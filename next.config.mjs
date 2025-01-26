@@ -13,6 +13,20 @@ const nextConfig = {
       },
     ],
   },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value:
+              "default-src 'self' https:; img-src 'self' data: https:; media-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:;",
+          },
+        ],
+      },
+    ]
+  },
   webpack(config, { dev, isServer }) {
     config.plugins.push(new MiniCssExtractPlugin())
 
