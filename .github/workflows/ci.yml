@@ -1,0 +1,35 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛎
+        uses: actions/checkout@v3
+
+      - name: Setup node env 🏗
+        uses: actions/setup-node@v3
+        with:
+          node-version: latest
+          check-latest: true
+
+      - name: Install pnpm 📦
+        run: npm i -g pnpm
+
+      - name: Install dependencies 👨🏻‍💻
+        run: pnpm install
+
+      - name: Run ESLint 👀
+        run: pnpm lint
+
+      - name: Build project 🚀
+        run: pnpm build

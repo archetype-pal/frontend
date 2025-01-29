@@ -10,7 +10,7 @@ const nextConfig = {
       },
       {
         protocol: 'http',
-        hostname: '13.60.172.99',
+        hostname: 'api.archetype.rancho.me',
       },
     ],
   },
@@ -18,7 +18,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://13.60.172.99/api/:path*', // Proxy to Backend
+        destination: 'https://api.archetype.rancho.me/api/:path*', // Proxy to Backend
       },
     ]
   },

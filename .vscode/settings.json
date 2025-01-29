@@ -1,0 +1,20 @@
+{
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "Commit messages should be concise and start with a verb in the present tense."
+    },
+    {
+      "text": "Limit commit messages to 60 characters."
+    },
+    {
+      "text": "Use the imperative mood in commit messages."
+    },
+    {
+      "text": "Include an appropriate emoji from https://gitmoji.dev/ at the beginning of the commit message."
+    },
+    {
+      "text": "If there is a branch, prepend the branch name followed by a colon and a space to the commit message."
+    }
+  ],
+  "git.allowNoVerifyCommit": true
+}
