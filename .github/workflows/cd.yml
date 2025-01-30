@@ -31,6 +31,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install pnpm 📦
+        run: npm i -g pnpm
+      - name: Install dependencies 👨🏻‍💻
+        run: pnpm install
+      - name: Run ESLint 👀
+        run: pnpm lint
+      - name: Build project 🚀
+        run: pnpm build
       - name: 'Build and push Docker image'
         id: docker_build
         uses: docker/build-push-action@v5
