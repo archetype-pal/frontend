@@ -1,3 +1,5 @@
+import type { SearchResponse } from '@/types/manuscript'
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export async function loginUser(username: string, password: string) {
@@ -74,8 +76,37 @@ export async function getPublications(params: {
   }`
 
   const res = await fetch(url)
-  console.log('🚀 ~ res:', res)
   if (!res.ok) throw new Error('Failed to fetch publications')
 
   return res.json()
+}
+
+// export async function fetchManuscripts(page = 1) {
+//   try {
+//     const response = await fetch(
+//       `${API_BASE_URL}/search/item-parts/facets?page=${page}`
+//     )
+//     if (!response.ok) {
+//       throw new Error('Failed to fetch manuscripts')
+//     }
+//     const data: SearchResponse = await response.json()
+//     return data
+//   } catch (error) {
+//     console.error('Error fetching manuscripts:', error)
+//     throw error
+//   }
+// }
+
+export async function fetchCarouselItems() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/media/carousel-items/`)
+    if (!response.ok) {
+      throw new Error('Failed to fetch carousel items')
+    }
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error fetching carousel items:', error)
+    throw error
+  }
 }

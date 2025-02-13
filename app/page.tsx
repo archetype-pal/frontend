@@ -43,11 +43,11 @@ export default function Home() {
             articles={featureArticles}
             moreLink='/features'
           />
-          <TwitterTimelineEmbed
+          {/* <TwitterTimelineEmbed
             sourceType='profile'
             screenName='XDevelopers' // Replace with the desired profile's screen name
             options={{ height: 400 }}
-          />
+          /> */}
         </div>
       </div>
     </main>

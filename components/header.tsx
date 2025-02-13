@@ -64,6 +64,17 @@ export default function Header() {
                 </Link>
               </li>
               <li>
+                <Link href='/search/manuscripts/'>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='text-white hover:text-primary w-full md:w-auto justify-start'
+                  >
+                    Search
+                  </Button>
+                </Link>
+              </li>
+              <li>
                 <Button
                   variant='ghost'
                   size='sm'

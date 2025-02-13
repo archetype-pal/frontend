@@ -3,6 +3,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware'
 
 const nextConfig = {
   images: {
+    domains: ['api.archetype.rancho.me'],
     remotePatterns: [
       {
         protocol: 'https',

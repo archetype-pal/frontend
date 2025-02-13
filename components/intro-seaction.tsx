@@ -1,45 +1,34 @@
 'use client'
 
-import * as React from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { CarouselItem } from '@/types'
+import { fetchCarouselItems } from '@/utils/api' // Import the function
 
 export default function Component() {
-  const [currentImage, setCurrentImage] = React.useState(0)
-  const [carouselItems, setCarouselItems] = React.useState<CarouselItem[]>([])
-  const [isLoading, setIsLoading] = React.useState(true)
-  const [error, setError] = React.useState<string | null>(null)
+  const [currentImage, setCurrentImage] = useState(0)
+  const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([])
 
-  React.useEffect(() => {
-    async function fetchCarouselItems() {
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadCarouselItems() {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/media/carousel-items/`
-        )
-        if (!response.ok) {
-          throw new Error('Failed to fetch carousel items')
-        }
-        const data = await response.json()
-        if (Array.isArray(data) && data.length > 0) {
-          console.log('data', data)
-
-          setCarouselItems(data)
-        } else {
-          throw new Error('No carousel items found')
-        }
+        const items = await fetchCarouselItems()
+        setCarouselItems(items)
       } catch (err) {
         setError('Failed to load carousel items')
-        console.error('Error fetching carousel items:', err)
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchCarouselItems()
+    loadCarouselItems()
   }, [])
 
   const nextImage = () => {
@@ -106,7 +95,9 @@ export default function Component() {
                 className='w-full sm:w-auto hover:text-primary border p-4 hover:border-primary'
                 asChild
               >
-                <Link href='/about'>Read more about the project</Link>
+                <Link href='/about/about-models-of-authority'>
+                  Read more about the project
+                </Link>
               </Button>
               <Button className='w-full sm:w-auto' asChild variant='outline'>
                 <Link href='/search'>Start searching</Link>
@@ -199,7 +190,9 @@ export default function Component() {
               className='w-full sm:w-auto hover:text-primary border p-4 hover:border-primary'
               asChild
             >
-              <Link href='/about'>Read more about the project</Link>
+              <Link href='/about/about-models-of-authority/'>
+                Read more about the project
+              </Link>
             </Button>
             <Button className='w-full sm:w-auto' asChild variant='outline'>
               <Link href='/search'>Start searching</Link>

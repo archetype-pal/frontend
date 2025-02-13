@@ -25,3 +25,15 @@ export interface CarouselItem {
   image: string
   link: string
 }
+
+export interface manuscriptItem {
+  repository_name: string
+  repository_city: string
+  shelfmark: string
+  catalogue_numbers: string[]
+  date: string
+  type: string
+  number_of_images: number
+  issuer_name: string
+  named_beneficiary: string
+}
