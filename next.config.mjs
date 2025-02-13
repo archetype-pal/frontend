@@ -19,7 +19,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'https://api.archetype.rancho.me/api/:path*', // Proxy to Backend
+        destination: 'https://api.archetype.gla.ac.uk/api/:path*', // Proxy to Backend
       },
     ]
   },
