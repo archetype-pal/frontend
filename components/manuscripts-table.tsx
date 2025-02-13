@@ -14,8 +14,8 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 export function ManuscriptsTable() {
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [, setError] = useState('')
+  const [, setIsLoading] = useState(false)
   const [manuscriptItems, setManuscriptsItems] = useState<ManuscriptListItem[]>(
     []
   )

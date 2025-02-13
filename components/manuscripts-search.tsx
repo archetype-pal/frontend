@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Grid, List } from 'lucide-react'
 
 export function ManuscriptsSearch() {
-  const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('table')
+  const [, setViewMode] = React.useState<'table' | 'grid'>('table')
 
   return (
     <div className='h-screen bg-gray-50'>

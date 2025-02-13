@@ -22,7 +22,7 @@ export default function Component() {
         const items = await fetchCarouselItems()
         setCarouselItems(items)
       } catch (err) {
-        setError('Failed to load carousel items')
+        setError(`Failed to load carousel items  ${err}`)
       } finally {
         setIsLoading(false)
       }
