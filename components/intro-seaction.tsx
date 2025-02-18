@@ -161,10 +161,14 @@ export default function Component() {
               </Button>
             </div>
           </CardContent>
+
           {carouselItems[currentImage] && (
-            <div className='absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-2 text-center'>
+            <Link
+              href={carouselItems[currentImage].url}
+              className='absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-2 text-center'
+            >
               {carouselItems[currentImage].title}
-            </div>
+            </Link>
           )}
         </Card>
         <div className='space-y-4'>

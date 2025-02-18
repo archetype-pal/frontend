@@ -13,17 +13,17 @@ export interface UserProfile {
   username: string
 }
 
-export interface CarouselItem {
-  id: number
-  title: string
-  image: string
-  description: string
-}
+// export interface CarouselItem {
+//   id: number
+//   title: string
+//   image: string
+//   description: string
+// }
 
 export interface CarouselItem {
   title: string
   image: string
-  link: string
+  url: string
 }
 
 export interface manuscriptItem {
