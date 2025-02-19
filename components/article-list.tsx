@@ -38,7 +38,7 @@ export default function ArticleList({
                 {article.title}
               </Link>
               <p className='text-sm text-gray-500'>
-                {article.published_at}, by {article.author.username}
+                {article.published_at}, by {article.author.first_name}
               </p>
             </li>
           ))}
