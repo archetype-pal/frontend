@@ -10,7 +10,6 @@ import ShareButtons from '@/components/share-buttons'
 import { Button } from '@/components/ui/button'
 
 interface BlogPostPreviewProps {
-  id: string
   title: string
   author: string
   date: string
@@ -22,7 +21,6 @@ interface BlogPostPreviewProps {
 }
 
 export default function BlogPostPreview({
-  id,
   title,
   author,
   date,
@@ -76,7 +74,7 @@ export default function BlogPostPreview({
   return (
     <article className='mb-8'>
       <h2 className='text-2xl font-semibold text-[#2B4C6F] mb-3'>
-        <Link href={`/news/${id}`} className='hover:underline'>
+        <Link href={`${slug}`} className='hover:underline'>
           {title}
         </Link>
       </h2>
@@ -98,7 +96,7 @@ export default function BlogPostPreview({
         </span>
         <span className='mx-1'>|</span>
         <Link
-          href='/news'
+          href={slug}
           className='flex items-center text-[#2B4C6F] hover:underline'
         >
           <Newspaper className='h-4 w-4 mr-1' />
@@ -106,7 +104,7 @@ export default function BlogPostPreview({
         </Link>
         <span className='mx-1'>|</span>
         <Link
-          href={`/news/${id}#comments`}
+          href={`${slug}`}
           className='flex items-center text-[#2B4C6F] hover:underline'
         >
           <MessageSquare className='h-4 w-4 mr-1' />
@@ -117,7 +115,7 @@ export default function BlogPostPreview({
 
       {showReadMoreBtn && (
         <Link
-          href={`/news/${id}`}
+          href={`${slug}`}
           className='inline-flex items-center px-4 py-2 text-sm text-[#2B4C6F] border border-[#2B4C6F] rounded hover:bg-[#2B4C6F] hover:text-white transition-colors'
         >
           Read more

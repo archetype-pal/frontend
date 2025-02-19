@@ -93,24 +93,29 @@ export default function Header() {
                 </Button>
               </li>
               <li>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      className='text-white hover:text-primary w-full md:w-auto justify-start'
-                    >
-                      News & Blog
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>Latest News</DropdownMenuItem>
-                    <DropdownMenuItem>Archive</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Link href='/news/'>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='text-white hover:text-primary w-full md:w-auto justify-start'
+                  >
+                    News
+                  </Button>
+                </Link>
               </li>
               <li>
-                <Link href='/feature-of-the-month/'>
+                <Link href='/blogs/'>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='text-white hover:text-primary w-full md:w-auto justify-start'
+                  >
+                    Blogs
+                  </Button>
+                </Link>
+              </li>
+              <li>
+                <Link href='/feature/'>
                   <Button
                     variant='ghost'
                     size='sm'

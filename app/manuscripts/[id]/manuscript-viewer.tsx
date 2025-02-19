@@ -27,7 +27,9 @@ export function ManuscriptViewer({
           <TabsTrigger value='descriptions'>
             Descriptions ({manuscript.historical_item.descriptions.length})
           </TabsTrigger>
-          <TabsTrigger value='manuscript'>Manuscript Images (2)</TabsTrigger>
+          <TabsTrigger value='manuscript'>
+            Manuscript Images ({images.length})
+          </TabsTrigger>
           {/* <TabsTrigger value='texts'>Texts (2)</TabsTrigger> */}
         </TabsList>
 

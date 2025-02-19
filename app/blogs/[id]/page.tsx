@@ -43,8 +43,7 @@ export default async function NewsList({ params }: { params: { id: string } }) {
             }
             date={newsItem.published_at}
             excerpt={newsItem.preview}
-            slug={'/feature'}
-            id={newsItem.id}
+            slug={newsItem.slug}
             commentsCount={newsItem.number_of_comments}
             showShareBtns={false}
             showReadMoreBtn={false}
@@ -55,11 +54,33 @@ export default async function NewsList({ params }: { params: { id: string } }) {
             <h2 className='text-lg font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2'>
               Recent Posts
             </h2>
+            <ul className='space-y-2'>
+              {/* {newslist.map((news, index) => (
+                <li key={index}>
+                  <Link
+                    href='#'
+                    className='text-blue-600 hover:underline text-sm'
+                  >
+                    {news.title}
+                  </Link>
+                </li>
+              ))} */}
+            </ul>
           </section>
           <section className='mb-8'>
             <h2 className='text-lg font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2'>
               Posts by Topic
             </h2>
+            <ul className='space-y-1'>
+              {/* {postsByTopic.map((topic, index) => (
+                <li key={index} className='text-sm'>
+                  <Link href='#' className='text-blue-600 hover:underline'>
+                    {topic.name}
+                  </Link>{' '}
+                  ({topic.count})
+                </li>
+              ))} */}
+            </ul>
           </section>
           <section className='mb-8'>
             <h2 className='text-lg font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2'>
@@ -73,6 +94,16 @@ export default async function NewsList({ params }: { params: { id: string } }) {
             <h2 className='text-lg font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2'>
               Posts by Author
             </h2>
+            <ul className='space-y-1'>
+              {/* {postsByAuthor.map((author, index) => (
+                <li key={index} className='text-sm'>
+                  <Link href='#' className='text-blue-600 hover:underline'>
+                    {author.name}
+                  </Link>{' '}
+                  ({author.count})
+                </li>
+              ))} */}
+            </ul>
           </section>
           <section>
             <h2 className='text-lg font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2'>
