@@ -2,14 +2,15 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
 interface Author {
-  username: string
+  first_name: string
+  last_name: string
 }
 
 interface Article {
   title: string
   published_at: string
   author: Author
-  slug: string
+  id: string
 }
 
 interface ArticleListProps {
@@ -31,7 +32,7 @@ export default function ArticleList({
           {articles.map((article, index) => (
             <li key={index}>
               <Link
-                href={article.slug}
+                href={`${moreLink}/${article.id}`}
                 className='text-blue-600 hover:underline'
               >
                 {article.title}

@@ -81,21 +81,14 @@ export async function getPublications(params: {
   return res.json()
 }
 
-// export async function fetchManuscripts(page = 1) {
-//   try {
-//     const response = await fetch(
-//       `${API_BASE_URL}/search/item-parts/facets?page=${page}`
-//     )
-//     if (!response.ok) {
-//       throw new Error('Failed to fetch manuscripts')
-//     }
-//     const data: SearchResponse = await response.json()
-//     return data
-//   } catch (error) {
-//     console.error('Error fetching manuscripts:', error)
-//     throw error
-//   }
-// }
+export async function getPublicationItem(id: string) {
+  const url = `${API_BASE_URL}/api/v1/media/publications/${id}`
+
+  const res = await fetch(url)
+  if (!res.ok) throw new Error('Failed to fetch publication item')
+
+  return res.json()
+}
 
 export async function fetchCarouselItems() {
   try {
