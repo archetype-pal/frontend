@@ -130,7 +130,7 @@ export function ManuscriptViewer({
               >
                 <div className='relative aspect-square'>
                   <Image
-                    src={image.iiif_image}
+                    src={`${image.iiif_image}/full/550,/0/default.jpg`}
                     alt={'Manuscript image'}
                     fill
                     className='object-contain'

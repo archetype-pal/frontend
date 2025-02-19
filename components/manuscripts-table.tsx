@@ -43,8 +43,8 @@ export function ManuscriptsTable() {
           throw new Error('No carousel items found')
         }
       } catch (err) {
-        setError('Failed to load carousel items')
-        console.error('Error fetching carousel items:', err)
+        setError('Failed to load Manuscript  items')
+        console.error('Error fetching Manuscript  items:', err)
       } finally {
         setIsLoading(false)
       }
