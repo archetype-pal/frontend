@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
 import { getPublicationItem } from '@/utils/api'
 import BlogPostPreview from '@/components/blog-post-preview'
 
@@ -43,8 +42,7 @@ export default async function NewsList({ params }: { params: { id: string } }) {
             }
             date={newsItem.published_at}
             excerpt={newsItem.preview}
-            slug={'/feature'}
-            id={newsItem.id}
+            slug={'/feature/' + newsItem.id}
             commentsCount={newsItem.number_of_comments}
             showShareBtns={false}
             showReadMoreBtn={false}

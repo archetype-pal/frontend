@@ -17,11 +17,9 @@ interface Publication {
   number_of_comments: number
 }
 
-async function getNewsList(page = 1): Promise<Publication[]> {
+async function getNewsList(): Promise<Publication[]> {
   try {
     const newsList = await getPublications({ is_news: true })
-    console.log('newsList.results', newsList.results)
-
     return newsList.results
   } catch (error) {
     console.error('Error fetching news list:', error)

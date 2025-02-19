@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
 import { getPublications } from '@/utils/api'
 import BlogPostPreview from '@/components/blog-post-preview'
 

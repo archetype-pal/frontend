@@ -36,8 +36,6 @@ export function ManuscriptsTable() {
           Array.isArray(data.objects.results) &&
           data.objects.results.length > 0
         ) {
-          console.log('data.objects.results', data.objects.results)
-
           setManuscriptsItems(data.objects.results)
         } else {
           throw new Error('No carousel items found')

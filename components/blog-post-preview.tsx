@@ -7,7 +7,6 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import ShareButtons from '@/components/share-buttons'
-import { Button } from '@/components/ui/button'
 
 interface BlogPostPreviewProps {
   title: string
@@ -30,47 +29,6 @@ export default function BlogPostPreview({
   showShareBtns = true,
   showReadMoreBtn = true,
 }: BlogPostPreviewProps) {
-  const handleShare = async (platform?: 'twitter' | 'facebook') => {
-    const shareText = `${title}\n\nBy ${author}`
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/news/${slug}`
-    if (!platform) {
-      // Try to use the Web Share API if available
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title,
-            text: shareText,
-            url,
-          })
-          return
-        } catch (err) {
-          console.log('Error sharing:', err)
-        }
-      }
-    }
-
-    // Fallback to platform-specific sharing
-    let shareUrl = ''
-
-    switch (platform) {
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-          shareText
-        )}&url=${encodeURIComponent(url)}`
-        break
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-          url
-        )}`
-        break
-      default:
-        return
-    }
-
-    // Open share dialog in a new window
-    window.open(shareUrl, '_blank', 'width=600,height=400')
-  }
-
   return (
     <article className='mb-8'>
       <h2 className='text-2xl font-semibold text-[#2B4C6F] mb-3'>

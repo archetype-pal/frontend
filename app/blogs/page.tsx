@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
 import { getPublications } from '@/utils/api'
 import BlogPostPreview from '@/components/blog-post-preview'
 
@@ -18,7 +17,7 @@ interface Publication {
   number_of_comments: number
 }
 
-async function getBlogsList(page = 1): Promise<Publication[]> {
+async function getBlogsList(): Promise<Publication[]> {
   try {
     const blogsList = await getPublications({ is_blog_post: true })
 

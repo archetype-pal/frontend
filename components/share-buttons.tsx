@@ -2,27 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Share2 } from 'lucide-react'
 
 interface ShareButtonsProps {
   title: string
   author: string
   slug: string
-}
-
-function SocialIcon({
-  icon,
-  className,
-}: {
-  icon: { svg: string }
-  className?: string
-}) {
-  return (
-    <span
-      className={className}
-      dangerouslySetInnerHTML={{ __html: icon.svg }}
-    />
-  )
 }
 
 export default function ShareButtons({
