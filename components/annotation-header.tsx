@@ -3,8 +3,6 @@
 import * as React from 'react'
 import { Wrench, Star, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Eye } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -24,6 +22,41 @@ export function AnnotationHeader({
   onToggleAnnotations,
   unsavedCount = 0,
 }: AnnotationHeaderProps) {
+  const [hands, setHands] = React.useState<{ id: string; name: string }[]>([])
+  const [allographs, setAllographs] = React.useState<
+    { id: string; name: string }[]
+  >([])
+
+  React.useEffect(() => {
+    async function fetchHands() {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/hands/`
+        )
+        const data = await response.json()
+        setHands(data.results)
+      } catch (error) {
+        console.error('Failed to fetch hands:', error)
+      }
+    }
+
+    async function fetchAllographs() {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/symbols_structure/allographs/`
+        )
+        const data = await response.json()
+
+        setAllographs(data)
+      } catch (error) {
+        console.error('Failed to fetch allographs:', error)
+      }
+    }
+
+    fetchHands()
+    fetchAllographs()
+  }, [])
+
   return (
     <div className='flex items-center justify-between px-4 py-2 bg-white border-b'>
       <div className='flex items-center space-x-2'>
@@ -71,25 +104,31 @@ export function AnnotationHeader({
       </div>
 
       <div className='flex items-center space-x-2'>
-        <Select defaultValue='main-hand'>
+        <Select>
           <SelectTrigger className='w-[200px]'>
-            <SelectValue placeholder='Main Hand' />
+            <SelectValue placeholder='Select Hand' />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='main-hand'>Main Hand</SelectItem>
-            <SelectItem value='o'>o</SelectItem>
-            <SelectItem value='p'>p</SelectItem>
-            <SelectItem value='q'>q</SelectItem>
-            <SelectItem value='r-2-shaped'>r, 2-shaped</SelectItem>
+            {hands.map((hand) => (
+              <SelectItem key={hand.id} value={hand.name}>
+                {hand.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
-        <Input className='w-[100px]' placeholder='R' />
-
-        <div className='flex items-center space-x-1 bg-white rounded-md border px-2 py-1'>
-          <Eye className='h-4 w-4 text-gray-500' />
-          <span className='text-sm'>7</span>
-        </div>
+        <Select>
+          <SelectTrigger className='w-[200px]'>
+            <SelectValue placeholder='Select Allograph' />
+          </SelectTrigger>
+          <SelectContent>
+            {allographs.map((allograph) => (
+              <SelectItem key={allograph.id} value={allograph.name}>
+                {allograph.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   )

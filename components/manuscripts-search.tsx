@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-// import { ManuscriptsFilters } from './manuscripts-filters'
+import { ManuscriptsFilters } from './manuscripts-filters'
 import { ManuscriptsTable } from './manuscripts-table'
 import { Button } from '@/components/ui/button'
 import { Grid, List } from 'lucide-react'
@@ -33,7 +33,7 @@ export function ManuscriptsSearch() {
         </div>
       </div>
       <div className='flex h-[calc(100vh-73px)]'>
-        {/* <ManuscriptsFilters /> */}
+        <ManuscriptsFilters />
         <div className='flex-1 p-6 overflow-auto'>
           <ManuscriptsTable />
         </div>

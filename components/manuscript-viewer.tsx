@@ -190,13 +190,13 @@ export default function ManuscriptViewer() {
 
         <div className='flex-1 overflow-hidden p-4'>
           <div className='relative h-[calc(100%-3rem)] w-full overflow-hidden rounded-lg border bg-accent/50 ml-10'>
-            <ManuscriptImage
-              annotationsEnabled={annotationsEnabled}
-              annotations={annotations}
-              isCreatingAnnotation={isCreatingAnnotation}
-              onAnnotationCreated={handleAnnotationCreated}
-              onAnnotationUpdated={handleAnnotationUpdated}
-            />
+              <ManuscriptImage
+                annotationsEnabled={annotationsEnabled}
+                annotations={annotations}
+                isCreatingAnnotation={isCreatingAnnotation}
+                onAnnotationCreated={handleAnnotationCreated}
+                onAnnotationUpdated={handleAnnotationUpdated}
+              />
             <div className='absolute left-4 top-4 flex flex-col gap-2'>
               <Button
                 variant='secondary'
