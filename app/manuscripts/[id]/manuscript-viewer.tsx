@@ -1,7 +1,6 @@
 'use client'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Star } from 'lucide-react'
 import Image from 'next/image'
 import type { Manuscript, ManuscriptImage } from '@/types/manuscript'
 import Link from 'next/link'
@@ -37,7 +36,7 @@ export function ManuscriptViewer({
           <section>
             {manuscript.historical_item.descriptions.map((desc, index) => (
               <div key={index} className='prose max-w-none'>
-                <h2>
+                <h2 className='text-2xl mb-4 '>
                   Description
                   {desc.source && (
                     <span className='text-gray-500 font-normal'>
@@ -108,7 +107,7 @@ export function ManuscriptViewer({
           <div className='space-y-8'>
             {manuscript.historical_item.descriptions.map((desc, index) => (
               <div key={index} className='prose max-w-none'>
-                <h2>
+                <h2 className='text-2xl mb-4'>
                   Description
                   {desc.source && (
                     <span className='text-gray-500 font-normal'>

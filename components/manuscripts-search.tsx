@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { ManuscriptsFilters } from './manuscripts-filters'
+// import { ManuscriptsFilters } from './manuscripts-filters'
 import { ManuscriptsTable } from './manuscripts-table'
 import { Button } from '@/components/ui/button'
 import { Grid, List } from 'lucide-react'
