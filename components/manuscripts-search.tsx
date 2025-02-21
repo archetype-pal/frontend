@@ -33,7 +33,7 @@ export function ManuscriptsSearch() {
         </div>
       </div>
       <div className='flex h-[calc(100vh-73px)]'>
-        <ManuscriptsFilters />
+        {/* <ManuscriptsFilters /> */}
         <div className='flex-1 p-6 overflow-auto'>
           <ManuscriptsTable />
         </div>

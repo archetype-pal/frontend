@@ -131,18 +131,17 @@ export function ManuscriptViewer({
                 className='relative bg-white p-4 rounded-lg shadow'
               >
                 <div className='relative aspect-square'>
-                  <Image
-                    src={`${image.iiif_image}/full/550,/0/default.jpg`}
-                    alt={'Manuscript image'}
-                    fill
-                    className='object-contain'
-                  />
-                  <div className='absolute top-2 right-2'>
-                    <Star
-                      className='text-yellow-400 fill-yellow-400'
-                      size={24}
+                  <Link
+                    href={`/digipal/${image.id}`}
+                    className='text-blue-600 hover:underline'
+                  >
+                    <Image
+                      src={`${image.iiif_image}/full/550,/0/default.jpg`}
+                      alt={'Manuscript image'}
+                      fill
+                      className='object-contain'
                     />
-                  </div>
+                  </Link>
                 </div>
                 <div className='mt-2 text-center'>
                   <span className='text-gray-700'>{image.locus}</span>
