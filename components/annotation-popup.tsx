@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Check, X, Link2, Plus, Star, Users, ChevronDown } from 'lucide-react'
+import type { Allograph } from '@/types/allographs'
 
 interface Annotation {
   id: string
@@ -15,20 +16,8 @@ interface Annotation {
   width: number
   height: number
   content: string
-  components?: {
-    head?: {
-      brokenArc?: boolean
-      horizontallyExtended?: boolean
-      looped?: boolean
-      ruched?: boolean
-      swellingTapering?: boolean
-    }
-    stem?: {
-      crossed?: boolean
-      extended?: boolean
-      onBaseline?: boolean
-    }
-  }
+  selectedAllograph?: Allograph
+  components?: Record<string, Record<string, boolean>>
 }
 
 interface AnnotationPopupProps {
@@ -44,12 +33,19 @@ export function AnnotationPopup({
   onUpdate,
   style,
 }: AnnotationPopupProps) {
-  const [expandedSections, setExpandedSections] = React.useState({
-    head: true,
-    stem: true,
+  const [expandedSections, setExpandedSections] = React.useState(() => {
+    if (annotation.selectedAllograph) {
+      return Object.fromEntries(
+        annotation.selectedAllograph.components.map((component) => [
+          component.component_name,
+          true,
+        ])
+      )
+    }
+    return {}
   })
 
-  const toggleSection = (section: 'head' | 'stem') => {
+  const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
@@ -57,25 +53,34 @@ export function AnnotationPopup({
   }
 
   const updateComponent = (
-    section: 'head' | 'stem',
-    field: string,
+    componentName: string,
+    featureName: string,
     value: boolean
   ) => {
     const newAnnotation = {
       ...annotation,
       components: {
         ...annotation.components,
-        [section]: {
-          ...annotation.components?.[section],
-          [field]: value,
+        [componentName]: {
+          ...annotation.components?.[componentName],
+          [featureName]: value,
         },
       },
     }
     onUpdate(newAnnotation)
   }
 
+  // Add this function to prevent click propagation
+  const handlePopupClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+  }
+
   return (
-    <Card className='absolute z-50 w-[500px] bg-white shadow-lg' style={style}>
+    <Card
+      className='absolute z-50 w-[500px] bg-white shadow-lg'
+      style={style}
+      onClick={handlePopupClick}
+    >
       <div className='flex items-center justify-between border-b p-2'>
         <div className='flex items-center gap-1'>
           <span className='text-lg font-bold'>{annotation.id.slice(0, 8)}</span>
@@ -128,157 +133,51 @@ export function AnnotationPopup({
 
         <TabsContent value='components' className='p-4'>
           <div className='space-y-4'>
-            <div className='space-y-2'>
-              <button
-                onClick={() => toggleSection('head')}
-                className='flex w-full items-center justify-between text-lg font-bold'
-              >
-                <span>Head</span>
-                <ChevronDown
-                  className={`h-5 w-5 transform transition-transform ${
-                    expandedSections.head ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
+            {annotation.selectedAllograph?.components.map((component) => (
+              <div key={component.component_id} className='space-y-2'>
+                <button
+                  onClick={() => toggleSection(component.component_name)}
+                  className='flex w-full items-center justify-between text-lg font-bold'
+                >
+                  <span>{component.component_name}</span>
+                  <ChevronDown
+                    className={`h-5 w-5 transform transition-transform ${
+                      expandedSections[component.component_name]
+                        ? 'rotate-180'
+                        : ''
+                    }`}
+                  />
+                </button>
 
-              {expandedSections.head && (
                 <div className='grid grid-cols-2 gap-4 pl-4'>
-                  <div className='space-y-2'>
-                    <div className='flex items-center space-x-2'>
+                  {component.features.map((feature) => (
+                    <div
+                      key={feature.id}
+                      className='flex items-center space-x-2'
+                    >
                       <Checkbox
-                        id='broken-arc'
-                        checked={annotation.components?.head?.brokenArc}
-                        onCheckedChange={(checked) =>
-                          updateComponent(
-                            'head',
-                            'brokenArc',
-                            checked as boolean
-                          )
-                        }
-                      />
-                      <label htmlFor='broken-arc'>broken arc</label>
-                    </div>
-                    <div className='flex items-center space-x-2'>
-                      <Checkbox
-                        id='horizontally-extended'
+                        id={`feature-${feature.id}`}
                         checked={
-                          annotation.components?.head?.horizontallyExtended
+                          annotation.components?.[component.component_name]?.[
+                            feature.name
+                          ] ?? feature.set_by_default
                         }
                         onCheckedChange={(checked) =>
                           updateComponent(
-                            'head',
-                            'horizontallyExtended',
+                            component.component_name,
+                            feature.name,
                             checked as boolean
                           )
                         }
                       />
-                      <label htmlFor='horizontally-extended'>
-                        horizontally extended
+                      <label htmlFor={`feature-${feature.id}`}>
+                        {feature.name}
                       </label>
                     </div>
-                  </div>
-                  <div className='space-y-2'>
-                    <div className='flex items-center space-x-2'>
-                      <Checkbox
-                        id='looped'
-                        checked={annotation.components?.head?.looped}
-                        onCheckedChange={(checked) =>
-                          updateComponent('head', 'looped', checked as boolean)
-                        }
-                      />
-                      <label htmlFor='looped'>looped</label>
-                    </div>
-                    <div className='flex items-center space-x-2'>
-                      <Checkbox
-                        id='ruched'
-                        checked={annotation.components?.head?.ruched}
-                        onCheckedChange={(checked) =>
-                          updateComponent('head', 'ruched', checked as boolean)
-                        }
-                      />
-                      <label htmlFor='ruched'>ruched</label>
-                    </div>
-                    <div className='flex items-center space-x-2'>
-                      <Checkbox
-                        id='swelling-tapering'
-                        checked={annotation.components?.head?.swellingTapering}
-                        onCheckedChange={(checked) =>
-                          updateComponent(
-                            'head',
-                            'swellingTapering',
-                            checked as boolean
-                          )
-                        }
-                      />
-                      <label htmlFor='swelling-tapering'>
-                        swelling/tapering
-                      </label>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              )}
-            </div>
-
-            <div className='space-y-2'>
-              <button
-                onClick={() => toggleSection('stem')}
-                className='flex w-full items-center justify-between text-lg font-bold'
-              >
-                <span>Stem</span>
-                <ChevronDown
-                  className={`h-5 w-5 transform transition-transform ${
-                    expandedSections.stem ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-
-              {expandedSections.stem && (
-                <div className='grid grid-cols-2 gap-4 pl-4'>
-                  <div className='space-y-2'>
-                    <div className='flex items-center space-x-2'>
-                      <Checkbox
-                        id='crossed'
-                        checked={annotation.components?.stem?.crossed}
-                        onCheckedChange={(checked) =>
-                          updateComponent('stem', 'crossed', checked as boolean)
-                        }
-                      />
-                      <label htmlFor='crossed'>crossed</label>
-                    </div>
-                    <div className='flex items-center space-x-2'>
-                      <Checkbox
-                        id='extended'
-                        checked={annotation.components?.stem?.extended}
-                        onCheckedChange={(checked) =>
-                          updateComponent(
-                            'stem',
-                            'extended',
-                            checked as boolean
-                          )
-                        }
-                      />
-                      <label htmlFor='extended'>extended</label>
-                    </div>
-                  </div>
-                  <div className='space-y-2'>
-                    <div className='flex items-center space-x-2'>
-                      <Checkbox
-                        id='on-baseline'
-                        checked={annotation.components?.stem?.onBaseline}
-                        onCheckedChange={(checked) =>
-                          updateComponent(
-                            'stem',
-                            'onBaseline',
-                            checked as boolean
-                          )
-                        }
-                      />
-                      <label htmlFor='on-baseline'>on the baseline</label>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            ))}
           </div>
         </TabsContent>
 

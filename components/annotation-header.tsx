@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Wrench, Star, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Eye } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -10,52 +11,68 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { fetchHands, fetchAllographs } from '@/services/manuscripts'
+import type { HandType } from '@/types/hands'
+import type { Allograph } from '@/types/allographs'
+// import { toast } from "sonner"
 
 interface AnnotationHeaderProps {
   annotationsEnabled: boolean
   onToggleAnnotations: (enabled: boolean) => void
   unsavedCount: number
+  imageId?: string
+  onAllographSelect: (allograph: Allograph | undefined) => void
+  onHandSelect: (hand: HandType | undefined) => void
 }
 
 export function AnnotationHeader({
   annotationsEnabled,
   onToggleAnnotations,
   unsavedCount = 0,
+  imageId,
+  onAllographSelect,
+  onHandSelect,
 }: AnnotationHeaderProps) {
-  const [hands, setHands] = React.useState<{ id: string; name: string }[]>([])
-  const [allographs, setAllographs] = React.useState<
-    { id: string; name: string }[]
-  >([])
+  const [hands, setHands] = React.useState<HandType[]>([])
+  const [allographs, setAllographs] = React.useState<Allograph[]>([])
+  const [selectedHand, setSelectedHand] = React.useState<string>('')
+  const [selectedAllograph, setSelectedAllograph] = React.useState<string>('')
+  const [, setLoading] = React.useState(true)
 
   React.useEffect(() => {
-    async function fetchHands() {
+    const loadData = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/hands/`
-        )
-        const data = await response.json()
-        setHands(data.results)
+        setLoading(true)
+        const [handsData, allographsData] = await Promise.all([
+          imageId ? fetchHands(imageId) : Promise.resolve({ results: [] }),
+          fetchAllographs(),
+        ])
+        setHands(handsData.results)
+        setAllographs(allographsData)
       } catch (error) {
-        console.error('Failed to fetch hands:', error)
+        console.error('Error loading data:', error)
+        // toast.error("Failed to load hands and allographs")
+      } finally {
+        setLoading(false)
       }
     }
 
-    async function fetchAllographs() {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/symbols_structure/allographs/`
-        )
-        const data = await response.json()
+    loadData()
+  }, [imageId])
 
-        setAllographs(data)
-      } catch (error) {
-        console.error('Failed to fetch allographs:', error)
-      }
-    }
+  const handleAllographChange = (allographId: string) => {
+    setSelectedAllograph(allographId)
+    const selectedAllographData = allographs.find(
+      (a) => a.id.toString() === allographId
+    )
+    onAllographSelect(selectedAllographData)
+  }
 
-    fetchHands()
-    fetchAllographs()
-  }, [])
+  const handleHandChange = (handId: string) => {
+    setSelectedHand(handId)
+    const selectedHandData = hands.find((h) => h.id.toString() === handId)
+    onHandSelect(selectedHandData)
+  }
 
   return (
     <div className='flex items-center justify-between px-4 py-2 bg-white border-b'>
@@ -104,31 +121,36 @@ export function AnnotationHeader({
       </div>
 
       <div className='flex items-center space-x-2'>
-        <Select>
+        <Select value={selectedHand} onValueChange={handleHandChange}>
           <SelectTrigger className='w-[200px]'>
             <SelectValue placeholder='Select Hand' />
           </SelectTrigger>
           <SelectContent>
             {hands.map((hand) => (
-              <SelectItem key={hand.id} value={hand.name}>
+              <SelectItem key={hand.id} value={hand.id.toString()}>
                 {hand.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        <Select>
+        <Select value={selectedAllograph} onValueChange={handleAllographChange}>
           <SelectTrigger className='w-[200px]'>
             <SelectValue placeholder='Select Allograph' />
           </SelectTrigger>
           <SelectContent>
             {allographs.map((allograph) => (
-              <SelectItem key={allograph.id} value={allograph.name}>
+              <SelectItem key={allograph.id} value={allograph.id.toString()}>
                 {allograph.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+
+        <div className='flex items-center space-x-1 bg-white rounded-md border px-2 py-1'>
+          <Eye className='h-4 w-4 text-gray-500' />
+          <span className='text-sm'>7</span>
+        </div>
       </div>
     </div>
   )

@@ -1,8 +1,11 @@
 'use client'
 
 import type React from 'react'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import { AnnotationPopup } from './annotation-popup'
+import { IIIFImage } from '@/utils/iiif'
+import { Button } from '@/components/ui/button'
+import { ZoomIn, ZoomOut } from 'lucide-react'
 
 interface Annotation {
   id: string
@@ -32,150 +35,269 @@ interface ManuscriptImageProps {
   annotationsEnabled: boolean
   annotations: Annotation[]
   isCreatingAnnotation: boolean
+  isMoveToolActive: boolean
+  isDeleteMode: boolean
   onAnnotationCreated: (annotation: Annotation) => void
   onAnnotationUpdated: (annotation: Annotation) => void
+  onAnnotationDeleted: (annotationId: string) => void
+  zoom: number
+  onZoomChange: (newZoom: number) => void
+  iiifImageUrl: string
+  selectedAllograph: Allograph | undefined
+}
+
+// Define the Allograph type
+interface Allograph {
+  id: string
+  name: string
+  // Add other properties as needed
 }
 
 export function ManuscriptImage({
   annotationsEnabled,
   annotations,
   isCreatingAnnotation,
+  isMoveToolActive,
+  isDeleteMode,
   onAnnotationCreated,
   onAnnotationUpdated,
+  onAnnotationDeleted,
+  zoom,
+  onZoomChange,
+  iiifImageUrl,
+  selectedAllograph,
 }: ManuscriptImageProps) {
   const [newAnnotation, setNewAnnotation] =
     useState<Partial<Annotation> | null>(null)
   const [selectedAnnotation, setSelectedAnnotation] =
     useState<Annotation | null>(null)
+  const [isDrawing, setIsDrawing] = useState(false)
+  const [isPanning, setIsPanning] = useState(false)
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  const [, setViewportPosition] = useState({ x: 0, y: 0 })
   const imageRef = useRef<HTMLImageElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
+  const iiifImage = useMemo(() => new IIIFImage(iiifImageUrl), [iiifImageUrl])
+
+  const getImageScale = useCallback(() => {
+    return zoom <= 1 ? 1 : zoom
+  }, [zoom])
+
+  const getImageUrl = useCallback(() => {
+    return zoom <= 1
+      ? iiifImage.getScaledUrl(zoom)
+      : iiifImage.getImageUrl({ size: 'max' })
+  }, [iiifImage, zoom])
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!isCreatingAnnotation || !imageRef.current) return
+      if (isMoveToolActive) {
+        setIsPanning(true)
+        setPanStart({ x: e.clientX, y: e.clientY })
+      } else if (
+        isCreatingAnnotation &&
+        imageRef.current &&
+        (e.target === imageRef.current || e.target === containerRef.current)
+      ) {
+        const rect = imageRef.current.getBoundingClientRect()
+        const x = ((e.clientX - rect.left) / rect.width) * 100
+        const y = ((e.clientY - rect.top) / rect.height) * 100
 
-      const rect = imageRef.current.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
-
-      setNewAnnotation({
-        x,
-        y,
-        width: 0,
-        height: 0,
-      })
+        setIsDrawing(true)
+        setNewAnnotation({
+          x,
+          y,
+          width: 0,
+          height: 0,
+        })
+      }
     },
-    [isCreatingAnnotation]
+    [isCreatingAnnotation, isMoveToolActive]
   )
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!newAnnotation || !imageRef.current) return
+      if (isPanning && containerRef.current) {
+        const dx = e.clientX - panStart.x
+        const dy = e.clientY - panStart.y
+        containerRef.current.scrollLeft -= dx
+        containerRef.current.scrollTop -= dy
+        setPanStart({ x: e.clientX, y: e.clientY })
 
-      const rect = imageRef.current.getBoundingClientRect()
-      const width = e.clientX - rect.left - newAnnotation.x!
-      const height = e.clientY - rect.top - newAnnotation.y!
+        setViewportPosition((prev) => ({
+          x: prev.x - dx,
+          y: prev.y - dy,
+        }))
+      } else if (isDrawing && newAnnotation && imageRef.current) {
+        const rect = imageRef.current.getBoundingClientRect()
+        const width =
+          ((e.clientX - rect.left) / rect.width) * 100 - newAnnotation.x!
+        const height =
+          ((e.clientY - rect.top) / rect.height) * 100 - newAnnotation.y!
 
-      setNewAnnotation((prev) => ({
-        ...prev,
-        width,
-        height,
-      }))
+        setNewAnnotation((prev) => ({
+          ...prev,
+          width,
+          height,
+        }))
+      }
     },
-    [newAnnotation]
+    [newAnnotation, isDrawing, isPanning, panStart]
   )
 
   const handleMouseUp = useCallback(() => {
-    if (!newAnnotation) return
+    if (isPanning) {
+      setIsPanning(false)
+    } else if (isDrawing && newAnnotation) {
+      const annotation: Annotation = {
+        id: Date.now().toString(),
+        type: 'editorial',
+        x: newAnnotation.x!,
+        y: newAnnotation.y!,
+        width: Math.abs(newAnnotation.width!),
+        height: Math.abs(newAnnotation.height!),
+        content: '',
+        components: {
+          head: {},
+          stem: {},
+        },
+      }
 
-    const annotation: Annotation = {
-      id: Date.now().toString(),
-      type: 'editorial',
-      x: newAnnotation.x!,
-      y: newAnnotation.y!,
-      width: Math.abs(newAnnotation.width!),
-      height: Math.abs(newAnnotation.height!),
-      content: '',
-      components: {
-        head: {},
-        stem: {},
-      },
+      onAnnotationCreated(annotation)
+      setNewAnnotation(null)
+      setIsDrawing(false)
+      setSelectedAnnotation(annotation)
     }
+  }, [newAnnotation, isDrawing, isPanning, onAnnotationCreated])
 
-    onAnnotationCreated(annotation)
-    setNewAnnotation(null)
-    setSelectedAnnotation(annotation)
-  }, [newAnnotation, onAnnotationCreated])
+  const handleContainerClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.target === containerRef.current || e.target === imageRef.current) {
+        setSelectedAnnotation(null)
+      }
+    },
+    []
+  )
 
-  const handleAnnotationClick = (
-    annotation: Annotation,
-    e: React.MouseEvent
-  ) => {
-    e.stopPropagation()
-    setSelectedAnnotation(annotation)
-  }
+  const handleAnnotationClick = useCallback(
+    (annotation: Annotation, e: React.MouseEvent) => {
+      e.stopPropagation()
+      if (isDeleteMode) {
+        const confirmDelete = window.confirm(
+          'Are you sure you want to delete this annotation?'
+        )
+        if (confirmDelete) {
+          onAnnotationDeleted(annotation.id)
+        }
+      } else {
+        setSelectedAnnotation(annotation)
+      }
+    },
+    [isDeleteMode, onAnnotationDeleted]
+  )
+
+  const handleZoomIn = useCallback(() => {
+    onZoomChange(Math.min(zoom * 1.2, 4))
+  }, [zoom, onZoomChange])
+
+  const handleZoomOut = useCallback(() => {
+    onZoomChange(Math.max(zoom / 1.2, 0.5))
+  }, [zoom, onZoomChange])
 
   return (
-    <div
-      ref={containerRef}
-      className={`relative h-full w-full overflow-auto ${
-        isCreatingAnnotation ? 'cursor-crosshair' : 'cursor-default'
-      }`}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onClick={() => setSelectedAnnotation(null)}
-    >
-      <img
-        ref={imageRef}
-        src='https://iiif.wellcomecollection.org/image/b20432033_B0008608.JP2/full/full/0/default.jpg'
-        alt='Manuscript'
-        className='w-full h-auto'
-      />
-      {annotationsEnabled && (
-        <>
-          {annotations.map((annotation) => (
-            <div
-              key={annotation.id}
-              className='absolute border-2 border-blue-500 bg-blue-200 bg-opacity-30 cursor-pointer hover:border-blue-600 hover:bg-blue-300 hover:bg-opacity-40 transition-colors'
-              style={{
-                left: `${annotation.x}px`,
-                top: `${annotation.y}px`,
-                width: `${annotation.width}px`,
-                height: `${annotation.height}px`,
-              }}
-              onClick={(e) => handleAnnotationClick(annotation, e)}
-            />
-          ))}
-          {newAnnotation && (
-            <div
-              className='absolute border-2 border-red-500 bg-red-200 bg-opacity-30'
-              style={{
-                left: `${newAnnotation.x}px`,
-                top: `${newAnnotation.y}px`,
-                width: `${Math.abs(newAnnotation.width!)}px`,
-                height: `${Math.abs(newAnnotation.height!)}px`,
-              }}
-            />
+    <div className='relative h-full w-full overflow-hidden'>
+      <div
+        ref={containerRef}
+        className={`relative h-full w-full overflow-auto ${
+          isCreatingAnnotation
+            ? 'cursor-crosshair'
+            : isMoveToolActive
+            ? 'cursor-move'
+            : isDeleteMode
+            ? 'cursor-pointer'
+            : 'cursor-default'
+        }`}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onClick={handleContainerClick}
+      >
+        <div
+          className='relative'
+          style={{
+            width: `${100 * zoom}%`,
+            height: `${100 * zoom}%`,
+          }}
+        >
+          <img
+            ref={imageRef}
+            src={getImageUrl() || '/placeholder.svg'}
+            alt='Manuscript'
+            className='w-full h-full object-contain'
+            style={{
+              transform: `scale(${getImageScale()})`,
+              transformOrigin: 'top left',
+            }}
+            draggable='false'
+          />
+          {annotationsEnabled && (
+            <>
+              {annotations.map((annotation) => (
+                <div
+                  key={annotation.id}
+                  className={`absolute border-2 border-blue-500 bg-blue-200 bg-opacity-30 cursor-pointer hover:border-blue-600 hover:bg-blue-300 hover:bg-opacity-40 transition-colors ${
+                    isDeleteMode ? 'hover:bg-red-300 hover:border-red-600' : ''
+                  }`}
+                  style={{
+                    left: `${annotation.x}%`,
+                    top: `${annotation.y}%`,
+                    width: `${annotation.width}%`,
+                    height: `${annotation.height}%`,
+                  }}
+                  onClick={(e) => handleAnnotationClick(annotation, e)}
+                />
+              ))}
+              {newAnnotation && isDrawing && (
+                <div
+                  className='absolute border-2 border-red-500 bg-red-200 bg-opacity-30'
+                  style={{
+                    left: `${newAnnotation.x!}%`,
+                    top: `${newAnnotation.y!}%`,
+                    width: `${Math.abs(newAnnotation.width!)}%`,
+                    height: `${Math.abs(newAnnotation.height!)}%`,
+                  }}
+                />
+              )}
+              {selectedAnnotation && !isDeleteMode && (
+                <AnnotationPopup
+                  annotation={{ ...selectedAnnotation, selectedAllograph }}
+                  onClose={() => setSelectedAnnotation(null)}
+                  onUpdate={(updated) => {
+                    onAnnotationUpdated(updated)
+                    setSelectedAnnotation(updated)
+                  }}
+                  style={{
+                    left: `${
+                      selectedAnnotation.x + Math.abs(selectedAnnotation.width)
+                    }%`,
+                    top: `${selectedAnnotation.y}%`,
+                  }}
+                />
+              )}
+            </>
           )}
-          {selectedAnnotation && (
-            <AnnotationPopup
-              annotation={selectedAnnotation}
-              onClose={() => setSelectedAnnotation(null)}
-              onUpdate={(updated) => {
-                onAnnotationUpdated(updated)
-                setSelectedAnnotation(updated)
-              }}
-              style={{
-                left: `${
-                  selectedAnnotation.x + Math.abs(selectedAnnotation.width) + 10
-                }px`,
-                top: `${selectedAnnotation.y}px`,
-              }}
-            />
-          )}
-        </>
-      )}
+        </div>
+      </div>
+      <div className='absolute left-4 top-4 flex flex-col gap-2'>
+        <Button variant='secondary' size='icon' onClick={handleZoomIn}>
+          <ZoomIn className='h-4 w-4' />
+        </Button>
+        <Button variant='secondary' size='icon' onClick={handleZoomOut}>
+          <ZoomOut className='h-4 w-4' />
+        </Button>
+      </div>
     </div>
   )
 }
