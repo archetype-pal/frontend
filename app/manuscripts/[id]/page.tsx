@@ -1,4 +1,3 @@
-// import type { Manuscript } from '@/types/manuscript'
 import type { Manuscript, ManuscriptImage } from '@/types/manuscript'
 
 import { ManuscriptViewer } from './manuscript-viewer'
@@ -21,14 +20,15 @@ async function getManuscript(id: string): Promise<Manuscript> {
 
 async function getManuscriptImages(id: string): Promise<ManuscriptImage[]> {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/v1/manuscripts/item-parts/${id}/images/`
+    `${process.env.NEXT_PUBLIC_API_URL}/api/v1/manuscripts/item-images/?item_part=${id}`
   )
 
   if (!res.ok) {
     throw new Error('Failed to fetch manuscript images')
   }
 
-  return res.json()
+  const data = await res.json()
+  return data.results
 }
 
 export default async function ManuscriptPage({

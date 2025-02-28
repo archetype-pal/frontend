@@ -124,7 +124,7 @@ export function ManuscriptViewer({
 
         <TabsContent value='manuscript' className='space-y-6'>
           <section className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4'>
-            {images.map((image, index) => (
+            {images?.map((image, index) => (
               <div
                 key={index}
                 className='relative bg-white p-4 rounded-lg shadow'
