@@ -6,6 +6,7 @@ import { AnnotationPopup } from './annotation-popup'
 import { IIIFImage } from '@/utils/iiif'
 import { Button } from '@/components/ui/button'
 import { ZoomIn, ZoomOut } from 'lucide-react'
+import type { Allograph } from '@/types/allographs'
 
 interface Annotation {
   id: string
@@ -47,11 +48,6 @@ interface ManuscriptImageProps {
 }
 
 // Define the Allograph type
-interface Allograph {
-  id: string
-  name: string
-  // Add other properties as needed
-}
 
 export function ManuscriptImage({
   annotationsEnabled,

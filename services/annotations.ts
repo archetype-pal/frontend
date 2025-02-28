@@ -1,12 +1,21 @@
-interface SaveAnnotationRequest {
+export interface SaveAnnotationRequest {
   id: string
   item_image: string
-  annotation: Record<string, unknown>
+  annotation: {
+    content: string
+    type: string
+    position: {
+      x: number
+      y: number
+      width: number
+      height: number
+    }
+  }
   allograph: string
   hand: string
   graphcomponent_set: Array<{
-    component: string
-    features: string[]
+    component: number
+    features: number[]
   }>
   positions: number[]
 }

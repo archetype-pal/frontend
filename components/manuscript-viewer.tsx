@@ -24,10 +24,10 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { AnnotationHeader } from './annotation-header'
-import { saveAnnotation } from '@/services/annotations'
-import { fetchManuscriptImage } from '@/services/manuscripts'
-// import { toast } from 'sonner'
+import { saveAnnotation, SaveAnnotationRequest } from '@/services/annotations'
+import { fetchManuscriptImage, fetchAllographs } from '@/services/manuscripts'
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image'
+import type { Allograph } from '@/types/allographs'
 import type { HandType } from '@/types/hands'
 
 interface Annotation {
@@ -38,132 +38,129 @@ interface Annotation {
   width: number
   height: number
   content: string
-  components?: {
-    head?: {
-      brokenArc?: boolean
-      horizontallyExtended?: boolean
-      looped?: boolean
-      ruched?: boolean
-      swellingTapering?: boolean
-    }
-    stem?: {
-      crossed?: boolean
-      extended?: boolean
-      onBaseline?: boolean
-    }
-  }
+  components?: Record<string, Record<string, boolean>>
+  selectedAllograph?: Allograph
 }
 
 interface ManuscriptViewerProps {
   imageId: string
 }
 
-interface Allograph {
-  id: string
-  name: string
-}
-
-export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps) {
-  const [zoom, setZoom] = React.useState(1)
-  const [annotationsEnabled, setAnnotationsEnabled] = React.useState(true)
+export default function ManuscriptViewer({
+  imageId,
+}: ManuscriptViewerProps): JSX.Element {
+  const [zoom, setZoom] = React.useState<number>(1)
+  const [annotationsEnabled, setAnnotationsEnabled] =
+    React.useState<boolean>(true)
   const [annotations, setAnnotations] = React.useState<Annotation[]>([])
-  const [isCreatingAnnotation, setIsCreatingAnnotation] = React.useState(false)
-  const [isMoveToolActive, setIsMoveToolActive] = React.useState(true) // Set to true by default
-  const [isDeleteMode, setIsDeleteMode] = React.useState(false)
-  const [activeButton, setActiveButton] = React.useState<string>('move') // Set "move" as the default active button
-  const [unsavedChanges, setUnsavedChanges] = React.useState(0)
+  const [isCreatingAnnotation, setIsCreatingAnnotation] =
+    React.useState<boolean>(false)
+  const [isMoveToolActive, setIsMoveToolActive] = React.useState<boolean>(true)
+  const [isDeleteMode, setIsDeleteMode] = React.useState<boolean>(false)
+  const [activeButton, setActiveButton] = React.useState<string>('move')
+  const [unsavedChanges, setUnsavedChanges] = React.useState<number>(0)
   const [manuscriptImage, setManuscriptImage] =
     React.useState<ManuscriptImageType | null>(null)
-  const [loading, setLoading] = React.useState(true)
+  const [loading, setLoading] = React.useState<boolean>(true)
   const [error, setError] = React.useState<string | null>(null)
   const [selectedAllograph, setSelectedAllograph] = React.useState<
     Allograph | undefined
   >(undefined)
-
   const [selectedHand, setSelectedHand] = React.useState<HandType | undefined>(
     undefined
   )
+  const [, setAllographs] = React.useState<Allograph[]>([])
 
   React.useEffect(() => {
-    const loadManuscriptImage = async () => {
+    const loadData = async (): Promise<void> => {
       try {
         setLoading(true)
-        const image = await fetchManuscriptImage(imageId)
+        const [image, allographsData] = await Promise.all([
+          fetchManuscriptImage(imageId),
+          fetchAllographs(),
+        ])
         setManuscriptImage(image)
+        setAllographs(allographsData)
         setError(null)
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : 'Failed to load manuscript image'
+          err instanceof Error ? err.message : 'Failed to load manuscript data'
         )
-        // toast.error('Failed to load manuscript image')
+        // toast.error('Failed to load manuscript data')
       } finally {
         setLoading(false)
       }
     }
 
-    loadManuscriptImage()
+    void loadData()
   }, [imageId])
 
-  const handleZoomChange = (newZoom: number) => {
+  const handleZoomChange = (newZoom: number): void => {
     setZoom(newZoom)
   }
 
-  const handleCreateAnnotation = () => {
+  const handleCreateAnnotation = (): void => {
     setIsCreatingAnnotation((prev) => !prev)
     setIsMoveToolActive(false)
     setIsDeleteMode(false)
     setActiveButton((prev) => (prev === 'editorial' ? 'move' : 'editorial'))
   }
 
-  const handleMoveTool = () => {
+  const handleMoveTool = (): void => {
     setIsMoveToolActive((prev) => !prev)
     setIsCreatingAnnotation(false)
     setIsDeleteMode(false)
-    setActiveButton((prev) => (prev === 'move' ? null : 'move'))
+    setActiveButton((prev) => (prev === 'move' ? '' : 'move'))
   }
 
-  const handleDeleteTool = () => {
+  const handleDeleteTool = (): void => {
     setIsDeleteMode((prev) => !prev)
     setIsCreatingAnnotation(false)
     setIsMoveToolActive(false)
     setActiveButton((prev) => (prev === 'delete' ? 'move' : 'delete'))
   }
 
-  const handleAnnotationCreated = (annotation: Annotation) => {
-    setAnnotations((prevAnnotations) => [...prevAnnotations, annotation])
+  const handleAnnotationCreated = (annotation: Annotation): void => {
+    const newAnnotation = {
+      ...annotation,
+      selectedAllograph: selectedAllograph,
+    }
+    setAnnotations((prevAnnotations) => [...prevAnnotations, newAnnotation])
     setUnsavedChanges((prev) => prev + 1)
   }
 
-  const handleAnnotationUpdated = (updatedAnnotation: Annotation) => {
+  const handleAnnotationUpdated = (updatedAnnotation: Annotation): void => {
+    const newAnnotation = {
+      ...updatedAnnotation,
+      selectedAllograph: selectedAllograph,
+    }
     setAnnotations((prevAnnotations) =>
       prevAnnotations.map((a) =>
-        a.id === updatedAnnotation.id ? updatedAnnotation : a
+        a.id === newAnnotation.id ? newAnnotation : a
       )
     )
     setUnsavedChanges((prev) => prev + 1)
   }
 
-  const handleAnnotationDeleted = (annotationId: string) => {
+  const handleAnnotationDeleted = (annotationId: string): void => {
     setAnnotations((prevAnnotations) =>
       prevAnnotations.filter((a) => a.id !== annotationId)
     )
     setUnsavedChanges((prev) => prev + 1)
   }
 
-  const handleZoomIn = () => {
+  const handleZoomIn = (): void => {
     setZoom((prevZoom) => Math.min(prevZoom * 1.2, 4))
   }
 
-  const handleZoomOut = () => {
+  const handleZoomOut = (): void => {
     setZoom((prevZoom) => Math.max(prevZoom / 1.2, 0.5))
   }
 
-  const handleSave = React.useCallback(async () => {
+  const handleSave = React.useCallback(async (): Promise<void> => {
     try {
-      console.log('Saving with selected hand:', selectedHand)
+      console.log('Saving annotations with selected hand:', selectedHand)
       const promises = annotations.map((annotation) => {
-        console.log('🚀 ~ promises ~ annotation:', annotation)
-
         const graphcomponent_set =
           annotation.selectedAllograph?.components
             .map((component) => ({
@@ -179,10 +176,9 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps) {
             }))
             .filter((comp) => comp.features.length > 0) || []
 
-        console.log('selectedAllograph', selectedAllograph)
-
-        const requestData = {
-          item_image: Number.parseInt(imageId) || 0,
+        const requestData: SaveAnnotationRequest = {
+          id: annotation.id,
+          item_image: imageId,
           annotation: {
             content: annotation.content,
             type: annotation.type,
@@ -193,8 +189,8 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps) {
               height: annotation.height,
             },
           },
-          allograph: selectedAllograph?.id,
-          hand: selectedHand?.id,
+          allograph: annotation.selectedAllograph?.id?.toString() || '',
+          hand: selectedHand?.id?.toString() || '',
           graphcomponent_set: graphcomponent_set,
           positions: [
             annotation.x,
@@ -214,14 +210,14 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps) {
       console.error('Error saving annotations:', error)
       // toast.error('Failed to save annotations')
     }
-  }, [annotations, manuscriptImage])
+  }, [annotations, imageId, selectedHand])
 
   React.useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
+    const handleKeyPress = (e: KeyboardEvent): void => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault()
         if (unsavedChanges > 0) {
-          handleSave()
+          void handleSave()
         }
       }
     }
@@ -270,7 +266,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps) {
         unsavedCount={unsavedChanges}
         imageId={imageId}
         onAllographSelect={setSelectedAllograph}
-        onHandSelect={setSelectedHand}
+        onHandSelect={(hand) => setSelectedHand(hand)}
       />
 
       <div className='relative flex flex-1'>
@@ -343,7 +339,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps) {
                 <Button
                   variant='ghost'
                   size='icon'
-                  onClick={handleSave}
+                  onClick={() => void handleSave()}
                   disabled={unsavedChanges === 0}
                 >
                   <Save className='h-4 w-4' />
