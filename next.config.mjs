@@ -3,7 +3,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware'
 
 const nextConfig = {
   images: {
-    domains: ['api.archetype.gla.ac.uk'],
+    domains: ['api.archetype.rancho.me'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -11,7 +11,7 @@ const nextConfig = {
       },
       {
         protocol: 'http',
-        hostname: 'api.archetype.gla.ac.uk',
+        hostname: 'api.archetype.rancho.me',
       },
     ],
   },
@@ -19,7 +19,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'https://api.archetype.gla.ac.uk/api/:path*', // Proxy to Backend
+        destination: 'https://api.archetype.rancho.me/api/:path*', // Proxy to Backend
       },
     ]
   },
