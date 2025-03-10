@@ -42,15 +42,17 @@ services:
     volumes:
       - ./storage/media:/sipi/images
   frontend:
-    build: .
+    build: 
+      context: .
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000}
     ports:
       - 3000:3000
     volumes:
       - ./frontend:/src/frontend
     depends_on:
       - api
-    environment:
-      REACT_APP_API_URL: http://localhost:8000  # change this to correct env var name
     command: npm start
 volumes:
   postgres:
