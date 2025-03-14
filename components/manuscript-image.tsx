@@ -6,7 +6,6 @@ import { AnnotationPopup } from './annotation-popup'
 import { IIIFImage } from '@/utils/iiif'
 import { Button } from '@/components/ui/button'
 import { ZoomIn, ZoomOut } from 'lucide-react'
-import type { Allograph } from '@/types/allographs'
 
 interface Annotation {
   id: string
@@ -48,6 +47,11 @@ interface ManuscriptImageProps {
 }
 
 // Define the Allograph type
+interface Allograph {
+  id: string
+  name: string
+  // Add other properties as needed
+}
 
 export function ManuscriptImage({
   annotationsEnabled,
@@ -59,7 +63,7 @@ export function ManuscriptImage({
   onAnnotationUpdated,
   onAnnotationDeleted,
   zoom,
-  onZoomChange,
+  onZoomChange: onZoomChangeProp,
   iiifImageUrl,
   selectedAllograph,
 }: ManuscriptImageProps) {
@@ -70,7 +74,8 @@ export function ManuscriptImage({
   const [isDrawing, setIsDrawing] = useState(false)
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
-  const [, setViewportPosition] = useState({ x: 0, y: 0 })
+  const [viewportPosition, setViewportPosition] = useState({ x: 0, y: 0 })
+  const [viewportOffset, setViewportOffset] = useState({ x: 0, y: 0 })
   const imageRef = useRef<HTMLImageElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -85,6 +90,41 @@ export function ManuscriptImage({
       ? iiifImage.getScaledUrl(zoom)
       : iiifImage.getImageUrl({ size: 'max' })
   }, [iiifImage, zoom])
+
+  const handleZoomChange = useCallback(
+    (newZoom: number) => {
+      if (containerRef.current && imageRef.current) {
+        const container = containerRef.current
+        const image = imageRef.current
+
+        // Get the dimensions of the container and image
+        const containerRect = container.getBoundingClientRect()
+        const imageRect = image.getBoundingClientRect()
+
+        // Calculate the center point of the image
+        const imageCenterX = imageRect.width / 2
+        const imageCenterY = imageRect.height / 2
+
+        // Calculate the new offset to keep the center point at the center after zooming
+        const newOffsetX =
+          containerRect.width / 2 - (imageCenterX / zoom) * newZoom
+        const newOffsetY =
+          containerRect.height / 2 - (imageCenterY / zoom) * newZoom
+
+        setViewportOffset({ x: newOffsetX, y: newOffsetY })
+        onZoomChangeProp(newZoom)
+      }
+    },
+    [zoom, onZoomChangeProp]
+  )
+
+  const handleZoomIn = useCallback(() => {
+    handleZoomChange(Math.min(zoom * 1.2, 4))
+  }, [zoom, handleZoomChange])
+
+  const handleZoomOut = useCallback(() => {
+    handleZoomChange(Math.max(zoom / 1.2, 0.5))
+  }, [zoom, handleZoomChange])
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -193,13 +233,12 @@ export function ManuscriptImage({
     [isDeleteMode, onAnnotationDeleted]
   )
 
-  const handleZoomIn = useCallback(() => {
-    onZoomChange(Math.min(zoom * 1.2, 4))
-  }, [zoom, onZoomChange])
-
-  const handleZoomOut = useCallback(() => {
-    onZoomChange(Math.max(zoom / 1.2, 0.5))
-  }, [zoom, onZoomChange])
+  const imageStyle = {
+    transform: `scale(${getImageScale()}) translate(${viewportOffset.x}px, ${
+      viewportOffset.y
+    }px)`,
+    transformOrigin: '0 0',
+  }
 
   return (
     <div className='relative h-full w-full overflow-hidden'>
@@ -232,10 +271,7 @@ export function ManuscriptImage({
             src={getImageUrl() || '/placeholder.svg'}
             alt='Manuscript'
             className='w-full h-full object-contain'
-            style={{
-              transform: `scale(${getImageScale()})`,
-              transformOrigin: 'top left',
-            }}
+            style={imageStyle}
             draggable='false'
           />
           {annotationsEnabled && (
