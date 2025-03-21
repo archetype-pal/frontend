@@ -5,18 +5,14 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL
 
 const nextConfig = {
   images: {
-    domains: ['api.archetype.rancho.me'],
+    domains: ['api.archetype.rancho.me', 'api.archetype.gla.ac.uk'],
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'www.modelsofauthority.ac.uk',
-      },
       {
         protocol: 'http',
         hostname: 'api.archetype.rancho.me',
       },
       {
-        protocol: 'https',
+        protocol: 'http',
         hostname: 'archetype.gla.ac.uk',
       },
     ],
