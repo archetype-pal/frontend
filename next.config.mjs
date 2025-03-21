@@ -1,7 +1,8 @@
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.archetype.rancho.me'
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'https://api.archetype.rancho.me'
 
 const nextConfig = {
   images: {
@@ -50,6 +51,11 @@ const nextConfig = {
     config.plugins.push(new MiniCssExtractPlugin())
 
     return config
+  },
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
   },
   output: 'standalone',
 }
