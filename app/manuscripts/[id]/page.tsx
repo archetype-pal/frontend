@@ -1,5 +1,5 @@
+'use client'
 import type { Manuscript, ManuscriptImage } from '@/types/manuscript'
-
 import { ManuscriptViewer } from './manuscript-viewer'
 import { notFound } from 'next/navigation'
 
