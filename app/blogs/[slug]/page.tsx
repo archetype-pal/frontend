@@ -14,12 +14,13 @@ interface Publication {
   author: Author
   slug: string
   preview: string
+  content: string
   number_of_comments: number
 }
 
-async function getNewsItem(id: string): Promise<Publication> {
+async function getNewsItem(slug: string): Promise<Publication> {
   try {
-    const newsItem = await getPublicationItem(id)
+    const newsItem = await getPublicationItem(slug)
     return newsItem
   } catch (error) {
     console.error('Error fetching news item:', error)
@@ -27,8 +28,8 @@ async function getNewsItem(id: string): Promise<Publication> {
   }
 }
 
-export default async function NewsList({ params }: { params: { id: string } }) {
-  const newsItem = await getNewsItem(params.id)
+export default async function NewsList({ params }: { params: { slug: string } }) {
+  const newsItem = await getNewsItem(params.slug)
 
   return (
     <div className='container mx-auto px-4 py-8'>
@@ -41,7 +42,7 @@ export default async function NewsList({ params }: { params: { id: string } }) {
               newsItem.author.first_name + ' ' + newsItem.author.last_name
             }
             date={newsItem.published_at}
-            excerpt={newsItem.preview}
+            excerpt={newsItem.content}
             slug={newsItem.slug}
             commentsCount={newsItem.number_of_comments}
             showShareBtns={false}

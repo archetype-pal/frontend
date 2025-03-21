@@ -64,6 +64,8 @@ export async function getPublications(params: {
   is_news?: boolean
   is_featured?: boolean
   is_blog_post?: boolean
+  limit?: number
+  offset?: number
 }) {
   const searchParams = new URLSearchParams()
 
@@ -71,18 +73,22 @@ export async function getPublications(params: {
   if (params.is_featured) searchParams.append('is_featured', 'true')
   if (params.is_blog_post) searchParams.append('is_blog_post', 'true')
 
+  if (params.limit) searchParams.append('limit', params.limit.toString())
+  if (params.offset) searchParams.append('offset', params.offset.toString())
+
   const url = `${API_BASE_URL}/api/v1/media/publications/${
     searchParams.toString() ? `?${searchParams.toString()}` : ''
   }`
-
+  console.log('Fetching:', url)
+  
   const res = await fetch(url)
   if (!res.ok) throw new Error('Failed to fetch publications')
 
   return res.json()
 }
 
-export async function getPublicationItem(id: string) {
-  const url = `${API_BASE_URL}/api/v1/media/publications/${id}`
+export async function getPublicationItem(slug: string) {
+  const url = `${API_BASE_URL}/api/v1/media/publications/${slug}`
 
   const res = await fetch(url)
   if (!res.ok) throw new Error('Failed to fetch publication item')
