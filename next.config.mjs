@@ -1,7 +1,7 @@
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.archetype.rancho.me'
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL
 
 const nextConfig = {
   images: {
@@ -14,6 +14,10 @@ const nextConfig = {
       {
         protocol: 'http',
         hostname: 'api.archetype.rancho.me',
+      },
+      {
+        protocol: 'https',
+        hostname: 'archetype.gla.ac.uk',
       },
     ],
   },
