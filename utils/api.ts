@@ -79,7 +79,6 @@ export async function getPublications(params: {
   const url = `${API_BASE_URL}/api/v1/media/publications/${
     searchParams.toString() ? `?${searchParams.toString()}` : ''
   }`
-  console.log('Fetching:', url)
   
   const res = await fetch(url)
   if (!res.ok) throw new Error('Failed to fetch publications')
