@@ -10,7 +10,6 @@ export default function Home() {
   const [featureArticles, setFeatureArticles] = useState([])
 
   useEffect(() => {
-    console.log("Fetching publication on client...");
     const fetchData = async () => {
       try {
         const [newsData, featuredData] = await Promise.all([
