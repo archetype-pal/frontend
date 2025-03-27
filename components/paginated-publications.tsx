@@ -1,5 +1,3 @@
-// Shared PaginatedPublications Component for Blogs, News, and Feature
-
 'use client'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
