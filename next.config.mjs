@@ -1,34 +1,22 @@
-// import MiniCssExtractPlugin from 'mini-css-extract-plugin'
+import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL;
-console.log(" Backend URL:", BACKEND_URL); 
-// || 'https://api.archetype.rancho.me'
+console.log(" Backend URL:", BACKEND_URL) || 'https://api.archetype.rancho.me';
 
 const nextConfig = {
-  // images: {
-  //   domains: ['api.archetype.rancho.me'],
-  //   remotePatterns: [
-  //     {
-  //       protocol: 'https',
-  //       hostname: 'www.modelsofauthority.ac.uk',
-  //     },
-  //     {
-  //       protocol: 'http',
-  //       hostname: 'api.archetype.rancho.me',
-  //     },
-  //   ],
-  // },
   images: {
+    domains: ['api.archetype.rancho.me'],
     remotePatterns: [
       {
+        protocol: 'https',
+        hostname: 'www.modelsofauthority.ac.uk',
+      },
+      {
         protocol: 'http',
-        hostname: 'localhost',
-        port: '8000',
-        pathname: '/media/**',
+        hostname: 'api.archetype.rancho.me',
       },
     ],
-    unoptimized: true, // Allows all images without optimization
   },
   async rewrites() {
     return [
@@ -60,7 +48,7 @@ const nextConfig = {
     ]
   },
   webpack(config, { dev, isServer }) {
-    // config.plugins.push(new MiniCssExtractPlugin())
+    config.plugins.push(new MiniCssExtractPlugin())
 
     return config
   },
