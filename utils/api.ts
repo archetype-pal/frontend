@@ -60,13 +60,15 @@ export async function getCarouselItems(token: string) {
   return response.json()
 }
 
-export async function getPublications(params: {
+export type PublicationParams = {
   is_news?: boolean
   is_featured?: boolean
   is_blog_post?: boolean
   limit?: number
   offset?: number
-}) {
+}
+
+export async function getPublications(params: PublicationParams) {
   const searchParams = new URLSearchParams()
 
   if (params.is_news) searchParams.append('is_news', 'true')
@@ -76,10 +78,9 @@ export async function getPublications(params: {
   if (params.limit) searchParams.append('limit', params.limit.toString())
   if (params.offset) searchParams.append('offset', params.offset.toString())
 
-  const url = `${API_BASE_URL}/api/v1/media/publications/${
-    searchParams.toString() ? `?${searchParams.toString()}` : ''
-  }`
-  
+  const url = `${API_BASE_URL}/api/v1/media/publications/${searchParams.toString() ? `?${searchParams.toString()}` : ''
+    }`
+
   const res = await fetch(url)
   if (!res.ok) throw new Error('Failed to fetch publications')
 
