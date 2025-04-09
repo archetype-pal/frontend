@@ -1,5 +1,10 @@
+import { Suspense } from 'react'
 import PaginatedPublications from '@/components/paginated-publications'
 
 export default function Page() {
-  return <PaginatedPublications title="Blogs" categoryFlag="is_blog_post" route="blogs" />
+  return (
+    <Suspense fallback={<div>Loading posts...</div>}>
+      <PaginatedPublications title="Blogs" categoryFlag="is_blog_post" route="blogs" />
+    </Suspense>
+  )
 }
