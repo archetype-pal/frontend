@@ -4,6 +4,7 @@ import type React from 'react'
 import { useState, useRef, useCallback, useMemo } from 'react'
 import { AnnotationPopup } from './annotation-popup'
 import { IIIFImage } from '@/utils/iiif'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { ZoomIn, ZoomOut } from 'lucide-react'
 import type { Allograph } from '@/types/allographs'
@@ -227,7 +228,7 @@ export function ManuscriptImage({
             height: `${100 * zoom}%`,
           }}
         >
-          <img
+          <Image
             ref={imageRef}
             src={getImageUrl() || '/placeholder.svg'}
             alt='Manuscript'
@@ -236,7 +237,8 @@ export function ManuscriptImage({
               transform: `scale(${getImageScale()})`,
               transformOrigin: 'top left',
             }}
-            draggable='false'
+            draggable={false}
+            fill
           />
           {annotationsEnabled && (
             <>
