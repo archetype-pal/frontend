@@ -3,11 +3,13 @@
 import * as React from 'react'
 import { ManuscriptsFilters } from './manuscripts-filters'
 import { ManuscriptsTable } from './manuscripts-table'
+import { ResultTypeToggle } from './manuscripts-filters-result-types'
 import { Button } from '@/components/ui/button'
 import { Grid, List } from 'lucide-react'
 
 export function ManuscriptsSearch() {
   const [, setViewMode] = React.useState<'table' | 'grid'>('table')
+  const [selectedTypes, setSelectedTypes] = React.useState<string[]>([])
 
   return (
     <div className='h-screen bg-gray-50'>
@@ -34,8 +36,18 @@ export function ManuscriptsSearch() {
       </div>
       <div className='flex h-[calc(100vh-73px)]'>
         <ManuscriptsFilters />
-        <div className='flex-1 p-6 overflow-auto'>
-          <ManuscriptsTable />
+        <div className='flex flex-1 flex-col'>
+          <div className='px-6 h-[150px] border-b bg-white grid content-center'>
+
+            <ResultTypeToggle
+              selectedTypes={selectedTypes}
+              onChange={setSelectedTypes}
+            />
+
+          </div>
+          <div className='p-6 overflow-auto'>
+            <ManuscriptsTable />
+          </div>
         </div>
       </div>
     </div>

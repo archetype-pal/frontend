@@ -7,18 +7,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 
 const filterSections = [
   {
-    id: 'result-type',
-    title: 'Result Type (7)',
-    items: [
-      { label: 'Manuscripts', count: 712 },
-      { label: 'Texts', count: 156 },
-      { label: 'Graphs', count: 89 },
-      { label: 'Classes', count: 45 },
-      { label: 'Places', count: 34 },
-      { label: 'People', count: 23 },
-    ],
-  },
-  {
     id: 'image-availability',
     title: 'Image Availability (2)',
     items: [
