@@ -13,18 +13,14 @@ const resultTypeItems = [
 ]
 
 export function ResultTypeToggle({
-  selectedTypes,
+  selectedType,
   onChange,
 }: {
-  selectedTypes: string[]
-  onChange: (next: string[]) => void
+  selectedType: string
+  onChange: (next: string) => void
 }) {
-  const toggle = (label: string) => {
-    onChange(
-      selectedTypes.includes(label)
-        ? selectedTypes.filter((t) => t !== label)
-        : [...selectedTypes, label]
-    )
+  const select = (label: string) => {
+    onChange(label)
   }
 
   return (
@@ -33,9 +29,9 @@ export function ResultTypeToggle({
         <Button
         className="flex-1 min-w-[180px]"
           key={item.label}
-          variant={selectedTypes.includes(item.label) ? 'toggle' : 'outline'}
+          variant={selectedType.includes(item.label) ? 'toggle' : 'outline'}
           size="sm"
-          onClick={() => toggle(item.label)}
+          onClick={() => select(item.label)}
         >
           {item.label}
         </Button>

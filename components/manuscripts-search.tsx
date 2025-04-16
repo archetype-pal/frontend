@@ -3,14 +3,14 @@
 import * as React from 'react'
 import { ManuscriptsFilters } from './manuscripts-filters'
 import { ManuscriptsTable } from './manuscripts-table'
-import { ResultTypeToggle } from './manuscripts-filters-result-types'
+import { ResultTypeToggle } from './search-result-types'
 import { Button } from '@/components/ui/button'
 import { Grid, List } from 'lucide-react'
 
 export function ManuscriptsSearch() {
   const [, setViewMode] = React.useState<'table' | 'grid'>('table')
-  const [selectedTypes, setSelectedTypes] = React.useState<string[]>([])
-
+  const [resultType, setResultType] = React.useState<string>('')
+  
   return (
     <div className='h-screen bg-gray-50'>
       <div className='px-6 py-4 border-b bg-white'>
@@ -40,8 +40,8 @@ export function ManuscriptsSearch() {
           <div className='px-6 h-[150px] border-b bg-white grid content-center'>
 
             <ResultTypeToggle
-              selectedTypes={selectedTypes}
-              onChange={setSelectedTypes}
+              selectedType={resultType}
+              onChange={setResultType}
             />
 
           </div>
