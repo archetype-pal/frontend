@@ -4,29 +4,18 @@ import { createProxyMiddleware } from 'http-proxy-middleware'
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL
 
 const nextConfig = {
-   // images: {
-  //   domains: ['api.archetype.rancho.me'],
-  //   remotePatterns: [
-  //     {
-  //       protocol: 'https',
-  //       hostname: 'www.modelsofauthority.ac.uk',
-  //     },
-  //     {
-  //       protocol: 'http',
-  //       hostname: 'api.archetype.rancho.me',
-  //     },
-  //   ],
-  // },
   images: {
+    domains: ['api.archetype.rancho.me', 'api.archetype.gla.ac.uk'],
     remotePatterns: [
       {
         protocol: 'http',
-        hostname: 'localhost',
-        port: '8000',
-        pathname: '/media/**',
+        hostname: 'api.archetype.rancho.me',
+      },
+      {
+        protocol: 'http',
+        hostname: 'archetype.gla.ac.uk',
       },
     ],
-    unoptimized: true, // Allows all images without optimization
   },
   async rewrites() {
     return [
