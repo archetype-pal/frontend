@@ -1,5 +1,5 @@
-import { ManuscriptsSearch } from '@/components/manuscripts-search'
+import { SearchPage } from '@/components/search/SearchPage'
 
 export default function ManuscriptsPage() {
-  return <ManuscriptsSearch />
+  return <SearchPage />
 }

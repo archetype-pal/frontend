@@ -4,12 +4,12 @@ import * as React from 'react'
 import { Button } from '@/components/ui/button'
 
 const resultTypeItems = [
-  { label: 'Manuscripts', count: 712 },
-  { label: 'Texts', count: 156 },
-  { label: 'Graphs', count: 89 },
-  { label: 'Classes', count: 45 },
-  { label: 'Places', count: 34 },
-  { label: 'People', count: 23 },
+  { label: 'Manuscripts', value: 'manuscripts', count: 712 },
+  { label: 'Texts', value: 'texts', count: 156 },
+  { label: 'Graphs', value: 'graphs', count: 89 },
+  { label: 'Classes', value: 'classes', count: 45 },
+  { label: 'Places', value: 'places', count: 34 },
+  { label: 'People', value: 'people', count: 23 },
 ]
 
 export function ResultTypeToggle({
@@ -19,8 +19,8 @@ export function ResultTypeToggle({
   selectedType: string
   onChange: (next: string) => void
 }) {
-  const select = (label: string) => {
-    onChange(label)
+  const select = (value: string) => {
+    onChange(value)
   }
 
   return (
@@ -28,10 +28,10 @@ export function ResultTypeToggle({
       {resultTypeItems.map((item) => (
         <Button
         className="flex-1 min-w-[180px]"
-          key={item.label}
-          variant={selectedType.includes(item.label) ? 'toggle' : 'outline'}
+          key={item.value}
+          variant={selectedType == item.value ? 'toggle' : 'outline'}
           size="sm"
-          onClick={() => select(item.label)}
+          onClick={() => select(item.value)}
         >
           {item.label}
         </Button>
