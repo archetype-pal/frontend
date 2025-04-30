@@ -1,6 +1,6 @@
 export function normalizeFacets(fields: Record<string, any>) {
-    const min = fields.date_min?.[0]?.text
-    const max = fields.date_max?.[0]?.text
+    const min = 720 //fields.date_min?.[0]?.text
+    const max = 1440 //fields.date_max?.[0]?.text
 
     if (typeof min === 'number' && typeof max === 'number') {
       fields.text_date_slider = [

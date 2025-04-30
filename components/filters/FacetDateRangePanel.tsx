@@ -18,7 +18,6 @@ type FacetDateRangePanelProps = {
 }
 
 export function FacetDateRangePanel({
-  id = 'text-date',
   title = 'Text Date',
   range = [1094, 1250],
   defaultValue = [1094, 1250],

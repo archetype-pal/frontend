@@ -10,22 +10,23 @@ import { FILTER_RENDER_MAP } from '@/lib/filter-config'
 import { fetchFacetsAndResults } from '@/utils/fetch-facets'
 import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map'
 import type { ManuscriptListItem } from '@/types/manuscript'
+import type { FacetData } from '@/types/facets'
 
 export function SearchPage() {
   const [, setViewMode] = React.useState<'table' | 'grid'>('table')
   const [resultType, setResultType] = React.useState<string>('manuscripts')
-  const [facetData, setFacetData] = React.useState<Record<string, any>>({})
+  const [facetData, setFacetData] = React.useState<FacetData>({})
   const [tableResults, setTableResults] = React.useState<ManuscriptListItem[]>([])
   const [totalCount, setTotalCount] = React.useState<number>(0)
 
   const renderMap = FILTER_RENDER_MAP[resultType] ?? {}
 
-  const loadData = async (url?: string) => {
+  const loadData = React.useCallback(async (url?: string) => {
     const { facets, results, count } = await fetchFacetsAndResults(resultType, url)
     setTotalCount(count)
     setFacetData(facets)
     setTableResults(results)
-  }
+  }, [resultType])
 
   React.useEffect(() => {
     if (RESULT_TYPE_API_MAP[resultType]) {
@@ -34,7 +35,7 @@ export function SearchPage() {
       setFacetData({})
       setTableResults([])
     }
-  }, [resultType])
+  }, [loadData])
 
   const handleFacetClick = (url: string) => {
     loadData(url)
