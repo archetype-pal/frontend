@@ -4,7 +4,7 @@ import * as React from 'react'
 import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { FACET_COMPONENT_MAP } from '@/lib/facet-component-map'
-import { FILTER_ORDER_MAP } from './filter-order'
+import { FILTER_ORDER_MAP } from '@/lib/filter-order'
 
 type DynamicFacetsProps = {
   facets: Record<string, any>
@@ -27,7 +27,6 @@ export function DynamicFacets({ facets, renderConfig, onFacetClick }: DynamicFac
       </div>
 
       <div className="space-y-4">
-        {/* {Object.entries(facets).map(([facetKey, facetItems]) => { */}
         {orderedKeys.map((facetKey) => {
           const facetItems = facets[facetKey]
           if (!facetItems) return null

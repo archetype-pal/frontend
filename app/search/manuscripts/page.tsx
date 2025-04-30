@@ -1,5 +1,5 @@
 import { SearchPage } from '@/components/search/SearchPage'
 
-export default function ManuscriptsPage() {
+export default function SearchFacetPage() {
   return <SearchPage />
 }

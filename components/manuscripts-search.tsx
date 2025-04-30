@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { ManuscriptsFilters } from './manuscripts-filters'
 import { ManuscriptsTable } from './manuscripts-table'
-import { ResultTypeToggle } from './search-result-types'
+import { ResultTypeToggle } from './search/search-result-types'
 import { Button } from '@/components/ui/button'
 import { Grid, List } from 'lucide-react'
 

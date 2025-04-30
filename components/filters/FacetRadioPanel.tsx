@@ -24,7 +24,7 @@ export function FacetRadioPanel({
   id,
   title,
   total,
-  items = [], // Fallback to empty array
+  items = [],
   expanded: defaultExpanded = true,
   onToggle,
 }: FacetRadioPanelProps) {

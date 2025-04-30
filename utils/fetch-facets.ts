@@ -20,6 +20,7 @@ export async function fetchFacetsAndResults(resultType: string, url?: string) {
   const data = await res.json()
   const facets = normalizeFacets(data.fields || {})
   const results = data.objects?.results ?? []
+  const count = data.objects?.count || 0
 
-  return { facets, results }
+  return { facets, results, count}
 }
