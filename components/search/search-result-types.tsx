@@ -7,7 +7,7 @@ const resultTypeItems = [
   { label: 'Manuscripts', value: 'manuscripts', count: 712 },
   { label: 'Texts', value: 'texts', count: 156 },
   { label: 'Graphs', value: 'graphs', count: 89 },
-  { label: 'Classes', value: 'classes', count: 45 },
+  { label: 'Clauses', value: 'clauses', count: 45 },
   { label: 'Places', value: 'places', count: 34 },
   { label: 'People', value: 'people', count: 23 },
 ]
