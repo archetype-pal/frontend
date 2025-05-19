@@ -31,7 +31,6 @@ export function FacetPanel({
   onSelect,
 }: FacetPanelProps) {
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded)
-  // const [sortBy, setSortBy] = React.useState<'name' | 'count'>('name')
   const [sortBy, setSortBy] = React.useState<'name-asc' | 'name-desc' | 'count-desc' | 'count-asc'>('name-asc')
   const [selectedItem, setSelectedItem] = React.useState<string | null>(null)
 
@@ -40,11 +39,6 @@ export function FacetPanel({
     onToggle?.(id)
   }
 
-  // const sortedItems = React.useMemo(() => {
-  //   const itemsCopy = [...(items ?? [])]
-  //   if (sortBy === 'name') return itemsCopy.sort((a, b) => a.label.localeCompare(b.label))
-  //   return itemsCopy.sort((a, b) => b.count - a.count)
-  // }, [items, sortBy])
   const sortedItems = React.useMemo(() => {
     const itemsCopy = [...(items ?? [])]
 
@@ -89,21 +83,6 @@ export function FacetPanel({
           )}
         </button>
       </div>
-
-      {/* <div className="text-xs text-gray-500 px-4 py-2 flex justify-between border-b">
-        <button
-          onClick={() => setSortBy('name')}
-          className={cn(sortBy === 'name' && 'font-semibold')}
-        >
-          A-Z
-        </button>
-        <button
-          onClick={() => setSortBy('count')}
-          className={cn(sortBy === 'count' && 'font-semibold')}
-        >
-          Count
-        </button>
-      </div> */}
       <div className="text-xs text-gray-500 px-4 py-2 flex justify-between border-b">
         <button
           onClick={() =>
