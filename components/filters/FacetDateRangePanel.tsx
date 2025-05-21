@@ -13,7 +13,12 @@ type FacetDateRangePanelProps = {
   defaultValue?: [number, number]
   precisionOptions?: { label: string; value: string }[]
   onSearch?: (value: string) => void
-  onRangeChange?: (range: [number, number]) => void
+  onRangeChange?: (range: {
+    min: number
+    max: number
+    precision: string
+    diff: number
+  }) => void
   onPrecisionChange?: (precision: string) => void
 }
 
@@ -38,7 +43,12 @@ export function FacetDateRangePanel({
   const handleSliderChange = (value: number[]) => {
     const newRange: [number, number] = [value[0], value[1]]
     setSliderValue(newRange)
-    onRangeChange?.(newRange)
+    onRangeChange?.({
+      min: newRange[0],
+      max: newRange[1],
+      precision,
+      diff: year || 0,
+    })
   }
 
   const handleSearchSubmit = () => {
@@ -96,6 +106,12 @@ export function FacetDateRangePanel({
                 onValueChange={(val) => {
                   setPrecision(val)
                   onPrecisionChange?.(val)
+                  onRangeChange?.({
+                    min: sliderValue[0],
+                    max: sliderValue[1],
+                    precision: val,
+                    diff: year || 0,
+                  })
                 }}
               >
                 <SelectTrigger className="w-[120px] h-9">
@@ -114,7 +130,17 @@ export function FacetDateRangePanel({
                 min={0}
                 className="w-20 h-9"
                 value={year}
-                onChange={(e) => setYear(e.target.value ? parseInt(e.target.value) : '')}
+                onChange={(e) => {
+                  const val = e.target.value ? parseInt(e.target.value) : ''
+                  setYear(val)
+                  onRangeChange?.({
+                    min: sliderValue[0],
+                    max: sliderValue[1],
+                    precision,
+                    diff: val || 0,
+                  })
+                }}
+
               />
             </div>
           </div>

@@ -10,7 +10,7 @@ import { Grid, List } from 'lucide-react'
 export function ManuscriptsSearch() {
   const [, setViewMode] = React.useState<'table' | 'grid'>('table')
   const [resultType, setResultType] = React.useState<string>('')
-  
+
   return (
     <div className='h-screen bg-gray-50'>
       <div className='px-6 py-4 border-b bg-white'>
