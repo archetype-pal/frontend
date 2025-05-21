@@ -37,7 +37,6 @@ export function DynamicFacets({ facets, renderConfig, onFacetClick }: DynamicFac
           const Component = FACET_COMPONENT_MAP[componentType as keyof typeof FACET_COMPONENT_MAP]
           if (!Component) return null
 
-
           const title = facetKey
             .replace(/_/g, ' ')
             .replace(/\b\w/g, (char) => char.toUpperCase())
@@ -74,7 +73,6 @@ export function DynamicFacets({ facets, renderConfig, onFacetClick }: DynamicFac
               />
             )
           }
-
 
           const items = Array.isArray(facetItems)
             ? facetItems.map((item: FacetItem) => ({
