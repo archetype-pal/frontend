@@ -42,18 +42,6 @@ export function DynamicFacets({ facets, renderConfig, onFacetClick }: DynamicFac
             .replace(/_/g, ' ')
             .replace(/\b\w/g, (char) => char.toUpperCase())
 
-
-          // if (componentType.startsWith('range')) {
-          //   const config = Array.isArray(facetItems) ? facetItems[0] as FacetItem : facetItems as FacetItem
-          //   return (
-          //     <Component
-          //       key={facetKey}
-          //       id={facetKey}
-          //       title={title}
-          //       range={config.range}
-          //       defaultValue={config.defaultValue} items={[]} />
-          //   )
-          // }
           if (componentType.startsWith('range')) {
             const config = Array.isArray(facetItems) ? facetItems[0] as any : facetItems as any
 
