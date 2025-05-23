@@ -42,7 +42,7 @@ export function DynamicFacets({ facets, renderConfig, onFacetClick }: DynamicFac
             .replace(/\b\w/g, (char) => char.toUpperCase())
 
           if (componentType.startsWith('range')) {
-            const config = Array.isArray(facetItems) ? facetItems[0] as any : facetItems as any
+            const config = Array.isArray(facetItems) ? facetItems[0] as FacetItem : facetItems as FacetItem
 
             return (
               <Component
@@ -55,8 +55,7 @@ export function DynamicFacets({ facets, renderConfig, onFacetClick }: DynamicFac
                   const optionsMin = config.options?.date_min || []
                   const optionsMax = config.options?.date_max || []
 
-                  // Find closest match by label (exact match or fallback to lower)
-                  const findClosest = (list: any[], target: number) =>
+                  const findClosest = (list: FacetItem[], target: number) =>
                     list.find((item) => Number(item.text) === target) ||
                     list.find((item) => Number(item.text) <= target)
 

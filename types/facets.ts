@@ -8,6 +8,11 @@ export type FacetItem = {
     range?: [number, number]
     defaultValue?: [number, number]
     active?: boolean
+
+    options?: {
+    date_min?: FacetItem[]
+    date_max?: FacetItem[]
+  }
   }
   
   export type FacetData = Record<string, FacetItem[] | FacetItem>
