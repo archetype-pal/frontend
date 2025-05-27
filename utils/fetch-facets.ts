@@ -24,3 +24,24 @@ export async function fetchFacetsAndResults(resultType: string, url?: string) {
 
   return { facets, results, count }
 }
+
+export function buildDateFacetUrl({
+  baseUrl,
+  min,
+  max,
+  precision,
+  diff,
+}: {
+  baseUrl: string
+  min: number
+  max: number
+  precision: string
+  diff: number
+}) {
+  const params = new URLSearchParams()
+  params.set('min_date', String(min))
+  params.set('max_date', String(max))
+  params.set('at_most_or_least', precision)
+  params.set('date_diff', String(diff))
+  return `${baseUrl}?${params.toString()}`
+}
