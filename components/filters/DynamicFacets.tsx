@@ -51,7 +51,26 @@ export function DynamicFacets({ facets, renderConfig, onFacetClick }: DynamicFac
                 id={facetKey}
                 title={title}
                 range={config.range}
-                defaultValue={config.defaultValue} items={[]} />
+                defaultValue={config.defaultValue}
+                onRangeChange={({ min, max }) => {
+                  const optionsMin = config.options?.date_min || []
+                  const optionsMax = config.options?.date_max || []
+
+                  const findClosest = (list: FacetItem[], target: number) =>
+                    list.find((item) => Number(item.text) === target) ||
+                    list.find((item) => Number(item.text) <= target)
+
+                  const closestMin = findClosest(optionsMin, min)
+                  const closestMax = findClosest(optionsMax, max)
+
+                  const url = closestMax?.narrow_url || closestMin?.narrow_url
+
+                  if (url) {
+                    onFacetClick?.(url)
+                  }
+                }}
+                items={[]}
+              />
             )
           }
 
