@@ -8,6 +8,7 @@ type RadioFacetItem = {
   label: string
   count: number
   value: string
+  href: string
 }
 
 type FacetRadioPanelProps = {
@@ -27,6 +28,7 @@ export function FacetRadioPanel({
   items = [],
   expanded: defaultExpanded = true,
   onToggle,
+  onSelect,
 }: FacetRadioPanelProps) {
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded)
   const [selectedValue, setSelectedValue] = React.useState<string | null>(null)
@@ -36,8 +38,15 @@ export function FacetRadioPanel({
     onToggle?.(id)
   }
 
-  const handleSelect = (value: string) => {
-    setSelectedValue((prev) => (prev === value ? null : value))
+  const handleSelect = (item: RadioFacetItem) => {
+    setSelectedValue((prev) => {
+      const next = prev === item.value ? null : item.value
+      if (onSelect) {
+        const base = process.env.NEXT_PUBLIC_API_URL + '/api/v1/search/item-parts/facets'
+        onSelect(next ? item.href || base : base)
+      }
+      return next
+    })
   }
 
   const visibleItems = selectedValue
@@ -65,7 +74,7 @@ export function FacetRadioPanel({
           {visibleItems.map((item) => (
             <li key={item.value}>
               <button
-                onClick={() => handleSelect(item.value)}
+                onClick={() => handleSelect(item)}
                 className={cn(
                   'w-full text-left flex justify-between items-center px-2 py-1 rounded hover:bg-muted transition-colors',
                   selectedValue === item.value && 'bg-muted font-semibold'
