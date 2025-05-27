@@ -22,5 +22,5 @@ export async function fetchFacetsAndResults(resultType: string, url?: string) {
   const results = data.objects?.results ?? []
   const count = data.objects?.count || 0
 
-  return { facets, results, count}
+  return { facets, results, count }
 }
