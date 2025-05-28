@@ -27,7 +27,7 @@ export function ResultTypeToggle({
     <div className="flex flex-wrap gap-2 my-3">
       {resultTypeItems.map((item) => (
         <Button
-        className="flex-1 min-w-[180px]"
+          className="flex-1 min-w-[180px]"
           key={item.value}
           variant={selectedType == item.value ? 'toggle' : 'outline'}
           size="sm"
