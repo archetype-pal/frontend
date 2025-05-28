@@ -3,7 +3,7 @@ export const FILTER_ORDER_MAP: Record<string, string[]> = {
     'image_availability',
     'text_date_slider',
     'date_precision',
-    'document_type',
+    'type',
     'repository_city',
     'repository_name',
     'issuer_name',
