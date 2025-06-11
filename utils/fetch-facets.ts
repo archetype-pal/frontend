@@ -1,47 +1,54 @@
 import { normalizeFacets } from './normalise-facets'
 import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map'
+import type { FacetData } from '@/types/facets'
 
-export async function fetchFacetsAndResults(resultType: string, url?: string) {
-  const apiSegment = RESULT_TYPE_API_MAP[resultType]
-  if (!apiSegment) {
-    console.warn(`No API segment mapped for resultType: "${resultType}"`)
-    return { facets: {}, results: [] }
-  }
-
-  const endpoint = url || `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/${apiSegment}/facets`
-
-  const res = await fetch(endpoint)
-  if (!res.ok) {
-    const text = await res.text()
-    console.error('Non-OK response:', res.status, text)
-    return { facets: {}, results: [] }
-  }
-
-  const data = await res.json()
-  const facets = normalizeFacets(data.fields || {})
-  const results = data.objects?.results ?? []
-  const count = data.objects?.count || 0
-
-  return { facets, results, count }
+export type SafeSearchResponse = {
+  facets: FacetData
+  results: any[]
+  count: number
+  ok: boolean
 }
 
-export function buildDateFacetUrl({
-  baseUrl,
-  min,
-  max,
-  precision,
-  diff,
-}: {
-  baseUrl: string
-  min: number
-  max: number
-  precision: string
-  diff: number
-}) {
-  const params = new URLSearchParams()
-  params.set('min_date', String(min))
-  params.set('max_date', String(max))
-  params.set('at_most_or_least', precision)
-  params.set('date_diff', String(diff))
-  return `${baseUrl}?${params.toString()}`
+export async function fetchFacetsAndResults(
+  resultType: string,
+  url?: string
+): Promise<SafeSearchResponse> {
+  const apiSegment = RESULT_TYPE_API_MAP[resultType]
+  if (!apiSegment) {
+    console.warn(`No API segment mapped for resultType "${resultType}"`)
+    return { facets: {}, results: [], count: 0, ok: false }
+  }
+
+  const endpoint =
+    url || `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/${apiSegment}/facets`
+
+  let raw: any
+  try {
+    const res = await fetch(endpoint)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    raw = await res.json()
+  } catch (e) {
+    console.error('Fetch or JSON error:', e)
+    return { facets: {}, results: [], count: 0, ok: false }
+  }
+
+  const fields = raw.fields ?? {}
+  const facetArrays = Object.values(fields).filter(Array.isArray)
+  const hasAnyFacetEntry = facetArrays.some(arr => arr.length > 0)
+
+  const results: any[] = Array.isArray(raw.objects?.results)
+    ? raw.objects.results
+    : []
+  const count: number = raw.objects?.count ?? results.length
+  const hasAnyResult = count > 0
+
+  if (!hasAnyFacetEntry && !hasAnyResult) {
+    console.warn(
+      'Empty payload (no facets AND no results)—treating as bad response'
+    )
+    return { facets: {}, results: [], count: 0, ok: false }
+  }
+
+  const facets: FacetData = normalizeFacets(fields)
+  return { facets, results, count, ok: true }
 }

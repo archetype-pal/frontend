@@ -6,6 +6,4 @@ export const FACET_COMPONENT_MAP = {
   checkbox: FacetPanel,
   toggle: FacetRadioPanel,
   range: FacetDateRangePanel,
-  'range-slider': FacetDateRangePanel,
-  'range-search': FacetDateRangePanel,
 } as const

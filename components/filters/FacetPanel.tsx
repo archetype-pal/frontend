@@ -55,7 +55,6 @@ export function FacetPanel({
     }
   }, [items, sortBy])
 
-
   const visibleItems = selectedItem
     ? sortedItems.filter((item) => item.label === selectedItem)
     : sortedItems
@@ -105,7 +104,6 @@ export function FacetPanel({
           {sortBy === 'count-asc' ? 'Count ↑' : 'Count ↓'}
         </button>
       </div>
-
 
       {isExpanded && (
         <ul className="p-2 space-y-2 text-sm">

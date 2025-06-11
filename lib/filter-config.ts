@@ -7,9 +7,7 @@ export const FILTER_RENDER_MAP: Record<
 > = {
   manuscripts: {
     image_availability: 'toggle',
-    text_date_input: 'number-select',
     text_date_slider: 'range',
-    date_precision: 'number-select',
     type: 'checkbox',
     repository_city: 'checkbox',
     repository_name: 'checkbox',
