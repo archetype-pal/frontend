@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -35,7 +37,7 @@ export default function ArticleList({
       <h2 className='text-2xl font-bold text-gray-700'>{title}</h2>
       {displayed.length > 0 ? (
         <ul className='space-y-3'>
-          {displayed.map((article, index) => (
+          {displayed.map((article) => (
             <li key={article.id}>
               <Link
                 href={`${moreLink}/${article.id}`}
