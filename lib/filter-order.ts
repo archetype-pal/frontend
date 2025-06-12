@@ -1,7 +1,7 @@
 export const FILTER_ORDER_MAP: Record<string, string[]> = {
   manuscripts: [
     'image_availability',
-    'text_date_slider',
+    'text_date',
     'date_precision',
     'type',
     'repository_city',

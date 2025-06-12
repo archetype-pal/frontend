@@ -23,7 +23,7 @@ export function normalizeFacets(fields: Record<string, any>) {
   }
 
   if (typeof globalMin === 'number' && typeof globalMax === 'number') {
-    fields.text_date_slider = [
+    fields.text_date = [
       {
         label: 'range',
         value: 'range',
