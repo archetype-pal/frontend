@@ -10,7 +10,7 @@ export default function ExhibitionLaunch() {
       <div className='flex flex-col md:flex-row gap-8'>
         <main className='flex-1'>
           <Image
-            src='https://www.modelsofauthority.ac.uk/media/uploads/Events/.thumbnails/banner.jpg/banner-1437x349.jpg'
+            src='/models_of_authority/Events/.thumbnails/banner.jpg/banner-1437x349.jpg'
             alt="SCRIBES AND ROYAL AUTHORITY: Scotland's Charters 1100-1250"
             width={600}
             height={200}

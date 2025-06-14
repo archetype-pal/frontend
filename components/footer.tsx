@@ -5,27 +5,27 @@ import { Button } from '@/components/ui/button'
 const partners = [
   {
     name: 'Arts & Humanities Research Council',
-    logo: 'https://www.modelsofauthority.ac.uk/media/uploads/Logos/ahrc_logo_small.png',
+    logo: '/models_of_authority/Logos/ahrc_logo_small.png',
   },
   {
     name: 'University of Glasgow',
-    logo: 'https://www.modelsofauthority.ac.uk/media/uploads/Logos/uni_glasgow_logo_small.png',
+    logo: '/models_of_authority/Logos/uni_glasgow_logo_small.png',
   },
   {
     name: "King's College London",
-    logo: 'https://www.modelsofauthority.ac.uk/media/uploads/Logos/ddh_no_strapline_small.png',
+    logo: '/models_of_authority/Logos/ddh_no_strapline_small.png',
   },
   {
     name: 'University of Cambridge',
-    logo: 'https://www.modelsofauthority.ac.uk/media/uploads/Logos/university_of_cambridge_logo_small.png',
+    logo: '/models_of_authority/Logos/university_of_cambridge_logo_small.png',
   },
   {
     name: 'National Records of Scotland',
-    logo: 'https://www.modelsofauthority.ac.uk/media/uploads/Logos/nrs-logo_small.png',
+    logo: '/models_of_authority/Logos/nrs-logo_small.png',
   },
   {
     name: 'The National Archives',
-    logo: 'https://www.modelsofauthority.ac.uk/media/uploads/Logos/the-national-archives_logo_small.png',
+    logo: '/models_of_authority/Logos/the-national-archives_logo_small.png',
   },
 ]
 
