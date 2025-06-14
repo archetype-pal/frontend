@@ -1,7 +1,5 @@
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL
-
 const nextConfig = {
   images: {
     domains: ['api.archetype.rancho.me', 'api.archetype.gla.ac.uk'],
@@ -15,14 +13,6 @@ const nextConfig = {
         hostname: 'archetype.gla.ac.uk',
       },
     ],
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${BACKEND_URL}/api/:path*`, // Proxy to Backend
-      },
-    ]
   },
   async headers() {
     return [
