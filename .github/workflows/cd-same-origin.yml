@@ -1,4 +1,4 @@
-name: CD Deployment to Rancho test server
+name: CD Deployment - assuming backend runs on same origin
 
 on:
   workflow_run:
@@ -39,7 +39,7 @@ jobs:
         with:
           context: .
           build-args: |
-            NEXT_PUBLIC_API_URL=https://api.archetype.rancho.me
-            REACT_APP_API_URL=https://api.archetype.rancho.me
+            NEXT_PUBLIC_API_URL=""
+            REACT_APP_API_URL=""
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ghcr.io/archetype-pal/frontend:rancho
+          tags: ghcr.io/archetype-pal/frontend:same-origin
