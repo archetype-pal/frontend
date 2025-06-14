@@ -40,6 +40,5 @@ jobs:
           context: .
           build-args: |
             NEXT_PUBLIC_API_URL=""
-            REACT_APP_API_URL=""
           push: ${{ github.event_name != 'pull_request' }}
           tags: ghcr.io/archetype-pal/frontend:same-origin
