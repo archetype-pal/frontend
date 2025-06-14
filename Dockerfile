@@ -1,10 +1,8 @@
 # syntax=docker.io/docker/dockerfile:1
 
 FROM node:alpine AS base
-ARG REACT_APP_API_URL
 ARG NEXT_PUBLIC_API_URL
 
-ENV REACT_APP_API_URL=${REACT_APP_API_URL}
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 # Install dependencies only when needed

@@ -1,5 +1,4 @@
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
-import { createProxyMiddleware } from 'http-proxy-middleware'
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL
 
