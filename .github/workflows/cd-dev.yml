@@ -41,4 +41,4 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=http://localhost
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ghcr.io/archetype-pal/frontend:same-origin
+          tags: ghcr.io/archetype-pal/frontend:dev
