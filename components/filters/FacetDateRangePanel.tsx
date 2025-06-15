@@ -4,7 +4,13 @@ import * as React from 'react'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 type FacetDateRangePanelProps = {
   id?: string
@@ -12,44 +18,98 @@ type FacetDateRangePanelProps = {
   range?: [number, number]
   defaultValue?: [number, number]
   precisionOptions?: { label: string; value: string }[]
-  onSearch?: (value: string) => void
-  onRangeChange?: (range: [number, number]) => void
-  onPrecisionChange?: (precision: string) => void
+
+  onSearch?: (params: {
+    min: number
+    max: number
+    precision: string
+    diff: number
+  }) => void
 }
 
 export function FacetDateRangePanel({
+  id,
   title = 'Text Date',
-  range = [1094, 1250],
   defaultValue = [1094, 1250],
   precisionOptions = [
-    { label: 'at most', value: 'lte' },
-    { label: 'at least', value: 'gte' },
+    { label: 'None', value: ' ' },
+    { label: 'at most', value: 'at most' },
+    { label: 'at least', value: 'at least' },
   ],
   onSearch,
-  onRangeChange,
-  onPrecisionChange,
 }: FacetDateRangePanelProps) {
-  const [expanded, setExpanded] = React.useState(true)
-  const [searchInput, setSearchInput] = React.useState('')
+  const initialEndpointsRef = React.useRef<[number, number]>(defaultValue)
+  const [expanded, setExpanded] = React.useState<boolean>(true)
   const [sliderValue, setSliderValue] = React.useState<[number, number]>(defaultValue)
-  const [precision, setPrecision] = React.useState(precisionOptions[0].value)
+  const [precision, setPrecision] = React.useState<string>(precisionOptions[0].value)
   const [year, setYear] = React.useState<number | ''>('')
+  const [searchInput, setSearchInput] = React.useState<string>(
+    `${defaultValue[0]}x${defaultValue[1]}`
+  )
 
   const handleSliderChange = (value: number[]) => {
-    const newRange: [number, number] = [value[0], value[1]]
-    setSliderValue(newRange)
-    onRangeChange?.(newRange)
+    const [newMin, newMax] = [value[0], value[1]] as [number, number]
+    setSliderValue([newMin, newMax])
+    setSearchInput(`${newMin}x${newMax}`)
+  }
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value
+    setSearchInput(raw)
+
+    const [minStr, maxStr] = raw.split('x')
+    if (minStr != null && maxStr != null) {
+      const parsedMin = parseInt(minStr, 10)
+      const parsedMax = parseInt(maxStr, 10)
+      const [fixedMin, fixedMax] = initialEndpointsRef.current
+
+      if (
+        !Number.isNaN(parsedMin) &&
+        !Number.isNaN(parsedMax) &&
+        parsedMin >= fixedMin &&
+        parsedMax <= fixedMax &&
+        parsedMin <= parsedMax
+      ) {
+        setSliderValue([parsedMin, parsedMax])
+      }
+    }
   }
 
   const handleSearchSubmit = () => {
-    onSearch?.(searchInput)
+    onSearch?.({
+      min: sliderValue[0],
+      max: sliderValue[1],
+      precision,
+      diff: precision === '' ? 0 : year === '' ? 0 : year,
+    })
   }
 
+  const handlePrecisionChange = (val: string) => {
+    setPrecision(val)
+    if (val === precisionOptions[0].value) {
+      setYear('')
+    }
+  }
+
+  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value ? parseInt(e.target.value, 10) : ''
+    if (precision === precisionOptions[0].value) {
+      setYear('')
+    } else {
+      setYear(val)
+    }
+  }
+
+  const [endpointMin, endpointMax] = initialEndpointsRef.current
+
   return (
-    <div className="border bg-white rounded shadow-sm">
+    <div id={id} className="border bg-white rounded shadow-sm">
       <div className="border-b px-4 py-2 flex items-center justify-between">
         <h4 className="text-sm font-semibold">{title}</h4>
-        <button onClick={() => setExpanded(!expanded)}>
+        <button
+          aria-label={expanded ? 'Collapse panel' : 'Expand panel'}
+          onClick={() => setExpanded((prev) => !prev)}
+        >
           {expanded ? (
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           ) : (
@@ -60,43 +120,44 @@ export function FacetDateRangePanel({
 
       {expanded && (
         <div className="p-4 space-y-4">
-          {/* Search Box */}
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
             <Input
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
+              onChange={handleSearchChange}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearchSubmit()
+                }
+              }}
               placeholder="Search text date..."
               className="pl-8"
+              aria-label="Date range (min x max)"
             />
           </div>
 
-          {/* Slider */}
           <div>
             <Slider
-              min={range[0]}
-              max={range[1]}
+              min={endpointMin}
+              max={endpointMax}
               step={1}
               value={sliderValue}
               onValueChange={handleSliderChange}
             />
             <div className="flex justify-between text-xs text-muted-foreground mt-1 px-1">
-              <span>{sliderValue[0]}</span>
-              <span>{sliderValue[1]}</span>
+              <span>{endpointMin}</span>
+              <span>{endpointMax}</span>
             </div>
           </div>
 
-          {/* Precision input */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Precision (in years)</label>
+            <label htmlFor={`${id}-precision`} className="text-sm font-medium">
+              Precision (in years)
+            </label>
             <div className="flex items-center gap-2">
               <Select
                 value={precision}
-                onValueChange={(val) => {
-                  setPrecision(val)
-                  onPrecisionChange?.(val)
-                }}
+                onValueChange={handlePrecisionChange}
               >
                 <SelectTrigger className="w-[120px] h-9">
                   <SelectValue />
@@ -109,12 +170,16 @@ export function FacetDateRangePanel({
                   ))}
                 </SelectContent>
               </Select>
+
               <Input
                 type="number"
                 min={0}
                 className="w-20 h-9"
                 value={year}
-                onChange={(e) => setYear(e.target.value ? parseInt(e.target.value) : '')}
+                onChange={handleYearChange}
+                placeholder="0"
+                aria-label="Year difference"
+                disabled={precision === precisionOptions[0].value}
               />
             </div>
           </div>

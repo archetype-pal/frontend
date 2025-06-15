@@ -13,8 +13,18 @@ type DynamicFacetsProps = {
   onFacetClick?: (url: string) => void
 }
 
-export function DynamicFacets({ facets, renderConfig, onFacetClick }: DynamicFacetsProps) {
+export function DynamicFacets({
+  facets,
+  renderConfig,
+  onFacetClick,
+}: DynamicFacetsProps) {
+  if (!facets || Object.keys(facets).length === 0) {
+    return null
+  }
+
   const orderedKeys = FILTER_ORDER_MAP[renderConfig.searchType] || Object.keys(facets)
+
+  const baseFacetURL = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/item-parts/facets`
 
   return (
     <div>
@@ -23,7 +33,19 @@ export function DynamicFacets({ facets, renderConfig, onFacetClick }: DynamicFac
           <h3 className="font-medium text-sm">Keywords</h3>
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-            <Input className="pl-8" placeholder="Search..." />
+            <Input
+              className="pl-8"
+              placeholder="Search..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const kw = (e.currentTarget as HTMLInputElement).value.trim()
+                  if (kw) {
+                    const url = `${baseFacetURL}?keyword=${encodeURIComponent(kw)}`
+                    onFacetClick?.(url)
+                  }
+                }
+              }}
+            />
           </div>
         </div>
       </div>
@@ -34,34 +56,49 @@ export function DynamicFacets({ facets, renderConfig, onFacetClick }: DynamicFac
           if (!facetItems) return null
 
           const componentType = renderConfig[facetKey]
-          const Component = FACET_COMPONENT_MAP[componentType as keyof typeof FACET_COMPONENT_MAP]
+          const Component = FACET_COMPONENT_MAP[
+            componentType as keyof typeof FACET_COMPONENT_MAP
+          ]
           if (!Component) return null
-
 
           const title = facetKey
             .replace(/_/g, ' ')
             .replace(/\b\w/g, (char) => char.toUpperCase())
 
-
           if (componentType.startsWith('range')) {
-            const config = Array.isArray(facetItems) ? facetItems[0] as FacetItem : facetItems as FacetItem
+            const config = Array.isArray(facetItems)
+              ? (facetItems[0] as FacetItem)
+              : (facetItems as FacetItem)
+
             return (
               <Component
                 key={facetKey}
                 id={facetKey}
                 title={title}
                 range={config.range}
-                defaultValue={config.defaultValue} items={[]} />
+                defaultValue={config.defaultValue}
+                onSearch={({ min, max, precision, diff }) => {
+                  let url = `${baseFacetURL}?min_date=${min}&max_date=${max}`
+
+                  if (precision !== '' && diff > 0) {
+                    const encodedPrecision = encodeURIComponent(precision)
+                    url += `&at_most_or_least=${encodedPrecision}&date_diff=${diff}`
+                  }
+
+                  onFacetClick?.(url)
+                }}
+                items={[]}
+              />
             )
           }
 
           const items = Array.isArray(facetItems)
-            ? facetItems.map((item: FacetItem) => ({
-              label: item.text || item.label || '',
-              count: item.count,
-              href: item.narrow_url || item.href || '',
-              value: item.value ?? item.text ?? '',
-            }))
+            ? (facetItems as FacetItem[]).map((item) => ({
+                label: item.text || item.label || '',
+                count: item.count,
+                href: item.narrow_url || item.href || '',
+                value: item.value ?? item.text ?? '',
+              }))
             : []
 
           return (
@@ -71,7 +108,13 @@ export function DynamicFacets({ facets, renderConfig, onFacetClick }: DynamicFac
               title={title}
               total={items.length}
               items={items}
-              onSelect={(url: string) => onFacetClick?.(url)}
+              onSelect={(url: string) => {
+                if (url) {
+                  onFacetClick?.(url)
+                } else {
+                  onFacetClick?.(baseFacetURL)
+                }
+              }}
             />
           )
         })}
