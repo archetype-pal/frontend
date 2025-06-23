@@ -19,6 +19,7 @@ type FacetRadioPanelProps = {
   expanded?: boolean
   onToggle?: (id: string) => void
   onSelect?: (url: string) => void
+  baseFacetURL: string
 }
 
 export function FacetRadioPanel({
@@ -29,6 +30,7 @@ export function FacetRadioPanel({
   expanded: defaultExpanded = true,
   onToggle,
   onSelect,
+  baseFacetURL,
 }: FacetRadioPanelProps) {
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded)
   const [selectedValue, setSelectedValue] = React.useState<string | null>(null)
@@ -42,7 +44,7 @@ export function FacetRadioPanel({
     setSelectedValue((prev) => {
       const next = prev === item.value ? null : item.value
       if (onSelect) {
-        const base = process.env.NEXT_PUBLIC_API_URL + '/api/v1/search/item-parts/facets'
+        const base = baseFacetURL
         onSelect(next ? item.href || base : base)
       }
       return next

@@ -19,6 +19,7 @@ type FacetPanelProps = {
   expanded?: boolean
   onToggle?: (id: string) => void
   onSelect?: (url: string) => void
+  baseFacetURL: string
 }
 
 export function FacetPanel({
@@ -29,6 +30,7 @@ export function FacetPanel({
   expanded: defaultExpanded = true,
   onToggle,
   onSelect,
+  baseFacetURL,
 }: FacetPanelProps) {
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded)
   const [sortBy, setSortBy] = React.useState<'name-asc' | 'name-desc' | 'count-desc' | 'count-asc'>('name-asc')
@@ -62,7 +64,7 @@ export function FacetPanel({
   const handleSelect = (label: string, href: string) => {
     setSelectedItem((current) => {
       const next = current === label ? null : label
-      onSelect?.(next ? href : `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/item-parts/facets`)
+      onSelect?.(next ? href : baseFacetURL)
       return next
     })
   }
