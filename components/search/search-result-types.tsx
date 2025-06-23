@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 
 const resultTypeItems = [
   { label: 'Manuscripts', value: 'manuscripts' },
+  { label: 'Images', value: 'images' },
   { label: 'Texts', value: 'texts' },
   { label: 'Graphs', value: 'graphs' },
   { label: 'Clauses', value: 'clauses' },
