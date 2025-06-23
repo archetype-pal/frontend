@@ -11,20 +11,20 @@ type DynamicFacetsProps = {
   facets: FacetData
   renderConfig: Record<string, string>
   onFacetClick?: (url: string) => void
+  baseFacetURL: string 
 }
 
 export function DynamicFacets({
   facets,
   renderConfig,
   onFacetClick,
+  baseFacetURL,
 }: DynamicFacetsProps) {
   if (!facets || Object.keys(facets).length === 0) {
     return null
   }
 
   const orderedKeys = FILTER_ORDER_MAP[renderConfig.searchType] || Object.keys(facets)
-
-  const baseFacetURL = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/item-parts/facets`
 
   return (
     <div>
@@ -77,6 +77,7 @@ export function DynamicFacets({
                 title={title}
                 range={config.range}
                 defaultValue={config.defaultValue}
+                baseFacetURL={baseFacetURL} 
                 onSearch={({ min, max, precision, diff }) => {
                   let url = `${baseFacetURL}?min_date=${min}&max_date=${max}`
 
@@ -108,6 +109,7 @@ export function DynamicFacets({
               title={title}
               total={items.length}
               items={items}
+              baseFacetURL={baseFacetURL} 
               onSelect={(url: string) => {
                 if (url) {
                   onFacetClick?.(url)
