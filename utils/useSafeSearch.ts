@@ -3,7 +3,7 @@ import { fetchFacetsAndResults, SafeSearchResponse } from './fetch-facets'
 import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map'
 
 type SafeData = Omit<SafeSearchResponse, 'ok'>
-const EMPTY: SafeData = { facets: {}, results: [], count: 0 }
+const EMPTY: SafeData = { facets: {}, results: [], count: 0, next: null, previous: null, limit: 20, offset: 0,}
 
 export function useSafeSearch(resultType: string) {
   const [data, setData] = useState<SafeData>(EMPTY)
@@ -15,11 +15,8 @@ export function useSafeSearch(resultType: string) {
 
       const resp = await fetchFacetsAndResults(resultType, url)
       if (resp.ok) {
-        lastGood.current = {
-          facets: resp.facets,
-          results: resp.results,
-          count: resp.count,
-        }
+        const { facets, results, count, next, previous, limit, offset } = resp
+        lastGood.current = { facets, results, count, next, previous, limit, offset }
         setData(lastGood.current)
       }
     },

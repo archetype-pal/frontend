@@ -9,6 +9,7 @@ import { DynamicFacets } from '@/components/filters/DynamicFacets'
 import { FILTER_RENDER_MAP } from '@/lib/filter-config'
 import { useSafeSearch } from '@/utils/useSafeSearch'
 import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map'
+import { Pagination } from '@/components/search/paginated-search'
 
 export function SearchPage() {
   const [, setViewMode] = React.useState<'table' | 'grid'>('table')
@@ -18,6 +19,19 @@ export function SearchPage() {
   const renderMap = FILTER_RENDER_MAP[resultType] ?? {}
   const hasMap = Boolean(RESULT_TYPE_API_MAP[resultType])
   const baseFacetURL = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/${RESULT_TYPE_API_MAP[resultType]}/facets`
+
+  const [limit, setLimit] = React.useState(20)
+
+  const handlePage = (page: number) => {
+    const offset = (page - 1) * limit
+    const url = `${baseFacetURL}?limit=${limit}&offset=${offset}`
+    search(url)
+  }
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit)
+    search(`${baseFacetURL}?limit=${newLimit}&offset=0`)
+  }
 
   return (
     <div className="h-screen bg-gray-50">
@@ -62,7 +76,29 @@ export function SearchPage() {
           </div>
           <div className="p-6 overflow-auto flex-1">
             {hasMap && data.results.length > 0 ? (
-              <ManuscriptsTable results={data.results} />
+              <>
+                <div className="mt-4 flex justify-center border rounded-md bg-white py-2">
+                  <Pagination
+                    count={data.count}
+                    limit={data.limit}
+                    offset={data.offset}
+                    onPageChange={handlePage}
+                    onLimitChange={handleLimitChange}
+                  />
+                </div>
+
+                <ManuscriptsTable results={data.results} />
+
+                <div className="mt-4 flex justify-center border rounded-md bg-white py-2">
+                  <Pagination
+                    count={data.count}
+                    limit={data.limit}
+                    offset={data.offset}
+                    onPageChange={handlePage}
+                    onLimitChange={handleLimitChange}
+                  />
+                </div>
+              </>
             ) : (
               <p className="text-center text-sm text-muted-foreground">
                 No results to display.
