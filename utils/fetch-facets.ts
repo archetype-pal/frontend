@@ -6,6 +6,10 @@ export type SafeSearchResponse = {
   facets: FacetData
   results: any[]
   count: number
+  next: string | null
+  previous: string | null
+  limit: number
+  offset: number
   ok: boolean
 }
 
@@ -16,11 +20,15 @@ export async function fetchFacetsAndResults(
   const apiSegment = RESULT_TYPE_API_MAP[resultType]
   if (!apiSegment) {
     console.warn(`No API segment mapped for resultType "${resultType}"`)
-    return { facets: {}, results: [], count: 0, ok: false }
+    return { facets: {}, results: [], count: 0,  next: null, previous: null, limit: 0, offset: 0, ok: false }
   }
 
   const endpoint =
     url || `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/${apiSegment}/facets`
+
+  const parsed = new URL(endpoint)
+  const limit = parseInt(parsed.searchParams.get('limit')  || '20', 10)
+  const offset = parseInt(parsed.searchParams.get('offset') || '0', 10)
 
   let raw: any
   try {
@@ -29,7 +37,7 @@ export async function fetchFacetsAndResults(
     raw = await res.json()
   } catch (e) {
     console.error('Fetch or JSON error:', e)
-    return { facets: {}, results: [], count: 0, ok: false }
+    return { facets: {}, results: [], count: 0,  next: null, previous: null, limit: 0, offset: 0, ok: false }
   }
 
   const fields = raw.fields ?? {}
@@ -46,9 +54,12 @@ export async function fetchFacetsAndResults(
     console.warn(
       'Empty payload (no facets AND no results)—treating as bad response'
     )
-    return { facets: {}, results: [], count: 0, ok: false }
+    return { facets: {}, results: [], count: 0,  next: null, previous: null, limit: 0, offset: 0, ok: false }
   }
 
+  const next: string | null     = raw.objects?.next     ?? null
+  const previous: string | null = raw.objects?.previous ?? null
+
   const facets: FacetData = normalizeFacets(fields)
-  return { facets, results, count, ok: true }
+  return { facets, results, count, next, previous, limit, offset, ok: true }
 }
