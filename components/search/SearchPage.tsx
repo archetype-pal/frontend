@@ -12,15 +12,16 @@ import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map'
 import { Pagination } from '@/components/search/paginated-search'
 
 export function SearchPage() {
-  const [, setViewMode] = React.useState<'table' | 'grid'>('table')
+  const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('table')
   const [resultType, setResultType] = React.useState<string>('manuscripts')
-
   const { data, search } = useSafeSearch(resultType)
+  const [limit, setLimit] = React.useState(20)
+
   const renderMap = FILTER_RENDER_MAP[resultType] ?? {}
   const hasMap = Boolean(RESULT_TYPE_API_MAP[resultType])
   const baseFacetURL = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/${RESULT_TYPE_API_MAP[resultType]}/facets`
+  const showGridToggle = resultType !== 'manuscripts';
 
-  const [limit, setLimit] = React.useState(20)
 
   const handlePage = (page: number) => {
     const offset = (page - 1) * limit
@@ -42,12 +43,22 @@ export function SearchPage() {
           {hasMap ? data.count : 0})
         </h1>
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setViewMode('grid')}>
-            <Grid className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setViewMode('table')}>
+          <Button
+            variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('table')}
+          >
             <List className="h-4 w-4" />
           </Button>
+          {showGridToggle && (
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </header>
 
@@ -87,7 +98,13 @@ export function SearchPage() {
                   />
                 </div>
 
-                <ManuscriptsTable results={data.results} />
+                {viewMode === 'table' ? (
+                  <ManuscriptsTable results={data.results} />
+                ) : (
+                  <div className="mt-8 text-center text-sm text-muted-foreground">
+                    No Grid view mode available.
+                  </div>
+                )}
 
                 <div className="mt-4 flex justify-center border rounded-md bg-white py-2">
                   <Pagination
