@@ -22,6 +22,11 @@ export function SearchPage() {
   const baseFacetURL = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/${RESULT_TYPE_API_MAP[resultType]}/facets`
   const showGridToggle = resultType !== 'manuscripts';
 
+  React.useEffect(() => {
+    if (resultType === 'manuscripts' && viewMode !== 'table') {
+      setViewMode('table')
+    }
+  }, [resultType, viewMode])
 
   const handlePage = (page: number) => {
     const offset = (page - 1) * limit
