@@ -72,7 +72,9 @@ export interface Manuscript {
 
 export interface ManuscriptImage {
   id: number
+  text: string
   iiif_image: string
+  thumbnail: string
   locus: string
   number_of_annotations: number
   texts: {
