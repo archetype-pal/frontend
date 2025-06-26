@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Grid, List } from 'lucide-react'
 import { ResultTypeToggle } from '@/components/search/search-result-types'
 import { ManuscriptsTable } from '@/components/search/search-table'
+import { SearchGrid } from '@/components/search/search-grid'
 import { DynamicFacets } from '@/components/filters/DynamicFacets'
 import { FILTER_RENDER_MAP } from '@/lib/filter-config'
 import { useSafeSearch } from '@/utils/useSafeSearch'
@@ -106,9 +107,13 @@ export function SearchPage() {
                 {viewMode === 'table' ? (
                   <ManuscriptsTable results={data.results} />
                 ) : (
-                  <div className="mt-8 text-center text-sm text-muted-foreground">
-                    No Grid view mode available.
-                  </div>
+                  resultType === 'images' ? (
+                    <SearchGrid results={data.results} resultType={resultType} />
+                  ) : (
+                    <div className="mt-8 text-center text-sm text-muted-foreground">
+                      No Grid view mode available.
+                    </div>
+                  )
                 )}
 
                 <div className="mt-4 flex justify-center border rounded-md bg-white py-2">
