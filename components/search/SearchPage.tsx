@@ -17,6 +17,7 @@ export function SearchPage() {
   const { data, search } = useSafeSearch(resultType)
   const renderMap = FILTER_RENDER_MAP[resultType] ?? {}
   const hasMap = Boolean(RESULT_TYPE_API_MAP[resultType])
+  const baseFacetURL = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/${RESULT_TYPE_API_MAP[resultType]}/facets`
 
   return (
     <div className="h-screen bg-gray-50">
@@ -43,6 +44,7 @@ export function SearchPage() {
               facets={data.facets}
               renderConfig={{ ...renderMap, searchType: resultType }}
               onFacetClick={(url) => search(url)}
+              baseFacetURL={baseFacetURL}
             />
           ) : (
             <div className="text-sm text-muted-foreground">
