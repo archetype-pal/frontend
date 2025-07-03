@@ -21,7 +21,7 @@ export function SearchGrid({
 
   return (
     <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-      {results.map((item, index) => {
+      {results.map((item) => {
         const imageUrl =
           item?.thumbnail ||
           item?.iiif_image?.replace('/info.json', '/full/300,/0/default.jpg') ||
@@ -29,7 +29,7 @@ export function SearchGrid({
 
         return (
           <div
-            key={index}
+            key={item.id}
             className="relative bg-white border rounded-lg shadow p-4 flex flex-col"
           >
             <div className="relative aspect-[4/3] mb-2">
@@ -37,7 +37,7 @@ export function SearchGrid({
                 <Link href={`/${resultType}/${item.id}`}>
                   <Image
                     src={imageUrl}
-                    alt={item.locus || 'Item image'}
+                    alt={item.text || item.locus || 'Item image'}
                     fill
                     className="object-contain rounded"
                   />
