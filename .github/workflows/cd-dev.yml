@@ -38,6 +38,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: dev.Dockerfile
           build-args: |
             NEXT_PUBLIC_API_URL=http://localhost
           push: ${{ github.event_name != 'pull_request' }}
