@@ -94,16 +94,17 @@ export function SearchPage() {
           <div className="p-6 overflow-auto flex-1">
             {hasMap && data.results.length > 0 ? (
               <>
-                <div className="mt-4 flex justify-center border rounded-md bg-white py-2">
-                  <Pagination
-                    count={data.count}
-                    limit={data.limit}
-                    offset={data.offset}
-                    onPageChange={handlePage}
-                    onLimitChange={handleLimitChange}
-                  />
-                </div>
-
+                {data.count > limit && (
+                  <div className="mt-4 flex justify-center border rounded-md bg-white py-2">
+                    <Pagination
+                      count={data.count}
+                      limit={data.limit}
+                      offset={data.offset}
+                      onPageChange={handlePage}
+                      onLimitChange={handleLimitChange}
+                    />
+                  </div>
+                )}
                 {viewMode === 'table' ? (
                   <ManuscriptsTable results={data.results} />
                 ) : (
@@ -115,16 +116,17 @@ export function SearchPage() {
                     </div>
                   )
                 )}
-
-                <div className="mt-4 flex justify-center border rounded-md bg-white py-2">
-                  <Pagination
-                    count={data.count}
-                    limit={data.limit}
-                    offset={data.offset}
-                    onPageChange={handlePage}
-                    onLimitChange={handleLimitChange}
-                  />
-                </div>
+                {data.count > limit && (
+                  <div className="mt-4 flex justify-center border rounded-md bg-white py-2">
+                    <Pagination
+                      count={data.count}
+                      limit={data.limit}
+                      offset={data.offset}
+                      onPageChange={handlePage}
+                      onLimitChange={handleLimitChange}
+                    />
+                  </div>
+                )}
               </>
             ) : (
               <p className="text-center text-sm text-muted-foreground">
