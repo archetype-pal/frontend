@@ -13,7 +13,4 @@ RUN corepack enable pnpm && pnpm i --frozen-lockfile
 
 EXPOSE 3000
 
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-CMD ["pnpm", "run", "dev"]
+CMD ["pnpm", "run", "dev", "--host", "0.0.0.0", "--port", "3000"]
