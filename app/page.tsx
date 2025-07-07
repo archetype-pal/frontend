@@ -17,8 +17,8 @@ export default function Home() {
           getPublications({ is_featured: true }),
         ])
 
-        setNewsArticles(newsData.results || [])
-        setFeatureArticles(featuredData.results || [])
+        setNewsArticles(newsData.results)
+        setFeatureArticles(featuredData.results)
       } catch (error) {
         console.error('Error fetching data:', error)
       }
