@@ -64,7 +64,7 @@ export default function Header() {
                 </Link>
               </li>
               <li>
-                <Link href='/search/manuscripts/'>
+                <Link href='/search/'>
                   <Button
                     variant='ghost'
                     size='sm'
