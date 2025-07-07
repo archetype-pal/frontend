@@ -29,7 +29,7 @@ export function SearchPage() {
     }
   }, [resultType, viewMode])
 
-  const handlePage = (page: number) => {
+  const handleSearchResultsPage = (page: number) => {
     const offset = (page - 1) * limit
     const url = `${baseFacetURL}?limit=${limit}&offset=${offset}`
     search(url)
@@ -100,7 +100,7 @@ export function SearchPage() {
                       count={data.count}
                       limit={data.limit}
                       offset={data.offset}
-                      onPageChange={handlePage}
+                      onPageChange={handleSearchResultsPage}
                       onLimitChange={handleLimitChange}
                     />
                   </div>
@@ -122,7 +122,7 @@ export function SearchPage() {
                       count={data.count}
                       limit={data.limit}
                       offset={data.offset}
-                      onPageChange={handlePage}
+                      onPageChange={handleSearchResultsPage}
                       onLimitChange={handleLimitChange}
                     />
                   </div>
