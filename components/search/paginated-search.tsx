@@ -23,7 +23,7 @@ export function Pagination({
   const totalPages = Math.ceil(count / limit)
   const currentPage = Math.floor(offset / limit) + 1
 
-  if (totalPages <= 1) return null
+  const showPageControls = totalPages > 1
 
   const generatePages = () => {
     const pages: (number | 'ellipsis')[] = []
@@ -62,45 +62,47 @@ export function Pagination({
       </div>
 
       {/* Page controls */}
-      <nav className="flex items-center gap-1 text-sm flex-wrap">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          ◄
-        </Button>
+      {showPageControls && (
+        <nav className="flex items-center gap-1 text-sm flex-wrap">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            ◄
+          </Button>
 
-        {pages.map((page, i) =>
-          page === 'ellipsis' ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-gray-500">
-              …
-            </span>
-          ) : (
-            <Button
-              key={page}
-              variant={page === currentPage ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => onPageChange(page)}
-              className={cn(
-                page === currentPage && 'font-semibold'
-              )}
-            >
-              {page}
-            </Button>
-          )
-        )}
+          {pages.map((page, i) =>
+            page === 'ellipsis' ? (
+              <span key={`ellipsis-${i}`} className="px-2 text-gray-500">
+                …
+              </span>
+            ) : (
+              <Button
+                key={page}
+                variant={page === currentPage ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => onPageChange(page)}
+                className={cn(
+                  page === currentPage && 'font-semibold'
+                )}
+              >
+                {page}
+              </Button>
+            )
+          )}
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          ►
-        </Button>
-      </nav>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            ►
+          </Button>
+        </nav>
+      )}
     </div>
   )
 }

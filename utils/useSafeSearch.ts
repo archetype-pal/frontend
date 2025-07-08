@@ -8,10 +8,12 @@ const EMPTY: SafeData = { facets: {}, results: [], count: 0, next: null, previou
 export function useSafeSearch(resultType: string) {
   const [data, setData] = useState<SafeData>(EMPTY)
   const lastGood = useRef<SafeData>(EMPTY)
+  const lastURL = useRef<string | undefined>()
 
   const performSearch = useCallback(
     async (url?: string) => {
       if (!RESULT_TYPE_API_MAP[resultType]) return
+      lastURL.current = url
 
       const resp = await fetchFacetsAndResults(resultType, url)
       if (resp.ok) {
@@ -25,6 +27,7 @@ export function useSafeSearch(resultType: string) {
 
   useEffect(() => {
     lastGood.current = EMPTY
+    lastURL.current = undefined
     setData(EMPTY)
 
     if (RESULT_TYPE_API_MAP[resultType]) {
@@ -32,5 +35,5 @@ export function useSafeSearch(resultType: string) {
     }
   }, [resultType, performSearch])
 
-  return { data, search: performSearch }
+  return { data, search: performSearch, lastURL }
 }
