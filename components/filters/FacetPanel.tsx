@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 type FacetItem = {
   label: string
   count: number
+  value: string
   href: string
   active?: boolean
 }
@@ -18,8 +19,9 @@ type FacetPanelProps = {
   items: FacetItem[]
   expanded?: boolean
   onToggle?: (id: string) => void
-  onSelect?: (url: string) => void
+  onSelect?: (url: string, value: string) => void
   baseFacetURL: string
+  selectedValue?: string | null
 }
 
 export function FacetPanel({
@@ -31,10 +33,12 @@ export function FacetPanel({
   onToggle,
   onSelect,
   baseFacetURL,
+  selectedValue,
 }: FacetPanelProps) {
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded)
   const [sortBy, setSortBy] = React.useState<'name-asc' | 'name-desc' | 'count-desc' | 'count-asc'>('name-asc')
-  const [selectedItem, setSelectedItem] = React.useState<string | null>(null)
+
+  const [allItems] = React.useState<FacetItem[]>(() => items)
 
   const toggle = () => {
     setIsExpanded((prev) => !prev)
@@ -42,7 +46,7 @@ export function FacetPanel({
   }
 
   const sortedItems = React.useMemo(() => {
-    const itemsCopy = [...(items ?? [])]
+    const itemsCopy = [...allItems]
 
     switch (sortBy) {
       case 'name-asc':
@@ -55,18 +59,16 @@ export function FacetPanel({
       default:
         return itemsCopy.sort((a, b) => b.count - a.count)
     }
-  }, [items, sortBy])
+  }, [allItems, sortBy])
 
-  const visibleItems = selectedItem
-    ? sortedItems.filter((item) => item.label === selectedItem)
-    : sortedItems
+  // const visibleItems = allItems
+  const visibleItems = sortedItems
+  
+  const handleSelect = (item: FacetItem) => {
+    const nextValue = selectedValue === item.value ? null : item.value
+    const nextUrl = nextValue ? item.href || baseFacetURL : baseFacetURL
 
-  const handleSelect = (label: string, href: string) => {
-    setSelectedItem((current) => {
-      const next = current === label ? null : label
-      onSelect?.(next ? href : baseFacetURL)
-      return next
-    })
+    onSelect?.(nextUrl, item.value)
   }
 
   return (
@@ -112,11 +114,11 @@ export function FacetPanel({
           {visibleItems.map((item) => (
             <li key={item.label}>
               <button
-                onClick={() => handleSelect(item.label, item.href)}
+                onClick={() => handleSelect(item)}
                 aria-label={`${item.label}, ${item.count}`}
                 className={cn(
                   'w-full text-left flex justify-between items-center px-2 py-1 rounded hover:bg-muted transition-colors',
-                  selectedItem === item.label && 'bg-muted font-semibold'
+                  selectedValue === item.value && 'bg-muted font-semibold'
                 )}
               >
                 <span>{item.label}</span>

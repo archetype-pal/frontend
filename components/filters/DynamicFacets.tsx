@@ -11,7 +11,7 @@ type DynamicFacetsProps = {
   facets: FacetData
   renderConfig: Record<string, string>
   onFacetClick?: (url: string) => void
-  baseFacetURL: string 
+  baseFacetURL: string
 }
 
 export function DynamicFacets({
@@ -20,6 +20,11 @@ export function DynamicFacets({
   onFacetClick,
   baseFacetURL,
 }: DynamicFacetsProps) {
+
+  const [activeFacet, setActiveFacet] = React.useState<
+    { key: string; value: string } | null
+  >(null)
+
   if (!facets || Object.keys(facets).length === 0) {
     return null
   }
@@ -77,7 +82,7 @@ export function DynamicFacets({
                 title={title}
                 range={config.range}
                 defaultValue={config.defaultValue}
-                baseFacetURL={baseFacetURL} 
+                baseFacetURL={baseFacetURL}
                 onSearch={({ min, max, precision, diff }) => {
                   let url = `${baseFacetURL}?min_date=${min}&max_date=${max}`
 
@@ -95,11 +100,11 @@ export function DynamicFacets({
 
           const items = Array.isArray(facetItems)
             ? (facetItems as FacetItem[]).map((item) => ({
-                label: item.text || item.label || '',
-                count: item.count,
-                href: item.narrow_url || item.href || '',
-                value: item.value ?? item.text ?? '',
-              }))
+              label: item.text || item.label || '',
+              count: item.count,
+              href: item.narrow_url || item.href || '',
+              value: item.value ?? item.text ?? '',
+            }))
             : []
 
           return (
@@ -109,13 +114,17 @@ export function DynamicFacets({
               title={title}
               total={items.length}
               items={items}
-              baseFacetURL={baseFacetURL} 
-              onSelect={(url: string) => {
-                if (url) {
-                  onFacetClick?.(url)
-                } else {
-                  onFacetClick?.(baseFacetURL)
-                }
+              baseFacetURL={baseFacetURL}
+              selectedValue={
+                activeFacet?.key === facetKey ? activeFacet.value : null
+              }
+              onSelect={(url: string, value: string) => {
+                setActiveFacet((curr) =>
+                  curr?.key === facetKey && curr.value === value
+                    ? null
+                    : { key: facetKey, value }
+                )
+                onFacetClick?.(url)
               }}
             />
           )
