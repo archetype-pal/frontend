@@ -44,7 +44,8 @@ export function SearchPage() {
     <div className="h-screen bg-gray-50">
       <header className="px-6 py-4 border-b bg-white flex items-center justify-between">
         <h1 className="text-lg font-semibold">
-          Search:{' '}
+          {/* Keep the brackets to preserve the space at the end */}
+          {"Search: "}  
           {resultType.charAt(0).toUpperCase() + resultType.slice(1)} (
           {hasMap ? data.count : 0})
         </h1>

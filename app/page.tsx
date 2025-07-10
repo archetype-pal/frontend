@@ -1,7 +1,6 @@
 'use client'
 import IntroSection from '@/components/intro-seaction'
 import ArticleList from '@/components/article-list'
-// import { TwitterTimelineEmbed } from 'react-twitter-embed'
 import { getPublications } from '@/utils/api'
 import { useEffect, useState } from 'react'
 
