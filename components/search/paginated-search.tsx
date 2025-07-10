@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 type Props = {
   count: number
@@ -63,14 +64,15 @@ export function Pagination({
 
       {/* Page controls */}
       {showPageControls && (
-        <nav className="flex items-center gap-1 text-sm flex-wrap">
+        <nav className="flex items-center gap-1 text-sm flex-wrap" aria-label="Pagination">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
+            aria-label="Previous page"
           >
-            ◄
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </Button>
 
           {pages.map((page, i) =>
@@ -83,10 +85,10 @@ export function Pagination({
                 key={page}
                 variant={page === currentPage ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => onPageChange(page)}
-                className={cn(
-                  page === currentPage && 'font-semibold'
-                )}
+                onClick={() => onPageChange(page as number)}
+                className={cn(page === currentPage && 'font-semibold')}
+                aria-current={page === currentPage ? 'page' : undefined}
+                aria-label={page === currentPage ? `Page ${page}, current` : `Go to page ${page}`}
               >
                 {page}
               </Button>
@@ -98,8 +100,9 @@ export function Pagination({
             size="sm"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
+            aria-label="Next page"
           >
-            ►
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </Button>
         </nav>
       )}
