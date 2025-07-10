@@ -1,7 +1,6 @@
 'use client'
 import IntroSection from '@/components/intro-seaction'
 import ArticleList from '@/components/article-list'
-// import { TwitterTimelineEmbed } from 'react-twitter-embed'
 import { getPublications } from '@/utils/api'
 import { useEffect, useState } from 'react'
 
@@ -17,8 +16,8 @@ export default function Home() {
           getPublications({ is_featured: true }),
         ])
 
-        setNewsArticles(newsData.results || [])
-        setFeatureArticles(featuredData.results || [])
+        setNewsArticles(newsData.results)
+        setFeatureArticles(featuredData.results)
       } catch (error) {
         console.error('Error fetching data:', error)
       }
