@@ -39,6 +39,6 @@ jobs:
         with:
           context: .
           build-args: |
-            NEXT_PUBLIC_API_URL=https://api.archetype.gla.ac.uk
+            NEXT_PUBLIC_API_URL=https://archetype.gla.ac.uk
           push: ${{ github.event_name != 'pull_request' }}
           tags: ghcr.io/archetype-pal/frontend:glasgow
