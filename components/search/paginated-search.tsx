@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 type Props = {
   count: number
@@ -23,7 +24,7 @@ export function Pagination({
   const totalPages = Math.ceil(count / limit)
   const currentPage = Math.floor(offset / limit) + 1
 
-  if (totalPages <= 1) return null
+  const showPageControls = totalPages > 1
 
   const generatePages = () => {
     const pages: (number | 'ellipsis')[] = []
@@ -62,45 +63,49 @@ export function Pagination({
       </div>
 
       {/* Page controls */}
-      <nav className="flex items-center gap-1 text-sm flex-wrap">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          ◄
-        </Button>
+      {showPageControls && (
+        <nav className="flex items-center gap-1 text-sm flex-wrap" aria-label="Pagination">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          </Button>
 
-        {pages.map((page, i) =>
-          page === 'ellipsis' ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-gray-500">
-              …
-            </span>
-          ) : (
-            <Button
-              key={page}
-              variant={page === currentPage ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => onPageChange(page)}
-              className={cn(
-                page === currentPage && 'font-semibold'
-              )}
-            >
-              {page}
-            </Button>
-          )
-        )}
+          {pages.map((page, i) =>
+            page === 'ellipsis' ? (
+              <span key={`ellipsis-${i}`} className="px-2 text-gray-500">
+                …
+              </span>
+            ) : (
+              <Button
+                key={page}
+                variant={page === currentPage ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => onPageChange(page as number)}
+                className={cn(page === currentPage && 'font-semibold')}
+                aria-current={page === currentPage ? 'page' : undefined}
+                aria-label={page === currentPage ? `Page ${page}, current` : `Go to page ${page}`}
+              >
+                {page}
+              </Button>
+            )
+          )}
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          ►
-        </Button>
-      </nav>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            aria-label="Next page"
+          >
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </nav>
+      )}
     </div>
   )
 }

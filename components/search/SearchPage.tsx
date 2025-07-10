@@ -15,7 +15,7 @@ import { Pagination } from '@/components/search/paginated-search'
 export function SearchPage() {
   const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('table')
   const [resultType, setResultType] = React.useState<string>('manuscripts')
-  const { data, search } = useSafeSearch(resultType)
+  const { data, search, lastURL } = useSafeSearch(resultType)
   const [limit, setLimit] = React.useState(20)
 
   const renderMap = FILTER_RENDER_MAP[resultType] ?? {}
@@ -31,13 +31,21 @@ export function SearchPage() {
 
   const handlePage = (page: number) => {
     const offset = (page - 1) * limit
-    const url = `${baseFacetURL}?limit=${limit}&offset=${offset}`
-    search(url)
+    const url = new URL(lastURL.current || baseFacetURL)
+    url.searchParams.set('offset', String(offset))
+    url.searchParams.set('limit', String(limit))
+
+    search(url.toString())
   }
 
   const handleLimitChange = (newLimit: number) => {
     setLimit(newLimit)
-    search(`${baseFacetURL}?limit=${newLimit}&offset=0`)
+
+    const url = new URL(lastURL.current || baseFacetURL)
+    url.searchParams.set('limit', String(newLimit))
+    url.searchParams.set('offset', '0')
+
+    search(url.toString())
   }
 
   return (
@@ -92,20 +100,19 @@ export function SearchPage() {
             />
           </div>
           <div className="p-6 overflow-auto flex-1">
-            {hasMap && data.results.length > 0 ? (
-              <>
-                {data.count > limit && (
-                  <div className="mt-4 flex justify-center border rounded-md bg-white py-2">
-                    <Pagination
-                      count={data.count}
-                      limit={data.limit}
-                      offset={data.offset}
-                      onPageChange={handlePage}
-                      onLimitChange={handleLimitChange}
-                    />
-                  </div>
-                )}
-                {viewMode === 'table' ? (
+
+            <>
+              <div className="mt-4 flex justify-center border rounded-md bg-white py-2">
+                <Pagination
+                  count={data.count}
+                  limit={data.limit}
+                  offset={data.offset}
+                  onPageChange={handlePage}
+                  onLimitChange={handleLimitChange}
+                />
+              </div>
+              {hasMap && data.results.length > 0 ? (
+                viewMode === 'table' ? (
                   <ManuscriptsTable results={data.results} />
                 ) : (
                   resultType === 'images' ? (
@@ -115,24 +122,23 @@ export function SearchPage() {
                       No Grid view mode available.
                     </div>
                   )
-                )}
-                {data.count > limit && (
-                  <div className="mt-4 flex justify-center border rounded-md bg-white py-2">
-                    <Pagination
-                      count={data.count}
-                      limit={data.limit}
-                      offset={data.offset}
-                      onPageChange={handlePage}
-                      onLimitChange={handleLimitChange}
-                    />
-                  </div>
-                )}
-              </>
-            ) : (
-              <p className="text-center text-sm text-muted-foreground">
-                No results to display.
-              </p>
-            )}
+                )
+              ) : (
+                <p className="text-center text-sm text-muted-foreground">
+                  No results to display.
+                </p>
+              )}
+              <div className="mt-4 flex justify-center border rounded-md bg-white py-2">
+                <Pagination
+                  count={data.count}
+                  limit={data.limit}
+                  offset={data.offset}
+                  onPageChange={handlePage}
+                  onLimitChange={handleLimitChange}
+                />
+              </div>
+            </>
+
           </div>
         </main>
       </div>
