@@ -21,16 +21,27 @@ export const FILTER_ORDER_MAP: Record<string, string[]> = {
     'components',
     'component_features',
   ],
-  graphs: [
+  scribes: [
     'text_date',
-    'character_type',
-    'character',
-    'allograph',
-    'components',
-    'features',
-    'component_features',
-    'positions',
+    'scriptorium',
+  ],
+  hands: [
+    'text_date',
     'repository_name',
     'repository_city',
+    'place',
+  ],
+  graphs: [
+    'character',
+    'character_type',
+    'allograph',
+    'place',
+    'repository_name',
+    'repository_city',
+    'features',
+    'components',
+    'component_features',
+    'positions',
+    'allograph'
   ],
 }
