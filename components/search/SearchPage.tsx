@@ -4,7 +4,6 @@ import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { Grid, List } from 'lucide-react'
 import { ResultTypeToggle } from '@/components/search/search-result-types'
-import { ManuscriptsTable } from '@/components/search/search-table'
 import { ResultsTable } from '@/components/search/ResultsTable'
 import { SearchGrid } from '@/components/search/search-grid'
 import { DynamicFacets } from '@/components/filters/DynamicFacets'
@@ -112,13 +111,9 @@ export function SearchPage() {
                   onLimitChange={handleLimitChange}
                 />
               </div>
-              {/* <pre className="p-4 bg-gray-100 text-xs">
-                {JSON.stringify(data.results[0], null, 2)}
-              </pre> */}
 
               {hasMap && data.results.length > 0 ? (
                 viewMode === 'table' ? (
-                  // <ManuscriptsTable results={data.results} />
                   <ResultsTable
                     resultType={resultType}
                     results={data.results}
