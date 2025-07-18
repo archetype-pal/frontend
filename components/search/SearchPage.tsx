@@ -17,6 +17,8 @@ export function SearchPage() {
   const [resultType, setResultType] = React.useState<string>('manuscripts')
   const { data, search, lastURL } = useSafeSearch(resultType)
   const [limit, setLimit] = React.useState(20)
+  const [sortKey, setSortKey] = React.useState<string | null>(null)
+  const [ascending, setAscending] = React.useState(true)
 
   const renderMap = FILTER_RENDER_MAP[resultType] ?? {}
   const hasMap = Boolean(RESULT_TYPE_API_MAP[resultType])
@@ -47,6 +49,40 @@ export function SearchPage() {
 
     search(url.toString())
   }
+
+  const handleSort = React.useCallback(
+    (opts: { sortKey?: string; sortUrl?: string }) => {
+      const { sortKey: clickedKey, sortUrl } = opts
+
+      // Server‑provided URL scenario
+      if (sortUrl) {
+        if (data.ordering) {
+          const group = data.ordering.options.filter(o =>
+            o.name.endsWith(clickedKey!)
+          )
+          const next = group.find(o => o.name !== data.ordering!.current) || group[0]
+          return search(next.url)
+        }
+
+        return search(sortUrl)
+      }
+
+      // Front‑end built ordering
+      if (clickedKey) {
+        const isSame = clickedKey === sortKey
+        const nextAsc = isSame ? !ascending : true
+        setSortKey(clickedKey)
+        setAscending(nextAsc)
+
+        const param = `${nextAsc ? '' : '-'}${clickedKey}`
+        const url = new URL(lastURL.current || baseFacetURL)
+        url.searchParams.set('ordering', param)
+        url.searchParams.set('offset', '0')
+        return search(url.toString())
+      }
+    },
+    [search, data.ordering, sortKey, ascending, lastURL, baseFacetURL]
+  )
 
   return (
     <div className="h-screen bg-gray-50">
@@ -117,6 +153,8 @@ export function SearchPage() {
                   <ResultsTable
                     resultType={resultType}
                     results={data.results}
+                    ordering={resultType === 'manuscripts' ? data.ordering : undefined}
+                    onSort={handleSort}
                   />
                 ) : (
                   resultType === 'images' ? (
