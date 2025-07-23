@@ -50,32 +50,32 @@ export const COLUMNS: Record<string, Column<any>[]> = {
         },
     ],
     images: [
-        { header: 'Repository City', accessor: (i: ImageListItem) => i.repository_city },
-        { header: 'Repository', accessor: (i: ImageListItem) => i.repository_name },
-        { header: 'Shelfmark', accessor: (i: ImageListItem) => i.shelfmark },
+        { header: 'Repository City', accessor: (i: ImageListItem) => i.repository_city, sortKey: 'repository_city_exact', },
+        { header: 'Repository', accessor: (i: ImageListItem) => i.repository_name, sortKey: 'repository_name_exact', },
+        { header: 'Shelfmark', accessor: (i: ImageListItem) => i.shelfmark, sortKey: 'shelfmark_exact', },
         { header: 'Category Number', accessor: () => '—' },
-        { header: 'Doc. Type', accessor: (i: ImageListItem) => i.type },
+        { header: 'Doc. Type', accessor: (i: ImageListItem) => i.type, sortKey: 'type_exact', },
         { header: 'Image(thumbnail)', accessor: (i: ImageListItem) => <img src={i.thumbnail} alt={i.text} className='h-12 mx-auto' />, className: 'text-center' },
-        { header: 'Number of annotations (Ann.)', accessor: (i: ImageListItem) => i.number_of_annotations, className: 'text-center' },
+        { header: 'Number of annotations (Ann.)', accessor: (i: ImageListItem) => i.number_of_annotations, className: 'text-center', sortKey: 'number_of_annotations_exact', },
     ],
     scribes: [
-        { header: 'Scribe Name', accessor: (s: ScribeListItem) => s.name },
+        { header: 'Scribe Name', accessor: (s: ScribeListItem) => s.name, sortKey: 'name_exact', },
         { header: 'Date', accessor: (s: ScribeListItem) => s.period },
-        { header: 'Scriptorium', accessor: (s: ScribeListItem) => s.scriptorium },
+        { header: 'Scriptorium', accessor: (s: ScribeListItem) => s.scriptorium, sortKey: 'scriptorium_exact', },
     ],
     hands: [
-        { header: 'Hand Title', accessor: (h: HandListItem) => h.name },
-        { header: 'Repository City', accessor: (h: HandListItem) => h.repository_city },
-        { header: 'Repository', accessor: (h: HandListItem) => h.repository_name },
-        { header: 'Shelfmark', accessor: (h: HandListItem) => h.shelfmark },
-        { header: 'Place', accessor: (h: HandListItem) => h.place },
+        { header: 'Hand Title', accessor: (h: HandListItem) => h.name, sortKey: 'name_exact' },
+        { header: 'Repository City', accessor: (h: HandListItem) => h.repository_city, sortKey: 'repository_city_exact', },
+        { header: 'Repository', accessor: (h: HandListItem) => h.repository_name, sortKey: 'repository_name_exact', },
+        { header: 'Shelfmark', accessor: (h: HandListItem) => h.shelfmark, sortKey: 'shelfmark_exact', },
+        { header: 'Place', accessor: (h: HandListItem) => h.place, sortKey: 'place_exact', },
         { header: 'Date', accessor: (h: HandListItem) => h.date ?? '—' },
-        { header: 'Cat. Num.', accessor: (h: HandListItem) => h.catalogue_numbers },
+        { header: 'Catalogue Num.', accessor: (h: HandListItem) => h.catalogue_numbers, sortKey: 'catalogue_numbers_exact', },
     ],
     graphs: [
-        { header: 'Repository City', accessor: (g: GraphListItem) => g.repository_city },
-        { header: 'Repository', accessor: (g: GraphListItem) => g.repository_name },
-        { header: 'Shelfmark', accessor: (g: GraphListItem) => g.shelfmark },
+        { header: 'Repository City', accessor: (g: GraphListItem) => g.repository_city, sortKey: 'repository_city_exact', },
+        { header: 'Repository', accessor: (g: GraphListItem) => g.repository_name, sortKey: 'repository_name_exact', },
+        { header: 'Shelfmark', accessor: (g: GraphListItem) => g.shelfmark, sortKey: 'shelfmark_exact', },
         { header: 'Document Date', accessor: (g: GraphListItem) => g.date },
         { header: 'Allograph', accessor: (g: GraphListItem) => (g.is_annotated ? 'Yes' : 'No') },
         { header: 'Thumbnail', accessor: () => <span className='text-xs text-muted-foreground'>N/A</span>, className: 'text-center' },
@@ -98,7 +98,7 @@ export function ResultsTable({
 }) {
     const baseCols = COLUMNS[resultType] ?? []
 
-    const cols = resultType === 'manuscripts' && ordering?.options
+    const cols = ordering?.options
         ? baseCols.map(col => {
             if (!col.sortKey) return col
 

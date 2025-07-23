@@ -153,7 +153,7 @@ export function SearchPage() {
                   <ResultsTable
                     resultType={resultType}
                     results={data.results}
-                    ordering={resultType === 'manuscripts' ? data.ordering : undefined}
+                    ordering={resultType ? data.ordering : undefined}
                     onSort={handleSort}
                   />
                 ) : (
