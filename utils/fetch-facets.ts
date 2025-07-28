@@ -11,6 +11,14 @@ export type SafeSearchResponse = {
   limit: number
   offset: number
   ok: boolean
+  ordering?: {
+    current: string
+    options: Array<{
+      name: string
+      text: string
+      url: string
+    }>
+  }
 }
 
 export async function fetchFacetsAndResults(
@@ -61,5 +69,7 @@ export async function fetchFacetsAndResults(
   const previous: string | null = raw.objects?.previous ?? null
 
   const facets: FacetData = normalizeFacets(fields)
-  return { facets, results, count, next, previous, limit, offset, ok: true }
+  const ordering = raw.objects?.ordering ?? raw.ordering
+  return { facets, results, count, next, previous, limit, offset, ok: true, ordering }
+
 }
