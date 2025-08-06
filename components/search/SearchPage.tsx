@@ -5,36 +5,71 @@ import { Button } from '@/components/ui/button'
 import { Grid, List } from 'lucide-react'
 import { ResultTypeToggle, ResultType } from '@/components/search/search-result-types'
 import { ResultsTable } from '@/components/search/ResultsTable'
-import { SearchGrid }    from '@/components/search/search-grid'
+import { SearchGrid } from '@/components/search/search-grid'
 import { DynamicFacets } from '@/components/filters/DynamicFacets'
 import { FILTER_RENDER_MAP } from '@/lib/filter-config'
-import { useSafeSearch }    from '@/utils/useSafeSearch'
+import { useSafeSearch } from '@/utils/useSafeSearch'
 import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map'
 import { Pagination } from '@/components/search/paginated-search'
 
 export function SearchPage() {
-  const [viewMode,   setViewMode]   = React.useState<'table'|'grid'>('table')
+  const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('table')
   const [resultType, setResultType] = React.useState<ResultType>('manuscripts')
-  const { data, search, lastURL }   = useSafeSearch(resultType)
-  const [limit,     setLimit]       = React.useState(20)
-  const [sortKey,   setSortKey]     = React.useState<string|null>(null)
-  const [ascending, setAscending]   = React.useState(true)
+  const { data, search, lastURL } = useSafeSearch(resultType)
+  const [limit, setLimit] = React.useState(20)
+  const [sortKey, setSortKey] = React.useState<string | null>(null)
+  const [ascending, setAscending] = React.useState(true)
 
-  const renderMap     = FILTER_RENDER_MAP[resultType] ?? {}
-  const hasMap        = Boolean(RESULT_TYPE_API_MAP[resultType])
-  const baseFacetURL  = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/${RESULT_TYPE_API_MAP[resultType]}/facets`
-  const showGridToggle= resultType !== 'manuscripts'
+  const [keyword, setKeyword] = React.useState('')
+  const [filtered, setFiltered] = React.useState(data.results)
+
+  const pool = React.useMemo(() => {
+    return Array.from(
+      new Set(
+        data.results
+          .flatMap((r) =>
+            Object.values(r)
+              .filter((v) => typeof v === 'string' || typeof v === 'number')
+              .map((v) => String(v))
+          )
+      )
+    )
+  }, [data.results])
 
   React.useEffect(() => {
-    if (resultType === 'manuscripts' && viewMode !== 'table')
+    if (resultType === 'manuscripts' && viewMode !== 'table') {
       setViewMode('table')
-  }, [resultType, viewMode])
+    }
+    setKeyword('')
+  }, [resultType])
+
+  React.useEffect(() => {
+    if (!keyword) {
+      setFiltered(data.results)
+    } else {
+      const low = keyword.toLowerCase()
+      setFiltered(
+        data.results.filter((row) =>
+          Object.values(row).some((v) =>
+            ['string', 'number'].includes(typeof v)
+              ? String(v).toLowerCase().includes(low)
+              : false
+          )
+        )
+      )
+    }
+  }, [data.results, keyword])
+
+  const renderMap = FILTER_RENDER_MAP[resultType] ?? {}
+  const hasMap = Boolean(RESULT_TYPE_API_MAP[resultType])
+  const baseFacetURL = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/${RESULT_TYPE_API_MAP[resultType]}/facets`
+  const showGridToggle = resultType !== 'manuscripts'
 
   const handlePage = (page: number) => {
     const offset = (page - 1) * limit
     const url = new URL(lastURL.current || baseFacetURL)
     url.searchParams.set('offset', String(offset))
-    url.searchParams.set('limit',  String(limit))
+    url.searchParams.set('limit', String(limit))
     search(url.toString())
   }
 
@@ -42,29 +77,29 @@ export function SearchPage() {
     setLimit(newLimit)
     const url = new URL(lastURL.current || baseFacetURL)
     url.searchParams.set('limit', String(newLimit))
-    url.searchParams.set('offset','0')
+    url.searchParams.set('offset', '0')
     search(url.toString())
   }
 
   const handleSort = React.useCallback(
-    (opts: { sortKey?:string; sortUrl?:string }) => {
-      const { sortKey: clickedKey, sortUrl } = opts
-
+    (opts: { sortKey?: string; sortUrl?: string }) => {
+      const { sortKey: ck, sortUrl } = opts
       if (sortUrl && data.ordering) {
-        const group = data.ordering.options.filter(o => o.name.endsWith(clickedKey!))
-        const next  = group.find(o => o.name !== data.ordering!.current) || group[0]
+        const group = data.ordering.options.filter((o) =>
+          o.name.endsWith(ck!)
+        )
+        const next = group.find((o) => o.name !== data.ordering!.current) || group[0]
         return search(next.url)
       } else if (sortUrl) {
         return search(sortUrl)
       }
-
-      if (clickedKey) {
-        const same   = clickedKey === sortKey
-        const nextAsc= same ? !ascending : true
-        setSortKey(clickedKey)
+      if (ck) {
+        const same = ck === sortKey
+        const nextAsc = same ? !ascending : true
+        setSortKey(ck)
         setAscending(nextAsc)
-        const param = `${nextAsc ? '' : '-'}${clickedKey}`
-        const url   = new URL(lastURL.current || baseFacetURL)
+        const param = `${nextAsc ? '' : '-'}${ck}`
+        const url = new URL(lastURL.current || baseFacetURL)
         url.searchParams.set('ordering', param)
         url.searchParams.set('offset', '0')
         return search(url.toString())
@@ -79,7 +114,7 @@ export function SearchPage() {
         <h1 className="text-lg font-semibold">
           Search:{' '}
           {resultType.charAt(0).toUpperCase() + resultType.slice(1)} (
-          {hasMap ? data.count : 0})
+          {keyword ? filtered.length : data.count})
         </h1>
         <div className="flex gap-2">
           <Button
@@ -87,7 +122,7 @@ export function SearchPage() {
             size="sm"
             onClick={() => setViewMode('table')}
           >
-            <List className="h-4 w-4"/>
+            <List className="h-4 w-4" />
           </Button>
           {showGridToggle && (
             <Button
@@ -95,7 +130,7 @@ export function SearchPage() {
               size="sm"
               onClick={() => setViewMode('grid')}
             >
-              <Grid className="h-4 w-4"/>
+              <Grid className="h-4 w-4" />
             </Button>
           )}
         </div>
@@ -107,7 +142,14 @@ export function SearchPage() {
             <DynamicFacets
               facets={data.facets}
               renderConfig={{ ...renderMap, searchType: resultType }}
-              onFacetClick={(url) => search(url)}
+              suggestionsPool={pool}
+              onFacetClick={(arg) => {
+                if (arg.startsWith('http')) {
+                  search(arg)
+                } else {
+                  setKeyword(arg)
+                }
+              }}
               baseFacetURL={baseFacetURL}
             />
           ) : (
@@ -135,16 +177,21 @@ export function SearchPage() {
               />
             </div>
 
-            {hasMap && data.results.length > 0 ? (
+            {hasMap && filtered.length > 0 ? (
               viewMode === 'table' ? (
                 <ResultsTable
                   resultType={resultType}
-                  results={data.results}
+                  results={filtered}
                   ordering={data.ordering}
                   onSort={handleSort}
+                  highlightKeyword={keyword}
                 />
               ) : resultType === 'images' ? (
-                <SearchGrid results={data.results} resultType={resultType} />
+                <SearchGrid
+                  results={filtered}
+                  resultType={resultType}
+                  highlightKeyword={keyword}
+                />
               ) : (
                 <div className="mt-8 text-center text-sm text-muted-foreground">
                   No Grid view mode available.
