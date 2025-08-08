@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import type { ManuscriptImage } from '@/types/manuscript' // Adjust to your types
+import type { ManuscriptImage } from '@/types/manuscript'
 
 export function SearchGrid({
   results = [],
