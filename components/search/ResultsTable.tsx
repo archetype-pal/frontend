@@ -2,18 +2,18 @@
 
 import * as React from 'react'
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table, TableHeader, TableBody, TableRow, TableCell, TableHead,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { ArrowUp, ArrowDown } from 'lucide-react'
-
 import type { ResultType } from './search-result-types'
 import type { ManuscriptListItem } from '@/types/manuscript'
-import type { ImageListItem      } from '@/types/image'
-import type { ScribeListItem     } from '@/types/scribe'
-import type { HandListItem       } from '@/types/hand'
-import type { GraphListItem      } from '@/types/graph'
+import type { ImageListItem } from '@/types/image'
+import type { ScribeListItem } from '@/types/scribe'
+import type { HandListItem } from '@/types/hand'
+import type { GraphListItem } from '@/types/graph'
+import { Highlight } from './Highlight'
 
 export type Column<T> = {
   header: string
@@ -25,20 +25,20 @@ export type Column<T> = {
 
 type ResultMap = {
   manuscripts: ManuscriptListItem
-  images:      ImageListItem
-  scribes:     ScribeListItem
-  hands:       HandListItem
-  graphs:      GraphListItem
+  images: ImageListItem
+  scribes: ScribeListItem
+  hands: HandListItem
+  graphs: GraphListItem
 }
 
 export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
   manuscripts: [
     { header: 'Repository City', accessor: (m) => m.repository_city, sortKey: 'repository_city_exact' },
-    { header: 'Repository',      accessor: (m) => m.repository_name, sortKey: 'repository_name_exact' },
-    { header: 'Shelfmark',       accessor: (m) => m.shelfmark,      sortKey: 'shelfmark_exact' },
-    { header: 'Catalogue Num.',  accessor: (m) => m.catalogue_numbers, sortKey: 'catalogue_numbers_exact' },
-    { header: 'Text Date',       accessor: (m) => m.date },
-    { header: 'Doc. Type',       accessor: (m) => m.type,          sortKey: 'type_exact'  },
+    { header: 'Repository', accessor: (m) => m.repository_name, sortKey: 'repository_name_exact' },
+    { header: 'Shelfmark', accessor: (m) => m.shelfmark, sortKey: 'shelfmark_exact' },
+    { header: 'Catalogue Num.', accessor: (m) => m.catalogue_numbers, sortKey: 'catalogue_numbers_exact' },
+    { header: 'Text Date', accessor: (m) => m.date },
+    { header: 'Doc. Type', accessor: (m) => m.type, sortKey: 'type_exact' },
     {
       header: 'Images',
       accessor: (m) =>
@@ -60,14 +60,14 @@ export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
   ],
 
   images: [
-    { header: 'Repository City',    accessor: (i) => i.repository_city, sortKey: 'repository_city_exact' },
-    { header: 'Repository',         accessor: (i) => i.repository_name, sortKey: 'repository_name_exact' },
-    { header: 'Shelfmark',          accessor: (i) => i.shelfmark,      sortKey: 'shelfmark_exact' },
-    { header: 'Category Number',    accessor: ()     => '—' },
-    { header: 'Doc. Type',          accessor: (i) => i.type,           sortKey: 'type_exact' },
+    { header: 'Repository City', accessor: (i) => i.repository_city, sortKey: 'repository_city_exact' },
+    { header: 'Repository', accessor: (i) => i.repository_name, sortKey: 'repository_name_exact' },
+    { header: 'Shelfmark', accessor: (i) => i.shelfmark, sortKey: 'shelfmark_exact' },
+    { header: 'Category Number', accessor: () => '—' },
+    { header: 'Doc. Type', accessor: (i) => i.type, sortKey: 'type_exact' },
     {
       header: 'Thumbnail',
-      accessor: (i) => <img src={i.thumbnail} alt={i.text} className="h-12 mx-auto"/>,
+      accessor: (i) => <img src={i.thumbnail} alt={i.text} className="h-12 mx-auto" />,
       className: 'text-center',
     },
     {
@@ -79,30 +79,30 @@ export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
   ],
 
   scribes: [
-    { header: 'Scribe Name', accessor: (s) => s.name,       sortKey: 'name_exact' },
-    { header: 'Date',        accessor: (s) => s.period },
+    { header: 'Scribe Name', accessor: (s) => s.name, sortKey: 'name_exact' },
+    { header: 'Date', accessor: (s) => s.period },
     { header: 'Scriptorium', accessor: (s) => s.scriptorium, sortKey: 'scriptorium_exact' },
   ],
 
   hands: [
-    { header: 'Hand Title',      accessor: (h) => h.name,              sortKey: 'name_exact' },
+    { header: 'Hand Title', accessor: (h) => h.name, sortKey: 'name_exact' },
     { header: 'Repository City', accessor: (h) => h.repository_city, sortKey: 'repository_city_exact' },
-    { header: 'Repository',      accessor: (h) => h.repository_name, sortKey: 'repository_name_exact' },
-    { header: 'Shelfmark',       accessor: (h) => h.shelfmark,       sortKey: 'shelfmark_exact' },
-    { header: 'Place',           accessor: (h) => h.place,           sortKey: 'place_exact' },
-    { header: 'Date',            accessor: (h) => h.date ?? '—' },
-    { header: 'Catalogue Num.',  accessor: (h) => h.catalogue_numbers, sortKey: 'catalogue_numbers_exact' },
+    { header: 'Repository', accessor: (h) => h.repository_name, sortKey: 'repository_name_exact' },
+    { header: 'Shelfmark', accessor: (h) => h.shelfmark, sortKey: 'shelfmark_exact' },
+    { header: 'Place', accessor: (h) => h.place, sortKey: 'place_exact' },
+    { header: 'Date', accessor: (h) => h.date ?? '—' },
+    { header: 'Catalogue Num.', accessor: (h) => h.catalogue_numbers, sortKey: 'catalogue_numbers_exact' },
   ],
 
   graphs: [
-    { header: 'Repository City', accessor: (g) => g.repository_city,  sortKey: 'repository_city_exact' },
-    { header: 'Repository',      accessor: (g) => g.repository_name,  sortKey: 'repository_name_exact' },
-    { header: 'Shelfmark',       accessor: (g) => g.shelfmark,       sortKey: 'shelfmark_exact' },
-    { header: 'Document Date',   accessor: (g) => g.date },
-    { header: 'Allograph',       accessor: (g) => g.is_annotated ? 'Yes' : 'No' },
+    { header: 'Repository City', accessor: (g) => g.repository_city, sortKey: 'repository_city_exact' },
+    { header: 'Repository', accessor: (g) => g.repository_name, sortKey: 'repository_name_exact' },
+    { header: 'Shelfmark', accessor: (g) => g.shelfmark, sortKey: 'shelfmark_exact' },
+    { header: 'Document Date', accessor: (g) => g.date },
+    { header: 'Allograph', accessor: (g) => (g.is_annotated ? 'Yes' : 'No') },
     {
       header: 'Thumbnail',
-      accessor: () => <span className='text-xs text-muted-foreground'>N/A</span>,
+      accessor: () => <span className="text-xs text-muted-foreground">N/A</span>,
       className: 'text-center',
     },
   ],
@@ -113,6 +113,7 @@ export function ResultsTable<K extends ResultType>({
   results,
   ordering,
   onSort,
+  highlightKeyword = '',
 }: {
   resultType: K
   results: ResultMap[K][]
@@ -121,21 +122,21 @@ export function ResultsTable<K extends ResultType>({
     options: Array<{ name: string; text: string; url: string }>
   }
   onSort?: (opts: { sortKey?: string; sortUrl?: string }) => void
+  highlightKeyword?: string
 }) {
   const baseCols = COLUMNS[resultType]
-
   const cols = ordering?.options
-    ? baseCols.map(col => {
-        if (!col.sortKey) return col
-        const asc  = ordering.options.find(o => o.name === col.sortKey)
-        const desc = ordering.options.find(o => o.name === `-${col.sortKey}`)
-        const next = ordering.current === col.sortKey ? (desc||asc) : (asc||desc)
-        return next ? { ...col, sortUrl: next.url } : col
-      })
+    ? baseCols.map((col) => {
+      if (!col.sortKey) return col
+      const asc = ordering.options.find((o) => o.name === col.sortKey)
+      const desc = ordering.options.find((o) => o.name === `-${col.sortKey}`)
+      const next = ordering.current === col.sortKey ? (desc || asc) : (asc || desc)
+      return next ? { ...col, sortUrl: next.url } : col
+    })
     : baseCols
 
-  const currentKey = ordering?.current.replace(/^-/, '')
-  const isDesc     = ordering?.current.startsWith('-')
+  const currKey = ordering?.current.replace(/^-/, '')
+  const isDesc = ordering?.current.startsWith('-')
 
   return (
     <div className="bg-white border rounded-lg overflow-auto">
@@ -146,29 +147,41 @@ export function ResultsTable<K extends ResultType>({
               <TableHead
                 key={i}
                 className={col.className}
-                style={{ cursor: col.sortKey||col.sortUrl ? 'pointer' : undefined }}
+                style={{ cursor: col.sortKey || col.sortUrl ? 'pointer' : undefined }}
                 onClick={() => onSort?.({ sortKey: col.sortKey, sortUrl: col.sortUrl })}
               >
                 <div className="inline-flex items-center space-x-1">
                   <span>{col.header}</span>
-                  {col.sortKey === currentKey && (
-                    isDesc
+                  {col.sortKey === currKey &&
+                    (isDesc
                       ? <ArrowDown className="w-4 h-4 text-muted-foreground" />
-                      : <ArrowUp   className="w-4 h-4 text-muted-foreground" />
-                  )}
+                      : <ArrowUp className="w-4 h-4 text-muted-foreground" />)}
                 </div>
               </TableHead>
             ))}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {results.map((row, i) => (
-            <TableRow key={i}>
-              {cols.map((col, j) => (
-                <TableCell key={j} className={col.className}>
-                  {col.accessor(row)}
-                </TableCell>
-              ))}
+          {results.map((row, ri) => (
+            <TableRow key={ri}>
+              {cols.map((col, ci) => {
+                const cell = col.accessor(row)
+                if (
+                  highlightKeyword &&
+                  (typeof cell === 'string' || typeof cell === 'number')
+                ) {
+                  return (
+                    <TableCell key={ci} className={col.className}>
+                      <Highlight text={String(cell)} keyword={highlightKeyword} />
+                    </TableCell>
+                  )
+                }
+                return (
+                  <TableCell key={ci} className={col.className}>
+                    {cell}
+                  </TableCell>
+                )
+              })}
             </TableRow>
           ))}
         </TableBody>

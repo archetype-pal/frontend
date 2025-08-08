@@ -3,15 +3,20 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ManuscriptImage } from '@/types/manuscript'
+import { Highlight } from './Highlight'
+
+export interface SearchGridProps {
+  results?: ManuscriptImage[]
+  resultType: string
+  highlightKeyword?: string
+}
 
 export function SearchGrid({
   results = [],
   resultType,
-}: {
-  results: ManuscriptImage[]
-  resultType: string
-}) {
-  if (!results?.length) {
+  highlightKeyword = '',
+}: SearchGridProps) {
+  if (!results.length) {
     return (
       <div className="text-center text-gray-500 py-10">
         No results to display.
@@ -51,11 +56,17 @@ export function SearchGrid({
 
             <div className="text-center space-y-1">
               <div className="font-medium text-gray-800 truncate">
-                {item.text || item.locus || 'Untitled'}
+                <Highlight
+                  text={item.text || item.locus || 'Untitled'}
+                  keyword={highlightKeyword}
+                />
               </div>
               {item.number_of_annotations != null && (
                 <div className="text-sm text-gray-500">
-                  {item.number_of_annotations} Annotations
+                  <Highlight
+                    text={`${item.number_of_annotations} Annotations`}
+                    keyword={highlightKeyword}
+                  />
                 </div>
               )}
             </div>
