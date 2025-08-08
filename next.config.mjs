@@ -1,8 +1,19 @@
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 
 const nextConfig = {
-  images: {
-    domains: ['archetype.gla.ac.uk', process.env.NEXT_PUBLIC_API_URL.replace(/^https?:\/\//, "")],
+  // images: {
+  //   domains: ['archetype.gla.ac.uk', process.env.NEXT_PUBLIC_API_URL.replace(/^https?:\/\//, "")],
+  // },
+    images: {
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '8000',
+        pathname: '/media/**',
+      },
+    ],
+    unoptimized: true, // Allows all images without optimization
   },
   async headers() {
     return [

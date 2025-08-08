@@ -26,12 +26,6 @@ export function DynamicFacets({
   const [keyword, setKeyword] = React.useState('')
   const [selectedIndex, setSelectedIndex] = React.useState(-1)
 
-  if (!facets || Object.keys(facets).length === 0) {
-    return null
-  }
-
-  const ordered = FILTER_ORDER_MAP[renderConfig.searchType] || Object.keys(facets)
-
   const suggestions = React.useMemo(() => {
     if (!keyword) return []
     const low = keyword.toLowerCase()
@@ -42,6 +36,12 @@ export function DynamicFacets({
       )
     ).slice(0, 5)
   }, [keyword, suggestionsPool])
+
+  if (!facets || Object.keys(facets).length === 0) {
+    return null
+  }
+
+  const ordered = FILTER_ORDER_MAP[renderConfig.searchType] || Object.keys(facets)
 
   function triggerSearch(kw: string) {
     setKeyword(kw)

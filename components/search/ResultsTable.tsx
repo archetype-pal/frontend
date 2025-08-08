@@ -6,6 +6,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowUp, ArrowDown } from 'lucide-react'
 import type { ResultType } from './search-result-types'
 import type { ManuscriptListItem } from '@/types/manuscript'
@@ -67,7 +68,29 @@ export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
     { header: 'Doc. Type', accessor: (i) => i.type, sortKey: 'type_exact' },
     {
       header: 'Thumbnail',
-      accessor: (i) => <img src={i.thumbnail} alt={i.text} className="h-12 mx-auto" />,
+      accessor: (i) => {
+        const src = (i.thumbnail || '').trim()
+
+        if (!src) {
+          return <span className="text-xs text-muted-foreground">N/A</span>
+        }
+
+        return (
+          <Image
+            src={src}
+            alt={
+              i.text ??
+              (
+                `${i.shelfmark ?? ''}`.trim() || 'Image thumbnail'
+              )
+            }
+            width={48}
+            height={48}
+            className="mx-auto h-12 w-auto"
+            unoptimized
+          />
+        )
+      },
       className: 'text-center',
     },
     {

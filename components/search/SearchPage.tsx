@@ -41,7 +41,7 @@ export function SearchPage() {
       setViewMode('table')
     }
     setKeyword('')
-  }, [resultType])
+  }, [resultType, viewMode])
 
   React.useEffect(() => {
     if (!keyword) {
