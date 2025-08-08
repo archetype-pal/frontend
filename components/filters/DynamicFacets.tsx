@@ -10,87 +10,143 @@ import type { FacetData, FacetItem } from '@/types/facets'
 type DynamicFacetsProps = {
   facets: FacetData
   renderConfig: Record<string, string>
-  onFacetClick?: (url: string) => void
+  suggestionsPool?: string[]
+  onFacetClick?: (arg: string) => void
   baseFacetURL: string
 }
 
 export function DynamicFacets({
   facets,
   renderConfig,
+  suggestionsPool = [],
   onFacetClick,
   baseFacetURL,
 }: DynamicFacetsProps) {
+  const [activeFacet, setActiveFacet] = React.useState<{ key: string; value: string } | null>(null)
+  const [keyword, setKeyword] = React.useState('')
+  const [selectedIndex, setSelectedIndex] = React.useState(-1)
 
-  const [activeFacet, setActiveFacet] = React.useState<
-    { key: string; value: string } | null
-  >(null)
+  const suggestions = React.useMemo(() => {
+    if (!keyword) return []
+    const low = keyword.toLowerCase()
+    return Array.from(
+      new Set(
+        suggestionsPool
+          .filter((s) => s.toLowerCase().startsWith(low) && s.toLowerCase() !== low)
+      )
+    ).slice(0, 5)
+  }, [keyword, suggestionsPool])
 
   if (!facets || Object.keys(facets).length === 0) {
     return null
   }
 
-  const orderedKeys = FILTER_ORDER_MAP[renderConfig.searchType] || Object.keys(facets)
+  const ordered = FILTER_ORDER_MAP[renderConfig.searchType] || Object.keys(facets)
+
+  function triggerSearch(kw: string) {
+    setKeyword(kw)
+    setSelectedIndex(-1)
+    onFacetClick?.(kw)
+  }
 
   return (
     <div>
       <div className="p-4">
-        <div className="space-y-2">
-          <h3 className="font-medium text-sm">Keywords</h3>
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-            <Input
-              className="pl-8"
-              placeholder="Search..."
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  const kw = (e.currentTarget as HTMLInputElement).value.trim()
-                  if (kw) {
-                    const url = `${baseFacetURL}?keyword=${encodeURIComponent(kw)}`
-                    onFacetClick?.(url)
+        <h3 className="font-medium text-sm mb-1">Keyword</h3>
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+          <Input
+            className="pl-8"
+            placeholder="Type and press Enter…"
+            value={keyword}
+            onChange={(e) => {
+              setKeyword(e.currentTarget.value)
+              setSelectedIndex(-1)
+            }}
+            onKeyDown={(e) => {
+              switch (e.key) {
+                case 'ArrowDown':
+                  e.preventDefault()
+                  if (suggestions.length > 0) {
+                    setSelectedIndex((si) => (si < suggestions.length - 1 ? si + 1 : 0))
                   }
-                }
-              }}
-            />
-          </div>
+                  break
+                case 'ArrowUp':
+                  e.preventDefault()
+                  if (suggestions.length > 0) {
+                    setSelectedIndex((si) => (si > 0 ? si - 1 : suggestions.length - 1))
+                  }
+                  break
+                case 'Enter':
+                  e.preventDefault()
+                  if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+                    triggerSearch(suggestions[selectedIndex])
+                  } else if (keyword.trim()) {
+                    triggerSearch(keyword.trim())
+                  } else {
+                    triggerSearch('')
+                  }
+                  break
+                case 'Escape':
+                  setSelectedIndex(-1)
+                  break
+              }
+            }}
+          />
+          {suggestions.length > 0 && (
+            <ul className="absolute z-10 bg-white border mt-1 w-full max-h-40 overflow-auto">
+              {suggestions.map((s, i) => (
+                <li
+                  key={s}
+                  className={
+                    'px-2 py-1 cursor-pointer ' +
+                    (i === selectedIndex ? 'bg-gray-200' : 'hover:bg-gray-100')
+                  }
+                  onMouseEnter={() => setSelectedIndex(i)}
+                  onMouseLeave={() => setSelectedIndex(-1)}
+                  onClick={() => triggerSearch(s)}
+                >
+                  {s}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
       <div className="space-y-4">
-        {orderedKeys.map((facetKey) => {
+        {ordered.map((facetKey) => {
           const facetItems = facets[facetKey]
           if (!facetItems) return null
-
-          const componentType = renderConfig[facetKey]
-          const Component = FACET_COMPONENT_MAP[
-            componentType as keyof typeof FACET_COMPONENT_MAP
-          ]
+          const type = renderConfig[facetKey]
+          const Component =
+            FACET_COMPONENT_MAP[type as keyof typeof FACET_COMPONENT_MAP]
           if (!Component) return null
 
           const title = facetKey
             .replace(/_/g, ' ')
-            .replace(/\b\w/g, (char) => char.toUpperCase())
+            .replace(/\b\w/g, (c) => c.toUpperCase())
 
-          if (componentType.startsWith('range')) {
-            const config = Array.isArray(facetItems)
+          // range facet
+          if (type.startsWith('range')) {
+            const cfg = Array.isArray(facetItems)
               ? (facetItems[0] as FacetItem)
               : (facetItems as FacetItem)
-
             return (
               <Component
                 key={facetKey}
                 id={facetKey}
                 title={title}
-                range={config.range}
-                defaultValue={config.defaultValue}
+                range={cfg.range}
+                defaultValue={cfg.defaultValue}
                 baseFacetURL={baseFacetURL}
                 onSearch={({ min, max, precision, diff }) => {
                   let url = `${baseFacetURL}?min_date=${min}&max_date=${max}`
-
-                  if (precision !== '' && diff > 0) {
-                    const encodedPrecision = encodeURIComponent(precision)
-                    url += `&at_most_or_least=${encodedPrecision}&date_diff=${diff}`
+                  if (precision && diff > 0) {
+                    url += `&at_most_or_least=${encodeURIComponent(
+                      precision
+                    )}&date_diff=${diff}`
                   }
-
                   onFacetClick?.(url)
                 }}
                 items={[]}
@@ -98,12 +154,13 @@ export function DynamicFacets({
             )
           }
 
+          // list facet
           const items = Array.isArray(facetItems)
-            ? (facetItems as FacetItem[]).map((item) => ({
-              label: item.text || item.label || '',
-              count: item.count,
-              href: item.narrow_url || item.href || '',
-              value: item.value ?? item.text ?? '',
+            ? (facetItems as FacetItem[]).map((it) => ({
+              label: it.text || it.label || '',
+              count: it.count,
+              href: it.narrow_url || it.href || '',
+              value: it.value ?? it.text ?? '',
             }))
             : []
 
@@ -118,11 +175,11 @@ export function DynamicFacets({
               selectedValue={
                 activeFacet?.key === facetKey ? activeFacet.value : null
               }
-              onSelect={(url: string, value: string) => {
+              onSelect={(url, val) => {
                 setActiveFacet((curr) =>
-                  curr?.key === facetKey && curr.value === value
+                  curr?.key === facetKey && curr.value === val
                     ? null
-                    : { key: facetKey, value }
+                    : { key: facetKey, value: val }
                 )
                 onFacetClick?.(url)
               }}
