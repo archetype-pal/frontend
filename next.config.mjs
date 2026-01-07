@@ -2,7 +2,24 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 
 const nextConfig = {
   images: {
-    domains: ['archetype.gla.ac.uk', process.env.NEXT_PUBLIC_API_URL.replace(/^https?:\/\//, "")],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'archetype.gla.ac.uk',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      ...(process.env.NEXT_PUBLIC_API_URL
+        ? [
+            {
+              protocol: process.env.NEXT_PUBLIC_API_URL.startsWith('https') ? 'https' : 'http',
+              hostname: process.env.NEXT_PUBLIC_API_URL.replace(/^https?:\/\//, '').split('/')[0],
+            },
+          ]
+        : []),
+    ],
   },
   async headers() {
     return [
