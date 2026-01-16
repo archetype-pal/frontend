@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { fetchHands, fetchAllographs } from '@/services/manuscripts'
+import { fetchHands, /* fetchAllographs */ } from '@/services/manuscripts'
 import type { HandType } from '@/types/hands'
 import type { Allograph } from '@/types/allographs'
 // import { toast } from "sonner"
@@ -23,6 +23,7 @@ interface AnnotationHeaderProps {
   imageId?: string
   onAllographSelect: (allograph: Allograph | undefined) => void
   onHandSelect: (hand: HandType | undefined) => void
+  allographs: Allograph[]
 }
 
 export function AnnotationHeader({
@@ -32,9 +33,10 @@ export function AnnotationHeader({
   imageId,
   onAllographSelect,
   onHandSelect,
+  allographs,
 }: AnnotationHeaderProps) {
   const [hands, setHands] = React.useState<HandType[]>([])
-  const [allographs, setAllographs] = React.useState<Allograph[]>([])
+  // const [allographs, setAllographs] = React.useState<Allograph[]>([])
   const [selectedHand, setSelectedHand] = React.useState<string>('')
   const [selectedAllograph, setSelectedAllograph] = React.useState<string>('')
   const [, setLoading] = React.useState(true)
@@ -43,12 +45,19 @@ export function AnnotationHeader({
     const loadData = async () => {
       try {
         setLoading(true)
-        const [handsData, allographsData] = await Promise.all([
-          imageId ? fetchHands(imageId) : Promise.resolve({ results: [] }),
-          fetchAllographs(),
-        ])
+
+        if (!imageId) {
+          setHands([])
+          return
+        }
+
+        // const [handsData, allographsData] = await Promise.all([
+        //   imageId ? fetchHands(imageId) : Promise.resolve({ results: [] }),
+        //   fetchAllographs(),
+        // ])
+        const handsData = await fetchHands(imageId)
         setHands(handsData.results)
-        setAllographs(allographsData)
+        // setAllographs(allographsData)
       } catch (error) {
         console.error('Error loading data:', error)
         // toast.error("Failed to load hands and allographs")
@@ -82,11 +91,10 @@ export function AnnotationHeader({
           <div className='flex'>
             <button
               onClick={() => onToggleAnnotations(!annotationsEnabled)}
-              className={`px-3 py-1 text-sm font-medium transition-colors ${
-                annotationsEnabled
+              className={`px-3 py-1 text-sm font-medium transition-colors ${annotationsEnabled
                   ? 'bg-slate-600 text-white'
                   : 'bg-white text-gray-900 border shadow-sm'
-              }`}
+                }`}
               style={{
                 borderTopLeftRadius: '4px',
                 borderBottomLeftRadius: '4px',
