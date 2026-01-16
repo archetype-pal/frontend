@@ -78,12 +78,7 @@ export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
         return (
           <Image
             src={src}
-            alt={
-              i.text ??
-              (
-                `${i.shelfmark ?? ''}`.trim() || 'Image thumbnail'
-              )
-            }
+            alt={i.shelfmark || 'Image thumbnail'}
             width={48}
             height={48}
             className="mx-auto h-12 w-auto"

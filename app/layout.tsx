@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import Header from '@/components/header'
 import Footer from '@/components/footer'
 import { AuthProvider } from '@/contexts/auth-context'
+import '@recogito/annotorious/dist/annotorious.min.css'
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',

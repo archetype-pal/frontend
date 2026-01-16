@@ -1,7 +1,8 @@
-import type { SearchResponse } from '@/types/manuscript'
+import type { SearchResponse, Manuscript } from '@/types/manuscript'
 import type { ManuscriptImage } from '@/types/manuscript-image'
 import type { HandsResponse } from '@/types/hands'
 import type { AllographsResponse } from '@/types/allographs'
+import { notFound } from 'next/navigation'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -54,6 +55,21 @@ export async function fetchAllographs(): Promise<AllographsResponse> {
 
   if (!response.ok) {
     throw new Error('Failed to fetch allographs')
+  }
+
+  return response.json()
+}
+
+export async function fetchManuscript(id: number): Promise<Manuscript> {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/v1/manuscripts/item-parts/${id}`
+  )
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      notFound()
+    }
+    throw new Error('Failed to fetch manuscript')
   }
 
   return response.json()

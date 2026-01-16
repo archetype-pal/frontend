@@ -95,30 +95,6 @@ export function ManuscriptsTable() {
           ))}
         </TableBody>
       </Table>
-      {/* <div className='flex items-center justify-between p-4 border-t'>
-        <div className='flex items-center space-x-2'>
-          <select
-            className='rounded-md border px-2 py-1 text-sm'
-            defaultValue='10'
-          >
-            <option value='10'>10 / pages</option>
-            <option value='20'>20 / pages</option>
-            <option value='50'>50 / pages</option>
-          </select>
-          <div className='flex items-center space-x-1'>
-            {[1, 2, 3, '...', 70, 71, 72].map((page, i) => (
-              <Button
-                key={i}
-                variant={page === 1 ? 'secondary' : 'ghost'}
-                size='sm'
-                className='w-8 h-8'
-              >
-                {page}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </div> */}
     </div>
   )
 }

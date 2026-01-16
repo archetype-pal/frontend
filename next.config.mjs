@@ -3,24 +3,36 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 const nextConfig = {
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'archetype.gla.ac.uk',
-      },
+      // Sipi – IIIF server
       {
         protocol: 'http',
         hostname: 'localhost',
+        port: '1024',
+        pathname: '/**',
       },
-      ...(process.env.NEXT_PUBLIC_API_URL
-        ? [
-            {
-              protocol: process.env.NEXT_PUBLIC_API_URL.startsWith('https') ? 'https' : 'http',
-              hostname: process.env.NEXT_PUBLIC_API_URL.replace(/^https?:\/\//, '').split('/')[0],
-            },
-          ]
-        : []),
+      // Django media
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '8000',
+        pathname: '/media/**',
+      },
+      // Production host
+      {
+        protocol: 'https',
+        hostname: 'archetype.gla.ac.uk',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: process.env.NEXT_PUBLIC_API_URL?.replace(/^https?:\/\//, ""),
+        pathname: '/**',
+      },
     ],
+    // With IIIF it’s usually better to not reprocess images again
+    unoptimized: true,
   },
+
   async headers() {
     return [
       {
