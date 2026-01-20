@@ -3,37 +3,46 @@ import { fetchFacetsAndResults, SafeSearchResponse } from './fetch-facets'
 import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map'
 
 type SafeData = Omit<SafeSearchResponse, 'ok'>
-const EMPTY: SafeData = { facets: {}, results: [], count: 0, next: null, previous: null, limit: 20, offset: 0, }
 
-export function useSafeSearch(resultType: string) {
+const EMPTY: SafeData = {
+  facets: {},
+  results: [],
+  count: 0,
+  next: null,
+  previous: null,
+  limit: 20,
+  offset: 0,
+}
+
+export function useSafeSearch(resultType: string, apiUrl: string): { data: SafeData } {
   const [data, setData] = useState<SafeData>(EMPTY)
-  const lastGood = useRef<SafeData>(EMPTY)
-  const lastURL = useRef<string | undefined>()
+  const prevResultType = useRef<string>(resultType)
 
   const performSearch = useCallback(
-    async (url?: string) => {
+    async (url: string, signal?: AbortSignal) => {
       if (!RESULT_TYPE_API_MAP[resultType]) return
-      lastURL.current = url
-
-      const resp = await fetchFacetsAndResults(resultType, url)
+      const resp = await fetchFacetsAndResults(resultType, url, signal)
       if (resp.ok) {
-        const { facets, results, count, next, previous, limit, offset } = resp
-        lastGood.current = { facets, results, count, next, previous, limit, offset, ordering: resp.ordering }
-        setData(lastGood.current)
+        const { facets, results, count, next, previous, limit, offset, ordering } = resp
+        setData({ facets, results, count, next, previous, limit, offset, ordering })
       }
     },
     [resultType]
   )
 
   useEffect(() => {
-    lastGood.current = EMPTY
-    lastURL.current = undefined
-    setData(EMPTY)
-
-    if (RESULT_TYPE_API_MAP[resultType]) {
-      performSearch()
+    if (!RESULT_TYPE_API_MAP[resultType]) {
+      setData(EMPTY)
+      return
     }
-  }, [resultType, performSearch])
+    if (prevResultType.current !== resultType) {
+      prevResultType.current = resultType
+      setData(EMPTY)
+    }
+    const ac = new AbortController()
+    performSearch(apiUrl, ac.signal)
+    return () => ac.abort()
+  }, [resultType, apiUrl, performSearch])
 
-  return { data, search: performSearch, lastURL }
+  return { data }
 }
