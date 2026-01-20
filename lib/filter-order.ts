@@ -42,6 +42,5 @@ export const FILTER_ORDER_MAP: Record<string, string[]> = {
     'components',
     'component_features',
     'positions',
-    'allograph'
   ],
 }

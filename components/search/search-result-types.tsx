@@ -2,33 +2,40 @@
 
 import * as React from 'react'
 import { Button } from '@/components/ui/button'
+import { resultTypeItems, type ResultType } from '@/lib/search-types'
 
-export const resultTypeItems = [
-  { label: 'Manuscripts', value: 'manuscripts' },
-  { label: 'Images',      value: 'images' },
-  { label: 'Scribes',     value: 'scribes' },
-  { label: 'Hands',       value: 'hands' },
-  { label: 'Graphs',      value: 'graphs' },
-] as const
-
-export type ResultType = typeof resultTypeItems[number]['value']
+export type { ResultType }
+export { resultTypeItems }
 
 export function ResultTypeToggle({
   selectedType,
   onChange,
+  compact,
 }: {
   selectedType: ResultType
   onChange: (next: ResultType) => void
+  compact?: boolean
 }) {
   return (
-    <div className="flex flex-wrap gap-2 my-3">
+    <div
+      className={
+        compact
+          ? 'flex w-full gap-1.5 my-0'
+          : 'flex flex-wrap gap-2 my-3'
+      }
+      role="tablist"
+      aria-label="Search result type"
+    >
       {resultTypeItems.map((item) => (
         <Button
           key={item.value}
-          className="flex-1 min-w-[180px]"
+          type="button"
+          className={compact ? 'flex-1 min-w-0' : 'flex-1 min-w-[180px]'}
           variant={selectedType === item.value ? 'toggle' : 'outline'}
           size="sm"
           onClick={() => onChange(item.value)}
+          role="tab"
+          aria-selected={selectedType === item.value}
         >
           {item.label}
         </Button>
