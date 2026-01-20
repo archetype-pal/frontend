@@ -2,11 +2,11 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import type { ManuscriptImage } from '@/types/manuscript'
+import type { ImageListItem } from '@/types/image'
 import { Highlight } from './Highlight'
 
 export interface SearchGridProps {
-  results?: ManuscriptImage[]
+  results?: ImageListItem[]
   resultType: string
   highlightKeyword?: string
 }
@@ -29,7 +29,7 @@ export function SearchGrid({
       {results.map((item) => {
         const imageUrl =
           item?.thumbnail ||
-          item?.iiif_image?.replace('/info.json', '/full/300,/0/default.jpg') ||
+          item?.image?.replace('/info.json', '/full/300,/0/default.jpg') ||
           null
 
         return (
@@ -42,7 +42,7 @@ export function SearchGrid({
                 <Link href={`/${resultType}/${item.id}`}>
                   <Image
                     src={imageUrl}
-                    alt={item.text || item.locus || 'Item image'}
+                    alt={item.shelfmark || item.locus || 'Item image'}
                     fill
                     className="object-contain rounded"
                   />
@@ -57,7 +57,7 @@ export function SearchGrid({
             <div className="text-center space-y-1">
               <div className="font-medium text-gray-800 truncate">
                 <Highlight
-                  text={item.text || item.locus || 'Untitled'}
+                  text={item.locus || 'Untitled'}
                   keyword={highlightKeyword}
                 />
               </div>

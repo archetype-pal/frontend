@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import ManuscriptViewer from '@/components/manuscript-viewer'
+import ManuscriptViewer from '@/components/ManuscriptViewer'
 interface PageProps {
   params: {
     id: string

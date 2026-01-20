@@ -90,3 +90,21 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* --- Viewer Interaction Cursors --- */
+
+.osd-mode-pan {
+  cursor: grab !important;
+}
+
+.osd-mode-pan:active {
+  cursor: grabbing !important;
+}
+
+.osd-mode-draw {
+  cursor: crosshair !important;
+}
+
+.osd-mode-delete {
+  cursor: not-allowed !important;
+}
