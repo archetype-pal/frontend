@@ -4,6 +4,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Image from 'next/image'
 import type { Manuscript, ManuscriptImage } from '@/types/manuscript'
 import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+
+const TAB_VALUES = ['information', 'descriptions', 'manuscript', 'texts'] as const
+const DEFAULT_TAB = 'information'
 
 interface ManuscriptViewerProps {
   manuscript: Manuscript
@@ -14,13 +18,34 @@ export function ManuscriptViewer({
   manuscript,
   images,
 }: ManuscriptViewerProps) {
+  const pathname = usePathname()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const tabFromUrl = searchParams.get('tab')
+  const activeTab =
+    tabFromUrl && TAB_VALUES.includes(tabFromUrl as (typeof TAB_VALUES)[number])
+      ? tabFromUrl
+      : DEFAULT_TAB
+
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (value === DEFAULT_TAB) {
+      params.delete('tab')
+    } else {
+      params.set('tab', value)
+    }
+    const query = params.toString()
+    router.push(query ? `${pathname}?${query}` : pathname)
+  }
+
   return (
     <main className='container mx-auto p-4 max-w-6xl'>
       <h1 className='text-3xl font-medium text-gray-800 mb-6'>
         {manuscript.display_label}
       </h1>
 
-      <Tabs defaultValue='information' className='space-y-6'>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className='space-y-6'>
         <TabsList className='bg-gray-100 p-1'>
           <TabsTrigger value='information'>Information</TabsTrigger>
           <TabsTrigger value='descriptions'>
@@ -139,6 +164,7 @@ export function ManuscriptViewer({
                       alt={'Manuscript image'}
                       fill
                       className='object-contain'
+                      unoptimized
                     />
                   </Link>
                 </div>
