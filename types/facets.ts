@@ -16,3 +16,10 @@ export type FacetItem = {
 }
 
 export type FacetData = Record<string, FacetItem[] | FacetItem>
+
+export type FacetClickOpts = {
+  merge?: boolean
+  facetKey?: string
+  value?: string
+  isDeselect?: boolean
+}

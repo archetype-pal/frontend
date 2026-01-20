@@ -5,13 +5,15 @@ import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { FACET_COMPONENT_MAP } from '@/lib/facet-component-map'
 import { FILTER_ORDER_MAP } from '@/lib/filter-order'
-import type { FacetData, FacetItem } from '@/types/facets'
+import { getSelectedForFacet, formatFacetTitle } from '@/lib/search-query'
+import type { FacetData, FacetItem, FacetClickOpts } from '@/types/facets'
 
 type DynamicFacetsProps = {
   facets: FacetData
   renderConfig: Record<string, string>
   suggestionsPool?: string[]
-  onFacetClick?: (arg: string) => void
+  selectedFacets?: string[]
+  onFacetClick?: (arg: string, opts?: FacetClickOpts) => void
   baseFacetURL: string
 }
 
@@ -19,10 +21,10 @@ export function DynamicFacets({
   facets,
   renderConfig,
   suggestionsPool = [],
+  selectedFacets = [],
   onFacetClick,
   baseFacetURL,
 }: DynamicFacetsProps) {
-  const [activeFacet, setActiveFacet] = React.useState<{ key: string; value: string } | null>(null)
   const [keyword, setKeyword] = React.useState('')
   const [selectedIndex, setSelectedIndex] = React.useState(-1)
 
@@ -50,8 +52,8 @@ export function DynamicFacets({
   }
 
   return (
-    <div>
-      <div className="p-4">
+    <div className="space-y-4">
+      <div className="px-4 pt-0 pb-0">
         <h3 className="font-medium text-sm mb-1">Keyword</h3>
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
@@ -123,11 +125,8 @@ export function DynamicFacets({
             FACET_COMPONENT_MAP[type as keyof typeof FACET_COMPONENT_MAP]
           if (!Component) return null
 
-          const title = facetKey
-            .replace(/_/g, ' ')
-            .replace(/\b\w/g, (c) => c.toUpperCase())
+          const title = formatFacetTitle(facetKey)
 
-          // range facet
           if (type.startsWith('range')) {
             const cfg = Array.isArray(facetItems)
               ? (facetItems[0] as FacetItem)
@@ -147,7 +146,7 @@ export function DynamicFacets({
                       precision
                     )}&date_diff=${diff}`
                   }
-                  onFacetClick?.(url)
+                  onFacetClick?.(url, { merge: true })
                 }}
                 items={[]}
               />
@@ -172,16 +171,13 @@ export function DynamicFacets({
               total={items.length}
               items={items}
               baseFacetURL={baseFacetURL}
-              selectedValue={
-                activeFacet?.key === facetKey ? activeFacet.value : null
-              }
-              onSelect={(url, val) => {
-                setActiveFacet((curr) =>
-                  curr?.key === facetKey && curr.value === val
-                    ? null
-                    : { key: facetKey, value: val }
-                )
-                onFacetClick?.(url)
+              selectedValue={getSelectedForFacet(selectedFacets, facetKey)}
+              onSelect={(url, val, isDeselect) => {
+                onFacetClick?.(url, {
+                  facetKey,
+                  value: val,
+                  isDeselect: isDeselect ?? false,
+                })
               }}
             />
           )
