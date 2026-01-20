@@ -33,11 +33,12 @@ async function getManuscriptImages(id: string): Promise<ManuscriptImage[]> {
 export default async function ManuscriptPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
   const [manuscript, images] = await Promise.all([
-    getManuscript(params.id),
-    getManuscriptImages(params.id),
+    getManuscript(id),
+    getManuscriptImages(id),
   ])
   return <ManuscriptViewer manuscript={manuscript} images={images} />
 }

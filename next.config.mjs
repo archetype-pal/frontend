@@ -1,6 +1,7 @@
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 
 const nextConfig = {
+  turbopack: {},
   images: {
     remotePatterns: [
       // Sipi – IIIF server

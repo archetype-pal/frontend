@@ -13,8 +13,13 @@ function SearchFallback() {
   )
 }
 
-export default function SearchTypePage({ params }: { params: { type: string } }) {
-  const type = VALID.has(params.type) ? (params.type as ResultType) : null
+export default async function SearchTypePage({
+  params,
+}: {
+  params: Promise<{ type: string }>
+}) {
+  const { type: typeParam } = await params
+  const type = VALID.has(typeParam) ? (typeParam as ResultType) : null
   if (!type) {
     redirect('/search/manuscripts')
   }

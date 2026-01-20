@@ -28,8 +28,13 @@ async function getNewsItem(slug: string): Promise<Publication> {
   }
 }
 
-export default async function NewsList({ params }: { params: { slug: string } }) {
-  const newsItem = await getNewsItem(params.slug)
+export default async function NewsList({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const newsItem = await getNewsItem(slug)
 
   return (
     <div className='container mx-auto px-4 py-8'>

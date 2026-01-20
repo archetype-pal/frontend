@@ -1,12 +1,10 @@
-'use client'
+import ManuscriptViewer from '@/components/manuscript-viewer'
 
-import React from 'react'
-import ManuscriptViewer from '@/components/ManuscriptViewer'
-interface PageProps {
-  params: {
-    id: string
-  }
-}
-export default function Page({ params }: PageProps) {
-  return <ManuscriptViewer imageId={params.id} />
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  return <ManuscriptViewer imageId={id} />
 }
