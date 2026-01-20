@@ -40,9 +40,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <Header></Header>
-            {children}
-            <Footer></Footer>
+            <div className='flex flex-col min-h-screen'>
+              <Header />
+              <div className='flex-1'>{children}</div>
+              <Footer />
+            </div>
           </AuthProvider>
         </ThemeProvider>
       </body>
