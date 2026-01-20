@@ -17,8 +17,7 @@ type FacetRadioPanelProps = {
   total?: number
   items?: RadioFacetItem[]
   expanded?: boolean
-  onToggle?: (id: string) => void
-  onSelect?: (url: string, value: string) => void
+  onSelect?: (url: string, value: string, isDeselect?: boolean) => void
   baseFacetURL: string
   selectedValue?: string | null
 }
@@ -29,29 +28,22 @@ export function FacetRadioPanel({
   total,
   items = [],
   expanded: defaultExpanded = true,
-  onToggle,
   onSelect,
   baseFacetURL,
   selectedValue,
 }: FacetRadioPanelProps) {
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded)
 
-  const [allItems] = React.useState<RadioFacetItem[]>(() => items)
-
-  const toggle = () => {
-    setIsExpanded((prev) => !prev)
-    onToggle?.(id)
-  }
-
+  const toggle = () => setIsExpanded((prev) => !prev)
 
   const handleSelect = (item: RadioFacetItem) => {
     const nextValue = selectedValue === item.value ? null : item.value
     const nextUrl = nextValue ? item.href || baseFacetURL : baseFacetURL
 
-    onSelect?.(nextUrl, item.value)
+    onSelect?.(nextUrl, item.value, nextValue === null)
   }
 
-  const visibleItems = allItems
+  const visibleItems = items
 
   return (
     <div className="border bg-white rounded shadow-sm" id={`panel-${id}`}>

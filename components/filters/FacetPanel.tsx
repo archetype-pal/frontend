@@ -9,7 +9,6 @@ type FacetItem = {
   count: number
   value: string
   href: string
-  active?: boolean
 }
 
 type FacetPanelProps = {
@@ -18,8 +17,7 @@ type FacetPanelProps = {
   total?: number
   items: FacetItem[]
   expanded?: boolean
-  onToggle?: (id: string) => void
-  onSelect?: (url: string, value: string) => void
+  onSelect?: (url: string, value: string, isDeselect?: boolean) => void
   baseFacetURL: string
   selectedValue?: string | null
 }
@@ -30,7 +28,6 @@ export function FacetPanel({
   total,
   items,
   expanded: defaultExpanded = true,
-  onToggle,
   onSelect,
   baseFacetURL,
   selectedValue,
@@ -38,16 +35,10 @@ export function FacetPanel({
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded)
   const [sortBy, setSortBy] = React.useState<'name-asc' | 'name-desc' | 'count-desc' | 'count-asc'>('name-asc')
 
-  const [allItems] = React.useState<FacetItem[]>(() => items)
+  const toggle = () => setIsExpanded((prev) => !prev)
 
-  const toggle = () => {
-    setIsExpanded((prev) => !prev)
-    onToggle?.(id)
-  }
-
-  const sortedItems = React.useMemo(() => {
-    const itemsCopy = [...allItems]
-
+  const visibleItems = React.useMemo(() => {
+    const itemsCopy = [...items]
     switch (sortBy) {
       case 'name-asc':
         return itemsCopy.sort((a, b) => a.label.localeCompare(b.label))
@@ -59,16 +50,13 @@ export function FacetPanel({
       default:
         return itemsCopy.sort((a, b) => b.count - a.count)
     }
-  }, [allItems, sortBy])
-
-  // const visibleItems = allItems
-  const visibleItems = sortedItems
+  }, [items, sortBy])
   
   const handleSelect = (item: FacetItem) => {
     const nextValue = selectedValue === item.value ? null : item.value
     const nextUrl = nextValue ? item.href || baseFacetURL : baseFacetURL
 
-    onSelect?.(nextUrl, item.value)
+    onSelect?.(nextUrl, item.value, nextValue === null)
   }
 
   return (
