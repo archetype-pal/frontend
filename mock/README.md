@@ -15,7 +15,31 @@ pnpm install
 pnpm dev
 ```
 
-The server will run on `http://localhost:8000` by default (or the port specified in `MOCK_PORT` environment variable).
+The server will run on `http://localhost:8000` by default.
+
+### Running on a Different Port
+
+To run the mock server on a different port, set the `MOCK_PORT` environment variable:
+
+```bash
+MOCK_PORT=9000 pnpm dev
+```
+
+Or on Windows (PowerShell):
+```powershell
+$env:MOCK_PORT=9000; pnpm dev
+```
+
+**Important:** If you change the mock server port, you'll also need to update the frontend's API URL:
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:9000 pnpm dev
+```
+
+Or update your `.env.local` file:
+```
+NEXT_PUBLIC_API_URL=http://localhost:9000
+```
 
 ## Usage
 

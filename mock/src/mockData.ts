@@ -94,9 +94,16 @@ export function generateManuscripts(count: number = 20): Manuscript[] {
   })
 }
 
-// Mock image URLs pointing to the mock server (localhost:8000)
-// These will be served by the mock server's IIIF endpoints
-const MOCK_IMAGE_BASE = 'http://localhost:8000/scans'
+// Base URL for the mock server (will be set by initializeMockBaseUrl)
+let MOCK_SERVER_BASE = 'http://localhost:8000'
+let MOCK_IMAGE_BASE = 'http://localhost:8000/scans'
+
+// Initialize base URLs with the server port
+export function initializeMockBaseUrl(port: number = 8000): void {
+  MOCK_SERVER_BASE = `http://localhost:${port}`
+  MOCK_IMAGE_BASE = `http://localhost:${port}/scans`
+}
+
 const REAL_IMAGE_PATHS = [
   'S-ABD-003_Formaston_WB_DSC0028.jpg',
   'S-ABD-003_Formaston_WB_DSC0030.jpg',
@@ -187,34 +194,35 @@ export function generateImageSearchResults(count: number = 50): any[] {
 
 // Mock facets data - matches real API structure
 export function generateFacets(): FacetData {
+  const baseUrl = `${MOCK_SERVER_BASE}/api/v1/search/item-parts/facets`
   return {
     date_min: [
-      { text: '1242', count: 63, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=date_min_exact%3A1242' },
-      { text: '1200', count: 22, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=date_min_exact%3A1200' },
-      { text: '1204', count: 21, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=date_min_exact%3A1204' },
-      { text: '1214', count: 21, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=date_min_exact%3A1214' },
-      { text: '1165', count: 20, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=date_min_exact%3A1165' },
+      { text: '1242', count: 63, narrow_url: `${baseUrl}?limit=20&selected_facets=date_min_exact%3A1242` },
+      { text: '1200', count: 22, narrow_url: `${baseUrl}?limit=20&selected_facets=date_min_exact%3A1200` },
+      { text: '1204', count: 21, narrow_url: `${baseUrl}?limit=20&selected_facets=date_min_exact%3A1204` },
+      { text: '1214', count: 21, narrow_url: `${baseUrl}?limit=20&selected_facets=date_min_exact%3A1214` },
+      { text: '1165', count: 20, narrow_url: `${baseUrl}?limit=20&selected_facets=date_min_exact%3A1165` },
     ],
     date_max: [
-      { text: '1242', count: 61, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=date_max_exact%3A1242' },
-      { text: '1200', count: 17, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=date_max_exact%3A1200' },
-      { text: '1232', count: 16, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=date_max_exact%3A1232' },
-      { text: '1214', count: 15, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=date_max_exact%3A1214' },
-      { text: '1250', count: 14, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=date_max_exact%3A1250' },
+      { text: '1242', count: 61, narrow_url: `${baseUrl}?limit=20&selected_facets=date_max_exact%3A1242` },
+      { text: '1200', count: 17, narrow_url: `${baseUrl}?limit=20&selected_facets=date_max_exact%3A1200` },
+      { text: '1232', count: 16, narrow_url: `${baseUrl}?limit=20&selected_facets=date_max_exact%3A1232` },
+      { text: '1214', count: 15, narrow_url: `${baseUrl}?limit=20&selected_facets=date_max_exact%3A1214` },
+      { text: '1250', count: 14, narrow_url: `${baseUrl}?limit=20&selected_facets=date_max_exact%3A1250` },
     ],
     repository_city: [
-      { text: 'Durham', count: 341, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=repository_city_exact%3ADurham' },
-      { text: 'Edinburgh', count: 295, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=repository_city_exact%3AEdinburgh' },
-      { text: 'London', count: 77, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=repository_city_exact%3ALondon' },
+      { text: 'Durham', count: 341, narrow_url: `${baseUrl}?limit=20&selected_facets=repository_city_exact%3ADurham` },
+      { text: 'Edinburgh', count: 295, narrow_url: `${baseUrl}?limit=20&selected_facets=repository_city_exact%3AEdinburgh` },
+      { text: 'London', count: 77, narrow_url: `${baseUrl}?limit=20&selected_facets=repository_city_exact%3ALondon` },
     ],
     type: [
-      { text: 'Charter', count: 588, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=type_exact%3ACharter' },
-      { text: 'Agreement', count: 29, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=type_exact%3AAgreement' },
-      { text: 'Brieve', count: 15, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=type_exact%3ABrieve' },
+      { text: 'Charter', count: 588, narrow_url: `${baseUrl}?limit=20&selected_facets=type_exact%3ACharter` },
+      { text: 'Agreement', count: 29, narrow_url: `${baseUrl}?limit=20&selected_facets=type_exact%3AAgreement` },
+      { text: 'Brieve', count: 15, narrow_url: `${baseUrl}?limit=20&selected_facets=type_exact%3ABrieve` },
     ],
     image_availability: [
-      { text: 'With images', count: 710, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=image_availability_exact%3AWith+images' },
-      { text: 'Without images', count: 3, narrow_url: 'http://localhost:8000/api/v1/search/item-parts/facets?limit=20&selected_facets=image_availability_exact%3AWithout+images' },
+      { text: 'With images', count: 710, narrow_url: `${baseUrl}?limit=20&selected_facets=image_availability_exact%3AWith+images` },
+      { text: 'Without images', count: 3, narrow_url: `${baseUrl}?limit=20&selected_facets=image_availability_exact%3AWithout+images` },
     ],
   }
 }
@@ -351,7 +359,7 @@ export function generateSearchResponse(
   facets: FacetData,
   limit: number = 20,
   offset: number = 0,
-  baseUrl: string = 'http://localhost:8000/api/v1/search/item-parts/facets'
+  baseUrl: string = `${MOCK_SERVER_BASE}/api/v1/search/item-parts/facets`
 ) {
   const count = results.length
   const hasNext = offset + limit < count

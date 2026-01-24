@@ -162,7 +162,7 @@ export default function Component() {
             </div>
           </CardContent>
 
-          {carouselItems[currentImage] && (
+          {carouselItems[currentImage] && carouselItems[currentImage].url && (
             <Link
               href={carouselItems[currentImage].url}
               className='absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-2 text-center'

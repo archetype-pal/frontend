@@ -16,10 +16,14 @@ import {
   generateCarouselItems,
   generatePublications,
   resetIdCounter,
+  initializeMockBaseUrl,
 } from './mockData'
 
 const app = express()
 const PORT = process.env.MOCK_PORT ? parseInt(process.env.MOCK_PORT) : 8000
+
+// Initialize base URLs with the server port
+initializeMockBaseUrl(PORT)
 
 app.use(cors())
 app.use(express.json())
