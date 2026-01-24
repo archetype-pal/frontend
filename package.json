@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:mock": "NEXT_PUBLIC_API_URL=http://localhost:8000 next dev",
+    "mock": "cd mock && pnpm dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

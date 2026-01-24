@@ -7,13 +7,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
 import type { ManuscriptListItem } from '@/types/manuscript'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 import { useEffect, useState } from 'react'
 
 export function ManuscriptsTable() {
+  const router = useRouter()
   const [, setError] = useState('')
   const [, setIsLoading] = useState(false)
   const [manuscriptItems, setManuscriptsItems] = useState<ManuscriptListItem[]>(
@@ -67,12 +67,15 @@ export function ManuscriptsTable() {
             </TableHead>
             <TableHead>Issuer</TableHead>
             <TableHead>Named Beneficiary</TableHead>
-            <TableHead className='w-[80px]'>View</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {manuscriptItems.map((manuscript, i) => (
-            <TableRow key={i}>
+            <TableRow 
+              key={i}
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => router.push(`/manuscripts/${manuscript.id}`)}
+            >
               <TableCell>{manuscript.repository_city}</TableCell>
               <TableCell>{manuscript.repository_name}</TableCell>
               <TableCell>{manuscript.shelfmark}</TableCell>
@@ -84,13 +87,6 @@ export function ManuscriptsTable() {
               </TableCell>
               <TableCell>{manuscript.issuer_name}</TableCell>
               <TableCell>{manuscript.named_beneficiary}</TableCell>
-              <TableCell>
-                <Link href={`/manuscripts/${manuscript.id}`}>
-                  <Button variant='outline' size='sm'>
-                    View
-                  </Button>
-                </Link>
-              </TableCell>
             </TableRow>
           ))}
         </TableBody>

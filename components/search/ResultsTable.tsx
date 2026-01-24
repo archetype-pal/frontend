@@ -4,9 +4,8 @@ import * as React from 'react'
 import {
   Table, TableHeader, TableBody, TableRow, TableCell, TableHead,
 } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { ArrowUp, ArrowDown } from 'lucide-react'
 import type { ResultType } from './search-result-types'
 import type { ManuscriptListItem } from '@/types/manuscript'
@@ -48,15 +47,6 @@ export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
           : '—',
       className: 'text-center',
       sortKey: 'number_of_images_exact',
-    },
-    {
-      header: 'View',
-      accessor: (m) => (
-        <Link href={`/manuscripts/${m.id}`}>
-          <Button variant="outline" size="sm">View</Button>
-        </Link>
-      ),
-      className: 'w-[80px]',
     },
   ],
 
@@ -120,10 +110,33 @@ export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
     { header: 'Allograph', accessor: (g) => (g.is_annotated ? 'Yes' : 'No') },
     {
       header: 'Thumbnail',
-      accessor: () => <span className="text-xs text-muted-foreground">N/A</span>,
+      accessor: (g) => g.image_url ? (
+        <img 
+          src={g.image_url} 
+          alt={`Thumbnail for ${g.shelfmark}`}
+          className="w-16 h-16 object-contain rounded border"
+        />
+      ) : (
+        <span className="text-xs text-muted-foreground">N/A</span>
+      ),
       className: 'text-center',
     },
   ],
+}
+
+function getDetailUrl<K extends ResultType>(resultType: K, item: ResultMap[K]): string {
+  switch (resultType) {
+    case 'manuscripts':
+      return `/manuscripts/${(item as ManuscriptListItem).id}`
+    case 'images':
+      return `/digipal/${(item as ImageListItem).id}`
+    case 'scribes':
+    case 'hands':
+    case 'graphs':
+      return `/${resultType}/${(item as ScribeListItem | HandListItem | GraphListItem).id}`
+    default:
+      return '#'
+  }
 }
 
 export function ResultsTable<K extends ResultType>({
@@ -142,6 +155,7 @@ export function ResultsTable<K extends ResultType>({
   onSort?: (opts: { sortKey?: string; sortUrl?: string }) => void
   highlightKeyword?: string
 }) {
+  const router = useRouter()
   const baseCols = COLUMNS[resultType]
   const cols = ordering?.options
     ? baseCols.map((col) => {
@@ -153,8 +167,18 @@ export function ResultsTable<K extends ResultType>({
     })
     : baseCols
 
-  const currKey = ordering?.current.replace(/^-/, '')
-  const isDesc = ordering?.current.startsWith('-')
+  const currKey = ordering?.current?.replace(/^-/, '')
+  const isDesc = ordering?.current?.startsWith('-') ?? false
+
+  const handleRowClick = (item: ResultMap[K], e: React.MouseEvent<HTMLTableRowElement>) => {
+    // Don't navigate if clicking on a link or button
+    const target = e.target as HTMLElement
+    if (target.closest('a, button')) {
+      return
+    }
+    const url = getDetailUrl(resultType, item)
+    router.push(url)
+  }
 
   return (
     <div className="bg-white border rounded-lg overflow-auto">
@@ -181,7 +205,11 @@ export function ResultsTable<K extends ResultType>({
         </TableHeader>
         <TableBody>
           {results.map((row, ri) => (
-            <TableRow key={ri}>
+            <TableRow 
+              key={ri}
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={(e) => handleRowClick(row, e)}
+            >
               {cols.map((col, ci) => {
                 const cell = col.accessor(row)
                 if (

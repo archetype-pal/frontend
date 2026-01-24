@@ -32,6 +32,10 @@ export function SearchGrid({
           item?.image?.replace('/info.json', '/full/300,/0/default.jpg') ||
           null
 
+        const detailUrl = resultType === 'images' 
+          ? `/digipal/${item.id}` 
+          : `/${resultType}/${item.id}`
+
         return (
           <div
             key={item.id}
@@ -39,7 +43,7 @@ export function SearchGrid({
           >
             <div className="relative aspect-[4/3] mb-2">
               {imageUrl ? (
-                <Link href={`/${resultType}/${item.id}`}>
+                <Link href={detailUrl}>
                   <Image
                     src={imageUrl}
                     alt={item.shelfmark || item.locus || 'Item image'}

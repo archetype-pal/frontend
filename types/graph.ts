@@ -7,4 +7,5 @@ export interface GraphListItem {
   item_image: number
   coordinates: string   // GeoJSON as string
   is_annotated: boolean
+  image_url?: string    // Thumbnail image URL
 }

@@ -69,7 +69,7 @@ export default function ManuscriptViewer({
   const [selectedHand, setSelectedHand] = React.useState<HandType | undefined>(
     undefined
   )
-  const [, setAllographs] = React.useState<Allograph[]>([])
+  const [allographs, setAllographs] = React.useState<Allograph[]>([])
 
   React.useEffect(() => {
     const loadData = async (): Promise<void> => {
@@ -267,6 +267,7 @@ export default function ManuscriptViewer({
         imageId={imageId}
         onAllographSelect={setSelectedAllograph}
         onHandSelect={(hand) => setSelectedHand(hand)}
+        allographs={allographs}
       />
 
       <div className='relative flex flex-1'>
