@@ -27,7 +27,7 @@ export function SearchGrid({
   }
 
   return (
-    <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+    <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
       {results.map((item) => {
         // Handle both ImageListItem and GraphListItem
         const imageUrl =
@@ -45,9 +45,9 @@ export function SearchGrid({
         return (
           <div
             key={item.id}
-            className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group"
+            className="relative overflow-hidden group"
           >
-            <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+            <div className="relative aspect-[4/3] bg-white overflow-hidden">
               {imageUrl ? (
                 <>
                   <Link href={detailUrl} className="block w-full h-full relative z-0 pointer-events-auto">
@@ -56,10 +56,28 @@ export function SearchGrid({
                       alt={displayText}
                       fill
                       className="object-contain transition-transform duration-300 group-hover:scale-105"
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
                     />
                   </Link>
                   {/* Hover overlay */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
+                  {/* Title overlay - shown on hover */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
+                    <div className="font-medium truncate text-xs">
+                      <Highlight
+                        text={displayText}
+                        keyword={highlightKeyword}
+                      />
+                    </div>
+                    {(item as ImageListItem).number_of_annotations != null && (
+                      <div className="text-xs text-white/80 mt-0.5">
+                        <Highlight
+                          text={`${(item as ImageListItem).number_of_annotations} Annotations`}
+                          keyword={highlightKeyword}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <div className="bg-gray-100 w-full h-full flex items-center justify-center text-sm text-gray-400">
@@ -82,22 +100,6 @@ export function SearchGrid({
                   item={item}
                   className="z-30"
                 />
-              )}
-            </div>
-            <div className="p-3 text-center space-y-1">
-              <div className="font-medium text-gray-800 truncate text-sm">
-                <Highlight
-                  text={displayText}
-                  keyword={highlightKeyword}
-                />
-              </div>
-              {(item as ImageListItem).number_of_annotations != null && (
-                <div className="text-xs text-gray-500">
-                  <Highlight
-                    text={`${(item as ImageListItem).number_of_annotations} Annotations`}
-                    keyword={highlightKeyword}
-                  />
-                </div>
               )}
             </div>
           </div>
