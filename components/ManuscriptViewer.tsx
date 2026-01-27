@@ -31,7 +31,7 @@ const metaKeyFor = (iiif: string) => `annotations:meta:${iiif}`
 const cacheKeyFor = (iiif: string) => `annotations:${iiif}`
 const isDbId = (id?: string) => typeof id === 'string' && id.startsWith('db:')
 
-export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): JSX.Element {
+export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): React.JSX.Element {
     const [annotationsEnabled, setAnnotationsEnabled] = React.useState<boolean>(() => {
         if (typeof window === 'undefined') return true
         const saved = localStorage.getItem(`annotationsVisible:${imageId}`)

@@ -14,6 +14,7 @@ import type { ScribeListItem } from '@/types/scribe'
 import type { HandListItem } from '@/types/hand'
 import type { GraphListItem } from '@/types/graph'
 import { Highlight } from './Highlight'
+import { CollectionStar } from '@/components/collection-star'
 
 export type Column<T> = {
   header: string
@@ -66,14 +67,23 @@ export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
         }
 
         return (
-          <Image
-            src={src}
-            alt={i.shelfmark || 'Image thumbnail'}
-            width={48}
-            height={48}
-            className="mx-auto h-12 w-auto"
-            unoptimized
-          />
+          <div className="relative inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
+            <Image
+              src={src}
+              alt={i.shelfmark || 'Image thumbnail'}
+              width={64}
+              height={64}
+              className="h-full w-auto object-contain"
+              unoptimized
+            />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
+            <CollectionStar
+              itemId={i.id}
+              itemType="image"
+              item={i}
+              size={16}
+            />
+          </div>
         )
       },
       className: 'text-center',
@@ -111,11 +121,20 @@ export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
     {
       header: 'Thumbnail',
       accessor: (g) => g.image_url ? (
-        <img 
-          src={g.image_url} 
-          alt={`Thumbnail for ${g.shelfmark}`}
-          className="w-16 h-16 object-contain rounded border"
-        />
+        <div className="relative inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
+          <img 
+            src={g.image_url} 
+            alt={`Thumbnail for ${g.shelfmark}`}
+            className="w-full h-full object-contain"
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
+          <CollectionStar
+            itemId={g.id}
+            itemType="graph"
+            item={g}
+            size={16}
+          />
+        </div>
       ) : (
         <span className="text-xs text-muted-foreground">N/A</span>
       ),

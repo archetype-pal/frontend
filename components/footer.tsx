@@ -46,7 +46,7 @@ export default function Footer() {
           ))}
         </div>
         <div className='text-center mb-4'>
-          <Link href='/accessibility' className='text-blue-600 hover:underline'>
+          <Link href='/accessibility' className='text-primary hover:underline font-medium'>
             Accessibility Statement
           </Link>
         </div>
@@ -118,7 +118,7 @@ export default function Footer() {
         </div>
         <div className='text-center mt-4'>
           <Link href='/login'>
-            <Button variant='link' className='text-blue-600'>
+            <Button variant='link' className='text-primary'>
               Log in.
             </Button>
           </Link>

@@ -10,11 +10,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useCollection } from '@/contexts/collection-context'
 
-import { Search, Home, Settings, Menu, X, ChevronDown } from 'lucide-react'
+import { Search, Home, Menu, X, ChevronDown } from 'lucide-react'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { items } = useCollection()
 
   return (
     <header className='bg-gray-100 border-b border-gray-200'>
@@ -44,7 +46,7 @@ export default function Header() {
         </div>
       </div>
       <nav
-        className={`bg-primary text-white p-2 ${
+        className={`bg-primary text-primary-foreground p-2 ${
           isMenuOpen ? 'block' : 'hidden md:block'
         }`}
       >
@@ -56,7 +58,7 @@ export default function Header() {
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='text-white hover:text-primary w-full md:w-auto justify-start'
+                    className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
                   >
                     <Home className='h-4 w-4 mr-1' />
                     Home
@@ -68,20 +70,22 @@ export default function Header() {
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='text-white hover:text-primary w-full md:w-auto justify-start'
+                    className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
                   >
                     Search
                   </Button>
                 </Link>
               </li>
               <li>
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  className='text-white hover:text-primary w-full md:w-auto justify-start'
-                >
-                  My Collection (0)
-                </Button>
+                <Link href='/collection'>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
+                  >
+                    My Collection ({items.length})
+                  </Button>
+                </Link>
               </li>
               <li>
                 <Button
@@ -97,7 +101,7 @@ export default function Header() {
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='text-white hover:text-primary w-full md:w-auto justify-start'
+                    className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
                   >
                     News
                   </Button>
@@ -108,7 +112,7 @@ export default function Header() {
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='text-white hover:text-primary w-full md:w-auto justify-start'
+                    className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
                   >
                     Blogs
                   </Button>
@@ -119,7 +123,7 @@ export default function Header() {
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='text-white hover:text-primary w-full md:w-auto justify-start'
+                    className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
                   >
                     Feature Articles
                   </Button>
@@ -131,7 +135,7 @@ export default function Header() {
                     <Button
                       variant='ghost'
                       size='sm'
-                      className='text-white hover:text-primary w-full md:w-auto justify-start'
+                      className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
                     >
                       Past Events
                       <ChevronDown className='ml-1 h-4 w-4' />
@@ -161,7 +165,7 @@ export default function Header() {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant='ghost'
-                      className='text-white  hover:text-primary'
+                      className='text-primary-foreground hover:bg-primary/80'
                     >
                       About <ChevronDown className='ml-1 h-4 w-4' />
                     </Button>
@@ -208,33 +212,14 @@ export default function Header() {
               </li>
             </ul>
             <div className='flex flex-col md:flex-row items-center gap-3 w-full md:w-auto md:max-w-xl'>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant='secondary'
-                    size='sm'
-                    className='whitespace-nowrap w-full md:w-auto'
-                  >
-                    Database
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem>Option 1</DropdownMenuItem>
-                  <DropdownMenuItem>Option 2</DropdownMenuItem>
-                  <DropdownMenuItem>Option 3</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
               <div className='relative flex-1 w-full md:w-auto'>
                 <Input
                   type='search'
                   placeholder='Enter search terms'
-                  className='pl-8 bg-white text-primary w-full'
+                  className='pl-8 bg-background text-foreground w-full'
                 />
-                <Search className='absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-primary' />
+                <Search className='absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none' />
               </div>
-              <Button type='submit' size='icon' variant='secondary'>
-                <Settings className='h-4 w-4' />
-              </Button>
             </div>
           </div>
         </div>

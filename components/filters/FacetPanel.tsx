@@ -105,12 +105,12 @@ export function FacetPanel({
                 onClick={() => handleSelect(item)}
                 aria-label={`${item.label}, ${item.count}`}
                 className={cn(
-                  'w-full text-left flex justify-between items-center px-2 py-1 rounded hover:bg-muted transition-colors',
+                  'w-full text-left flex justify-between items-center px-2 py-1 rounded hover:bg-muted transition-colors gap-2',
                   selectedValue === item.value && 'bg-muted font-semibold'
                 )}
               >
-                <span>{item.label}</span>
-                <span className="text-muted-foreground">{item.count}</span>
+                <span className="truncate min-w-0 flex-1">{item.label}</span>
+                <span className="text-muted-foreground shrink-0">{item.count}</span>
               </button>
             </li>
           ))}

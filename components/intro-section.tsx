@@ -92,7 +92,7 @@ export default function Component() {
             </p>
             <div className='flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 '>
               <Button
-                className='w-full sm:w-auto hover:text-primary border p-4 hover:border-primary'
+                className='w-full sm:w-auto'
                 asChild
               >
                 <Link href='/about/about-models-of-authority'>
@@ -191,7 +191,7 @@ export default function Component() {
           </p>
           <div className='flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 '>
             <Button
-              className='w-full sm:w-auto hover:text-primary border p-4 hover:border-primary'
+              className='w-full sm:w-auto'
               asChild
             >
               <Link href='/about/about-models-of-authority/'>

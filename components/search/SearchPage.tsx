@@ -50,8 +50,15 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   }, [])
 
   const hasMap = Boolean(RESULT_TYPE_API_MAP[resultType])
-  const baseFacetURL = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/${RESULT_TYPE_API_MAP[resultType]}/facets`
-  const apiUrl = React.useMemo(() => buildApiUrl(baseFacetURL, queryState), [baseFacetURL, queryState])
+  const apiSegment = RESULT_TYPE_API_MAP[resultType]
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL
+  const baseFacetURL = apiSegment && apiBaseUrl
+    ? `${apiBaseUrl}/api/v1/search/${apiSegment}/facets`
+    : ''
+  const apiUrl = React.useMemo(() => {
+    if (!baseFacetURL) return ''
+    return buildApiUrl(baseFacetURL, queryState)
+  }, [baseFacetURL, queryState])
   const { data } = useSafeSearch(resultType, apiUrl)
 
   const filtered = React.useMemo(
@@ -193,7 +200,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   onSort={handleSort}
                   highlightKeyword={keyword}
                 />
-              ) : resultType === 'images' ? (
+              ) : resultType === 'images' || resultType === 'graphs' ? (
                 <SearchGrid results={filtered} resultType={resultType} highlightKeyword={keyword} />
               ) : (
                 <p className="text-center text-sm text-muted-foreground py-8">

@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import Header from '@/components/header'
 import Footer from '@/components/footer'
 import { AuthProvider } from '@/contexts/auth-context'
+import { CollectionProvider } from '@/contexts/collection-context'
 import '@recogito/annotorious/dist/annotorious.min.css'
 
 const geistSans = localFont({
@@ -40,11 +41,13 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <div className='flex flex-col min-h-screen'>
-              <Header />
-              <div className='flex-1'>{children}</div>
-              <Footer />
-            </div>
+            <CollectionProvider>
+              <div className='flex flex-col min-h-screen'>
+                <Header />
+                <div className='flex-1'>{children}</div>
+                <Footer />
+              </div>
+            </CollectionProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

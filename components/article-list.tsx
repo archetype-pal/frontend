@@ -41,7 +41,7 @@ export default function ArticleList({
             <li key={article.id}>
               <Link
                 href={`${moreLink}/${article.id}`}
-                className='text-blue-600 hover:underline'
+                className='text-primary hover:underline font-medium'
               >
                 {article.title}
               </Link>
@@ -54,7 +54,7 @@ export default function ArticleList({
       ) : (
         <p>No articles available.</p>
       )}
-      <Button asChild variant='outline' className='text-blue-600'>
+      <Button asChild variant='outline'>
         <Link href={moreLink}>
           More {typeof title === 'string' ? title.toLowerCase() : 'articles'} »
         </Link>
