@@ -1,4 +1,13 @@
+// Proxy IIIF (Sipi) so same-origin requests avoid CORS when frontend is on different port.
+// Set NEXT_PUBLIC_IIIF_UPSTREAM in Docker to e.g. http://image_server:1024 so the server can reach Sipi.
+const IIIF_UPSTREAM = (process.env.NEXT_PUBLIC_IIIF_UPSTREAM || 'http://localhost:1024').replace(/\/$/, '')
+
 const nextConfig = {
+  async rewrites() {
+    return [
+      { source: '/iiif-proxy/:path*', destination: `${IIIF_UPSTREAM}/:path*` },
+    ]
+  },
   images: {
     remotePatterns: [
       // Sipi – IIIF server

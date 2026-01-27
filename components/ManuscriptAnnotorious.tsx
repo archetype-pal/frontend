@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import OpenSeadragon from 'openseadragon'
 import Annotorious from '@recogito/annotorious-openseadragon'
 
@@ -39,6 +39,13 @@ interface Props {
     initialAnnotations?: Annotation[]
 }
 
+// ---- Component state ----
+interface ComponentState {
+    hasError: boolean
+    errorMessage: string | null
+    isLoading: boolean
+}
+
 // ---- Component ----
 export default function ManuscriptAnnotorious({
     iiifImageUrl,
@@ -54,11 +61,18 @@ export default function ManuscriptAnnotorious({
     const onCreateRef = useRef(onCreate)
     const onDeleteRef = useRef(onDelete)
     const onSelectRef = useRef(onSelect)
+    const exposeApiRef = useRef(exposeApi)
+    const [state, setState] = React.useState<ComponentState>({
+        hasError: false,
+        errorMessage: null,
+        isLoading: true,
+    })
 
     // keep refs up to date without re-running the heavy OSD effect
     useEffect(() => { onCreateRef.current = onCreate }, [onCreate])
     useEffect(() => { onDeleteRef.current = onDelete }, [onDelete])
     useEffect(() => { onSelectRef.current = onSelect }, [onSelect])
+    useEffect(() => { exposeApiRef.current = exposeApi }, [exposeApi])
 
     // also keep the latest initial annotations in a ref,
     // so the OSD 'open' handler doesn't capture an old (empty) array
@@ -72,12 +86,15 @@ export default function ManuscriptAnnotorious({
     useEffect(() => {
         if (!viewerRef.current) return
 
-        console.log('[Annotorious] OSD init for', iiifImageUrl)
+        let isMounted = true
+        let viewer: InstanceType<typeof OpenSeadragon.Viewer> | null = null
 
-        const viewer = OpenSeadragon({
+        const baseUrl = iiifImageUrl.replace(/\/info\.json$/, '')
+        const tileSourceUrl = `${baseUrl}/info.json`
+
+        const opts = {
             element: viewerRef.current,
             prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
-            tileSources: `${iiifImageUrl}/info.json`,
             showFullPageControl: false,
             showZoomControl: false,
             showHomeControl: false,
@@ -90,125 +107,94 @@ export default function ManuscriptAnnotorious({
                 dragToPan: true,
                 scrollToZoom: true,
             },
-        })
+        }
 
-        osdRef.current = viewer
+        void (async () => {
+            let tileSources: string | Record<string, unknown> = tileSourceUrl
+            if (baseUrl.includes('/iiif-proxy')) {
+                try {
+                    const res = await fetch(tileSourceUrl)
+                    if (!res.ok) throw new Error(`IIIF info: ${res.status}`)
+                    const obj = (await res.json()) as Record<string, unknown>
+                    // OpenSeadragon supports IIIF Image API 2.x; Sipi often returns 3.0. Rewrite id and, if needed, convert to 2-style.
+                    const id = baseUrl
+                    if (obj.type === 'ImageService3') {
+                        tileSources = {
+                            '@context': 'http://iiif.io/api/image/2/context.json',
+                            '@id': id,
+                            protocol: obj.protocol ?? 'http://iiif.io/api/image',
+                            width: obj.width,
+                            height: obj.height,
+                            profile: Array.isArray(obj.profile) ? obj.profile : [obj.profile],
+                            tiles: obj.tiles ?? [{ scaleFactors: [1, 2, 4, 8, 16], width: 256 }],
+                        }
+                    } else {
+                        tileSources = { ...obj, id: baseUrl, '@id': baseUrl }
+                    }
+                } catch (err) {
+                    if (isMounted) {
+                        setState({
+                            hasError: true,
+                            errorMessage: `Failed to load IIIF info: ${err instanceof Error ? err.message : String(err)}`,
+                            isLoading: false,
+                        })
+                    }
+                    return
+                }
+            }
+            if (!isMounted) return
 
-        viewer.addHandler('open', () => {
-            console.log('[Annotorious] OSD image opened')
+            viewer = OpenSeadragon({ ...opts, tileSources })
+            osdRef.current = viewer
+
+            viewer.addHandler('open-failed', (event: { message?: string }) => {
+                if (!isMounted) return
+                setState({
+                    hasError: true,
+                    errorMessage: `Failed to open image: ${event?.message ?? 'unknown'}. URL: ${tileSourceUrl}`,
+                    isLoading: false,
+                })
+            })
+
+            viewer.addHandler('tile-load-failed', () => {})
+
+            viewer.addHandler('open', () => {
+            if (!isMounted) return
+            setState(prev => ({ ...prev, isLoading: false, hasError: false }))
 
             if (!annoRef.current) {
-                console.log('[Annotorious] Annotorious initialized')
                 const anno = Annotorious(viewer, { widgets: [{ widget: 'COMMENT' }] })
                 annoRef.current = anno
 
-                //Use of the latest annotations (from ref) at the exact moment OSD opens
-                const toApplyNow = initialAnnotsRef.current || []
-                console.log(
-                    '[Annotorious] Applying initial annotations:',
-                    Array.isArray(toApplyNow) ? toApplyNow.length : 0,
-                )
+                const toApplyNow = initialAnnotsRef.current ?? []
                 if (Array.isArray(toApplyNow) && toApplyNow.length > 0) {
                     const existing = new Set(anno.getAnnotations().map((a: Annotation) => a.id))
-                    let added = 0
-                    toApplyNow.forEach(a => {
+                    for (const a of toApplyNow) {
                         if (!existing.has(a.id)) {
                             try {
                                 anno.addAnnotation(a)
-                                added++
-                            } catch (err) {
-                                console.warn(
-                                    '[Annotorious] Failed to add initial annotation',
-                                    a,
-                                    err,
-                                )
+                            } catch {
+                                // skip invalid annotation
                             }
                         }
-                    })
-                    if (added) {
-                        try {
-                            const all = anno.getAnnotations()
-                            console.log(
-                                '[Annotorious] After load, total annotations:',
-                                all.length,
-                            )
-                            console.log(
-                                '[Annotorious] Saved %d annotations after initial load',
-                                all.length,
-                            )
-                        } catch (err) {
-                            console.warn(
-                                '[Annotorious] Failed to persist annotations after initial load',
-                                err,
-                            )
-                        }
-                    } else {
-                        console.log(
-                            '[Annotorious] No new initial annotations added on open (all existed)',
-                        )
                     }
-                } else {
-                    console.log('[Annotorious] No initial annotations passed in on open')
                 }
 
-                // ---- Event listeners ----
                 anno.on('createAnnotation', (a: Annotation) => {
-                    try {
-                        const all = anno.getAnnotations()
-                        console.log(
-                            '[Annotorious] Saved %d annotations (create)',
-                            all.length,
-                        )
-                    } catch (err) {
-                        console.warn(
-                            '[Annotorious] Failed to save annotations on create',
-                            err,
-                        )
-                    }
                     onCreateRef.current?.(a)
                 })
-
                 anno.on('deleteAnnotation', (a: Annotation) => {
-                    try {
-                        const all = anno.getAnnotations()
-                        console.log(
-                            '[Annotorious] Saved %d annotations (delete)',
-                            all.length,
-                        )
-                    } catch (err) {
-                        console.warn(
-                            '[Annotorious] Failed to save annotations on delete',
-                            err,
-                        )
-                    }
                     onDeleteRef.current?.(a)
                 })
-
                 anno.on('selectAnnotation', (a: Annotation | null) => {
                     onSelectRef.current?.(a)
                 })
 
-                anno.on('updateAnnotation', () => {
-                    try {
-                        const all = anno.getAnnotations()
-                        console.log(
-                            '[Annotorious] Saved %d annotations (update)',
-                            all.length,
-                        )
-                    } catch (err) {
-                        console.warn(
-                            '[Annotorious] Failed to save annotations on update',
-                            err,
-                        )
-                    }
-                })
-
-                // ---- Expose API ----
                 let currentMode: 'pan' | 'draw' | 'delete' = 'pan'
                 let deleteHandler: ((a: Annotation) => void) | null = null
                 let rearmHandler: (() => void) | null = null
 
-                exposeApi?.({
+                exposeApiRef.current?.({
                     zoomIn: () => {
                         const v = osdRef.current
                         v?.viewport.zoomBy(1.2)
@@ -236,8 +222,6 @@ export default function ManuscriptAnnotorious({
 
                         anno.setDrawingEnabled(false)
                         currentMode = 'pan'
-                        console.log('[Annotorious] Switched to Pan mode')
-
                         viewerRef.current?.classList.remove('osd-mode-draw', 'osd-mode-delete')
                         viewerRef.current?.classList.add('osd-mode-pan')
                     },
@@ -251,8 +235,6 @@ export default function ManuscriptAnnotorious({
 
                         anno.setDrawingEnabled(true)
                         currentMode = 'draw'
-                        console.log('[Annotorious] Switched to Draw mode')
-
                         viewerRef.current?.classList.remove('osd-mode-pan', 'osd-mode-delete')
                         viewerRef.current?.classList.add('osd-mode-draw')
 
@@ -284,9 +266,6 @@ export default function ManuscriptAnnotorious({
 
                         anno.setDrawingEnabled(false)
                         currentMode = 'delete'
-                        console.log('[Annotorious] Switched to Delete mode')
-
-
                         viewerRef.current?.classList.remove('osd-mode-pan', 'osd-mode-draw')
                         viewerRef.current?.classList.add('osd-mode-delete')
 
@@ -294,25 +273,7 @@ export default function ManuscriptAnnotorious({
                         deleteHandler = (a: Annotation) => {
                             if (a && currentMode === 'delete') {
                                 anno.removeAnnotation(a)
-                                setTimeout(() => {
-                                    try {
-                                        const all = anno.getAnnotations()
-                                        console.log(
-                                            '[Annotorious] Saved %d annotations (delete via tool)',
-                                            all.length,
-                                        )
-                                    } catch (err) {
-                                        console.warn(
-                                            '[Annotorious] Failed to save annotations on delete (tool)',
-                                            err,
-                                        )
-                                    }
-                                }, 0)
                                 onDeleteRef.current?.(a)
-                                console.log(
-                                    '[Annotorious] Deleted annotation via Delete mode',
-                                    a,
-                                )
                             }
                         }
                         anno.on('selectAnnotation', deleteHandler)
@@ -332,97 +293,91 @@ export default function ManuscriptAnnotorious({
                             const layer = viewerRef.current?.querySelector<SVGSVGElement>('.a9s-annotationlayer')
                             if (layer) layer.style.display = visible ? 'block' : 'none'
                         }
-                        console.log(
-                            visible
-                                ? '[Annotorious] Annotations Visible'
-                                : '[Annotorious] Annotations Hidden',
-                        )
-                        // small debug snapshot
-                        try {
-                            const all = anno?.getAnnotations?.() ?? []
-                            console.log(
-                                '[Annotorious] Current annotations count:',
-                                Array.isArray(all) ? all.length : 0,
-                            )
-                        } catch (err) {
-                            console.warn(
-                                '[Annotorious] Failed to inspect annotations on visibility toggle',
-                                err,
-                            )
-                        }
                     },
 
                     getAnnotations: () => annoRef.current?.getAnnotations?.() ?? []
                 })
             }
-        })
+        });
+        })();
 
-        // Debug: log tile-drawn events
-        // viewer.addHandler('tile-drawn', (e: any) => {
-        //     console.log('Tile drawn', e.tile?.level)
-        // })
-
-        // Clean up OSD + Annotorious
         return () => {
+            isMounted = false
+            const prev = annoRef.current
+            annoRef.current = null
             try {
-                viewer.destroy()
-            } catch (err) {
-                console.warn('[Annotorious] Failed to destroy OSD viewer', err)
+                (prev as { destroy?: () => void })?.destroy?.()
+            } catch {
+                // ignore
             }
+            const v = osdRef.current
+            osdRef.current = null
             try {
-                annoRef.current?.destroy?.()
-            } catch (err) {
-                console.warn('[Annotorious] Failed to destroy Annotorious instance', err)
+                v?.destroy?.()
+            } catch {
+                // ignore
             }
         }
+    }, [iiifImageUrl])
 
-
-    }, [iiifImageUrl, exposeApi])
-
-    // If DB/parent annotations arrive after OSD open, apply now (already exists)
     useEffect(() => {
         const anno = annoRef.current
-        if (!anno || !initialAnnotations?.length) return
+        if (!anno || !Array.isArray(initialAnnotations) || initialAnnotations.length === 0) return
 
         const existing = new Set(anno.getAnnotations().map((a: Annotation) => a.id))
-        let added = 0
-        initialAnnotations.forEach((a) => {
+        for (const a of initialAnnotations) {
             if (!existing.has(a.id)) {
                 try {
                     anno.addAnnotation(a)
-                    added++
-                } catch (err) {
-                    console.warn(
-                        '[Annotorious] Failed to add late-arriving initial annotation',
-                        a,
-                        err,
-                    )
+                } catch {
+                    // skip invalid annotation
                 }
-            }
-        })
-
-        if (added) {
-            console.log(
-                '[Annotorious] Applied %d late-arriving initial annotations',
-                added,
-            )
-            try {
-                const all = anno.getAnnotations()
-                console.log(
-                    '[Annotorious] Saved %d annotations after late apply',
-                    all.length,
-                )
-            } catch (err) {
-                console.warn(
-                    '[Annotorious] Failed to persist annotations after late apply',
-                    err,
-                )
             }
         }
     }, [initialAnnotations, iiifImageUrl])
 
+    if (state.hasError) {
+        return (
+            <div style={{ width: '100%', height: '100%', background: '#000', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ color: '#fff', textAlign: 'center', padding: '2rem', maxWidth: '600px' }}>
+                    <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', fontWeight: 'bold' }}>Image Load Error</h3>
+                    <p style={{ marginBottom: '1rem', opacity: 0.9 }}>{state.errorMessage}</p>
+                    <button
+                        onClick={() => {
+                            setState({ hasError: false, errorMessage: null, isLoading: true })
+                            // Trigger a re-render by updating the key or reloading
+                            window.location.reload()
+                        }}
+                        style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: '#3b82f6',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '0.25rem',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        Reload Page
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
     return (
-        <div style={{ width: '100vw', height: '100%', overflow: 'hidden' }}>
+        <div style={{ width: '100vw', height: '100%', overflow: 'hidden', position: 'relative' }}>
+            {state.isLoading && (
+                <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    color: '#fff',
+                    zIndex: 10,
+                }}>
+                    Loading image...
+                </div>
+            )}
             <div
                 ref={viewerRef}
                 style={{ width: '100%', height: '100%', background: '#000', position: 'relative' }}

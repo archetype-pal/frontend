@@ -42,31 +42,26 @@ export function AnnotationHeader({
   const [, setLoading] = React.useState(true)
 
   React.useEffect(() => {
+    let isMounted = true
     const loadData = async () => {
       try {
         setLoading(true)
-
         if (!imageId) {
-          setHands([])
+          if (isMounted) setHands([])
           return
         }
-
-        // const [handsData, allographsData] = await Promise.all([
-        //   imageId ? fetchHands(imageId) : Promise.resolve({ results: [] }),
-        //   fetchAllographs(),
-        // ])
         const handsData = await fetchHands(imageId)
-        setHands(handsData.results)
-        // setAllographs(allographsData)
-      } catch (error) {
-        console.error('Error loading data:', error)
-        // toast.error("Failed to load hands and allographs")
+        if (isMounted) setHands(handsData.results)
+      } catch {
+        if (isMounted) setHands([])
       } finally {
-        setLoading(false)
+        if (isMounted) setLoading(false)
       }
     }
-
     loadData()
+    return () => {
+      isMounted = false
+    }
   }, [imageId])
 
   const handleAllographChange = (allographId: string) => {

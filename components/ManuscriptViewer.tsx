@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import {
-    Home, LaptopMinimal, ZoomIn, ZoomOut, Hand, Pencil, Save, Trash2, Expand, SquarePen,
+    Home, LaptopMinimal, ZoomIn, ZoomOut, Hand, Pencil, Save, Trash2, Expand, SquarePen, Maximize2,
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
@@ -15,6 +15,7 @@ import { Toolbar } from './toolbar'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { AnnotationHeader } from './annotation-header'
+import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button'
 import { fetchManuscriptImage, fetchAllographs, fetchManuscript } from '@/services/manuscripts'
 import { fetchAnnotationsForImage, postAnnotation, patchAnnotation, type BackendGraph } from '@/services/annotations'
 import { backendToA9sAnnotation, a9sToBackendFeature, isDbAnnotation, dbIdFromA9s } from '@/lib/annoMapping'
@@ -31,12 +32,34 @@ const metaKeyFor = (iiif: string) => `annotations:meta:${iiif}`
 const cacheKeyFor = (iiif: string) => `annotations:${iiif}`
 const isDbId = (id?: string) => typeof id === 'string' && id.startsWith('db:')
 
+/** Rewrite cross-origin IIIF URL to same-origin /iiif-proxy to avoid CORS. */
+function browserSafeIiifUrl(raw: string): string {
+    const base = raw.replace(/\/info\.json$/, '')
+    if (typeof window === 'undefined') return base
+    try {
+        const u = new URL(raw)
+        if (u.origin !== window.location.origin) {
+            const path = u.pathname.replace(/\/info\.json$/, '') || ''
+            return `${window.location.origin}/iiif-proxy${path}`
+        }
+        return base
+    } catch {
+        return base
+    }
+}
+
 export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): React.JSX.Element {
-    const [annotationsEnabled, setAnnotationsEnabled] = React.useState<boolean>(() => {
-        if (typeof window === 'undefined') return true
+    // Always start with default value to avoid hydration mismatch
+    const [annotationsEnabled, setAnnotationsEnabled] = React.useState<boolean>(true)
+    
+    // Load from localStorage only on client after mount
+    React.useEffect(() => {
+        if (typeof window === 'undefined') return
         const saved = localStorage.getItem(`annotationsVisible:${imageId}`)
-        return saved === null ? true : saved === 'true'
-    })
+        if (saved !== null) {
+            setAnnotationsEnabled(saved === 'true')
+        }
+    }, [imageId])
 
     const [manuscriptImage, setManuscriptImage] = React.useState<ManuscriptImageType | null>(null)
     const [manuscript, setManuscript] = React.useState<Manuscript | null>(null)
@@ -84,32 +107,32 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
             api.enablePan()
             setActiveButton('move')
         },
-
-        [viewerApiRef, setOsdReady, setActiveButton],
+        [],
     )
 
     // persist the unsaved counter so it survives reloads
-    const [unsavedChanges, setUnsavedChanges] = React.useState<number>(() => {
-        if (typeof window === 'undefined') return 0
+    // Always start with 0 to avoid hydration mismatch
+    const [unsavedChanges, setUnsavedChanges] = React.useState<number>(0)
+    
+    // Load from localStorage only on client after mount
+    React.useEffect(() => {
+        if (typeof window === 'undefined') return
         try {
-            return Number(localStorage.getItem(`unsaved:${imageId}`) || 0)
-        } catch (err) {
-            console.warn(
-                '[ManuscriptViewer] Failed to read unsaved changes from localStorage',
-                err,
-            )
-            return 0
+            const saved = Number(localStorage.getItem(`unsaved:${imageId}`) || 0)
+            if (saved > 0) {
+                setUnsavedChanges(saved)
+            }
+        } catch {
+            // ignore
         }
-    })
+    }, [imageId])
 
     React.useEffect(() => {
+        if (typeof window === 'undefined') return
         try {
             localStorage.setItem(`unsaved:${imageId}`, String(unsavedChanges))
-        } catch (err) {
-            console.warn(
-                '[ManuscriptViewer] Failed to persist unsaved changes counter',
-                err,
-            )
+        } catch {
+            // ignore
         }
     }, [unsavedChanges, imageId])
 
@@ -120,6 +143,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
 
     // load image & size
     React.useEffect(() => {
+        let isMounted = true
         const loadData = async () => {
             try {
                 setLoading(true)
@@ -127,41 +151,51 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                     fetchManuscriptImage(imageId),
                     fetchAllographs(),
                 ])
+                if (!isMounted) return
                 setManuscriptImage(image)
                 setAllographs(allographsData)
-                fetchManuscript(image.item_part).then(m => setManuscript(m))
+                fetchManuscript(image.item_part).then((m) => {
+                    if (isMounted) setManuscript(m)
+                })
 
-                // IIIF image size
-                const infoRes = await fetch(`${image.iiif_image}/info.json`)
-                const info = await infoRes.json()
-                setImageHeight(info.height)
-                console.log('[ManuscriptViewer] Image height:', info.height)
-
-                setError(null)
+                const baseUrl = browserSafeIiifUrl(image.iiif_image)
+                const infoUrl = `${baseUrl}/info.json`
+                try {
+                    const infoRes = await fetch(infoUrl)
+                    if (!infoRes.ok) throw new Error(`IIIF info: ${infoRes.status}`)
+                    const info = await infoRes.json()
+                    if (isMounted) setImageHeight(info.height ?? 2000)
+                } catch {
+                    if (isMounted) setImageHeight(2000)
+                }
+                if (isMounted) setError(null)
             } catch (err) {
-                console.error('[ManuscriptViewer] Failed to load manuscript data', err)
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : 'Failed to load manuscript data',
-                )
+                if (isMounted) {
+                    setError(
+                        err instanceof Error
+                            ? err.message
+                            : 'Failed to load manuscript data',
+                    )
+                }
             } finally {
-                setLoading(false)
+                if (isMounted) setLoading(false)
             }
         }
         void loadData()
+        return () => {
+            isMounted = false
+        }
     }, [imageId])
 
     React.useEffect(() => {
         if (!manuscriptImage) return
-
+        let isMounted = true
         const loadAllographIds = async () => {
             try {
-                // No allograph filter here: we want ALL graphs for this image
                 const graphs = await fetchAnnotationsForImage(
                     String(manuscriptImage.id),
                 )
-
+                if (!isMounted) return
                 const ids = Array.from(
                     new Set(
                         graphs
@@ -169,22 +203,15 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                             .filter((id): id is number => typeof id === 'number'),
                     ),
                 )
-
                 setImageAllographIds(ids)
-                console.log(
-                    '[ManuscriptViewer] Allograph IDs for this image:',
-                    ids,
-                )
-            } catch (err) {
-                console.warn(
-                    '[ManuscriptViewer] Failed to load allograph IDs for image',
-                    err,
-                )
-                setImageAllographIds([])
+            } catch {
+                if (isMounted) setImageAllographIds([])
             }
         }
-
         void loadAllographIds()
+        return () => {
+            isMounted = false
+        }
     }, [manuscriptImage])
 
     const allographsForThisImage = React.useMemo(() => {
@@ -198,75 +225,46 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
     }, [allographs, imageAllographIds])
 
 
-    // Load DB annotations → map with imageHeight → merge with local unsaved cache (same imageHeight only)
     React.useEffect(() => {
         if (!manuscriptImage || !imageHeight) return
-
+        let isMounted = true
         const load = async () => {
             try {
                 const allographId = selectedAllograph?.id ? String(selectedAllograph.id) : undefined
                 const list = await fetchAnnotationsForImage(String(manuscriptImage.id), allographId)
-                console.log(
-                    '[ManuscriptViewer] Fetched DB annotations:',
-                    list.length,
-                )
-
+                if (!isMounted) return
                 const dbMapped: A9sAnnotation[] = list.map(a => backendToA9sAnnotation(a, imageHeight, allographNameById.get(a.allograph),))
-                console.log(
-                    '[ManuscriptViewer] Mapped DB annotations to a9s:',
-                    dbMapped.length,
-                )
-
-                // ---- Merge with local cache (only if meta.imageHeight matches) ----
                 const iiif = manuscriptImage.iiif_image
                 const cacheKey = cacheKeyFor(iiif)
                 const metaKey = metaKeyFor(iiif)
-
                 let merged: A9sAnnotation[] = dbMapped
-                try {
-                    const raw = localStorage.getItem(cacheKey)
-                    const meta = JSON.parse(localStorage.getItem(metaKey) || '{}') as {
-                        imageHeight?: number
-                    }
-                    if (raw && meta?.imageHeight === imageHeight) {
-                        const cached = JSON.parse(raw) as A9sAnnotation[]
-                        const localOnly = Array.isArray(cached) ? cached.filter((a) => !isDbId(a?.id)) : []
-                        const existing = new Set(dbMapped.map(a => a.id))
-                        const extras = localOnly.filter((a) => !existing.has(a.id))
-                        merged = [...dbMapped, ...extras]
-                        console.log(
-                            '[ManuscriptViewer] Merged cache: +%d local-only annotations',
-                            extras.length,
-                        )
-                    } else {
-                        if (raw && meta && meta.imageHeight !== imageHeight) {
+                if (typeof window !== 'undefined') {
+                    try {
+                        const raw = localStorage.getItem(cacheKey)
+                        const meta = JSON.parse(localStorage.getItem(metaKey) || '{}') as { imageHeight?: number }
+                        if (raw && meta?.imageHeight === imageHeight) {
+                            const cached = JSON.parse(raw) as A9sAnnotation[]
+                            const localOnly = Array.isArray(cached) ? cached.filter((a) => !isDbId(a?.id)) : []
+                            const existing = new Set(dbMapped.map(a => a.id))
+                            const extras = localOnly.filter((a) => !existing.has(a.id))
+                            merged = [...dbMapped, ...extras]
+                        } else if (raw && meta?.imageHeight !== imageHeight) {
                             localStorage.removeItem(cacheKey)
                             localStorage.removeItem(metaKey)
-                            console.log(
-                                '[ManuscriptViewer] Dropped stale cache (imageHeight changed)',
-                            )
                         }
+                    } catch {
+                        // ignore
                     }
-                } catch (e) {
-                    console.warn(
-                        '[ManuscriptViewer] Failed to merge cached annotations',
-                        e,
-                    )
                 }
-
-                setInitialA9sAnnots(merged)
-
-                // Debug logs
-                console.log('initialA9sAnnots:', merged)
-                console.log('imageHeight:', imageHeight)
-                console.log('manuscriptImage.iiif_image:', manuscriptImage.iiif_image)
-            } catch (e) {
-                console.warn('[ManuscriptViewer] Failed to load DB annotations', e)
-                setInitialA9sAnnots([])
+                if (isMounted) setInitialA9sAnnots(merged)
+            } catch {
+                if (isMounted) setInitialA9sAnnots([])
             }
         }
-
         load()
+        return () => {
+            isMounted = false
+        }
     }, [manuscriptImage, imageHeight, selectedAllograph, allographNameById])
 
     const handleMoveTool = () => {
@@ -288,11 +286,6 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
     const handleSave = React.useCallback(async (): Promise<void> => {
         try {
             const a9s = viewerApiRef.current?.getAnnotations() ?? []
-            console.log(
-                '[ManuscriptViewer] Saving annotations. Current a9s count:',
-                a9s.length,
-            )
-
             const tasks: Promise<BackendGraph>[] = []
             for (const a of a9s) {
                 const feature = a9sToBackendFeature(a)
@@ -312,14 +305,13 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
             }
 
             await Promise.all(tasks)
-            console.log('[ManuscriptViewer] Saved annotations to DB')
-
             setUnsavedChanges(0)
-            try { localStorage.removeItem(`unsaved:${imageId}`) } catch (err) {
-                console.warn(
-                    '[ManuscriptViewer] Failed to clear unsaved changes counter',
-                    err,
-                )
+            if (typeof window !== 'undefined') {
+                try {
+                    localStorage.removeItem(`unsaved:${imageId}`)
+                } catch {
+                    // ignore
+                }
             }
 
             // Reload DB → map → replace cache (drop local-only)
@@ -329,29 +321,24 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
             )
             const mapped = refreshed.map(a => backendToA9sAnnotation(a, imageHeight))
 
-            try {
-                localStorage.setItem(
-                    `annotations:${manuscriptImage!.iiif_image}`,
-                    JSON.stringify(mapped),
-                )
-                localStorage.setItem(
-                    `annotations:meta:${manuscriptImage!.iiif_image}`,
-                    JSON.stringify({ imageHeight }),
-                )
-            } catch (err) {
-                console.warn(
-                    '[ManuscriptViewer] Failed to update localStorage cache after save',
-                    err,
-                )
+            if (typeof window !== 'undefined') {
+                try {
+                    localStorage.setItem(
+                        `annotations:${manuscriptImage!.iiif_image}`,
+                        JSON.stringify(mapped),
+                    )
+                    localStorage.setItem(
+                        `annotations:meta:${manuscriptImage!.iiif_image}`,
+                        JSON.stringify({ imageHeight }),
+                    )
+                } catch {
+                    // ignore
+                }
             }
 
             setInitialA9sAnnots(mapped)
-            console.log(
-                '[ManuscriptViewer] Saved to DB & refreshed cache. Count:',
-                mapped.length,
-            )
-        } catch (error) {
-            console.error('Error saving annotations:', error)
+        } catch {
+            // save failed — leave unsaved count as is
         }
     }, [manuscriptImage, imageHeight, selectedAllograph, selectedHand, imageId])
 
@@ -381,13 +368,12 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
     const handleToggleAnnotations = () => {
         setAnnotationsEnabled(prev => {
             const next = !prev
-            try {
-                localStorage.setItem(`annotationsVisible:${imageId}`, String(next))
-            } catch (err) {
-                console.warn(
-                    '[ManuscriptViewer] Failed to persist annotations visibility',
-                    err,
-                )
+            if (typeof window !== 'undefined') {
+                try {
+                    localStorage.setItem(`annotationsVisible:${imageId}`, String(next))
+                } catch {
+                    // ignore
+                }
             }
             viewerApiRef.current?.toggleAnnotations(next)
             return next
@@ -408,8 +394,8 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                         <h1 className='text-lg font-semibold'>
                             Manuscript Image: <Link href={`/manuscripts/${manuscript?.id}`} className='text-blue-600 hover:underline'>{manuscript?.display_label}</Link>: {manuscriptImage.locus}
                         </h1>
-                        <p className='text-sm text-muted-foreground'>
-                            {manuscript?.historical_item.descriptions[0]?.content || 'No description available'}
+                        <p className='text-sm text-muted-foreground line-clamp-3'>
+                            {manuscript?.historical_item?.descriptions?.[0]?.content || 'No description available'}
                         </p>
                     </header>
 
@@ -453,7 +439,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                                     onClick={handleToggleFullScreen}
                                 >
                                     {isFullScreen ? (
-                                        <Expand className='h-4 w-4' />      // or a Minimize icon if it is preferred
+                                        <Expand className='h-4 w-4' />
                                     ) : (
                                         <LaptopMinimal className='h-4 w-4' />
                                     )}
@@ -504,6 +490,29 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                         </Tooltip>
                         <Tooltip><TooltipTrigger asChild><Button variant='ghost' size='icon'><Expand className='h-4 w-4' /></Button></TooltipTrigger><TooltipContent>Modify</TooltipContent></Tooltip>
                         <Tooltip><TooltipTrigger asChild><Button variant='ghost' size='icon'><SquarePen className='h-4 w-4' /></Button></TooltipTrigger><TooltipContent>Draw</TooltipContent></Tooltip>
+                        {manuscriptImage && manuscript && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div>
+                                        <OpenLightboxButton
+                                            item={{
+                                                id: Number(imageId),
+                                                type: 'image',
+                                                image: manuscriptImage.iiif_image,
+                                                shelfmark: manuscript.current_item?.shelfmark || '',
+                                                locus: manuscriptImage.locus,
+                                                repository_name: manuscript.current_item?.repository?.name || '',
+                                                repository_city: manuscript.current_item?.repository?.place || '',
+                                                date: manuscript.historical_item?.date || '',
+                                            }}
+                                            variant="ghost"
+                                            size="icon"
+                                        />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>Open in Lightbox</TooltipContent>
+                            </Tooltip>
+                        )}
                     </TooltipProvider>
                 </Toolbar>
 
@@ -522,46 +531,36 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                         }
                     >
                         <ManuscriptAnnotorious
-                            iiifImageUrl={manuscriptImage.iiif_image}
+                            iiifImageUrl={browserSafeIiifUrl(manuscriptImage.iiif_image)}
                             initialAnnotations={initialA9sAnnots}
                             onCreate={() => {
-                                try {
-                                    const iiif = manuscriptImage.iiif_image
-                                    const cacheKey = cacheKeyFor(iiif)
-                                    const metaKey = metaKeyFor(iiif)
-                                    const all = viewerApiRef.current?.getAnnotations() ?? []
-                                    localStorage.setItem(cacheKey, JSON.stringify(all))
-                                    localStorage.setItem(metaKey, JSON.stringify({ imageHeight }))
-                                    console.log(
-                                        '[ManuscriptViewer] Saved %d annotations (create)',
-                                        all.length,
-                                    )
-                                } catch (err) {
-                                    console.warn(
-                                        '[ManuscriptViewer] Failed to save annotations on create',
-                                        err,
-                                    )
+                                if (typeof window !== 'undefined') {
+                                    try {
+                                        const iiif = manuscriptImage.iiif_image
+                                        const cacheKey = cacheKeyFor(iiif)
+                                        const metaKey = metaKeyFor(iiif)
+                                        const all = viewerApiRef.current?.getAnnotations() ?? []
+                                        localStorage.setItem(cacheKey, JSON.stringify(all))
+                                        localStorage.setItem(metaKey, JSON.stringify({ imageHeight }))
+                                    } catch {
+                                        // ignore
+                                    }
                                 }
                                 // unsaved counter: +1 for creates
                                 setUnsavedChanges(n => n + 1)
                             }}
                             onDelete={(a: A9sAnnotation) => {
-                                try {
-                                    const iiif = manuscriptImage.iiif_image
-                                    const cacheKey = cacheKeyFor(iiif)
-                                    const metaKey = metaKeyFor(iiif)
-                                    const all = viewerApiRef.current?.getAnnotations() ?? []
-                                    localStorage.setItem(cacheKey, JSON.stringify(all))
-                                    localStorage.setItem(metaKey, JSON.stringify({ imageHeight }))
-                                    console.log(
-                                        '[ManuscriptViewer] Saved %d annotations (delete)',
-                                        all.length,
-                                    )
-                                } catch (err) {
-                                    console.warn(
-                                        '[ManuscriptViewer] Failed to save annotations on delete',
-                                        err,
-                                    )
+                                if (typeof window !== 'undefined') {
+                                    try {
+                                        const iiif = manuscriptImage.iiif_image
+                                        const cacheKey = cacheKeyFor(iiif)
+                                        const metaKey = metaKeyFor(iiif)
+                                        const all = viewerApiRef.current?.getAnnotations() ?? []
+                                        localStorage.setItem(cacheKey, JSON.stringify(all))
+                                        localStorage.setItem(metaKey, JSON.stringify({ imageHeight }))
+                                    } catch {
+                                        // ignore
+                                    }
                                 }
                                 const id = a?.id as string | undefined
                                 if (id && !isDbId(id)) {
@@ -569,7 +568,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                                     setUnsavedChanges(n => Math.max(0, n - 1))
                                 }
                             }}
-                            onSelect={(a) => console.log('Annotation selected:', a)}
+                            onSelect={() => {}}
                             exposeApi={handleExposeApi}
                         />
                     </div>
