@@ -1,5 +1,3 @@
-import MiniCssExtractPlugin from 'mini-css-extract-plugin'
-
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -53,11 +51,6 @@ const nextConfig = {
         ],
       },
     ]
-  },
-  webpack(config, { dev, isServer }) {
-    config.plugins.push(new MiniCssExtractPlugin())
-
-    return config
   },
   turbopack: {},
   output: 'standalone',
