@@ -24,10 +24,15 @@ const nextConfig = {
         port: '8000',
         pathname: '/media/**',
       },
-      // Production host
+      // Production hosts
       {
         protocol: 'https',
         hostname: 'archetype.gla.ac.uk',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'archetype.elghareeb.space',
         pathname: '/**',
       },
       {

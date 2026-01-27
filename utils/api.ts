@@ -2,6 +2,14 @@ import type { SearchResponse } from '@/types/manuscript'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
+/** Build absolute URL for carousel (or other API-served) images. API returns relative paths like "media/carousel/…". */
+export function getCarouselImageUrl(imagePath: string | null | undefined): string {
+  if (!imagePath) return '/placeholder.svg'
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return imagePath
+  const base = API_BASE_URL.replace(/\/$/, '')
+  return imagePath.startsWith('/') ? `${base}${imagePath}` : `${base}/${imagePath}`
+}
+
 export async function loginUser(username: string, password: string) {
   const response = await fetch(`${API_BASE_URL}/api/v1/auth/token/login`, {
     method: 'POST',
