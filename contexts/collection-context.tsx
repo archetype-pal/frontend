@@ -47,12 +47,23 @@ function saveToStorage(items: CollectionItem[]): void {
 }
 
 export function CollectionProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = React.useState<CollectionItem[]>(loadFromStorage)
+  // Always start with empty array to avoid hydration mismatch
+  const [items, setItems] = React.useState<CollectionItem[]>([])
+  const [isHydrated, setIsHydrated] = React.useState(false)
 
-  // Sync with localStorage on mount and when items change
+  // Load from localStorage only on client after mount
   React.useEffect(() => {
-    saveToStorage(items)
-  }, [items])
+    const loaded = loadFromStorage()
+    setItems(loaded)
+    setIsHydrated(true)
+  }, [])
+
+  // Sync with localStorage on mount and when items change (but only after hydration)
+  React.useEffect(() => {
+    if (isHydrated) {
+      saveToStorage(items)
+    }
+  }, [items, isHydrated])
 
   const addItem = React.useCallback((item: CollectionItem) => {
     setItems((prev) => {

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,11 +13,20 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useCollection } from '@/contexts/collection-context'
 
-import { Search, Home, Menu, X, ChevronDown } from 'lucide-react'
+import { Search, Home, Menu, X, ChevronDown, FolderOpen } from 'lucide-react'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { items } = useCollection()
+  const pathname = usePathname()
+
+  // Helper function to check if a route is active
+  const isActive = (href: string, exact: boolean = false) => {
+    if (exact) {
+      return pathname === href
+    }
+    return pathname?.startsWith(href)
+  }
 
   return (
     <header className='bg-gray-100 border-b border-gray-200'>
@@ -47,8 +57,8 @@ export default function Header() {
       </div>
       <nav
         className={`bg-primary text-primary-foreground p-2 ${
-          isMenuOpen ? 'block' : 'hidden md:block'
-        }`}
+          isMenuOpen ? 'block' : 'hidden'
+        } md:block`}
       >
         <div className='container mx-auto'>
           <div className='flex flex-col md:flex-row md:items-center md:justify-between md:flex-wrap gap-4 md:gap-6'>
@@ -58,9 +68,13 @@ export default function Header() {
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
+                    className={`transition-colors w-full md:w-auto justify-start group ${
+                      isActive('/', true)
+                        ? 'bg-primary-foreground/30 text-white'
+                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                    }`}
                   >
-                    <Home className='h-4 w-4 mr-1' />
+                    <Home className='h-4 w-4 mr-1 group-hover:scale-110 transition-transform' />
                     Home
                   </Button>
                 </Link>
@@ -70,8 +84,13 @@ export default function Header() {
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
+                    className={`transition-colors w-full md:w-auto justify-start group ${
+                      isActive('/search')
+                        ? 'bg-primary-foreground/30 text-white'
+                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                    }`}
                   >
+                    <Search className='h-4 w-4 mr-1 group-hover:scale-110 transition-transform' />
                     Search
                   </Button>
                 </Link>
@@ -81,27 +100,42 @@ export default function Header() {
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
+                    className={`transition-colors w-full md:w-auto justify-start group ${
+                      isActive('/collection', true)
+                        ? 'bg-primary-foreground/30 text-white'
+                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                    }`}
                   >
+                    <FolderOpen className='h-4 w-4 mr-1 group-hover:scale-110 transition-transform' />
                     My Collection ({items.length})
                   </Button>
                 </Link>
               </li>
               <li>
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  className='text-white hover:text-primary w-full md:w-auto justify-start'
-                >
-                  Lightbox
-                </Button>
+                <Link href='/lightbox'>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className={`transition-colors w-full md:w-auto justify-start group ${
+                      isActive('/lightbox', true)
+                        ? 'bg-primary-foreground/30 text-white'
+                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                    }`}
+                  >
+                    Lightbox
+                  </Button>
+                </Link>
               </li>
               <li>
                 <Link href='/news/'>
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
+                    className={`transition-colors w-full md:w-auto justify-start ${
+                      isActive('/news')
+                        ? 'bg-primary-foreground/30 text-white'
+                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                    }`}
                   >
                     News
                   </Button>
@@ -112,7 +146,11 @@ export default function Header() {
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
+                    className={`transition-colors w-full md:w-auto justify-start ${
+                      isActive('/blogs')
+                        ? 'bg-primary-foreground/30 text-white'
+                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                    }`}
                   >
                     Blogs
                   </Button>
@@ -123,7 +161,11 @@ export default function Header() {
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
+                    className={`transition-colors w-full md:w-auto justify-start ${
+                      isActive('/feature')
+                        ? 'bg-primary-foreground/30 text-white'
+                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                    }`}
                   >
                     Feature Articles
                   </Button>
@@ -135,10 +177,14 @@ export default function Header() {
                     <Button
                       variant='ghost'
                       size='sm'
-                      className='text-primary-foreground hover:bg-primary/80 w-full md:w-auto justify-start'
+                      className={`transition-colors w-full md:w-auto justify-start group ${
+                        isActive('/events')
+                          ? 'bg-primary-foreground/30 text-white'
+                          : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                      }`}
                     >
                       Past Events
-                      <ChevronDown className='ml-1 h-4 w-4' />
+                      <ChevronDown className='ml-1 h-4 w-4 group-hover:scale-110 transition-transform' />
                     </Button>
                   </DropdownMenuTrigger>
 
@@ -165,9 +211,13 @@ export default function Header() {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant='ghost'
-                      className='text-primary-foreground hover:bg-primary/80'
+                      className={`transition-colors group ${
+                        isActive('/about')
+                          ? 'bg-primary-foreground/30 text-white'
+                          : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                      }`}
                     >
-                      About <ChevronDown className='ml-1 h-4 w-4' />
+                      About <ChevronDown className='ml-1 h-4 w-4 group-hover:scale-110 transition-transform' />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className='w-56'>

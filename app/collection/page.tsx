@@ -1,20 +1,22 @@
 'use client'
 
 import * as React from 'react'
+import { Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useCollection, type CollectionItem } from '@/contexts/collection-context'
 import { CollectionStar } from '@/components/collection-star'
 import { Button } from '@/components/ui/button'
-import { Trash2, Star, ArrowUpDown } from 'lucide-react'
+import { Trash2, Star, ArrowUpDown, Maximize2 } from 'lucide-react'
+import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button'
 import type { ImageListItem } from '@/types/image'
 import type { GraphListItem } from '@/types/graph'
 
 type SortOption = 'added' | 'name' | 'repository'
 type FilterType = 'all' | 'image' | 'graph'
 
-export default function CollectionPage() {
+function CollectionPageContent() {
   const searchParams = useSearchParams()
   const { items, clearCollection } = useCollection()
   const [filter, setFilter] = React.useState<FilterType>(() => {
@@ -107,8 +109,8 @@ export default function CollectionPage() {
   const renderCard = (item: CollectionItem, type: 'image' | 'graph') => {
     const imageUrl = type === 'image' 
       ? (item as ImageListItem).thumbnail || (item as ImageListItem).image?.replace('/info.json', '/full/300,/0/default.jpg') || null
-      : (item as GraphListItem).image_url || null
-    const title = type === 'image' ? ((item as ImageListItem).locus || (item as ImageListItem).shelfmark || 'Untitled') : ((item as GraphListItem).shelfmark || 'Untitled')
+      : (item as unknown as GraphListItem).image_url || null
+    const title = type === 'image' ? ((item as ImageListItem).locus || (item as ImageListItem).shelfmark || 'Untitled') : ((item as unknown as GraphListItem).shelfmark || 'Untitled')
 
     return (
       <div key={`${type}-${item.id}`} className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden group cursor-pointer">
@@ -123,7 +125,13 @@ export default function CollectionPage() {
           ) : (
             <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-full h-full flex items-center justify-center text-xs text-gray-500">No Image</div>
           )}
-          <div className="absolute top-2 right-2 z-10">
+          <div className="absolute top-2 right-2 z-10 flex gap-1">
+            <OpenLightboxButton
+              item={item}
+              variant="ghost"
+              size="icon"
+              className="bg-white/80 hover:bg-white"
+            />
             <CollectionStar itemId={item.id} itemType={type} item={item} />
           </div>
         </div>
@@ -167,15 +175,22 @@ export default function CollectionPage() {
             <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-gray-900">My Collection</h1>
             <p className="text-muted-foreground text-sm sm:text-base">{items.length} {items.length === 1 ? 'item' : 'items'} saved</p>
           </div>
-          <Button 
-            variant={showClearConfirm ? "destructive" : "outline"} 
-            size="sm" 
-            onClick={handleClear} 
-            className={showClearConfirm ? "w-full sm:w-auto" : "text-destructive hover:text-destructive hover:bg-destructive/10 w-full sm:w-auto"}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            {showClearConfirm ? 'Click again to confirm' : 'Clear All'}
-          </Button>
+          <div className="flex gap-2">
+            <OpenLightboxButton
+              items={items}
+              variant="outline"
+              size="sm"
+            />
+            <Button 
+              variant={showClearConfirm ? "destructive" : "outline"} 
+              size="sm" 
+              onClick={handleClear} 
+              className={showClearConfirm ? "w-full sm:w-auto" : "text-destructive hover:text-destructive hover:bg-destructive/10 w-full sm:w-auto"}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {showClearConfirm ? 'Click again to confirm' : 'Clear All'}
+            </Button>
+          </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
@@ -200,5 +215,13 @@ export default function CollectionPage() {
         {renderSection('Graphs', graphs, allGraphs, 'graph')}
       </div>
     </div>
+  )
+}
+
+export default function CollectionPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-16 text-center">Loading...</div>}>
+      <CollectionPageContent />
+    </Suspense>
   )
 }

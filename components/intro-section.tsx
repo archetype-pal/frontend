@@ -1,13 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { CarouselItem } from '@/types'
-import { fetchCarouselItems } from '@/utils/api' // Import the function
+import { fetchCarouselItems, getCarouselImageUrl } from '@/utils/api'
 
 export default function Component() {
   const [currentImage, setCurrentImage] = useState(0)
@@ -121,16 +120,13 @@ export default function Component() {
             <div className='relative h-[400px]'>
               {carouselItems[currentImage] && (
                 <>
-                  <Image
-                    src={
-                      carouselItems[currentImage].image || '/placeholder.svg'
-                    }
+                  <img
+                    src={getCarouselImageUrl(carouselItems[currentImage].image)}
                     alt={carouselItems[currentImage].title}
-                    fill
-                    className='object-cover'
-                    priority
+                    className='absolute inset-0 h-full w-full object-cover'
+                    loading='eager'
                   />
-                  <div className='absolute inset-0 bg-black bg-opacity-50' />
+                  <div className='absolute inset-0 bg-black/50' aria-hidden />
                 </>
               )}
               <div className='absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2'>

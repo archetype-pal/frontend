@@ -6,6 +6,7 @@ import type { ImageListItem } from '@/types/image'
 import type { GraphListItem } from '@/types/graph'
 import { Highlight } from './Highlight'
 import { CollectionStar } from '@/components/collection-star'
+import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button'
 
 export interface SearchGridProps {
   results?: (ImageListItem | GraphListItem)[]
@@ -84,23 +85,29 @@ export function SearchGrid({
                   No Image
                 </div>
               )}
-              {/* Star buttons - positioned above everything with high z-index */}
-              {resultType === 'images' && (
-                <CollectionStar
-                  itemId={item.id}
-                  itemType="image"
+              {/* Action buttons - positioned above everything with high z-index */}
+              <div className="absolute top-2 right-2 z-30 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <OpenLightboxButton
                   item={item}
-                  className="z-30"
+                  variant="ghost"
+                  size="icon"
+                  className="bg-white/90 hover:bg-white h-7 w-7"
                 />
-              )}
-              {resultType === 'graphs' && (
-                <CollectionStar
-                  itemId={item.id}
-                  itemType="graph"
-                  item={item}
-                  className="z-30"
-                />
-              )}
+                {resultType === 'images' && (
+                  <CollectionStar
+                    itemId={item.id}
+                    itemType="image"
+                    item={item}
+                  />
+                )}
+                {resultType === 'graphs' && (
+                  <CollectionStar
+                    itemId={item.id}
+                    itemType="graph"
+                    item={item}
+                  />
+                )}
+              </div>
             </div>
           </div>
         )
