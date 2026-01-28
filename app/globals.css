@@ -128,3 +128,18 @@
 .osd-mode-delete {
   cursor: not-allowed !important;
 }
+
+g.a9s-annotation.a9s-highlight rect.a9s-outer,
+g.a9s-annotation.a9s-highlight rect.a9s-inner,
+g.a9s-annotation.a9s-highlight path,
+g.a9s-annotation.a9s-highlight polygon {
+  stroke-width: 4px !important;
+  stroke: orange !important;
+}
+
+g.a9s-annotation:hover path,
+g.a9s-annotation:hover rect,
+g.a9s-annotation:hover polygon {
+  stroke-width: 4px !important;
+  stroke: cornflowerblue !important;
+}

@@ -46,6 +46,10 @@ export function backendToA9sAnnotation(backend: BackendGraph,
         value: `xywh=pixel:${x},${y},${w},${h}`,
       },
     },
+    _meta: {
+      allographId: backend.allograph,
+      handId: backend.hand,
+    },
   }
 
   if (allographLabel) {

@@ -14,6 +14,10 @@ export interface Annotation {
         purpose?: string
     }[]
     target: unknown
+    _meta?: {
+        allographId?: number
+        handId?: number
+    }
 }
 type AnnotoriousInstance = ReturnType<typeof Annotorious>
 
@@ -27,6 +31,8 @@ export type ViewerApi = {
     enableDelete: () => void
     toggleAnnotations: (visible: boolean) => void
     getAnnotations: () => Annotation[]
+    highlightAnnotations: (ids: string[]) => void
+    clearHighlights: () => void
 }
 
 // ---- Component props ----
@@ -293,6 +299,28 @@ export default function ManuscriptAnnotorious({
                             const layer = viewerRef.current?.querySelector<SVGSVGElement>('.a9s-annotationlayer')
                             if (layer) layer.style.display = visible ? 'block' : 'none'
                         }
+                    },
+
+                    highlightAnnotations: (ids: string[]) => {
+                        const root = viewerRef.current
+                        if (!root) return
+
+                        // Remove highlight from all first
+                        root.querySelectorAll<SVGGElement>('g.a9s-annotation.a9s-highlight')
+                            .forEach(el => el.classList.remove('a9s-highlight'))
+
+                        // Add highlight to requested ids
+                        ids.forEach((id) => {
+                            const el = root.querySelector<SVGGElement>(`g.a9s-annotation[data-id="${id}"]`)
+                            if (el) el.classList.add('a9s-highlight')
+                        })
+                    },
+
+                    clearHighlights: () => {
+                        const root = viewerRef.current
+                        if (!root) return
+                        root.querySelectorAll<SVGGElement>('g.a9s-annotation.a9s-highlight')
+                            .forEach(el => el.classList.remove('a9s-highlight'))
                     },
 
                     getAnnotations: () => annoRef.current?.getAnnotations?.() ?? []

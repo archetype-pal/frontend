@@ -87,6 +87,25 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
         [allographs],
     )
 
+    const [hoveredAllograph, setHoveredAllograph] = React.useState<Allograph | undefined>(undefined)
+
+    const activeAllographId = hoveredAllograph?.id ?? selectedAllograph?.id ?? null
+    React.useEffect(() => {
+        if (!osdReady) return
+
+        if (activeAllographId == null) {
+            viewerApiRef.current?.clearHighlights?.()
+            return
+        }
+
+        const annots = viewerApiRef.current?.getAnnotations?.() ?? []
+        const ids = annots
+            .filter((a) => a?._meta?.allographId === activeAllographId)
+            .map((a) => a.id)
+
+        viewerApiRef.current?.highlightAnnotations?.(ids)
+    }, [activeAllographId, osdReady])
+
     const handleToggleFullScreen = () => {
         setIsFullScreen(prev => !prev)
 
@@ -413,6 +432,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                         onAllographSelect={setSelectedAllograph}
                         onHandSelect={setSelectedHand}
                         allographs={allographsForThisImage}
+                        onAllographHover={setHoveredAllograph}
                     />
                 </div>
             ) : (
@@ -424,6 +444,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                     onAllographSelect={setSelectedAllograph}
                     onHandSelect={setSelectedHand}
                     allographs={allographsForThisImage}
+                    onAllographHover={setHoveredAllograph}
                 />
             )}
 

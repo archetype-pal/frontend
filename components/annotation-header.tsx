@@ -24,6 +24,7 @@ interface AnnotationHeaderProps {
   onAllographSelect: (allograph: Allograph | undefined) => void
   onHandSelect: (hand: HandType | undefined) => void
   allographs: Allograph[]
+  onAllographHover?: (allograph: Allograph | undefined) => void
 }
 
 export function AnnotationHeader({
@@ -34,6 +35,7 @@ export function AnnotationHeader({
   onAllographSelect,
   onHandSelect,
   allographs,
+  onAllographHover,
 }: AnnotationHeaderProps) {
   const [hands, setHands] = React.useState<HandType[]>([])
   // const [allographs, setAllographs] = React.useState<Allograph[]>([])
@@ -65,12 +67,26 @@ export function AnnotationHeader({
   }, [imageId])
 
   const handleAllographChange = (allographId: string) => {
+    onAllographHover?.(undefined)
+    
+    if (allographId === '__all__') {
+      setSelectedAllograph('')
+      onAllographSelect(undefined)
+      return
+    }
+
     setSelectedAllograph(allographId)
     const selectedAllographData = allographs.find(
       (a) => a.id.toString() === allographId
     )
     onAllographSelect(selectedAllographData)
   }
+
+  const handleAllographHover = (allographId: string) => {
+    const a = allographs.find((x) => x.id.toString() === allographId)
+    onAllographHover?.(a)
+  }
+
 
   const handleHandChange = (handId: string) => {
     setSelectedHand(handId)
@@ -87,8 +103,8 @@ export function AnnotationHeader({
             <button
               onClick={() => onToggleAnnotations(!annotationsEnabled)}
               className={`px-3 py-1 text-sm font-medium transition-colors ${annotationsEnabled
-                  ? 'bg-slate-600 text-white'
-                  : 'bg-white text-gray-900 border shadow-sm'
+                ? 'bg-slate-600 text-white'
+                : 'bg-white text-gray-900 border shadow-sm'
                 }`}
               style={{
                 borderTopLeftRadius: '4px',
@@ -137,13 +153,20 @@ export function AnnotationHeader({
           </SelectContent>
         </Select>
 
-        <Select value={selectedAllograph} onValueChange={handleAllographChange}>
+        <Select value={selectedAllograph} onValueChange={handleAllographChange} onOpenChange={(open) => { if (!open) onAllographHover?.(undefined) }}>
           <SelectTrigger className='w-[200px]'>
             <SelectValue placeholder='Select Allograph' />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="__all__">All allographs</SelectItem>
+
             {allographs.map((allograph) => (
-              <SelectItem key={allograph.id} value={allograph.id.toString()}>
+              <SelectItem
+                key={allograph.id}
+                value={allograph.id.toString()}
+                onPointerEnter={() => handleAllographHover(allograph.id.toString())}
+                onFocus={() => handleAllographHover(allograph.id.toString())}
+              >
                 {allograph.name}
               </SelectItem>
             ))}
