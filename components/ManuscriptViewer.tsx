@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import {
-    Home, LaptopMinimal, ZoomIn, ZoomOut, Hand, Pencil, Save, Trash2, Expand, SquarePen, Maximize2,
+    Home, LaptopMinimal, ZoomIn, ZoomOut, Hand, Pencil, Save, Trash2, Expand, SquarePen,
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
@@ -51,7 +51,7 @@ function browserSafeIiifUrl(raw: string): string {
 export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): React.JSX.Element {
     // Always start with default value to avoid hydration mismatch
     const [annotationsEnabled, setAnnotationsEnabled] = React.useState<boolean>(true)
-    
+
     // Load from localStorage only on client after mount
     React.useEffect(() => {
         if (typeof window === 'undefined') return
@@ -89,7 +89,23 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
 
     const [hoveredAllograph, setHoveredAllograph] = React.useState<Allograph | undefined>(undefined)
 
+    type A9sWithMeta = A9sAnnotation & { _meta?: { allographId?: number } }
+    const [a9sSnapshot, setA9sSnapshot] = React.useState<A9sAnnotation[]>([])
+
     const activeAllographId = hoveredAllograph?.id ?? selectedAllograph?.id ?? null
+
+    const filteredA9s = React.useMemo(() => {
+        if (activeAllographId == null) return []
+        return a9sSnapshot.filter(
+            (a) => (a as A9sWithMeta)._meta?.allographId === activeAllographId
+        )
+    }, [a9sSnapshot, activeAllographId])
+
+    const filteredIds = React.useMemo(
+        () => filteredA9s.map((a) => a.id),
+        [filteredA9s]
+    )
+
     React.useEffect(() => {
         if (!osdReady) return
 
@@ -98,13 +114,9 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
             return
         }
 
-        const annots = viewerApiRef.current?.getAnnotations?.() ?? []
-        const ids = annots
-            .filter((a) => a?._meta?.allographId === activeAllographId)
-            .map((a) => a.id)
+        viewerApiRef.current?.highlightAnnotations?.(filteredIds)
+    }, [activeAllographId, osdReady, filteredIds])
 
-        viewerApiRef.current?.highlightAnnotations?.(ids)
-    }, [activeAllographId, osdReady])
 
     const handleToggleFullScreen = () => {
         setIsFullScreen(prev => !prev)
@@ -125,6 +137,8 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
             // Initial tool setup
             api.enablePan()
             setActiveButton('move')
+
+            setA9sSnapshot(api.getAnnotations?.() ?? [])
         },
         [],
     )
@@ -132,7 +146,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
     // persist the unsaved counter so it survives reloads
     // Always start with 0 to avoid hydration mismatch
     const [unsavedChanges, setUnsavedChanges] = React.useState<number>(0)
-    
+
     // Load from localStorage only on client after mount
     React.useEffect(() => {
         if (typeof window === 'undefined') return
@@ -276,8 +290,12 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                     }
                 }
                 if (isMounted) setInitialA9sAnnots(merged)
+                if (isMounted) setA9sSnapshot(merged)
             } catch {
-                if (isMounted) setInitialA9sAnnots([])
+                if (isMounted) {
+                    setInitialA9sAnnots([])
+                    setA9sSnapshot([])
+                }
             }
         }
         load()
@@ -433,6 +451,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                         onHandSelect={setSelectedHand}
                         allographs={allographsForThisImage}
                         onAllographHover={setHoveredAllograph}
+                        activeAllographCount={filteredA9s.length}
                     />
                 </div>
             ) : (
@@ -445,6 +464,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                     onHandSelect={setSelectedHand}
                     allographs={allographsForThisImage}
                     onAllographHover={setHoveredAllograph}
+                    activeAllographCount={filteredA9s.length}
                 />
             )}
 
@@ -569,6 +589,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                                 }
                                 // unsaved counter: +1 for creates
                                 setUnsavedChanges(n => n + 1)
+                                setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? [])
                             }}
                             onDelete={(a: A9sAnnotation) => {
                                 if (typeof window !== 'undefined') {
@@ -588,8 +609,9 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                                     // deleting a brand-new unsaved annotation reduces the counter
                                     setUnsavedChanges(n => Math.max(0, n - 1))
                                 }
+                                setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? [])
                             }}
-                            onSelect={() => {}}
+                            onSelect={() => { }}
                             exposeApi={handleExposeApi}
                         />
                     </div>

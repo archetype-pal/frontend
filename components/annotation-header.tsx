@@ -25,6 +25,7 @@ interface AnnotationHeaderProps {
   onHandSelect: (hand: HandType | undefined) => void
   allographs: Allograph[]
   onAllographHover?: (allograph: Allograph | undefined) => void
+  activeAllographCount?: number
 }
 
 export function AnnotationHeader({
@@ -36,6 +37,7 @@ export function AnnotationHeader({
   onHandSelect,
   allographs,
   onAllographHover,
+  activeAllographCount,
 }: AnnotationHeaderProps) {
   const [hands, setHands] = React.useState<HandType[]>([])
   // const [allographs, setAllographs] = React.useState<Allograph[]>([])
@@ -66,9 +68,20 @@ export function AnnotationHeader({
     }
   }, [imageId])
 
+  React.useEffect(() => {
+    if (!selectedAllograph) return
+    const exists = allographs.some((a) => a.id.toString() === selectedAllograph)
+    if (!exists) {
+      setSelectedAllograph('')
+      onAllographSelect(undefined)
+      onAllographHover?.(undefined)
+    }
+  }, [allographs, selectedAllograph, onAllographSelect, onAllographHover])
+
+
   const handleAllographChange = (allographId: string) => {
     onAllographHover?.(undefined)
-    
+
     if (allographId === '__all__') {
       setSelectedAllograph('')
       onAllographSelect(undefined)
@@ -173,10 +186,15 @@ export function AnnotationHeader({
           </SelectContent>
         </Select>
 
-        <div className='flex items-center space-x-1 bg-white rounded-md border px-2 py-1'>
-          <Eye className='h-4 w-4 text-gray-500' />
-          <span className='text-sm'>7</span>
-        </div>
+        <Button
+          variant="outline"
+          className="h-8 px-2 flex items-center gap-2"
+          onClick={() => {/* next step: open modal */ }}
+        >
+          <Eye className="h-4 w-4 text-gray-500" />
+          <span className="text-sm">{activeAllographCount ?? 0}</span>
+        </Button>
+
       </div>
     </div>
   )
