@@ -31,6 +31,7 @@ export type ViewerApi = {
     enableDelete: () => void
     toggleAnnotations: (visible: boolean) => void
     getAnnotations: () => Annotation[]
+    centerOnAnnotation?: (id: string) => void
     highlightAnnotations: (ids: string[]) => void
     clearHighlights: () => void
 }
@@ -50,6 +51,18 @@ interface ComponentState {
     hasError: boolean
     errorMessage: string | null
     isLoading: boolean
+}
+
+function isAnnotation(x: unknown): x is Annotation {
+    if (!x || typeof x !== 'object') return false
+    const r = x as Record<string, unknown>
+    return typeof r.id === 'string' && 'target' in r
+}
+
+function selectorValueFromAnnotation(a: Annotation): string | null {
+    const target = a.target as { selector?: { value?: unknown } } | null
+    const v = target?.selector?.value
+    return typeof v === 'string' ? v : null
 }
 
 // ---- Component ----
@@ -162,171 +175,206 @@ export default function ManuscriptAnnotorious({
                 })
             })
 
-            viewer.addHandler('tile-load-failed', () => {})
+            viewer.addHandler('tile-load-failed', () => { })
 
             viewer.addHandler('open', () => {
-            if (!isMounted) return
-            setState(prev => ({ ...prev, isLoading: false, hasError: false }))
+                if (!isMounted) return
+                setState(prev => ({ ...prev, isLoading: false, hasError: false }))
 
-            if (!annoRef.current) {
-                const anno = Annotorious(viewer, { widgets: [{ widget: 'COMMENT' }] })
-                annoRef.current = anno
+                if (!annoRef.current) {
+                    const anno = Annotorious(viewer, { widgets: [{ widget: 'COMMENT' }] })
+                    annoRef.current = anno
 
-                const toApplyNow = initialAnnotsRef.current ?? []
-                if (Array.isArray(toApplyNow) && toApplyNow.length > 0) {
-                    const existing = new Set(anno.getAnnotations().map((a: Annotation) => a.id))
-                    for (const a of toApplyNow) {
-                        if (!existing.has(a.id)) {
-                            try {
-                                anno.addAnnotation(a)
-                            } catch {
-                                // skip invalid annotation
+                    const toApplyNow = initialAnnotsRef.current ?? []
+                    if (Array.isArray(toApplyNow) && toApplyNow.length > 0) {
+                        const existing = new Set(anno.getAnnotations().map((a: Annotation) => a.id))
+                        for (const a of toApplyNow) {
+                            if (!existing.has(a.id)) {
+                                try {
+                                    anno.addAnnotation(a)
+                                } catch {
+                                    // skip invalid annotation
+                                }
                             }
                         }
                     }
+
+                    anno.on('createAnnotation', (a: Annotation) => {
+                        onCreateRef.current?.(a)
+                    })
+                    anno.on('deleteAnnotation', (a: Annotation) => {
+                        onDeleteRef.current?.(a)
+                    })
+                    anno.on('selectAnnotation', (a: Annotation | null) => {
+                        onSelectRef.current?.(a)
+                    })
+
+                    let currentMode: 'pan' | 'draw' | 'delete' = 'pan'
+                    let deleteHandler: ((a: Annotation) => void) | null = null
+                    let rearmHandler: (() => void) | null = null
+
+                    exposeApiRef.current?.({
+                        zoomIn: () => {
+                            const v = osdRef.current
+                            v?.viewport.zoomBy(1.2)
+                            v?.viewport.applyConstraints()
+                        },
+                        zoomOut: () => {
+                            const v = osdRef.current
+                            v?.viewport.zoomBy(0.8)
+                            v?.viewport.applyConstraints()
+                        },
+                        goHome: () => osdRef.current?.viewport.goHome(),
+
+                        // --- MOVE TOOL ---
+                        enablePan: () => {
+                            const anno = annoRef.current
+                            if (!anno) return
+
+                            if (deleteHandler) { anno.off('selectAnnotation', deleteHandler); deleteHandler = null }
+                            if (rearmHandler) {
+                                anno.off('createAnnotation', rearmHandler)
+                                anno.off('cancelSelected', rearmHandler)
+                                anno.off('updateAnnotation', rearmHandler)
+                                rearmHandler = null
+                            }
+
+                            anno.setDrawingEnabled(false)
+                            currentMode = 'pan'
+                            viewerRef.current?.classList.remove('osd-mode-draw', 'osd-mode-delete')
+                            viewerRef.current?.classList.add('osd-mode-pan')
+                        },
+
+                        // --- DRAW TOOL ---
+                        enableDraw: () => {
+                            const anno = annoRef.current
+                            if (!anno) return
+
+                            if (deleteHandler) { anno.off('selectAnnotation', deleteHandler); deleteHandler = null }
+
+                            anno.setDrawingEnabled(true)
+                            currentMode = 'draw'
+                            viewerRef.current?.classList.remove('osd-mode-pan', 'osd-mode-delete')
+                            viewerRef.current?.classList.add('osd-mode-draw')
+
+                            const rearm = () => {
+                                if (currentMode === 'draw') setTimeout(() => anno.setDrawingEnabled(true), 0)
+                            }
+                            if (rearmHandler) {
+                                anno.off('createAnnotation', rearmHandler)
+                                anno.off('cancelSelected', rearmHandler)
+                                anno.off('updateAnnotation', rearmHandler)
+                            }
+                            rearmHandler = rearm
+                            anno.on('createAnnotation', rearmHandler)
+                            anno.on('cancelSelected', rearmHandler)
+                            anno.on('updateAnnotation', rearmHandler)
+                        },
+
+                        // --- DELETE TOOL ---
+                        enableDelete: () => {
+                            const anno = annoRef.current
+                            if (!anno) return
+
+                            if (rearmHandler) {
+                                anno.off('createAnnotation', rearmHandler)
+                                anno.off('cancelSelected', rearmHandler)
+                                anno.off('updateAnnotation', rearmHandler)
+                                rearmHandler = null
+                            }
+
+                            anno.setDrawingEnabled(false)
+                            currentMode = 'delete'
+                            viewerRef.current?.classList.remove('osd-mode-pan', 'osd-mode-draw')
+                            viewerRef.current?.classList.add('osd-mode-delete')
+
+                            if (deleteHandler) anno.off('selectAnnotation', deleteHandler)
+                            deleteHandler = (a: Annotation) => {
+                                if (a && currentMode === 'delete') {
+                                    anno.removeAnnotation(a)
+                                    onDeleteRef.current?.(a)
+                                }
+                            }
+                            anno.on('selectAnnotation', deleteHandler)
+                        },
+
+                        // --- SHOW/HIDE ANNOTATIONS ---
+                        toggleAnnotations: (visible: boolean) => {
+                            const anno = annoRef.current
+                            if (anno && typeof anno.setVisible === 'function') {
+                                anno.setVisible(visible)
+                                if (!visible) {
+                                    anno.setDrawingEnabled(false)
+                                    if (deleteHandler) { anno.off('selectAnnotation', deleteHandler); deleteHandler = null }
+                                    currentMode = 'pan'
+                                }
+                            } else {
+                                const layer = viewerRef.current?.querySelector<SVGSVGElement>('.a9s-annotationlayer')
+                                if (layer) layer.style.display = visible ? 'block' : 'none'
+                            }
+                        },
+
+                        highlightAnnotations: (ids: string[]) => {
+                            const root = viewerRef.current
+                            if (!root) return
+
+                            // Remove highlight from all first
+                            root.querySelectorAll<SVGGElement>('g.a9s-annotation.a9s-highlight')
+                                .forEach(el => el.classList.remove('a9s-highlight'))
+
+                            // Add highlight to requested ids
+                            ids.forEach((id) => {
+                                const el = root.querySelector<SVGGElement>(`g.a9s-annotation[data-id="${id}"]`)
+                                if (el) el.classList.add('a9s-highlight')
+                            })
+                        },
+
+                        clearHighlights: () => {
+                            const root = viewerRef.current
+                            if (!root) return
+                            root.querySelectorAll<SVGGElement>('g.a9s-annotation.a9s-highlight')
+                                .forEach(el => el.classList.remove('a9s-highlight'))
+                        },
+
+                        getAnnotations: () => annoRef.current?.getAnnotations?.() ?? [],
+
+                        centerOnAnnotation: (id: string) => {
+                            const viewer = osdRef.current
+                            const anno = annoRef.current
+                            if (!viewer || !anno) return
+
+                            const annots = (anno.getAnnotations?.() ?? []) as unknown[]
+                            const a = annots.find((x): x is Annotation => isAnnotation(x) && x.id === id)
+                            if (!a) return
+
+                            const value = selectorValueFromAnnotation(a)
+                            if (!value) return
+
+                            const m = value.match(/xywh=pixel:([\d.]+),([\d.]+),([\d.]+),([\d.]+)/)
+                            if (!m) return
+
+                            const x = Number(m[1])
+                            const y = Number(m[2])
+                            const w = Number(m[3])
+                            const h = Number(m[4])
+
+                            const pad = Math.max(w, h) * 3
+
+                            const px = Math.max(0, x - pad)
+                            const py = Math.max(0, y - pad)
+                            const pw = w + pad * 2
+                            const ph = h + pad * 2
+
+                            
+                            const rect = new OpenSeadragon.Rect(px, py, pw, ph)
+                            const vpRect = viewer.viewport.imageToViewportRectangle(rect)
+
+                            viewer.viewport.fitBounds(vpRect, true)
+                        },
+
+                    })
                 }
-
-                anno.on('createAnnotation', (a: Annotation) => {
-                    onCreateRef.current?.(a)
-                })
-                anno.on('deleteAnnotation', (a: Annotation) => {
-                    onDeleteRef.current?.(a)
-                })
-                anno.on('selectAnnotation', (a: Annotation | null) => {
-                    onSelectRef.current?.(a)
-                })
-
-                let currentMode: 'pan' | 'draw' | 'delete' = 'pan'
-                let deleteHandler: ((a: Annotation) => void) | null = null
-                let rearmHandler: (() => void) | null = null
-
-                exposeApiRef.current?.({
-                    zoomIn: () => {
-                        const v = osdRef.current
-                        v?.viewport.zoomBy(1.2)
-                        v?.viewport.applyConstraints()
-                    },
-                    zoomOut: () => {
-                        const v = osdRef.current
-                        v?.viewport.zoomBy(0.8)
-                        v?.viewport.applyConstraints()
-                    },
-                    goHome: () => osdRef.current?.viewport.goHome(),
-
-                    // --- MOVE TOOL ---
-                    enablePan: () => {
-                        const anno = annoRef.current
-                        if (!anno) return
-
-                        if (deleteHandler) { anno.off('selectAnnotation', deleteHandler); deleteHandler = null }
-                        if (rearmHandler) {
-                            anno.off('createAnnotation', rearmHandler)
-                            anno.off('cancelSelected', rearmHandler)
-                            anno.off('updateAnnotation', rearmHandler)
-                            rearmHandler = null
-                        }
-
-                        anno.setDrawingEnabled(false)
-                        currentMode = 'pan'
-                        viewerRef.current?.classList.remove('osd-mode-draw', 'osd-mode-delete')
-                        viewerRef.current?.classList.add('osd-mode-pan')
-                    },
-
-                    // --- DRAW TOOL ---
-                    enableDraw: () => {
-                        const anno = annoRef.current
-                        if (!anno) return
-
-                        if (deleteHandler) { anno.off('selectAnnotation', deleteHandler); deleteHandler = null }
-
-                        anno.setDrawingEnabled(true)
-                        currentMode = 'draw'
-                        viewerRef.current?.classList.remove('osd-mode-pan', 'osd-mode-delete')
-                        viewerRef.current?.classList.add('osd-mode-draw')
-
-                        const rearm = () => {
-                            if (currentMode === 'draw') setTimeout(() => anno.setDrawingEnabled(true), 0)
-                        }
-                        if (rearmHandler) {
-                            anno.off('createAnnotation', rearmHandler)
-                            anno.off('cancelSelected', rearmHandler)
-                            anno.off('updateAnnotation', rearmHandler)
-                        }
-                        rearmHandler = rearm
-                        anno.on('createAnnotation', rearmHandler)
-                        anno.on('cancelSelected', rearmHandler)
-                        anno.on('updateAnnotation', rearmHandler)
-                    },
-
-                    // --- DELETE TOOL ---
-                    enableDelete: () => {
-                        const anno = annoRef.current
-                        if (!anno) return
-
-                        if (rearmHandler) {
-                            anno.off('createAnnotation', rearmHandler)
-                            anno.off('cancelSelected', rearmHandler)
-                            anno.off('updateAnnotation', rearmHandler)
-                            rearmHandler = null
-                        }
-
-                        anno.setDrawingEnabled(false)
-                        currentMode = 'delete'
-                        viewerRef.current?.classList.remove('osd-mode-pan', 'osd-mode-draw')
-                        viewerRef.current?.classList.add('osd-mode-delete')
-
-                        if (deleteHandler) anno.off('selectAnnotation', deleteHandler)
-                        deleteHandler = (a: Annotation) => {
-                            if (a && currentMode === 'delete') {
-                                anno.removeAnnotation(a)
-                                onDeleteRef.current?.(a)
-                            }
-                        }
-                        anno.on('selectAnnotation', deleteHandler)
-                    },
-
-                    // --- SHOW/HIDE ANNOTATIONS ---
-                    toggleAnnotations: (visible: boolean) => {
-                        const anno = annoRef.current
-                        if (anno && typeof anno.setVisible === 'function') {
-                            anno.setVisible(visible)
-                            if (!visible) {
-                                anno.setDrawingEnabled(false)
-                                if (deleteHandler) { anno.off('selectAnnotation', deleteHandler); deleteHandler = null }
-                                currentMode = 'pan'
-                            }
-                        } else {
-                            const layer = viewerRef.current?.querySelector<SVGSVGElement>('.a9s-annotationlayer')
-                            if (layer) layer.style.display = visible ? 'block' : 'none'
-                        }
-                    },
-
-                    highlightAnnotations: (ids: string[]) => {
-                        const root = viewerRef.current
-                        if (!root) return
-
-                        // Remove highlight from all first
-                        root.querySelectorAll<SVGGElement>('g.a9s-annotation.a9s-highlight')
-                            .forEach(el => el.classList.remove('a9s-highlight'))
-
-                        // Add highlight to requested ids
-                        ids.forEach((id) => {
-                            const el = root.querySelector<SVGGElement>(`g.a9s-annotation[data-id="${id}"]`)
-                            if (el) el.classList.add('a9s-highlight')
-                        })
-                    },
-
-                    clearHighlights: () => {
-                        const root = viewerRef.current
-                        if (!root) return
-                        root.querySelectorAll<SVGGElement>('g.a9s-annotation.a9s-highlight')
-                            .forEach(el => el.classList.remove('a9s-highlight'))
-                    },
-
-                    getAnnotations: () => annoRef.current?.getAnnotations?.() ?? []
-                })
-            }
-        });
+            });
         })();
 
         return () => {

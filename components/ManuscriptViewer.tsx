@@ -7,13 +7,20 @@ import {
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import type { ViewerApi, Annotation as A9sAnnotation, } from '@/components/ManuscriptAnnotorious'
-
+import { getSelectorValue, iiifThumbFromSelector } from '@/utils/iiif'
 const ManuscriptAnnotorious = dynamic(() => import('@/components/ManuscriptAnnotorious'), { ssr: false })
 
 import { ManuscriptTabs } from './manuscript-tabs'
 import { Toolbar } from './toolbar'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog'
+import { Separator } from '@/components/ui/separator'
 import { AnnotationHeader } from './annotation-header'
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button'
 import { fetchManuscriptImage, fetchAllographs, fetchManuscript } from '@/services/manuscripts'
@@ -36,11 +43,13 @@ const isDbId = (id?: string) => typeof id === 'string' && id.startsWith('db:')
 function browserSafeIiifUrl(raw: string): string {
     const base = raw.replace(/\/info\.json$/, '')
     if (typeof window === 'undefined') return base
+
     try {
         const u = new URL(raw)
         if (u.origin !== window.location.origin) {
-            const path = u.pathname.replace(/\/info\.json$/, '') || ''
-            return `${window.location.origin}/iiif-proxy${path}`
+            // IMPORTANT: decode %2F to real slashes so Next rewrite path matching works
+            const decodedPath = decodeURIComponent(u.pathname).replace(/\/info\.json$/, '')
+            return `${window.location.origin}/iiif-proxy${decodedPath}`
         }
         return base
     } catch {
@@ -89,10 +98,18 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
 
     const [hoveredAllograph, setHoveredAllograph] = React.useState<Allograph | undefined>(undefined)
 
+    const [isAllographModalOpen, setIsAllographModalOpen] = React.useState(false)
+    const [hoveredAnnotationId, setHoveredAnnotationId] = React.useState<string | null>(null)
+    const activeAllographLabel = hoveredAllograph?.name ?? selectedAllograph?.name ?? undefined
+    const activeHandLabel = selectedHand?.name ?? 'Any'
+
     type A9sWithMeta = A9sAnnotation & { _meta?: { allographId?: number } }
     const [a9sSnapshot, setA9sSnapshot] = React.useState<A9sAnnotation[]>([])
 
     const activeAllographId = hoveredAllograph?.id ?? selectedAllograph?.id ?? null
+
+    const [dialogPos, setDialogPos] = React.useState({ x: 0, y: 0 })
+    const dragRef = React.useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null)
 
     const filteredA9s = React.useMemo(() => {
         if (activeAllographId == null) return []
@@ -109,14 +126,19 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
     React.useEffect(() => {
         if (!osdReady) return
 
+        // If hovering a thumbnail, highlight ONLY that annotation
+        if (hoveredAnnotationId) {
+            viewerApiRef.current?.highlightAnnotations?.([hoveredAnnotationId])
+            return
+        }
+
         if (activeAllographId == null) {
             viewerApiRef.current?.clearHighlights?.()
             return
         }
 
         viewerApiRef.current?.highlightAnnotations?.(filteredIds)
-    }, [activeAllographId, osdReady, filteredIds])
-
+    }, [osdReady, hoveredAnnotationId, activeAllographId, filteredIds])
 
     const handleToggleFullScreen = () => {
         setIsFullScreen(prev => !prev)
@@ -452,6 +474,12 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                         allographs={allographsForThisImage}
                         onAllographHover={setHoveredAllograph}
                         activeAllographCount={filteredA9s.length}
+                        activeAllographLabel={activeAllographLabel}
+                        onOpenAllographModal={() => {
+                            setHoveredAnnotationId(null)
+                            setIsAllographModalOpen(true)
+                        }}
+
                     />
                 </div>
             ) : (
@@ -465,8 +493,95 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                     allographs={allographsForThisImage}
                     onAllographHover={setHoveredAllograph}
                     activeAllographCount={filteredA9s.length}
+                    activeAllographLabel={activeAllographLabel}
+                    onOpenAllographModal={() => {
+                        setHoveredAnnotationId(null)
+                        setIsAllographModalOpen(true)
+                    }}
+
                 />
             )}
+            <Dialog open={isAllographModalOpen} onOpenChange={setIsAllographModalOpen} modal={false}>
+                <DialogContent className="w-[640px] max-w-[90vw] max-h-[80vh] overflow-auto" style={{ transform: `translate(calc(-50% + ${dialogPos.x}px), calc(-50% + ${dialogPos.y}px))` }} onOpenAutoFocus={(e) => e.preventDefault()}>
+                    <DialogHeader
+                        className="cursor-move select-none"
+                        onPointerDown={(e) => {
+                            dragRef.current = {
+                                startX: e.clientX,
+                                startY: e.clientY,
+                                baseX: dialogPos.x,
+                                baseY: dialogPos.y,
+                            }
+                                ; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+                        }}
+                        onPointerMove={(e) => {
+                            if (!dragRef.current) return
+                            const dx = e.clientX - dragRef.current.startX
+                            const dy = e.clientY - dragRef.current.startY
+                            setDialogPos({ x: dragRef.current.baseX + dx, y: dragRef.current.baseY + dy })
+                        }}
+                        onPointerUp={() => { dragRef.current = null }}
+                    >
+                        <DialogTitle className="mb-2">
+                            {activeAllographLabel ? `Allograph: ${activeAllographLabel}` : 'Allograph'}
+                        </DialogTitle>
+
+                    </DialogHeader>
+
+                    <div className="px-5 pb-4">
+                        <div className="text-sm text-muted-foreground">
+                            <span className="flex items-center gap-2">
+                                Hand:
+                                <span className="text-foreground font-medium">{activeHandLabel}</span>
+                                <span className="inline-flex items-center justify-center rounded bg-muted px-2 py-0.5 text-xs text-foreground">
+                                    {filteredA9s.length}
+                                </span>
+                            </span>
+                        </div>
+
+                        <Separator className="my-4" />
+
+                        <div className="grid grid-cols-4 gap-3">
+                            {filteredA9s.map((a) => {
+                                const v = getSelectorValue(a)
+                                if (!v || !manuscriptImage) return null
+
+                                const base = browserSafeIiifUrl(manuscriptImage.iiif_image)
+                                const src = iiifThumbFromSelector(base, v, 200)
+                                if (!src) return null
+
+                                return (
+                                    <button
+                                        key={a.id}
+                                        className="group rounded-md border bg-background overflow-hidden text-left hover:shadow-sm"
+                                        onMouseEnter={() => setHoveredAnnotationId(a.id)}
+                                        onMouseLeave={() => setHoveredAnnotationId(null)}
+                                        onClick={() => {
+                                            viewerApiRef.current?.centerOnAnnotation?.(a.id)
+                                        }}
+                                        title={a.id}
+                                        type="button"
+                                    >
+                                        <div className="w-full aspect-square bg-muted flex items-center justify-center">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={src}
+                                                alt=""
+                                                className="max-h-full max-w-full object-contain"
+                                                loading="lazy"
+                                                onError={() => console.warn('thumb failed:', src)}
+                                            />
+                                        </div>
+                                        <div className="px-2 py-1 text-xs text-muted-foreground truncate">
+                                            {a.id}
+                                        </div>
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             <div className={`relative flex flex-1 ${isFullScreen ? 'mt-20' : ''}`}>
                 <Toolbar>

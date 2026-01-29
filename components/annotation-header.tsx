@@ -26,6 +26,8 @@ interface AnnotationHeaderProps {
   allographs: Allograph[]
   onAllographHover?: (allograph: Allograph | undefined) => void
   activeAllographCount?: number
+  activeAllographLabel?: string
+  onOpenAllographModal?: () => void
 }
 
 export function AnnotationHeader({
@@ -38,6 +40,8 @@ export function AnnotationHeader({
   allographs,
   onAllographHover,
   activeAllographCount,
+  activeAllographLabel,
+  onOpenAllographModal,
 }: AnnotationHeaderProps) {
   const [hands, setHands] = React.useState<HandType[]>([])
   // const [allographs, setAllographs] = React.useState<Allograph[]>([])
@@ -189,7 +193,13 @@ export function AnnotationHeader({
         <Button
           variant="outline"
           className="h-8 px-2 flex items-center gap-2"
-          onClick={() => {/* next step: open modal */ }}
+          onClick={() => onOpenAllographModal?.()}
+          disabled={!activeAllographLabel}
+          title={
+            activeAllographLabel
+              ? `${activeAllographLabel}: ${activeAllographCount ?? 0}`
+              : 'Select an allograph first'
+          }
         >
           <Eye className="h-4 w-4 text-gray-500" />
           <span className="text-sm">{activeAllographCount ?? 0}</span>
