@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useLightboxStore } from '@/stores/lightbox-store'
+import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store'
 import { LightboxImageLayer } from './lightbox-image-layer'
 import { LightboxMinimap } from './lightbox-minimap'
 import { LightboxGridOverlay } from './lightbox-grid-overlay'
@@ -12,15 +12,9 @@ interface LightboxViewerProps {
 }
 
 export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}) {
-  const { currentWorkspaceId, images, showAnnotations, showGrid, selectedImageIds } = useLightboxStore()
+  const { currentWorkspaceId, showAnnotations, showGrid, selectedImageIds } = useLightboxStore()
+  const workspaceImages = useWorkspaceImages()
   const containerRef = React.useRef<HTMLDivElement>(null)
-  
-  const workspaceImages = React.useMemo(() => {
-    if (!currentWorkspaceId) return []
-    return Array.from(images.values()).filter(
-      (img) => img.workspaceId === currentWorkspaceId
-    )
-  }, [currentWorkspaceId, images])
 
   if (!currentWorkspaceId) {
     return (
@@ -68,12 +62,7 @@ export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}
       {showAnnotations && selectedImage && (
         <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
           <div className="w-full h-full pointer-events-auto">
-            <LightboxAnnotations
-              image={selectedImage}
-              onAnnotationChange={() => {
-                // Refresh annotations if needed
-              }}
-            />
+            <LightboxAnnotations image={selectedImage} />
           </div>
         </div>
       )}

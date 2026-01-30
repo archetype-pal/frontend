@@ -3,10 +3,13 @@
 import * as React from 'react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { X, Split, Layers } from 'lucide-react'
 import { getWorkspaceRegions } from '@/lib/lightbox-db'
 import { useLightboxStore } from '@/stores/lightbox-store'
 import type { LightboxRegion } from '@/lib/lightbox-db'
+import {
+  LightboxComparisonHeader,
+  type ComparisonViewMode,
+} from './lightbox-comparison-header'
 
 interface LightboxRegionComparisonProps {
   onClose: () => void
@@ -16,34 +19,21 @@ export function LightboxRegionComparison({ onClose }: LightboxRegionComparisonPr
   const { currentWorkspaceId } = useLightboxStore()
   const [regions, setRegions] = useState<LightboxRegion[]>([])
   const [selectedRegions, setSelectedRegions] = useState<string[]>([])
-  const [mode, setMode] = useState<'side-by-side' | 'overlay'>('side-by-side')
+  const [mode, setMode] = useState<ComparisonViewMode>('side-by-side')
   const [overlayOpacity, setOverlayOpacity] = useState(0.5)
 
   React.useEffect(() => {
     if (!currentWorkspaceId) return
-
-    const workspaceId = currentWorkspaceId
-    async function loadRegions() {
-      try {
-        const workspaceRegions = await getWorkspaceRegions(workspaceId)
-        setRegions(workspaceRegions)
-      } catch (error) {
-        console.error('Failed to load regions:', error)
-      }
-    }
-
-    loadRegions()
+    getWorkspaceRegions(currentWorkspaceId)
+      .then(setRegions)
+      .catch((error) => console.error('Failed to load regions:', error))
   }, [currentWorkspaceId])
 
   const handleRegionSelect = (regionId: string) => {
     setSelectedRegions((prev) => {
-      if (prev.includes(regionId)) {
-        return prev.filter((id) => id !== regionId)
-      }
-      if (prev.length < 2) {
-        return [...prev, regionId]
-      }
-      return [prev[1], regionId] // Replace first with new selection
+      if (prev.includes(regionId)) return prev.filter((id) => id !== regionId)
+      if (prev.length < 2) return [...prev, regionId]
+      return [prev[1], regionId]
     })
   }
 
@@ -67,48 +57,14 @@ export function LightboxRegionComparison({ onClose }: LightboxRegionComparisonPr
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h3 className="text-lg font-semibold">Region Comparison</h3>
-          <div className="flex gap-2">
-            <Button
-              variant={mode === 'side-by-side' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setMode('side-by-side')}
-            >
-              <Split className="h-4 w-4 mr-2" />
-              Side-by-Side
-            </Button>
-            <Button
-              variant={mode === 'overlay' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setMode('overlay')}
-            >
-              <Layers className="h-4 w-4 mr-2" />
-              Overlay
-            </Button>
-          </div>
-          {mode === 'overlay' && (
-            <div className="flex items-center gap-2">
-              <label className="text-sm">Opacity:</label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={overlayOpacity}
-                onChange={(e) => setOverlayOpacity(Number(e.target.value))}
-                className="w-24"
-              />
-              <span className="text-sm">{Math.round(overlayOpacity * 100)}%</span>
-            </div>
-          )}
-        </div>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+      <LightboxComparisonHeader
+        title="Region Comparison"
+        mode={mode}
+        onModeChange={setMode}
+        overlayOpacity={overlayOpacity}
+        onOverlayOpacityChange={setOverlayOpacity}
+        onClose={onClose}
+      />
 
       {/* Region Selection */}
       <div className="bg-gray-50 border-b px-4 py-2">

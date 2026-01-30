@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Save, X, FolderOpen, Trash2 } from 'lucide-react'
-import { useLightboxStore } from '@/stores/lightbox-store'
+import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store'
 import { saveSession, getAllSessions, deleteSession } from '@/lib/lightbox-db'
 import type { LightboxSession } from '@/lib/lightbox-db'
 
@@ -18,7 +18,8 @@ export function LightboxSessionManager({
   onClose,
   onLoad,
 }: LightboxSessionManagerProps) {
-  const { workspaces, images, currentWorkspaceId } = useLightboxStore()
+  const { workspaces, currentWorkspaceId } = useLightboxStore()
+  const workspaceImages = useWorkspaceImages()
   const [sessions, setSessions] = useState<LightboxSession[]>([])
   const [sessionName, setSessionName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -49,10 +50,6 @@ export function LightboxSessionManager({
 
     setIsLoading(true)
     try {
-      const workspaceImages = Array.from(images.values()).filter(
-        (img) => img.workspaceId === currentWorkspaceId
-      )
-
       const session: LightboxSession = {
         id: `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         name: sessionName,

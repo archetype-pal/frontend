@@ -10,7 +10,7 @@ import {
   X,
   FileJson,
 } from 'lucide-react'
-import { useLightboxStore } from '@/stores/lightbox-store'
+import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store'
 import type { LightboxImage } from '@/lib/lightbox-db'
 
 interface LightboxExportProps {
@@ -18,7 +18,8 @@ interface LightboxExportProps {
 }
 
 export function LightboxExport({ onClose }: LightboxExportProps) {
-  const { currentWorkspaceId, images, workspaces } = useLightboxStore()
+  const { currentWorkspaceId, workspaces } = useLightboxStore()
+  const workspaceImages = useWorkspaceImages()
   const [exportFormat, setExportFormat] = useState<'pdf' | 'image' | 'json' | 'tei'>('pdf')
   const [isExporting, setIsExporting] = useState(false)
 
@@ -29,10 +30,6 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
         alert('No workspace selected')
         return
       }
-
-      const workspaceImages = Array.from(images.values()).filter(
-        (img) => img.workspaceId === currentWorkspaceId
-      )
 
       switch (exportFormat) {
         case 'pdf':

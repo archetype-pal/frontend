@@ -301,14 +301,6 @@ function LightboxPageContent() {
             onToggleMeasurement={() => setShowMeasurement(!showMeasurement)}
             onToggleComparison={() => setShowComparison(!showComparison)}
             onToggleRegionComparison={() => setShowRegionComparison(!showRegionComparison)}
-            onToggleAnnotations={() => {
-              const { showAnnotations, setShowAnnotations } = useLightboxStore.getState()
-              setShowAnnotations(!showAnnotations)
-            }}
-            onToggleGrid={() => {
-              const { showGrid, setShowGrid } = useLightboxStore.getState()
-              setShowGrid(!showGrid)
-            }}
           />
         </header>
 

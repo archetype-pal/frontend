@@ -4,14 +4,8 @@ import * as React from 'react'
 import NextImage from 'next/image'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  Plus,
-  Trash2,
-  Image as ImageIcon,
-  Folder,
-  X,
-} from 'lucide-react'
-import { useLightboxStore } from '@/stores/lightbox-store'
+import { Plus, Trash2, Image as ImageIcon, Folder, X } from 'lucide-react'
+import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store'
 import { useCollection } from '@/contexts/collection-context'
 import { cn } from '@/lib/utils'
 
@@ -29,15 +23,9 @@ export function LightboxSidebar() {
     selectImage,
     deselectImage,
   } = useLightboxStore()
+  const workspaceImages = useWorkspaceImages()
   const { items: collectionItems } = useCollection()
   const [isCollapsed, setIsCollapsed] = React.useState(false)
-
-  const workspaceImages = React.useMemo(() => {
-    if (!currentWorkspaceId) return []
-    return Array.from(images.values()).filter(
-      (img) => img.workspaceId === currentWorkspaceId
-    )
-  }, [currentWorkspaceId, images])
 
   const handleCreateWorkspace = async () => {
     await createWorkspace()
@@ -83,7 +71,6 @@ export function LightboxSidebar() {
         <div className="p-2 space-y-1">
           {workspaces.map((workspace) => {
             const isActive = workspace.id === currentWorkspaceId
-            // Count images for this specific workspace
             const workspaceImageCount = Array.from(images.values()).filter(
               (img) => img.workspaceId === workspace.id
             ).length

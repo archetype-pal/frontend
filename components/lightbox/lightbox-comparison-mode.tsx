@@ -3,11 +3,12 @@
 import * as React from 'react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { X, Split, Layers } from 'lucide-react'
 import { useLightboxStore } from '@/stores/lightbox-store'
 import { LightboxImageLayer } from './lightbox-image-layer'
-
-type ComparisonMode = 'side-by-side' | 'overlay'
+import {
+  LightboxComparisonHeader,
+  type ComparisonViewMode,
+} from './lightbox-comparison-header'
 
 interface LightboxComparisonModeProps {
   onClose: () => void
@@ -15,7 +16,7 @@ interface LightboxComparisonModeProps {
 
 export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps) {
   const { selectedImageIds, images } = useLightboxStore()
-  const [mode, setMode] = useState<ComparisonMode>('side-by-side')
+  const [mode, setMode] = useState<ComparisonViewMode>('side-by-side')
   const [overlayOpacity, setOverlayOpacity] = useState(0.5)
 
   const selectedImages = React.useMemo(() => {
@@ -43,48 +44,14 @@ export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps)
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h3 className="text-lg font-semibold">Comparison Mode</h3>
-          <div className="flex gap-2">
-            <Button
-              variant={mode === 'side-by-side' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setMode('side-by-side')}
-            >
-              <Split className="h-4 w-4 mr-2" />
-              Side-by-Side
-            </Button>
-            <Button
-              variant={mode === 'overlay' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setMode('overlay')}
-            >
-              <Layers className="h-4 w-4 mr-2" />
-              Overlay
-            </Button>
-          </div>
-          {mode === 'overlay' && (
-            <div className="flex items-center gap-2">
-              <label className="text-sm">Opacity:</label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={overlayOpacity}
-                onChange={(e) => setOverlayOpacity(Number(e.target.value))}
-                className="w-24"
-              />
-              <span className="text-sm">{Math.round(overlayOpacity * 100)}%</span>
-            </div>
-          )}
-        </div>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+      <LightboxComparisonHeader
+        title="Comparison Mode"
+        mode={mode}
+        onModeChange={setMode}
+        overlayOpacity={overlayOpacity}
+        onOverlayOpacityChange={setOverlayOpacity}
+        onClose={onClose}
+      />
 
       {/* Comparison View */}
       <div className="flex-1 flex overflow-hidden">
