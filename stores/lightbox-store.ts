@@ -9,15 +9,14 @@ export interface LightboxState {
   currentWorkspaceId: string | null
   workspaces: LightboxWorkspace[]
   images: Map<string, LightboxImage>
-  
+
   // UI state
   isLoading: boolean
   error: string | null
   selectedImageIds: Set<string>
-  
+
   // Viewer state
   zoom: number
-  pan: { x: number; y: number }
   showAnnotations: boolean
   showGrid: boolean
   
@@ -42,7 +41,6 @@ export interface LightboxState {
   selectAll: () => void
   deselectAll: () => void
   setZoom: (zoom: number) => void
-  setPan: (pan: { x: number; y: number }) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
   clearError: () => void
@@ -93,7 +91,6 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
   error: null,
   selectedImageIds: new Set(),
   zoom: 1,
-  pan: { x: 0, y: 0 },
   showAnnotations: false,
   showGrid: false,
   history: [],
@@ -187,34 +184,31 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
     
     if (type === 'image') {
       const imgItem = item as ImageListItem | CollectionItem
-      imageUrl = imgItem.image || imgItem.thumbnail || ''
-      thumbnailUrl = imgItem.thumbnail || ''
-      
-      // If it's an IIIF URL, ensure it's in the right format
+      imageUrl = String(imgItem.image ?? imgItem.thumbnail ?? '')
+      thumbnailUrl = String(imgItem.thumbnail ?? '')
       if (imageUrl.includes('/info.json')) {
         imageUrl = imageUrl.replace('/info.json', '/full/max/0/default.jpg')
       } else if (imageUrl && !imageUrl.includes('/full/')) {
-        // Try to construct IIIF URL
         imageUrl = `${imageUrl}/full/max/0/default.jpg`
       }
     } else {
       const graphItem = item as GraphListItem | CollectionItem
-      imageUrl = graphItem.image_url || ''
-      thumbnailUrl = graphItem.image_url || ''
+      imageUrl = String(graphItem.image_url ?? '')
+      thumbnailUrl = String(graphItem.image_url ?? '')
     }
-    
+
     const lightboxImage: LightboxImage = {
       id: imageId,
-      originalId: item.id,
+      originalId: typeof item.id === 'number' ? item.id : 0,
       type: type as 'image' | 'graph',
       imageUrl,
       thumbnailUrl,
       metadata: {
-        shelfmark: item.shelfmark,
-        locus: 'locus' in item ? item.locus : undefined,
-        repository_name: item.repository_name,
-        repository_city: item.repository_city,
-        date: item.date,
+        shelfmark: item.shelfmark != null ? String(item.shelfmark) : undefined,
+        locus: 'locus' in item && item.locus != null ? String(item.locus) : undefined,
+        repository_name: item.repository_name != null ? String(item.repository_name) : undefined,
+        repository_city: item.repository_city != null ? String(item.repository_city) : undefined,
+        date: item.date != null ? String(item.date) : undefined,
       },
       workspaceId,
       position: {
@@ -361,10 +355,6 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
     set({ zoom })
   },
 
-  setPan: (pan) => {
-    set({ pan })
-  },
-
   setLoading: (loading) => {
     set({ isLoading: loading })
   },
@@ -470,3 +460,13 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
     }
   },
 }))
+
+/** Images in the current workspace. Use in components instead of duplicating filter logic. */
+export function useWorkspaceImages(): LightboxImage[] {
+  return useLightboxStore((state) => {
+    if (!state.currentWorkspaceId) return []
+    return Array.from(state.images.values()).filter(
+      (img) => img.workspaceId === state.currentWorkspaceId
+    )
+  })
+}
