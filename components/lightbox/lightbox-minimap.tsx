@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useLightboxStore } from '@/stores/lightbox-store'
+import { useWorkspaceImages } from '@/stores/lightbox-store'
 import { cn } from '@/lib/utils'
 
 interface LightboxMinimapProps {
@@ -10,16 +10,8 @@ interface LightboxMinimapProps {
 }
 
 export function LightboxMinimap({ containerRef, className }: LightboxMinimapProps) {
-  const { images, currentWorkspaceId } = useLightboxStore()
+  const workspaceImages = useWorkspaceImages()
   const [viewportRect, setViewportRect] = React.useState<DOMRect | null>(null)
-  const minimapRef = React.useRef<HTMLDivElement>(null)
-
-  const workspaceImages = React.useMemo(() => {
-    if (!currentWorkspaceId) return []
-    return Array.from(images.values()).filter(
-      (img) => img.workspaceId === currentWorkspaceId
-    )
-  }, [currentWorkspaceId, images])
 
   React.useEffect(() => {
     if (!containerRef.current) return
@@ -70,7 +62,6 @@ export function LightboxMinimap({ containerRef, className }: LightboxMinimapProp
 
   return (
     <div
-      ref={minimapRef}
       className={cn(
         'absolute bottom-4 right-4 w-[200px] h-[150px] bg-white/90 border-2 border-gray-300 rounded-lg shadow-lg p-2 z-50',
         className

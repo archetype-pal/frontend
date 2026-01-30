@@ -34,8 +34,6 @@ interface LightboxToolbarProps {
   onToggleMeasurement?: () => void
   onToggleComparison?: () => void
   onToggleRegionComparison?: () => void
-  onToggleAnnotations?: () => void
-  onToggleGrid?: () => void
 }
 
 export function LightboxToolbar({
@@ -47,8 +45,6 @@ export function LightboxToolbar({
   onToggleMeasurement,
   onToggleComparison,
   onToggleRegionComparison,
-  onToggleAnnotations,
-  onToggleGrid,
 }: LightboxToolbarProps = {}) {
   const {
     selectedImageIds,
@@ -57,7 +53,9 @@ export function LightboxToolbar({
     zoom,
     setZoom,
     showAnnotations,
+    setShowAnnotations,
     showGrid,
+    setShowGrid,
     undo,
     redo,
     historyIndex,
@@ -111,24 +109,6 @@ export function LightboxToolbar({
           transform: {
             ...img.transform,
             flipY: !img.transform.flipY,
-          },
-        })
-      }
-    })
-  }
-
-  const _handleReset = () => {
-    selectedImages.forEach((img) => {
-      if (img) {
-        updateImage(img.id, {
-          transform: {
-            opacity: 1,
-            brightness: 100,
-            contrast: 100,
-            rotation: 0,
-            flipX: false,
-            flipY: false,
-            grayscale: false,
           },
         })
       }
@@ -243,21 +223,19 @@ export function LightboxToolbar({
             <Upload className="h-4 w-4" />
           </Button>
         )}
-        {onToggleGrid && (
-          <Button
-            variant={showGrid ? 'default' : 'ghost'}
-            size="sm"
-            onClick={onToggleGrid}
-            title="Toggle Grid"
-          >
-            <Grid3x3 className="h-4 w-4" />
-          </Button>
-        )}
-        {onToggleAnnotations && hasSelection && selectedImages.length === 1 && (
+        <Button
+          variant={showGrid ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setShowGrid(!showGrid)}
+          title="Toggle Grid"
+        >
+          <Grid3x3 className="h-4 w-4" />
+        </Button>
+        {hasSelection && selectedImages.length === 1 && (
           <Button
             variant={showAnnotations ? 'default' : 'ghost'}
             size="sm"
-            onClick={onToggleAnnotations}
+            onClick={() => setShowAnnotations(!showAnnotations)}
             title="Toggle Annotations"
           >
             <MessageSquare className="h-4 w-4" />

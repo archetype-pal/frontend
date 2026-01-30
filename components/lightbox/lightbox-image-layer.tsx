@@ -150,14 +150,7 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
             </div>
             {/* Resize handles - only show when selected */}
             {isSelected && (
-              <LightboxImageResize
-                image={image}
-                onResize={(width, height) => {
-                  updateImage(image.id, {
-                    size: { width, height },
-                  })
-                }}
-              />
+              <LightboxImageResize image={image} />
             )}
           </div>
         )

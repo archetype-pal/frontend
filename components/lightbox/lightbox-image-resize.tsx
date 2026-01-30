@@ -6,19 +6,14 @@ import type { LightboxImage } from '@/lib/lightbox-db'
 
 interface LightboxImageResizeProps {
   image: LightboxImage
-  onResize?: (width: number, height: number) => void
 }
 
-export function LightboxImageResize({ image, onResize: _onResize }: LightboxImageResizeProps) {
-  const [_isResizing, setIsResizing] = React.useState(false)
-  const [_resizeHandle, setResizeHandle] = React.useState<'se' | 'sw' | 'ne' | 'nw' | null>(null)
+export function LightboxImageResize({ image }: LightboxImageResizeProps) {
   const { updateImage } = useLightboxStore()
 
   const handleMouseDown = (e: React.MouseEvent, handle: 'se' | 'sw' | 'ne' | 'nw') => {
     e.preventDefault()
     e.stopPropagation()
-    setIsResizing(true)
-    setResizeHandle(handle)
 
     const startX = e.clientX
     const startY = e.clientY
@@ -80,8 +75,6 @@ export function LightboxImageResize({ image, onResize: _onResize }: LightboxImag
     }
 
     const handleMouseUp = () => {
-      setIsResizing(false)
-      setResizeHandle(null)
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
     }

@@ -19,33 +19,7 @@ export function openLightboxWithGraph(graphId: number) {
 }
 
 /**
- * Open lightbox with multiple images
- */
-export function openLightboxWithImages(imageIds: number[]) {
-  const ids = imageIds.join(',')
-  const url = `/lightbox?images=${ids}`
-  window.location.href = url
-}
-
-/**
- * Open lightbox with multiple graphs
- */
-export function openLightboxWithGraphs(graphIds: number[]) {
-  const ids = graphIds.join(',')
-  const url = `/lightbox?graphs=${ids}`
-  window.location.href = url
-}
-
-/**
- * Open lightbox with items from collection
- */
-export function openLightboxWithCollection() {
-  const url = `/lightbox?from=collection`
-  window.location.href = url
-}
-
-/**
- * Open lightbox with selected items
+ * Open lightbox with selected items (images and/or graphs).
  */
 export function openLightboxWithItems(items: (ImageListItem | GraphListItem | CollectionItem)[]) {
   const images: number[] = []

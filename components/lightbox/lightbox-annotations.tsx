@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils'
 
 interface LightboxAnnotationsProps {
   image: LightboxImage
-  onAnnotationChange?: () => void
 }
 
 /**
