@@ -7,7 +7,6 @@ export function LightboxKeyboardShortcuts() {
   const {
     selectedImageIds,
     images,
-    currentWorkspaceId,
     removeImage,
     updateImage,
     selectAll,

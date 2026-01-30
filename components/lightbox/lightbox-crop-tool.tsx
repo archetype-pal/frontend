@@ -5,7 +5,6 @@ import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { X, Crop, Save } from 'lucide-react'
 import type { LightboxImage } from '@/lib/lightbox-db'
-import { cn } from '@/lib/utils'
 
 interface CropArea {
   x: number

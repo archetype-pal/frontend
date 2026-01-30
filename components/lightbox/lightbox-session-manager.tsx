@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Save, X, FolderOpen, Trash2 } from 'lucide-react'
 import { useLightboxStore } from '@/stores/lightbox-store'
-import { saveSession, getAllSessions, deleteSession, getSession } from '@/lib/lightbox-db'
+import { saveSession, getAllSessions, deleteSession } from '@/lib/lightbox-db'
 import type { LightboxSession } from '@/lib/lightbox-db'
 
 interface LightboxSessionManagerProps {

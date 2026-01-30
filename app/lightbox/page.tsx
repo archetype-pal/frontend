@@ -30,7 +30,6 @@ function LightboxPageContent() {
   const {
     currentWorkspaceId,
     createWorkspace,
-    setCurrentWorkspace,
     loadImages,
     setLoading,
     setError,
@@ -343,7 +342,7 @@ function LightboxPageContent() {
       {showSessionManager && (
         <LightboxSessionManager
           onClose={() => setShowSessionManager(false)}
-          onLoad={(sessionId) => {
+          onLoad={() => {
             setShowSessionManager(false)
           }}
         />

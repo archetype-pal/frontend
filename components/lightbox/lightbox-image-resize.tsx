@@ -9,9 +9,9 @@ interface LightboxImageResizeProps {
   onResize?: (width: number, height: number) => void
 }
 
-export function LightboxImageResize({ image, onResize }: LightboxImageResizeProps) {
-  const [isResizing, setIsResizing] = React.useState(false)
-  const [resizeHandle, setResizeHandle] = React.useState<'se' | 'sw' | 'ne' | 'nw' | null>(null)
+export function LightboxImageResize({ image, onResize: _onResize }: LightboxImageResizeProps) {
+  const [_isResizing, setIsResizing] = React.useState(false)
+  const [_resizeHandle, setResizeHandle] = React.useState<'se' | 'sw' | 'ne' | 'nw' | null>(null)
   const { updateImage } = useLightboxStore()
 
   const handleMouseDown = (e: React.MouseEvent, handle: 'se' | 'sw' | 'ne' | 'nw') => {

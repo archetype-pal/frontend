@@ -1,7 +1,4 @@
 import Dexie, { type Table } from 'dexie'
-import type { ImageListItem } from '@/types/image'
-import type { GraphListItem } from '@/types/graph'
-import type { CollectionItem } from '@/contexts/collection-context'
 
 export interface LightboxImage {
   id: string // Unique ID for lightbox (not the original image ID)
@@ -15,7 +12,7 @@ export interface LightboxImage {
     repository_name?: string
     repository_city?: string
     date?: string
-    [key: string]: any
+    [key: string]: unknown
   }
   workspaceId: string
   position: {
@@ -60,7 +57,7 @@ export interface LightboxSession {
 export interface LightboxAnnotation {
   id: string
   imageId: string
-  annotation: any // Annotorious annotation format
+  annotation: unknown // Annotorious annotation format
   createdAt: number
   updatedAt: number
 }
@@ -79,7 +76,7 @@ export interface LightboxRegion {
   imageData: string // Base64 or blob URL
   metadata: {
     manuscript?: string
-    [key: string]: any
+    [key: string]: unknown
   }
   createdAt: number
 }

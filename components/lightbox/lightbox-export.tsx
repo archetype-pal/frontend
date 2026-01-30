@@ -11,8 +11,7 @@ import {
   FileJson,
 } from 'lucide-react'
 import { useLightboxStore } from '@/stores/lightbox-store'
-import { getAllWorkspaces, getWorkspaceImages } from '@/lib/lightbox-db'
-import type { LightboxWorkspace, LightboxImage } from '@/lib/lightbox-db'
+import type { LightboxImage } from '@/lib/lightbox-db'
 
 interface LightboxExportProps {
   onClose: () => void
@@ -73,7 +72,7 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
     try {
       // Lazy load jsPDF only when needed (client-side only)
       const jsPDFModule = await import('jspdf')
-      const jsPDF = (jsPDFModule as any).default || jsPDFModule
+      const jsPDF = (jsPDFModule as { default?: typeof import('jspdf') }).default ?? jsPDFModule
       
       const pdf = new jsPDF({
         orientation: 'landscape',

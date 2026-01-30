@@ -53,7 +53,6 @@ export function LightboxToolbar({
   const {
     selectedImageIds,
     images,
-    currentWorkspaceId,
     updateImage,
     zoom,
     setZoom,
@@ -118,7 +117,7 @@ export function LightboxToolbar({
     })
   }
 
-  const handleReset = () => {
+  const _handleReset = () => {
     selectedImages.forEach((img) => {
       if (img) {
         updateImage(img.id, {

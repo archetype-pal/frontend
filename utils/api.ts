@@ -1,5 +1,3 @@
-import type { SearchResponse } from '@/types/manuscript'
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 /** Build absolute URL for carousel (or other API-served) images. API returns relative paths like "media/carousel/…". */

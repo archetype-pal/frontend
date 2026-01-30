@@ -1,6 +1,6 @@
 export interface SearchResponse {
-  dates: any
-  queries: any
+  dates: unknown
+  queries: unknown
   objects: {
     count: number
     next: string | null

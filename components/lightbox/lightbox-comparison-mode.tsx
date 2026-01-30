@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { X, Split, Layers } from 'lucide-react'
 import { useLightboxStore } from '@/stores/lightbox-store'
 import { LightboxImageLayer } from './lightbox-image-layer'
-import { cn } from '@/lib/utils'
 
 type ComparisonMode = 'side-by-side' | 'overlay'
 
@@ -15,7 +14,7 @@ interface LightboxComparisonModeProps {
 }
 
 export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps) {
-  const { selectedImageIds, images, currentWorkspaceId } = useLightboxStore()
+  const { selectedImageIds, images } = useLightboxStore()
   const [mode, setMode] = useState<ComparisonMode>('side-by-side')
   const [overlayOpacity, setOverlayOpacity] = useState(0.5)
 

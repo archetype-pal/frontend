@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getUserProfile } from '@/utils/api'
 import type { UserProfile } from '@/types'
@@ -19,10 +19,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null)
   const router = useRouter()
 
+  const logout = useCallback(() => {
+    setToken(null)
+    setUser(null)
+    localStorage.removeItem('token')
+    router.push('/login')
+  }, [router])
+
   useEffect(() => {
     const storedToken = localStorage.getItem('token')
     if (storedToken) {
-      setToken(storedToken)
+      queueMicrotask(() => setToken(storedToken))
     }
   }, [])
 
@@ -32,20 +39,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const profile = await getUserProfile(token)
           setUser(profile)
-        } catch (error) {
+        } catch {
           logout()
         }
       }
     }
     fetchUserProfile()
-  }, [token])
-
-  const logout = () => {
-    setToken(null)
-    setUser(null)
-    localStorage.removeItem('token')
-    router.push('/login')
-  }
+  }, [token, logout])
 
   return (
     <AuthContext.Provider value={{ token, user, setToken, logout }}>

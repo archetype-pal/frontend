@@ -35,13 +35,13 @@ export function ManuscriptImage({
   annotationsEnabled,
   annotations,
   isCreatingAnnotation,
-  isMoveToolActive,
+  isMoveToolActive: _isMoveToolActive,
   isDeleteMode,
   onAnnotationCreated,
-  onAnnotationUpdated,
+  onAnnotationUpdated: _onAnnotationUpdated,
   onAnnotationDeleted,
-  zoom,
-  onZoomChange,
+  zoom: _zoom,
+  onZoomChange: _onZoomChange,
   iiifImageUrl,
   selectedAllograph,
 }: ManuscriptImageProps) {
@@ -67,7 +67,7 @@ export function ManuscriptImage({
   }, [annotations])
 
   const handleCreate = React.useCallback(
-    (annotation: any) => {
+    (annotation: { id: string; target?: { selector?: { value?: string } }; body?: Array<{ value?: string }> }) => {
       // Convert back to the expected format
       const target = annotation.target?.selector?.value || ''
       const match = target.match(/xywh=(\d+),(\d+),(\d+),(\d+)/)
@@ -89,7 +89,7 @@ export function ManuscriptImage({
   )
 
   const handleDelete = React.useCallback(
-    (annotation: any) => {
+    (annotation: { id: string }) => {
       onAnnotationDeleted(annotation.id)
     },
     [onAnnotationDeleted]

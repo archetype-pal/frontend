@@ -12,7 +12,7 @@ export type CollectionItem = {
   repository_name?: string
   repository_city?: string
   date?: string
-  [key: string]: any // Allow additional properties
+  [key: string]: unknown // Allow additional properties
 }
 
 type CollectionContextType = {

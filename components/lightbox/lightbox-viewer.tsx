@@ -12,7 +12,7 @@ interface LightboxViewerProps {
 }
 
 export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}) {
-  const { currentWorkspaceId, images, zoom, pan, showAnnotations, showGrid, selectedImageIds } = useLightboxStore()
+  const { currentWorkspaceId, images, showAnnotations, showGrid, selectedImageIds } = useLightboxStore()
   const containerRef = React.useRef<HTMLDivElement>(null)
   
   const workspaceImages = React.useMemo(() => {

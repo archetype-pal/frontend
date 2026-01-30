@@ -7,8 +7,8 @@ export interface BackendGraph {
       type: 'Polygon'
       coordinates: number[][][] // [[[x,y],...]]
     }
-    properties?: Record<string, any>
-    crs?: any
+    properties?: Record<string, unknown>
+    crs?: unknown
   }
   allograph: number
   hand: number

@@ -17,18 +17,18 @@ export interface CollectionStarProps {
     repository_name?: string
     repository_city?: string
     date?: string
-    [key: string]: any
+    [key: string]: unknown
   }
   className?: string
   size?: number
 }
 
 export function CollectionStar({ itemId, itemType, item, className, size = 24 }: CollectionStarProps) {
-  const { isInCollection, addItem, removeItem, items } = useCollection()
+  const { isInCollection, addItem, removeItem } = useCollection()
   // Re-compute isCollected whenever items change
   const isCollected = React.useMemo(
     () => isInCollection(itemId, itemType),
-    [isInCollection, itemId, itemType, items]
+    [isInCollection, itemId, itemType]
   )
 
   const handleClick = (e: React.MouseEvent) => {

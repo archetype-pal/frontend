@@ -38,7 +38,6 @@ export function FacetDateRangePanel({
   ],
   onSearch,
 }: FacetDateRangePanelProps) {
-  const initialEndpointsRef = React.useRef<[number, number]>(defaultValue)
   const [expanded, setExpanded] = React.useState<boolean>(true)
   const [sliderValue, setSliderValue] = React.useState<[number, number]>(defaultValue)
   const [precision, setPrecision] = React.useState<string>(precisionOptions[0].value)
@@ -46,6 +45,7 @@ export function FacetDateRangePanel({
   const [searchInput, setSearchInput] = React.useState<string>(
     `${defaultValue[0]}x${defaultValue[1]}`
   )
+  const [endpointMin, endpointMax] = defaultValue
 
   const handleSliderChange = (value: number[]) => {
     const [newMin, newMax] = [value[0], value[1]] as [number, number]
@@ -61,7 +61,7 @@ export function FacetDateRangePanel({
     if (minStr != null && maxStr != null) {
       const parsedMin = parseInt(minStr, 10)
       const parsedMax = parseInt(maxStr, 10)
-      const [fixedMin, fixedMax] = initialEndpointsRef.current
+      const [fixedMin, fixedMax] = defaultValue
 
       if (
         !Number.isNaN(parsedMin) &&
@@ -99,8 +99,6 @@ export function FacetDateRangePanel({
       setYear(val)
     }
   }
-
-  const [endpointMin, endpointMax] = initialEndpointsRef.current
 
   return (
     <div id={id} className="border bg-white rounded shadow-sm">

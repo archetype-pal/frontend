@@ -4,7 +4,7 @@ import type { FacetData } from '@/types/facets'
 
 export type SafeSearchResponse = {
   facets: FacetData
-  results: any[]
+  results: unknown[]
   count: number
   next: string | null
   previous: string | null
@@ -43,7 +43,7 @@ export async function fetchFacetsAndResults(
   const limit = parseInt(parsed.searchParams.get('limit') || '20', 10)
   const offset = parseInt(parsed.searchParams.get('offset') || '0', 10)
 
-  let raw: any
+  let raw: unknown
   try {
     const res = await fetch(endpoint, { cache: 'no-store', signal })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -54,12 +54,13 @@ export async function fetchFacetsAndResults(
     return BAD_RESPONSE
   }
 
-  const fields = raw.fields ?? {}
+  const rawObj = raw as { fields?: Record<string, unknown>; objects?: { results?: unknown[]; count?: number; next?: string | null; previous?: string | null; ordering?: SafeSearchResponse['ordering'] } }
+  const fields = rawObj.fields ?? {}
   const facetArrays = Object.values(fields).filter(Array.isArray)
   const hasAnyFacetEntry = facetArrays.some((arr) => (arr as unknown[]).length > 0)
 
-  const results: any[] = Array.isArray(raw.objects?.results) ? raw.objects.results : []
-  const count = raw.objects?.count ?? results.length
+  const results: unknown[] = Array.isArray(rawObj.objects?.results) ? rawObj.objects.results : []
+  const count = rawObj.objects?.count ?? results.length
   const hasAnyResult = count > 0
 
   if (!hasAnyFacetEntry && !hasAnyResult) {
@@ -72,11 +73,11 @@ export async function fetchFacetsAndResults(
     facets,
     results,
     count,
-    next: raw.objects?.next ?? null,
-    previous: raw.objects?.previous ?? null,
+    next: rawObj.objects?.next ?? null,
+    previous: rawObj.objects?.previous ?? null,
     limit,
     offset,
     ok: true,
-    ordering: raw.objects?.ordering ?? raw.ordering,
+    ordering: rawObj.objects?.ordering ?? (raw as { ordering?: SafeSearchResponse['ordering'] }).ordering,
   }
 }

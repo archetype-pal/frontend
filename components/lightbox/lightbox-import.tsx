@@ -3,11 +3,10 @@
 import * as React from 'react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Upload, X, FileJson, FileText } from 'lucide-react'
 import { useLightboxStore } from '@/stores/lightbox-store'
-import { saveWorkspace, saveImage } from '@/lib/lightbox-db'
-import type { LightboxWorkspace, LightboxImage } from '@/lib/lightbox-db'
+import { saveImage } from '@/lib/lightbox-db'
+import type { LightboxImage } from '@/lib/lightbox-db'
 
 interface LightboxImportProps {
   onClose: () => void
@@ -108,8 +107,8 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
       return
     }
 
-    const workspaceId = await createWorkspace('Imported from TEI XML')
-    const images: any[] = []
+    await createWorkspace('Imported from TEI XML')
+    const images: Array<{ id: number; type: string; image: string; thumbnail: string; shelfmark: string }> = []
 
     surfaces.forEach((surface) => {
       const graphic = surface.querySelector('graphic')
