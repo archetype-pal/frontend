@@ -1,12 +1,10 @@
 export interface SearchResponse {
-  dates: unknown
-  queries: unknown
-  objects: {
-    count: number
-    next: string | null
-    previous: string | null
-    results: Manuscript[]
-  }
+  results: Manuscript[]
+  total: number
+  limit?: number
+  offset?: number
+  next?: string | null
+  previous?: string | null
 }
 
 export interface ManuscriptListItem {

@@ -6,10 +6,13 @@ import { notFound } from 'next/navigation'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
+const MANUSCRIPTS_PAGE_SIZE = 20
+
 export async function fetchManuscripts(page = 1) {
   try {
+    const offset = (page - 1) * MANUSCRIPTS_PAGE_SIZE
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/search/item-parts/facets?page=${page}`
+      `${API_BASE_URL}/api/v1/search/item-parts/facets?limit=${MANUSCRIPTS_PAGE_SIZE}&offset=${offset}`
     )
     if (!response.ok) {
       throw new Error('Failed to fetch manuscripts')

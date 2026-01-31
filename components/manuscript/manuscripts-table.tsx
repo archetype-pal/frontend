@@ -30,13 +30,9 @@ export function ManuscriptsTable() {
           throw new Error('Failed to fetch carousel items')
         }
         const data = await response.json()
-        if (
-          data &&
-          data.objects &&
-          Array.isArray(data.objects.results) &&
-          data.objects.results.length > 0
-        ) {
-          setManuscriptsItems(data.objects.results)
+        const results = data.results ?? []
+        if (Array.isArray(results) && results.length > 0) {
+          setManuscriptsItems(results)
         } else {
           throw new Error('No carousel items found')
         }

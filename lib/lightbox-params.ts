@@ -18,7 +18,7 @@ export async function resolveItemById(
   const item = collectionItems.find((i) => i.id === numId && i.type === type)
   if (item) return item
 
-  const endpoint = type === 'image' ? 'images' : 'graphs'
+  const endpoint = type === 'image' ? 'item-images' : 'graphs'
   const url = `${API_BASE}/api/v1/search/${endpoint}/${id}`
   try {
     const response = await fetch(url)
@@ -45,7 +45,7 @@ export async function resolveItemsByIds(
 ): Promise<void> {
   const fromCollection = collectionItems.filter((i) => ids.includes(i.id) && i.type === type)
   const missingIds = ids.filter((id) => !fromCollection.some((i) => i.id === id))
-  const endpoint = type === 'image' ? 'images' : 'graphs'
+  const endpoint = type === 'image' ? 'item-images' : 'graphs'
   const label = type === 'image' ? 'image' : 'graph'
   const failed: string[] = []
 

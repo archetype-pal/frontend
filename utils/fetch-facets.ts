@@ -25,6 +25,30 @@ const BAD_RESPONSE: SafeSearchResponse = {
   ok: false,
 }
 
+/** Convert Meilisearch facetDistribution + facetStats into "fields" shape for normalizeFacets. */
+function meilisearchFacetsToFields(
+  facetDistribution: Record<string, Record<string, number>> = {},
+  facetStats: Record<string, Record<string, number>> = {}
+): Record<string, unknown> {
+  const fields: Record<string, unknown> = {}
+  for (const [key, dist] of Object.entries(facetDistribution)) {
+    fields[key] = Object.entries(dist).map(([text, count]) => ({ text, count }))
+  }
+  if (facetStats.date_min && typeof facetStats.date_min.min === 'number') {
+    fields.date_min = [
+      { text: facetStats.date_min.min },
+      { text: facetStats.date_min.max ?? facetStats.date_min.min },
+    ]
+  }
+  if (facetStats.date_max && typeof facetStats.date_max.min === 'number') {
+    fields.date_max = [
+      { text: facetStats.date_max.min },
+      { text: facetStats.date_max.max ?? facetStats.date_max.min },
+    ]
+  }
+  return fields
+}
+
 export async function fetchFacetsAndResults(
   resultType: string,
   url?: string,
@@ -54,14 +78,24 @@ export async function fetchFacetsAndResults(
     return BAD_RESPONSE
   }
 
-  const rawObj = raw as { fields?: Record<string, unknown>; objects?: { results?: unknown[]; count?: number; next?: string | null; previous?: string | null; ordering?: SafeSearchResponse['ordering'] } }
-  const fields = rawObj.fields ?? {}
+  type ApiResponse = {
+    facetDistribution?: Record<string, Record<string, number>>
+    facetStats?: Record<string, Record<string, number>>
+    results?: unknown[]
+    total?: number
+    next?: string | null
+    previous?: string | null
+    ordering?: SafeSearchResponse['ordering']
+  }
+  const data = raw as ApiResponse
+
+  const results: unknown[] = Array.isArray(data.results) ? data.results : []
+  const count = data.total ?? results.length
+  const hasAnyResult = count > 0
+
+  const fields = meilisearchFacetsToFields(data.facetDistribution ?? {}, data.facetStats ?? {})
   const facetArrays = Object.values(fields).filter(Array.isArray)
   const hasAnyFacetEntry = facetArrays.some((arr) => (arr as unknown[]).length > 0)
-
-  const results: unknown[] = Array.isArray(rawObj.objects?.results) ? rawObj.objects.results : []
-  const count = rawObj.objects?.count ?? results.length
-  const hasAnyResult = count > 0
 
   if (!hasAnyFacetEntry && !hasAnyResult) {
     console.warn('Empty payload (no facets AND no results)—treating as bad response')
@@ -73,11 +107,11 @@ export async function fetchFacetsAndResults(
     facets,
     results,
     count,
-    next: rawObj.objects?.next ?? null,
-    previous: rawObj.objects?.previous ?? null,
+    next: data.next ?? null,
+    previous: data.previous ?? null,
     limit,
     offset,
     ok: true,
-    ordering: rawObj.objects?.ordering ?? (raw as { ordering?: SafeSearchResponse['ordering'] }).ordering,
+    ordering: data.ordering,
   }
 }
