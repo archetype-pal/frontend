@@ -5,7 +5,7 @@ import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { RotateCcw } from 'lucide-react'
-import { useLightboxStore } from '@/stores/lightbox-store'
+import { useLightboxStore, useSelectedImages } from '@/stores/lightbox-store'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,14 +13,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export function LightboxTransformPanel() {
-  const { selectedImageIds, images, updateImage } = useLightboxStore()
-
-  const selectedImages = React.useMemo(() => {
-    return Array.from(selectedImageIds)
-      .map((id) => images.get(id))
-      .filter(Boolean)
-  }, [selectedImageIds, images])
-
+  const { updateImage } = useLightboxStore()
+  const selectedImages = useSelectedImages()
   const firstImage = selectedImages[0]
 
   const handleOpacityChange = (value: number[]) => {

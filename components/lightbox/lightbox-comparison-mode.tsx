@@ -1,9 +1,8 @@
 'use client'
 
-import * as React from 'react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { useLightboxStore } from '@/stores/lightbox-store'
+import { useSelectedImages } from '@/stores/lightbox-store'
 import { LightboxImageLayer } from './lightbox-image-layer'
 import {
   LightboxComparisonHeader,
@@ -15,15 +14,9 @@ interface LightboxComparisonModeProps {
 }
 
 export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps) {
-  const { selectedImageIds, images } = useLightboxStore()
+  const selectedImages = useSelectedImages()
   const [mode, setMode] = useState<ComparisonViewMode>('side-by-side')
   const [overlayOpacity, setOverlayOpacity] = useState(0.5)
-
-  const selectedImages = React.useMemo(() => {
-    return Array.from(selectedImageIds)
-      .map((id) => images.get(id))
-      .filter((img): img is NonNullable<typeof img> => img !== undefined)
-  }, [selectedImageIds, images])
 
   if (selectedImages.length < 2) {
     return (

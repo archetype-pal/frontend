@@ -85,11 +85,6 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     [items]
   )
 
-  // Force re-render when items change by including items in the value
-  React.useEffect(() => {
-    // This ensures components re-render when items change
-  }, [items])
-
   const clearCollection = React.useCallback(() => {
     setItems([])
   }, [])

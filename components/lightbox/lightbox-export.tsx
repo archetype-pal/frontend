@@ -69,9 +69,17 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
     try {
       // Lazy load jsPDF only when needed (client-side only)
       const jsPDFModule = await import('jspdf')
-      const jsPDF = (jsPDFModule as { default?: typeof import('jspdf') }).default ?? jsPDFModule
-      
-      const pdf = new jsPDF({
+      type JsPDFConstructor = new (opts?: { orientation?: string; unit?: string; format?: string }) => {
+        addPage: () => void
+        addImage: (img: string, format: string, x: number, y: number, w: number, h: number) => void
+        setFontSize: (n: number) => void
+        text: (text: string, x: number, y: number) => void
+        save: (name: string) => void
+        internal: { pageSize: { getWidth: () => number; getHeight: () => number } }
+      }
+      const JsPDF = ((jsPDFModule as unknown as { default?: JsPDFConstructor }).default ?? jsPDFModule) as JsPDFConstructor
+
+      const pdf = new JsPDF({
         orientation: 'landscape',
         unit: 'mm',
         format: 'a4',
@@ -230,10 +238,10 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
         const annotations = await getImageAnnotations(img.id)
         const annotationElements = annotations
           .map((ann) => {
-            const annotation = ann.annotation
+            const a = ann.annotation as { target?: { selector?: { value?: string } }; body?: Array<{ value?: string }> }
             return `      <zone>
-        <graphic url="${annotation.target?.selector?.value || ''}"/>
-        <note>${annotation.body?.[0]?.value || ''}</note>
+        <graphic url="${a.target?.selector?.value ?? ''}"/>
+        <note>${a.body?.[0]?.value ?? ''}</note>
       </zone>`
           })
           .join('\n')

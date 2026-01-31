@@ -84,27 +84,28 @@ export function formatFacetTitle(facetKey: string): string {
   return facetKey.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-export function filterResultsByKeyword<T extends Record<string, unknown>>(
-  results: T[],
-  keyword: string
-): T[] {
+export function filterResultsByKeyword(results: unknown[], keyword: string): unknown[] {
   if (!keyword.trim()) return results
+  if (!Array.isArray(results)) return []
   const low = keyword.toLowerCase()
-  return results.filter((row) =>
-    Object.values(row).some((v) =>
+  return results.filter((row) => {
+    if (row == null || typeof row !== 'object') return false
+    return Object.values(row as Record<string, unknown>).some((v) =>
       typeof v === 'string' || typeof v === 'number' ? String(v).toLowerCase().includes(low) : false
     )
-  )
+  })
 }
 
-export function getSuggestionsPool(results: Record<string, unknown>[]): string[] {
+export function getSuggestionsPool(results: unknown[]): string[] {
+  if (!Array.isArray(results)) return []
   return Array.from(
     new Set(
-      results.flatMap((r) =>
-        Object.values(r)
+      results.flatMap((r) => {
+        if (r == null || typeof r !== 'object') return []
+        return Object.values(r as Record<string, unknown>)
           .filter((v): v is string | number => typeof v === 'string' || typeof v === 'number')
           .map(String)
-      )
+      })
     )
   )
 }

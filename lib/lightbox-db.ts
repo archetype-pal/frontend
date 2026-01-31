@@ -118,28 +118,12 @@ export async function saveImage(image: LightboxImage): Promise<string> {
   return await getDb().images.put(image)
 }
 
-export async function getImage(id: string): Promise<LightboxImage | undefined> {
-  return await getDb().images.get(id)
-}
-
 export async function saveRegion(region: LightboxRegion): Promise<string> {
   return await getDb().regions.put(region)
 }
 
-export async function getRegion(id: string): Promise<LightboxRegion | undefined> {
-  return await getDb().regions.get(id)
-}
-
-export async function getImageRegions(imageId: string): Promise<LightboxRegion[]> {
-  return await getDb().regions.where('imageId').equals(imageId).toArray()
-}
-
 export async function getWorkspaceRegions(workspaceId: string): Promise<LightboxRegion[]> {
   return await getDb().regions.where('workspaceId').equals(workspaceId).toArray()
-}
-
-export async function deleteRegion(id: string): Promise<void> {
-  await getDb().regions.delete(id)
 }
 
 export async function getWorkspaceImages(workspaceId: string): Promise<LightboxImage[]> {
@@ -193,8 +177,4 @@ export async function saveAnnotation(annotation: LightboxAnnotation): Promise<st
 
 export async function getImageAnnotations(imageId: string): Promise<LightboxAnnotation[]> {
   return await getDb().annotations.where('imageId').equals(imageId).toArray()
-}
-
-export async function deleteAnnotation(id: string): Promise<void> {
-  await getDb().annotations.delete(id)
 }

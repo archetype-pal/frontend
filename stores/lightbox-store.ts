@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useShallow } from 'zustand/react/shallow'
 import type { LightboxImage, LightboxWorkspace } from '@/lib/lightbox-db'
 import type { ImageListItem } from '@/types/image'
 import type { GraphListItem } from '@/types/graph'
@@ -19,14 +20,14 @@ export interface LightboxState {
   zoom: number
   showAnnotations: boolean
   showGrid: boolean
-  
+
   // History for undo/redo
   history: Array<{
     workspaces: LightboxWorkspace[]
     images: Map<string, LightboxImage>
   }>
   historyIndex: number
-  
+
   // Actions
   initialize: () => Promise<void>
   setCurrentWorkspace: (workspaceId: string | null) => void
@@ -95,22 +96,22 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
   showGrid: false,
   history: [],
   historyIndex: -1,
-  
+
   // Initialize function to load from IndexedDB
   initialize: async () => {
     set({ isLoading: true })
     try {
       const { workspaces, images } = await initializeStore()
-      set({ 
-        workspaces, 
+      set({
+        workspaces,
         images,
         currentWorkspaceId: workspaces.length > 0 ? workspaces[0].id : null,
-        isLoading: false 
+        isLoading: false
       })
     } catch (error) {
-      set({ 
+      set({
         error: error instanceof Error ? error.message : 'Failed to initialize',
-        isLoading: false 
+        isLoading: false
       })
     }
   },
@@ -121,7 +122,7 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
 
   createWorkspace: async (name) => {
     get().saveHistory()
-    
+
     const workspaceId = createWorkspaceId()
     const workspace: LightboxWorkspace = {
       id: workspaceId,
@@ -130,34 +131,34 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       createdAt: Date.now(),
       updatedAt: Date.now(),
     }
-    
+
     set((state) => ({
       workspaces: [...state.workspaces, workspace],
       currentWorkspaceId: workspaceId,
     }))
-    
+
     // Save to IndexedDB
     const { saveWorkspace } = await import('@/lib/lightbox-db')
     await saveWorkspace(workspace)
-    
+
     return workspaceId
   },
 
   deleteWorkspace: async (workspaceId) => {
     const { deleteWorkspace: deleteWorkspaceDb } = await import('@/lib/lightbox-db')
     await deleteWorkspaceDb(workspaceId)
-    
+
     set((state) => {
       const workspaces = state.workspaces.filter((w) => w.id !== workspaceId)
       const images = new Map(state.images)
-      
+
       // Remove images from this workspace
       state.images.forEach((img, id) => {
         if (img.workspaceId === workspaceId) {
           images.delete(id)
         }
       })
-      
+
       return {
         workspaces,
         images,
@@ -169,19 +170,19 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
   loadImage: async (item) => {
     const state = get()
     let workspaceId = state.currentWorkspaceId
-    
+
     // Create workspace if none exists
     if (!workspaceId) {
       workspaceId = await get().createWorkspace()
     }
-    
+
     const imageId = createImageId()
     const type = 'type' in item ? item.type : ('image' in item ? 'image' : 'graph')
-    
+
     // Determine image URL
     let imageUrl = ''
     let thumbnailUrl = ''
-    
+
     if (type === 'image') {
       const imgItem = item as ImageListItem | CollectionItem
       imageUrl = String(imgItem.image ?? imgItem.thumbnail ?? '')
@@ -232,7 +233,7 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       createdAt: Date.now(),
       updatedAt: Date.now(),
     }
-    
+
     // Update workspace
     const workspace = state.workspaces.find((w) => w.id === workspaceId)
     if (workspace) {
@@ -243,26 +244,26 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       }
       const { saveWorkspace } = await import('@/lib/lightbox-db')
       await saveWorkspace(updatedWorkspace)
-      
+
       // Update workspace in state
       set((state) => ({
-        workspaces: state.workspaces.map((w) => 
+        workspaces: state.workspaces.map((w) =>
           w.id === workspaceId ? updatedWorkspace : w
         ),
       }))
     }
-    
+
     // Save image
     const { saveImage } = await import('@/lib/lightbox-db')
     await saveImage(lightboxImage)
-    
+
     // Update state
     set((state) => {
       const images = new Map(state.images)
       images.set(imageId, lightboxImage)
       return { images }
     })
-    
+
     return imageId
   },
 
@@ -278,14 +279,14 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
   removeImage: async (imageId) => {
     // Save history before removal
     get().saveHistory()
-    
+
     const { deleteImage } = await import('@/lib/lightbox-db')
     await deleteImage(imageId)
-    
+
     set((state) => {
       const images = new Map(state.images)
       images.delete(imageId)
-      
+
       // Update workspace
       const workspaces = state.workspaces.map((w) => {
         if (w.images.includes(imageId)) {
@@ -297,7 +298,7 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
         }
         return w
       })
-      
+
       return { images, workspaces }
     })
   },
@@ -306,16 +307,16 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
     const state = get()
     const image = state.images.get(imageId)
     if (!image) return
-    
+
     const updated = {
       ...image,
       ...updates,
       updatedAt: Date.now(),
     }
-    
+
     const { saveImage } = await import('@/lib/lightbox-db')
     await saveImage(updated)
-    
+
     set((state) => {
       const images = new Map(state.images)
       images.set(imageId, updated)
@@ -372,29 +373,29 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
     try {
       const { getSession } = await import('@/lib/lightbox-db')
       const session = await getSession(sessionId)
-      
+
       if (!session) {
         throw new Error('Session not found')
       }
 
       // Load workspaces and images from session
       const { saveWorkspace, saveImage } = await import('@/lib/lightbox-db')
-      
+
       // Save workspaces
       for (const workspace of session.workspaces) {
         await saveWorkspace(workspace)
       }
-      
+
       // Save images
       const imagesMap = new Map<string, LightboxImage>()
       for (const image of session.images) {
         await saveImage(image)
         imagesMap.set(image.id, image)
       }
-      
+
       // Set first workspace as current
       const firstWorkspaceId = session.workspaces[0]?.id || null
-      
+
       set({
         workspaces: session.workspaces,
         images: imagesMap,
@@ -423,7 +424,7 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       workspaces: JSON.parse(JSON.stringify(state.workspaces)),
       images: new Map(state.images),
     }
-    
+
     set((state) => {
       const newHistory = state.history.slice(0, state.historyIndex + 1)
       newHistory.push(snapshot)
@@ -463,10 +464,23 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
 
 /** Images in the current workspace. Use in components instead of duplicating filter logic. */
 export function useWorkspaceImages(): LightboxImage[] {
-  return useLightboxStore((state) => {
-    if (!state.currentWorkspaceId) return []
-    return Array.from(state.images.values()).filter(
-      (img) => img.workspaceId === state.currentWorkspaceId
+  return useLightboxStore(
+    useShallow((state) => {
+      if (!state.currentWorkspaceId) return []
+      return Array.from(state.images.values()).filter(
+        (img) => img.workspaceId === state.currentWorkspaceId
+      )
+    })
+  )
+}
+
+/** Selected images (resolved from selectedImageIds). Use instead of duplicating map+filter. */
+export function useSelectedImages(): LightboxImage[] {
+  return useLightboxStore(
+    useShallow((state) =>
+      Array.from(state.selectedImageIds)
+        .map((id) => state.images.get(id))
+        .filter((img): img is LightboxImage => img != null)
     )
-  })
+  )
 }

@@ -10,11 +10,19 @@ import { CollectionStar } from '@/components/collection-star'
 import { Button } from '@/components/ui/button'
 import { Trash2, Star, ArrowUpDown } from 'lucide-react'
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button'
-import type { ImageListItem } from '@/types/image'
-import type { GraphListItem } from '@/types/graph'
 
 type SortOption = 'added' | 'name' | 'repository'
 type FilterType = 'all' | 'image' | 'graph'
+
+function getItemImageUrl(item: CollectionItem): string | null {
+  if (item.type === 'image') return item.thumbnail ?? item.image ?? null
+  return (item as { image_url?: string }).image_url ?? null
+}
+
+function getItemTitle(item: CollectionItem): string {
+  const locus = 'locus' in item ? item.locus : undefined
+  return String(locus ?? item.shelfmark ?? 'Untitled')
+}
 
 function CollectionPageContent() {
   const searchParams = useSearchParams()
@@ -64,8 +72,8 @@ function CollectionPageContent() {
     })
   }, [items, filter, sortBy])
 
-  const images = filteredItems.filter((item) => item.type === 'image') as (ImageListItem & { type: 'image' })[]
-  const graphs = filteredItems.filter((item) => item.type === 'graph') as (GraphListItem & { type: 'graph' })[]
+  const images = filteredItems.filter((item) => item.type === 'image')
+  const graphs = filteredItems.filter((item) => item.type === 'graph')
   const allImages = items.filter((item) => item.type === 'image')
   const allGraphs = items.filter((item) => item.type === 'graph')
 
@@ -107,10 +115,11 @@ function CollectionPageContent() {
   }
 
   const renderCard = (item: CollectionItem, type: 'image' | 'graph') => {
-    const imageUrl = type === 'image' 
-      ? (item as ImageListItem).thumbnail || (item as ImageListItem).image?.replace('/info.json', '/full/300,/0/default.jpg') || null
-      : (item as unknown as GraphListItem).image_url || null
-    const title = type === 'image' ? ((item as ImageListItem).locus || (item as ImageListItem).shelfmark || 'Untitled') : ((item as unknown as GraphListItem).shelfmark || 'Untitled')
+    let imageUrl = getItemImageUrl(item)
+    if (type === 'image' && imageUrl?.includes('/info.json')) {
+      imageUrl = imageUrl.replace('/info.json', '/full/300,/0/default.jpg')
+    }
+    const title = getItemTitle(item)
 
     return (
       <div key={`${type}-${item.id}`} className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden group cursor-pointer">

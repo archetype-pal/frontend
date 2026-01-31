@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import ManuscriptAnnotorious from './ManuscriptAnnotorious'
+import ManuscriptAnnotorious, { type Annotation as AnnotoriousAnnotation } from './ManuscriptAnnotorious'
 import type { Allograph } from '@/types/allographs'
 
 interface Annotation {
@@ -67,9 +67,8 @@ export function ManuscriptImage({
   }, [annotations])
 
   const handleCreate = React.useCallback(
-    (annotation: { id: string; target?: { selector?: { value?: string } }; body?: Array<{ value?: string }> }) => {
-      // Convert back to the expected format
-      const target = annotation.target?.selector?.value || ''
+    (annotation: AnnotoriousAnnotation) => {
+      const target = (annotation.target as { selector?: { value?: string } })?.selector?.value ?? ''
       const match = target.match(/xywh=(\d+),(\d+),(\d+),(\d+)/)
       if (match) {
         const [, x, y, width, height] = match.map(Number)
@@ -80,7 +79,7 @@ export function ManuscriptImage({
           y,
           width,
           height,
-          content: annotation.body?.[0]?.value || '',
+          content: annotation.body?.[0]?.value ?? '',
           selectedAllograph,
         })
       }
@@ -89,7 +88,7 @@ export function ManuscriptImage({
   )
 
   const handleDelete = React.useCallback(
-    (annotation: { id: string }) => {
+    (annotation: AnnotoriousAnnotation) => {
       onAnnotationDeleted(annotation.id)
     },
     [onAnnotationDeleted]

@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Upload, X, FileJson, FileText } from 'lucide-react'
 import { useLightboxStore } from '@/stores/lightbox-store'
+import type { CollectionItem } from '@/contexts/collection-context'
 import { saveImage } from '@/lib/lightbox-db'
 import type { LightboxImage } from '@/lib/lightbox-db'
 
@@ -127,7 +128,7 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
     })
 
     if (images.length > 0) {
-      await loadImages(images)
+      await loadImages(images as CollectionItem[])
     }
   }
 

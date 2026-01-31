@@ -17,7 +17,6 @@ export interface CollectionStarProps {
     repository_name?: string
     repository_city?: string
     date?: string
-    [key: string]: unknown
   }
   className?: string
   size?: number

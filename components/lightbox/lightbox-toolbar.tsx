@@ -22,7 +22,7 @@ import {
   Undo2,
   Redo2,
 } from 'lucide-react'
-import { useLightboxStore } from '@/stores/lightbox-store'
+import { useLightboxStore, useSelectedImages } from '@/stores/lightbox-store'
 import { LightboxTransformPanel } from './lightbox-transform-panel'
 
 interface LightboxToolbarProps {
@@ -47,8 +47,6 @@ export function LightboxToolbar({
   onToggleRegionComparison,
 }: LightboxToolbarProps = {}) {
   const {
-    selectedImageIds,
-    images,
     updateImage,
     zoom,
     setZoom,
@@ -61,12 +59,7 @@ export function LightboxToolbar({
     historyIndex,
     history,
   } = useLightboxStore()
-
-  const selectedImages = React.useMemo(() => {
-    return Array.from(selectedImageIds)
-      .map((id) => images.get(id))
-      .filter(Boolean)
-  }, [selectedImageIds, images])
+  const selectedImages = useSelectedImages()
 
   const handleZoomIn = () => {
     setZoom(Math.min(zoom * 1.2, 10))

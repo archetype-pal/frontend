@@ -13,6 +13,11 @@ import { useSafeSearch } from '@/utils/useSafeSearch'
 import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map'
 import { Pagination } from '@/components/search/paginated-search'
 import type { FacetClickOpts } from '@/types/facets'
+import type { ImageListItem } from '@/types/image'
+import type { GraphListItem } from '@/types/graph'
+import type { ManuscriptListItem } from '@/types/manuscript'
+import type { HandListItem } from '@/types/hand'
+import type { ScribeListItem } from '@/types/scribe'
 import {
   buildApiUrl,
   buildQueryString,
@@ -24,6 +29,8 @@ import {
   getSuggestionsPool,
   type QueryState,
 } from '@/lib/search-query'
+
+type ResultListItem = ImageListItem | GraphListItem | ManuscriptListItem | HandListItem | ScribeListItem
 
 export function SearchPage({ resultType: initialType }: { resultType?: ResultType } = {}) {
   const searchParams = useSearchParams()
@@ -195,13 +202,17 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               viewMode === 'table' ? (
                 <ResultsTable
                   resultType={resultType}
-                  results={filtered}
+                  results={filtered as ResultListItem[]}
                   ordering={data.ordering}
                   onSort={handleSort}
                   highlightKeyword={keyword}
                 />
               ) : resultType === 'images' || resultType === 'graphs' ? (
-                <SearchGrid results={filtered} resultType={resultType} highlightKeyword={keyword} />
+                <SearchGrid
+                  results={filtered as (ImageListItem | GraphListItem)[]}
+                  resultType={resultType}
+                  highlightKeyword={keyword}
+                />
               ) : (
                 <p className="text-center text-sm text-muted-foreground py-8">
                   No Grid view mode available.

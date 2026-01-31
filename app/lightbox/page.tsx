@@ -5,8 +5,7 @@ import { Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useCollection, type CollectionItem } from '@/contexts/collection-context'
 import { useLightboxStore } from '@/stores/lightbox-store'
-import type { ImageListItem } from '@/types/image'
-import type { GraphListItem } from '@/types/graph'
+import { resolveItemById, resolveItemsByIds } from '@/lib/lightbox-params'
 import { LightboxViewer } from '@/components/lightbox/lightbox-viewer'
 import { LightboxToolbar } from '@/components/lightbox/lightbox-toolbar'
 import { LightboxSidebar } from '@/components/lightbox/lightbox-sidebar'
@@ -49,166 +48,65 @@ function LightboxPageContent() {
   const viewerContainerRef = React.useRef<HTMLDivElement>(null)
   const { initialize, images } = useLightboxStore()
 
-  // Initialize store from IndexedDB first
   React.useEffect(() => {
+    let cancelled = false
     async function initStore() {
       await initialize()
-      setIsInitialized(true)
+      if (!cancelled) setIsInitialized(true)
     }
     initStore()
+    return () => { cancelled = true }
   }, [initialize])
 
-  // Initialize workspace and load images from URL params.
-  // Re-runs when URL changes (searchParams) or when from=collection and collection loads.
   const paramKey = searchParams.toString()
   const fromCollectionCount = searchParams.get('from') === 'collection' ? collectionItems.length : -1
 
   React.useEffect(() => {
     if (!isInitialized) return
 
+    const imageId = searchParams.get('image')
+    const graphId = searchParams.get('graph')
+    const imagesParam = searchParams.get('images')
+    const graphsParam = searchParams.get('graphs')
+    const fromCollection = searchParams.get('from') === 'collection'
+
+    let cancelled = false
     async function loadImagesFromParams() {
       try {
         setError(null)
         setLoading(true)
+        if (!currentWorkspaceId) await createWorkspace()
+        if (cancelled) return
 
-        // Check URL parameters
-        const imageId = searchParams.get('image')
-        const graphId = searchParams.get('graph')
-        const imagesParam = searchParams.get('images')
-        const graphsParam = searchParams.get('graphs')
-        const fromCollection = searchParams.get('from') === 'collection'
+        type ResolvedItem = CollectionItem | import('@/types/image').ImageListItem | import('@/types/graph').GraphListItem
+        const itemsToLoad: ResolvedItem[] = []
 
-        // Create workspace if needed
-        if (!currentWorkspaceId) {
-          await createWorkspace()
-        }
-
-        const itemsToLoad: (CollectionItem | ImageListItem | GraphListItem)[] = []
-
-        // Load images based on parameters
         if (imageId) {
-          // Try to find in collection first
-          let item = collectionItems.find((i) => i.id === Number(imageId) && i.type === 'image')
-          
-          // If not in collection, try to fetch from API
-          if (!item) {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-            const url = `${apiUrl}/api/v1/search/images/${imageId}`
-            try {
-              const response = await fetch(url)
-              if (response.ok) {
-                const data = await response.json()
-                item = { ...data, type: 'image' as const } as CollectionItem
-              } else {
-                setError(`Image ${imageId} not found (${response.status}: ${response.statusText}). URL: ${url}`)
-              }
-            } catch (err) {
-              const msg = err instanceof Error ? err.message : String(err)
-              setError(`Failed to load image ${imageId}: ${msg}`)
-            }
-          }
-          
-          if (item) {
-            itemsToLoad.push(item)
-          }
+          const item = await resolveItemById('image', imageId, collectionItems, setError)
+          if (item) itemsToLoad.push(item)
         } else if (graphId) {
-          // Try to find in collection first
-          let item = collectionItems.find((i) => i.id === Number(graphId) && i.type === 'graph')
-          
-          // If not in collection, try to fetch from API
-          if (!item) {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-            const url = `${apiUrl}/api/v1/search/graphs/${graphId}`
-            try {
-              const response = await fetch(url)
-              if (response.ok) {
-                const data = await response.json()
-                item = { ...data, type: 'graph' as const } as CollectionItem
-              } else {
-                setError(`Graph ${graphId} not found (${response.status}: ${response.statusText}). URL: ${url}`)
-              }
-            } catch (err) {
-              const msg = err instanceof Error ? err.message : String(err)
-              setError(`Failed to load graph ${graphId}: ${msg}`)
-            }
-          }
-          
-          if (item) {
-            itemsToLoad.push(item)
-          }
+          const item = await resolveItemById('graph', graphId, collectionItems, setError)
+          if (item) itemsToLoad.push(item)
         } else if (imagesParam) {
-          // Load multiple images
           const ids = imagesParam.split(',').map(Number)
-          const collectionItemsFound = collectionItems.filter(
-            (i) => ids.includes(i.id) && i.type === 'image'
-          )
-          
-          // Fetch missing items from API
-          const missingIds = ids.filter(id => !collectionItemsFound.some(i => i.id === id))
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-          const failed: string[] = []
-          for (const id of missingIds) {
-            try {
-              const response = await fetch(`${apiUrl}/api/v1/search/images/${id}`)
-              if (response.ok) {
-                const data = await response.json()
-                itemsToLoad.push(data as ImageListItem)
-              } else {
-                failed.push(`image ${id} (${response.status})`)
-              }
-            } catch (err) {
-              failed.push(`image ${id}: ${err instanceof Error ? err.message : String(err)}`)
-            }
-          }
-          if (failed.length > 0 && collectionItemsFound.length === 0 && itemsToLoad.length === 0) {
-            setError(`Could not load images: ${failed.join('; ')}`)
-          }
-          itemsToLoad.push(...collectionItemsFound)
+          await resolveItemsByIds('image', ids, collectionItems, itemsToLoad, setError)
         } else if (graphsParam) {
-          // Load multiple graphs
           const ids = graphsParam.split(',').map(Number)
-          const collectionItemsFound = collectionItems.filter(
-            (i) => ids.includes(i.id) && i.type === 'graph'
-          )
-          
-          // Fetch missing items from API
-          const missingIds = ids.filter(id => !collectionItemsFound.some(i => i.id === id))
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-          const failed: string[] = []
-          for (const id of missingIds) {
-            try {
-              const response = await fetch(`${apiUrl}/api/v1/search/graphs/${id}`)
-              if (response.ok) {
-                const data = await response.json()
-                itemsToLoad.push(data as GraphListItem)
-              } else {
-                failed.push(`graph ${id} (${response.status})`)
-              }
-            } catch (err) {
-              failed.push(`graph ${id}: ${err instanceof Error ? err.message : String(err)}`)
-            }
-          }
-          if (failed.length > 0 && collectionItemsFound.length === 0 && itemsToLoad.length === 0) {
-            setError(`Could not load graphs: ${failed.join('; ')}`)
-          }
-          itemsToLoad.push(...collectionItemsFound)
+          await resolveItemsByIds('graph', ids, collectionItems, itemsToLoad, setError)
         } else if (fromCollection) {
-          // Load all from collection
           itemsToLoad.push(...collectionItems)
         }
 
-        if (itemsToLoad.length > 0) {
-          await loadImages(itemsToLoad)
-        }
+        if (!cancelled && itemsToLoad.length > 0) await loadImages(itemsToLoad)
       } catch (error) {
-        console.error('Failed to load images:', error)
-        setError(error instanceof Error ? error.message : 'Failed to load images')
+        if (!cancelled) setError(error instanceof Error ? error.message : 'Failed to load images')
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     loadImagesFromParams()
+    return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitialized, paramKey, fromCollectionCount])
 

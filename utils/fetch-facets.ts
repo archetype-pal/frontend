@@ -68,7 +68,7 @@ export async function fetchFacetsAndResults(
     return BAD_RESPONSE
   }
 
-  const facets = normalizeFacets(fields)
+  const facets = normalizeFacets(fields) as FacetData
   return {
     facets,
     results,
