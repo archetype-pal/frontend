@@ -1,6 +1,6 @@
 'use client'
-import IntroSection from '@/components/intro-section'
-import ArticleList from '@/components/article-list'
+import IntroSection from '@/components/content/intro-section'
+import ArticleList from '@/components/content/article-list'
 import { getPublications } from '@/utils/api'
 import { useEffect, useState } from 'react'
 

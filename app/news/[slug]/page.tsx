@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { getPublicationItem } from '@/utils/api'
-import BlogPostPreview from '@/components/blog-post-preview'
+import BlogPostPreview from '@/components/content/blog-post-preview'
 
 interface Author {
   first_name: string

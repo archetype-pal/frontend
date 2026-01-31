@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import PaginatedPublications from '@/components/paginated-publications'
+import PaginatedPublications from '@/components/content/paginated-publications'
 
 export const dynamic = 'force-dynamic'
 

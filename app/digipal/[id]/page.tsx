@@ -1,4 +1,4 @@
-import ManuscriptViewer from '@/components/ManuscriptViewer'
+import ManuscriptViewer from '@/components/manuscript/ManuscriptViewer'
 
 export default async function Page({
   params,

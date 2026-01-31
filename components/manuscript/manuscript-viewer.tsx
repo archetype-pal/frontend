@@ -13,7 +13,7 @@ import {
   Expand,
   SquarePen,
 } from 'lucide-react'
-import { ManuscriptImage } from '@/components/manuscript-image'
+import { ManuscriptImage } from './manuscript-image'
 import { ManuscriptTabs } from './manuscript-tabs'
 import { Toolbar } from './toolbar'
 import { Button } from '@/components/ui/button'
@@ -23,7 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { AnnotationHeader } from './annotation-header'
+import { AnnotationHeader } from '@/components/annotation/annotation-header'
 import { saveAnnotation, SaveAnnotationRequest } from '@/services/annotations'
 import { fetchManuscriptImage, fetchAllographs } from '@/services/manuscripts'
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image'

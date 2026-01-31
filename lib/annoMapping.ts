@@ -1,4 +1,4 @@
-import type { Annotation } from '@/components/ManuscriptAnnotorious'
+import type { Annotation } from '@/components/manuscript/ManuscriptAnnotorious'
 import type { BackendGraph } from '@/services/annotations'
 
 // Convert rect (xywh) <-> Polygon for the backend.

@@ -14,7 +14,7 @@ import type { ScribeListItem } from '@/types/scribe'
 import type { HandListItem } from '@/types/hand'
 import type { GraphListItem } from '@/types/graph'
 import { Highlight } from './Highlight'
-import { CollectionStar } from '@/components/collection-star'
+import { CollectionStar } from '@/components/collection/collection-star'
 
 export type Column<T> = {
   header: string

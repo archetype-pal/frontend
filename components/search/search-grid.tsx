@@ -5,7 +5,7 @@ import Link from 'next/link'
 import type { ImageListItem } from '@/types/image'
 import type { GraphListItem } from '@/types/graph'
 import { Highlight } from './Highlight'
-import { CollectionStar } from '@/components/collection-star'
+import { CollectionStar } from '@/components/collection/collection-star'
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button'
 
 export interface SearchGridProps {
