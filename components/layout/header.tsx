@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useSearchContext } from '@/contexts/search-context'
 import { KeywordSearchInput, useKeywordSuggestions } from '@/components/search/KeywordSearchInput'
-import { Search, Home, Menu, X, ChevronDown, FolderOpen } from 'lucide-react'
+import { Search, Home, Menu, X, ChevronDown, FolderOpen, PanelTopClose, PanelTopOpen } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,10 +15,24 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useCollection } from '@/contexts/collection-context'
 
+const BANNER_VISIBLE_KEY = 'digipal-header-banner-visible'
+
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isBannerVisible, setIsBannerVisible] = useState(true)
   const { items } = useCollection()
   const pathname = usePathname()
+
+  useEffect(() => {
+    const stored = localStorage.getItem(BANNER_VISIBLE_KEY)
+    if (stored !== null) setIsBannerVisible(stored === 'true')
+  }, [])
+
+  const toggleBanner = () => {
+    const next = !isBannerVisible
+    setIsBannerVisible(next)
+    localStorage.setItem(BANNER_VISIBLE_KEY, String(next))
+  }
   const router = useRouter()
   const { keyword, setKeyword, suggestionsPool, loadGlobalSuggestions } = useSearchContext()
   const isOnSearchPage = pathname?.startsWith('/search') ?? false
@@ -53,31 +67,21 @@ export default function Header() {
 
   return (
     <header className='bg-gray-100 border-b border-gray-200'>
-      <div className='container mx-auto py-2'>
-        <div className='flex justify-between items-center mb-4'>
-          <div className='flex flex-col md:flex-row items-start md:items-end'>
-            <h1 className='text-4xl md:text-4xl font-serif text-primary leading-tight mb-2 md:mb-0 md:mr-6'>
-              Models of Authority
-            </h1>
-            <div className='text-lg md:text-base text-[#555] border-l-2 border-primary font-sans max-w-md pl-4'>
-              <p>Scottish Charters</p>
-              <p>and the Emergence of Government 1100-1250</p>
+      {isBannerVisible && (
+        <div className='container mx-auto py-2'>
+          <div className='flex justify-between items-center mb-4'>
+            <div className='flex flex-col md:flex-row items-start md:items-end'>
+              <h1 className='text-4xl md:text-4xl font-serif text-primary leading-tight mb-2 md:mb-0 md:mr-6'>
+                Models of Authority
+              </h1>
+              <div className='text-lg md:text-base text-[#555] border-l-2 border-primary font-sans max-w-md pl-4'>
+                <p>Scottish Charters</p>
+                <p>and the Emergence of Government 1100-1250</p>
+              </div>
             </div>
           </div>
-          <Button
-            variant='ghost'
-            size='icon'
-            className='md:hidden'
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? (
-              <X className='h-6 w-6' />
-            ) : (
-              <Menu className='h-6 w-6' />
-            )}
-          </Button>
         </div>
-      </div>
+      )}
       <nav
         className={`bg-primary text-primary-foreground p-2 ${
           isMenuOpen ? 'block' : 'hidden'
@@ -297,6 +301,34 @@ export default function Header() {
                   clearOnFocus
                   onFocus={handleHeaderSearchFocus}
                 />
+              </div>
+              <div className='flex items-center gap-1 shrink-0'>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20'
+                  onClick={toggleBanner}
+                  aria-label={isBannerVisible ? 'Hide banner' : 'Show banner'}
+                  title={isBannerVisible ? 'Hide banner' : 'Show banner'}
+                >
+                  {isBannerVisible ? (
+                    <PanelTopClose className='h-4 w-4' />
+                  ) : (
+                    <PanelTopOpen className='h-4 w-4' />
+                  )}
+                </Button>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='md:hidden h-8 w-8'
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                >
+                  {isMenuOpen ? (
+                    <X className='h-6 w-6' />
+                  ) : (
+                    <Menu className='h-6 w-6' />
+                  )}
+                </Button>
               </div>
             </div>
           </div>
