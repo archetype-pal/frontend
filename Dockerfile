@@ -1,9 +1,12 @@
 # syntax=docker.io/docker/dockerfile:1
 
-FROM node:alpine AS base
+FROM node:25-alpine AS base
 ARG NEXT_PUBLIC_API_URL
 
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
+# Install pnpm in base so all stages have it (corepack unreliable on Alpine)
+RUN npm install -g pnpm@10.28.2
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -12,9 +15,8 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
 COPY package.json pnpm-lock.yaml ./
-RUN corepack enable pnpm && pnpm i --frozen-lockfile
+RUN pnpm i --frozen-lockfile
 
 
 # Rebuild the source code only when needed
@@ -28,7 +30,7 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN corepack enable pnpm && pnpm run build
+RUN pnpm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
