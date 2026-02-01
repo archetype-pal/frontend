@@ -109,7 +109,7 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
     }
 
     await createWorkspace('Imported from TEI XML')
-    const images: Array<{ id: number; type: string; image: string; thumbnail: string; shelfmark: string }> = []
+    const images: Array<{ id: number; type: string; image_iiif: string; shelfmark: string }> = []
 
     surfaces.forEach((surface) => {
       const graphic = surface.querySelector('graphic')
@@ -118,10 +118,9 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
 
       if (url) {
         images.push({
-          id: 0, // Will be generated
+          id: 0,
           type: 'image',
-          image: url,
-          thumbnail: url,
+          image_iiif: url,
           shelfmark: desc,
         })
       }

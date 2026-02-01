@@ -4,8 +4,7 @@ export interface GraphListItem {
   repository_city: string
   shelfmark: string
   date: string
-  item_image: number
+  image_iiif: string    // IIIF Image Information URL
   coordinates: string   // GeoJSON as string
   is_annotated: boolean
-  image_url?: string    // Thumbnail image URL
 }

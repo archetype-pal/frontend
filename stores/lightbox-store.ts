@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
+import { getIiifImageUrl, getIiifImageUrlWithBounds, coordinatesFromGeoJson } from '@/utils/iiif'
 import type { LightboxImage, LightboxWorkspace } from '@/lib/lightbox-db'
 import type { ImageListItem } from '@/types/image'
 import type { GraphListItem } from '@/types/graph'
@@ -179,23 +180,30 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
     const imageId = createImageId()
     const type = 'type' in item ? item.type : ('image' in item ? 'image' : 'graph')
 
-    // Determine image URL
+    // Build IIIF image URLs from image_iiif (and coordinates for graphs)
     let imageUrl = ''
     let thumbnailUrl = ''
 
     if (type === 'image') {
       const imgItem = item as ImageListItem | CollectionItem
-      imageUrl = String(imgItem.image ?? imgItem.thumbnail ?? '')
-      thumbnailUrl = String(imgItem.thumbnail ?? '')
-      if (imageUrl.includes('/info.json')) {
-        imageUrl = imageUrl.replace('/info.json', '/full/max/0/default.jpg')
-      } else if (imageUrl && !imageUrl.includes('/full/')) {
-        imageUrl = `${imageUrl}/full/max/0/default.jpg`
+      const infoUrl = (imgItem as ImageListItem).image_iiif ?? (imgItem as CollectionItem).image_iiif ?? ''
+      if (infoUrl) {
+        imageUrl = getIiifImageUrl(infoUrl)
+        thumbnailUrl = getIiifImageUrl(infoUrl, { thumbnail: true })
       }
     } else {
       const graphItem = item as GraphListItem | CollectionItem
-      imageUrl = String(graphItem.image_url ?? '')
-      thumbnailUrl = String(graphItem.image_url ?? '')
+      const infoUrl = (graphItem as GraphListItem).image_iiif ?? (graphItem as CollectionItem).image_iiif ?? ''
+      const coords = (graphItem as GraphListItem).coordinates != null
+        ? coordinatesFromGeoJson((graphItem as GraphListItem).coordinates)
+        : (graphItem as CollectionItem).coordinates != null
+          ? coordinatesFromGeoJson(String((graphItem as CollectionItem).coordinates))
+          : undefined
+      if (infoUrl) {
+        const opts = { coordinates: coords ?? undefined }
+        imageUrl = await getIiifImageUrlWithBounds(infoUrl, opts)
+        thumbnailUrl = await getIiifImageUrlWithBounds(infoUrl, { ...opts, thumbnail: true })
+      }
     }
 
     const lightboxImage: LightboxImage = {

@@ -17,12 +17,18 @@ const nextConfig = {
         port: '1024',
         pathname: '/**',
       },
-      // Django media
+      // Django media and mock IIIF scans
       {
         protocol: 'http',
         hostname: 'localhost',
         port: '8000',
         pathname: '/media/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '8000',
+        pathname: '/scans/**',
       },
       // Production hosts
       {

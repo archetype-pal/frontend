@@ -5,8 +5,8 @@ import * as React from 'react'
 export type CollectionItem = {
   id: number
   type: 'image' | 'graph'
-  thumbnail?: string
-  image?: string
+  image_iiif?: string
+  coordinates?: string
   shelfmark?: string
   locus?: string
   repository_name?: string

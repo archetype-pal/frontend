@@ -6,8 +6,7 @@ export interface ImageListItem {
   date: string
   type: string
   text: string
-  image: string         // IIIF path
-  thumbnail: string     // ready‑to‑use URL
+  image_iiif: string    // IIIF Image Information URL
   locus: string
   number_of_annotations: number
   components: string[]

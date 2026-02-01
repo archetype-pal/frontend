@@ -13,6 +13,7 @@ import type { ImageListItem } from '@/types/image'
 import type { ScribeListItem } from '@/types/scribe'
 import type { HandListItem } from '@/types/hand'
 import type { GraphListItem } from '@/types/graph'
+import { getIiifImageUrl, getIiifImageUrlWithBounds, coordinatesFromGeoJson } from '@/utils/iiif'
 import { Highlight } from './Highlight'
 import { CollectionStar } from '@/components/collection/collection-star'
 
@@ -30,6 +31,50 @@ type ResultMap = {
   scribes: ScribeListItem
   hands: HandListItem
   graphs: GraphListItem
+}
+
+function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
+  const [src, setSrc] = React.useState<string | null>(null)
+  const infoUrl = (graph.image_iiif || '').trim()
+  const coords = coordinatesFromGeoJson(graph.coordinates) ?? undefined
+
+  React.useEffect(() => {
+    if (!infoUrl) {
+      setSrc(null)
+      return
+    }
+    let cancelled = false
+    getIiifImageUrlWithBounds(infoUrl, { coordinates: coords, thumbnail: true })
+      .then((url) => {
+        if (!cancelled) setSrc(url)
+      })
+      .catch(() => {
+        if (!cancelled) setSrc(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [infoUrl, graph.coordinates])
+
+  if (!infoUrl) return <span className="text-xs text-muted-foreground">N/A</span>
+  if (!src) {
+    return (
+      <div className="relative inline-block w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
+        <span className="text-xs text-muted-foreground">…</span>
+      </div>
+    )
+  }
+  return (
+    <div className="relative inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
+      <img
+        src={src}
+        alt={`Thumbnail for ${graph.shelfmark}`}
+        className="w-full h-full object-contain"
+      />
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
+      <CollectionStar itemId={graph.id} itemType="graph" item={graph} size={16} />
+    </div>
+  )
 }
 
 export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
@@ -60,7 +105,8 @@ export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
     {
       header: 'Thumbnail',
       accessor: (i) => {
-        const src = (i.thumbnail || '').trim()
+        const infoUrl = (i.image_iiif || '').trim()
+        const src = infoUrl ? getIiifImageUrl(infoUrl, { thumbnail: true }) : ''
 
         if (!src) {
           return <span className="text-xs text-muted-foreground">N/A</span>
@@ -120,24 +166,7 @@ export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
     { header: 'Allograph', accessor: (g) => (g.is_annotated ? 'Yes' : 'No') },
     {
       header: 'Thumbnail',
-      accessor: (g) => g.image_url ? (
-        <div className="relative inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
-          <img 
-            src={g.image_url} 
-            alt={`Thumbnail for ${g.shelfmark}`}
-            className="w-full h-full object-contain"
-          />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
-          <CollectionStar
-            itemId={g.id}
-            itemType="graph"
-            item={g}
-            size={16}
-          />
-        </div>
-      ) : (
-        <span className="text-xs text-muted-foreground">N/A</span>
-      ),
+      accessor: (g) => <GraphThumbnailCell graph={g} />,
       className: 'text-center',
     },
   ],

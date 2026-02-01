@@ -10,18 +10,87 @@ import { CollectionStar } from '@/components/collection/collection-star'
 import { Button } from '@/components/ui/button'
 import { Trash2, Star, ArrowUpDown } from 'lucide-react'
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button'
+import { getIiifImageUrl, getIiifImageUrlWithBounds, coordinatesFromGeoJson } from '@/utils/iiif'
 
 type SortOption = 'added' | 'name' | 'repository'
 type FilterType = 'all' | 'image' | 'graph'
 
-function getItemImageUrl(item: CollectionItem): string | null {
-  if (item.type === 'image') return item.thumbnail ?? item.image ?? null
-  return (item as { image_url?: string }).image_url ?? null
+/** Sync thumbnail URL for image items (no coordinates). */
+function getImageItemThumbnailUrl(item: CollectionItem): string | null {
+  const infoUrl = item.image_iiif
+  if (!infoUrl) return null
+  return getIiifImageUrl(infoUrl, { thumbnail: true })
 }
 
 function getItemTitle(item: CollectionItem): string {
   const locus = 'locus' in item ? item.locus : undefined
   return String(locus ?? item.shelfmark ?? 'Untitled')
+}
+
+/** Card for a graph item: fetches thumbnail URL with bounds + no upscaling, then renders. */
+function CollectionGraphCard({
+  item,
+  getUrl,
+  title,
+}: {
+  item: CollectionItem
+  getUrl: (item: CollectionItem) => string
+  title: string
+}) {
+  const [imageUrl, setImageUrl] = React.useState<string | null>(null)
+  const infoUrl = (item.image_iiif || '').trim()
+  const coords = item.coordinates != null ? coordinatesFromGeoJson(String(item.coordinates)) ?? undefined : undefined
+
+  React.useEffect(() => {
+    if (!infoUrl) {
+      setImageUrl(null)
+      return
+    }
+    let cancelled = false
+    getIiifImageUrlWithBounds(infoUrl, { coordinates: coords, thumbnail: true })
+      .then((url) => {
+        if (!cancelled) setImageUrl(url)
+      })
+      .catch(() => {
+        if (!cancelled) setImageUrl(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [infoUrl, item.coordinates])
+
+  return (
+    <div className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden group cursor-pointer">
+      <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+        {imageUrl ? (
+          <>
+            <Link href={getUrl(item)} className="block w-full h-full">
+              <Image
+                src={imageUrl}
+                alt={title}
+                fill
+                className="object-contain transition-transform duration-300 group-hover:scale-110"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw"
+              />
+            </Link>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/0 via-black/0 to-black/0 group-hover:from-black/5 group-hover:via-black/0 group-hover:to-black/0 transition-all duration-300 pointer-events-none" />
+          </>
+        ) : (
+          <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-full h-full flex items-center justify-center text-xs text-gray-500">
+            {infoUrl ? '…' : 'No Image'}
+          </div>
+        )}
+        <div className="absolute top-2 right-2 z-10 flex gap-1">
+          <OpenLightboxButton item={item} variant="ghost" size="icon" className="bg-white/80 hover:bg-white" />
+          <CollectionStar itemId={item.id} itemType="graph" item={item} />
+        </div>
+      </div>
+      <div className="p-3 text-center space-y-1 bg-white">
+        <div className="font-medium text-gray-900 truncate text-xs sm:text-sm" title={title}>{title}</div>
+        {item.repository_name && <div className="text-xs text-gray-500 truncate" title={item.repository_name}>{item.repository_name}</div>}
+      </div>
+    </div>
+  )
 }
 
 function CollectionPageContent() {
@@ -115,19 +184,26 @@ function CollectionPageContent() {
   }
 
   const renderCard = (item: CollectionItem, type: 'image' | 'graph') => {
-    let imageUrl = getItemImageUrl(item)
-    if (type === 'image' && imageUrl?.includes('/info.json')) {
-      imageUrl = imageUrl.replace('/info.json', '/full/300,/0/default.jpg')
-    }
     const title = getItemTitle(item)
 
+    if (type === 'graph') {
+      return <CollectionGraphCard key={`graph-${item.id}`} item={item} getUrl={getUrl} title={title} />
+    }
+
+    const imageUrl = getImageItemThumbnailUrl(item)
     return (
-      <div key={`${type}-${item.id}`} className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden group cursor-pointer">
+      <div key={`image-${item.id}`} className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden group cursor-pointer">
         <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
           {imageUrl ? (
             <>
               <Link href={getUrl(item)} className="block w-full h-full">
-                <Image src={imageUrl} alt={title} fill className="object-contain transition-transform duration-300 group-hover:scale-110" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw" />
+                <Image
+                  src={imageUrl}
+                  alt={title}
+                  fill
+                  className="object-contain transition-transform duration-300 group-hover:scale-110"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw"
+                />
               </Link>
               <div className="absolute inset-0 bg-gradient-to-t from-black/0 via-black/0 to-black/0 group-hover:from-black/5 group-hover:via-black/0 group-hover:to-black/0 transition-all duration-300 pointer-events-none" />
             </>
@@ -135,13 +211,8 @@ function CollectionPageContent() {
             <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-full h-full flex items-center justify-center text-xs text-gray-500">No Image</div>
           )}
           <div className="absolute top-2 right-2 z-10 flex gap-1">
-            <OpenLightboxButton
-              item={item}
-              variant="ghost"
-              size="icon"
-              className="bg-white/80 hover:bg-white"
-            />
-            <CollectionStar itemId={item.id} itemType={type} item={item} />
+            <OpenLightboxButton item={item} variant="ghost" size="icon" className="bg-white/80 hover:bg-white" />
+            <CollectionStar itemId={item.id} itemType="image" item={item} />
           </div>
         </div>
         <div className="p-3 text-center space-y-1 bg-white">

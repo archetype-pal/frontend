@@ -172,9 +172,8 @@ export function generateImageSearchResults(count: number = 50): any[] {
   return Array.from({ length: count }, (_, i) => {
     const repo = repositories[i % repositories.length]
     const imageUrl = getMockImageUrl(i)
-    const iiifImageUrl = imageUrl.endsWith('/info.json') ? imageUrl : `${imageUrl}/info.json`
-    const thumbnailUrl = `${imageUrl}/full/300,/0/default.jpg`
-    
+    const image_iiif = imageUrl.endsWith('/info.json') ? imageUrl : `${imageUrl}/info.json`
+
     return {
       id: generateId(),
       repository_name: repo.name,
@@ -183,8 +182,7 @@ export function generateImageSearchResults(count: number = 50): any[] {
       date: dates[i % dates.length],
       type: types[i % types.length],
       text: `Sample transcription text for image ${i + 1}`,
-      image: iiifImageUrl,
-      thumbnail: thumbnailUrl,
+      image_iiif,
       locus: LOCUS_VALUES[i % LOCUS_VALUES.length],
       number_of_annotations: Math.floor(Math.random() * 10),
       components: [components[i % components.length]],
@@ -276,17 +274,6 @@ export function generateAllographs(): Allograph[] {
   ]
 }
 
-// Helper function to generate thumbnail URL from image URL
-function generateThumbnailUrl(imageUrl: string): string {
-  // Convert IIIF image URL to thumbnail format: /full/150,/0/default.jpg
-  // Example: http://localhost:1024/scans%2FS-ABD-003_Formaston_WB_DSC0228.jpg
-  // Becomes: http://localhost:1024/scans%2FS-ABD-003_Formaston_WB_DSC0228.jpg/full/150,/0/default.jpg
-  if (imageUrl.endsWith('/full/150,/0/default.jpg')) {
-    return imageUrl
-  }
-  return `${imageUrl}/full/150,/0/default.jpg`
-}
-
 // Mock annotations/graphs
 export function generateGraphs(count: number = 5, itemImageId?: number): BackendGraph[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -310,7 +297,7 @@ export function generateGraphs(count: number = 5, itemImageId?: number): Backend
   }))
 }
 
-// Generate graph search results with image_url
+// Generate graph search results with image_iiif
 export function generateGraphSearchResults(count: number = 20): any[] {
   const repositories = [
     { name: 'National Records of Scotland', city: 'Edinburgh' },
@@ -330,10 +317,11 @@ export function generateGraphSearchResults(count: number = 20): any[] {
   return Array.from({ length: count }, (_, i) => {
     const repo = repositories[i % repositories.length]
     const imageUrl = getMockImageUrl(i)
-    
+    const image_iiif = imageUrl.endsWith('/info.json') ? imageUrl : `${imageUrl}/info.json`
+
     return {
       id: generateId(),
-      item_image: generateId(),
+      image_iiif,
       coordinates: JSON.stringify({
         crs: { type: 'name', properties: { name: 'EPSG:3785' } },
         type: 'Feature',
@@ -348,7 +336,6 @@ export function generateGraphSearchResults(count: number = 20): any[] {
       repository_city: repo.city,
       shelfmark: shelfmarks[i % shelfmarks.length],
       date: dates[i % dates.length],
-      image_url: generateThumbnailUrl(imageUrl),
     }
   })
 }

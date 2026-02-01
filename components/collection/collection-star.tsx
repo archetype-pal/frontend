@@ -10,8 +10,8 @@ export interface CollectionStarProps {
   itemType: 'image' | 'graph'
   item: {
     id: number
-    thumbnail?: string
-    image?: string
+    image_iiif?: string
+    coordinates?: string
     shelfmark?: string
     locus?: string
     repository_name?: string
