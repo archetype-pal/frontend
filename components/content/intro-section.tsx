@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
@@ -120,11 +121,13 @@ export default function Component() {
             <div className='relative h-[400px]'>
               {carouselItems[currentImage] && (
                 <>
-                  <img
+                  <Image
                     src={getCarouselImageUrl(carouselItems[currentImage].image)}
                     alt={carouselItems[currentImage].title}
-                    className='absolute inset-0 h-full w-full object-cover'
-                    loading='eager'
+                    fill
+                    className='object-cover'
+                    sizes='(max-width: 768px) 100vw, 50vw'
+                    priority
                   />
                   <div className='absolute inset-0 bg-black/50' aria-hidden />
                 </>

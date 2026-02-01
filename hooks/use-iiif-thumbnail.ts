@@ -31,7 +31,7 @@ export function useIiifThumbnailUrl(
     return () => {
       cancelled = true
     }
-  }, [trimmed, coordinatesJson])
+  }, [trimmed, coords])
 
   return url
 }

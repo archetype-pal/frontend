@@ -122,7 +122,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
         })
       }
     },
-    [baseFacetURL]
+    [baseFacetURL, setKeyword]
   )
 
   const handlePage = React.useCallback((page: number) => {

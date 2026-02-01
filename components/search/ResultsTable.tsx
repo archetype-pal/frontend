@@ -48,9 +48,11 @@ function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
   }
   return (
     <div className="relative inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
-      <img
+      <Image
         src={src}
         alt={`Thumbnail for ${graph.shelfmark}`}
+        width={80}
+        height={80}
         className="w-full h-full object-contain"
       />
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />

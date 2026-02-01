@@ -25,7 +25,10 @@ export default function Header() {
 
   useEffect(() => {
     const stored = localStorage.getItem(BANNER_VISIBLE_KEY)
-    if (stored !== null) setIsBannerVisible(stored === 'true')
+    if (stored !== null) {
+      const value = stored === 'true'
+      queueMicrotask(() => setIsBannerVisible(value))
+    }
   }, [])
 
   const toggleBanner = () => {
