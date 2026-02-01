@@ -3,13 +3,11 @@ name: CD Deployment - Dev (same origin backend)
 on:
   workflow_run:
     workflows: ["CI Pipeline"]
-    types:
-      - completed
-    branches:
-      - main
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
   release:
-    types: [prereleased, released]
+    types: [published, prereleased]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -41,7 +39,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: dev.Dockerfile

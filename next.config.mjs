@@ -3,6 +3,7 @@
 const IIIF_UPSTREAM = (process.env.NEXT_PUBLIC_IIIF_UPSTREAM || 'http://localhost:1024').replace(/\/$/, '')
 
 const nextConfig = {
+  reactStrictMode: true,
   async rewrites() {
     return [
       { source: '/iiif-proxy/:path*', destination: `${IIIF_UPSTREAM}/:path*` },
