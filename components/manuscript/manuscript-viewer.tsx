@@ -24,6 +24,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { AnnotationHeader } from '@/components/annotation/annotation-header'
+import { getIiifBaseUrl } from '@/utils/iiif'
 import { saveAnnotation, SaveAnnotationRequest } from '@/services/annotations'
 import { fetchManuscriptImage, fetchAllographs } from '@/services/manuscripts'
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image'
@@ -395,7 +396,7 @@ export default function ManuscriptViewer({
               onAnnotationDeleted={handleAnnotationDeleted}
               zoom={zoom}
               onZoomChange={handleZoomChange}
-              iiifImageUrl={manuscriptImage.iiif_image}
+              iiifImageUrl={getIiifBaseUrl(manuscriptImage.iiif_image)}
               selectedAllograph={selectedAllograph}
             />
           </div>

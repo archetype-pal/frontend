@@ -137,6 +137,11 @@ export function normalizeIiifBase(iiifBase: string): string {
   }
 }
 
+/** Resolve (relative → absolute) then normalize (encode slashes) IIIF base URL. Use for digipal/manuscript viewer. */
+export function getIiifBaseUrl(infoUrl: string): string {
+  return normalizeIiifBase(resolveInfoUrl(infoUrl))
+}
+
 export function iiifThumbFromSelector(
   iiifBase: string,
   selectorValue: string,

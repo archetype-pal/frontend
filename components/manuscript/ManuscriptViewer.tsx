@@ -7,7 +7,7 @@ import {
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import type { ViewerApi, Annotation as A9sAnnotation, } from './ManuscriptAnnotorious'
-import { getSelectorValue, iiifThumbFromSelector } from '@/utils/iiif'
+import { getSelectorValue, iiifThumbFromSelector, getIiifBaseUrl } from '@/utils/iiif'
 const ManuscriptAnnotorious = dynamic(() => import('./ManuscriptAnnotorious'), { ssr: false })
 
 import { ManuscriptTabs } from './manuscript-tabs'
@@ -39,7 +39,7 @@ const metaKeyFor = (iiif: string) => `annotations:meta:${iiif}`
 const cacheKeyFor = (iiif: string) => `annotations:${iiif}`
 const isDbId = (id?: string) => typeof id === 'string' && id.startsWith('db:')
 
-/** Rewrite cross-origin IIIF URL to same-origin /iiif-proxy to avoid CORS. */
+/** Rewrite cross-origin IIIF URL to same-origin /iiif-proxy to avoid CORS. Keeps path encoding (%2F) so Sipi receives a single identifier segment. */
 function browserSafeIiifUrl(raw: string): string {
     const base = raw.replace(/\/info\.json$/, '')
     if (typeof window === 'undefined') return base
@@ -47,9 +47,8 @@ function browserSafeIiifUrl(raw: string): string {
     try {
         const u = new URL(raw)
         if (u.origin !== window.location.origin) {
-            // IMPORTANT: decode %2F to real slashes so Next rewrite path matching works
-            const decodedPath = decodeURIComponent(u.pathname).replace(/\/info\.json$/, '')
-            return `${window.location.origin}/iiif-proxy${decodedPath}`
+            const path = u.pathname.replace(/\/info\.json$/i, '')
+            return `${window.location.origin}/iiif-proxy${path}`
         }
         return base
     } catch {
@@ -213,7 +212,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                     if (isMounted) setManuscript(m)
                 })
 
-                const baseUrl = browserSafeIiifUrl(image.iiif_image)
+                const baseUrl = browserSafeIiifUrl(getIiifBaseUrl(image.iiif_image))
                 const infoUrl = `${baseUrl}/info.json`
                 try {
                     const infoRes = await fetch(infoUrl)
@@ -546,7 +545,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                                 const v = getSelectorValue(a)
                                 if (!v || !manuscriptImage) return null
 
-                                const base = browserSafeIiifUrl(manuscriptImage.iiif_image)
+                                const base = browserSafeIiifUrl(getIiifBaseUrl(manuscriptImage.iiif_image))
                                 const src = iiifThumbFromSelector(base, v, 200)
                                 if (!src) return null
 
@@ -654,7 +653,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                                             item={{
                                                 id: Number(imageId),
                                                 type: 'image',
-                                                image: manuscriptImage.iiif_image,
+                                                image_iiif: manuscriptImage.iiif_image,
                                                 shelfmark: manuscript.current_item?.shelfmark || '',
                                                 locus: manuscriptImage.locus,
                                                 repository_name: manuscript.current_item?.repository?.name || '',
@@ -687,7 +686,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                         }
                     >
                         <ManuscriptAnnotorious
-                            iiifImageUrl={browserSafeIiifUrl(manuscriptImage.iiif_image)}
+                            iiifImageUrl={browserSafeIiifUrl(getIiifBaseUrl(manuscriptImage.iiif_image))}
                             initialAnnotations={initialA9sAnnots}
                             onCreate={() => {
                                 if (typeof window !== 'undefined') {
