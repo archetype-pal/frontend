@@ -13,23 +13,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout 🛎
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v6
 
-      - name: Setup node env 🏗
-        uses: actions/setup-node@v3
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          node-version: latest
-          check-latest: true
+          version: 10
 
-      - name: Install pnpm 📦
-        run: npm i -g pnpm
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "25"
+          cache: "pnpm"
 
-      - name: Install dependencies 👨🏻‍💻
-        run: pnpm install
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Run ESLint 👀
+      - name: Run ESLint
         run: pnpm lint
 
-      - name: Build project 🚀
+      - name: Build project
         run: pnpm build
