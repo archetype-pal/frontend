@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Input } from '@/components/ui/input'
+import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { useSearchContext } from '@/contexts/search-context'
+import { KeywordSearchInput, useKeywordSuggestions } from '@/components/search/KeywordSearchInput'
+import { Search, Home, Menu, X, ChevronDown, FolderOpen } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,12 +15,33 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useCollection } from '@/contexts/collection-context'
 
-import { Search, Home, Menu, X, ChevronDown, FolderOpen } from 'lucide-react'
-
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { items } = useCollection()
   const pathname = usePathname()
+  const router = useRouter()
+  const { keyword, setKeyword, suggestionsPool, loadGlobalSuggestions } = useSearchContext()
+  const isOnSearchPage = pathname?.startsWith('/search') ?? false
+  const headerSearchValue = isOnSearchPage ? '' : keyword
+  const suggestions = useKeywordSuggestions(headerSearchValue, suggestionsPool)
+
+  const handleTriggerSearch = (kw: string) => {
+    setKeyword(kw)
+    if (!isOnSearchPage) {
+      const query = kw.trim() ? `?keyword=${encodeURIComponent(kw.trim())}` : ''
+      router.push(`/search/manuscripts${query}`)
+    }
+  }
+
+  const handleHeaderSearchChange = (value: string) => {
+    if (!isOnSearchPage) setKeyword(value)
+  }
+
+  const handleHeaderSearchFocus = () => {
+    if (!isOnSearchPage) {
+      loadGlobalSuggestions()
+    }
+  }
 
   // Helper function to check if a route is active
   const isActive = (href: string, exact: boolean = false) => {
@@ -263,12 +286,17 @@ export default function Header() {
             </ul>
             <div className='flex flex-col md:flex-row items-center gap-3 w-full md:w-auto md:max-w-xl'>
               <div className='relative flex-1 w-full md:w-auto'>
-                <Input
-                  type='search'
+                <KeywordSearchInput
+                  value={headerSearchValue}
+                  onChange={handleHeaderSearchChange}
+                  onTriggerSearch={handleTriggerSearch}
+                  suggestions={suggestions}
                   placeholder='Enter search terms'
-                  className='pl-8 bg-background text-foreground w-full'
+                  className='w-full'
+                  inputClassName='bg-background text-foreground w-full'
+                  clearOnFocus
+                  onFocus={handleHeaderSearchFocus}
                 />
-                <Search className='absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none' />
               </div>
             </div>
           </div>

@@ -8,6 +8,7 @@ import { ResultTypeToggle, type ResultType } from '@/components/search/search-re
 import { ResultsTable } from '@/components/search/ResultsTable'
 import { SearchGrid } from '@/components/search/search-grid'
 import { DynamicFacets } from '@/components/filters/DynamicFacets'
+import { useSearchContext } from '@/contexts/search-context'
 import { FILTER_RENDER_MAP } from '@/lib/filter-config'
 import { useSafeSearch } from '@/utils/useSafeSearch'
 import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map'
@@ -39,17 +40,24 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const [queryState, setQueryState] = React.useState<QueryState>(() => stateFromSearchParams(searchParams))
   const [sortKey, setSortKey] = React.useState<string | null>(null)
   const [ascending, setAscending] = React.useState(true)
-  const [keyword, setKeyword] = React.useState('')
+  const { keyword, setKeyword, setSuggestionsPool } = useSearchContext()
 
   React.useEffect(() => {
     if (initialType != null) setResultType(initialType)
   }, [initialType])
 
   React.useEffect(() => {
+    const kw = searchParams.get('keyword')
+    setKeyword(kw ?? '')
+  }, [searchParams, setKeyword])
+
+  React.useEffect(() => {
     const qs = buildQueryString(queryState)
-    const path = '/search/' + resultType + (qs ? '?' + qs : '')
+    const params = new URLSearchParams(qs)
+    if (keyword) params.set('keyword', keyword)
+    const path = '/search/' + resultType + (params.toString() ? '?' + params.toString() : '')
     window.history.replaceState(null, '', path)
-  }, [resultType, queryState])
+  }, [resultType, queryState, keyword])
 
   const handleResultTypeChange = React.useCallback((next: ResultType) => {
     setResultType(next)
@@ -72,11 +80,14 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
     () => filterResultsByKeyword(data.results, keyword),
     [data.results, keyword]
   )
-  const suggestionsPool = React.useMemo(() => getSuggestionsPool(data.results), [data.results])
+
+  React.useEffect(() => {
+    setSuggestionsPool(getSuggestionsPool(data.results))
+    return () => setSuggestionsPool([])
+  }, [data.results, setSuggestionsPool])
 
   React.useEffect(() => {
     if (resultType === 'manuscripts' && viewMode !== 'table') setViewMode('table')
-    setKeyword('')
   }, [resultType, viewMode])
 
   const handleFacetClick = React.useCallback(
@@ -186,7 +197,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             <DynamicFacets
               facets={data.facets}
               renderConfig={{ ...renderMap, searchType: resultType }}
-              suggestionsPool={suggestionsPool}
               selectedFacets={queryState.selected_facets}
               onFacetClick={handleFacetClick}
               baseFacetURL={baseFacetURL}

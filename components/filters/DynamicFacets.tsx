@@ -1,17 +1,16 @@
 'use client'
 
 import * as React from 'react'
-import { Search } from 'lucide-react'
-import { Input } from '@/components/ui/input'
 import { FACET_COMPONENT_MAP } from '@/lib/facet-component-map'
 import { FILTER_ORDER_MAP } from '@/lib/filter-order'
 import { getSelectedForFacet, formatFacetTitle } from '@/lib/search-query'
+import { useSearchContext } from '@/contexts/search-context'
+import { KeywordSearchInput, useKeywordSuggestions } from '@/components/search/KeywordSearchInput'
 import type { FacetData, FacetItem, FacetClickOpts } from '@/types/facets'
 
 type DynamicFacetsProps = {
   facets: FacetData
   renderConfig: Record<string, string>
-  suggestionsPool?: string[]
   selectedFacets?: string[]
   onFacetClick?: (arg: string, opts?: FacetClickOpts) => void
   baseFacetURL: string
@@ -20,24 +19,20 @@ type DynamicFacetsProps = {
 export function DynamicFacets({
   facets,
   renderConfig,
-  suggestionsPool = [],
   selectedFacets = [],
   onFacetClick,
   baseFacetURL,
 }: DynamicFacetsProps) {
-  const [keyword, setKeyword] = React.useState('')
-  const [selectedIndex, setSelectedIndex] = React.useState(-1)
+  const { keyword, setKeyword, suggestionsPool } = useSearchContext()
+  const suggestions = useKeywordSuggestions(keyword, suggestionsPool)
 
-  const suggestions = React.useMemo(() => {
-    if (!keyword) return []
-    const low = keyword.toLowerCase()
-    return Array.from(
-      new Set(
-        suggestionsPool
-          .filter((s) => s.toLowerCase().startsWith(low) && s.toLowerCase() !== low)
-      )
-    ).slice(0, 5)
-  }, [keyword, suggestionsPool])
+  const triggerSearch = React.useCallback(
+    (kw: string) => {
+      setKeyword(kw)
+      onFacetClick?.(kw)
+    },
+    [setKeyword, onFacetClick]
+  )
 
   if (!facets || Object.keys(facets).length === 0) {
     return null
@@ -45,75 +40,17 @@ export function DynamicFacets({
 
   const ordered = FILTER_ORDER_MAP[renderConfig.searchType] || Object.keys(facets)
 
-  function triggerSearch(kw: string) {
-    setKeyword(kw)
-    setSelectedIndex(-1)
-    onFacetClick?.(kw)
-  }
-
   return (
     <div className="space-y-4">
       <div className="px-4 pt-0 pb-0">
         <h3 className="font-medium text-sm mb-1">Keyword</h3>
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-          <Input
-            className="pl-8"
-            placeholder="Type and press Enter…"
-            value={keyword}
-            onChange={(e) => {
-              setKeyword(e.currentTarget.value)
-              setSelectedIndex(-1)
-            }}
-            onKeyDown={(e) => {
-              switch (e.key) {
-                case 'ArrowDown':
-                  e.preventDefault()
-                  if (suggestions.length > 0) {
-                    setSelectedIndex((si) => (si < suggestions.length - 1 ? si + 1 : 0))
-                  }
-                  break
-                case 'ArrowUp':
-                  e.preventDefault()
-                  if (suggestions.length > 0) {
-                    setSelectedIndex((si) => (si > 0 ? si - 1 : suggestions.length - 1))
-                  }
-                  break
-                case 'Enter':
-                  e.preventDefault()
-                  if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-                    triggerSearch(suggestions[selectedIndex])
-                  } else if (keyword.trim()) {
-                    triggerSearch(keyword.trim())
-                  } else {
-                    triggerSearch('')
-                  }
-                  break
-                case 'Escape':
-                  setSelectedIndex(-1)
-                  break
-              }
-            }}
-          />
-          {suggestions.length > 0 && (
-            <ul className="absolute z-10 bg-white border mt-1 w-full max-h-40 overflow-auto">
-              {suggestions.map((s, i) => (
-                <li
-                  key={s}
-                  className={
-                    'px-2 py-1 cursor-pointer ' +
-                    (i === selectedIndex ? 'bg-gray-200' : 'hover:bg-gray-100')
-                  }
-                  onMouseEnter={() => setSelectedIndex(i)}
-                  onMouseLeave={() => setSelectedIndex(-1)}
-                  onClick={() => triggerSearch(s)}
-                >
-                  {s}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <KeywordSearchInput
+          value={keyword}
+          onChange={setKeyword}
+          onTriggerSearch={triggerSearch}
+          suggestions={suggestions}
+          placeholder="Type and press Enter…"
+        />
       </div>
 
       <div className="space-y-4">
