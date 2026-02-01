@@ -322,14 +322,14 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       updatedAt: Date.now(),
     }
 
-    const { saveImage } = await import('@/lib/lightbox-db')
-    await saveImage(updated)
-
     set((state) => {
       const images = new Map(state.images)
       images.set(imageId, updated)
       return { images }
     })
+
+    const { saveImage } = await import('@/lib/lightbox-db')
+    await saveImage(updated)
   },
 
   selectImage: (imageId) => {

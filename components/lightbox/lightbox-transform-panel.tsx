@@ -13,81 +13,58 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export function LightboxTransformPanel() {
-  const { updateImage } = useLightboxStore()
+  const { updateImage, saveHistory } = useLightboxStore()
   const selectedImages = useSelectedImages()
   const firstImage = selectedImages[0]
 
   const handleOpacityChange = (value: number[]) => {
+    saveHistory()
     const opacity = value[0] / 100
-    selectedImages.forEach((img) => {
-      if (img) {
-        updateImage(img.id, {
-          transform: {
-            ...img.transform,
-            opacity,
-          },
-        })
-      }
-    })
+    selectedImages.forEach((img) =>
+      updateImage(img.id, { transform: { ...img.transform, opacity } })
+    )
   }
 
   const handleBrightnessChange = (value: number[]) => {
+    saveHistory()
     const brightness = value[0]
-    selectedImages.forEach((img) => {
-      if (img) {
-        updateImage(img.id, {
-          transform: {
-            ...img.transform,
-            brightness,
-          },
-        })
-      }
-    })
+    selectedImages.forEach((img) =>
+      updateImage(img.id, { transform: { ...img.transform, brightness } })
+    )
   }
 
   const handleContrastChange = (value: number[]) => {
+    saveHistory()
     const contrast = value[0]
-    selectedImages.forEach((img) => {
-      if (img) {
-        updateImage(img.id, {
-          transform: {
-            ...img.transform,
-            contrast,
-          },
-        })
-      }
-    })
+    selectedImages.forEach((img) =>
+      updateImage(img.id, { transform: { ...img.transform, contrast } })
+    )
   }
 
   const handleGrayscaleToggle = () => {
-    selectedImages.forEach((img) => {
-      if (img) {
-        updateImage(img.id, {
-          transform: {
-            ...img.transform,
-            grayscale: !img.transform.grayscale,
-          },
-        })
-      }
-    })
+    saveHistory()
+    selectedImages.forEach((img) =>
+      updateImage(img.id, {
+        transform: { ...img.transform, grayscale: !img.transform.grayscale },
+      })
+    )
   }
 
   const handleReset = () => {
-    selectedImages.forEach((img) => {
-      if (img) {
-        updateImage(img.id, {
-          transform: {
-            opacity: 1,
-            brightness: 100,
-            contrast: 100,
-            rotation: 0,
-            flipX: false,
-            flipY: false,
-            grayscale: false,
-          },
-        })
-      }
-    })
+    saveHistory()
+    selectedImages.forEach((img) =>
+      updateImage(img.id, {
+        transform: {
+          opacity: 1,
+          brightness: 100,
+          contrast: 100,
+          rotation: 0,
+          flipX: false,
+          flipY: false,
+          grayscale: false,
+        },
+      })
+    )
   }
 
   if (selectedImages.length === 0) {

@@ -48,6 +48,7 @@ export function LightboxToolbar({
 }: LightboxToolbarProps = {}) {
   const {
     updateImage,
+    saveHistory,
     zoom,
     setZoom,
     showAnnotations,
@@ -70,42 +71,33 @@ export function LightboxToolbar({
   }
 
   const handleRotate = () => {
-    selectedImages.forEach((img) => {
-      if (img) {
-        updateImage(img.id, {
-          transform: {
-            ...img.transform,
-            rotation: (img.transform.rotation + 90) % 360,
-          },
-        })
-      }
-    })
+    saveHistory()
+    selectedImages.forEach((img) =>
+      updateImage(img.id, {
+        transform: {
+          ...img.transform,
+          rotation: (img.transform.rotation + 90) % 360,
+        },
+      })
+    )
   }
 
   const handleFlipX = () => {
-    selectedImages.forEach((img) => {
-      if (img) {
-        updateImage(img.id, {
-          transform: {
-            ...img.transform,
-            flipX: !img.transform.flipX,
-          },
-        })
-      }
-    })
+    saveHistory()
+    selectedImages.forEach((img) =>
+      updateImage(img.id, {
+        transform: { ...img.transform, flipX: !img.transform.flipX },
+      })
+    )
   }
 
   const handleFlipY = () => {
-    selectedImages.forEach((img) => {
-      if (img) {
-        updateImage(img.id, {
-          transform: {
-            ...img.transform,
-            flipY: !img.transform.flipY,
-          },
-        })
-      }
-    })
+    saveHistory()
+    selectedImages.forEach((img) =>
+      updateImage(img.id, {
+        transform: { ...img.transform, flipY: !img.transform.flipY },
+      })
+    )
   }
 
   const hasSelection = selectedImages.length > 0

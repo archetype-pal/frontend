@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Download,
@@ -27,7 +28,7 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
     setIsExporting(true)
     try {
       if (!currentWorkspaceId) {
-        alert('No workspace selected')
+        toast.error('No workspace selected')
         return
       }
 
@@ -47,7 +48,7 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
       }
     } catch (error) {
       console.error('Export failed:', error)
-      alert('Export failed. Please try again.')
+      toast.error('Export failed. Please try again.')
     } finally {
       setIsExporting(false)
       onClose()
@@ -56,13 +57,13 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
 
   const exportAsPDF = async (workspaceImages: LightboxImage[]) => {
     if (workspaceImages.length === 0) {
-      alert('No images to export')
+      toast.error('No images to export')
       return
     }
 
     // Ensure we're in browser
     if (typeof window === 'undefined' || typeof document === 'undefined') {
-      alert('PDF export is only available in the browser')
+      toast.error('PDF export is only available in the browser')
       return
     }
 
@@ -134,20 +135,20 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
       pdf.save(`lightbox-export-${Date.now()}.pdf`)
     } catch (error) {
       console.error('PDF export failed:', error)
-      alert('Failed to export PDF. Please try again.')
+      toast.error('Failed to export PDF. Please try again.')
     }
   }
 
   const exportAsImage = async (workspaceImages: LightboxImage[]) => {
     if (workspaceImages.length === 0) {
-      alert('No images to export')
+      toast.error('No images to export')
       return
     }
 
     // Export first selected image or first image in workspace
     const image = workspaceImages[0]
     if (!image.imageUrl) {
-      alert('Image URL not available')
+      toast.error('Image URL not available')
       return
     }
 
@@ -164,7 +165,7 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
       URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Image export failed:', error)
-      alert('Failed to export image')
+      toast.error('Failed to export image')
     }
   }
 

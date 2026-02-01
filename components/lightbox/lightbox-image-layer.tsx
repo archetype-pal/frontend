@@ -11,59 +11,74 @@ interface LightboxImageLayerProps {
   images: LightboxImage[]
 }
 
+function clampPosition(
+  x: number,
+  y: number,
+  containerRect: DOMRect,
+  imageSize: { width: number; height: number }
+) {
+  return {
+    x: Math.max(0, Math.min(x, containerRect.width - imageSize.width)),
+    y: Math.max(0, Math.min(y, containerRect.height - imageSize.height)),
+  }
+}
+
 export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
   const { selectedImageIds, updateImage } = useLightboxStore()
   const [draggedImage, setDraggedImage] = React.useState<string | null>(null)
-  const dragStateRef = React.useRef<{
+  const [dragPosition, setDragPosition] = React.useState<{ x: number; y: number } | null>(null)
+  const dragRef = React.useRef<{
     imageId: string | null
     offset: { x: number; y: number }
-  }>({ imageId: null, offset: { x: 0, y: 0 } })
+    lastPosition: { x: number; y: number } | null
+  }>({ imageId: null, offset: { x: 0, y: 0 }, lastPosition: null })
   const containerRef = React.useRef<HTMLDivElement>(null)
 
   const handleMouseDown = (e: React.MouseEvent, imageId: string) => {
     e.preventDefault()
     e.stopPropagation()
-    
     const image = images.find((img) => img.id === imageId)
     if (!image) return
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const startX = e.clientX - rect.left
-    const startY = e.clientY - rect.top
-
-    dragStateRef.current = {
+    dragRef.current = {
       imageId,
-      offset: { x: startX, y: startY },
+      offset: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+      lastPosition: null,
     }
     setDraggedImage(imageId)
+    setDragPosition(null)
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (dragStateRef.current.imageId !== imageId) return
-      
-      const container = containerRef.current
-      if (!container) return
-      
-      const containerRect = container.getBoundingClientRect()
-      const newX = e.clientX - containerRect.left - dragStateRef.current.offset.x
-      const newY = e.clientY - containerRect.top - dragStateRef.current.offset.y
-
+      if (dragRef.current.imageId !== imageId || !containerRef.current) return
+      const containerRect = containerRef.current.getBoundingClientRect()
       const currentImage = images.find((img) => img.id === imageId)
       if (!currentImage) return
 
-      updateImage(imageId, {
-        position: {
-          ...currentImage.position,
-          x: Math.max(0, Math.min(newX, containerRect.width - currentImage.size.width)),
-          y: Math.max(0, Math.min(newY, containerRect.height - currentImage.size.height)),
-        },
-      })
+      const rawX = e.clientX - containerRect.left - dragRef.current.offset.x
+      const rawY = e.clientY - containerRect.top - dragRef.current.offset.y
+      const pos = clampPosition(rawX, rawY, containerRect, currentImage.size)
+      dragRef.current.lastPosition = pos
+      setDragPosition(pos)
     }
 
     const handleMouseUp = () => {
-      dragStateRef.current = { imageId: null, offset: { x: 0, y: 0 } }
+      const { imageId: commitId, lastPosition: commitPos } = dragRef.current
+      dragRef.current = { imageId: null, offset: { x: 0, y: 0 }, lastPosition: null }
       setDraggedImage(null)
+      setDragPosition(null)
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
+
+      if (commitId && commitPos != null) {
+        const currentImage = images.find((img) => img.id === commitId)
+        if (currentImage) {
+          useLightboxStore.getState().saveHistory()
+          updateImage(commitId, {
+            position: { ...currentImage.position, ...commitPos },
+          })
+        }
+      }
     }
 
     document.addEventListener('mousemove', handleMouseMove)
@@ -73,14 +88,10 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
   const handleImageClick = (e: React.MouseEvent, imageId: string) => {
     e.stopPropagation()
     const { selectImage, deselectImage, selectedImageIds } = useLightboxStore.getState()
-    
     if (selectedImageIds.has(imageId)) {
       deselectImage(imageId)
     } else {
-      if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
-        // Deselect all if not holding modifier key
-        useLightboxStore.getState().deselectAll()
-      }
+      if (!e.shiftKey && !e.ctrlKey && !e.metaKey) useLightboxStore.getState().deselectAll()
       selectImage(imageId)
     }
   }
@@ -90,12 +101,13 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
       {images.map((image) => {
         const isSelected = selectedImageIds.has(image.id)
         const isDragging = draggedImage === image.id
+        const displayPosition =
+          isDragging && dragPosition != null ? dragPosition : image.position
 
-        // Apply transforms
         const transformStyle: React.CSSProperties = {
           position: 'absolute',
-          left: `${image.position.x}px`,
-          top: `${image.position.y}px`,
+          left: `${displayPosition.x}px`,
+          top: `${displayPosition.y}px`,
           width: `${image.size.width}px`,
           height: `${image.size.height}px`,
           zIndex: image.position.zIndex,
@@ -119,7 +131,8 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
             key={image.id}
             style={transformStyle}
             className={cn(
-              'border-2 transition-all group',
+              'border-2 group',
+              isDragging ? 'transition-none' : 'transition-all',
               isSelected
                 ? 'border-blue-500 shadow-lg'
                 : 'border-transparent hover:border-gray-300'
@@ -148,10 +161,7 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
                 </div>
               )}
             </div>
-            {/* Resize handles - only show when selected */}
-            {isSelected && (
-              <LightboxImageResize image={image} />
-            )}
+            {isSelected && <LightboxImageResize image={image} />}
           </div>
         )
       })}

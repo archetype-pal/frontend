@@ -9,6 +9,7 @@ export function LightboxKeyboardShortcuts() {
     images,
     removeImage,
     updateImage,
+    saveHistory,
     selectAll,
     deselectAll,
     zoom,
@@ -75,19 +76,18 @@ export function LightboxKeyboardShortcuts() {
         return
       }
 
-      // Rotate with R
       if (e.key === 'r' || e.key === 'R') {
         e.preventDefault()
+        saveHistory()
         selectedImageIds.forEach((id) => {
           const img = images.get(id)
-          if (img) {
+          if (img)
             updateImage(id, {
               transform: {
                 ...img.transform,
                 rotation: (img.transform.rotation + 90) % 360,
               },
             })
-          }
         })
         return
       }
@@ -97,7 +97,7 @@ export function LightboxKeyboardShortcuts() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [selectedImageIds, images, zoom, setZoom, removeImage, selectAll, deselectAll, updateImage, undo, redo])
+  }, [selectedImageIds, images, zoom, setZoom, removeImage, saveHistory, selectAll, deselectAll, updateImage, undo, redo])
 
   return null // This component doesn't render anything
 }

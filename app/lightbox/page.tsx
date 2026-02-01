@@ -18,9 +18,19 @@ import { LightboxMeasurementTool } from '@/components/lightbox/lightbox-measurem
 import { LightboxComparisonMode } from '@/components/lightbox/lightbox-comparison-mode'
 import { LightboxRegionComparison } from '@/components/lightbox/lightbox-region-comparison'
 import { LightboxImport } from '@/components/lightbox/lightbox-import'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { saveRegion, type LightboxRegion } from '@/lib/lightbox-db'
+
+type OpenPanel =
+  | 'export'
+  | 'session'
+  | 'measurement'
+  | 'comparison'
+  | 'region-comparison'
+  | 'import'
+  | null
 
 function LightboxPageContent() {
   const searchParams = useSearchParams()
@@ -34,19 +44,22 @@ function LightboxPageContent() {
     setError,
     error,
     isLoading,
+    initialize,
+    images,
   } = useLightboxStore()
 
   const [isInitialized, setIsInitialized] = React.useState(false)
   const [cropImageId, setCropImageId] = React.useState<string | null>(null)
-  const [showExport, setShowExport] = React.useState(false)
-  const [showSessionManager, setShowSessionManager] = React.useState(false)
+  const [openPanel, setOpenPanel] = React.useState<OpenPanel>(null)
   const [showMinimap, setShowMinimap] = React.useState(false)
-  const [showMeasurement, setShowMeasurement] = React.useState(false)
-  const [showComparison, setShowComparison] = React.useState(false)
-  const [showRegionComparison, setShowRegionComparison] = React.useState(false)
-  const [showImport, setShowImport] = React.useState(false)
   const viewerContainerRef = React.useRef<HTMLDivElement>(null)
-  const { initialize, images } = useLightboxStore()
+
+  const closePanel = React.useCallback(() => setOpenPanel(null), [])
+  const togglePanel = React.useCallback(
+    (panel: NonNullable<OpenPanel>) => () =>
+      setOpenPanel((p) => (p === panel ? null : panel)),
+    []
+  )
 
   React.useEffect(() => {
     let cancelled = false
@@ -123,7 +136,7 @@ function LightboxPageContent() {
 
     const image = images.get(cropImageId)
     if (!image) {
-      setError('Image not found; cannot save crop.')
+      toast.error('Image not found; cannot save crop.')
       return
     }
 
@@ -143,7 +156,7 @@ function LightboxPageContent() {
       setCropImageId(null)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setError(`Failed to save crop: ${msg}`)
+      toast.error(`Failed to save crop: ${msg}`)
       if (process.env.NODE_ENV === 'development') {
         console.error('[Lightbox] saveRegion failed:', err)
       }
@@ -151,9 +164,7 @@ function LightboxPageContent() {
     }
   }
 
-  const handleSaveSession = () => {
-    setShowSessionManager(true)
-  }
+  const openSessionPanel = React.useCallback(() => setOpenPanel('session'), [])
 
   if (!isInitialized || isLoading) {
     return (
@@ -181,7 +192,6 @@ function LightboxPageContent() {
     <LightboxErrorBoundary>
       <LightboxKeyboardShortcuts />
       <div className="h-screen flex flex-col bg-gray-50">
-        {/* Header */}
         <header className="shrink-0 border-b bg-white px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={handleBack}>
@@ -192,29 +202,24 @@ function LightboxPageContent() {
           </div>
           <LightboxToolbar
             onCrop={handleCrop}
-            onExport={() => setShowExport(true)}
-            onSaveSession={handleSaveSession}
-            onImport={() => setShowImport(true)}
+            onExport={() => setOpenPanel('export')}
+            onSaveSession={openSessionPanel}
+            onImport={() => setOpenPanel('import')}
             onToggleMinimap={() => setShowMinimap(!showMinimap)}
-            onToggleMeasurement={() => setShowMeasurement(!showMeasurement)}
-            onToggleComparison={() => setShowComparison(!showComparison)}
-            onToggleRegionComparison={() => setShowRegionComparison(!showRegionComparison)}
+            onToggleMeasurement={togglePanel('measurement')}
+            onToggleComparison={togglePanel('comparison')}
+            onToggleRegionComparison={togglePanel('region-comparison')}
           />
         </header>
 
-        {/* Main Content */}
         <div className="flex-1 flex min-h-0">
-          {/* Sidebar */}
           <LightboxSidebar />
-
-          {/* Viewer */}
           <div ref={viewerContainerRef} className="flex-1 min-w-0">
             <LightboxViewer showMinimap={showMinimap} />
           </div>
         </div>
       </div>
 
-      {/* Crop Tool Modal */}
       {cropImageId && images.get(cropImageId) && (
         <LightboxCropTool
           image={images.get(cropImageId)!}
@@ -223,47 +228,18 @@ function LightboxPageContent() {
         />
       )}
 
-      {/* Export Dialog */}
-      {showExport && (
-        <LightboxExport onClose={() => setShowExport(false)} />
+      {openPanel === 'export' && <LightboxExport onClose={closePanel} />}
+      {openPanel === 'session' && (
+        <LightboxSessionManager onClose={closePanel} onLoad={closePanel} />
       )}
-
-      {/* Session Manager */}
-      {showSessionManager && (
-        <LightboxSessionManager
-          onClose={() => setShowSessionManager(false)}
-          onLoad={() => {
-            setShowSessionManager(false)
-          }}
-        />
+      {openPanel === 'measurement' && (
+        <LightboxMeasurementTool containerRef={viewerContainerRef} onClose={closePanel} />
       )}
-
-      {/* Measurement Tool */}
-      {showMeasurement && (
-        <LightboxMeasurementTool
-          containerRef={viewerContainerRef}
-          onClose={() => setShowMeasurement(false)}
-        />
+      {openPanel === 'comparison' && <LightboxComparisonMode onClose={closePanel} />}
+      {openPanel === 'region-comparison' && (
+        <LightboxRegionComparison onClose={closePanel} />
       )}
-
-      {/* Comparison Mode */}
-      {showComparison && (
-        <LightboxComparisonMode
-          onClose={() => setShowComparison(false)}
-        />
-      )}
-
-      {/* Region Comparison */}
-      {showRegionComparison && (
-        <LightboxRegionComparison
-          onClose={() => setShowRegionComparison(false)}
-        />
-      )}
-
-      {/* Import Dialog */}
-      {showImport && (
-        <LightboxImport onClose={() => setShowImport(false)} />
-      )}
+      {openPanel === 'import' && <LightboxImport onClose={closePanel} />}
     </LightboxErrorBoundary>
   )
 }

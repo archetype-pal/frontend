@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Save, X, FolderOpen, Trash2 } from 'lucide-react'
@@ -39,12 +40,12 @@ export function LightboxSessionManager({
 
   const handleSave = async () => {
     if (!sessionName.trim()) {
-      alert('Please enter a session name')
+      toast.error('Please enter a session name')
       return
     }
 
     if (!currentWorkspaceId) {
-      alert('No workspace to save')
+      toast.error('No workspace to save')
       return
     }
 
@@ -62,10 +63,10 @@ export function LightboxSessionManager({
       await saveSession(session)
       await loadSessions()
       setSessionName('')
-      alert('Session saved successfully')
+      toast.success('Session saved successfully')
     } catch (error) {
       console.error('Failed to save session:', error)
-      alert('Failed to save session')
+      toast.error('Failed to save session')
     } finally {
       setIsLoading(false)
     }
@@ -81,7 +82,7 @@ export function LightboxSessionManager({
       onClose()
     } catch (error) {
       console.error('Failed to load session:', error)
-      alert('Failed to load session')
+      toast.error('Failed to load session')
     }
   }
 
@@ -93,7 +94,7 @@ export function LightboxSessionManager({
       await loadSessions()
     } catch (error) {
       console.error('Failed to delete session:', error)
-      alert('Failed to delete session')
+      toast.error('Failed to delete session')
     }
   }
 

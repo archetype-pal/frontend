@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Upload, X, FileJson, FileText } from 'lucide-react'
 import { useLightboxStore } from '@/stores/lightbox-store'
@@ -31,13 +32,13 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
       } else if (file.name.endsWith('.xml')) {
         await importTEI(text)
       } else {
-        alert('Unsupported file format. Please use JSON or TEI XML.')
+        toast.error('Unsupported file format. Please use JSON or TEI XML.')
       }
       
       onClose()
     } catch (error) {
       console.error('Import failed:', error)
-      alert('Failed to import file. Please check the format.')
+      toast.error('Failed to import file. Please check the format.')
     } finally {
       setIsImporting(false)
     }
@@ -104,7 +105,7 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
     const surfaces = doc.querySelectorAll('surface')
     
     if (surfaces.length === 0) {
-      alert('No images found in TEI XML file')
+      toast.error('No images found in TEI XML file')
       return
     }
 

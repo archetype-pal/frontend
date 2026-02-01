@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
+import { Toaster } from 'sonner'
 import './globals.css'
 import { ThemeProvider } from '@/components/layout/theme-provider'
 import Header from '@/components/layout/header'
 import Footer from '@/components/layout/footer'
 import { AuthProvider } from '@/contexts/auth-context'
 import { CollectionProvider } from '@/contexts/collection-context'
+import { SearchProvider } from '@/contexts/search-context'
 import '@recogito/annotorious/dist/annotorious.min.css'
 
 const geistSans = localFont({
@@ -42,14 +44,17 @@ export default function RootLayout({
         >
           <AuthProvider>
             <CollectionProvider>
-              <div className='flex flex-col min-h-screen'>
-                <Header />
-                <div className='flex-1'>{children}</div>
-                <Footer />
-              </div>
+              <SearchProvider>
+                <div className='flex flex-col min-h-screen'>
+                  <Header />
+                  <div className='flex-1'>{children}</div>
+                  <Footer />
+                </div>
+              </SearchProvider>
             </CollectionProvider>
           </AuthProvider>
         </ThemeProvider>
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   )

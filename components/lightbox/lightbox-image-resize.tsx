@@ -15,6 +15,8 @@ export function LightboxImageResize({ image }: LightboxImageResizeProps) {
     e.preventDefault()
     e.stopPropagation()
 
+    useLightboxStore.getState().saveHistory()
+
     const startX = e.clientX
     const startY = e.clientY
     const startWidth = image.size.width

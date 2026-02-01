@@ -92,10 +92,10 @@ export function LightboxMinimap({ containerRef, className }: LightboxMinimapProp
             )
           })}
           
-          {/* Viewport indicator */}
+          {/* Viewport indicator: container-relative (0,0) to (width, height) in content space */}
           <rect
-            x={(viewportRect.left - bounds.minX) * scale}
-            y={(viewportRect.top - bounds.minY) * scale}
+            x={(0 - bounds.minX) * scale}
+            y={(0 - bounds.minY) * scale}
             width={viewportRect.width * scale}
             height={viewportRect.height * scale}
             fill="none"
