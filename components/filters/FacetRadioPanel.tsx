@@ -62,22 +62,24 @@ export function FacetRadioPanel({
       </div>
 
       {isExpanded && visibleItems.length > 0 && (
-        <ul className="p-2 space-y-2 text-sm">
-          {visibleItems.map((item) => (
-            <li key={item.value}>
-              <button
-                onClick={() => handleSelect(item)}
-                className={cn(
-                  'w-full text-left flex justify-between items-center px-2 py-1 rounded hover:bg-muted transition-colors',
-                  selectedValue === item.value && 'bg-muted font-semibold'
-                )}
-              >
-                <span>{item.label}</span>
-                <span className="text-muted-foreground">{item.count}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="max-h-48 overflow-y-auto">
+          <ul className="p-2 space-y-2 text-sm">
+            {visibleItems.map((item) => (
+              <li key={item.value}>
+                <button
+                  onClick={() => handleSelect(item)}
+                  className={cn(
+                    'w-full text-left flex justify-between items-center px-2 py-1 rounded hover:bg-muted transition-colors',
+                    selectedValue === item.value && 'bg-muted font-semibold'
+                  )}
+                >
+                  <span>{item.label}</span>
+                  <span className="text-muted-foreground">{item.count}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   )

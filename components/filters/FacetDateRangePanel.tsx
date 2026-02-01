@@ -117,7 +117,7 @@ export function FacetDateRangePanel({
       </div>
 
       {expanded && (
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 max-h-48 overflow-y-auto">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
             <Input
