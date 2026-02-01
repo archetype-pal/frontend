@@ -5,6 +5,7 @@ import Image from 'next/image'
 import type { Manuscript, ManuscriptImage } from '@/types/manuscript'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { getIiifImageUrl } from '@/utils/iiif'
 
 const TAB_VALUES = ['information', 'descriptions', 'manuscript', 'texts'] as const
 const DEFAULT_TAB = 'information'
@@ -160,7 +161,7 @@ export function ManuscriptViewer({
                     className='text-blue-600 hover:underline'
                   >
                     <Image
-                      src={`${image.iiif_image}/full/550,/0/default.jpg`}
+                      src={image.iiif_image ? getIiifImageUrl(image.iiif_image, { thumbnail: true }) : '/placeholder.svg'}
                       alt={'Manuscript image'}
                       fill
                       className='object-contain'

@@ -10,7 +10,8 @@ import { CollectionStar } from '@/components/collection/collection-star'
 import { Button } from '@/components/ui/button'
 import { Trash2, Star, ArrowUpDown } from 'lucide-react'
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button'
-import { getIiifImageUrl, getIiifImageUrlWithBounds, coordinatesFromGeoJson } from '@/utils/iiif'
+import { getIiifImageUrl } from '@/utils/iiif'
+import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail'
 
 type SortOption = 'added' | 'name' | 'repository'
 type FilterType = 'all' | 'image' | 'graph'
@@ -27,7 +28,7 @@ function getItemTitle(item: CollectionItem): string {
   return String(locus ?? item.shelfmark ?? 'Untitled')
 }
 
-/** Card for a graph item: fetches thumbnail URL with bounds + no upscaling, then renders. */
+/** Card for a graph item: thumbnail URL with bounds (no upscaling). */
 function CollectionGraphCard({
   item,
   getUrl,
@@ -37,27 +38,8 @@ function CollectionGraphCard({
   getUrl: (item: CollectionItem) => string
   title: string
 }) {
-  const [imageUrl, setImageUrl] = React.useState<string | null>(null)
   const infoUrl = (item.image_iiif || '').trim()
-  const coords = item.coordinates != null ? coordinatesFromGeoJson(String(item.coordinates)) ?? undefined : undefined
-
-  React.useEffect(() => {
-    if (!infoUrl) {
-      setImageUrl(null)
-      return
-    }
-    let cancelled = false
-    getIiifImageUrlWithBounds(infoUrl, { coordinates: coords, thumbnail: true })
-      .then((url) => {
-        if (!cancelled) setImageUrl(url)
-      })
-      .catch(() => {
-        if (!cancelled) setImageUrl(null)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [infoUrl, item.coordinates])
+  const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined)
 
   return (
     <div className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden group cursor-pointer">

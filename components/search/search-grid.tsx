@@ -5,7 +5,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { ImageListItem } from '@/types/image'
 import type { GraphListItem } from '@/types/graph'
-import { getIiifImageUrl, getIiifImageUrlWithBounds, coordinatesFromGeoJson } from '@/utils/iiif'
+import { getIiifImageUrl } from '@/utils/iiif'
+import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail'
 import { Highlight } from './Highlight'
 import { CollectionStar } from '@/components/collection/collection-star'
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button'
@@ -27,27 +28,8 @@ function GraphGridCard({
   displayText: string
   highlightKeyword: string
 }) {
-  const [imageUrl, setImageUrl] = React.useState<string | null>(null)
   const infoUrl = (item.image_iiif || '').trim()
-  const coords = coordinatesFromGeoJson(item.coordinates) ?? undefined
-
-  React.useEffect(() => {
-    if (!infoUrl) {
-      setImageUrl(null)
-      return
-    }
-    let cancelled = false
-    getIiifImageUrlWithBounds(infoUrl, { coordinates: coords, thumbnail: true })
-      .then((url) => {
-        if (!cancelled) setImageUrl(url)
-      })
-      .catch(() => {
-        if (!cancelled) setImageUrl(null)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [infoUrl, item.coordinates])
+  const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates)
 
   return (
     <div className="relative overflow-hidden group">

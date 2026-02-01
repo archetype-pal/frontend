@@ -13,7 +13,8 @@ import type { ImageListItem } from '@/types/image'
 import type { ScribeListItem } from '@/types/scribe'
 import type { HandListItem } from '@/types/hand'
 import type { GraphListItem } from '@/types/graph'
-import { getIiifImageUrl, getIiifImageUrlWithBounds, coordinatesFromGeoJson } from '@/utils/iiif'
+import { getIiifImageUrl } from '@/utils/iiif'
+import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail'
 import { Highlight } from './Highlight'
 import { CollectionStar } from '@/components/collection/collection-star'
 
@@ -34,27 +35,8 @@ type ResultMap = {
 }
 
 function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
-  const [src, setSrc] = React.useState<string | null>(null)
   const infoUrl = (graph.image_iiif || '').trim()
-  const coords = coordinatesFromGeoJson(graph.coordinates) ?? undefined
-
-  React.useEffect(() => {
-    if (!infoUrl) {
-      setSrc(null)
-      return
-    }
-    let cancelled = false
-    getIiifImageUrlWithBounds(infoUrl, { coordinates: coords, thumbnail: true })
-      .then((url) => {
-        if (!cancelled) setSrc(url)
-      })
-      .catch(() => {
-        if (!cancelled) setSrc(null)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [infoUrl, graph.coordinates])
+  const src = useIiifThumbnailUrl(infoUrl, graph.coordinates)
 
   if (!infoUrl) return <span className="text-xs text-muted-foreground">N/A</span>
   if (!src) {
