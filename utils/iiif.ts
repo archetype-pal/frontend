@@ -45,13 +45,38 @@ function encodeIiifPathIdentifier(pathname: string): string {
 
 function normalizeIiifBase(iiifBase: string): string {
   let cleaned = iiifBase.replace(/\/info\.json$/i, '').replace(/\/+$/, '')
-  cleaned = cleaned.replace(/\/full\/[^/]+\/\d+\/(?:default|color|gray|bitonal)\.(?:jpg|png|gif|webp)$/i, '')
+  cleaned = cleaned.replace(
+    /\/full\/[^/]+\/\d+\/(?:default|color|gray|bitonal)\.(?:jpg|png|gif|webp)$/i,
+    '',
+  )
+
   try {
     const u = new URL(cleaned)
-    let pathname = decodeURIComponent(u.pathname)
-    pathname = encodeIiifPathIdentifier(pathname)
-    return `${u.origin}${pathname}`.replace(/\/+$/, '')
+
+    // IMPORTANT: do NOT decode here; decoding would turn %2F into "/" and we lose the signal.
+    const pathname = u.pathname.replace(/\/+$/, '')
+
+    // Special-case our Next rewrite prefix: keep "/iiif-proxy/" literal.
+    // Everything after it is the IIIF identifier and must be a single segment:
+    // encode any "/" as "%2F".
+    const proxyPrefix = '/iiif-proxy/'
+    if (pathname.startsWith(proxyPrefix)) {
+      const identifier = pathname.slice(proxyPrefix.length)
+      const encodedIdentifier = identifier.replace(/\//g, '%2F')
+      return `${u.origin}${proxyPrefix}${encodedIdentifier}`.replace(/\/+$/, '')
+    }
+
+    let decoded = decodeURIComponent(pathname)
+    decoded = encodeIiifPathIdentifier(decoded)
+    return `${u.origin}${decoded}`.replace(/\/+$/, '')
   } catch {
+
+    const proxyPrefix = '/iiif-proxy/'
+    if (cleaned.startsWith(proxyPrefix)) {
+      const identifier = cleaned.slice(proxyPrefix.length).replace(/^\/+/, '')
+      const encodedIdentifier = identifier.replace(/\//g, '%2F')
+      return `${proxyPrefix}${encodedIdentifier}`.replace(/\/+$/, '')
+    }
     return cleaned
   }
 }
