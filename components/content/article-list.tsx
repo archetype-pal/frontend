@@ -13,6 +13,7 @@ interface Article {
   published_at: string
   author: Author
   id: string
+  slug: string
 }
 
 interface ArticleListProps {
@@ -22,11 +23,14 @@ interface ArticleListProps {
   limit?: number
 }
 
+const joinPath = (base: string, part: string) =>
+  `${base.replace(/\/+$/, '')}/${part.replace(/^\/+/, '')}`
+
 export default function ArticleList({
   title = 'Articles',
   articles = [],
   moreLink,
-  limit, 
+  limit,
 }: ArticleListProps) {
   const displayed = typeof limit === 'number'
     ? articles.slice(0, limit)
@@ -40,7 +44,7 @@ export default function ArticleList({
           {displayed.map((article) => (
             <li key={article.id}>
               <Link
-                href={`${moreLink}/${article.id}`}
+                href={joinPath(moreLink, article.slug)}
                 className='text-primary hover:underline font-medium'
               >
                 {article.title}

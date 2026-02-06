@@ -48,7 +48,7 @@ export default async function NewsList({
             }
             date={newsItem.published_at}
             excerpt={newsItem.content}
-            slug={'/news/' + newsItem.id}
+            slug={'/news/' + newsItem.slug}
             commentsCount={newsItem.number_of_comments}
             showShareBtns={true}
             showReadMoreBtn={false}
