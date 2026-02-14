@@ -1,5 +1,7 @@
 export interface PersonListItem {
   id: string
+  item_image: number | null
+  item_part: number | null
   name: string
   person_type: string
   ref: string

@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { getIiifImageUrl } from '@/utils/iiif'
 
-const TAB_VALUES = ['information', 'descriptions', 'manuscript', 'texts'] as const
+const TAB_VALUES = ['information', 'descriptions', 'images', 'texts'] as const
 const DEFAULT_TAB = 'information'
 
 interface ManuscriptViewerProps {
@@ -52,8 +52,8 @@ export function ManuscriptViewer({
           <TabsTrigger value='descriptions'>
             Descriptions ({manuscript.historical_item.descriptions.length})
           </TabsTrigger>
-          <TabsTrigger value='manuscript'>
-            Manuscript Images ({images.length})
+          <TabsTrigger value='images'>
+            Images ({images.length})
           </TabsTrigger>
           {/* <TabsTrigger value='texts'>Texts (2)</TabsTrigger> */}
         </TabsList>
@@ -148,7 +148,7 @@ export function ManuscriptViewer({
           </div>
         </TabsContent>
 
-        <TabsContent value='manuscript' className='space-y-6'>
+        <TabsContent value='images' className='space-y-6'>
           <section className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4'>
             {images?.map((image, index) => (
               <div
@@ -157,7 +157,7 @@ export function ManuscriptViewer({
               >
                 <div className='relative aspect-square'>
                   <Link
-                    href={`/digipal/${image.id}`}
+                    href={`/manuscripts/${manuscript.id}/images/${image.id}`}
                     className='text-blue-600 hover:underline'
                   >
                     <Image

@@ -1,4 +1,5 @@
-import ManuscriptViewer from '@/components/manuscript/ManuscriptViewer'
+import { redirect } from 'next/navigation'
+import { fetchManuscriptImage } from '@/services/manuscripts'
 
 export default async function Page({
   params,
@@ -6,5 +7,6 @@ export default async function Page({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  return <ManuscriptViewer imageId={id} />
+  const image = await fetchManuscriptImage(id)
+  redirect(`/manuscripts/${image.item_part}/images/${id}`)
 }

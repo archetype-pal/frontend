@@ -1,5 +1,7 @@
 export interface PlaceListItem {
   id: string
+  item_image: number | null
+  item_part: number | null
   name: string
   place_type: string
   ref: string

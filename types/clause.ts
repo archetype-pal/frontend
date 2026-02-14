@@ -1,5 +1,7 @@
 export interface ClauseListItem {
   id: string
+  item_image: number | null
+  item_part: number | null
   clause_type: string
   content: string
   text_type: string

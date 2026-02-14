@@ -11,7 +11,7 @@ export default function Loading() {
         <TabsList className='bg-gray-100 p-1'>
           <TabsTrigger value='information'>Information</TabsTrigger>
           <TabsTrigger value='descriptions'>Descriptions</TabsTrigger>
-          <TabsTrigger value='manuscript'>Manuscript Images</TabsTrigger>
+          <TabsTrigger value='images'>Images</TabsTrigger>
           <TabsTrigger value='texts'>Texts</TabsTrigger>
         </TabsList>
 
@@ -51,7 +51,7 @@ export default function Loading() {
           <Skeleton className='h-40 w-full' />
         </TabsContent>
 
-        <TabsContent value='manuscript' className='grid md:grid-cols-2 gap-6'>
+        <TabsContent value='images' className='grid md:grid-cols-2 gap-6'>
           {[...Array(2)].map((_, i) => (
             <div key={i} className='space-y-2'>
               <Skeleton className='h-64 w-full' />

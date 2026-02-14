@@ -5,7 +5,7 @@ import {
   Table, TableHeader, TableBody, TableRow, TableCell, TableHead,
 } from '@/components/ui/table'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { ArrowUp, ArrowDown } from 'lucide-react'
 import type { ResultType } from './search-result-types'
 import type { ManuscriptListItem } from '@/types/manuscript'
@@ -55,7 +55,7 @@ function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
     )
   }
   return (
-    <div className="relative inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
+    <div className="relative z-[2] inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
       <Image
         src={src}
         alt={`Thumbnail for ${graph.shelfmark}`}
@@ -105,7 +105,7 @@ export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
         }
 
         return (
-          <div className="relative inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
+          <div className="relative z-[2] inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
             <Image
               src={src}
               alt={i.shelfmark || 'Image thumbnail'}
@@ -241,6 +241,13 @@ const SUB_ROW_ACCESSORS: Partial<{ [K in ResultType]: SubRowAccessor<ResultMap[K
   places: (p) => (p as PlaceListItem).name,
 }
 
+function imageDetailUrl(item: { item_part?: number | null; item_image?: number | null }): string {
+  if (item.item_part && item.item_image) {
+    return `/manuscripts/${item.item_part}/images/${item.item_image}`
+  }
+  return '#'
+}
+
 function getDetailUrl<K extends ResultType>(resultType: K, item: ResultMap[K]): string {
   switch (resultType) {
     case 'manuscripts':
@@ -248,13 +255,13 @@ function getDetailUrl<K extends ResultType>(resultType: K, item: ResultMap[K]): 
     case 'images':
       return `/digipal/${(item as ImageListItem).id}`
     case 'texts':
-      return `/texts/${(item as TextListItem).id}`
+      return imageDetailUrl(item as TextListItem)
     case 'clauses':
-      return `/texts/${(item as ClauseListItem).id.split('_')[0]}`
+      return imageDetailUrl(item as ClauseListItem)
     case 'people':
-      return `/texts/${(item as PersonListItem).id.split('_')[0]}`
+      return imageDetailUrl(item as PersonListItem)
     case 'places':
-      return `/texts/${(item as PlaceListItem).id.split('_')[0]}`
+      return imageDetailUrl(item as PlaceListItem)
     case 'scribes':
     case 'hands':
     case 'graphs':
@@ -280,7 +287,6 @@ export function ResultsTable<K extends ResultType>({
   onSort?: (opts: { sortKey?: string; sortUrl?: string }) => void
   highlightKeyword?: string
 }) {
-  const router = useRouter()
   const baseCols = COLUMNS[resultType]
   const cols = ordering?.options
     ? baseCols.map((col) => {
@@ -294,16 +300,6 @@ export function ResultsTable<K extends ResultType>({
 
   const currKey = ordering?.current?.replace(/^-/, '')
   const isDesc = ordering?.current?.startsWith('-') ?? false
-
-  const handleRowClick = (item: ResultMap[K], e: React.MouseEvent<HTMLTableRowElement>) => {
-    // Don't navigate if clicking on a link or button
-    const target = e.target as HTMLElement
-    if (target.closest('a, button')) {
-      return
-    }
-    const url = getDetailUrl(resultType, item)
-    router.push(url)
-  }
 
   const subRowAccessor = SUB_ROW_ACCESSORS[resultType] as SubRowAccessor<ResultMap[K]> | undefined
   const hasSubRow = !!subRowAccessor
@@ -336,43 +332,51 @@ export function ResultsTable<K extends ResultType>({
             ))}
           </TableRow>
         </TableHeader>
-        <TableBody>
-          {results.map((row, ri) => (
-            <React.Fragment key={ri}>
+        {results.map((row, ri) => {
+          const url = getDetailUrl(resultType, row)
+          return (
+            <tbody key={ri} className="group border-b">
               {/* Main data row */}
               <TableRow
-                className="cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={(e) => handleRowClick(row, e)}
+                className={`relative cursor-pointer group-hover:bg-muted/50 transition-colors${hasSubRow ? ' border-b-0' : ''}`}
               >
                 {hasSubRow && (
                   <TableCell className="w-16 py-1.5">
-                    <button
-                      className="text-xs text-primary border border-primary/30 rounded px-2 py-0.5 hover:bg-primary/5 transition-colors whitespace-nowrap"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        const url = getDetailUrl(resultType, row)
-                        router.push(url)
-                      }}
+                    <Link
+                      href={url}
+                      className="absolute inset-0 z-[1]"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                    />
+                    <Link
+                      href={url}
+                      className="relative z-[2] inline-block text-xs text-primary border border-primary/30 rounded px-2 py-0.5 hover:bg-primary/5 transition-colors whitespace-nowrap"
                     >
                       View
-                    </button>
+                    </Link>
                   </TableCell>
                 )}
                 {cols.map((col, ci) => {
                   const cell = col.accessor(row)
-                  if (
+                  const isFirst = ci === 0 && !hasSubRow
+                  const inner =
                     highlightKeyword &&
                     (typeof cell === 'string' || typeof cell === 'number')
-                  ) {
-                    return (
-                      <TableCell key={ci} className={col.className}>
-                        <Highlight text={String(cell)} keyword={highlightKeyword} />
-                      </TableCell>
-                    )
-                  }
+                      ? <Highlight text={String(cell)} keyword={highlightKeyword} />
+                      : cell
+
                   return (
                     <TableCell key={ci} className={col.className}>
-                      {cell}
+                      {isFirst ? (
+                        <Link
+                          href={url}
+                          className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
+                        >
+                          {inner}
+                        </Link>
+                      ) : (
+                        inner
+                      )}
                     </TableCell>
                   )
                 })}
@@ -380,24 +384,28 @@ export function ResultsTable<K extends ResultType>({
               {/* Sub-row: name/content displayed in italic spanning full width */}
               {subRowAccessor && (
                 <TableRow
-                  className="cursor-pointer hover:bg-muted/50 transition-colors border-b"
-                  onClick={(e) => handleRowClick(row, e)}
+                  className="relative cursor-pointer group-hover:bg-muted/50 transition-colors"
                 >
                   <TableCell
                     colSpan={totalColSpan}
                     className="py-1.5 pl-20 text-sm italic text-muted-foreground"
                   >
-                    {highlightKeyword ? (
-                      <Highlight text={subRowAccessor(row)} keyword={highlightKeyword} />
-                    ) : (
-                      subRowAccessor(row)
-                    )}
+                    <Link
+                      href={url}
+                      className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
+                    >
+                      {highlightKeyword ? (
+                        <Highlight text={subRowAccessor(row)} keyword={highlightKeyword} />
+                      ) : (
+                        subRowAccessor(row)
+                      )}
+                    </Link>
                   </TableCell>
                 </TableRow>
               )}
-            </React.Fragment>
-          ))}
-        </TableBody>
+            </tbody>
+          )
+        })}
       </Table>
     </div>
   )

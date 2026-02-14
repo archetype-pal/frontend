@@ -1,5 +1,7 @@
 export interface TextListItem {
   id: number
+  item_image: number | null
+  item_part: number | null
   repository_city: string
   repository_name: string
   shelfmark: string
