@@ -13,6 +13,10 @@ import type { ImageListItem } from '@/types/image'
 import type { ScribeListItem } from '@/types/scribe'
 import type { HandListItem } from '@/types/hand'
 import type { GraphListItem } from '@/types/graph'
+import type { TextListItem } from '@/types/text'
+import type { ClauseListItem } from '@/types/clause'
+import type { PersonListItem } from '@/types/person'
+import type { PlaceListItem } from '@/types/place'
 import { getIiifImageUrl } from '@/utils/iiif'
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail'
 import { Highlight } from './Highlight'
@@ -32,6 +36,10 @@ type ResultMap = {
   scribes: ScribeListItem
   hands: HandListItem
   graphs: GraphListItem
+  texts: TextListItem
+  clauses: ClauseListItem
+  people: PersonListItem
+  places: PlaceListItem
 }
 
 function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
@@ -154,6 +162,83 @@ export const COLUMNS: { [K in ResultType]: Column<ResultMap[K]>[] } = {
       className: 'text-center',
     },
   ],
+
+  texts: [
+    { header: 'Repository City', accessor: (t) => t.repository_city, sortKey: 'repository_city_exact' },
+    { header: 'Repository', accessor: (t) => t.repository_name, sortKey: 'repository_name_exact' },
+    { header: 'Shelfmark', accessor: (t) => t.shelfmark, sortKey: 'shelfmark_exact' },
+    { header: 'Text Type', accessor: (t) => t.text_type, sortKey: 'text_type_exact' },
+    { header: 'MS Date', accessor: (t) => t.date ?? '—' },
+    {
+      header: 'Thumbnail',
+      accessor: (t) => {
+        const infoUrl = (t.thumbnail_iiif || '').trim()
+        const src = infoUrl ? getIiifImageUrl(infoUrl, { thumbnail: true }) : ''
+
+        if (!src) {
+          return <span className="text-xs text-muted-foreground">N/A</span>
+        }
+
+        return (
+          <div className="relative inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
+            <Image
+              src={src}
+              alt={t.shelfmark || 'Text thumbnail'}
+              width={64}
+              height={64}
+              className="h-full w-auto object-contain"
+              unoptimized
+            />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
+          </div>
+        )
+      },
+      className: 'text-center',
+    },
+  ],
+
+  clauses: [
+    { header: 'Cat. Num.', accessor: (c) => c.catalogue_numbers },
+    { header: 'Document Type', accessor: (c) => c.type, sortKey: 'type_exact' },
+    { header: 'Repository City', accessor: (c) => c.repository_city, sortKey: 'repository_city_exact' },
+    { header: 'Repository', accessor: (c) => c.repository_name, sortKey: 'repository_name_exact' },
+    { header: 'Shelfmark', accessor: (c) => c.shelfmark, sortKey: 'shelfmark_exact' },
+    { header: 'Text Date', accessor: (c) => c.date ?? '—' },
+    { header: 'Text Type', accessor: (c) => c.text_type },
+    { header: 'Clause Type', accessor: (c) => c.clause_type, sortKey: 'clause_type_exact' },
+  ],
+
+  people: [
+    { header: 'Cat. Num.', accessor: (p) => p.catalogue_numbers },
+    { header: 'Document Type', accessor: (p) => p.type, sortKey: 'type_exact' },
+    { header: 'Repository City', accessor: (p) => p.repository_city, sortKey: 'repository_city_exact' },
+    { header: 'Repository', accessor: (p) => p.repository_name, sortKey: 'repository_name_exact' },
+    { header: 'Shelfmark', accessor: (p) => p.shelfmark, sortKey: 'shelfmark_exact' },
+    { header: 'Text Date', accessor: (p) => p.date ?? '—' },
+    { header: 'Text Type', accessor: (p) => p.text_type },
+    { header: 'Category', accessor: (p) => p.person_type, sortKey: 'person_type_exact' },
+  ],
+
+  places: [
+    { header: 'Cat. Num.', accessor: (p) => p.catalogue_numbers },
+    { header: 'Document Type', accessor: (p) => p.type, sortKey: 'type_exact' },
+    { header: 'Repository City', accessor: (p) => p.repository_city, sortKey: 'repository_city_exact' },
+    { header: 'Repository', accessor: (p) => p.repository_name, sortKey: 'repository_name_exact' },
+    { header: 'Shelfmark', accessor: (p) => p.shelfmark, sortKey: 'shelfmark_exact' },
+    { header: 'Text Date', accessor: (p) => p.date ?? '—' },
+    { header: 'Text Type', accessor: (p) => p.text_type },
+    { header: 'Clause Type', accessor: (p) => p.place_type, sortKey: 'place_type_exact' },
+  ],
+}
+
+/* ---------- sub-row accessors (legacy two-row pattern) ---------- */
+
+type SubRowAccessor<T> = (item: T) => string
+
+const SUB_ROW_ACCESSORS: Partial<{ [K in ResultType]: SubRowAccessor<ResultMap[K]> }> = {
+  clauses: (c) => (c as ClauseListItem).content,
+  people: (p) => (p as PersonListItem).name,
+  places: (p) => (p as PlaceListItem).name,
 }
 
 function getDetailUrl<K extends ResultType>(resultType: K, item: ResultMap[K]): string {
@@ -162,6 +247,14 @@ function getDetailUrl<K extends ResultType>(resultType: K, item: ResultMap[K]): 
       return `/manuscripts/${(item as ManuscriptListItem).id}`
     case 'images':
       return `/digipal/${(item as ImageListItem).id}`
+    case 'texts':
+      return `/texts/${(item as TextListItem).id}`
+    case 'clauses':
+      return `/texts/${(item as ClauseListItem).id.split('_')[0]}`
+    case 'people':
+      return `/texts/${(item as PersonListItem).id.split('_')[0]}`
+    case 'places':
+      return `/texts/${(item as PlaceListItem).id.split('_')[0]}`
     case 'scribes':
     case 'hands':
     case 'graphs':
@@ -212,11 +305,19 @@ export function ResultsTable<K extends ResultType>({
     router.push(url)
   }
 
+  const subRowAccessor = SUB_ROW_ACCESSORS[resultType] as SubRowAccessor<ResultMap[K]> | undefined
+  const hasSubRow = !!subRowAccessor
+  // +1 for the View column when sub-rows are present
+  const totalColSpan = cols.length + (hasSubRow ? 1 : 0)
+
   return (
     <div className="bg-white border rounded-lg overflow-auto">
       <Table>
         <TableHeader>
           <TableRow>
+            {hasSubRow && (
+              <TableHead className="w-16" />
+            )}
             {cols.map((col, i) => (
               <TableHead
                 key={i}
@@ -237,30 +338,64 @@ export function ResultsTable<K extends ResultType>({
         </TableHeader>
         <TableBody>
           {results.map((row, ri) => (
-            <TableRow 
-              key={ri}
-              className="cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={(e) => handleRowClick(row, e)}
-            >
-              {cols.map((col, ci) => {
-                const cell = col.accessor(row)
-                if (
-                  highlightKeyword &&
-                  (typeof cell === 'string' || typeof cell === 'number')
-                ) {
+            <React.Fragment key={ri}>
+              {/* Main data row */}
+              <TableRow
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={(e) => handleRowClick(row, e)}
+              >
+                {hasSubRow && (
+                  <TableCell className="w-16 py-1.5">
+                    <button
+                      className="text-xs text-primary border border-primary/30 rounded px-2 py-0.5 hover:bg-primary/5 transition-colors whitespace-nowrap"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const url = getDetailUrl(resultType, row)
+                        router.push(url)
+                      }}
+                    >
+                      View
+                    </button>
+                  </TableCell>
+                )}
+                {cols.map((col, ci) => {
+                  const cell = col.accessor(row)
+                  if (
+                    highlightKeyword &&
+                    (typeof cell === 'string' || typeof cell === 'number')
+                  ) {
+                    return (
+                      <TableCell key={ci} className={col.className}>
+                        <Highlight text={String(cell)} keyword={highlightKeyword} />
+                      </TableCell>
+                    )
+                  }
                   return (
                     <TableCell key={ci} className={col.className}>
-                      <Highlight text={String(cell)} keyword={highlightKeyword} />
+                      {cell}
                     </TableCell>
                   )
-                }
-                return (
-                  <TableCell key={ci} className={col.className}>
-                    {cell}
+                })}
+              </TableRow>
+              {/* Sub-row: name/content displayed in italic spanning full width */}
+              {subRowAccessor && (
+                <TableRow
+                  className="cursor-pointer hover:bg-muted/50 transition-colors border-b"
+                  onClick={(e) => handleRowClick(row, e)}
+                >
+                  <TableCell
+                    colSpan={totalColSpan}
+                    className="py-1.5 pl-20 text-sm italic text-muted-foreground"
+                  >
+                    {highlightKeyword ? (
+                      <Highlight text={subRowAccessor(row)} keyword={highlightKeyword} />
+                    ) : (
+                      subRowAccessor(row)
+                    )}
                   </TableCell>
-                )
-              })}
-            </TableRow>
+                </TableRow>
+              )}
+            </React.Fragment>
           ))}
         </TableBody>
       </Table>

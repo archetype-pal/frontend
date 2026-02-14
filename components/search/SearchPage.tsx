@@ -19,6 +19,9 @@ import type { GraphListItem } from '@/types/graph'
 import type { ManuscriptListItem } from '@/types/manuscript'
 import type { HandListItem } from '@/types/hand'
 import type { ScribeListItem } from '@/types/scribe'
+import type { TextListItem } from '@/types/text'
+import type { PersonListItem } from '@/types/person'
+import type { PlaceListItem } from '@/types/place'
 import {
   buildApiUrl,
   buildQueryString,
@@ -31,7 +34,9 @@ import {
   type QueryState,
 } from '@/lib/search-query'
 
-type ResultListItem = ImageListItem | GraphListItem | ManuscriptListItem | HandListItem | ScribeListItem
+type ResultListItem = ImageListItem | GraphListItem | ManuscriptListItem | HandListItem | ScribeListItem | TextListItem | PersonListItem | PlaceListItem
+
+const TABLE_ONLY_TYPES: readonly string[] = ['manuscripts', 'texts', 'people', 'places']
 
 export function SearchPage({ resultType: initialType }: { resultType?: ResultType } = {}) {
   const searchParams = useSearchParams()
@@ -87,7 +92,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   }, [data.results, setSuggestionsPool])
 
   React.useEffect(() => {
-    if (resultType === 'manuscripts' && viewMode !== 'table') setViewMode('table')
+    if (TABLE_ONLY_TYPES.includes(resultType) && viewMode !== 'table') setViewMode('table')
   }, [resultType, viewMode])
 
   const handleFacetClick = React.useCallback(
@@ -159,7 +164,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   )
 
   const renderMap = FILTER_RENDER_MAP[resultType] ?? {}
-  const showGridToggle = resultType !== 'manuscripts'
+  const showGridToggle = !TABLE_ONLY_TYPES.includes(resultType)
   const resultCount = keyword ? filtered.length : data.count
 
   return (

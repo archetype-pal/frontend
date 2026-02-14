@@ -62,7 +62,7 @@ export function DynamicFacets({
             FACET_COMPONENT_MAP[type as keyof typeof FACET_COMPONENT_MAP]
           if (!Component) return null
 
-          const title = formatFacetTitle(facetKey)
+          const title = formatFacetTitle(facetKey, renderConfig.searchType)
 
           if (type.startsWith('range')) {
             const cfg = Array.isArray(facetItems)

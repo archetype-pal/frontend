@@ -80,7 +80,30 @@ export function formatTypeLabel(type: string): string {
   return type.charAt(0).toUpperCase() + type.slice(1)
 }
 
-export function formatFacetTitle(facetKey: string): string {
+/**
+ * Human-readable label overrides for facet keys, keyed by searchType then facetKey.
+ * Falls back to a global map, then to auto-formatted title.
+ */
+const FACET_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
+  _global: {
+    type: 'Document Type',
+    repository_name: 'Repository',
+  },
+  people: {
+    person_type: 'Category',
+  },
+  places: {
+    place_type: 'Clause Type',
+  },
+}
+
+export function formatFacetTitle(facetKey: string, searchType?: string): string {
+  if (searchType) {
+    const typeOverrides = FACET_LABEL_OVERRIDES[searchType]
+    if (typeOverrides?.[facetKey]) return typeOverrides[facetKey]
+  }
+  const globalOverrides = FACET_LABEL_OVERRIDES._global
+  if (globalOverrides?.[facetKey]) return globalOverrides[facetKey]
   return facetKey.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
