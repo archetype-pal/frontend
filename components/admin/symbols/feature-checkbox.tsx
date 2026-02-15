@@ -1,6 +1,5 @@
 'use client'
 
-import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 
 interface FeatureCheckboxProps {
@@ -13,6 +12,11 @@ interface FeatureCheckboxProps {
   disabled?: boolean
 }
 
+/**
+ * Compact pill-style feature toggle.
+ * Click to toggle checked/unchecked.
+ * When checked, shows a (d)/(o) badge -- click that to toggle default.
+ */
 export function FeatureCheckbox({
   featureId,
   name,
@@ -23,37 +27,70 @@ export function FeatureCheckbox({
   disabled = false,
 }: FeatureCheckboxProps) {
   return (
-    <div
+    <span
       className={cn(
-        'flex items-center gap-2 rounded px-2 py-1 text-sm transition-colors',
-        checked ? 'bg-accent/50' : 'opacity-60'
+        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors cursor-pointer select-none border',
+        checked
+          ? 'bg-primary/10 border-primary/30 text-foreground'
+          : 'bg-muted/50 border-transparent text-muted-foreground hover:bg-muted',
+        disabled && 'opacity-50 pointer-events-none'
       )}
     >
-      <Checkbox
-        checked={checked}
-        onCheckedChange={(val) => onToggle(featureId, !!val)}
+      <button
+        type='button'
+        onClick={() => onToggle(featureId, !checked)}
         disabled={disabled}
-        className='h-3.5 w-3.5'
-      />
-      <span className={cn('flex-1', !checked && 'line-through text-muted-foreground')}>
-        {name}
-      </span>
+        className='flex items-center gap-1'
+      >
+        <span
+          className={cn(
+            'h-2.5 w-2.5 rounded-sm border flex items-center justify-center transition-colors',
+            checked
+              ? 'bg-primary border-primary'
+              : 'border-muted-foreground/40'
+          )}
+        >
+          {checked && (
+            <svg
+              className='h-2 w-2 text-primary-foreground'
+              viewBox='0 0 12 12'
+              fill='none'
+            >
+              <path
+                d='M2.5 6L5 8.5L9.5 3.5'
+                stroke='currentColor'
+                strokeWidth='2'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+              />
+            </svg>
+          )}
+        </span>
+        <span className={cn(!checked && 'line-through')}>{name}</span>
+      </button>
       {checked && (
         <button
           type='button'
-          onClick={() => onToggleDefault(featureId, !setByDefault)}
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleDefault(featureId, !setByDefault)
+          }}
           disabled={disabled}
           className={cn(
-            'text-[10px] font-medium rounded px-1.5 py-0.5 transition-colors',
+            'text-[9px] font-bold rounded px-1 py-px transition-colors leading-none',
             setByDefault
-              ? 'bg-primary/15 text-primary'
+              ? 'bg-primary/20 text-primary'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
           )}
-          title={setByDefault ? 'Set by default (click to unset)' : 'Click to set as default'}
+          title={
+            setByDefault
+              ? 'Default (click to make optional)'
+              : 'Optional (click to set as default)'
+          }
         >
-          {setByDefault ? 'default' : 'optional'}
+          {setByDefault ? 'd' : 'o'}
         </button>
       )}
-    </div>
+    </span>
   )
 }

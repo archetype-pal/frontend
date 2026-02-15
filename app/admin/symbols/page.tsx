@@ -11,6 +11,7 @@ import {
   getCharacters,
   getComponents,
   getFeatures,
+  getPositions,
   createCharacter,
 } from '@/services/admin/symbols'
 import { adminKeys } from '@/lib/admin/query-keys'
@@ -39,6 +40,12 @@ export default function SymbolsPage() {
     enabled: !!token,
   })
 
+  const positions = useQuery({
+    queryKey: adminKeys.positions.all(),
+    queryFn: () => getPositions(token!),
+    enabled: !!token,
+  })
+
   const createMut = useMutation({
     mutationFn: (data: { name: string; type: string | null }) =>
       createCharacter(token!, data),
@@ -55,7 +62,10 @@ export default function SymbolsPage() {
   })
 
   const isLoading =
-    characters.isLoading || components.isLoading || features.isLoading
+    characters.isLoading ||
+    components.isLoading ||
+    features.isLoading ||
+    positions.isLoading
 
   if (isLoading) {
     return (
@@ -72,12 +82,13 @@ export default function SymbolsPage() {
 
   return (
     <div className='flex h-[calc(100vh-8rem)] -m-6'>
-      {/* Left: tree sidebar */}
-      <div className='w-72 shrink-0 border-r bg-card'>
+      {/* Left: tabbed sidebar */}
+      <div className='w-80 shrink-0 border-r bg-card'>
         <SymbolTreeSidebar
           characters={characters.data ?? []}
           components={components.data ?? []}
           features={features.data ?? []}
+          positions={positions.data ?? []}
           selectedId={selectedId}
           onSelect={setSelectedId}
           onCreateCharacter={(data) => createMut.mutate(data)}

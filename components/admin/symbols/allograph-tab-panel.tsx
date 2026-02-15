@@ -1,25 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, Trash2, Pencil, Check, X } from 'lucide-react'
+import { Trash2, Pencil, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
-import { cn } from '@/lib/utils'
 import { AllographComponentRow } from './allograph-component-row'
 import { AddComponentPopover } from './add-component-popover'
 import type {
   AllographNested,
   AllographComponentNested,
+  AllographComponentFeatureNested,
   Component,
   Feature,
 } from '@/types/admin'
 
-interface AllographCardProps {
+interface AllographTabPanelProps {
   allograph: AllographNested
   allComponents: Component[]
   allFeatures: Feature[]
@@ -28,14 +23,14 @@ interface AllographCardProps {
   disabled?: boolean
 }
 
-export function AllographCard({
+export function AllographTabPanel({
   allograph,
   allComponents,
   allFeatures,
   onUpdate,
   onRemove,
   disabled = false,
-}: AllographCardProps) {
+}: AllographTabPanelProps) {
   const [editingName, setEditingName] = useState(false)
   const [draftName, setDraftName] = useState(allograph.name)
 
@@ -52,11 +47,21 @@ export function AllographCard({
   const handleAddComponent = (componentId: number) => {
     const comp = allComponents.find((c) => c.id === componentId)
     if (!comp) return
+
+    // Auto-fill features from the global component template
+    const autoFeatures: AllographComponentFeatureNested[] = comp.features
+      .map((fId) => {
+        const feat = allFeatures.find((f) => f.id === fId)
+        if (!feat) return null
+        return { id: fId, name: feat.name, set_by_default: false }
+      })
+      .filter(Boolean) as AllographComponentFeatureNested[]
+
     const newAc: AllographComponentNested = {
-      id: 0, // will be assigned by backend
+      id: 0,
       component_id: comp.id,
       component_name: comp.name,
-      features: [],
+      features: autoFeatures,
     }
     onUpdate({
       ...allograph,
@@ -71,7 +76,11 @@ export function AllographCard({
     })
   }
 
-  const handleToggleFeature = (compIndex: number, featureId: number, checked: boolean) => {
+  const handleToggleFeature = (
+    compIndex: number,
+    featureId: number,
+    checked: boolean
+  ) => {
     const updated = allograph.components.map((ac, i) => {
       if (i !== compIndex) return ac
       if (checked) {
@@ -80,7 +89,11 @@ export function AllographCard({
           ...ac,
           features: [
             ...ac.features,
-            { id: featureId, name: feat?.name ?? '', set_by_default: false },
+            {
+              id: featureId,
+              name: feat?.name ?? '',
+              set_by_default: false,
+            },
           ],
         }
       }
@@ -92,7 +105,11 @@ export function AllographCard({
     onUpdate({ ...allograph, components: updated })
   }
 
-  const handleToggleDefault = (compIndex: number, featureId: number, setByDefault: boolean) => {
+  const handleToggleDefault = (
+    compIndex: number,
+    featureId: number,
+    setByDefault: boolean
+  ) => {
     const updated = allograph.components.map((ac, i) => {
       if (i !== compIndex) return ac
       return {
@@ -106,20 +123,15 @@ export function AllographCard({
   }
 
   return (
-    <Collapsible defaultOpen className='rounded-lg border'>
-      <div className='flex items-center gap-2 px-3 py-2'>
-        <CollapsibleTrigger asChild>
-          <Button variant='ghost' size='icon' className='h-6 w-6 shrink-0'>
-            <ChevronDown className='h-4 w-4 transition-transform [[data-state=closed]>&]:rotate-[-90deg]' />
-          </Button>
-        </CollapsibleTrigger>
-
+    <div className='space-y-3'>
+      {/* Allograph name + actions */}
+      <div className='flex items-center gap-2'>
         {editingName ? (
           <div className='flex items-center gap-1 flex-1'>
             <Input
               value={draftName}
               onChange={(e) => setDraftName(e.target.value)}
-              className='h-7 text-sm'
+              className='h-8 text-sm font-medium'
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === 'Enter') saveName()
@@ -129,13 +141,18 @@ export function AllographCard({
                 }
               }}
             />
-            <Button variant='ghost' size='icon' className='h-6 w-6' onClick={saveName}>
+            <Button
+              variant='ghost'
+              size='icon'
+              className='h-7 w-7'
+              onClick={saveName}
+            >
               <Check className='h-3.5 w-3.5' />
             </Button>
             <Button
               variant='ghost'
               size='icon'
-              className='h-6 w-6'
+              className='h-7 w-7'
               onClick={() => {
                 setDraftName(allograph.name)
                 setEditingName(false)
@@ -156,53 +173,53 @@ export function AllographCard({
         )}
 
         <span className='text-xs text-muted-foreground'>
-          {allograph.components.length} comp.
+          {allograph.components.length} component
+          {allograph.components.length !== 1 ? 's' : ''}
         </span>
         <Button
           variant='ghost'
-          size='icon'
-          className='h-6 w-6 text-muted-foreground hover:text-destructive'
+          size='sm'
+          className='h-7 text-xs text-muted-foreground hover:text-destructive'
           onClick={onRemove}
           disabled={disabled}
-          title='Delete allograph'
         >
-          <Trash2 className='h-3.5 w-3.5' />
+          <Trash2 className='h-3.5 w-3.5 mr-1' />
+          Remove
         </Button>
       </div>
 
-      <CollapsibleContent>
-        <div className='border-t px-3 py-2 space-y-2'>
-          {allograph.components.map((ac, idx) => {
-            const globalComp = allComponents.find((c) => c.id === ac.component_id)
-            return (
-              <AllographComponentRow
-                key={ac.id || `new-${idx}`}
-                allographComponentId={ac.id || undefined}
-                componentId={ac.component_id}
-                componentName={ac.component_name}
-                features={ac.features}
-                globalComponent={globalComp}
-                allFeatures={allFeatures}
-                onRemove={() => handleRemoveComponent(idx)}
-                onToggleFeature={(fId, checked) =>
-                  handleToggleFeature(idx, fId, checked)
-                }
-                onToggleDefault={(fId, def) =>
-                  handleToggleDefault(idx, fId, def)
-                }
-                disabled={disabled}
-              />
-            )
-          })}
+      {/* Components */}
+      <div className='space-y-2'>
+        {allograph.components.map((ac, idx) => {
+          const globalComp = allComponents.find(
+            (c) => c.id === ac.component_id
+          )
+          return (
+            <AllographComponentRow
+              key={ac.id || `new-${idx}`}
+              componentName={ac.component_name}
+              features={ac.features}
+              globalComponent={globalComp}
+              allFeatures={allFeatures}
+              onRemove={() => handleRemoveComponent(idx)}
+              onToggleFeature={(fId, checked) =>
+                handleToggleFeature(idx, fId, checked)
+              }
+              onToggleDefault={(fId, def) =>
+                handleToggleDefault(idx, fId, def)
+              }
+              disabled={disabled}
+            />
+          )
+        })}
 
-          <AddComponentPopover
-            components={allComponents}
-            existingComponentIds={existingComponentIds}
-            onAdd={handleAddComponent}
-            disabled={disabled}
-          />
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
+        <AddComponentPopover
+          components={allComponents}
+          existingComponentIds={existingComponentIds}
+          onAdd={handleAddComponent}
+          disabled={disabled}
+        />
+      </div>
+    </div>
   )
 }

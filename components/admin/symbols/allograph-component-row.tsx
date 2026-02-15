@@ -12,8 +12,6 @@ interface ComponentFeatureState {
 }
 
 interface AllographComponentRowProps {
-  allographComponentId?: number
-  componentId: number
   componentName: string
   features: ComponentFeatureState[]
   /** All features available for this component (from global component pool). */
@@ -45,8 +43,8 @@ export function AllographComponentRow({
   const featureMap = new Map(features.map((f) => [f.id, f]))
 
   return (
-    <div className='rounded-md border bg-card'>
-      <div className='flex items-center justify-between border-b px-3 py-1.5'>
+    <div className='rounded-lg border bg-card'>
+      <div className='flex items-center justify-between px-3 py-2'>
         <span className='text-sm font-medium'>{componentName}</span>
         <Button
           variant='ghost'
@@ -59,27 +57,29 @@ export function AllographComponentRow({
           <X className='h-3.5 w-3.5' />
         </Button>
       </div>
-      <div className='p-2 space-y-0.5'>
+      <div className='px-3 pb-2'>
         {availableFeatures.length === 0 ? (
-          <p className='px-2 py-1 text-xs text-muted-foreground italic'>
+          <p className='text-xs text-muted-foreground italic'>
             No features linked to this component
           </p>
         ) : (
-          availableFeatures.map((feat) => {
-            const state = featureMap.get(feat.id)
-            return (
-              <FeatureCheckbox
-                key={feat.id}
-                featureId={feat.id}
-                name={feat.name}
-                checked={!!state}
-                setByDefault={state?.set_by_default ?? false}
-                onToggle={onToggleFeature}
-                onToggleDefault={onToggleDefault}
-                disabled={disabled}
-              />
-            )
-          })
+          <div className='flex flex-wrap gap-1.5'>
+            {availableFeatures.map((feat) => {
+              const state = featureMap.get(feat.id)
+              return (
+                <FeatureCheckbox
+                  key={feat.id}
+                  featureId={feat.id}
+                  name={feat.name}
+                  checked={!!state}
+                  setByDefault={state?.set_by_default ?? false}
+                  onToggle={onToggleFeature}
+                  onToggleDefault={onToggleDefault}
+                  disabled={disabled}
+                />
+              )
+            })}
+          </div>
         )}
       </div>
     </div>

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from 'sonner'
-import { Save, Plus, Loader2, Trash2 } from 'lucide-react'
+import { Save, Plus, Loader2, Trash2, Grid3X3, LayoutList } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,8 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { AllographCard } from './allograph-card'
-import { AddAllographDialog } from './add-allograph-dialog'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { AllographTabPanel } from './allograph-tab-panel'
+import { ComparisonMatrix } from './comparison-matrix'
 import { ConfirmDialog } from '@/components/admin/common/confirm-dialog'
 import {
   getCharacter,
@@ -28,15 +29,14 @@ import { adminKeys } from '@/lib/admin/query-keys'
 import { formatApiError } from '@/lib/admin/format-api-error'
 import { useUnsavedGuard } from '@/hooks/admin/use-unsaved-guard'
 import { useKeyboardShortcut } from '@/hooks/admin/use-keyboard-shortcut'
-import type {
-  CharacterDetail as CharacterDetailType,
-  CharacterStructurePayload,
-  AllographNested,
-  Component,
-  Feature,
+import {
+  CHARACTER_TYPES,
+  type CharacterDetail as CharacterDetailType,
+  type CharacterStructurePayload,
+  type AllographNested,
+  type Component,
+  type Feature,
 } from '@/types/admin'
-
-const CHARACTER_TYPES = ['', 'Letter', 'Punctuation', 'Numeral', 'Symbol', 'Abbreviation']
 
 interface CharacterDetailProps {
   characterId: number
@@ -44,6 +44,8 @@ interface CharacterDetailProps {
   allFeatures: Feature[]
   onDeleted: () => void
 }
+
+type ViewMode = 'tabs' | 'matrix'
 
 export function CharacterDetail({
   characterId,
@@ -63,8 +65,11 @@ export function CharacterDetail({
   // Local draft state for editing
   const [draft, setDraft] = useState<CharacterDetailType | null>(null)
   const [dirty, setDirty] = useState(false)
-  const [addAlloOpen, setAddAlloOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('tabs')
+  const [activeAlloTab, setActiveAlloTab] = useState<string>('0')
+  const [addingAllograph, setAddingAllograph] = useState(false)
+  const [newAlloName, setNewAlloName] = useState('')
 
   // Warn before leaving with unsaved changes
   useUnsavedGuard(dirty)
@@ -143,9 +148,13 @@ export function CharacterDetail({
   }
 
   // Cmd+S to save
-  useKeyboardShortcut('mod+s', () => {
-    if (dirty && !saveMutation.isPending) handleSave()
-  }, dirty)
+  useKeyboardShortcut(
+    'mod+s',
+    () => {
+      if (dirty && !saveMutation.isPending) handleSave()
+    },
+    dirty
+  )
 
   const handleAddAllograph = (name: string) => {
     updateDraft((prev) => ({
@@ -155,7 +164,10 @@ export function CharacterDetail({
         { id: 0, name, components: [] } as AllographNested,
       ],
     }))
-    setAddAlloOpen(false)
+    // Switch to the new tab
+    setActiveAlloTab(String(draft ? draft.allographs.length : 0))
+    setAddingAllograph(false)
+    setNewAlloName('')
   }
 
   const handleUpdateAllograph = (index: number, updated: AllographNested) => {
@@ -170,7 +182,30 @@ export function CharacterDetail({
       ...prev,
       allographs: prev.allographs.filter((_, i) => i !== index),
     }))
+    // Adjust active tab
+    if (Number(activeAlloTab) >= index) {
+      setActiveAlloTab(String(Math.max(0, Number(activeAlloTab) - 1)))
+    }
   }
+
+  // Summary stats
+  const stats = useMemo(() => {
+    if (!draft) return { allographs: 0, components: 0, features: 0 }
+    const totalComponents = draft.allographs.reduce(
+      (sum, a) => sum + a.components.length,
+      0
+    )
+    const totalFeatures = draft.allographs.reduce(
+      (sum, a) =>
+        sum + a.components.reduce((s, c) => s + c.features.length, 0),
+      0
+    )
+    return {
+      allographs: draft.allographs.length,
+      components: totalComponents,
+      features: totalFeatures,
+    }
+  }, [draft])
 
   if (isLoading || !draft) {
     return (
@@ -186,10 +221,14 @@ export function CharacterDetail({
       <div className='flex items-start justify-between'>
         <div className='space-y-1'>
           <h2 className='text-xl font-semibold'>Character: {draft.name}</h2>
-          <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2 text-sm text-muted-foreground'>
             {draft.type && <Badge variant='secondary'>{draft.type}</Badge>}
-            <span className='text-sm text-muted-foreground'>
-              {draft.allographs.length} allograph{draft.allographs.length !== 1 ? 's' : ''}
+            <span>
+              {stats.allographs} allograph{stats.allographs !== 1 ? 's' : ''}
+              {' \u00b7 '}
+              {stats.components} component{stats.components !== 1 ? 's' : ''}
+              {' \u00b7 '}
+              {stats.features} feature{stats.features !== 1 ? 's' : ''}
             </span>
           </div>
         </div>
@@ -244,9 +283,10 @@ export function CharacterDetail({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value='__none'>None</SelectItem>
               {CHARACTER_TYPES.map((t) => (
-                <SelectItem key={t || '__none'} value={t || '__none'}>
-                  {t || 'None'}
+                <SelectItem key={t} value={t}>
+                  {t}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -258,52 +298,147 @@ export function CharacterDetail({
       <div>
         <div className='flex items-center justify-between mb-3'>
           <h3 className='text-sm font-medium'>Allographs</h3>
-          <Button
-            variant='outline'
-            size='sm'
-            className='h-7 gap-1 text-xs'
-            onClick={() => setAddAlloOpen(true)}
-          >
-            <Plus className='h-3 w-3' />
-            Add Allograph
-          </Button>
+          <div className='flex items-center gap-1'>
+            <Button
+              variant={viewMode === 'tabs' ? 'secondary' : 'ghost'}
+              size='icon'
+              className='h-7 w-7'
+              onClick={() => setViewMode('tabs')}
+              title='Tab view'
+            >
+              <LayoutList className='h-3.5 w-3.5' />
+            </Button>
+            <Button
+              variant={viewMode === 'matrix' ? 'secondary' : 'ghost'}
+              size='icon'
+              className='h-7 w-7'
+              onClick={() => setViewMode('matrix')}
+              title='Matrix comparison view'
+              disabled={draft.allographs.length === 0}
+            >
+              <Grid3X3 className='h-3.5 w-3.5' />
+            </Button>
+          </div>
         </div>
 
-        {draft.allographs.length === 0 ? (
+        {draft.allographs.length === 0 && !addingAllograph ? (
           <div className='rounded-lg border border-dashed p-8 text-center text-muted-foreground'>
             <p className='text-sm'>No allographs yet.</p>
             <Button
               variant='link'
               size='sm'
               className='mt-1'
-              onClick={() => setAddAlloOpen(true)}
+              onClick={() => setAddingAllograph(true)}
             >
               Add the first allograph
             </Button>
           </div>
+        ) : viewMode === 'matrix' ? (
+          <ComparisonMatrix
+            allographs={draft.allographs}
+            allComponents={allComponents}
+            allFeatures={allFeatures}
+            onUpdateAllograph={handleUpdateAllograph}
+            onRemoveAllograph={handleRemoveAllograph}
+            onAddAllograph={handleAddAllograph}
+            disabled={saveMutation.isPending}
+          />
         ) : (
-          <div className='space-y-3'>
+          <Tabs
+            value={activeAlloTab}
+            onValueChange={setActiveAlloTab}
+          >
+            <div className='flex items-center gap-1'>
+              <TabsList className='h-auto flex-wrap justify-start bg-transparent p-0 gap-1'>
+                {draft.allographs.map((allo, idx) => (
+                  <TabsTrigger
+                    key={allo.id || `new-${idx}`}
+                    value={String(idx)}
+                    className='rounded-md border px-3 py-1.5 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm'
+                  >
+                    {allo.name}
+                    {allo.components.length > 0 && (
+                      <Badge
+                        variant='secondary'
+                        className='ml-1.5 text-[9px] px-1 h-3.5 tabular-nums data-[state=active]:bg-primary-foreground/20 data-[state=active]:text-primary-foreground'
+                      >
+                        {allo.components.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {/* Inline add allograph */}
+              {addingAllograph ? (
+                <div className='flex items-center gap-1'>
+                  <Input
+                    value={newAlloName}
+                    onChange={(e) => setNewAlloName(e.target.value)}
+                    placeholder='Allograph name...'
+                    className='h-8 w-40 text-xs'
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newAlloName.trim()) {
+                        handleAddAllograph(newAlloName.trim())
+                      }
+                      if (e.key === 'Escape') {
+                        setAddingAllograph(false)
+                        setNewAlloName('')
+                      }
+                    }}
+                    onBlur={() => {
+                      if (!newAlloName.trim()) {
+                        setAddingAllograph(false)
+                        setNewAlloName('')
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  className='h-8 gap-1 text-xs text-muted-foreground'
+                  onClick={() => setAddingAllograph(true)}
+                >
+                  <Plus className='h-3 w-3' />
+                  Add
+                </Button>
+              )}
+            </div>
+
             {draft.allographs.map((allo, idx) => (
-              <AllographCard
+              <TabsContent
                 key={allo.id || `new-${idx}`}
-                allograph={allo}
-                allComponents={allComponents}
-                allFeatures={allFeatures}
-                onUpdate={(updated) => handleUpdateAllograph(idx, updated)}
-                onRemove={() => handleRemoveAllograph(idx)}
-                disabled={saveMutation.isPending}
-              />
+                value={String(idx)}
+                className='mt-3'
+              >
+                <AllographTabPanel
+                  allograph={allo}
+                  allComponents={allComponents}
+                  allFeatures={allFeatures}
+                  onUpdate={(updated) => handleUpdateAllograph(idx, updated)}
+                  onRemove={() => handleRemoveAllograph(idx)}
+                  disabled={saveMutation.isPending}
+                />
+              </TabsContent>
             ))}
-          </div>
+          </Tabs>
         )}
       </div>
 
       {/* Dirty indicator */}
       {dirty && (
         <div className='sticky bottom-0 bg-background/95 backdrop-blur border-t -mx-6 px-6 py-3 flex items-center justify-between'>
-          <span className='text-sm text-amber-600 font-medium'>
-            Unsaved changes
-          </span>
+          <div className='flex items-center gap-3'>
+            <span className='text-sm text-amber-600 font-medium'>
+              Unsaved changes
+            </span>
+            <kbd className='hidden sm:inline-flex items-center gap-0.5 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground'>
+              Ctrl+S
+            </kbd>
+          </div>
           <div className='flex gap-2'>
             <Button
               variant='outline'
@@ -328,14 +463,7 @@ export function CharacterDetail({
         </div>
       )}
 
-      {/* Dialogs */}
-      <AddAllographDialog
-        open={addAlloOpen}
-        onOpenChange={setAddAlloOpen}
-        characterName={draft.name}
-        onSubmit={handleAddAllograph}
-      />
-
+      {/* Delete dialog */}
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}

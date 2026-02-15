@@ -106,6 +106,14 @@ export function createPosition(token: string, data: { name: string }) {
   return adminPost<Position>('/symbols/positions/', token, data)
 }
 
+export function updatePosition(
+  token: string,
+  id: number,
+  data: { name: string }
+) {
+  return adminPatch<Position>(`/symbols/positions/${id}/`, token, data)
+}
+
 export function deletePosition(token: string, id: number) {
   return adminDelete(`/symbols/positions/${id}/`, token)
 }

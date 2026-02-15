@@ -18,6 +18,15 @@ export interface AdminDate {
 
 // ── Symbols ─────────────────────────────────────────────────────────────
 
+export const CHARACTER_TYPES = [
+  'Majuscule Letter',
+  'Minuscule Letter',
+  'Numeral',
+  'Punctuation',
+  'Symbol',
+  'Accent',
+] as const
+
 export interface Feature {
   id: number
   name: string
