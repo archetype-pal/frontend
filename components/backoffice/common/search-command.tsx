@@ -42,8 +42,7 @@ const entries: NavEntry[] = [
   { label: 'Scribes', href: '/backoffice/scribes', icon: PenTool, group: 'Scholarly Data' },
   { label: 'Hands', href: '/backoffice/hands', icon: PenTool, group: 'Scholarly Data' },
   { label: 'Annotations', href: '/backoffice/annotations', icon: PenTool, group: 'Scholarly Data' },
-  // Palaeography
-  { label: 'Characters', href: '/backoffice/symbols', icon: Type, group: 'Palaeography' },
+  { label: 'Characters', href: '/backoffice/symbols', icon: Type, group: 'Scholarly Data' },
   // Site Content
   { label: 'Publications', href: '/backoffice/publications', icon: Newspaper, group: 'Site Content' },
   { label: 'Events', href: '/backoffice/events', icon: CalendarDays, group: 'Site Content' },
@@ -53,8 +52,7 @@ const entries: NavEntry[] = [
   { label: 'Dates', href: '/backoffice/dates', icon: Hash, group: 'Reference Data' },
   { label: 'Formats', href: '/backoffice/formats', icon: Hash, group: 'Reference Data' },
   { label: 'Sources', href: '/backoffice/sources', icon: Hash, group: 'Reference Data' },
-  // Tools
-  { label: 'Search Engine', href: '/backoffice/search-engine', icon: Search, group: 'Tools' },
+  { label: 'Search Engine', href: '/backoffice/search-engine', icon: Search, group: 'General' },
 ]
 
 const quickActions = [
