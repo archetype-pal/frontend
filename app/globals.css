@@ -111,6 +111,33 @@
   }
 }
 
+/*
+ * Backoffice contrast overrides.
+ *
+ * The backoffice handles dense data at small font sizes, so it needs
+ * stronger contrast than the marketing/public pages. These overrides
+ * are scoped to .backoffice-shell so they don't affect the public site.
+ *
+ * Changes vs global theme:
+ * - muted-foreground: 46% → 35% lightness (much more readable)
+ * - border/input: 90% → 83% lightness (visible borders)
+ * - muted/secondary/accent bg: 95.9% → 94% (subtle but more distinct)
+ */
+.backoffice-shell {
+  --muted-foreground: 240 5% 35%;
+  --border: 240 6% 83%;
+  --input: 240 6% 83%;
+  --muted: 240 5% 94%;
+  --secondary: 240 5% 94%;
+  --accent: 240 5% 94%;
+}
+
+.backoffice-shell .dark {
+  --muted-foreground: 240 5% 70%;
+  --border: 240 4% 22%;
+  --input: 240 4% 22%;
+}
+
 /* --- Viewer Interaction Cursors --- */
 
 .osd-mode-pan {

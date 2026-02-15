@@ -20,7 +20,7 @@ export default function LoginPage() {
   // Redirect already-authenticated users
   useEffect(() => {
     if (token && user) {
-      router.replace(user.is_staff ? '/admin' : '/')
+      router.replace(user.is_staff ? '/backoffice' : '/')
     }
   }, [token, user, router])
 
@@ -36,7 +36,7 @@ export default function LoginPage() {
 
       // Fetch profile to check if staff, then redirect accordingly
       const profile = await getUserProfile(response.auth_token)
-      router.push(profile.is_staff ? '/admin' : '/')
+      router.push(profile.is_staff ? '/backoffice' : '/')
     } catch (error) {
       setError((error as Error).message)
     } finally {

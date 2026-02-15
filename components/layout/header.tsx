@@ -311,14 +311,14 @@ export default function Header() {
                 {token ? (
                   <>
                     {user?.is_staff && (
-                      <Link href='/admin'>
+                      <Link href='/backoffice'>
                         <Button
                           variant='ghost'
                           size='sm'
                           className='text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
                         >
                           <Shield className='h-4 w-4 mr-1' />
-                          Admin
+                          Backoffice
                         </Button>
                       </Link>
                     )}
