@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import type { CarouselItem } from '@/types'
+import type { CarouselItem } from '@/types/backoffice'
 import { fetchCarouselItems, getCarouselImageUrl } from '@/utils/api'
 
 export default function Component() {

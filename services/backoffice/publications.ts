@@ -1,4 +1,5 @@
-import { backofficeGet, backofficePost, backofficePatch, backofficeDelete } from './api-client'
+import { backofficePost } from './api-client'
+import { createCrudService } from './crud-factory'
 import type {
   PaginatedResponse,
   PublicationListItem,
@@ -9,6 +10,12 @@ import type {
 } from '@/types/backoffice'
 
 // ── Publications ────────────────────────────────────────────────────────
+
+const publicationsCrud = createCrudService<
+  PaginatedResponse<PublicationListItem>,
+  PublicationDetail,
+  string
+>('/publications/publications/')
 
 export function getPublications(
   token: string,
@@ -21,105 +28,40 @@ export function getPublications(
     is_featured?: boolean
   }
 ) {
-  const qs = new URLSearchParams()
-  if (params?.limit) qs.set('limit', String(params.limit))
-  if (params?.offset) qs.set('offset', String(params.offset))
-  if (params?.status) qs.set('status', params.status)
-  if (params?.is_blog_post) qs.set('is_blog_post', 'true')
-  if (params?.is_news) qs.set('is_news', 'true')
-  if (params?.is_featured) qs.set('is_featured', 'true')
-  const query = qs.toString()
-  return backofficeGet<PaginatedResponse<PublicationListItem>>(
-    `/publications/publications/${query ? `?${query}` : ''}`,
-    token
-  )
+  return publicationsCrud.list(token, params)
 }
 
-export function getPublication(token: string, slug: string) {
-  return backofficeGet<PublicationDetail>(
-    `/publications/publications/${slug}/`,
-    token
-  )
-}
-
-export function createPublication(
-  token: string,
-  data: Partial<PublicationDetail>
-) {
-  return backofficePost<PublicationDetail>(
-    '/publications/publications/',
-    token,
-    data
-  )
-}
-
-export function updatePublication(
-  token: string,
-  slug: string,
-  data: Partial<PublicationDetail>
-) {
-  return backofficePatch<PublicationDetail>(
-    `/publications/publications/${slug}/`,
-    token,
-    data
-  )
-}
-
-export function deletePublication(token: string, slug: string) {
-  return backofficeDelete(`/publications/publications/${slug}/`, token)
-}
+export const getPublication = publicationsCrud.get
+export const createPublication = publicationsCrud.create
+export const updatePublication = publicationsCrud.update
+export const deletePublication = publicationsCrud.remove
 
 // ── Events ──────────────────────────────────────────────────────────────
 
-export function getEvents(token: string) {
-  return backofficeGet<PaginatedResponse<EventItem>>(
-    '/publications/events/',
-    token
-  )
-}
+const eventsCrud = createCrudService<
+  PaginatedResponse<EventItem>,
+  EventItem,
+  string
+>('/publications/events/')
 
-export function getEvent(token: string, slug: string) {
-  return backofficeGet<EventItem>(`/publications/events/${slug}/`, token)
-}
-
-export function createEvent(
-  token: string,
-  data: Partial<EventItem>
-) {
-  return backofficePost<EventItem>('/publications/events/', token, data)
-}
-
-export function updateEvent(
-  token: string,
-  slug: string,
-  data: Partial<EventItem>
-) {
-  return backofficePatch<EventItem>(
-    `/publications/events/${slug}/`,
-    token,
-    data
-  )
-}
-
-export function deleteEvent(token: string, slug: string) {
-  return backofficeDelete(`/publications/events/${slug}/`, token)
-}
+export const getEvents = (token: string) => eventsCrud.list(token)
+export const getEvent = eventsCrud.get
+export const createEvent = eventsCrud.create
+export const updateEvent = eventsCrud.update
+export const deleteEvent = eventsCrud.remove
 
 // ── Comments ────────────────────────────────────────────────────────────
+
+const commentsCrud = createCrudService<
+  PaginatedResponse<CommentItem>,
+  CommentItem
+>('/publications/comments/')
 
 export function getComments(
   token: string,
   params?: { is_approved?: boolean; post?: number }
 ) {
-  const qs = new URLSearchParams()
-  if (params?.is_approved !== undefined)
-    qs.set('is_approved', String(params.is_approved))
-  if (params?.post) qs.set('post', String(params.post))
-  const query = qs.toString()
-  return backofficeGet<PaginatedResponse<CommentItem>>(
-    `/publications/comments/${query ? `?${query}` : ''}`,
-    token
-  )
+  return commentsCrud.list(token, params)
 }
 
 export function approveComment(token: string, id: number) {
@@ -138,42 +80,13 @@ export function rejectComment(token: string, id: number) {
   )
 }
 
-export function deleteComment(token: string, id: number) {
-  return backofficeDelete(`/publications/comments/${id}/`, token)
-}
+export const deleteComment = commentsCrud.remove
 
 // ── Carousel ────────────────────────────────────────────────────────────
 
-export function getCarouselItems(token: string) {
-  return backofficeGet<CarouselItem[]>(
-    '/publications/carousel-items/',
-    token
-  )
-}
+const carouselCrud = createCrudService<CarouselItem>('/publications/carousel-items/')
 
-export function createCarouselItem(
-  token: string,
-  data: Partial<CarouselItem>
-) {
-  return backofficePost<CarouselItem>(
-    '/publications/carousel-items/',
-    token,
-    data
-  )
-}
-
-export function updateCarouselItem(
-  token: string,
-  id: number,
-  data: Partial<CarouselItem>
-) {
-  return backofficePatch<CarouselItem>(
-    `/publications/carousel-items/${id}/`,
-    token,
-    data
-  )
-}
-
-export function deleteCarouselItem(token: string, id: number) {
-  return backofficeDelete(`/publications/carousel-items/${id}/`, token)
-}
+export const getCarouselItems = (token: string) => carouselCrud.list(token)
+export const createCarouselItem = carouselCrud.create
+export const updateCarouselItem = carouselCrud.update
+export const deleteCarouselItem = carouselCrud.remove

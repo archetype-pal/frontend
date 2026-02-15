@@ -1,4 +1,5 @@
-import { backofficeGet, backofficePost, backofficePatch, backofficeDelete } from './api-client'
+import { backofficeGet } from './api-client'
+import { createCrudService } from './crud-factory'
 import type {
   PaginatedResponse,
   HistoricalItemListItem,
@@ -13,193 +14,86 @@ import type {
 
 // ── Historical Items ────────────────────────────────────────────────────
 
+const historicalItemsCrud = createCrudService<
+  PaginatedResponse<HistoricalItemListItem>,
+  HistoricalItemDetail
+>('/manuscripts/historical-items/')
+
 export function getHistoricalItems(
   token: string,
   params?: { limit?: number; offset?: number; type?: string }
 ) {
-  const qs = new URLSearchParams()
-  if (params?.limit) qs.set('limit', String(params.limit))
-  if (params?.offset) qs.set('offset', String(params.offset))
-  if (params?.type) qs.set('type', params.type)
-  const query = qs.toString()
-  return backofficeGet<PaginatedResponse<HistoricalItemListItem>>(
-    `/manuscripts/historical-items/${query ? `?${query}` : ''}`,
-    token
-  )
+  return historicalItemsCrud.list(token, params)
 }
 
-export function getHistoricalItem(token: string, id: number) {
-  return backofficeGet<HistoricalItemDetail>(
-    `/manuscripts/historical-items/${id}/`,
-    token
-  )
-}
-
-export function createHistoricalItem(
-  token: string,
-  data: Partial<HistoricalItemDetail>
-) {
-  return backofficePost<HistoricalItemDetail>(
-    '/manuscripts/historical-items/',
-    token,
-    data
-  )
-}
-
-export function updateHistoricalItem(
-  token: string,
-  id: number,
-  data: Partial<HistoricalItemDetail>
-) {
-  return backofficePatch<HistoricalItemDetail>(
-    `/manuscripts/historical-items/${id}/`,
-    token,
-    data
-  )
-}
-
-export function deleteHistoricalItem(token: string, id: number) {
-  return backofficeDelete(`/manuscripts/historical-items/${id}/`, token)
-}
+export const getHistoricalItem = historicalItemsCrud.get
+export const createHistoricalItem = historicalItemsCrud.create
+export const updateHistoricalItem = historicalItemsCrud.update
+export const deleteHistoricalItem = historicalItemsCrud.remove
 
 // ── Catalogue Numbers ───────────────────────────────────────────────────
 
-export function createCatalogueNumber(
-  token: string,
-  data: Omit<CatalogueNumber, 'id' | 'catalogue_label'>
-) {
-  return backofficePost<CatalogueNumber>(
-    '/manuscripts/catalogue-numbers/',
-    token,
-    data
-  )
-}
+const catalogueNumbersCrud = createCrudService<CatalogueNumber>(
+  '/manuscripts/catalogue-numbers/'
+)
 
-export function updateCatalogueNumber(
-  token: string,
-  id: number,
-  data: Partial<CatalogueNumber>
-) {
-  return backofficePatch<CatalogueNumber>(
-    `/manuscripts/catalogue-numbers/${id}/`,
-    token,
-    data
-  )
-}
-
-export function deleteCatalogueNumber(token: string, id: number) {
-  return backofficeDelete(`/manuscripts/catalogue-numbers/${id}/`, token)
-}
+export const createCatalogueNumber = catalogueNumbersCrud.create
+export const updateCatalogueNumber = catalogueNumbersCrud.update
+export const deleteCatalogueNumber = catalogueNumbersCrud.remove
 
 // ── Descriptions ────────────────────────────────────────────────────────
 
-export function createDescription(
-  token: string,
-  data: Omit<HistoricalItemDescription, 'id' | 'source_label'>
-) {
-  return backofficePost<HistoricalItemDescription>(
-    '/manuscripts/descriptions/',
-    token,
-    data
-  )
-}
+const descriptionsCrud = createCrudService<HistoricalItemDescription>(
+  '/manuscripts/descriptions/'
+)
 
-export function updateDescription(
-  token: string,
-  id: number,
-  data: Partial<HistoricalItemDescription>
-) {
-  return backofficePatch<HistoricalItemDescription>(
-    `/manuscripts/descriptions/${id}/`,
-    token,
-    data
-  )
-}
-
-export function deleteDescription(token: string, id: number) {
-  return backofficeDelete(`/manuscripts/descriptions/${id}/`, token)
-}
+export const createDescription = descriptionsCrud.create
+export const updateDescription = descriptionsCrud.update
+export const deleteDescription = descriptionsCrud.remove
 
 // ── Repositories ────────────────────────────────────────────────────────
 
-export function getRepositories(token: string) {
-  return backofficeGet<PaginatedResponse<Repository>>(
-    '/manuscripts/repositories/',
-    token
-  )
-}
+const repositoriesCrud = createCrudService<
+  PaginatedResponse<Repository>,
+  Repository
+>('/manuscripts/repositories/')
 
-export function createRepository(
-  token: string,
-  data: Omit<Repository, 'id'>
-) {
-  return backofficePost<Repository>('/manuscripts/repositories/', token, data)
-}
-
-export function updateRepository(
-  token: string,
-  id: number,
-  data: Partial<Repository>
-) {
-  return backofficePatch<Repository>(
-    `/manuscripts/repositories/${id}/`,
-    token,
-    data
-  )
-}
-
-export function deleteRepository(token: string, id: number) {
-  return backofficeDelete(`/manuscripts/repositories/${id}/`, token)
-}
+export const getRepositories = (token: string) => repositoriesCrud.list(token)
+export const createRepository = repositoriesCrud.create
+export const updateRepository = repositoriesCrud.update
+export const deleteRepository = repositoriesCrud.remove
 
 // ── Bibliographic Sources ───────────────────────────────────────────────
+
+const sourcesCrud = createCrudService<BibliographicSource>(
+  '/manuscripts/sources/'
+)
 
 export function getSources(token: string) {
   return backofficeGet<BibliographicSource[]>('/manuscripts/sources/', token)
 }
 
-export function createSource(
-  token: string,
-  data: Omit<BibliographicSource, 'id'>
-) {
-  return backofficePost<BibliographicSource>(
-    '/manuscripts/sources/',
-    token,
-    data
-  )
-}
-
-export function deleteSource(token: string, id: number) {
-  return backofficeDelete(`/manuscripts/sources/${id}/`, token)
-}
+export const createSource = sourcesCrud.create
+export const deleteSource = sourcesCrud.remove
 
 // ── Item Formats ────────────────────────────────────────────────────────
+
+const formatsCrud = createCrudService<ItemFormat>('/manuscripts/formats/')
 
 export function getFormats(token: string) {
   return backofficeGet<ItemFormat[]>('/manuscripts/formats/', token)
 }
 
-export function createFormat(token: string, data: { name: string }) {
-  return backofficePost<ItemFormat>('/manuscripts/formats/', token, data)
-}
-
-export function deleteFormat(token: string, id: number) {
-  return backofficeDelete(`/manuscripts/formats/${id}/`, token)
-}
+export const createFormat = formatsCrud.create
+export const deleteFormat = formatsCrud.remove
 
 // ── Dates ───────────────────────────────────────────────────────────────
+
+const datesCrud = createCrudService<BackofficeDate>('/common/dates/')
 
 export function getDates(token: string) {
   return backofficeGet<BackofficeDate[]>('/common/dates/', token)
 }
 
-export function createDate(
-  token: string,
-  data: Omit<BackofficeDate, 'id'>
-) {
-  return backofficePost<BackofficeDate>('/common/dates/', token, data)
-}
-
-export function deleteDate(token: string, id: number) {
-  return backofficeDelete(`/common/dates/${id}/`, token)
-}
+export const createDate = datesCrud.create
+export const deleteDate = datesCrud.remove

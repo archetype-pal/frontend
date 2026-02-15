@@ -52,20 +52,6 @@ export async function getUserProfile(token: string) {
   return response.json()
 }
 
-export async function getCarouselItems(token: string) {
-  const response = await apiFetch(`/api/v1/media/carousel-items/`, {
-    headers: {
-      Authorization: `Token ${token}`,
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch carousel items')
-  }
-
-  return response.json()
-}
-
 export type PublicationParams = {
   is_news?: boolean
   is_featured?: boolean
