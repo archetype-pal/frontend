@@ -3,16 +3,15 @@ import type { ManuscriptImage } from '@/types/manuscript-image'
 import type { HandsResponse } from '@/types/hands'
 import type { AllographsResponse } from '@/types/allographs'
 import { notFound } from 'next/navigation'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+import { apiFetch } from '@/lib/api-fetch'
 
 const MANUSCRIPTS_PAGE_SIZE = 20
 
 export async function fetchManuscripts(page = 1) {
   try {
     const offset = (page - 1) * MANUSCRIPTS_PAGE_SIZE
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/search/item-parts/facets?limit=${MANUSCRIPTS_PAGE_SIZE}&offset=${offset}`
+    const response = await apiFetch(
+      `/api/v1/search/item-parts/facets?limit=${MANUSCRIPTS_PAGE_SIZE}&offset=${offset}`
     )
     if (!response.ok) {
       throw new Error('Failed to fetch manuscripts')
@@ -28,8 +27,8 @@ export async function fetchManuscripts(page = 1) {
 export async function fetchManuscriptImage(
   id: string
 ): Promise<ManuscriptImage> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/manuscripts/item-images/${id}`
+  const response = await apiFetch(
+    `/api/v1/manuscripts/item-images/${id}`
   )
 
   if (!response.ok) {
@@ -40,8 +39,8 @@ export async function fetchManuscriptImage(
 }
 
 export async function fetchHands(itemImageId: string): Promise<HandsResponse> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/v1/hands?item_image=${itemImageId}`
+  const response = await apiFetch(
+    `/api/v1/hands?item_image=${itemImageId}`
   )
 
   if (!response.ok) {
@@ -52,8 +51,8 @@ export async function fetchHands(itemImageId: string): Promise<HandsResponse> {
 }
 
 export async function fetchAllographs(): Promise<AllographsResponse> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/v1/symbols_structure/allographs/`
+  const response = await apiFetch(
+    `/api/v1/symbols_structure/allographs/`
   )
 
   if (!response.ok) {
@@ -64,8 +63,8 @@ export async function fetchAllographs(): Promise<AllographsResponse> {
 }
 
 export async function fetchManuscript(id: number): Promise<Manuscript> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/v1/manuscripts/item-parts/${id}`
+  const response = await apiFetch(
+    `/api/v1/manuscripts/item-parts/${id}`
   )
 
   if (!response.ok) {

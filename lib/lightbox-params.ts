@@ -1,11 +1,10 @@
 import type { CollectionItem } from '@/contexts/collection-context'
 import type { ImageListItem } from '@/types/image'
 import type { GraphListItem } from '@/types/graph'
+import { apiFetch } from '@/lib/api-fetch'
 
 type ItemType = 'image' | 'graph'
 type ResolvedItem = CollectionItem | ImageListItem | GraphListItem
-
-const API_BASE = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000' : ''
 
 /** Resolve a single item by id: from collection or fetch from API. Sets error and returns null on failure. */
 export async function resolveItemById(
@@ -19,11 +18,11 @@ export async function resolveItemById(
   if (item) return item
 
   const endpoint = type === 'image' ? 'item-images' : 'graphs'
-  const url = `${API_BASE}/api/v1/search/${endpoint}/${id}`
+  const path = `/api/v1/search/${endpoint}/${id}`
   try {
-    const response = await fetch(url)
+    const response = await apiFetch(path)
     if (!response.ok) {
-      setError(`${type === 'image' ? 'Image' : 'Graph'} ${id} not found (${response.status}: ${response.statusText}). URL: ${url}`)
+      setError(`${type === 'image' ? 'Image' : 'Graph'} ${id} not found (${response.status}: ${response.statusText}).`)
       return null
     }
     const data = await response.json()
@@ -51,7 +50,7 @@ export async function resolveItemsByIds(
 
   for (const id of missingIds) {
     try {
-      const response = await fetch(`${API_BASE}/api/v1/search/${endpoint}/${id}`)
+      const response = await apiFetch(`/api/v1/search/${endpoint}/${id}`)
       if (response.ok) {
         const data = await response.json()
         itemsToLoad.push(data as ResolvedItem)

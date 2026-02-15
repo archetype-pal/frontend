@@ -1,14 +1,17 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { getIiifImageUrl } from '@/utils/iiif'
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail'
+import { useTabNavigation } from '@/hooks/use-tab-navigation'
 import type { HandDetail, HandImage, HandScribe, HandManuscript, HandGraph } from '@/types/hand-detail'
-import { BookOpen, Calendar, MapPin, PenTool, User, FileText, ImageIcon, Grid3X3 } from 'lucide-react'
+import type { BackendGraph } from '@/services/annotations'
+import type { Allograph } from '@/types/allographs'
+import { BookOpen, Calendar, MapPin, PenTool, User, FileText, ImageIcon, Grid3X3, Loader2 } from 'lucide-react'
+import { apiFetch } from '@/lib/api-fetch'
 
 const TAB_VALUES = ['information', 'description', 'images', 'graphs'] as const
 const DEFAULT_TAB = 'information'
@@ -18,7 +21,6 @@ interface HandViewerProps {
   images: HandImage[]
   scribe: HandScribe | null
   manuscript: HandManuscript | null
-  graphs: HandGraph[]
 }
 
 /** A single graph thumbnail that resolves its IIIF crop URL. */
@@ -45,32 +47,88 @@ function GraphThumbnail({ graph }: { graph: HandGraph }) {
   )
 }
 
-export function HandViewer({ hand, images, scribe, manuscript, graphs }: HandViewerProps) {
-  const pathname = usePathname()
-  const router = useRouter()
-  const searchParams = useSearchParams()
+// ── Client-side graph fetching ──────────────────────────────────────
 
-  const tabFromUrl = searchParams.get('tab')
-  const activeTab =
-    tabFromUrl && TAB_VALUES.includes(tabFromUrl as (typeof TAB_VALUES)[number])
-      ? tabFromUrl
-      : DEFAULT_TAB
+function enrichGraphs(
+  backendGraphs: BackendGraph[],
+  allographs: Allograph[],
+  images: HandImage[]
+): HandGraph[] {
+  const allographMap = new Map(allographs.map((a) => [a.id, a.name]))
+  const imageMap = new Map(images.map((img) => [img.id, img.iiif_image]))
 
-  const handleTabChange = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (value === DEFAULT_TAB) {
-      params.delete('tab')
-    } else {
-      params.set('tab', value)
-    }
-    const query = params.toString()
-    router.push(query ? `${pathname}?${query}` : pathname)
-  }
+  return backendGraphs
+    .map((g) => {
+      const iiifImage = imageMap.get(g.item_image)
+      if (!iiifImage) return null
+
+      return {
+        id: g.id,
+        allograph_name: allographMap.get(g.allograph) ?? `Allograph ${g.allograph}`,
+        allograph_id: g.allograph,
+        image_iiif: iiifImage.endsWith('/info.json') ? iiifImage : `${iiifImage}/info.json`,
+        coordinates: JSON.stringify(g.annotation),
+      }
+    })
+    .filter((g): g is HandGraph => g !== null)
+}
+
+type GraphsState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'loaded'; graphs: HandGraph[] }
+  | { status: 'error' }
+
+function useHandGraphs(handId: number, images: HandImage[], enabled: boolean): GraphsState {
+  const [state, setState] = useState<GraphsState>({ status: 'idle' })
+  const fetchedRef = useRef(false)
+
+  useEffect(() => {
+    if (!enabled || fetchedRef.current) return
+    fetchedRef.current = true
+
+    const controller = new AbortController()
+    setState({ status: 'loading' })
+
+    Promise.all([
+      apiFetch(`/api/v1/manuscripts/graphs/?hand=${handId}`, {
+        signal: controller.signal,
+      }).then((r) => (r.ok ? r.json() : [])),
+      apiFetch(`/api/v1/symbols_structure/allographs/`, {
+        signal: controller.signal,
+      }).then((r) => (r.ok ? r.json() : [])),
+    ])
+      .then(([rawGraphs, allographs]) => {
+        const graphsArr: BackendGraph[] = Array.isArray(rawGraphs)
+          ? rawGraphs
+          : rawGraphs?.results ?? []
+        const graphs = enrichGraphs(graphsArr, allographs, images)
+        setState({ status: 'loaded', graphs })
+      })
+      .catch((err) => {
+        if (err?.name === 'AbortError') return
+        setState({ status: 'error' })
+      })
+
+    return () => controller.abort()
+  }, [enabled, handId, images])
+
+  return state
+}
+
+// ── Main component ──────────────────────────────────────────────────
+
+export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps) {
+  const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB)
 
   const manuscriptLabel =
     manuscript?.display_label ??
     manuscript?.current_item?.shelfmark ??
     (hand.shelfmark || null)
+
+  // Lazy-load graphs only when the Graphs tab is active
+  const graphsState = useHandGraphs(hand.id, images, activeTab === 'graphs')
+  const graphs = graphsState.status === 'loaded' ? graphsState.graphs : []
 
   // Group graphs by allograph, preserving order of first appearance
   const graphGroups = useMemo(() => {
@@ -85,13 +143,13 @@ export function HandViewer({ hand, images, scribe, manuscript, graphs }: HandVie
     return Array.from(groupMap.values())
   }, [graphs])
 
-  const scrollToAllograph = (allographId: number, allographName: string) => {
+  const scrollToAllograph = useCallback((allographId: number, allographName: string) => {
     const key = `${allographId}-${allographName}`
     const el = document.getElementById(`allograph-${key}`)
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
-  }
+  }, [])
 
   return (
     <main className="container mx-auto p-4 max-w-6xl">
@@ -131,7 +189,7 @@ export function HandViewer({ hand, images, scribe, manuscript, graphs }: HandVie
             Manuscript Images ({images.length})
           </TabsTrigger>
           <TabsTrigger value="graphs">
-            Graphs ({graphs.length})
+            Graphs{graphsState.status === 'loaded' ? ` (${graphs.length})` : ''}
           </TabsTrigger>
         </TabsList>
 
@@ -288,7 +346,19 @@ export function HandViewer({ hand, images, scribe, manuscript, graphs }: HandVie
 
         {/* Graphs Tab */}
         <TabsContent value="graphs" className="space-y-6">
-          {graphs.length > 0 ? (
+          {graphsState.status === 'loading' || graphsState.status === 'idle' ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading graphs...</span>
+            </div>
+          ) : graphsState.status === 'error' ? (
+            <div className="rounded-lg border bg-card p-6">
+              <div className="flex items-center gap-2 text-destructive bg-destructive/10 rounded-md p-4">
+                <Grid3X3 className="h-4 w-4" />
+                <span>Failed to load graphs. Please try again later.</span>
+              </div>
+            </div>
+          ) : graphs.length > 0 ? (
             <div className="space-y-6">
               {/* Hand name heading */}
               <h2 className="text-xl font-semibold">{hand.name}</h2>

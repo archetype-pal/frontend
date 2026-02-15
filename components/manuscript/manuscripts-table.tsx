@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table'
 import type { ManuscriptListItem } from '@/types/manuscript'
 import { useRouter } from 'next/navigation'
+import { apiFetch } from '@/lib/api-fetch'
 
 import { useEffect, useState } from 'react'
 
@@ -23,8 +24,8 @@ export function ManuscriptsTable() {
   useEffect(() => {
     async function fetchManuscriptsTable() {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/item-parts/facets`
+        const response = await apiFetch(
+          `/api/v1/search/item-parts/facets`
         )
         if (!response.ok) {
           throw new Error('Failed to fetch carousel items')

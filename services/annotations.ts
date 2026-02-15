@@ -38,22 +38,21 @@ export interface SaveAnnotationRequest {
   positions: number[]
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+import { apiFetch } from '@/lib/api-fetch'
 
 export async function fetchAnnotationsForImage(
   imageId: string,
   allographId?: string
 ): Promise<BackendGraph[]> {
-  const url = new URL(`${API_BASE_URL}/api/v1/manuscripts/graphs/`)
-  url.searchParams.set('item_image', imageId)
-  if (allographId) url.searchParams.set('allograph', allographId)
-  const res = await fetch(url.toString(), { cache: 'no-store' })
+  const params = new URLSearchParams({ item_image: imageId })
+  if (allographId) params.set('allograph', allographId)
+  const res = await apiFetch(`/api/v1/manuscripts/graphs/?${params}`, { cache: 'no-store' })
   if (!res.ok) throw new Error('Failed to load annotations')
   return res.json()
 }
 
 export async function postAnnotation(payload: Omit<BackendGraph, 'id'>) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/manuscripts/graphs/`, {
+  const res = await apiFetch(`/api/v1/manuscripts/graphs/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -69,7 +68,7 @@ export async function patchAnnotation(
   id: number,
   partial: Partial<Omit<BackendGraph, 'id'>>
 ) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/manuscripts/graphs/${id}/`, {
+  const res = await apiFetch(`/api/v1/manuscripts/graphs/${id}/`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(partial)

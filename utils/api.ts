@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+import { apiFetch, API_BASE_URL } from '@/lib/api-fetch'
 
 /** Build absolute URL for carousel (or other API-served) images. API returns relative paths like "media/carousel/…". */
 export function getCarouselImageUrl(imagePath: string | null | undefined): string {
@@ -9,7 +9,7 @@ export function getCarouselImageUrl(imagePath: string | null | undefined): strin
 }
 
 export async function loginUser(username: string, password: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/auth/token/login`, {
+  const response = await apiFetch(`/api/v1/auth/token/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -25,7 +25,7 @@ export async function loginUser(username: string, password: string) {
 }
 
 export async function logoutUser(token: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/auth/token/logout`, {
+  const response = await apiFetch(`/api/v1/auth/token/logout`, {
     method: 'POST',
     headers: {
       Authorization: `Token ${token}`,
@@ -39,7 +39,7 @@ export async function logoutUser(token: string) {
 }
 
 export async function getUserProfile(token: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/auth/profile`, {
+  const response = await apiFetch(`/api/v1/auth/profile`, {
     headers: {
       Authorization: `Token ${token}`,
     },
@@ -53,7 +53,7 @@ export async function getUserProfile(token: string) {
 }
 
 export async function getCarouselItems(token: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/media/carousel-items/`, {
+  const response = await apiFetch(`/api/v1/media/carousel-items/`, {
     headers: {
       Authorization: `Token ${token}`,
     },
@@ -84,19 +84,17 @@ export async function getPublications(params: PublicationParams) {
   if (params.limit) searchParams.append('limit', params.limit.toString())
   if (params.offset) searchParams.append('offset', params.offset.toString())
 
-  const url = `${API_BASE_URL}/api/v1/media/publications/${searchParams.toString() ? `?${searchParams.toString()}` : ''
-    }`
+  const qs = searchParams.toString()
+  const path = `/api/v1/media/publications/${qs ? `?${qs}` : ''}`
 
-  const res = await fetch(url)
+  const res = await apiFetch(path)
   if (!res.ok) throw new Error('Failed to fetch publications')
 
   return res.json()
 }
 
 export async function getPublicationItem(slug: string) {
-  const url = `${API_BASE_URL}/api/v1/media/publications/${slug}`
-
-  const res = await fetch(url)
+  const res = await apiFetch(`/api/v1/media/publications/${slug}`)
   if (!res.ok) throw new Error('Failed to fetch publication item')
 
   return res.json()
@@ -104,7 +102,7 @@ export async function getPublicationItem(slug: string) {
 
 export async function fetchCarouselItems() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/media/carousel-items/`)
+    const response = await apiFetch(`/api/v1/media/carousel-items/`)
     if (!response.ok) {
       throw new Error('Failed to fetch carousel items')
     }

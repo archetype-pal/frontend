@@ -19,14 +19,6 @@ export interface ScribeHand {
   shelfmark?: string
 }
 
-export interface ScribeImage {
-  id: number
-  iiif_image: string
-  locus: string
-  number_of_annotations: number
-  item_part: number
-}
-
 export interface ScribeIdiograph {
   id: number
   name: string

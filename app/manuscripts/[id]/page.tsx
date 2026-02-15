@@ -1,10 +1,11 @@
 import type { Manuscript, ManuscriptImage } from '@/types/manuscript'
 import { ManuscriptViewer } from './manuscript-viewer'
 import { notFound } from 'next/navigation'
+import { apiFetch } from '@/lib/api-fetch'
 
 async function getManuscript(id: string): Promise<Manuscript> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/v1/manuscripts/item-parts/${id}`
+  const response = await apiFetch(
+    `/api/v1/manuscripts/item-parts/${id}`
   )
 
   if (!response.ok) {
@@ -18,8 +19,8 @@ async function getManuscript(id: string): Promise<Manuscript> {
 }
 
 async function getManuscriptImages(id: string): Promise<ManuscriptImage[]> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/v1/manuscripts/item-images/?item_part=${id}`
+  const res = await apiFetch(
+    `/api/v1/manuscripts/item-images/?item_part=${id}`
   )
 
   if (!res.ok) {

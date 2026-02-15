@@ -10,7 +10,7 @@ import {
   TableHead,
 } from '@/components/ui/table'
 import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useTabNavigation } from '@/hooks/use-tab-navigation'
 import type { ScribeDetail, ScribeHand } from '@/types/scribe-detail'
 import { Calendar, Building2, User, PenTool, Pen } from 'lucide-react'
 
@@ -23,26 +23,7 @@ interface ScribeViewerProps {
 }
 
 export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
-  const pathname = usePathname()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-
-  const tabFromUrl = searchParams.get('tab')
-  const activeTab =
-    tabFromUrl && TAB_VALUES.includes(tabFromUrl as (typeof TAB_VALUES)[number])
-      ? tabFromUrl
-      : DEFAULT_TAB
-
-  const handleTabChange = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (value === DEFAULT_TAB) {
-      params.delete('tab')
-    } else {
-      params.set('tab', value)
-    }
-    const query = params.toString()
-    router.push(query ? `${pathname}?${query}` : pathname)
-  }
+  const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB)
 
   const period = scribe.period ?? scribe.date ?? null
 
@@ -106,9 +87,10 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
           {scribe.description && (
             <div className="rounded-lg border bg-card p-6">
               <h2 className="text-lg font-semibold mb-4">Description</h2>
-              <div className="prose max-w-none">
-                <p>{scribe.description}</p>
-              </div>
+              <div
+                className="prose max-w-none"
+                dangerouslySetInnerHTML={{ __html: scribe.description }}
+              />
             </div>
           )}
         </TabsContent>

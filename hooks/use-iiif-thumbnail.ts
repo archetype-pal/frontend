@@ -12,7 +12,9 @@ export function useIiifThumbnailUrl(
   coordinatesJson?: string | null
 ): string | null {
   const trimmed = (infoUrl || '').trim()
-  const coords = coordinatesFromGeoJson(coordinatesJson ?? undefined) ?? undefined
+  // Use the raw JSON string as the dependency (stable primitive) instead of
+  // the parsed coords object which would be a new reference every render.
+  const coordsKey = coordinatesJson ?? ''
   const [url, setUrl] = React.useState<string | null>(null)
 
   React.useEffect(() => {
@@ -20,6 +22,7 @@ export function useIiifThumbnailUrl(
       setUrl(null)
       return
     }
+    const coords = coordinatesFromGeoJson(coordsKey || undefined) ?? undefined
     let cancelled = false
     getIiifImageUrlWithBounds(trimmed, { coordinates: coords, thumbnail: true })
       .then((u) => {
@@ -31,7 +34,7 @@ export function useIiifThumbnailUrl(
     return () => {
       cancelled = true
     }
-  }, [trimmed, coords])
+  }, [trimmed, coordsKey])
 
   return url
 }

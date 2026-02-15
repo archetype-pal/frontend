@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { fetchFacetsAndResults } from '@/utils/fetch-facets'
 import { buildApiUrl, DEFAULT_QUERY, getSuggestionsPool } from '@/lib/search-query'
+import { API_BASE_URL } from '@/lib/api-fetch'
 
 type SearchContextType = {
   keyword: string
@@ -20,9 +21,7 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
   const [suggestionsPool, setSuggestionsPool] = React.useState<string[]>([])
 
   const loadGlobalSuggestions = React.useCallback(async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL
-    if (!baseUrl) return
-    const base = `${baseUrl}/api/v1/search/item-parts/facets`
+    const base = `${API_BASE_URL}/api/v1/search/item-parts/facets`
     const url = buildApiUrl(base, { ...DEFAULT_QUERY, limit: 100 })
     const resp = await fetchFacetsAndResults('manuscripts', url)
     if (resp.ok && Array.isArray(resp.results)) {

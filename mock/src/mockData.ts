@@ -241,6 +241,75 @@ export function generateHands(count: number = 5, itemImageId?: number): HandType
   }))
 }
 
+// Generate a single hand detail for detail endpoint
+export function generateHandDetail(id: number): {
+  id: number
+  name: string
+  scribe: number | null
+  item_part: number | null
+  date: string | null
+  place: string | null
+  description: string | null
+  script: string | null
+  shelfmark: string
+} {
+  const places = ['London', 'Oxford', 'Cambridge', 'Edinburgh', 'York']
+  const dates = ['1200', '1250', '1300', '1350', '1400']
+  const scripts = ['Caroline Minuscule', 'Insular', 'Protogothic', null]
+  const shelfmarks = ['GD55/1', 'GD55/6', 'GD55/10', 'GD55/15', 'GD55/20']
+  const i = id % 100
+
+  return {
+    id,
+    name: `Hand ${id}`,
+    scribe: id % 3 === 0 ? null : ((id % 10) + 1),
+    item_part: ((id % 20) + 1),
+    date: dates[i % dates.length],
+    place: places[i % places.length],
+    description: `<p>Description for hand ${id}. This hand is an example of medieval scribal practice.</p>`,
+    script: scripts[i % scripts.length],
+    shelfmark: shelfmarks[i % shelfmarks.length],
+  }
+}
+
+// Generate a single scribe detail for detail endpoint
+export function generateScribeDetail(id: number): {
+  id: number
+  name: string
+  date: string | null
+  period: string | null
+  scriptorium: string | null
+  description: string | null
+  idiographs: { id: number; name: string; character: string }[]
+} {
+  const scriptoria = ['Durham', 'Edinburgh', 'London', 'Canterbury', null]
+  const periods = ['12th century', '13th century', 'Late 12th century', null]
+  const i = id % 100
+
+  const idiographNames = [
+    'a, Caroline', 'b', 'd, Caroline', 'e', 'g, Caroline',
+    'h', 'r, 2-shaped', 's, Round', 't',
+  ]
+
+  // Give each scribe a subset of idiographs
+  const idiographCount = (id % 6) + 2
+  const idiographs = Array.from({ length: idiographCount }, (_, j) => ({
+    id: id * 100 + j + 1,
+    name: idiographNames[(id + j) % idiographNames.length],
+    character: idiographNames[(id + j) % idiographNames.length].charAt(0),
+  }))
+
+  return {
+    id,
+    name: `Scribe ${id}`,
+    date: `${1150 + id * 5}`,
+    period: periods[i % periods.length],
+    scriptorium: scriptoria[i % scriptoria.length],
+    description: `<p>Scribe ${id} is a medieval scribe known for their distinctive hand.</p>`,
+    idiographs,
+  }
+}
+
 // Mock allographs data
 export function generateAllographs(): Allograph[] {
   const allographNames = [

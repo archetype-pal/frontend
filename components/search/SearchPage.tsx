@@ -12,6 +12,7 @@ import { useSearchContext } from '@/contexts/search-context'
 import { FILTER_RENDER_MAP } from '@/lib/filter-config'
 import { useSafeSearch } from '@/utils/useSafeSearch'
 import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map'
+import { API_BASE_URL } from '@/lib/api-fetch'
 import { Pagination } from '@/components/search/paginated-search'
 import type { FacetClickOpts } from '@/types/facets'
 import type { ImageListItem } from '@/types/image'
@@ -71,9 +72,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
 
   const hasMap = Boolean(RESULT_TYPE_API_MAP[resultType])
   const apiSegment = RESULT_TYPE_API_MAP[resultType]
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL
-  const baseFacetURL = apiSegment && apiBaseUrl
-    ? `${apiBaseUrl}/api/v1/search/${apiSegment}/facets`
+  const baseFacetURL = apiSegment
+    ? `${API_BASE_URL}/api/v1/search/${apiSegment}/facets`
     : ''
   const apiUrl = React.useMemo(() => {
     if (!baseFacetURL) return ''

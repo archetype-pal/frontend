@@ -1,5 +1,6 @@
 import { normalizeFacets } from './normalise-facets'
 import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map'
+import { API_BASE_URL } from '@/lib/api-fetch'
 import type { FacetData } from '@/types/facets'
 
 export type SafeSearchResponse = {
@@ -61,7 +62,7 @@ export async function fetchFacetsAndResults(
   }
 
   const endpoint =
-    url || `${process.env.NEXT_PUBLIC_API_URL}/api/v1/search/${apiSegment}/facets`
+    url || `${API_BASE_URL}/api/v1/search/${apiSegment}/facets`
 
   const parsed = new URL(endpoint)
   const limit = parseInt(parsed.searchParams.get('limit') || '20', 10)

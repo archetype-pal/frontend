@@ -1,11 +1,10 @@
 import { notFound } from 'next/navigation'
 import { ScribeViewer } from './scribe-viewer'
 import type { ScribeDetail, ScribeHand } from '@/types/scribe-detail'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+import { apiFetch } from '@/lib/api-fetch'
 
 async function getScribe(id: string): Promise<ScribeDetail> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/scribes/${id}/`)
+  const response = await apiFetch(`/api/v1/scribes/${id}/`)
   if (!response.ok) {
     if (response.status === 404) notFound()
     throw new Error('Failed to fetch scribe')
@@ -14,8 +13,8 @@ async function getScribe(id: string): Promise<ScribeDetail> {
 }
 
 async function getScribeHands(scribeId: string): Promise<ScribeHand[]> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/hands/?scribe=${scribeId}`
+  const response = await apiFetch(
+    `/api/v1/hands/?scribe=${scribeId}`
   )
   if (!response.ok) return []
   const data = await response.json()

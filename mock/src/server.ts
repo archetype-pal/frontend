@@ -8,6 +8,8 @@ import {
   generateImageSearchResults,
   generateFacets,
   generateHands,
+  generateHandDetail,
+  generateScribeDetail,
   generateAllographs,
   generateGraphs,
   generateGraphSearchResults,
@@ -454,18 +456,59 @@ app.get('/api/v1/manuscripts/item-images/', (req: Request, res: Response) => {
   })
 })
 
-// Hands endpoint
+// Hand detail endpoint
+app.get('/api/v1/hands/:id/', (req: Request, res: Response) => {
+  const { id } = req.params
+  const handId = parseInt(id)
+
+  if (isNaN(handId)) {
+    return res.status(400).json({ error: 'Invalid hand ID' })
+  }
+
+  res.json(generateHandDetail(handId))
+})
+
+// Hands list endpoint (supports item_image and scribe filters)
 app.get('/api/v1/hands', (req: Request, res: Response) => {
-  const { item_image } = req.query
+  const { item_image, scribe } = req.query
   const itemImageId = item_image ? parseInt(item_image as string) : undefined
-  const hands = generateHands(10, itemImageId)
-  
+  const scribeId = scribe ? parseInt(scribe as string) : undefined
+
+  let hands = generateHands(10, itemImageId)
+
+  // When filtering by scribe, generate hands with enriched fields for ScribeHand
+  if (scribeId) {
+    hands = Array.from({ length: 3 + (scribeId % 4) }, (_, i) => ({
+      id: scribeId * 100 + i + 1,
+      name: `Hand ${scribeId * 100 + i + 1}`,
+      scribe: scribeId,
+      item_part: (scribeId + i) % 20 + 1,
+      date: ['1200', '1250', '1300', '1350'][i % 4],
+      place: ['London', 'Oxford', 'Edinburgh', 'Durham'][i % 4],
+      description: `Hand by scribe ${scribeId}`,
+      item_part_display_label: `NRS - GD55/${(scribeId + i) % 20 + 1}`,
+      shelfmark: `GD55/${(scribeId + i) % 20 + 1}`,
+    }))
+  }
+
   res.json({
     count: hands.length,
     next: null,
     previous: null,
     results: hands,
   })
+})
+
+// Scribe detail endpoint
+app.get('/api/v1/scribes/:id/', (req: Request, res: Response) => {
+  const { id } = req.params
+  const scribeId = parseInt(id)
+
+  if (isNaN(scribeId)) {
+    return res.status(400).json({ error: 'Invalid scribe ID' })
+  }
+
+  res.json(generateScribeDetail(scribeId))
 })
 
 // Allographs endpoint
@@ -525,7 +568,9 @@ app.listen(PORT, () => {
   console.log(`   - GET  /api/v1/search/*/facets`)
   console.log(`   - POST /api/v1/auth/token/login`)
   console.log(`   - GET  /api/v1/manuscripts/*`)
-  console.log(`   - GET  /api/v1/hands`)
+  console.log(`   - GET  /api/v1/hands/:id/`)
+  console.log(`   - GET  /api/v1/hands?scribe=&item_image=`)
+  console.log(`   - GET  /api/v1/scribes/:id/`)
   console.log(`   - GET  /api/v1/symbols_structure/allographs/`)
   console.log(`   - GET/POST/PATCH /api/v1/manuscripts/graphs/`)
   console.log(`   - GET  /api/v1/media/*`)

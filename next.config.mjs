@@ -4,6 +4,12 @@ const IIIF_UPSTREAM = (process.env.NEXT_PUBLIC_IIIF_UPSTREAM || 'http://localhos
 
 const nextConfig = {
   reactStrictMode: true,
+  logging: {
+    fetches: {
+      fullUrl: true,
+      hmrRefreshes: true,
+    },
+  },
   async rewrites() {
     return [
       { source: '/iiif-proxy/:path*', destination: `${IIIF_UPSTREAM}/:path*` },
