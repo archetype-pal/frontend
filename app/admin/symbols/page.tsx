@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
+import { toast } from 'sonner'
 import { Loader2, Type } from 'lucide-react'
 import { SymbolTreeSidebar } from '@/components/admin/symbols/symbol-tree-sidebar'
 import { CharacterDetail } from '@/components/admin/symbols/character-detail'
@@ -12,6 +13,8 @@ import {
   getFeatures,
   createCharacter,
 } from '@/services/admin/symbols'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
 
 export default function SymbolsPage() {
   const { token } = useAuth()
@@ -19,19 +22,19 @@ export default function SymbolsPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
   const characters = useQuery({
-    queryKey: ['admin', 'characters'],
+    queryKey: adminKeys.characters.all(),
     queryFn: () => getCharacters(token!),
     enabled: !!token,
   })
 
   const components = useQuery({
-    queryKey: ['admin', 'components'],
+    queryKey: adminKeys.components.all(),
     queryFn: () => getComponents(token!),
     enabled: !!token,
   })
 
   const features = useQuery({
-    queryKey: ['admin', 'features'],
+    queryKey: adminKeys.features.all(),
     queryFn: () => getFeatures(token!),
     enabled: !!token,
   })
@@ -40,8 +43,14 @@ export default function SymbolsPage() {
     mutationFn: (data: { name: string; type: string | null }) =>
       createCharacter(token!, data),
     onSuccess: (newChar) => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'characters'] })
+      toast.success('Character created')
+      queryClient.invalidateQueries({ queryKey: adminKeys.characters.all() })
       setSelectedId(newChar.id)
+    },
+    onError: (err) => {
+      toast.error('Failed to create character', {
+        description: formatApiError(err),
+      })
     },
   })
 

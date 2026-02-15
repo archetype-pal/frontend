@@ -9,13 +9,18 @@ import { ArrowLeft, Save, Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { ConfirmDialog } from '@/components/admin/common/confirm-dialog'
+import { RichTextEditor } from '@/components/admin/common/rich-text-editor'
 import {
   getEvent,
   updateEvent,
   deleteEvent,
 } from '@/services/admin/publications'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
+import { useUnsavedGuard } from '@/hooks/admin/use-unsaved-guard'
+import { useKeyboardShortcut } from '@/hooks/admin/use-keyboard-shortcut'
+import { toast } from 'sonner'
 
 export default function EventEditorPage({
   params,
@@ -28,7 +33,7 @@ export default function EventEditorPage({
   const queryClient = useQueryClient()
 
   const { data: event, isLoading } = useQuery({
-    queryKey: ['admin', 'event', slug],
+    queryKey: adminKeys.events.detail(slug),
     queryFn: () => getEvent(token!, slug),
     enabled: !!token,
   })
@@ -46,20 +51,40 @@ export default function EventEditorPage({
     }
   }, [event])
 
+  // Warn before leaving with unsaved changes
+  useUnsavedGuard(dirty)
+
   const saveMut = useMutation({
     mutationFn: () => updateEvent(token!, slug, { title, content }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'event', slug] })
-      queryClient.invalidateQueries({ queryKey: ['admin', 'events'] })
+      toast.success('Event saved')
+      queryClient.invalidateQueries({ queryKey: adminKeys.events.detail(slug) })
+      queryClient.invalidateQueries({ queryKey: adminKeys.events.all() })
       setDirty(false)
     },
+    onError: (err) => {
+      toast.error('Failed to save event', {
+        description: formatApiError(err),
+      })
+    },
   })
+
+  // Cmd+S to save
+  useKeyboardShortcut('mod+s', () => {
+    if (dirty && !saveMut.isPending) saveMut.mutate()
+  }, dirty)
 
   const deleteMut = useMutation({
     mutationFn: () => deleteEvent(token!, slug),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'events'] })
+      toast.success('Event deleted')
+      queryClient.invalidateQueries({ queryKey: adminKeys.events.all() })
       router.push('/admin/events')
+    },
+    onError: (err) => {
+      toast.error('Failed to delete event', {
+        description: formatApiError(err),
+      })
     },
   })
 
@@ -120,12 +145,10 @@ export default function EventEditorPage({
         </div>
         <div className='space-y-1.5'>
           <Label>Content</Label>
-          <Textarea
-            value={content}
-            onChange={(e) => { setContent(e.target.value); markDirty() }}
-            rows={20}
-            className='font-mono text-sm'
-            placeholder='Event content (HTML)...'
+          <RichTextEditor
+            content={content}
+            onChange={(html) => { setContent(html); markDirty() }}
+            placeholder='Write your event content...'
           />
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from 'sonner'
 import { AdminShell } from '@/components/admin/layout/admin-shell'
 
 function makeQueryClient() {
@@ -39,6 +40,7 @@ export default function AdminLayout({
   return (
     <QueryClientProvider client={queryClient}>
       <AdminShell>{children}</AdminShell>
+      <Toaster richColors closeButton position='bottom-right' />
     </QueryClientProvider>
   )
 }

@@ -13,6 +13,8 @@ import {
   Hash,
   Settings,
   Search,
+  Plus,
+  Clock,
 } from 'lucide-react'
 import {
   CommandDialog,
@@ -23,6 +25,7 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
+import { useRecentEntities } from '@/hooks/admin/use-recent-entities'
 
 interface NavEntry {
   label: string
@@ -43,12 +46,21 @@ const entries: NavEntry[] = [
   { label: 'Scribes', href: '/admin/scribes', icon: PenTool, group: 'Scribes' },
   { label: 'Hands', href: '/admin/hands', icon: PenTool, group: 'Scribes' },
   { label: 'Dates', href: '/admin/dates', icon: Hash, group: 'System' },
+  { label: 'Formats', href: '/admin/formats', icon: Hash, group: 'System' },
+  { label: 'Sources', href: '/admin/sources', icon: Hash, group: 'System' },
   { label: 'Search Engine', href: '/admin/search-engine', icon: Search, group: 'System' },
+]
+
+const quickActions = [
+  { label: 'New Manuscript', href: '/admin/manuscripts/new', icon: Plus },
+  { label: 'New Publication', href: '/admin/publications/new', icon: Plus },
+  { label: 'Moderate Comments', href: '/admin/comments', icon: MessageSquare },
 ]
 
 export function SearchCommand() {
   const [open, setOpen] = useState(false)
   const router = useRouter()
+  const { entities: recentEntities } = useRecentEntities()
 
   // Register Cmd+K / Ctrl+K shortcut
   useEffect(() => {
@@ -79,9 +91,51 @@ export function SearchCommand() {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder='Search admin pages...' />
+      <CommandInput placeholder='Search pages, actions, or recent items...' />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
+
+        {/* Recent entities */}
+        {recentEntities.length > 0 && (
+          <>
+            <CommandGroup heading='Recent'>
+              {recentEntities.slice(0, 5).map((entity) => (
+                <CommandItem
+                  key={entity.href}
+                  value={`recent ${entity.label}`}
+                  onSelect={() => navigate(entity.href)}
+                >
+                  <Clock className='mr-2 h-4 w-4 text-muted-foreground' />
+                  <span className='flex-1'>{entity.label}</span>
+                  <span className='text-[10px] text-muted-foreground'>
+                    {entity.type}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
+
+        {/* Quick actions */}
+        <CommandGroup heading='Quick Actions'>
+          {quickActions.map((action) => {
+            const Icon = action.icon
+            return (
+              <CommandItem
+                key={action.href}
+                value={`action ${action.label}`}
+                onSelect={() => navigate(action.href)}
+              >
+                <Icon className='mr-2 h-4 w-4' />
+                {action.label}
+              </CommandItem>
+            )
+          })}
+        </CommandGroup>
+        <CommandSeparator />
+
+        {/* Navigation pages */}
         {groups.map(([group, items], i) => (
           <div key={group}>
             {i > 0 && <CommandSeparator />}

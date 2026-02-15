@@ -11,14 +11,30 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { createPublication } from '@/services/admin/publications'
+import { formatApiError } from '@/lib/admin/format-api-error'
+import { toast } from 'sonner'
 
 export default function NewPublicationPage() {
   const { token } = useAuth()
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
+  const [slugLocked, setSlugLocked] = useState(false)
   const [isBlog, setIsBlog] = useState(false)
   const [isNews, setIsNews] = useState(false)
+
+  // Auto-generate slug from title when not locked
+  const handleTitleChange = (value: string) => {
+    setTitle(value)
+    if (!slugLocked) {
+      setSlug(
+        value
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')
+      )
+    }
+  }
 
   const createMut = useMutation({
     mutationFn: () =>
@@ -29,10 +45,16 @@ export default function NewPublicationPage() {
         preview: '',
         is_blog_post: isBlog,
         is_news: isNews,
-        status: 'Draft' as any,
+        status: 'Draft',
       }),
     onSuccess: (data) => {
+      toast.success('Publication created')
       router.push(`/admin/publications/${data.slug}`)
+    },
+    onError: (err) => {
+      toast.error('Failed to create publication', {
+        description: formatApiError(err),
+      })
     },
   })
 
@@ -53,17 +75,29 @@ export default function NewPublicationPage() {
           <Label>Title</Label>
           <Input
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => handleTitleChange(e.target.value)}
             placeholder='My Publication Title'
             autoFocus
           />
         </div>
 
         <div className='space-y-1.5'>
-          <Label>Slug (auto-generated if empty)</Label>
+          <div className='flex items-center justify-between'>
+            <Label>Slug</Label>
+            <button
+              type='button'
+              onClick={() => setSlugLocked(!slugLocked)}
+              className='text-xs text-muted-foreground hover:text-foreground'
+            >
+              {slugLocked ? 'Unlock (auto-generate)' : 'Lock (manual)'}
+            </button>
+          </div>
           <Input
             value={slug}
-            onChange={(e) => setSlug(e.target.value)}
+            onChange={(e) => {
+              setSlug(e.target.value)
+              setSlugLocked(true)
+            }}
             placeholder='my-publication-title'
           />
         </div>

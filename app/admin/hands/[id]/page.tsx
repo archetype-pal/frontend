@@ -13,6 +13,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/admin/common/confirm-dialog'
 import { getHand, updateHand, deleteHand } from '@/services/admin/scribes'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
+import { useUnsavedGuard } from '@/hooks/admin/use-unsaved-guard'
+import { useKeyboardShortcut } from '@/hooks/admin/use-keyboard-shortcut'
+import { toast } from 'sonner'
 
 export default function HandDetailPage({
   params,
@@ -26,7 +31,7 @@ export default function HandDetailPage({
   const queryClient = useQueryClient()
 
   const { data: hand, isLoading } = useQuery({
-    queryKey: ['admin', 'hand', id],
+    queryKey: adminKeys.hands.detail(id),
     queryFn: () => getHand(token!, id),
     enabled: !!token,
   })
@@ -46,21 +51,41 @@ export default function HandDetailPage({
     }
   }, [hand])
 
+  // Warn before leaving with unsaved changes
+  useUnsavedGuard(dirty)
+
   const saveMut = useMutation({
     mutationFn: () =>
-      updateHand(token!, id, { name, place, description } as any),
+      updateHand(token!, id, { name, place, description }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'hand', id] })
-      queryClient.invalidateQueries({ queryKey: ['admin', 'hands'] })
+      toast.success('Hand saved')
+      queryClient.invalidateQueries({ queryKey: adminKeys.hands.detail(id) })
+      queryClient.invalidateQueries({ queryKey: adminKeys.hands.all() })
       setDirty(false)
     },
+    onError: (err) => {
+      toast.error('Failed to save hand', {
+        description: formatApiError(err),
+      })
+    },
   })
+
+  // Cmd+S to save
+  useKeyboardShortcut('mod+s', () => {
+    if (dirty && !saveMut.isPending) saveMut.mutate()
+  }, dirty)
 
   const deleteMut = useMutation({
     mutationFn: () => deleteHand(token!, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'hands'] })
+      toast.success('Hand deleted')
+      queryClient.invalidateQueries({ queryKey: adminKeys.hands.all() })
       router.push('/admin/hands')
+    },
+    onError: (err) => {
+      toast.error('Failed to delete hand', {
+        description: formatApiError(err),
+      })
     },
   })
 

@@ -17,6 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createHistoricalItem } from '@/services/admin/manuscripts'
+import { formatApiError } from '@/lib/admin/format-api-error'
+import { toast } from 'sonner'
 
 const ITEM_TYPES = ['charter', 'book', 'roll', 'single sheet', 'other']
 
@@ -28,9 +30,15 @@ export default function NewManuscriptPage() {
 
   const createMut = useMutation({
     mutationFn: () =>
-      createHistoricalItem(token!, { type, language: language || undefined } as any),
+      createHistoricalItem(token!, { type, language: language || undefined }),
     onSuccess: (data) => {
+      toast.success('Manuscript created')
       router.push(`/admin/manuscripts/${data.id}`)
+    },
+    onError: (err) => {
+      toast.error('Failed to create manuscript', {
+        description: formatApiError(err),
+      })
     },
   })
 

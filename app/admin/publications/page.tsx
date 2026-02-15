@@ -1,21 +1,39 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Newspaper, Plus, Trash2, ExternalLink, MessageSquare } from 'lucide-react'
+import { Newspaper, Plus, ExternalLink, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DataTable, sortableHeader } from '@/components/admin/common/data-table'
-import { ConfirmDialog } from '@/components/admin/common/confirm-dialog'
-import {
-  getPublications,
-  deletePublication,
-} from '@/services/admin/publications'
+import { FilterBar, type FilterConfig } from '@/components/admin/common/filter-bar'
+import { getPublications } from '@/services/admin/publications'
+import { adminKeys } from '@/lib/admin/query-keys'
 import type { PublicationListItem } from '@/types/admin'
+
+const pubFilters: FilterConfig[] = [
+  {
+    key: 'status',
+    label: 'Status',
+    options: [
+      { value: 'Draft', label: 'Draft' },
+      { value: 'Published', label: 'Published' },
+    ],
+  },
+  {
+    key: 'type',
+    label: 'Type',
+    options: [
+      { value: 'blog', label: 'Blog Post' },
+      { value: 'news', label: 'News' },
+      { value: 'featured', label: 'Featured' },
+    ],
+  },
+]
 
 const columns: ColumnDef<PublicationListItem>[] = [
   {
@@ -113,11 +131,25 @@ const columns: ColumnDef<PublicationListItem>[] = [
 export default function PublicationsPage() {
   const { token } = useAuth()
   const router = useRouter()
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({})
 
   const { data } = useQuery({
-    queryKey: ['admin', 'publications'],
+    queryKey: adminKeys.publications.all(),
     queryFn: () => getPublications(token!, { limit: 200 }),
     enabled: !!token,
+  })
+
+  // Client-side filtering
+  const filtered = (data?.results ?? []).filter((pub) => {
+    if (filterValues.status && filterValues.status !== '__all') {
+      if (pub.status !== filterValues.status) return false
+    }
+    if (filterValues.type && filterValues.type !== '__all') {
+      if (filterValues.type === 'blog' && !pub.is_blog_post) return false
+      if (filterValues.type === 'news' && !pub.is_news) return false
+      if (filterValues.type === 'featured' && !pub.is_featured) return false
+    }
+    return true
   })
 
   return (
@@ -145,10 +177,23 @@ export default function PublicationsPage() {
 
       <DataTable
         columns={columns}
-        data={data?.results ?? []}
+        data={filtered}
         searchColumn='title'
         searchPlaceholder='Search publications...'
         pageSize={25}
+        enableColumnVisibility
+        enableExport
+        exportFilename='publications'
+        filterBar={
+          <FilterBar
+            filters={pubFilters}
+            values={filterValues}
+            onChange={(key, value) =>
+              setFilterValues((prev) => ({ ...prev, [key]: value }))
+            }
+            onClear={() => setFilterValues({})}
+          />
+        }
       />
     </div>
   )

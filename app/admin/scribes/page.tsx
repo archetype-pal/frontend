@@ -24,6 +24,9 @@ import {
   createScribe,
   deleteScribe,
 } from '@/services/admin/scribes'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
+import { toast } from 'sonner'
 import type { ScribeListItem } from '@/types/admin'
 
 const columns: ColumnDef<ScribeListItem>[] = [
@@ -89,17 +92,23 @@ export default function ScribesPage() {
   const [newName, setNewName] = useState('')
 
   const { data } = useQuery({
-    queryKey: ['admin', 'scribes'],
+    queryKey: adminKeys.scribes.all(),
     queryFn: () => getScribes(token!),
     enabled: !!token,
   })
 
   const createMut = useMutation({
-    mutationFn: () => createScribe(token!, { name: newName } as any),
+    mutationFn: () => createScribe(token!, { name: newName }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'scribes'] })
+      toast.success('Scribe created')
+      queryClient.invalidateQueries({ queryKey: adminKeys.scribes.all() })
       setAddOpen(false)
       setNewName('')
+    },
+    onError: (err) => {
+      toast.error('Failed to create scribe', {
+        description: formatApiError(err),
+      })
     },
   })
 

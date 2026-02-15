@@ -4,6 +4,7 @@ import { use, useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -11,14 +12,14 @@ import {
   Trash2,
   Loader2,
   Eye,
-  EyeOff,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { RichTextEditor } from '@/components/admin/common/rich-text-editor'
 import {
   Select,
   SelectContent,
@@ -32,6 +33,11 @@ import {
   updatePublication,
   deletePublication,
 } from '@/services/admin/publications'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
+import { useUnsavedGuard } from '@/hooks/admin/use-unsaved-guard'
+import { useKeyboardShortcut } from '@/hooks/admin/use-keyboard-shortcut'
+import { useRecentEntities } from '@/hooks/admin/use-recent-entities'
 
 export default function PublicationEditorPage({
   params,
@@ -44,15 +50,17 @@ export default function PublicationEditorPage({
   const queryClient = useQueryClient()
 
   const { data: pub, isLoading } = useQuery({
-    queryKey: ['admin', 'publication', slug],
+    queryKey: adminKeys.publications.detail(slug),
     queryFn: () => getPublication(token!, slug),
     enabled: !!token,
   })
 
+  const { track } = useRecentEntities()
+
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [preview, setPreview] = useState('')
-  const [status, setStatus] = useState<string>('Draft')
+  const [status, setStatus] = useState<'Draft' | 'Published'>('Draft')
   const [isBlog, setIsBlog] = useState(false)
   const [isNews, setIsNews] = useState(false)
   const [isFeatured, setIsFeatured] = useState(false)
@@ -73,8 +81,12 @@ export default function PublicationEditorPage({
       setAllowComments(pub.allow_comments)
       setKeywords(pub.keywords ?? '')
       setDirty(false)
+      track({ label: pub.title, href: `/admin/publications/${slug}`, type: 'Publication' })
     }
-  }, [pub])
+  }, [pub, slug, track])
+
+  // Warn before leaving with unsaved changes
+  useUnsavedGuard(dirty)
 
   const saveMut = useMutation({
     mutationFn: () =>
@@ -82,7 +94,7 @@ export default function PublicationEditorPage({
         title,
         content,
         preview,
-        status: status as any,
+        status,
         is_blog_post: isBlog,
         is_news: isNews,
         is_featured: isFeatured,
@@ -90,19 +102,36 @@ export default function PublicationEditorPage({
         keywords,
       }),
     onSuccess: () => {
+      toast.success('Publication saved')
       queryClient.invalidateQueries({
-        queryKey: ['admin', 'publication', slug],
+        queryKey: adminKeys.publications.detail(slug),
       })
-      queryClient.invalidateQueries({ queryKey: ['admin', 'publications'] })
+      queryClient.invalidateQueries({ queryKey: adminKeys.publications.all() })
       setDirty(false)
     },
+    onError: (err) => {
+      toast.error('Failed to save publication', {
+        description: formatApiError(err),
+      })
+    },
   })
+
+  // Cmd+S to save
+  useKeyboardShortcut('mod+s', () => {
+    if (dirty && !saveMut.isPending) saveMut.mutate()
+  }, dirty)
 
   const deleteMut = useMutation({
     mutationFn: () => deletePublication(token!, slug),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'publications'] })
+      toast.success('Publication deleted')
+      queryClient.invalidateQueries({ queryKey: adminKeys.publications.all() })
       router.push('/admin/publications')
+    },
+    onError: (err) => {
+      toast.error('Failed to delete publication', {
+        description: formatApiError(err),
+      })
     },
   })
 
@@ -176,7 +205,7 @@ export default function PublicationEditorPage({
             <Label>Status</Label>
             <Select
               value={status}
-              onValueChange={(val) => { setStatus(val); markDirty() }}
+              onValueChange={(val) => { setStatus(val as 'Draft' | 'Published'); markDirty() }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -230,23 +259,38 @@ export default function PublicationEditorPage({
 
         <div className='space-y-1.5'>
           <Label>Content</Label>
-          <Textarea
-            value={content}
-            onChange={(e) => { setContent(e.target.value); markDirty() }}
-            rows={16}
-            className='font-mono text-sm'
-            placeholder='Publication content (HTML)...'
-          />
+          <Tabs defaultValue='editor'>
+            <TabsList className='h-8'>
+              <TabsTrigger value='editor' className='text-xs'>
+                <Save className='h-3 w-3 mr-1' /> Editor
+              </TabsTrigger>
+              <TabsTrigger value='preview' className='text-xs'>
+                <Eye className='h-3 w-3 mr-1' /> Preview
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value='editor' className='mt-2'>
+              <RichTextEditor
+                content={content}
+                onChange={(html) => { setContent(html); markDirty() }}
+                placeholder='Start writing your publication...'
+              />
+            </TabsContent>
+            <TabsContent value='preview' className='mt-2'>
+              <div
+                className='prose prose-sm dark:prose-invert max-w-none rounded-md border px-4 py-3 min-h-[200px]'
+                dangerouslySetInnerHTML={{ __html: content }}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
 
         <div className='space-y-1.5'>
-          <Label>Preview</Label>
-          <Textarea
-            value={preview}
-            onChange={(e) => { setPreview(e.target.value); markDirty() }}
-            rows={4}
-            className='font-mono text-sm'
-            placeholder='Short preview text (HTML)...'
+          <Label>Preview Text</Label>
+          <RichTextEditor
+            content={preview}
+            onChange={(html) => { setPreview(html); markDirty() }}
+            placeholder='Short preview text...'
+            minimal
           />
         </div>
       </div>

@@ -18,6 +18,9 @@ import {
 import { DataTable, sortableHeader } from '@/components/admin/common/data-table'
 import { ConfirmDialog } from '@/components/admin/common/confirm-dialog'
 import { getDates, createDate, deleteDate } from '@/services/admin/manuscripts'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
+import { toast } from 'sonner'
 import type { AdminDate } from '@/types/admin'
 
 export default function DatesPage() {
@@ -30,13 +33,13 @@ export default function DatesPage() {
   const [newMax, setNewMax] = useState('')
 
   const { data: dates } = useQuery({
-    queryKey: ['admin', 'dates'],
+    queryKey: adminKeys.dates.all(),
     queryFn: () => getDates(token!),
     enabled: !!token,
   })
 
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ['admin', 'dates'] })
+    queryClient.invalidateQueries({ queryKey: adminKeys.dates.all() })
 
   const createMut = useMutation({
     mutationFn: () =>
@@ -46,19 +49,31 @@ export default function DatesPage() {
         max_weight: Number(newMax) || 0,
       }),
     onSuccess: () => {
+      toast.success('Date created')
       invalidate()
       setAddOpen(false)
       setNewDate('')
       setNewMin('')
       setNewMax('')
     },
+    onError: (err) => {
+      toast.error('Failed to create date', {
+        description: formatApiError(err),
+      })
+    },
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteDate(token!, id),
     onSuccess: () => {
+      toast.success('Date deleted')
       invalidate()
       setDeleteTarget(null)
+    },
+    onError: (err) => {
+      toast.error('Failed to delete date', {
+        description: formatApiError(err),
+      })
     },
   })
 

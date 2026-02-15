@@ -18,6 +18,9 @@ import {
 import { DataTable, sortableHeader } from '@/components/admin/common/data-table'
 import { ConfirmDialog } from '@/components/admin/common/confirm-dialog'
 import { getSources, createSource, deleteSource } from '@/services/admin/manuscripts'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
+import { toast } from 'sonner'
 import type { BibliographicSource } from '@/types/admin'
 
 export default function SourcesPage() {
@@ -29,30 +32,38 @@ export default function SourcesPage() {
   const [newLabel, setNewLabel] = useState('')
 
   const { data: sources } = useQuery({
-    queryKey: ['admin', 'sources'],
+    queryKey: adminKeys.sources.all(),
     queryFn: () => getSources(token!),
     enabled: !!token,
   })
 
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ['admin', 'sources'] })
+    queryClient.invalidateQueries({ queryKey: adminKeys.sources.all() })
 
   const createMut = useMutation({
     mutationFn: () =>
       createSource(token!, { name: newName, label: newLabel }),
     onSuccess: () => {
+      toast.success('Source created')
       invalidate()
       setAddOpen(false)
       setNewName('')
       setNewLabel('')
+    },
+    onError: (err) => {
+      toast.error('Failed to create source', { description: formatApiError(err) })
     },
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteSource(token!, id),
     onSuccess: () => {
+      toast.success('Source deleted')
       invalidate()
       setDeleteTarget(null)
+    },
+    onError: (err) => {
+      toast.error('Failed to delete source', { description: formatApiError(err) })
     },
   })
 

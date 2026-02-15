@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
+import { toast } from 'sonner'
 import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +19,8 @@ import {
   createCatalogueNumber,
   deleteCatalogueNumber,
 } from '@/services/admin/manuscripts'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
 import type { CatalogueNumber } from '@/types/admin'
 
 interface CatalogueNumbersSectionProps {
@@ -37,14 +40,14 @@ export function CatalogueNumbersSection({
   const [newUrl, setNewUrl] = useState('')
 
   const { data: sources } = useQuery({
-    queryKey: ['admin', 'sources'],
+    queryKey: adminKeys.sources.all(),
     queryFn: () => getSources(token!),
     enabled: !!token,
   })
 
   const invalidate = () =>
     queryClient.invalidateQueries({
-      queryKey: ['admin', 'historical-item', historicalItemId],
+      queryKey: adminKeys.manuscripts.detail(historicalItemId),
     })
 
   const createMut = useMutation({
@@ -56,17 +59,31 @@ export function CatalogueNumbersSection({
         url: newUrl || null,
       }),
     onSuccess: () => {
+      toast.success('Catalogue number added')
       invalidate()
       setAdding(false)
       setNewCatalogue('')
       setNewNumber('')
       setNewUrl('')
     },
+    onError: (err) => {
+      toast.error('Failed to add catalogue number', {
+        description: formatApiError(err),
+      })
+    },
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteCatalogueNumber(token!, id),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      toast.success('Catalogue number removed')
+      invalidate()
+    },
+    onError: (err) => {
+      toast.error('Failed to remove catalogue number', {
+        description: formatApiError(err),
+      })
+    },
   })
 
   return (

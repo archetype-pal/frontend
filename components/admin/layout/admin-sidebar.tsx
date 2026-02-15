@@ -1,6 +1,8 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
+import { useAuth } from '@/contexts/auth-context'
 import Link from 'next/link'
 import {
   ChevronDown,
@@ -28,6 +30,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
+import { getComments } from '@/services/admin/publications'
+import { adminKeys } from '@/lib/admin/query-keys'
 
 interface NavItem {
   label: string
@@ -94,6 +98,18 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ collapsed }: AdminSidebarProps) {
   const pathname = usePathname()
+  const { token } = useAuth()
+
+  // Lightweight poll for pending comments (60s)
+  const { data: pendingComments } = useQuery({
+    queryKey: adminKeys.comments.list('pending'),
+    queryFn: () => getComments(token!, { is_approved: false }),
+    enabled: !!token,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  })
+
+  const pendingCount = pendingComments?.count ?? 0
 
   return (
     <aside
@@ -121,6 +137,7 @@ export function AdminSidebar({ collapsed }: AdminSidebarProps) {
             group={group}
             pathname={pathname}
             collapsed={collapsed}
+            badges={{ '/admin/comments': pendingCount }}
           />
         ))}
       </nav>
@@ -146,10 +163,12 @@ function NavGroupSection({
   group,
   pathname,
   collapsed,
+  badges = {},
 }: {
   group: NavGroup
   pathname: string
   collapsed: boolean
+  badges?: Record<string, number>
 }) {
   const Icon = group.icon
   const isActive = group.items.some((item) => pathname.startsWith(item.href))
@@ -199,7 +218,12 @@ function NavGroupSection({
                 )}
               >
                 <ItemIcon className='h-3.5 w-3.5 shrink-0' />
-                <span>{item.label}</span>
+                <span className='flex-1'>{item.label}</span>
+                {badges[item.href] && badges[item.href] > 0 ? (
+                  <span className='ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground'>
+                    {badges[item.href]}
+                  </span>
+                ) : null}
               </Link>
             )
           })}

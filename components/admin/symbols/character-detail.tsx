@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
+import { toast } from 'sonner'
 import { Save, Plus, Loader2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,6 +24,10 @@ import {
   updateCharacterStructure,
   deleteCharacter,
 } from '@/services/admin/symbols'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
+import { useUnsavedGuard } from '@/hooks/admin/use-unsaved-guard'
+import { useKeyboardShortcut } from '@/hooks/admin/use-keyboard-shortcut'
 import type {
   CharacterDetail as CharacterDetailType,
   CharacterStructurePayload,
@@ -50,7 +55,7 @@ export function CharacterDetail({
   const queryClient = useQueryClient()
 
   const { data: character, isLoading } = useQuery({
-    queryKey: ['admin', 'character', characterId],
+    queryKey: adminKeys.characters.detail(characterId),
     queryFn: () => getCharacter(token!, characterId),
     enabled: !!token,
   })
@@ -60,6 +65,9 @@ export function CharacterDetail({
   const [dirty, setDirty] = useState(false)
   const [addAlloOpen, setAddAlloOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+
+  // Warn before leaving with unsaved changes
+  useUnsavedGuard(dirty)
 
   // Sync draft with fetched data
   useEffect(() => {
@@ -86,9 +94,15 @@ export function CharacterDetail({
     mutationFn: (payload: CharacterStructurePayload) =>
       updateCharacterStructure(token!, characterId, payload),
     onSuccess: (data) => {
-      queryClient.setQueryData(['admin', 'character', characterId], data)
-      queryClient.invalidateQueries({ queryKey: ['admin', 'characters'] })
+      toast.success('Character saved')
+      queryClient.setQueryData(adminKeys.characters.detail(characterId), data)
+      queryClient.invalidateQueries({ queryKey: adminKeys.characters.all() })
       setDirty(false)
+    },
+    onError: (err) => {
+      toast.error('Failed to save character', {
+        description: formatApiError(err),
+      })
     },
   })
 
@@ -96,8 +110,14 @@ export function CharacterDetail({
   const deleteMutation = useMutation({
     mutationFn: () => deleteCharacter(token!, characterId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'characters'] })
+      toast.success('Character deleted')
+      queryClient.invalidateQueries({ queryKey: adminKeys.characters.all() })
       onDeleted()
+    },
+    onError: (err) => {
+      toast.error('Failed to delete character', {
+        description: formatApiError(err),
+      })
     },
   })
 
@@ -121,6 +141,11 @@ export function CharacterDetail({
     }
     saveMutation.mutate(payload)
   }
+
+  // Cmd+S to save
+  useKeyboardShortcut('mod+s', () => {
+    if (dirty && !saveMutation.isPending) handleSave()
+  }, dirty)
 
   const handleAddAllograph = (name: string) => {
     updateDraft((prev) => ({

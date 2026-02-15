@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DataTable, sortableHeader } from '@/components/admin/common/data-table'
 import { getHands } from '@/services/admin/scribes'
+import { adminKeys } from '@/lib/admin/query-keys'
 import type { HandListItem } from '@/types/admin'
 
 const columns: ColumnDef<HandListItem>[] = [
@@ -86,7 +87,7 @@ export default function HandsPage() {
   const { token } = useAuth()
 
   const { data } = useQuery({
-    queryKey: ['admin', 'hands'],
+    queryKey: adminKeys.hands.all(),
     queryFn: () => getHands(token!),
     enabled: !!token,
   })

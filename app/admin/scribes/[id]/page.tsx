@@ -4,6 +4,7 @@ import { use, useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -23,6 +24,10 @@ import {
   deleteScribe,
   getHands,
 } from '@/services/admin/scribes'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
+import { useUnsavedGuard } from '@/hooks/admin/use-unsaved-guard'
+import { useKeyboardShortcut } from '@/hooks/admin/use-keyboard-shortcut'
 
 export default function ScribeDetailPage({
   params,
@@ -36,13 +41,13 @@ export default function ScribeDetailPage({
   const queryClient = useQueryClient()
 
   const { data: scribe, isLoading } = useQuery({
-    queryKey: ['admin', 'scribe', id],
+    queryKey: adminKeys.scribes.detail(id),
     queryFn: () => getScribe(token!, id),
     enabled: !!token,
   })
 
   const { data: hands } = useQuery({
-    queryKey: ['admin', 'hands', { scribe: id }],
+    queryKey: adminKeys.hands.list({ scribe: id }),
     queryFn: () => getHands(token!, { scribe: id }),
     enabled: !!token,
   })
@@ -60,21 +65,41 @@ export default function ScribeDetailPage({
     }
   }, [scribe])
 
+  // Warn before leaving with unsaved changes
+  useUnsavedGuard(dirty)
+
   const saveMut = useMutation({
     mutationFn: () =>
-      updateScribe(token!, id, { name, scriptorium } as any),
+      updateScribe(token!, id, { name, scriptorium }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'scribe', id] })
-      queryClient.invalidateQueries({ queryKey: ['admin', 'scribes'] })
+      toast.success('Scribe saved')
+      queryClient.invalidateQueries({ queryKey: adminKeys.scribes.detail(id) })
+      queryClient.invalidateQueries({ queryKey: adminKeys.scribes.all() })
       setDirty(false)
     },
+    onError: (err) => {
+      toast.error('Failed to save scribe', {
+        description: formatApiError(err),
+      })
+    },
   })
+
+  // Cmd+S to save
+  useKeyboardShortcut('mod+s', () => {
+    if (dirty && !saveMut.isPending) saveMut.mutate()
+  }, dirty)
 
   const deleteMut = useMutation({
     mutationFn: () => deleteScribe(token!, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'scribes'] })
+      toast.success('Scribe deleted')
+      queryClient.invalidateQueries({ queryKey: adminKeys.scribes.all() })
       router.push('/admin/scribes')
+    },
+    onError: (err) => {
+      toast.error('Failed to delete scribe', {
+        description: formatApiError(err),
+      })
     },
   })
 

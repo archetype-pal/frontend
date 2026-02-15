@@ -1,6 +1,6 @@
 'use client'
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import Link from 'next/link'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -8,6 +8,7 @@ import { Calendar, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DataTable, sortableHeader } from '@/components/admin/common/data-table'
 import { getEvents } from '@/services/admin/publications'
+import { adminKeys } from '@/lib/admin/query-keys'
 import type { EventItem } from '@/types/admin'
 
 const columns: ColumnDef<EventItem>[] = [
@@ -60,7 +61,7 @@ export default function EventsPage() {
   const { token } = useAuth()
 
   const { data } = useQuery({
-    queryKey: ['admin', 'events'],
+    queryKey: adminKeys.events.all(),
     queryFn: () => getEvents(token!),
     enabled: !!token,
   })

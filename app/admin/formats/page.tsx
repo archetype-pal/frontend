@@ -16,9 +16,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { DataTable, sortableHeader } from '@/components/admin/common/data-table'
-import { InlineEdit } from '@/components/admin/common/inline-edit'
 import { ConfirmDialog } from '@/components/admin/common/confirm-dialog'
 import { getFormats, createFormat, deleteFormat } from '@/services/admin/manuscripts'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
+import { toast } from 'sonner'
 import type { ItemFormat } from '@/types/admin'
 
 export default function FormatsPage() {
@@ -29,28 +31,36 @@ export default function FormatsPage() {
   const [newName, setNewName] = useState('')
 
   const { data: formats } = useQuery({
-    queryKey: ['admin', 'formats'],
+    queryKey: adminKeys.formats.all(),
     queryFn: () => getFormats(token!),
     enabled: !!token,
   })
 
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ['admin', 'formats'] })
+    queryClient.invalidateQueries({ queryKey: adminKeys.formats.all() })
 
   const createMut = useMutation({
     mutationFn: () => createFormat(token!, { name: newName }),
     onSuccess: () => {
+      toast.success('Format created')
       invalidate()
       setAddOpen(false)
       setNewName('')
+    },
+    onError: (err) => {
+      toast.error('Failed to create format', { description: formatApiError(err) })
     },
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteFormat(token!, id),
     onSuccess: () => {
+      toast.success('Format deleted')
       invalidate()
       setDeleteTarget(null)
+    },
+    onError: (err) => {
+      toast.error('Failed to delete format', { description: formatApiError(err) })
     },
   })
 

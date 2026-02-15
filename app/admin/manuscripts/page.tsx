@@ -1,20 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { ColumnDef } from '@tanstack/react-table'
-import { BookOpen, Plus, Trash2, ExternalLink } from 'lucide-react'
+import { BookOpen, Plus, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DataTable, sortableHeader } from '@/components/admin/common/data-table'
-import { ConfirmDialog } from '@/components/admin/common/confirm-dialog'
-import {
-  getHistoricalItems,
-  deleteHistoricalItem,
-} from '@/services/admin/manuscripts'
+import { getHistoricalItems } from '@/services/admin/manuscripts'
+import { adminKeys } from '@/lib/admin/query-keys'
 import type { HistoricalItemListItem } from '@/types/admin'
 
 const columns: ColumnDef<HistoricalItemListItem>[] = [
@@ -90,11 +87,10 @@ const columns: ColumnDef<HistoricalItemListItem>[] = [
 export default function ManuscriptsPage() {
   const { token } = useAuth()
   const router = useRouter()
-  const queryClient = useQueryClient()
   const [page, setPage] = useState(0)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'historical-items', { offset: page * 50 }],
+    queryKey: adminKeys.manuscripts.list({ offset: page * 50 }),
     queryFn: () =>
       getHistoricalItems(token!, { limit: 50, offset: page * 50 }),
     enabled: !!token,
@@ -126,6 +122,9 @@ export default function ManuscriptsPage() {
         searchColumn='catalogue_numbers_display'
         searchPlaceholder='Search by catalogue number...'
         pageSize={50}
+        enableColumnVisibility
+        enableExport
+        exportFilename='manuscripts'
       />
 
       {/* Server-side pagination controls */}

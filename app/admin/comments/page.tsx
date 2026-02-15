@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
+import { toast } from 'sonner'
 import {
   MessageSquare,
   CheckCircle,
@@ -20,6 +21,8 @@ import {
   rejectComment,
   deleteComment,
 } from '@/services/admin/publications'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
 import type { CommentItem } from '@/types/admin'
 
 export default function CommentsPage() {
@@ -29,7 +32,7 @@ export default function CommentsPage() {
   const [deleteTarget, setDeleteTarget] = useState<CommentItem | null>(null)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'comments', filter],
+    queryKey: adminKeys.comments.list(filter),
     queryFn: () =>
       getComments(
         token!,
@@ -41,23 +44,45 @@ export default function CommentsPage() {
   })
 
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] })
+    queryClient.invalidateQueries({ queryKey: adminKeys.comments.all() })
 
   const approveMut = useMutation({
     mutationFn: (id: number) => approveComment(token!, id),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      toast.success('Comment approved')
+      invalidate()
+    },
+    onError: (err) => {
+      toast.error('Failed to approve comment', {
+        description: formatApiError(err),
+      })
+    },
   })
 
   const rejectMut = useMutation({
     mutationFn: (id: number) => rejectComment(token!, id),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      toast.success('Comment rejected')
+      invalidate()
+    },
+    onError: (err) => {
+      toast.error('Failed to reject comment', {
+        description: formatApiError(err),
+      })
+    },
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteComment(token!, id),
     onSuccess: () => {
+      toast.success('Comment deleted')
       invalidate()
       setDeleteTarget(null)
+    },
+    onError: (err) => {
+      toast.error('Failed to delete comment', {
+        description: formatApiError(err),
+      })
     },
   })
 

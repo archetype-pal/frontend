@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Search, RefreshCw, Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/admin/common/confirm-dialog'
 
 export default function SearchEnginePage() {

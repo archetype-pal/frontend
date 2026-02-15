@@ -6,6 +6,7 @@ import {
   type SortingState,
   type ColumnFiltersState,
   type VisibilityState,
+  type RowSelectionState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -23,7 +24,21 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { ChevronLeft, ChevronRight, Search, Columns, Download, X } from 'lucide-react'
+
+export interface BulkAction {
+  label: string
+  action: (ids: string[]) => void
+  variant?: 'destructive' | 'default'
+  icon?: React.ReactNode
+}
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -36,6 +51,20 @@ interface DataTableProps<TData, TValue> {
   /** Enable client-side pagination (default: true). */
   pagination?: boolean
   pageSize?: number
+  /** Enable row selection with checkboxes. */
+  enableRowSelection?: boolean
+  /** Bulk actions shown when rows are selected. */
+  bulkActions?: BulkAction[]
+  /** Unique ID accessor for bulk actions (default: 'id'). */
+  getRowId?: (row: TData) => string
+  /** Enable column visibility toggle. */
+  enableColumnVisibility?: boolean
+  /** Enable CSV export of current view. */
+  enableExport?: boolean
+  /** Filename for CSV export. */
+  exportFilename?: string
+  /** Content for filter bar above the table. */
+  filterBar?: React.ReactNode
 }
 
 export function DataTable<TData, TValue>({
@@ -46,14 +75,56 @@ export function DataTable<TData, TValue>({
   toolbarActions,
   pagination = true,
   pageSize = 20,
+  enableRowSelection = false,
+  bulkActions,
+  getRowId,
+  enableColumnVisibility = false,
+  enableExport = false,
+  exportFilename = 'export',
+  filterBar,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+
+  // Prepend checkbox column if selection is enabled
+  const finalColumns: ColumnDef<TData, TValue>[] = enableRowSelection
+    ? [
+        {
+          id: 'select',
+          header: ({ table }) => (
+            <Checkbox
+              checked={
+                table.getIsAllPageRowsSelected() ||
+                (table.getIsSomePageRowsSelected() && 'indeterminate')
+              }
+              onCheckedChange={(value) =>
+                table.toggleAllPageRowsSelected(!!value)
+              }
+              aria-label='Select all'
+              className='translate-y-[2px]'
+            />
+          ),
+          cell: ({ row }) => (
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label='Select row'
+              className='translate-y-[2px]'
+            />
+          ),
+          enableSorting: false,
+          enableHiding: false,
+          size: 32,
+        } as ColumnDef<TData, TValue>,
+        ...columns,
+      ]
+    : columns
 
   const table = useReactTable({
     data,
-    columns,
+    columns: finalColumns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -61,14 +132,53 @@ export function DataTable<TData, TValue>({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    state: { sorting, columnFilters, columnVisibility },
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection,
+    getRowId: getRowId
+      ? (row) => getRowId(row)
+      : (row) => String((row as Record<string, unknown>).id ?? ''),
+    state: { sorting, columnFilters, columnVisibility, rowSelection },
     initialState: { pagination: { pageSize } },
   })
 
+  const selectedCount = Object.keys(rowSelection).length
+  const selectedIds = Object.keys(rowSelection)
+
+  function handleExport() {
+    const headers = table
+      .getVisibleLeafColumns()
+      .filter((c) => c.id !== 'select' && c.id !== 'actions')
+      .map((c) => c.id)
+
+    const rows = table.getFilteredRowModel().rows.map((row) =>
+      headers
+        .map((h) => {
+          const val = row.getValue(h)
+          const str = String(val ?? '')
+          return str.includes(',') || str.includes('"')
+            ? `"${str.replace(/"/g, '""')}"`
+            : str
+        })
+        .join(',')
+    )
+
+    const csv = [headers.join(','), ...rows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${exportFilename}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className='space-y-3'>
+      {/* Filter bar */}
+      {filterBar && <div className='flex flex-wrap items-center gap-2'>{filterBar}</div>}
+
       {/* Toolbar */}
-      {(searchColumn || toolbarActions) && (
+      {(searchColumn || toolbarActions || enableColumnVisibility || enableExport) && (
         <div className='flex items-center gap-2'>
           {searchColumn && (
             <div className='relative max-w-sm flex-1'>
@@ -90,7 +200,77 @@ export function DataTable<TData, TValue>({
             </div>
           )}
           <div className='ml-auto flex items-center gap-2'>
+            {enableExport && (
+              <Button
+                variant='outline'
+                size='sm'
+                className='h-9 gap-1'
+                onClick={handleExport}
+              >
+                <Download className='h-3.5 w-3.5' />
+                <span className='hidden sm:inline'>Export</span>
+              </Button>
+            )}
+            {enableColumnVisibility && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant='outline' size='sm' className='h-9 gap-1'>
+                    <Columns className='h-3.5 w-3.5' />
+                    <span className='hidden sm:inline'>Columns</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end' className='w-40'>
+                  {table
+                    .getAllColumns()
+                    .filter((col) => col.getCanHide())
+                    .map((col) => (
+                      <DropdownMenuCheckboxItem
+                        key={col.id}
+                        className='capitalize'
+                        checked={col.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          col.toggleVisibility(!!value)
+                        }
+                      >
+                        {col.id}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             {toolbarActions}
+          </div>
+        </div>
+      )}
+
+      {/* Bulk actions bar */}
+      {selectedCount > 0 && bulkActions && bulkActions.length > 0 && (
+        <div className='flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-2'>
+          <span className='text-sm font-medium'>
+            {selectedCount} selected
+          </span>
+          <div className='ml-auto flex items-center gap-2'>
+            {bulkActions.map((action) => (
+              <Button
+                key={action.label}
+                variant={action.variant === 'destructive' ? 'destructive' : 'outline'}
+                size='sm'
+                className='h-7 gap-1 text-xs'
+                onClick={() => action.action(selectedIds)}
+              >
+                {action.icon}
+                {action.label}
+              </Button>
+            ))}
+            <Button
+              variant='ghost'
+              size='sm'
+              className='h-7 gap-1 text-xs'
+              onClick={() => setRowSelection({})}
+            >
+              <X className='h-3 w-3' />
+              Clear
+            </Button>
           </div>
         </div>
       )}
@@ -117,7 +297,10 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
@@ -131,7 +314,7 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={finalColumns.length}
                   className='h-24 text-center text-muted-foreground'
                 >
                   No results.
@@ -146,7 +329,9 @@ export function DataTable<TData, TValue>({
       {pagination && (
         <div className='flex items-center justify-between text-sm text-muted-foreground'>
           <span>
-            {table.getFilteredRowModel().rows.length} row(s) total
+            {enableRowSelection && selectedCount > 0
+              ? `${selectedCount} of ${table.getFilteredRowModel().rows.length} selected`
+              : `${table.getFilteredRowModel().rows.length} row(s) total`}
           </span>
           <div className='flex items-center gap-1'>
             <Button
@@ -196,8 +381,8 @@ export function sortableHeader(label: string) {
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
         {label}
-        {column.getIsSorted() === 'asc' && ' ↑'}
-        {column.getIsSorted() === 'desc' && ' ↓'}
+        {column.getIsSorted() === 'asc' && ' \u2191'}
+        {column.getIsSorted() === 'desc' && ' \u2193'}
       </Button>
     )
   }

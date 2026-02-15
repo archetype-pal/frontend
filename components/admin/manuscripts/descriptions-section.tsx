@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
+import { toast } from 'sonner'
 import { Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -19,6 +20,8 @@ import {
   updateDescription,
   deleteDescription,
 } from '@/services/admin/manuscripts'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
 import type { HistoricalItemDescription } from '@/types/admin'
 
 interface DescriptionsSectionProps {
@@ -39,14 +42,14 @@ export function DescriptionsSection({
   const [editContent, setEditContent] = useState('')
 
   const { data: sources } = useQuery({
-    queryKey: ['admin', 'sources'],
+    queryKey: adminKeys.sources.all(),
     queryFn: () => getSources(token!),
     enabled: !!token,
   })
 
   const invalidate = () =>
     queryClient.invalidateQueries({
-      queryKey: ['admin', 'historical-item', historicalItemId],
+      queryKey: adminKeys.manuscripts.detail(historicalItemId),
     })
 
   const createMut = useMutation({
@@ -57,10 +60,16 @@ export function DescriptionsSection({
         content: newContent,
       }),
     onSuccess: () => {
+      toast.success('Description added')
       invalidate()
       setAdding(false)
       setNewSource('')
       setNewContent('')
+    },
+    onError: (err) => {
+      toast.error('Failed to add description', {
+        description: formatApiError(err),
+      })
     },
   })
 
@@ -68,14 +77,28 @@ export function DescriptionsSection({
     mutationFn: ({ id, content }: { id: number; content: string }) =>
       updateDescription(token!, id, { content }),
     onSuccess: () => {
+      toast.success('Description updated')
       invalidate()
       setEditingId(null)
+    },
+    onError: (err) => {
+      toast.error('Failed to update description', {
+        description: formatApiError(err),
+      })
     },
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteDescription(token!, id),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      toast.success('Description removed')
+      invalidate()
+    },
+    onError: (err) => {
+      toast.error('Failed to remove description', {
+        description: formatApiError(err),
+      })
+    },
   })
 
   return (

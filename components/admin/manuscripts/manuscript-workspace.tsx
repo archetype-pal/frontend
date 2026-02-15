@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Save, Trash2, Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -28,6 +29,11 @@ import {
   deleteHistoricalItem,
 } from '@/services/admin/manuscripts'
 import { getFormats, getDates } from '@/services/admin/manuscripts'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
+import { useUnsavedGuard } from '@/hooks/admin/use-unsaved-guard'
+import { useKeyboardShortcut } from '@/hooks/admin/use-keyboard-shortcut'
+import { useRecentEntities } from '@/hooks/admin/use-recent-entities'
 import type { HistoricalItemDetail, ItemFormat, AdminDate } from '@/types/admin'
 
 const ITEM_TYPES = ['charter', 'book', 'roll', 'single sheet', 'other']
@@ -42,22 +48,24 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   const queryClient = useQueryClient()
 
   const { data: item, isLoading } = useQuery({
-    queryKey: ['admin', 'historical-item', itemId],
+    queryKey: adminKeys.manuscripts.detail(itemId),
     queryFn: () => getHistoricalItem(token!, itemId),
     enabled: !!token,
   })
 
   const { data: formats } = useQuery({
-    queryKey: ['admin', 'formats'],
+    queryKey: adminKeys.formats.all(),
     queryFn: () => getFormats(token!),
     enabled: !!token,
   })
 
   const { data: dates } = useQuery({
-    queryKey: ['admin', 'dates'],
+    queryKey: adminKeys.dates.all(),
     queryFn: () => getDates(token!),
     enabled: !!token,
   })
+
+  const { track } = useRecentEntities()
 
   const [draft, setDraft] = useState<Partial<HistoricalItemDetail>>({})
   const [dirty, setDirty] = useState(false)
@@ -65,6 +73,10 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
 
   useEffect(() => {
     if (item) {
+      const label = item.catalogue_numbers.length > 0
+        ? item.catalogue_numbers.map((cn) => `${cn.catalogue_label} ${cn.number}`).join(', ')
+        : `Item #${item.id}`
+      track({ label, href: `/admin/manuscripts/${itemId}`, type: 'Manuscript' })
       setDraft({
         type: item.type,
         format: item.format,
@@ -74,7 +86,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       })
       setDirty(false)
     }
-  }, [item])
+  }, [item, itemId, track])
 
   const updateField = <K extends keyof typeof draft>(
     field: K,
@@ -84,26 +96,46 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
     setDirty(true)
   }
 
+  // Warn before leaving with unsaved changes
+  useUnsavedGuard(dirty)
+
   const saveMut = useMutation({
     mutationFn: () => updateHistoricalItem(token!, itemId, draft),
     onSuccess: () => {
+      toast.success('Manuscript saved')
       queryClient.invalidateQueries({
-        queryKey: ['admin', 'historical-item', itemId],
+        queryKey: adminKeys.manuscripts.detail(itemId),
       })
       queryClient.invalidateQueries({
-        queryKey: ['admin', 'historical-items'],
+        queryKey: adminKeys.manuscripts.all(),
       })
       setDirty(false)
     },
+    onError: (err) => {
+      toast.error('Failed to save manuscript', {
+        description: formatApiError(err),
+      })
+    },
   })
+
+  // Cmd+S to save
+  useKeyboardShortcut('mod+s', () => {
+    if (dirty && !saveMut.isPending) saveMut.mutate()
+  }, dirty)
 
   const deleteMut = useMutation({
     mutationFn: () => deleteHistoricalItem(token!, itemId),
     onSuccess: () => {
+      toast.success('Manuscript deleted')
       queryClient.invalidateQueries({
-        queryKey: ['admin', 'historical-items'],
+        queryKey: adminKeys.manuscripts.all(),
       })
       router.push('/admin/manuscripts')
+    },
+    onError: (err) => {
+      toast.error('Failed to delete manuscript', {
+        description: formatApiError(err),
+      })
     },
   })
 

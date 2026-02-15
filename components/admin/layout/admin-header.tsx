@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -7,6 +8,7 @@ import {
   PanelLeft,
   LogOut,
   User,
+  Keyboard,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
@@ -25,6 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useRecentEntities } from '@/hooks/admin/use-recent-entities'
 
 interface AdminHeaderProps {
   collapsed: boolean
@@ -53,11 +56,21 @@ const segmentLabels: Record<string, string> = {
 
 function useBreadcrumbs() {
   const pathname = usePathname()
+  const { entities: recentEntities } = useRecentEntities()
   const segments = pathname.split('/').filter(Boolean)
 
   return segments.map((segment, index) => {
     const href = '/' + segments.slice(0, index + 1).join('/')
-    const label = segmentLabels[segment] ?? decodeURIComponent(segment)
+    let label = segmentLabels[segment] ?? decodeURIComponent(segment)
+
+    // Try to resolve entity name from recent entities for dynamic segments
+    if (!segmentLabels[segment] && index > 1) {
+      const entity = recentEntities.find((e) => e.href === href)
+      if (entity) {
+        label = entity.label
+      }
+    }
+
     const isLast = index === segments.length - 1
     return { href, label, isLast }
   })
@@ -86,19 +99,29 @@ export function AdminHeader({ collapsed, onToggleSidebar }: AdminHeaderProps) {
       <Breadcrumb className='flex-1'>
         <BreadcrumbList>
           {crumbs.map((crumb, i) => (
-            <BreadcrumbItem key={crumb.href}>
+            <React.Fragment key={crumb.href}>
               {i > 0 && <BreadcrumbSeparator />}
-              {crumb.isLast ? (
-                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink asChild>
-                  <Link href={crumb.href}>{crumb.label}</Link>
-                </BreadcrumbLink>
-              )}
-            </BreadcrumbItem>
+              <BreadcrumbItem>
+                {crumb.isLast ? (
+                  <BreadcrumbPage className='max-w-[200px] truncate'>
+                    {crumb.label}
+                  </BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild>
+                    <Link href={crumb.href}>{crumb.label}</Link>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+            </React.Fragment>
           ))}
         </BreadcrumbList>
       </Breadcrumb>
+
+      {/* Keyboard shortcut hint */}
+      <kbd className='hidden sm:inline-flex items-center gap-1 rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground'>
+        <Keyboard className='h-3 w-3' />
+        <span>Ctrl+K</span>
+      </kbd>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

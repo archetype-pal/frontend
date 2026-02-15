@@ -24,6 +24,9 @@ import {
   updateRepository,
   deleteRepository,
 } from '@/services/admin/manuscripts'
+import { adminKeys } from '@/lib/admin/query-keys'
+import { formatApiError } from '@/lib/admin/format-api-error'
+import { toast } from 'sonner'
 import type { Repository } from '@/types/admin'
 
 export default function RepositoriesPage() {
@@ -36,13 +39,13 @@ export default function RepositoriesPage() {
   const [newPlace, setNewPlace] = useState('')
 
   const { data } = useQuery({
-    queryKey: ['admin', 'repositories'],
+    queryKey: adminKeys.repositories.all(),
     queryFn: () => getRepositories(token!),
     enabled: !!token,
   })
 
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ['admin', 'repositories'] })
+    queryClient.invalidateQueries({ queryKey: adminKeys.repositories.all() })
 
   const createMut = useMutation({
     mutationFn: () =>
@@ -54,11 +57,17 @@ export default function RepositoriesPage() {
         type: null,
       }),
     onSuccess: () => {
+      toast.success('Repository created')
       invalidate()
       setAddOpen(false)
       setNewName('')
       setNewLabel('')
       setNewPlace('')
+    },
+    onError: (err) => {
+      toast.error('Failed to create repository', {
+        description: formatApiError(err),
+      })
     },
   })
 
@@ -66,13 +75,24 @@ export default function RepositoriesPage() {
     mutationFn: ({ id, data: d }: { id: number; data: Partial<Repository> }) =>
       updateRepository(token!, id, d),
     onSuccess: invalidate,
+    onError: (err) => {
+      toast.error('Failed to update repository', {
+        description: formatApiError(err),
+      })
+    },
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteRepository(token!, id),
     onSuccess: () => {
+      toast.success('Repository deleted')
       invalidate()
       setDeleteTarget(null)
+    },
+    onError: (err) => {
+      toast.error('Failed to delete repository', {
+        description: formatApiError(err),
+      })
     },
   })
 
