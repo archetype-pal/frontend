@@ -94,4 +94,12 @@ export const adminKeys = {
   stats: {
     all: () => [...adminKeys.all, 'stats'] as const,
   },
+
+  // ── Search Engine ───────────────────────────────────────────
+  searchEngine: {
+    all: () => [...adminKeys.all, 'searchEngine'] as const,
+    stats: () => [...adminKeys.all, 'searchEngine', 'stats'] as const,
+    task: (taskId: string) =>
+      [...adminKeys.all, 'searchEngine', 'task', taskId] as const,
+  },
 } as const
