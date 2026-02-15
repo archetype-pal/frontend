@@ -50,7 +50,13 @@ export default function BlogPostPreview({
         <span className='mx-1'>|</span>
         <span className='flex items-center'>
           <Calendar className='h-4 w-4 mr-1' />
-          <time dateTime={date}>{date}</time>
+          <time dateTime={date}>
+            {new Date(date).toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </time>
         </span>
         <span className='mx-1'>|</span>
         <Link

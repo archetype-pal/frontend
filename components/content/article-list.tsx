@@ -50,7 +50,13 @@ export default function ArticleList({
                 {article.title}
               </Link>
               <p className='text-sm text-gray-500'>
-                {article.published_at}, by {article.author.first_name}
+                {`${new Date(article.published_at).toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}${article.author && (article.author.first_name || article.author.last_name)
+                  ? `, by ${[article.author.first_name, article.author.last_name].filter(Boolean).join(' ')}`
+                  : ''}`}
               </p>
             </li>
           ))}
