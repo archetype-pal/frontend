@@ -243,39 +243,31 @@ export function generateHands(count: number = 5, itemImageId?: number): HandType
 
 // Mock allographs data
 export function generateAllographs(): Allograph[] {
-  return [
-    {
-      id: 1,
-      name: 'Allograph A',
-      components: [
-        {
-          component_id: 1,
-          component_name: 'Component 1',
-          features: [
-            { id: 1, name: 'Feature 1', set_by_default: true },
-            { id: 2, name: 'Feature 2', set_by_default: false },
-          ],
-        },
-      ],
-    },
-    {
-      id: 2,
-      name: 'Allograph B',
-      components: [
-        {
-          component_id: 2,
-          component_name: 'Component 2',
-          features: [
-            { id: 3, name: 'Feature 3', set_by_default: true },
-          ],
-        },
-      ],
-    },
+  const allographNames = [
+    'a, Caroline', 'b', 'c', 'd, Caroline', 'e', 'f, Caroline',
+    'g, Caroline', 'h, Caroline', 'i', 'k', 'l', 'm', 'n', 'o',
+    'p', 'q', 'r, 2-shaped', 'r, Caroline', 's, Caroline', 's, Round',
+    't', 'u', 'w', 'x',
   ]
+  return allographNames.map((name, i) => ({
+    id: i + 1,
+    name,
+    components: [
+      {
+        component_id: i + 1,
+        component_name: `Component ${i + 1}`,
+        features: [
+          { id: i * 2 + 1, name: `Feature ${i * 2 + 1}`, set_by_default: true },
+          { id: i * 2 + 2, name: `Feature ${i * 2 + 2}`, set_by_default: false },
+        ],
+      },
+    ],
+  }))
 }
 
 // Mock annotations/graphs
-export function generateGraphs(count: number = 5, itemImageId?: number): BackendGraph[] {
+export function generateGraphs(count: number = 5, itemImageId?: number, handId?: number): BackendGraph[] {
+  const allographCount = 24 // matches generateAllographs length
   return Array.from({ length: count }, (_, i) => ({
     id: generateId(),
     item_image: itemImageId ?? generateId(),
@@ -290,8 +282,8 @@ export function generateGraphs(count: number = 5, itemImageId?: number): Backend
         type: 'editorial',
       },
     },
-    allograph: 1,
-    hand: 1,
+    allograph: (i % allographCount) + 1,
+    hand: handId ?? 1,
     graphcomponent_set: [],
     positions: [],
   }))

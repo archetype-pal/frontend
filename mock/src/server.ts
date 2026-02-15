@@ -475,9 +475,10 @@ app.get('/api/v1/symbols_structure/allographs/', (req: Request, res: Response) =
 
 // Annotations/Graphs endpoints
 app.get('/api/v1/manuscripts/graphs/', (req: Request, res: Response) => {
-  const { item_image, allograph } = req.query
+  const { item_image, allograph, hand } = req.query
   const itemImageId = item_image ? parseInt(item_image as string) : undefined
-  const graphs = generateGraphs(10, itemImageId)
+  const handId = hand ? parseInt(hand as string) : undefined
+  const graphs = generateGraphs(handId ? 30 : 10, itemImageId, handId)
   
   // Filter by allograph if provided
   let filteredGraphs = graphs
