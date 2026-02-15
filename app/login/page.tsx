@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { loginUser } from '@/utils/api'
+import { loginUser, getUserProfile } from '@/utils/api'
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,7 +15,14 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const { setToken } = useAuth()
+  const { token, user, setToken } = useAuth()
+
+  // Redirect already-authenticated users
+  useEffect(() => {
+    if (token && user) {
+      router.replace(user.is_staff ? '/admin' : '/')
+    }
+  }, [token, user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,7 +33,10 @@ export default function LoginPage() {
       const response = await loginUser(username, password)
       localStorage.setItem('token', response.auth_token)
       setToken(response.auth_token)
-      router.push('/')
+
+      // Fetch profile to check if staff, then redirect accordingly
+      const profile = await getUserProfile(response.auth_token)
+      router.push(profile.is_staff ? '/admin' : '/')
     } catch (error) {
       setError((error as Error).message)
     } finally {

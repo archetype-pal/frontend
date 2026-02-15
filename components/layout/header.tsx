@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useSearchContext } from '@/contexts/search-context'
 import { KeywordSearchInput, useKeywordSuggestions } from '@/components/search/KeywordSearchInput'
-import { Search, Home, Menu, X, ChevronDown, FolderOpen, PanelTopClose, PanelTopOpen } from 'lucide-react'
+import { Search, Home, Menu, X, ChevronDown, FolderOpen, PanelTopClose, PanelTopOpen, LogIn, Shield, LogOut } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useCollection } from '@/contexts/collection-context'
+import { useAuth } from '@/contexts/auth-context'
 
 const BANNER_VISIBLE_KEY = 'digipal-header-banner-visible'
 
@@ -21,6 +22,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isBannerVisible, setIsBannerVisible] = useState(true)
   const { items } = useCollection()
+  const { token, user, logout } = useAuth()
   const pathname = usePathname()
 
   useEffect(() => {
@@ -306,6 +308,42 @@ export default function Header() {
                 />
               </div>
               <div className='flex items-center gap-1 shrink-0'>
+                {token ? (
+                  <>
+                    {user?.is_staff && (
+                      <Link href='/admin'>
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          className='text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                        >
+                          <Shield className='h-4 w-4 mr-1' />
+                          Admin
+                        </Button>
+                      </Link>
+                    )}
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className='h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20'
+                      onClick={logout}
+                      title='Sign out'
+                    >
+                      <LogOut className='h-4 w-4' />
+                    </Button>
+                  </>
+                ) : (
+                  <Link href='/login'>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      className='text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                    >
+                      <LogIn className='h-4 w-4 mr-1' />
+                      Sign in
+                    </Button>
+                  </Link>
+                )}
                 <Button
                   variant='ghost'
                   size='icon'
