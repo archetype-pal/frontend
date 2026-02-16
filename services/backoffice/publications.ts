@@ -1,4 +1,8 @@
-import { backofficePost } from './api-client'
+import {
+  backofficePost,
+  backofficePostFormData,
+  backofficePatchFormData,
+} from './api-client'
 import { createCrudService } from './crud-factory'
 import type {
   PaginatedResponse,
@@ -84,9 +88,58 @@ export const deleteComment = commentsCrud.remove
 
 // ── Carousel ────────────────────────────────────────────────────────────
 
-const carouselCrud = createCrudService<CarouselItem>('/publications/carousel-items/')
+const CAROUSEL_PATH = '/publications/carousel-items/'
+
+const carouselCrud = createCrudService<CarouselItem[], CarouselItem>(CAROUSEL_PATH)
 
 export const getCarouselItems = (token: string) => carouselCrud.list(token)
-export const createCarouselItem = carouselCrud.create
-export const updateCarouselItem = carouselCrud.update
 export const deleteCarouselItem = carouselCrud.remove
+
+/** Plain JSON update (e.g. reordering). */
+export const updateCarouselItemJson = carouselCrud.update
+
+export interface CarouselItemPayload {
+  title: string
+  url?: string
+  ordering?: number
+  image?: File | null
+}
+
+function buildCarouselFormData(data: CarouselItemPayload): FormData {
+  const fd = new FormData()
+  fd.append('title', data.title)
+  if (data.url !== undefined) fd.append('url', data.url)
+  if (data.ordering !== undefined) fd.append('ordering', String(data.ordering))
+  if (data.image) fd.append('image', data.image)
+  return fd
+}
+
+/** Create a carousel item. Uses multipart when an image File is provided. */
+export function createCarouselItem(
+  token: string,
+  data: CarouselItemPayload
+): Promise<CarouselItem> {
+  return backofficePostFormData<CarouselItem>(
+    CAROUSEL_PATH,
+    token,
+    buildCarouselFormData(data)
+  )
+}
+
+/** Update a carousel item. Uses multipart when an image File is provided. */
+export function updateCarouselItem(
+  token: string,
+  id: number,
+  data: Partial<CarouselItemPayload>
+): Promise<CarouselItem> {
+  const fd = new FormData()
+  if (data.title !== undefined) fd.append('title', data.title)
+  if (data.url !== undefined) fd.append('url', data.url)
+  if (data.ordering !== undefined) fd.append('ordering', String(data.ordering))
+  if (data.image) fd.append('image', data.image)
+  return backofficePatchFormData<CarouselItem>(
+    `${CAROUSEL_PATH}${id}/`,
+    token,
+    fd
+  )
+}

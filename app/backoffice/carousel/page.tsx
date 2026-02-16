@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from 'sonner'
@@ -16,120 +16,36 @@ import {
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import {
-  Image as ImageIcon,
-  Plus,
-  Trash2,
-  GripVertical,
-  Loader2,
-} from 'lucide-react'
+import { Image as ImageIcon, Plus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { InlineEdit } from '@/components/backoffice/common/inline-edit'
+import { SortableCarouselCard } from '@/components/backoffice/carousel/sortable-carousel-card'
+import { CarouselEditorPanel } from '@/components/backoffice/carousel/carousel-editor-panel'
+import { CarouselPreview } from '@/components/backoffice/carousel/carousel-preview'
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
 import {
   getCarouselItems,
   createCarouselItem,
   updateCarouselItem,
+  updateCarouselItemJson,
   deleteCarouselItem,
 } from '@/services/backoffice/publications'
 import { backofficeKeys } from '@/lib/backoffice/query-keys'
 import { formatApiError } from '@/lib/backoffice/format-api-error'
 import type { CarouselItem } from '@/types/backoffice'
 
-function SortableCarouselItem({
-  item,
-  onUpdate,
-  onDelete,
-}: {
-  item: CarouselItem
-  onUpdate: (id: number, data: Partial<CarouselItem>) => void
-  onDelete: (item: CarouselItem) => void
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: item.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 50 : undefined,
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className='flex items-center gap-3 rounded-lg border bg-card p-3'
-    >
-      <button
-        {...attributes}
-        {...listeners}
-        className='cursor-grab active:cursor-grabbing touch-none'
-        aria-label='Drag to reorder'
-      >
-        <GripVertical className='h-4 w-4 text-muted-foreground shrink-0' />
-      </button>
-
-      <div className='h-16 w-24 shrink-0 rounded bg-muted flex items-center justify-center'>
-        <ImageIcon className='h-6 w-6 text-muted-foreground' />
-      </div>
-
-      <div className='flex-1 min-w-0 space-y-1'>
-        <InlineEdit
-          value={item.title}
-          onSave={(title) => onUpdate(item.id, { title })}
-          className='font-medium'
-        />
-        <InlineEdit
-          value={item.url}
-          onSave={(url) => onUpdate(item.id, { url })}
-          className='text-xs text-muted-foreground'
-          placeholder='Set URL...'
-        />
-      </div>
-
-      <span className='text-xs text-muted-foreground tabular-nums w-6 text-center'>
-        #{item.ordering}
-      </span>
-
-      <Button
-        variant='ghost'
-        size='icon'
-        className='h-7 w-7 text-muted-foreground hover:text-destructive'
-        onClick={() => onDelete(item)}
-      >
-        <Trash2 className='h-3.5 w-3.5' />
-      </Button>
-    </div>
-  )
-}
+type PanelMode =
+  | { kind: 'preview' }
+  | { kind: 'edit'; item: CarouselItem }
+  | { kind: 'create' }
 
 export default function CarouselPage() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
-  const [addOpen, setAddOpen] = useState(false)
+
+  const [panel, setPanel] = useState<PanelMode>({ kind: 'preview' })
   const [deleteTarget, setDeleteTarget] = useState<CarouselItem | null>(null)
-  const [newTitle, setNewTitle] = useState('')
-  const [newUrl, setNewUrl] = useState('')
 
   const { data: items, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.carousel.all(),
@@ -138,23 +54,39 @@ export default function CarouselPage() {
   })
 
   const invalidate = useCallback(
-    () => queryClient.invalidateQueries({ queryKey: backofficeKeys.carousel.all() }),
+    () =>
+      queryClient.invalidateQueries({
+        queryKey: backofficeKeys.carousel.all(),
+      }),
     [queryClient]
   )
 
+  const sorted = [...(items ?? [])].sort((a, b) => a.ordering - b.ordering)
+
+  // Keep the editor panel in sync when data refreshes
+  useEffect(() => {
+    if (panel.kind === 'edit' && items) {
+      const fresh = items.find((i) => i.id === panel.item.id)
+      if (!fresh) {
+        setPanel({ kind: 'preview' })
+      }
+    }
+  }, [items, panel])
+
+  // ── Mutations ──────────────────────────────────────────────────────
+
   const createMut = useMutation({
-    mutationFn: () =>
+    mutationFn: (data: { title: string; url: string; image?: File }) =>
       createCarouselItem(token!, {
-        title: newTitle,
-        url: newUrl,
+        title: data.title,
+        url: data.url,
         ordering: (items?.length ?? 0) + 1,
+        image: data.image ?? null,
       }),
     onSuccess: () => {
       toast.success('Carousel item created')
       invalidate()
-      setAddOpen(false)
-      setNewTitle('')
-      setNewUrl('')
+      setPanel({ kind: 'preview' })
     },
     onError: (err) => {
       toast.error('Failed to create carousel item', {
@@ -169,9 +101,13 @@ export default function CarouselPage() {
       data,
     }: {
       id: number
-      data: Partial<CarouselItem>
+      data: { title: string; url: string; image?: File }
     }) => updateCarouselItem(token!, id, data),
-    onSuccess: invalidate,
+    onSuccess: (updated) => {
+      toast.success('Carousel item updated')
+      invalidate()
+      setPanel({ kind: 'edit', item: updated })
+    },
     onError: (err) => {
       toast.error('Failed to update carousel item', {
         description: formatApiError(err),
@@ -184,6 +120,7 @@ export default function CarouselPage() {
     onSuccess: () => {
       toast.success('Carousel item deleted')
       invalidate()
+      setPanel({ kind: 'preview' })
       setDeleteTarget(null)
     },
     onError: (err) => {
@@ -193,7 +130,7 @@ export default function CarouselPage() {
     },
   })
 
-  const sorted = [...(items ?? [])].sort((a, b) => a.ordering - b.ordering)
+  // ── Drag-and-drop reordering ───────────────────────────────────────
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -208,29 +145,33 @@ export default function CarouselPage() {
       if (!over || active.id === over.id || !items) return
 
       const currentSorted = [...items].sort((a, b) => a.ordering - b.ordering)
-      const oldIndex = currentSorted.findIndex((item) => item.id === active.id)
-      const newIndex = currentSorted.findIndex((item) => item.id === over.id)
-
+      const oldIndex = currentSorted.findIndex((i) => i.id === active.id)
+      const newIndex = currentSorted.findIndex((i) => i.id === over.id)
       if (oldIndex === -1 || newIndex === -1) return
 
-      // Compute new ordering for all affected items
       const reordered = [...currentSorted]
-      const [movedItem] = reordered.splice(oldIndex, 1)
-      reordered.splice(newIndex, 0, movedItem)
+      const [moved] = reordered.splice(oldIndex, 1)
+      reordered.splice(newIndex, 0, moved)
 
-      // Optimistically update cache
       const updated = reordered.map((item, i) => ({
         ...item,
         ordering: i + 1,
       }))
+
+      // Optimistic cache update
       queryClient.setQueryData(backofficeKeys.carousel.all(), updated)
 
-      // Persist all ordering changes
       Promise.all(
         updated
-          .filter((item, i) => currentSorted[i]?.id !== item.id || currentSorted[i]?.ordering !== item.ordering)
+          .filter(
+            (item, i) =>
+              currentSorted[i]?.id !== item.id ||
+              currentSorted[i]?.ordering !== item.ordering
+          )
           .map((item) =>
-            updateCarouselItem(token!, item.id, { ordering: item.ordering })
+            updateCarouselItemJson(token!, item.id, {
+              ordering: item.ordering,
+            })
           )
       )
         .then(() => invalidate())
@@ -242,133 +183,193 @@ export default function CarouselPage() {
     [items, token, queryClient, invalidate]
   )
 
-  const handleUpdate = useCallback(
-    (id: number, data: Partial<CarouselItem>) => {
-      updateMut.mutate({ id, data })
+  // ── Keyboard shortcuts ─────────────────────────────────────────────
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && panel.kind !== 'preview') {
+        setPanel({ kind: 'preview' })
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [panel.kind])
+
+  // ── Handlers ───────────────────────────────────────────────────────
+
+  const handleSelect = useCallback((item: CarouselItem) => {
+    setPanel((prev) =>
+      prev.kind === 'edit' && prev.item.id === item.id
+        ? { kind: 'preview' }
+        : { kind: 'edit', item }
+    )
+  }, [])
+
+  const handleDelete = useCallback((item: CarouselItem) => {
+    setDeleteTarget(item)
+  }, [])
+
+  const handleEditorSave = useCallback(
+    (data: { title: string; url: string; image?: File }) => {
+      if (panel.kind === 'create') {
+        createMut.mutate(data)
+      } else if (panel.kind === 'edit') {
+        updateMut.mutate({ id: panel.item.id, data })
+      }
     },
-    [updateMut]
+    [panel, createMut, updateMut]
   )
+
+  const handleEditorDelete = useCallback(() => {
+    if (panel.kind === 'edit') {
+      deleteMut.mutate(panel.item.id)
+    }
+  }, [panel, deleteMut])
+
+  // ── Loading / error states ─────────────────────────────────────────
 
   if (isLoading) {
     return (
-      <div className='flex items-center justify-center py-20'>
-        <Loader2 className='h-6 w-6 animate-spin text-muted-foreground' />
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   if (isError) {
     return (
-      <div className='flex flex-col items-center justify-center py-20 gap-3'>
-        <p className='text-sm text-destructive'>Failed to load carousel items</p>
-        <Button variant='outline' size='sm' onClick={() => refetch()}>
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <p className="text-sm text-destructive">
+          Failed to load carousel items
+        </p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
           Retry
         </Button>
       </div>
     )
   }
 
+  // ── Empty state ────────────────────────────────────────────────────
+
+  if (sorted.length === 0 && panel.kind !== 'create') {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ImageIcon className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-semibold tracking-tight">Carousel</h1>
+          </div>
+        </div>
+        <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
+          <ImageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground/40" />
+          <p className="text-base font-medium">No carousel items yet</p>
+          <p className="text-sm mt-1 max-w-sm mx-auto">
+            The homepage carousel is empty. Add your first item with an image,
+            title, and optional link.
+          </p>
+          <Button
+            size="sm"
+            className="mt-4"
+            onClick={() => setPanel({ kind: 'create' })}
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            Add First Item
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Main layout ────────────────────────────────────────────────────
+
+  const selectedId = panel.kind === 'edit' ? panel.item.id : null
+
   return (
-    <div className='space-y-4'>
-      <div className='flex items-center justify-between'>
-        <div className='flex items-center gap-3'>
-          <ImageIcon className='h-6 w-6 text-primary' />
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <ImageIcon className="h-6 w-6 text-primary" />
           <div>
-            <h1 className='text-2xl font-semibold tracking-tight'>
-              Carousel
-            </h1>
-            <p className='text-sm text-muted-foreground'>
-              {sorted.length} items &mdash; drag to reorder
+            <h1 className="text-2xl font-semibold tracking-tight">Carousel</h1>
+            <p className="text-sm text-muted-foreground">
+              {sorted.length} item{sorted.length !== 1 ? 's' : ''} &mdash; drag
+              to reorder, click to edit
             </p>
           </div>
         </div>
-        <Button size='sm' onClick={() => setAddOpen(true)}>
-          <Plus className='h-4 w-4 mr-1' />
+        <Button
+          size="sm"
+          onClick={() => setPanel({ kind: 'create' })}
+        >
+          <Plus className="h-4 w-4 mr-1.5" />
           Add Item
         </Button>
       </div>
 
-      {sorted.length === 0 ? (
-        <div className='rounded-lg border border-dashed p-8 text-center text-muted-foreground'>
-          <ImageIcon className='h-10 w-10 mx-auto mb-3 text-muted-foreground/50' />
-          <p className='text-sm font-medium'>No carousel items yet</p>
-          <p className='text-xs mt-1'>
-            Add your first carousel item to get started.
-          </p>
-          <Button
-            variant='outline'
-            size='sm'
-            className='mt-3'
-            onClick={() => setAddOpen(true)}
+      {/* Split layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        {/* Left: sortable card list */}
+        <div className="lg:col-span-2 space-y-1">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
           >
-            <Plus className='h-3.5 w-3.5 mr-1' />
-            Add Item
-          </Button>
-        </div>
-      ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={sorted.map((item) => item.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className='space-y-1'>
+            <SortableContext
+              items={sorted.map((i) => i.id)}
+              strategy={verticalListSortingStrategy}
+            >
               {sorted.map((item) => (
-                <SortableCarouselItem
+                <SortableCarouselCard
                   key={item.id}
                   item={item}
-                  onUpdate={handleUpdate}
-                  onDelete={setDeleteTarget}
+                  isSelected={item.id === selectedId}
+                  onSelect={handleSelect}
+                  onDelete={handleDelete}
                 />
               ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      )}
+            </SortableContext>
+          </DndContext>
+        </div>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className='max-w-sm'>
-          <DialogHeader>
-            <DialogTitle>New Carousel Item</DialogTitle>
-          </DialogHeader>
-          <div className='space-y-3 mt-2'>
-            <div className='space-y-1.5'>
-              <Label>Title</Label>
-              <Input
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder='Carousel item title'
+        {/* Right: context-sensitive panel */}
+        <div className="lg:col-span-3">
+          <div className="rounded-lg border bg-card p-5">
+            {panel.kind === 'preview' && (
+              <CarouselPreview items={sorted} />
+            )}
+            {panel.kind === 'edit' && (
+              <CarouselEditorPanel
+                item={panel.item}
+                saving={updateMut.isPending}
+                deleting={deleteMut.isPending}
+                onSave={handleEditorSave}
+                onDelete={handleEditorDelete}
+                onCancel={() => setPanel({ kind: 'preview' })}
               />
-            </div>
-            <div className='space-y-1.5'>
-              <Label>URL</Label>
-              <Input
-                value={newUrl}
-                onChange={(e) => setNewUrl(e.target.value)}
-                placeholder='/about or https://...'
+            )}
+            {panel.kind === 'create' && (
+              <CarouselEditorPanel
+                item={null}
+                saving={createMut.isPending}
+                deleting={false}
+                onSave={handleEditorSave}
+                onDelete={() => {}}
+                onCancel={() => setPanel({ kind: 'preview' })}
               />
-            </div>
+            )}
           </div>
-          <DialogFooter>
-            <Button
-              onClick={() => createMut.mutate()}
-              disabled={!newTitle.trim() || createMut.isPending}
-            >
-              Create
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
 
+      {/* Standalone delete confirmation (triggered from card delete button) */}
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title={`Delete "${deleteTarget?.title}"?`}
-        description='This carousel item will be removed.'
-        confirmLabel='Delete'
+        description="This carousel item will be permanently removed."
+        confirmLabel="Delete"
         loading={deleteMut.isPending}
         onConfirm={() => deleteTarget && deleteMut.mutate(deleteTarget.id)}
       />

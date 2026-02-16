@@ -85,3 +85,49 @@ export function backofficePut<T>(
 export function backofficeDelete(path: string, token: string): Promise<void> {
   return apiRequest<void>(path, token, { method: 'DELETE' })
 }
+
+/**
+ * Authenticated multipart fetch wrapper.
+ * Sends FormData without setting Content-Type so the browser
+ * automatically adds the correct multipart boundary.
+ */
+async function apiRequestFormData<T>(
+  path: string,
+  token: string,
+  method: string,
+  formData: FormData
+): Promise<T> {
+  const res = await apiFetch(`${API_PREFIX}${path}`, {
+    method,
+    headers: {
+      Authorization: `Token ${token}`,
+    },
+    body: formData,
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new BackofficeApiError(res.status, body as Record<string, unknown>)
+  }
+
+  if (res.status === 204) return undefined as T
+  return res.json() as Promise<T>
+}
+
+/** POST with auth + FormData body (multipart) */
+export function backofficePostFormData<T>(
+  path: string,
+  token: string,
+  formData: FormData
+): Promise<T> {
+  return apiRequestFormData<T>(path, token, 'POST', formData)
+}
+
+/** PATCH with auth + FormData body (multipart) */
+export function backofficePatchFormData<T>(
+  path: string,
+  token: string,
+  formData: FormData
+): Promise<T> {
+  return apiRequestFormData<T>(path, token, 'PATCH', formData)
+}
