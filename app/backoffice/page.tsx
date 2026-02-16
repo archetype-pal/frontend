@@ -15,6 +15,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   FileEdit,
+  Database,
+  Search,
+  RefreshCw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,6 +25,7 @@ import { getCharacters } from '@/services/backoffice/symbols'
 import { getHistoricalItems } from '@/services/backoffice/manuscripts'
 import { getPublications, getComments } from '@/services/backoffice/publications'
 import { getScribes } from '@/services/backoffice/scribes'
+import { getSearchEngineStats } from '@/services/backoffice/search-engine'
 import { backofficeKeys } from '@/lib/backoffice/query-keys'
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities'
 
@@ -171,9 +175,17 @@ export default function BackofficeDashboardPage() {
     enabled: !!token,
   })
 
+  const searchStats = useQuery({
+    queryKey: backofficeKeys.searchEngine.stats(),
+    queryFn: () => getSearchEngineStats(token!),
+    enabled: !!token,
+    refetchInterval: 60_000,
+  })
+
   const pendingCount = pendingComments.data?.count ?? 0
   const draftCount = draftPublications.data?.count ?? 0
-  const hasPendingTasks = pendingCount > 0 || draftCount > 0
+  const outOfSyncIndexes = searchStats.data?.indexes?.filter((i) => !i.in_sync) ?? []
+  const hasPendingTasks = pendingCount > 0 || draftCount > 0 || outOfSyncIndexes.length > 0
 
   // Group recent entities by time
   const todayEntities = recentEntities.filter(
@@ -242,6 +254,21 @@ export default function BackofficeDashboardPage() {
               </Badge>
             </Link>
           )}
+          {outOfSyncIndexes.length > 0 && (
+            <Link
+              href='/backoffice/search-engine'
+              className='flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-accent/50'
+            >
+              <Search className='h-4 w-4 text-muted-foreground shrink-0' />
+              <span className='flex-1'>
+                {outOfSyncIndexes.length} search index{outOfSyncIndexes.length !== 1 ? 'es' : ''} out of sync
+              </span>
+              <Badge variant='secondary' className='text-xs gap-1'>
+                <RefreshCw className='h-3 w-3' />
+                {outOfSyncIndexes.length}
+              </Badge>
+            </Link>
+          )}
           {!hasPendingTasks && (
             <div className='px-5 py-3 text-sm text-muted-foreground'>
               No pending tasks. Everything is up to date.
@@ -294,6 +321,66 @@ export default function BackofficeDashboardPage() {
           />
         </div>
       </div>
+
+      {/* Search Engine Health */}
+      {searchStats.data && (
+        <div className='rounded-lg border bg-card'>
+          <div className='flex items-center gap-2 border-b px-5 py-3'>
+            <Database className='h-4 w-4 text-muted-foreground' />
+            <h2 className='text-sm font-medium'>Search Engine</h2>
+            <div className='ml-auto flex items-center gap-2'>
+              {searchStats.data.healthy ? (
+                <Badge variant='default' className='text-[10px] gap-1'>
+                  <CheckCircle2 className='h-3 w-3' />
+                  Healthy
+                </Badge>
+              ) : (
+                <Badge variant='destructive' className='text-[10px] gap-1'>
+                  <AlertTriangle className='h-3 w-3' />
+                  Unhealthy
+                </Badge>
+              )}
+              <Link href='/backoffice/search-engine'>
+                <Button variant='ghost' size='sm' className='h-6 text-[10px] px-2'>
+                  Manage
+                  <ArrowRight className='h-3 w-3 ml-1' />
+                </Button>
+              </Link>
+            </div>
+          </div>
+          <div className='grid grid-cols-3 divide-x text-center py-3'>
+            <div>
+              <p className='text-lg font-semibold tabular-nums'>
+                {searchStats.data.total_database.toLocaleString()}
+              </p>
+              <p className='text-[10px] text-muted-foreground'>Database Records</p>
+            </div>
+            <div>
+              <p className='text-lg font-semibold tabular-nums'>
+                {searchStats.data.total_meilisearch.toLocaleString()}
+              </p>
+              <p className='text-[10px] text-muted-foreground'>Indexed Documents</p>
+            </div>
+            <div>
+              <p className='text-lg font-semibold tabular-nums'>
+                {searchStats.data.indexes?.filter((i) => i.in_sync).length ?? 0}
+                <span className='text-sm text-muted-foreground font-normal'>
+                  /{searchStats.data.indexes?.length ?? 0}
+                </span>
+              </p>
+              <p className='text-[10px] text-muted-foreground'>Indexes In Sync</p>
+            </div>
+          </div>
+          {outOfSyncIndexes.length > 0 && (
+            <div className='border-t px-5 py-2'>
+              <p className='text-xs text-amber-600 flex items-center gap-1'>
+                <AlertTriangle className='h-3 w-3' />
+                Out of sync: {outOfSyncIndexes.map((i) => i.label).join(', ')}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Quick Create */}
       <div className='flex items-center gap-3'>

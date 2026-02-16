@@ -342,6 +342,10 @@ export function CharacterDetail({
             onRemoveAllograph={handleRemoveAllograph}
             onAddAllograph={handleAddAllograph}
             disabled={saveMutation.isPending}
+            onSelectAllograph={(idx) => {
+              setActiveAlloTab(String(idx))
+              setViewMode('tabs')
+            }}
           />
         ) : (
           <Tabs

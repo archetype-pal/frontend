@@ -1,19 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Newspaper, Plus, ExternalLink, MessageSquare } from 'lucide-react'
+import { Newspaper, Plus, ExternalLink, MessageSquare, Trash2, CheckCircle, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table'
+import { DataTable, sortableHeader, type BulkAction } from '@/components/backoffice/common/data-table'
 import { FilterBar, type FilterConfig } from '@/components/backoffice/common/filter-bar'
-import { getPublications } from '@/services/backoffice/publications'
+import { getPublications, updatePublication, deletePublication } from '@/services/backoffice/publications'
 import { backofficeKeys } from '@/lib/backoffice/query-keys'
 import type { PublicationListItem } from '@/types/backoffice'
+import { toast } from 'sonner'
 
 const pubFilters: FilterConfig[] = [
   {
@@ -131,6 +132,7 @@ const columns: ColumnDef<PublicationListItem>[] = [
 export default function PublicationsPage() {
   const { token } = useAuth()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [filterValues, setFilterValues] = useState<Record<string, string>>({})
 
   const { data } = useQuery({
@@ -151,6 +153,61 @@ export default function PublicationsPage() {
     }
     return true
   })
+
+  const allPubs = data?.results ?? []
+
+  const bulkActions: BulkAction[] = [
+    {
+      label: 'Publish',
+      icon: <CheckCircle className='h-3 w-3' />,
+      action: async (slugs) => {
+        try {
+          await Promise.all(
+            slugs.map((slug) =>
+              updatePublication(token!, slug, { status: 'Published' })
+            )
+          )
+          toast.success(`${slugs.length} publication(s) published`)
+          queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() })
+        } catch {
+          toast.error('Failed to publish some publications')
+        }
+      },
+    },
+    {
+      label: 'Unpublish',
+      icon: <XCircle className='h-3 w-3' />,
+      action: async (slugs) => {
+        try {
+          await Promise.all(
+            slugs.map((slug) =>
+              updatePublication(token!, slug, { status: 'Draft' })
+            )
+          )
+          toast.success(`${slugs.length} publication(s) unpublished`)
+          queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() })
+        } catch {
+          toast.error('Failed to unpublish some publications')
+        }
+      },
+    },
+    {
+      label: 'Delete',
+      variant: 'destructive',
+      icon: <Trash2 className='h-3 w-3' />,
+      action: async (slugs) => {
+        try {
+          await Promise.all(
+            slugs.map((slug) => deletePublication(token!, slug))
+          )
+          toast.success(`${slugs.length} publication(s) deleted`)
+          queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() })
+        } catch {
+          toast.error('Failed to delete some publications')
+        }
+      },
+    },
+  ]
 
   return (
     <div className='space-y-4'>
@@ -184,6 +241,9 @@ export default function PublicationsPage() {
         enableColumnVisibility
         enableExport
         exportFilename='publications'
+        enableRowSelection
+        bulkActions={bulkActions}
+        getRowId={(row) => row.slug}
         filterBar={
           <FilterBar
             filters={pubFilters}

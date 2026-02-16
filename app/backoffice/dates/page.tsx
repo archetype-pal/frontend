@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CalendarDays, Plus, Trash2 } from 'lucide-react'
+import { CalendarDays, Plus, Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,8 +16,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table'
+import { InlineEdit } from '@/components/backoffice/common/inline-edit'
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
-import { getDates, createDate, deleteDate } from '@/services/backoffice/manuscripts'
+import { getDates, createDate, updateDate, deleteDate } from '@/services/backoffice/manuscripts'
 import { backofficeKeys } from '@/lib/backoffice/query-keys'
 import { formatApiError } from '@/lib/backoffice/format-api-error'
 import { toast } from 'sonner'
@@ -32,7 +33,7 @@ export default function DatesPage() {
   const [newMin, setNewMin] = useState('')
   const [newMax, setNewMax] = useState('')
 
-  const { data: dates } = useQuery({
+  const { data: dates, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.dates.all(),
     queryFn: () => getDates(token!),
     enabled: !!token,
@@ -63,6 +64,17 @@ export default function DatesPage() {
     },
   })
 
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<BackofficeDate> }) =>
+      updateDate(token!, id, data),
+    onSuccess: invalidate,
+    onError: (err) => {
+      toast.error('Failed to update date', {
+        description: formatApiError(err),
+      })
+    },
+  })
+
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteDate(token!, id),
     onSuccess: () => {
@@ -82,14 +94,27 @@ export default function DatesPage() {
       accessorKey: 'date',
       header: sortableHeader('Date'),
       cell: ({ row }) => (
-        <span className='font-medium'>{row.original.date}</span>
+        <InlineEdit
+          value={row.original.date}
+          onSave={(date) =>
+            updateMut.mutate({ id: row.original.id, data: { date } })
+          }
+        />
       ),
     },
     {
       accessorKey: 'min_weight',
       header: sortableHeader('Min Weight'),
       cell: ({ row }) => (
-        <span className='tabular-nums text-sm'>{row.original.min_weight}</span>
+        <InlineEdit
+          value={String(row.original.min_weight)}
+          onSave={(val) =>
+            updateMut.mutate({
+              id: row.original.id,
+              data: { min_weight: Number(val) || 0 },
+            })
+          }
+        />
       ),
       size: 100,
     },
@@ -97,7 +122,15 @@ export default function DatesPage() {
       accessorKey: 'max_weight',
       header: sortableHeader('Max Weight'),
       cell: ({ row }) => (
-        <span className='tabular-nums text-sm'>{row.original.max_weight}</span>
+        <InlineEdit
+          value={String(row.original.max_weight)}
+          onSave={(val) =>
+            updateMut.mutate({
+              id: row.original.id,
+              data: { max_weight: Number(val) || 0 },
+            })
+          }
+        />
       ),
       size: 100,
     },
@@ -116,6 +149,25 @@ export default function DatesPage() {
       size: 50,
     },
   ]
+
+  if (isLoading) {
+    return (
+      <div className='flex items-center justify-center py-20'>
+        <Loader2 className='h-6 w-6 animate-spin text-muted-foreground' />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className='flex flex-col items-center justify-center py-20 gap-3'>
+        <p className='text-sm text-destructive'>Failed to load dates</p>
+        <Button variant='outline' size='sm' onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className='space-y-4'>

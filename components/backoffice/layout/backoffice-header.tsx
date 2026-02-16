@@ -51,6 +51,8 @@ const segmentLabels: Record<string, string> = {
   sources: 'Sources',
   annotations: 'Annotations',
   'search-engine': 'Search Engine',
+  translations: 'Translations',
+  'site-features': 'Site Features',
   new: 'New',
 }
 

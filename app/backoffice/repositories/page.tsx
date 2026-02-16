@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Building2, Plus, Trash2 } from 'lucide-react'
+import { Building2, Plus, Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -38,7 +38,7 @@ export default function RepositoriesPage() {
   const [newLabel, setNewLabel] = useState('')
   const [newPlace, setNewPlace] = useState('')
 
-  const { data } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
     queryFn: () => getRepositories(token!),
     enabled: !!token,
@@ -148,6 +148,25 @@ export default function RepositoriesPage() {
       size: 50,
     },
   ]
+
+  if (isLoading) {
+    return (
+      <div className='flex items-center justify-center py-20'>
+        <Loader2 className='h-6 w-6 animate-spin text-muted-foreground' />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className='flex flex-col items-center justify-center py-20 gap-3'>
+        <p className='text-sm text-destructive'>Failed to load repositories</p>
+        <Button variant='outline' size='sm' onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className='space-y-4'>

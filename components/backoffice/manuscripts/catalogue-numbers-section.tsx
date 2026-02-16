@@ -14,9 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { InlineEdit } from '@/components/backoffice/common/inline-edit'
 import { getSources } from '@/services/backoffice/manuscripts'
 import {
   createCatalogueNumber,
+  updateCatalogueNumber,
   deleteCatalogueNumber,
 } from '@/services/backoffice/manuscripts'
 import { backofficeKeys } from '@/lib/backoffice/query-keys'
@@ -38,6 +40,8 @@ export function CatalogueNumbersSection({
   const [newCatalogue, setNewCatalogue] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [newUrl, setNewUrl] = useState('')
+  const [editingSourceId, setEditingSourceId] = useState<number | null>(null)
+  const [editSourceValue, setEditSourceValue] = useState('')
 
   const { data: sources } = useQuery({
     queryKey: backofficeKeys.sources.all(),
@@ -68,6 +72,21 @@ export function CatalogueNumbersSection({
     },
     onError: (err) => {
       toast.error('Failed to add catalogue number', {
+        description: formatApiError(err),
+      })
+    },
+  })
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      updateCatalogueNumber(token!, id, data),
+    onSuccess: () => {
+      toast.success('Catalogue number updated')
+      invalidate()
+      setEditingSourceId(null)
+    },
+    onError: (err) => {
+      toast.error('Failed to update catalogue number', {
         description: formatApiError(err),
       })
     },
@@ -112,20 +131,75 @@ export function CatalogueNumbersSection({
               key={cn.id}
               className='flex items-center gap-3 px-3 py-2 text-sm'
             >
-              <span className='font-medium w-24 shrink-0'>
-                {cn.catalogue_label}
-              </span>
-              <span className='flex-1'>{cn.number}</span>
-              {cn.url && (
-                <a
-                  href={cn.url}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='text-xs text-primary hover:underline truncate max-w-40'
-                >
-                  {cn.url}
-                </a>
-              )}
+              {/* Catalogue source – click-to-edit dropdown */}
+              <div className='w-28 shrink-0'>
+                {editingSourceId === cn.id ? (
+                  <Select
+                    value={editSourceValue}
+                    onValueChange={(val) => {
+                      setEditSourceValue(val)
+                      updateMut.mutate({
+                        id: cn.id,
+                        data: { catalogue: Number(val) },
+                      })
+                    }}
+                  >
+                    <SelectTrigger className='h-7 text-xs'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(sources ?? []).map((s) => (
+                        <SelectItem key={s.id} value={String(s.id)}>
+                          {s.label || s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <button
+                    type='button'
+                    className='group inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors'
+                    onClick={() => {
+                      setEditingSourceId(cn.id)
+                      setEditSourceValue(String(cn.catalogue))
+                    }}
+                  >
+                    {cn.catalogue_label}
+                  </button>
+                )}
+              </div>
+
+              {/* Number – inline edit */}
+              <div className='flex-1'>
+                <InlineEdit
+                  value={cn.number}
+                  onSave={(number) =>
+                    updateMut.mutateAsync({ id: cn.id, data: { number } })
+                  }
+                />
+              </div>
+
+              {/* URL – inline edit */}
+              <div className='flex-1 max-w-48'>
+                <InlineEdit
+                  value={cn.url ?? ''}
+                  placeholder='Add URL...'
+                  onSave={(url) =>
+                    updateMut.mutateAsync({
+                      id: cn.id,
+                      data: { url: url || null },
+                    })
+                  }
+                  renderValue={(v) =>
+                    v ? (
+                      <span className='text-xs text-primary truncate'>
+                        {v}
+                      </span>
+                    ) : undefined
+                  }
+                />
+              </div>
+
               <Button
                 variant='ghost'
                 size='icon'

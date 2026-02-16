@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { BackofficeShell } from '@/components/backoffice/layout/backoffice-shell'
+import { BackofficeErrorBoundary } from '@/components/backoffice/common/error-boundary'
 
 function makeQueryClient() {
   return new QueryClient({
@@ -39,7 +40,9 @@ export default function BackofficeLayout({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BackofficeShell>{children}</BackofficeShell>
+      <BackofficeErrorBoundary>
+        <BackofficeShell>{children}</BackofficeShell>
+      </BackofficeErrorBoundary>
       <Toaster richColors closeButton position='bottom-right' />
     </QueryClientProvider>
   )

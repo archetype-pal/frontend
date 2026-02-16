@@ -12,6 +12,9 @@ import {
   Trash2,
   Loader2,
   PenTool,
+  ExternalLink,
+  Calendar,
+  MapPin,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -174,22 +177,34 @@ export default function ScribeDetailPage({
         </div>
       </div>
 
+      {/* Quick links */}
+      <div className='flex items-center gap-2'>
+        <Link href={`/scribes/${id}`} target='_blank'>
+          <Button variant='outline' size='sm' className='h-7 text-xs gap-1'>
+            <ExternalLink className='h-3 w-3' />
+            View Public Profile
+          </Button>
+        </Link>
+      </div>
+
       {/* Hands list */}
       <div className='space-y-3'>
-        <h3 className='text-sm font-medium'>
-          Hands ({hands?.results?.length ?? 0})
-        </h3>
+        <div className='flex items-center justify-between'>
+          <h3 className='text-sm font-medium'>
+            Hands ({hands?.results?.length ?? 0})
+          </h3>
+        </div>
         {hands?.results?.length === 0 ? (
-          <p className='text-sm text-muted-foreground py-2'>
+          <div className='rounded-md border border-dashed p-6 text-center text-muted-foreground text-sm'>
             No hands associated with this scribe.
-          </p>
+          </div>
         ) : (
           <div className='rounded-md border divide-y'>
             {hands?.results?.map((hand) => (
               <Link
                 key={hand.id}
                 href={`/backoffice/hands/${hand.id}`}
-                className='flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors'
+                className='flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group'
               >
                 <PenTool className='h-4 w-4 text-muted-foreground shrink-0' />
                 <div className='flex-1 min-w-0'>
@@ -197,12 +212,32 @@ export default function ScribeDetailPage({
                   <p className='text-xs text-muted-foreground truncate'>
                     {hand.item_part_display}
                   </p>
+                  <div className='flex items-center gap-3 mt-1'>
+                    {hand.date_display && (
+                      <span className='text-[10px] text-muted-foreground flex items-center gap-1'>
+                        <Calendar className='h-3 w-3' />
+                        {hand.date_display}
+                      </span>
+                    )}
+                    {hand.place && (
+                      <span className='text-[10px] text-muted-foreground flex items-center gap-1'>
+                        <MapPin className='h-3 w-3' />
+                        {hand.place}
+                      </span>
+                    )}
+                    {hand.item_part_images?.length > 0 && (
+                      <span className='text-[10px] text-muted-foreground'>
+                        {hand.item_part_images.length} image{hand.item_part_images.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {hand.script_name && (
-                  <Badge variant='outline' className='text-xs'>
+                  <Badge variant='outline' className='text-xs shrink-0'>
                     {hand.script_name}
                   </Badge>
                 )}
+                <ExternalLink className='h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0' />
               </Link>
             ))}
           </div>

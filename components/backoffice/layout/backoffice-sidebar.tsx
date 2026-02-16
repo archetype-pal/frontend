@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
@@ -22,7 +23,11 @@ import {
   Hash,
   Library,
   ExternalLink,
-  Layers,
+  Settings,
+  Languages,
+  ToggleLeft,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -35,40 +40,55 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>
 }
 
+interface NavSubGroup {
+  label: string
+  items: NavItem[]
+  defaultOpen?: boolean
+}
+
 interface NavGroup {
   label: string
   icon: React.ComponentType<{ className?: string }>
   items: NavItem[]
+  subGroups?: NavSubGroup[]
 }
 
 /**
- * Navigation organised by the professor's mental model, not the database schema.
+ * Navigation organised by the professor's mental model:
  *
- * Groups are always expanded (no collapsibles) — there are only ~15 items,
- * so everything fits on screen and hiding items adds unnecessary clicks.
+ * - Manuscripts & Palaeography: primary scholarly entities plus a collapsible
+ *   "Supporting Data" sub-group for lookup tables (repositories, dates, etc.)
+ * - Site & Content: public-facing publications, events, carousel, comments
+ * - Administration: system tools (search engine, translations, feature toggles)
  *
- * - Scholarly Data: core entities including characters (formerly "Palaeography")
- * - Site Content: public-facing publications, events, carousel
- * - Reference Data: lookup tables used when editing manuscripts
- *
- * "Search Engine" lives in the footer alongside "View public site" since
- * it's a single maintenance tool, not worth its own section.
+ * "View public site" stays in the footer as a standalone escape hatch.
  */
 const navigation: NavGroup[] = [
   {
-    label: 'Scholarly Data',
+    label: 'Manuscripts & Palaeography',
     icon: BookOpen,
     items: [
       { label: 'Manuscripts', href: '/backoffice/manuscripts', icon: BookOpen },
-      { label: 'Repositories', href: '/backoffice/repositories', icon: Landmark },
       { label: 'Scribes', href: '/backoffice/scribes', icon: Users },
       { label: 'Hands', href: '/backoffice/hands', icon: Hand },
       { label: 'Annotations', href: '/backoffice/annotations', icon: PenTool },
       { label: 'Characters', href: '/backoffice/symbols', icon: Type },
     ],
+    subGroups: [
+      {
+        label: 'Supporting Data',
+        defaultOpen: true,
+        items: [
+          { label: 'Repositories', href: '/backoffice/repositories', icon: Landmark },
+          { label: 'Dates', href: '/backoffice/dates', icon: Hash },
+          { label: 'Formats', href: '/backoffice/formats', icon: Library },
+          { label: 'Sources', href: '/backoffice/sources', icon: Database },
+        ],
+      },
+    ],
   },
   {
-    label: 'Site Content',
+    label: 'Site & Content',
     icon: Newspaper,
     items: [
       { label: 'Publications', href: '/backoffice/publications', icon: FileText },
@@ -78,19 +98,14 @@ const navigation: NavGroup[] = [
     ],
   },
   {
-    label: 'Reference Data',
-    icon: Layers,
+    label: 'Administration',
+    icon: Settings,
     items: [
-      { label: 'Dates', href: '/backoffice/dates', icon: Hash },
-      { label: 'Formats', href: '/backoffice/formats', icon: Library },
-      { label: 'Sources', href: '/backoffice/sources', icon: Database },
+      { label: 'Search Engine', href: '/backoffice/search-engine', icon: Search },
+      { label: 'Translations', href: '/backoffice/translations', icon: Languages },
+      { label: 'Site Features', href: '/backoffice/site-features', icon: ToggleLeft },
     ],
   },
-]
-
-/** Standalone footer links (not worth their own nav group). */
-const footerLinks: NavItem[] = [
-  { label: 'Search Engine', href: '/backoffice/search-engine', icon: Search },
 ]
 
 interface BackofficeSidebarProps {
@@ -147,54 +162,8 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
         ))}
       </nav>
 
-      {/* Footer: standalone links */}
+      {/* Footer: View public site */}
       <div className='border-t p-2 flex flex-col gap-0.5'>
-        {footerLinks.map((item) => {
-          const Icon = item.icon
-          const active =
-            pathname === item.href || pathname.startsWith(item.href + '/')
-
-          if (collapsed) {
-            return (
-              <Tooltip key={item.href} delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      'flex h-9 w-9 items-center justify-center rounded-md mx-auto',
-                      active
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                    )}
-                  >
-                    <Icon className='h-4 w-4' />
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side='right' sideOffset={8}>
-                  {item.label}
-                </TooltipContent>
-              </Tooltip>
-            )
-          }
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors',
-                active
-                  ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-              )}
-            >
-              <Icon className='h-4 w-4 shrink-0' />
-              <span>{item.label}</span>
-            </Link>
-          )
-        })}
-
-        {/* View public site */}
         {collapsed ? (
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
@@ -223,6 +192,106 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
   )
 }
 
+// ---------------------------------------------------------------------------
+// Collapsible sub-group (localStorage-persisted)
+// ---------------------------------------------------------------------------
+
+const STORAGE_PREFIX = 'backoffice-subgroup-'
+
+function useSubGroupOpen(label: string, defaultOpen: boolean) {
+  const key = STORAGE_PREFIX + label.toLowerCase().replace(/\s+/g, '-')
+
+  const [open, setOpen] = useState(() => {
+    if (typeof window === 'undefined') return defaultOpen
+    const stored = localStorage.getItem(key)
+    return stored !== null ? stored === '1' : defaultOpen
+  })
+
+  const toggle = useCallback(() => {
+    setOpen((prev) => {
+      const next = !prev
+      localStorage.setItem(key, next ? '1' : '0')
+      return next
+    })
+  }, [key])
+
+  // Sync with localStorage on mount (SSR hydration safety)
+  useEffect(() => {
+    const stored = localStorage.getItem(key)
+    if (stored !== null) {
+      setOpen(stored === '1')
+    }
+  }, [key])
+
+  return { open, toggle }
+}
+
+function CollapsibleSubGroup({
+  subGroup,
+  pathname,
+  badges,
+}: {
+  subGroup: NavSubGroup
+  pathname: string
+  badges: Record<string, number>
+}) {
+  const { open, toggle } = useSubGroupOpen(
+    subGroup.label,
+    subGroup.defaultOpen ?? true
+  )
+
+  return (
+    <div className='mt-1'>
+      <button
+        type='button'
+        onClick={toggle}
+        className='flex w-full items-center gap-1.5 px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70 hover:text-muted-foreground transition-colors'
+      >
+        {open ? (
+          <ChevronDown className='h-3 w-3 shrink-0' />
+        ) : (
+          <ChevronRight className='h-3 w-3 shrink-0' />
+        )}
+        <span>{subGroup.label}</span>
+      </button>
+      {open && (
+        <div className='flex flex-col gap-0.5'>
+          {subGroup.items.map((item) => {
+            const ItemIcon = item.icon
+            const active =
+              pathname === item.href || pathname.startsWith(item.href + '/')
+            const badgeCount = badges[item.href]
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors',
+                  active
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                <ItemIcon className='h-4 w-4 shrink-0' />
+                <span className='flex-1'>{item.label}</span>
+                {badgeCount != null && badgeCount > 0 ? (
+                  <span className='ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-xs font-medium text-destructive-foreground'>
+                    {badgeCount}
+                  </span>
+                ) : null}
+              </Link>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Nav group section
+// ---------------------------------------------------------------------------
+
 function NavGroupSection({
   group,
   pathname,
@@ -238,11 +307,16 @@ function NavGroupSection({
 }) {
   const Icon = group.icon
 
+  // Gather all items (including sub-group items) for collapsed mode
+  const allItems = [
+    ...group.items,
+    ...(group.subGroups?.flatMap((sg) => sg.items) ?? []),
+  ]
+
   if (collapsed) {
-    // In collapsed mode, show each item as an icon with a tooltip
     return (
       <div className={cn('px-2', !isFirst && 'mt-2 border-t pt-2')}>
-        {group.items.map((item) => {
+        {allItems.map((item) => {
           const ItemIcon = item.icon
           const active =
             pathname === item.href || pathname.startsWith(item.href + '/')
@@ -275,13 +349,13 @@ function NavGroupSection({
 
   return (
     <div className={cn('px-2', !isFirst && 'mt-3')}>
-      {/* Static section header — not interactive */}
+      {/* Static section header */}
       <div className='flex items-center gap-2 px-2 py-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground'>
         <Icon className='h-3.5 w-3.5 shrink-0' />
         <span>{group.label}</span>
       </div>
 
-      {/* Items — always visible */}
+      {/* Primary items */}
       <div className='ml-4 mt-0.5 flex flex-col gap-0.5 border-l pl-2'>
         {group.items.map((item) => {
           const ItemIcon = item.icon
@@ -309,6 +383,16 @@ function NavGroupSection({
             </Link>
           )
         })}
+
+        {/* Collapsible sub-groups */}
+        {group.subGroups?.map((sg) => (
+          <CollapsibleSubGroup
+            key={sg.label}
+            subGroup={sg}
+            pathname={pathname}
+            badges={badges}
+          />
+        ))}
       </div>
     </div>
   )

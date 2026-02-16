@@ -25,6 +25,7 @@ import {
   Plus,
   Trash2,
   GripVertical,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -130,7 +131,7 @@ export default function CarouselPage() {
   const [newTitle, setNewTitle] = useState('')
   const [newUrl, setNewUrl] = useState('')
 
-  const { data: items } = useQuery({
+  const { data: items, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.carousel.all(),
     queryFn: () => getCarouselItems(token!),
     enabled: !!token,
@@ -247,6 +248,25 @@ export default function CarouselPage() {
     },
     [updateMut]
   )
+
+  if (isLoading) {
+    return (
+      <div className='flex items-center justify-center py-20'>
+        <Loader2 className='h-6 w-6 animate-spin text-muted-foreground' />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className='flex flex-col items-center justify-center py-20 gap-3'>
+        <p className='text-sm text-destructive'>Failed to load carousel items</p>
+        <Button variant='outline' size='sm' onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className='space-y-4'>

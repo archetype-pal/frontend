@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
 import {
   getComments,
@@ -30,6 +31,9 @@ export default function CommentsPage() {
   const queryClient = useQueryClient()
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('all')
   const [deleteTarget, setDeleteTarget] = useState<CommentItem | null>(null)
+  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false)
+  const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | 'delete' | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: backofficeKeys.comments.list(filter),
@@ -43,8 +47,10 @@ export default function CommentsPage() {
     enabled: !!token,
   })
 
-  const invalidate = () =>
+  const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: backofficeKeys.comments.all() })
+    setSelected(new Set())
+  }
 
   const approveMut = useMutation({
     mutationFn: (id: number) => approveComment(token!, id),
@@ -88,6 +94,50 @@ export default function CommentsPage() {
 
   const comments = data?.results ?? []
 
+  const toggleSelect = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selected.size === comments.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(comments.map((c) => c.id)))
+    }
+  }
+
+  const handleBulkAction = async () => {
+    if (!bulkAction || selected.size === 0) return
+    const ids = Array.from(selected)
+    try {
+      if (bulkAction === 'approve') {
+        await Promise.all(ids.map((id) => approveComment(token!, id)))
+        toast.success(`${ids.length} comment(s) approved`)
+      } else if (bulkAction === 'reject') {
+        await Promise.all(ids.map((id) => rejectComment(token!, id)))
+        toast.success(`${ids.length} comment(s) rejected`)
+      } else if (bulkAction === 'delete') {
+        await Promise.all(ids.map((id) => deleteComment(token!, id)))
+        toast.success(`${ids.length} comment(s) deleted`)
+      }
+      invalidate()
+    } catch {
+      toast.error(`Failed to ${bulkAction} some comments`)
+    }
+    setBulkConfirmOpen(false)
+    setBulkAction(null)
+  }
+
+  const openBulkConfirm = (action: 'approve' | 'reject' | 'delete') => {
+    setBulkAction(action)
+    setBulkConfirmOpen(true)
+  }
+
   return (
     <div className='space-y-4'>
       <div className='flex items-center gap-3'>
@@ -110,7 +160,7 @@ export default function CommentsPage() {
             key={f}
             variant={filter === f ? 'default' : 'outline'}
             size='sm'
-            onClick={() => setFilter(f)}
+            onClick={() => { setFilter(f); setSelected(new Set()) }}
             className='capitalize'
           >
             {f}
@@ -118,8 +168,72 @@ export default function CommentsPage() {
         ))}
       </div>
 
+      {/* Bulk actions bar */}
+      {selected.size > 0 && (
+        <div className='flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-2'>
+          <span className='text-sm font-medium'>
+            {selected.size} selected
+          </span>
+          <div className='ml-auto flex items-center gap-2'>
+            <Button
+              variant='outline'
+              size='sm'
+              className='h-7 text-xs gap-1 text-green-600 hover:text-green-700'
+              onClick={() => openBulkConfirm('approve')}
+            >
+              <CheckCircle className='h-3 w-3' />
+              Approve All
+            </Button>
+            <Button
+              variant='outline'
+              size='sm'
+              className='h-7 text-xs gap-1 text-amber-600 hover:text-amber-700'
+              onClick={() => openBulkConfirm('reject')}
+            >
+              <XCircle className='h-3 w-3' />
+              Reject All
+            </Button>
+            <Button
+              variant='destructive'
+              size='sm'
+              className='h-7 text-xs gap-1'
+              onClick={() => openBulkConfirm('delete')}
+            >
+              <Trash2 className='h-3 w-3' />
+              Delete All
+            </Button>
+            <Button
+              variant='ghost'
+              size='sm'
+              className='h-7 text-xs'
+              onClick={() => setSelected(new Set())}
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Comment list */}
       <div className='space-y-2'>
+        {comments.length > 0 && (
+          <div className='flex items-center gap-2 px-1'>
+            <Checkbox
+              checked={
+                selected.size === comments.length && comments.length > 0
+                  ? true
+                  : selected.size > 0
+                    ? 'indeterminate'
+                    : false
+              }
+              onCheckedChange={toggleSelectAll}
+              aria-label='Select all'
+            />
+            <span className='text-xs text-muted-foreground'>
+              Select all ({comments.length})
+            </span>
+          </div>
+        )}
         {comments.length === 0 ? (
           <div className='rounded-lg border border-dashed p-8 text-center text-muted-foreground'>
             <p className='text-sm'>No comments to show.</p>
@@ -131,36 +245,44 @@ export default function CommentsPage() {
               className='rounded-lg border p-4 space-y-2'
             >
               <div className='flex items-start justify-between'>
-                <div className='space-y-0.5'>
-                  <div className='flex items-center gap-2'>
-                    <span className='font-medium text-sm'>
-                      {comment.author_name}
-                    </span>
-                    <span className='text-xs text-muted-foreground'>
-                      {comment.author_email}
-                    </span>
-                    {comment.is_approved ? (
-                      <Badge
-                        variant='default'
-                        className='text-[10px] gap-0.5'
-                      >
-                        <CheckCircle className='h-3 w-3' />
-                        Approved
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant='secondary'
-                        className='text-[10px] gap-0.5'
-                      >
-                        <Clock className='h-3 w-3' />
-                        Pending
-                      </Badge>
-                    )}
+                <div className='flex items-start gap-3'>
+                  <Checkbox
+                    checked={selected.has(comment.id)}
+                    onCheckedChange={() => toggleSelect(comment.id)}
+                    aria-label={`Select comment by ${comment.author_name}`}
+                    className='mt-0.5'
+                  />
+                  <div className='space-y-0.5'>
+                    <div className='flex items-center gap-2'>
+                      <span className='font-medium text-sm'>
+                        {comment.author_name}
+                      </span>
+                      <span className='text-xs text-muted-foreground'>
+                        {comment.author_email}
+                      </span>
+                      {comment.is_approved ? (
+                        <Badge
+                          variant='default'
+                          className='text-[10px] gap-0.5'
+                        >
+                          <CheckCircle className='h-3 w-3' />
+                          Approved
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant='secondary'
+                          className='text-[10px] gap-0.5'
+                        >
+                          <Clock className='h-3 w-3' />
+                          Pending
+                        </Badge>
+                      )}
+                    </div>
+                    <p className='text-xs text-muted-foreground'>
+                      on &ldquo;{comment.post_title}&rdquo; &middot;{' '}
+                      {new Date(comment.created_at).toLocaleDateString()}
+                    </p>
                   </div>
-                  <p className='text-xs text-muted-foreground'>
-                    on &ldquo;{comment.post_title}&rdquo; &middot;{' '}
-                    {new Date(comment.created_at).toLocaleDateString()}
-                  </p>
                 </div>
                 <div className='flex items-center gap-1'>
                   {!comment.is_approved && (
@@ -197,12 +319,13 @@ export default function CommentsPage() {
                   </Button>
                 </div>
               </div>
-              <p className='text-sm whitespace-pre-wrap'>{comment.content}</p>
+              <p className='text-sm whitespace-pre-wrap pl-8'>{comment.content}</p>
             </div>
           ))
         )}
       </div>
 
+      {/* Single delete confirmation */}
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
@@ -211,6 +334,25 @@ export default function CommentsPage() {
         confirmLabel='Delete'
         loading={deleteMut.isPending}
         onConfirm={() => deleteTarget && deleteMut.mutate(deleteTarget.id)}
+      />
+
+      {/* Bulk action confirmation */}
+      <ConfirmDialog
+        open={bulkConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setBulkConfirmOpen(false)
+            setBulkAction(null)
+          }
+        }}
+        title={`${bulkAction === 'delete' ? 'Delete' : bulkAction === 'approve' ? 'Approve' : 'Reject'} ${selected.size} comment(s)?`}
+        description={
+          bulkAction === 'delete'
+            ? `${selected.size} comment(s) will be permanently deleted.`
+            : `${selected.size} comment(s) will be ${bulkAction === 'approve' ? 'approved' : 'rejected'}.`
+        }
+        confirmLabel={bulkAction === 'delete' ? 'Delete All' : bulkAction === 'approve' ? 'Approve All' : 'Reject All'}
+        onConfirm={handleBulkAction}
       />
     </div>
   )

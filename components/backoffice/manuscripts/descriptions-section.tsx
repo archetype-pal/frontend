@@ -40,6 +40,8 @@ export function DescriptionsSection({
   const [newContent, setNewContent] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [editingSourceId, setEditingSourceId] = useState<number | null>(null)
+  const [editSourceValue, setEditSourceValue] = useState('')
 
   const { data: sources } = useQuery({
     queryKey: backofficeKeys.sources.all(),
@@ -74,12 +76,13 @@ export function DescriptionsSection({
   })
 
   const updateMut = useMutation({
-    mutationFn: ({ id, content }: { id: number; content: string }) =>
-      updateDescription(token!, id, { content }),
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      updateDescription(token!, id, data),
     onSuccess: () => {
       toast.success('Description updated')
       invalidate()
       setEditingId(null)
+      setEditingSourceId(null)
     },
     onError: (err) => {
       toast.error('Failed to update description', {
@@ -123,9 +126,53 @@ export function DescriptionsSection({
           {descriptions.map((desc) => (
             <div key={desc.id} className='rounded-md border p-3'>
               <div className='flex items-center justify-between mb-2'>
-                <span className='text-xs font-medium text-muted-foreground'>
-                  {desc.source_label}
-                </span>
+                {/* Source – click-to-edit dropdown */}
+                {editingSourceId === desc.id ? (
+                  <div className='flex items-center gap-1.5'>
+                    <Select
+                      value={editSourceValue}
+                      onValueChange={(val) => {
+                        setEditSourceValue(val)
+                        updateMut.mutate({
+                          id: desc.id,
+                          data: { source: Number(val) },
+                        })
+                      }}
+                    >
+                      <SelectTrigger className='h-7 text-xs w-40'>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(sources ?? []).map((s) => (
+                          <SelectItem key={s.id} value={String(s.id)}>
+                            {s.label || s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className='h-6 w-6'
+                      onClick={() => setEditingSourceId(null)}
+                    >
+                      <X className='h-3 w-3' />
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    type='button'
+                    className='group inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors'
+                    onClick={() => {
+                      setEditingSourceId(desc.id)
+                      setEditSourceValue(String(desc.source))
+                    }}
+                  >
+                    {desc.source_label}
+                    <Pencil className='h-2.5 w-2.5 opacity-0 group-hover:opacity-60 transition-opacity' />
+                  </button>
+                )}
+
                 <div className='flex gap-1'>
                   {editingId === desc.id ? (
                     <>
@@ -136,7 +183,7 @@ export function DescriptionsSection({
                         onClick={() =>
                           updateMut.mutate({
                             id: desc.id,
-                            content: editContent,
+                            data: { content: editContent },
                           })
                         }
                       >

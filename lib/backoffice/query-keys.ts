@@ -90,6 +90,15 @@ export const backofficeKeys = {
     all: () => [...backofficeKeys.all, 'scripts'] as const,
   },
 
+  // ── Annotations ──────────────────────────────────────────
+  graphs: {
+    all: () => [...backofficeKeys.all, 'graphs'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...backofficeKeys.all, 'graphs', 'list', filters] as const,
+    detail: (id: number) =>
+      [...backofficeKeys.all, 'graphs', 'detail', id] as const,
+  },
+
   // ── Stats (dashboard) ─────────────────────────────────────
   stats: {
     all: () => [...backofficeKeys.all, 'stats'] as const,

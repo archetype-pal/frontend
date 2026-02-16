@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import type { ColumnDef } from '@tanstack/react-table'
-import { BookMarked, Plus, Trash2 } from 'lucide-react'
+import { BookMarked, Plus, Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,8 +16,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table'
+import { InlineEdit } from '@/components/backoffice/common/inline-edit'
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
-import { getSources, createSource, deleteSource } from '@/services/backoffice/manuscripts'
+import { getSources, createSource, updateSource, deleteSource } from '@/services/backoffice/manuscripts'
 import { backofficeKeys } from '@/lib/backoffice/query-keys'
 import { formatApiError } from '@/lib/backoffice/format-api-error'
 import { toast } from 'sonner'
@@ -31,7 +32,7 @@ export default function SourcesPage() {
   const [newName, setNewName] = useState('')
   const [newLabel, setNewLabel] = useState('')
 
-  const { data: sources } = useQuery({
+  const { data: sources, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.sources.all(),
     queryFn: () => getSources(token!),
     enabled: !!token,
@@ -55,6 +56,15 @@ export default function SourcesPage() {
     },
   })
 
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<BibliographicSource> }) =>
+      updateSource(token!, id, data),
+    onSuccess: invalidate,
+    onError: (err) => {
+      toast.error('Failed to update source', { description: formatApiError(err) })
+    },
+  })
+
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteSource(token!, id),
     onSuccess: () => {
@@ -72,16 +82,24 @@ export default function SourcesPage() {
       accessorKey: 'name',
       header: sortableHeader('Name'),
       cell: ({ row }) => (
-        <span className='font-medium'>{row.original.name}</span>
+        <InlineEdit
+          value={row.original.name}
+          onSave={(name) =>
+            updateMut.mutate({ id: row.original.id, data: { name } })
+          }
+        />
       ),
     },
     {
       accessorKey: 'label',
       header: sortableHeader('Label'),
       cell: ({ row }) => (
-        <span className='text-sm text-muted-foreground'>
-          {row.original.label}
-        </span>
+        <InlineEdit
+          value={row.original.label}
+          onSave={(label) =>
+            updateMut.mutate({ id: row.original.id, data: { label } })
+          }
+        />
       ),
       size: 150,
     },
@@ -100,6 +118,25 @@ export default function SourcesPage() {
       size: 50,
     },
   ]
+
+  if (isLoading) {
+    return (
+      <div className='flex items-center justify-center py-20'>
+        <Loader2 className='h-6 w-6 animate-spin text-muted-foreground' />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className='flex flex-col items-center justify-center py-20 gap-3'>
+        <p className='text-sm text-destructive'>Failed to load sources</p>
+        <Button variant='outline' size='sm' onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className='space-y-4'>

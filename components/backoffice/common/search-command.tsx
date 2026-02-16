@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Type,
   BookOpen,
+  Landmark,
   Newspaper,
   PenTool,
   CalendarDays,
@@ -13,6 +14,12 @@ import {
   Hash,
   Settings,
   Search,
+  Database,
+  Library,
+  Languages,
+  ToggleLeft,
+  Users,
+  Hand,
   Plus,
   Clock,
 } from 'lucide-react'
@@ -36,23 +43,25 @@ interface NavEntry {
 
 const entries: NavEntry[] = [
   { label: 'Dashboard', href: '/backoffice', icon: Settings, group: 'General' },
-  // Scholarly Data
-  { label: 'Manuscripts', href: '/backoffice/manuscripts', icon: BookOpen, group: 'Scholarly Data' },
-  { label: 'Repositories', href: '/backoffice/repositories', icon: BookOpen, group: 'Scholarly Data' },
-  { label: 'Scribes', href: '/backoffice/scribes', icon: PenTool, group: 'Scholarly Data' },
-  { label: 'Hands', href: '/backoffice/hands', icon: PenTool, group: 'Scholarly Data' },
-  { label: 'Annotations', href: '/backoffice/annotations', icon: PenTool, group: 'Scholarly Data' },
-  { label: 'Characters', href: '/backoffice/symbols', icon: Type, group: 'Scholarly Data' },
-  // Site Content
-  { label: 'Publications', href: '/backoffice/publications', icon: Newspaper, group: 'Site Content' },
-  { label: 'Events', href: '/backoffice/events', icon: CalendarDays, group: 'Site Content' },
-  { label: 'Comments', href: '/backoffice/comments', icon: MessageSquare, group: 'Site Content' },
-  { label: 'Carousel', href: '/backoffice/carousel', icon: Image, group: 'Site Content' },
-  // Reference Data
-  { label: 'Dates', href: '/backoffice/dates', icon: Hash, group: 'Reference Data' },
-  { label: 'Formats', href: '/backoffice/formats', icon: Hash, group: 'Reference Data' },
-  { label: 'Sources', href: '/backoffice/sources', icon: Hash, group: 'Reference Data' },
-  { label: 'Search Engine', href: '/backoffice/search-engine', icon: Search, group: 'General' },
+  // Manuscripts & Palaeography
+  { label: 'Manuscripts', href: '/backoffice/manuscripts', icon: BookOpen, group: 'Manuscripts & Palaeography' },
+  { label: 'Scribes', href: '/backoffice/scribes', icon: Users, group: 'Manuscripts & Palaeography' },
+  { label: 'Hands', href: '/backoffice/hands', icon: Hand, group: 'Manuscripts & Palaeography' },
+  { label: 'Annotations', href: '/backoffice/annotations', icon: PenTool, group: 'Manuscripts & Palaeography' },
+  { label: 'Characters', href: '/backoffice/symbols', icon: Type, group: 'Manuscripts & Palaeography' },
+  { label: 'Repositories', href: '/backoffice/repositories', icon: Landmark, group: 'Manuscripts & Palaeography' },
+  { label: 'Dates', href: '/backoffice/dates', icon: Hash, group: 'Manuscripts & Palaeography' },
+  { label: 'Formats', href: '/backoffice/formats', icon: Library, group: 'Manuscripts & Palaeography' },
+  { label: 'Sources', href: '/backoffice/sources', icon: Database, group: 'Manuscripts & Palaeography' },
+  // Site & Content
+  { label: 'Publications', href: '/backoffice/publications', icon: Newspaper, group: 'Site & Content' },
+  { label: 'Events', href: '/backoffice/events', icon: CalendarDays, group: 'Site & Content' },
+  { label: 'Comments', href: '/backoffice/comments', icon: MessageSquare, group: 'Site & Content' },
+  { label: 'Carousel', href: '/backoffice/carousel', icon: Image, group: 'Site & Content' },
+  // Administration
+  { label: 'Search Engine', href: '/backoffice/search-engine', icon: Search, group: 'Administration' },
+  { label: 'Translations', href: '/backoffice/translations', icon: Languages, group: 'Administration' },
+  { label: 'Site Features', href: '/backoffice/site-features', icon: ToggleLeft, group: 'Administration' },
 ]
 
 const quickActions = [

@@ -1,18 +1,28 @@
 'use client'
 
-import { use, useState, useEffect } from 'react'
+import { use, useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Trash2, Loader2 } from 'lucide-react'
+import {
+  ArrowLeft,
+  Save,
+  Trash2,
+  Loader2,
+  Image as ImageIcon,
+  Check,
+  ExternalLink,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
 import { getHand, updateHand, deleteHand } from '@/services/backoffice/scribes'
+import { getItemImages } from '@/services/backoffice/manuscripts'
 import { backofficeKeys } from '@/lib/backoffice/query-keys'
 import { formatApiError } from '@/lib/backoffice/format-api-error'
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard'
@@ -39,24 +49,42 @@ export default function HandDetailPage({
   const [name, setName] = useState('')
   const [place, setPlace] = useState('')
   const [description, setDescription] = useState('')
+  const [selectedImages, setSelectedImages] = useState<number[]>([])
   const [dirty, setDirty] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+
+  // Fetch images for the hand's item part
+  const { data: imagesData, isLoading: imagesLoading } = useQuery({
+    queryKey: ['backoffice', 'item-images', hand?.item_part],
+    queryFn: () => getItemImages(token!, { item_part: hand!.item_part, limit: 200 }),
+    enabled: !!token && !!hand?.item_part,
+  })
+
+  const availableImages = useMemo(
+    () => imagesData?.results ?? [],
+    [imagesData]
+  )
 
   useEffect(() => {
     if (hand) {
       setName(hand.name)
       setPlace(hand.place)
       setDescription(hand.description)
+      setSelectedImages(hand.item_part_images ?? [])
       setDirty(false)
     }
   }, [hand])
 
-  // Warn before leaving with unsaved changes
   useUnsavedGuard(dirty)
 
   const saveMut = useMutation({
     mutationFn: () =>
-      updateHand(token!, id, { name, place, description }),
+      updateHand(token!, id, {
+        name,
+        place,
+        description,
+        item_part_images: selectedImages,
+      }),
     onSuccess: () => {
       toast.success('Hand saved')
       queryClient.invalidateQueries({ queryKey: backofficeKeys.hands.detail(id) })
@@ -70,7 +98,6 @@ export default function HandDetailPage({
     },
   })
 
-  // Cmd+S to save
   useKeyboardShortcut('mod+s', () => {
     if (dirty && !saveMut.isPending) saveMut.mutate()
   }, dirty)
@@ -98,6 +125,25 @@ export default function HandDetailPage({
   }
 
   const markDirty = () => setDirty(true)
+
+  const toggleImage = (imageId: number) => {
+    setSelectedImages((prev) =>
+      prev.includes(imageId)
+        ? prev.filter((id) => id !== imageId)
+        : [...prev, imageId]
+    )
+    markDirty()
+  }
+
+  const selectAllImages = () => {
+    setSelectedImages(availableImages.map((img) => img.id))
+    markDirty()
+  }
+
+  const deselectAllImages = () => {
+    setSelectedImages([])
+    markDirty()
+  }
 
   return (
     <div className='max-w-3xl space-y-6'>
@@ -139,6 +185,7 @@ export default function HandDetailPage({
         </div>
       </div>
 
+      {/* Read-only info card */}
       <div className='rounded-md border p-4 text-sm space-y-1'>
         <p>
           <span className='text-muted-foreground'>Scribe:</span>{' '}
@@ -151,7 +198,12 @@ export default function HandDetailPage({
         </p>
         <p>
           <span className='text-muted-foreground'>Item Part:</span>{' '}
-          {hand.item_part_display}
+          <Link
+            href={`/backoffice/manuscripts/${hand.item_part}`}
+            className='text-primary hover:underline'
+          >
+            {hand.item_part_display}
+          </Link>
         </p>
         {hand.date_display && (
           <p>
@@ -161,6 +213,22 @@ export default function HandDetailPage({
         )}
       </div>
 
+      {/* Quick links */}
+      <div className='flex items-center gap-2'>
+        <Link href={`/hands/${id}`} target='_blank'>
+          <Button variant='outline' size='sm' className='h-7 text-xs gap-1'>
+            <ExternalLink className='h-3 w-3' />
+            View Public Page
+          </Button>
+        </Link>
+        <Link href={`/backoffice/scribes/${hand.scribe}`}>
+          <Button variant='outline' size='sm' className='h-7 text-xs gap-1'>
+            Go to Scribe
+          </Button>
+        </Link>
+      </div>
+
+      {/* Editable fields */}
       <div className='grid grid-cols-2 gap-4'>
         <div className='space-y-1.5'>
           <Label>Name</Label>
@@ -185,6 +253,94 @@ export default function HandDetailPage({
           onChange={(e) => { setDescription(e.target.value); markDirty() }}
           rows={6}
         />
+      </div>
+
+      {/* Image selection section */}
+      <div className='space-y-3'>
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center gap-2'>
+            <ImageIcon className='h-4 w-4 text-muted-foreground' />
+            <Label className='text-base'>Images where this hand appears</Label>
+          </div>
+          <div className='flex items-center gap-2'>
+            <span className='text-xs text-muted-foreground'>
+              {selectedImages.length} of {availableImages.length} selected
+            </span>
+            <Button
+              variant='outline'
+              size='sm'
+              className='h-7 text-xs'
+              onClick={selectAllImages}
+              disabled={selectedImages.length === availableImages.length}
+            >
+              Select All
+            </Button>
+            <Button
+              variant='outline'
+              size='sm'
+              className='h-7 text-xs'
+              onClick={deselectAllImages}
+              disabled={selectedImages.length === 0}
+            >
+              Deselect All
+            </Button>
+          </div>
+        </div>
+
+        {imagesLoading ? (
+          <div className='flex items-center justify-center h-24 rounded-md border border-dashed'>
+            <Loader2 className='h-4 w-4 animate-spin text-muted-foreground' />
+          </div>
+        ) : availableImages.length === 0 ? (
+          <div className='rounded-md border border-dashed p-6 text-center text-muted-foreground text-sm'>
+            No images found for this item part.
+          </div>
+        ) : (
+          <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3'>
+            {availableImages.map((img) => {
+              const isSelected = selectedImages.includes(img.id)
+              return (
+                <button
+                  key={img.id}
+                  type='button'
+                  onClick={() => toggleImage(img.id)}
+                  className={`
+                    relative group rounded-lg border-2 p-3 text-left transition-all
+                    ${isSelected
+                      ? 'border-primary bg-primary/5'
+                      : 'border-muted hover:border-muted-foreground/30'}
+                  `}
+                >
+                  {/* Check indicator */}
+                  <div
+                    className={`
+                      absolute top-2 right-2 h-5 w-5 rounded-full flex items-center justify-center transition-colors
+                      ${isSelected
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-transparent group-hover:bg-muted-foreground/20'}
+                    `}
+                  >
+                    <Check className='h-3 w-3' />
+                  </div>
+
+                  {/* Image placeholder */}
+                  <div className='flex items-center justify-center h-16 rounded bg-muted/50 mb-2'>
+                    <ImageIcon className='h-6 w-6 text-muted-foreground/50' />
+                  </div>
+
+                  <div className='space-y-0.5'>
+                    <p className='text-xs font-medium truncate'>
+                      {img.locus || `Image #${img.id}`}
+                    </p>
+                    <p className='text-[10px] text-muted-foreground'>
+                      ID: {img.id}
+                    </p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <ConfirmDialog

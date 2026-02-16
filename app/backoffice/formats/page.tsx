@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Ruler, Plus, Trash2 } from 'lucide-react'
+import { Ruler, Plus, Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,8 +16,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table'
+import { InlineEdit } from '@/components/backoffice/common/inline-edit'
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
-import { getFormats, createFormat, deleteFormat } from '@/services/backoffice/manuscripts'
+import { getFormats, createFormat, updateFormat, deleteFormat } from '@/services/backoffice/manuscripts'
 import { backofficeKeys } from '@/lib/backoffice/query-keys'
 import { formatApiError } from '@/lib/backoffice/format-api-error'
 import { toast } from 'sonner'
@@ -30,7 +31,7 @@ export default function FormatsPage() {
   const [deleteTarget, setDeleteTarget] = useState<ItemFormat | null>(null)
   const [newName, setNewName] = useState('')
 
-  const { data: formats } = useQuery({
+  const { data: formats, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.formats.all(),
     queryFn: () => getFormats(token!),
     enabled: !!token,
@@ -49,6 +50,15 @@ export default function FormatsPage() {
     },
     onError: (err) => {
       toast.error('Failed to create format', { description: formatApiError(err) })
+    },
+  })
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<ItemFormat> }) =>
+      updateFormat(token!, id, data),
+    onSuccess: invalidate,
+    onError: (err) => {
+      toast.error('Failed to update format', { description: formatApiError(err) })
     },
   })
 
@@ -79,7 +89,12 @@ export default function FormatsPage() {
       accessorKey: 'name',
       header: sortableHeader('Name'),
       cell: ({ row }) => (
-        <span className='font-medium'>{row.original.name}</span>
+        <InlineEdit
+          value={row.original.name}
+          onSave={(name) =>
+            updateMut.mutate({ id: row.original.id, data: { name } })
+          }
+        />
       ),
     },
     {
@@ -97,6 +112,25 @@ export default function FormatsPage() {
       size: 50,
     },
   ]
+
+  if (isLoading) {
+    return (
+      <div className='flex items-center justify-center py-20'>
+        <Loader2 className='h-6 w-6 animate-spin text-muted-foreground' />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className='flex flex-col items-center justify-center py-20 gap-3'>
+        <p className='text-sm text-destructive'>Failed to load formats</p>
+        <Button variant='outline' size='sm' onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className='space-y-4'>

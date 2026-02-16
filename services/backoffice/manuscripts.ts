@@ -31,6 +31,25 @@ export const createHistoricalItem = historicalItemsCrud.create
 export const updateHistoricalItem = historicalItemsCrud.update
 export const deleteHistoricalItem = historicalItemsCrud.remove
 
+// ── Item Images ─────────────────────────────────────────────────────────
+
+export interface AdminItemImage {
+  id: number
+  item_part: number
+  image: string | null
+  locus: string
+}
+
+export function getItemImages(
+  token: string,
+  params?: { item_part?: number; limit?: number; offset?: number }
+) {
+  const crud = createCrudService<PaginatedResponse<AdminItemImage>, AdminItemImage>(
+    '/manuscripts/item-images/'
+  )
+  return crud.list(token, params)
+}
+
 // ── Catalogue Numbers ───────────────────────────────────────────────────
 
 const catalogueNumbersCrud = createCrudService<CatalogueNumber>(
@@ -74,6 +93,7 @@ export function getSources(token: string) {
 }
 
 export const createSource = sourcesCrud.create
+export const updateSource = sourcesCrud.update
 export const deleteSource = sourcesCrud.remove
 
 // ── Item Formats ────────────────────────────────────────────────────────
@@ -85,6 +105,7 @@ export function getFormats(token: string) {
 }
 
 export const createFormat = formatsCrud.create
+export const updateFormat = formatsCrud.update
 export const deleteFormat = formatsCrud.remove
 
 // ── Dates ───────────────────────────────────────────────────────────────
@@ -96,4 +117,5 @@ export function getDates(token: string) {
 }
 
 export const createDate = datesCrud.create
+export const updateDate = datesCrud.update
 export const deleteDate = datesCrud.remove

@@ -38,6 +38,7 @@ import { formatApiError } from '@/lib/backoffice/format-api-error'
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard'
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut'
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities'
+import { useAutosave } from '@/hooks/backoffice/use-autosave'
 
 export default function PublicationEditorPage({
   params,
@@ -58,6 +59,8 @@ export default function PublicationEditorPage({
   const { track } = useRecentEntities()
 
   const [title, setTitle] = useState('')
+  const [pubSlug, setPubSlug] = useState('')
+  const [slugLocked, setSlugLocked] = useState(true)
   const [content, setContent] = useState('')
   const [preview, setPreview] = useState('')
   const [status, setStatus] = useState<'Draft' | 'Published'>('Draft')
@@ -69,9 +72,16 @@ export default function PublicationEditorPage({
   const [dirty, setDirty] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
+  const generateSlug = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+
   useEffect(() => {
     if (pub) {
       setTitle(pub.title)
+      setPubSlug(pub.slug)
       setContent(pub.content)
       setPreview(pub.preview)
       setStatus(pub.status)
@@ -85,6 +95,46 @@ export default function PublicationEditorPage({
     }
   }, [pub, slug, track])
 
+  // Autosave to localStorage every 30s when dirty
+  const autosaveData = { title, pubSlug, content, preview, status, isBlog, isNews, isFeatured, allowComments, keywords }
+  const { status: autosaveStatus, discard: discardDraft, recover, getDraftInfo } = useAutosave(
+    `publication:${slug}`,
+    autosaveData,
+    dirty
+  )
+
+  // Check for recovered draft on mount
+  const [showRecovery, setShowRecovery] = useState(false)
+  useEffect(() => {
+    const info = getDraftInfo()
+    if (info.exists && pub) {
+      setShowRecovery(true)
+    }
+  }, [pub]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const recoverDraft = () => {
+    const draft = recover()
+    if (draft) {
+      setTitle(draft.title)
+      setPubSlug(draft.pubSlug)
+      setContent(draft.content)
+      setPreview(draft.preview)
+      setStatus(draft.status)
+      setIsBlog(draft.isBlog)
+      setIsNews(draft.isNews)
+      setIsFeatured(draft.isFeatured)
+      setAllowComments(draft.allowComments)
+      setKeywords(draft.keywords)
+      setDirty(true)
+    }
+    setShowRecovery(false)
+  }
+
+  const dismissRecovery = () => {
+    discardDraft()
+    setShowRecovery(false)
+  }
+
   // Warn before leaving with unsaved changes
   useUnsavedGuard(dirty)
 
@@ -92,6 +142,7 @@ export default function PublicationEditorPage({
     mutationFn: () =>
       updatePublication(token!, slug, {
         title,
+        slug: pubSlug,
         content,
         preview,
         status,
@@ -101,13 +152,17 @@ export default function PublicationEditorPage({
         allow_comments: allowComments,
         keywords,
       }),
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success('Publication saved')
+      discardDraft()
       queryClient.invalidateQueries({
         queryKey: backofficeKeys.publications.detail(slug),
       })
       queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() })
       setDirty(false)
+      if (data.slug !== slug) {
+        router.replace(`/backoffice/publications/${data.slug}`)
+      }
     },
     onError: (err) => {
       toast.error('Failed to save publication', {
@@ -190,14 +245,80 @@ export default function PublicationEditorPage({
         </div>
       </div>
 
+      {/* Recovery banner */}
+      {showRecovery && (
+        <div className='flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 px-4 py-3'>
+          <span className='text-sm text-amber-800 dark:text-amber-200 flex-1'>
+            An autosaved draft was found. Would you like to recover it?
+          </span>
+          <Button size='sm' variant='outline' className='h-7 text-xs' onClick={recoverDraft}>
+            Recover Draft
+          </Button>
+          <Button size='sm' variant='ghost' className='h-7 text-xs' onClick={dismissRecovery}>
+            Dismiss
+          </Button>
+        </div>
+      )}
+
+      {/* Autosave status */}
+      {dirty && (
+        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+          {autosaveStatus === 'saving' && (
+            <>
+              <Loader2 className='h-3 w-3 animate-spin' />
+              <span>Autosaving draft...</span>
+            </>
+          )}
+          {autosaveStatus === 'saved' && (
+            <span>Draft autosaved</span>
+          )}
+          {autosaveStatus === 'idle' && (
+            <span>Unsaved changes</span>
+          )}
+        </div>
+      )}
+
       {/* Form */}
       <div className='space-y-4'>
         <div className='space-y-1.5'>
           <Label>Title</Label>
           <Input
             value={title}
-            onChange={(e) => { setTitle(e.target.value); markDirty() }}
+            onChange={(e) => {
+              setTitle(e.target.value)
+              if (!slugLocked) setPubSlug(generateSlug(e.target.value))
+              markDirty()
+            }}
           />
+        </div>
+
+        <div className='space-y-1.5'>
+          <div className='flex items-center justify-between'>
+            <Label>Slug</Label>
+            <button
+              type='button'
+              onClick={() => {
+                const next = !slugLocked
+                setSlugLocked(next)
+                if (!next) setPubSlug(generateSlug(title))
+              }}
+              className='text-xs text-muted-foreground hover:text-foreground'
+            >
+              {slugLocked ? 'Auto-generate from title' : 'Lock (manual)'}
+            </button>
+          </div>
+          <Input
+            value={pubSlug}
+            onChange={(e) => {
+              setPubSlug(e.target.value)
+              setSlugLocked(true)
+              markDirty()
+            }}
+            className='font-mono text-sm'
+          />
+          <p className='text-xs text-muted-foreground'>
+            URL: /blogs/{pubSlug || '...'}
+          </p>
         </div>
 
         <div className='grid grid-cols-2 gap-4'>

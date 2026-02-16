@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   type ColumnDef,
   type SortingState,
@@ -101,6 +101,28 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [activePreset, setActivePreset] = useState(0)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // "/" shortcut to focus search input
+  useEffect(() => {
+    if (!searchColumn) return
+    function onKeyDown(e: KeyboardEvent) {
+      if (
+        e.key === '/' &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !(e.target instanceof HTMLInputElement) &&
+        !(e.target instanceof HTMLTextAreaElement) &&
+        !(e.target as HTMLElement)?.isContentEditable
+      ) {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [searchColumn])
 
   // Apply preset filter to data
   const filteredData =
@@ -233,6 +255,7 @@ export function DataTable<TData, TValue>({
             <div className='relative max-w-sm flex-1'>
               <Search className='absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
               <Input
+                ref={searchInputRef}
                 placeholder={searchPlaceholder}
                 value={
                   (table
@@ -244,8 +267,11 @@ export function DataTable<TData, TValue>({
                     .getColumn(searchColumn)
                     ?.setFilterValue(e.target.value)
                 }
-                className='pl-8 h-9'
+                className='pl-8 pr-8 h-9'
               />
+              <kbd className='absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none hidden sm:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground'>
+                /
+              </kbd>
             </div>
           )}
           <div className='ml-auto flex items-center gap-2'>

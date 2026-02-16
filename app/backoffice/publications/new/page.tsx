@@ -5,17 +5,18 @@ import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { Badge } from '@/components/ui/badge'
 import { createPublication } from '@/services/backoffice/publications'
 import { formatApiError } from '@/lib/backoffice/format-api-error'
 import { toast } from 'sonner'
 
 export default function NewPublicationPage() {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
@@ -23,16 +24,16 @@ export default function NewPublicationPage() {
   const [isBlog, setIsBlog] = useState(false)
   const [isNews, setIsNews] = useState(false)
 
-  // Auto-generate slug from title when not locked
+  const generateSlug = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+
   const handleTitleChange = (value: string) => {
     setTitle(value)
     if (!slugLocked) {
-      setSlug(
-        value
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '')
-      )
+      setSlug(generateSlug(value))
     }
   }
 
@@ -40,12 +41,13 @@ export default function NewPublicationPage() {
     mutationFn: () =>
       createPublication(token!, {
         title,
-        slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+        slug: slug || generateSlug(title),
         content: '<p></p>',
         preview: '',
         is_blog_post: isBlog,
         is_news: isNews,
         status: 'Draft',
+        author: user?.id,
       }),
     onSuccess: (data) => {
       toast.success('Publication created')
@@ -86,7 +88,11 @@ export default function NewPublicationPage() {
             <Label>Slug</Label>
             <button
               type='button'
-              onClick={() => setSlugLocked(!slugLocked)}
+              onClick={() => {
+                const next = !slugLocked
+                setSlugLocked(next)
+                if (!next) setSlug(generateSlug(title))
+              }}
               className='text-xs text-muted-foreground hover:text-foreground'
             >
               {slugLocked ? 'Unlock (auto-generate)' : 'Lock (manual)'}
@@ -99,8 +105,27 @@ export default function NewPublicationPage() {
               setSlugLocked(true)
             }}
             placeholder='my-publication-title'
+            className='font-mono text-sm'
           />
+          {slug && (
+            <p className='text-xs text-muted-foreground'>
+              URL: /blogs/{slug}
+            </p>
+          )}
         </div>
+
+        {user && (
+          <div className='space-y-1.5'>
+            <Label>Author</Label>
+            <div className='flex items-center gap-2 rounded-md border px-3 py-2 text-sm bg-muted/30'>
+              <User className='h-4 w-4 text-muted-foreground' />
+              <span>{user.first_name ? `${user.first_name} ${user.last_name}` : user.username}</span>
+              <Badge variant='outline' className='text-[10px] ml-auto'>
+                Auto-assigned
+              </Badge>
+            </div>
+          </div>
+        )}
 
         <div className='flex items-center gap-6'>
           <label className='flex items-center gap-2 text-sm'>
