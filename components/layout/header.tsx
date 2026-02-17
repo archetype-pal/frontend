@@ -21,9 +21,14 @@ const BANNER_VISIBLE_KEY = 'digipal-header-banner-visible'
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isBannerVisible, setIsBannerVisible] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const { items } = useCollection()
   const { token, user, logout } = useAuth()
   const pathname = usePathname()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const stored = localStorage.getItem(BANNER_VISIBLE_KEY)
@@ -96,201 +101,236 @@ export default function Header() {
           <div className='flex flex-col md:flex-row md:items-center md:justify-between md:flex-wrap gap-4 md:gap-6'>
             <ul className='flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mr-0 md:mr-6'>
               <li>
-                <Link href='/'>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    className={`transition-colors w-full md:w-auto justify-start group ${
-                      isActive('/', true)
-                        ? 'bg-primary-foreground/30 text-white'
-                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                    }`}
-                  >
+                <Button
+                  asChild
+                  variant='ghost'
+                  size='sm'
+                  className={`transition-colors w-full md:w-auto justify-start group ${
+                    isActive('/', true)
+                      ? 'bg-primary-foreground/30 text-white'
+                      : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                  }`}
+                >
+                  <Link href='/'>
                     <Home className='h-4 w-4 mr-1 group-hover:scale-110 transition-transform' />
                     Home
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </li>
               <li>
-                <Link href='/search/manuscripts/'>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    className={`transition-colors w-full md:w-auto justify-start group ${
-                      isActive('/search')
-                        ? 'bg-primary-foreground/30 text-white'
-                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                    }`}
-                  >
+                <Button
+                  asChild
+                  variant='ghost'
+                  size='sm'
+                  className={`transition-colors w-full md:w-auto justify-start group ${
+                    isActive('/search')
+                      ? 'bg-primary-foreground/30 text-white'
+                      : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                  }`}
+                >
+                  <Link href='/search/manuscripts/'>
                     <Search className='h-4 w-4 mr-1 group-hover:scale-110 transition-transform' />
                     Search
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </li>
               <li>
-                <Link href='/collection'>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    className={`transition-colors w-full md:w-auto justify-start group ${
-                      isActive('/collection', true)
-                        ? 'bg-primary-foreground/30 text-white'
-                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                    }`}
-                  >
+                <Button
+                  asChild
+                  variant='ghost'
+                  size='sm'
+                  className={`transition-colors w-full md:w-auto justify-start group ${
+                    isActive('/collection', true)
+                      ? 'bg-primary-foreground/30 text-white'
+                      : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                  }`}
+                >
+                  <Link href='/collection'>
                     <FolderOpen className='h-4 w-4 mr-1 group-hover:scale-110 transition-transform' />
                     My Collection ({items.length})
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </li>
               <li>
-                <Link href='/lightbox'>
+                <Button
+                  asChild
+                  variant='ghost'
+                  size='sm'
+                  className={`transition-colors w-full md:w-auto justify-start group ${
+                    isActive('/lightbox', true)
+                      ? 'bg-primary-foreground/30 text-white'
+                      : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                  }`}
+                >
+                  <Link href='/lightbox'>
+                    Lightbox
+                  </Link>
+                </Button>
+              </li>
+              <li>
+                <Button
+                  asChild
+                  variant='ghost'
+                  size='sm'
+                  className={`transition-colors w-full md:w-auto justify-start ${
+                    isActive('/news')
+                      ? 'bg-primary-foreground/30 text-white'
+                      : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                  }`}
+                >
+                  <Link href='/news/'>
+                    News
+                  </Link>
+                </Button>
+              </li>
+              <li>
+                <Button
+                  asChild
+                  variant='ghost'
+                  size='sm'
+                  className={`transition-colors w-full md:w-auto justify-start ${
+                    isActive('/blogs')
+                      ? 'bg-primary-foreground/30 text-white'
+                      : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                  }`}
+                >
+                  <Link href='/blogs/'>
+                    Blogs
+                  </Link>
+                </Button>
+              </li>
+              <li>
+                <Button
+                  asChild
+                  variant='ghost'
+                  size='sm'
+                  className={`transition-colors w-full md:w-auto justify-start ${
+                    isActive('/feature')
+                      ? 'bg-primary-foreground/30 text-white'
+                      : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                  }`}
+                >
+                  <Link href='/feature/'>
+                    Feature Articles
+                  </Link>
+                </Button>
+              </li>
+              <li>
+                {mounted ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        className={`transition-colors w-full md:w-auto justify-start group ${
+                          isActive('/events')
+                            ? 'bg-primary-foreground/30 text-white'
+                            : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                        }`}
+                      >
+                        Past Events
+                        <ChevronDown className='ml-1 h-4 w-4 group-hover:scale-110 transition-transform' />
+                      </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent>
+                      <DropdownMenuItem>
+                        <Link href='/events/exhibition/'>Exhibition</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link href='/events/exhibition-launch/'>
+                          Exhibition Launch
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link href='/events/colloquium/'>Colloquium</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link href='/events/conference/'>Public conference</Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
                   <Button
                     variant='ghost'
                     size='sm'
                     className={`transition-colors w-full md:w-auto justify-start group ${
-                      isActive('/lightbox', true)
+                      isActive('/events')
                         ? 'bg-primary-foreground/30 text-white'
                         : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
                     }`}
                   >
-                    Lightbox
+                    Past Events
+                    <ChevronDown className='ml-1 h-4 w-4 group-hover:scale-110 transition-transform' />
                   </Button>
-                </Link>
+                )}
               </li>
               <li>
-                <Link href='/news/'>
+                {mounted ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant='ghost'
+                        className={`transition-colors group ${
+                          isActive('/about')
+                            ? 'bg-primary-foreground/30 text-white'
+                            : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                        }`}
+                      >
+                        About <ChevronDown className='ml-1 h-4 w-4 group-hover:scale-110 transition-transform' />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className='w-56'>
+                      <DropdownMenuItem>
+                        <Link href='/about/historical-context'>
+                          Historical Context
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link href='/about/project-team'>Project Team</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link href='/about/citing-database'>
+                          Citing the Models of Authority database
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link href='/about/talks-publications'>
+                          Talks and Publications
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link href='/about/acknowledgements'>
+                          Acknowledgements and Image Rights
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link href='/about/privacy-policy'>
+                          Privacy and Cookie Policy
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link href='/about/accessibility'>
+                          Accessibility Statement
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link href='/about'>About</Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
                   <Button
                     variant='ghost'
-                    size='sm'
-                    className={`transition-colors w-full md:w-auto justify-start ${
-                      isActive('/news')
+                    className={`transition-colors group ${
+                      isActive('/about')
                         ? 'bg-primary-foreground/30 text-white'
                         : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
                     }`}
                   >
-                    News
+                    About <ChevronDown className='ml-1 h-4 w-4 group-hover:scale-110 transition-transform' />
                   </Button>
-                </Link>
-              </li>
-              <li>
-                <Link href='/blogs/'>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    className={`transition-colors w-full md:w-auto justify-start ${
-                      isActive('/blogs')
-                        ? 'bg-primary-foreground/30 text-white'
-                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                    }`}
-                  >
-                    Blogs
-                  </Button>
-                </Link>
-              </li>
-              <li>
-                <Link href='/feature/'>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    className={`transition-colors w-full md:w-auto justify-start ${
-                      isActive('/feature')
-                        ? 'bg-primary-foreground/30 text-white'
-                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                    }`}
-                  >
-                    Feature Articles
-                  </Button>
-                </Link>
-              </li>
-              <li>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      className={`transition-colors w-full md:w-auto justify-start group ${
-                        isActive('/events')
-                          ? 'bg-primary-foreground/30 text-white'
-                          : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                      }`}
-                    >
-                      Past Events
-                      <ChevronDown className='ml-1 h-4 w-4 group-hover:scale-110 transition-transform' />
-                    </Button>
-                  </DropdownMenuTrigger>
-
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <Link href='/events/exhibition/'>Exhibition</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link href='/events/exhibition-launch/'>
-                        Exhibition Launch
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link href='/events/colloquium/'>Colloquium</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link href='/events/conference/'>Public conference</Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </li>
-              <li>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant='ghost'
-                      className={`transition-colors group ${
-                        isActive('/about')
-                          ? 'bg-primary-foreground/30 text-white'
-                          : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                      }`}
-                    >
-                      About <ChevronDown className='ml-1 h-4 w-4 group-hover:scale-110 transition-transform' />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className='w-56'>
-                    <DropdownMenuItem>
-                      <Link href='/about/historical-context'>
-                        Historical Context
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link href='/about/project-team'>Project Team</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link href='/about/citing-database'>
-                        Citing the Models of Authority database
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link href='/about/talks-publications'>
-                        Talks and Publications
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link href='/about/acknowledgements'>
-                        Acknowledgements and Image Rights
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link href='/about/privacy-policy'>
-                        Privacy and Cookie Policy
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link href='/about/accessibility'>
-                        Accessibility Statement
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link href='/about'>About</Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                )}
               </li>
             </ul>
             <div className='flex flex-col md:flex-row items-center gap-3 w-full md:w-auto md:max-w-xl'>
@@ -311,16 +351,17 @@ export default function Header() {
                 {token ? (
                   <>
                     {user?.is_staff && (
-                      <Link href='/backoffice'>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          className='text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                        >
+                      <Button
+                        asChild
+                        variant='ghost'
+                        size='sm'
+                        className='text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                      >
+                        <Link href='/backoffice'>
                           <Shield className='h-4 w-4 mr-1' />
                           Backoffice
-                        </Button>
-                      </Link>
+                        </Link>
+                      </Button>
                     )}
                     <Button
                       variant='ghost'
@@ -333,16 +374,17 @@ export default function Header() {
                     </Button>
                   </>
                 ) : (
-                  <Link href='/login'>
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      className='text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                    >
+                  <Button
+                    asChild
+                    variant='ghost'
+                    size='sm'
+                    className='text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                  >
+                    <Link href='/login'>
                       <LogIn className='h-4 w-4 mr-1' />
                       Sign in
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 )}
                 <Button
                   variant='ghost'

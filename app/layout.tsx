@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import { Toaster } from 'sonner'
 import './globals.css'
-import { ThemeProvider } from '@/components/layout/theme-provider'
 import Header from '@/components/layout/header'
 import Footer from '@/components/layout/footer'
 import { AuthProvider } from '@/contexts/auth-context'
@@ -32,28 +31,21 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang='en' suppressHydrationWarning>
+    <html lang='en' className='light' suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute='class'
-          defaultTheme='light'
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <CollectionProvider>
-              <SearchProvider>
-                <div className='flex flex-col min-h-screen'>
-                  <Header />
-                  <div className='flex-1'>{children}</div>
-                  <Footer />
-                </div>
-              </SearchProvider>
-            </CollectionProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <CollectionProvider>
+            <SearchProvider>
+              <div className='flex flex-col min-h-screen'>
+                <Header />
+                <div className='flex-1'>{children}</div>
+                <Footer />
+              </div>
+            </SearchProvider>
+          </CollectionProvider>
+        </AuthProvider>
         <Toaster richColors position="top-center" />
       </body>
     </html>

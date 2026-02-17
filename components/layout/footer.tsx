@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -36,11 +35,13 @@ export default function Footer() {
         <div className='flex flex-wrap justify-center items-center mb-8'>
           {partners.map((partner, index) => (
             <div key={index} className='m-4'>
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={partner.logo}
                 alt={partner.name}
                 width={100}
                 height={50}
+                loading='lazy'
               />
             </div>
           ))}
@@ -117,11 +118,11 @@ export default function Footer() {
           </Button>
         </div>
         <div className='text-center mt-4'>
-          <Link href='/login'>
-            <Button variant='link' className='text-primary'>
+          <Button asChild variant='link' className='text-primary'>
+            <Link href='/login'>
               Log in.
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
     </footer>
