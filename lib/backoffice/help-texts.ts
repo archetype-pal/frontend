@@ -41,15 +41,32 @@ export const helpTexts: Record<string, HelpEntry> = {
     example: 'HFHF',
   },
 
+  // -- Current Location --
+  'currentLocation.repository': {
+    description:
+      'The archive or library where this charter is held today.',
+    example: 'National Records of Scotland, Durham Cathedral Archives',
+  },
+  'currentLocation.shelfmark': {
+    description:
+      'The catalogue reference used by the repository to identify this document on their shelves.',
+    example: 'GD55/1, 3.1.Pont.7',
+  },
+
   // -- Item Parts --
   'itemPart.locus': {
     description:
-      'The folio or page range within the current item for this part.',
-    example: 'ff.2-173, pp.1-24',
+      'The folio or page range within the physical volume for this part.',
+    example: 'f.1r, ff.2-173, pp.1-24',
   },
   'itemPart.currentItem': {
     description:
-      'The physical volume (repository + shelfmark) where this part currently resides.',
+      'The physical volume (repository + shelfmark) where this manuscript currently resides.',
+  },
+  'itemPart.customLabel': {
+    description:
+      'An optional label that overrides the auto-generated display name. Use when the standard "Repository Shelfmark Locus" format is insufficient.',
+    example: 'Charter of King William (original)',
   },
 
   // -- Catalogue Numbers --

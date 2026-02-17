@@ -10,6 +10,8 @@ import type {
   CatalogueNumber,
   HistoricalItemDescription,
   BackofficeDate,
+  CurrentItemOption,
+  ItemPartNested,
 } from '@/types/backoffice'
 
 // ── Historical Items ────────────────────────────────────────────────────
@@ -49,6 +51,36 @@ export function getItemImages(
   )
   return crud.list(token, params)
 }
+
+// ── Item Parts ───────────────────────────────────────────────────────────
+
+const itemPartsCrud = createCrudService<
+  PaginatedResponse<ItemPartNested>,
+  ItemPartNested
+>('/manuscripts/item-parts/')
+
+export const createItemPart = itemPartsCrud.create
+export const updateItemPart = itemPartsCrud.update
+export const deleteItemPart = itemPartsCrud.remove
+
+// ── Current Items ────────────────────────────────────────────────────────
+
+const currentItemsCrud = createCrudService<
+  PaginatedResponse<CurrentItemOption>,
+  CurrentItemOption
+>('/manuscripts/current-items/')
+
+export function getCurrentItems(
+  token: string,
+  params?: { repository?: number; limit?: number; offset?: number }
+) {
+  return currentItemsCrud.list(token, params)
+}
+
+export const getCurrentItem = currentItemsCrud.get
+export const createCurrentItem = currentItemsCrud.create
+export const updateCurrentItem = currentItemsCrud.update
+export const deleteCurrentItem = currentItemsCrud.remove
 
 // ── Catalogue Numbers ───────────────────────────────────────────────────
 

@@ -24,6 +24,7 @@ import { CompletenessChecklist } from '@/components/backoffice/common/completene
 import { UnsavedChangesBar } from '@/components/backoffice/common/unsaved-changes-bar'
 import { CatalogueNumbersSection } from './catalogue-numbers-section'
 import { DescriptionsSection } from './descriptions-section'
+import { CurrentLocationSection } from './current-location-section'
 import { ItemPartsTab } from './item-parts-tab'
 import {
   getHistoricalItem,
@@ -72,6 +73,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   const [draft, setDraft] = useState<Partial<HistoricalItemDetail>>({})
   const [dirty, setDirty] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState('details')
 
   useEffect(() => {
     if (item) {
@@ -149,10 +151,16 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
     )
   }
 
-  const heading =
-    item.catalogue_numbers.length > 0
-      ? item.catalogue_numbers.map((cn) => `${cn.catalogue_label} ${cn.number}`).join(', ')
-      : `Historical Item #${item.id}`
+  const heading = (() => {
+    if (item.catalogue_numbers.length > 0) {
+      return item.catalogue_numbers.map((cn) => `${cn.catalogue_label} ${cn.number}`).join(', ')
+    }
+    const firstPart = item.item_parts[0]
+    if (firstPart?.display_label) {
+      return firstPart.display_label
+    }
+    return `Manuscript #${item.id}`
+  })()
 
   return (
     <div className='space-y-6'>
@@ -236,6 +244,13 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       <CompletenessChecklist
         items={[
           {
+            label: 'Current Location',
+            complete:
+              item.item_parts.length > 0 &&
+              item.item_parts[0].current_item != null,
+            value: item.item_parts[0]?.current_item_display ?? undefined,
+          },
+          {
             label: 'Date',
             complete: item.date != null,
             value: item.date_display ?? undefined,
@@ -266,18 +281,18 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
                 : undefined,
           },
           {
-            label: 'Item Parts',
+            label: 'Parts',
             complete: item.item_parts.length > 0,
             value:
               item.item_parts.length > 0
-                ? `${item.item_parts.length} parts`
+                ? `${item.item_parts.length} part${item.item_parts.length !== 1 ? 's' : ''}`
                 : undefined,
           },
         ]}
       />
 
       {/* Tabs */}
-      <Tabs defaultValue='details'>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value='details'>Details</TabsTrigger>
           <TabsTrigger value='parts'>
@@ -370,6 +385,13 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             </div>
           </div>
 
+          {/* Current Location */}
+          <CurrentLocationSection
+            historicalItemId={itemId}
+            itemParts={item.item_parts}
+            onNavigateToParts={() => setActiveTab('parts')}
+          />
+
           {/* Catalogue Numbers */}
           <CatalogueNumbersSection
             historicalItemId={itemId}
@@ -394,8 +416,8 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title='Delete this historical item?'
-        description='This will permanently delete this item and all its parts, images, and texts.'
+        title='Delete this manuscript?'
+        description='This will permanently delete this manuscript and all its parts, images, and texts.'
         confirmLabel='Delete'
         loading={deleteMut.isPending}
         onConfirm={() => deleteMut.mutate()}

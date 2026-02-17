@@ -16,24 +16,32 @@ import type { HistoricalItemListItem } from '@/types/backoffice'
 
 const columns: ColumnDef<HistoricalItemListItem>[] = [
   {
-    accessorKey: 'id',
-    header: sortableHeader('ID'),
-    cell: ({ row }) => (
-      <span className='tabular-nums text-muted-foreground'>#{row.original.id}</span>
-    ),
-    size: 60,
+    accessorKey: 'location_display',
+    header: sortableHeader('Shelfmark'),
+    cell: ({ row }) => {
+      const display =
+        row.original.location_display ||
+        row.original.catalogue_numbers_display ||
+        `Manuscript #${row.original.id}`
+      return (
+        <Link
+          href={`/backoffice/manuscripts/${row.original.id}`}
+          className='font-medium text-primary hover:underline'
+        >
+          {display}
+        </Link>
+      )
+    },
   },
   {
-    accessorKey: 'catalogue_numbers_display',
-    header: sortableHeader('Catalogue'),
+    accessorKey: 'repository_label',
+    header: sortableHeader('Repository'),
     cell: ({ row }) => (
-      <Link
-        href={`/backoffice/manuscripts/${row.original.id}`}
-        className='font-medium text-primary hover:underline'
-      >
-        {row.original.catalogue_numbers_display || `Item #${row.original.id}`}
-      </Link>
+      <span className='text-sm text-muted-foreground'>
+        {row.original.repository_label ?? '—'}
+      </span>
     ),
+    size: 80,
   },
   {
     accessorKey: 'type',
@@ -54,20 +62,20 @@ const columns: ColumnDef<HistoricalItemListItem>[] = [
     size: 120,
   },
   {
-    accessorKey: 'format_display',
-    header: 'Format',
+    accessorKey: 'catalogue_numbers_display',
+    header: 'Catalogue',
     cell: ({ row }) => (
       <span className='text-sm text-muted-foreground'>
-        {row.original.format_display ?? '—'}
+        {row.original.catalogue_numbers_display || '—'}
       </span>
     ),
-    size: 100,
+    size: 140,
   },
   {
-    accessorKey: 'part_count',
-    header: sortableHeader('Parts'),
+    accessorKey: 'image_count',
+    header: sortableHeader('Images'),
     cell: ({ row }) => (
-      <span className='tabular-nums text-sm'>{row.original.part_count}</span>
+      <span className='tabular-nums text-sm'>{row.original.image_count}</span>
     ),
     size: 70,
   },
@@ -103,7 +111,7 @@ export default function ManuscriptsPage() {
           <BookOpen className='h-6 w-6 text-primary' />
           <div>
             <h1 className='text-2xl font-semibold tracking-tight'>
-              Historical Items
+              Manuscripts
             </h1>
             <p className='text-sm text-muted-foreground'>
               {data?.count ?? '...'} manuscripts in the collection
@@ -112,15 +120,15 @@ export default function ManuscriptsPage() {
         </div>
         <Button size='sm' onClick={() => router.push('/backoffice/manuscripts/new')}>
           <Plus className='h-4 w-4 mr-1' />
-          New Item
+          New Manuscript
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.results ?? []}
-        searchColumn='catalogue_numbers_display'
-        searchPlaceholder='Search by catalogue number...'
+        searchColumn='location_display'
+        searchPlaceholder='Search by shelfmark or catalogue...'
         pageSize={50}
         enableColumnVisibility
         enableExport

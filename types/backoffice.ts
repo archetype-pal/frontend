@@ -147,7 +147,19 @@ export interface ItemPartNested {
   current_item_display: string | null
   current_item_locus: string
   display_label: string
+  repository: number | null
+  repository_name: string | null
+  shelfmark: string | null
   images: ItemPartImage[]
+}
+
+export interface CurrentItemOption {
+  id: number
+  description: string
+  repository: number
+  repository_name: string
+  shelfmark: string
+  part_count: number
 }
 
 export interface HistoricalItemListItem {
@@ -161,6 +173,10 @@ export interface HistoricalItemListItem {
   date_display: string | null
   catalogue_numbers_display: string
   part_count: number
+  location_display: string | null
+  repository_label: string | null
+  shelfmark: string | null
+  image_count: number
 }
 
 export interface HistoricalItemDetail {

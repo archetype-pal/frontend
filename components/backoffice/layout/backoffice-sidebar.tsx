@@ -19,6 +19,7 @@ import {
   Users,
   Hand,
   Search,
+  Archive,
   Database,
   Hash,
   Library,
@@ -79,6 +80,7 @@ const navigation: NavGroup[] = [
         label: 'Supporting Data',
         defaultOpen: true,
         items: [
+          { label: 'Physical Volumes', href: '/backoffice/physical-volumes', icon: Archive },
           { label: 'Repositories', href: '/backoffice/repositories', icon: Landmark },
           { label: 'Dates', href: '/backoffice/dates', icon: Hash },
           { label: 'Formats', href: '/backoffice/formats', icon: Library },
