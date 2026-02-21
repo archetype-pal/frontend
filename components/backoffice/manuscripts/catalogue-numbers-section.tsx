@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from 'sonner'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -129,7 +129,7 @@ export function CatalogueNumbersSection({
           {catalogueNumbers.map((cn) => (
             <div
               key={cn.id}
-              className='flex items-center gap-3 px-3 py-2 text-sm'
+              className='flex items-center gap-3 px-3 py-2 text-sm min-w-0'
             >
               {/* Catalogue source – click-to-edit dropdown */}
               <div className='w-28 shrink-0'>
@@ -170,7 +170,7 @@ export function CatalogueNumbersSection({
               </div>
 
               {/* Number – inline edit */}
-              <div className='flex-1'>
+              <div className='min-w-0 shrink'>
                 <InlineEdit
                   value={cn.number}
                   onSave={(number) =>
@@ -180,10 +180,11 @@ export function CatalogueNumbersSection({
               </div>
 
               {/* URL – inline edit */}
-              <div className='flex-1 max-w-48'>
+              <div className='min-w-0 max-w-52'>
                 <InlineEdit
                   value={cn.url ?? ''}
                   placeholder='Add URL...'
+                  className='max-w-full'
                   onSave={(url) =>
                     updateMut.mutateAsync({
                       id: cn.id,
@@ -192,8 +193,9 @@ export function CatalogueNumbersSection({
                   }
                   renderValue={(v) =>
                     v ? (
-                      <span className='text-xs text-primary truncate'>
-                        {v}
+                      <span className='inline-flex items-center gap-1 text-xs text-primary min-w-0'>
+                        <ExternalLink className='h-3 w-3 shrink-0' />
+                        <span className='truncate'>{v}</span>
                       </span>
                     ) : undefined
                   }
@@ -203,7 +205,7 @@ export function CatalogueNumbersSection({
               <Button
                 variant='ghost'
                 size='icon'
-                className='h-6 w-6 text-muted-foreground hover:text-destructive'
+                className='h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive'
                 onClick={() => deleteMut.mutate(cn.id)}
               >
                 <Trash2 className='h-3 w-3' />

@@ -123,7 +123,7 @@ export function InlineEdit({
         className
       )}
     >
-      {renderValue ? renderValue(value) : value || placeholder}
+      {(renderValue ? renderValue(value) : null) ?? (value || placeholder)}
       {!disabled && (
         <Pencil className='h-3 w-3 opacity-0 transition-opacity group-hover:opacity-60' />
       )}
