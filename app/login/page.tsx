@@ -8,16 +8,24 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Eye, EyeOff, Loader2, User, Lock } from 'lucide-react'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { token, user, setToken } = useAuth()
 
-  // Redirect already-authenticated users
   useEffect(() => {
     if (token && user) {
       router.replace(user.is_staff ? '/backoffice' : '/')
@@ -34,7 +42,6 @@ export default function LoginPage() {
       localStorage.setItem('token', response.auth_token)
       setToken(response.auth_token)
 
-      // Fetch profile to check if staff, then redirect accordingly
       const profile = await getUserProfile(response.auth_token)
       router.push(profile.is_staff ? '/backoffice' : '/')
     } catch (error) {
@@ -45,54 +52,99 @@ export default function LoginPage() {
   }
 
   return (
-    <div className='min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8'>
-      <div className='max-w-md w-full space-y-8'>
-        <div>
-          <h2 className='mt-6 text-center text-3xl font-extrabold text-gray-900'>
-            Sign in to your account
-          </h2>
-        </div>
-        <form className='mt-8 space-y-6' onSubmit={handleSubmit}>
-          <div className='rounded-md shadow-sm space-y-4'>
-            <div>
-              <Label htmlFor='username'>Username</Label>
-              <Input
-                id='username'
-                name='username'
-                type='text'
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className='appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm'
-                placeholder='Enter your username'
-              />
-            </div>
-            <div>
-              <Label htmlFor='password'>Password</Label>
-              <Input
-                id='password'
-                name='password'
-                type='password'
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className='appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm'
-                placeholder='Enter your password'
-              />
-            </div>
+    <div className='flex flex-1 items-center justify-center bg-linear-to-b from-background to-muted/40 px-4 py-16'>
+      <Card className='w-full max-w-[420px] shadow-lg border-border/60'>
+        <CardHeader className='space-y-3 pb-2 text-center'>
+          <div className='mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10'>
+            <Lock className='h-7 w-7 text-primary' />
           </div>
+          <CardTitle className='text-2xl font-bold tracking-tight'>
+            Welcome back
+          </CardTitle>
+          <CardDescription className='text-sm text-muted-foreground'>
+            Sign in to access Models of Authority
+          </CardDescription>
+        </CardHeader>
 
-          {error && (
-            <Alert variant='destructive'>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+        <CardContent className='pt-4'>
+          <form onSubmit={handleSubmit} className='space-y-5'>
+            {error && (
+              <Alert variant='destructive' className='text-sm'>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          <Button type='submit' className='w-full' disabled={isLoading}>
-            {isLoading ? 'Signing in...' : 'Sign in'}
-          </Button>
-        </form>
-      </div>
+            <div className='space-y-2'>
+              <Label htmlFor='username' className='text-sm font-medium'>
+                Username
+              </Label>
+              <div className='relative'>
+                <User className='pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                <Input
+                  id='username'
+                  name='username'
+                  type='text'
+                  autoComplete='username'
+                  autoFocus
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className='h-11 pl-10'
+                  placeholder='Enter your username'
+                />
+              </div>
+            </div>
+
+            <div className='space-y-2'>
+              <Label htmlFor='password' className='text-sm font-medium'>
+                Password
+              </Label>
+              <div className='relative'>
+                <Lock className='pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                <Input
+                  id='password'
+                  name='password'
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete='current-password'
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className='h-11 pl-10 pr-10'
+                  placeholder='Enter your password'
+                />
+                <button
+                  type='button'
+                  onClick={() => setShowPassword(!showPassword)}
+                  className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors'
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className='h-4 w-4' />
+                  ) : (
+                    <Eye className='h-4 w-4' />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <Button
+              type='submit'
+              className='w-full h-11 text-sm font-semibold'
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Signing in…
+                </>
+              ) : (
+                'Sign in'
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }
