@@ -199,6 +199,7 @@ function ItemPartCard({
                   setCurrentItemId(id)
                   setDirty(true)
                 }}
+                selectedLabel={part.current_item_display}
                 className='w-full'
               />
             </div>

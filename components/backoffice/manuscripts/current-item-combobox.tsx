@@ -43,6 +43,8 @@ interface CurrentItemComboboxProps {
   onChange: (currentItemId: number | null, currentItem?: CurrentItemOption) => void
   /** Pre-filter by repository (optional). */
   repositoryId?: number
+  /** Authoritative display label for the selected value (avoids needing the full list to render). */
+  selectedLabel?: string | null
   className?: string
 }
 
@@ -50,6 +52,7 @@ export function CurrentItemCombobox({
   value,
   onChange,
   repositoryId,
+  selectedLabel,
   className,
 }: CurrentItemComboboxProps) {
   const { token } = useAuth()
@@ -68,7 +71,7 @@ export function CurrentItemCombobox({
         repository: repositoryId,
         limit: 500,
       }),
-    enabled: !!token,
+    enabled: !!token && open,
   })
 
   const { data: repositoriesData } = useQuery({
@@ -81,8 +84,8 @@ export function CurrentItemCombobox({
   const repositories: Repository[] = repositoriesData?.results ?? repositoriesData ?? []
 
   const selectedItem = items.find((ci) => ci.id === value)
-  const displayValue = selectedItem
-    ? `${selectedItem.repository_name} ${selectedItem.shelfmark}`
+  const displayValue = value != null
+    ? selectedLabel ?? (selectedItem ? `${selectedItem.repository_name} ${selectedItem.shelfmark}` : null)
     : null
 
   const createMut = useMutation({

@@ -267,6 +267,7 @@ function SinglePartLocation({
             <CurrentItemCombobox
               value={currentItemId}
               onChange={handleCurrentItemChange}
+              selectedLabel={part.current_item_display}
               className='w-full'
             />
           </div>
