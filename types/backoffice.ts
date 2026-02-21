@@ -295,6 +295,7 @@ export interface GraphItem {
   id: number
   item_image: number
   image_display: string
+  historical_item: number
   annotation: Record<string, unknown>
   annotation_type: string | null
   allograph: number
