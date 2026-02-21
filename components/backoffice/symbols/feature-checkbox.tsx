@@ -1,5 +1,13 @@
 'use client'
 
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 interface FeatureCheckboxProps {
@@ -12,11 +20,6 @@ interface FeatureCheckboxProps {
   disabled?: boolean
 }
 
-/**
- * Compact pill-style feature toggle.
- * Click to toggle checked/unchecked.
- * When checked, shows a (d)/(o) badge -- click that to toggle default.
- */
 export function FeatureCheckbox({
   featureId,
   name,
@@ -26,71 +29,53 @@ export function FeatureCheckbox({
   onToggleDefault,
   disabled = false,
 }: FeatureCheckboxProps) {
+  const checkboxId = `feature-${featureId}`
+
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors cursor-pointer select-none border',
-        checked
-          ? 'bg-primary/10 border-primary/30 text-foreground'
-          : 'bg-muted/50 border-transparent text-muted-foreground hover:bg-muted',
-        disabled && 'opacity-50 pointer-events-none'
-      )}
-    >
-      <button
-        type='button'
-        onClick={() => onToggle(featureId, !checked)}
-        disabled={disabled}
-        className='flex items-center gap-1'
-      >
-        <span
-          className={cn(
-            'h-2.5 w-2.5 rounded-sm border flex items-center justify-center transition-colors',
-            checked
-              ? 'bg-primary border-primary'
-              : 'border-muted-foreground/40'
-          )}
-        >
-          {checked && (
-            <svg
-              className='h-2 w-2 text-primary-foreground'
-              viewBox='0 0 12 12'
-              fill='none'
-            >
-              <path
-                d='M2.5 6L5 8.5L9.5 3.5'
-                stroke='currentColor'
-                strokeWidth='2'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-              />
-            </svg>
-          )}
-        </span>
-        <span className={cn(!checked && 'line-through')}>{name}</span>
-      </button>
-      {checked && (
-        <button
-          type='button'
-          onClick={(e) => {
-            e.stopPropagation()
-            onToggleDefault(featureId, !setByDefault)
-          }}
+    <div className='flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors'>
+      <div className='flex items-center gap-2'>
+        <Checkbox
+          id={checkboxId}
+          checked={checked}
+          onCheckedChange={(v) => onToggle(featureId, !!v)}
           disabled={disabled}
+        />
+        <Label
+          htmlFor={checkboxId}
           className={cn(
-            'text-[9px] font-bold rounded px-1 py-px transition-colors leading-none',
-            setByDefault
-              ? 'bg-primary/20 text-primary'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            'text-sm font-normal cursor-pointer select-none',
+            !checked && 'text-muted-foreground'
           )}
-          title={
-            setByDefault
-              ? 'Default (click to make optional)'
-              : 'Optional (click to set as default)'
-          }
         >
-          {setByDefault ? 'd' : 'o'}
-        </button>
+          {name}
+        </Label>
+      </div>
+      {checked && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type='button'
+              onClick={() => onToggleDefault(featureId, !setByDefault)}
+              disabled={disabled}
+            >
+              <Badge
+                variant={setByDefault ? 'default' : 'outline'}
+                className={cn(
+                  'text-[10px] px-1.5 py-0 cursor-pointer',
+                  !setByDefault && 'text-muted-foreground'
+                )}
+              >
+                {setByDefault ? 'Default' : 'Optional'}
+              </Badge>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side='top'>
+            {setByDefault
+              ? 'Click to make optional'
+              : 'Click to set as default'}
+          </TooltipContent>
+        </Tooltip>
       )}
-    </span>
+    </div>
   )
 }

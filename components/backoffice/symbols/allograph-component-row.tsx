@@ -57,13 +57,19 @@ export function AllographComponentRow({
           <X className='h-3.5 w-3.5' />
         </Button>
       </div>
-      <div className='px-3 pb-2'>
+      <div className='px-1 pb-1'>
         {availableFeatures.length === 0 ? (
-          <p className='text-xs text-muted-foreground italic'>
+          <p className='text-xs text-muted-foreground italic px-2 pb-1'>
             No features linked to this component
           </p>
         ) : (
-          <div className='flex flex-wrap gap-1.5'>
+          <div
+            className={
+              availableFeatures.length > 8
+                ? 'grid grid-cols-1 sm:grid-cols-2'
+                : 'grid grid-cols-1'
+            }
+          >
             {availableFeatures.map((feat) => {
               const state = featureMap.get(feat.id)
               return (
