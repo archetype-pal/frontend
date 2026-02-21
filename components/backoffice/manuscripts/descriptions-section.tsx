@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { toast } from 'sonner'
 import { Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/backoffice/common/rich-text-editor'
 import {
   Select,
   SelectContent,
@@ -224,16 +224,17 @@ export function DescriptionsSection({
                 </div>
               </div>
               {editingId === desc.id ? (
-                <Textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  rows={3}
-                  className='text-sm'
+                <RichTextEditor
+                  content={editContent}
+                  onChange={(html) => setEditContent(html)}
+                  placeholder='Enter description...'
+                  minimal
                 />
               ) : (
-                <p className='text-sm whitespace-pre-wrap line-clamp-3'>
-                  {desc.content}
-                </p>
+                <div
+                  className='prose prose-sm dark:prose-invert max-w-none line-clamp-3'
+                  dangerouslySetInnerHTML={{ __html: desc.content }}
+                />
               )}
             </div>
           ))}
@@ -252,12 +253,11 @@ export function DescriptionsSection({
                   ))}
                 </SelectContent>
               </Select>
-              <Textarea
-                value={newContent}
-                onChange={(e) => setNewContent(e.target.value)}
+              <RichTextEditor
+                content={newContent}
+                onChange={(html) => setNewContent(html)}
                 placeholder='Enter description...'
-                rows={3}
-                className='text-sm'
+                minimal
               />
               <div className='flex gap-2'>
                 <Button

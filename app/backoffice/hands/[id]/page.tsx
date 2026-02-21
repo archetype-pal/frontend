@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/backoffice/common/rich-text-editor'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
@@ -248,10 +248,11 @@ export default function HandDetailPage({
 
       <div className='space-y-1.5'>
         <Label>Description</Label>
-        <Textarea
-          value={description}
-          onChange={(e) => { setDescription(e.target.value); markDirty() }}
-          rows={6}
+        <RichTextEditor
+          content={description}
+          onChange={(html) => { setDescription(html); markDirty() }}
+          placeholder='Enter hand description...'
+          minimal
         />
       </div>
 
