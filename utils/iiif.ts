@@ -22,10 +22,28 @@ export interface IIIFImageInfo {
 const DEFAULT_THUMBNAIL_SIZE = 300
 const IIIF_PREFIX_LEN: Record<string, number> = { sipi: 2, iiif: 2 }
 
+function getIiifUpstream(): string {
+  return (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_IIIF_UPSTREAM)
+    ? process.env.NEXT_PUBLIC_IIIF_UPSTREAM.replace(/\/$/, '')
+    : 'http://localhost:1024'
+}
+
 function resolveInfoUrl(infoUrl: string): string {
   const trimmed = (infoUrl || '').trim()
   if (!trimmed) return trimmed
+
+  // Django media URLs (absolute or relative) point to file storage, not the IIIF
+  // server. Strip the media prefix and redirect to the IIIF upstream.
+  if (trimmed.startsWith('media/')) {
+    return `${getIiifUpstream()}/${trimmed.slice('media/'.length)}`
+  }
+  const mediaIdx = trimmed.indexOf('/media/')
+  if (mediaIdx !== -1 && /^https?:\/\//.test(trimmed)) {
+    return `${getIiifUpstream()}/${trimmed.slice(mediaIdx + '/media/'.length)}`
+  }
+
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed
+
   const apiBase = typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL
     ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
     : ''

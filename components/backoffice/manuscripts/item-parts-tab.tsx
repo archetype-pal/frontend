@@ -7,14 +7,12 @@ import { toast } from 'sonner'
 import {
   ChevronDown,
   Image as ImageIcon,
-  ImageOff,
   Plus,
   Trash2,
   Save,
   Loader2,
 } from 'lucide-react'
-import Image from 'next/image'
-import { getIiifImageUrl } from '@/utils/iiif'
+import { IiifThumbnail } from '@/components/backoffice/common/iiif-thumbnail'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -239,41 +237,20 @@ function ItemPartCard({
                 Images ({part.images.length})
               </p>
               <div className='grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2'>
-                {part.images.map((img) => {
-                  const thumbUrl = img.image
-                    ? getIiifImageUrl(img.image, { thumbnail: true })
-                    : null
-                  return (
-                    <div
-                      key={img.id}
-                      className='group relative aspect-square rounded-md border bg-muted overflow-hidden'
-                    >
-                      {thumbUrl ? (
-                        <Image
-                          src={thumbUrl}
-                          alt={img.locus || `Image ${img.id}`}
-                          fill
-                          className='object-cover'
-                          sizes='80px'
-                        />
-                      ) : (
-                        <div className='flex items-center justify-center h-full text-xs text-muted-foreground'>
-                          <ImageOff className='h-5 w-5' />
-                        </div>
-                      )}
-                      <div className='absolute bottom-0 inset-x-0 bg-black/60 px-1 py-0.5 z-10'>
-                        <p className='text-[9px] text-white truncate'>
-                          {img.locus || '—'}
-                        </p>
-                      </div>
-                      {img.text_count > 0 && (
-                        <Badge className='absolute top-0.5 right-0.5 h-4 px-1 text-[9px] z-10'>
-                          {img.text_count}T
-                        </Badge>
-                      )}
-                    </div>
-                  )
-                })}
+                {part.images.map((img) => (
+                  <IiifThumbnail
+                    key={img.id}
+                    image={img.image}
+                    alt={img.locus || `Image ${img.id}`}
+                    locus={img.locus}
+                  >
+                    {img.text_count > 0 && (
+                      <Badge className='absolute top-0.5 right-0.5 h-4 px-1 text-[9px] z-10'>
+                        {img.text_count}T
+                      </Badge>
+                    )}
+                  </IiifThumbnail>
+                ))}
               </div>
             </div>
           )}

@@ -14,6 +14,7 @@ import {
   Check,
   ExternalLink,
 } from 'lucide-react'
+import { IiifThumbnail } from '@/components/backoffice/common/iiif-thumbnail'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -324,10 +325,11 @@ export default function HandDetailPage({
                     <Check className='h-3 w-3' />
                   </div>
 
-                  {/* Image placeholder */}
-                  <div className='flex items-center justify-center h-16 rounded bg-muted/50 mb-2'>
-                    <ImageIcon className='h-6 w-6 text-muted-foreground/50' />
-                  </div>
+                  <IiifThumbnail
+                    image={img.image}
+                    locus={img.locus}
+                    className='mb-2'
+                  />
 
                   <div className='space-y-0.5'>
                     <p className='text-xs font-medium truncate'>
