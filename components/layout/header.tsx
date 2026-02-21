@@ -98,8 +98,8 @@ export default function Header() {
         } md:block`}
       >
         <div className='container mx-auto'>
-          <div className='flex flex-col md:flex-row md:items-center md:justify-between md:flex-wrap gap-4 md:gap-6'>
-            <ul className='flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mr-0 md:mr-6'>
+          <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-2'>
+            <ul className='flex flex-col md:flex-row md:items-center gap-2 md:gap-1 mr-0 md:mr-2'>
               <li>
                 <Button
                   asChild
@@ -333,7 +333,7 @@ export default function Header() {
                 )}
               </li>
             </ul>
-            <div className='flex flex-col md:flex-row items-center gap-3 w-full md:w-auto md:max-w-xl'>
+            <div className='flex flex-col md:flex-row items-center gap-3 w-full md:w-auto md:max-w-xs'>
               <div className='relative flex-1 w-full md:w-auto'>
                 <KeywordSearchInput
                   value={headerSearchValue}
