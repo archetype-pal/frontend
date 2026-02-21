@@ -39,7 +39,11 @@ import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut'
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities'
 import type { HistoricalItemDetail, ItemFormat, BackofficeDate } from '@/types/backoffice'
 
-const ITEM_TYPES = ['charter', 'book', 'roll', 'single sheet', 'other']
+const ITEM_TYPES = [
+  { value: 'agreement', label: 'Agreement' },
+  { value: 'charter', label: 'Charter' },
+  { value: 'letter', label: 'Letter' },
+]
 
 interface ManuscriptWorkspaceProps {
   itemId: number
@@ -314,8 +318,8 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {ITEM_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

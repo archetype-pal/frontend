@@ -30,7 +30,11 @@ import { formatApiError } from '@/lib/backoffice/format-api-error'
 import { toast } from 'sonner'
 import type { Repository } from '@/types/backoffice'
 
-const ITEM_TYPES = ['charter', 'book', 'roll', 'single sheet', 'other']
+const ITEM_TYPES = [
+  { value: 'agreement', label: 'Agreement' },
+  { value: 'charter', label: 'Charter' },
+  { value: 'letter', label: 'Letter' },
+]
 
 export default function NewManuscriptPage() {
   const { token } = useAuth()
@@ -42,7 +46,7 @@ export default function NewManuscriptPage() {
   const [locus, setLocus] = useState('')
 
   // Historical identity fields
-  const [type, setType] = useState('charter')
+  const [type, setType] = useState('agreement')
   const [language, setLanguage] = useState('')
   const [date, setDate] = useState('')
 
@@ -205,8 +209,8 @@ export default function NewManuscriptPage() {
               </SelectTrigger>
               <SelectContent>
                 {ITEM_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
                   </SelectItem>
                 ))}
               </SelectContent>
