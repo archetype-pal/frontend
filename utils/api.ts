@@ -1,4 +1,48 @@
 import { apiFetch, API_BASE_URL } from '@/lib/api-fetch'
+import type { CarouselItem } from '@/types/backoffice'
+
+export interface PublicationAuthor {
+  first_name: string
+  last_name: string
+}
+
+export interface Publication {
+  id: number | string
+  title: string
+  slug: string
+  content: string
+  preview: string
+  keywords: string
+  status: string
+  is_blog_post: boolean
+  is_news: boolean
+  is_featured: boolean
+  allow_comments: boolean
+  author: PublicationAuthor
+  author_name: string | null
+  published_at: string | null
+  created_at: string
+  updated_at: string
+  number_of_comments: number
+}
+
+interface AuthToken {
+  auth_token: string
+}
+
+interface UserProfile {
+  id: number
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  is_staff: boolean
+}
+
+interface PaginatedPublications {
+  results: Publication[]
+  count: number
+}
 
 /** Build absolute URL for carousel (or other API-served) images. API returns relative paths like "media/carousel/…". */
 export function getCarouselImageUrl(imagePath: string | null | undefined): string {
@@ -8,7 +52,7 @@ export function getCarouselImageUrl(imagePath: string | null | undefined): strin
   return imagePath.startsWith('/') ? `${base}${imagePath}` : `${base}/${imagePath}`
 }
 
-export async function loginUser(username: string, password: string) {
+export async function loginUser(username: string, password: string): Promise<AuthToken> {
   const response = await apiFetch(`/api/v1/auth/token/login`, {
     method: 'POST',
     headers: {
@@ -21,7 +65,7 @@ export async function loginUser(username: string, password: string) {
     throw new Error('Login failed')
   }
 
-  return response.json()
+  return response.json() as Promise<AuthToken>
 }
 
 export async function logoutUser(token: string) {
@@ -38,7 +82,7 @@ export async function logoutUser(token: string) {
   }
 }
 
-export async function getUserProfile(token: string) {
+export async function getUserProfile(token: string): Promise<UserProfile> {
   const response = await apiFetch(`/api/v1/auth/profile`, {
     headers: {
       Authorization: `Token ${token}`,
@@ -49,7 +93,7 @@ export async function getUserProfile(token: string) {
     throw new Error('Failed to fetch user profile')
   }
 
-  return response.json()
+  return response.json() as Promise<UserProfile>
 }
 
 export type PublicationParams = {
@@ -60,7 +104,7 @@ export type PublicationParams = {
   offset?: number
 }
 
-export async function getPublications(params: PublicationParams) {
+export async function getPublications(params: PublicationParams): Promise<PaginatedPublications> {
   const searchParams = new URLSearchParams()
 
   if (params.is_news) searchParams.append('is_news', 'true')
@@ -76,23 +120,23 @@ export async function getPublications(params: PublicationParams) {
   const res = await apiFetch(path)
   if (!res.ok) throw new Error('Failed to fetch publications')
 
-  return res.json()
+  return res.json() as Promise<PaginatedPublications>
 }
 
-export async function getPublicationItem(slug: string) {
+export async function getPublicationItem(slug: string): Promise<Publication> {
   const res = await apiFetch(`/api/v1/media/publications/${slug}`)
   if (!res.ok) throw new Error('Failed to fetch publication item')
 
-  return res.json()
+  return res.json() as Promise<Publication>
 }
 
-export async function fetchCarouselItems() {
+export async function fetchCarouselItems(): Promise<CarouselItem[]> {
   try {
     const response = await apiFetch(`/api/v1/media/carousel-items/`)
     if (!response.ok) {
       throw new Error('Failed to fetch carousel items')
     }
-    const data = await response.json()
+    const data: CarouselItem[] = await response.json()
     return data
   } catch (error) {
     console.error('Error fetching carousel items:', error)

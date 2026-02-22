@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { HandViewer } from './hand-viewer'
 import type { HandDetail, HandImage, HandScribe, HandManuscript } from '@/types/hand-detail'
@@ -40,6 +41,23 @@ async function getManuscript(itemPartId: number): Promise<HandManuscript | null>
     return response.json()
   } catch {
     return null
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  try {
+    const hand = await getHand(id)
+    return {
+      title: `${hand.name || `Hand #${id}`} | Models of Authority`,
+      description: `View hand ${hand.name || id}${hand.place ? ` – ${hand.place}` : ''} – Models of Authority`,
+    }
+  } catch {
+    return { title: 'Hand | Models of Authority' }
   }
 }
 

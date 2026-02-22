@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ScribeViewer } from './scribe-viewer'
 import type { ScribeDetail, ScribeHand } from '@/types/scribe-detail'
@@ -19,6 +20,23 @@ async function getScribeHands(scribeId: string): Promise<ScribeHand[]> {
   if (!response.ok) return []
   const data = await response.json()
   return data.results ?? data ?? []
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  try {
+    const scribe = await getScribe(id)
+    return {
+      title: `${scribe.name || `Scribe #${id}`} | Models of Authority`,
+      description: `View scribe ${scribe.name || id}${scribe.scriptorium ? ` from ${scribe.scriptorium}` : ''} – Models of Authority`,
+    }
+  } catch {
+    return { title: 'Scribe | Models of Authority' }
+  }
 }
 
 export default async function ScribePage({

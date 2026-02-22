@@ -4,22 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import BlogPostPreview from './blog-post-preview'
-import { getPublications, PublicationParams } from '@/utils/api'
-
-interface Author {
-  first_name: string
-  last_name: string
-}
-
-interface Publication {
-  id: string
-  title: string
-  published_at: string
-  author: Author
-  slug: string
-  preview: string
-  number_of_comments: number
-}
+import { getPublications, type Publication, type PublicationParams } from '@/utils/api'
 
 interface PaginatedPublicationsProps {
   title: string
@@ -110,7 +95,7 @@ export default function PaginatedPublications({
                   key={article.id}
                   title={article.title}
                   author={`${article.author.first_name} ${article.author.last_name}`}
-                  date={article.published_at}
+                  date={article.published_at ?? ''}
                   excerpt={article.preview}
                   slug={`/${route}/${article.slug}`}
                   commentsCount={article.number_of_comments}

@@ -1,22 +1,7 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { getPublicationItem } from '@/utils/api'
+import { getPublicationItem, type Publication } from '@/utils/api'
 import BlogPostPreview from '@/components/content/blog-post-preview'
-
-interface Author {
-  first_name: string
-  last_name: string
-}
-
-interface Publication {
-  id: string
-  title: string
-  published_at: string
-  author: Author
-  slug: string
-  preview: string
-  content: string
-  number_of_comments: number
-}
 
 async function getNewsItem(slug: string): Promise<Publication> {
   try {
@@ -25,6 +10,29 @@ async function getNewsItem(slug: string): Promise<Publication> {
   } catch (error) {
     console.error('Error fetching news item:', error)
     throw error
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  try {
+    const item = await getNewsItem(slug)
+    return {
+      title: `${item.title} | Models of Authority`,
+      description: item.preview || `${item.title} – Models of Authority news`,
+      openGraph: {
+        title: item.title,
+        description: item.preview || undefined,
+        type: 'article',
+        publishedTime: item.published_at ?? undefined,
+      },
+    }
+  } catch {
+    return { title: 'News | Models of Authority' }
   }
 }
 
@@ -38,7 +46,7 @@ export default async function NewsList({
 
   return (
     <div className='container mx-auto px-4 py-8'>
-      <div className='flex flex-col md:flex-row gap-72'>
+        <div className='flex flex-col md:flex-row gap-8'>
         <main className='flex-1'>
           <BlogPostPreview
             key={newsItem.id}
@@ -46,7 +54,7 @@ export default async function NewsList({
             author={
               newsItem.author.first_name + ' ' + newsItem.author.last_name
             }
-            date={newsItem.published_at}
+            date={newsItem.published_at ?? ''}
             excerpt={newsItem.content}
             slug={'/news/' + newsItem.slug}
             commentsCount={newsItem.number_of_comments}

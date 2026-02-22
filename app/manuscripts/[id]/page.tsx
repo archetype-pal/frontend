@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import type { Manuscript, ManuscriptImage } from '@/types/manuscript'
 import { ManuscriptViewer } from './manuscript-viewer'
 import { notFound } from 'next/navigation'
@@ -29,6 +30,24 @@ async function getManuscriptImages(id: string): Promise<ManuscriptImage[]> {
 
   const data = await res.json()
   return data.results
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  try {
+    const manuscript = await getManuscript(id)
+    const label = manuscript.display_label ?? `Manuscript #${id}`
+    return {
+      title: `${label} | Models of Authority`,
+      description: `View manuscript ${label} – Scottish Charters and the Emergence of Government 1100-1250`,
+    }
+  } catch {
+    return { title: 'Manuscript | Models of Authority' }
+  }
 }
 
 export default async function ManuscriptPage({
