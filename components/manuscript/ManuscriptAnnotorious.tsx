@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from 'react'
 import OpenSeadragon from 'openseadragon'
 import Annotorious from '@recogito/annotorious-openseadragon'
+import '@recogito/annotorious/dist/annotorious.min.css'
 
 // ---- Annotation data model ----
 export interface Annotation {

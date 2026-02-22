@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useSearchContext } from '@/contexts/search-context'
-import { KeywordSearchInput, useKeywordSuggestions } from '@/components/search/KeywordSearchInput'
+import { KeywordSearchInput, useKeywordSuggestions } from '@/components/search/keyword-search-input'
 import { Search, Home, Menu, X, ChevronDown, FolderOpen, PanelTopClose, PanelTopOpen, LogIn, Shield, LogOut } from 'lucide-react'
 import {
   DropdownMenu,
@@ -94,13 +94,27 @@ export default function Header() {
           </div>
         </div>
       )}
-      <nav
-        className={`bg-primary text-primary-foreground p-2 ${
-          isMenuOpen ? 'block' : 'hidden'
-        } md:block`}
-      >
+      <nav className='bg-primary text-primary-foreground p-2'>
         <div className='container mx-auto'>
-          <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-2'>
+          <div className='flex items-center justify-between md:hidden mb-2'>
+            <span className='text-sm font-medium'>Menu</span>
+            <Button
+              variant='ghost'
+              size='icon'
+              className='h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20'
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+            >
+              {isMenuOpen ? (
+                <X className='h-5 w-5' />
+              ) : (
+                <Menu className='h-5 w-5' />
+              )}
+            </Button>
+          </div>
+          <div className={`flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-2 ${
+            isMenuOpen ? 'flex' : 'hidden md:flex'
+          }`}>
             <ul className='flex flex-col md:flex-row md:items-center gap-2 md:gap-1 mr-0 md:mr-2'>
               <li>
                 <Button
@@ -418,18 +432,6 @@ export default function Header() {
                     <PanelTopClose className='h-4 w-4' />
                   ) : (
                     <PanelTopOpen className='h-4 w-4' />
-                  )}
-                </Button>
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  className='md:hidden h-8 w-8'
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                >
-                  {isMenuOpen ? (
-                    <X className='h-6 w-6' />
-                  ) : (
-                    <Menu className='h-6 w-6' />
                   )}
                 </Button>
               </div>

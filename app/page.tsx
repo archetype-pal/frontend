@@ -1,30 +1,29 @@
-'use client'
 import IntroSection from '@/components/content/intro-section'
 import ArticleList from '@/components/content/article-list'
-import { getPublications } from '@/utils/api'
-import { useEffect, useState } from 'react'
+import { apiFetch } from '@/lib/api-fetch'
 
-export default function Home() {
-  const [newsArticles, setNewsArticles] = useState([])
-  const [featureArticles, setFeatureArticles] = useState([])
+async function getPublications(params: { is_news?: boolean; is_featured?: boolean }) {
+  const searchParams = new URLSearchParams()
+  if (params.is_news) searchParams.append('is_news', 'true')
+  if (params.is_featured) searchParams.append('is_featured', 'true')
+  const qs = searchParams.toString()
+  const path = `/api/v1/media/publications/${qs ? `?${qs}` : ''}`
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [newsData, featuredData] = await Promise.all([
-          getPublications({ is_news: true }),
-          getPublications({ is_featured: true }),
-        ])
+  try {
+    const res = await apiFetch(path)
+    if (!res.ok) return []
+    const data = await res.json()
+    return data.results ?? []
+  } catch {
+    return []
+  }
+}
 
-        setNewsArticles(newsData.results || [])
-        setFeatureArticles(featuredData.results || [])
-      } catch (error) {
-        console.error('Error fetching data:', error)
-      }
-    }
-
-    fetchData()
-  }, [])
+export default async function Home() {
+  const [newsArticles, featureArticles] = await Promise.all([
+    getPublications({ is_news: true }),
+    getPublications({ is_featured: true }),
+  ])
 
   return (
     <main className='flex flex-col gap-8 row-start-2 items-center sm:items-start'>
@@ -32,17 +31,17 @@ export default function Home() {
 
       <div className='container mx-auto px-4 py-4'>
         <div className='grid grid-cols-1 md:grid-cols-3 gap-8 my-8'>
-          <ArticleList 
-            title='News' 
-            articles={newsArticles} 
-            moreLink='/news' 
-            limit={3} 
+          <ArticleList
+            title='News'
+            articles={newsArticles}
+            moreLink='/news'
+            limit={3}
           />
           <ArticleList
             title='Feature Articles'
             articles={featureArticles}
             moreLink='/feature'
-            limit={3} 
+            limit={3}
           />
         </div>
       </div>

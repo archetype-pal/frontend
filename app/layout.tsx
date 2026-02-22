@@ -8,7 +8,6 @@ import { AuthProvider } from '@/contexts/auth-context'
 import { CollectionProvider } from '@/contexts/collection-context'
 import { SearchProvider } from '@/contexts/search-context'
 import { SiteFeaturesProvider } from '@/contexts/site-features-context'
-import '@recogito/annotorious/dist/annotorious.min.css'
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -22,8 +21,17 @@ const geistMono = localFont({
 })
 
 export const metadata: Metadata = {
-  title: 'Models of Authority',
-  description: 'Models of Authority',
+  title: {
+    default: 'Models of Authority',
+    template: '%s | Models of Authority',
+  },
+  description: 'Scottish Charters and the Emergence of Government 1100-1250 – a resource for the study of the contents, script and physical appearance of the corpus of Scottish charters.',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://archetype.gla.ac.uk'),
+  openGraph: {
+    type: 'website',
+    locale: 'en_GB',
+    siteName: 'Models of Authority',
+  },
 }
 
 export default function RootLayout({
@@ -32,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang='en' className='light' suppressHydrationWarning>
+    <html lang='en' suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -49,7 +57,7 @@ export default function RootLayout({
             </CollectionProvider>
           </SiteFeaturesProvider>
         </AuthProvider>
-        <Toaster richColors position="top-center" />
+        <Toaster richColors closeButton position="top-center" />
       </body>
     </html>
   )
