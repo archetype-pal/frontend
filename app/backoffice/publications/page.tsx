@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DataTable, sortableHeader, type BulkAction } from '@/components/backoffice/common/data-table'
 import { FilterBar, type FilterConfig } from '@/components/backoffice/common/filter-bar'
+import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
 import { getPublications, updatePublication, deletePublication } from '@/services/backoffice/publications'
 import { backofficeKeys } from '@/lib/backoffice/query-keys'
 import type { PublicationListItem } from '@/types/backoffice'
@@ -134,6 +135,12 @@ export default function PublicationsPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [filterValues, setFilterValues] = useState<Record<string, string>>({})
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false)
+  const [pendingBulkAction, setPendingBulkAction] = useState<{
+    label: string
+    slugs: string[]
+    execute: (slugs: string[]) => Promise<void>
+  } | null>(null)
 
   const { data } = useQuery({
     queryKey: backofficeKeys.publications.all(),
@@ -175,34 +182,48 @@ export default function PublicationsPage() {
     {
       label: 'Unpublish',
       icon: <XCircle className='h-3 w-3' />,
-      action: async (slugs) => {
-        try {
-          await Promise.all(
-            slugs.map((slug) =>
-              updatePublication(token!, slug, { status: 'Draft' })
-            )
-          )
-          toast.success(`${slugs.length} publication(s) unpublished`)
-          queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() })
-        } catch {
-          toast.error('Failed to unpublish some publications')
-        }
+      action: (slugs) => {
+        setPendingBulkAction({
+          label: 'Unpublish',
+          slugs,
+          execute: async (s) => {
+            try {
+              await Promise.all(
+                s.map((slug) =>
+                  updatePublication(token!, slug, { status: 'Draft' })
+                )
+              )
+              toast.success(`${s.length} publication(s) unpublished`)
+              queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() })
+            } catch {
+              toast.error('Failed to unpublish some publications')
+            }
+          },
+        })
+        setBulkConfirmOpen(true)
       },
     },
     {
       label: 'Delete',
       variant: 'destructive',
       icon: <Trash2 className='h-3 w-3' />,
-      action: async (slugs) => {
-        try {
-          await Promise.all(
-            slugs.map((slug) => deletePublication(token!, slug))
-          )
-          toast.success(`${slugs.length} publication(s) deleted`)
-          queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() })
-        } catch {
-          toast.error('Failed to delete some publications')
-        }
+      action: (slugs) => {
+        setPendingBulkAction({
+          label: 'Delete',
+          slugs,
+          execute: async (s) => {
+            try {
+              await Promise.all(
+                s.map((slug) => deletePublication(token!, slug))
+              )
+              toast.success(`${s.length} publication(s) deleted`)
+              queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() })
+            } catch {
+              toast.error('Failed to delete some publications')
+            }
+          },
+        })
+        setBulkConfirmOpen(true)
       },
     },
   ]
@@ -252,6 +273,30 @@ export default function PublicationsPage() {
             onClear={() => setFilterValues({})}
           />
         }
+      />
+
+      <ConfirmDialog
+        open={bulkConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setBulkConfirmOpen(false)
+            setPendingBulkAction(null)
+          }
+        }}
+        title={`${pendingBulkAction?.label} ${pendingBulkAction?.slugs.length ?? 0} publication(s)?`}
+        description={
+          pendingBulkAction?.label === 'Delete'
+            ? `${pendingBulkAction.slugs.length} publication(s) will be permanently deleted.`
+            : `${pendingBulkAction?.slugs.length ?? 0} publication(s) will be unpublished.`
+        }
+        confirmLabel={`${pendingBulkAction?.label} All`}
+        onConfirm={async () => {
+          if (pendingBulkAction) {
+            await pendingBulkAction.execute(pendingBulkAction.slugs)
+          }
+          setBulkConfirmOpen(false)
+          setPendingBulkAction(null)
+        }}
       />
     </div>
   )

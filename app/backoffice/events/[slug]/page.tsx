@@ -10,7 +10,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
-import { RichTextEditor } from '@/components/backoffice/common/rich-text-editor'
+import dynamic from 'next/dynamic'
+const RichTextEditor = dynamic(
+  () => import('@/components/backoffice/common/rich-text-editor').then(m => m.RichTextEditor),
+  { ssr: false, loading: () => <div className="h-[200px] rounded-md border animate-pulse bg-muted" /> }
+)
 import {
   getEvent,
   updateEvent,

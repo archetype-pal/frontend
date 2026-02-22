@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -26,6 +27,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
 import { Separator } from '@/components/ui/separator'
+import { Input } from '@/components/ui/input'
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
 interface RichTextEditorProps {
@@ -73,20 +80,27 @@ export function RichTextEditor({
     },
   })
 
+  const [linkOpen, setLinkOpen] = useState(false)
+  const [linkUrl, setLinkUrl] = useState('')
+  const [imageOpen, setImageOpen] = useState(false)
+  const [imageUrl, setImageUrl] = useState('')
+
   if (!editor) return null
 
-  function addLink() {
-    const url = window.prompt('URL')
-    if (url) {
-      editor!.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+  function insertLink() {
+    if (linkUrl) {
+      editor!.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run()
     }
+    setLinkUrl('')
+    setLinkOpen(false)
   }
 
-  function addImage() {
-    const url = window.prompt('Image URL')
-    if (url) {
-      editor!.chain().focus().setImage({ src: url }).run()
+  function insertImage() {
+    if (imageUrl) {
+      editor!.chain().focus().setImage({ src: imageUrl }).run()
     }
+    setImageUrl('')
+    setImageOpen(false)
   }
 
   return (
@@ -227,26 +241,78 @@ export function RichTextEditor({
 
         <Separator orientation='vertical' className='mx-1 h-6' />
 
-        <Button
-          variant='ghost'
-          size='sm'
-          className='h-8 w-8 p-0'
-          onClick={addLink}
-          title='Add link'
-        >
-          <LinkIcon className='h-4 w-4' />
-        </Button>
+        <Popover open={linkOpen} onOpenChange={setLinkOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant='ghost'
+              size='sm'
+              className='h-8 w-8 p-0'
+              title='Add link'
+            >
+              <LinkIcon className='h-4 w-4' />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className='w-80 p-3' align='start'>
+            <div className='space-y-2'>
+              <Input
+                placeholder='https://example.com'
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && insertLink()}
+                autoFocus
+              />
+              <div className='flex justify-end gap-2'>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => { setLinkUrl(''); setLinkOpen(false) }}
+                >
+                  Cancel
+                </Button>
+                <Button size='sm' onClick={insertLink}>
+                  Insert
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {!minimal && (
-          <Button
-            variant='ghost'
-            size='sm'
-            className='h-8 w-8 p-0'
-            onClick={addImage}
-            title='Add image'
-          >
-            <ImageIcon className='h-4 w-4' />
-          </Button>
+          <Popover open={imageOpen} onOpenChange={setImageOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant='ghost'
+                size='sm'
+                className='h-8 w-8 p-0'
+                title='Add image'
+              >
+                <ImageIcon className='h-4 w-4' />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className='w-80 p-3' align='start'>
+              <div className='space-y-2'>
+                <Input
+                  placeholder='https://example.com/image.png'
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && insertImage()}
+                  autoFocus
+                />
+                <div className='flex justify-end gap-2'>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => { setImageUrl(''); setImageOpen(false) }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button size='sm' onClick={insertImage}>
+                    Insert
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
 
         <div className='ml-auto flex items-center gap-0.5'>
