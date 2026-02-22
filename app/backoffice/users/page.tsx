@@ -23,7 +23,6 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import {
   Tooltip,
   TooltipContent,
@@ -147,9 +146,7 @@ function PasswordInput({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className='text-xs font-medium uppercase tracking-wider text-muted-foreground'>
-      {children}
-    </p>
+    <p className='text-[13px] font-medium text-foreground'>{children}</p>
   )
 }
 
@@ -577,125 +574,133 @@ export default function UsersPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className='space-y-4 mt-1'>
-            <SectionLabel>Account</SectionLabel>
-            <div className='grid grid-cols-2 gap-3'>
-              <div className='space-y-1.5'>
-                <Label>Username</Label>
-                <Input
-                  value={createForm.username}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      username: e.target.value,
-                    }))
-                  }
-                  placeholder='jdoe'
-                />
-              </div>
-              <div className='space-y-1.5'>
-                <Label>Email</Label>
-                <Input
-                  type='email'
-                  value={createForm.email}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, email: e.target.value }))
-                  }
-                  placeholder='jdoe@example.com'
-                />
-              </div>
-            </div>
-            <div className='space-y-1.5'>
-              <Label>Password</Label>
-              <PasswordInput
-                value={createForm.password}
-                onChange={(v) =>
-                  setCreateForm((f) => ({ ...f, password: v }))
-                }
-              />
-              <p className='text-xs text-muted-foreground'>
-                Minimum 8 characters recommended
-              </p>
-            </div>
-
-            <Separator />
-
-            <SectionLabel>Personal Information</SectionLabel>
-            <div className='grid grid-cols-2 gap-3'>
-              <div className='space-y-1.5'>
-                <Label>First Name</Label>
-                <Input
-                  value={createForm.first_name}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      first_name: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className='space-y-1.5'>
-                <Label>Last Name</Label>
-                <Input
-                  value={createForm.last_name}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      last_name: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            <SectionLabel>Permissions</SectionLabel>
-            <div className='rounded-lg border divide-y'>
-              <div className='flex items-center justify-between px-4 py-3'>
-                <div>
-                  <Label
-                    htmlFor='create-is-staff'
-                    className='cursor-pointer text-sm'
-                  >
-                    Staff access
-                  </Label>
-                  <p className='text-xs text-muted-foreground mt-0.5'>
-                    Can access the backoffice
-                  </p>
+          <div
+            className='overflow-y-auto px-5 py-4 space-y-5'
+            style={{ maxHeight: 'calc(100vh - 12rem)' }}
+          >
+            <div className='space-y-3'>
+              <SectionLabel>Account</SectionLabel>
+              <div className='grid grid-cols-2 gap-3'>
+                <div className='space-y-1.5'>
+                  <Label>Username</Label>
+                  <Input
+                    value={createForm.username}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        username: e.target.value,
+                      }))
+                    }
+                    placeholder='jdoe'
+                  />
                 </div>
-                <Switch
-                  id='create-is-staff'
-                  checked={createForm.is_staff}
-                  onCheckedChange={(v) =>
-                    setCreateForm((f) => ({ ...f, is_staff: v }))
-                  }
-                />
-              </div>
-              <div className='flex items-center justify-between px-4 py-3'>
-                <div>
-                  <Label
-                    htmlFor='create-is-active'
-                    className='cursor-pointer text-sm'
-                  >
-                    Active
-                  </Label>
-                  <p className='text-xs text-muted-foreground mt-0.5'>
-                    Can sign in to the site
-                  </p>
+                <div className='space-y-1.5'>
+                  <Label>Email</Label>
+                  <Input
+                    type='email'
+                    value={createForm.email}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        email: e.target.value,
+                      }))
+                    }
+                    placeholder='jdoe@example.com'
+                  />
                 </div>
-                <Switch
-                  id='create-is-active'
-                  checked={createForm.is_active}
-                  onCheckedChange={(v) =>
-                    setCreateForm((f) => ({ ...f, is_active: v }))
+              </div>
+              <div className='space-y-1.5'>
+                <Label>Password</Label>
+                <PasswordInput
+                  value={createForm.password}
+                  onChange={(v) =>
+                    setCreateForm((f) => ({ ...f, password: v }))
                   }
                 />
+                <p className='text-[11px] text-muted-foreground'>
+                  Minimum 8 characters recommended
+                </p>
+              </div>
+            </div>
+
+            <div className='space-y-3'>
+              <SectionLabel>Personal Information</SectionLabel>
+              <div className='grid grid-cols-2 gap-3'>
+                <div className='space-y-1.5'>
+                  <Label>First Name</Label>
+                  <Input
+                    value={createForm.first_name}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        first_name: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className='space-y-1.5'>
+                  <Label>Last Name</Label>
+                  <Input
+                    value={createForm.last_name}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        last_name: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className='space-y-3'>
+              <SectionLabel>Permissions</SectionLabel>
+              <div className='rounded-lg border divide-y'>
+                <div className='flex items-center justify-between px-4 py-3'>
+                  <div>
+                    <Label
+                      htmlFor='create-is-staff'
+                      className='cursor-pointer text-sm'
+                    >
+                      Staff access
+                    </Label>
+                    <p className='text-[11px] text-muted-foreground'>
+                      Can access the backoffice
+                    </p>
+                  </div>
+                  <Switch
+                    id='create-is-staff'
+                    checked={createForm.is_staff}
+                    onCheckedChange={(v) =>
+                      setCreateForm((f) => ({ ...f, is_staff: v }))
+                    }
+                  />
+                </div>
+                <div className='flex items-center justify-between px-4 py-3'>
+                  <div>
+                    <Label
+                      htmlFor='create-is-active'
+                      className='cursor-pointer text-sm'
+                    >
+                      Active
+                    </Label>
+                    <p className='text-[11px] text-muted-foreground'>
+                      Can sign in to the site
+                    </p>
+                  </div>
+                  <Switch
+                    id='create-is-active'
+                    checked={createForm.is_active}
+                    onCheckedChange={(v) =>
+                      setCreateForm((f) => ({ ...f, is_active: v }))
+                    }
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          <DialogFooter className='mt-2'>
+          <DialogFooter>
             <Button
               variant='outline'
               onClick={() => setCreateOpen(false)}
@@ -720,166 +725,167 @@ export default function UsersPage() {
       >
         <DialogContent className='max-w-lg'>
           <DialogHeader>
-            <DialogTitle>
-              Edit{' '}
-              <span className='text-muted-foreground font-normal'>
-                @{editTarget?.username}
-              </span>
-            </DialogTitle>
-            <DialogDescription>
-              {editTarget &&
-                `Member since ${new Date(editTarget.date_joined).toLocaleDateString()}`}
-            </DialogDescription>
+            <div className='flex items-center gap-3'>
+              {editTarget && (
+                <div
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarColor(editTarget.username)}`}
+                >
+                  {getInitials(editTarget)}
+                </div>
+              )}
+              <div>
+                <DialogTitle>@{editTarget?.username}</DialogTitle>
+                <DialogDescription>
+                  {editTarget &&
+                    `Member since ${new Date(editTarget.date_joined).toLocaleDateString()}`}
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
-          <div className='space-y-4 mt-1'>
-            <SectionLabel>Account</SectionLabel>
-            <div className='grid grid-cols-2 gap-3'>
-              <div className='space-y-1.5'>
-                <Label>Username</Label>
-                <Input
-                  value={editForm.username ?? ''}
-                  onChange={(e) =>
-                    setEditForm((f) => ({
-                      ...f,
-                      username: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className='space-y-1.5'>
-                <Label>Email</Label>
-                <Input
-                  type='email'
-                  value={editForm.email ?? ''}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, email: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            <SectionLabel>Change Password</SectionLabel>
-            <div className='space-y-1.5'>
-              <PasswordInput
-                value={editForm.password ?? ''}
-                onChange={(v) =>
-                  setEditForm((f) => ({ ...f, password: v }))
-                }
-                placeholder='Leave blank to keep current password'
-              />
-              <p className='text-xs text-muted-foreground'>
-                Only fill in if you want to change the password
-              </p>
-            </div>
-
-            <Separator />
-
-            <SectionLabel>Personal Information</SectionLabel>
-            <div className='grid grid-cols-2 gap-3'>
-              <div className='space-y-1.5'>
-                <Label>First Name</Label>
-                <Input
-                  value={editForm.first_name ?? ''}
-                  onChange={(e) =>
-                    setEditForm((f) => ({
-                      ...f,
-                      first_name: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className='space-y-1.5'>
-                <Label>Last Name</Label>
-                <Input
-                  value={editForm.last_name ?? ''}
-                  onChange={(e) =>
-                    setEditForm((f) => ({
-                      ...f,
-                      last_name: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            <SectionLabel>Permissions</SectionLabel>
-            <div className='rounded-lg border divide-y'>
-              <div className='flex items-center justify-between px-4 py-3'>
-                <div>
-                  <Label
-                    htmlFor='edit-is-staff'
-                    className='cursor-pointer text-sm'
-                  >
-                    Staff access
-                  </Label>
-                  <p className='text-xs text-muted-foreground mt-0.5'>
-                    Can access the backoffice
-                  </p>
+          <div
+            className='overflow-y-auto px-5 py-4 space-y-5'
+            style={{ maxHeight: 'calc(100vh - 12rem)' }}
+          >
+            <div className='space-y-3'>
+              <SectionLabel>Account</SectionLabel>
+              <div className='grid grid-cols-2 gap-3'>
+                <div className='space-y-1.5'>
+                  <Label>Username</Label>
+                  <Input
+                    value={editForm.username ?? ''}
+                    onChange={(e) =>
+                      setEditForm((f) => ({
+                        ...f,
+                        username: e.target.value,
+                      }))
+                    }
+                  />
                 </div>
-                <Switch
-                  id='edit-is-staff'
-                  checked={editForm.is_staff ?? false}
-                  onCheckedChange={(v) =>
-                    setEditForm((f) => ({ ...f, is_staff: v }))
-                  }
-                />
-              </div>
-              <div className='flex items-center justify-between px-4 py-3'>
-                <div>
-                  <Label
-                    htmlFor='edit-is-active'
-                    className='cursor-pointer text-sm'
-                  >
-                    Active
-                  </Label>
-                  <p className='text-xs text-muted-foreground mt-0.5'>
-                    Can sign in to the site
-                  </p>
+                <div className='space-y-1.5'>
+                  <Label>Email</Label>
+                  <Input
+                    type='email'
+                    value={editForm.email ?? ''}
+                    onChange={(e) =>
+                      setEditForm((f) => ({
+                        ...f,
+                        email: e.target.value,
+                      }))
+                    }
+                  />
                 </div>
-                <Switch
-                  id='edit-is-active'
-                  checked={editForm.is_active ?? false}
-                  onCheckedChange={(v) =>
-                    setEditForm((f) => ({ ...f, is_active: v }))
-                  }
-                />
               </div>
             </div>
 
-            <Separator />
-
-            <div className='flex items-center justify-between'>
-              <div>
-                <p className='text-sm font-medium text-destructive'>
-                  Danger Zone
-                </p>
-                <p className='text-xs text-muted-foreground'>
-                  Permanently delete this user account
+            <div className='space-y-3'>
+              <SectionLabel>Change Password</SectionLabel>
+              <div className='space-y-1.5'>
+                <PasswordInput
+                  value={editForm.password ?? ''}
+                  onChange={(v) =>
+                    setEditForm((f) => ({ ...f, password: v }))
+                  }
+                  placeholder='Leave blank to keep current password'
+                />
+                <p className='text-[11px] text-muted-foreground'>
+                  Only fill in if you want to change the password
                 </p>
               </div>
-              <Button
-                variant='outline'
-                size='sm'
-                className='text-destructive border-destructive/30 hover:bg-destructive/10'
-                onClick={() => {
-                  if (editTarget) {
-                    setDeleteTarget(editTarget)
-                    setEditTarget(null)
-                  }
-                }}
-              >
-                <Trash2 className='h-3.5 w-3.5 mr-1' />
-                Delete
-              </Button>
+            </div>
+
+            <div className='space-y-3'>
+              <SectionLabel>Personal Information</SectionLabel>
+              <div className='grid grid-cols-2 gap-3'>
+                <div className='space-y-1.5'>
+                  <Label>First Name</Label>
+                  <Input
+                    value={editForm.first_name ?? ''}
+                    onChange={(e) =>
+                      setEditForm((f) => ({
+                        ...f,
+                        first_name: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className='space-y-1.5'>
+                  <Label>Last Name</Label>
+                  <Input
+                    value={editForm.last_name ?? ''}
+                    onChange={(e) =>
+                      setEditForm((f) => ({
+                        ...f,
+                        last_name: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className='space-y-3'>
+              <SectionLabel>Permissions</SectionLabel>
+              <div className='rounded-lg border divide-y'>
+                <div className='flex items-center justify-between px-4 py-3'>
+                  <div>
+                    <Label
+                      htmlFor='edit-is-staff'
+                      className='cursor-pointer text-sm'
+                    >
+                      Staff access
+                    </Label>
+                    <p className='text-[11px] text-muted-foreground'>
+                      Can access the backoffice
+                    </p>
+                  </div>
+                  <Switch
+                    id='edit-is-staff'
+                    checked={editForm.is_staff ?? false}
+                    onCheckedChange={(v) =>
+                      setEditForm((f) => ({ ...f, is_staff: v }))
+                    }
+                  />
+                </div>
+                <div className='flex items-center justify-between px-4 py-3'>
+                  <div>
+                    <Label
+                      htmlFor='edit-is-active'
+                      className='cursor-pointer text-sm'
+                    >
+                      Active
+                    </Label>
+                    <p className='text-[11px] text-muted-foreground'>
+                      Can sign in to the site
+                    </p>
+                  </div>
+                  <Switch
+                    id='edit-is-active'
+                    checked={editForm.is_active ?? false}
+                    onCheckedChange={(v) =>
+                      setEditForm((f) => ({ ...f, is_active: v }))
+                    }
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <DialogFooter className='mt-2'>
+          <DialogFooter>
+            <Button
+              variant='ghost'
+              size='sm'
+              className='mr-auto text-destructive hover:text-destructive hover:bg-destructive/10'
+              onClick={() => {
+                if (editTarget) {
+                  setDeleteTarget(editTarget)
+                  setEditTarget(null)
+                }
+              }}
+            >
+              <Trash2 className='h-3.5 w-3.5 mr-1' />
+              Delete user
+            </Button>
             <Button
               variant='outline'
               onClick={() => setEditTarget(null)}
