@@ -109,6 +109,15 @@ export const backofficeKeys = {
     all: () => [...backofficeKeys.all, 'stats'] as const,
   },
 
+  // ── Users ────────────────────────────────────────────────────
+  users: {
+    all: () => [...backofficeKeys.all, 'users'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...backofficeKeys.users.all(), 'list', filters] as const,
+    detail: (id: number) =>
+      [...backofficeKeys.users.all(), 'detail', id] as const,
+  },
+
   // ── Search Engine ───────────────────────────────────────────
   searchEngine: {
     all: () => [...backofficeKeys.all, 'searchEngine'] as const,

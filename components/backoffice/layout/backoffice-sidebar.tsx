@@ -17,6 +17,7 @@ import {
   Image,
   CalendarDays,
   Users,
+  UserCog,
   Hand,
   Search,
   Archive,
@@ -103,6 +104,7 @@ const navigation: NavGroup[] = [
     label: 'Administration',
     icon: Settings,
     items: [
+      { label: 'User Management', href: '/backoffice/users', icon: UserCog },
       { label: 'Search Engine', href: '/backoffice/search-engine', icon: Search },
       { label: 'Translations', href: '/backoffice/translations', icon: Languages },
       { label: 'Site Features', href: '/backoffice/site-features', icon: ToggleLeft },

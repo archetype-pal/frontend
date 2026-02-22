@@ -281,6 +281,42 @@ export interface CarouselItem {
   ordering: number
 }
 
+// ── Users ──────────────────────────────────────────────────────────────
+
+export interface UserListItem {
+  id: number
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  is_staff: boolean
+  is_active: boolean
+  date_joined: string
+  last_login: string | null
+}
+
+export interface UserDetail extends UserListItem {}
+
+export interface UserCreatePayload {
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  password: string
+  is_staff: boolean
+  is_active: boolean
+}
+
+export interface UserUpdatePayload {
+  username?: string
+  email?: string
+  first_name?: string
+  last_name?: string
+  password?: string
+  is_staff?: boolean
+  is_active?: boolean
+}
+
 // ── Annotations ─────────────────────────────────────────────────────────
 
 export interface GraphComponentNested {
