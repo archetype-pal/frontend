@@ -58,7 +58,7 @@ export default function SiteFeaturesPage() {
 
   useEffect(() => {
     if (serverConfig) {
-      setConfig(serverConfig)
+      setConfig(serverConfig) // eslint-disable-line react-hooks/set-state-in-effect
       setDirty(false)
     }
   }, [serverConfig])

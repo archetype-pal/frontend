@@ -295,7 +295,7 @@ export interface UserListItem {
   last_login: string | null
 }
 
-export interface UserDetail extends UserListItem {}
+export type UserDetail = UserListItem
 
 export interface UserCreatePayload {
   username: string

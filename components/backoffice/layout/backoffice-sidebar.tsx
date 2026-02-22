@@ -223,7 +223,7 @@ function useSubGroupOpen(label: string, defaultOpen: boolean) {
   useEffect(() => {
     const stored = localStorage.getItem(key)
     if (stored !== null) {
-      setOpen(stored === '1')
+      setOpen(stored === '1') // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [key])
 

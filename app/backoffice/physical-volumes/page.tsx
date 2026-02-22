@@ -3,9 +3,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
-import Link from 'next/link'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Archive, ExternalLink } from 'lucide-react'
+import { Archive } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -88,7 +87,7 @@ export default function PhysicalVolumesPage() {
     offset: page * 50,
   }
 
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: backofficeKeys.currentItems.list(filterParams),
     queryFn: () => getCurrentItems(token!, filterParams),
     enabled: !!token,

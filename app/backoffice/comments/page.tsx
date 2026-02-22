@@ -35,7 +35,7 @@ export default function CommentsPage() {
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false)
   const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | 'delete' | null>(null)
 
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: backofficeKeys.comments.list(filter),
     queryFn: () =>
       getComments(

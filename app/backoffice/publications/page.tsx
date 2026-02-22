@@ -154,8 +154,6 @@ export default function PublicationsPage() {
     return true
   })
 
-  const allPubs = data?.results ?? []
-
   const bulkActions: BulkAction[] = [
     {
       label: 'Publish',

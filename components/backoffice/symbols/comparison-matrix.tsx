@@ -1,6 +1,5 @@
 'use client'
 
-import { useMemo } from 'react'
 import {
   Tooltip,
   TooltipContent,
@@ -29,17 +28,10 @@ interface ComparisonMatrixProps {
 export function ComparisonMatrix({
   allographs,
   allComponents,
-  allFeatures,
+  allFeatures: _allFeatures,
   disabled,
   onSelectAllograph,
 }: ComparisonMatrixProps) {
-  // Build a lookup: featureId -> featureName
-  const featureMap = useMemo(() => {
-    const m = new Map<number, string>()
-    for (const f of allFeatures) m.set(f.id, f.name)
-    return m
-  }, [allFeatures])
-
   if (allographs.length === 0) {
     return (
       <div className='py-8 text-center text-sm text-muted-foreground'>

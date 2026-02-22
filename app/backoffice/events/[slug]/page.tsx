@@ -45,7 +45,7 @@ export default function EventEditorPage({
 
   useEffect(() => {
     if (event) {
-      setTitle(event.title)
+      setTitle(event.title) // eslint-disable-line react-hooks/set-state-in-effect
       setContent(event.content)
       setDirty(false)
     }

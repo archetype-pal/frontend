@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/auth-context'
 import Link from 'next/link'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Users, Plus, Trash2, ExternalLink } from 'lucide-react'
+import { Users, Plus, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -18,11 +18,9 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table'
-import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
 import {
   getScribes,
   createScribe,
-  deleteScribe,
 } from '@/services/backoffice/scribes'
 import { backofficeKeys } from '@/lib/backoffice/query-keys'
 import { formatApiError } from '@/lib/backoffice/format-api-error'

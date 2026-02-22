@@ -97,7 +97,7 @@ export default function ManuscriptsPage() {
   const router = useRouter()
   const [page, setPage] = useState(0)
 
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: backofficeKeys.manuscripts.list({ offset: page * 50 }),
     queryFn: () =>
       getHistoricalItems(token!, { limit: 50, offset: page * 50 }),

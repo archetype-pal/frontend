@@ -37,7 +37,7 @@ import { formatApiError } from '@/lib/backoffice/format-api-error'
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard'
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut'
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities'
-import type { HistoricalItemDetail, ItemFormat, BackofficeDate } from '@/types/backoffice'
+import type { HistoricalItemDetail } from '@/types/backoffice'
 
 const ITEM_TYPES = [
   { value: 'agreement', label: 'Agreement' },
@@ -85,7 +85,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
         ? item.catalogue_numbers.map((cn) => `${cn.catalogue_label} ${cn.number}`).join(', ')
         : `Item #${item.id}`
       track({ label, href: `/backoffice/manuscripts/${itemId}`, type: 'Manuscript' })
-      setDraft({
+      setDraft({ // eslint-disable-line react-hooks/set-state-in-effect
         type: item.type,
         format: item.format,
         language: item.language,

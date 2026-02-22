@@ -60,21 +60,24 @@ export function SymbolTreeSidebar({
   const [newCharName, setNewCharName] = useState('')
 
   // Filter characters
-  const filtered = characters.filter((c) => {
+  const filtered = useMemo(() => characters.filter((c) => {
     const matchesSearch = !search || c.name.toLowerCase().includes(search.toLowerCase())
     const matchesType =
       typeFilter === '__all' ||
       (typeFilter === '__untyped' ? !c.type : c.type === typeFilter)
     return matchesSearch && matchesType
-  })
+  }), [characters, search, typeFilter])
 
   // Group by type
-  const grouped = new Map<string, CharacterListItem[]>()
-  for (const char of filtered) {
-    const key = char.type || 'Untyped'
-    if (!grouped.has(key)) grouped.set(key, [])
-    grouped.get(key)!.push(char)
-  }
+  const grouped = useMemo(() => {
+    const m = new Map<string, CharacterListItem[]>()
+    for (const char of filtered) {
+      const key = char.type || 'Untyped'
+      if (!m.has(key)) m.set(key, [])
+      m.get(key)!.push(char)
+    }
+    return m
+  }, [filtered])
 
   // Flat list of filtered character IDs for keyboard navigation
   const flatIds = useMemo(() => filtered.map((c) => c.id), [filtered])

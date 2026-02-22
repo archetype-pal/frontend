@@ -31,7 +31,10 @@ export function useAutosave<T>(
 ) {
   const storageKey = `${AUTOSAVE_PREFIX}${key}`
   const dataRef = useRef(data)
-  dataRef.current = data
+
+  useEffect(() => {
+    dataRef.current = data
+  })
 
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -54,7 +57,7 @@ export function useAutosave<T>(
   // Periodic autosave when dirty
   useEffect(() => {
     if (!dirty) {
-      setStatus('idle')
+      setStatus('idle') // eslint-disable-line react-hooks/set-state-in-effect
       return
     }
 

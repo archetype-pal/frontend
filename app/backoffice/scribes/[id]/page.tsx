@@ -62,7 +62,7 @@ export default function ScribeDetailPage({
 
   useEffect(() => {
     if (scribe) {
-      setName(scribe.name)
+      setName(scribe.name) // eslint-disable-line react-hooks/set-state-in-effect
       setScriptorium(scribe.scriptorium)
       setDirty(false)
     }

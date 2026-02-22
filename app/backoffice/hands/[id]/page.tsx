@@ -20,7 +20,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RichTextEditor } from '@/components/backoffice/common/rich-text-editor'
 import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
 import { getHand, updateHand, deleteHand } from '@/services/backoffice/scribes'
 import { getItemImages } from '@/services/backoffice/manuscripts'
@@ -68,7 +67,7 @@ export default function HandDetailPage({
 
   useEffect(() => {
     if (hand) {
-      setName(hand.name)
+      setName(hand.name) // eslint-disable-line react-hooks/set-state-in-effect
       setPlace(hand.place)
       setDescription(hand.description)
       setSelectedImages(hand.item_part_images ?? [])

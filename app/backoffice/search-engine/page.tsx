@@ -133,6 +133,8 @@ export default function SearchEnginePage() {
     .filter((t) => !t.status || !['SUCCESS', 'FAILURE'].includes(t.status.state))
     .map((t) => t.taskId)
 
+  const activeTaskKey = activeTaskIds.join(',')
+
   // Poll each active task
   useEffect(() => {
     if (!token || activeTaskIds.length === 0) return
@@ -156,7 +158,7 @@ export default function SearchEnginePage() {
     }, 800)
 
     return () => clearInterval(interval)
-  }, [token, activeTaskIds.join(',')])
+  }, [token, activeTaskKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // When tasks complete, refetch stats and show toast
   const prevTaskStatesRef = useRef<Record<string, string>>({})
@@ -258,7 +260,6 @@ export default function SearchEnginePage() {
 
   // ── Derived state ────────────────────────────────────────────
   const outOfSyncCount = stats?.indexes.filter((i) => !i.in_sync).length ?? 0
-  const isHealthy = stats?.healthy ?? false
   const isUnreachable = !!statsError || (stats != null && !stats.healthy)
 
   return (
@@ -636,7 +637,17 @@ function IndexTable({
 /*  InlineProgress (shown in the table row)                            */
 /* ================================================================== */
 
+function useElapsedSeconds(startedAt: number) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+  return Math.round((now - startedAt) / 1000)
+}
+
 function InlineProgress({ task }: { task: TrackedTask }) {
+  const waitSecs = useElapsedSeconds(task.startedAt)
   const s = task.status
   if (!s) {
     return (
@@ -648,7 +659,6 @@ function InlineProgress({ task }: { task: TrackedTask }) {
   }
 
   if (s.state === 'PENDING') {
-    const waitSecs = Math.round((Date.now() - task.startedAt) / 1000)
     return (
       <div className='space-y-1'>
         <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
@@ -786,10 +796,10 @@ function TaskProgressItem({
   task: TrackedTask
   onDismiss: (taskId: string) => void
 }) {
+  const waitSecs = useElapsedSeconds(task.startedAt)
   const s = task.status
   const state = s?.state ?? 'PENDING'
   const isTerminal = state === 'SUCCESS' || state === 'FAILURE'
-  const waitSecs = Math.round((Date.now() - task.startedAt) / 1000)
 
   // Progress calculation
   let pct = 0

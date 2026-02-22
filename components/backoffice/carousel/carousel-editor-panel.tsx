@@ -40,7 +40,7 @@ export function CarouselEditorPanel({
 
   // Reset form when the selected item changes
   useEffect(() => {
-    setTitle(item?.title ?? '')
+    setTitle(item?.title ?? '') // eslint-disable-line react-hooks/set-state-in-effect
     setUrl(item?.url ?? '')
     setImageFile(null)
   }, [item])

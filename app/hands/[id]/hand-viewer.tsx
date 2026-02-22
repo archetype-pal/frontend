@@ -88,7 +88,7 @@ function useHandGraphs(handId: number, images: HandImage[], enabled: boolean): G
     fetchedRef.current = true
 
     const controller = new AbortController()
-    setState({ status: 'loading' })
+    setState({ status: 'loading' }) // eslint-disable-line react-hooks/set-state-in-effect
 
     Promise.all([
       apiFetch(`/api/v1/manuscripts/graphs/?hand=${handId}`, {
@@ -128,7 +128,10 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
 
   // Lazy-load graphs only when the Graphs tab is active
   const graphsState = useHandGraphs(hand.id, images, activeTab === 'graphs')
-  const graphs = graphsState.status === 'loaded' ? graphsState.graphs : []
+  const graphs = useMemo(
+    () => (graphsState.status === 'loaded' ? graphsState.graphs : []),
+    [graphsState]
+  )
 
   // Group graphs by allograph, preserving order of first appearance
   const graphGroups = useMemo(() => {

@@ -80,7 +80,7 @@ export default function PublicationEditorPage({
 
   useEffect(() => {
     if (pub) {
-      setTitle(pub.title)
+      setTitle(pub.title) // eslint-disable-line react-hooks/set-state-in-effect
       setPubSlug(pub.slug)
       setContent(pub.content)
       setPreview(pub.preview)
@@ -108,7 +108,7 @@ export default function PublicationEditorPage({
   useEffect(() => {
     const info = getDraftInfo()
     if (info.exists && pub) {
-      setShowRecovery(true)
+      setShowRecovery(true) // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [pub]) // eslint-disable-line react-hooks/exhaustive-deps
 

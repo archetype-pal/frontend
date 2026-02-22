@@ -68,7 +68,7 @@ export default function CarouselPage() {
     if (panel.kind === 'edit' && items) {
       const fresh = items.find((i) => i.id === panel.item.id)
       if (!fresh) {
-        setPanel({ kind: 'preview' })
+        setPanel({ kind: 'preview' }) // eslint-disable-line react-hooks/set-state-in-effect
       }
     }
   }, [items, panel])

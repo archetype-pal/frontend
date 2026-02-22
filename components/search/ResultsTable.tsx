@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import {
-  Table, TableHeader, TableBody, TableRow, TableCell, TableHead,
+  Table, TableHeader, TableRow, TableCell, TableHead,
 } from '@/components/ui/table'
 import Image from 'next/image'
 import Link from 'next/link'
