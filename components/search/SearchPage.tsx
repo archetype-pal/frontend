@@ -9,6 +9,7 @@ import { ResultsTable } from '@/components/search/ResultsTable'
 import { SearchGrid } from '@/components/search/search-grid'
 import { DynamicFacets } from '@/components/filters/DynamicFacets'
 import { useSearchContext } from '@/contexts/search-context'
+import { useSiteFeatures } from '@/contexts/site-features-context'
 import { FILTER_RENDER_MAP } from '@/lib/filter-config'
 import { useSafeSearch } from '@/utils/useSafeSearch'
 import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map'
@@ -47,6 +48,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const [sortKey, setSortKey] = React.useState<string | null>(null)
   const [ascending, setAscending] = React.useState(true)
   const { keyword, setKeyword, setSuggestionsPool } = useSearchContext()
+  const { enabledCategories, getCategoryConfig } = useSiteFeatures()
+  const categoryConfig = getCategoryConfig(resultType)
 
   React.useEffect(() => {
     if (initialType != null) setResultType(initialType)
@@ -174,7 +177,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           Search: {formatTypeLabel(resultType)} ({resultCount})
         </h1>
         <div className="flex-1 min-w-0 flex items-center px-2">
-          <ResultTypeToggle selectedType={resultType} onChange={handleResultTypeChange} compact />
+          <ResultTypeToggle selectedType={resultType} onChange={handleResultTypeChange} compact enabledTypes={enabledCategories} />
         </div>
         <div className="flex gap-2 shrink-0">
           <Button
@@ -205,6 +208,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               selectedFacets={queryState.selected_facets}
               onFacetClick={handleFacetClick}
               baseFacetURL={baseFacetURL}
+              visibleFacets={categoryConfig.visibleFacets}
             />
           ) : (
             <div className="text-sm text-muted-foreground">No filters for this type</div>
@@ -221,6 +225,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   ordering={data.ordering}
                   onSort={handleSort}
                   highlightKeyword={keyword}
+                  visibleColumns={categoryConfig.visibleColumns}
                 />
               ) : resultType === 'images' || resultType === 'graphs' ? (
                 <SearchGrid

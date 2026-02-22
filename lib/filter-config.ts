@@ -22,9 +22,6 @@ export const FILTER_RENDER_MAP: Record<
     locus: 'checkbox',
     type: 'checkbox',
     repository_name: 'checkbox',
-    issuer_type: 'checkbox',
-    issuer: 'checkbox',
-    named_beneficiary: 'checkbox',
   },
   scribes: {
     text_date: 'range',
@@ -37,7 +34,6 @@ export const FILTER_RENDER_MAP: Record<
     place: 'checkbox',
   },
   graphs: {
-    text_date: 'range',
     features: 'checkbox',
     components: 'checkbox',
     character: 'checkbox',

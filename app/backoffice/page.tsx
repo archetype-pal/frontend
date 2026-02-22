@@ -152,14 +152,8 @@ export default function BackofficeDashboardPage() {
   })
 
   const publications = useQuery({
-    queryKey: backofficeKeys.publications.list({ limit: 1 }),
-    queryFn: () => getPublications(token!, { limit: 1 }),
-    enabled: !!token,
-  })
-
-  const draftPublications = useQuery({
-    queryKey: backofficeKeys.publications.list({ status: 'draft' }),
-    queryFn: () => getPublications(token!, { status: 'draft', limit: 1 }),
+    queryKey: backofficeKeys.publications.all(),
+    queryFn: () => getPublications(token!, { limit: 200 }),
     enabled: !!token,
   })
 
@@ -183,7 +177,7 @@ export default function BackofficeDashboardPage() {
   })
 
   const pendingCount = pendingComments.data?.count ?? 0
-  const draftCount = draftPublications.data?.count ?? 0
+  const draftCount = publications.data?.results?.filter((p) => p.status === 'Draft').length ?? 0
   const outOfSyncIndexes = searchStats.data?.indexes?.filter((i) => !i.in_sync) ?? []
   const hasPendingTasks = pendingCount > 0 || draftCount > 0 || outOfSyncIndexes.length > 0
 

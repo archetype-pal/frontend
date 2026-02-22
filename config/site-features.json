@@ -1,0 +1,197 @@
+{
+  "sections": {
+    "search": true,
+    "collection": true,
+    "lightbox": true,
+    "news": false,
+    "blogs": false,
+    "featureArticles": false,
+    "events": false,
+    "about": false
+  },
+  "searchCategories": {
+    "manuscripts": {
+      "enabled": true,
+      "visibleColumns": [
+        "Shelfmark",
+        "Repository City",
+        "Repository",
+        "Catalogue Num.",
+        "Text Date",
+        "Doc. Type",
+        "Images"
+      ],
+      "visibleFacets": [
+        "text_date",
+        "image_availability",
+        "format",
+        "type",
+        "repository_city",
+        "repository_name"
+      ]
+    },
+    "images": {
+      "enabled": true,
+      "visibleColumns": [
+        "Repository",
+        "Repository City",
+        "Shelfmark",
+        "Category Number",
+        "Doc. Type",
+        "Thumbnail",
+        "Ann."
+      ],
+      "visibleFacets": [
+        "text_date",
+        "type",
+        "locus",
+        "repository_name",
+        "repository_city",
+        "features",
+        "components",
+        "component_features"
+      ]
+    },
+    "scribes": {
+      "enabled": false,
+      "visibleColumns": [
+        "Scribe Name",
+        "Date",
+        "Scriptorium"
+      ],
+      "visibleFacets": [
+        "text_date",
+        "scriptorium"
+      ]
+    },
+    "hands": {
+      "enabled": false,
+      "visibleColumns": [
+        "Hand Title",
+        "Repository City",
+        "Repository",
+        "Shelfmark",
+        "Place",
+        "Date",
+        "Catalogue Num."
+      ],
+      "visibleFacets": [
+        "text_date",
+        "repository_name",
+        "repository_city",
+        "place"
+      ]
+    },
+    "graphs": {
+      "enabled": true,
+      "visibleColumns": [
+        "Repository City",
+        "Repository",
+        "Shelfmark",
+        "Document Date",
+        "Allograph",
+        "Thumbnail"
+      ],
+      "visibleFacets": [
+        "character",
+        "character_type",
+        "allograph",
+        "place",
+        "repository_name",
+        "repository_city",
+        "features",
+        "components",
+        "component_features",
+        "positions"
+      ]
+    },
+    "texts": {
+      "enabled": false,
+      "visibleColumns": [
+        "Repository City",
+        "Repository",
+        "Shelfmark",
+        "Text Type",
+        "MS Date",
+        "Thumbnail"
+      ],
+      "visibleFacets": [
+        "text_date",
+        "text_type",
+        "type",
+        "repository_city",
+        "repository_name",
+        "status",
+        "language",
+        "places",
+        "people"
+      ]
+    },
+    "clauses": {
+      "enabled": true,
+      "visibleColumns": [
+        "Cat. Num.",
+        "Document Type",
+        "Repository City",
+        "Repository",
+        "Shelfmark",
+        "Text Date",
+        "Text Type",
+        "Clause Type"
+      ],
+      "visibleFacets": [
+        "type",
+        "repository_city",
+        "repository_name",
+        "text_date",
+        "text_type",
+        "clause_type",
+        "status"
+      ]
+    },
+    "people": {
+      "enabled": true,
+      "visibleColumns": [
+        "Cat. Num.",
+        "Document Type",
+        "Repository City",
+        "Repository",
+        "Shelfmark",
+        "Text Date",
+        "Text Type",
+        "Category"
+      ],
+      "visibleFacets": [
+        "type",
+        "repository_city",
+        "repository_name",
+        "text_date",
+        "text_type",
+        "person_type",
+        "status"
+      ]
+    },
+    "places": {
+      "enabled": false,
+      "visibleColumns": [
+        "Cat. Num.",
+        "Document Type",
+        "Repository City",
+        "Repository",
+        "Shelfmark",
+        "Text Date",
+        "Text Type",
+        "Clause Type"
+      ],
+      "visibleFacets": [
+        "type",
+        "repository_city",
+        "repository_name",
+        "text_date",
+        "text_type",
+        "place_type",
+        "status"
+      ]
+    }
+  }
+}

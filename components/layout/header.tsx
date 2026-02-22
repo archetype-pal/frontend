@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useCollection } from '@/contexts/collection-context'
 import { useAuth } from '@/contexts/auth-context'
+import { useSiteFeatures } from '@/contexts/site-features-context'
 
 const BANNER_VISIBLE_KEY = 'digipal-header-banner-visible'
 
@@ -24,6 +25,7 @@ export default function Header() {
   const [mounted, setMounted] = useState(false)
   const { items } = useCollection()
   const { token, user, logout } = useAuth()
+  const { isSectionEnabled } = useSiteFeatures()
   const pathname = usePathname()
 
   useEffect(() => {
@@ -117,6 +119,7 @@ export default function Header() {
                   </Link>
                 </Button>
               </li>
+              {isSectionEnabled('search') && (
               <li>
                 <Button
                   asChild
@@ -134,6 +137,8 @@ export default function Header() {
                   </Link>
                 </Button>
               </li>
+              )}
+              {isSectionEnabled('collection') && (
               <li>
                 <Button
                   asChild
@@ -151,6 +156,8 @@ export default function Header() {
                   </Link>
                 </Button>
               </li>
+              )}
+              {isSectionEnabled('lightbox') && (
               <li>
                 <Button
                   asChild
@@ -167,6 +174,8 @@ export default function Header() {
                   </Link>
                 </Button>
               </li>
+              )}
+              {isSectionEnabled('news') && (
               <li>
                 <Button
                   asChild
@@ -183,6 +192,8 @@ export default function Header() {
                   </Link>
                 </Button>
               </li>
+              )}
+              {isSectionEnabled('blogs') && (
               <li>
                 <Button
                   asChild
@@ -199,6 +210,8 @@ export default function Header() {
                   </Link>
                 </Button>
               </li>
+              )}
+              {isSectionEnabled('featureArticles') && (
               <li>
                 <Button
                   asChild
@@ -215,6 +228,8 @@ export default function Header() {
                   </Link>
                 </Button>
               </li>
+              )}
+              {isSectionEnabled('events') && (
               <li>
                 {mounted ? (
                   <DropdownMenu>
@@ -265,6 +280,8 @@ export default function Header() {
                   </Button>
                 )}
               </li>
+              )}
+              {isSectionEnabled('about') && (
               <li>
                 {mounted ? (
                   <DropdownMenu>
@@ -332,8 +349,10 @@ export default function Header() {
                   </Button>
                 )}
               </li>
+              )}
             </ul>
             <div className='flex flex-col md:flex-row items-center gap-3 w-full md:w-auto md:max-w-xs'>
+              {isSectionEnabled('search') && (
               <div className='relative flex-1 w-full md:w-auto'>
                 <KeywordSearchInput
                   value={headerSearchValue}
@@ -347,6 +366,7 @@ export default function Header() {
                   onFocus={handleHeaderSearchFocus}
                 />
               </div>
+              )}
               <div className='flex items-center gap-1 shrink-0'>
                 {token ? (
                   <>

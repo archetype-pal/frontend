@@ -7,6 +7,7 @@ import Footer from '@/components/layout/footer'
 import { AuthProvider } from '@/contexts/auth-context'
 import { CollectionProvider } from '@/contexts/collection-context'
 import { SearchProvider } from '@/contexts/search-context'
+import { SiteFeaturesProvider } from '@/contexts/site-features-context'
 import '@recogito/annotorious/dist/annotorious.min.css'
 
 const geistSans = localFont({
@@ -36,15 +37,17 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <CollectionProvider>
-            <SearchProvider>
-              <div className='flex flex-col min-h-screen'>
-                <Header />
-                <div className='flex-1'>{children}</div>
-                <Footer />
-              </div>
-            </SearchProvider>
-          </CollectionProvider>
+          <SiteFeaturesProvider>
+            <CollectionProvider>
+              <SearchProvider>
+                <div className='flex flex-col min-h-screen'>
+                  <Header />
+                  <div className='flex-1'>{children}</div>
+                  <Footer />
+                </div>
+              </SearchProvider>
+            </CollectionProvider>
+          </SiteFeaturesProvider>
         </AuthProvider>
         <Toaster richColors position="top-center" />
       </body>

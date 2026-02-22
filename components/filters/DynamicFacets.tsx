@@ -14,6 +14,7 @@ type DynamicFacetsProps = {
   selectedFacets?: string[]
   onFacetClick?: (arg: string, opts?: FacetClickOpts) => void
   baseFacetURL: string
+  visibleFacets?: string[]
 }
 
 export function DynamicFacets({
@@ -22,6 +23,7 @@ export function DynamicFacets({
   selectedFacets = [],
   onFacetClick,
   baseFacetURL,
+  visibleFacets,
 }: DynamicFacetsProps) {
   const { keyword, setKeyword, suggestionsPool } = useSearchContext()
   const suggestions = useKeywordSuggestions(keyword, suggestionsPool)
@@ -38,7 +40,10 @@ export function DynamicFacets({
     return null
   }
 
-  const ordered = FILTER_ORDER_MAP[renderConfig.searchType] || Object.keys(facets)
+  const allOrdered = FILTER_ORDER_MAP[renderConfig.searchType] || Object.keys(facets)
+  const ordered = visibleFacets
+    ? visibleFacets.filter((k) => allOrdered.includes(k))
+    : allOrdered
 
   return (
     <div className="space-y-4">

@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { SearchPage } from '@/components/search/SearchPage'
 import { SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types'
+import { readSiteFeatures } from '@/lib/site-features-server'
 
 const VALID = new Set<string>(SEARCH_RESULT_TYPES)
 
@@ -20,8 +21,15 @@ export default async function SearchTypePage({
 }) {
   const { type: typeParam } = await params
   const type = VALID.has(typeParam) ? (typeParam as ResultType) : null
-  if (!type) {
-    redirect('/search/manuscripts')
+
+  const config = await readSiteFeatures()
+  const enabledCategories = (Object.entries(config.searchCategories) as [ResultType, { enabled: boolean }][])
+    .filter(([, c]) => c.enabled)
+    .map(([t]) => t)
+  const firstEnabled = enabledCategories[0] ?? 'manuscripts'
+
+  if (!type || !enabledCategories.includes(type)) {
+    redirect(`/search/${firstEnabled}`)
   }
   return (
     <Suspense fallback={<SearchFallback />}>

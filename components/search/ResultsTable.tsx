@@ -277,6 +277,7 @@ export function ResultsTable<K extends ResultType>({
   ordering,
   onSort,
   highlightKeyword = '',
+  visibleColumns,
 }: {
   resultType: K
   results: ResultMap[K][]
@@ -286,8 +287,14 @@ export function ResultsTable<K extends ResultType>({
   }
   onSort?: (opts: { sortKey?: string; sortUrl?: string }) => void
   highlightKeyword?: string
+  visibleColumns?: string[]
 }) {
-  const baseCols = COLUMNS[resultType]
+  const allCols = COLUMNS[resultType]
+  const baseCols = visibleColumns
+    ? visibleColumns
+        .map((h) => allCols.find((c) => c.header === h))
+        .filter((c): c is NonNullable<typeof c> => c != null)
+    : allCols
   const cols = ordering?.options
     ? baseCols.map((col) => {
       if (!col.sortKey) return col

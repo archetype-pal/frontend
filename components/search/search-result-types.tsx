@@ -11,11 +11,17 @@ export function ResultTypeToggle({
   selectedType,
   onChange,
   compact,
+  enabledTypes,
 }: {
   selectedType: ResultType
   onChange: (next: ResultType) => void
   compact?: boolean
+  enabledTypes?: ResultType[]
 }) {
+  const items = enabledTypes
+    ? resultTypeItems.filter((i) => enabledTypes.includes(i.value))
+    : resultTypeItems
+
   return (
     <div
       className={
@@ -26,7 +32,7 @@ export function ResultTypeToggle({
       role="tablist"
       aria-label="Search result type"
     >
-      {resultTypeItems.map((item) => (
+      {items.map((item) => (
         <Button
           key={item.value}
           type="button"
