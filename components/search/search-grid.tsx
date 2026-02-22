@@ -7,7 +7,7 @@ import type { ImageListItem } from '@/types/image'
 import type { GraphListItem } from '@/types/graph'
 import { getIiifImageUrl } from '@/utils/iiif'
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail'
-import { Highlight } from './Highlight'
+import { Highlight } from './highlight'
 import { CollectionStar } from '@/components/collection/collection-star'
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button'
 

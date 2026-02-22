@@ -79,7 +79,7 @@ export default function PhysicalVolumesPage() {
     enabled: !!token,
   })
 
-  const repositories: Repository[] = repositoriesData?.results ?? repositoriesData ?? []
+  const repositories: Repository[] = !repositoriesData ? [] : Array.isArray(repositoriesData) ? repositoriesData : repositoriesData.results
 
   const filterParams = {
     ...(repoFilter !== '__all' ? { repository: Number(repoFilter) } : {}),

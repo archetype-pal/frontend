@@ -19,7 +19,7 @@ import type { PersonListItem } from '@/types/person'
 import type { PlaceListItem } from '@/types/place'
 import { getIiifImageUrl } from '@/utils/iiif'
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail'
-import { Highlight } from './Highlight'
+import { Highlight } from './highlight'
 import { CollectionStar } from '@/components/collection/collection-star'
 
 export type Column<T> = {

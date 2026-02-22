@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
-import { SearchPage } from '@/components/search/SearchPage'
+import { SearchPage } from '@/components/search/search-page'
 import { SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types'
 import { readSiteFeatures } from '@/lib/site-features-server'
 

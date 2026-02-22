@@ -62,7 +62,7 @@ export default function NewManuscriptPage() {
     enabled: !!token,
   })
 
-  const repositories: Repository[] = repositoriesData?.results ?? repositoriesData ?? []
+  const repositories: Repository[] = !repositoriesData ? [] : Array.isArray(repositoriesData) ? repositoriesData : repositoriesData.results
   const dates = datesData ?? []
 
   const createMut = useMutation({

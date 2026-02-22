@@ -173,9 +173,9 @@ export function CatalogueNumbersSection({
               <div className='min-w-0 shrink'>
                 <InlineEdit
                   value={cn.number}
-                  onSave={(number) =>
-                    updateMut.mutateAsync({ id: cn.id, data: { number } })
-                  }
+                  onSave={async (number) => {
+                    await updateMut.mutateAsync({ id: cn.id, data: { number } })
+                  }}
                 />
               </div>
 
@@ -185,12 +185,12 @@ export function CatalogueNumbersSection({
                   value={cn.url ?? ''}
                   placeholder='Add URL...'
                   className='max-w-full'
-                  onSave={(url) =>
-                    updateMut.mutateAsync({
+                  onSave={async (url) => {
+                    await updateMut.mutateAsync({
                       id: cn.id,
                       data: { url: url || null },
                     })
-                  }
+                  }}
                   renderValue={(v) =>
                     v ? (
                       <span className='inline-flex items-center gap-1 text-xs text-primary min-w-0'>

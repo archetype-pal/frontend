@@ -5,7 +5,7 @@ import { FACET_COMPONENT_MAP } from '@/lib/facet-component-map'
 import { FILTER_ORDER_MAP } from '@/lib/filter-order'
 import { getSelectedForFacet, formatFacetTitle } from '@/lib/search-query'
 import { useSearchContext } from '@/contexts/search-context'
-import { KeywordSearchInput, useKeywordSuggestions } from '@/components/search/KeywordSearchInput'
+import { KeywordSearchInput, useKeywordSuggestions } from '@/components/search/keyword-search-input'
 import type { FacetData, FacetItem, FacetClickOpts } from '@/types/facets'
 
 type DynamicFacetsProps = {

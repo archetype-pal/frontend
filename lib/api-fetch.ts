@@ -5,8 +5,9 @@
  * exactly what happens (and how long it takes) during SSR or client fetches.
  */
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+import { env } from '@/lib/env'
+
+export const API_BASE_URL = env.apiUrl
 
 /** Threshold in ms – requests slower than this are flagged. */
 const SLOW_THRESHOLD = 500

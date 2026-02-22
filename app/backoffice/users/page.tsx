@@ -894,7 +894,7 @@ export default function UsersPage() {
               Cancel
             </Button>
             <Button
-              onClick={() => updateMut.mutate()}
+              onClick={() => updateMut.mutate(undefined)}
               disabled={!editForm.username?.trim() || updateMut.isPending}
             >
               {updateMut.isPending ? 'Saving...' : 'Save Changes'}

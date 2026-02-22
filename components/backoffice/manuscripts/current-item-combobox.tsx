@@ -81,7 +81,7 @@ export function CurrentItemCombobox({
   })
 
   const items: CurrentItemOption[] = currentItemsData?.results ?? []
-  const repositories: Repository[] = repositoriesData?.results ?? repositoriesData ?? []
+  const repositories: Repository[] = !repositoriesData ? [] : Array.isArray(repositoriesData) ? repositoriesData : repositoriesData.results
 
   const selectedItem = items.find((ci) => ci.id === value)
   const displayValue = value != null

@@ -1,4 +1,4 @@
-import { FacetPanel } from '@/components/filters/FacetPanel'
+import { FacetPanel } from '@/components/filters/facet-panel'
 import { FacetRadioPanel } from '@/components/filters/FacetRadioPanel'
 import { FacetDateRangePanel } from '@/components/filters/FacetDateRangePanel'
 

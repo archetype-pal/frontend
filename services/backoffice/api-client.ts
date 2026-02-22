@@ -2,6 +2,30 @@ import { apiFetch } from '@/lib/api-fetch'
 
 const API_PREFIX = '/api/v1/admin'
 
+const TRANSIENT_STATUSES = [502, 503, 504]
+
+async function fetchWithRetry(
+  path: string,
+  init?: RequestInit,
+  retries = 2,
+  delay = 500
+): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await apiFetch(path, init)
+      if (attempt < retries && TRANSIENT_STATUSES.includes(res.status)) {
+        await new Promise((r) => setTimeout(r, delay * (attempt + 1)))
+        continue
+      }
+      return res
+    } catch (err) {
+      if (attempt === retries) throw err
+      await new Promise((r) => setTimeout(r, delay * (attempt + 1)))
+    }
+  }
+  throw new Error('Retry limit exceeded')
+}
+
 export class BackofficeApiError extends Error {
   constructor(
     public status: number,
@@ -21,7 +45,7 @@ async function apiRequest<T>(
   token: string,
   init?: RequestInit
 ): Promise<T> {
-  const res = await apiFetch(`${API_PREFIX}${path}`, {
+  const res = await fetchWithRetry(`${API_PREFIX}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -97,7 +121,7 @@ async function apiRequestFormData<T>(
   method: string,
   formData: FormData
 ): Promise<T> {
-  const res = await apiFetch(`${API_PREFIX}${path}`, {
+  const res = await fetchWithRetry(`${API_PREFIX}${path}`, {
     method,
     headers: {
       Authorization: `Token ${token}`,
