@@ -12,6 +12,7 @@ import type { BackendGraph } from '@/services/annotations'
 import type { Allograph } from '@/types/allographs'
 import { BookOpen, Calendar, MapPin, PenTool, User, FileText, ImageIcon, Grid3X3, Loader2 } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch'
+import { sanitizeHtml } from '@/lib/sanitize-html'
 
 const TAB_VALUES = ['information', 'description', 'images', 'graphs'] as const
 const DEFAULT_TAB = 'information'
@@ -290,7 +291,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
             {hand.description ? (
               <div
                 className="prose max-w-none"
-                dangerouslySetInnerHTML={{ __html: hand.description }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(hand.description) }}
               />
             ) : (
               <div className="flex items-center gap-2 text-muted-foreground bg-muted/50 rounded-md p-4">

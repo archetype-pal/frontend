@@ -6,7 +6,11 @@ import { useAuth } from '@/contexts/auth-context'
 import { toast } from 'sonner'
 import { Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { RichTextEditor } from '@/components/backoffice/common/rich-text-editor'
+import dynamic from 'next/dynamic'
+const RichTextEditor = dynamic(
+  () => import('@/components/backoffice/common/rich-text-editor').then(m => m.RichTextEditor),
+  { ssr: false, loading: () => <div className="h-[200px] rounded-md border animate-pulse bg-muted" /> }
+)
 import {
   Select,
   SelectContent,
@@ -22,6 +26,7 @@ import {
 } from '@/services/backoffice/manuscripts'
 import { backofficeKeys } from '@/lib/backoffice/query-keys'
 import { formatApiError } from '@/lib/backoffice/format-api-error'
+import { sanitizeHtml } from '@/lib/sanitize-html'
 import type { HistoricalItemDescription } from '@/types/backoffice'
 
 interface DescriptionsSectionProps {
@@ -233,7 +238,7 @@ export function DescriptionsSection({
               ) : (
                 <div
                   className='prose prose-sm dark:prose-invert max-w-none line-clamp-3'
-                  dangerouslySetInnerHTML={{ __html: desc.content }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(desc.content) }}
                 />
               )}
             </div>

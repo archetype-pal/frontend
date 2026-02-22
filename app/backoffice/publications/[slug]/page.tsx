@@ -19,7 +19,11 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { RichTextEditor } from '@/components/backoffice/common/rich-text-editor'
+import dynamic from 'next/dynamic'
+const RichTextEditor = dynamic(
+  () => import('@/components/backoffice/common/rich-text-editor').then(m => m.RichTextEditor),
+  { ssr: false, loading: () => <div className="h-[200px] rounded-md border animate-pulse bg-muted" /> }
+)
 import {
   Select,
   SelectContent,
@@ -39,6 +43,7 @@ import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard'
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut'
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities'
 import { useAutosave } from '@/hooks/backoffice/use-autosave'
+import { sanitizeHtml } from '@/lib/sanitize-html'
 
 export default function PublicationEditorPage({
   params,
@@ -399,7 +404,7 @@ export default function PublicationEditorPage({
             <TabsContent value='preview' className='mt-2'>
               <div
                 className='prose prose-sm dark:prose-invert max-w-none rounded-md border px-4 py-3 min-h-[200px]'
-                dangerouslySetInnerHTML={{ __html: content }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
               />
             </TabsContent>
           </Tabs>

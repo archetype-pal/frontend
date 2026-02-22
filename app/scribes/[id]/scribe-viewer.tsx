@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { useTabNavigation } from '@/hooks/use-tab-navigation'
 import type { ScribeDetail, ScribeHand } from '@/types/scribe-detail'
 import { Calendar, Building2, User, PenTool, Pen } from 'lucide-react'
+import { sanitizeHtml } from '@/lib/sanitize-html'
 
 const TAB_VALUES = ['information', 'hands', 'idiographs'] as const
 const DEFAULT_TAB = 'information'
@@ -89,7 +90,7 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
               <h2 className="text-lg font-semibold mb-4">Description</h2>
               <div
                 className="prose max-w-none"
-                dangerouslySetInnerHTML={{ __html: scribe.description }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(scribe.description) }}
               />
             </div>
           )}

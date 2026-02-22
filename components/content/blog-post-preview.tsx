@@ -7,6 +7,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import ShareButtons from './share-buttons'
+import { sanitizeHtml } from '@/lib/sanitize-html'
 
 interface BlogPostPreviewProps {
   title: string
@@ -75,7 +76,7 @@ export default function BlogPostPreview({
           {commentsCount} Comments
         </Link>
       </div>
-      <p className='mb-4' dangerouslySetInnerHTML={{ __html: excerpt }}></p>
+      <p className='mb-4' dangerouslySetInnerHTML={{ __html: sanitizeHtml(excerpt) }}></p>
 
       {showReadMoreBtn && (
         <Link
