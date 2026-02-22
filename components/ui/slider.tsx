@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import * as RadixSlider from '@radix-ui/react-slider'
-import { cn } from '@/lib/utils'
+import * as React from 'react';
+import * as RadixSlider from '@radix-ui/react-slider';
+import { cn } from '@/lib/utils';
 
 export const Slider = React.forwardRef<
   React.ElementRef<typeof RadixSlider.Root>,
@@ -10,10 +10,7 @@ export const Slider = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <RadixSlider.Root
     ref={ref}
-    className={cn(
-      'relative flex w-full touch-none select-none items-center',
-      className
-    )}
+    className={cn('relative flex w-full touch-none select-none items-center', className)}
     {...props}
   >
     <RadixSlider.Track className="relative h-1 w-full grow overflow-hidden rounded-full bg-gray-200">
@@ -26,5 +23,5 @@ export const Slider = React.forwardRef<
       />
     ))}
   </RadixSlider.Root>
-))
-Slider.displayName = 'Slider'
+));
+Slider.displayName = 'Slider';

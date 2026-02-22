@@ -1,55 +1,55 @@
-import { apiFetch, API_BASE_URL } from '@/lib/api-fetch'
-import type { CarouselItem } from '@/types/backoffice'
+import { apiFetch, API_BASE_URL } from '@/lib/api-fetch';
+import type { CarouselItem } from '@/types/backoffice';
 
 export interface PublicationAuthor {
-  first_name: string
-  last_name: string
+  first_name: string;
+  last_name: string;
 }
 
 export interface Publication {
-  id: number | string
-  title: string
-  slug: string
-  content: string
-  preview: string
-  keywords: string
-  status: string
-  is_blog_post: boolean
-  is_news: boolean
-  is_featured: boolean
-  allow_comments: boolean
-  author: PublicationAuthor
-  author_name: string | null
-  published_at: string | null
-  created_at: string
-  updated_at: string
-  number_of_comments: number
+  id: number | string;
+  title: string;
+  slug: string;
+  content: string;
+  preview: string;
+  keywords: string;
+  status: string;
+  is_blog_post: boolean;
+  is_news: boolean;
+  is_featured: boolean;
+  allow_comments: boolean;
+  author: PublicationAuthor;
+  author_name: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  number_of_comments: number;
 }
 
 interface AuthToken {
-  auth_token: string
+  auth_token: string;
 }
 
 interface UserProfile {
-  id: number
-  username: string
-  email: string
-  first_name: string
-  last_name: string
-  is_staff: boolean
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_staff: boolean;
 }
 
 interface PaginatedPublications {
-  results: Publication[]
-  count: number
+  results: Publication[];
+  count: number;
 }
 
 /** Build absolute URL for carousel (or other API-served) images. API returns relative paths like "media/carousel/…". */
 export function getCarouselImageUrl(imagePath: string | null | undefined): string {
-  if (!imagePath) return '/placeholder.svg'
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return imagePath
-  const base = API_BASE_URL.replace(/\/$/, '')
-  return imagePath.startsWith('/') ? `${base}${imagePath}` : `${base}/${imagePath}`
+  if (!imagePath) return '/placeholder.svg';
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return imagePath;
+  const base = API_BASE_URL.replace(/\/$/, '');
+  return imagePath.startsWith('/') ? `${base}${imagePath}` : `${base}/${imagePath}`;
 }
 
 export async function loginUser(username: string, password: string): Promise<AuthToken> {
@@ -59,13 +59,13 @@ export async function loginUser(username: string, password: string): Promise<Aut
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ username, password }),
-  })
+  });
 
   if (!response.ok) {
-    throw new Error('Login failed')
+    throw new Error('Login failed');
   }
 
-  return response.json() as Promise<AuthToken>
+  return response.json() as Promise<AuthToken>;
 }
 
 export async function logoutUser(token: string) {
@@ -75,10 +75,10 @@ export async function logoutUser(token: string) {
       Authorization: `Token ${token}`,
       'Content-Type': 'application/json',
     },
-  })
+  });
 
   if (!response.ok) {
-    throw new Error('Logout failed')
+    throw new Error('Logout failed');
   }
 }
 
@@ -87,59 +87,68 @@ export async function getUserProfile(token: string): Promise<UserProfile> {
     headers: {
       Authorization: `Token ${token}`,
     },
-  })
+  });
 
   if (!response.ok) {
-    throw new Error('Failed to fetch user profile')
+    throw new Error('Failed to fetch user profile');
   }
 
-  return response.json() as Promise<UserProfile>
+  return response.json() as Promise<UserProfile>;
 }
 
 export type PublicationParams = {
-  is_news?: boolean
-  is_featured?: boolean
-  is_blog_post?: boolean
-  limit?: number
-  offset?: number
-}
+  is_news?: boolean;
+  is_featured?: boolean;
+  is_blog_post?: boolean;
+  limit?: number;
+  offset?: number;
+};
 
 export async function getPublications(params: PublicationParams): Promise<PaginatedPublications> {
-  const searchParams = new URLSearchParams()
+  const searchParams = new URLSearchParams();
 
-  if (params.is_news) searchParams.append('is_news', 'true')
-  if (params.is_featured) searchParams.append('is_featured', 'true')
-  if (params.is_blog_post) searchParams.append('is_blog_post', 'true')
+  if (params.is_news) searchParams.append('is_news', 'true');
+  if (params.is_featured) searchParams.append('is_featured', 'true');
+  if (params.is_blog_post) searchParams.append('is_blog_post', 'true');
 
-  if (params.limit) searchParams.append('limit', params.limit.toString())
-  if (params.offset) searchParams.append('offset', params.offset.toString())
+  if (params.limit) searchParams.append('limit', params.limit.toString());
+  if (params.offset) searchParams.append('offset', params.offset.toString());
 
-  const qs = searchParams.toString()
-  const path = `/api/v1/media/publications/${qs ? `?${qs}` : ''}`
+  const qs = searchParams.toString();
+  const path = `/api/v1/media/publications/${qs ? `?${qs}` : ''}`;
 
-  const res = await apiFetch(path)
-  if (!res.ok) throw new Error('Failed to fetch publications')
+  const res = await apiFetch(path);
+  if (!res.ok) throw new Error('Failed to fetch publications');
 
-  return res.json() as Promise<PaginatedPublications>
+  return res.json() as Promise<PaginatedPublications>;
+}
+
+/** Thrown when the publication API returns 404. Use in pages to call notFound(). */
+export class PublicationNotFoundError extends Error {
+  constructor() {
+    super('Publication not found');
+    this.name = 'PublicationNotFoundError';
+  }
 }
 
 export async function getPublicationItem(slug: string): Promise<Publication> {
-  const res = await apiFetch(`/api/v1/media/publications/${slug}`)
-  if (!res.ok) throw new Error('Failed to fetch publication item')
+  const res = await apiFetch(`/api/v1/media/publications/${slug}`);
+  if (res.status === 404) throw new PublicationNotFoundError();
+  if (!res.ok) throw new Error('Failed to fetch publication item');
 
-  return res.json() as Promise<Publication>
+  return res.json() as Promise<Publication>;
 }
 
 export async function fetchCarouselItems(): Promise<CarouselItem[]> {
   try {
-    const response = await apiFetch(`/api/v1/media/carousel-items/`)
+    const response = await apiFetch(`/api/v1/media/carousel-items/`);
     if (!response.ok) {
-      throw new Error('Failed to fetch carousel items')
+      throw new Error('Failed to fetch carousel items');
     }
-    const data: CarouselItem[] = await response.json()
-    return data
+    const data: CarouselItem[] = await response.json();
+    return data;
   } catch (error) {
-    console.error('Error fetching carousel items:', error)
-    throw error
+    console.error('Error fetching carousel items:', error);
+    throw error;
   }
 }

@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableHeader,
@@ -8,25 +8,25 @@ import {
   TableRow,
   TableCell,
   TableHead,
-} from '@/components/ui/table'
-import Link from 'next/link'
-import { useTabNavigation } from '@/hooks/use-tab-navigation'
-import type { ScribeDetail, ScribeHand } from '@/types/scribe-detail'
-import { Calendar, Building2, User, PenTool, Pen } from 'lucide-react'
-import { sanitizeHtml } from '@/lib/sanitize-html'
+} from '@/components/ui/table';
+import Link from 'next/link';
+import { useTabNavigation } from '@/hooks/use-tab-navigation';
+import type { ScribeDetail, ScribeHand } from '@/types/scribe-detail';
+import { Calendar, Building2, User, PenTool, Pen } from 'lucide-react';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 
-const TAB_VALUES = ['information', 'hands', 'idiographs'] as const
-const DEFAULT_TAB = 'information'
+const TAB_VALUES = ['information', 'hands', 'idiographs'] as const;
+const DEFAULT_TAB = 'information';
 
 interface ScribeViewerProps {
-  scribe: ScribeDetail
-  hands: ScribeHand[]
+  scribe: ScribeDetail;
+  hands: ScribeHand[];
 }
 
 export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
-  const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB)
+  const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB);
 
-  const period = scribe.period ?? scribe.date ?? null
+  const period = scribe.period ?? scribe.date ?? null;
 
   return (
     <main className="container mx-auto p-4 max-w-6xl">
@@ -47,7 +47,9 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
         <TabsList className="bg-gray-100 p-1">
           <TabsTrigger value="information">Information</TabsTrigger>
           <TabsTrigger value="hands">Hands ({hands.length})</TabsTrigger>
-          <TabsTrigger value="idiographs">Idiographs ({scribe.idiographs?.length ?? 0})</TabsTrigger>
+          <TabsTrigger value="idiographs">
+            Idiographs ({scribe.idiographs?.length ?? 0})
+          </TabsTrigger>
         </TabsList>
 
         {/* Information Tab */}
@@ -120,7 +122,9 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
                           href={`/manuscripts/${hand.item_part}`}
                           className="text-primary hover:underline relative z-[2]"
                         >
-                          {hand.item_part_display_label ?? hand.shelfmark ?? `Manuscript #${hand.item_part}`}
+                          {hand.item_part_display_label ??
+                            hand.shelfmark ??
+                            `Manuscript #${hand.item_part}`}
                         </Link>
                       </TableCell>
                       <TableCell>
@@ -178,5 +182,5 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
         </TabsContent>
       </Tabs>
     </main>
-  )
+  );
 }

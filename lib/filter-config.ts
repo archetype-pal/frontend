@@ -1,9 +1,6 @@
 export const FILTER_RENDER_MAP: Record<
   string,
-  Record<
-    string,
-    'checkbox' | 'toggle' | 'range' | 'number-select'
-  >
+  Record<string, 'checkbox' | 'toggle' | 'range' | 'number-select'>
 > = {
   manuscripts: {
     image_availability: 'toggle',
@@ -83,4 +80,4 @@ export const FILTER_RENDER_MAP: Record<
     repository_name: 'checkbox',
     status: 'checkbox',
   },
-}
+};

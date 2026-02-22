@@ -1,33 +1,33 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { Wrench, Star, Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Eye } from 'lucide-react'
+import * as React from 'react';
+import { Wrench, Star, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Eye } from 'lucide-react';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { fetchHands, /* fetchAllographs */ } from '@/services/manuscripts'
-import type { HandType } from '@/types/hands'
-import type { Allograph } from '@/types/allographs'
+} from '@/components/ui/select';
+import { fetchHands /* fetchAllographs */ } from '@/services/manuscripts';
+import type { HandType } from '@/types/hands';
+import type { Allograph } from '@/types/allographs';
 // import { toast } from "sonner"
 
 interface AnnotationHeaderProps {
-  annotationsEnabled: boolean
-  onToggleAnnotations: (enabled: boolean) => void
-  unsavedCount: number
-  imageId?: string
-  onAllographSelect: (allograph: Allograph | undefined) => void
-  onHandSelect: (hand: HandType | undefined) => void
-  allographs: Allograph[]
-  onAllographHover?: (allograph: Allograph | undefined) => void
-  activeAllographCount?: number
-  activeAllographLabel?: string
-  onOpenAllographModal?: () => void
+  annotationsEnabled: boolean;
+  onToggleAnnotations: (enabled: boolean) => void;
+  unsavedCount: number;
+  imageId?: string;
+  onAllographSelect: (allograph: Allograph | undefined) => void;
+  onHandSelect: (hand: HandType | undefined) => void;
+  allographs: Allograph[];
+  onAllographHover?: (allograph: Allograph | undefined) => void;
+  activeAllographCount?: number;
+  activeAllographLabel?: string;
+  onOpenAllographModal?: () => void;
 }
 
 export function AnnotationHeader({
@@ -43,86 +43,83 @@ export function AnnotationHeader({
   activeAllographLabel,
   onOpenAllographModal,
 }: AnnotationHeaderProps) {
-  const [hands, setHands] = React.useState<HandType[]>([])
+  const [hands, setHands] = React.useState<HandType[]>([]);
   // const [allographs, setAllographs] = React.useState<Allograph[]>([])
-  const [selectedHand, setSelectedHand] = React.useState<string>('')
-  const [selectedAllograph, setSelectedAllograph] = React.useState<string>('')
-  const [, setLoading] = React.useState(true)
+  const [selectedHand, setSelectedHand] = React.useState<string>('');
+  const [selectedAllograph, setSelectedAllograph] = React.useState<string>('');
+  const [, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
     const loadData = async () => {
       try {
-        setLoading(true)
+        setLoading(true);
         if (!imageId) {
-          if (isMounted) setHands([])
-          return
+          if (isMounted) setHands([]);
+          return;
         }
-        const handsData = await fetchHands(imageId)
-        if (isMounted) setHands(handsData.results)
+        const handsData = await fetchHands(imageId);
+        if (isMounted) setHands(handsData.results);
       } catch {
-        if (isMounted) setHands([])
+        if (isMounted) setHands([]);
       } finally {
-        if (isMounted) setLoading(false)
+        if (isMounted) setLoading(false);
       }
-    }
-    loadData()
+    };
+    loadData();
     return () => {
-      isMounted = false
-    }
-  }, [imageId])
+      isMounted = false;
+    };
+  }, [imageId]);
 
   React.useEffect(() => {
-    if (!selectedAllograph) return
-    const exists = allographs.some((a) => a.id.toString() === selectedAllograph)
+    if (!selectedAllograph) return;
+    const exists = allographs.some((a) => a.id.toString() === selectedAllograph);
     if (!exists) {
-      setSelectedAllograph('')
-      onAllographSelect(undefined)
-      onAllographHover?.(undefined)
+      setSelectedAllograph('');
+      onAllographSelect(undefined);
+      onAllographHover?.(undefined);
     }
-  }, [allographs, selectedAllograph, onAllographSelect, onAllographHover])
-
+  }, [allographs, selectedAllograph, onAllographSelect, onAllographHover]);
 
   const handleAllographChange = (allographId: string) => {
-    onAllographHover?.(undefined)
+    onAllographHover?.(undefined);
 
     if (allographId === '__all__') {
-      setSelectedAllograph('')
-      onAllographSelect(undefined)
-      return
+      setSelectedAllograph('');
+      onAllographSelect(undefined);
+      return;
     }
 
-    setSelectedAllograph(allographId)
-    const selectedAllographData = allographs.find(
-      (a) => a.id.toString() === allographId
-    )
-    onAllographSelect(selectedAllographData)
-  }
+    setSelectedAllograph(allographId);
+    const selectedAllographData = allographs.find((a) => a.id.toString() === allographId);
+    onAllographSelect(selectedAllographData);
+  };
 
   const handleAllographHover = (allographId: string) => {
-    const a = allographs.find((x) => x.id.toString() === allographId)
-    onAllographHover?.(a)
-  }
-
+    const a = allographs.find((x) => x.id.toString() === allographId);
+    onAllographHover?.(a);
+  };
 
   const handleHandChange = (handId: string) => {
-    setSelectedHand(handId)
-    const selectedHandData = hands.find((h) => h.id.toString() === handId)
-    onHandSelect(selectedHandData)
-  }
+    setSelectedHand(handId);
+    const selectedHandData = hands.find((h) => h.id.toString() === handId);
+    onHandSelect(selectedHandData);
+  };
 
   return (
-    <div className='flex items-center justify-between px-4 py-2 bg-white border-b'>
-      <div className='flex items-center space-x-2'>
-        <div className='flex items-center space-x-2'>
-          <span className='text-sm font-medium text-gray-700'>Annotations</span>
-          <div className='flex'>
+    <div className="flex items-center justify-between px-4 py-2 bg-white border-b">
+      <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-medium text-gray-700">Annotations</span>
+          <div className="flex">
             <button
               onClick={() => onToggleAnnotations(!annotationsEnabled)}
-              className={`px-3 py-1 text-sm font-medium transition-colors ${annotationsEnabled
-                ? 'bg-slate-600 text-white'
-                : 'bg-white text-gray-900 border shadow-sm'
-                }`}
+              className={`px-3 py-1 text-sm font-medium transition-colors ${
+                annotationsEnabled
+                  ? 'bg-slate-600 text-white'
+                  : 'bg-white text-gray-900 border shadow-sm'
+              }`}
               style={{
                 borderTopLeftRadius: '4px',
                 borderBottomLeftRadius: '4px',
@@ -135,31 +132,31 @@ export function AnnotationHeader({
           </div>
         </div>
 
-        <div className='flex items-center space-x-1'>
-          <span className='text-sm text-gray-600'>Unsaved</span>
-          <span className='inline-flex items-center justify-center w-6 h-6 text-sm font-medium text-gray-600 bg-gray-100 rounded'>
+        <div className="flex items-center space-x-1">
+          <span className="text-sm text-gray-600">Unsaved</span>
+          <span className="inline-flex items-center justify-center w-6 h-6 text-sm font-medium text-gray-600 bg-gray-100 rounded">
             {unsavedCount}
           </span>
         </div>
 
-        <div className='flex items-center space-x-1'>
-          <Button variant='outline' size='icon' className='h-8 w-8'>
-            <Wrench className='h-4 w-4' />
+        <div className="flex items-center space-x-1">
+          <Button variant="outline" size="icon" className="h-8 w-8">
+            <Wrench className="h-4 w-4" />
           </Button>
-          <Button variant='outline' size='icon' className='h-8 w-8'>
-            <Star className='h-4 w-4' />
+          <Button variant="outline" size="icon" className="h-8 w-8">
+            <Star className="h-4 w-4" />
           </Button>
-          <Button variant='outline' size='icon' className='h-8 w-8'>
-            <Star className='h-4 w-4' />
-            <Plus className='h-3 w-3 absolute -top-1 -right-1' />
+          <Button variant="outline" size="icon" className="h-8 w-8">
+            <Star className="h-4 w-4" />
+            <Plus className="h-3 w-3 absolute -top-1 -right-1" />
           </Button>
         </div>
       </div>
 
-      <div className='flex items-center space-x-2'>
+      <div className="flex items-center space-x-2">
         <Select value={selectedHand} onValueChange={handleHandChange}>
-          <SelectTrigger className='w-[200px]'>
-            <SelectValue placeholder='Select Hand' />
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Select Hand" />
           </SelectTrigger>
           <SelectContent>
             {hands.map((hand) => (
@@ -170,9 +167,15 @@ export function AnnotationHeader({
           </SelectContent>
         </Select>
 
-        <Select value={selectedAllograph} onValueChange={handleAllographChange} onOpenChange={(open) => { if (!open) onAllographHover?.(undefined) }}>
-          <SelectTrigger className='w-[200px]'>
-            <SelectValue placeholder='Select Allograph' />
+        <Select
+          value={selectedAllograph}
+          onValueChange={handleAllographChange}
+          onOpenChange={(open) => {
+            if (!open) onAllographHover?.(undefined);
+          }}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Select Allograph" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">All allographs</SelectItem>
@@ -204,8 +207,7 @@ export function AnnotationHeader({
           <Eye className="h-4 w-4 text-gray-500" />
           <span className="text-sm">{activeAllographCount ?? 0}</span>
         </Button>
-
       </div>
     </div>
-  )
+  );
 }

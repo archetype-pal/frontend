@@ -1,55 +1,52 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { useState } from 'react'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Save, X, FolderOpen, Trash2 } from 'lucide-react'
-import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store'
-import { saveSession, getAllSessions, deleteSession } from '@/lib/lightbox-db'
-import type { LightboxSession } from '@/lib/lightbox-db'
+import * as React from 'react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Save, X, FolderOpen, Trash2 } from 'lucide-react';
+import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store';
+import { saveSession, getAllSessions, deleteSession } from '@/lib/lightbox-db';
+import type { LightboxSession } from '@/lib/lightbox-db';
 
 interface LightboxSessionManagerProps {
-  onClose: () => void
-  onLoad?: (sessionId: string) => void
+  onClose: () => void;
+  onLoad?: (sessionId: string) => void;
 }
 
-export function LightboxSessionManager({
-  onClose,
-  onLoad,
-}: LightboxSessionManagerProps) {
-  const { workspaces, currentWorkspaceId } = useLightboxStore()
-  const workspaceImages = useWorkspaceImages()
-  const [sessions, setSessions] = useState<LightboxSession[]>([])
-  const [sessionName, setSessionName] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManagerProps) {
+  const { workspaces, currentWorkspaceId } = useLightboxStore();
+  const workspaceImages = useWorkspaceImages();
+  const [sessions, setSessions] = useState<LightboxSession[]>([]);
+  const [sessionName, setSessionName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   React.useEffect(() => {
-    loadSessions()
-  }, [])
+    loadSessions();
+  }, []);
 
   const loadSessions = async () => {
     try {
-      const allSessions = await getAllSessions()
-      setSessions(allSessions)
+      const allSessions = await getAllSessions();
+      setSessions(allSessions);
     } catch (error) {
-      console.error('Failed to load sessions:', error)
+      console.error('Failed to load sessions:', error);
     }
-  }
+  };
 
   const handleSave = async () => {
     if (!sessionName.trim()) {
-      toast.error('Please enter a session name')
-      return
+      toast.error('Please enter a session name');
+      return;
     }
 
     if (!currentWorkspaceId) {
-      toast.error('No workspace to save')
-      return
+      toast.error('No workspace to save');
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const session: LightboxSession = {
         id: `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -58,45 +55,45 @@ export function LightboxSessionManager({
         images: workspaceImages,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      }
+      };
 
-      await saveSession(session)
-      await loadSessions()
-      setSessionName('')
-      toast.success('Session saved successfully')
+      await saveSession(session);
+      await loadSessions();
+      setSessionName('');
+      toast.success('Session saved successfully');
     } catch (error) {
-      console.error('Failed to save session:', error)
-      toast.error('Failed to save session')
+      console.error('Failed to save session:', error);
+      toast.error('Failed to save session');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleLoad = async (sessionId: string) => {
     try {
-      const { loadSession } = useLightboxStore.getState()
-      await loadSession(sessionId)
+      const { loadSession } = useLightboxStore.getState();
+      await loadSession(sessionId);
       if (onLoad) {
-        onLoad(sessionId)
+        onLoad(sessionId);
       }
-      onClose()
+      onClose();
     } catch (error) {
-      console.error('Failed to load session:', error)
-      toast.error('Failed to load session')
+      console.error('Failed to load session:', error);
+      toast.error('Failed to load session');
     }
-  }
+  };
 
   const handleDelete = async (sessionId: string) => {
-    if (!confirm('Are you sure you want to delete this session?')) return
+    if (!confirm('Are you sure you want to delete this session?')) return;
 
     try {
-      await deleteSession(sessionId)
-      await loadSessions()
+      await deleteSession(sessionId);
+      await loadSessions();
     } catch (error) {
-      console.error('Failed to delete session:', error)
-      toast.error('Failed to delete session')
+      console.error('Failed to delete session:', error);
+      toast.error('Failed to delete session');
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
@@ -122,7 +119,7 @@ export function LightboxSessionManager({
                 onChange={(e) => setSessionName(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    handleSave()
+                    handleSave();
                   }
                 }}
               />
@@ -153,18 +150,10 @@ export function LightboxSessionManager({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleLoad(session.id)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleLoad(session.id)}>
                         <FolderOpen className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(session.id)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(session.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -182,5 +171,5 @@ export function LightboxSessionManager({
         </div>
       </div>
     </div>
-  )
+  );
 }

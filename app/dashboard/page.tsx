@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/auth-context'
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const { token, user } = useAuth()
+  const router = useRouter();
+  const { token, user } = useAuth();
 
   useEffect(() => {
     if (!token) {
-      router.push('/login')
+      router.push('/login');
     }
-  }, [token, router])
+  }, [token, router]);
 
   if (!token) {
-    return null
+    return null;
   }
 
   return (
@@ -28,5 +28,5 @@ export default function DashboardPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

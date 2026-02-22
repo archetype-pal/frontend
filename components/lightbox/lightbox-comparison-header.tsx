@@ -1,17 +1,17 @@
-'use client'
+'use client';
 
-import { Button } from '@/components/ui/button'
-import { X, Split, Layers } from 'lucide-react'
+import { Button } from '@/components/ui/button';
+import { X, Split, Layers } from 'lucide-react';
 
-export type ComparisonViewMode = 'side-by-side' | 'overlay'
+export type ComparisonViewMode = 'side-by-side' | 'overlay';
 
 interface LightboxComparisonHeaderProps {
-  title: string
-  mode: ComparisonViewMode
-  onModeChange: (mode: ComparisonViewMode) => void
-  overlayOpacity?: number
-  onOverlayOpacityChange?: (value: number) => void
-  onClose: () => void
+  title: string;
+  mode: ComparisonViewMode;
+  onModeChange: (mode: ComparisonViewMode) => void;
+  overlayOpacity?: number;
+  onOverlayOpacityChange?: (value: number) => void;
+  onClose: () => void;
 }
 
 export function LightboxComparisonHeader({
@@ -64,5 +64,5 @@ export function LightboxComparisonHeader({
         <X className="h-4 w-4" />
       </Button>
     </div>
-  )
+  );
 }

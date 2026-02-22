@@ -1,49 +1,55 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { Star } from 'lucide-react'
-import { useCollection } from '@/contexts/collection-context'
-import { cn } from '@/lib/utils'
+import * as React from 'react';
+import { Star } from 'lucide-react';
+import { useCollection } from '@/contexts/collection-context';
+import { cn } from '@/lib/utils';
 
 export interface CollectionStarProps {
-  itemId: number
-  itemType: 'image' | 'graph'
+  itemId: number;
+  itemType: 'image' | 'graph';
   item: {
-    id: number
-    image_iiif?: string
-    coordinates?: string
-    shelfmark?: string
-    locus?: string
-    repository_name?: string
-    repository_city?: string
-    date?: string
-  }
-  className?: string
-  size?: number
+    id: number;
+    image_iiif?: string;
+    coordinates?: string;
+    shelfmark?: string;
+    locus?: string;
+    repository_name?: string;
+    repository_city?: string;
+    date?: string;
+  };
+  className?: string;
+  size?: number;
 }
 
-export function CollectionStar({ itemId, itemType, item, className, size = 24 }: CollectionStarProps) {
-  const { isInCollection, addItem, removeItem } = useCollection()
+export function CollectionStar({
+  itemId,
+  itemType,
+  item,
+  className,
+  size = 24,
+}: CollectionStarProps) {
+  const { isInCollection, addItem, removeItem } = useCollection();
   // Re-compute isCollected whenever items change
   const isCollected = React.useMemo(
     () => isInCollection(itemId, itemType),
     [isInCollection, itemId, itemType]
-  )
+  );
 
   const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
+    e.preventDefault();
+    e.stopPropagation();
+
     if (isCollected) {
-      removeItem(itemId, itemType)
+      removeItem(itemId, itemType);
     } else {
       addItem({
         ...item,
         id: itemId,
         type: itemType,
-      })
+      });
     }
-  }
+  };
 
   return (
     <button
@@ -57,7 +63,7 @@ export function CollectionStar({ itemId, itemType, item, className, size = 24 }:
         'pointer-events-auto',
         // Show star if parent is hovered (group-hover) or if item is already in collection
         isCollected
-          ? 'opacity-100 scale-100' 
+          ? 'opacity-100 scale-100'
           : 'opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100',
         className
       )}
@@ -75,5 +81,5 @@ export function CollectionStar({ itemId, itemType, item, className, size = 24 }:
         strokeWidth={2}
       />
     </button>
-  )
+  );
 }

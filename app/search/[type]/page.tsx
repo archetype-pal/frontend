@@ -1,39 +1,37 @@
-import { Suspense } from 'react'
-import { redirect } from 'next/navigation'
-import { SearchPage } from '@/components/search/search-page'
-import { SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types'
-import { readSiteFeatures } from '@/lib/site-features-server'
+import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
+import { SearchPage } from '@/components/search/search-page';
+import { SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
+import { readSiteFeatures } from '@/lib/site-features-server';
 
-const VALID = new Set<string>(SEARCH_RESULT_TYPES)
+const VALID = new Set<string>(SEARCH_RESULT_TYPES);
 
 function SearchFallback() {
   return (
     <div className="flex h-screen items-center justify-center bg-gray-50">
       <p className="text-muted-foreground">Loading search…</p>
     </div>
-  )
+  );
 }
 
-export default async function SearchTypePage({
-  params,
-}: {
-  params: Promise<{ type: string }>
-}) {
-  const { type: typeParam } = await params
-  const type = VALID.has(typeParam) ? (typeParam as ResultType) : null
+export default async function SearchTypePage({ params }: { params: Promise<{ type: string }> }) {
+  const { type: typeParam } = await params;
+  const type = VALID.has(typeParam) ? (typeParam as ResultType) : null;
 
-  const config = await readSiteFeatures()
-  const enabledCategories = (Object.entries(config.searchCategories) as [ResultType, { enabled: boolean }][])
+  const config = await readSiteFeatures();
+  const enabledCategories = (
+    Object.entries(config.searchCategories) as [ResultType, { enabled: boolean }][]
+  )
     .filter(([, c]) => c.enabled)
-    .map(([t]) => t)
-  const firstEnabled = enabledCategories[0] ?? 'manuscripts'
+    .map(([t]) => t);
+  const firstEnabled = enabledCategories[0] ?? 'manuscripts';
 
   if (!type || !enabledCategories.includes(type)) {
-    redirect(`/search/${firstEnabled}`)
+    redirect(`/search/${firstEnabled}`);
   }
   return (
     <Suspense fallback={<SearchFallback />}>
       <SearchPage resultType={type} />
     </Suspense>
-  )
+  );
 }

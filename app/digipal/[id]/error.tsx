@@ -1,22 +1,22 @@
-'use client'
+'use client';
 
-import { useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { AlertCircle } from 'lucide-react'
+import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 
 export default function DigipalError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   useEffect(() => {
     // Log only in dev; avoid leaking into overlay
     if (process.env.NODE_ENV === 'development') {
-      console.error('[digipal]', error.message)
+      console.error('[digipal]', error.message);
     }
-  }, [error])
+  }, [error]);
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center p-8">
@@ -27,10 +27,11 @@ export default function DigipalError({
           {error.message || 'Something went wrong loading this image.'}
         </p>
         <p className="text-sm text-muted-foreground mb-6">
-          If the image server (Sipi) is not running, or the IIIF URL is wrong, the viewer will fail. Try again after starting the image server.
+          If the image server (Sipi) is not running, or the IIIF URL is wrong, the viewer will fail.
+          Try again after starting the image server.
         </p>
         <Button onClick={reset}>Try again</Button>
       </div>
     </div>
-  )
+  );
 }

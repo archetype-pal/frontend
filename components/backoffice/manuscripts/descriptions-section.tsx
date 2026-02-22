@@ -1,63 +1,63 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
-import { useAuth } from '@/contexts/auth-context'
-import { toast } from 'sonner'
-import { Plus, Trash2, Pencil, Check, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import dynamic from 'next/dynamic'
+import { useState } from 'react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/auth-context';
+import { toast } from 'sonner';
+import { Plus, Trash2, Pencil, Check, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import dynamic from 'next/dynamic';
 const RichTextEditor = dynamic(
-  () => import('@/components/backoffice/common/rich-text-editor').then(m => m.RichTextEditor),
-  { ssr: false, loading: () => <div className="h-[200px] rounded-md border animate-pulse bg-muted" /> }
-)
+  () => import('@/components/backoffice/common/rich-text-editor').then((m) => m.RichTextEditor),
+  {
+    ssr: false,
+    loading: () => <div className="h-[200px] rounded-md border animate-pulse bg-muted" />,
+  }
+);
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { getSources } from '@/services/backoffice/manuscripts'
+} from '@/components/ui/select';
+import { getSources } from '@/services/backoffice/manuscripts';
 import {
   createDescription,
   updateDescription,
   deleteDescription,
-} from '@/services/backoffice/manuscripts'
-import { backofficeKeys } from '@/lib/backoffice/query-keys'
-import { formatApiError } from '@/lib/backoffice/format-api-error'
-import { sanitizeHtml } from '@/lib/sanitize-html'
-import type { HistoricalItemDescription } from '@/types/backoffice'
+} from '@/services/backoffice/manuscripts';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { sanitizeHtml } from '@/lib/sanitize-html';
+import type { HistoricalItemDescription } from '@/types/backoffice';
 
 interface DescriptionsSectionProps {
-  historicalItemId: number
-  descriptions: HistoricalItemDescription[]
+  historicalItemId: number;
+  descriptions: HistoricalItemDescription[];
 }
 
-export function DescriptionsSection({
-  historicalItemId,
-  descriptions,
-}: DescriptionsSectionProps) {
-  const { token } = useAuth()
-  const queryClient = useQueryClient()
-  const [adding, setAdding] = useState(false)
-  const [newSource, setNewSource] = useState('')
-  const [newContent, setNewContent] = useState('')
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [editContent, setEditContent] = useState('')
-  const [editingSourceId, setEditingSourceId] = useState<number | null>(null)
-  const [editSourceValue, setEditSourceValue] = useState('')
+export function DescriptionsSection({ historicalItemId, descriptions }: DescriptionsSectionProps) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+  const [adding, setAdding] = useState(false);
+  const [newSource, setNewSource] = useState('');
+  const [newContent, setNewContent] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [editingSourceId, setEditingSourceId] = useState<number | null>(null);
+  const [editSourceValue, setEditSourceValue] = useState('');
 
   const { data: sources } = useQuery({
     queryKey: backofficeKeys.sources.all(),
     queryFn: () => getSources(token!),
     enabled: !!token,
-  })
+  });
 
   const invalidate = () =>
     queryClient.invalidateQueries({
       queryKey: backofficeKeys.manuscripts.detail(historicalItemId),
-    })
+    });
 
   const createMut = useMutation({
     mutationFn: () =>
@@ -67,84 +67,84 @@ export function DescriptionsSection({
         content: newContent,
       }),
     onSuccess: () => {
-      toast.success('Description added')
-      invalidate()
-      setAdding(false)
-      setNewSource('')
-      setNewContent('')
+      toast.success('Description added');
+      invalidate();
+      setAdding(false);
+      setNewSource('');
+      setNewContent('');
     },
     onError: (err) => {
       toast.error('Failed to add description', {
         description: formatApiError(err),
-      })
+      });
     },
-  })
+  });
 
   const updateMut = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       updateDescription(token!, id, data),
     onSuccess: () => {
-      toast.success('Description updated')
-      invalidate()
-      setEditingId(null)
-      setEditingSourceId(null)
+      toast.success('Description updated');
+      invalidate();
+      setEditingId(null);
+      setEditingSourceId(null);
     },
     onError: (err) => {
       toast.error('Failed to update description', {
         description: formatApiError(err),
-      })
+      });
     },
-  })
+  });
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteDescription(token!, id),
     onSuccess: () => {
-      toast.success('Description removed')
-      invalidate()
+      toast.success('Description removed');
+      invalidate();
     },
     onError: (err) => {
       toast.error('Failed to remove description', {
         description: formatApiError(err),
-      })
+      });
     },
-  })
+  });
 
   return (
-    <div className='space-y-3'>
-      <div className='flex items-center justify-between'>
-        <h3 className='text-sm font-medium'>Descriptions</h3>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium">Descriptions</h3>
         <Button
-          variant='outline'
-          size='sm'
-          className='h-7 gap-1 text-xs'
+          variant="outline"
+          size="sm"
+          className="h-7 gap-1 text-xs"
           onClick={() => setAdding(true)}
         >
-          <Plus className='h-3 w-3' />
+          <Plus className="h-3 w-3" />
           Add
         </Button>
       </div>
 
       {descriptions.length === 0 && !adding ? (
-        <p className='text-sm text-muted-foreground py-2'>No descriptions</p>
+        <p className="text-sm text-muted-foreground py-2">No descriptions</p>
       ) : (
-        <div className='space-y-2'>
+        <div className="space-y-2">
           {descriptions.map((desc) => (
-            <div key={desc.id} className='rounded-md border p-3'>
-              <div className='flex items-center justify-between mb-2'>
+            <div key={desc.id} className="rounded-md border p-3">
+              <div className="flex items-center justify-between mb-2">
                 {/* Source – click-to-edit dropdown */}
                 {editingSourceId === desc.id ? (
-                  <div className='flex items-center gap-1.5'>
+                  <div className="flex items-center gap-1.5">
                     <Select
                       value={editSourceValue}
                       onValueChange={(val) => {
-                        setEditSourceValue(val)
+                        setEditSourceValue(val);
                         updateMut.mutate({
                           id: desc.id,
                           data: { source: Number(val) },
-                        })
+                        });
                       }}
                     >
-                      <SelectTrigger className='h-7 text-xs w-40'>
+                      <SelectTrigger className="h-7 text-xs w-40">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -156,35 +156,35 @@ export function DescriptionsSection({
                       </SelectContent>
                     </Select>
                     <Button
-                      variant='ghost'
-                      size='icon'
-                      className='h-6 w-6'
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
                       onClick={() => setEditingSourceId(null)}
                     >
-                      <X className='h-3 w-3' />
+                      <X className="h-3 w-3" />
                     </Button>
                   </div>
                 ) : (
                   <button
-                    type='button'
-                    className='group inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors'
+                    type="button"
+                    className="group inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
                     onClick={() => {
-                      setEditingSourceId(desc.id)
-                      setEditSourceValue(String(desc.source))
+                      setEditingSourceId(desc.id);
+                      setEditSourceValue(String(desc.source));
                     }}
                   >
                     {desc.source_label}
-                    <Pencil className='h-2.5 w-2.5 opacity-0 group-hover:opacity-60 transition-opacity' />
+                    <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-60 transition-opacity" />
                   </button>
                 )}
 
-                <div className='flex gap-1'>
+                <div className="flex gap-1">
                   {editingId === desc.id ? (
                     <>
                       <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-6 w-6'
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
                         onClick={() =>
                           updateMut.mutate({
                             id: desc.id,
@@ -192,37 +192,37 @@ export function DescriptionsSection({
                           })
                         }
                       >
-                        <Check className='h-3 w-3' />
+                        <Check className="h-3 w-3" />
                       </Button>
                       <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-6 w-6'
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
                         onClick={() => setEditingId(null)}
                       >
-                        <X className='h-3 w-3' />
+                        <X className="h-3 w-3" />
                       </Button>
                     </>
                   ) : (
                     <>
                       <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-6 w-6'
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
                         onClick={() => {
-                          setEditingId(desc.id)
-                          setEditContent(desc.content)
+                          setEditingId(desc.id);
+                          setEditContent(desc.content);
                         }}
                       >
-                        <Pencil className='h-3 w-3' />
+                        <Pencil className="h-3 w-3" />
                       </Button>
                       <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-6 w-6 text-muted-foreground hover:text-destructive'
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
                         onClick={() => deleteMut.mutate(desc.id)}
                       >
-                        <Trash2 className='h-3 w-3' />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </>
                   )}
@@ -232,12 +232,12 @@ export function DescriptionsSection({
                 <RichTextEditor
                   content={editContent}
                   onChange={(html) => setEditContent(html)}
-                  placeholder='Enter description...'
+                  placeholder="Enter description..."
                   minimal
                 />
               ) : (
                 <div
-                  className='prose prose-sm dark:prose-invert max-w-none line-clamp-3'
+                  className="prose prose-sm dark:prose-invert max-w-none line-clamp-3"
                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(desc.content) }}
                 />
               )}
@@ -245,10 +245,10 @@ export function DescriptionsSection({
           ))}
 
           {adding && (
-            <div className='rounded-md border p-3 space-y-2'>
+            <div className="rounded-md border p-3 space-y-2">
               <Select value={newSource} onValueChange={setNewSource}>
-                <SelectTrigger className='h-8 text-sm w-48'>
-                  <SelectValue placeholder='Select source...' />
+                <SelectTrigger className="h-8 text-sm w-48">
+                  <SelectValue placeholder="Select source..." />
                 </SelectTrigger>
                 <SelectContent>
                   {(sources ?? []).map((s) => (
@@ -261,24 +261,18 @@ export function DescriptionsSection({
               <RichTextEditor
                 content={newContent}
                 onChange={(html) => setNewContent(html)}
-                placeholder='Enter description...'
+                placeholder="Enter description..."
                 minimal
               />
-              <div className='flex gap-2'>
+              <div className="flex gap-2">
                 <Button
-                  size='sm'
+                  size="sm"
                   onClick={() => createMut.mutate()}
-                  disabled={
-                    !newSource || !newContent.trim() || createMut.isPending
-                  }
+                  disabled={!newSource || !newContent.trim() || createMut.isPending}
                 >
                   Save
                 </Button>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => setAdding(false)}
-                >
+                <Button variant="outline" size="sm" onClick={() => setAdding(false)}>
                   Cancel
                 </Button>
               </div>
@@ -287,5 +281,5 @@ export function DescriptionsSection({
         </div>
       )}
     </div>
-  )
+  );
 }

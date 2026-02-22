@@ -1,27 +1,27 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { useCollection, type CollectionItem } from '@/contexts/collection-context'
-import { useLightboxStore } from '@/stores/lightbox-store'
-import { resolveItemById, resolveItemsByIds } from '@/lib/lightbox-params'
-import { LightboxViewer } from '@/components/lightbox/lightbox-viewer'
-import { LightboxToolbar } from '@/components/lightbox/lightbox-toolbar'
-import { LightboxSidebar } from '@/components/lightbox/lightbox-sidebar'
-import { LightboxErrorBoundary } from '@/components/lightbox/lightbox-error-boundary'
-import { LightboxKeyboardShortcuts } from '@/components/lightbox/lightbox-keyboard-shortcuts'
-import { LightboxCropTool } from '@/components/lightbox/lightbox-crop-tool'
-import { LightboxExport } from '@/components/lightbox/lightbox-export'
-import { LightboxSessionManager } from '@/components/lightbox/lightbox-session-manager'
-import { LightboxMeasurementTool } from '@/components/lightbox/lightbox-measurement-tool'
-import { LightboxComparisonMode } from '@/components/lightbox/lightbox-comparison-mode'
-import { LightboxRegionComparison } from '@/components/lightbox/lightbox-region-comparison'
-import { LightboxImport } from '@/components/lightbox/lightbox-import'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
-import { saveRegion, type LightboxRegion } from '@/lib/lightbox-db'
+import * as React from 'react';
+import { Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useCollection, type CollectionItem } from '@/contexts/collection-context';
+import { useLightboxStore } from '@/stores/lightbox-store';
+import { resolveItemById, resolveItemsByIds } from '@/lib/lightbox-params';
+import { LightboxViewer } from '@/components/lightbox/lightbox-viewer';
+import { LightboxToolbar } from '@/components/lightbox/lightbox-toolbar';
+import { LightboxSidebar } from '@/components/lightbox/lightbox-sidebar';
+import { LightboxErrorBoundary } from '@/components/lightbox/lightbox-error-boundary';
+import { LightboxKeyboardShortcuts } from '@/components/lightbox/lightbox-keyboard-shortcuts';
+import { LightboxCropTool } from '@/components/lightbox/lightbox-crop-tool';
+import { LightboxExport } from '@/components/lightbox/lightbox-export';
+import { LightboxSessionManager } from '@/components/lightbox/lightbox-session-manager';
+import { LightboxMeasurementTool } from '@/components/lightbox/lightbox-measurement-tool';
+import { LightboxComparisonMode } from '@/components/lightbox/lightbox-comparison-mode';
+import { LightboxRegionComparison } from '@/components/lightbox/lightbox-region-comparison';
+import { LightboxImport } from '@/components/lightbox/lightbox-import';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { saveRegion, type LightboxRegion } from '@/lib/lightbox-db';
 
 type OpenPanel =
   | 'export'
@@ -30,12 +30,12 @@ type OpenPanel =
   | 'comparison'
   | 'region-comparison'
   | 'import'
-  | null
+  | null;
 
 function LightboxPageContent() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const { items: collectionItems } = useCollection()
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { items: collectionItems } = useCollection();
   const {
     currentWorkspaceId,
     createWorkspace,
@@ -46,101 +46,113 @@ function LightboxPageContent() {
     isLoading,
     initialize,
     images,
-  } = useLightboxStore()
+  } = useLightboxStore();
 
-  const [isInitialized, setIsInitialized] = React.useState(false)
-  const [cropImageId, setCropImageId] = React.useState<string | null>(null)
-  const [openPanel, setOpenPanel] = React.useState<OpenPanel>(null)
-  const [showMinimap, setShowMinimap] = React.useState(false)
-  const viewerContainerRef = React.useRef<HTMLDivElement>(null)
+  const [isInitialized, setIsInitialized] = React.useState(false);
+  const [cropImageId, setCropImageId] = React.useState<string | null>(null);
+  const [openPanel, setOpenPanel] = React.useState<OpenPanel>(null);
+  const [showMinimap, setShowMinimap] = React.useState(false);
+  const viewerContainerRef = React.useRef<HTMLDivElement>(null);
 
-  const closePanel = React.useCallback(() => setOpenPanel(null), [])
+  const closePanel = React.useCallback(() => setOpenPanel(null), []);
   const togglePanel = React.useCallback(
-    (panel: NonNullable<OpenPanel>) => () =>
-      setOpenPanel((p) => (p === panel ? null : panel)),
+    (panel: NonNullable<OpenPanel>) => () => setOpenPanel((p) => (p === panel ? null : panel)),
     []
-  )
+  );
 
   React.useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
     async function initStore() {
-      await initialize()
-      if (!cancelled) setIsInitialized(true)
+      await initialize();
+      if (!cancelled) setIsInitialized(true);
     }
-    initStore()
-    return () => { cancelled = true }
-  }, [initialize])
+    initStore();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialize]);
 
-  const paramKey = searchParams.toString()
-  const fromCollectionCount = searchParams.get('from') === 'collection' ? collectionItems.length : -1
+  const paramKey = searchParams.toString();
+  const fromCollectionCount =
+    searchParams.get('from') === 'collection' ? collectionItems.length : -1;
 
   React.useEffect(() => {
-    if (!isInitialized) return
+    if (!isInitialized) return;
 
-    const imageId = searchParams.get('image')
-    const graphId = searchParams.get('graph')
-    const imagesParam = searchParams.get('images')
-    const graphsParam = searchParams.get('graphs')
-    const fromCollection = searchParams.get('from') === 'collection'
+    const imageId = searchParams.get('image');
+    const graphId = searchParams.get('graph');
+    const imagesParam = searchParams.get('images');
+    const graphsParam = searchParams.get('graphs');
+    const fromCollection = searchParams.get('from') === 'collection';
 
-    let cancelled = false
+    let cancelled = false;
     async function loadImagesFromParams() {
       try {
-        setError(null)
-        setLoading(true)
-        if (!currentWorkspaceId) await createWorkspace()
-        if (cancelled) return
+        setError(null);
+        setLoading(true);
+        if (!currentWorkspaceId) await createWorkspace();
+        if (cancelled) return;
 
-        type ResolvedItem = CollectionItem | import('@/types/image').ImageListItem | import('@/types/graph').GraphListItem
-        const itemsToLoad: ResolvedItem[] = []
+        type ResolvedItem =
+          | CollectionItem
+          | import('@/types/image').ImageListItem
+          | import('@/types/graph').GraphListItem;
+        const itemsToLoad: ResolvedItem[] = [];
 
         if (imageId) {
-          const item = await resolveItemById('image', imageId, collectionItems, setError)
-          if (item) itemsToLoad.push(item)
+          const item = await resolveItemById('image', imageId, collectionItems, setError);
+          if (item) itemsToLoad.push(item);
         } else if (graphId) {
-          const item = await resolveItemById('graph', graphId, collectionItems, setError)
-          if (item) itemsToLoad.push(item)
+          const item = await resolveItemById('graph', graphId, collectionItems, setError);
+          if (item) itemsToLoad.push(item);
         } else if (imagesParam) {
-          const ids = imagesParam.split(',').map(Number)
-          await resolveItemsByIds('image', ids, collectionItems, itemsToLoad, setError)
+          const ids = imagesParam.split(',').map(Number);
+          await resolveItemsByIds('image', ids, collectionItems, itemsToLoad, setError);
         } else if (graphsParam) {
-          const ids = graphsParam.split(',').map(Number)
-          await resolveItemsByIds('graph', ids, collectionItems, itemsToLoad, setError)
+          const ids = graphsParam.split(',').map(Number);
+          await resolveItemsByIds('graph', ids, collectionItems, itemsToLoad, setError);
         } else if (fromCollection) {
-          itemsToLoad.push(...collectionItems)
+          itemsToLoad.push(...collectionItems);
         }
 
-        if (!cancelled && itemsToLoad.length > 0) await loadImages(itemsToLoad)
+        if (!cancelled && itemsToLoad.length > 0) await loadImages(itemsToLoad);
       } catch (error) {
-        if (!cancelled) setError(error instanceof Error ? error.message : 'Failed to load images')
+        if (!cancelled) setError(error instanceof Error ? error.message : 'Failed to load images');
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setLoading(false);
       }
     }
 
-    loadImagesFromParams()
-    return () => { cancelled = true }
+    loadImagesFromParams();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitialized, paramKey, fromCollectionCount])
+  }, [isInitialized, paramKey, fromCollectionCount]);
 
   const handleBack = () => {
-    router.back()
-  }
+    router.back();
+  };
 
   const handleCrop = (imageId: string) => {
-    setCropImageId(imageId)
-  }
+    setCropImageId(imageId);
+  };
 
-  const handleCropSave = async (cropArea: { x: number; y: number; width: number; height: number }) => {
-    if (!cropImageId || !currentWorkspaceId) return
+  const handleCropSave = async (cropArea: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }) => {
+    if (!cropImageId || !currentWorkspaceId) return;
 
-    const image = images.get(cropImageId)
+    const image = images.get(cropImageId);
     if (!image) {
-      toast.error('Image not found; cannot save crop.')
-      return
+      toast.error('Image not found; cannot save crop.');
+      return;
     }
 
-    const regionId = `region-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+    const regionId = `region-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const region: LightboxRegion = {
       id: regionId,
       imageId: cropImageId,
@@ -150,21 +162,21 @@ function LightboxPageContent() {
       imageData: image.imageUrl,
       metadata: { manuscript: image.metadata.shelfmark },
       createdAt: Date.now(),
-    }
+    };
     try {
-      await saveRegion(region)
-      setCropImageId(null)
+      await saveRegion(region);
+      setCropImageId(null);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      toast.error(`Failed to save crop: ${msg}`)
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Failed to save crop: ${msg}`);
       if (process.env.NODE_ENV === 'development') {
-        console.error('[Lightbox] saveRegion failed:', err)
+        console.error('[Lightbox] saveRegion failed:', err);
       }
-      throw err
+      throw err;
     }
-  }
+  };
 
-  const openSessionPanel = React.useCallback(() => setOpenPanel('session'), [])
+  const openSessionPanel = React.useCallback(() => setOpenPanel('session'), []);
 
   if (!isInitialized || isLoading) {
     return (
@@ -174,7 +186,7 @@ function LightboxPageContent() {
           <p className="text-muted-foreground">Loading lightbox...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -185,7 +197,7 @@ function LightboxPageContent() {
           <Button onClick={() => window.location.reload()}>Reload</Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -236,18 +248,18 @@ function LightboxPageContent() {
         <LightboxMeasurementTool containerRef={viewerContainerRef} onClose={closePanel} />
       )}
       {openPanel === 'comparison' && <LightboxComparisonMode onClose={closePanel} />}
-      {openPanel === 'region-comparison' && (
-        <LightboxRegionComparison onClose={closePanel} />
-      )}
+      {openPanel === 'region-comparison' && <LightboxRegionComparison onClose={closePanel} />}
       {openPanel === 'import' && <LightboxImport onClose={closePanel} />}
     </LightboxErrorBoundary>
-  )
+  );
 }
 
 export default function LightboxPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}>
+    <Suspense
+      fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}
+    >
       <LightboxPageContent />
     </Suspense>
-  )
+  );
 }

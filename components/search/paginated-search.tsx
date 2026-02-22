@@ -1,47 +1,47 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 type Props = {
-  count: number
-  limit: number
-  offset: number
-  onPageChange: (page: number) => void
-  onLimitChange?: (limit: number) => void
-}
+  count: number;
+  limit: number;
+  offset: number;
+  onPageChange: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
+};
 
-const LIMIT_OPTIONS = [10, 20, 50, 100]
+const LIMIT_OPTIONS = [10, 20, 50, 100];
 
-export function Pagination({
-  count,
-  limit,
-  offset,
-  onPageChange,
-  onLimitChange,
-}: Props) {
-  const totalPages = Math.ceil(count / limit)
-  const currentPage = Math.floor(offset / limit) + 1
+export function Pagination({ count, limit, offset, onPageChange, onLimitChange }: Props) {
+  const totalPages = Math.ceil(count / limit);
+  const currentPage = Math.floor(offset / limit) + 1;
 
-  const showPageControls = totalPages > 1
+  const showPageControls = totalPages > 1;
 
   const generatePages = () => {
-    const pages: (number | 'ellipsis')[] = []
-    const siblings = 1
+    const pages: (number | 'ellipsis')[] = [];
+    const siblings = 1;
 
-    const left = Math.max(currentPage - siblings, 2)
-    const right = Math.min(currentPage + siblings, totalPages - 1)
+    const left = Math.max(currentPage - siblings, 2);
+    const right = Math.min(currentPage + siblings, totalPages - 1);
 
-    pages.push(1)
-    if (left > 2) pages.push('ellipsis')
-    for (let i = left; i <= right; i++) pages.push(i)
-    if (right < totalPages - 1) pages.push('ellipsis')
-    if (totalPages > 1) pages.push(totalPages)
+    pages.push(1);
+    if (left > 2) pages.push('ellipsis');
+    for (let i = left; i <= right; i++) pages.push(i);
+    if (right < totalPages - 1) pages.push('ellipsis');
+    if (totalPages > 1) pages.push(totalPages);
 
-    return pages
-  }
+    return pages;
+  };
 
-  const pages = generatePages()
+  const pages = generatePages();
 
   return (
     <div className="flex items-center justify-between gap-4 w-full flex-wrap px-1">
@@ -106,5 +106,5 @@ export function Pagination({
         </nav>
       )}
     </div>
-  )
+  );
 }

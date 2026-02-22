@@ -1,35 +1,33 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { Search } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import * as React from 'react';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 /** Shared hook for keyword suggestions from a pool (used by Header and DynamicFacets). */
 export function useKeywordSuggestions(keyword: string, pool: string[]) {
   return React.useMemo(() => {
-    if (!keyword) return []
-    const low = keyword.toLowerCase()
+    if (!keyword) return [];
+    const low = keyword.toLowerCase();
     return Array.from(
-      new Set(
-        pool.filter((s) => s.toLowerCase().startsWith(low) && s.toLowerCase() !== low)
-      )
-    ).slice(0, 5)
-  }, [keyword, pool])
+      new Set(pool.filter((s) => s.toLowerCase().startsWith(low) && s.toLowerCase() !== low))
+    ).slice(0, 5);
+  }, [keyword, pool]);
 }
 
 type KeywordSearchInputProps = {
-  value: string
-  onChange: (value: string) => void
-  onTriggerSearch: (keyword: string) => void
-  suggestions: string[]
-  placeholder?: string
-  className?: string
-  inputClassName?: string
+  value: string;
+  onChange: (value: string) => void;
+  onTriggerSearch: (keyword: string) => void;
+  suggestions: string[];
+  placeholder?: string;
+  className?: string;
+  inputClassName?: string;
   /** When true, clears the input on focus (e.g. for header search) */
-  clearOnFocus?: boolean
+  clearOnFocus?: boolean;
   /** Called when the input receives focus (e.g. to load suggestions from any page) */
-  onFocus?: () => void
-}
+  onFocus?: () => void;
+};
 
 export function KeywordSearchInput({
   value,
@@ -42,63 +40,63 @@ export function KeywordSearchInput({
   clearOnFocus = false,
   onFocus: onFocusProp,
 }: KeywordSearchInputProps) {
-  const [selectedIndex, setSelectedIndex] = React.useState(-1)
+  const [selectedIndex, setSelectedIndex] = React.useState(-1);
 
   const handleChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      onChange(e.currentTarget.value)
-      setSelectedIndex(-1)
+      onChange(e.currentTarget.value);
+      setSelectedIndex(-1);
     },
     [onChange]
-  )
+  );
 
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       switch (e.key) {
         case 'ArrowDown':
-          e.preventDefault()
+          e.preventDefault();
           if (suggestions.length > 0) {
-            setSelectedIndex((si) => (si < suggestions.length - 1 ? si + 1 : 0))
+            setSelectedIndex((si) => (si < suggestions.length - 1 ? si + 1 : 0));
           }
-          break
+          break;
         case 'ArrowUp':
-          e.preventDefault()
+          e.preventDefault();
           if (suggestions.length > 0) {
-            setSelectedIndex((si) => (si > 0 ? si - 1 : suggestions.length - 1))
+            setSelectedIndex((si) => (si > 0 ? si - 1 : suggestions.length - 1));
           }
-          break
+          break;
         case 'Enter':
-          e.preventDefault()
+          e.preventDefault();
           if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-            onTriggerSearch(suggestions[selectedIndex])
+            onTriggerSearch(suggestions[selectedIndex]);
           } else if (value.trim()) {
-            onTriggerSearch(value.trim())
+            onTriggerSearch(value.trim());
           } else {
-            onTriggerSearch('')
+            onTriggerSearch('');
           }
-          break
+          break;
         case 'Escape':
-          setSelectedIndex(-1)
-          break
+          setSelectedIndex(-1);
+          break;
       }
     },
     [suggestions, selectedIndex, value, onTriggerSearch]
-  )
+  );
 
   const handleFocus = React.useCallback(() => {
     if (clearOnFocus) {
-      onChange('')
-      setSelectedIndex(-1)
+      onChange('');
+      setSelectedIndex(-1);
     }
-    onFocusProp?.()
-  }, [clearOnFocus, onChange, onFocusProp])
+    onFocusProp?.();
+  }, [clearOnFocus, onChange, onFocusProp]);
 
   const handleSuggestionClick = React.useCallback(
     (s: string) => {
-      onTriggerSearch(s)
+      onTriggerSearch(s);
     },
     [onTriggerSearch]
-  )
+  );
 
   return (
     <div className={className ? `relative ${className}` : 'relative'}>
@@ -145,5 +143,5 @@ export function KeywordSearchInput({
         </ul>
       )}
     </div>
-  )
+  );
 }

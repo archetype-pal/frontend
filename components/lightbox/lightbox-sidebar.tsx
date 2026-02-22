@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import NextImage from 'next/image'
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Plus, Trash2, Image as ImageIcon, Folder, X } from 'lucide-react'
-import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store'
-import { useCollection } from '@/contexts/collection-context'
-import { cn } from '@/lib/utils'
+import * as React from 'react';
+import NextImage from 'next/image';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Plus, Trash2, Image as ImageIcon, Folder, X } from 'lucide-react';
+import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store';
+import { useCollection } from '@/contexts/collection-context';
+import { cn } from '@/lib/utils';
 
 export function LightboxSidebar() {
   const {
@@ -22,34 +22,29 @@ export function LightboxSidebar() {
     selectedImageIds,
     selectImage,
     deselectImage,
-  } = useLightboxStore()
-  const workspaceImages = useWorkspaceImages()
-  const { items: collectionItems } = useCollection()
-  const [isCollapsed, setIsCollapsed] = React.useState(false)
+  } = useLightboxStore();
+  const workspaceImages = useWorkspaceImages();
+  const { items: collectionItems } = useCollection();
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
 
   const handleCreateWorkspace = async () => {
-    await createWorkspace()
-  }
+    await createWorkspace();
+  };
 
   const handleLoadFromCollection = async () => {
     if (collectionItems.length > 0) {
-      await loadImages(collectionItems)
+      await loadImages(collectionItems);
     }
-  }
+  };
 
   if (isCollapsed) {
     return (
       <div className="w-12 border-r bg-white flex flex-col items-center py-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsCollapsed(false)}
-          className="mb-2"
-        >
+        <Button variant="ghost" size="sm" onClick={() => setIsCollapsed(false)} className="mb-2">
           <Folder className="h-4 w-4" />
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -57,11 +52,7 @@ export function LightboxSidebar() {
       {/* Header */}
       <div className="p-4 border-b flex items-center justify-between">
         <h2 className="font-semibold text-sm">Workspaces</h2>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsCollapsed(true)}
-        >
+        <Button variant="ghost" size="sm" onClick={() => setIsCollapsed(true)}>
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -70,10 +61,10 @@ export function LightboxSidebar() {
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
           {workspaces.map((workspace) => {
-            const isActive = workspace.id === currentWorkspaceId
+            const isActive = workspace.id === currentWorkspaceId;
             const workspaceImageCount = Array.from(images.values()).filter(
               (img) => img.workspaceId === workspace.id
-            ).length
+            ).length;
 
             return (
               <div
@@ -87,9 +78,7 @@ export function LightboxSidebar() {
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <Folder className="h-4 w-4 shrink-0 text-gray-500" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">
-                      {workspace.name}
-                    </div>
+                    <div className="text-sm font-medium truncate">{workspace.name}</div>
                     <div className="text-xs text-muted-foreground">
                       {workspaceImageCount} image{workspaceImageCount !== 1 ? 's' : ''}
                     </div>
@@ -101,15 +90,15 @@ export function LightboxSidebar() {
                     size="sm"
                     className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
                     onClick={(e) => {
-                      e.stopPropagation()
-                      deleteWorkspace(workspace.id)
+                      e.stopPropagation();
+                      deleteWorkspace(workspace.id);
                     }}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 )}
               </div>
-            )
+            );
           })}
 
           <Button
@@ -147,7 +136,7 @@ export function LightboxSidebar() {
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-2">
               {workspaceImages.map((image) => {
-                const isSelected = selectedImageIds.has(image.id)
+                const isSelected = selectedImageIds.has(image.id);
 
                 return (
                   <div
@@ -158,9 +147,9 @@ export function LightboxSidebar() {
                     )}
                     onClick={() => {
                       if (isSelected) {
-                        deselectImage(image.id)
+                        deselectImage(image.id);
                       } else {
-                        selectImage(image.id)
+                        selectImage(image.id);
                       }
                     }}
                   >
@@ -194,8 +183,8 @@ export function LightboxSidebar() {
                           size="sm"
                           className="h-6 px-2 mt-1 text-xs"
                           onClick={(e) => {
-                            e.stopPropagation()
-                            removeImage(image.id)
+                            e.stopPropagation();
+                            removeImage(image.id);
                           }}
                         >
                           <Trash2 className="h-3 w-3" />
@@ -203,16 +192,14 @@ export function LightboxSidebar() {
                       </div>
                     </div>
                   </div>
-                )
+                );
               })}
 
               {workspaceImages.length === 0 && (
                 <div className="text-center py-8 text-sm text-muted-foreground">
                   <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p>No images in workspace</p>
-                  <p className="text-xs mt-1">
-                    Add images from your collection
-                  </p>
+                  <p className="text-xs mt-1">Add images from your collection</p>
                 </div>
               )}
             </div>
@@ -220,5 +207,5 @@ export function LightboxSidebar() {
         </>
       )}
     </div>
-  )
+  );
 }

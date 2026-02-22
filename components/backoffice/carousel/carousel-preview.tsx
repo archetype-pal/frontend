@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useState, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { getCarouselImageUrl } from '@/utils/api'
-import type { CarouselItem } from '@/types/backoffice'
+import { useState, useCallback } from 'react';
+import { ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { getCarouselImageUrl } from '@/utils/api';
+import type { CarouselItem } from '@/types/backoffice';
 
 interface CarouselPreviewProps {
-  items: CarouselItem[]
+  items: CarouselItem[];
 }
 
 /**
@@ -16,35 +16,33 @@ interface CarouselPreviewProps {
  * Shows image, title overlay, navigation arrows, and dot indicators.
  */
 export function CarouselPreview({ items }: CarouselPreviewProps) {
-  const [current, setCurrent] = useState(0)
+  const [current, setCurrent] = useState(0);
 
-  const safeIndex = items.length > 0 ? current % items.length : 0
-  const currentItem = items[safeIndex]
+  const safeIndex = items.length > 0 ? current % items.length : 0;
+  const currentItem = items[safeIndex];
 
   const next = useCallback(() => {
-    if (items.length === 0) return
-    setCurrent((prev) => (prev + 1) % items.length)
-  }, [items.length])
+    if (items.length === 0) return;
+    setCurrent((prev) => (prev + 1) % items.length);
+  }, [items.length]);
 
   const prev = useCallback(() => {
-    if (items.length === 0) return
-    setCurrent((prev) => (prev - 1 + items.length) % items.length)
-  }, [items.length])
+    if (items.length === 0) return;
+    setCurrent((prev) => (prev - 1 + items.length) % items.length);
+  }, [items.length]);
 
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center text-muted-foreground">
         <ImageIcon className="h-12 w-12 mb-3 opacity-30" />
         <p className="text-sm font-medium">No items to preview</p>
-        <p className="text-xs mt-1 opacity-70">
-          Add carousel items to see a live preview here.
-        </p>
+        <p className="text-xs mt-1 opacity-70">Add carousel items to see a live preview here.</p>
       </div>
-    )
+    );
   }
 
-  const imageUrl = getCarouselImageUrl(currentItem?.image)
-  const hasImage = !!currentItem?.image
+  const imageUrl = getCarouselImageUrl(currentItem?.image);
+  const hasImage = !!currentItem?.image;
 
   return (
     <div className="space-y-3">
@@ -53,11 +51,7 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
         <div className="relative aspect-[16/9] max-h-[360px]">
           {hasImage ? (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={imageUrl}
-              alt={currentItem.title}
-              className="h-full w-full object-cover"
-            />
+            <img src={imageUrl} alt={currentItem.title} className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-muted">
               <ImageIcon className="h-16 w-16 text-muted-foreground/30" />
@@ -65,9 +59,7 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
           )}
 
           {/* Dark overlay matching public carousel */}
-          {hasImage && (
-            <div className="absolute inset-0 bg-black/40" aria-hidden />
-          )}
+          {hasImage && <div className="absolute inset-0 bg-black/40" aria-hidden />}
 
           {/* Navigation arrows */}
           {items.length > 1 && (
@@ -111,13 +103,9 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
           {/* Title overlay */}
           {currentItem?.title && (
             <div className="absolute bottom-0 inset-x-0 bg-black/70 px-4 py-2.5 text-center">
-              <p className="text-sm font-medium text-white truncate">
-                {currentItem.title}
-              </p>
+              <p className="text-sm font-medium text-white truncate">{currentItem.title}</p>
               {currentItem.url && (
-                <p className="text-xs text-white/60 truncate mt-0.5">
-                  {currentItem.url}
-                </p>
+                <p className="text-xs text-white/60 truncate mt-0.5">{currentItem.url}</p>
               )}
             </div>
           )}
@@ -125,9 +113,8 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
       </div>
 
       <p className="text-xs text-muted-foreground text-center">
-        Showing slide {safeIndex + 1} of {items.length} &mdash; as it will
-        appear on the homepage
+        Showing slide {safeIndex + 1} of {items.length} &mdash; as it will appear on the homepage
       </p>
     </div>
-  )
+  );
 }

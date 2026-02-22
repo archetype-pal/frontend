@@ -1,57 +1,57 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { Slider } from '@/components/ui/slider'
-import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
-import { RotateCcw } from 'lucide-react'
-import { useLightboxStore, useSelectedImages } from '@/stores/lightbox-store'
+import * as React from 'react';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { RotateCcw } from 'lucide-react';
+import { useLightboxStore, useSelectedImages } from '@/stores/lightbox-store';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 
 export function LightboxTransformPanel() {
-  const { updateImage, saveHistory } = useLightboxStore()
-  const selectedImages = useSelectedImages()
-  const firstImage = selectedImages[0]
+  const { updateImage, saveHistory } = useLightboxStore();
+  const selectedImages = useSelectedImages();
+  const firstImage = selectedImages[0];
 
   const handleOpacityChange = (value: number[]) => {
-    saveHistory()
-    const opacity = value[0] / 100
+    saveHistory();
+    const opacity = value[0] / 100;
     selectedImages.forEach((img) =>
       updateImage(img.id, { transform: { ...img.transform, opacity } })
-    )
-  }
+    );
+  };
 
   const handleBrightnessChange = (value: number[]) => {
-    saveHistory()
-    const brightness = value[0]
+    saveHistory();
+    const brightness = value[0];
     selectedImages.forEach((img) =>
       updateImage(img.id, { transform: { ...img.transform, brightness } })
-    )
-  }
+    );
+  };
 
   const handleContrastChange = (value: number[]) => {
-    saveHistory()
-    const contrast = value[0]
+    saveHistory();
+    const contrast = value[0];
     selectedImages.forEach((img) =>
       updateImage(img.id, { transform: { ...img.transform, contrast } })
-    )
-  }
+    );
+  };
 
   const handleGrayscaleToggle = () => {
-    saveHistory()
+    saveHistory();
     selectedImages.forEach((img) =>
       updateImage(img.id, {
         transform: { ...img.transform, grayscale: !img.transform.grayscale },
       })
-    )
-  }
+    );
+  };
 
   const handleReset = () => {
-    saveHistory()
+    saveHistory();
     selectedImages.forEach((img) =>
       updateImage(img.id, {
         transform: {
@@ -64,11 +64,11 @@ export function LightboxTransformPanel() {
           grayscale: false,
         },
       })
-    )
-  }
+    );
+  };
 
   if (selectedImages.length === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -132,18 +132,10 @@ export function LightboxTransformPanel() {
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleGrayscaleToggle}
-            >
+            <Button variant="outline" size="sm" onClick={handleGrayscaleToggle}>
               {firstImage?.transform.grayscale ? 'Color' : 'Grayscale'}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-            >
+            <Button variant="outline" size="sm" onClick={handleReset}>
               <RotateCcw className="h-4 w-4 mr-2" />
               Reset
             </Button>
@@ -151,5 +143,5 @@ export function LightboxTransformPanel() {
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

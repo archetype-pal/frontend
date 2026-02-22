@@ -1,31 +1,26 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { ChevronDown, ChevronRight, Search } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { Slider } from '@/components/ui/slider'
+import * as React from 'react';
+import { ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 
 type FacetDateRangePanelProps = {
-  id?: string
-  title?: string
-  range?: [number, number]
-  defaultValue?: [number, number]
-  precisionOptions?: { label: string; value: string }[]
+  id?: string;
+  title?: string;
+  range?: [number, number];
+  defaultValue?: [number, number];
+  precisionOptions?: { label: string; value: string }[];
 
-  onSearch?: (params: {
-    min: number
-    max: number
-    precision: string
-    diff: number
-  }) => void
-}
+  onSearch?: (params: { min: number; max: number; precision: string; diff: number }) => void;
+};
 
 export function FacetDateRangePanel({
   id,
@@ -38,30 +33,30 @@ export function FacetDateRangePanel({
   ],
   onSearch,
 }: FacetDateRangePanelProps) {
-  const [expanded, setExpanded] = React.useState<boolean>(true)
-  const [sliderValue, setSliderValue] = React.useState<[number, number]>(defaultValue)
-  const [precision, setPrecision] = React.useState<string>(precisionOptions[0].value)
-  const [year, setYear] = React.useState<number | ''>('')
+  const [expanded, setExpanded] = React.useState<boolean>(true);
+  const [sliderValue, setSliderValue] = React.useState<[number, number]>(defaultValue);
+  const [precision, setPrecision] = React.useState<string>(precisionOptions[0].value);
+  const [year, setYear] = React.useState<number | ''>('');
   const [searchInput, setSearchInput] = React.useState<string>(
     `${defaultValue[0]}x${defaultValue[1]}`
-  )
-  const [endpointMin, endpointMax] = defaultValue
+  );
+  const [endpointMin, endpointMax] = defaultValue;
 
   const handleSliderChange = (value: number[]) => {
-    const [newMin, newMax] = [value[0], value[1]] as [number, number]
-    setSliderValue([newMin, newMax])
-    setSearchInput(`${newMin}x${newMax}`)
-  }
+    const [newMin, newMax] = [value[0], value[1]] as [number, number];
+    setSliderValue([newMin, newMax]);
+    setSearchInput(`${newMin}x${newMax}`);
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value
-    setSearchInput(raw)
+    const raw = e.target.value;
+    setSearchInput(raw);
 
-    const [minStr, maxStr] = raw.split('x')
+    const [minStr, maxStr] = raw.split('x');
     if (minStr != null && maxStr != null) {
-      const parsedMin = parseInt(minStr, 10)
-      const parsedMax = parseInt(maxStr, 10)
-      const [fixedMin, fixedMax] = defaultValue
+      const parsedMin = parseInt(minStr, 10);
+      const parsedMax = parseInt(maxStr, 10);
+      const [fixedMin, fixedMax] = defaultValue;
 
       if (
         !Number.isNaN(parsedMin) &&
@@ -70,10 +65,10 @@ export function FacetDateRangePanel({
         parsedMax <= fixedMax &&
         parsedMin <= parsedMax
       ) {
-        setSliderValue([parsedMin, parsedMax])
+        setSliderValue([parsedMin, parsedMax]);
       }
     }
-  }
+  };
 
   const handleSearchSubmit = () => {
     onSearch?.({
@@ -81,24 +76,24 @@ export function FacetDateRangePanel({
       max: sliderValue[1],
       precision,
       diff: precision === '' ? 0 : year === '' ? 0 : year,
-    })
-  }
+    });
+  };
 
   const handlePrecisionChange = (val: string) => {
-    setPrecision(val)
+    setPrecision(val);
     if (val === precisionOptions[0].value) {
-      setYear('')
+      setYear('');
     }
-  }
+  };
 
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value ? parseInt(e.target.value, 10) : ''
+    const val = e.target.value ? parseInt(e.target.value, 10) : '';
     if (precision === precisionOptions[0].value) {
-      setYear('')
+      setYear('');
     } else {
-      setYear(val)
+      setYear(val);
     }
-  }
+  };
 
   return (
     <div id={id} className="border bg-white rounded shadow-sm">
@@ -125,7 +120,7 @@ export function FacetDateRangePanel({
               onChange={handleSearchChange}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  handleSearchSubmit()
+                  handleSearchSubmit();
                 }
               }}
               placeholder="Search text date..."
@@ -153,10 +148,7 @@ export function FacetDateRangePanel({
               Precision (in years)
             </label>
             <div className="flex items-center gap-2">
-              <Select
-                value={precision}
-                onValueChange={handlePrecisionChange}
-              >
+              <Select value={precision} onValueChange={handlePrecisionChange}>
                 <SelectTrigger className="w-[120px] h-9">
                   <SelectValue />
                 </SelectTrigger>
@@ -184,5 +176,5 @@ export function FacetDateRangePanel({
         </div>
       )}
     </div>
-  )
+  );
 }

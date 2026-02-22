@@ -1,21 +1,37 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '@/contexts/auth-context'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import type { ColumnDef } from '@tanstack/react-table'
-import { Newspaper, Plus, ExternalLink, MessageSquare, Trash2, CheckCircle, XCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { DataTable, sortableHeader, type BulkAction } from '@/components/backoffice/common/data-table'
-import { FilterBar, type FilterConfig } from '@/components/backoffice/common/filter-bar'
-import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
-import { getPublications, updatePublication, deletePublication } from '@/services/backoffice/publications'
-import { backofficeKeys } from '@/lib/backoffice/query-keys'
-import type { PublicationListItem } from '@/types/backoffice'
-import { toast } from 'sonner'
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/auth-context';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import type { ColumnDef } from '@tanstack/react-table';
+import {
+  Newspaper,
+  Plus,
+  ExternalLink,
+  MessageSquare,
+  Trash2,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  DataTable,
+  sortableHeader,
+  type BulkAction,
+} from '@/components/backoffice/common/data-table';
+import { FilterBar, type FilterConfig } from '@/components/backoffice/common/filter-bar';
+import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import {
+  getPublications,
+  updatePublication,
+  deletePublication,
+} from '@/services/backoffice/publications';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import type { PublicationListItem } from '@/types/backoffice';
+import { toast } from 'sonner';
 
 const pubFilters: FilterConfig[] = [
   {
@@ -35,7 +51,7 @@ const pubFilters: FilterConfig[] = [
       { value: 'featured', label: 'Featured' },
     ],
   },
-]
+];
 
 const columns: ColumnDef<PublicationListItem>[] = [
   {
@@ -44,7 +60,7 @@ const columns: ColumnDef<PublicationListItem>[] = [
     cell: ({ row }) => (
       <Link
         href={`/backoffice/publications/${row.original.slug}`}
-        className='font-medium text-primary hover:underline line-clamp-1'
+        className="font-medium text-primary hover:underline line-clamp-1"
       >
         {row.original.title}
       </Link>
@@ -56,7 +72,7 @@ const columns: ColumnDef<PublicationListItem>[] = [
     cell: ({ row }) => (
       <Badge
         variant={row.original.status === 'Published' ? 'default' : 'secondary'}
-        className='text-xs'
+        className="text-xs"
       >
         {row.original.status}
       </Badge>
@@ -67,19 +83,19 @@ const columns: ColumnDef<PublicationListItem>[] = [
     id: 'type',
     header: 'Type',
     cell: ({ row }) => {
-      const tags: string[] = []
-      if (row.original.is_blog_post) tags.push('Blog')
-      if (row.original.is_news) tags.push('News')
-      if (row.original.is_featured) tags.push('Featured')
+      const tags: string[] = [];
+      if (row.original.is_blog_post) tags.push('Blog');
+      if (row.original.is_news) tags.push('News');
+      if (row.original.is_featured) tags.push('Featured');
       return (
-        <div className='flex gap-1 flex-wrap'>
+        <div className="flex gap-1 flex-wrap">
           {tags.map((t) => (
-            <Badge key={t} variant='outline' className='text-[10px]'>
+            <Badge key={t} variant="outline" className="text-[10px]">
               {t}
             </Badge>
           ))}
         </div>
-      )
+      );
     },
     size: 140,
   },
@@ -87,9 +103,7 @@ const columns: ColumnDef<PublicationListItem>[] = [
     accessorKey: 'author_name',
     header: 'Author',
     cell: ({ row }) => (
-      <span className='text-sm text-muted-foreground'>
-        {row.original.author_name ?? '—'}
-      </span>
+      <span className="text-sm text-muted-foreground">{row.original.author_name ?? '—'}</span>
     ),
     size: 100,
   },
@@ -98,12 +112,12 @@ const columns: ColumnDef<PublicationListItem>[] = [
     header: sortableHeader('Comments'),
     cell: ({ row }) =>
       row.original.comment_count > 0 ? (
-        <Badge variant='secondary' className='text-xs gap-1'>
-          <MessageSquare className='h-3 w-3' />
+        <Badge variant="secondary" className="text-xs gap-1">
+          <MessageSquare className="h-3 w-3" />
           {row.original.comment_count}
         </Badge>
       ) : (
-        <span className='text-xs text-muted-foreground'>0</span>
+        <span className="text-xs text-muted-foreground">0</span>
       ),
     size: 90,
   },
@@ -111,7 +125,7 @@ const columns: ColumnDef<PublicationListItem>[] = [
     accessorKey: 'created_at',
     header: sortableHeader('Created'),
     cell: ({ row }) => (
-      <span className='text-xs text-muted-foreground tabular-nums'>
+      <span className="text-xs text-muted-foreground tabular-nums">
         {new Date(row.original.created_at).toLocaleDateString()}
       </span>
     ),
@@ -121,67 +135,65 @@ const columns: ColumnDef<PublicationListItem>[] = [
     id: 'actions',
     cell: ({ row }) => (
       <Link href={`/backoffice/publications/${row.original.slug}`}>
-        <Button variant='ghost' size='icon' className='h-7 w-7'>
-          <ExternalLink className='h-3.5 w-3.5' />
+        <Button variant="ghost" size="icon" className="h-7 w-7">
+          <ExternalLink className="h-3.5 w-3.5" />
         </Button>
       </Link>
     ),
     size: 50,
   },
-]
+];
 
 export default function PublicationsPage() {
-  const { token } = useAuth()
-  const router = useRouter()
-  const queryClient = useQueryClient()
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({})
-  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false)
+  const { token } = useAuth();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState<{
-    label: string
-    slugs: string[]
-    execute: (slugs: string[]) => Promise<void>
-  } | null>(null)
+    label: string;
+    slugs: string[];
+    execute: (slugs: string[]) => Promise<void>;
+  } | null>(null);
 
   const { data } = useQuery({
     queryKey: backofficeKeys.publications.all(),
     queryFn: () => getPublications(token!, { limit: 200 }),
     enabled: !!token,
-  })
+  });
 
   // Client-side filtering
   const filtered = (data?.results ?? []).filter((pub) => {
     if (filterValues.status && filterValues.status !== '__all') {
-      if (pub.status !== filterValues.status) return false
+      if (pub.status !== filterValues.status) return false;
     }
     if (filterValues.type && filterValues.type !== '__all') {
-      if (filterValues.type === 'blog' && !pub.is_blog_post) return false
-      if (filterValues.type === 'news' && !pub.is_news) return false
-      if (filterValues.type === 'featured' && !pub.is_featured) return false
+      if (filterValues.type === 'blog' && !pub.is_blog_post) return false;
+      if (filterValues.type === 'news' && !pub.is_news) return false;
+      if (filterValues.type === 'featured' && !pub.is_featured) return false;
     }
-    return true
-  })
+    return true;
+  });
 
   const bulkActions: BulkAction[] = [
     {
       label: 'Publish',
-      icon: <CheckCircle className='h-3 w-3' />,
+      icon: <CheckCircle className="h-3 w-3" />,
       action: async (slugs) => {
         try {
           await Promise.all(
-            slugs.map((slug) =>
-              updatePublication(token!, slug, { status: 'Published' })
-            )
-          )
-          toast.success(`${slugs.length} publication(s) published`)
-          queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() })
+            slugs.map((slug) => updatePublication(token!, slug, { status: 'Published' }))
+          );
+          toast.success(`${slugs.length} publication(s) published`);
+          queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
         } catch {
-          toast.error('Failed to publish some publications')
+          toast.error('Failed to publish some publications');
         }
       },
     },
     {
       label: 'Unpublish',
-      icon: <XCircle className='h-3 w-3' />,
+      icon: <XCircle className="h-3 w-3" />,
       action: (slugs) => {
         setPendingBulkAction({
           label: 'Unpublish',
@@ -189,64 +201,53 @@ export default function PublicationsPage() {
           execute: async (s) => {
             try {
               await Promise.all(
-                s.map((slug) =>
-                  updatePublication(token!, slug, { status: 'Draft' })
-                )
-              )
-              toast.success(`${s.length} publication(s) unpublished`)
-              queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() })
+                s.map((slug) => updatePublication(token!, slug, { status: 'Draft' }))
+              );
+              toast.success(`${s.length} publication(s) unpublished`);
+              queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
             } catch {
-              toast.error('Failed to unpublish some publications')
+              toast.error('Failed to unpublish some publications');
             }
           },
-        })
-        setBulkConfirmOpen(true)
+        });
+        setBulkConfirmOpen(true);
       },
     },
     {
       label: 'Delete',
       variant: 'destructive',
-      icon: <Trash2 className='h-3 w-3' />,
+      icon: <Trash2 className="h-3 w-3" />,
       action: (slugs) => {
         setPendingBulkAction({
           label: 'Delete',
           slugs,
           execute: async (s) => {
             try {
-              await Promise.all(
-                s.map((slug) => deletePublication(token!, slug))
-              )
-              toast.success(`${s.length} publication(s) deleted`)
-              queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() })
+              await Promise.all(s.map((slug) => deletePublication(token!, slug)));
+              toast.success(`${s.length} publication(s) deleted`);
+              queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
             } catch {
-              toast.error('Failed to delete some publications')
+              toast.error('Failed to delete some publications');
             }
           },
-        })
-        setBulkConfirmOpen(true)
+        });
+        setBulkConfirmOpen(true);
       },
     },
-  ]
+  ];
 
   return (
-    <div className='space-y-4'>
-      <div className='flex items-center justify-between'>
-        <div className='flex items-center gap-3'>
-          <Newspaper className='h-6 w-6 text-primary' />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Newspaper className="h-6 w-6 text-primary" />
           <div>
-            <h1 className='text-2xl font-semibold tracking-tight'>
-              Publications
-            </h1>
-            <p className='text-sm text-muted-foreground'>
-              {data?.count ?? '...'} publications
-            </p>
+            <h1 className="text-2xl font-semibold tracking-tight">Publications</h1>
+            <p className="text-sm text-muted-foreground">{data?.count ?? '...'} publications</p>
           </div>
         </div>
-        <Button
-          size='sm'
-          onClick={() => router.push('/backoffice/publications/new')}
-        >
-          <Plus className='h-4 w-4 mr-1' />
+        <Button size="sm" onClick={() => router.push('/backoffice/publications/new')}>
+          <Plus className="h-4 w-4 mr-1" />
           New Publication
         </Button>
       </div>
@@ -254,12 +255,12 @@ export default function PublicationsPage() {
       <DataTable
         columns={columns}
         data={filtered}
-        searchColumn='title'
-        searchPlaceholder='Search publications...'
+        searchColumn="title"
+        searchPlaceholder="Search publications..."
         pageSize={25}
         enableColumnVisibility
         enableExport
-        exportFilename='publications'
+        exportFilename="publications"
         enableRowSelection
         bulkActions={bulkActions}
         getRowId={(row) => row.slug}
@@ -267,9 +268,7 @@ export default function PublicationsPage() {
           <FilterBar
             filters={pubFilters}
             values={filterValues}
-            onChange={(key, value) =>
-              setFilterValues((prev) => ({ ...prev, [key]: value }))
-            }
+            onChange={(key, value) => setFilterValues((prev) => ({ ...prev, [key]: value }))}
             onClear={() => setFilterValues({})}
           />
         }
@@ -279,8 +278,8 @@ export default function PublicationsPage() {
         open={bulkConfirmOpen}
         onOpenChange={(open) => {
           if (!open) {
-            setBulkConfirmOpen(false)
-            setPendingBulkAction(null)
+            setBulkConfirmOpen(false);
+            setPendingBulkAction(null);
           }
         }}
         title={`${pendingBulkAction?.label} ${pendingBulkAction?.slugs.length ?? 0} publication(s)?`}
@@ -292,12 +291,12 @@ export default function PublicationsPage() {
         confirmLabel={`${pendingBulkAction?.label} All`}
         onConfirm={async () => {
           if (pendingBulkAction) {
-            await pendingBulkAction.execute(pendingBulkAction.slugs)
+            await pendingBulkAction.execute(pendingBulkAction.slugs);
           }
-          setBulkConfirmOpen(false)
-          setPendingBulkAction(null)
+          setBulkConfirmOpen(false);
+          setPendingBulkAction(null);
         }}
       />
     </div>
-  )
+  );
 }

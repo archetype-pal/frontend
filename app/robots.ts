@@ -1,6 +1,6 @@
-import type { MetadataRoute } from 'next'
+import type { MetadataRoute } from 'next';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://archetype.gla.ac.uk'
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://archetype.gla.ac.uk';
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -12,5 +12,5 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,
-  }
+  };
 }

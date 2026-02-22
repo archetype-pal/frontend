@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store'
-import { LightboxImageLayer } from './lightbox-image-layer'
-import { LightboxMinimap } from './lightbox-minimap'
-import { LightboxGridOverlay } from './lightbox-grid-overlay'
-import { LightboxAnnotations } from './lightbox-annotations'
+import * as React from 'react';
+import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store';
+import { LightboxImageLayer } from './lightbox-image-layer';
+import { LightboxMinimap } from './lightbox-minimap';
+import { LightboxGridOverlay } from './lightbox-grid-overlay';
+import { LightboxAnnotations } from './lightbox-annotations';
 
 interface LightboxViewerProps {
-  showMinimap?: boolean
+  showMinimap?: boolean;
 }
 
 function EmptyState({ title, subtitle }: { title: string; subtitle: string }) {
@@ -19,13 +19,14 @@ function EmptyState({ title, subtitle }: { title: string; subtitle: string }) {
         <p className="text-sm text-muted-foreground">{subtitle}</p>
       </div>
     </div>
-  )
+  );
 }
 
 export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}) {
-  const { currentWorkspaceId, showAnnotations, showGrid, selectedImageIds, zoom } = useLightboxStore()
-  const workspaceImages = useWorkspaceImages()
-  const containerRef = React.useRef<HTMLDivElement>(null)
+  const { currentWorkspaceId, showAnnotations, showGrid, selectedImageIds, zoom } =
+    useLightboxStore();
+  const workspaceImages = useWorkspaceImages();
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   if (!currentWorkspaceId) {
     return (
@@ -33,7 +34,7 @@ export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}
         title="No workspace selected"
         subtitle="Create a new workspace or select an existing one from the sidebar"
       />
-    )
+    );
   }
 
   if (workspaceImages.length === 0) {
@@ -42,13 +43,13 @@ export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}
         title="No images in workspace"
         subtitle="Add images from your collection or search results"
       />
-    )
+    );
   }
 
   const selectedImage =
     selectedImageIds.size === 1
       ? workspaceImages.find((img) => selectedImageIds.has(img.id))
-      : null
+      : null;
 
   return (
     <div ref={containerRef} className="relative h-full w-full bg-gray-100 overflow-hidden">
@@ -74,5 +75,5 @@ export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}
       </div>
       {showMinimap && <LightboxMinimap containerRef={containerRef} />}
     </div>
-  )
+  );
 }

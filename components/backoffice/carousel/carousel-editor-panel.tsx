@@ -1,26 +1,26 @@
-'use client'
+'use client';
 
-import { useCallback, useEffect, useState } from 'react'
-import { Loader2, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import { ImageUploadZone } from '@/components/backoffice/common/image-upload-zone'
-import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
-import { getCarouselImageUrl } from '@/utils/api'
-import type { CarouselItem } from '@/types/backoffice'
+import { useCallback, useEffect, useState } from 'react';
+import { Loader2, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { ImageUploadZone } from '@/components/backoffice/common/image-upload-zone';
+import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { getCarouselImageUrl } from '@/utils/api';
+import type { CarouselItem } from '@/types/backoffice';
 
 interface CarouselEditorPanelProps {
   /** The item being edited, or null for "create new" mode. */
-  item: CarouselItem | null
+  item: CarouselItem | null;
   /** Whether a save mutation is in progress. */
-  saving: boolean
+  saving: boolean;
   /** Whether a delete mutation is in progress. */
-  deleting: boolean
-  onSave: (data: { title: string; url: string; image?: File }) => void
-  onDelete: () => void
-  onCancel: () => void
+  deleting: boolean;
+  onSave: (data: { title: string; url: string; image?: File }) => void;
+  onDelete: () => void;
+  onCancel: () => void;
 }
 
 export function CarouselEditorPanel({
@@ -31,53 +31,48 @@ export function CarouselEditorPanel({
   onDelete,
   onCancel,
 }: CarouselEditorPanelProps) {
-  const isNew = !item
+  const isNew = !item;
 
-  const [title, setTitle] = useState(item?.title ?? '')
-  const [url, setUrl] = useState(item?.url ?? '')
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [title, setTitle] = useState(item?.title ?? '');
+  const [url, setUrl] = useState(item?.url ?? '');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Reset form when the selected item changes
   useEffect(() => {
-    setTitle(item?.title ?? '') // eslint-disable-line react-hooks/set-state-in-effect
-    setUrl(item?.url ?? '')
-    setImageFile(null)
-  }, [item])
+    setTitle(item?.title ?? ''); // eslint-disable-line react-hooks/set-state-in-effect
+    setUrl(item?.url ?? '');
+    setImageFile(null);
+  }, [item]);
 
   const isDirty =
-    isNew ||
-    title !== (item?.title ?? '') ||
-    url !== (item?.url ?? '') ||
-    imageFile !== null
+    isNew || title !== (item?.title ?? '') || url !== (item?.url ?? '') || imageFile !== null;
 
-  const canSave = title.trim().length > 0 && isDirty && !saving
+  const canSave = title.trim().length > 0 && isDirty && !saving;
 
   const handleSave = useCallback(() => {
-    if (!canSave) return
+    if (!canSave) return;
     onSave({
       title: title.trim(),
       url: url.trim(),
       ...(imageFile ? { image: imageFile } : {}),
-    })
-  }, [canSave, title, url, imageFile, onSave])
+    });
+  }, [canSave, title, url, imageFile, onSave]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault()
-        handleSave()
+        e.preventDefault();
+        handleSave();
       }
       if (e.key === 'Escape') {
-        onCancel()
+        onCancel();
       }
     },
     [handleSave, onCancel]
-  )
+  );
 
-  const currentImageUrl = item?.image
-    ? getCarouselImageUrl(item.image)
-    : null
+  const currentImageUrl = item?.image ? getCarouselImageUrl(item.image) : null;
 
   return (
     <div className="space-y-5" onKeyDown={handleKeyDown}>
@@ -132,9 +127,7 @@ export function CarouselEditorPanel({
           placeholder="/about or https://..."
           disabled={saving}
         />
-        <p className="text-xs text-muted-foreground">
-          Full URL or a relative path starting with /
-        </p>
+        <p className="text-xs text-muted-foreground">Full URL or a relative path starting with /</p>
       </div>
 
       {!isNew && (
@@ -164,5 +157,5 @@ export function CarouselEditorPanel({
         </>
       )}
     </div>
-  )
+  );
 }

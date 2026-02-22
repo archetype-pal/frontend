@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useCallback } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useCallback } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 /**
  * Shared hook for URL-synced tab navigation.
@@ -14,29 +14,27 @@ export function useTabNavigation<T extends readonly string[]>(
   tabValues: T,
   defaultTab: T[number]
 ): { activeTab: string; handleTabChange: (value: string) => void } {
-  const pathname = usePathname()
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const tabFromUrl = searchParams.get('tab')
+  const tabFromUrl = searchParams.get('tab');
   const activeTab =
-    tabFromUrl && (tabValues as readonly string[]).includes(tabFromUrl)
-      ? tabFromUrl
-      : defaultTab
+    tabFromUrl && (tabValues as readonly string[]).includes(tabFromUrl) ? tabFromUrl : defaultTab;
 
   const handleTabChange = useCallback(
     (value: string) => {
-      const params = new URLSearchParams(searchParams.toString())
+      const params = new URLSearchParams(searchParams.toString());
       if (value === defaultTab) {
-        params.delete('tab')
+        params.delete('tab');
       } else {
-        params.set('tab', value)
+        params.set('tab', value);
       }
-      const query = params.toString()
-      router.push(query ? `${pathname}?${query}` : pathname)
+      const query = params.toString();
+      router.push(query ? `${pathname}?${query}` : pathname);
     },
     [pathname, router, searchParams, defaultTab]
-  )
+  );
 
-  return { activeTab, handleTabChange }
+  return { activeTab, handleTabChange };
 }

@@ -1,0 +1,20 @@
+# Build and deps
+.next
+out
+build
+node_modules
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Generated / vendored
+.next
+*.min.js
+*.min.css
+
+# Mock app (separate package)
+mock
+
+# Ignore config that may use different style
+tailwind.config.ts
+postcss.config.mjs

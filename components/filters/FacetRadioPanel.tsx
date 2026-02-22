@@ -1,26 +1,26 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import * as React from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type RadioFacetItem = {
-  label: string
-  count: number
-  value: string
-  href: string
-}
+  label: string;
+  count: number;
+  value: string;
+  href: string;
+};
 
 type FacetRadioPanelProps = {
-  id: string
-  title: string
-  total?: number
-  items?: RadioFacetItem[]
-  expanded?: boolean
-  onSelect?: (url: string, value: string, isDeselect?: boolean) => void
-  baseFacetURL: string
-  selectedValue?: string | null
-}
+  id: string;
+  title: string;
+  total?: number;
+  items?: RadioFacetItem[];
+  expanded?: boolean;
+  onSelect?: (url: string, value: string, isDeselect?: boolean) => void;
+  baseFacetURL: string;
+  selectedValue?: string | null;
+};
 
 export function FacetRadioPanel({
   id,
@@ -32,18 +32,18 @@ export function FacetRadioPanel({
   baseFacetURL,
   selectedValue,
 }: FacetRadioPanelProps) {
-  const [isExpanded, setIsExpanded] = React.useState(defaultExpanded)
+  const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
 
-  const toggle = () => setIsExpanded((prev) => !prev)
+  const toggle = () => setIsExpanded((prev) => !prev);
 
   const handleSelect = (item: RadioFacetItem) => {
-    const nextValue = selectedValue === item.value ? null : item.value
-    const nextUrl = nextValue ? item.href || baseFacetURL : baseFacetURL
+    const nextValue = selectedValue === item.value ? null : item.value;
+    const nextUrl = nextValue ? item.href || baseFacetURL : baseFacetURL;
 
-    onSelect?.(nextUrl, item.value, nextValue === null)
-  }
+    onSelect?.(nextUrl, item.value, nextValue === null);
+  };
 
-  const visibleItems = items
+  const visibleItems = items;
 
   return (
     <div className="border bg-white rounded shadow-sm" id={`panel-${id}`}>
@@ -82,5 +82,5 @@ export function FacetRadioPanel({
         </div>
       )}
     </div>
-  )
+  );
 }

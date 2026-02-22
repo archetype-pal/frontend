@@ -1,5 +1,15 @@
-export const SEARCH_RESULT_TYPES = ['manuscripts', 'images', 'scribes', 'hands', 'graphs', 'texts', 'clauses', 'people', 'places'] as const
-export type ResultType = (typeof SEARCH_RESULT_TYPES)[number]
+export const SEARCH_RESULT_TYPES = [
+  'manuscripts',
+  'images',
+  'scribes',
+  'hands',
+  'graphs',
+  'texts',
+  'clauses',
+  'people',
+  'places',
+] as const;
+export type ResultType = (typeof SEARCH_RESULT_TYPES)[number];
 
 const LABELS: Record<ResultType, string> = {
   manuscripts: 'Manuscripts',
@@ -11,9 +21,9 @@ const LABELS: Record<ResultType, string> = {
   clauses: 'Clauses',
   people: 'People',
   places: 'Places',
-}
+};
 
 export const resultTypeItems = SEARCH_RESULT_TYPES.map((value) => ({
   label: LABELS[value],
   value,
-})) as { label: string; value: ResultType }[]
+})) as { label: string; value: ResultType }[];

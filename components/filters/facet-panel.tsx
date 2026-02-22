@@ -1,26 +1,26 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import * as React from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type FacetItem = {
-  label: string
-  count: number
-  value: string
-  href: string
-}
+  label: string;
+  count: number;
+  value: string;
+  href: string;
+};
 
 type FacetPanelProps = {
-  id: string
-  title: string
-  total?: number
-  items: FacetItem[]
-  expanded?: boolean
-  onSelect?: (url: string, value: string, isDeselect?: boolean) => void
-  baseFacetURL: string
-  selectedValue?: string | null
-}
+  id: string;
+  title: string;
+  total?: number;
+  items: FacetItem[];
+  expanded?: boolean;
+  onSelect?: (url: string, value: string, isDeselect?: boolean) => void;
+  baseFacetURL: string;
+  selectedValue?: string | null;
+};
 
 export function FacetPanel({
   id,
@@ -32,32 +32,34 @@ export function FacetPanel({
   baseFacetURL,
   selectedValue,
 }: FacetPanelProps) {
-  const [isExpanded, setIsExpanded] = React.useState(defaultExpanded)
-  const [sortBy, setSortBy] = React.useState<'name-asc' | 'name-desc' | 'count-desc' | 'count-asc'>('name-asc')
+  const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
+  const [sortBy, setSortBy] = React.useState<'name-asc' | 'name-desc' | 'count-desc' | 'count-asc'>(
+    'name-asc'
+  );
 
-  const toggle = () => setIsExpanded((prev) => !prev)
+  const toggle = () => setIsExpanded((prev) => !prev);
 
   const visibleItems = React.useMemo(() => {
-    const itemsCopy = [...items]
+    const itemsCopy = [...items];
     switch (sortBy) {
       case 'name-asc':
-        return itemsCopy.sort((a, b) => a.label.localeCompare(b.label))
+        return itemsCopy.sort((a, b) => a.label.localeCompare(b.label));
       case 'name-desc':
-        return itemsCopy.sort((a, b) => b.label.localeCompare(a.label))
+        return itemsCopy.sort((a, b) => b.label.localeCompare(a.label));
       case 'count-asc':
-        return itemsCopy.sort((a, b) => a.count - b.count)
+        return itemsCopy.sort((a, b) => a.count - b.count);
       case 'count-desc':
       default:
-        return itemsCopy.sort((a, b) => b.count - a.count)
+        return itemsCopy.sort((a, b) => b.count - a.count);
     }
-  }, [items, sortBy])
-  
-  const handleSelect = (item: FacetItem) => {
-    const nextValue = selectedValue === item.value ? null : item.value
-    const nextUrl = nextValue ? item.href || baseFacetURL : baseFacetURL
+  }, [items, sortBy]);
 
-    onSelect?.(nextUrl, item.value, nextValue === null)
-  }
+  const handleSelect = (item: FacetItem) => {
+    const nextValue = selectedValue === item.value ? null : item.value;
+    const nextUrl = nextValue ? item.href || baseFacetURL : baseFacetURL;
+
+    onSelect?.(nextUrl, item.value, nextValue === null);
+  };
 
   return (
     <div className="border bg-white rounded shadow-sm" id={`panel-${id}`}>
@@ -76,21 +78,13 @@ export function FacetPanel({
       </div>
       <div className="text-xs text-gray-500 px-4 py-2 flex justify-between border-b">
         <button
-          onClick={() =>
-            setSortBy(prev =>
-              prev === 'name-asc' ? 'name-desc' : 'name-asc'
-            )
-          }
+          onClick={() => setSortBy((prev) => (prev === 'name-asc' ? 'name-desc' : 'name-asc'))}
           className={cn((sortBy === 'name-asc' || sortBy === 'name-desc') && 'font-semibold')}
         >
           {sortBy === 'name-desc' ? 'Z–A' : 'A–Z'}
         </button>
         <button
-          onClick={() =>
-            setSortBy(prev =>
-              prev === 'count-desc' ? 'count-asc' : 'count-desc'
-            )
-          }
+          onClick={() => setSortBy((prev) => (prev === 'count-desc' ? 'count-asc' : 'count-desc'))}
           className={cn((sortBy === 'count-desc' || sortBy === 'count-asc') && 'font-semibold')}
         >
           {sortBy === 'count-asc' ? 'Count ↑' : 'Count ↓'}
@@ -119,5 +113,5 @@ export function FacetPanel({
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -8,4 +8,4 @@ export const RESULT_TYPE_API_MAP: Record<string, string> = {
   clauses: 'clauses',
   people: 'people',
   places: 'places',
-}
+};

@@ -1,6 +1,6 @@
-import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import * as React from 'react'
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import * as React from 'react';
 
 export default function Loading() {
   return (
@@ -30,5 +30,5 @@ export default function Loading() {
         </TabsContent>
       </Tabs>
     </main>
-  )
+  );
 }

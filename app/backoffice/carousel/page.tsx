@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import { useState, useCallback, useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '@/contexts/auth-context'
-import { toast } from 'sonner'
+import { useState, useCallback, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/auth-context';
+import { toast } from 'sonner';
 import {
   DndContext,
   closestCenter,
@@ -12,46 +12,48 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-} from '@dnd-kit/core'
+} from '@dnd-kit/core';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { Image as ImageIcon, Plus, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { SortableCarouselCard } from '@/components/backoffice/carousel/sortable-carousel-card'
-import { CarouselEditorPanel } from '@/components/backoffice/carousel/carousel-editor-panel'
-import { CarouselPreview } from '@/components/backoffice/carousel/carousel-preview'
-import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog'
+} from '@dnd-kit/sortable';
+import { Image as ImageIcon, Plus, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { SortableCarouselCard } from '@/components/backoffice/carousel/sortable-carousel-card';
+import { CarouselEditorPanel } from '@/components/backoffice/carousel/carousel-editor-panel';
+import { CarouselPreview } from '@/components/backoffice/carousel/carousel-preview';
+import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import {
   getCarouselItems,
   createCarouselItem,
   updateCarouselItem,
   updateCarouselItemJson,
   deleteCarouselItem,
-} from '@/services/backoffice/publications'
-import { backofficeKeys } from '@/lib/backoffice/query-keys'
-import { formatApiError } from '@/lib/backoffice/format-api-error'
-import type { CarouselItem } from '@/types/backoffice'
+} from '@/services/backoffice/publications';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { formatApiError } from '@/lib/backoffice/format-api-error';
+import type { CarouselItem } from '@/types/backoffice';
 
-type PanelMode =
-  | { kind: 'preview' }
-  | { kind: 'edit'; item: CarouselItem }
-  | { kind: 'create' }
+type PanelMode = { kind: 'preview' } | { kind: 'edit'; item: CarouselItem } | { kind: 'create' };
 
 export default function CarouselPage() {
-  const { token } = useAuth()
-  const queryClient = useQueryClient()
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
 
-  const [panel, setPanel] = useState<PanelMode>({ kind: 'preview' })
-  const [deleteTarget, setDeleteTarget] = useState<CarouselItem | null>(null)
+  const [panel, setPanel] = useState<PanelMode>({ kind: 'preview' });
+  const [deleteTarget, setDeleteTarget] = useState<CarouselItem | null>(null);
 
-  const { data: items, isLoading, isError, refetch } = useQuery({
+  const {
+    data: items,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: backofficeKeys.carousel.all(),
     queryFn: () => getCarouselItems(token!),
     enabled: !!token,
-  })
+  });
 
   const invalidate = useCallback(
     () =>
@@ -59,19 +61,19 @@ export default function CarouselPage() {
         queryKey: backofficeKeys.carousel.all(),
       }),
     [queryClient]
-  )
+  );
 
-  const sorted = [...(items ?? [])].sort((a, b) => a.ordering - b.ordering)
+  const sorted = [...(items ?? [])].sort((a, b) => a.ordering - b.ordering);
 
   // Keep the editor panel in sync when data refreshes
   useEffect(() => {
     if (panel.kind === 'edit' && items) {
-      const fresh = items.find((i) => i.id === panel.item.id)
+      const fresh = items.find((i) => i.id === panel.item.id);
       if (!fresh) {
-        setPanel({ kind: 'preview' }) // eslint-disable-line react-hooks/set-state-in-effect
+        setPanel({ kind: 'preview' }); // eslint-disable-line react-hooks/set-state-in-effect
       }
     }
-  }, [items, panel])
+  }, [items, panel]);
 
   // ── Mutations ──────────────────────────────────────────────────────
 
@@ -84,51 +86,51 @@ export default function CarouselPage() {
         image: data.image ?? null,
       }),
     onSuccess: () => {
-      toast.success('Carousel item created')
-      invalidate()
-      setPanel({ kind: 'preview' })
+      toast.success('Carousel item created');
+      invalidate();
+      setPanel({ kind: 'preview' });
     },
     onError: (err) => {
       toast.error('Failed to create carousel item', {
         description: formatApiError(err),
-      })
+      });
     },
-  })
+  });
 
   const updateMut = useMutation({
     mutationFn: ({
       id,
       data,
     }: {
-      id: number
-      data: { title: string; url: string; image?: File }
+      id: number;
+      data: { title: string; url: string; image?: File };
     }) => updateCarouselItem(token!, id, data),
     onSuccess: (updated) => {
-      toast.success('Carousel item updated')
-      invalidate()
-      setPanel({ kind: 'edit', item: updated })
+      toast.success('Carousel item updated');
+      invalidate();
+      setPanel({ kind: 'edit', item: updated });
     },
     onError: (err) => {
       toast.error('Failed to update carousel item', {
         description: formatApiError(err),
-      })
+      });
     },
-  })
+  });
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteCarouselItem(token!, id),
     onSuccess: () => {
-      toast.success('Carousel item deleted')
-      invalidate()
-      setPanel({ kind: 'preview' })
-      setDeleteTarget(null)
+      toast.success('Carousel item deleted');
+      invalidate();
+      setPanel({ kind: 'preview' });
+      setDeleteTarget(null);
     },
     onError: (err) => {
       toast.error('Failed to delete carousel item', {
         description: formatApiError(err),
-      })
+      });
     },
-  })
+  });
 
   // ── Drag-and-drop reordering ───────────────────────────────────────
 
@@ -137,36 +139,35 @@ export default function CarouselPage() {
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
-  )
+  );
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      const { active, over } = event
-      if (!over || active.id === over.id || !items) return
+      const { active, over } = event;
+      if (!over || active.id === over.id || !items) return;
 
-      const currentSorted = [...items].sort((a, b) => a.ordering - b.ordering)
-      const oldIndex = currentSorted.findIndex((i) => i.id === active.id)
-      const newIndex = currentSorted.findIndex((i) => i.id === over.id)
-      if (oldIndex === -1 || newIndex === -1) return
+      const currentSorted = [...items].sort((a, b) => a.ordering - b.ordering);
+      const oldIndex = currentSorted.findIndex((i) => i.id === active.id);
+      const newIndex = currentSorted.findIndex((i) => i.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
 
-      const reordered = [...currentSorted]
-      const [moved] = reordered.splice(oldIndex, 1)
-      reordered.splice(newIndex, 0, moved)
+      const reordered = [...currentSorted];
+      const [moved] = reordered.splice(oldIndex, 1);
+      reordered.splice(newIndex, 0, moved);
 
       const updated = reordered.map((item, i) => ({
         ...item,
         ordering: i + 1,
-      }))
+      }));
 
       // Optimistic cache update
-      queryClient.setQueryData(backofficeKeys.carousel.all(), updated)
+      queryClient.setQueryData(backofficeKeys.carousel.all(), updated);
 
       Promise.all(
         updated
           .filter(
             (item, i) =>
-              currentSorted[i]?.id !== item.id ||
-              currentSorted[i]?.ordering !== item.ordering
+              currentSorted[i]?.id !== item.id || currentSorted[i]?.ordering !== item.ordering
           )
           .map((item) =>
             updateCarouselItemJson(token!, item.id, {
@@ -176,24 +177,24 @@ export default function CarouselPage() {
       )
         .then(() => invalidate())
         .catch(() => {
-          toast.error('Failed to reorder items')
-          invalidate()
-        })
+          toast.error('Failed to reorder items');
+          invalidate();
+        });
     },
     [items, token, queryClient, invalidate]
-  )
+  );
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && panel.kind !== 'preview') {
-        setPanel({ kind: 'preview' })
+        setPanel({ kind: 'preview' });
       }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [panel.kind])
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [panel.kind]);
 
   // ── Handlers ───────────────────────────────────────────────────────
 
@@ -202,29 +203,29 @@ export default function CarouselPage() {
       prev.kind === 'edit' && prev.item.id === item.id
         ? { kind: 'preview' }
         : { kind: 'edit', item }
-    )
-  }, [])
+    );
+  }, []);
 
   const handleDelete = useCallback((item: CarouselItem) => {
-    setDeleteTarget(item)
-  }, [])
+    setDeleteTarget(item);
+  }, []);
 
   const handleEditorSave = useCallback(
     (data: { title: string; url: string; image?: File }) => {
       if (panel.kind === 'create') {
-        createMut.mutate(data)
+        createMut.mutate(data);
       } else if (panel.kind === 'edit') {
-        updateMut.mutate({ id: panel.item.id, data })
+        updateMut.mutate({ id: panel.item.id, data });
       }
     },
     [panel, createMut, updateMut]
-  )
+  );
 
   const handleEditorDelete = useCallback(() => {
     if (panel.kind === 'edit') {
-      deleteMut.mutate(panel.item.id)
+      deleteMut.mutate(panel.item.id);
     }
-  }, [panel, deleteMut])
+  }, [panel, deleteMut]);
 
   // ── Loading / error states ─────────────────────────────────────────
 
@@ -233,20 +234,18 @@ export default function CarouselPage() {
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
-    )
+    );
   }
 
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <p className="text-sm text-destructive">
-          Failed to load carousel items
-        </p>
+        <p className="text-sm text-destructive">Failed to load carousel items</p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
           Retry
         </Button>
       </div>
-    )
+    );
   }
 
   // ── Empty state ────────────────────────────────────────────────────
@@ -264,25 +263,21 @@ export default function CarouselPage() {
           <ImageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground/40" />
           <p className="text-base font-medium">No carousel items yet</p>
           <p className="text-sm mt-1 max-w-sm mx-auto">
-            The homepage carousel is empty. Add your first item with an image,
-            title, and optional link.
+            The homepage carousel is empty. Add your first item with an image, title, and optional
+            link.
           </p>
-          <Button
-            size="sm"
-            className="mt-4"
-            onClick={() => setPanel({ kind: 'create' })}
-          >
+          <Button size="sm" className="mt-4" onClick={() => setPanel({ kind: 'create' })}>
             <Plus className="h-4 w-4 mr-1.5" />
             Add First Item
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   // ── Main layout ────────────────────────────────────────────────────
 
-  const selectedId = panel.kind === 'edit' ? panel.item.id : null
+  const selectedId = panel.kind === 'edit' ? panel.item.id : null;
 
   return (
     <div className="space-y-4">
@@ -293,15 +288,12 @@ export default function CarouselPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Carousel</h1>
             <p className="text-sm text-muted-foreground">
-              {sorted.length} item{sorted.length !== 1 ? 's' : ''} &mdash; drag
-              to reorder, click to edit
+              {sorted.length} item{sorted.length !== 1 ? 's' : ''} &mdash; drag to reorder, click to
+              edit
             </p>
           </div>
         </div>
-        <Button
-          size="sm"
-          onClick={() => setPanel({ kind: 'create' })}
-        >
+        <Button size="sm" onClick={() => setPanel({ kind: 'create' })}>
           <Plus className="h-4 w-4 mr-1.5" />
           Add Item
         </Button>
@@ -316,10 +308,7 @@ export default function CarouselPage() {
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext
-              items={sorted.map((i) => i.id)}
-              strategy={verticalListSortingStrategy}
-            >
+            <SortableContext items={sorted.map((i) => i.id)} strategy={verticalListSortingStrategy}>
               {sorted.map((item) => (
                 <SortableCarouselCard
                   key={item.id}
@@ -336,9 +325,7 @@ export default function CarouselPage() {
         {/* Right: context-sensitive panel */}
         <div className="lg:col-span-3">
           <div className="rounded-lg border bg-card p-5">
-            {panel.kind === 'preview' && (
-              <CarouselPreview items={sorted} />
-            )}
+            {panel.kind === 'preview' && <CarouselPreview items={sorted} />}
             {panel.kind === 'edit' && (
               <CarouselEditorPanel
                 item={panel.item}
@@ -374,5 +361,5 @@ export default function CarouselPage() {
         onConfirm={() => deleteTarget && deleteMut.mutate(deleteTarget.id)}
       />
     </div>
-  )
+  );
 }

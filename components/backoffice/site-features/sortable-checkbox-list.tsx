@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { useCallback } from 'react'
+import { useCallback } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -9,54 +9,49 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-} from '@dnd-kit/core'
+} from '@dnd-kit/core';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
   arrayMove,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { GripVertical } from 'lucide-react'
-import { Checkbox } from '@/components/ui/checkbox'
-import { cn } from '@/lib/utils'
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 export type SortableItem = {
-  id: string
-  label: string
-}
+  id: string;
+  label: string;
+};
 
 type Props = {
-  allItems: SortableItem[]
-  checkedIds: string[]
-  onChangeOrder: (reordered: string[]) => void
-}
+  allItems: SortableItem[];
+  checkedIds: string[];
+  onChangeOrder: (reordered: string[]) => void;
+};
 
 function SortableRow({
   item,
   checked,
   onToggle,
 }: {
-  item: SortableItem
-  checked: boolean
-  onToggle: (id: string, checked: boolean) => void
+  item: SortableItem;
+  checked: boolean;
+  onToggle: (id: string, checked: boolean) => void;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: item.id })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 50 : undefined,
-  }
+  };
 
   return (
     <div
@@ -79,72 +74,56 @@ function SortableRow({
       />
       <span className="truncate select-none leading-tight">{item.label}</span>
     </div>
-  )
+  );
 }
 
-export function SortableCheckboxList({
-  allItems,
-  checkedIds,
-  onChangeOrder,
-}: Props) {
+export function SortableCheckboxList({ allItems, checkedIds, onChangeOrder }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  )
+    })
+  );
 
-  const checkedSet = new Set(checkedIds)
+  const checkedSet = new Set(checkedIds);
   const checkedItems = checkedIds
     .map((id) => allItems.find((i) => i.id === id))
-    .filter(Boolean) as SortableItem[]
-  const uncheckedItems = allItems.filter((i) => !checkedSet.has(i.id))
+    .filter(Boolean) as SortableItem[];
+  const uncheckedItems = allItems.filter((i) => !checkedSet.has(i.id));
 
   const handleToggle = useCallback(
     (id: string, checked: boolean) => {
       if (checked) {
-        onChangeOrder([...checkedIds, id])
+        onChangeOrder([...checkedIds, id]);
       } else {
-        onChangeOrder(checkedIds.filter((cid) => cid !== id))
+        onChangeOrder(checkedIds.filter((cid) => cid !== id));
       }
     },
-    [checkedIds, onChangeOrder],
-  )
+    [checkedIds, onChangeOrder]
+  );
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      const { active, over } = event
-      if (!over || active.id === over.id) return
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
 
-      const oldIndex = checkedIds.indexOf(String(active.id))
-      const newIndex = checkedIds.indexOf(String(over.id))
-      if (oldIndex === -1 || newIndex === -1) return
+      const oldIndex = checkedIds.indexOf(String(active.id));
+      const newIndex = checkedIds.indexOf(String(over.id));
+      if (oldIndex === -1 || newIndex === -1) return;
 
-      onChangeOrder(arrayMove(checkedIds, oldIndex, newIndex))
+      onChangeOrder(arrayMove(checkedIds, oldIndex, newIndex));
     },
-    [checkedIds, onChangeOrder],
-  )
+    [checkedIds, onChangeOrder]
+  );
 
   return (
     <div className="space-y-0.5">
       {checkedItems.length > 0 && (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={checkedIds}
-            strategy={verticalListSortingStrategy}
-          >
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={checkedIds} strategy={verticalListSortingStrategy}>
             <div className="space-y-0.5">
               {checkedItems.map((item) => (
-                <SortableRow
-                  key={item.id}
-                  item={item}
-                  checked
-                  onToggle={handleToggle}
-                />
+                <SortableRow key={item.id} item={item} checked onToggle={handleToggle} />
               ))}
             </div>
           </SortableContext>
@@ -152,7 +131,12 @@ export function SortableCheckboxList({
       )}
 
       {uncheckedItems.length > 0 && (
-        <div className={cn('space-y-0.5', checkedItems.length > 0 && 'mt-1.5 pt-1.5 border-t border-dashed')}>
+        <div
+          className={cn(
+            'space-y-0.5',
+            checkedItems.length > 0 && 'mt-1.5 pt-1.5 border-t border-dashed'
+          )}
+        >
           {uncheckedItems.map((item) => (
             <label
               key={item.id}
@@ -170,5 +154,5 @@ export function SortableCheckboxList({
         </div>
       )}
     </div>
-  )
+  );
 }

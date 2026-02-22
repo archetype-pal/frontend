@@ -1,31 +1,31 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { Suspense } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { useCollection, type CollectionItem } from '@/contexts/collection-context'
-import { CollectionStar } from '@/components/collection/collection-star'
-import { Button } from '@/components/ui/button'
-import { Trash2, Star, ArrowUpDown } from 'lucide-react'
-import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button'
-import { getIiifImageUrl } from '@/utils/iiif'
-import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail'
+import * as React from 'react';
+import { Suspense } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { useCollection, type CollectionItem } from '@/contexts/collection-context';
+import { CollectionStar } from '@/components/collection/collection-star';
+import { Button } from '@/components/ui/button';
+import { Trash2, Star, ArrowUpDown } from 'lucide-react';
+import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
+import { getIiifImageUrl } from '@/utils/iiif';
+import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 
-type SortOption = 'added' | 'name' | 'repository'
-type FilterType = 'all' | 'image' | 'graph'
+type SortOption = 'added' | 'name' | 'repository';
+type FilterType = 'all' | 'image' | 'graph';
 
 /** Sync thumbnail URL for image items (no coordinates). */
 function getImageItemThumbnailUrl(item: CollectionItem): string | null {
-  const infoUrl = item.image_iiif
-  if (!infoUrl) return null
-  return getIiifImageUrl(infoUrl, { thumbnail: true })
+  const infoUrl = item.image_iiif;
+  if (!infoUrl) return null;
+  return getIiifImageUrl(infoUrl, { thumbnail: true });
 }
 
 function getItemTitle(item: CollectionItem): string {
-  const locus = 'locus' in item ? item.locus : undefined
-  return String(locus ?? item.shelfmark ?? 'Untitled')
+  const locus = 'locus' in item ? item.locus : undefined;
+  return String(locus ?? item.shelfmark ?? 'Untitled');
 }
 
 /** Card for a graph item: thumbnail URL with bounds (no upscaling). */
@@ -34,12 +34,12 @@ function CollectionGraphCard({
   getUrl,
   title,
 }: {
-  item: CollectionItem
-  getUrl: (item: CollectionItem) => string
-  title: string
+  item: CollectionItem;
+  getUrl: (item: CollectionItem) => string;
+  title: string;
 }) {
-  const infoUrl = (item.image_iiif || '').trim()
-  const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined)
+  const infoUrl = (item.image_iiif || '').trim();
+  const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined);
 
   return (
     <div className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden group cursor-pointer">
@@ -63,87 +63,109 @@ function CollectionGraphCard({
           </div>
         )}
         <div className="absolute top-2 right-2 z-10 flex gap-1">
-          <OpenLightboxButton item={item} variant="ghost" size="icon" className="bg-white/80 hover:bg-white" />
+          <OpenLightboxButton
+            item={item}
+            variant="ghost"
+            size="icon"
+            className="bg-white/80 hover:bg-white"
+          />
           <CollectionStar itemId={item.id} itemType="graph" item={item} />
         </div>
       </div>
       <div className="p-3 text-center space-y-1 bg-white">
-        <div className="font-medium text-gray-900 truncate text-xs sm:text-sm" title={title}>{title}</div>
-        {item.repository_name && <div className="text-xs text-gray-500 truncate" title={item.repository_name}>{item.repository_name}</div>}
+        <div className="font-medium text-gray-900 truncate text-xs sm:text-sm" title={title}>
+          {title}
+        </div>
+        {item.repository_name && (
+          <div className="text-xs text-gray-500 truncate" title={item.repository_name}>
+            {item.repository_name}
+          </div>
+        )}
       </div>
     </div>
-  )
+  );
 }
 
 function CollectionPageContent() {
-  const searchParams = useSearchParams()
-  const { items, clearCollection } = useCollection()
+  const searchParams = useSearchParams();
+  const { items, clearCollection } = useCollection();
   const [filter, setFilter] = React.useState<FilterType>(() => {
-    const p = searchParams.get('filter') as FilterType
-    return p && ['all', 'image', 'graph'].includes(p) ? p : 'all'
-  })
+    const p = searchParams.get('filter') as FilterType;
+    return p && ['all', 'image', 'graph'].includes(p) ? p : 'all';
+  });
   const [sortBy, setSortBy] = React.useState<SortOption>(() => {
-    const p = searchParams.get('sort') as SortOption
-    return p && ['added', 'name', 'repository'].includes(p) ? p : 'added'
-  })
-  const [showClearConfirm, setShowClearConfirm] = React.useState(false)
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+    const p = searchParams.get('sort') as SortOption;
+    return p && ['added', 'name', 'repository'].includes(p) ? p : 'added';
+  });
+  const [showClearConfirm, setShowClearConfirm] = React.useState(false);
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   React.useEffect(() => {
-    const params = new URLSearchParams()
-    if (filter !== 'all') params.set('filter', filter)
-    if (sortBy !== 'added') params.set('sort', sortBy)
-    window.history.replaceState(null, '', params.toString() ? `/collection?${params}` : '/collection')
-  }, [filter, sortBy])
+    const params = new URLSearchParams();
+    if (filter !== 'all') params.set('filter', filter);
+    if (sortBy !== 'added') params.set('sort', sortBy);
+    window.history.replaceState(
+      null,
+      '',
+      params.toString() ? `/collection?${params}` : '/collection'
+    );
+  }, [filter, sortBy]);
 
   React.useEffect(() => {
     if (items.length === 0) {
-      setShowClearConfirm(false)
+      setShowClearConfirm(false);
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-        timeoutRef.current = null
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     }
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    }
-  }, [items.length])
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [items.length]);
 
   const filteredItems = React.useMemo(() => {
-    const filtered = filter === 'all' ? items : items.filter((item) => item.type === filter)
-    if (sortBy === 'added') return filtered
-    
+    const filtered = filter === 'all' ? items : items.filter((item) => item.type === filter);
+    if (sortBy === 'added') return filtered;
+
     return [...filtered].sort((a, b) => {
       if (sortBy === 'name') {
-        const nameA = (a.type === 'image' ? (a.shelfmark || a.locus || '') : (a.shelfmark || '')).toLowerCase()
-        const nameB = (b.type === 'image' ? (b.shelfmark || b.locus || '') : (b.shelfmark || '')).toLowerCase()
-        return nameA.localeCompare(nameB)
+        const nameA = (
+          a.type === 'image' ? a.shelfmark || a.locus || '' : a.shelfmark || ''
+        ).toLowerCase();
+        const nameB = (
+          b.type === 'image' ? b.shelfmark || b.locus || '' : b.shelfmark || ''
+        ).toLowerCase();
+        return nameA.localeCompare(nameB);
       }
-      return ((a.repository_name || '').toLowerCase()).localeCompare((b.repository_name || '').toLowerCase())
-    })
-  }, [items, filter, sortBy])
+      return (a.repository_name || '')
+        .toLowerCase()
+        .localeCompare((b.repository_name || '').toLowerCase());
+    });
+  }, [items, filter, sortBy]);
 
-  const images = filteredItems.filter((item) => item.type === 'image')
-  const graphs = filteredItems.filter((item) => item.type === 'graph')
-  const allImages = items.filter((item) => item.type === 'image')
-  const allGraphs = items.filter((item) => item.type === 'graph')
+  const images = filteredItems.filter((item) => item.type === 'image');
+  const graphs = filteredItems.filter((item) => item.type === 'graph');
+  const allImages = items.filter((item) => item.type === 'image');
+  const allGraphs = items.filter((item) => item.type === 'graph');
 
   const handleClear = () => {
     if (showClearConfirm) {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-      clearCollection()
-      setShowClearConfirm(false)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      clearCollection();
+      setShowClearConfirm(false);
     } else {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-      setShowClearConfirm(true)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      setShowClearConfirm(true);
       timeoutRef.current = setTimeout(() => {
-        setShowClearConfirm(false)
-        timeoutRef.current = null
-      }, 5000)
+        setShowClearConfirm(false);
+        timeoutRef.current = null;
+      }, 5000);
     }
-  }
+  };
 
-  const getUrl = (item: CollectionItem) => item.type === 'image' ? `/digipal/${item.id}` : `/graphs/${item.id}`
+  const getUrl = (item: CollectionItem) =>
+    item.type === 'image' ? `/digipal/${item.id}` : `/graphs/${item.id}`;
 
   if (items.length === 0) {
     return (
@@ -154,27 +176,41 @@ function CollectionPageContent() {
           </div>
           <h1 className="text-4xl font-bold mb-4 text-gray-900">My Collection</h1>
           <p className="text-muted-foreground text-lg mb-10 leading-relaxed max-w-md mx-auto">
-            Your collection is empty. Start adding items by hovering over thumbnails in the search pages and clicking the star icon.
+            Your collection is empty. Start adding items by hovering over thumbnails in the search
+            pages and clicking the star icon.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/search/images"><Button size="lg" className="w-full sm:w-auto">Browse Images</Button></Link>
-            <Link href="/search/graphs"><Button size="lg" variant="outline" className="w-full sm:w-auto">Browse Graphs</Button></Link>
+            <Link href="/search/images">
+              <Button size="lg" className="w-full sm:w-auto">
+                Browse Images
+              </Button>
+            </Link>
+            <Link href="/search/graphs">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                Browse Graphs
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   const renderCard = (item: CollectionItem, type: 'image' | 'graph') => {
-    const title = getItemTitle(item)
+    const title = getItemTitle(item);
 
     if (type === 'graph') {
-      return <CollectionGraphCard key={`graph-${item.id}`} item={item} getUrl={getUrl} title={title} />
+      return (
+        <CollectionGraphCard key={`graph-${item.id}`} item={item} getUrl={getUrl} title={title} />
+      );
     }
 
-    const imageUrl = getImageItemThumbnailUrl(item)
+    const imageUrl = getImageItemThumbnailUrl(item);
     return (
-      <div key={`image-${item.id}`} className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden group cursor-pointer">
+      <div
+        key={`image-${item.id}`}
+        className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden group cursor-pointer"
+      >
         <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
           {imageUrl ? (
             <>
@@ -190,30 +226,49 @@ function CollectionPageContent() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/0 via-black/0 to-black/0 group-hover:from-black/5 group-hover:via-black/0 group-hover:to-black/0 transition-all duration-300 pointer-events-none" />
             </>
           ) : (
-            <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-full h-full flex items-center justify-center text-xs text-gray-500">No Image</div>
+            <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-full h-full flex items-center justify-center text-xs text-gray-500">
+              No Image
+            </div>
           )}
           <div className="absolute top-2 right-2 z-10 flex gap-1">
-            <OpenLightboxButton item={item} variant="ghost" size="icon" className="bg-white/80 hover:bg-white" />
+            <OpenLightboxButton
+              item={item}
+              variant="ghost"
+              size="icon"
+              className="bg-white/80 hover:bg-white"
+            />
             <CollectionStar itemId={item.id} itemType="image" item={item} />
           </div>
         </div>
         <div className="p-3 text-center space-y-1 bg-white">
-          <div className="font-medium text-gray-900 truncate text-xs sm:text-sm" title={title}>{title}</div>
-          {item.repository_name && <div className="text-xs text-gray-500 truncate" title={item.repository_name}>{item.repository_name}</div>}
+          <div className="font-medium text-gray-900 truncate text-xs sm:text-sm" title={title}>
+            {title}
+          </div>
+          {item.repository_name && (
+            <div className="text-xs text-gray-500 truncate" title={item.repository_name}>
+              {item.repository_name}
+            </div>
+          )}
         </div>
       </div>
-    )
-  }
+    );
+  };
 
-  const renderSection = (title: string, items: CollectionItem[], allItems: CollectionItem[], type: 'image' | 'graph') => {
-    if (allItems.length === 0 || (filter !== 'all' && filter !== type)) return null
-    
+  const renderSection = (
+    title: string,
+    items: CollectionItem[],
+    allItems: CollectionItem[],
+    type: 'image' | 'graph'
+  ) => {
+    if (allItems.length === 0 || (filter !== 'all' && filter !== type)) return null;
+
     return (
       <section>
         <div className="flex items-center gap-2 mb-6">
           <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900">{title}</h2>
           <span className="text-sm text-muted-foreground bg-gray-100 px-3 py-1 rounded-full font-medium">
-            {items.length} {items.length === 1 ? 'item' : 'items'}{items.length !== allItems.length && ` of ${allItems.length}`}
+            {items.length} {items.length === 1 ? 'item' : 'items'}
+            {items.length !== allItems.length && ` of ${allItems.length}`}
           </span>
         </div>
         {items.length > 0 ? (
@@ -222,12 +277,14 @@ function CollectionPageContent() {
           </div>
         ) : (
           <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-sm text-muted-foreground">No {title.toLowerCase()} match the current filter.</p>
+            <p className="text-sm text-muted-foreground">
+              No {title.toLowerCase()} match the current filter.
+            </p>
           </div>
         )}
       </section>
-    )
-  }
+    );
+  };
 
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8 max-w-7xl">
@@ -235,19 +292,21 @@ function CollectionPageContent() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-gray-900">My Collection</h1>
-            <p className="text-muted-foreground text-sm sm:text-base">{items.length} {items.length === 1 ? 'item' : 'items'} saved</p>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              {items.length} {items.length === 1 ? 'item' : 'items'} saved
+            </p>
           </div>
           <div className="flex gap-2">
-            <OpenLightboxButton
-              items={items}
-              variant="outline"
+            <OpenLightboxButton items={items} variant="outline" size="sm" />
+            <Button
+              variant={showClearConfirm ? 'destructive' : 'outline'}
               size="sm"
-            />
-            <Button 
-              variant={showClearConfirm ? "destructive" : "outline"} 
-              size="sm" 
-              onClick={handleClear} 
-              className={showClearConfirm ? "w-full sm:w-auto" : "text-destructive hover:text-destructive hover:bg-destructive/10 w-full sm:w-auto"}
+              onClick={handleClear}
+              className={
+                showClearConfirm
+                  ? 'w-full sm:w-auto'
+                  : 'text-destructive hover:text-destructive hover:bg-destructive/10 w-full sm:w-auto'
+              }
             >
               <Trash2 className="h-4 w-4 mr-2" />
               {showClearConfirm ? 'Click again to confirm' : 'Clear All'}
@@ -257,14 +316,26 @@ function CollectionPageContent() {
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
             {(['all', 'image', 'graph'] as FilterType[]).map((f) => (
-              <Button key={f} variant={filter === f ? 'default' : 'ghost'} size="sm" onClick={() => setFilter(f)} className={f === 'all' ? 'min-w-[60px]' : 'min-w-[70px]'}>
+              <Button
+                key={f}
+                variant={filter === f ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setFilter(f)}
+                className={f === 'all' ? 'min-w-[60px]' : 'min-w-[70px]'}
+              >
                 {f === 'all' ? 'All' : f === 'image' ? 'Images' : 'Graphs'}
               </Button>
             ))}
           </div>
           <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
             {(['added', 'name', 'repository'] as SortOption[]).map((s) => (
-              <Button key={s} variant={sortBy === s ? 'default' : 'ghost'} size="sm" onClick={() => setSortBy(s)} className={s === 'repository' ? 'min-w-[100px]' : 'min-w-[80px]'}>
+              <Button
+                key={s}
+                variant={sortBy === s ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSortBy(s)}
+                className={s === 'repository' ? 'min-w-[100px]' : 'min-w-[80px]'}
+              >
                 {s === 'added' && <ArrowUpDown className="h-3.5 w-3.5 mr-1.5" />}
                 {s === 'added' ? 'Added' : s === 'name' ? 'Name' : 'Repository'}
               </Button>
@@ -277,7 +348,7 @@ function CollectionPageContent() {
         {renderSection('Graphs', graphs, allGraphs, 'graph')}
       </div>
     </div>
-  )
+  );
 }
 
 export default function CollectionPage() {
@@ -285,5 +356,5 @@ export default function CollectionPage() {
     <Suspense fallback={<div className="container mx-auto px-4 py-16 text-center">Loading...</div>}>
       <CollectionPageContent />
     </Suspense>
-  )
+  );
 }

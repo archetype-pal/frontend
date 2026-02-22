@@ -1,11 +1,20 @@
-'use client'
+'use client';
 
-import { Search, FolderOpen, Newspaper, BookOpen, PenTool, CalendarDays, Info, Image } from 'lucide-react'
-import { Switch } from '@/components/ui/switch'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { ALL_SECTION_KEYS, SECTION_LABELS, type SectionKey } from '@/lib/site-features'
-import type { LucideIcon } from 'lucide-react'
+import {
+  Search,
+  FolderOpen,
+  Newspaper,
+  BookOpen,
+  PenTool,
+  CalendarDays,
+  Info,
+  Image,
+} from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { ALL_SECTION_KEYS, SECTION_LABELS, type SectionKey } from '@/lib/site-features';
+import type { LucideIcon } from 'lucide-react';
 
 const SECTION_ICONS: Record<SectionKey, LucideIcon> = {
   search: Search,
@@ -16,12 +25,12 @@ const SECTION_ICONS: Record<SectionKey, LucideIcon> = {
   featureArticles: BookOpen,
   events: CalendarDays,
   about: Info,
-}
+};
 
 type Props = {
-  sections: Record<SectionKey, boolean>
-  onChange: (key: SectionKey, enabled: boolean) => void
-}
+  sections: Record<SectionKey, boolean>;
+  onChange: (key: SectionKey, enabled: boolean) => void;
+};
 
 export function SectionToggles({ sections, onChange }: Props) {
   return (
@@ -35,8 +44,8 @@ export function SectionToggles({ sections, onChange }: Props) {
       <CardContent>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {ALL_SECTION_KEYS.map((key) => {
-            const Icon = SECTION_ICONS[key]
-            const enabled = sections[key]
+            const Icon = SECTION_ICONS[key];
+            const enabled = sections[key];
             return (
               <label
                 key={key}
@@ -61,10 +70,10 @@ export function SectionToggles({ sections, onChange }: Props) {
                   className="shrink-0"
                 />
               </label>
-            )
+            );
           })}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

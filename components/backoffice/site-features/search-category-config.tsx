@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
-import { useState, useMemo } from 'react'
-import { ChevronDown } from 'lucide-react'
-import { Switch } from '@/components/ui/switch'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types'
-import { FILTER_ORDER_MAP } from '@/lib/filter-order'
-import { formatFacetTitle } from '@/lib/search-query'
-import { DEFAULT_COLUMNS, type SearchCategoryConfig } from '@/lib/site-features'
-import { SortableCheckboxList, type SortableItem } from './sortable-checkbox-list'
+import { useState, useMemo } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
+import { FILTER_ORDER_MAP } from '@/lib/filter-order';
+import { formatFacetTitle } from '@/lib/search-query';
+import { DEFAULT_COLUMNS, type SearchCategoryConfig } from '@/lib/site-features';
+import { SortableCheckboxList, type SortableItem } from './sortable-checkbox-list';
 
 const CATEGORY_LABELS: Record<ResultType, string> = {
   manuscripts: 'Manuscripts',
@@ -22,29 +22,26 @@ const CATEGORY_LABELS: Record<ResultType, string> = {
   clauses: 'Clauses',
   people: 'People',
   places: 'Places',
-}
+};
 
 type Props = {
-  categories: Record<ResultType, SearchCategoryConfig>
-  onChange: (type: ResultType, config: SearchCategoryConfig) => void
-}
+  categories: Record<ResultType, SearchCategoryConfig>;
+  onChange: (type: ResultType, config: SearchCategoryConfig) => void;
+};
 
 function useColumnItems(type: ResultType): SortableItem[] {
-  return useMemo(
-    () => DEFAULT_COLUMNS[type].map((col) => ({ id: col, label: col })),
-    [type],
-  )
+  return useMemo(() => DEFAULT_COLUMNS[type].map((col) => ({ id: col, label: col })), [type]);
 }
 
 function useFacetItems(type: ResultType): SortableItem[] {
   return useMemo(() => {
-    const facets = FILTER_ORDER_MAP[type] ?? []
-    return facets.map((f) => ({ id: f, label: formatFacetTitle(f, type) }))
-  }, [type])
+    const facets = FILTER_ORDER_MAP[type] ?? [];
+    return facets.map((f) => ({ id: f, label: formatFacetTitle(f, type) }));
+  }, [type]);
 }
 
 export function SearchCategoryConfigPanel({ categories, onChange }: Props) {
-  const [openCategory, setOpenCategory] = useState<string | null>(null)
+  const [openCategory, setOpenCategory] = useState<string | null>(null);
 
   return (
     <Card>
@@ -57,8 +54,8 @@ export function SearchCategoryConfigPanel({ categories, onChange }: Props) {
       <CardContent>
         <div className="space-y-1.5">
           {SEARCH_RESULT_TYPES.map((type) => {
-            const config = categories[type]
-            const isOpen = openCategory === type
+            const config = categories[type];
+            const isOpen = openCategory === type;
 
             return (
               <Collapsible
@@ -69,23 +66,26 @@ export function SearchCategoryConfigPanel({ categories, onChange }: Props) {
                 <div className="rounded-lg border">
                   <div className="flex items-center justify-between px-3 py-2">
                     <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-2 p-0 h-auto hover:bg-transparent">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex items-center gap-2 p-0 h-auto hover:bg-transparent"
+                      >
                         <ChevronDown
                           className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-0' : '-rotate-90'}`}
                         />
                         <span className="text-sm font-medium">{CATEGORY_LABELS[type]}</span>
                         {!isOpen && (
                           <span className="text-xs text-muted-foreground ml-1">
-                            {config.visibleColumns.length} col · {config.visibleFacets.length} facets
+                            {config.visibleColumns.length} col · {config.visibleFacets.length}{' '}
+                            facets
                           </span>
                         )}
                       </Button>
                     </CollapsibleTrigger>
                     <Switch
                       checked={config.enabled}
-                      onCheckedChange={(checked) =>
-                        onChange(type, { ...config, enabled: checked })
-                      }
+                      onCheckedChange={(checked) => onChange(type, { ...config, enabled: checked })}
                     />
                   </div>
 
@@ -99,12 +99,12 @@ export function SearchCategoryConfigPanel({ categories, onChange }: Props) {
                   </CollapsibleContent>
                 </div>
               </Collapsible>
-            )
+            );
           })}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function CategoryColumns({
@@ -112,11 +112,11 @@ function CategoryColumns({
   config,
   onChange,
 }: {
-  type: ResultType
-  config: SearchCategoryConfig
-  onChange: (type: ResultType, config: SearchCategoryConfig) => void
+  type: ResultType;
+  config: SearchCategoryConfig;
+  onChange: (type: ResultType, config: SearchCategoryConfig) => void;
 }) {
-  const columnItems = useColumnItems(type)
+  const columnItems = useColumnItems(type);
   return (
     <div>
       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
@@ -125,12 +125,10 @@ function CategoryColumns({
       <SortableCheckboxList
         allItems={columnItems}
         checkedIds={config.visibleColumns}
-        onChangeOrder={(reordered) =>
-          onChange(type, { ...config, visibleColumns: reordered })
-        }
+        onChangeOrder={(reordered) => onChange(type, { ...config, visibleColumns: reordered })}
       />
     </div>
-  )
+  );
 }
 
 function CategoryFacets({
@@ -138,11 +136,11 @@ function CategoryFacets({
   config,
   onChange,
 }: {
-  type: ResultType
-  config: SearchCategoryConfig
-  onChange: (type: ResultType, config: SearchCategoryConfig) => void
+  type: ResultType;
+  config: SearchCategoryConfig;
+  onChange: (type: ResultType, config: SearchCategoryConfig) => void;
 }) {
-  const facetItems = useFacetItems(type)
+  const facetItems = useFacetItems(type);
   return (
     <div>
       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
@@ -151,10 +149,8 @@ function CategoryFacets({
       <SortableCheckboxList
         allItems={facetItems}
         checkedIds={config.visibleFacets}
-        onChangeOrder={(reordered) =>
-          onChange(type, { ...config, visibleFacets: reordered })
-        }
+        onChangeOrder={(reordered) => onChange(type, { ...config, visibleFacets: reordered })}
       />
     </div>
-  )
+  );
 }

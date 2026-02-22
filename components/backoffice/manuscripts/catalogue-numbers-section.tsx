@@ -1,58 +1,58 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
-import { useAuth } from '@/contexts/auth-context'
-import { toast } from 'sonner'
-import { Plus, Trash2, ExternalLink } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useState } from 'react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/auth-context';
+import { toast } from 'sonner';
+import { Plus, Trash2, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { InlineEdit } from '@/components/backoffice/common/inline-edit'
-import { getSources } from '@/services/backoffice/manuscripts'
+} from '@/components/ui/select';
+import { InlineEdit } from '@/components/backoffice/common/inline-edit';
+import { getSources } from '@/services/backoffice/manuscripts';
 import {
   createCatalogueNumber,
   updateCatalogueNumber,
   deleteCatalogueNumber,
-} from '@/services/backoffice/manuscripts'
-import { backofficeKeys } from '@/lib/backoffice/query-keys'
-import { formatApiError } from '@/lib/backoffice/format-api-error'
-import type { CatalogueNumber } from '@/types/backoffice'
+} from '@/services/backoffice/manuscripts';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { formatApiError } from '@/lib/backoffice/format-api-error';
+import type { CatalogueNumber } from '@/types/backoffice';
 
 interface CatalogueNumbersSectionProps {
-  historicalItemId: number
-  catalogueNumbers: CatalogueNumber[]
+  historicalItemId: number;
+  catalogueNumbers: CatalogueNumber[];
 }
 
 export function CatalogueNumbersSection({
   historicalItemId,
   catalogueNumbers,
 }: CatalogueNumbersSectionProps) {
-  const { token } = useAuth()
-  const queryClient = useQueryClient()
-  const [adding, setAdding] = useState(false)
-  const [newCatalogue, setNewCatalogue] = useState('')
-  const [newNumber, setNewNumber] = useState('')
-  const [newUrl, setNewUrl] = useState('')
-  const [editingSourceId, setEditingSourceId] = useState<number | null>(null)
-  const [editSourceValue, setEditSourceValue] = useState('')
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+  const [adding, setAdding] = useState(false);
+  const [newCatalogue, setNewCatalogue] = useState('');
+  const [newNumber, setNewNumber] = useState('');
+  const [newUrl, setNewUrl] = useState('');
+  const [editingSourceId, setEditingSourceId] = useState<number | null>(null);
+  const [editSourceValue, setEditSourceValue] = useState('');
 
   const { data: sources } = useQuery({
     queryKey: backofficeKeys.sources.all(),
     queryFn: () => getSources(token!),
     enabled: !!token,
-  })
+  });
 
   const invalidate = () =>
     queryClient.invalidateQueries({
       queryKey: backofficeKeys.manuscripts.detail(historicalItemId),
-    })
+    });
 
   const createMut = useMutation({
     mutationFn: () =>
@@ -63,88 +63,83 @@ export function CatalogueNumbersSection({
         url: newUrl || null,
       }),
     onSuccess: () => {
-      toast.success('Catalogue number added')
-      invalidate()
-      setAdding(false)
-      setNewCatalogue('')
-      setNewNumber('')
-      setNewUrl('')
+      toast.success('Catalogue number added');
+      invalidate();
+      setAdding(false);
+      setNewCatalogue('');
+      setNewNumber('');
+      setNewUrl('');
     },
     onError: (err) => {
       toast.error('Failed to add catalogue number', {
         description: formatApiError(err),
-      })
+      });
     },
-  })
+  });
 
   const updateMut = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       updateCatalogueNumber(token!, id, data),
     onSuccess: () => {
-      toast.success('Catalogue number updated')
-      invalidate()
-      setEditingSourceId(null)
+      toast.success('Catalogue number updated');
+      invalidate();
+      setEditingSourceId(null);
     },
     onError: (err) => {
       toast.error('Failed to update catalogue number', {
         description: formatApiError(err),
-      })
+      });
     },
-  })
+  });
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteCatalogueNumber(token!, id),
     onSuccess: () => {
-      toast.success('Catalogue number removed')
-      invalidate()
+      toast.success('Catalogue number removed');
+      invalidate();
     },
     onError: (err) => {
       toast.error('Failed to remove catalogue number', {
         description: formatApiError(err),
-      })
+      });
     },
-  })
+  });
 
   return (
-    <div className='space-y-3'>
-      <div className='flex items-center justify-between'>
-        <h3 className='text-sm font-medium'>Catalogue Numbers</h3>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium">Catalogue Numbers</h3>
         <Button
-          variant='outline'
-          size='sm'
-          className='h-7 gap-1 text-xs'
+          variant="outline"
+          size="sm"
+          className="h-7 gap-1 text-xs"
           onClick={() => setAdding(true)}
         >
-          <Plus className='h-3 w-3' />
+          <Plus className="h-3 w-3" />
           Add
         </Button>
       </div>
 
       {catalogueNumbers.length === 0 && !adding ? (
-        <p className='text-sm text-muted-foreground py-2'>
-          No catalogue numbers
-        </p>
+        <p className="text-sm text-muted-foreground py-2">No catalogue numbers</p>
       ) : (
-        <div className='rounded-md border divide-y'>
+        <div className="rounded-md border divide-y">
           {catalogueNumbers.map((cn) => (
-            <div
-              key={cn.id}
-              className='flex items-center gap-3 px-3 py-2 text-sm min-w-0'
-            >
+            <div key={cn.id} className="flex items-center gap-3 px-3 py-2 text-sm min-w-0">
               {/* Catalogue source – click-to-edit dropdown */}
-              <div className='w-28 shrink-0'>
+              <div className="w-28 shrink-0">
                 {editingSourceId === cn.id ? (
                   <Select
                     value={editSourceValue}
                     onValueChange={(val) => {
-                      setEditSourceValue(val)
+                      setEditSourceValue(val);
                       updateMut.mutate({
                         id: cn.id,
                         data: { catalogue: Number(val) },
-                      })
+                      });
                     }}
                   >
-                    <SelectTrigger className='h-7 text-xs'>
+                    <SelectTrigger className="h-7 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -157,11 +152,11 @@ export function CatalogueNumbersSection({
                   </Select>
                 ) : (
                   <button
-                    type='button'
-                    className='group inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors'
+                    type="button"
+                    className="group inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
                     onClick={() => {
-                      setEditingSourceId(cn.id)
-                      setEditSourceValue(String(cn.catalogue))
+                      setEditingSourceId(cn.id);
+                      setEditSourceValue(String(cn.catalogue));
                     }}
                   >
                     {cn.catalogue_label}
@@ -170,32 +165,32 @@ export function CatalogueNumbersSection({
               </div>
 
               {/* Number – inline edit */}
-              <div className='min-w-0 shrink'>
+              <div className="min-w-0 shrink">
                 <InlineEdit
                   value={cn.number}
                   onSave={async (number) => {
-                    await updateMut.mutateAsync({ id: cn.id, data: { number } })
+                    await updateMut.mutateAsync({ id: cn.id, data: { number } });
                   }}
                 />
               </div>
 
               {/* URL – inline edit */}
-              <div className='min-w-0 max-w-52'>
+              <div className="min-w-0 max-w-52">
                 <InlineEdit
                   value={cn.url ?? ''}
-                  placeholder='Add URL...'
-                  className='max-w-full'
+                  placeholder="Add URL..."
+                  className="max-w-full"
                   onSave={async (url) => {
                     await updateMut.mutateAsync({
                       id: cn.id,
                       data: { url: url || null },
-                    })
+                    });
                   }}
                   renderValue={(v) =>
                     v ? (
-                      <span className='inline-flex items-center gap-1 text-xs text-primary min-w-0'>
-                        <ExternalLink className='h-3 w-3 shrink-0' />
-                        <span className='truncate'>{v}</span>
+                      <span className="inline-flex items-center gap-1 text-xs text-primary min-w-0">
+                        <ExternalLink className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{v}</span>
                       </span>
                     ) : undefined
                   }
@@ -203,25 +198,22 @@ export function CatalogueNumbersSection({
               </div>
 
               <Button
-                variant='ghost'
-                size='icon'
-                className='h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive'
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
                 onClick={() => deleteMut.mutate(cn.id)}
               >
-                <Trash2 className='h-3 w-3' />
+                <Trash2 className="h-3 w-3" />
               </Button>
             </div>
           ))}
 
           {adding && (
-            <div className='flex items-end gap-2 p-3'>
-              <div className='w-32'>
-                <Select
-                  value={newCatalogue}
-                  onValueChange={setNewCatalogue}
-                >
-                  <SelectTrigger className='h-8 text-sm'>
-                    <SelectValue placeholder='Source' />
+            <div className="flex items-end gap-2 p-3">
+              <div className="w-32">
+                <Select value={newCatalogue} onValueChange={setNewCatalogue}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="Source" />
                   </SelectTrigger>
                   <SelectContent>
                     {(sources ?? []).map((s) => (
@@ -235,29 +227,24 @@ export function CatalogueNumbersSection({
               <Input
                 value={newNumber}
                 onChange={(e) => setNewNumber(e.target.value)}
-                placeholder='Number'
-                className='h-8 text-sm flex-1'
+                placeholder="Number"
+                className="h-8 text-sm flex-1"
               />
               <Input
                 value={newUrl}
                 onChange={(e) => setNewUrl(e.target.value)}
-                placeholder='URL (optional)'
-                className='h-8 text-sm flex-1'
+                placeholder="URL (optional)"
+                className="h-8 text-sm flex-1"
               />
               <Button
-                size='sm'
-                className='h-8'
+                size="sm"
+                className="h-8"
                 onClick={() => createMut.mutate()}
                 disabled={!newCatalogue || !newNumber || createMut.isPending}
               >
                 Save
               </Button>
-              <Button
-                variant='outline'
-                size='sm'
-                className='h-8'
-                onClick={() => setAdding(false)}
-              >
+              <Button variant="outline" size="sm" className="h-8" onClick={() => setAdding(false)}>
                 Cancel
               </Button>
             </div>
@@ -265,5 +252,5 @@ export function CatalogueNumbersSection({
         </div>
       )}
     </div>
-  )
+  );
 }

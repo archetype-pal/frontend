@@ -1,45 +1,45 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { fetchFacetsAndResults } from '@/utils/fetch-facets'
-import { buildApiUrl, DEFAULT_QUERY, getSuggestionsPool } from '@/lib/search-query'
-import { API_BASE_URL } from '@/lib/api-fetch'
+import * as React from 'react';
+import { fetchFacetsAndResults } from '@/utils/fetch-facets';
+import { buildApiUrl, DEFAULT_QUERY, getSuggestionsPool } from '@/lib/search-query';
+import { API_BASE_URL } from '@/lib/api-fetch';
 
 type SearchContextType = {
-  keyword: string
-  setKeyword: (value: string) => void
-  suggestionsPool: string[]
-  setSuggestionsPool: (pool: string[]) => void
+  keyword: string;
+  setKeyword: (value: string) => void;
+  suggestionsPool: string[];
+  setSuggestionsPool: (pool: string[]) => void;
   /** Load a suggestions pool from the API so header autocomplete works from any page. */
-  loadGlobalSuggestions: () => Promise<void>
-}
+  loadGlobalSuggestions: () => Promise<void>;
+};
 
-const SearchContext = React.createContext<SearchContextType | undefined>(undefined)
+const SearchContext = React.createContext<SearchContextType | undefined>(undefined);
 
 export function SearchProvider({ children }: { children: React.ReactNode }) {
-  const [keyword, setKeyword] = React.useState('')
-  const [suggestionsPool, setSuggestionsPool] = React.useState<string[]>([])
+  const [keyword, setKeyword] = React.useState('');
+  const [suggestionsPool, setSuggestionsPool] = React.useState<string[]>([]);
 
   const loadGlobalSuggestions = React.useCallback(async () => {
-    const base = `${API_BASE_URL}/api/v1/search/item-parts/facets`
-    const url = buildApiUrl(base, { ...DEFAULT_QUERY, limit: 100 })
-    const resp = await fetchFacetsAndResults('manuscripts', url)
+    const base = `${API_BASE_URL}/api/v1/search/item-parts/facets`;
+    const url = buildApiUrl(base, { ...DEFAULT_QUERY, limit: 100 });
+    const resp = await fetchFacetsAndResults('manuscripts', url);
     if (resp.ok && Array.isArray(resp.results)) {
-      setSuggestionsPool(getSuggestionsPool(resp.results))
+      setSuggestionsPool(getSuggestionsPool(resp.results));
     }
-  }, [])
+  }, []);
 
   const value = React.useMemo(
     () => ({ keyword, setKeyword, suggestionsPool, setSuggestionsPool, loadGlobalSuggestions }),
     [keyword, suggestionsPool, loadGlobalSuggestions]
-  )
-  return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>
+  );
+  return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>;
 }
 
 export function useSearchContext() {
-  const ctx = React.useContext(SearchContext)
+  const ctx = React.useContext(SearchContext);
   if (ctx === undefined) {
-    throw new Error('useSearchContext must be used within a SearchProvider')
+    throw new Error('useSearchContext must be used within a SearchProvider');
   }
-  return ctx
+  return ctx;
 }

@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import NextImage from 'next/image'
-import type { LightboxImage } from '@/lib/lightbox-db'
-import { cn } from '@/lib/utils'
+import * as React from 'react';
+import NextImage from 'next/image';
+import type { LightboxImage } from '@/lib/lightbox-db';
+import { cn } from '@/lib/utils';
 
 interface LightboxAnnotationsProps {
-  image: LightboxImage
+  image: LightboxImage;
 }
 
 /**
@@ -35,9 +35,9 @@ export function LightboxAnnotations({ image }: LightboxAnnotationsProps) {
           'absolute inset-x-0 bottom-0 bg-black/70 text-white text-xs px-3 py-2 text-center'
         )}
       >
-        Annotations are not available in the lightbox. Use the manuscript viewer
-        for full zoom and annotation support.
+        Annotations are not available in the lightbox. Use the manuscript viewer for full zoom and
+        annotation support.
       </div>
     </div>
-  )
+  );
 }

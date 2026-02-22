@@ -1,20 +1,20 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import type { ImageListItem } from '@/types/image'
-import type { GraphListItem } from '@/types/graph'
-import { getIiifImageUrl } from '@/utils/iiif'
-import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail'
-import { Highlight } from './highlight'
-import { CollectionStar } from '@/components/collection/collection-star'
-import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button'
+import * as React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import type { ImageListItem } from '@/types/image';
+import type { GraphListItem } from '@/types/graph';
+import { getIiifImageUrl } from '@/utils/iiif';
+import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
+import { Highlight } from './highlight';
+import { CollectionStar } from '@/components/collection/collection-star';
+import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 
 export interface SearchGridProps {
-  results?: (ImageListItem | GraphListItem)[]
-  resultType: string
-  highlightKeyword?: string
+  results?: (ImageListItem | GraphListItem)[];
+  resultType: string;
+  highlightKeyword?: string;
 }
 
 function GraphGridCard({
@@ -23,13 +23,13 @@ function GraphGridCard({
   displayText,
   highlightKeyword,
 }: {
-  item: GraphListItem
-  detailUrl: string
-  displayText: string
-  highlightKeyword: string
+  item: GraphListItem;
+  detailUrl: string;
+  displayText: string;
+  highlightKeyword: string;
 }) {
-  const infoUrl = (item.image_iiif || '').trim()
-  const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates)
+  const infoUrl = (item.image_iiif || '').trim();
+  const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates);
 
   return (
     <div className="relative overflow-hidden group">
@@ -58,36 +58,35 @@ function GraphGridCard({
           </div>
         )}
         <div className="absolute top-2 right-2 z-30 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <OpenLightboxButton item={item} variant="ghost" size="icon" className="bg-white/90 hover:bg-white h-7 w-7" />
+          <OpenLightboxButton
+            item={item}
+            variant="ghost"
+            size="icon"
+            className="bg-white/90 hover:bg-white h-7 w-7"
+          />
           <CollectionStar itemId={item.id} itemType="graph" item={item} />
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export function SearchGrid({
-  results = [],
-  resultType,
-  highlightKeyword = '',
-}: SearchGridProps) {
+export function SearchGrid({ results = [], resultType, highlightKeyword = '' }: SearchGridProps) {
   if (!results.length) {
-    return (
-      <div className="text-center text-gray-500 py-10">
-        No results to display.
-      </div>
-    )
+    return <div className="text-center text-gray-500 py-10">No results to display.</div>;
   }
 
   return (
     <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
       {results.map((item) => {
-        const isImage = resultType === 'images'
-        const isGraph = resultType === 'graphs'
-        const img = item as ImageListItem
-        const graph = item as GraphListItem
-        const detailUrl = resultType === 'images' ? `/digipal/${item.id}` : `/${resultType}/${item.id}`
-        const displayText = (item as ImageListItem).locus || (item as GraphListItem).shelfmark || 'Untitled'
+        const isImage = resultType === 'images';
+        const isGraph = resultType === 'graphs';
+        const img = item as ImageListItem;
+        const graph = item as GraphListItem;
+        const detailUrl =
+          resultType === 'images' ? `/digipal/${item.id}` : `/${resultType}/${item.id}`;
+        const displayText =
+          (item as ImageListItem).locus || (item as GraphListItem).shelfmark || 'Untitled';
 
         if (isGraph && graph.image_iiif) {
           return (
@@ -98,17 +97,21 @@ export function SearchGrid({
               displayText={displayText}
               highlightKeyword={highlightKeyword}
             />
-          )
+          );
         }
 
-        const imageUrl = isImage && img.image_iiif ? getIiifImageUrl(img.image_iiif, { thumbnail: true }) : null
+        const imageUrl =
+          isImage && img.image_iiif ? getIiifImageUrl(img.image_iiif, { thumbnail: true }) : null;
 
         return (
           <div key={item.id} className="relative overflow-hidden group">
             <div className="relative aspect-[4/3] bg-white overflow-hidden">
               {imageUrl ? (
                 <>
-                  <Link href={detailUrl} className="block w-full h-full relative z-0 pointer-events-auto">
+                  <Link
+                    href={detailUrl}
+                    className="block w-full h-full relative z-0 pointer-events-auto"
+                  >
                     <Image
                       src={imageUrl}
                       alt={displayText}
@@ -138,13 +141,20 @@ export function SearchGrid({
                 </div>
               )}
               <div className="absolute top-2 right-2 z-30 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <OpenLightboxButton item={item} variant="ghost" size="icon" className="bg-white/90 hover:bg-white h-7 w-7" />
-                {resultType === 'images' && <CollectionStar itemId={item.id} itemType="image" item={item} />}
+                <OpenLightboxButton
+                  item={item}
+                  variant="ghost"
+                  size="icon"
+                  className="bg-white/90 hover:bg-white h-7 w-7"
+                />
+                {resultType === 'images' && (
+                  <CollectionStar itemId={item.id} itemType="image" item={item} />
+                )}
               </div>
             </div>
           </div>
-        )
+        );
       })}
     </section>
-  )
+  );
 }

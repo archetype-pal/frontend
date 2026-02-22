@@ -10,7 +10,12 @@
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "analyze": "ANALYZE=true next build"
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "analyze": "ANALYZE=true next build",
+    "audit": "pnpm audit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@annotorious/react": "^3.7.19",
@@ -70,9 +75,13 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.1.6",
+    "eslint-config-prettier": "^10.1.5",
+    "prettier": "^3.5.3",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
+    "jsdom": "^26.0.0"
   },
   "engines": {
     "node": ">=25.0.0",

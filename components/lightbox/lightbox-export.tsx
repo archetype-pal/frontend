@@ -1,182 +1,181 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { useState } from 'react'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import {
-  Download,
-  FileText,
-  Image as ImageIcon,
-  X,
-  FileJson,
-} from 'lucide-react'
-import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store'
-import type { LightboxImage } from '@/lib/lightbox-db'
+import * as React from 'react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Download, FileText, Image as ImageIcon, X, FileJson } from 'lucide-react';
+import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store';
+import type { LightboxImage } from '@/lib/lightbox-db';
 
 interface LightboxExportProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 export function LightboxExport({ onClose }: LightboxExportProps) {
-  const { currentWorkspaceId, workspaces } = useLightboxStore()
-  const workspaceImages = useWorkspaceImages()
-  const [exportFormat, setExportFormat] = useState<'pdf' | 'image' | 'json' | 'tei'>('pdf')
-  const [isExporting, setIsExporting] = useState(false)
+  const { currentWorkspaceId, workspaces } = useLightboxStore();
+  const workspaceImages = useWorkspaceImages();
+  const [exportFormat, setExportFormat] = useState<'pdf' | 'image' | 'json' | 'tei'>('pdf');
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
-    setIsExporting(true)
+    setIsExporting(true);
     try {
       if (!currentWorkspaceId) {
-        toast.error('No workspace selected')
-        return
+        toast.error('No workspace selected');
+        return;
       }
 
       switch (exportFormat) {
         case 'pdf':
-          await exportAsPDF(workspaceImages)
-          break
+          await exportAsPDF(workspaceImages);
+          break;
         case 'image':
-          await exportAsImage(workspaceImages)
-          break
+          await exportAsImage(workspaceImages);
+          break;
         case 'json':
-          await exportAsJSON(workspaceImages)
-          break
+          await exportAsJSON(workspaceImages);
+          break;
         case 'tei':
-          await exportAsTEI(workspaceImages)
-          break
+          await exportAsTEI(workspaceImages);
+          break;
       }
     } catch (error) {
-      console.error('Export failed:', error)
-      toast.error('Export failed. Please try again.')
+      console.error('Export failed:', error);
+      toast.error('Export failed. Please try again.');
     } finally {
-      setIsExporting(false)
-      onClose()
+      setIsExporting(false);
+      onClose();
     }
-  }
+  };
 
   const exportAsPDF = async (workspaceImages: LightboxImage[]) => {
     if (workspaceImages.length === 0) {
-      toast.error('No images to export')
-      return
+      toast.error('No images to export');
+      return;
     }
 
     // Ensure we're in browser
     if (typeof window === 'undefined' || typeof document === 'undefined') {
-      toast.error('PDF export is only available in the browser')
-      return
+      toast.error('PDF export is only available in the browser');
+      return;
     }
 
     try {
       // Lazy load jsPDF only when needed (client-side only)
-      const jsPDFModule = await import('jspdf')
-      type JsPDFConstructor = new (opts?: { orientation?: string; unit?: string; format?: string }) => {
-        addPage: () => void
-        addImage: (img: string, format: string, x: number, y: number, w: number, h: number) => void
-        setFontSize: (n: number) => void
-        text: (text: string, x: number, y: number) => void
-        save: (name: string) => void
-        internal: { pageSize: { getWidth: () => number; getHeight: () => number } }
-      }
-      const JsPDF = ((jsPDFModule as unknown as { default?: JsPDFConstructor }).default ?? jsPDFModule) as JsPDFConstructor
+      const jsPDFModule = await import('jspdf');
+      type JsPDFConstructor = new (opts?: {
+        orientation?: string;
+        unit?: string;
+        format?: string;
+      }) => {
+        addPage: () => void;
+        addImage: (img: string, format: string, x: number, y: number, w: number, h: number) => void;
+        setFontSize: (n: number) => void;
+        text: (text: string, x: number, y: number) => void;
+        save: (name: string) => void;
+        internal: { pageSize: { getWidth: () => number; getHeight: () => number } };
+      };
+      const JsPDF = ((jsPDFModule as unknown as { default?: JsPDFConstructor }).default ??
+        jsPDFModule) as JsPDFConstructor;
 
       const pdf = new JsPDF({
         orientation: 'landscape',
         unit: 'mm',
         format: 'a4',
-      })
+      });
 
-      const pageWidth = pdf.internal.pageSize.getWidth()
-      const pageHeight = pdf.internal.pageSize.getHeight()
-      const margin = 10
-      const imageWidth = pageWidth - 2 * margin
-      const imageHeight = pageHeight - 2 * margin
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const imageWidth = pageWidth - 2 * margin;
+      const imageHeight = pageHeight - 2 * margin;
 
       for (let i = 0; i < workspaceImages.length; i++) {
         if (i > 0) {
-          pdf.addPage()
+          pdf.addPage();
         }
 
-        const image = workspaceImages[i]
-        if (!image.imageUrl) continue
+        const image = workspaceImages[i];
+        if (!image.imageUrl) continue;
 
         try {
           // Fetch image and convert to base64
-          const response = await fetch(image.imageUrl)
-          const blob = await response.blob()
-          const reader = new FileReader()
-          
+          const response = await fetch(image.imageUrl);
+          const blob = await response.blob();
+          const reader = new FileReader();
+
           await new Promise<void>((resolve, reject) => {
             reader.onload = () => {
               try {
-                const base64 = reader.result as string
-                pdf.addImage(base64, 'JPEG', margin, margin, imageWidth, imageHeight)
-                
+                const base64 = reader.result as string;
+                pdf.addImage(base64, 'JPEG', margin, margin, imageWidth, imageHeight);
+
                 // Add metadata
-                pdf.setFontSize(10)
+                pdf.setFontSize(10);
                 pdf.text(
                   image.metadata.shelfmark || image.metadata.locus || 'Image',
                   margin,
                   pageHeight - 5
-                )
-                resolve()
+                );
+                resolve();
               } catch (err) {
-                reject(err)
+                reject(err);
               }
-            }
-            reader.onerror = reject
-            reader.readAsDataURL(blob)
-          })
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
         } catch (err) {
-          console.error(`Failed to add image ${i + 1}:`, err)
+          console.error(`Failed to add image ${i + 1}:`, err);
         }
       }
 
-      pdf.save(`lightbox-export-${Date.now()}.pdf`)
+      pdf.save(`lightbox-export-${Date.now()}.pdf`);
     } catch (error) {
-      console.error('PDF export failed:', error)
-      toast.error('Failed to export PDF. Please try again.')
+      console.error('PDF export failed:', error);
+      toast.error('Failed to export PDF. Please try again.');
     }
-  }
+  };
 
   const exportAsImage = async (workspaceImages: LightboxImage[]) => {
     if (workspaceImages.length === 0) {
-      toast.error('No images to export')
-      return
+      toast.error('No images to export');
+      return;
     }
 
     // Export first selected image or first image in workspace
-    const image = workspaceImages[0]
+    const image = workspaceImages[0];
     if (!image.imageUrl) {
-      toast.error('Image URL not available')
-      return
+      toast.error('Image URL not available');
+      return;
     }
 
     try {
-      const response = await fetch(image.imageUrl)
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${image.metadata.shelfmark || 'image'}-${image.id}.jpg`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      const response = await fetch(image.imageUrl);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${image.metadata.shelfmark || 'image'}-${image.id}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Image export failed:', error)
-      toast.error('Failed to export image')
+      console.error('Image export failed:', error);
+      toast.error('Failed to export image');
     }
-  }
+  };
 
   const exportAsJSON = async (workspaceImages: LightboxImage[]) => {
-    const workspace = workspaces.find((w) => w.id === currentWorkspaceId)
-    const { getImageAnnotations } = await import('@/lib/lightbox-db')
-    
+    const workspace = workspaces.find((w) => w.id === currentWorkspaceId);
+    const { getImageAnnotations } = await import('@/lib/lightbox-db');
+
     // Include annotations if available
     const imagesWithAnnotations = await Promise.all(
       workspaceImages.map(async (img) => {
-        const annotations = await getImageAnnotations(img.id)
+        const annotations = await getImageAnnotations(img.id);
         return {
           id: img.id,
           originalId: img.originalId,
@@ -188,33 +187,33 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
           size: img.size,
           transform: img.transform,
           annotations: annotations.map((a) => a.annotation),
-        }
+        };
       })
-    )
-    
+    );
+
     const exportData = {
       workspace: workspace ? { id: workspace.id, name: workspace.name } : null,
       images: imagesWithAnnotations,
       exportedAt: new Date().toISOString(),
       version: '1.0',
-    }
+    };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
       type: 'application/json',
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `lightbox-export-${Date.now()}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lightbox-export-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const exportAsTEI = async (workspaceImages: LightboxImage[]) => {
-    const { getImageAnnotations } = await import('@/lib/lightbox-db')
-    
+    const { getImageAnnotations } = await import('@/lib/lightbox-db');
+
     // Basic TEI XML export structure with annotations
     const teiHeader = `<?xml version="1.0" encoding="UTF-8"?>
 <TEI xmlns="http://www.tei-c.org/ns/1.0">
@@ -232,43 +231,46 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
     </fileDesc>
   </teiHeader>
   <facsimile>
-`
+`;
 
     const surfaceElements = await Promise.all(
       workspaceImages.map(async (img) => {
-        const annotations = await getImageAnnotations(img.id)
+        const annotations = await getImageAnnotations(img.id);
         const annotationElements = annotations
           .map((ann) => {
-            const a = ann.annotation as { target?: { selector?: { value?: string } }; body?: Array<{ value?: string }> }
+            const a = ann.annotation as {
+              target?: { selector?: { value?: string } };
+              body?: Array<{ value?: string }>;
+            };
             return `      <zone>
         <graphic url="${a.target?.selector?.value ?? ''}"/>
         <note>${a.body?.[0]?.value ?? ''}</note>
-      </zone>`
+      </zone>`;
           })
-          .join('\n')
-        
+          .join('\n');
+
         return `    <surface>
       <graphic url="${img.imageUrl}"/>
       <desc>${img.metadata.shelfmark || img.metadata.locus || 'Image'}</desc>
-${annotationElements ? annotationElements + '\n' : ''}    </surface>`
+${annotationElements ? annotationElements + '\n' : ''}    </surface>`;
       })
-    )
+    );
 
     const teiFooter = `  </facsimile>
-</TEI>`
+</TEI>`;
 
-    const teiContent = teiHeader + surfaceElements.join('\n') + '\n' + teiFooter
+    const teiContent = teiHeader + surfaceElements.join('\n') + '\n' + teiFooter;
 
-    const blob = new Blob([teiContent], { type: 'application/xml' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `lightbox-export-${Date.now()}.xml`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
+    const blob = new Blob([teiContent], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lightbox-export-${Date.now()}.xml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
@@ -345,5 +347,5 @@ ${annotationElements ? annotationElements + '\n' : ''}    </surface>`
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { Button } from '@/components/ui/button'
-import { AlertCircle } from 'lucide-react'
+import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 
 interface LightboxErrorBoundaryProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 interface LightboxErrorBoundaryState {
-  hasError: boolean
-  error: Error | null
+  hasError: boolean;
+  error: Error | null;
 }
 
 export class LightboxErrorBoundary extends React.Component<
@@ -18,16 +18,16 @@ export class LightboxErrorBoundary extends React.Component<
   LightboxErrorBoundaryState
 > {
   constructor(props: LightboxErrorBoundaryProps) {
-    super(props)
-    this.state = { hasError: false, error: null }
+    super(props);
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error): LightboxErrorBoundaryState {
-    return { hasError: true, error }
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Lightbox error:', error, errorInfo)
+    console.error('Lightbox error:', error, errorInfo);
   }
 
   render() {
@@ -42,17 +42,17 @@ export class LightboxErrorBoundary extends React.Component<
             </p>
             <Button
               onClick={() => {
-                this.setState({ hasError: false, error: null })
-                window.location.reload()
+                this.setState({ hasError: false, error: null });
+                window.location.reload();
               }}
             >
               Reload Page
             </Button>
           </div>
         </div>
-      )
+      );
     }
 
-    return this.props.children
+    return this.props.children;
   }
 }

@@ -1,11 +1,11 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { Button } from '@/components/ui/button'
-import { resultTypeItems, type ResultType } from '@/lib/search-types'
+import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import { resultTypeItems, type ResultType } from '@/lib/search-types';
 
-export type { ResultType }
-export { resultTypeItems }
+export type { ResultType };
+export { resultTypeItems };
 
 export function ResultTypeToggle({
   selectedType,
@@ -13,22 +13,18 @@ export function ResultTypeToggle({
   compact,
   enabledTypes,
 }: {
-  selectedType: ResultType
-  onChange: (next: ResultType) => void
-  compact?: boolean
-  enabledTypes?: ResultType[]
+  selectedType: ResultType;
+  onChange: (next: ResultType) => void;
+  compact?: boolean;
+  enabledTypes?: ResultType[];
 }) {
   const items = enabledTypes
     ? resultTypeItems.filter((i) => enabledTypes.includes(i.value))
-    : resultTypeItems
+    : resultTypeItems;
 
   return (
     <div
-      className={
-        compact
-          ? 'flex w-full gap-1.5 my-0'
-          : 'flex flex-wrap gap-2 my-3'
-      }
+      className={compact ? 'flex w-full gap-1.5 my-0' : 'flex flex-wrap gap-2 my-3'}
       role="tablist"
       aria-label="Search result type"
     >
@@ -47,5 +43,5 @@ export function ResultTypeToggle({
         </Button>
       ))}
     </div>
-  )
+  );
 }

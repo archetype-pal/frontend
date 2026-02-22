@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { useLightboxStore } from '@/stores/lightbox-store'
+import * as React from 'react';
+import { useLightboxStore } from '@/stores/lightbox-store';
 
-const GRID_SIZE = 24
+const GRID_SIZE = 24;
 
 export function LightboxGridOverlay() {
-  const { showGrid } = useLightboxStore()
+  const { showGrid } = useLightboxStore();
 
-  if (!showGrid) return null
+  if (!showGrid) return null;
 
   return (
     <svg
@@ -34,5 +34,5 @@ export function LightboxGridOverlay() {
       </defs>
       <rect width="100%" height="100%" fill="url(#lightbox-grid)" />
     </svg>
-  )
+  );
 }

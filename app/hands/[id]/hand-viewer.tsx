@@ -1,32 +1,48 @@
-'use client'
+'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import Image from 'next/image'
-import Link from 'next/link'
-import { getIiifImageUrl } from '@/utils/iiif'
-import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail'
-import { useTabNavigation } from '@/hooks/use-tab-navigation'
-import type { HandDetail, HandImage, HandScribe, HandManuscript, HandGraph } from '@/types/hand-detail'
-import type { BackendGraph } from '@/services/annotations'
-import type { Allograph } from '@/types/allographs'
-import { BookOpen, Calendar, MapPin, PenTool, User, FileText, ImageIcon, Grid3X3, Loader2 } from 'lucide-react'
-import { apiFetch } from '@/lib/api-fetch'
-import { sanitizeHtml } from '@/lib/sanitize-html'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Image from 'next/image';
+import Link from 'next/link';
+import { getIiifImageUrl } from '@/utils/iiif';
+import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
+import { useTabNavigation } from '@/hooks/use-tab-navigation';
+import type {
+  HandDetail,
+  HandImage,
+  HandScribe,
+  HandManuscript,
+  HandGraph,
+} from '@/types/hand-detail';
+import type { BackendGraph } from '@/services/annotations';
+import type { Allograph } from '@/types/allographs';
+import {
+  BookOpen,
+  Calendar,
+  MapPin,
+  PenTool,
+  User,
+  FileText,
+  ImageIcon,
+  Grid3X3,
+  Loader2,
+} from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 
-const TAB_VALUES = ['information', 'description', 'images', 'graphs'] as const
-const DEFAULT_TAB = 'information'
+const TAB_VALUES = ['information', 'description', 'images', 'graphs'] as const;
+const DEFAULT_TAB = 'information';
 
 interface HandViewerProps {
-  hand: HandDetail
-  images: HandImage[]
-  scribe: HandScribe | null
-  manuscript: HandManuscript | null
+  hand: HandDetail;
+  images: HandImage[];
+  scribe: HandScribe | null;
+  manuscript: HandManuscript | null;
 }
 
 /** A single graph thumbnail that resolves its IIIF crop URL. */
 function GraphThumbnail({ graph }: { graph: HandGraph }) {
-  const imageUrl = useIiifThumbnailUrl(graph.image_iiif, graph.coordinates)
+  const imageUrl = useIiifThumbnailUrl(graph.image_iiif, graph.coordinates);
 
   return (
     <div className="relative w-20 h-20 border rounded bg-white overflow-hidden group/thumb">
@@ -45,7 +61,7 @@ function GraphThumbnail({ graph }: { graph: HandGraph }) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ── Client-side graph fetching ──────────────────────────────────────
@@ -55,13 +71,13 @@ function enrichGraphs(
   allographs: Allograph[],
   images: HandImage[]
 ): HandGraph[] {
-  const allographMap = new Map(allographs.map((a) => [a.id, a.name]))
-  const imageMap = new Map(images.map((img) => [img.id, img.iiif_image]))
+  const allographMap = new Map(allographs.map((a) => [a.id, a.name]));
+  const imageMap = new Map(images.map((img) => [img.id, img.iiif_image]));
 
   return backendGraphs
     .map((g) => {
-      const iiifImage = imageMap.get(g.item_image)
-      if (!iiifImage) return null
+      const iiifImage = imageMap.get(g.item_image);
+      if (!iiifImage) return null;
 
       return {
         id: g.id,
@@ -69,27 +85,27 @@ function enrichGraphs(
         allograph_id: g.allograph,
         image_iiif: iiifImage.endsWith('/info.json') ? iiifImage : `${iiifImage}/info.json`,
         coordinates: JSON.stringify(g.annotation),
-      }
+      };
     })
-    .filter((g): g is HandGraph => g !== null)
+    .filter((g): g is HandGraph => g !== null);
 }
 
 type GraphsState =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'loaded'; graphs: HandGraph[] }
-  | { status: 'error' }
+  | { status: 'error' };
 
 function useHandGraphs(handId: number, images: HandImage[], enabled: boolean): GraphsState {
-  const [state, setState] = useState<GraphsState>({ status: 'idle' })
-  const fetchedRef = useRef(false)
+  const [state, setState] = useState<GraphsState>({ status: 'idle' });
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    if (!enabled || fetchedRef.current) return
-    fetchedRef.current = true
+    if (!enabled || fetchedRef.current) return;
+    fetchedRef.current = true;
 
-    const controller = new AbortController()
-    setState({ status: 'loading' }) // eslint-disable-line react-hooks/set-state-in-effect
+    const controller = new AbortController();
+    setState({ status: 'loading' }); // eslint-disable-line react-hooks/set-state-in-effect
 
     Promise.all([
       apiFetch(`/api/v1/manuscripts/graphs/?hand=${handId}`, {
@@ -102,58 +118,63 @@ function useHandGraphs(handId: number, images: HandImage[], enabled: boolean): G
       .then(([rawGraphs, allographs]) => {
         const graphsArr: BackendGraph[] = Array.isArray(rawGraphs)
           ? rawGraphs
-          : rawGraphs?.results ?? []
-        const graphs = enrichGraphs(graphsArr, allographs, images)
-        setState({ status: 'loaded', graphs })
+          : (rawGraphs?.results ?? []);
+        const graphs = enrichGraphs(graphsArr, allographs, images);
+        setState({ status: 'loaded', graphs });
       })
       .catch((err) => {
-        if (err?.name === 'AbortError') return
-        setState({ status: 'error' })
-      })
+        if (err?.name === 'AbortError') return;
+        setState({ status: 'error' });
+      });
 
-    return () => controller.abort()
-  }, [enabled, handId, images])
+    return () => controller.abort();
+  }, [enabled, handId, images]);
 
-  return state
+  return state;
 }
 
 // ── Main component ──────────────────────────────────────────────────
 
 export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps) {
-  const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB)
+  const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB);
 
   const manuscriptLabel =
-    manuscript?.display_label ??
-    manuscript?.current_item?.shelfmark ??
-    (hand.shelfmark || null)
+    manuscript?.display_label ?? manuscript?.current_item?.shelfmark ?? (hand.shelfmark || null);
 
   // Lazy-load graphs only when the Graphs tab is active
-  const graphsState = useHandGraphs(hand.id, images, activeTab === 'graphs')
+  const graphsState = useHandGraphs(hand.id, images, activeTab === 'graphs');
   const graphs = useMemo(
     () => (graphsState.status === 'loaded' ? graphsState.graphs : []),
     [graphsState]
-  )
+  );
 
   // Group graphs by allograph, preserving order of first appearance
   const graphGroups = useMemo(() => {
-    const groupMap = new Map<string, { allograph_id: number; allograph_name: string; graphs: HandGraph[] }>()
+    const groupMap = new Map<
+      string,
+      { allograph_id: number; allograph_name: string; graphs: HandGraph[] }
+    >();
     for (const g of graphs) {
-      const key = `${g.allograph_id}-${g.allograph_name}`
+      const key = `${g.allograph_id}-${g.allograph_name}`;
       if (!groupMap.has(key)) {
-        groupMap.set(key, { allograph_id: g.allograph_id, allograph_name: g.allograph_name, graphs: [] })
+        groupMap.set(key, {
+          allograph_id: g.allograph_id,
+          allograph_name: g.allograph_name,
+          graphs: [],
+        });
       }
-      groupMap.get(key)!.graphs.push(g)
+      groupMap.get(key)!.graphs.push(g);
     }
-    return Array.from(groupMap.values())
-  }, [graphs])
+    return Array.from(groupMap.values());
+  }, [graphs]);
 
   const scrollToAllograph = useCallback((allographId: number, allographName: string) => {
-    const key = `${allographId}-${allographName}`
-    const el = document.getElementById(`allograph-${key}`)
+    const key = `${allographId}-${allographName}`;
+    const el = document.getElementById(`allograph-${key}`);
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [])
+  }, []);
 
   return (
     <main className="container mx-auto p-4 max-w-6xl">
@@ -167,10 +188,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
             <>
               {' / '}
               {hand.item_part ? (
-                <Link
-                  href={`/manuscripts/${hand.item_part}`}
-                  className="hover:underline"
-                >
+                <Link href={`/manuscripts/${hand.item_part}`} className="hover:underline">
                   {manuscriptLabel}
                 </Link>
               ) : (
@@ -189,9 +207,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
         <TabsList className="bg-gray-100 p-1">
           <TabsTrigger value="information">Information</TabsTrigger>
           <TabsTrigger value="description">Description</TabsTrigger>
-          <TabsTrigger value="images">
-            Manuscript Images ({images.length})
-          </TabsTrigger>
+          <TabsTrigger value="images">Manuscript Images ({images.length})</TabsTrigger>
           <TabsTrigger value="graphs">
             Graphs{graphsState.status === 'loaded' ? ` (${graphs.length})` : ''}
           </TabsTrigger>
@@ -246,10 +262,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                     Scribe
                   </dt>
                   <dd className="text-sm">
-                    <Link
-                      href={`/scribes/${scribe.id}`}
-                      className="text-primary hover:underline"
-                    >
+                    <Link href={`/scribes/${scribe.id}`} className="text-primary hover:underline">
                       {scribe.name}
                       {scribe.period && (
                         <span className="text-muted-foreground">
@@ -331,7 +344,8 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                     <div className="mt-3 text-center">
                       <p className="text-sm font-medium">{image.locus}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {image.number_of_annotations} Annotation{image.number_of_annotations !== 1 ? 's' : ''}
+                        {image.number_of_annotations} Annotation
+                        {image.number_of_annotations !== 1 ? 's' : ''}
                       </p>
                     </div>
                   </div>
@@ -386,13 +400,9 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
               {/* Allograph sections */}
               <div className="space-y-8">
                 {graphGroups.map((group) => {
-                  const key = `${group.allograph_id}-${group.allograph_name}`
+                  const key = `${group.allograph_id}-${group.allograph_name}`;
                   return (
-                    <section
-                      key={key}
-                      id={`allograph-${key}`}
-                      className="scroll-mt-4"
-                    >
+                    <section key={key} id={`allograph-${key}`} className="scroll-mt-4">
                       <div className="border-b pb-2 mb-4">
                         <h4 className="text-base font-semibold">{group.allograph_name}</h4>
                       </div>
@@ -402,7 +412,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                         ))}
                       </div>
                     </section>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -417,5 +427,5 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
         </TabsContent>
       </Tabs>
     </main>
-  )
+  );
 }

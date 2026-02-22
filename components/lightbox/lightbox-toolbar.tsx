@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { Button } from '@/components/ui/button'
+import * as React from 'react';
+import { Button } from '@/components/ui/button';
 import {
   ZoomIn,
   ZoomOut,
@@ -21,19 +21,19 @@ import {
   Upload,
   Undo2,
   Redo2,
-} from 'lucide-react'
-import { useLightboxStore, useSelectedImages } from '@/stores/lightbox-store'
-import { LightboxTransformPanel } from './lightbox-transform-panel'
+} from 'lucide-react';
+import { useLightboxStore, useSelectedImages } from '@/stores/lightbox-store';
+import { LightboxTransformPanel } from './lightbox-transform-panel';
 
 interface LightboxToolbarProps {
-  onCrop?: (imageId: string) => void
-  onExport?: () => void
-  onSaveSession?: () => void
-  onImport?: () => void
-  onToggleMinimap?: () => void
-  onToggleMeasurement?: () => void
-  onToggleComparison?: () => void
-  onToggleRegionComparison?: () => void
+  onCrop?: (imageId: string) => void;
+  onExport?: () => void;
+  onSaveSession?: () => void;
+  onImport?: () => void;
+  onToggleMinimap?: () => void;
+  onToggleMeasurement?: () => void;
+  onToggleComparison?: () => void;
+  onToggleRegionComparison?: () => void;
 }
 
 export function LightboxToolbar({
@@ -59,19 +59,19 @@ export function LightboxToolbar({
     redo,
     historyIndex,
     history,
-  } = useLightboxStore()
-  const selectedImages = useSelectedImages()
+  } = useLightboxStore();
+  const selectedImages = useSelectedImages();
 
   const handleZoomIn = () => {
-    setZoom(Math.min(zoom * 1.2, 10))
-  }
+    setZoom(Math.min(zoom * 1.2, 10));
+  };
 
   const handleZoomOut = () => {
-    setZoom(Math.max(zoom / 1.2, 0.1))
-  }
+    setZoom(Math.max(zoom / 1.2, 0.1));
+  };
 
   const handleRotate = () => {
-    saveHistory()
+    saveHistory();
     selectedImages.forEach((img) =>
       updateImage(img.id, {
         transform: {
@@ -79,50 +79,40 @@ export function LightboxToolbar({
           rotation: (img.transform.rotation + 90) % 360,
         },
       })
-    )
-  }
+    );
+  };
 
   const handleFlipX = () => {
-    saveHistory()
+    saveHistory();
     selectedImages.forEach((img) =>
       updateImage(img.id, {
         transform: { ...img.transform, flipX: !img.transform.flipX },
       })
-    )
-  }
+    );
+  };
 
   const handleFlipY = () => {
-    saveHistory()
+    saveHistory();
     selectedImages.forEach((img) =>
       updateImage(img.id, {
         transform: { ...img.transform, flipY: !img.transform.flipY },
       })
-    )
-  }
+    );
+  };
 
-  const hasSelection = selectedImages.length > 0
+  const hasSelection = selectedImages.length > 0;
 
   return (
     <div className="flex items-center gap-2">
       {/* Zoom Controls */}
       <div className="flex items-center gap-1 border-r pr-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleZoomOut}
-          disabled={zoom <= 0.1}
-        >
+        <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.1}>
           <ZoomOut className="h-4 w-4" />
         </Button>
         <span className="text-sm text-muted-foreground min-w-[60px] text-center">
           {Math.round(zoom * 100)}%
         </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleZoomIn}
-          disabled={zoom >= 10}
-        >
+        <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={zoom >= 10}>
           <ZoomIn className="h-4 w-4" />
         </Button>
       </div>
@@ -131,28 +121,13 @@ export function LightboxToolbar({
       {hasSelection && (
         <>
           <LightboxTransformPanel />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRotate}
-            title="Rotate 90°"
-          >
+          <Button variant="ghost" size="sm" onClick={handleRotate} title="Rotate 90°">
             <RotateCw className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleFlipX}
-            title="Flip Horizontal"
-          >
+          <Button variant="ghost" size="sm" onClick={handleFlipX} title="Flip Horizontal">
             <FlipHorizontal className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleFlipY}
-            title="Flip Vertical"
-          >
+          <Button variant="ghost" size="sm" onClick={handleFlipY} title="Flip Vertical">
             <FlipVertical className="h-4 w-4" />
           </Button>
         </>
@@ -164,9 +139,9 @@ export function LightboxToolbar({
           variant="ghost"
           size="sm"
           onClick={() => {
-            const firstSelected = selectedImages[0]
+            const firstSelected = selectedImages[0];
             if (firstSelected && onCrop) {
-              onCrop(firstSelected.id)
+              onCrop(firstSelected.id);
             }
           }}
           title="Crop Image"
@@ -177,13 +152,7 @@ export function LightboxToolbar({
 
       {/* Undo/Redo */}
       <div className="flex items-center gap-1 border-r pr-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={undo}
-          disabled={historyIndex <= 0}
-          title="Undo"
-        >
+        <Button variant="ghost" size="sm" onClick={undo} disabled={historyIndex <= 0} title="Undo">
           <Undo2 className="h-4 w-4" />
         </Button>
         <Button
@@ -199,12 +168,7 @@ export function LightboxToolbar({
 
       <div className="flex items-center gap-1 border-l pl-2">
         {onImport && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onImport}
-            title="Import"
-          >
+          <Button variant="ghost" size="sm" onClick={onImport} title="Import">
             <Upload className="h-4 w-4" />
           </Button>
         )}
@@ -227,32 +191,17 @@ export function LightboxToolbar({
           </Button>
         )}
         {onToggleMinimap && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleMinimap}
-            title="Toggle Minimap"
-          >
+          <Button variant="ghost" size="sm" onClick={onToggleMinimap} title="Toggle Minimap">
             <Map className="h-4 w-4" />
           </Button>
         )}
         {onToggleMeasurement && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleMeasurement}
-            title="Measurement Tool"
-          >
+          <Button variant="ghost" size="sm" onClick={onToggleMeasurement} title="Measurement Tool">
             <Ruler className="h-4 w-4" />
           </Button>
         )}
         {onToggleComparison && hasSelection && selectedImages.length >= 2 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleComparison}
-            title="Compare Images"
-          >
+          <Button variant="ghost" size="sm" onClick={onToggleComparison} title="Compare Images">
             <Split className="h-4 w-4" />
           </Button>
         )}
@@ -266,20 +215,10 @@ export function LightboxToolbar({
             <Layers className="h-4 w-4" />
           </Button>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onSaveSession}
-          title="Save Session"
-        >
+        <Button variant="ghost" size="sm" onClick={onSaveSession} title="Save Session">
           <Save className="h-4 w-4" />
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onExport}
-          title="Export"
-        >
+        <Button variant="ghost" size="sm" onClick={onExport} title="Export">
           <Download className="h-4 w-4" />
         </Button>
         <Button variant="ghost" size="sm" title="Fullscreen">
@@ -287,5 +226,5 @@ export function LightboxToolbar({
         </Button>
       </div>
     </div>
-  )
+  );
 }

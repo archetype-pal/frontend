@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
-import { Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface EmptySectionProps {
   /** Icon displayed above the message */
-  icon?: React.ComponentType<{ className?: string }>
+  icon?: React.ComponentType<{ className?: string }>;
   /** Primary message, e.g. "No catalogue numbers yet" */
-  title: string
+  title: string;
   /** Helpful description explaining why this matters */
-  description?: string
+  description?: string;
   /** Label for the action button */
-  actionLabel?: string
+  actionLabel?: string;
   /** Called when the action button is clicked */
-  onAction?: () => void
-  className?: string
+  onAction?: () => void;
+  className?: string;
 }
 
 /**
@@ -54,27 +54,18 @@ export function EmptySection({
       )}
     >
       {Icon && (
-        <div className='flex h-10 w-10 items-center justify-center rounded-full bg-muted mb-3'>
-          <Icon className='h-5 w-5 text-muted-foreground' />
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted mb-3">
+          <Icon className="h-5 w-5 text-muted-foreground" />
         </div>
       )}
-      <p className='text-sm font-medium text-foreground'>{title}</p>
-      {description && (
-        <p className='mt-1 text-xs text-muted-foreground max-w-sm'>
-          {description}
-        </p>
-      )}
+      <p className="text-sm font-medium text-foreground">{title}</p>
+      {description && <p className="mt-1 text-xs text-muted-foreground max-w-sm">{description}</p>}
       {actionLabel && onAction && (
-        <Button
-          variant='outline'
-          size='sm'
-          className='mt-4 gap-1.5'
-          onClick={onAction}
-        >
-          <Plus className='h-3.5 w-3.5' />
+        <Button variant="outline" size="sm" className="mt-4 gap-1.5" onClick={onAction}>
+          <Plus className="h-3.5 w-3.5" />
           {actionLabel}
         </Button>
       )}
     </div>
-  )
+  );
 }

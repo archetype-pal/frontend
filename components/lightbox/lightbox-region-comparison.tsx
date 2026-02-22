@@ -1,46 +1,43 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { useState } from 'react'
-import Image from 'next/image'
-import { Button } from '@/components/ui/button'
-import { getWorkspaceRegions } from '@/lib/lightbox-db'
-import { useLightboxStore } from '@/stores/lightbox-store'
-import type { LightboxRegion } from '@/lib/lightbox-db'
-import {
-  LightboxComparisonHeader,
-  type ComparisonViewMode,
-} from './lightbox-comparison-header'
+import * as React from 'react';
+import { useState } from 'react';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { getWorkspaceRegions } from '@/lib/lightbox-db';
+import { useLightboxStore } from '@/stores/lightbox-store';
+import type { LightboxRegion } from '@/lib/lightbox-db';
+import { LightboxComparisonHeader, type ComparisonViewMode } from './lightbox-comparison-header';
 
 interface LightboxRegionComparisonProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 export function LightboxRegionComparison({ onClose }: LightboxRegionComparisonProps) {
-  const { currentWorkspaceId } = useLightboxStore()
-  const [regions, setRegions] = useState<LightboxRegion[]>([])
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([])
-  const [mode, setMode] = useState<ComparisonViewMode>('side-by-side')
-  const [overlayOpacity, setOverlayOpacity] = useState(0.5)
+  const { currentWorkspaceId } = useLightboxStore();
+  const [regions, setRegions] = useState<LightboxRegion[]>([]);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [mode, setMode] = useState<ComparisonViewMode>('side-by-side');
+  const [overlayOpacity, setOverlayOpacity] = useState(0.5);
 
   React.useEffect(() => {
-    if (!currentWorkspaceId) return
+    if (!currentWorkspaceId) return;
     getWorkspaceRegions(currentWorkspaceId)
       .then(setRegions)
-      .catch((error) => console.error('Failed to load regions:', error))
-  }, [currentWorkspaceId])
+      .catch((error) => console.error('Failed to load regions:', error));
+  }, [currentWorkspaceId]);
 
   const handleRegionSelect = (regionId: string) => {
     setSelectedRegions((prev) => {
-      if (prev.includes(regionId)) return prev.filter((id) => id !== regionId)
-      if (prev.length < 2) return [...prev, regionId]
-      return [prev[1], regionId]
-    })
-  }
+      if (prev.includes(regionId)) return prev.filter((id) => id !== regionId);
+      if (prev.length < 2) return [...prev, regionId];
+      return [prev[1], regionId];
+    });
+  };
 
   const selectedRegionData = selectedRegions
     .map((id) => regions.find((r) => r.id === id))
-    .filter(Boolean) as LightboxRegion[]
+    .filter(Boolean) as LightboxRegion[];
 
   if (regions.length === 0) {
     return (
@@ -53,7 +50,7 @@ export function LightboxRegionComparison({ onClose }: LightboxRegionComparisonPr
           <Button onClick={onClose}>Close</Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -137,11 +134,9 @@ export function LightboxRegionComparison({ onClose }: LightboxRegionComparisonPr
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-muted-foreground">
-            Select 2 regions to compare
-          </p>
+          <p className="text-muted-foreground">Select 2 regions to compare</p>
         </div>
       )}
     </div>
-  )
+  );
 }

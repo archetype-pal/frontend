@@ -1,39 +1,39 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { useWorkspaceImages } from '@/stores/lightbox-store'
-import { cn } from '@/lib/utils'
+import * as React from 'react';
+import { useWorkspaceImages } from '@/stores/lightbox-store';
+import { cn } from '@/lib/utils';
 
 interface LightboxMinimapProps {
-  containerRef: React.RefObject<HTMLDivElement | null>
-  className?: string
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  className?: string;
 }
 
 export function LightboxMinimap({ containerRef, className }: LightboxMinimapProps) {
-  const workspaceImages = useWorkspaceImages()
-  const [viewportRect, setViewportRect] = React.useState<DOMRect | null>(null)
+  const workspaceImages = useWorkspaceImages();
+  const [viewportRect, setViewportRect] = React.useState<DOMRect | null>(null);
 
   React.useEffect(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current) return;
 
     const updateViewport = () => {
       if (containerRef.current) {
-        setViewportRect(containerRef.current.getBoundingClientRect())
+        setViewportRect(containerRef.current.getBoundingClientRect());
       }
-    }
+    };
 
-    updateViewport()
-    window.addEventListener('resize', updateViewport)
-    window.addEventListener('scroll', updateViewport)
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    window.addEventListener('scroll', updateViewport);
 
     return () => {
-      window.removeEventListener('resize', updateViewport)
-      window.removeEventListener('scroll', updateViewport)
-    }
-  }, [containerRef])
+      window.removeEventListener('resize', updateViewport);
+      window.removeEventListener('scroll', updateViewport);
+    };
+  }, [containerRef]);
 
   if (workspaceImages.length === 0 || !viewportRect) {
-    return null
+    return null;
   }
 
   // Calculate bounds of all images
@@ -44,7 +44,7 @@ export function LightboxMinimap({ containerRef, className }: LightboxMinimapProp
         minY: Math.min(acc.minY, img.position.y),
         maxX: Math.max(acc.maxX, img.position.x + img.size.width),
         maxY: Math.max(acc.maxY, img.position.y + img.size.height),
-      }
+      };
     },
     {
       minX: Infinity,
@@ -52,13 +52,13 @@ export function LightboxMinimap({ containerRef, className }: LightboxMinimapProp
       maxX: -Infinity,
       maxY: -Infinity,
     }
-  )
+  );
 
-  const contentWidth = bounds.maxX - bounds.minX
-  const contentHeight = bounds.maxY - bounds.minY
-  const scaleX = 200 / Math.max(contentWidth, viewportRect.width)
-  const scaleY = 150 / Math.max(contentHeight, viewportRect.height)
-  const scale = Math.min(scaleX, scaleY)
+  const contentWidth = bounds.maxX - bounds.minX;
+  const contentHeight = bounds.maxY - bounds.minY;
+  const scaleX = 200 / Math.max(contentWidth, viewportRect.width);
+  const scaleY = 150 / Math.max(contentHeight, viewportRect.height);
+  const scale = Math.min(scaleX, scaleY);
 
   return (
     <div
@@ -70,13 +70,16 @@ export function LightboxMinimap({ containerRef, className }: LightboxMinimapProp
       <div className="text-xs font-semibold mb-1 text-gray-700">Overview</div>
       <div className="relative w-full h-full border border-gray-200 rounded overflow-hidden">
         {/* Content bounds */}
-        <svg className="w-full h-full" viewBox={`0 0 ${contentWidth * scale} ${contentHeight * scale}`}>
+        <svg
+          className="w-full h-full"
+          viewBox={`0 0 ${contentWidth * scale} ${contentHeight * scale}`}
+        >
           {/* Images as rectangles */}
           {workspaceImages.map((image) => {
-            const x = (image.position.x - bounds.minX) * scale
-            const y = (image.position.y - bounds.minY) * scale
-            const width = image.size.width * scale
-            const height = image.size.height * scale
+            const x = (image.position.x - bounds.minX) * scale;
+            const y = (image.position.y - bounds.minY) * scale;
+            const width = image.size.width * scale;
+            const height = image.size.height * scale;
 
             return (
               <rect
@@ -89,9 +92,9 @@ export function LightboxMinimap({ containerRef, className }: LightboxMinimapProp
                 stroke="rgba(59, 130, 246, 0.8)"
                 strokeWidth="1"
               />
-            )
+            );
           })}
-          
+
           {/* Viewport indicator: container-relative (0,0) to (width, height) in content space */}
           <rect
             x={(0 - bounds.minX) * scale}
@@ -106,5 +109,5 @@ export function LightboxMinimap({ containerRef, className }: LightboxMinimapProp
         </svg>
       </div>
     </div>
-  )
+  );
 }

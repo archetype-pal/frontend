@@ -1,39 +1,34 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { useSelectedImages } from '@/stores/lightbox-store'
-import { LightboxImageLayer } from './lightbox-image-layer'
-import {
-  LightboxComparisonHeader,
-  type ComparisonViewMode,
-} from './lightbox-comparison-header'
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useSelectedImages } from '@/stores/lightbox-store';
+import { LightboxImageLayer } from './lightbox-image-layer';
+import { LightboxComparisonHeader, type ComparisonViewMode } from './lightbox-comparison-header';
 
 interface LightboxComparisonModeProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps) {
-  const selectedImages = useSelectedImages()
-  const [mode, setMode] = useState<ComparisonViewMode>('side-by-side')
-  const [overlayOpacity, setOverlayOpacity] = useState(0.5)
+  const selectedImages = useSelectedImages();
+  const [mode, setMode] = useState<ComparisonViewMode>('side-by-side');
+  const [overlayOpacity, setOverlayOpacity] = useState(0.5);
 
   if (selectedImages.length < 2) {
     return (
       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-xl p-6 max-w-md">
           <h3 className="text-lg font-semibold mb-2">Comparison Mode</h3>
-          <p className="text-muted-foreground mb-4">
-            Please select at least 2 images to compare
-          </p>
+          <p className="text-muted-foreground mb-4">Please select at least 2 images to compare</p>
           <Button onClick={onClose}>Close</Button>
         </div>
       </div>
-    )
+    );
   }
 
-  const image1 = selectedImages[0]!
-  const image2 = selectedImages[1]!
+  const image1 = selectedImages[0]!;
+  const image2 = selectedImages[1]!;
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
@@ -75,10 +70,7 @@ export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps)
                 <LightboxImageLayer images={[image1]} />
               </div>
               {/* Overlay image */}
-              <div
-                className="absolute inset-0"
-                style={{ opacity: overlayOpacity }}
-              >
+              <div className="absolute inset-0" style={{ opacity: overlayOpacity }}>
                 <LightboxImageLayer images={[image2]} />
               </div>
             </div>
@@ -86,5 +78,5 @@ export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps)
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -1,139 +1,117 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '@/contexts/auth-context'
-import { toast } from 'sonner'
-import { Trash2, ChevronRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
-import { InlineEdit } from '@/components/backoffice/common/inline-edit'
-import { NamedEntityManager } from '@/components/backoffice/common/named-entity-manager'
-import { useEntityCrud } from '@/hooks/backoffice/use-entity-crud'
-import { backofficeKeys } from '@/lib/backoffice/query-keys'
-import { formatApiError } from '@/lib/backoffice/format-api-error'
-import {
-  createComponent,
-  updateComponent,
-  deleteComponent,
-} from '@/services/backoffice/symbols'
-import { cn } from '@/lib/utils'
-import type { Component, Feature } from '@/types/backoffice'
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/auth-context';
+import { toast } from 'sonner';
+import { Trash2, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { InlineEdit } from '@/components/backoffice/common/inline-edit';
+import { NamedEntityManager } from '@/components/backoffice/common/named-entity-manager';
+import { useEntityCrud } from '@/hooks/backoffice/use-entity-crud';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { createComponent, updateComponent, deleteComponent } from '@/services/backoffice/symbols';
+import { cn } from '@/lib/utils';
+import type { Component, Feature } from '@/types/backoffice';
 
 interface ComponentManagerProps {
-  components: Component[]
-  allFeatures: Feature[]
+  components: Component[];
+  allFeatures: Feature[];
 }
 
-export function ComponentManager({
-  components,
-  allFeatures,
-}: ComponentManagerProps) {
-  const { token } = useAuth()
-  const queryClient = useQueryClient()
-  const [expandedId, setExpandedId] = useState<number | null>(null)
+export function ComponentManager({ components, allFeatures }: ComponentManagerProps) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const crud = useEntityCrud<Component>({
-    queryKeys: [
-      backofficeKeys.components.all(),
-      backofficeKeys.characters.all(),
-    ],
+    queryKeys: [backofficeKeys.components.all(), backofficeKeys.characters.all()],
     createFn: createComponent,
     updateFn: updateComponent,
     deleteFn: deleteComponent,
     entityLabel: 'Component',
-  })
+  });
 
   const featureLinkMut = useMutation({
     mutationFn: ({ id, features }: { id: number; features: number[] }) =>
       updateComponent(token!, id, { features }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.components.all() })
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.characters.all() })
-      toast.success('Component features updated')
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.components.all() });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.characters.all() });
+      toast.success('Component features updated');
     },
     onError: (err) => {
       toast.error('Failed to update component features', {
         description: formatApiError(err),
-      })
+      });
     },
-  })
+  });
 
   const toggleFeatureLink = (comp: Component, featureId: number) => {
-    const current = comp.features
+    const current = comp.features;
     const next = current.includes(featureId)
       ? current.filter((id) => id !== featureId)
-      : [...current, featureId]
-    featureLinkMut.mutate({ id: comp.id, features: next })
-  }
+      : [...current, featureId];
+    featureLinkMut.mutate({ id: comp.id, features: next });
+  };
 
   return (
     <NamedEntityManager
       items={components}
       crud={crud}
-      placeholder='New component name...'
-      emptyMessage='No components yet. Create one above.'
-      deleteDescription='This will remove the component from all allographs that use it.'
+      placeholder="New component name..."
+      emptyMessage="No components yet. Create one above."
+      deleteDescription="This will remove the component from all allographs that use it."
       renderItem={(comp) => {
-        const isExpanded = expandedId === comp.id
+        const isExpanded = expandedId === comp.id;
         return (
-          <div key={comp.id} className='rounded border bg-card'>
-            <div className='group flex items-center gap-1 px-2 py-1'>
+          <div key={comp.id} className="rounded border bg-card">
+            <div className="group flex items-center gap-1 px-2 py-1">
               <button
-                type='button'
-                onClick={() =>
-                  setExpandedId(isExpanded ? null : comp.id)
-                }
-                className='shrink-0 p-0.5 rounded hover:bg-accent'
+                type="button"
+                onClick={() => setExpandedId(isExpanded ? null : comp.id)}
+                className="shrink-0 p-0.5 rounded hover:bg-accent"
               >
                 <ChevronRight
-                  className={cn(
-                    'h-3 w-3 transition-transform',
-                    isExpanded && 'rotate-90'
-                  )}
+                  className={cn('h-3 w-3 transition-transform', isExpanded && 'rotate-90')}
                 />
               </button>
               <InlineEdit
                 value={comp.name}
-                onSave={(name) =>
-                  crud.renameMut.mutate({ id: comp.id, name })
-                }
-                className='flex-1 min-w-0'
+                onSave={(name) => crud.renameMut.mutate({ id: comp.id, name })}
+                className="flex-1 min-w-0"
               />
-              <div className='flex items-center gap-0.5'>
+              <div className="flex items-center gap-0.5">
                 {comp.features.length > 0 && (
-                  <Badge
-                    variant='secondary'
-                    className='text-[10px] px-1.5 h-4 tabular-nums'
-                  >
+                  <Badge variant="secondary" className="text-[10px] px-1.5 h-4 tabular-nums">
                     {comp.features.length}f
                   </Badge>
                 )}
                 <Button
-                  variant='ghost'
-                  size='icon'
-                  className='h-5 w-5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive'
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
                   onClick={() => crud.setDeleteTarget(comp)}
                 >
-                  <Trash2 className='h-3 w-3' />
+                  <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
             </div>
 
             {isExpanded && (
-              <div className='border-t px-2 py-2 space-y-1'>
-                <p className='text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1'>
+              <div className="border-t px-2 py-2 space-y-1">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
                   Linked Features
                 </p>
                 {allFeatures.length === 0 ? (
-                  <p className='text-xs text-muted-foreground italic'>
-                    No features exist yet
-                  </p>
+                  <p className="text-xs text-muted-foreground italic">No features exist yet</p>
                 ) : (
-                  <div className='space-y-0.5 max-h-40 overflow-y-auto'>
+                  <div className="space-y-0.5 max-h-40 overflow-y-auto">
                     {allFeatures.map((feat) => {
-                      const isLinked = comp.features.includes(feat.id)
+                      const isLinked = comp.features.includes(feat.id);
                       return (
                         <label
                           key={feat.id}
@@ -146,23 +124,21 @@ export function ComponentManager({
                         >
                           <Checkbox
                             checked={isLinked}
-                            onCheckedChange={() =>
-                              toggleFeatureLink(comp, feat.id)
-                            }
-                            className='h-3.5 w-3.5'
+                            onCheckedChange={() => toggleFeatureLink(comp, feat.id)}
+                            className="h-3.5 w-3.5"
                             disabled={featureLinkMut.isPending}
                           />
                           <span>{feat.name}</span>
                         </label>
-                      )
+                      );
                     })}
                   </div>
                 )}
               </div>
             )}
           </div>
-        )
+        );
       }}
     />
-  )
+  );
 }

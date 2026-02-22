@@ -17,16 +17,8 @@ export const FILTER_ORDER_MAP: Record<string, string[]> = {
     'components',
     'component_features',
   ],
-  scribes: [
-    'text_date',
-    'scriptorium',
-  ],
-  hands: [
-    'text_date',
-    'repository_name',
-    'repository_city',
-    'place',
-  ],
+  scribes: ['text_date', 'scriptorium'],
+  hands: ['text_date', 'repository_name', 'repository_city', 'place'],
   graphs: [
     'character',
     'character_type',
@@ -77,4 +69,4 @@ export const FILTER_ORDER_MAP: Record<string, string[]> = {
     'place_type',
     'status',
   ],
-}
+};

@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BackofficeShell } from '@/components/backoffice/layout/backoffice-shell'
-import { BackofficeErrorBoundary } from '@/components/backoffice/common/error-boundary'
+import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BackofficeShell } from '@/components/backoffice/layout/backoffice-shell';
+import { BackofficeErrorBoundary } from '@/components/backoffice/common/error-boundary';
 
 function makeQueryClient() {
   return new QueryClient({
@@ -15,27 +15,23 @@ function makeQueryClient() {
         refetchOnWindowFocus: true,
       },
     },
-  })
+  });
 }
 
-let browserQueryClient: QueryClient | undefined
+let browserQueryClient: QueryClient | undefined;
 
 function getQueryClient() {
   if (typeof window === 'undefined') {
     // Server: always make a new client
-    return makeQueryClient()
+    return makeQueryClient();
   }
   // Browser: reuse the same client
-  if (!browserQueryClient) browserQueryClient = makeQueryClient()
-  return browserQueryClient
+  if (!browserQueryClient) browserQueryClient = makeQueryClient();
+  return browserQueryClient;
 }
 
-export default function BackofficeLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const [queryClient] = useState(getQueryClient)
+export default function BackofficeLayout({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(getQueryClient);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -43,5 +39,5 @@ export default function BackofficeLayout({
         <BackofficeShell>{children}</BackofficeShell>
       </BackofficeErrorBoundary>
     </QueryClientProvider>
-  )
+  );
 }

@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { useLightboxStore } from '@/stores/lightbox-store'
+import * as React from 'react';
+import { useLightboxStore } from '@/stores/lightbox-store';
 
 export function LightboxKeyboardShortcuts() {
   const {
@@ -16,20 +16,20 @@ export function LightboxKeyboardShortcuts() {
     setZoom,
     undo,
     redo,
-  } = useLightboxStore()
+  } = useLightboxStore();
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Undo/Redo
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault()
-        undo()
-        return
+        e.preventDefault();
+        undo();
+        return;
       }
       if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-        e.preventDefault()
-        redo()
-        return
+        e.preventDefault();
+        redo();
+        return;
       }
       // Don't handle shortcuts when typing in inputs
       if (
@@ -37,67 +37,79 @@ export function LightboxKeyboardShortcuts() {
         e.target instanceof HTMLTextAreaElement ||
         (e.target as HTMLElement)?.isContentEditable
       ) {
-        return
+        return;
       }
 
       // Delete selected images
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedImageIds.size > 0) {
-        e.preventDefault()
+        e.preventDefault();
         selectedImageIds.forEach((id) => {
-          removeImage(id)
-        })
-        return
+          removeImage(id);
+        });
+        return;
       }
 
       // Select all
       if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
-        e.preventDefault()
-        selectAll()
-        return
+        e.preventDefault();
+        selectAll();
+        return;
       }
 
       // Deselect all
       if (e.key === 'Escape') {
-        e.preventDefault()
-        deselectAll()
-        return
+        e.preventDefault();
+        deselectAll();
+        return;
       }
 
       // Zoom with +/-
       if (e.key === '+' || e.key === '=') {
-        e.preventDefault()
-        setZoom(Math.min(zoom * 1.1, 10))
-        return
+        e.preventDefault();
+        setZoom(Math.min(zoom * 1.1, 10));
+        return;
       }
 
       if (e.key === '-') {
-        e.preventDefault()
-        setZoom(Math.max(zoom / 1.1, 0.1))
-        return
+        e.preventDefault();
+        setZoom(Math.max(zoom / 1.1, 0.1));
+        return;
       }
 
       if (e.key === 'r' || e.key === 'R') {
-        e.preventDefault()
-        saveHistory()
+        e.preventDefault();
+        saveHistory();
         selectedImageIds.forEach((id) => {
-          const img = images.get(id)
+          const img = images.get(id);
           if (img)
             updateImage(id, {
               transform: {
                 ...img.transform,
                 rotation: (img.transform.rotation + 90) % 360,
               },
-            })
-        })
-        return
+            });
+        });
+        return;
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [selectedImageIds, images, zoom, setZoom, removeImage, saveHistory, selectAll, deselectAll, updateImage, undo, redo])
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [
+    selectedImageIds,
+    images,
+    zoom,
+    setZoom,
+    removeImage,
+    saveHistory,
+    selectAll,
+    deselectAll,
+    updateImage,
+    undo,
+    redo,
+  ]);
 
-  return null // This component doesn't render anything
+  return null; // This component doesn't render anything
 }

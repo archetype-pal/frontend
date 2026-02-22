@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import {
   Table,
   TableBody,
@@ -6,50 +6,46 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import type { ManuscriptListItem } from '@/types/manuscript'
-import { useRouter } from 'next/navigation'
-import { apiFetch } from '@/lib/api-fetch'
+} from '@/components/ui/table';
+import type { ManuscriptListItem } from '@/types/manuscript';
+import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/api-fetch';
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 
 export function ManuscriptsTable() {
-  const router = useRouter()
-  const [, setError] = useState('')
-  const [, setIsLoading] = useState(false)
-  const [manuscriptItems, setManuscriptsItems] = useState<ManuscriptListItem[]>(
-    []
-  )
+  const router = useRouter();
+  const [, setError] = useState('');
+  const [, setIsLoading] = useState(false);
+  const [manuscriptItems, setManuscriptsItems] = useState<ManuscriptListItem[]>([]);
 
   useEffect(() => {
     async function fetchManuscriptsTable() {
       try {
-        const response = await apiFetch(
-          `/api/v1/search/item-parts/facets`
-        )
+        const response = await apiFetch(`/api/v1/search/item-parts/facets`);
         if (!response.ok) {
-          throw new Error('Failed to fetch carousel items')
+          throw new Error('Failed to fetch carousel items');
         }
-        const data = await response.json()
-        const results = data.results ?? []
+        const data = await response.json();
+        const results = data.results ?? [];
         if (Array.isArray(results) && results.length > 0) {
-          setManuscriptsItems(results)
+          setManuscriptsItems(results);
         } else {
-          throw new Error('No carousel items found')
+          throw new Error('No carousel items found');
         }
       } catch (err) {
-        setError('Failed to load Manuscript  items')
-        console.error('Error fetching Manuscript  items:', err)
+        setError('Failed to load Manuscript  items');
+        console.error('Error fetching Manuscript  items:', err);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    fetchManuscriptsTable()
-  }, [])
+    fetchManuscriptsTable();
+  }, []);
 
   return (
-    <div className='bg-white border rounded-lg'>
+    <div className="bg-white border rounded-lg">
       <Table>
         <TableHeader>
           <TableRow>
@@ -59,16 +55,14 @@ export function ManuscriptsTable() {
             <TableHead>Cat. Num.</TableHead>
             <TableHead>Text Date</TableHead>
             <TableHead>Document Type</TableHead>
-            <TableHead className='text-center w-[100px]'>
-              Public Images
-            </TableHead>
+            <TableHead className="text-center w-[100px]">Public Images</TableHead>
             <TableHead>Issuer</TableHead>
             <TableHead>Named Beneficiary</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {manuscriptItems.map((manuscript, i) => (
-            <TableRow 
+            <TableRow
               key={i}
               className="cursor-pointer hover:bg-muted/50 transition-colors"
               onClick={() => router.push(`/manuscripts/${manuscript.id}`)}
@@ -79,9 +73,7 @@ export function ManuscriptsTable() {
               <TableCell>{manuscript.catalogue_numbers}</TableCell>
               <TableCell>{manuscript.date}</TableCell>
               <TableCell>{manuscript.type}</TableCell>
-              <TableCell className='text-center'>
-                {manuscript.number_of_images}
-              </TableCell>
+              <TableCell className="text-center">{manuscript.number_of_images}</TableCell>
               <TableCell>{manuscript.issuer_name}</TableCell>
               <TableCell>{manuscript.named_beneficiary}</TableCell>
             </TableRow>
@@ -89,5 +81,5 @@ export function ManuscriptsTable() {
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }

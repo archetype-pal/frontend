@@ -1,68 +1,68 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { useState, useRef, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { X, Crop, Save } from 'lucide-react'
-import type { LightboxImage } from '@/lib/lightbox-db'
+import * as React from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { X, Crop, Save } from 'lucide-react';
+import type { LightboxImage } from '@/lib/lightbox-db';
 
 interface CropArea {
-  x: number
-  y: number
-  width: number
-  height: number
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 interface LightboxCropToolProps {
-  image: LightboxImage
-  onCrop: (cropArea: CropArea) => Promise<void>
-  onCancel: () => void
+  image: LightboxImage;
+  onCrop: (cropArea: CropArea) => Promise<void>;
+  onCancel: () => void;
 }
 
 export function LightboxCropTool({ image, onCrop, onCancel }: LightboxCropToolProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [cropArea, setCropArea] = useState<CropArea | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [cropArea, setCropArea] = useState<CropArea | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current) return;
 
-    const container = containerRef.current
-    const rect = container.getBoundingClientRect()
-    
+    const container = containerRef.current;
+    const rect = container.getBoundingClientRect();
+
     // Initialize crop area to center 50% of image
-    const initialWidth = rect.width * 0.5
-    const initialHeight = rect.height * 0.5
+    const initialWidth = rect.width * 0.5;
+    const initialHeight = rect.height * 0.5;
     setCropArea({
       x: (rect.width - initialWidth) / 2,
       y: (rect.height - initialHeight) / 2,
       width: initialWidth,
       height: initialHeight,
-    })
-  }, [])
+    });
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!containerRef.current || !cropArea) return
-    
-    e.preventDefault()
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    if (!containerRef.current || !cropArea) return;
+
+    e.preventDefault();
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
     // Check if clicking inside crop area
     const isInside =
       x >= cropArea.x &&
       x <= cropArea.x + cropArea.width &&
       y >= cropArea.y &&
-      y <= cropArea.y + cropArea.height
+      y <= cropArea.y + cropArea.height;
 
     if (isInside) {
-      setIsDragging(true)
+      setIsDragging(true);
       setDragStart({
         x: x - cropArea.x,
         y: y - cropArea.y,
-      })
+      });
     } else {
       // Start new crop area
       setCropArea({
@@ -70,61 +70,61 @@ export function LightboxCropTool({ image, onCrop, onCancel }: LightboxCropToolPr
         y,
         width: 0,
         height: 0,
-      })
-      setIsDragging(true)
-      setDragStart({ x, y })
+      });
+      setIsDragging(true);
+      setDragStart({ x, y });
     }
-  }
+  };
 
   useEffect(() => {
-    if (!isDragging) return
+    if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current || !cropArea) return
+      if (!containerRef.current || !cropArea) return;
 
-      const rect = containerRef.current.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
       if (dragStart.x < cropArea.x || dragStart.y < cropArea.y) {
         // Dragging from inside - move crop area
-        const newX = Math.max(0, Math.min(x - dragStart.x, rect.width - cropArea.width))
-        const newY = Math.max(0, Math.min(y - dragStart.y, rect.height - cropArea.height))
+        const newX = Math.max(0, Math.min(x - dragStart.x, rect.width - cropArea.width));
+        const newY = Math.max(0, Math.min(y - dragStart.y, rect.height - cropArea.height));
         setCropArea({
           ...cropArea,
           x: newX,
           y: newY,
-        })
+        });
       } else {
         // Dragging from outside - resize crop area
-        const newWidth = Math.max(20, Math.min(x - dragStart.x, rect.width - dragStart.x))
-        const newHeight = Math.max(20, Math.min(y - dragStart.y, rect.height - dragStart.y))
+        const newWidth = Math.max(20, Math.min(x - dragStart.x, rect.width - dragStart.x));
+        const newHeight = Math.max(20, Math.min(y - dragStart.y, rect.height - dragStart.y));
         setCropArea({
           x: dragStart.x,
           y: dragStart.y,
           width: newWidth,
           height: newHeight,
-        })
+        });
       }
-    }
+    };
 
     const handleMouseUp = () => {
-      setIsDragging(false)
-    }
+      setIsDragging(false);
+    };
 
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [isDragging, cropArea, dragStart])
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, cropArea, dragStart]);
 
   const handleSave = async () => {
-    if (!cropArea) return
-    await onCrop(cropArea)
-  }
+    if (!cropArea) return;
+    await onCrop(cropArea);
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
@@ -204,5 +204,5 @@ export function LightboxCropTool({ image, onCrop, onCancel }: LightboxCropToolPr
         </div>
       </div>
     </div>
-  )
+  );
 }

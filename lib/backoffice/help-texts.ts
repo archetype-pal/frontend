@@ -11,16 +11,15 @@
 
 export interface HelpEntry {
   /** One-sentence description of the field. */
-  description: string
+  description: string;
   /** Example value or format hint (optional). */
-  example?: string
+  example?: string;
 }
 
 export const helpTexts: Record<string, HelpEntry> = {
   // -- Manuscripts / Historical Items --
   'manuscript.type': {
-    description:
-      'The type of historical item, such as Charter, Manuscript, or Document.',
+    description: 'The type of historical item, such as Charter, Manuscript, or Document.',
   },
   'manuscript.date': {
     description:
@@ -28,23 +27,20 @@ export const helpTexts: Record<string, HelpEntry> = {
     example: 's.xi (mid)',
   },
   'manuscript.format': {
-    description:
-      'The physical format of the item, e.g. Codex, Roll, or Single sheet.',
+    description: 'The physical format of the item, e.g. Codex, Roll, or Single sheet.',
   },
   'manuscript.language': {
     description: 'The primary language of the manuscript text.',
     example: 'Latin, Old English',
   },
   'manuscript.hair_type': {
-    description:
-      'The arrangement of hair and flesh sides in the quire. Leave blank if unknown.',
+    description: 'The arrangement of hair and flesh sides in the quire. Leave blank if unknown.',
     example: 'HFHF',
   },
 
   // -- Current Location --
   'currentLocation.repository': {
-    description:
-      'The archive or library where this charter is held today.',
+    description: 'The archive or library where this charter is held today.',
     example: 'National Records of Scotland, Durham Cathedral Archives',
   },
   'currentLocation.shelfmark': {
@@ -55,8 +51,7 @@ export const helpTexts: Record<string, HelpEntry> = {
 
   // -- Item Parts --
   'itemPart.locus': {
-    description:
-      'The folio or page range within the physical volume for this part.',
+    description: 'The folio or page range within the physical volume for this part.',
     example: 'f.1r, ff.2-173, pp.1-24',
   },
   'itemPart.currentItem': {
@@ -71,22 +66,19 @@ export const helpTexts: Record<string, HelpEntry> = {
 
   // -- Catalogue Numbers --
   'catalogueNumber.source': {
-    description:
-      'The bibliographic source that assigned this catalogue number (e.g. Ker, Gneuss).',
+    description: 'The bibliographic source that assigned this catalogue number (e.g. Ker, Gneuss).',
   },
   'catalogueNumber.number': {
     description: 'The identifier assigned by the catalogue source.',
     example: '001, 345a',
   },
   'catalogueNumber.url': {
-    description:
-      'An optional URL linking to the catalogue entry online.',
+    description: 'An optional URL linking to the catalogue entry online.',
   },
 
   // -- Images --
   'image.locus': {
-    description:
-      'The specific folio or page this image depicts.',
+    description: 'The specific folio or page this image depicts.',
     example: 'f.2r, p.15',
   },
 
@@ -96,18 +88,15 @@ export const helpTexts: Record<string, HelpEntry> = {
       'Whether this text is a transcription (original script) or translation (modern language rendering).',
   },
   'imageText.status': {
-    description:
-      'The editorial status of this text: Draft, Review, Live, or Reviewed.',
+    description: 'The editorial status of this text: Draft, Review, Live, or Reviewed.',
   },
 
   // -- Symbols / Palaeography --
   'character.type': {
-    description:
-      'The category of this character, e.g. Letter, Punctuation, or Abbreviation.',
+    description: 'The category of this character, e.g. Letter, Punctuation, or Abbreviation.',
   },
   'allograph.name': {
-    description:
-      'A human-readable name for this allograph, typically describing its form.',
+    description: 'A human-readable name for this allograph, typically describing its form.',
     example: 'b (minuscule), B (majuscule)',
   },
   'feature.set_by_default': {
@@ -117,18 +106,15 @@ export const helpTexts: Record<string, HelpEntry> = {
 
   // -- Scribes --
   'scribe.scriptorium': {
-    description:
-      'The writing centre or monastery associated with this scribe, if known.',
+    description: 'The writing centre or monastery associated with this scribe, if known.',
   },
   'scribe.period': {
-    description:
-      'The date range in which this scribe was active.',
+    description: 'The date range in which this scribe was active.',
   },
 
   // -- Hands --
   'hand.script': {
-    description:
-      'The script type used by this hand, e.g. Caroline Minuscule, Insular.',
+    description: 'The script type used by this hand, e.g. Caroline Minuscule, Insular.',
   },
   'hand.itemPart': {
     description:
@@ -141,8 +127,7 @@ export const helpTexts: Record<string, HelpEntry> = {
       'Draft publications are only visible to staff. Published items appear on the public site.',
   },
   'publication.keywords': {
-    description:
-      'Comma-separated tags used for filtering and related post suggestions.',
+    description: 'Comma-separated tags used for filtering and related post suggestions.',
     example: 'palaeography, charter, twelfth-century',
   },
   'publication.published_at': {
@@ -152,13 +137,11 @@ export const helpTexts: Record<string, HelpEntry> = {
 
   // -- Common --
   'date.minWeight': {
-    description:
-      'The earliest year in the date range, used for sorting and filtering.',
+    description: 'The earliest year in the date range, used for sorting and filtering.',
     example: '1100',
   },
   'date.maxWeight': {
-    description:
-      'The latest year in the date range.',
+    description: 'The latest year in the date range.',
     example: '1250',
   },
-}
+};

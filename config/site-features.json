@@ -3,11 +3,11 @@
     "search": true,
     "collection": true,
     "lightbox": true,
-    "news": false,
-    "blogs": false,
-    "featureArticles": false,
-    "events": false,
-    "about": false
+    "news": true,
+    "blogs": true,
+    "featureArticles": true,
+    "events": true,
+    "about": true
   },
   "searchCategories": {
     "manuscripts": {
@@ -31,7 +31,7 @@
       ]
     },
     "images": {
-      "enabled": true,
+      "enabled": false,
       "visibleColumns": [
         "Repository",
         "Repository City",
@@ -54,15 +54,8 @@
     },
     "scribes": {
       "enabled": false,
-      "visibleColumns": [
-        "Scribe Name",
-        "Date",
-        "Scriptorium"
-      ],
-      "visibleFacets": [
-        "text_date",
-        "scriptorium"
-      ]
+      "visibleColumns": ["Scribe Name", "Date", "Scriptorium"],
+      "visibleFacets": ["text_date", "scriptorium"]
     },
     "hands": {
       "enabled": false,
@@ -75,12 +68,7 @@
         "Date",
         "Catalogue Num."
       ],
-      "visibleFacets": [
-        "text_date",
-        "repository_name",
-        "repository_city",
-        "place"
-      ]
+      "visibleFacets": ["text_date", "repository_name", "repository_city", "place"]
     },
     "graphs": {
       "enabled": true,

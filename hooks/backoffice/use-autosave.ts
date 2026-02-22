@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react';
 
-const AUTOSAVE_PREFIX = 'archetype_autosave_'
+const AUTOSAVE_PREFIX = 'archetype_autosave_';
 
 interface AutosaveData<T> {
-  data: T
-  savedAt: number
+  data: T;
+  savedAt: number;
 }
 
 /**
@@ -23,21 +23,16 @@ interface AutosaveData<T> {
  * @param dirty    Whether the form has unsaved changes
  * @param intervalMs  Autosave interval (default: 30 seconds)
  */
-export function useAutosave<T>(
-  key: string,
-  data: T,
-  dirty: boolean,
-  intervalMs = 30_000
-) {
-  const storageKey = `${AUTOSAVE_PREFIX}${key}`
-  const dataRef = useRef(data)
+export function useAutosave<T>(key: string, data: T, dirty: boolean, intervalMs = 30_000) {
+  const storageKey = `${AUTOSAVE_PREFIX}${key}`;
+  const dataRef = useRef(data);
 
   useEffect(() => {
-    dataRef.current = data
-  })
+    dataRef.current = data;
+  });
 
-  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   // Save to localStorage
   const save = useCallback(() => {
@@ -45,62 +40,62 @@ export function useAutosave<T>(
       const payload: AutosaveData<T> = {
         data: dataRef.current,
         savedAt: Date.now(),
-      }
-      localStorage.setItem(storageKey, JSON.stringify(payload))
-      setLastSavedAt(payload.savedAt)
-      setStatus('saved')
+      };
+      localStorage.setItem(storageKey, JSON.stringify(payload));
+      setLastSavedAt(payload.savedAt);
+      setStatus('saved');
     } catch {
       // localStorage might be full or unavailable
     }
-  }, [storageKey])
+  }, [storageKey]);
 
   // Periodic autosave when dirty
   useEffect(() => {
     if (!dirty) {
-      setStatus('idle') // eslint-disable-line react-hooks/set-state-in-effect
-      return
+      setStatus('idle'); // eslint-disable-line react-hooks/set-state-in-effect
+      return;
     }
 
-    setStatus('idle')
+    setStatus('idle');
     const timer = setInterval(() => {
-      setStatus('saving')
+      setStatus('saving');
       // Small delay so the "Saving..." text is visible
-      setTimeout(() => save(), 300)
-    }, intervalMs)
+      setTimeout(() => save(), 300);
+    }, intervalMs);
 
-    return () => clearInterval(timer)
-  }, [dirty, intervalMs, save])
+    return () => clearInterval(timer);
+  }, [dirty, intervalMs, save]);
 
   // Recover saved draft
   const recover = useCallback((): T | null => {
     try {
-      const raw = localStorage.getItem(storageKey)
-      if (!raw) return null
-      const parsed: AutosaveData<T> = JSON.parse(raw)
-      return parsed.data
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return null;
+      const parsed: AutosaveData<T> = JSON.parse(raw);
+      return parsed.data;
     } catch {
-      return null
+      return null;
     }
-  }, [storageKey])
+  }, [storageKey]);
 
   // Check if a draft exists and how old it is
   const getDraftInfo = useCallback((): { exists: boolean; savedAt: number | null } => {
     try {
-      const raw = localStorage.getItem(storageKey)
-      if (!raw) return { exists: false, savedAt: null }
-      const parsed: AutosaveData<T> = JSON.parse(raw)
-      return { exists: true, savedAt: parsed.savedAt }
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return { exists: false, savedAt: null };
+      const parsed: AutosaveData<T> = JSON.parse(raw);
+      return { exists: true, savedAt: parsed.savedAt };
     } catch {
-      return { exists: false, savedAt: null }
+      return { exists: false, savedAt: null };
     }
-  }, [storageKey])
+  }, [storageKey]);
 
   // Clear the autosaved draft (call after successful server save)
   const discard = useCallback(() => {
-    localStorage.removeItem(storageKey)
-    setLastSavedAt(null)
-    setStatus('idle')
-  }, [storageKey])
+    localStorage.removeItem(storageKey);
+    setLastSavedAt(null);
+    setStatus('idle');
+  }, [storageKey]);
 
   return {
     save,
@@ -109,5 +104,5 @@ export function useAutosave<T>(
     getDraftInfo,
     lastSavedAt,
     status,
-  }
+  };
 }
