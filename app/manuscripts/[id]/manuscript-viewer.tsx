@@ -15,6 +15,15 @@ interface ManuscriptViewerProps {
   images: ManuscriptImage[];
 }
 
+function toIiifProxyUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return `/iiif-proxy${u.pathname}${u.search}`;
+  } catch {
+    return url;
+  }
+}
+
 export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -142,7 +151,7 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
                     <Image
                       src={
                         image.iiif_image
-                          ? getIiifImageUrl(image.iiif_image, { thumbnail: true })
+                          ? toIiifProxyUrl(getIiifImageUrl(image.iiif_image, { thumbnail: true }))
                           : '/placeholder.svg'
                       }
                       alt={image.locus || 'Manuscript image'}

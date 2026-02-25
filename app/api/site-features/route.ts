@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readSiteFeatures, writeSiteFeatures } from '@/lib/site-features-server';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import type { SiteFeaturesConfig } from '@/lib/site-features';
+import { env } from '@/lib/env';
 
 async function verifyStaff(token: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/profile`, {
+    const res = await fetch(`${env.apiUrl}/api/v1/auth/profile`, {
       headers: { Authorization: `Token ${token}` },
     });
     if (!res.ok) return false;
@@ -33,14 +33,15 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Staff access required' }, { status: 403 });
   }
 
+  let body: unknown;
   try {
-    const body = await request.json();
-    if (!body.sections || !body.searchCategories) {
-      return NextResponse.json({ error: 'Invalid config shape' }, { status: 400 });
-    }
-    await writeSiteFeatures(body);
-    return NextResponse.json(body);
+    body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
+  if (!body || typeof body !== 'object' || !('sections' in body) || !('searchCategories' in body)) {
+    return NextResponse.json({ error: 'Invalid config shape' }, { status: 400 });
+  }
+  await writeSiteFeatures(body as SiteFeaturesConfig);
+  return NextResponse.json(body);
 }

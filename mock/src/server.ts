@@ -428,14 +428,13 @@ app.get('/api/v1/manuscripts/item-parts/:id', (req: Request, res: Response) => {
 })
 
 app.get('/api/v1/manuscripts/item-images/:id', (req: Request, res: Response) => {
-  const { id } = req.params
-  const images = generateManuscriptImages(50)
-  const image = images.find((img) => img.id === parseInt(id))
-  
-  if (!image) {
-    return res.status(404).json({ error: 'Manuscript image not found' })
+  const idNum = parseInt(req.params.id, 10)
+  if (isNaN(idNum)) {
+    return res.status(400).json({ error: 'Invalid image ID' })
   }
-  
+  const images = generateManuscriptImages(50)
+  const template = images[idNum % images.length]
+  const image = { ...template, id: idNum }
   res.json(image)
 })
 

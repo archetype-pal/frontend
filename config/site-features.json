@@ -13,25 +13,20 @@
     "manuscripts": {
       "enabled": true,
       "visibleColumns": [
-        "Shelfmark",
+        "Doc. Type",
+        "Images",
         "Repository City",
         "Catalogue Num.",
         "Repository",
-        "Text Date",
-        "Doc. Type",
-        "Images"
+        "Shelfmark",
+        "Text Date"
       ],
       "visibleFacets": [
-        "text_date",
-        "image_availability",
-        "format",
-        "type",
-        "repository_city",
-        "repository_name"
+        "type"
       ]
     },
     "images": {
-      "enabled": false,
+      "enabled": true,
       "visibleColumns": [
         "Repository",
         "Repository City",
@@ -53,12 +48,19 @@
       ]
     },
     "scribes": {
-      "enabled": false,
-      "visibleColumns": ["Scribe Name", "Date", "Scriptorium"],
-      "visibleFacets": ["text_date", "scriptorium"]
+      "enabled": true,
+      "visibleColumns": [
+        "Scribe Name",
+        "Date",
+        "Scriptorium"
+      ],
+      "visibleFacets": [
+        "text_date",
+        "scriptorium"
+      ]
     },
     "hands": {
-      "enabled": false,
+      "enabled": true,
       "visibleColumns": [
         "Hand Title",
         "Repository City",
@@ -68,7 +70,12 @@
         "Date",
         "Catalogue Num."
       ],
-      "visibleFacets": ["text_date", "repository_name", "repository_city", "place"]
+      "visibleFacets": [
+        "text_date",
+        "repository_name",
+        "repository_city",
+        "place"
+      ]
     },
     "graphs": {
       "enabled": true,
@@ -94,7 +101,7 @@
       ]
     },
     "texts": {
-      "enabled": false,
+      "enabled": true,
       "visibleColumns": [
         "Repository City",
         "Repository",
@@ -160,7 +167,7 @@
       ]
     },
     "places": {
-      "enabled": false,
+      "enabled": true,
       "visibleColumns": [
         "Cat. Num.",
         "Document Type",

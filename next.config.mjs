@@ -8,6 +8,8 @@ const IIIF_UPSTREAM = (process.env.NEXT_PUBLIC_IIIF_UPSTREAM || 'http://localhos
   /\/$/,
   ''
 );
+// API base for rewrites (e.g. mock server serves /scans for IIIF when using local dev).
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 const ALLOWED_ORIGINS =
   process.env.CORS_ALLOWED_ORIGINS ||
   'https://archetype.gla.ac.uk,https://archetype.elghareeb.space';
@@ -21,8 +23,13 @@ const nextConfig = {
     },
   },
   async rewrites() {
-    return [{ source: '/iiif-proxy/:path*', destination: `${IIIF_UPSTREAM}/:path*` }];
+    return [
+      // API server may serve IIIF at /scans (e.g. mock); route those to API so images work.
+      { source: '/iiif-proxy/scans/:path*', destination: `${API_BASE}/scans/:path*` },
+      { source: '/iiif-proxy/:path*', destination: `${IIIF_UPSTREAM}/:path*` },
+    ];
   },
+  // IIIF and external image servers require unoptimized; same-origin static assets could use optimization if needed.
   images: {
     remotePatterns: [
       // Sipi – IIIF server
@@ -70,6 +77,7 @@ const nextConfig = {
       {
         source: '/:path*',
         headers: [
+          // TODO: Tighten CSP: prefer nonces/hashes for inline scripts and avoid 'unsafe-eval' where possible.
           {
             key: 'Content-Security-Policy',
             value:
