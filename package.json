@@ -53,7 +53,7 @@
     "cmdk": "^1.1.1",
     "dexie": "^4.3.0",
     "isomorphic-dompurify": "^3.0.0",
-    "jspdf": "^4.0.0",
+    "jspdf": "^4.2.0",
     "lucide-react": "^0.563.0",
     "next": "^16.1.6",
     "openseadragon": "^5.0.1",
@@ -84,11 +84,14 @@
     "jsdom": "^26.0.0"
   },
   "engines": {
-    "node": ">=25.0.0",
+    "node": ">=22.0.0",
     "pnpm": ">=10.0.0"
   },
   "overrides": {
-    "glob": "^10.5.0"
+    "glob": "^10.5.0",
+    "minimatch": "^10.2.1",
+    "ajv": "^8.18.0",
+    "qs": "^6.14.2"
   },
   "packageManager": "pnpm@10.30.1"
 }

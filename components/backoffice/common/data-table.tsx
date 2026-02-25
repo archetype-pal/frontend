@@ -163,6 +163,7 @@ export function DataTable<TData, TValue>({
     : columns;
 
   // TanStack Table's useReactTable() returns unstable refs; React Compiler skip is intentional.
+  // @tanstack/react-table + React 19: incompatible-library until upstream support; disable is intentional
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filteredData,
