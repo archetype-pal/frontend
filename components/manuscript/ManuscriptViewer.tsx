@@ -587,7 +587,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={src}
-                        alt=""
+                        alt={`Annotation thumbnail: ${a.id}`}
                         className="max-h-full max-w-full object-contain"
                         loading="lazy"
                         onError={() => console.warn('thumb failed:', src)}

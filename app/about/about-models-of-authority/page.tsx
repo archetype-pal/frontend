@@ -162,7 +162,7 @@ export default function HistoricalContext() {
                 </Link>
               </li>
               <li>
-                <Link href="/accessibility" className="text-blue-600 hover:underline">
+                <Link href="/about/accessibility" className="text-blue-600 hover:underline">
                   Accessibility Statement
                 </Link>
               </li>
