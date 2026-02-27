@@ -43,7 +43,7 @@ function CollectionGraphCard({
 
   return (
     <div className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden group cursor-pointer">
-      <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+      <div className="relative aspect-4/3 bg-gray-50 overflow-hidden">
         {imageUrl ? (
           <>
             <Link href={getUrl(item)} className="block w-full h-full">
@@ -55,10 +55,10 @@ function CollectionGraphCard({
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw"
               />
             </Link>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/0 via-black/0 to-black/0 group-hover:from-black/5 group-hover:via-black/0 group-hover:to-black/0 transition-all duration-300 pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-t from-black/0 via-black/0 to-black/0 group-hover:from-black/5 group-hover:via-black/0 group-hover:to-black/0 transition-all duration-300 pointer-events-none" />
           </>
         ) : (
-          <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-full h-full flex items-center justify-center text-xs text-gray-500">
+          <div className="bg-linear-to-br from-gray-100 to-gray-200 w-full h-full flex items-center justify-center text-xs text-gray-500">
             {infoUrl ? '…' : 'No Image'}
           </div>
         )}
@@ -171,7 +171,7 @@ function CollectionPageContent() {
     return (
       <div className="container mx-auto px-4 py-16 sm:py-20">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-gray-50 to-gray-100 mb-6 shadow-sm">
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-linear-to-br from-gray-50 to-gray-100 mb-6 shadow-sm">
             <Star className="h-12 w-12 text-gray-400" />
           </div>
           <h1 className="text-4xl font-bold mb-4 text-gray-900">My Collection</h1>
@@ -211,7 +211,7 @@ function CollectionPageContent() {
         key={`image-${item.id}`}
         className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden group cursor-pointer"
       >
-        <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+        <div className="relative aspect-4/3 bg-gray-50 overflow-hidden">
           {imageUrl ? (
             <>
               <Link href={getUrl(item)} className="block w-full h-full">
@@ -223,10 +223,10 @@ function CollectionPageContent() {
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw"
                 />
               </Link>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/0 via-black/0 to-black/0 group-hover:from-black/5 group-hover:via-black/0 group-hover:to-black/0 transition-all duration-300 pointer-events-none" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/0 via-black/0 to-black/0 group-hover:from-black/5 group-hover:via-black/0 group-hover:to-black/0 transition-all duration-300 pointer-events-none" />
             </>
           ) : (
-            <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-full h-full flex items-center justify-center text-xs text-gray-500">
+            <div className="bg-linear-to-br from-gray-100 to-gray-200 w-full h-full flex items-center justify-center text-xs text-gray-500">
               No Image
             </div>
           )}

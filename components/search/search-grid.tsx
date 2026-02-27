@@ -33,7 +33,7 @@ function GraphGridCard({
 
   return (
     <div className="relative overflow-hidden group">
-      <div className="relative aspect-[4/3] bg-white overflow-hidden">
+      <div className="relative aspect-4/3 bg-white overflow-hidden">
         {imageUrl ? (
           <>
             <Link href={detailUrl} className="block w-full h-full relative z-0 pointer-events-auto">
@@ -105,7 +105,7 @@ export function SearchGrid({ results = [], resultType, highlightKeyword = '' }: 
 
         return (
           <div key={item.id} className="relative overflow-hidden group">
-            <div className="relative aspect-[4/3] bg-white overflow-hidden">
+            <div className="relative aspect-4/3 bg-white overflow-hidden">
               {imageUrl ? (
                 <>
                   <Link
