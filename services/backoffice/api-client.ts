@@ -1,7 +1,5 @@
 import { apiFetch } from '@/lib/api-fetch';
 
-const API_PREFIX = '/api/v1/admin';
-
 const TRANSIENT_STATUSES = [502, 503, 504];
 
 async function fetchWithRetry(
@@ -38,10 +36,10 @@ export class BackofficeApiError extends Error {
 
 /**
  * Authenticated fetch wrapper for backoffice API endpoints.
- * Prepends the API prefix to the path and adds the auth token header.
+ * Sends requests to the provided API path and adds the auth token header.
  */
 async function apiRequest<T>(path: string, token: string, init?: RequestInit): Promise<T> {
-  const res = await fetchWithRetry(`${API_PREFIX}${path}`, {
+  const res = await fetchWithRetry(path, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -105,7 +103,7 @@ async function apiRequestFormData<T>(
   method: string,
   formData: FormData
 ): Promise<T> {
-  const res = await fetchWithRetry(`${API_PREFIX}${path}`, {
+  const res = await fetchWithRetry(path, {
     method,
     headers: {
       Authorization: `Token ${token}`,

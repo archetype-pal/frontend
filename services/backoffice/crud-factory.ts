@@ -27,7 +27,7 @@ export function buildUrl(basePath: string, params?: Record<string, ParamValue>):
  * @template TDetail – shape returned for a single item (defaults to TList)
  * @template TId     – type of the resource identifier (number or string)
  *
- * @param basePath – API path **with trailing slash**, e.g. `'/manuscripts/historical-items/'`
+ * @param basePath – API path **with trailing slash**, e.g. `'/api/v1/manuscripts/management/historical-items/'`
  */
 export function createCrudService<TList, TDetail = TList, TId extends string | number = number>(
   basePath: string
