@@ -19,7 +19,7 @@ import type {
 const historicalItemsCrud = createCrudService<
   PaginatedResponse<HistoricalItemListItem>,
   HistoricalItemDetail
->('/manuscripts/historical-items/');
+>('/api/v1/manuscripts/management/historical-items/');
 
 export function getHistoricalItems(
   token: string,
@@ -47,7 +47,7 @@ export function getItemImages(
   params?: { item_part?: number; limit?: number; offset?: number }
 ) {
   const crud = createCrudService<PaginatedResponse<AdminItemImage>, AdminItemImage>(
-    '/manuscripts/item-images/'
+    '/api/v1/manuscripts/management/item-images/'
   );
   return crud.list(token, params);
 }
@@ -55,7 +55,7 @@ export function getItemImages(
 // ── Item Parts ───────────────────────────────────────────────────────────
 
 const itemPartsCrud = createCrudService<PaginatedResponse<ItemPartNested>, ItemPartNested>(
-  '/manuscripts/item-parts/'
+  '/api/v1/manuscripts/management/item-parts/'
 );
 
 export const createItemPart = itemPartsCrud.create;
@@ -65,7 +65,7 @@ export const deleteItemPart = itemPartsCrud.remove;
 // ── Current Items ────────────────────────────────────────────────────────
 
 const currentItemsCrud = createCrudService<PaginatedResponse<CurrentItemOption>, CurrentItemOption>(
-  '/manuscripts/current-items/'
+  '/api/v1/manuscripts/management/current-items/'
 );
 
 export function getCurrentItems(
@@ -82,7 +82,9 @@ export const deleteCurrentItem = currentItemsCrud.remove;
 
 // ── Catalogue Numbers ───────────────────────────────────────────────────
 
-const catalogueNumbersCrud = createCrudService<CatalogueNumber>('/manuscripts/catalogue-numbers/');
+const catalogueNumbersCrud = createCrudService<CatalogueNumber>(
+  '/api/v1/manuscripts/management/catalogue-numbers/'
+);
 
 export const createCatalogueNumber = catalogueNumbersCrud.create;
 export const updateCatalogueNumber = catalogueNumbersCrud.update;
@@ -90,7 +92,9 @@ export const deleteCatalogueNumber = catalogueNumbersCrud.remove;
 
 // ── Descriptions ────────────────────────────────────────────────────────
 
-const descriptionsCrud = createCrudService<HistoricalItemDescription>('/manuscripts/descriptions/');
+const descriptionsCrud = createCrudService<HistoricalItemDescription>(
+  '/api/v1/manuscripts/management/descriptions/'
+);
 
 export const createDescription = descriptionsCrud.create;
 export const updateDescription = descriptionsCrud.update;
@@ -99,7 +103,7 @@ export const deleteDescription = descriptionsCrud.remove;
 // ── Repositories ────────────────────────────────────────────────────────
 
 const repositoriesCrud = createCrudService<PaginatedResponse<Repository>, Repository>(
-  '/manuscripts/repositories/'
+  '/api/v1/manuscripts/management/repositories/'
 );
 
 export const getRepositories = (token: string) => repositoriesCrud.list(token);
@@ -109,10 +113,10 @@ export const deleteRepository = repositoriesCrud.remove;
 
 // ── Bibliographic Sources ───────────────────────────────────────────────
 
-const sourcesCrud = createCrudService<BibliographicSource>('/manuscripts/sources/');
+const sourcesCrud = createCrudService<BibliographicSource>('/api/v1/manuscripts/management/sources/');
 
 export function getSources(token: string) {
-  return backofficeGet<BibliographicSource[]>('/manuscripts/sources/', token);
+  return backofficeGet<BibliographicSource[]>('/api/v1/manuscripts/management/sources/', token);
 }
 
 export const createSource = sourcesCrud.create;
@@ -121,10 +125,10 @@ export const deleteSource = sourcesCrud.remove;
 
 // ── Item Formats ────────────────────────────────────────────────────────
 
-const formatsCrud = createCrudService<ItemFormat>('/manuscripts/formats/');
+const formatsCrud = createCrudService<ItemFormat>('/api/v1/manuscripts/management/formats/');
 
 export function getFormats(token: string) {
-  return backofficeGet<ItemFormat[]>('/manuscripts/formats/', token);
+  return backofficeGet<ItemFormat[]>('/api/v1/manuscripts/management/formats/', token);
 }
 
 export const createFormat = formatsCrud.create;
@@ -133,10 +137,10 @@ export const deleteFormat = formatsCrud.remove;
 
 // ── Dates ───────────────────────────────────────────────────────────────
 
-const datesCrud = createCrudService<BackofficeDate>('/common/dates/');
+const datesCrud = createCrudService<BackofficeDate>('/api/v1/management/common/dates/');
 
 export function getDates(token: string) {
-  return backofficeGet<BackofficeDate[]>('/common/dates/', token);
+  return backofficeGet<BackofficeDate[]>('/api/v1/management/common/dates/', token);
 }
 
 export const createDate = datesCrud.create;

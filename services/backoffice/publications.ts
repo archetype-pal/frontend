@@ -15,7 +15,7 @@ const publicationsCrud = createCrudService<
   PaginatedResponse<PublicationListItem>,
   PublicationDetail,
   string
->('/publications/publications/');
+>('/api/v1/media/management/publications/');
 
 export function getPublications(
   token: string,
@@ -39,7 +39,7 @@ export const deletePublication = publicationsCrud.remove;
 // ── Events ──────────────────────────────────────────────────────────────
 
 const eventsCrud = createCrudService<PaginatedResponse<EventItem>, EventItem, string>(
-  '/publications/events/'
+  '/api/v1/media/management/events/'
 );
 
 export const getEvents = (token: string) => eventsCrud.list(token);
@@ -51,7 +51,7 @@ export const deleteEvent = eventsCrud.remove;
 // ── Comments ────────────────────────────────────────────────────────────
 
 const commentsCrud = createCrudService<PaginatedResponse<CommentItem>, CommentItem>(
-  '/publications/comments/'
+  '/api/v1/media/management/comments/'
 );
 
 export function getComments(token: string, params?: { is_approved?: boolean; post?: number }) {
@@ -59,18 +59,18 @@ export function getComments(token: string, params?: { is_approved?: boolean; pos
 }
 
 export function approveComment(token: string, id: number) {
-  return backofficePost<CommentItem>(`/publications/comments/${id}/approve/`, token, {});
+  return backofficePost<CommentItem>(`/api/v1/media/management/comments/${id}/approve/`, token, {});
 }
 
 export function rejectComment(token: string, id: number) {
-  return backofficePost<CommentItem>(`/publications/comments/${id}/reject/`, token, {});
+  return backofficePost<CommentItem>(`/api/v1/media/management/comments/${id}/reject/`, token, {});
 }
 
 export const deleteComment = commentsCrud.remove;
 
 // ── Carousel ────────────────────────────────────────────────────────────
 
-const CAROUSEL_PATH = '/publications/carousel-items/';
+const CAROUSEL_PATH = '/api/v1/media/management/carousel-items/';
 
 const carouselCrud = createCrudService<CarouselItem[], CarouselItem>(CAROUSEL_PATH);
 

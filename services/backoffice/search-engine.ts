@@ -57,7 +57,7 @@ export interface TaskStatus {
 /* ------------------------------------------------------------------ */
 
 export function getSearchEngineStats(token: string): Promise<SearchEngineStats> {
-  return backofficeGet<SearchEngineStats>('/search/stats/', token);
+  return backofficeGet<SearchEngineStats>('/api/v1/search/management/stats/', token);
 }
 
 export function dispatchSearchAction(
@@ -67,9 +67,9 @@ export function dispatchSearchAction(
 ): Promise<TaskActionResponse> {
   const body: Record<string, string> = { action };
   if (indexType) body.index_type = indexType;
-  return backofficePost<TaskActionResponse>('/search/actions/', token, body);
+  return backofficePost<TaskActionResponse>('/api/v1/search/management/actions/', token, body);
 }
 
 export function getTaskStatus(token: string, taskId: string): Promise<TaskStatus> {
-  return backofficeGet<TaskStatus>(`/search/tasks/${taskId}/`, token);
+  return backofficeGet<TaskStatus>(`/api/v1/search/management/tasks/${taskId}/`, token);
 }

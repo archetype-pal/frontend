@@ -4,7 +4,7 @@ import type { PaginatedResponse, GraphItem } from '@/types/backoffice';
 // ── Graphs ───────────────────────────────────────────────────────────────
 
 const graphsCrud = createCrudService<PaginatedResponse<GraphItem>, GraphItem>(
-  '/annotations/graphs/'
+  '/api/v1/management/annotations/graphs/'
 );
 
 export function getGraphs(

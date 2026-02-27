@@ -5,7 +5,7 @@ import type { PaginatedResponse, ScribeListItem, HandListItem, Script } from '@/
 // ── Scribes ─────────────────────────────────────────────────────────────
 
 const scribesCrud = createCrudService<PaginatedResponse<ScribeListItem>, ScribeListItem>(
-  '/scribes/scribes/'
+  '/api/v1/management/scribes/scribes/'
 );
 
 export const getScribes = (token: string) => scribesCrud.list(token);
@@ -17,7 +17,7 @@ export const deleteScribe = scribesCrud.remove;
 // ── Hands ───────────────────────────────────────────────────────────────
 
 const handsCrud = createCrudService<PaginatedResponse<HandListItem>, HandListItem>(
-  '/scribes/hands/'
+  '/api/v1/management/scribes/hands/'
 );
 
 export function getHands(token: string, params?: { scribe?: number; item_part?: number }) {
@@ -31,10 +31,10 @@ export const deleteHand = handsCrud.remove;
 
 // ── Scripts ─────────────────────────────────────────────────────────────
 
-const scriptsCrud = createCrudService<Script>('/scribes/scripts/');
+const scriptsCrud = createCrudService<Script>('/api/v1/management/scribes/scripts/');
 
 export function getScripts(token: string) {
-  return backofficeGet<Script[]>('/scribes/scripts/', token);
+  return backofficeGet<Script[]>('/api/v1/management/scribes/scripts/', token);
 }
 
 export const createScript = scriptsCrud.create;

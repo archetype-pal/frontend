@@ -1,7 +1,9 @@
 import { createCrudService } from './crud-factory';
 import type { PaginatedResponse, UserListItem, UserDetail } from '@/types/backoffice';
 
-const usersCrud = createCrudService<PaginatedResponse<UserListItem>, UserDetail>('/users/');
+const usersCrud = createCrudService<PaginatedResponse<UserListItem>, UserDetail>(
+  '/api/v1/auth/management/users/'
+);
 
 export const getUsers = usersCrud.list;
 export const getUser = usersCrud.get;
