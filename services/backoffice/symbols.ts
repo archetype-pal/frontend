@@ -63,10 +63,7 @@ const featuresCrud = createCrudService<Feature>(
 );
 
 export function getFeatures(token: string) {
-  return backofficeGet<Feature[]>(
-    '/api/v1/symbols_structure/management/symbols/features/',
-    token
-  );
+  return backofficeGet<Feature[]>('/api/v1/symbols_structure/management/symbols/features/', token);
 }
 
 export const createFeature = featuresCrud.create;

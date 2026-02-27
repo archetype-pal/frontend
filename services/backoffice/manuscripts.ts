@@ -113,7 +113,9 @@ export const deleteRepository = repositoriesCrud.remove;
 
 // ── Bibliographic Sources ───────────────────────────────────────────────
 
-const sourcesCrud = createCrudService<BibliographicSource>('/api/v1/manuscripts/management/sources/');
+const sourcesCrud = createCrudService<BibliographicSource>(
+  '/api/v1/manuscripts/management/sources/'
+);
 
 export function getSources(token: string) {
   return backofficeGet<BibliographicSource[]>('/api/v1/manuscripts/management/sources/', token);
