@@ -22,6 +22,22 @@ const nextConfig = {
       hmrRefreshes: true,
     },
   },
+  async redirects() {
+    return [
+      { source: '/about', destination: '/about/about-models-of-authority', permanent: true },
+      { source: '/images', destination: '/search/manuscripts', permanent: true },
+      { source: '/authors', destination: '/blogs', permanent: true },
+      { source: '/authors/:author', destination: '/blogs', permanent: true },
+      { source: '/events', destination: '/events/conference', permanent: true },
+      { source: '/events/conferece', destination: '/events/conference', permanent: true },
+      { source: '/historical-context', destination: '/about/historical-context', permanent: true },
+      { source: '/project-team', destination: '/about/about-models-of-authority', permanent: true },
+      { source: '/citing-database', destination: '/about/about-models-of-authority', permanent: true },
+      { source: '/talks-publications', destination: '/about/about-models-of-authority', permanent: true },
+      { source: '/acknowledgements', destination: '/about/about-models-of-authority', permanent: true },
+      { source: '/privacy-policy', destination: '/about/about-models-of-authority', permanent: true },
+    ];
+  },
   async rewrites() {
     return [
       // API server may serve IIIF at /scans (e.g. mock); route those to API so images work.
@@ -63,11 +79,15 @@ const nextConfig = {
         hostname: 'archetype.elghareeb.space',
         pathname: '/**',
       },
-      {
-        protocol: 'https',
-        hostname: process.env.NEXT_PUBLIC_API_URL?.replace(/^https?:\/\//, '')?.split(':')[0],
-        pathname: '/**',
-      },
+      ...(process.env.NEXT_PUBLIC_API_URL
+        ? [
+            {
+              protocol: 'https',
+              hostname: process.env.NEXT_PUBLIC_API_URL.replace(/^https?:\/\//, '').split(':')[0],
+              pathname: '/**',
+            },
+          ]
+        : []),
     ],
     unoptimized: true,
   },

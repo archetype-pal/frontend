@@ -13,7 +13,7 @@ export default function DashboardLayout({
           <nav className="bg-white border border-gray-200 rounded-lg overflow-hidden">
             <ul className="divide-y divide-gray-200">
               <li>
-                <Link href="/events" className="block px-4 py-2 text-gray-700 hover:bg-gray-50">
+                <Link href="/events/conference" className="block px-4 py-2 text-gray-700 hover:bg-gray-50">
                   Past Events
                 </Link>
               </li>
@@ -43,7 +43,7 @@ export default function DashboardLayout({
               </li>
               <li>
                 <Link
-                  href="/events/conferece/"
+                  href="/events/conference/"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
                 >
                   Public conference
