@@ -6,21 +6,13 @@ import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  Save,
-  Trash2,
-  Loader2,
-  PenTool,
-  ExternalLink,
-  Calendar,
-  MapPin,
-} from 'lucide-react';
+import { ArrowLeft, Loader2, PenTool, ExternalLink, Calendar, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { EntityEditorActions } from '@/components/backoffice/common/entity-editor-actions';
 import { getScribe, updateScribe, deleteScribe, getHands } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
@@ -119,23 +111,12 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
           {scribe.period_display && <Badge variant="secondary">{scribe.period_display}</Badge>}
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-destructive"
-            onClick={() => setDeleteOpen(true)}
-          >
-            <Trash2 className="h-3.5 w-3.5 mr-1" />
-            Delete
-          </Button>
-          <Button size="sm" onClick={() => saveMut.mutate()} disabled={!dirty || saveMut.isPending}>
-            {saveMut.isPending ? (
-              <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-            ) : (
-              <Save className="h-3.5 w-3.5 mr-1" />
-            )}
-            Save
-          </Button>
+          <EntityEditorActions
+            dirty={dirty}
+            isSaving={saveMut.isPending}
+            onSave={() => saveMut.mutate()}
+            onDelete={() => setDeleteOpen(true)}
+          />
         </div>
       </div>
 

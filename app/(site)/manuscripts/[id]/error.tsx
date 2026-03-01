@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
-import { EntityErrorState } from '@/components/page/entity-error-state';
+import { EntitySegmentError } from '@/components/page/entity-segment-error';
 
 export default function ManuscriptError({
   error,
@@ -10,17 +9,12 @@ export default function ManuscriptError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[manuscripts]', error.message);
-    }
-  }, [error]);
-
   return (
-    <EntityErrorState
-      message={error.message || 'This manuscript could not be loaded. Please try again.'}
+    <EntitySegmentError
+      scope="manuscripts"
+      error={error}
       reset={reset}
-      backHref="/search/manuscripts"
+      fallbackMessage="This manuscript could not be loaded. Please try again."
       backLabel="Back to manuscripts"
     />
   );
