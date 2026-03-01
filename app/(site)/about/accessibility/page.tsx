@@ -45,7 +45,7 @@ export default function AccessibilityStatement() {
           <p className="mb-4">
             The Models of Authority project is based at the University of Glasgow. You can find
             contact details on the{' '}
-            <Link href="/about" className="text-primary hover:underline">
+            <Link href="/about/about-models-of-authority" className="text-primary hover:underline">
               About
             </Link>{' '}
             page.

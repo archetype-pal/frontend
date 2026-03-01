@@ -96,10 +96,10 @@ export default function Component() {
                 <Link href="/about/about-models-of-authority">Read more about the project</Link>
               </Button>
               <Button className="w-full sm:w-auto" asChild variant="outline">
-                <Link href="/search">Start searching</Link>
+                <Link href="/search/manuscripts">Start searching</Link>
               </Button>
               <Button className="w-full sm:w-auto" asChild variant="outline">
-                <Link href="/images">Browse images</Link>
+                <Link href="/search/images">Browse images</Link>
               </Button>
             </div>
           </div>
@@ -186,10 +186,10 @@ export default function Component() {
               <Link href="/about/about-models-of-authority/">Read more about the project</Link>
             </Button>
             <Button className="w-full sm:w-auto" asChild variant="outline">
-              <Link href="/search">Start searching</Link>
+              <Link href="/search/manuscripts">Start searching</Link>
             </Button>
             <Button className="w-full sm:w-auto" asChild variant="outline">
-              <Link href="/images">Browse images</Link>
+              <Link href="/search/images">Browse images</Link>
             </Button>
           </div>
         </div>

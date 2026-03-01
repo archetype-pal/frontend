@@ -167,7 +167,7 @@ export default function HistoricalContext() {
                 </Link>
               </li>
               <li>
-                <Link href="/search" className="text-blue-600 hover:underline">
+                <Link href="/search/manuscripts" className="text-blue-600 hover:underline">
                   Search
                 </Link>
               </li>

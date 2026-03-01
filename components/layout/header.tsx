@@ -14,7 +14,6 @@ import {
   Home,
   Menu,
   X,
-  ChevronDown,
   FolderOpen,
   PanelTopClose,
   PanelTopOpen,
@@ -22,12 +21,6 @@ import {
   Shield,
   LogOut,
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useCollection } from '@/contexts/collection-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
@@ -37,15 +30,10 @@ const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
-  const [mounted, setMounted] = useState(false);
   const { items } = useCollection();
   const { token, user, logout } = useAuth();
   const { isSectionEnabled } = useSiteFeatures();
   const pathname = usePathname();
-
-  useEffect(() => {
-    setMounted(true); // eslint-disable-line react-hooks/set-state-in-effect
-  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem(BANNER_VISIBLE_KEY);
@@ -158,7 +146,7 @@ export default function Header() {
                         : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
                     }`}
                   >
-                    <Link href="/search/manuscripts/">
+                    <Link href="/search/manuscripts">
                       <Search className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
                       Search
                     </Link>
@@ -207,12 +195,12 @@ export default function Header() {
                     variant="ghost"
                     size="sm"
                     className={`transition-colors w-full md:w-auto justify-start ${
-                      isActive('/news')
+                      isActive('/publications/news')
                         ? 'bg-primary-foreground/30 text-white'
                         : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
                     }`}
                   >
-                    <Link href="/news/">News</Link>
+                    <Link href="/publications/news">News</Link>
                   </Button>
                 </li>
               )}
@@ -223,12 +211,12 @@ export default function Header() {
                     variant="ghost"
                     size="sm"
                     className={`transition-colors w-full md:w-auto justify-start ${
-                      isActive('/blogs')
+                      isActive('/publications/blogs')
                         ? 'bg-primary-foreground/30 text-white'
                         : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
                     }`}
                   >
-                    <Link href="/blogs/">Blogs</Link>
+                    <Link href="/publications/blogs">Blogs</Link>
                   </Button>
                 </li>
               )}
@@ -239,126 +227,29 @@ export default function Header() {
                     variant="ghost"
                     size="sm"
                     className={`transition-colors w-full md:w-auto justify-start ${
-                      isActive('/feature')
+                      isActive('/publications/feature')
                         ? 'bg-primary-foreground/30 text-white'
                         : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
                     }`}
                   >
-                    <Link href="/feature/">Feature Articles</Link>
+                    <Link href="/publications/feature">Feature Articles</Link>
                   </Button>
-                </li>
-              )}
-              {isSectionEnabled('events') && (
-                <li>
-                  {mounted ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`transition-colors w-full md:w-auto justify-start group ${
-                            isActive('/events')
-                              ? 'bg-primary-foreground/30 text-white'
-                              : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                          }`}
-                        >
-                          Past Events
-                          <ChevronDown className="ml-1 h-4 w-4 group-hover:scale-110 transition-transform" />
-                        </Button>
-                      </DropdownMenuTrigger>
-
-                      <DropdownMenuContent>
-                        <DropdownMenuItem>
-                          <Link href="/events/exhibition/">Exhibition</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/events/exhibition-launch/">Exhibition Launch</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/events/colloquium/">Colloquium</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/events/conference/">Public conference</Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={`transition-colors w-full md:w-auto justify-start group ${
-                        isActive('/events')
-                          ? 'bg-primary-foreground/30 text-white'
-                          : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                      }`}
-                    >
-                      Past Events
-                      <ChevronDown className="ml-1 h-4 w-4 group-hover:scale-110 transition-transform" />
-                    </Button>
-                  )}
                 </li>
               )}
               {isSectionEnabled('about') && (
                 <li>
-                  {mounted ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className={`transition-colors group ${
-                            isActive('/about')
-                              ? 'bg-primary-foreground/30 text-white'
-                              : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                          }`}
-                        >
-                          About{' '}
-                          <ChevronDown className="ml-1 h-4 w-4 group-hover:scale-110 transition-transform" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-56">
-                        <DropdownMenuItem>
-                          <Link href="/about/historical-context">Historical Context</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/about/project-team">Project Team</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/about/citing-database">
-                            Citing the Models of Authority database
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/about/talks-publications">Talks and Publications</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/about/acknowledgements">
-                            Acknowledgements and Image Rights
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/about/privacy-policy">Privacy and Cookie Policy</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/about/accessibility">Accessibility Statement</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/about">About</Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      className={`transition-colors group ${
-                        isActive('/about')
-                          ? 'bg-primary-foreground/30 text-white'
-                          : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                      }`}
-                    >
-                      About{' '}
-                      <ChevronDown className="ml-1 h-4 w-4 group-hover:scale-110 transition-transform" />
-                    </Button>
-                  )}
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className={`transition-colors w-full md:w-auto justify-start ${
+                      isActive('/about')
+                        ? 'bg-primary-foreground/30 text-white'
+                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+                    }`}
+                  >
+                    <Link href="/about/about-models-of-authority">About</Link>
+                  </Button>
                 </li>
               )}
             </ul>

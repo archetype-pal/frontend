@@ -5,11 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import BlogPostPreview from './blog-post-preview';
 import { getPublications, type Publication, type PublicationParams } from '@/utils/api';
+import { Button } from '@/components/ui/button';
 
 interface PaginatedPublicationsProps {
   title: string;
   categoryFlag: 'is_blog_post' | 'is_news' | 'is_featured';
-  route: string;
+  basePath: string;
 }
 
 const POSTS_PER_PAGE = 10;
@@ -18,7 +19,7 @@ const RECENT_POST_COUNT = 5;
 export default function PaginatedPublications({
   title,
   categoryFlag,
-  route,
+  basePath,
 }: PaginatedPublicationsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -76,7 +77,7 @@ export default function PaginatedPublications({
   const goToPage = (newPage: number) => {
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.set('page', newPage.toString());
-    router.push(`/${route}?${newParams.toString()}`);
+    router.push(`${basePath}?${newParams.toString()}`);
   };
 
   return (
@@ -97,7 +98,7 @@ export default function PaginatedPublications({
                   author={`${article.author.first_name} ${article.author.last_name}`}
                   date={article.published_at ?? ''}
                   excerpt={article.preview}
-                  slug={`/${route}/${article.slug}`}
+                  slug={`${basePath}/${article.slug}`}
                   commentsCount={article.number_of_comments}
                   showShareBtns={false}
                   showReadMoreBtn={true}
@@ -109,46 +110,26 @@ export default function PaginatedPublications({
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mt-10 flex-wrap">
-              <button
-                onClick={() => goToPage(page - 1)}
-                disabled={page <= 1}
-                className={`px-3 py-1 rounded border ${
-                  page <= 1
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
-                }`}
-              >
+              <Button variant="outline" onClick={() => goToPage(page - 1)} disabled={page <= 1}>
                 Prev
-              </button>
+              </Button>
 
               {[...Array(totalPages)].map((_, i) => {
                 const pageNum = i + 1;
                 return (
-                  <button
+                  <Button
                     key={pageNum}
+                    variant={pageNum === page ? 'default' : 'outline'}
                     onClick={() => goToPage(pageNum)}
-                    className={`px-3 py-1 rounded border ${
-                      pageNum === page
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-blue-600 hover:bg-blue-100'
-                    }`}
                   >
                     {pageNum}
-                  </button>
+                  </Button>
                 );
               })}
 
-              <button
-                onClick={() => goToPage(page + 1)}
-                disabled={page >= totalPages}
-                className={`px-3 py-1 rounded border ${
-                  page >= totalPages
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
-                }`}
-              >
+              <Button variant="outline" onClick={() => goToPage(page + 1)} disabled={page >= totalPages}>
                 Next
-              </button>
+              </Button>
             </div>
           )}
         </main>
@@ -164,7 +145,7 @@ export default function PaginatedPublications({
               {recentPosts.map((article) => (
                 <li key={article.id}>
                   <Link
-                    href={`/${route}/${article.slug}`}
+                    href={`${basePath}/${article.slug}`}
                     className="text-sm text-blue-600 hover:underline"
                   >
                     {article.title}

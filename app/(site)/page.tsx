@@ -31,11 +31,11 @@ export default async function Home() {
 
       <div className="container mx-auto px-4 py-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 my-8">
-          <ArticleList title="News" articles={newsArticles} moreLink="/news" limit={3} />
+          <ArticleList title="News" articles={newsArticles} moreLink="/publications/news" limit={3} />
           <ArticleList
             title="Feature Articles"
             articles={featureArticles}
-            moreLink="/feature"
+            moreLink="/publications/feature"
             limit={3}
           />
         </div>
