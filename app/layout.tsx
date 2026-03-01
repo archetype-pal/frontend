@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/auth-context';
 import { CollectionProvider } from '@/contexts/collection-context';
 import { SearchProvider } from '@/contexts/search-context';
 import { SiteFeaturesProvider } from '@/contexts/site-features-context';
+import { AppQueryProvider } from '@/components/providers/query-provider';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -43,11 +44,11 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
           <SiteFeaturesProvider>
-            <CollectionProvider>
-              <SearchProvider>
-                {children}
-              </SearchProvider>
-            </CollectionProvider>
+            <AppQueryProvider>
+              <CollectionProvider>
+                <SearchProvider>{children}</SearchProvider>
+              </CollectionProvider>
+            </AppQueryProvider>
           </SiteFeaturesProvider>
         </AuthProvider>
         <Toaster richColors closeButton position="top-center" />

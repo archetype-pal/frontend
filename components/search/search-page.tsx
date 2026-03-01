@@ -11,10 +11,8 @@ import { DynamicFacets } from '@/components/filters/dynamic-facets';
 import { useSearchContext } from '@/contexts/search-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { FILTER_RENDER_MAP } from '@/lib/filter-config';
-import { useSafeSearch } from '@/utils/useSafeSearch';
-import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map';
-import { API_BASE_URL } from '@/lib/api-fetch';
 import { Pagination } from '@/components/search/paginated-search';
+import { useSearchResults } from '@/hooks/search/use-search-results';
 import type { FacetClickOpts } from '@/types/facets';
 import type { ImageListItem } from '@/types/image';
 import type { GraphListItem } from '@/types/graph';
@@ -25,7 +23,6 @@ import type { TextListItem } from '@/types/text';
 import type { PersonListItem } from '@/types/person';
 import type { PlaceListItem } from '@/types/place';
 import {
-  buildApiUrl,
   buildQueryString,
   stateFromUrl,
   stateFromSearchParams,
@@ -83,14 +80,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
     setQueryState((prev) => ({ ...prev, selected_facets: [], dateParams: {}, offset: 0 }));
   }, []);
 
-  const hasMap = Boolean(RESULT_TYPE_API_MAP[resultType]);
-  const apiSegment = RESULT_TYPE_API_MAP[resultType];
-  const baseFacetURL = apiSegment ? `${API_BASE_URL}/api/v1/search/${apiSegment}/facets` : '';
-  const apiUrl = React.useMemo(() => {
-    if (!baseFacetURL) return '';
-    return buildApiUrl(baseFacetURL, queryState);
-  }, [baseFacetURL, queryState]);
-  const { data } = useSafeSearch(resultType, apiUrl);
+  const { hasMap, baseFacetURL, data } = useSearchResults(resultType, queryState);
 
   const filtered = React.useMemo(
     () => filterResultsByKeyword(data.results, keyword),
