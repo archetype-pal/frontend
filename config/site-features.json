@@ -3,12 +3,13 @@
     "search": true,
     "collection": true,
     "lightbox": true,
-    "news": true,
+    "news": false,
     "blogs": true,
     "featureArticles": true,
-    "events": true,
+    "events": false,
     "about": true
   },
+  "sectionOrder": ["search", "lightbox", "collection", "blogs", "featureArticles", "about", "news"],
   "searchCategories": {
     "manuscripts": {
       "enabled": true,

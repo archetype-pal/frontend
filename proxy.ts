@@ -2,14 +2,13 @@ import { NextResponse, type NextRequest } from 'next/server';
 import type { SectionKey } from '@/lib/site-features';
 import type { ResultType } from '@/lib/search-types';
 
-const SECTION_ROUTE_MAP: Record<SectionKey, string> = {
+const SECTION_ROUTE_MAP: Partial<Record<SectionKey, string>> = {
   search: '/search',
   collection: '/collection',
   lightbox: '/lightbox',
   news: '/publications/news',
   blogs: '/publications/blogs',
   featureArticles: '/publications/feature',
-  events: '/disabled-events',
   about: '/about',
 };
 
