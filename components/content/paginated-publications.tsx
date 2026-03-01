@@ -127,7 +127,11 @@ export default function PaginatedPublications({
                 );
               })}
 
-              <Button variant="outline" onClick={() => goToPage(page + 1)} disabled={page >= totalPages}>
+              <Button
+                variant="outline"
+                onClick={() => goToPage(page + 1)}
+                disabled={page >= totalPages}
+              >
                 Next
               </Button>
             </div>

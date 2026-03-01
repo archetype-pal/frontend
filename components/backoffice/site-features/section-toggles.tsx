@@ -31,11 +31,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import {
-  normalizeSectionOrder,
-  SECTION_LABELS,
-  type SectionKey,
-} from '@/lib/site-features';
+import { normalizeSectionOrder, SECTION_LABELS, type SectionKey } from '@/lib/site-features';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

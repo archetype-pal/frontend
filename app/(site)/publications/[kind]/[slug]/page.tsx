@@ -1,9 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import {
-  PublicationDetailPage,
-  publicationMetadata,
-} from '@/components/content/publication-pages';
+import { PublicationDetailPage, publicationMetadata } from '@/components/content/publication-pages';
 import { isPublicationKind } from '@/lib/publications';
 
 export async function generateMetadata({

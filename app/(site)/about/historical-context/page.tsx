@@ -137,27 +137,42 @@ export default function HistoricalContext() {
                 </Link>
               </li>
               <li>
-                <Link href="/about/about-models-of-authority" className="text-blue-600 hover:underline">
+                <Link
+                  href="/about/about-models-of-authority"
+                  className="text-blue-600 hover:underline"
+                >
                   Project Team
                 </Link>
               </li>
               <li>
-                <Link href="/about/about-models-of-authority" className="text-blue-600 hover:underline">
+                <Link
+                  href="/about/about-models-of-authority"
+                  className="text-blue-600 hover:underline"
+                >
                   Citing the Models of Authority database
                 </Link>
               </li>
               <li>
-                <Link href="/about/about-models-of-authority" className="text-blue-600 hover:underline">
+                <Link
+                  href="/about/about-models-of-authority"
+                  className="text-blue-600 hover:underline"
+                >
                   Talks and Publications
                 </Link>
               </li>
               <li>
-                <Link href="/about/about-models-of-authority" className="text-blue-600 hover:underline">
+                <Link
+                  href="/about/about-models-of-authority"
+                  className="text-blue-600 hover:underline"
+                >
                   Acknowledgements and Image Rights
                 </Link>
               </li>
               <li>
-                <Link href="/about/about-models-of-authority" className="text-blue-600 hover:underline">
+                <Link
+                  href="/about/about-models-of-authority"
+                  className="text-blue-600 hover:underline"
+                >
                   Privacy and Cookie Policy
                 </Link>
               </li>
@@ -172,7 +187,10 @@ export default function HistoricalContext() {
                 </Link>
               </li>
               <li>
-                <Link href="/about/about-models-of-authority" className="text-blue-600 hover:underline">
+                <Link
+                  href="/about/about-models-of-authority"
+                  className="text-blue-600 hover:underline"
+                >
                   About
                 </Link>
               </li>

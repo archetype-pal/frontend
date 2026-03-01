@@ -13,7 +13,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/collection`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/about/historical-context`, changeFrequency: 'yearly', priority: 0.4 },
     { url: `${BASE_URL}/about/accessibility`, changeFrequency: 'yearly', priority: 0.4 },
-    { url: `${BASE_URL}/about/about-models-of-authority`, changeFrequency: 'yearly', priority: 0.4 },
+    {
+      url: `${BASE_URL}/about/about-models-of-authority`,
+      changeFrequency: 'yearly',
+      priority: 0.4,
+    },
   ];
 
   const dynamicRoutes: MetadataRoute.Sitemap = [];

@@ -85,9 +85,7 @@ export function SearchGrid({ results = [], resultType, highlightKeyword = '' }: 
         const img = item as ImageListItem;
         const graph = item as GraphListItem;
         const detailUrl =
-          resultType === 'images'
-            ? getImageDetailUrl(img)
-            : `/${resultType}/${item.id}`;
+          resultType === 'images' ? getImageDetailUrl(img) : `/${resultType}/${item.id}`;
         const displayText =
           (item as ImageListItem).locus || (item as GraphListItem).shelfmark || 'Untitled';
 

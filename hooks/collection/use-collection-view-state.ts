@@ -28,7 +28,11 @@ export function useCollectionViewState(items: CollectionItem[], clearCollection:
     const params = new URLSearchParams();
     if (filter !== 'all') params.set('filter', filter);
     if (sortBy !== 'added') params.set('sort', sortBy);
-    window.history.replaceState(null, '', params.toString() ? `/collection?${params}` : '/collection');
+    window.history.replaceState(
+      null,
+      '',
+      params.toString() ? `/collection?${params}` : '/collection'
+    );
   }, [filter, sortBy]);
 
   React.useEffect(() => {
@@ -50,8 +54,12 @@ export function useCollectionViewState(items: CollectionItem[], clearCollection:
 
     return [...filtered].sort((a, b) => {
       if (sortBy === 'name') {
-        const nameA = (a.type === 'image' ? a.shelfmark || a.locus || '' : a.shelfmark || '').toLowerCase();
-        const nameB = (b.type === 'image' ? b.shelfmark || b.locus || '' : b.shelfmark || '').toLowerCase();
+        const nameA = (
+          a.type === 'image' ? a.shelfmark || a.locus || '' : a.shelfmark || ''
+        ).toLowerCase();
+        const nameB = (
+          b.type === 'image' ? b.shelfmark || b.locus || '' : b.shelfmark || ''
+        ).toLowerCase();
         return nameA.localeCompare(nameB);
       }
       return (a.repository_name || '')

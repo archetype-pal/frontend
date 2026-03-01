@@ -64,7 +64,13 @@ export async function publicationMetadata({
   }
 }
 
-export async function PublicationDetailPage({ kind, slug }: { kind: PublicationKind; slug: string }) {
+export async function PublicationDetailPage({
+  kind,
+  slug,
+}: {
+  kind: PublicationKind;
+  slug: string;
+}) {
   const config = PUBLICATION_KIND_CONFIG[kind];
   const item = await getPublicationBySlug(slug);
   const recent = await getPublications({ [config.queryFlag]: true, limit: 5, offset: 0 });

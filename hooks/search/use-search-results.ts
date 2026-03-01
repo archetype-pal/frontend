@@ -47,7 +47,16 @@ export function useSearchResults(resultType: string, queryState: QueryState) {
       const response = await fetchFacetsAndResults(resultType, apiUrl);
       if (!response.ok) return EMPTY;
       const { facets, results, count, next, previous, limit, offset, ordering } = response;
-      return { facets, results, count, next, previous, limit, offset, ordering } satisfies SearchData;
+      return {
+        facets,
+        results,
+        count,
+        next,
+        previous,
+        limit,
+        offset,
+        ordering,
+      } satisfies SearchData;
     },
     enabled: hasMap && !!apiUrl,
     staleTime: 10_000,

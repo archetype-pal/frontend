@@ -112,7 +112,9 @@ export default function NewPublicationPage() {
             className="font-mono text-sm"
           />
           {slug && (
-            <p className="text-xs text-muted-foreground">URL: /publications/{publicationKindPath}/{slug}</p>
+            <p className="text-xs text-muted-foreground">
+              URL: /publications/{publicationKindPath}/{slug}
+            </p>
           )}
         </div>
 

@@ -265,7 +265,7 @@ Reuse existing loading patterns from e.g. `app/blogs/[slug]/loading.tsx` or `app
 | P0       | Transitive vulnerabilities | Add pnpm overrides for minimatch, ajv, qs to patched versions; run audit and tests.                       | Done       |
 | P1       | Node engine                | Relax to `>=20.0.0` or `>=22.0.0` (or document Node 25 requirement and fix CI).                           | Done       |
 | P1       | CSP                        | Plan to remove or reduce `unsafe-inline` / `unsafe-eval`; implement nonces/hashes if needed.              | TODO       |
-| P1       | Loading UX                 | Add `loading.tsx` for manuscripts/images and backoffice (and optionally about/events).                     | Done       |
+| P1       | Loading UX                 | Add `loading.tsx` for manuscripts/images and backoffice (and optionally about/events).                    | Done       |
 | P2       | Env consistency            | Use `env.apiUrl` in `app/api/site-features/route.ts`.                                                     | Done       |
 | P2       | ESLint disables            | Refactor or document set-state-in-effect and exhaustive-deps; restrict no-img-element to necessary cases. | Partial    |
 | P2       | Tests                      | Add unit tests for lib and a few integration/E2E tests for main flows.                                    | Pending    |
