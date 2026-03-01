@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,11 +12,17 @@ import { fetchCarouselItems, getCarouselImageUrl } from '@/utils/api';
 export default function Component() {
   const [currentImage, setCurrentImage] = useState(0);
   const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);
+  const hasLoadedRef = useRef(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // In React Strict Mode (dev), effects can run twice.
+    // Guard to avoid duplicate API requests that can trigger backend throttling.
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+
     async function loadCarouselItems() {
       try {
         const items = await fetchCarouselItems();

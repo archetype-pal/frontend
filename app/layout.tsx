@@ -2,8 +2,6 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import { Toaster } from 'sonner';
 import './globals.css';
-import Header from '@/components/layout/header';
-import Footer from '@/components/layout/footer';
 import { AuthProvider } from '@/contexts/auth-context';
 import { CollectionProvider } from '@/contexts/collection-context';
 import { SearchProvider } from '@/contexts/search-context';
@@ -47,11 +45,7 @@ export default function RootLayout({
           <SiteFeaturesProvider>
             <CollectionProvider>
               <SearchProvider>
-                <div className="flex flex-col min-h-screen">
-                  <Header />
-                  <div className="flex-1">{children}</div>
-                  <Footer />
-                </div>
+                {children}
               </SearchProvider>
             </CollectionProvider>
           </SiteFeaturesProvider>

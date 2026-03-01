@@ -140,12 +140,34 @@ export async function getPublicationItem(slug: string): Promise<Publication> {
 }
 
 export async function fetchCarouselItems(): Promise<CarouselItem[]> {
+  const cacheKey = '__carousel_items_cache__';
+  const cacheTtlMs = 60_000;
+
+  if (typeof window !== 'undefined') {
+    const cached = window.sessionStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as { ts: number; data: CarouselItem[] };
+        if (Date.now() - parsed.ts < cacheTtlMs && Array.isArray(parsed.data)) {
+          return parsed.data;
+        }
+      } catch {
+        // Ignore malformed cache and continue with network fetch.
+      }
+    }
+  }
+
   try {
     const response = await apiFetch(`/api/v1/media/carousel-items/`);
     if (!response.ok) {
       throw new Error('Failed to fetch carousel items');
     }
     const data: CarouselItem[] = await response.json();
+
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data }));
+    }
+
     return data;
   } catch (error) {
     console.error('Error fetching carousel items:', error);
