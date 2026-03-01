@@ -83,8 +83,13 @@ export function SearchGrid({ results = [], resultType, highlightKeyword = '' }: 
         const isGraph = resultType === 'graphs';
         const img = item as ImageListItem;
         const graph = item as GraphListItem;
+        const imageId = img.item_image ?? img.id;
         const detailUrl =
-          resultType === 'images' ? `/digipal/${item.id}` : `/${resultType}/${item.id}`;
+          resultType === 'images'
+            ? img.item_part && imageId
+              ? `/manuscripts/${img.item_part}/images/${imageId}`
+              : '#'
+            : `/${resultType}/${item.id}`;
         const displayText =
           (item as ImageListItem).locus || (item as GraphListItem).shelfmark || 'Untitled';
 

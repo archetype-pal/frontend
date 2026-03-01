@@ -10,6 +10,8 @@ export interface CollectionStarProps {
   itemType: 'image' | 'graph';
   item: {
     id: number;
+    item_part?: number | null;
+    item_image?: number | null;
     image_iiif?: string;
     coordinates?: string;
     shelfmark?: string;

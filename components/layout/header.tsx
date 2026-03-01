@@ -32,7 +32,7 @@ import { useCollection } from '@/contexts/collection-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 
-const BANNER_VISIBLE_KEY = 'digipal-header-banner-visible';
+const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

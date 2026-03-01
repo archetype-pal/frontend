@@ -152,7 +152,6 @@ Node 25 is “Current” (not LTS); Node 24 is Active LTS.
 
 **Routes without loading (candidates):**
 
-- `digipal/[id]`
 - `manuscripts/[id]/images/[imageId]`
 - `collection`, `dashboard`, `login`
 - All **backoffice** routes (layout or key pages)
@@ -161,17 +160,17 @@ Node 25 is “Current” (not LTS); Node 24 is Active LTS.
 
 **Remediation:** Add a `loading.tsx` (skeleton or spinner) for:
 
-1. `digipal/[id]`, `manuscripts/[id]/images/[imageId]`
+1. `manuscripts/[id]/images/[imageId]`
 2. Backoffice layout or high-traffic backoffice pages
 3. About and events pages if they do async work
 
 Reuse existing loading patterns from e.g. `app/blogs/[slug]/loading.tsx` or `app/manuscripts/[id]/loading.tsx`.
 
-**Status:** Done. Added `loading.tsx` for: `digipal/[id]`, `manuscripts/[id]/images/[imageId]`, `backoffice`, `about/accessibility`, `about/historical-context`, `about/about-models-of-authority`, and all four events routes (exhibition, exhibition-launch, conference, colloquium).
+**Status:** Done. Added `loading.tsx` for: `manuscripts/[id]/images/[imageId]`, `backoffice`, `about/accessibility`, `about/historical-context`, `about/about-models-of-authority`, and all four events routes (exhibition, exhibition-launch, conference, colloquium).
 
 ### 6.2 Error boundaries (Low priority)
 
-**Current:** Root `error.tsx` and `digipal/[id]/error.tsx` exist; lightbox and backoffice use custom error boundaries. Deeper segments (e.g. manuscripts, hands, scribes) rely on `notFound()` and root error.
+**Current:** Root `error.tsx` exists; lightbox and backoffice use custom error boundaries. Deeper segments (e.g. manuscripts, hands, scribes) rely on `notFound()` and root error.
 
 **Remediation:** Optional: add segment-level `error.tsx` for heavy routes (e.g. `manuscripts/[id]`, `hands/[id]`) to show a contextual “Something went wrong” and retry instead of the root error UI.
 
@@ -266,7 +265,7 @@ Reuse existing loading patterns from e.g. `app/blogs/[slug]/loading.tsx` or `app
 | P0       | Transitive vulnerabilities | Add pnpm overrides for minimatch, ajv, qs to patched versions; run audit and tests.                       | Done       |
 | P1       | Node engine                | Relax to `>=20.0.0` or `>=22.0.0` (or document Node 25 requirement and fix CI).                           | Done       |
 | P1       | CSP                        | Plan to remove or reduce `unsafe-inline` / `unsafe-eval`; implement nonces/hashes if needed.              | TODO       |
-| P1       | Loading UX                 | Add `loading.tsx` for digipal, manuscripts/images, and backoffice (and optionally about/events).          | Done       |
+| P1       | Loading UX                 | Add `loading.tsx` for manuscripts/images and backoffice (and optionally about/events).                     | Done       |
 | P2       | Env consistency            | Use `env.apiUrl` in `app/api/site-features/route.ts`.                                                     | Done       |
 | P2       | ESLint disables            | Refactor or document set-state-in-effect and exhaustive-deps; restrict no-img-element to necessary cases. | Partial    |
 | P2       | Tests                      | Add unit tests for lib and a few integration/E2E tests for main flows.                                    | Pending    |
@@ -286,7 +285,7 @@ Reuse existing loading patterns from e.g. `app/blogs/[slug]/loading.tsx` or `app
 - **Lint / TypeScript / Prettier:** All pass; CI runs lint, format, and build.
 - **Build:** Production build completes successfully; static and dynamic routes are correctly classified.
 - **next/image:** Most usages provide descriptive `alt`; raw `<img>` is used only where justified (IIIF/OpenSeadragon, carousel preview) with eslint-disable. Annotation thumbnails in ManuscriptViewer use descriptive alt (§7.2).
-- **Error handling:** Root, global-error, digipal, manuscripts/[id], and hands/[id] error boundaries exist; key pages use `notFound()` and handle publication-not-found flows.
+- **Error handling:** Root, global-error, manuscripts/[id], and hands/[id] error boundaries exist; key pages use `notFound()` and handle publication-not-found flows.
 - **Auth:** Site-features API PUT is protected by Token + server-side staff check; backoffice uses auth context and redirects.
 - **No @ts-ignore / @ts-expect-error** in the codebase.
 

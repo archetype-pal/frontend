@@ -1,5 +1,7 @@
 export interface ImageListItem {
   id: number;
+  item_part?: number | null;
+  item_image?: number | null;
   repository_name: string;
   repository_city: string;
   shelfmark: string;

@@ -5,6 +5,8 @@ import * as React from 'react';
 export type CollectionItem = {
   id: number;
   type: 'image' | 'graph';
+  item_part?: number | null;
+  item_image?: number | null;
   image_iiif?: string;
   coordinates?: string;
   shelfmark?: string;

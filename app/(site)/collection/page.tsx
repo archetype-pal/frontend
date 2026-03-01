@@ -28,6 +28,15 @@ function getItemTitle(item: CollectionItem): string {
   return String(locus ?? item.shelfmark ?? 'Untitled');
 }
 
+function getImageDetailUrl(item: CollectionItem): string {
+  const itemPart = typeof item.item_part === 'number' ? item.item_part : null;
+  const itemImage = typeof item.item_image === 'number' ? item.item_image : item.id;
+  if (itemPart && itemImage) {
+    return `/manuscripts/${itemPart}/images/${itemImage}`;
+  }
+  return '#';
+}
+
 /** Card for a graph item: thumbnail URL with bounds (no upscaling). */
 function CollectionGraphCard({
   item,
@@ -165,7 +174,7 @@ function CollectionPageContent() {
   };
 
   const getUrl = (item: CollectionItem) =>
-    item.type === 'image' ? `/digipal/${item.id}` : `/graphs/${item.id}`;
+    item.type === 'image' ? getImageDetailUrl(item) : `/graphs/${item.id}`;
 
   if (items.length === 0) {
     return (

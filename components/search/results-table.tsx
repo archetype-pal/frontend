@@ -272,9 +272,10 @@ const SUB_ROW_ACCESSORS: Partial<{ [K in ResultType]: SubRowAccessor<ResultMap[K
   places: (p) => (p as PlaceListItem).name,
 };
 
-function imageDetailUrl(item: { item_part?: number | null; item_image?: number | null }): string {
-  if (item.item_part && item.item_image) {
-    return `/manuscripts/${item.item_part}/images/${item.item_image}`;
+function imageDetailUrl(item: { item_part?: number | null; item_image?: number | null; id?: number }): string {
+  const imageId = item.item_image ?? item.id;
+  if (item.item_part && imageId) {
+    return `/manuscripts/${item.item_part}/images/${imageId}`;
   }
   return '#';
 }
@@ -284,7 +285,7 @@ function getDetailUrl<K extends ResultType>(resultType: K, item: ResultMap[K]): 
     case 'manuscripts':
       return `/manuscripts/${(item as ManuscriptListItem).id}`;
     case 'images':
-      return `/digipal/${(item as ImageListItem).id}`;
+      return imageDetailUrl(item as ImageListItem);
     case 'texts':
       return imageDetailUrl(item as TextListItem);
     case 'clauses':
