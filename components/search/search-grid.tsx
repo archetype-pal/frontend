@@ -17,6 +17,27 @@ export interface SearchGridProps {
   highlightKeyword?: string;
 }
 
+function toNumericId(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function imageDetailUrl(item: {
+  item_part?: number | string | null;
+  item_part_id?: number | string | null;
+  item_image?: number | string | null;
+  id?: number | string | null;
+}): string {
+  const imageId = toNumericId(item.item_image) ?? toNumericId(item.id);
+  const manuscriptId = toNumericId(item.item_part) ?? toNumericId(item.item_part_id) ?? imageId;
+  if (!imageId || !manuscriptId) return '#';
+  return `/manuscripts/${manuscriptId}/images/${imageId}`;
+}
+
 function GraphGridCard({
   item,
   detailUrl,
@@ -83,12 +104,9 @@ export function SearchGrid({ results = [], resultType, highlightKeyword = '' }: 
         const isGraph = resultType === 'graphs';
         const img = item as ImageListItem;
         const graph = item as GraphListItem;
-        const imageId = img.item_image ?? img.id;
         const detailUrl =
           resultType === 'images'
-            ? img.item_part && imageId
-              ? `/manuscripts/${img.item_part}/images/${imageId}`
-              : '#'
+            ? imageDetailUrl(img)
             : `/${resultType}/${item.id}`;
         const displayText =
           (item as ImageListItem).locus || (item as GraphListItem).shelfmark || 'Untitled';

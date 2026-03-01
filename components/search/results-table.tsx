@@ -272,12 +272,25 @@ const SUB_ROW_ACCESSORS: Partial<{ [K in ResultType]: SubRowAccessor<ResultMap[K
   places: (p) => (p as PlaceListItem).name,
 };
 
-function imageDetailUrl(item: { item_part?: number | null; item_image?: number | null; id?: number }): string {
-  const imageId = item.item_image ?? item.id;
-  if (item.item_part && imageId) {
-    return `/manuscripts/${item.item_part}/images/${imageId}`;
+function toNumericId(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
   }
-  return '#';
+  return null;
+}
+
+function imageDetailUrl(item: {
+  item_part?: number | string | null;
+  item_part_id?: number | string | null;
+  item_image?: number | string | null;
+  id?: number | string | null;
+}): string {
+  const imageId = toNumericId(item.item_image) ?? toNumericId(item.id);
+  const manuscriptId = toNumericId(item.item_part) ?? toNumericId(item.item_part_id) ?? imageId;
+  if (!imageId || !manuscriptId) return '#';
+  return `/manuscripts/${manuscriptId}/images/${imageId}`;
 }
 
 function getDetailUrl<K extends ResultType>(resultType: K, item: ResultMap[K]): string {
