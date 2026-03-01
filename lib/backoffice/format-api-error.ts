@@ -39,18 +39,3 @@ export function formatApiError(error: unknown): string {
   if (error instanceof Error) return error.message;
   return 'An unexpected error occurred';
 }
-
-/**
- * Map a DRF error body into { field: message } for form-level display.
- */
-export function mapServerErrors(body: Record<string, unknown>): Record<string, string> {
-  const errors: Record<string, string> = {};
-  for (const [field, value] of Object.entries(body)) {
-    if (Array.isArray(value)) {
-      errors[field] = (value as string[]).join('. ');
-    } else if (typeof value === 'string') {
-      errors[field] = value;
-    }
-  }
-  return errors;
-}

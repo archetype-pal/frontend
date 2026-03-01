@@ -79,14 +79,6 @@ export function backofficePatch<T>(path: string, token: string, data: unknown): 
   });
 }
 
-/** PUT with auth + JSON body */
-export function backofficePut<T>(path: string, token: string, data: unknown): Promise<T> {
-  return apiRequest<T>(path, token, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
-}
-
 /** DELETE with auth */
 export function backofficeDelete(path: string, token: string): Promise<void> {
   return apiRequest<void>(path, token, { method: 'DELETE' });
