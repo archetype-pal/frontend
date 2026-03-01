@@ -18,12 +18,16 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Image as ImageIcon, Plus, Loader2 } from 'lucide-react';
+import { Image as ImageIcon, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SortableCarouselCard } from '@/components/backoffice/carousel/sortable-carousel-card';
 import { CarouselEditorPanel } from '@/components/backoffice/carousel/carousel-editor-panel';
 import { CarouselPreview } from '@/components/backoffice/carousel/carousel-preview';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import {
+  BackofficeErrorState,
+  BackofficeLoadingState,
+} from '@/components/backoffice/common/query-state';
 import {
   getCarouselItems,
   createCarouselItem,
@@ -230,21 +234,12 @@ export default function CarouselPage() {
   // ── Loading / error states ─────────────────────────────────────────
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <BackofficeLoadingState />;
   }
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <p className="text-sm text-destructive">Failed to load carousel items</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </div>
+      <BackofficeErrorState message="Failed to load carousel items" onRetry={() => refetch()} />
     );
   }
 

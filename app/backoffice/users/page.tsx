@@ -11,7 +11,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  Loader2,
   Eye,
   EyeOff,
   CheckCircle,
@@ -34,6 +33,10 @@ import {
 } from '@/components/ui/dialog';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import {
+  BackofficeErrorState,
+  BackofficeLoadingState,
+} from '@/components/backoffice/common/query-state';
 import { getUsers, createUser, updateUser, deleteUser } from '@/services/backoffice/users';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
@@ -391,22 +394,11 @@ export default function UsersPage() {
   // ── Loading / error states ───────────────────────────────────────────
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <BackofficeLoadingState />;
   }
 
   if (isError) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <p className="text-sm text-destructive">Failed to load users</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </div>
-    );
+    return <BackofficeErrorState message="Failed to load users" onRetry={() => refetch()} />;
   }
 
   const canCreate = createForm.username.trim() && createForm.password.trim();
