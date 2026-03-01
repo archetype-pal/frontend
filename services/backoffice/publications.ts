@@ -4,7 +4,6 @@ import type {
   PaginatedResponse,
   PublicationListItem,
   PublicationDetail,
-  EventItem,
   CommentItem,
   CarouselItem,
 } from '@/types/backoffice';
@@ -35,18 +34,6 @@ export const getPublication = publicationsCrud.get;
 export const createPublication = publicationsCrud.create;
 export const updatePublication = publicationsCrud.update;
 export const deletePublication = publicationsCrud.remove;
-
-// ── Events ──────────────────────────────────────────────────────────────
-
-const eventsCrud = createCrudService<PaginatedResponse<EventItem>, EventItem, string>(
-  '/api/v1/media/management/events/'
-);
-
-export const getEvents = (token: string) => eventsCrud.list(token);
-export const getEvent = eventsCrud.get;
-export const createEvent = eventsCrud.create;
-export const updateEvent = eventsCrud.update;
-export const deleteEvent = eventsCrud.remove;
 
 // ── Comments ────────────────────────────────────────────────────────────
 

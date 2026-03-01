@@ -19,6 +19,7 @@ import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { Highlight } from './highlight';
 import { CollectionStar } from '@/components/collection/collection-star';
+import { getImageDetailUrl } from '@/lib/media-url';
 
 export type Column<T> = {
   header: string;
@@ -272,41 +273,20 @@ const SUB_ROW_ACCESSORS: Partial<{ [K in ResultType]: SubRowAccessor<ResultMap[K
   places: (p) => (p as PlaceListItem).name,
 };
 
-function toNumericId(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string' && value.trim() !== '') {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-function imageDetailUrl(item: {
-  item_part?: number | string | null;
-  item_part_id?: number | string | null;
-  item_image?: number | string | null;
-  id?: number | string | null;
-}): string {
-  const imageId = toNumericId(item.item_image) ?? toNumericId(item.id);
-  const manuscriptId = toNumericId(item.item_part) ?? toNumericId(item.item_part_id) ?? imageId;
-  if (!imageId || !manuscriptId) return '#';
-  return `/manuscripts/${manuscriptId}/images/${imageId}`;
-}
-
 function getDetailUrl<K extends ResultType>(resultType: K, item: ResultMap[K]): string {
   switch (resultType) {
     case 'manuscripts':
       return `/manuscripts/${(item as ManuscriptListItem).id}`;
     case 'images':
-      return imageDetailUrl(item as ImageListItem);
+      return getImageDetailUrl(item as ImageListItem);
     case 'texts':
-      return imageDetailUrl(item as TextListItem);
+      return getImageDetailUrl(item as TextListItem);
     case 'clauses':
-      return imageDetailUrl(item as ClauseListItem);
+      return getImageDetailUrl(item as ClauseListItem);
     case 'people':
-      return imageDetailUrl(item as PersonListItem);
+      return getImageDetailUrl(item as PersonListItem);
     case 'places':
-      return imageDetailUrl(item as PlaceListItem);
+      return getImageDetailUrl(item as PlaceListItem);
     case 'scribes':
     case 'hands':
     case 'graphs':

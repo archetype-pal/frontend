@@ -15,7 +15,6 @@ import {
   FileText,
   MessageSquare,
   Image,
-  CalendarDays,
   Users,
   UserCog,
   Hand,
@@ -95,7 +94,6 @@ const navigation: NavGroup[] = [
     icon: Newspaper,
     items: [
       { label: 'Publications', href: '/backoffice/publications', icon: FileText },
-      { label: 'Events', href: '/backoffice/events', icon: CalendarDays },
       { label: 'Comments', href: '/backoffice/comments', icon: MessageSquare },
       { label: 'Carousel', href: '/backoffice/carousel', icon: Image },
     ],

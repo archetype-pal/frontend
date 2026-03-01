@@ -10,32 +10,12 @@ import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { Highlight } from './highlight';
 import { CollectionStar } from '@/components/collection/collection-star';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
+import { getImageDetailUrl } from '@/lib/media-url';
 
 export interface SearchGridProps {
   results?: (ImageListItem | GraphListItem)[];
   resultType: string;
   highlightKeyword?: string;
-}
-
-function toNumericId(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string' && value.trim() !== '') {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-function imageDetailUrl(item: {
-  item_part?: number | string | null;
-  item_part_id?: number | string | null;
-  item_image?: number | string | null;
-  id?: number | string | null;
-}): string {
-  const imageId = toNumericId(item.item_image) ?? toNumericId(item.id);
-  const manuscriptId = toNumericId(item.item_part) ?? toNumericId(item.item_part_id) ?? imageId;
-  if (!imageId || !manuscriptId) return '#';
-  return `/manuscripts/${manuscriptId}/images/${imageId}`;
 }
 
 function GraphGridCard({
@@ -106,7 +86,7 @@ export function SearchGrid({ results = [], resultType, highlightKeyword = '' }: 
         const graph = item as GraphListItem;
         const detailUrl =
           resultType === 'images'
-            ? imageDetailUrl(img)
+            ? getImageDetailUrl(img)
             : `/${resultType}/${item.id}`;
         const displayText =
           (item as ImageListItem).locus || (item as GraphListItem).shelfmark || 'Untitled';

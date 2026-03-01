@@ -8,7 +8,6 @@ import {
   Landmark,
   Newspaper,
   PenTool,
-  CalendarDays,
   MessageSquare,
   Image,
   Hash,
@@ -95,7 +94,6 @@ const entries: NavEntry[] = [
     icon: Newspaper,
     group: 'Site & Content',
   },
-  { label: 'Events', href: '/backoffice/events', icon: CalendarDays, group: 'Site & Content' },
   { label: 'Comments', href: '/backoffice/comments', icon: MessageSquare, group: 'Site & Content' },
   { label: 'Carousel', href: '/backoffice/carousel', icon: Image, group: 'Site & Content' },
   // Administration

@@ -4,7 +4,6 @@ import * as React from 'react';
 import { Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { useCollection, type CollectionItem } from '@/contexts/collection-context';
 import { CollectionStar } from '@/components/collection/collection-star';
 import { Button } from '@/components/ui/button';
@@ -12,9 +11,12 @@ import { Trash2, Star, ArrowUpDown } from 'lucide-react';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
-
-type SortOption = 'added' | 'name' | 'repository';
-type FilterType = 'all' | 'image' | 'graph';
+import { getImageDetailUrl as buildImageDetailUrl } from '@/lib/media-url';
+import {
+  useCollectionViewState,
+  type FilterType,
+  type SortOption,
+} from '@/hooks/collection/use-collection-view-state';
 
 /** Sync thumbnail URL for image items (no coordinates). */
 function getImageItemThumbnailUrl(item: CollectionItem): string | null {
@@ -29,12 +31,7 @@ function getItemTitle(item: CollectionItem): string {
 }
 
 function getImageDetailUrl(item: CollectionItem): string {
-  const itemPart = typeof item.item_part === 'number' ? item.item_part : null;
-  const itemImage = typeof item.item_image === 'number' ? item.item_image : item.id;
-  if (itemPart && itemImage) {
-    return `/manuscripts/${itemPart}/images/${itemImage}`;
-  }
-  return '#';
+  return buildImageDetailUrl(item);
 }
 
 /** Card for a graph item: thumbnail URL with bounds (no upscaling). */
@@ -96,85 +93,16 @@ function CollectionGraphCard({
 }
 
 function CollectionPageContent() {
-  const searchParams = useSearchParams();
   const { items, clearCollection } = useCollection();
-  const [filter, setFilter] = React.useState<FilterType>(() => {
-    const p = searchParams.get('filter') as FilterType;
-    return p && ['all', 'image', 'graph'].includes(p) ? p : 'all';
-  });
-  const [sortBy, setSortBy] = React.useState<SortOption>(() => {
-    const p = searchParams.get('sort') as SortOption;
-    return p && ['added', 'name', 'repository'].includes(p) ? p : 'added';
-  });
-  const [showClearConfirm, setShowClearConfirm] = React.useState(false);
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  React.useEffect(() => {
-    const params = new URLSearchParams();
-    if (filter !== 'all') params.set('filter', filter);
-    if (sortBy !== 'added') params.set('sort', sortBy);
-    window.history.replaceState(
-      null,
-      '',
-      params.toString() ? `/collection?${params}` : '/collection'
-    );
-  }, [filter, sortBy]);
-
-  React.useEffect(() => {
-    if (items.length === 0) {
-      setShowClearConfirm(false);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    }
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [items.length]);
-
-  const filteredItems = React.useMemo(() => {
-    const filtered = filter === 'all' ? items : items.filter((item) => item.type === filter);
-    if (sortBy === 'added') return filtered;
-
-    return [...filtered].sort((a, b) => {
-      if (sortBy === 'name') {
-        const nameA = (
-          a.type === 'image' ? a.shelfmark || a.locus || '' : a.shelfmark || ''
-        ).toLowerCase();
-        const nameB = (
-          b.type === 'image' ? b.shelfmark || b.locus || '' : b.shelfmark || ''
-        ).toLowerCase();
-        return nameA.localeCompare(nameB);
-      }
-      return (a.repository_name || '')
-        .toLowerCase()
-        .localeCompare((b.repository_name || '').toLowerCase());
-    });
-  }, [items, filter, sortBy]);
+  const { filter, setFilter, sortBy, setSortBy, showClearConfirm, filteredItems, handleClear } =
+    useCollectionViewState(items, clearCollection);
 
   const images = filteredItems.filter((item) => item.type === 'image');
   const graphs = filteredItems.filter((item) => item.type === 'graph');
   const allImages = items.filter((item) => item.type === 'image');
   const allGraphs = items.filter((item) => item.type === 'graph');
 
-  const handleClear = () => {
-    if (showClearConfirm) {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      clearCollection();
-      setShowClearConfirm(false);
-    } else {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      setShowClearConfirm(true);
-      timeoutRef.current = setTimeout(() => {
-        setShowClearConfirm(false);
-        timeoutRef.current = null;
-      }, 5000);
-    }
-  };
-
-  const getUrl = (item: CollectionItem) =>
-    item.type === 'image' ? getImageDetailUrl(item) : `/graphs/${item.id}`;
+  const getUrl = (item: CollectionItem) => (item.type === 'image' ? getImageDetailUrl(item) : '#');
 
   if (items.length === 0) {
     return (
