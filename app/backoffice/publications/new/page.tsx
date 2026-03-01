@@ -60,6 +60,8 @@ export default function NewPublicationPage() {
     },
   });
 
+  const publicationKindPath = isNews ? 'news' : isBlog ? 'blogs' : 'feature';
+
   return (
     <div className="max-w-lg space-y-6">
       <div className="flex items-center gap-2">
@@ -86,17 +88,19 @@ export default function NewPublicationPage() {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label>Slug</Label>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
               onClick={() => {
                 const next = !slugLocked;
                 setSlugLocked(next);
                 if (!next) setSlug(generateSlug(title));
               }}
-              className="text-xs text-muted-foreground hover:text-foreground"
             >
               {slugLocked ? 'Unlock (auto-generate)' : 'Lock (manual)'}
-            </button>
+            </Button>
           </div>
           <Input
             value={slug}
@@ -107,7 +111,9 @@ export default function NewPublicationPage() {
             placeholder="my-publication-title"
             className="font-mono text-sm"
           />
-          {slug && <p className="text-xs text-muted-foreground">URL: /blogs/{slug}</p>}
+          {slug && (
+            <p className="text-xs text-muted-foreground">URL: /publications/{publicationKindPath}/{slug}</p>
+          )}
         </div>
 
         {user && (

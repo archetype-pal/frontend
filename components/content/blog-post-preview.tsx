@@ -24,6 +24,12 @@ export default function BlogPostPreview({
   showShareBtns = true,
   showReadMoreBtn = true,
 }: BlogPostPreviewProps) {
+  const publicationLabel = slug.includes('/publications/feature')
+    ? 'Feature'
+    : slug.includes('/publications/blogs')
+      ? 'Blog'
+      : 'News';
+
   return (
     <article className="mb-8">
       <h2 className="text-2xl font-semibold text-[#2B4C6F] mb-3">
@@ -36,9 +42,7 @@ export default function BlogPostPreview({
           <User className="h-4 w-4 mr-1" />
           Posted by:
         </span>
-        <Link href={`/authors/${author}`} className="text-[#2B4C6F] hover:underline font-medium">
-          {author}
-        </Link>
+        <span className="text-[#2B4C6F] font-medium">{author}</span>
         <span className="mx-1">|</span>
         <span className="flex items-center">
           <Calendar className="h-4 w-4 mr-1" />
@@ -53,7 +57,7 @@ export default function BlogPostPreview({
         <span className="mx-1">|</span>
         <Link href={slug} className="flex items-center text-[#2B4C6F] hover:underline">
           <Newspaper className="h-4 w-4 mr-1" />
-          News
+          {publicationLabel}
         </Link>
         <span className="mx-1">|</span>
         <Link href={`${slug}`} className="flex items-center text-[#2B4C6F] hover:underline">

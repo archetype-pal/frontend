@@ -213,6 +213,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
   }
 
   const markDirty = () => setDirty(true);
+  const publicationKindPath = isNews ? 'news' : isBlog ? 'blogs' : isFeatured ? 'feature' : 'blogs';
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -295,17 +296,19 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label>Slug</Label>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
               onClick={() => {
                 const next = !slugLocked;
                 setSlugLocked(next);
                 if (!next) setPubSlug(generateSlug(title));
               }}
-              className="text-xs text-muted-foreground hover:text-foreground"
             >
               {slugLocked ? 'Auto-generate from title' : 'Lock (manual)'}
-            </button>
+            </Button>
           </div>
           <Input
             value={pubSlug}
@@ -316,7 +319,9 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
             }}
             className="font-mono text-sm"
           />
-          <p className="text-xs text-muted-foreground">URL: /blogs/{pubSlug || '...'}</p>
+          <p className="text-xs text-muted-foreground">
+            URL: /publications/{publicationKindPath}/{pubSlug || '...'}
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

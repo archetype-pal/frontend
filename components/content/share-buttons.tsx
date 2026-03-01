@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
 interface ShareButtonsProps {
@@ -10,11 +9,9 @@ interface ShareButtonsProps {
 }
 
 export default function ShareButtons({ title, author, slug }: ShareButtonsProps) {
-  const [currentUrl, setCurrentUrl] = useState<string>('');
-
-  useEffect(() => {
-    setCurrentUrl(`${window.location.origin}/posts/${slug}`);
-  }, [slug]);
+  const normalizedSlug = slug.startsWith('/') ? slug : `/${slug}`;
+  const currentUrl =
+    typeof window === 'undefined' ? '' : `${window.location.origin}${normalizedSlug}`;
 
   const handleShare = async (platform?: 'twitter' | 'facebook') => {
     if (!currentUrl) return;
