@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import path from 'path';
-import { getDefaultConfig, type SiteFeaturesConfig } from './site-features';
+import { getDefaultConfig, normalizeSectionOrder, type SiteFeaturesConfig } from './site-features';
 
 const CONFIG_PATH = path.join(process.cwd(), 'config', 'site-features.json');
 
@@ -11,6 +11,7 @@ export async function readSiteFeatures(): Promise<SiteFeaturesConfig> {
     const parsed = JSON.parse(raw) as Partial<SiteFeaturesConfig>;
     return {
       sections: { ...defaults.sections, ...parsed.sections },
+      sectionOrder: normalizeSectionOrder(parsed.sectionOrder),
       searchCategories: {
         ...defaults.searchCategories,
         ...Object.fromEntries(
@@ -29,5 +30,9 @@ export async function readSiteFeatures(): Promise<SiteFeaturesConfig> {
 export async function writeSiteFeatures(config: SiteFeaturesConfig): Promise<void> {
   const dir = path.dirname(CONFIG_PATH);
   await mkdir(dir, { recursive: true });
-  await writeFile(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8');
+  const normalized: SiteFeaturesConfig = {
+    ...config,
+    sectionOrder: normalizeSectionOrder(config.sectionOrder),
+  };
+  await writeFile(CONFIG_PATH, JSON.stringify(normalized, null, 2), 'utf-8');
 }

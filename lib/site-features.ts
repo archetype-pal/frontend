@@ -19,6 +19,7 @@ export type SearchCategoryConfig = {
 
 export type SiteFeaturesConfig = {
   sections: Record<SectionKey, boolean>;
+  sectionOrder: SectionKey[];
   searchCategories: Record<ResultType, SearchCategoryConfig>;
 };
 
@@ -43,6 +44,26 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   events: 'Past Events',
   about: 'About',
 };
+
+export function normalizeSectionOrder(order: readonly SectionKey[] | undefined): SectionKey[] {
+  const ordered: SectionKey[] = [];
+  const seen = new Set<SectionKey>();
+
+  for (const key of order ?? []) {
+    if (ALL_SECTION_KEYS.includes(key) && !seen.has(key)) {
+      ordered.push(key);
+      seen.add(key);
+    }
+  }
+
+  for (const key of ALL_SECTION_KEYS) {
+    if (!seen.has(key)) {
+      ordered.push(key);
+    }
+  }
+
+  return ordered;
+}
 
 const DEFAULT_COLUMNS: Record<ResultType, string[]> = {
   manuscripts: [
@@ -126,5 +147,5 @@ export function getDefaultConfig(): SiteFeaturesConfig {
     ])
   ) as Record<ResultType, SearchCategoryConfig>;
 
-  return { sections, searchCategories };
+  return { sections, sectionOrder: [...ALL_SECTION_KEYS], searchCategories };
 }

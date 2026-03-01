@@ -24,6 +24,7 @@ import {
 import { useCollection } from '@/contexts/collection-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
+import { normalizeSectionOrder, type SectionKey } from '@/lib/site-features';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 
@@ -32,7 +33,7 @@ export default function Header() {
   const [isBannerVisible, setIsBannerVisible] = useState(true);
   const { items } = useCollection();
   const { token, user, logout } = useAuth();
-  const { isSectionEnabled } = useSiteFeatures();
+  const { config, isSectionEnabled } = useSiteFeatures();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -78,6 +79,146 @@ export default function Header() {
       return pathname === href;
     }
     return pathname?.startsWith(href);
+  };
+
+  const orderedSections = normalizeSectionOrder(config.sectionOrder);
+
+  const renderSectionButton = (sectionKey: SectionKey) => {
+    if (!isSectionEnabled(sectionKey)) {
+      return null;
+    }
+
+    switch (sectionKey) {
+      case 'search':
+        return (
+          <li key={sectionKey}>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className={`transition-colors w-full md:w-auto justify-start group ${
+                isActive('/search')
+                  ? 'bg-primary-foreground/30 text-white'
+                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+              }`}
+            >
+              <Link href="/search/manuscripts">
+                <Search className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
+                Search
+              </Link>
+            </Button>
+          </li>
+        );
+      case 'collection':
+        return (
+          <li key={sectionKey}>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className={`transition-colors w-full md:w-auto justify-start group ${
+                isActive('/collection', true)
+                  ? 'bg-primary-foreground/30 text-white'
+                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+              }`}
+            >
+              <Link href="/collection">
+                <FolderOpen className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
+                My Collection ({items.length})
+              </Link>
+            </Button>
+          </li>
+        );
+      case 'lightbox':
+        return (
+          <li key={sectionKey}>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className={`transition-colors w-full md:w-auto justify-start group ${
+                isActive('/lightbox', true)
+                  ? 'bg-primary-foreground/30 text-white'
+                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+              }`}
+            >
+              <Link href="/lightbox">Lightbox</Link>
+            </Button>
+          </li>
+        );
+      case 'news':
+        return (
+          <li key={sectionKey}>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className={`transition-colors w-full md:w-auto justify-start ${
+                isActive('/publications/news')
+                  ? 'bg-primary-foreground/30 text-white'
+                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+              }`}
+            >
+              <Link href="/publications/news">News</Link>
+            </Button>
+          </li>
+        );
+      case 'blogs':
+        return (
+          <li key={sectionKey}>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className={`transition-colors w-full md:w-auto justify-start ${
+                isActive('/publications/blogs')
+                  ? 'bg-primary-foreground/30 text-white'
+                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+              }`}
+            >
+              <Link href="/publications/blogs">Blogs</Link>
+            </Button>
+          </li>
+        );
+      case 'featureArticles':
+        return (
+          <li key={sectionKey}>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className={`transition-colors w-full md:w-auto justify-start ${
+                isActive('/publications/feature')
+                  ? 'bg-primary-foreground/30 text-white'
+                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+              }`}
+            >
+              <Link href="/publications/feature">Feature Articles</Link>
+            </Button>
+          </li>
+        );
+      case 'events':
+        return null;
+      case 'about':
+        return (
+          <li key={sectionKey}>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className={`transition-colors w-full md:w-auto justify-start ${
+                isActive('/about')
+                  ? 'bg-primary-foreground/30 text-white'
+                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
+              }`}
+            >
+              <Link href="/about/about-models-of-authority">About</Link>
+            </Button>
+          </li>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -134,124 +275,7 @@ export default function Header() {
                   </Link>
                 </Button>
               </li>
-              {isSectionEnabled('search') && (
-                <li>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className={`transition-colors w-full md:w-auto justify-start group ${
-                      isActive('/search')
-                        ? 'bg-primary-foreground/30 text-white'
-                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                    }`}
-                  >
-                    <Link href="/search/manuscripts">
-                      <Search className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
-                      Search
-                    </Link>
-                  </Button>
-                </li>
-              )}
-              {isSectionEnabled('collection') && (
-                <li>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className={`transition-colors w-full md:w-auto justify-start group ${
-                      isActive('/collection', true)
-                        ? 'bg-primary-foreground/30 text-white'
-                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                    }`}
-                  >
-                    <Link href="/collection">
-                      <FolderOpen className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
-                      My Collection ({items.length})
-                    </Link>
-                  </Button>
-                </li>
-              )}
-              {isSectionEnabled('lightbox') && (
-                <li>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className={`transition-colors w-full md:w-auto justify-start group ${
-                      isActive('/lightbox', true)
-                        ? 'bg-primary-foreground/30 text-white'
-                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                    }`}
-                  >
-                    <Link href="/lightbox">Lightbox</Link>
-                  </Button>
-                </li>
-              )}
-              {isSectionEnabled('news') && (
-                <li>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className={`transition-colors w-full md:w-auto justify-start ${
-                      isActive('/publications/news')
-                        ? 'bg-primary-foreground/30 text-white'
-                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                    }`}
-                  >
-                    <Link href="/publications/news">News</Link>
-                  </Button>
-                </li>
-              )}
-              {isSectionEnabled('blogs') && (
-                <li>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className={`transition-colors w-full md:w-auto justify-start ${
-                      isActive('/publications/blogs')
-                        ? 'bg-primary-foreground/30 text-white'
-                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                    }`}
-                  >
-                    <Link href="/publications/blogs">Blogs</Link>
-                  </Button>
-                </li>
-              )}
-              {isSectionEnabled('featureArticles') && (
-                <li>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className={`transition-colors w-full md:w-auto justify-start ${
-                      isActive('/publications/feature')
-                        ? 'bg-primary-foreground/30 text-white'
-                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                    }`}
-                  >
-                    <Link href="/publications/feature">Feature Articles</Link>
-                  </Button>
-                </li>
-              )}
-              {isSectionEnabled('about') && (
-                <li>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className={`transition-colors w-full md:w-auto justify-start ${
-                      isActive('/about')
-                        ? 'bg-primary-foreground/30 text-white'
-                        : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                    }`}
-                  >
-                    <Link href="/about/about-models-of-authority">About</Link>
-                  </Button>
-                </li>
-              )}
+              {orderedSections.map((sectionKey) => renderSectionButton(sectionKey))}
             </ul>
             <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto md:max-w-xs">
               {isSectionEnabled('search') && (

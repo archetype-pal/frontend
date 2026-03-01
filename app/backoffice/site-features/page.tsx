@@ -12,6 +12,7 @@ import { SectionToggles } from '@/components/backoffice/site-features/section-to
 import { SearchCategoryConfigPanel } from '@/components/backoffice/site-features/search-category-config';
 import {
   getDefaultConfig,
+  normalizeSectionOrder,
   type SiteFeaturesConfig,
   type SectionKey,
   type SearchCategoryConfig,
@@ -92,6 +93,14 @@ export default function SiteFeaturesPage() {
     setDirty(true);
   };
 
+  const handleSectionOrderChange = (sectionOrder: SectionKey[]) => {
+    setConfig((prev) => ({
+      ...prev,
+      sectionOrder: normalizeSectionOrder(sectionOrder),
+    }));
+    setDirty(true);
+  };
+
   const handleCategoryChange = (type: ResultType, catConfig: SearchCategoryConfig) => {
     setConfig((prev) => ({
       ...prev,
@@ -120,7 +129,12 @@ export default function SiteFeaturesPage() {
         </div>
       </div>
 
-      <SectionToggles sections={config.sections} onChange={handleSectionChange} />
+      <SectionToggles
+        sections={config.sections}
+        sectionOrder={config.sectionOrder}
+        onChange={handleSectionChange}
+        onOrderChange={handleSectionOrderChange}
+      />
       <SearchCategoryConfigPanel
         categories={config.searchCategories}
         onChange={handleCategoryChange}
