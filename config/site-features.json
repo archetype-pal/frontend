@@ -4,12 +4,21 @@
     "collection": true,
     "lightbox": true,
     "news": false,
-    "blogs": true,
+    "blogs": false,
     "featureArticles": true,
     "events": false,
     "about": true
   },
-  "sectionOrder": ["search", "lightbox", "collection", "blogs", "featureArticles", "about", "news"],
+  "sectionOrder": [
+    "search",
+    "lightbox",
+    "collection",
+    "blogs",
+    "featureArticles",
+    "about",
+    "news",
+    "events"
+  ],
   "searchCategories": {
     "manuscripts": {
       "enabled": true,
@@ -22,7 +31,9 @@
         "Shelfmark",
         "Text Date"
       ],
-      "visibleFacets": ["type"]
+      "visibleFacets": [
+        "type"
+      ]
     },
     "images": {
       "enabled": true,
@@ -48,8 +59,15 @@
     },
     "scribes": {
       "enabled": true,
-      "visibleColumns": ["Scribe Name", "Date", "Scriptorium"],
-      "visibleFacets": ["text_date", "scriptorium"]
+      "visibleColumns": [
+        "Scribe Name",
+        "Date",
+        "Scriptorium"
+      ],
+      "visibleFacets": [
+        "text_date",
+        "scriptorium"
+      ]
     },
     "hands": {
       "enabled": true,
@@ -62,7 +80,12 @@
         "Date",
         "Catalogue Num."
       ],
-      "visibleFacets": ["text_date", "repository_name", "repository_city", "place"]
+      "visibleFacets": [
+        "text_date",
+        "repository_name",
+        "repository_city",
+        "place"
+      ]
     },
     "graphs": {
       "enabled": true,
