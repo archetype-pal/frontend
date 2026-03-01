@@ -3,16 +3,9 @@ import { redirect } from 'next/navigation';
 import { SearchPage } from '@/components/search/search-page';
 import { SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
 import { readSiteFeatures } from '@/lib/site-features-server';
+import { PageLoadingState } from '@/components/page/page-loading-state';
 
 const VALID = new Set<string>(SEARCH_RESULT_TYPES);
-
-function SearchFallback() {
-  return (
-    <div className="flex h-screen items-center justify-center bg-gray-50">
-      <p className="text-muted-foreground">Loading search…</p>
-    </div>
-  );
-}
 
 export default async function SearchTypePage({ params }: { params: Promise<{ type: string }> }) {
   const { type: typeParam } = await params;
@@ -30,7 +23,7 @@ export default async function SearchTypePage({ params }: { params: Promise<{ typ
     redirect(`/search/${firstEnabled}`);
   }
   return (
-    <Suspense fallback={<SearchFallback />}>
+    <Suspense fallback={<PageLoadingState label="Loading search…" />}>
       <SearchPage resultType={type} />
     </Suspense>
   );
