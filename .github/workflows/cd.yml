@@ -35,7 +35,7 @@ jobs:
           context: .
           file: Dockerfile
           build-args: |
-            NEXT_PUBLIC_API_URL=https://betaarchetype.gla.ac.uk
+            NEXT_PUBLIC_API_URL=https://archetype.gla.ac.uk
           push: true
           tags: |
             ghcr.io/archetype-pal/frontend:latest
@@ -48,7 +48,7 @@ jobs:
           context: .
           file: Dockerfile
           build-args: |
-            NEXT_PUBLIC_API_URL=https://archetype.gla.ac.uk
+            NEXT_PUBLIC_API_URL=https://betaarchetype.gla.ac.uk
           push: true
           tags: |
             ghcr.io/archetype-pal/frontend:staging-source
