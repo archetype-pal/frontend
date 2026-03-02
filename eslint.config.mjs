@@ -19,6 +19,7 @@ export default defineConfig([
     '.next/**',
     'out/**',
     'build/**',
+    'coverage/**',
     'next-env.d.ts',
     'node_modules/**',
     'mock/**',
