@@ -5,8 +5,16 @@ import type { BackofficeDate } from '@/types/backoffice';
 import { createDate, deleteDate, getDates, updateDate } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { SimpleCrudPage } from '@/components/backoffice/common/simple-crud-page';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 export default function DatesPage() {
+  const { getLabel, getPluralLabel } = useModelLabels();
+  const dateLabel = getLabel('date');
+  const dateLabelPlural = getPluralLabel('date');
+  const historicalItemPlural = getPluralLabel('historicalItem');
+  const dateMinWeightLabel = getLabel('fieldDateMinWeight');
+  const dateMaxWeightLabel = getLabel('fieldDateMaxWeight');
+
   return (
     <SimpleCrudPage<BackofficeDate>
       queryKey={backofficeKeys.dates.all()}
@@ -22,16 +30,16 @@ export default function DatesPage() {
       updateFn={(token, id, payload) => updateDate(token, id, payload as Partial<BackofficeDate>)}
       deleteFn={(token, id) => deleteDate(token, id)}
       icon={CalendarDays}
-      title="Dates"
-      description="Manage date records used across historical items"
-      singularLabel="Date"
-      pluralLabel="Dates"
+      title={dateLabelPlural}
+      description={`Manage ${dateLabel.toLowerCase()} records used across ${historicalItemPlural.toLowerCase()}`}
+      singularLabel={dateLabel}
+      pluralLabel={dateLabelPlural}
       searchColumn="date"
       fields={[
-        { key: 'date', label: 'Date string', placeholder: 'e.g. s.xii' },
+        { key: 'date', label: `${dateLabel} string`, placeholder: 'e.g. s.xii' },
         {
           key: 'min_weight',
-          label: 'Min Weight',
+          label: dateMinWeightLabel,
           inputType: 'number',
           placeholder: '0',
           parse: (v) => Number(v) || 0,
@@ -39,14 +47,14 @@ export default function DatesPage() {
         },
         {
           key: 'max_weight',
-          label: 'Max Weight',
+          label: dateMaxWeightLabel,
           inputType: 'number',
           placeholder: '0',
           parse: (v) => Number(v) || 0,
           tableSize: 100,
         },
       ]}
-      deleteDescription="This may affect items that reference this date."
+      deleteDescription={`This may affect ${historicalItemPlural.toLowerCase()} that reference this ${dateLabel.toLowerCase()}.`}
     />
   );
 }

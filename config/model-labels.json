@@ -1,0 +1,13 @@
+{
+  "labels": {
+    "historicalItem": "Historical Item",
+    "catalogueNumber": "Catalogue Number",
+    "position": "Position",
+    "date": "Date",
+    "appManuscripts": "Manuscripts",
+    "fieldHairType": "Hair Type",
+    "fieldShelfmark": "Shelfmark",
+    "fieldDateMinWeight": "Minimum weight",
+    "fieldDateMaxWeight": "Maximum weight"
+  }
+}

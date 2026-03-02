@@ -11,6 +11,7 @@ import { FILTER_ORDER_MAP } from '@/lib/filter-order';
 import { formatFacetTitle } from '@/lib/search-query';
 import { DEFAULT_COLUMNS, type SearchCategoryConfig } from '@/lib/site-features';
 import { SortableCheckboxList, type SortableItem } from './sortable-checkbox-list';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 const CATEGORY_LABELS: Record<ResultType, string> = {
   manuscripts: 'Manuscripts',
@@ -42,6 +43,11 @@ function useFacetItems(type: ResultType): SortableItem[] {
 
 export function SearchCategoryConfigPanel({ categories, onChange }: Props) {
   const [openCategory, setOpenCategory] = useState<string | null>(null);
+  const { getLabel } = useModelLabels();
+  const categoryLabels: Record<ResultType, string> = {
+    ...CATEGORY_LABELS,
+    manuscripts: getLabel('appManuscripts'),
+  };
 
   return (
     <Card>
@@ -74,7 +80,7 @@ export function SearchCategoryConfigPanel({ categories, onChange }: Props) {
                         <ChevronDown
                           className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-0' : '-rotate-90'}`}
                         />
-                        <span className="text-sm font-medium">{CATEGORY_LABELS[type]}</span>
+                        <span className="text-sm font-medium">{categoryLabels[type]}</span>
                         {!isOpen && (
                           <span className="text-xs text-muted-foreground ml-1">
                             {config.visibleColumns.length} col · {config.visibleFacets.length}{' '}

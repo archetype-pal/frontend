@@ -28,6 +28,7 @@ import { getScribes } from '@/services/backoffice/scribes';
 import { getSearchEngineStats } from '@/services/backoffice/search-engine';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 // ---------------------------------------------------------------------------
 // Greeting helpers
@@ -134,7 +135,10 @@ function QuickAccessCard({
 
 export default function BackofficeDashboardPage() {
   const { token, user } = useAuth();
+  const { getLabel } = useModelLabels();
   const { entities: recentEntities } = useRecentEntities();
+  const appManuscriptsLabel = getLabel('appManuscripts');
+  const historicalItemLabel = getLabel('historicalItem');
 
   // Data queries
   const characters = useQuery({
@@ -269,7 +273,7 @@ export default function BackofficeDashboardPage() {
         <h2 className="text-sm font-medium text-muted-foreground mb-3">Quick Access</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <QuickAccessCard
-            title="Manuscripts"
+            title={appManuscriptsLabel}
             description="Historical items, parts, and images"
             count={manuscripts.data?.count}
             icon={BookOpen}
@@ -374,7 +378,7 @@ export default function BackofficeDashboardPage() {
         <Link href="/backoffice/manuscripts/new">
           <Button variant="outline" size="sm" className="gap-1.5">
             <BookOpen className="h-3.5 w-3.5" />
-            New Manuscript
+            {`New ${historicalItemLabel}`}
           </Button>
         </Link>
         <Link href="/backoffice/publications/new">

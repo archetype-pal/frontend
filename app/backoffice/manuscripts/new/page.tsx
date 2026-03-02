@@ -29,6 +29,7 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { toast } from 'sonner';
 import type { Repository } from '@/types/backoffice';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 const ITEM_TYPES = [
   { value: 'agreement', label: 'Agreement' },
@@ -39,6 +40,10 @@ const ITEM_TYPES = [
 export default function NewManuscriptPage() {
   const { token } = useAuth();
   const router = useRouter();
+  const { getLabel } = useModelLabels();
+  const historicalItemLabel = getLabel('historicalItem');
+  const shelfmarkLabel = getLabel('fieldShelfmark');
+  const dateLabel = getLabel('date');
 
   // Location fields
   const [repository, setRepository] = useState('');
@@ -113,11 +118,11 @@ export default function NewManuscriptPage() {
       return historicalItem;
     },
     onSuccess: (data) => {
-      toast.success('Manuscript created');
+      toast.success(`${historicalItemLabel} created`);
       router.push(`/backoffice/manuscripts/${data.id}`);
     },
     onError: (err) => {
-      toast.error('Failed to create manuscript', {
+      toast.error(`Failed to create ${historicalItemLabel.toLowerCase()}`, {
         description: formatApiError(err),
       });
     },
@@ -134,7 +139,7 @@ export default function NewManuscriptPage() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <h1 className="text-xl font-semibold">New Manuscript</h1>
+        <h1 className="text-xl font-semibold">{`New ${historicalItemLabel}`}</h1>
       </div>
 
       {/* Section 1: Physical Location */}
@@ -164,7 +169,7 @@ export default function NewManuscriptPage() {
           </div>
 
           <div className="space-y-1.5">
-            <FieldLabel helpField="currentLocation.shelfmark">Shelfmark</FieldLabel>
+            <FieldLabel helpField="currentLocation.shelfmark">{shelfmarkLabel}</FieldLabel>
             <Input
               value={shelfmark}
               onChange={(e) => setShelfmark(e.target.value)}
@@ -172,8 +177,8 @@ export default function NewManuscriptPage() {
             />
             {showShelfmarkWarning && (
               <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
-                <AlertCircle className="h-3 w-3" />A shelfmark is recommended so the manuscript can
-                be identified later.
+                <AlertCircle className="h-3 w-3" />
+                {`A ${shelfmarkLabel.toLowerCase()} is recommended so the ${historicalItemLabel.toLowerCase()} can be identified later.`}
               </p>
             )}
           </div>
@@ -230,7 +235,7 @@ export default function NewManuscriptPage() {
 
           <div className="space-y-1.5">
             <Label>
-              Date <span className="text-muted-foreground font-normal">(optional)</span>
+              {dateLabel} <span className="text-muted-foreground font-normal">(optional)</span>
             </Label>
             <Select value={date} onValueChange={setDate}>
               <SelectTrigger>

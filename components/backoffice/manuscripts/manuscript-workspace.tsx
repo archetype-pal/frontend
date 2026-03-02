@@ -38,6 +38,7 @@ import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
 import type { HistoricalItemDetail } from '@/types/backoffice';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 const ITEM_TYPES = [
   { value: 'agreement', label: 'Agreement' },
@@ -53,6 +54,11 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   const { token } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { getLabel, getPluralLabel } = useModelLabels();
+  const historicalItemLabel = getLabel('historicalItem');
+  const catalogueLabelPlural = getPluralLabel('catalogueNumber');
+  const dateLabel = getLabel('date');
+  const hairTypeLabel = getLabel('fieldHairType');
 
   const { data: item, isLoading } = useQuery({
     queryKey: backofficeKeys.manuscripts.detail(itemId),
@@ -84,8 +90,8 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       const label =
         item.catalogue_numbers.length > 0
           ? item.catalogue_numbers.map((cn) => `${cn.catalogue_label} ${cn.number}`).join(', ')
-          : `Item #${item.id}`;
-      track({ label, href: `/backoffice/manuscripts/${itemId}`, type: 'Manuscript' });
+          : `${historicalItemLabel} #${item.id}`;
+      track({ label, href: `/backoffice/manuscripts/${itemId}`, type: historicalItemLabel });
       // Sync draft from item; intentional setState in effect.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setDraft({
@@ -97,7 +103,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       });
       setDirty(false);
     }
-  }, [item, itemId, track]);
+  }, [item, itemId, track, historicalItemLabel]);
 
   const updateField = <K extends keyof typeof draft>(field: K, value: (typeof draft)[K]) => {
     setDraft((prev) => ({ ...prev, [field]: value }));
@@ -110,7 +116,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   const saveMut = useMutation({
     mutationFn: () => updateHistoricalItem(token!, itemId, draft),
     onSuccess: () => {
-      toast.success('Manuscript saved');
+      toast.success(`${historicalItemLabel} saved`);
       queryClient.invalidateQueries({
         queryKey: backofficeKeys.manuscripts.detail(itemId),
       });
@@ -120,7 +126,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       setDirty(false);
     },
     onError: (err) => {
-      toast.error('Failed to save manuscript', {
+      toast.error(`Failed to save ${historicalItemLabel.toLowerCase()}`, {
         description: formatApiError(err),
       });
     },
@@ -138,14 +144,14 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   const deleteMut = useMutation({
     mutationFn: () => deleteHistoricalItem(token!, itemId),
     onSuccess: () => {
-      toast.success('Manuscript deleted');
+      toast.success(`${historicalItemLabel} deleted`);
       queryClient.invalidateQueries({
         queryKey: backofficeKeys.manuscripts.all(),
       });
       router.push('/backoffice/manuscripts');
     },
     onError: (err) => {
-      toast.error('Failed to delete manuscript', {
+      toast.error(`Failed to delete ${historicalItemLabel.toLowerCase()}`, {
         description: formatApiError(err),
       });
     },
@@ -167,7 +173,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
     if (firstPart?.display_label) {
       return firstPart.display_label;
     }
-    return `Manuscript #${item.id}`;
+    return `${historicalItemLabel} #${item.id}`;
   })();
 
   return (
@@ -221,7 +227,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
         const badges = [
           ['Parts', partsCount],
           ['Images', imagesCount],
-          ['Catalogue Numbers', catalogueCount],
+          [catalogueLabelPlural, catalogueCount],
           ['Descriptions', descriptionsCount],
         ] as const;
         return (
@@ -244,7 +250,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             value: item.item_parts[0]?.current_item_display ?? undefined,
           },
           {
-            label: 'Date',
+            label: dateLabel,
             complete: item.date != null,
             value: item.date_display ?? undefined,
           },
@@ -258,7 +264,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             complete: !!item.language,
           },
           {
-            label: 'Catalogue Numbers',
+            label: catalogueLabelPlural,
             complete: item.catalogue_numbers.length > 0,
             value:
               item.catalogue_numbers.length > 0
@@ -330,7 +336,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             </div>
 
             <div className="space-y-1.5">
-              <FieldLabel helpField="manuscript.date">Date</FieldLabel>
+              <FieldLabel helpField="manuscript.date">{dateLabel}</FieldLabel>
               <Select
                 value={String(draft.date ?? '__none')}
                 onValueChange={(val) => updateField('date', val === '__none' ? null : Number(val))}
@@ -359,7 +365,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             </div>
 
             <div className="space-y-1.5">
-              <FieldLabel helpField="manuscript.hair_type">Hair Type</FieldLabel>
+              <FieldLabel helpField="manuscript.hair_type">{hairTypeLabel}</FieldLabel>
               <Input
                 value={draft.hair_type ?? ''}
                 onChange={(e) => updateField('hair_type', e.target.value)}
@@ -393,8 +399,8 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete this manuscript?"
-        description="This will permanently delete this manuscript and all its parts, images, and texts."
+        title={`Delete this ${historicalItemLabel.toLowerCase()}?`}
+        description={`This will permanently delete this ${historicalItemLabel.toLowerCase()} and all related parts, images, and texts.`}
         confirmLabel="Delete"
         loading={deleteMut.isPending}
         onConfirm={() => deleteMut.mutate()}

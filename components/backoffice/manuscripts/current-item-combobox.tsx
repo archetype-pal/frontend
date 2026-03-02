@@ -33,6 +33,7 @@ import {
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 interface CurrentItemComboboxProps {
   value: number | null;
@@ -52,7 +53,9 @@ export function CurrentItemCombobox({
   className,
 }: CurrentItemComboboxProps) {
   const { token } = useAuth();
+  const { getLabel } = useModelLabels();
   const queryClient = useQueryClient();
+  const shelfmarkLabel = getLabel('fieldShelfmark');
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newRepo, setNewRepo] = useState(repositoryId ? String(repositoryId) : '');
@@ -148,7 +151,7 @@ export function CurrentItemCombobox({
               <Input
                 value={newShelfmark}
                 onChange={(e) => setNewShelfmark(e.target.value)}
-                placeholder="Shelfmark (e.g. GD55/1)"
+                placeholder={`${shelfmarkLabel} (e.g. GD55/1)`}
                 className="h-8 text-sm"
               />
             </div>
@@ -174,7 +177,7 @@ export function CurrentItemCombobox({
           </div>
         ) : (
           <Command>
-            <CommandInput placeholder="Search by shelfmark..." />
+            <CommandInput placeholder={`Search by ${shelfmarkLabel.toLowerCase()}...`} />
             <CommandList>
               <CommandEmpty>No volumes found.</CommandEmpty>
               <CommandGroup>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { getComments } from '@/services/backoffice/publications';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 interface NavItem {
   label: string;
@@ -64,51 +65,53 @@ interface NavGroup {
  *
  * "View public site" stays in the footer as a standalone escape hatch.
  */
-const navigation: NavGroup[] = [
-  {
-    label: 'Manuscripts & Palaeography',
-    icon: BookOpen,
-    items: [
-      { label: 'Manuscripts', href: '/backoffice/manuscripts', icon: BookOpen },
-      { label: 'Scribes', href: '/backoffice/scribes', icon: Users },
-      { label: 'Hands', href: '/backoffice/hands', icon: Hand },
-      { label: 'Annotations', href: '/backoffice/annotations', icon: PenTool },
-      { label: 'Characters', href: '/backoffice/symbols', icon: Type },
-    ],
-    subGroups: [
-      {
-        label: 'Supporting Data',
-        defaultOpen: true,
-        items: [
-          { label: 'Physical Volumes', href: '/backoffice/physical-volumes', icon: Archive },
-          { label: 'Repositories', href: '/backoffice/repositories', icon: Landmark },
-          { label: 'Dates', href: '/backoffice/dates', icon: Hash },
-          { label: 'Formats', href: '/backoffice/formats', icon: Library },
-          { label: 'Sources', href: '/backoffice/sources', icon: Database },
-        ],
-      },
-    ],
-  },
-  {
-    label: 'Site & Content',
-    icon: Newspaper,
-    items: [
-      { label: 'Publications', href: '/backoffice/publications', icon: FileText },
-      { label: 'Comments', href: '/backoffice/comments', icon: MessageSquare },
-      { label: 'Carousel', href: '/backoffice/carousel', icon: Image },
-    ],
-  },
-  {
-    label: 'Administration',
-    icon: Settings,
-    items: [
-      { label: 'User Management', href: '/backoffice/users', icon: UserCog },
-      { label: 'Search Engine', href: '/backoffice/search-engine', icon: Search },
-      { label: 'Translations', href: '/backoffice/translations', icon: Languages },
-      { label: 'Site Features', href: '/backoffice/site-features', icon: ToggleLeft },
-    ],
-  },
-];
+function getNavigation(datesLabel: string, manuscriptsAppLabel: string): NavGroup[] {
+  return [
+    {
+      label: 'Manuscripts & Palaeography',
+      icon: BookOpen,
+      items: [
+        { label: manuscriptsAppLabel, href: '/backoffice/manuscripts', icon: BookOpen },
+        { label: 'Scribes', href: '/backoffice/scribes', icon: Users },
+        { label: 'Hands', href: '/backoffice/hands', icon: Hand },
+        { label: 'Annotations', href: '/backoffice/annotations', icon: PenTool },
+        { label: 'Characters', href: '/backoffice/symbols', icon: Type },
+      ],
+      subGroups: [
+        {
+          label: 'Supporting Data',
+          defaultOpen: true,
+          items: [
+            { label: 'Physical Volumes', href: '/backoffice/physical-volumes', icon: Archive },
+            { label: 'Repositories', href: '/backoffice/repositories', icon: Landmark },
+            { label: datesLabel, href: '/backoffice/dates', icon: Hash },
+            { label: 'Formats', href: '/backoffice/formats', icon: Library },
+            { label: 'Sources', href: '/backoffice/sources', icon: Database },
+          ],
+        },
+      ],
+    },
+    {
+      label: 'Site & Content',
+      icon: Newspaper,
+      items: [
+        { label: 'Publications', href: '/backoffice/publications', icon: FileText },
+        { label: 'Comments', href: '/backoffice/comments', icon: MessageSquare },
+        { label: 'Carousel', href: '/backoffice/carousel', icon: Image },
+      ],
+    },
+    {
+      label: 'Administration',
+      icon: Settings,
+      items: [
+        { label: 'User Management', href: '/backoffice/users', icon: UserCog },
+        { label: 'Search Engine', href: '/backoffice/search-engine', icon: Search },
+        { label: 'Translations', href: '/backoffice/translations', icon: Languages },
+        { label: 'Site Features', href: '/backoffice/site-features', icon: ToggleLeft },
+      ],
+    },
+  ];
+}
 
 interface BackofficeSidebarProps {
   collapsed: boolean;
@@ -117,6 +120,11 @@ interface BackofficeSidebarProps {
 export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
   const pathname = usePathname();
   const { token } = useAuth();
+  const { getLabel, getPluralLabel } = useModelLabels();
+  const navigation = useMemo(
+    () => getNavigation(getPluralLabel('date'), getLabel('appManuscripts')),
+    [getLabel, getPluralLabel]
+  );
 
   // Lightweight poll for pending comments (60s)
   const { data: pendingComments } = useQuery({

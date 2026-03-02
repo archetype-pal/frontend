@@ -26,6 +26,7 @@ import {
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import type { ItemPartNested, Repository } from '@/types/backoffice';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 interface CurrentLocationSectionProps {
   historicalItemId: number;
@@ -53,7 +54,10 @@ export function CurrentLocationSection({
 
 function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number }) {
   const { token } = useAuth();
+  const { getLabel } = useModelLabels();
   const queryClient = useQueryClient();
+  const shelfmarkLabel = getLabel('fieldShelfmark');
+  const historicalItemLabel = getLabel('historicalItem');
   const [repository, setRepository] = useState('');
   const [shelfmark, setShelfmark] = useState('');
   const [locus, setLocus] = useState('');
@@ -118,7 +122,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
     <div className="space-y-3">
       <h3 className="text-sm font-medium flex items-center gap-2">
         <MapPin className="h-4 w-4" />
-        Where is this manuscript held?
+        {`Where is this ${historicalItemLabel.toLowerCase()} held?`}
       </h3>
       <div className="rounded-lg border border-dashed p-4 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -138,7 +142,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
             </Select>
           </div>
           <div className="space-y-1.5">
-            <FieldLabel helpField="currentLocation.shelfmark">Shelfmark</FieldLabel>
+            <FieldLabel helpField="currentLocation.shelfmark">{shelfmarkLabel}</FieldLabel>
             <Input
               value={shelfmark}
               onChange={(e) => setShelfmark(e.target.value)}
@@ -165,7 +169,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
           Set Location
         </Button>
         <p className="text-xs text-muted-foreground">
-          Links this manuscript to its physical location in a repository.
+          {`Links this ${historicalItemLabel.toLowerCase()} to its physical location in a repository.`}
         </p>
       </div>
     </div>

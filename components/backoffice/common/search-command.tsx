@@ -32,6 +32,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 interface NavEntry {
   label: string;
@@ -40,93 +41,103 @@ interface NavEntry {
   group: string;
 }
 
-const entries: NavEntry[] = [
-  { label: 'Dashboard', href: '/backoffice', icon: Settings, group: 'General' },
-  // Manuscripts & Palaeography
-  {
-    label: 'Manuscripts',
-    href: '/backoffice/manuscripts',
-    icon: BookOpen,
-    group: 'Manuscripts & Palaeography',
-  },
-  {
-    label: 'Scribes',
-    href: '/backoffice/scribes',
-    icon: Users,
-    group: 'Manuscripts & Palaeography',
-  },
-  { label: 'Hands', href: '/backoffice/hands', icon: Hand, group: 'Manuscripts & Palaeography' },
-  {
-    label: 'Annotations',
-    href: '/backoffice/annotations',
-    icon: PenTool,
-    group: 'Manuscripts & Palaeography',
-  },
-  {
-    label: 'Characters',
-    href: '/backoffice/symbols',
-    icon: Type,
-    group: 'Manuscripts & Palaeography',
-  },
-  {
-    label: 'Repositories',
-    href: '/backoffice/repositories',
-    icon: Landmark,
-    group: 'Manuscripts & Palaeography',
-  },
-  { label: 'Dates', href: '/backoffice/dates', icon: Hash, group: 'Manuscripts & Palaeography' },
-  {
-    label: 'Formats',
-    href: '/backoffice/formats',
-    icon: Library,
-    group: 'Manuscripts & Palaeography',
-  },
-  {
-    label: 'Sources',
-    href: '/backoffice/sources',
-    icon: Database,
-    group: 'Manuscripts & Palaeography',
-  },
-  // Site & Content
-  {
-    label: 'Publications',
-    href: '/backoffice/publications',
-    icon: Newspaper,
-    group: 'Site & Content',
-  },
-  { label: 'Comments', href: '/backoffice/comments', icon: MessageSquare, group: 'Site & Content' },
-  { label: 'Carousel', href: '/backoffice/carousel', icon: Image, group: 'Site & Content' },
-  // Administration
-  {
-    label: 'Search Engine',
-    href: '/backoffice/search-engine',
-    icon: Search,
-    group: 'Administration',
-  },
-  {
-    label: 'Translations',
-    href: '/backoffice/translations',
-    icon: Languages,
-    group: 'Administration',
-  },
-  {
-    label: 'Site Features',
-    href: '/backoffice/site-features',
-    icon: ToggleLeft,
-    group: 'Administration',
-  },
-];
+function getEntries(datesLabel: string, manuscriptsAppLabel: string): NavEntry[] {
+  return [
+    { label: 'Dashboard', href: '/backoffice', icon: Settings, group: 'General' },
+    // Manuscripts & Palaeography
+    {
+      label: manuscriptsAppLabel,
+      href: '/backoffice/manuscripts',
+      icon: BookOpen,
+      group: 'Manuscripts & Palaeography',
+    },
+    {
+      label: 'Scribes',
+      href: '/backoffice/scribes',
+      icon: Users,
+      group: 'Manuscripts & Palaeography',
+    },
+    { label: 'Hands', href: '/backoffice/hands', icon: Hand, group: 'Manuscripts & Palaeography' },
+    {
+      label: 'Annotations',
+      href: '/backoffice/annotations',
+      icon: PenTool,
+      group: 'Manuscripts & Palaeography',
+    },
+    {
+      label: 'Characters',
+      href: '/backoffice/symbols',
+      icon: Type,
+      group: 'Manuscripts & Palaeography',
+    },
+    {
+      label: 'Repositories',
+      href: '/backoffice/repositories',
+      icon: Landmark,
+      group: 'Manuscripts & Palaeography',
+    },
+    { label: datesLabel, href: '/backoffice/dates', icon: Hash, group: 'Manuscripts & Palaeography' },
+    {
+      label: 'Formats',
+      href: '/backoffice/formats',
+      icon: Library,
+      group: 'Manuscripts & Palaeography',
+    },
+    {
+      label: 'Sources',
+      href: '/backoffice/sources',
+      icon: Database,
+      group: 'Manuscripts & Palaeography',
+    },
+    // Site & Content
+    {
+      label: 'Publications',
+      href: '/backoffice/publications',
+      icon: Newspaper,
+      group: 'Site & Content',
+    },
+    { label: 'Comments', href: '/backoffice/comments', icon: MessageSquare, group: 'Site & Content' },
+    { label: 'Carousel', href: '/backoffice/carousel', icon: Image, group: 'Site & Content' },
+    // Administration
+    {
+      label: 'Search Engine',
+      href: '/backoffice/search-engine',
+      icon: Search,
+      group: 'Administration',
+    },
+    {
+      label: 'Translations',
+      href: '/backoffice/translations',
+      icon: Languages,
+      group: 'Administration',
+    },
+    {
+      label: 'Site Features',
+      href: '/backoffice/site-features',
+      icon: ToggleLeft,
+      group: 'Administration',
+    },
+  ];
+}
 
-const quickActions = [
-  { label: 'New Manuscript', href: '/backoffice/manuscripts/new', icon: Plus },
-  { label: 'New Publication', href: '/backoffice/publications/new', icon: Plus },
-  { label: 'Moderate Comments', href: '/backoffice/comments', icon: MessageSquare },
-];
+function getQuickActions(historicalItemLabel: string) {
+  return [
+    { label: `New ${historicalItemLabel}`, href: '/backoffice/manuscripts/new', icon: Plus },
+    { label: 'New Publication', href: '/backoffice/publications/new', icon: Plus },
+    { label: 'Moderate Comments', href: '/backoffice/comments', icon: MessageSquare },
+  ];
+}
 
 export function SearchCommand() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const { entities: recentEntities } = useRecentEntities();
+  const { getLabel, getPluralLabel } = useModelLabels();
+  const entries = useMemo(() => getEntries(getPluralLabel('date'), getLabel('appManuscripts')), [
+    getLabel,
+    getPluralLabel,
+  ]);
+  const quickActions = useMemo(() => getQuickActions(getLabel('historicalItem')), [getLabel]);
 
   // Register Cmd+K / Ctrl+K shortcut
   useEffect(() => {
@@ -148,7 +159,7 @@ export function SearchCommand() {
       map.set(entry.group, list);
     }
     return Array.from(map.entries());
-  }, []);
+  }, [entries]);
 
   function navigate(href: string) {
     setOpen(false);

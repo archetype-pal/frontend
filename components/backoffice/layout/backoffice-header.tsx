@@ -22,37 +22,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 interface BackofficeHeaderProps {
   collapsed: boolean;
   onToggleSidebar: () => void;
 }
 
-/** Maps URL segments to human-readable breadcrumb labels. */
-const segmentLabels: Record<string, string> = {
-  backoffice: 'Backoffice',
-  symbols: 'Palaeography',
-  manuscripts: 'Manuscripts',
-  repositories: 'Repositories',
-  publications: 'Publications',
-  events: 'Events',
-  comments: 'Comments',
-  carousel: 'Carousel',
-  scribes: 'Scribes',
-  hands: 'Hands',
-  dates: 'Dates',
-  formats: 'Formats',
-  sources: 'Sources',
-  annotations: 'Annotations',
-  'physical-volumes': 'Physical Volumes',
-  users: 'Users',
-  'search-engine': 'Search Engine',
-  translations: 'Translations',
-  'site-features': 'Site Features',
-  new: 'New',
-};
-
-function useBreadcrumbs() {
+function useBreadcrumbs(segmentLabels: Record<string, string>) {
   const pathname = usePathname();
   const { entities: recentEntities } = useRecentEntities();
   const segments = pathname.split('/').filter(Boolean);
@@ -79,7 +56,33 @@ function useBreadcrumbs() {
 
 export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeaderProps) {
   const { user, logout } = useAuth();
-  const crumbs = useBreadcrumbs();
+  const { getLabel, getPluralLabel } = useModelLabels();
+  const segmentLabels: Record<string, string> = React.useMemo(
+    () => ({
+      backoffice: 'Backoffice',
+      symbols: 'Palaeography',
+      manuscripts: getLabel('appManuscripts'),
+      repositories: 'Repositories',
+      publications: 'Publications',
+      events: 'Events',
+      comments: 'Comments',
+      carousel: 'Carousel',
+      scribes: 'Scribes',
+      hands: 'Hands',
+      dates: getPluralLabel('date'),
+      formats: 'Formats',
+      sources: 'Sources',
+      annotations: 'Annotations',
+      'physical-volumes': 'Physical Volumes',
+      users: 'Users',
+      'search-engine': 'Search Engine',
+      translations: 'Translations',
+      'site-features': 'Site Features',
+      new: 'New',
+    }),
+    [getLabel, getPluralLabel]
+  );
+  const crumbs = useBreadcrumbs(segmentLabels);
 
   return (
     <header className="flex h-14 items-center gap-3 border-b bg-card px-4">

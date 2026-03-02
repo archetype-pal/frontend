@@ -17,49 +17,53 @@ import { DataTable, sortableHeader } from '@/components/backoffice/common/data-t
 import { getCurrentItems, getRepositories } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
-
-const columns: ColumnDef<CurrentItemOption>[] = [
-  {
-    accessorKey: 'repository_name',
-    header: sortableHeader('Repository'),
-    cell: ({ row }) => <span className="text-sm font-medium">{row.original.repository_name}</span>,
-    size: 120,
-  },
-  {
-    accessorKey: 'shelfmark',
-    header: sortableHeader('Shelfmark'),
-    cell: ({ row }) => <span className="text-sm">{row.original.shelfmark}</span>,
-  },
-  {
-    accessorKey: 'description',
-    header: 'Description',
-    cell: ({ row }) => (
-      <span className="text-sm text-muted-foreground line-clamp-1">
-        {row.original.description || '—'}
-      </span>
-    ),
-    size: 200,
-  },
-  {
-    accessorKey: 'part_count',
-    header: sortableHeader('Parts'),
-    cell: ({ row }) => <span className="tabular-nums text-sm">{row.original.part_count}</span>,
-    size: 70,
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => {
-      if (row.original.part_count === 0) return null;
-      return <span className="text-xs text-muted-foreground">Linked to manuscripts</span>;
-    },
-    size: 120,
-  },
-];
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 export default function PhysicalVolumesPage() {
   const { token } = useAuth();
+  const { getLabel } = useModelLabels();
   const [repoFilter, setRepoFilter] = useState<string>('__all');
   const [page, setPage] = useState(0);
+  const shelfmarkLabel = getLabel('fieldShelfmark');
+  const appManuscriptsLabel = getLabel('appManuscripts');
+
+  const columns: ColumnDef<CurrentItemOption>[] = [
+    {
+      accessorKey: 'repository_name',
+      header: sortableHeader('Repository'),
+      cell: ({ row }) => <span className="text-sm font-medium">{row.original.repository_name}</span>,
+      size: 120,
+    },
+    {
+      accessorKey: 'shelfmark',
+      header: sortableHeader(shelfmarkLabel),
+      cell: ({ row }) => <span className="text-sm">{row.original.shelfmark}</span>,
+    },
+    {
+      accessorKey: 'description',
+      header: 'Description',
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground line-clamp-1">
+          {row.original.description || '—'}
+        </span>
+      ),
+      size: 200,
+    },
+    {
+      accessorKey: 'part_count',
+      header: sortableHeader('Parts'),
+      cell: ({ row }) => <span className="tabular-nums text-sm">{row.original.part_count}</span>,
+      size: 70,
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        if (row.original.part_count === 0) return null;
+        return <span className="text-xs text-muted-foreground">{`Linked to ${appManuscriptsLabel.toLowerCase()}`}</span>;
+      },
+      size: 120,
+    },
+  ];
 
   const { data: repositoriesData } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
@@ -124,7 +128,7 @@ export default function PhysicalVolumesPage() {
         columns={columns}
         data={data?.results ?? []}
         searchColumn="shelfmark"
-        searchPlaceholder="Search by shelfmark..."
+        searchPlaceholder={`Search by ${shelfmarkLabel.toLowerCase()}...`}
         pageSize={50}
         enableColumnVisibility
         enableExport

@@ -24,6 +24,7 @@ import {
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import type { CatalogueNumber } from '@/types/backoffice';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 interface CatalogueNumbersSectionProps {
   historicalItemId: number;
@@ -35,7 +36,10 @@ export function CatalogueNumbersSection({
   catalogueNumbers,
 }: CatalogueNumbersSectionProps) {
   const { token } = useAuth();
+  const { getLabel, getPluralLabel } = useModelLabels();
   const queryClient = useQueryClient();
+  const catalogueLabel = getLabel('catalogueNumber');
+  const catalogueLabelPlural = getPluralLabel('catalogueNumber');
   const [adding, setAdding] = useState(false);
   const [newCatalogue, setNewCatalogue] = useState('');
   const [newNumber, setNewNumber] = useState('');
@@ -63,7 +67,7 @@ export function CatalogueNumbersSection({
         url: newUrl || null,
       }),
     onSuccess: () => {
-      toast.success('Catalogue number added');
+      toast.success(`${catalogueLabel} added`);
       invalidate();
       setAdding(false);
       setNewCatalogue('');
@@ -71,7 +75,7 @@ export function CatalogueNumbersSection({
       setNewUrl('');
     },
     onError: (err) => {
-      toast.error('Failed to add catalogue number', {
+      toast.error(`Failed to add ${catalogueLabel.toLowerCase()}`, {
         description: formatApiError(err),
       });
     },
@@ -81,12 +85,12 @@ export function CatalogueNumbersSection({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       updateCatalogueNumber(token!, id, data),
     onSuccess: () => {
-      toast.success('Catalogue number updated');
+      toast.success(`${catalogueLabel} updated`);
       invalidate();
       setEditingSourceId(null);
     },
     onError: (err) => {
-      toast.error('Failed to update catalogue number', {
+      toast.error(`Failed to update ${catalogueLabel.toLowerCase()}`, {
         description: formatApiError(err),
       });
     },
@@ -95,11 +99,11 @@ export function CatalogueNumbersSection({
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteCatalogueNumber(token!, id),
     onSuccess: () => {
-      toast.success('Catalogue number removed');
+      toast.success(`${catalogueLabel} removed`);
       invalidate();
     },
     onError: (err) => {
-      toast.error('Failed to remove catalogue number', {
+      toast.error(`Failed to remove ${catalogueLabel.toLowerCase()}`, {
         description: formatApiError(err),
       });
     },
@@ -108,7 +112,7 @@ export function CatalogueNumbersSection({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">Catalogue Numbers</h3>
+        <h3 className="text-sm font-medium">{catalogueLabelPlural}</h3>
         <Button
           variant="outline"
           size="sm"
@@ -121,7 +125,9 @@ export function CatalogueNumbersSection({
       </div>
 
       {catalogueNumbers.length === 0 && !adding ? (
-        <p className="text-sm text-muted-foreground py-2">No catalogue numbers</p>
+        <p className="text-sm text-muted-foreground py-2">
+          No {catalogueLabelPlural.toLowerCase()}
+        </p>
       ) : (
         <div className="rounded-md border divide-y">
           {catalogueNumbers.map((cn) => (
