@@ -55,10 +55,10 @@ The `Dockerfile` builds a production image and runs Next.js in standalone mode o
 
 ```bash
 docker build \
-  --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000 \
-  --build-arg NEXT_PUBLIC_IIIF_UPSTREAM=http://localhost:1024 \
-  --build-arg NEXT_PUBLIC_SITE_URL=http://localhost:3000 \
-  --build-arg CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000 \
+  --build-arg NEXT_PUBLIC_API_URL=https://betaarchetype.gla.ac.uk \
+  --build-arg NEXT_PUBLIC_IIIF_UPSTREAM=https://betaarchetype.gla.ac.uk \
+  --build-arg NEXT_PUBLIC_SITE_URL=https://betaarchetype.gla.ac.uk \
+  --build-arg CORS_ALLOWED_ORIGINS=https://betaarchetype.gla.ac.uk \
   --build-arg DOCKER_IMAGE_HASH=local-dev \
   -t archetype-frontend:local .
 ```

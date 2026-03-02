@@ -1,11 +1,16 @@
-function requireEnv(key: string): string {
-  const value = process.env[key]?.trim();
-  if (value) return value;
-  throw new Error(`Missing required environment variable: ${key}`);
+const apiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+if (!apiUrl) {
+  throw new Error('Missing required environment variable: NEXT_PUBLIC_API_URL');
 }
 
-export const env = {
-  apiUrl: requireEnv('NEXT_PUBLIC_API_URL'),
-  iiifUpstream: requireEnv('NEXT_PUBLIC_IIIF_UPSTREAM'),
-  siteUrl: requireEnv('NEXT_PUBLIC_SITE_URL'),
-} as const;
+const iiifUpstream = process.env.NEXT_PUBLIC_IIIF_UPSTREAM?.trim();
+if (!iiifUpstream) {
+  throw new Error('Missing required environment variable: NEXT_PUBLIC_IIIF_UPSTREAM');
+}
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+if (!siteUrl) {
+  throw new Error('Missing required environment variable: NEXT_PUBLIC_SITE_URL');
+}
+
+export const env = { apiUrl, iiifUpstream, siteUrl } as const;

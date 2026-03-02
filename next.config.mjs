@@ -1,7 +1,7 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
 
 const analyze = withBundleAnalyzer({ enabled: process.env.ANALYZE === 'true' });
-const requireEnv = key => {
+const requireEnv = (key) => {
   const value = process.env[key]?.trim();
   if (!value) {
     throw new Error(`Missing required environment variable: ${key}`);

@@ -46,7 +46,9 @@ function resolveInfoUrl(infoUrl: string): string {
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
 
   const apiBase =
-    typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_API_URL?.trim()?.replace(/\/$/, '') : '';
+    typeof process !== 'undefined'
+      ? process.env?.NEXT_PUBLIC_API_URL?.trim()?.replace(/\/$/, '')
+      : '';
   if (!apiBase) throw new Error('Missing required environment variable: NEXT_PUBLIC_API_URL');
   return `${apiBase}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
 }
