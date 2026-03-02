@@ -39,6 +39,7 @@ jobs:
             NEXT_PUBLIC_IIIF_UPSTREAM=https://betaarchetype.gla.ac.uk
             NEXT_PUBLIC_SITE_URL=https://betaarchetype.gla.ac.uk
             CORS_ALLOWED_ORIGINS=https://betaarchetype.gla.ac.uk
+            DOCKER_IMAGE_HASH=${{ github.sha }}
           push: true
           tags: |
             ghcr.io/archetype-pal/frontend:latest
@@ -55,6 +56,7 @@ jobs:
             NEXT_PUBLIC_IIIF_UPSTREAM=https://archetype.gla.ac.uk
             NEXT_PUBLIC_SITE_URL=https://archetype.gla.ac.uk
             CORS_ALLOWED_ORIGINS=https://archetype.gla.ac.uk
+            DOCKER_IMAGE_HASH=${{ github.sha }}
           push: true
           tags: |
             ghcr.io/archetype-pal/frontend:staging-source

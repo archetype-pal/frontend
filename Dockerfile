@@ -37,6 +37,7 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ARG DOCKER_IMAGE_HASH=unknown
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -49,6 +50,7 @@ COPY --from=builder /app/public ./public
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+RUN echo "${DOCKER_IMAGE_HASH}" > /app/.docker-image-hash && chmod 444 /app/.docker-image-hash
 
 USER nextjs
 

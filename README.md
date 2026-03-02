@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Archetype Frontend
 
-## Getting Started
+Next.js frontend for the Archetype project.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js `>=22`
+- pnpm `>=10`
+- Docker (for containerized local runs)
+
+## Environment Variables
+
+Copy the sample file and adjust values as needed:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Important variables:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `NEXT_PUBLIC_API_URL` (default: `http://localhost:8000`)
+- `NEXT_PUBLIC_IIIF_UPSTREAM` (default: `http://localhost:1024`)
+- `NEXT_PUBLIC_SITE_URL`
+- `CORS_ALLOWED_ORIGINS` (optional, used by `/api/*` headers)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Local Development (pnpm)
 
-## Learn More
+Install dependencies:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm install
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Start the dev server:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm dev
+```
 
-## Deploy on Vercel
+Or run against a local backend with mocked API URL:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm dev:mock
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+App URL: `http://localhost:3000`
+
+## Quality Checks
+
+```bash
+pnpm lint
+pnpm test
+pnpm build
+```
+
+## Run With Docker (Local)
+
+The `Dockerfile` builds a production image and runs Next.js in standalone mode on port `3000`.
+
+### 1) Build the image
+
+```bash
+docker build \
+  --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000 \
+  --build-arg DOCKER_IMAGE_HASH=local-dev \
+  -t archetype-frontend:local .
+```
+
+If your API is reachable on another host/IP, set that URL in `NEXT_PUBLIC_API_URL` during build.
+
+### 2) Run the container
+
+```bash
+docker run --rm \
+  --name archetype-frontend \
+  -p 3000:3000 \
+  -e NEXT_PUBLIC_API_URL=http://localhost:8000 \
+  -e NEXT_PUBLIC_IIIF_UPSTREAM=http://localhost:1024 \
+  -e NEXT_PUBLIC_SITE_URL=http://localhost:3000 \
+  archetype-frontend:local
+```
+
+The container listens on `0.0.0.0` internally (already configured in the image), and `-p 3000:3000` publishes it on your machine.
+
+## Access Over Your Local Network
+
+To open the app from another device on the same network:
+
+1. Find your machine IP (example on macOS):
+   ```bash
+   ipconfig getifaddr en0
+   ```
+2. Ensure port `3000` is allowed by your firewall.
+3. Open from another device:
+   - `http://<YOUR_MACHINE_IP>:3000`
+
+If backend/image services are on your machine, they must also be reachable from the container and from client devices (CORS and host/IP values in env vars may need to be updated).
+
+## Useful Commands
+
+```bash
+pnpm dev
+pnpm dev:mock
+pnpm build
+pnpm start
+pnpm lint
+pnpm lint:fix
+pnpm test
+```
