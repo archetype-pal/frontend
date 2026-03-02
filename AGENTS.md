@@ -22,7 +22,6 @@ This file gives Cursor quick architectural context and reliable commands for bot
 Run from `/Users/elgharee/hub/archetype/frontend`.
 
 - Dev server: `pnpm dev`
-- Dev against local backend: `pnpm dev:mock` (sets `NEXT_PUBLIC_API_URL=http://localhost:8000`)
 - Build: `pnpm build`
 - Start prod build: `pnpm start`
 - Lint: `pnpm lint` (fix: `pnpm lint:fix`)
@@ -62,5 +61,5 @@ Run from `/Users/elgharee/hub/archetype/backend`.
 - Run backend and frontend in parallel (ports: backend 8000, frontend 3000).
 - Typical local loop:
   1. Start backend stack and apply migrations.
-  2. Start frontend with `pnpm dev` (or `pnpm dev:mock`).
+  2. Start frontend with `pnpm dev`.
   3. Validate affected tests/lint in the repo you changed.

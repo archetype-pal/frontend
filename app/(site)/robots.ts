@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
+import { env } from '@/lib/env';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://archetype.gla.ac.uk';
+const BASE_URL = env.siteUrl;
 
 export default function robots(): MetadataRoute.Robots {
   return {

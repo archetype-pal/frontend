@@ -18,10 +18,10 @@ cp .env.example .env
 
 Important variables:
 
-- `NEXT_PUBLIC_API_URL` (default: `http://localhost:8000`)
-- `NEXT_PUBLIC_IIIF_UPSTREAM` (default: `http://localhost:1024`)
-- `NEXT_PUBLIC_SITE_URL`
-- `CORS_ALLOWED_ORIGINS` (optional, used by `/api/*` headers)
+- `NEXT_PUBLIC_API_URL` (required)
+- `NEXT_PUBLIC_IIIF_UPSTREAM` (required)
+- `NEXT_PUBLIC_SITE_URL` (required)
+- `CORS_ALLOWED_ORIGINS` (required, used by `/api/*` headers)
 
 ## Local Development (pnpm)
 
@@ -35,12 +35,6 @@ Start the dev server:
 
 ```bash
 pnpm dev
-```
-
-Or run against a local backend with mocked API URL:
-
-```bash
-pnpm dev:mock
 ```
 
 App URL: `http://localhost:3000`
@@ -62,6 +56,9 @@ The `Dockerfile` builds a production image and runs Next.js in standalone mode o
 ```bash
 docker build \
   --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000 \
+  --build-arg NEXT_PUBLIC_IIIF_UPSTREAM=http://localhost:1024 \
+  --build-arg NEXT_PUBLIC_SITE_URL=http://localhost:3000 \
+  --build-arg CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000 \
   --build-arg DOCKER_IMAGE_HASH=local-dev \
   -t archetype-frontend:local .
 ```
@@ -74,13 +71,11 @@ If your API is reachable on another host/IP, set that URL in `NEXT_PUBLIC_API_UR
 docker run --rm \
   --name archetype-frontend \
   -p 3000:3000 \
-  -e NEXT_PUBLIC_API_URL=http://localhost:8000 \
-  -e NEXT_PUBLIC_IIIF_UPSTREAM=http://localhost:1024 \
-  -e NEXT_PUBLIC_SITE_URL=http://localhost:3000 \
   archetype-frontend:local
 ```
 
 The container listens on `0.0.0.0` internally (already configured in the image), and `-p 3000:3000` publishes it on your machine.
+`NEXT_PUBLIC_*` values are set at image build time via `--build-arg`; passing them at `docker run` can override server-side behavior.
 
 ## Access Over Your Local Network
 
@@ -100,7 +95,6 @@ If backend/image services are on your machine, they must also be reachable from 
 
 ```bash
 pnpm dev
-pnpm dev:mock
 pnpm build
 pnpm start
 pnpm lint

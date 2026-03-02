@@ -1,13 +1,11 @@
-function requireEnv(key: string, fallback?: string): string {
-  const value = process.env[key] || fallback;
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-  return value;
+function requireEnv(key: string): string {
+  const value = process.env[key]?.trim();
+  if (value) return value;
+  throw new Error(`Missing required environment variable: ${key}`);
 }
 
 export const env = {
-  apiUrl: requireEnv('NEXT_PUBLIC_API_URL', 'http://localhost:8000'),
-  iiifUpstream: requireEnv('NEXT_PUBLIC_IIIF_UPSTREAM', 'http://localhost:1024'),
-  siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://archetype.gla.ac.uk',
+  apiUrl: requireEnv('NEXT_PUBLIC_API_URL'),
+  iiifUpstream: requireEnv('NEXT_PUBLIC_IIIF_UPSTREAM'),
+  siteUrl: requireEnv('NEXT_PUBLIC_SITE_URL'),
 } as const;

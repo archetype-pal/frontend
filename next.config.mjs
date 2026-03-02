@@ -1,18 +1,20 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
 
 const analyze = withBundleAnalyzer({ enabled: process.env.ANALYZE === 'true' });
+const requireEnv = key => {
+  const value = process.env[key]?.trim();
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return value;
+};
 
 // Proxy IIIF (Sipi) so same-origin requests avoid CORS when frontend is on different port.
 // Set NEXT_PUBLIC_IIIF_UPSTREAM in Docker to e.g. http://image_server:1024 so the server can reach Sipi.
-const IIIF_UPSTREAM = (process.env.NEXT_PUBLIC_IIIF_UPSTREAM || 'http://localhost:1024').replace(
-  /\/$/,
-  ''
-);
-// API base for rewrites (e.g. mock server serves /scans for IIIF when using local dev).
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
-const ALLOWED_ORIGINS =
-  process.env.CORS_ALLOWED_ORIGINS ||
-  'https://archetype.gla.ac.uk,https://archetype.elghareeb.space';
+const IIIF_UPSTREAM = requireEnv('NEXT_PUBLIC_IIIF_UPSTREAM').replace(/\/$/, '');
+// API base for rewrites.
+const API_BASE = requireEnv('NEXT_PUBLIC_API_URL').replace(/\/$/, '');
+const ALLOWED_ORIGINS = requireEnv('CORS_ALLOWED_ORIGINS');
 
 const nextConfig = {
   reactStrictMode: true,
@@ -27,7 +29,7 @@ const nextConfig = {
   },
   async rewrites() {
     return [
-      // API server may serve IIIF at /scans (e.g. mock); route those to API so images work.
+      // Route /scans through API base for IIIF assets.
       { source: '/iiif-proxy/scans/:path*', destination: `${API_BASE}/scans/:path*` },
       { source: '/iiif-proxy/:path*', destination: `${IIIF_UPSTREAM}/:path*` },
     ];
@@ -42,7 +44,7 @@ const nextConfig = {
         port: '1024',
         pathname: '/**',
       },
-      // Django media and mock IIIF scans
+      // Django media and IIIF scans
       {
         protocol: 'http',
         hostname: 'localhost',

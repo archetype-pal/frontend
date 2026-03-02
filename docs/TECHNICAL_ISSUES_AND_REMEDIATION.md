@@ -90,7 +90,7 @@ Node 25 is “Current” (not LTS); Node 24 is Active LTS.
 
 ### 3.2 Env and API base URL consistency (Low priority)
 
-**Current:** `app/api/site-features/route.ts` uses `process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'` instead of the shared `env` from `@/lib/env`.
+**Current:** `app/api/site-features/route.ts` uses `process.env.NEXT_PUBLIC_API_URL` instead of the shared `env` from `@/lib/env`.
 
 **Remediation:** Import `env` from `@/lib/env` and use `env.apiUrl` so the API base URL is defined in one place.
 

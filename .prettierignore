@@ -12,9 +12,6 @@ yarn.lock
 *.min.js
 *.min.css
 
-# Mock app (separate package)
-mock
-
 # Ignore config that may use different style
 tailwind.config.ts
 postcss.config.mjs

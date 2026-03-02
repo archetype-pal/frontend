@@ -22,7 +22,6 @@ export default defineConfig([
     'coverage/**',
     'next-env.d.ts',
     'node_modules/**',
-    'mock/**',
     'types/**/*.d.ts',
     'tailwind.config.*',
     'postcss.config.*',

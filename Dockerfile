@@ -2,8 +2,15 @@
 
 FROM node:25-alpine AS base
 ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_IIIF_UPSTREAM
+ARG NEXT_PUBLIC_SITE_URL
+ARG CORS_ALLOWED_ORIGINS
+ARG DOCKER_IMAGE_HASH
 
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_IIIF_UPSTREAM=${NEXT_PUBLIC_IIIF_UPSTREAM}
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+ENV CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
 
 # Install pnpm in base so all stages have it (corepack unreliable on Alpine)
 RUN npm install -g pnpm@10.28.2
@@ -24,6 +31,7 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN test -n "${NEXT_PUBLIC_API_URL}" && test -n "${NEXT_PUBLIC_IIIF_UPSTREAM}" && test -n "${NEXT_PUBLIC_SITE_URL}" && test -n "${CORS_ALLOWED_ORIGINS}" && test -n "${DOCKER_IMAGE_HASH}"
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
@@ -37,7 +45,7 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ARG DOCKER_IMAGE_HASH=unknown
+ARG DOCKER_IMAGE_HASH
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED=1
 

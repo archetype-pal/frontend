@@ -8,6 +8,7 @@ import { SearchProvider } from '@/contexts/search-context';
 import { SiteFeaturesProvider } from '@/contexts/site-features-context';
 import { ModelLabelsProvider } from '@/contexts/model-labels-context';
 import { AppQueryProvider } from '@/components/providers/query-provider';
+import { env } from '@/lib/env';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
   },
   description:
     'Scottish Charters and the Emergence of Government 1100-1250 – a resource for the study of the contents, script and physical appearance of the corpus of Scottish charters.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://archetype.gla.ac.uk'),
+  metadataBase: new URL(env.siteUrl),
   openGraph: {
     type: 'website',
     locale: 'en_GB',

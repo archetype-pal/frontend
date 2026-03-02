@@ -23,9 +23,10 @@ const DEFAULT_THUMBNAIL_SIZE = 300;
 const IIIF_PREFIX_LEN: Record<string, number> = { sipi: 2, iiif: 2 };
 
 function getIiifUpstream(): string {
-  return typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_IIIF_UPSTREAM
-    ? process.env.NEXT_PUBLIC_IIIF_UPSTREAM.replace(/\/$/, '')
-    : 'http://localhost:1024';
+  const value =
+    typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_IIIF_UPSTREAM?.trim() : undefined;
+  if (!value) throw new Error('Missing required environment variable: NEXT_PUBLIC_IIIF_UPSTREAM');
+  return value.replace(/\/$/, '');
 }
 
 function resolveInfoUrl(infoUrl: string): string {
@@ -45,10 +46,9 @@ function resolveInfoUrl(infoUrl: string): string {
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
 
   const apiBase =
-    typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL
-      ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
-      : '';
-  return apiBase ? `${apiBase}${trimmed.startsWith('/') ? '' : '/'}${trimmed}` : trimmed;
+    typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_API_URL?.trim()?.replace(/\/$/, '') : '';
+  if (!apiBase) throw new Error('Missing required environment variable: NEXT_PUBLIC_API_URL');
+  return `${apiBase}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
 }
 
 function encodeIiifPathIdentifier(pathname: string): string {
