@@ -76,7 +76,12 @@ function getEntries(datesLabel: string, manuscriptsAppLabel: string): NavEntry[]
       icon: Landmark,
       group: 'Manuscripts & Palaeography',
     },
-    { label: datesLabel, href: '/backoffice/dates', icon: Hash, group: 'Manuscripts & Palaeography' },
+    {
+      label: datesLabel,
+      href: '/backoffice/dates',
+      icon: Hash,
+      group: 'Manuscripts & Palaeography',
+    },
     {
       label: 'Formats',
       href: '/backoffice/formats',
@@ -96,7 +101,12 @@ function getEntries(datesLabel: string, manuscriptsAppLabel: string): NavEntry[]
       icon: Newspaper,
       group: 'Site & Content',
     },
-    { label: 'Comments', href: '/backoffice/comments', icon: MessageSquare, group: 'Site & Content' },
+    {
+      label: 'Comments',
+      href: '/backoffice/comments',
+      icon: MessageSquare,
+      group: 'Site & Content',
+    },
     { label: 'Carousel', href: '/backoffice/carousel', icon: Image, group: 'Site & Content' },
     // Administration
     {
@@ -133,10 +143,10 @@ export function SearchCommand() {
   const router = useRouter();
   const { entities: recentEntities } = useRecentEntities();
   const { getLabel, getPluralLabel } = useModelLabels();
-  const entries = useMemo(() => getEntries(getPluralLabel('date'), getLabel('appManuscripts')), [
-    getLabel,
-    getPluralLabel,
-  ]);
+  const entries = useMemo(
+    () => getEntries(getPluralLabel('date'), getLabel('appManuscripts')),
+    [getLabel, getPluralLabel]
+  );
   const quickActions = useMemo(() => getQuickActions(getLabel('historicalItem')), [getLabel]);
 
   // Register Cmd+K / Ctrl+K shortcut

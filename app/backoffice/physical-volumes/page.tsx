@@ -31,7 +31,9 @@ export default function PhysicalVolumesPage() {
     {
       accessorKey: 'repository_name',
       header: sortableHeader('Repository'),
-      cell: ({ row }) => <span className="text-sm font-medium">{row.original.repository_name}</span>,
+      cell: ({ row }) => (
+        <span className="text-sm font-medium">{row.original.repository_name}</span>
+      ),
       size: 120,
     },
     {
@@ -59,7 +61,9 @@ export default function PhysicalVolumesPage() {
       id: 'actions',
       cell: ({ row }) => {
         if (row.original.part_count === 0) return null;
-        return <span className="text-xs text-muted-foreground">{`Linked to ${appManuscriptsLabel.toLowerCase()}`}</span>;
+        return (
+          <span className="text-xs text-muted-foreground">{`Linked to ${appManuscriptsLabel.toLowerCase()}`}</span>
+        );
       },
       size: 120,
     },

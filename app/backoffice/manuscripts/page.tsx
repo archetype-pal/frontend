@@ -51,7 +51,9 @@ export default function ManuscriptsPage() {
         accessorKey: 'repository_label',
         header: sortableHeader('Repository'),
         cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">{row.original.repository_label ?? '—'}</span>
+          <span className="text-sm text-muted-foreground">
+            {row.original.repository_label ?? '—'}
+          </span>
         ),
         size: 80,
       },

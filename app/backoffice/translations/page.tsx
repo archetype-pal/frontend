@@ -10,7 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
-import { getDefaultModelLabelsConfig, type ModelLabelKey, type ModelLabelsConfig } from '@/lib/model-labels';
+import {
+  getDefaultModelLabelsConfig,
+  type ModelLabelKey,
+  type ModelLabelsConfig,
+} from '@/lib/model-labels';
 
 const fieldMeta: Array<{ key: ModelLabelKey; title: string; description: string }> = [
   {
@@ -66,7 +70,10 @@ async function fetchModelLabels(): Promise<ModelLabelsConfig> {
   return res.json();
 }
 
-async function saveModelLabels(token: string, config: ModelLabelsConfig): Promise<ModelLabelsConfig> {
+async function saveModelLabels(
+  token: string,
+  config: ModelLabelsConfig
+): Promise<ModelLabelsConfig> {
   const res = await fetch('/api/model-labels', {
     method: 'PUT',
     headers: {
@@ -156,7 +163,8 @@ export default function TranslationsPage() {
         <div>
           <h2 className="text-base font-medium">App, model, and field labels</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            These labels now live in the frontend and replace backend app/model/field display settings.
+            These labels now live in the frontend and replace backend app/model/field display
+            settings.
           </p>
         </div>
 
