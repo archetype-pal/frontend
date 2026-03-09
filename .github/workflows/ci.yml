@@ -12,11 +12,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
-      NEXT_PUBLIC_IIIF_UPSTREAM: http://localhost:1024
-      NEXT_PUBLIC_SITE_URL: http://localhost:3000
-      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8000
-
+      NEXT_PUBLIC_API_URL: https:archetype.gla.ac.uk
+      NEXT_PUBLIC_IIIF_UPSTREAM: https:archetype.gla.ac.uk
+      NEXT_PUBLIC_SITE_URL: https:archetype.gla.ac.uk
+      CORS_ALLOWED_ORIGINS: https:archetype.gla.ac.uk
     steps:
       - name: Checkout
         uses: actions/checkout@v6
