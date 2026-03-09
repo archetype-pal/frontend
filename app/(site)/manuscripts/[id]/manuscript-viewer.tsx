@@ -118,7 +118,7 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
               <dt className="text-gray-600">Format</dt>
               <dd>{manuscript.historical_item.format}</dd>
               <dt className="text-gray-600">Text Date</dt>
-              <dd>{manuscript.historical_item.date}</dd>
+              <dd>{manuscript.historical_item.date_display ?? '-'}</dd>
             </dl>
           </section>
         </TabsContent>

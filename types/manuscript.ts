@@ -47,6 +47,7 @@ export interface HistoricalItem {
   type: string;
   format: string;
   date: string;
+  date_display: string | null;
   catalogue_numbers: CatalogueNumber[];
   descriptions: Description[];
 }
