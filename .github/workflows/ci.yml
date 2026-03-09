@@ -12,10 +12,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_API_URL: https:archetype.gla.ac.uk
-      NEXT_PUBLIC_IIIF_UPSTREAM: https:archetype.gla.ac.uk
-      NEXT_PUBLIC_SITE_URL: https:archetype.gla.ac.uk
-      CORS_ALLOWED_ORIGINS: https:archetype.gla.ac.uk
+      NEXT_PUBLIC_API_URL: https://archetype.gla.ac.uk
+      NEXT_PUBLIC_IIIF_UPSTREAM: https://archetype.gla.ac.uk
+      NEXT_PUBLIC_SITE_URL: https://archetype.gla.ac.uk
+      CORS_ALLOWED_ORIGINS: https://archetype.gla.ac
+      MEILI_MASTER_KEY=k-CFiSgz7lyXHPSTw_rhyTw0AKgNV7_y78k0NQR2fx4
+      MEILISEARCH_API_KEY=k-CFiSgz7lyXHPSTw_rhyTw0AKgNV7_y78k0NQR2fx4
     steps:
       - name: Checkout
         uses: actions/checkout@v6
