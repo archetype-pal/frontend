@@ -93,7 +93,9 @@ export function CarouselImagePickerDialog({
             <div className="p-4 space-y-6">
               {isError ? (
                 <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">
-                  <p className="text-sm text-destructive font-medium">Failed to load media folder</p>
+                  <p className="text-sm text-destructive font-medium">
+                    Failed to load media folder
+                  </p>
                   <p className="text-xs text-muted-foreground mt-1">{formatApiError(error)}</p>
                   <Button
                     type="button"
@@ -160,7 +162,9 @@ export function CarouselImagePickerDialog({
                             </div>
                             <div className="p-2">
                               <p className="text-xs font-medium truncate">{image.name}</p>
-                              <p className="text-[11px] text-muted-foreground truncate">{image.path}</p>
+                              <p className="text-[11px] text-muted-foreground truncate">
+                                {image.path}
+                              </p>
                             </div>
                           </button>
                         ))}

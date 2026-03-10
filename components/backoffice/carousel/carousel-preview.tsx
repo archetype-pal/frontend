@@ -56,11 +56,7 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
           {hasImage ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imageUrl}
-                alt={currentItem.title}
-                className="h-full w-full object-cover"
-              />
+              <img src={imageUrl} alt={currentItem.title} className="h-full w-full object-cover" />
             </>
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-muted">
