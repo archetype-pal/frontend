@@ -1,65 +1,52 @@
-# Archetype Workspace Guide (Frontend + Backend)
+# Archetype Frontend Guide
 
-This file gives Cursor quick architectural context and reliable commands for both repositories.
+## Runtime Policy (Mandatory)
+- Frontend can run directly via `pnpm` from this directory.
+- Backend must run via Docker Compose (either `api/compose.yaml` for backend-focused work or `infrastructure/compose.yaml` for full stack).
 
-## Repositories
+## Frontend Architecture
+- Stack: Next.js App Router + React + TypeScript + TanStack Query (`package.json`).
+- Route layout split:
+  - Public site routes in `app/(site)/*` with header/footer shell in `app/(site)/layout.tsx`.
+  - Backoffice routes in `app/backoffice/*` with guarded shell in `app/backoffice/layout.tsx` and `components/backoffice/layout/backoffice-shell.tsx`.
+- Root providers are composed in `app/layout.tsx`:
+  - auth, site features, model labels, query provider, collection, and search context.
+- Data access patterns:
+  - `lib/api-fetch.ts` centralizes base URL request calls.
+  - `services/backoffice/*` provides backoffice API client and typed CRUD helpers.
+  - Query keys are centralized under `lib/*/query-keys.ts`.
+- State:
+  - React contexts in `contexts/*`.
+  - Zustand store for lightbox behavior in `stores/lightbox-store.ts`.
+  - Dexie persistence for lightbox data in `lib/lightbox-db.ts`.
+- Auth:
+  - Token login/profile calls target backend `/api/v1/auth/*`.
+  - Backoffice shell enforces authenticated + staff-only access client-side.
 
-- Frontend: `/Users/elgharee/hub/archetype/frontend`
-- Backend: `/Users/elgharee/hub/archetype/backend`
+## Frontend Commands (run in `/home/green/hub/archetype/v3/frontend`)
+- `pnpm dev`
+- `pnpm build`
+- `pnpm start`
+- `pnpm lint`
+- `pnpm lint:fix`
+- `pnpm format`
+- `pnpm format:fix`
+- `pnpm test`
+- `pnpm test:watch`
+- `pnpm analyze`
 
----
+## Required Environment
+- `NEXT_PUBLIC_API_URL`
+- `NEXT_PUBLIC_IIIF_UPSTREAM`
+- `NEXT_PUBLIC_SITE_URL`
+- `CORS_ALLOWED_ORIGINS`
 
-## Frontend Architecture (Next.js App Router)
+Notes:
+- `NEXT_PUBLIC_API_URL` should not include a trailing slash.
+- Missing required env values will fail startup (`lib/env.ts`, `next.config.mjs`).
+- API/IIIF rewrites are defined in `next.config.mjs` and depend on these env vars.
 
-- Framework: Next.js (App Router), TypeScript, React Query, Tailwind.
-- Main routes/layout: `app/*` (including backoffice UI in `app/backoffice/*`).
-- UI building blocks: `components/ui/*` and feature components in `components/*`.
-- Data access: `services/*` (API calls), with shared helpers in `lib/*`, `hooks/*`, `contexts/*`, `stores/*`.
-- Search/backoffice wiring: search admin page in `app/backoffice/search-engine/page.tsx` and API client logic in `services/backoffice/*`.
-
-### Frontend Commands
-
-Run from `/Users/elgharee/hub/archetype/frontend`.
-
-- Dev server: `pnpm dev`
-- Build: `pnpm build`
-- Start prod build: `pnpm start`
-- Lint: `pnpm lint` (fix: `pnpm lint:fix`)
-- Format check: `pnpm format` (fix: `pnpm format:fix`)
-- Tests: `pnpm test` (watch: `pnpm test:watch`)
-
----
-
-## Backend Architecture (Django + DRF)
-
-- Runtime: Docker Compose (`compose.yaml`) is the canonical local/CI environment.
-- Entry points: `manage.py`, DRF API under `/api/v1/*`, docs at `/api/v1/docs`.
-- Main code: `apps/*` feature modules (`annotations`, `manuscripts`, `publications`, `scribes`, `search`, `users`).
-- Search: registry-driven metadata in `apps/search/registry.py`; admin/search orchestration in `apps/search/admin_service.py` and `apps/search/services.py`.
-- Config: `config/settings.py`, env contract from `config/test.env` (copy to `config/.env` for local runs).
-
-### Backend Commands
-
-Run from `/Users/elgharee/hub/archetype/backend`.
-
-- Start stack: `docker compose up` (or `make up-bg` for detached)
-- Stop stack: `make down`
-- Migrations: `make makemigrations` / `make migrate`
-- Django shell: `make shell`
-- Tests (all): `make pytest`
-- Tests (search only): `make pytest-search`
-- Coverage gate: `make coverage`
-- Search setup: `make setup-search-indexes`
-- Reindex one search index: `make sync-search-index INDEX=item-parts`
-- Reindex all search indexes: `make sync-all-search-indexes`
-- Architecture checks: `make check-architecture` and `make check-ci-entrypoints`
-
----
-
-## Cross-Repo Workflow
-
-- Run backend and frontend in parallel (ports: backend 8000, frontend 3000).
-- Typical local loop:
-  1. Start backend stack and apply migrations.
-  2. Start frontend with `pnpm dev`.
-  3. Validate affected tests/lint in the repo you changed.
+## Backend Coordination
+- If backend is started from `api/compose.yaml`, API is typically reachable at `http://localhost:8000`.
+- If backend is started from `infrastructure/compose.yaml`, traffic is commonly routed through nginx (`http://localhost` / `https://localhost` depending on setup).
+- Keep `NEXT_PUBLIC_API_URL` aligned with whichever backend runtime mode is active.
