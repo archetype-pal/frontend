@@ -45,21 +45,30 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
   const hasImage = !!currentItem?.image;
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-lg font-semibold">Live Preview</h2>
-      <div className="relative overflow-hidden rounded-lg border bg-muted">
-        <div className="relative aspect-[16/9] max-h-[360px]">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Live Preview</h2>
+        <p className="text-xs text-muted-foreground">Homepage carousel appearance</p>
+      </div>
+
+      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-b from-card to-muted/40 p-2 shadow-sm">
+        <div className="relative aspect-[16/7] overflow-hidden rounded-lg border bg-black">
           {hasImage ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={imageUrl} alt={currentItem.title} className="h-full w-full object-cover" />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl}
+                alt={currentItem.title}
+                className="h-full w-full object-cover"
+              />
+            </>
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-muted">
               <ImageIcon className="h-16 w-16 text-muted-foreground/30" />
             </div>
           )}
 
-          {/* Dark overlay matching public carousel */}
-          {hasImage && <div className="absolute inset-0 bg-black/40" aria-hidden />}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
 
           {/* Navigation arrows */}
           {items.length > 1 && (
@@ -67,7 +76,7 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-1/2 left-2 -translate-y-1/2 text-white hover:bg-white/20"
+                className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full border border-white/25 bg-black/45 text-white shadow-sm hover:bg-black/65"
                 onClick={prev}
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -75,7 +84,7 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-1/2 right-2 -translate-y-1/2 text-white hover:bg-white/20"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-white/25 bg-black/45 text-white shadow-sm hover:bg-black/65"
                 onClick={next}
               >
                 <ChevronRight className="h-5 w-5" />
@@ -85,7 +94,7 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
 
           {/* Dot indicators */}
           {items.length > 1 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full border border-white/20 bg-black/45 px-2.5 py-1.5 backdrop-blur-sm">
               {items.map((_, i) => (
                 <button
                   key={i}
@@ -102,10 +111,12 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
 
           {/* Title overlay */}
           {currentItem?.title && (
-            <div className="absolute bottom-0 inset-x-0 bg-black/70 px-4 py-2.5 text-center">
-              <p className="text-sm font-medium text-white truncate">{currentItem.title}</p>
+            <div className="absolute inset-x-0 bottom-0 px-4 pb-4">
+              <div className="rounded-md border border-white/20 bg-black/55 px-3 py-2 backdrop-blur-sm">
+                <p className="text-sm font-medium text-white line-clamp-2">{currentItem.title}</p>
+              </div>
               {currentItem.url && (
-                <p className="text-xs text-white/60 truncate mt-0.5">{currentItem.url}</p>
+                <p className="mt-1 text-xs text-white/75 truncate">{currentItem.url}</p>
               )}
             </div>
           )}
