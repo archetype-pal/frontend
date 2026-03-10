@@ -42,6 +42,22 @@ export interface AdminItemImage {
   locus: string;
 }
 
+export interface MediaPickerFolder {
+  name: string;
+  path: string;
+}
+
+export interface MediaPickerImage {
+  name: string;
+  path: string;
+  url: string;
+}
+
+export interface MediaPickerContent {
+  folders: MediaPickerFolder[];
+  images: MediaPickerImage[];
+}
+
 export function getItemImages(
   token: string,
   params?: { item_part?: number; limit?: number; offset?: number }
@@ -50,6 +66,13 @@ export function getItemImages(
     '/api/v1/manuscripts/management/item-images/'
   );
   return crud.list(token, params);
+}
+
+export function getMediaPickerContent(token: string, path = ''): Promise<MediaPickerContent> {
+  const qs = new URLSearchParams();
+  if (path) qs.set('path', path);
+  const endpoint = `/api/v1/manuscripts/management/image-picker-content/${qs.toString() ? `?${qs.toString()}` : ''}`;
+  return backofficeGet<MediaPickerContent>(endpoint, token);
 }
 
 // ── Item Parts ───────────────────────────────────────────────────────────

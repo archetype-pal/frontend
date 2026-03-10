@@ -52,6 +52,46 @@ export function getCarouselImageUrl(imagePath: string | null | undefined): strin
   return imagePath.startsWith('/') ? `${base}${imagePath}` : `${base}/${imagePath}`;
 }
 
+/**
+ * Normalize mixed carousel image values to backend-relative media paths.
+ * Examples:
+ * - "https://host/media/carousel/a.jpg" -> "carousel/a.jpg"
+ * - "/media/carousel/a.jpg" -> "carousel/a.jpg"
+ * - "carousel/a.jpg" -> "carousel/a.jpg"
+ */
+export function normalizeCarouselImagePath(imagePath: string): string {
+  let value = imagePath.trim();
+  if (!value) return '';
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    try {
+      const parsed = new URL(value);
+      value = parsed.pathname;
+    } catch {
+      // Keep original value when URL parsing fails.
+    }
+  }
+
+  try {
+    value = decodeURIComponent(value);
+  } catch {
+    // Keep original value when malformed encoding is encountered.
+  }
+
+  value = value.replace(/^\/+/, '');
+  if (value.startsWith('media/')) {
+    value = value.slice('media/'.length);
+  }
+  return value;
+}
+
+/** Derive picker start folder from a carousel image path/url. */
+export function getCarouselPickerStartPath(imagePath: string): string {
+  const normalized = normalizeCarouselImagePath(imagePath);
+  if (!normalized.includes('/')) return '';
+  return normalized.split('/').slice(0, -1).join('/');
+}
+
 export async function loginUser(username: string, password: string): Promise<AuthToken> {
   const response = await apiFetch(`/api/v1/auth/token/login`, {
     method: 'POST',

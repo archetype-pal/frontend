@@ -66,6 +66,7 @@ export const backofficeKeys = {
   },
   carousel: {
     all: () => [...backofficeKeys.all, 'carousel'] as const,
+    mediaPicker: (path: string) => [...backofficeKeys.carousel.all(), 'mediaPicker', path] as const,
   },
 
   // ── Scribes ────────────────────────────────────────────────

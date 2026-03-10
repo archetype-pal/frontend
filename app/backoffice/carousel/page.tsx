@@ -82,7 +82,7 @@ export default function CarouselPage() {
   // ── Mutations ──────────────────────────────────────────────────────
 
   const createMut = useMutation({
-    mutationFn: (data: { title: string; url: string; image?: File }) =>
+    mutationFn: (data: { title: string; url: string; image?: File | string }) =>
       createCarouselItem(token!, {
         title: data.title,
         url: data.url,
@@ -107,7 +107,7 @@ export default function CarouselPage() {
       data,
     }: {
       id: number;
-      data: { title: string; url: string; image?: File };
+      data: { title: string; url: string; image?: File | string };
     }) => updateCarouselItem(token!, id, data),
     onSuccess: (updated) => {
       toast.success('Carousel item updated');
@@ -215,7 +215,7 @@ export default function CarouselPage() {
   }, []);
 
   const handleEditorSave = useCallback(
-    (data: { title: string; url: string; image?: File }) => {
+    (data: { title: string; url: string; image?: File | string }) => {
       if (panel.kind === 'create') {
         createMut.mutate(data);
       } else if (panel.kind === 'edit') {

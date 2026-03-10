@@ -1,15 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2, Trash2 } from 'lucide-react';
+import { FolderOpen, Loader2, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ImageUploadZone } from '@/components/backoffice/common/image-upload-zone';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
-import { getCarouselImageUrl } from '@/utils/api';
+import { CarouselImagePickerDialog } from '@/components/backoffice/carousel/carousel-image-picker-dialog';
+import { getCarouselImageUrl, getCarouselPickerStartPath } from '@/utils/api';
 import type { CarouselItem } from '@/types/backoffice';
+import { Input } from '@/components/ui/input';
 
 interface CarouselEditorPanelProps {
   /** The item being edited, or null for "create new" mode. */
@@ -18,7 +19,7 @@ interface CarouselEditorPanelProps {
   saving: boolean;
   /** Whether a delete mutation is in progress. */
   deleting: boolean;
-  onSave: (data: { title: string; url: string; image?: File }) => void;
+  onSave: (data: { title: string; url: string; image?: File | string }) => void;
   onDelete: () => void;
   onCancel: () => void;
 }
@@ -36,28 +37,36 @@ export function CarouselEditorPanel({
   const [title, setTitle] = useState(item?.title ?? '');
   const [url, setUrl] = useState(item?.url ?? '');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePath, setImagePath] = useState(item?.image ?? '');
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // Reset form when the selected item changes
   useEffect(() => {
     setTitle(item?.title ?? ''); // eslint-disable-line react-hooks/set-state-in-effect
     setUrl(item?.url ?? '');
+    setImagePath(item?.image ?? '');
     setImageFile(null);
   }, [item]);
 
   const isDirty =
-    isNew || title !== (item?.title ?? '') || url !== (item?.url ?? '') || imageFile !== null;
+    isNew ||
+    title !== (item?.title ?? '') ||
+    url !== (item?.url ?? '') ||
+    imagePath !== (item?.image ?? '') ||
+    imageFile !== null;
 
-  const canSave = title.trim().length > 0 && isDirty && !saving;
+  const hasImageValue = imageFile !== null || imagePath.trim().length > 0;
+  const canSave = title.trim().length > 0 && hasImageValue && isDirty && !saving;
 
   const handleSave = useCallback(() => {
     if (!canSave) return;
     onSave({
       title: title.trim(),
       url: url.trim(),
-      ...(imageFile ? { image: imageFile } : {}),
+      ...(imageFile ? { image: imageFile } : imagePath.trim() ? { image: imagePath.trim() } : {}),
     });
-  }, [canSave, title, url, imageFile, onSave]);
+  }, [canSave, title, url, imageFile, imagePath, onSave]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -72,7 +81,8 @@ export function CarouselEditorPanel({
     [handleSave, onCancel]
   );
 
-  const currentImageUrl = item?.image ? getCarouselImageUrl(item.image) : null;
+  const currentImageUrl = imagePath ? getCarouselImageUrl(imagePath) : null;
+  const pickerStartPath = getCarouselPickerStartPath(imagePath);
 
   return (
     <div className="space-y-5" onKeyDown={handleKeyDown}>
@@ -96,14 +106,43 @@ export function CarouselEditorPanel({
         <ImageUploadZone
           key={item?.id ?? 'new'}
           currentImageUrl={currentImageUrl}
-          onFileSelect={setImageFile}
+          onFileSelect={(file) => setImageFile(file)}
           onClear={() => setImageFile(null)}
           loading={saving}
         />
-        {isNew && !imageFile && (
-          <p className="mt-1.5 text-xs text-amber-600">
-            An image is required for the carousel to display properly.
-          </p>
+        <div className="mt-2 flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setPickerOpen(true)}
+            disabled={saving}
+          >
+            <FolderOpen className="h-3.5 w-3.5 mr-1.5" />
+            Pick from Media Library
+          </Button>
+          {imagePath && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setImagePath('')}
+              disabled={saving}
+            >
+              <X className="h-3.5 w-3.5 mr-1.5" />
+              Clear image
+            </Button>
+          )}
+        </div>
+        <p className="mt-1.5 text-xs text-muted-foreground break-all">
+          {imageFile
+            ? 'Upload selected. Saving will use this file.'
+            : imagePath
+              ? `Using media image: ${imagePath}`
+              : 'No image selected yet.'}
+        </p>
+        {isNew && !hasImageValue && (
+          <p className="mt-1.5 text-xs text-amber-600">Upload a file or pick one from media.</p>
         )}
       </div>
 
@@ -156,6 +195,16 @@ export function CarouselEditorPanel({
           />
         </>
       )}
+
+      <CarouselImagePickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        initialPath={pickerStartPath}
+        onSelectImage={(path) => {
+          setImagePath(`/media/${path.replace(/^\/+/, '')}`);
+          setImageFile(null);
+        }}
+      />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import type {
   CommentItem,
   CarouselItem,
 } from '@/types/backoffice';
+import { normalizeCarouselImagePath } from '@/utils/api';
 
 // ── Publications ────────────────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ export interface CarouselItemPayload {
   title: string;
   url?: string;
   ordering?: number;
-  image?: File | null;
+  image?: File | string | null;
 }
 
 function buildCarouselFormData(data: CarouselItemPayload): FormData {
@@ -79,7 +80,11 @@ function buildCarouselFormData(data: CarouselItemPayload): FormData {
   fd.append('title', data.title);
   if (data.url !== undefined) fd.append('url', data.url);
   if (data.ordering !== undefined) fd.append('ordering', String(data.ordering));
-  if (data.image) fd.append('image', data.image);
+  if (data.image instanceof File) {
+    fd.append('image', data.image);
+  } else if (typeof data.image === 'string' && data.image.trim().length > 0) {
+    fd.append('image', normalizeCarouselImagePath(data.image));
+  }
   return fd;
 }
 
@@ -101,6 +106,10 @@ export function updateCarouselItem(
   if (data.title !== undefined) fd.append('title', data.title);
   if (data.url !== undefined) fd.append('url', data.url);
   if (data.ordering !== undefined) fd.append('ordering', String(data.ordering));
-  if (data.image) fd.append('image', data.image);
+  if (data.image instanceof File) {
+    fd.append('image', data.image);
+  } else if (typeof data.image === 'string' && data.image.trim().length > 0) {
+    fd.append('image', normalizeCarouselImagePath(data.image));
+  }
   return backofficePatchFormData<CarouselItem>(`${CAROUSEL_PATH}${id}/`, token, fd);
 }
