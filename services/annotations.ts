@@ -1,6 +1,7 @@
 export interface BackendGraph {
   id: number;
   item_image: number;
+  annotation_type?: string;
   annotation: {
     type: 'Feature';
     geometry: {
@@ -20,10 +21,12 @@ import { apiFetch } from '@/lib/api-fetch';
 
 export async function fetchAnnotationsForImage(
   imageId: string,
-  allographId?: string
+  allographId?: string,
+  annotationType: string = 'image'
 ): Promise<BackendGraph[]> {
   const params = new URLSearchParams({ item_image: imageId });
   if (allographId) params.set('allograph', allographId);
+  if (annotationType) params.set('annotation_type', annotationType);
   const res = await apiFetch(`/api/v1/manuscripts/graphs/?${params}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to load annotations');
   return res.json();
