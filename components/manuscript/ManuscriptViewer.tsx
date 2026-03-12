@@ -48,6 +48,7 @@ import type { Manuscript } from '@/types/manuscript';
 
 interface ManuscriptViewerProps {
   imageId: string;
+  mode?: 'public' | 'editor';
 }
 
 // small helpers for cache meta
@@ -72,7 +73,9 @@ function browserSafeIiifUrl(raw: string): string {
   }
 }
 
-export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): React.JSX.Element {
+export default function ManuscriptViewer({ imageId, mode = 'editor' }: ManuscriptViewerProps): React.JSX.Element {
+  const isPublicDemoMode = mode === 'public';
+
   // Always start with default value to avoid hydration mismatch
   const [annotationsEnabled, setAnnotationsEnabled] = React.useState<boolean>(true);
 
@@ -184,7 +187,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
 
   // Load from localStorage only on client after mount
   React.useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isPublicDemoMode) return;
     try {
       const saved = Number(localStorage.getItem(`unsaved:${imageId}`) || 0);
       if (saved > 0) {
@@ -193,16 +196,16 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
     } catch {
       // ignore
     }
-  }, [imageId]);
+  }, [imageId, isPublicDemoMode]);
 
   React.useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isPublicDemoMode) return;
     try {
       localStorage.setItem(`unsaved:${imageId}`, String(unsavedChanges));
     } catch {
       // ignore
     }
-  }, [unsavedChanges, imageId]);
+  }, [unsavedChanges, imageId, isPublicDemoMode]);
 
   React.useEffect(() => {
     if (!osdReady) return;
@@ -299,7 +302,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
         const cacheKey = cacheKeyFor(iiif);
         const metaKey = metaKeyFor(iiif);
         let merged: A9sAnnotation[] = dbMapped;
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && !isPublicDemoMode) {
           try {
             const raw = localStorage.getItem(cacheKey);
             const meta = JSON.parse(localStorage.getItem(metaKey) || '{}') as {
@@ -351,6 +354,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
 
   // === SAVE ===
   const handleSave = React.useCallback(async (): Promise<void> => {
+    if (isPublicDemoMode) return;
     try {
       const a9s = viewerApiRef.current?.getAnnotations() ?? [];
       const tasks: Promise<BackendGraph>[] = [];
@@ -412,6 +416,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
   }, [manuscriptImage, imageHeight, selectedAllograph, selectedHand, imageId]);
 
   React.useEffect(() => {
+    if (isPublicDemoMode) return;
     const handleKeyPress = (e: KeyboardEvent): void => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
@@ -484,6 +489,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
             annotationsEnabled={annotationsEnabled}
             onToggleAnnotations={handleToggleAnnotations}
             unsavedCount={unsavedChanges}
+            showUnsavedCount={!isPublicDemoMode}
             imageId={imageId}
             onAllographSelect={setSelectedAllograph}
             onHandSelect={setSelectedHand}
@@ -502,6 +508,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
           annotationsEnabled={annotationsEnabled}
           onToggleAnnotations={handleToggleAnnotations}
           unsavedCount={unsavedChanges}
+          showUnsavedCount={!isPublicDemoMode}
           imageId={imageId}
           onAllographSelect={setSelectedAllograph}
           onHandSelect={setSelectedHand}
@@ -667,49 +674,53 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                   <Pencil className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Create Editorial Annotation</TooltipContent>
+              <TooltipContent>Create Annotation</TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => void handleSave()}
-                  disabled={unsavedChanges === 0}
-                >
-                  <Save className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Save</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={activeButton === 'delete' ? 'default' : 'ghost'}
-                  size="icon"
-                  onClick={handleDeleteTool}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Delete (del)</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Expand className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Modify</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <SquarePen className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Draw</TooltipContent>
-            </Tooltip>
+            {!isPublicDemoMode && (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => void handleSave()}
+                      disabled={unsavedChanges === 0}
+                    >
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Save</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={activeButton === 'delete' ? 'default' : 'ghost'}
+                      size="icon"
+                      onClick={handleDeleteTool}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Delete (del)</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Expand className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Modify</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <SquarePen className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Draw</TooltipContent>
+                </Tooltip>
+              </>
+            )}
             {manuscriptImage && manuscript && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -748,7 +759,7 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
               iiifImageUrl={browserSafeIiifUrl(getIiifBaseUrl(manuscriptImage.iiif_image))}
               initialAnnotations={initialA9sAnnots}
               onCreate={() => {
-                if (typeof window !== 'undefined') {
+                if (typeof window !== 'undefined' && !isPublicDemoMode) {
                   try {
                     const iiif = manuscriptImage.iiif_image;
                     const cacheKey = cacheKeyFor(iiif);
@@ -761,11 +772,13 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                   }
                 }
                 // unsaved counter: +1 for creates
-                setUnsavedChanges((n) => n + 1);
+                if (!isPublicDemoMode) {
+                  setUnsavedChanges((n) => n + 1);
+                }
                 setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? []);
               }}
               onDelete={(a: A9sAnnotation) => {
-                if (typeof window !== 'undefined') {
+                if (typeof window !== 'undefined' && !isPublicDemoMode) {
                   try {
                     const iiif = manuscriptImage.iiif_image;
                     const cacheKey = cacheKeyFor(iiif);
@@ -778,13 +791,13 @@ export default function ManuscriptViewer({ imageId }: ManuscriptViewerProps): Re
                   }
                 }
                 const id = a?.id as string | undefined;
-                if (id && !isDbId(id)) {
+                if (!isPublicDemoMode && id && !isDbId(id)) {
                   // deleting a brand-new unsaved annotation reduces the counter
                   setUnsavedChanges((n) => Math.max(0, n - 1));
                 }
                 setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? []);
               }}
-              onSelect={() => {}}
+              onSelect={() => { }}
               exposeApi={handleExposeApi}
             />
           </div>

@@ -18,8 +18,9 @@ import type { Allograph } from '@/types/allographs';
 
 interface AnnotationHeaderProps {
   annotationsEnabled: boolean;
-  onToggleAnnotations: (enabled: boolean) => void;
+  onToggleAnnotations: () => void;
   unsavedCount: number;
+  showUnsavedCount?: boolean;
   imageId?: string;
   onAllographSelect: (allograph: Allograph | undefined) => void;
   onHandSelect: (hand: HandType | undefined) => void;
@@ -34,6 +35,7 @@ export function AnnotationHeader({
   annotationsEnabled,
   onToggleAnnotations,
   unsavedCount = 0,
+  showUnsavedCount = true,
   imageId,
   onAllographSelect,
   onHandSelect,
@@ -114,12 +116,11 @@ export function AnnotationHeader({
           <span className="text-sm font-medium text-gray-700">Annotations</span>
           <div className="flex">
             <button
-              onClick={() => onToggleAnnotations(!annotationsEnabled)}
-              className={`px-3 py-1 text-sm font-medium transition-colors ${
-                annotationsEnabled
+              onClick={onToggleAnnotations}
+              className={`px-3 py-1 text-sm font-medium transition-colors ${annotationsEnabled
                   ? 'bg-slate-600 text-white'
                   : 'bg-white text-gray-900 border shadow-sm'
-              }`}
+                }`}
               style={{
                 borderTopLeftRadius: '4px',
                 borderBottomLeftRadius: '4px',
@@ -131,14 +132,15 @@ export function AnnotationHeader({
             </button>
           </div>
         </div>
-
-        <div className="flex items-center space-x-1">
-          <span className="text-sm text-gray-600">Unsaved</span>
-          <span className="inline-flex items-center justify-center w-6 h-6 text-sm font-medium text-gray-600 bg-gray-100 rounded">
-            {unsavedCount}
-          </span>
-        </div>
-
+        {showUnsavedCount && (
+          <div className="flex items-center space-x-1">
+            <span className="text-sm text-gray-600">Unsaved</span>
+            <span className="inline-flex items-center justify-center w-6 h-6 text-sm font-medium text-gray-600 bg-gray-100 rounded">
+              {unsavedCount}
+            </span>
+          </div>
+        )}
+        
         <div className="flex items-center space-x-1">
           <Button variant="outline" size="icon" className="h-8 w-8">
             <Wrench className="h-4 w-4" />
