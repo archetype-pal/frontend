@@ -18,6 +18,10 @@ export interface Annotation {
   _meta?: {
     allographId?: number;
     handId?: number;
+    numFeatures?: number;
+    isDescribed?: boolean;
+    annotationType?: string;
+    graphcomponentSet?: Array<{ component: number; features: number[] }>;
   };
 }
 type AnnotoriousInstance = ReturnType<typeof Annotorious>;
@@ -81,12 +85,54 @@ export default function ManuscriptAnnotorious({
   const onCreateRef = useRef(onCreate);
   const onDeleteRef = useRef(onDelete);
   const onSelectRef = useRef(onSelect);
+  const selectedAnnotationRef = useRef<Annotation | null>(null);
   const exposeApiRef = useRef(exposeApi);
   const [state, setState] = React.useState<ComponentState>({
     hasError: false,
     errorMessage: null,
     isLoading: true,
   });
+
+  const syncAnnotationClasses = React.useCallback(() => {
+    const root = viewerRef.current;
+    const anno = annoRef.current;
+    if (!root || !anno) return;
+
+    root.querySelectorAll<SVGGElement>('g.a9s-annotation').forEach((el) => {
+      el.classList.remove('a9s-described', 'a9s-undescribed', 'a9s-current-selected');
+    });
+
+    root.querySelectorAll<SVGGElement>('g.a9s-selection').forEach((el) => {
+      el.classList.remove('a9s-described', 'a9s-undescribed');
+    });
+
+    const annotations = (anno.getAnnotations?.() ?? []) as Annotation[];
+
+    annotations.forEach((a) => {
+      const el = root.querySelector<SVGGElement>(`g.a9s-annotation[data-id="${a.id}"]`);
+      if (!el) return;
+
+      const isDescribed = a._meta?.isDescribed === true;
+      el.classList.add(isDescribed ? 'a9s-described' : 'a9s-undescribed');
+    });
+
+    const selected = selectedAnnotationRef.current;
+    if (selected) {
+      const baseEl = root.querySelector<SVGGElement>(`g.a9s-annotation[data-id="${selected.id}"]`);
+      if (baseEl) {
+        baseEl.classList.add('a9s-current-selected');
+      }
+    }
+  }, []);
+
+  const queueSyncAnnotationClasses = React.useCallback(() => {
+    requestAnimationFrame(() => {
+      syncAnnotationClasses();
+      requestAnimationFrame(() => {
+        syncAnnotationClasses();
+      });
+    });
+  }, [syncAnnotationClasses]);
 
   // keep refs up to date without re-running the heavy OSD effect
   useEffect(() => {
@@ -184,7 +230,7 @@ export default function ManuscriptAnnotorious({
         });
       });
 
-      viewer.addHandler('tile-load-failed', () => {});
+      viewer.addHandler('tile-load-failed', () => { });
 
       viewer.addHandler('open', () => {
         if (!isMounted) return;
@@ -208,14 +254,25 @@ export default function ManuscriptAnnotorious({
             }
           }
 
+          queueSyncAnnotationClasses();
+
           anno.on('createAnnotation', (a: Annotation) => {
+            queueSyncAnnotationClasses();
             onCreateRef.current?.(a);
           });
           anno.on('deleteAnnotation', (a: Annotation) => {
+            queueSyncAnnotationClasses();
             onDeleteRef.current?.(a);
           });
           anno.on('selectAnnotation', (a: Annotation | null) => {
+            selectedAnnotationRef.current = a;
+            queueSyncAnnotationClasses();
             onSelectRef.current?.(a);
+          });
+          anno.on('cancelSelected', () => {
+            selectedAnnotationRef.current = null;
+            queueSyncAnnotationClasses();
+            onSelectRef.current?.(null);
           });
 
           let currentMode: 'pan' | 'draw' | 'delete' = 'pan';
@@ -319,6 +376,8 @@ export default function ManuscriptAnnotorious({
               if (anno && typeof anno.setVisible === 'function') {
                 anno.setVisible(visible);
                 if (!visible) {
+                  selectedAnnotationRef.current = null;
+                  queueSyncAnnotationClasses();
                   anno.setDrawingEnabled(false);
                   if (deleteHandler) {
                     anno.off('selectAnnotation', deleteHandler);
@@ -413,7 +472,7 @@ export default function ManuscriptAnnotorious({
         // ignore
       }
     };
-  }, [iiifImageUrl]);
+  }, [iiifImageUrl, queueSyncAnnotationClasses]);
 
   useEffect(() => {
     const anno = annoRef.current;
@@ -429,7 +488,9 @@ export default function ManuscriptAnnotorious({
         }
       }
     }
-  }, [initialAnnotations, iiifImageUrl]);
+
+    queueSyncAnnotationClasses();
+  }, [initialAnnotations, iiifImageUrl, queueSyncAnnotationClasses]);
 
   if (state.hasError) {
     return (

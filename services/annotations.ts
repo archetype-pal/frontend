@@ -15,6 +15,8 @@ export interface BackendGraph {
   hand: number;
   graphcomponent_set: Array<{ component: number; features: number[] }>;
   positions: number[];
+  num_features?: number;
+  is_described?: boolean;
 }
 
 import { apiFetch } from '@/lib/api-fetch';
@@ -27,7 +29,7 @@ export async function fetchAnnotationsForImage(
   const params = new URLSearchParams({ item_image: imageId });
   if (allographId) params.set('allograph', allographId);
   if (annotationType) params.set('annotation_type', annotationType);
-  const res = await apiFetch(`/api/v1/manuscripts/graphs/?${params}`, { cache: 'no-store' });
+  const res = await apiFetch(`/api/v1/manuscripts/graphs/?${params.toString()}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to load annotations');
   return res.json();
 }

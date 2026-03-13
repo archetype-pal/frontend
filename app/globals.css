@@ -98,6 +98,7 @@
   * {
     border-color: hsl(var(--border));
   }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
@@ -150,17 +151,134 @@
   cursor: not-allowed !important;
 }
 
+/* Allograph hover/highlight - use purple so it does not clash with undescribed yellow */
 g.a9s-annotation.a9s-highlight rect.a9s-outer,
 g.a9s-annotation.a9s-highlight rect.a9s-inner,
 g.a9s-annotation.a9s-highlight path,
 g.a9s-annotation.a9s-highlight polygon {
   stroke-width: 4px !important;
-  stroke: orange !important;
+  stroke: #7c3aed !important;
 }
 
-g.a9s-annotation:hover path,
-g.a9s-annotation:hover rect,
-g.a9s-annotation:hover polygon {
+/* ------------------------------
+   Base described / undescribed
+   ------------------------------ */
+
+g.a9s-annotation.a9s-described .a9s-inner,
+g.a9s-annotation.a9s-described rect,
+g.a9s-annotation.a9s-described polygon,
+g.a9s-annotation.a9s-described path {
+  stroke: #2f9e44 !important;
+  fill: rgba(47, 158, 68, 0.18) !important;
+}
+
+g.a9s-annotation.a9s-described .a9s-outer {
+  stroke: #2f9e44 !important;
+  fill: transparent !important;
+}
+
+g.a9s-annotation.a9s-undescribed .a9s-inner,
+g.a9s-annotation.a9s-undescribed rect,
+g.a9s-annotation.a9s-undescribed polygon,
+g.a9s-annotation.a9s-undescribed path {
+  stroke: #e0a800 !important;
+  fill: rgba(224, 168, 0, 0.18) !important;
+}
+
+g.a9s-annotation.a9s-undescribed .a9s-outer {
+  stroke: #e0a800 !important;
+  fill: transparent !important;
+}
+
+/* ------------------------------
+   Hover keeps family colour
+   ------------------------------ */
+
+g.a9s-annotation.a9s-described:hover .a9s-inner,
+g.a9s-annotation.a9s-described:hover .a9s-outer,
+g.a9s-annotation.a9s-described:hover rect,
+g.a9s-annotation.a9s-described:hover polygon,
+g.a9s-annotation.a9s-described:hover path {
+  stroke: #2f9e44 !important;
   stroke-width: 4px !important;
+  fill: rgba(47, 158, 68, 0.22) !important;
+}
+
+g.a9s-annotation.a9s-undescribed:hover .a9s-inner,
+g.a9s-annotation.a9s-undescribed:hover .a9s-outer,
+g.a9s-annotation.a9s-undescribed:hover rect,
+g.a9s-annotation.a9s-undescribed:hover polygon,
+g.a9s-annotation.a9s-undescribed:hover path {
+  stroke: #e0a800 !important;
+  stroke-width: 4px !important;
+  fill: rgba(224, 168, 0, 0.22) !important;
+}
+
+/* ------------------------------
+   Selection overlay
+   Blue-ish selected state with fill
+   ------------------------------ */
+
+g.a9s-annotation.a9s-current-selected .a9s-inner,
+g.a9s-annotation.a9s-current-selected rect,
+g.a9s-annotation.a9s-current-selected polygon,
+g.a9s-annotation.a9s-current-selected path {
   stroke: cornflowerblue !important;
+  fill: rgba(100, 149, 237, 0.24) !important;
+  stroke-width: 4px !important;
+}
+
+g.a9s-annotation.a9s-current-selected .a9s-outer {
+  stroke: cornflowerblue !important;
+  fill: transparent !important;
+  stroke-width: 4px !important;
+}
+
+/* Hovering while selected stays blue-ish */
+g.a9s-annotation.a9s-current-selected:hover .a9s-inner,
+g.a9s-annotation.a9s-current-selected:hover rect,
+g.a9s-annotation.a9s-current-selected:hover polygon,
+g.a9s-annotation.a9s-current-selected:hover path {
+  stroke: cornflowerblue !important;
+  fill: rgba(100, 149, 237, 0.24) !important;
+  stroke-width: 4px !important;
+}
+
+g.a9s-annotation.a9s-current-selected:hover .a9s-outer {
+  stroke: cornflowerblue !important;
+  fill: transparent !important;
+  stroke-width: 4px !important;
+}
+
+/* ------------------------------
+   Selection overlay
+   Keep family fill, blue outer border
+   ------------------------------ */
+
+g.a9s-selection .a9s-inner,
+g.a9s-selection rect,
+g.a9s-selection polygon,
+g.a9s-selection path {
+  stroke: cornflowerblue !important;
+  fill: transparent !important;
+}
+
+g.a9s-selection .a9s-outer {
+  stroke: cornflowerblue !important;
+  stroke-width: 4px !important;
+  fill: transparent !important;
+}
+
+g.a9s-selection:hover .a9s-inner,
+g.a9s-selection:hover rect,
+g.a9s-selection:hover polygon,
+g.a9s-selection:hover path {
+  stroke: cornflowerblue !important;
+  fill: transparent !important;
+}
+
+g.a9s-selection:hover .a9s-outer {
+  stroke: cornflowerblue !important;
+  stroke-width: 4px !important;
+  fill: transparent !important;
 }

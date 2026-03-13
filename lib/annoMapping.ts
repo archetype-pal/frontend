@@ -47,6 +47,10 @@ export function backendToA9sAnnotation(
   allographLabel?: string
 ): Annotation {
   const { x, y, w, h } = polygonToXywh(backend.annotation.geometry.coordinates, imageHeight);
+  
+  const numFeatures = backend.num_features ?? fallbackNumFeatures(backend);
+  const isDescribed = backend.is_described ?? numFeatures > 0;
+  
   const base: Annotation = {
     id: `db:${backend.id}`,
     type: 'Annotation',
@@ -60,6 +64,10 @@ export function backendToA9sAnnotation(
     _meta: {
       allographId: backend.allograph,
       handId: backend.hand,
+      numFeatures,
+      isDescribed,
+      annotationType: backend.annotation_type,
+      graphcomponentSet: backend.graphcomponent_set,
     },
   };
 
@@ -119,4 +127,11 @@ export function dbIdFromA9s(a9s: Annotation): number | null {
   const idNum = Number.parseInt(idStr ?? '', 10);
 
   return Number.isNaN(idNum) ? null : idNum;
+}
+
+function fallbackNumFeatures(graph: BackendGraph): number {
+  return (graph.graphcomponent_set ?? []).reduce(
+    (sum, gc) => sum + (gc.features?.length ?? 0),
+    0
+  );
 }
