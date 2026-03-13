@@ -338,7 +338,7 @@ export default function ManuscriptViewer({
     return () => {
       isMounted = false;
     };
-  }, [manuscriptImage, imageHeight, selectedAllograph, allographNameById]);
+  }, [manuscriptImage, imageHeight, selectedAllograph, allographNameById, isPublicDemoMode]);
 
   const handleMoveTool = () => {
     viewerApiRef.current?.enablePan();
@@ -416,7 +416,7 @@ export default function ManuscriptViewer({
     } catch {
       // save failed — leave unsaved count as is
     }
-  }, [manuscriptImage, imageHeight, selectedAllograph, selectedHand, imageId]);
+  }, [manuscriptImage, imageHeight, selectedAllograph, selectedHand, imageId, isPublicDemoMode]);
 
   React.useEffect(() => {
     if (isPublicDemoMode) return;
@@ -428,7 +428,7 @@ export default function ManuscriptViewer({
     };
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [unsavedChanges, handleSave]);
+  }, [unsavedChanges, handleSave, isPublicDemoMode]);
 
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
   if (error || !manuscriptImage) {
