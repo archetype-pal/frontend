@@ -230,7 +230,7 @@ export default function ManuscriptAnnotorious({
         });
       });
 
-      viewer.addHandler('tile-load-failed', () => { });
+      viewer.addHandler('tile-load-failed', () => {});
 
       viewer.addHandler('open', () => {
         if (!isMounted) return;
