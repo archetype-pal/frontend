@@ -117,10 +117,11 @@ export function AnnotationHeader({
           <div className="flex">
             <button
               onClick={onToggleAnnotations}
-              className={`px-3 py-1 text-sm font-medium transition-colors ${annotationsEnabled
+              className={`px-3 py-1 text-sm font-medium transition-colors ${
+                annotationsEnabled
                   ? 'bg-slate-600 text-white'
                   : 'bg-white text-gray-900 border shadow-sm'
-                }`}
+              }`}
               style={{
                 borderTopLeftRadius: '4px',
                 borderBottomLeftRadius: '4px',
@@ -140,7 +141,7 @@ export function AnnotationHeader({
             </span>
           </div>
         )}
-        
+
         <div className="flex items-center space-x-1">
           <Button variant="outline" size="icon" className="h-8 w-8">
             <Wrench className="h-4 w-4" />

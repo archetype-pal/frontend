@@ -73,7 +73,10 @@ function browserSafeIiifUrl(raw: string): string {
   }
 }
 
-export default function ManuscriptViewer({ imageId, mode = 'public' }: ManuscriptViewerProps): React.JSX.Element {
+export default function ManuscriptViewer({
+  imageId,
+  mode = 'public',
+}: ManuscriptViewerProps): React.JSX.Element {
   const isPublicDemoMode = mode === 'public';
 
   // Always start with default value to avoid hydration mismatch
@@ -797,7 +800,7 @@ export default function ManuscriptViewer({ imageId, mode = 'public' }: Manuscrip
                 }
                 setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? []);
               }}
-              onSelect={() => { }}
+              onSelect={() => {}}
               exposeApi={handleExposeApi}
             />
           </div>
