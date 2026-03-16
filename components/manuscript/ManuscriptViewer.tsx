@@ -16,7 +16,6 @@ import {
   Share2,
   Star,
 } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { ViewerApi, Annotation as A9sAnnotation } from './ManuscriptAnnotorious';
@@ -25,10 +24,12 @@ const ManuscriptAnnotorious = dynamic(() => import('./ManuscriptAnnotorious'), {
 
 import { ManuscriptTabs } from './manuscript-tabs';
 import { Toolbar } from './toolbar';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
 import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import {
@@ -1023,11 +1024,7 @@ export default function ManuscriptViewer({
                 {isShareUrlVisible && (
                   <div className="border-b px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <input
-                        readOnly
-                        value={shareUrl}
-                        className="flex-1 rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground"
-                      />
+                      <Input readOnly value={shareUrl} className="flex-1 text-sm" />
                       <Button variant="ghost" size="sm" onClick={handleCopyShareUrl}>
                         Copy
                       </Button>
