@@ -31,7 +31,7 @@ function getItemTitle(item: CollectionItem): string {
 }
 
 function getImageDetailUrl(item: CollectionItem): string {
-  return buildImageDetailUrl(item);
+  return buildImageDetailUrl(item) ?? '#';
 }
 
 /** Card for a graph item: thumbnail URL with bounds (no upscaling). */

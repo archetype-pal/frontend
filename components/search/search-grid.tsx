@@ -23,15 +23,15 @@ type GridCard =
   | {
       kind: 'image';
       item: ImageListItem;
-      detailUrl: string;
+      detailUrl: string | null;
       displayText: string;
       imageUrl: string | null;
     }
-  | { kind: 'graph'; item: GraphListItem; detailUrl: string; displayText: string };
+  | { kind: 'graph'; item: GraphListItem; detailUrl: string | null; displayText: string };
 
 type MediaGridCardProps = {
   imageUrl: string | null;
-  detailUrl: string;
+  detailUrl: string | null;
   displayText: string;
   highlightKeyword: string;
   onLinkClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
@@ -81,7 +81,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
         {imageUrl ? (
           <>
             <Link
-              href={detailUrl}
+              href={detailUrl ?? '#'}
               onClick={onLinkClick}
               className="block w-full h-full relative z-0 pointer-events-auto"
             >
@@ -132,7 +132,7 @@ const GraphGridCard = React.memo(function GraphGridCard({
   onLinkClick,
 }: {
   item: GraphListItem;
-  detailUrl: string;
+  detailUrl: string | null;
   displayText: string;
   highlightKeyword: string;
   onLinkClick: (e: React.MouseEvent<HTMLAnchorElement>) => void;
@@ -167,7 +167,7 @@ function SearchGridComponent({ results = [], resultType, highlightKeyword = '' }
         const card = toGridCard(resultType, item);
         if (!card) return null;
         const handleGraphLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-          if (card.kind !== 'graph' || card.detailUrl !== '#') return;
+          if (card.kind !== 'graph' || card.detailUrl) return;
           e.preventDefault();
           void resolveAndPushGraphDetail(card.item, router.push);
         };
@@ -195,7 +195,7 @@ function SearchGridComponent({ results = [], resultType, highlightKeyword = '' }
             onLinkClick={handleGraphLinkClick}
             annotationCount={card.kind === 'image' ? card.item.number_of_annotations : null}
             item={card.item}
-            itemType="image"
+            itemType={card.kind}
           />
         );
       })}

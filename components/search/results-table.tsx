@@ -263,65 +263,85 @@ export const COLUMN_HEADERS_BY_TYPE: Record<ResultType, string[]> = Object.fromE
 type SubRowAccessor<T> = (item: T) => string;
 type PreviewAccessor<T> = (item: T) => React.ReactNode;
 
-const SUB_ROW_ACCESSORS = {
-  clauses: (c: ClauseListItem) => c.content,
-  people: (p: PersonListItem) => p.name,
-  places: (p: PlaceListItem) => p.name,
-} satisfies Partial<{ [K in ResultType]: SubRowAccessor<ResultMap[K]> }>;
+type ResultTypeDescriptor<K extends ResultType> = {
+  columns: Column<ResultMap[K]>[];
+  detailUrl: (item: ResultMap[K]) => string | null;
+  subRowAccessor?: SubRowAccessor<ResultMap[K]>;
+  previewAccessor?: PreviewAccessor<ResultMap[K]>;
+};
 
-const PREVIEW_ACCESSORS = {
-  texts: (t: TextListItem) => (
-    <AnnotationInlinePreview
-      thumbnailIiif={t.thumbnail_iiif}
-      coordinates={t.annotation_coordinates}
-      alt={t.shelfmark || 'Text annotation'}
-    />
-  ),
-  clauses: (c: ClauseListItem) => (
-    <AnnotationInlinePreview
-      thumbnailIiif={c.thumbnail_iiif}
-      coordinates={c.annotation_coordinates}
-      alt={c.shelfmark || 'Clause annotation'}
-    />
-  ),
-  people: (p: PersonListItem) => (
-    <AnnotationInlinePreview
-      thumbnailIiif={p.thumbnail_iiif}
-      coordinates={p.annotation_coordinates}
-      alt={p.shelfmark || 'Person annotation'}
-    />
-  ),
-  places: (p: PlaceListItem) => (
-    <AnnotationInlinePreview
-      thumbnailIiif={p.thumbnail_iiif}
-      coordinates={p.annotation_coordinates}
-      alt={p.shelfmark || 'Place annotation'}
-    />
-  ),
-} satisfies Partial<{ [K in ResultType]: PreviewAccessor<ResultMap[K]> }>;
+const RESULT_TYPE_DESCRIPTORS = {
+  manuscripts: {
+    columns: COLUMNS.manuscripts,
+    detailUrl: (item: ManuscriptListItem) => `/manuscripts/${item.id}`,
+  },
+  images: {
+    columns: COLUMNS.images,
+    detailUrl: (item: ImageListItem) => getImageDetailUrl(item),
+  },
+  scribes: {
+    columns: COLUMNS.scribes,
+    detailUrl: (item: ScribeListItem) => `/scribes/${item.id}`,
+  },
+  hands: {
+    columns: COLUMNS.hands,
+    detailUrl: (item: HandListItem) => `/hands/${item.id}`,
+  },
+  graphs: {
+    columns: COLUMNS.graphs,
+    detailUrl: (item: GraphListItem) => getGraphDetailUrl(item),
+  },
+  texts: {
+    columns: COLUMNS.texts,
+    detailUrl: (item: TextListItem) => getImageDetailUrl(item),
+    previewAccessor: (item: TextListItem) => (
+      <AnnotationInlinePreview
+        thumbnailIiif={item.thumbnail_iiif}
+        coordinates={item.annotation_coordinates}
+        alt={item.shelfmark || 'Text annotation'}
+      />
+    ),
+  },
+  clauses: {
+    columns: COLUMNS.clauses,
+    detailUrl: (item: ClauseListItem) => getImageDetailUrl(item),
+    subRowAccessor: (item: ClauseListItem) => item.content,
+    previewAccessor: (item: ClauseListItem) => (
+      <AnnotationInlinePreview
+        thumbnailIiif={item.thumbnail_iiif}
+        coordinates={item.annotation_coordinates}
+        alt={item.shelfmark || 'Clause annotation'}
+      />
+    ),
+  },
+  people: {
+    columns: COLUMNS.people,
+    detailUrl: (item: PersonListItem) => getImageDetailUrl(item),
+    subRowAccessor: (item: PersonListItem) => item.name,
+    previewAccessor: (item: PersonListItem) => (
+      <AnnotationInlinePreview
+        thumbnailIiif={item.thumbnail_iiif}
+        coordinates={item.annotation_coordinates}
+        alt={item.shelfmark || 'Person annotation'}
+      />
+    ),
+  },
+  places: {
+    columns: COLUMNS.places,
+    detailUrl: (item: PlaceListItem) => getImageDetailUrl(item),
+    subRowAccessor: (item: PlaceListItem) => item.name,
+    previewAccessor: (item: PlaceListItem) => (
+      <AnnotationInlinePreview
+        thumbnailIiif={item.thumbnail_iiif}
+        coordinates={item.annotation_coordinates}
+        alt={item.shelfmark || 'Place annotation'}
+      />
+    ),
+  },
+} satisfies { [K in ResultType]: ResultTypeDescriptor<K> };
 
-const DETAIL_URL_BUILDERS = {
-  manuscripts: (item: ManuscriptListItem) => `/manuscripts/${item.id}`,
-  images: (item: ImageListItem) => getImageDetailUrl(item),
-  scribes: (item: ScribeListItem) => `/scribes/${item.id}`,
-  hands: (item: HandListItem) => `/hands/${item.id}`,
-  graphs: (item: GraphListItem) => getGraphDetailUrl(item),
-  texts: (item: TextListItem) => getImageDetailUrl(item),
-  clauses: (item: ClauseListItem) => getImageDetailUrl(item),
-  people: (item: PersonListItem) => getImageDetailUrl(item),
-  places: (item: PlaceListItem) => getImageDetailUrl(item),
-} satisfies { [K in ResultType]: (item: ResultMap[K]) => string };
-
-function getDetailUrl<K extends ResultType>(resultType: K, item: ResultMap[K]): string {
-  const buildUrl = DETAIL_URL_BUILDERS[resultType] as (row: ResultMap[K]) => string;
-  return buildUrl(item);
-}
-
-function getAccessorForResultType<K extends ResultType, TValue>(
-  accessors: Partial<{ [P in ResultType]: (item: ResultMap[P]) => TValue }>,
-  resultType: K
-): ((item: ResultMap[K]) => TValue) | undefined {
-  return accessors[resultType] as ((item: ResultMap[K]) => TValue) | undefined;
+function getDescriptor<K extends ResultType>(resultType: K): ResultTypeDescriptor<K> {
+  return RESULT_TYPE_DESCRIPTORS[resultType] as ResultTypeDescriptor<K>;
 }
 
 function ResultsTableComponent<K extends ResultType>({
@@ -343,7 +363,8 @@ function ResultsTableComponent<K extends ResultType>({
   visibleColumns?: string[];
 }) {
   const router = useRouter();
-  const allCols = React.useMemo(() => COLUMNS[resultType] as Column<ResultMap[K]>[], [resultType]);
+  const descriptor = React.useMemo(() => getDescriptor(resultType), [resultType]);
+  const allCols = descriptor.columns;
   const baseCols = React.useMemo(
     () =>
       visibleColumns
@@ -370,24 +391,23 @@ function ResultsTableComponent<K extends ResultType>({
   const currKey = ordering?.current?.replace(/^-/, '');
   const isDesc = ordering?.current?.startsWith('-') ?? false;
 
-  const subRowAccessor = getAccessorForResultType(SUB_ROW_ACCESSORS, resultType);
-  const previewAccessor = getAccessorForResultType(PREVIEW_ACCESSORS, resultType);
+  const { subRowAccessor, previewAccessor } = descriptor;
   const hasSubRow = !!subRowAccessor;
   // +1 for the View column when sub-rows are present
   const totalColSpan = cols.length + (hasSubRow ? 1 : 0);
   const getRowNavigationProps = React.useCallback(
     (row: ResultMap[K]) => {
-      const href = getDetailUrl(resultType, row);
+      const href = descriptor.detailUrl(row);
       return {
-        href,
+        href: href ?? '#',
         onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
-          if (resultType !== 'graphs' || href !== '#') return;
+          if (resultType !== 'graphs' || href) return;
           e.preventDefault();
           void resolveAndPushGraphDetail(row as GraphListItem, router.push);
         },
       };
     },
-    [resultType, router]
+    [descriptor, resultType, router]
   );
 
   return (
