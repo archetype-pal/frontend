@@ -140,6 +140,9 @@ export default function ManuscriptViewer({
     'components'
   );
   const [positions, setPositions] = React.useState<Array<{ id: number; name: string }>>([]);
+  const [shareUrl, setShareUrl] = React.useState('');
+  const [isShareUrlVisible, setIsShareUrlVisible] = React.useState(false);
+  const initialGraphHandledRef = React.useRef(false);
 
   type A9sWithMeta = A9sAnnotation & {
     body?: Array<{ value?: string; type?: string; purpose?: string }>;
@@ -173,14 +176,23 @@ export default function ManuscriptViewer({
     }
   }, [hasPositionsTab, popupTab]);
 
-  const handleShareSelectedAnnotation = async () => {
+  const handleShareSelectedAnnotation = () => {
     if (!selectedAnnotation || typeof window === 'undefined') return;
 
+    const graphId = selectedAnnotation.id.replace(/^db:/, '');
+    if (!graphId) return;
+
     const url = new URL(window.location.href);
-    url.searchParams.set('annotation', selectedAnnotation.id);
+    url.searchParams.set('graph', graphId);
+
+    setShareUrl(url.toString());
+    setIsShareUrlVisible(true);
+  };
+  const handleCopyShareUrl = async () => {
+    if (!shareUrl) return;
 
     try {
-      await navigator.clipboard.writeText(url.toString());
+      await navigator.clipboard.writeText(shareUrl);
     } catch {
       // ignore for now
     }
@@ -239,8 +251,14 @@ export default function ManuscriptViewer({
     viewerApiRef.current?.clearSelection?.();
     setSelectedAnnotation(null);
     setPopupTab('components');
+    setIsShareUrlVisible(false);
+    setShareUrl('');
     annotationPopupDrag.reset();
   };
+  React.useEffect(() => {
+    setIsShareUrlVisible(false);
+    setShareUrl('');
+  }, [selectedAnnotation?.id]);
 
   const allographDialogDrag = useDraggablePosition();
   const annotationPopupDrag = useDraggablePosition({ x: 0, y: 300 });
@@ -539,6 +557,32 @@ export default function ManuscriptViewer({
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [unsavedChanges, handleSave, isPublicDemoMode]);
+
+  React.useEffect(() => {
+    if (initialGraphHandledRef.current) return;
+    if (!osdReady || !a9sSnapshot.length || typeof window === 'undefined') return;
+
+    const url = new URL(window.location.href);
+    const graphParam = url.searchParams.get('graph');
+
+    if (!graphParam) {
+      initialGraphHandledRef.current = true;
+      return;
+    }
+
+    const targetId = `db:${graphParam}`;
+    const found = a9sSnapshot.find((a) => a.id === targetId) as A9sWithMeta | undefined;
+
+    initialGraphHandledRef.current = true;
+
+    if (!found) return;
+
+    setSelectedAnnotation(found);
+    setPopupTab('components');
+
+    viewerApiRef.current?.selectAnnotationById?.(targetId);
+    viewerApiRef.current?.centerOnAnnotation?.(targetId);
+  }, [osdReady, a9sSnapshot]);
 
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
   if (error || !manuscriptImage) {
@@ -902,6 +946,8 @@ export default function ManuscriptViewer({
                 const selected = (a as A9sWithMeta | null) ?? null;
                 setSelectedAnnotation(selected);
                 setPopupTab('components');
+                setIsShareUrlVisible(false);
+                setShareUrl('');
               }}
               exposeApi={handleExposeApi}
             />
@@ -973,6 +1019,29 @@ export default function ManuscriptViewer({
                     </TooltipProvider>
                   </div>
                 </div>
+
+                {isShareUrlVisible && (
+                  <div className="border-b px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        readOnly
+                        value={shareUrl}
+                        className="flex-1 rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground"
+                      />
+                      <Button variant="ghost" size="sm" onClick={handleCopyShareUrl}>
+                        Copy
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsShareUrlVisible(false)}
+                        title="Hide URL"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 <Tabs
                   value={popupTab}

@@ -41,6 +41,7 @@ export type ViewerApi = {
   highlightAnnotations: (ids: string[]) => void;
   clearHighlights: () => void;
   clearSelection: () => void;
+  selectAnnotationById?: (id: string) => void;
 };
 
 // ---- Component props ----
@@ -473,6 +474,18 @@ export default function ManuscriptAnnotorious({
 
               queueSyncAnnotationClasses();
               onSelectRef.current?.(null);
+            },
+            selectAnnotationById: (id: string) => {
+              const anno = annoRef.current;
+              if (!anno) return;
+
+              const annots = (anno.getAnnotations?.() ?? []) as unknown[];
+              const selected = annots.find((x): x is Annotation => isAnnotation(x) && x.id === id);
+              if (!selected) return;
+
+              selectedAnnotationRef.current = selected;
+              queueSyncAnnotationClasses();
+              onSelectRef.current?.(selected);
             },
           });
         }
