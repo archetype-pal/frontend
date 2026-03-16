@@ -297,7 +297,7 @@ export default function Header() {
               <div className="flex items-center gap-1 shrink-0">
                 {token ? (
                   <>
-                    {user?.is_staff && (
+                    {user?.is_superuser && (
                       <Button
                         asChild
                         variant="ghost"

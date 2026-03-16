@@ -14,7 +14,7 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
 
-  // Auth guard — redirect non-authenticated or non-staff users
+  // Auth guard — redirect non-authenticated or non-superusers
   useEffect(() => {
     if (token === null) {
       // Wait for initial token load from localStorage
@@ -26,7 +26,7 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
   }, [token, router]);
 
   useEffect(() => {
-    if (user && !user.is_staff) {
+    if (user && !user.is_superuser) {
       router.replace('/');
     }
   }, [user, router]);
@@ -43,7 +43,7 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (user && !user.is_staff) {
+  if (user && !user.is_superuser) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="text-center">

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { AUTH_TOKEN_COOKIE } from '@/lib/auth-token-cookie';
 import type { SectionKey } from '@/lib/site-features';
 import type { ResultType } from '@/lib/search-types';
 
@@ -47,6 +48,16 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const origin = request.nextUrl.origin;
 
+  if (pathname === '/backoffice' || pathname.startsWith('/backoffice/')) {
+    const tokenCookie = request.cookies.get(AUTH_TOKEN_COOKIE)?.value;
+    if (!tokenCookie) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.searchParams.set('next', pathname);
+      return NextResponse.redirect(url);
+    }
+  }
+
   const config = await loadConfig(origin);
 
   for (const [sectionKey, routePrefix] of Object.entries(SECTION_ROUTE_MAP)) {
@@ -75,6 +86,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/backoffice',
+    '/backoffice/:path*',
     '/search/:path*',
     '/collection/:path*',
     '/collection',

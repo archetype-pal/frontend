@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUserProfile } from '@/utils/api';
+import { clearAuthTokenCookie, setAuthTokenCookie } from '@/lib/auth-token-cookie';
 import type { UserProfile } from '@/types';
 
 interface AuthContextType {
@@ -23,12 +24,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
+    clearAuthTokenCookie();
     router.push('/login');
   }, [router]);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
+      setAuthTokenCookie(storedToken);
       queueMicrotask(() => setToken(storedToken));
     }
   }, []);
