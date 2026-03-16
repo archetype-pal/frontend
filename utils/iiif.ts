@@ -9,6 +9,8 @@ export type IIIFCoordinates = { x: number; y: number; w: number; h: number };
 export type IIIFImageUrlOptions = {
   coordinates?: IIIFCoordinates;
   thumbnail?: boolean;
+  /** Flip Y from bottom-left origin (legacy GeoJSON) to top-left origin (IIIF). */
+  flipY?: boolean;
 };
 
 /** IIIF Image Information 2.x – width/height from info.json. */
@@ -209,13 +211,19 @@ export async function getIiifImageUrlWithBounds(
     return getIiifImageUrl(infoUrl, options);
   }
   const bounds = await fetchIiifImageInfo(infoUrl);
-  const coordinates =
-    bounds != null
-      ? clampCoordinatesToBounds(options.coordinates, {
-          width: bounds.width,
-          height: bounds.height,
-        })
-      : options.coordinates;
+  let coordinates = options.coordinates;
+  if (bounds != null) {
+    if (options.flipY) {
+      coordinates = {
+        ...coordinates,
+        y: bounds.height - coordinates.y - coordinates.h,
+      };
+    }
+    coordinates = clampCoordinatesToBounds(coordinates, {
+      width: bounds.width,
+      height: bounds.height,
+    });
+  }
   return getIiifImageUrl(infoUrl, { ...options, coordinates });
 }
 

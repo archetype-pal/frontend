@@ -24,7 +24,7 @@ export function useIiifThumbnailUrl(
     }
     const coords = coordinatesFromGeoJson(coordsKey || undefined) ?? undefined;
     let cancelled = false;
-    getIiifImageUrlWithBounds(trimmed, { coordinates: coords, thumbnail: true })
+    getIiifImageUrlWithBounds(trimmed, { coordinates: coords, thumbnail: true, flipY: true })
       .then((u) => {
         if (!cancelled) setUrl(u);
       })

@@ -95,7 +95,7 @@ type FragmentTarget = {
 export type BackendFeature = BackendGraph['annotation'];
 
 // From a9s rect annotation (xywh) back to the backend polygon Feature
-export function a9sToBackendFeature(a9s: Annotation): BackendFeature {
+export function a9sToBackendFeature(a9s: Annotation, imageHeight: number): BackendFeature {
   const sel = (a9s.target as FragmentTarget)?.selector?.value ?? '';
 
   const m = sel.match(/xywh=pixel:(\d+(?:\.\d+)?),(\d+(?:\.\d+)?),(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)/);
@@ -105,12 +105,18 @@ export function a9sToBackendFeature(a9s: Annotation): BackendFeature {
     y = parseFloat(sy),
     w = parseFloat(sw),
     h = parseFloat(sh);
+  if (!Number.isFinite(imageHeight) || imageHeight <= 0) {
+    throw new Error('Invalid image height for annotation coordinate conversion');
+  }
+
+  // Annotorious xywh uses Y-down image coordinates; backend polygons are stored Y-up.
+  const yFlipped = imageHeight - y - h;
 
   return {
     type: 'Feature' as const,
     geometry: {
       type: 'Polygon' as const,
-      coordinates: xywhToPolygon(x, y, w, h),
+      coordinates: xywhToPolygon(x, yFlipped, w, h),
     },
     properties: { saved: 0 }, // keep the existing property if needed
   };

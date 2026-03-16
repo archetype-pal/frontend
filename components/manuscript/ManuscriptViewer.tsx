@@ -362,7 +362,7 @@ export default function ManuscriptViewer({
       const a9s = viewerApiRef.current?.getAnnotations() ?? [];
       const tasks: Promise<BackendGraph>[] = [];
       for (const a of a9s) {
-        const feature = a9sToBackendFeature(a);
+        const feature = a9sToBackendFeature(a, imageHeight);
         if (isDbAnnotation(a)) {
           const id = dbIdFromA9s(a)!;
           tasks.push(patchAnnotation(id, { annotation: feature }));
