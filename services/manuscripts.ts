@@ -1,7 +1,7 @@
 import type { SearchResponse, Manuscript } from '@/types/manuscript';
 import type { ManuscriptImage } from '@/types/manuscript-image';
 import type { HandsResponse } from '@/types/hands';
-import type { AllographsResponse } from '@/types/allographs';
+import type { AllographsResponse, Position } from '@/types/allographs';
 import { notFound } from 'next/navigation';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -49,6 +49,16 @@ export async function fetchAllographs(): Promise<AllographsResponse> {
 
   if (!response.ok) {
     throw new Error('Failed to fetch allographs');
+  }
+
+  return response.json();
+}
+
+export async function fetchPositions(): Promise<Position[]> {
+  const response = await apiFetch(`/api/v1/symbols_structure/positions/`);
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch positions');
   }
 
   return response.json();

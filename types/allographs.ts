@@ -1,3 +1,8 @@
+export interface Position {
+  id: number;
+  name: string;
+}
+
 export interface Feature {
   id: number;
   name: string;

@@ -1,6 +1,9 @@
 declare module '@recogito/annotorious-openseadragon' {
   export default function Annotorious(
     viewer: any,
-    config?: { widgets?: { widget: string }[] }
+    config?: {
+      widgets?: { widget: string }[];
+      disableEditor?: boolean;
+    }
   ): any;
 }

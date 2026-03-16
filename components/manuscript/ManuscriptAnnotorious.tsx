@@ -22,6 +22,7 @@ export interface Annotation {
     isDescribed?: boolean;
     annotationType?: string;
     graphcomponentSet?: Array<{ component: number; features: number[] }>;
+    positions?: number[];
   };
 }
 type AnnotoriousInstance = ReturnType<typeof Annotorious>;
@@ -39,6 +40,7 @@ export type ViewerApi = {
   centerOnAnnotation?: (id: string) => void;
   highlightAnnotations: (ids: string[]) => void;
   clearHighlights: () => void;
+  clearSelection: () => void;
 };
 
 // ---- Component props ----
@@ -49,6 +51,7 @@ interface Props {
   onSelect?: (annotation: Annotation | null) => void;
   exposeApi?: (api: ViewerApi) => void;
   initialAnnotations?: Annotation[];
+  disableEditor?: boolean;
 }
 
 // ---- Component state ----
@@ -78,6 +81,7 @@ export default function ManuscriptAnnotorious({
   onSelect,
   exposeApi,
   initialAnnotations = [],
+  disableEditor = false,
 }: Props) {
   const viewerRef = useRef<HTMLDivElement | null>(null);
   const osdRef = useRef<OpenSeadragon.Viewer | null>(null);
@@ -237,7 +241,11 @@ export default function ManuscriptAnnotorious({
         setState((prev) => ({ ...prev, isLoading: false, hasError: false }));
 
         if (!annoRef.current) {
-          const anno = Annotorious(viewer, { widgets: [{ widget: 'COMMENT' }] });
+          const annoOptions: NonNullable<Parameters<typeof Annotorious>[1]> = disableEditor
+            ? { disableEditor: true }
+            : { widgets: [{ widget: 'COMMENT' as const }] };
+          const anno = Annotorious(viewer, annoOptions);
+
           annoRef.current = anno;
 
           const toApplyNow = initialAnnotsRef.current ?? [];
@@ -450,6 +458,22 @@ export default function ManuscriptAnnotorious({
 
               viewer.viewport.fitBounds(vpRect, true);
             },
+
+            clearSelection: () => {
+              const anno = annoRef.current;
+
+              selectedAnnotationRef.current = null;
+
+              if (
+                anno &&
+                typeof (anno as { cancelSelected?: () => void }).cancelSelected === 'function'
+              ) {
+                (anno as { cancelSelected: () => void }).cancelSelected();
+              }
+
+              queueSyncAnnotationClasses();
+              onSelectRef.current?.(null);
+            },
           });
         }
       });
@@ -472,7 +496,7 @@ export default function ManuscriptAnnotorious({
         // ignore
       }
     };
-  }, [iiifImageUrl, queueSyncAnnotationClasses]);
+  }, [iiifImageUrl, queueSyncAnnotationClasses, disableEditor]);
 
   useEffect(() => {
     const anno = annoRef.current;

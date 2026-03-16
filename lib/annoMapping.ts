@@ -68,6 +68,7 @@ export function backendToA9sAnnotation(
       isDescribed,
       annotationType: backend.annotation_type,
       graphcomponentSet: backend.graphcomponent_set,
+      positions: backend.positions,
     },
   };
 
