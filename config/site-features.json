@@ -31,7 +31,14 @@
         "Shelfmark",
         "Text Date"
       ],
-      "visibleFacets": ["type"]
+      "visibleFacets": [
+        "type",
+        "image_availability",
+        "text_date",
+        "format",
+        "repository_city",
+        "repository_name"
+      ]
     },
     "images": {
       "enabled": true,
