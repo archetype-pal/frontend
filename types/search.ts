@@ -9,6 +9,7 @@ export interface ManuscriptListItem {
   number_of_images: number;
   issuer_name: string;
   named_beneficiary: string;
+  first_image_iiif?: string;
 }
 
 export interface ImageListItem {

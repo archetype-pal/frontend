@@ -1,19 +1,26 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Grid, List, Share2 } from 'lucide-react';
 import { ResultsTable } from '@/components/search/results-table';
 import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';
+import { SavedSearchesDropdown } from '@/components/search/saved-searches';
 import { useSearchContext } from '@/contexts/search-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
-import { SEARCH_RESULT_CONFIG, resultTypeItems, type ResultType } from '@/lib/search-types';
+import {
+  SEARCH_RESULT_CONFIG,
+  getCrossTypeLinks,
+  resultTypeItems,
+  type ResultType,
+} from '@/lib/search-types';
 import { Pagination } from '@/components/search/paginated-search';
 import { useSearchResults } from '@/hooks/search/use-search-results';
 import type { FacetClickAction } from '@/types/facets';
-import type { GraphListItem, ImageListItem, ResultMap } from '@/types/search';
+import type { ResultMap } from '@/types/search';
 import {
   buildActiveQueryTags,
   buildQueryString,
@@ -31,7 +38,7 @@ import {
 
 type ResultListItem = ResultMap[ResultType];
 
-const TABLE_ONLY_TYPES: readonly ResultType[] = ['manuscripts', 'texts', 'people', 'places'];
+const TABLE_ONLY_TYPES: readonly ResultType[] = ['texts', 'people', 'places'];
 const TABLE_ONLY_TYPE_SET = new Set<ResultType>(TABLE_ONLY_TYPES);
 
 function isTableOnlyType(type: ResultType): boolean {
@@ -111,6 +118,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
     const value = kw ?? '';
     setDraftKeyword(value);
     setSubmittedKeyword(value);
+    setQueryState(stateFromSearchParams(searchParams));
   }, [searchParams]);
 
   React.useEffect(() => {
@@ -236,12 +244,32 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
     }
   }, []);
 
+  const crossTypeLinks = React.useMemo(() => getCrossTypeLinks(resultType), [resultType]);
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       <header className="shrink-0 px-6 py-3 border-b bg-white flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-lg font-semibold shrink-0">
-          Search: {SEARCH_RESULT_CONFIG[resultType].label} ({resultCount})
-        </h1>
+        <div className="shrink-0">
+          <h1 className="text-lg font-semibold">
+            Search: {SEARCH_RESULT_CONFIG[resultType].label} ({resultCount})
+          </h1>
+          {crossTypeLinks.length > 0 && (
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-[11px] text-muted-foreground">Also in:</span>
+              {crossTypeLinks.map((type, i) => (
+                <React.Fragment key={type}>
+                  {i > 0 && <span className="text-[11px] text-muted-foreground/40">·</span>}
+                  <Link
+                    href={`/search/${type}${submittedKeyword ? '?keyword=' + encodeURIComponent(submittedKeyword) : ''}`}
+                    className="text-[11px] text-primary hover:underline"
+                  >
+                    {SEARCH_RESULT_CONFIG[type].label}
+                  </Link>
+                </React.Fragment>
+              ))}
+            </div>
+          )}
+        </div>
         <div className="flex-1 min-w-0 flex items-center px-2">
           <ResultTypeToggle
             selectedType={resultType}
@@ -250,6 +278,12 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           />
         </div>
         <div className="flex gap-2 shrink-0">
+          <SavedSearchesDropdown
+            resultType={resultType}
+            keyword={submittedKeyword}
+            filterCount={activeFilterCount}
+            resultCount={resultCount}
+          />
           <Button variant="ghost" size="sm" onClick={() => void handleShareSearch()}>
             <Share2 className="h-4 w-4" />
             <span className="ml-1 hidden sm:inline">
@@ -333,16 +367,12 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   highlightKeyword={submittedKeyword}
                   visibleColumns={categoryConfig.visibleColumns}
                 />
-              ) : resultType === 'images' || resultType === 'graphs' ? (
+              ) : (
                 <SearchGrid
-                  results={filtered as (ImageListItem | GraphListItem)[]}
+                  results={filtered as Parameters<typeof SearchGrid>[0]['results']}
                   resultType={resultType}
                   highlightKeyword={submittedKeyword}
                 />
-              ) : (
-                <p className="text-center text-sm text-muted-foreground py-8">
-                  No Grid view mode available.
-                </p>
               )
             ) : (
               <section className="rounded-lg border bg-white p-6 text-center">

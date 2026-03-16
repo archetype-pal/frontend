@@ -228,3 +228,43 @@ export const resultTypeItems = SEARCH_RESULT_TYPES.map((value) => ({
   label: SEARCH_RESULT_CONFIG[value].label,
   value,
 })) as { label: string; value: ResultType }[];
+
+/**
+ * Cross-type navigation: which result types to show as "also search" links
+ * for each result type.
+ */
+const CROSS_TYPE_LINKS: Record<ResultType, readonly ResultType[]> = {
+  manuscripts: ['images', 'hands', 'graphs'],
+  images: ['manuscripts', 'hands', 'graphs'],
+  hands: ['manuscripts', 'images', 'graphs'],
+  graphs: ['manuscripts', 'images', 'hands'],
+  scribes: ['hands'],
+  texts: ['manuscripts', 'images'],
+  clauses: ['manuscripts', 'images', 'texts'],
+  people: ['manuscripts', 'images', 'texts'],
+  places: ['manuscripts', 'images', 'texts'],
+};
+
+export function getCrossTypeLinks(resultType: ResultType): readonly ResultType[] {
+  return CROSS_TYPE_LINKS[resultType];
+}
+
+/**
+ * Per-row cross-type navigation: which result types can be reached from a row
+ * by filtering on that row's shelfmark.
+ */
+const ROW_CROSS_TYPE_TARGETS: Partial<Record<ResultType, readonly ResultType[]>> = {
+  manuscripts: ['images', 'hands', 'graphs'],
+  hands: ['images', 'graphs'],
+  images: ['hands', 'graphs'],
+};
+
+export function getRowCrossTypeTargets(resultType: ResultType): readonly ResultType[] | undefined {
+  return ROW_CROSS_TYPE_TARGETS[resultType];
+}
+
+export function buildShelfmarkFilterUrl(targetType: ResultType, shelfmark: string): string {
+  const params = new URLSearchParams();
+  params.append('selected_facets', `shelfmark_exact:${shelfmark}`);
+  return `/search/${targetType}?${params.toString()}`;
+}

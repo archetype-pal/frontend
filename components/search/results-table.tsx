@@ -23,7 +23,12 @@ import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { Highlight } from './highlight';
 import { CollectionStar } from '@/components/collection/collection-star';
 import { getImageDetailUrl, getGraphDetailUrl } from '@/lib/media-url';
-import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
+import {
+  SEARCH_RESULT_TYPES,
+  SEARCH_RESULT_CONFIG,
+  getRowCrossTypeTargets,
+  buildShelfmarkFilterUrl,
+} from '@/lib/search-types';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
 
 export type Column<T> = {
@@ -281,21 +286,39 @@ export const COLUMN_HEADERS_BY_TYPE: Record<ResultType, string[]> = Object.fromE
 type SubRowAccessor<T> = (item: T) => string;
 type PreviewAccessor<T> = (item: T) => React.ReactNode;
 
+type CrossTypeLink = { label: string; href: string };
+type CrossTypeLinksFn<T> = (item: T) => CrossTypeLink[];
+
 type ResultTypeDescriptor<K extends ResultType> = {
   columns: Column<ResultMap[K]>[];
   detailUrl: (item: ResultMap[K]) => string | null;
   subRowAccessor?: SubRowAccessor<ResultMap[K]>;
   previewAccessor?: PreviewAccessor<ResultMap[K]>;
+  crossTypeLinks?: CrossTypeLinksFn<ResultMap[K]>;
 };
+
+function buildCrossTypeLinks<T extends { shelfmark: string }>(
+  resultType: ResultType
+): CrossTypeLinksFn<T> | undefined {
+  const targets = getRowCrossTypeTargets(resultType);
+  if (!targets) return undefined;
+  return (item: T) =>
+    targets.map((target) => ({
+      label: SEARCH_RESULT_CONFIG[target].label,
+      href: buildShelfmarkFilterUrl(target, item.shelfmark),
+    }));
+}
 
 const RESULT_TYPE_DESCRIPTORS = {
   manuscripts: {
     columns: COLUMNS.manuscripts,
     detailUrl: (item: ManuscriptListItem) => `/manuscripts/${item.id}`,
+    crossTypeLinks: buildCrossTypeLinks<ManuscriptListItem>('manuscripts'),
   },
   images: {
     columns: COLUMNS.images,
     detailUrl: (item: ImageListItem) => getImageDetailUrl(item),
+    crossTypeLinks: buildCrossTypeLinks<ImageListItem>('images'),
   },
   scribes: {
     columns: COLUMNS.scribes,
@@ -304,6 +327,7 @@ const RESULT_TYPE_DESCRIPTORS = {
   hands: {
     columns: COLUMNS.hands,
     detailUrl: (item: HandListItem) => `/hands/${item.id}`,
+    crossTypeLinks: buildCrossTypeLinks<HandListItem>('hands'),
   },
   graphs: {
     columns: COLUMNS.graphs,
@@ -408,9 +432,8 @@ function ResultsTableComponent<K extends ResultType>({
   const currKey = ordering?.current?.replace(/^-/, '');
   const isDesc = ordering?.current?.startsWith('-') ?? false;
 
-  const { subRowAccessor, previewAccessor } = descriptor;
+  const { subRowAccessor, previewAccessor, crossTypeLinks } = descriptor;
   const hasSubRow = !!subRowAccessor;
-  // +1 for the View column when sub-rows are present
   const totalColSpan = cols.length + (hasSubRow ? 1 : 0);
   return (
     <div className="bg-white border rounded-lg overflow-auto">
@@ -442,9 +465,9 @@ function ResultsTableComponent<K extends ResultType>({
           const rowUrl = descriptor.detailUrl(row);
           const rowHref = rowUrl ?? '#';
           const preview = previewAccessor ? previewAccessor(row) : null;
+          const rowCrossLinks = crossTypeLinks ? crossTypeLinks(row) : null;
           return (
             <tbody key={ri} className="group border-b">
-              {/* Main data row */}
               <TableRow
                 className={`relative cursor-pointer group-hover:bg-muted/50 transition-colors${hasSubRow ? ' border-b-0' : ''}`}
               >
@@ -525,7 +548,6 @@ function ResultsTableComponent<K extends ResultType>({
                   </TableCell>
                 </TableRow>
               )}
-              {/* Sub-row: name/content displayed in italic spanning full width */}
               {subRowAccessor && (
                 <TableRow className="relative cursor-pointer group-hover:bg-muted/50 transition-colors">
                   <TableCell
@@ -542,6 +564,27 @@ function ResultsTableComponent<K extends ResultType>({
                         subRowAccessor(row)
                       )}
                     </Link>
+                  </TableCell>
+                </TableRow>
+              )}
+              {rowCrossLinks && rowCrossLinks.length > 0 && (
+                <TableRow className="h-0 overflow-hidden group-hover:h-auto border-b-0">
+                  <TableCell
+                    colSpan={totalColSpan}
+                    className="py-0 group-hover:py-1 px-4 transition-all"
+                  >
+                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[11px] text-muted-foreground">View:</span>
+                      {rowCrossLinks.map((link, li) => (
+                        <Link
+                          key={li}
+                          href={link.href}
+                          className="relative z-[2] text-[11px] text-primary hover:underline px-1.5 py-0.5 rounded hover:bg-primary/5 transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
                   </TableCell>
                 </TableRow>
               )}

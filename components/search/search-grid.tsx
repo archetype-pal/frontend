@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { GraphListItem, ImageListItem } from '@/types/search';
+import type { GraphListItem, ImageListItem, ManuscriptListItem } from '@/types/search';
 import type { ResultType } from '@/lib/search-types';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
@@ -13,8 +13,10 @@ import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { getImageDetailUrl } from '@/lib/media-url';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
 
+type GridItem = ImageListItem | GraphListItem | ManuscriptListItem;
+
 export interface SearchGridProps {
-  results?: (ImageListItem | GraphListItem)[];
+  results?: GridItem[];
   resultType: ResultType;
   highlightKeyword?: string;
 }
@@ -34,6 +36,14 @@ type GridCard =
       detailUrl: string | null;
       displayText: string;
       formattedDisplayText?: string;
+    }
+  | {
+      kind: 'manuscript';
+      item: ManuscriptListItem;
+      detailUrl: string;
+      displayText: string;
+      formattedDisplayText?: string;
+      imageUrl: string | null;
     };
 
 type MediaGridCardProps = {
@@ -49,8 +59,21 @@ type MediaGridCardProps = {
   itemType: 'image' | 'graph';
 };
 
-function toGridCard(resultType: ResultType, item: ImageListItem | GraphListItem): GridCard | null {
+function toGridCard(resultType: ResultType, item: GridItem): GridCard | null {
   const formatted = (item as { _formatted?: Record<string, string | undefined> })._formatted ?? {};
+  if (resultType === 'manuscripts') {
+    const ms = item as ManuscriptListItem;
+    return {
+      kind: 'manuscript',
+      item: ms,
+      detailUrl: `/manuscripts/${ms.id}`,
+      displayText: ms.shelfmark || 'Untitled',
+      formattedDisplayText: formatted.shelfmark,
+      imageUrl: ms.first_image_iiif
+        ? getIiifImageUrl(ms.first_image_iiif, { thumbnail: true })
+        : null,
+    };
+  }
   if (resultType === 'images') {
     const image = item as ImageListItem;
     return {
@@ -189,6 +212,64 @@ const GraphGridCard = React.memo(function GraphGridCard({
   );
 });
 
+const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
+  item,
+  detailUrl,
+  imageUrl,
+  displayText,
+  formattedDisplayText,
+  highlightKeyword,
+}: {
+  item: ManuscriptListItem;
+  detailUrl: string;
+  imageUrl: string | null;
+  displayText: string;
+  formattedDisplayText?: string;
+  highlightKeyword: string;
+}) {
+  return (
+    <div className="relative overflow-hidden group">
+      <div className="relative aspect-4/3 bg-white overflow-hidden">
+        <Link href={detailUrl} className="block w-full h-full relative z-0">
+          {imageUrl ? (
+            <Image
+              src={imageUrl}
+              alt={displayText}
+              fill
+              className="object-contain transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+            />
+          ) : (
+            <div className="bg-gray-100 w-full h-full flex items-center justify-center text-sm text-gray-400">
+              No Image
+            </div>
+          )}
+        </Link>
+        {imageUrl && (
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
+        )}
+        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
+          <div className="font-medium truncate text-xs">
+            <Highlight
+              text={displayText}
+              keyword={highlightKeyword}
+              formattedText={formattedDisplayText}
+            />
+          </div>
+          <div className="text-xs text-white/80 mt-0.5 truncate">
+            {[item.type, item.date].filter(Boolean).join(' · ') || '—'}
+          </div>
+          {item.number_of_images > 0 && (
+            <div className="text-xs text-white/60 mt-0.5">
+              {item.number_of_images} image{item.number_of_images !== 1 ? 's' : ''}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
 function SearchGridComponent({ results = [], resultType, highlightKeyword = '' }: SearchGridProps) {
   if (!results.length) {
     return <div className="text-center text-gray-500 py-10">No results to display.</div>;
@@ -199,6 +280,20 @@ function SearchGridComponent({ results = [], resultType, highlightKeyword = '' }
       {results.map((item) => {
         const card = toGridCard(resultType, item);
         if (!card) return null;
+
+        if (card.kind === 'manuscript') {
+          return (
+            <ManuscriptGridCard
+              key={card.item.id}
+              item={card.item}
+              detailUrl={card.detailUrl}
+              imageUrl={card.imageUrl}
+              displayText={card.displayText}
+              formattedDisplayText={card.formattedDisplayText}
+              highlightKeyword={highlightKeyword}
+            />
+          );
+        }
 
         if (card.kind === 'graph' && card.item.image_iiif) {
           return (
