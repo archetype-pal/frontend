@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import {
   getDefaultModelLabelsConfig,
   pluralizeLabel,
@@ -24,7 +32,7 @@ export function ModelLabelsProvider({
   children: ReactNode;
   initialConfig?: ModelLabelsConfig;
 }) {
-  const defaults = getDefaultModelLabelsConfig();
+  const defaults = useMemo(() => getDefaultModelLabelsConfig(), []);
   const [config, setConfig] = useState<ModelLabelsConfig>(initialConfig ?? defaults);
   const [loading, setLoading] = useState(!initialConfig);
 
@@ -35,16 +43,25 @@ export function ModelLabelsProvider({
       .then((c) => setConfig(c))
       .catch(() => setConfig(defaults))
       .finally(() => setLoading(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [defaults, initialConfig]);
+
+  const getLabel = useCallback(
+    (key: ModelLabelKey) => config.labels[key] ?? defaults.labels[key],
+    [config, defaults]
+  );
+  const getPluralLabel = useCallback(
+    (key: ModelLabelKey) => pluralizeLabel(getLabel(key)),
+    [getLabel]
+  );
 
   const value = useMemo<ModelLabelsContextValue>(
     () => ({
       config,
       loading,
-      getLabel: (key) => config.labels[key] ?? defaults.labels[key],
-      getPluralLabel: (key) => pluralizeLabel(config.labels[key] ?? defaults.labels[key]),
+      getLabel,
+      getPluralLabel,
     }),
-    [config, loading, defaults]
+    [config, loading, getLabel, getPluralLabel]
   );
 
   return <ModelLabelsContext.Provider value={value}>{children}</ModelLabelsContext.Provider>;

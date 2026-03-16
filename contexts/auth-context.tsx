@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUserProfile } from '@/utils/api';
 import { clearAuthTokenCookie, setAuthTokenCookie } from '@/lib/auth-token-cookie';
@@ -20,21 +20,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const router = useRouter();
 
-  const logout = useCallback(() => {
-    setToken(null);
-    setUser(null);
+  const setAuthToken = useCallback((nextToken: string | null) => {
+    setToken(nextToken);
+    if (nextToken) {
+      localStorage.setItem('token', nextToken);
+      setAuthTokenCookie(nextToken);
+      return;
+    }
     localStorage.removeItem('token');
     clearAuthTokenCookie();
+  }, []);
+
+  const logout = useCallback(() => {
+    setAuthToken(null);
+    setUser(null);
     router.push('/login');
-  }, [router]);
+  }, [router, setAuthToken]);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
-      setAuthTokenCookie(storedToken);
-      queueMicrotask(() => setToken(storedToken));
+      queueMicrotask(() => setAuthToken(storedToken));
     }
-  }, []);
+  }, [setAuthToken]);
 
   useEffect(() => {
     async function fetchUserProfile() {
@@ -50,11 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     fetchUserProfile();
   }, [token, logout]);
 
-  return (
-    <AuthContext.Provider value={{ token, user, setToken, logout }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo<AuthContextType>(
+    () => ({ token, user, setToken: setAuthToken, logout }),
+    [token, user, setAuthToken, logout]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

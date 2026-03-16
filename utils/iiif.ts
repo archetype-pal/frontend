@@ -23,6 +23,8 @@ export interface IIIFImageInfo {
 
 const DEFAULT_THUMBNAIL_SIZE = 300;
 const IIIF_PREFIX_LEN: Record<string, number> = { sipi: 2, iiif: 2 };
+const IIIF_INFO_CACHE = new Map<string, IIIFImageInfo | null>();
+const IIIF_INFO_INFLIGHT = new Map<string, Promise<IIIFImageInfo | null>>();
 
 function getIiifUpstream(): string {
   const value =
@@ -190,17 +192,29 @@ export async function fetchIiifImageInfo(infoUrl: string): Promise<IIIFImageInfo
   const url = resolved.endsWith('/info.json')
     ? resolved
     : resolved.replace(/\/+$/, '') + '/info.json';
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const info = (await res.json()) as { width?: number; height?: number };
-    const width = Number(info?.width);
-    const height = Number(info?.height);
-    if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1) return null;
-    return { width, height };
-  } catch {
-    return null;
-  }
+  const cached = IIIF_INFO_CACHE.get(url);
+  if (cached !== undefined) return cached;
+  const inflight = IIIF_INFO_INFLIGHT.get(url);
+  if (inflight) return inflight;
+  const request = (async () => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const info = (await res.json()) as { width?: number; height?: number };
+      const width = Number(info?.width);
+      const height = Number(info?.height);
+      if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1)
+        return null;
+      return { width, height };
+    } catch {
+      return null;
+    }
+  })();
+  IIIF_INFO_INFLIGHT.set(url, request);
+  const result = await request;
+  IIIF_INFO_INFLIGHT.delete(url);
+  IIIF_INFO_CACHE.set(url, result);
+  return result;
 }
 
 export async function getIiifImageUrlWithBounds(

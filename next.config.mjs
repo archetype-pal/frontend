@@ -18,6 +18,9 @@ const ALLOWED_ORIGINS = requireEnv('CORS_ALLOWED_ORIGINS');
 
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
   logging: {
     fetches: {
       fullUrl: true,
@@ -34,7 +37,7 @@ const nextConfig = {
       { source: '/iiif-proxy/:path*', destination: `${IIIF_UPSTREAM}/:path*` },
     ];
   },
-  // IIIF and external image servers require unoptimized; same-origin static assets could use optimization if needed.
+  // External hosts used across the app (IIIF thumbnails keep `unoptimized` per-image).
   images: {
     remotePatterns: [
       // Sipi – IIIF server
@@ -78,7 +81,6 @@ const nextConfig = {
           ]
         : []),
     ],
-    unoptimized: true,
   },
 
   async headers() {

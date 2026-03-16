@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import {
   getDefaultConfig,
   type SiteFeaturesConfig,
@@ -26,7 +34,7 @@ export function SiteFeaturesProvider({
   children: ReactNode;
   initialConfig?: SiteFeaturesConfig;
 }) {
-  const defaults = getDefaultConfig();
+  const defaults = useMemo(() => getDefaultConfig(), []);
   const [config, setConfig] = useState<SiteFeaturesConfig>(initialConfig ?? defaults);
   const [loading, setLoading] = useState(!initialConfig);
 
@@ -37,30 +45,37 @@ export function SiteFeaturesProvider({
       .then((c) => setConfig(c))
       .catch(() => setConfig(defaults))
       .finally(() => setLoading(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [defaults, initialConfig]);
 
-  const isSectionEnabled = (key: SectionKey) => config.sections[key] !== false;
-
-  const getCategoryConfig = (type: ResultType) =>
-    config.searchCategories[type] ?? {
-      enabled: true,
-      visibleColumns: [],
-      visibleFacets: [],
-    };
-
-  const enabledCategories = (
-    Object.entries(config.searchCategories) as [ResultType, SearchCategoryConfig][]
-  )
-    .filter(([, c]) => c.enabled)
-    .map(([t]) => t);
-
-  return (
-    <SiteFeaturesContext.Provider
-      value={{ config, loading, isSectionEnabled, getCategoryConfig, enabledCategories }}
-    >
-      {children}
-    </SiteFeaturesContext.Provider>
+  const isSectionEnabled = useCallback(
+    (key: SectionKey) => config.sections[key] !== false,
+    [config]
   );
+
+  const getCategoryConfig = useCallback(
+    (type: ResultType) =>
+      config.searchCategories[type] ?? {
+        enabled: true,
+        visibleColumns: [],
+        visibleFacets: [],
+      },
+    [config]
+  );
+
+  const enabledCategories = useMemo(
+    () =>
+      (Object.entries(config.searchCategories) as [ResultType, SearchCategoryConfig][])
+        .filter(([, c]) => c.enabled)
+        .map(([t]) => t),
+    [config]
+  );
+
+  const value = useMemo<SiteFeaturesContextValue>(
+    () => ({ config, loading, isSectionEnabled, getCategoryConfig, enabledCategories }),
+    [config, loading, isSectionEnabled, getCategoryConfig, enabledCategories]
+  );
+
+  return <SiteFeaturesContext.Provider value={value}>{children}</SiteFeaturesContext.Provider>;
 }
 
 export function useSiteFeatures() {

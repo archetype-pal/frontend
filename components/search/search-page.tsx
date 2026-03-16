@@ -91,6 +91,7 @@ function ResultTypeToggle({
 
 export function SearchPage({ resultType: initialType }: { resultType?: ResultType } = {}) {
   const searchParams = useSearchParams();
+  const resultsScrollRef = React.useRef<HTMLDivElement | null>(null);
   const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('table');
   const [resultType, setResultType] = React.useState<ResultType>(initialType ?? 'manuscripts');
   const [queryState, setQueryState] = React.useState<QueryState>(() =>
@@ -145,6 +146,11 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   React.useEffect(() => {
     if (isTableOnlyType(resultType) && viewMode !== 'table') setViewMode('table');
   }, [resultType, viewMode]);
+
+  React.useEffect(() => {
+    const el = resultsScrollRef.current;
+    if (el) el.scrollTo({ top: 0 });
+  }, [resultType, queryState.offset, viewMode]);
 
   const handleFacetClick = React.useCallback(
     (arg: string, action?: FacetClickAction) => {
@@ -356,7 +362,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
         </aside>
 
         <main className="flex-1 flex flex-col min-w-0">
-          <div className="p-4 overflow-auto flex-1 flex flex-col gap-4">
+          <div ref={resultsScrollRef} className="p-4 overflow-auto flex-1 flex flex-col gap-4">
             {filtered.length > 0 ? (
               viewMode === 'table' ? (
                 <ResultsTable
@@ -366,12 +372,14 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   onSort={handleSort}
                   highlightKeyword={submittedKeyword}
                   visibleColumns={categoryConfig.visibleColumns}
+                  scrollContainerRef={resultsScrollRef}
                 />
               ) : (
                 <SearchGrid
                   results={filtered as Parameters<typeof SearchGrid>[0]['results']}
                   resultType={resultType}
                   highlightKeyword={submittedKeyword}
+                  scrollContainerRef={resultsScrollRef}
                 />
               )
             ) : (

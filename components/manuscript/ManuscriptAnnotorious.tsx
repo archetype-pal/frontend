@@ -1,14 +1,30 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import OpenSeadragon from 'openseadragon';
-import Annotorious, {
-  type AnnotoriousAnnotation,
-  type AnnotoriousInstance,
-} from '@recogito/annotorious-openseadragon';
+import type OpenSeadragon from 'openseadragon';
 import '@recogito/annotorious/dist/annotorious.min.css';
 
-export type Annotation = AnnotoriousAnnotation;
+// ---- Annotation data model ----
+export interface Annotation {
+  id: string;
+  type: 'Annotation';
+  body?: {
+    value: string;
+    type?: string;
+    purpose?: string;
+  }[];
+  target: unknown;
+  _meta?: {
+    allographId?: number;
+    handId?: number;
+    numFeatures?: number;
+    isDescribed?: boolean;
+    annotationType?: string;
+    graphcomponentSet?: Array<{ component: number; features: number[] }>;
+  };
+}
+type AnnotoriousFactory = typeof import('@recogito/annotorious-openseadragon').default;
+type AnnotoriousInstance = ReturnType<AnnotoriousFactory>;
 
 // ---- API we expose upward (no ref needed) ----
 export type ViewerApi = {
@@ -64,6 +80,9 @@ export default function ManuscriptAnnotorious({
   const viewerRef = useRef<HTMLDivElement | null>(null);
   const osdRef = useRef<OpenSeadragon.Viewer | null>(null);
   const annoRef = useRef<AnnotoriousInstance | null>(null);
+  const osdModuleRef = useRef<{
+    Rect: new (x: number, y: number, w: number, h: number) => unknown;
+  } | null>(null);
   const onCreateRef = useRef(onCreate);
   const onDeleteRef = useRef(onDelete);
   const onSelectRef = useRef(onSelect);
@@ -208,6 +227,32 @@ export default function ManuscriptAnnotorious({
 
     void (async () => {
       let tileSources: string | Record<string, unknown> = tileSourceUrl;
+      let OpenSeadragonCtor: {
+        (options: Record<string, unknown>): OpenSeadragon.Viewer;
+        Rect: new (x: number, y: number, w: number, h: number) => unknown;
+      };
+      let AnnotoriousCtor: AnnotoriousFactory;
+      try {
+        const [osdModule, annoModule] = await Promise.all([
+          import('openseadragon'),
+          import('@recogito/annotorious-openseadragon'),
+        ]);
+        OpenSeadragonCtor = osdModule.default as unknown as {
+          (options: Record<string, unknown>): OpenSeadragon.Viewer;
+          Rect: new (x: number, y: number, w: number, h: number) => unknown;
+        };
+        AnnotoriousCtor = annoModule.default;
+        osdModuleRef.current = OpenSeadragonCtor;
+      } catch (err) {
+        if (isMounted) {
+          setState({
+            hasError: true,
+            errorMessage: `Failed to load viewer libraries: ${err instanceof Error ? err.message : String(err)}`,
+            isLoading: false,
+          });
+        }
+        return;
+      }
       if (baseUrl.includes('/iiif-proxy')) {
         try {
           const res = await fetch(tileSourceUrl);
@@ -241,7 +286,7 @@ export default function ManuscriptAnnotorious({
       }
       if (!isMounted) return;
 
-      viewer = OpenSeadragon({ ...opts, tileSources });
+      viewer = OpenSeadragonCtor({ ...opts, tileSources });
       osdRef.current = viewer;
 
       viewer.addHandler('open-failed', (event: { message?: string }) => {
@@ -258,10 +303,10 @@ export default function ManuscriptAnnotorious({
         setState((prev) => ({ ...prev, isLoading: false, hasError: false }));
 
         if (!annoRef.current) {
-          const annoOptions: NonNullable<Parameters<typeof Annotorious>[1]> = disableEditor
+          const annoOptions: NonNullable<Parameters<AnnotoriousFactory>[1]> = disableEditor
             ? { disableEditor: true, readOnly }
             : { widgets: [{ widget: 'COMMENT' as const }], readOnly };
-          const anno = Annotorious(viewer, annoOptions);
+          const anno = AnnotoriousCtor(viewer, annoOptions);
 
           annoRef.current = anno;
           anno.readOnly = true;

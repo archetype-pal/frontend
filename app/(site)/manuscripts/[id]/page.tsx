@@ -60,7 +60,7 @@ export async function generateMetadata({
 
 export default async function ManuscriptPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const manuscript = await getManuscript(id);
+  const [manuscript, images] = await Promise.all([getManuscript(id), getManuscriptImages(id)]);
 
   if (!manuscript) {
     return (
@@ -78,6 +78,5 @@ export default async function ManuscriptPage({ params }: { params: Promise<{ id:
     );
   }
 
-  const images = await getManuscriptImages(id);
   return <ManuscriptViewer manuscript={manuscript} images={images} />;
 }

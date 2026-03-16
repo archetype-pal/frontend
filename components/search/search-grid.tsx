@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { GraphListItem, ImageListItem, ManuscriptListItem } from '@/types/search';
@@ -19,6 +20,7 @@ export interface SearchGridProps {
   results?: GridItem[];
   resultType: ResultType;
   highlightKeyword?: string;
+  scrollContainerRef?: React.RefObject<HTMLElement | null>;
 }
 
 type GridCard =
@@ -126,6 +128,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
                   fill
                   className="object-contain transition-transform duration-300 group-hover:scale-105"
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                  unoptimized
                 />
               </GraphDetailLink>
             ) : (
@@ -139,6 +142,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
                   fill
                   className="object-contain transition-transform duration-300 group-hover:scale-105"
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                  unoptimized
                 />
               </Link>
             )}
@@ -238,6 +242,7 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
               fill
               className="object-contain transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+              unoptimized
             />
           ) : (
             <div className="bg-gray-100 w-full h-full flex items-center justify-center text-sm text-gray-400">
@@ -270,58 +275,138 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   );
 });
 
-function SearchGridComponent({ results = [], resultType, highlightKeyword = '' }: SearchGridProps) {
+function columnsForWidth(width: number): number {
+  if (width < 640) return 2;
+  if (width < 768) return 3;
+  if (width < 1024) return 4;
+  if (width < 1280) return 5;
+  return 6;
+}
+
+function SearchGridComponent({
+  results = [],
+  resultType,
+  highlightKeyword = '',
+  scrollContainerRef,
+}: SearchGridProps) {
+  const layoutRef = React.useRef<HTMLDivElement | null>(null);
+  const [layoutWidth, setLayoutWidth] = React.useState(1280);
+  const cards = React.useMemo(
+    () => results.map((item) => ({ card: toGridCard(resultType, item) })),
+    [results, resultType]
+  );
+  const columnCount = React.useMemo(() => columnsForWidth(layoutWidth), [layoutWidth]);
+  const rowCount = React.useMemo(
+    () => Math.ceil(cards.filter(({ card }) => card != null).length / columnCount),
+    [cards, columnCount]
+  );
+  const shouldVirtualize = !!scrollContainerRef && cards.length > 80;
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => scrollContainerRef?.current ?? null,
+    estimateSize: () => 260,
+    overscan: 3,
+  });
+
+  React.useEffect(() => {
+    const el = layoutRef.current;
+    if (!el) return;
+    setLayoutWidth(el.getBoundingClientRect().width || 1280);
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (typeof width === 'number' && width > 0) {
+        setLayoutWidth(width);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const renderCard = React.useCallback(
+    (card: GridCard) => {
+      if (card.kind === 'manuscript') {
+        return (
+          <ManuscriptGridCard
+            key={card.item.id}
+            item={card.item}
+            detailUrl={card.detailUrl}
+            imageUrl={card.imageUrl}
+            displayText={card.displayText}
+            formattedDisplayText={card.formattedDisplayText}
+            highlightKeyword={highlightKeyword}
+          />
+        );
+      }
+
+      if (card.kind === 'graph' && card.item.image_iiif) {
+        return (
+          <GraphGridCard
+            key={card.item.id}
+            item={card.item}
+            displayText={card.displayText}
+            formattedDisplayText={card.formattedDisplayText}
+            highlightKeyword={highlightKeyword}
+          />
+        );
+      }
+
+      return (
+        <MediaGridCard
+          key={card.item.id}
+          imageUrl={card.kind === 'image' ? card.imageUrl : null}
+          detailUrl={card.detailUrl}
+          displayText={card.displayText}
+          formattedDisplayText={card.formattedDisplayText}
+          highlightKeyword={highlightKeyword}
+          graphItem={card.kind === 'graph' ? card.item : undefined}
+          annotationCount={card.kind === 'image' ? card.item.number_of_annotations : null}
+          item={card.item}
+          itemType={card.kind}
+        />
+      );
+    },
+    [highlightKeyword]
+  );
+
   if (!results.length) {
     return <div className="text-center text-gray-500 py-10">No results to display.</div>;
   }
 
+  const flatCards = cards.map(({ card }) => card).filter((card): card is GridCard => card != null);
+
+  if (!shouldVirtualize) {
+    return (
+      <section
+        ref={layoutRef}
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
+      >
+        {flatCards.map((card) => renderCard(card))}
+      </section>
+    );
+  }
+
   return (
-    <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-      {results.map((item) => {
-        const card = toGridCard(resultType, item);
-        if (!card) return null;
-
-        if (card.kind === 'manuscript') {
+    <section ref={layoutRef} className="relative">
+      <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+          const start = virtualRow.index * columnCount;
+          const rowCards = flatCards.slice(start, start + columnCount);
+          if (rowCards.length === 0) return null;
           return (
-            <ManuscriptGridCard
-              key={card.item.id}
-              item={card.item}
-              detailUrl={card.detailUrl}
-              imageUrl={card.imageUrl}
-              displayText={card.displayText}
-              formattedDisplayText={card.formattedDisplayText}
-              highlightKeyword={highlightKeyword}
-            />
+            <div
+              key={virtualRow.key}
+              className="absolute left-0 w-full grid gap-3"
+              style={{
+                transform: `translateY(${virtualRow.start}px)`,
+                gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+              }}
+            >
+              {rowCards.map((card) => renderCard(card))}
+            </div>
           );
-        }
-
-        if (card.kind === 'graph' && card.item.image_iiif) {
-          return (
-            <GraphGridCard
-              key={card.item.id}
-              item={card.item}
-              displayText={card.displayText}
-              formattedDisplayText={card.formattedDisplayText}
-              highlightKeyword={highlightKeyword}
-            />
-          );
-        }
-
-        return (
-          <MediaGridCard
-            key={card.item.id}
-            imageUrl={card.kind === 'image' ? card.imageUrl : null}
-            detailUrl={card.detailUrl}
-            displayText={card.displayText}
-            formattedDisplayText={card.formattedDisplayText}
-            highlightKeyword={highlightKeyword}
-            graphItem={card.kind === 'graph' ? card.item : undefined}
-            annotationCount={card.kind === 'image' ? card.item.number_of_annotations : null}
-            item={card.item}
-            itemType={card.kind}
-          />
-        );
-      })}
+        })}
+      </div>
     </section>
   );
 }

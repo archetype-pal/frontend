@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Table, TableHeader, TableRow, TableCell, TableHead } from '@/components/ui/table';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowUp, ArrowDown } from 'lucide-react';
@@ -107,6 +108,7 @@ function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
         width={80}
         height={80}
         className="w-full h-full object-contain"
+        unoptimized
       />
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
       <CollectionStar itemId={graph.id} itemType="graph" item={graph} size={16} />
@@ -132,9 +134,10 @@ function AnnotationInlinePreview({
     <Image
       src={src}
       alt={alt}
-      width={960}
-      height={280}
-      className="block h-auto w-auto max-h-40 max-w-full object-contain"
+      width={360}
+      height={140}
+      sizes="(max-width: 768px) 100vw, 360px"
+      className="block h-auto w-full max-h-40 max-w-[360px] object-contain"
       unoptimized
     />
   );
@@ -393,6 +396,7 @@ function ResultsTableComponent<K extends ResultType>({
   onSort,
   highlightKeyword = '',
   visibleColumns,
+  scrollContainerRef,
 }: {
   resultType: K;
   results: ResultMap[K][];
@@ -403,6 +407,7 @@ function ResultsTableComponent<K extends ResultType>({
   onSort?: (opts: { sortKey?: string; sortUrl?: string }) => void;
   highlightKeyword?: string;
   visibleColumns?: string[];
+  scrollContainerRef?: React.RefObject<HTMLElement | null>;
 }) {
   const descriptor = React.useMemo(() => getDescriptor(resultType), [resultType]);
   const allCols = descriptor.columns;
@@ -435,15 +440,197 @@ function ResultsTableComponent<K extends ResultType>({
   const { subRowAccessor, previewAccessor, crossTypeLinks } = descriptor;
   const hasSubRow = !!subRowAccessor;
   const totalColSpan = cols.length + (hasSubRow ? 1 : 0);
+  const localScrollRef = React.useRef<HTMLDivElement | null>(null);
+  const shouldVirtualize = results.length > 80;
+  const rowEstimate = React.useMemo(() => {
+    if (hasSubRow || previewAccessor || crossTypeLinks) return 120;
+    return 56;
+  }, [hasSubRow, previewAccessor, crossTypeLinks]);
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const rowVirtualizer = useVirtualizer({
+    count: results.length,
+    getScrollElement: () => scrollContainerRef?.current ?? localScrollRef.current,
+    estimateSize: () => rowEstimate,
+    overscan: 8,
+    measureElement: (el) => el?.getBoundingClientRect().height ?? rowEstimate,
+  });
+  const virtualRows = shouldVirtualize ? rowVirtualizer.getVirtualItems() : [];
+  const topSpacerHeight = shouldVirtualize && virtualRows.length > 0 ? virtualRows[0]!.start : 0;
+  const bottomSpacerHeight =
+    shouldVirtualize && virtualRows.length > 0
+      ? rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1]!.end
+      : 0;
+  const rowKeyOf = React.useCallback((row: ResultMap[K], index: number): React.Key => {
+    const withId = row as { id?: string | number };
+    if (typeof withId.id === 'string' || typeof withId.id === 'number') return withId.id;
+    const withShelfmark = row as { shelfmark?: string };
+    if (withShelfmark.shelfmark) return `${withShelfmark.shelfmark}-${index}`;
+    return index;
+  }, []);
+
+  const renderRow = React.useCallback(
+    (
+      row: ResultMap[K],
+      ri: number,
+      virtualKey?: React.Key,
+      measure?: (el: Element | null) => void
+    ) => {
+      const rowUrl = descriptor.detailUrl(row);
+      const rowHref = rowUrl ?? '#';
+      const preview = previewAccessor ? previewAccessor(row) : null;
+      const rowCrossLinks = crossTypeLinks ? crossTypeLinks(row) : null;
+      const rowKey = virtualKey ?? rowKeyOf(row, ri);
+      return (
+        <tbody
+          key={rowKey}
+          className="group border-b"
+          ref={measure ? (el) => measure(el) : undefined}
+        >
+          <TableRow
+            className={`relative cursor-pointer group-hover:bg-muted/50 transition-colors${hasSubRow ? ' border-b-0' : ''}`}
+          >
+            {hasSubRow && (
+              <TableCell className="w-16 py-1.5">
+                <Link
+                  href={rowHref}
+                  className="absolute inset-0 z-[1]"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                />
+                <Link
+                  href={rowHref}
+                  className="relative z-[2] inline-block text-xs text-primary border border-primary/30 rounded px-2 py-0.5 hover:bg-primary/5 transition-colors whitespace-nowrap"
+                >
+                  View
+                </Link>
+              </TableCell>
+            )}
+            {cols.map((col, ci) => {
+              const cell = col.accessor(row);
+              const isFirst = ci === 0 && !hasSubRow;
+              const formattedFields = getFormattedFields(row);
+              const formattedText =
+                col.formattedKey && formattedFields ? formattedFields[col.formattedKey] : undefined;
+              const inner =
+                highlightKeyword && (typeof cell === 'string' || typeof cell === 'number') ? (
+                  <Highlight
+                    text={String(cell)}
+                    keyword={highlightKeyword}
+                    formattedText={typeof formattedText === 'string' ? formattedText : undefined}
+                  />
+                ) : (
+                  cell
+                );
+
+              return (
+                <TableCell key={ci} className={col.className}>
+                  {isFirst ? (
+                    resultType === 'graphs' ? (
+                      <GraphDetailLink
+                        graph={row as GraphListItem}
+                        className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
+                      >
+                        {inner}
+                      </GraphDetailLink>
+                    ) : (
+                      <Link
+                        href={rowHref}
+                        className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
+                      >
+                        {inner}
+                      </Link>
+                    )
+                  ) : (
+                    inner
+                  )}
+                </TableCell>
+              );
+            })}
+          </TableRow>
+          {preview && (
+            <TableRow className="relative cursor-pointer group-hover:bg-muted/50 transition-colors">
+              <TableCell
+                colSpan={totalColSpan}
+                className={`py-1.5 ${hasSubRow ? 'pl-20' : 'pl-4'} text-sm text-muted-foreground`}
+              >
+                <Link
+                  href={rowHref}
+                  className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
+                >
+                  <span className="relative z-[2] inline-block">{preview}</span>
+                </Link>
+              </TableCell>
+            </TableRow>
+          )}
+          {subRowAccessor && (
+            <TableRow className="relative cursor-pointer group-hover:bg-muted/50 transition-colors">
+              <TableCell
+                colSpan={totalColSpan}
+                className="py-1.5 pl-20 text-sm italic text-muted-foreground"
+              >
+                <Link
+                  href={rowHref}
+                  className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
+                >
+                  {highlightKeyword ? (
+                    <Highlight text={subRowAccessor(row)} keyword={highlightKeyword} />
+                  ) : (
+                    subRowAccessor(row)
+                  )}
+                </Link>
+              </TableCell>
+            </TableRow>
+          )}
+          {rowCrossLinks && rowCrossLinks.length > 0 && (
+            <TableRow className="h-0 overflow-hidden group-hover:h-auto border-b-0">
+              <TableCell
+                colSpan={totalColSpan}
+                className="py-0 group-hover:py-1 px-4 transition-all"
+              >
+                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-[11px] text-muted-foreground">View:</span>
+                  {rowCrossLinks.map((link) => (
+                    <Link
+                      key={`${link.label}-${link.href}`}
+                      href={link.href}
+                      className="relative z-[2] text-[11px] text-primary hover:underline px-1.5 py-0.5 rounded hover:bg-primary/5 transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </TableCell>
+            </TableRow>
+          )}
+        </tbody>
+      );
+    },
+    [
+      cols,
+      crossTypeLinks,
+      descriptor,
+      hasSubRow,
+      highlightKeyword,
+      previewAccessor,
+      resultType,
+      rowKeyOf,
+      subRowAccessor,
+      totalColSpan,
+    ]
+  );
+
   return (
-    <div className="bg-white border rounded-lg overflow-auto">
+    <div
+      ref={scrollContainerRef ? undefined : localScrollRef}
+      className={`bg-white border rounded-lg ${scrollContainerRef ? 'overflow-visible' : 'overflow-auto'}`}
+    >
       <Table>
         <TableHeader>
           <TableRow>
             {hasSubRow && <TableHead className="w-16" />}
-            {cols.map((col, i) => (
+            {cols.map((col) => (
               <TableHead
-                key={i}
+                key={col.header}
                 className={col.className}
                 style={{ cursor: col.sortKey || col.sortUrl ? 'pointer' : undefined }}
                 onClick={() => onSort?.({ sortKey: col.sortKey, sortUrl: col.sortUrl })}
@@ -461,136 +648,25 @@ function ResultsTableComponent<K extends ResultType>({
             ))}
           </TableRow>
         </TableHeader>
-        {results.map((row, ri) => {
-          const rowUrl = descriptor.detailUrl(row);
-          const rowHref = rowUrl ?? '#';
-          const preview = previewAccessor ? previewAccessor(row) : null;
-          const rowCrossLinks = crossTypeLinks ? crossTypeLinks(row) : null;
-          return (
-            <tbody key={ri} className="group border-b">
-              <TableRow
-                className={`relative cursor-pointer group-hover:bg-muted/50 transition-colors${hasSubRow ? ' border-b-0' : ''}`}
-              >
-                {hasSubRow && (
-                  <TableCell className="w-16 py-1.5">
-                    <Link
-                      href={rowHref}
-                      className="absolute inset-0 z-[1]"
-                      tabIndex={-1}
-                      aria-hidden="true"
-                    />
-                    <Link
-                      href={rowHref}
-                      className="relative z-[2] inline-block text-xs text-primary border border-primary/30 rounded px-2 py-0.5 hover:bg-primary/5 transition-colors whitespace-nowrap"
-                    >
-                      View
-                    </Link>
-                  </TableCell>
-                )}
-                {cols.map((col, ci) => {
-                  const cell = col.accessor(row);
-                  const isFirst = ci === 0 && !hasSubRow;
-                  const formattedFields = getFormattedFields(row);
-                  const formattedText =
-                    col.formattedKey && formattedFields
-                      ? formattedFields[col.formattedKey]
-                      : undefined;
-                  const inner =
-                    highlightKeyword && (typeof cell === 'string' || typeof cell === 'number') ? (
-                      <Highlight
-                        text={String(cell)}
-                        keyword={highlightKeyword}
-                        formattedText={
-                          typeof formattedText === 'string' ? formattedText : undefined
-                        }
-                      />
-                    ) : (
-                      cell
-                    );
-
-                  return (
-                    <TableCell key={ci} className={col.className}>
-                      {isFirst ? (
-                        resultType === 'graphs' ? (
-                          <GraphDetailLink
-                            graph={row as GraphListItem}
-                            className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
-                          >
-                            {inner}
-                          </GraphDetailLink>
-                        ) : (
-                          <Link
-                            href={rowHref}
-                            className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
-                          >
-                            {inner}
-                          </Link>
-                        )
-                      ) : (
-                        inner
-                      )}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-              {preview && (
-                <TableRow className="relative cursor-pointer group-hover:bg-muted/50 transition-colors">
-                  <TableCell
-                    colSpan={totalColSpan}
-                    className={`py-1.5 ${hasSubRow ? 'pl-20' : 'pl-4'} text-sm text-muted-foreground`}
-                  >
-                    <Link
-                      href={rowHref}
-                      className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
-                    >
-                      <span className="relative z-[2] inline-block">{preview}</span>
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              )}
-              {subRowAccessor && (
-                <TableRow className="relative cursor-pointer group-hover:bg-muted/50 transition-colors">
-                  <TableCell
-                    colSpan={totalColSpan}
-                    className="py-1.5 pl-20 text-sm italic text-muted-foreground"
-                  >
-                    <Link
-                      href={rowHref}
-                      className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
-                    >
-                      {highlightKeyword ? (
-                        <Highlight text={subRowAccessor(row)} keyword={highlightKeyword} />
-                      ) : (
-                        subRowAccessor(row)
-                      )}
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              )}
-              {rowCrossLinks && rowCrossLinks.length > 0 && (
-                <TableRow className="h-0 overflow-hidden group-hover:h-auto border-b-0">
-                  <TableCell
-                    colSpan={totalColSpan}
-                    className="py-0 group-hover:py-1 px-4 transition-all"
-                  >
-                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[11px] text-muted-foreground">View:</span>
-                      {rowCrossLinks.map((link, li) => (
-                        <Link
-                          key={li}
-                          href={link.href}
-                          className="relative z-[2] text-[11px] text-primary hover:underline px-1.5 py-0.5 rounded hover:bg-primary/5 transition-colors"
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </tbody>
-          );
-        })}
+        {shouldVirtualize && topSpacerHeight > 0 && (
+          <tbody>
+            <TableRow>
+              <TableCell colSpan={totalColSpan} style={{ height: `${topSpacerHeight}px` }} />
+            </TableRow>
+          </tbody>
+        )}
+        {shouldVirtualize
+          ? virtualRows.map((vr) =>
+              renderRow(results[vr.index]!, vr.index, vr.key, rowVirtualizer.measureElement)
+            )
+          : results.map((row, ri) => renderRow(row, ri))}
+        {shouldVirtualize && bottomSpacerHeight > 0 && (
+          <tbody>
+            <TableRow>
+              <TableCell colSpan={totalColSpan} style={{ height: `${bottomSpacerHeight}px` }} />
+            </TableRow>
+          </tbody>
+        )}
       </Table>
     </div>
   );

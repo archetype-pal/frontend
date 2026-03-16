@@ -124,6 +124,7 @@ export default function Component() {
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 50vw"
                     priority
+                    unoptimized
                   />
                   <div className="absolute inset-0 bg-black/50" aria-hidden />
                 </>

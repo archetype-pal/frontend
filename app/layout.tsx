@@ -9,6 +9,8 @@ import { SiteFeaturesProvider } from '@/contexts/site-features-context';
 import { ModelLabelsProvider } from '@/contexts/model-labels-context';
 import { AppQueryProvider } from '@/components/providers/query-provider';
 import { env } from '@/lib/env';
+import { readSiteFeatures } from '@/lib/site-features-server';
+import { readModelLabels } from '@/lib/model-labels-server';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -36,17 +38,22 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [siteFeaturesConfig, modelLabelsConfig] = await Promise.all([
+    readSiteFeatures(),
+    readModelLabels(),
+  ]);
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
-          <SiteFeaturesProvider>
-            <ModelLabelsProvider>
+          <SiteFeaturesProvider initialConfig={siteFeaturesConfig}>
+            <ModelLabelsProvider initialConfig={modelLabelsConfig}>
               <AppQueryProvider>
                 <CollectionProvider>
                   <SearchProvider>{children}</SearchProvider>
