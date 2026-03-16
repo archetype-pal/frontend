@@ -4,7 +4,6 @@ import * as React from 'react';
 import { Table, TableHeader, TableRow, TableCell, TableHead } from '@/components/ui/table';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import type { ResultType } from '@/lib/search-types';
 import type {
@@ -23,13 +22,15 @@ import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { Highlight } from './highlight';
 import { CollectionStar } from '@/components/collection/collection-star';
-import { getImageDetailUrl, getGraphDetailUrl, resolveAndPushGraphDetail } from '@/lib/media-url';
+import { getImageDetailUrl, getGraphDetailUrl } from '@/lib/media-url';
 import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
+import { GraphDetailLink } from '@/components/search/graph-detail-link';
 
 export type Column<T> = {
   header: string;
   sortKey?: string;
   sortUrl?: string;
+  formattedKey?: string;
   accessor: (item: T) => React.ReactNode;
   className?: string;
 };
@@ -38,9 +39,26 @@ function makeColumn<T>(
   header: string,
   accessor: (item: T) => React.ReactNode,
   sortKey?: string,
-  className?: string
+  className?: string,
+  formattedKey?: string
 ): Column<T> {
-  return { header, accessor, sortKey, className };
+  const inferredFormattedKey = sortKey?.replace(/_exact$/, '');
+  return {
+    header,
+    accessor,
+    sortKey,
+    className,
+    formattedKey: formattedKey ?? inferredFormattedKey,
+  };
+}
+
+type SearchFormattedFields = Record<string, string | undefined>;
+
+function getFormattedFields(value: unknown): SearchFormattedFields | null {
+  if (value == null || typeof value !== 'object') return null;
+  const formatted = (value as { _formatted?: unknown })._formatted;
+  if (formatted == null || typeof formatted !== 'object') return null;
+  return formatted as SearchFormattedFields;
 }
 
 const repositoryCityColumn = <T extends { repository_city: string }>(): Column<T> =>
@@ -71,13 +89,13 @@ function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
   if (!infoUrl) return <span className="text-xs text-muted-foreground">N/A</span>;
   if (!src) {
     return (
-      <div className="relative inline-block w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
+      <div className="relative inline-block w-20 h-20 flex items-center justify-center bg-gray-50 rounded overflow-hidden">
         <span className="text-xs text-muted-foreground">…</span>
       </div>
     );
   }
   return (
-    <div className="relative z-[2] inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
+    <div className="relative z-[2] inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded overflow-hidden">
       <Image
         src={src}
         alt={`Thumbnail for ${graph.shelfmark}`}
@@ -155,7 +173,7 @@ export const COLUMNS = {
         }
 
         return (
-          <div className="relative z-[2] inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded border border-gray-200 overflow-hidden">
+          <div className="relative z-[2] inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded overflow-hidden">
             <Image
               src={src}
               alt={i.shelfmark || 'Image thumbnail'}
@@ -362,7 +380,6 @@ function ResultsTableComponent<K extends ResultType>({
   highlightKeyword?: string;
   visibleColumns?: string[];
 }) {
-  const router = useRouter();
   const descriptor = React.useMemo(() => getDescriptor(resultType), [resultType]);
   const allCols = descriptor.columns;
   const baseCols = React.useMemo(
@@ -395,21 +412,6 @@ function ResultsTableComponent<K extends ResultType>({
   const hasSubRow = !!subRowAccessor;
   // +1 for the View column when sub-rows are present
   const totalColSpan = cols.length + (hasSubRow ? 1 : 0);
-  const getRowNavigationProps = React.useCallback(
-    (row: ResultMap[K]) => {
-      const href = descriptor.detailUrl(row);
-      return {
-        href: href ?? '#',
-        onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
-          if (resultType !== 'graphs' || href) return;
-          e.preventDefault();
-          void resolveAndPushGraphDetail(row as GraphListItem, router.push);
-        },
-      };
-    },
-    [descriptor, resultType, router]
-  );
-
   return (
     <div className="bg-white border rounded-lg overflow-auto">
       <Table>
@@ -437,7 +439,8 @@ function ResultsTableComponent<K extends ResultType>({
           </TableRow>
         </TableHeader>
         {results.map((row, ri) => {
-          const { href: url, onClick: handleLinkClick } = getRowNavigationProps(row);
+          const rowUrl = descriptor.detailUrl(row);
+          const rowHref = rowUrl ?? '#';
           const preview = previewAccessor ? previewAccessor(row) : null;
           return (
             <tbody key={ri} className="group border-b">
@@ -448,15 +451,13 @@ function ResultsTableComponent<K extends ResultType>({
                 {hasSubRow && (
                   <TableCell className="w-16 py-1.5">
                     <Link
-                      href={url}
-                      onClick={handleLinkClick}
+                      href={rowHref}
                       className="absolute inset-0 z-[1]"
                       tabIndex={-1}
                       aria-hidden="true"
                     />
                     <Link
-                      href={url}
-                      onClick={handleLinkClick}
+                      href={rowHref}
                       className="relative z-[2] inline-block text-xs text-primary border border-primary/30 rounded px-2 py-0.5 hover:bg-primary/5 transition-colors whitespace-nowrap"
                     >
                       View
@@ -466,9 +467,20 @@ function ResultsTableComponent<K extends ResultType>({
                 {cols.map((col, ci) => {
                   const cell = col.accessor(row);
                   const isFirst = ci === 0 && !hasSubRow;
+                  const formattedFields = getFormattedFields(row);
+                  const formattedText =
+                    col.formattedKey && formattedFields
+                      ? formattedFields[col.formattedKey]
+                      : undefined;
                   const inner =
                     highlightKeyword && (typeof cell === 'string' || typeof cell === 'number') ? (
-                      <Highlight text={String(cell)} keyword={highlightKeyword} />
+                      <Highlight
+                        text={String(cell)}
+                        keyword={highlightKeyword}
+                        formattedText={
+                          typeof formattedText === 'string' ? formattedText : undefined
+                        }
+                      />
                     ) : (
                       cell
                     );
@@ -476,13 +488,21 @@ function ResultsTableComponent<K extends ResultType>({
                   return (
                     <TableCell key={ci} className={col.className}>
                       {isFirst ? (
-                        <Link
-                          href={url}
-                          onClick={handleLinkClick}
-                          className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
-                        >
-                          {inner}
-                        </Link>
+                        resultType === 'graphs' ? (
+                          <GraphDetailLink
+                            graph={row as GraphListItem}
+                            className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
+                          >
+                            {inner}
+                          </GraphDetailLink>
+                        ) : (
+                          <Link
+                            href={rowHref}
+                            className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
+                          >
+                            {inner}
+                          </Link>
+                        )
                       ) : (
                         inner
                       )}
@@ -497,8 +517,7 @@ function ResultsTableComponent<K extends ResultType>({
                     className={`py-1.5 ${hasSubRow ? 'pl-20' : 'pl-4'} text-sm text-muted-foreground`}
                   >
                     <Link
-                      href={url}
-                      onClick={handleLinkClick}
+                      href={rowHref}
                       className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
                     >
                       <span className="relative z-[2] inline-block">{preview}</span>
@@ -514,8 +533,7 @@ function ResultsTableComponent<K extends ResultType>({
                     className="py-1.5 pl-20 text-sm italic text-muted-foreground"
                   >
                     <Link
-                      href={url}
-                      onClick={handleLinkClick}
+                      href={rowHref}
                       className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
                     >
                       {highlightKeyword ? (

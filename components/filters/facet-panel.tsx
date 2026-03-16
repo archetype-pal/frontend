@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 import type { FacetListItem } from '@/types/facets';
 
 type FacetPanelProps = {
@@ -32,8 +33,10 @@ export function FacetPanel({
   const [sortBy, setSortBy] = React.useState<'name-asc' | 'name-desc' | 'count-desc' | 'count-asc'>(
     'name-asc'
   );
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [expandedList, setExpandedList] = React.useState(false);
 
-  const visibleItems = React.useMemo(() => {
+  const sortedItems = React.useMemo(() => {
     if (!showSort) return items;
     const itemsCopy = [...items];
     switch (sortBy) {
@@ -48,6 +51,20 @@ export function FacetPanel({
         return itemsCopy.sort((a, b) => b.count - a.count);
     }
   }, [items, showSort, sortBy]);
+
+  const filteredItems = React.useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return sortedItems;
+    return sortedItems.filter((item) => item.label.toLowerCase().includes(q));
+  }, [searchTerm, sortedItems]);
+
+  React.useEffect(() => {
+    setExpandedList(false);
+  }, [searchTerm, sortBy, id]);
+
+  const INITIAL_VISIBLE_COUNT = 10;
+  const hasOverflow = filteredItems.length > INITIAL_VISIBLE_COUNT;
+  const visibleItems = expandedList ? filteredItems : filteredItems.slice(0, INITIAL_VISIBLE_COUNT);
 
   const handleSelect = (item: FacetListItem) => {
     const nextValue = selectedValue === item.value ? null : item.value;
@@ -94,6 +111,15 @@ export function FacetPanel({
       )}
       {isExpanded && (
         <div className="max-h-48 overflow-y-auto">
+          <div className="p-2 pb-0">
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={`Search ${title.toLowerCase()}...`}
+              className="h-8"
+              aria-label={`Search ${title} facets`}
+            />
+          </div>
           <ul className="p-2 space-y-2 text-sm">
             {visibleItems.map((item) => (
               <li key={item.label}>
@@ -110,7 +136,23 @@ export function FacetPanel({
                 </button>
               </li>
             ))}
+            {visibleItems.length === 0 && (
+              <li className="px-2 py-1 text-xs text-muted-foreground">No matching facet values.</li>
+            )}
           </ul>
+          {hasOverflow && (
+            <div className="px-2 pb-2">
+              <button
+                type="button"
+                className="w-full rounded border border-dashed px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => setExpandedList((prev) => !prev)}
+              >
+                {expandedList
+                  ? 'Show fewer'
+                  : `Show all (${filteredItems.length - INITIAL_VISIBLE_COUNT} more)`}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

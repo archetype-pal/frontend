@@ -4,6 +4,7 @@ import * as React from 'react';
 import { ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -42,12 +43,25 @@ export function FacetDateRangePanel({
   const [searchInput, setSearchInput] = React.useState<string>(
     `${normalizedDefaultValue[0]}x${normalizedDefaultValue[1]}`
   );
+  const initialPrecision = precisionOptions[0].value;
   const [endpointMin, endpointMax] = normalizedDefaultValue;
+  const applySignatureRef = React.useRef<string>('');
+  const isFirstDebounceRef = React.useRef(true);
 
   React.useEffect(() => {
     setSliderValue(normalizedDefaultValue);
     setSearchInput(`${normalizedDefaultValue[0]}x${normalizedDefaultValue[1]}`);
   }, [normalizedDefaultValue]);
+
+  const buildPayload = React.useCallback(() => {
+    const diff = precision === initialPrecision || year === '' ? 0 : year;
+    return {
+      min: sliderValue[0],
+      max: sliderValue[1],
+      precision,
+      diff,
+    };
+  }, [initialPrecision, precision, sliderValue, year]);
 
   const handleSliderChange = (value: number[]) => {
     const [newMin, newMax] = [value[0], value[1]] as [number, number];
@@ -77,14 +91,13 @@ export function FacetDateRangePanel({
     }
   };
 
-  const handleSearchSubmit = () => {
-    onSearch?.({
-      min: sliderValue[0],
-      max: sliderValue[1],
-      precision,
-      diff: precision === '' ? 0 : year === '' ? 0 : year,
-    });
-  };
+  const handleSearchSubmit = React.useCallback(() => {
+    const payload = buildPayload();
+    const signature = JSON.stringify(payload);
+    if (applySignatureRef.current === signature) return;
+    applySignatureRef.current = signature;
+    onSearch?.(payload);
+  }, [buildPayload, onSearch]);
 
   const handlePrecisionChange = (val: string) => {
     setPrecision(val);
@@ -101,6 +114,28 @@ export function FacetDateRangePanel({
       setYear(val);
     }
   };
+
+  const handleReset = React.useCallback(() => {
+    const [min, max] = normalizedDefaultValue;
+    setSliderValue([min, max]);
+    setSearchInput(`${min}x${max}`);
+    setPrecision(initialPrecision);
+    setYear('');
+    const payload = { min, max, precision: initialPrecision, diff: 0 };
+    applySignatureRef.current = JSON.stringify(payload);
+    onSearch?.(payload);
+  }, [initialPrecision, normalizedDefaultValue, onSearch]);
+
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (isFirstDebounceRef.current) {
+        isFirstDebounceRef.current = false;
+        return;
+      }
+      handleSearchSubmit();
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [sliderValue, precision, year, handleSearchSubmit]);
 
   return (
     <div id={id} className="border bg-white rounded shadow-sm">
@@ -179,6 +214,18 @@ export function FacetDateRangePanel({
                 disabled={precision === precisionOptions[0].value}
               />
             </div>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+              onClick={handleReset}
+            >
+              Reset
+            </button>
+            <Button type="button" size="sm" onClick={handleSearchSubmit}>
+              Apply
+            </Button>
           </div>
         </div>
       )}

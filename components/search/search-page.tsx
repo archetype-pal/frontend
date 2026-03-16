@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Grid, List } from 'lucide-react';
+import { Grid, List, Share2 } from 'lucide-react';
 import { ResultsTable } from '@/components/search/results-table';
 import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';
@@ -97,6 +97,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   );
   const [sortKey, setSortKey] = React.useState<string | null>(null);
   const [ascending, setAscending] = React.useState(true);
+  const [shareFeedback, setShareFeedback] = React.useState<'idle' | 'copied' | 'error'>('idle');
   const { setSuggestionsPool } = useSearchContext();
   const { enabledCategories, getCategoryConfig } = useSiteFeatures();
   const categoryConfig = getCategoryConfig(resultType);
@@ -180,6 +181,13 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
       searchType: resultType,
     });
   }, [submittedKeyword, queryState.dateParams, queryState.selected_facets, resultType]);
+  const activeFilterCount = activeTags.length;
+
+  React.useEffect(() => {
+    if (shareFeedback === 'idle') return;
+    const timer = window.setTimeout(() => setShareFeedback('idle'), 1800);
+    return () => window.clearTimeout(timer);
+  }, [shareFeedback]);
 
   const handleRemoveTag = React.useCallback(
     (item: ActiveFacetTag) => {
@@ -219,6 +227,15 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const showGridToggle = !isTableOnlyType(resultType);
   const resultCount = data.count;
 
+  const handleShareSearch = React.useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareFeedback('copied');
+    } catch {
+      setShareFeedback('error');
+    }
+  }, []);
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       <header className="shrink-0 px-6 py-3 border-b bg-white flex items-center justify-between gap-4 flex-wrap">
@@ -233,6 +250,16 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           />
         </div>
         <div className="flex gap-2 shrink-0">
+          <Button variant="ghost" size="sm" onClick={() => void handleShareSearch()}>
+            <Share2 className="h-4 w-4" />
+            <span className="ml-1 hidden sm:inline">
+              {shareFeedback === 'copied'
+                ? 'Copied'
+                : shareFeedback === 'error'
+                  ? 'Failed'
+                  : 'Share'}
+            </span>
+          </Button>
           <Button
             variant={viewMode === 'table' ? 'secondary' : 'ghost'}
             size="sm"
@@ -254,6 +281,25 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
 
       <div className="flex flex-1 min-h-0">
         <aside className="w-64 shrink-0 border-r bg-white py-4 px-4 overflow-y-auto">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold">
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                  {activeFilterCount}
+                </span>
+              )}
+            </h2>
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                className="text-xs text-primary hover:underline"
+                onClick={handleClearAllFilters}
+              >
+                Clear all ({activeFilterCount})
+              </button>
+            )}
+          </div>
           {Object.keys(data.facets).length > 0 ? (
             <DynamicFacets
               facets={data.facets}
@@ -268,6 +314,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               onFacetClick={handleFacetClick}
               baseFacetURL={baseFacetURL}
               visibleFacets={categoryConfig.visibleFacets}
+              activeFilterCount={activeFilterCount}
             />
           ) : (
             <div className="text-sm text-muted-foreground">No filters for this type</div>
@@ -298,9 +345,33 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 </p>
               )
             ) : (
-              <p className="text-center text-sm text-muted-foreground py-8">
-                No results to display.
-              </p>
+              <section className="rounded-lg border bg-white p-6 text-center">
+                <h3 className="text-base font-semibold">No results found</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {submittedKeyword
+                    ? `No ${SEARCH_RESULT_CONFIG[resultType].label.toLowerCase()} matched "${submittedKeyword}".`
+                    : `No ${SEARCH_RESULT_CONFIG[resultType].label.toLowerCase()} matched the current filters.`}
+                </p>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  {activeFilterCount > 0 && (
+                    <Button variant="outline" size="sm" onClick={handleClearAllFilters}>
+                      Clear all filters
+                    </Button>
+                  )}
+                  {submittedKeyword && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setDraftKeyword('');
+                        setSubmittedKeyword('');
+                      }}
+                    >
+                      Clear keyword
+                    </Button>
+                  )}
+                </div>
+              </section>
             )}
 
             {data.count > 0 && (

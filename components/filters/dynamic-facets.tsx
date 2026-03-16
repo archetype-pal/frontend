@@ -26,6 +26,7 @@ type DynamicFacetsProps = {
   onFacetClick?: (arg: string, action?: FacetClickAction) => void;
   baseFacetURL: string;
   visibleFacets?: string[];
+  activeFilterCount?: number;
 };
 
 export function DynamicFacets({
@@ -41,6 +42,7 @@ export function DynamicFacets({
   onFacetClick,
   baseFacetURL,
   visibleFacets,
+  activeFilterCount = 0,
 }: DynamicFacetsProps) {
   const { suggestionsPool } = useSearchContext();
   const [draftKeyword, setDraftKeyword] = React.useState(keyword);
@@ -91,6 +93,7 @@ export function DynamicFacets({
     <div className="space-y-4">
       <ActiveFacetTags
         items={activeTags}
+        title={activeFilterCount > 0 ? `Active filters (${activeFilterCount})` : 'Active filters'}
         onRemove={(item) => {
           if (onRemoveTag) {
             onRemoveTag(item);
