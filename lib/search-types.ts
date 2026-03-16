@@ -12,13 +12,19 @@ export const SEARCH_RESULT_TYPES = [
 export type ResultType = (typeof SEARCH_RESULT_TYPES)[number];
 export type FacetRenderType = 'checkbox' | 'toggle' | 'range' | 'number-select';
 
-export type SearchResultConfig = {
+export type SearchFacetConfig = {
+  key: string;
+  render: FacetRenderType;
+};
+
+type SearchResultConfigSeed = {
   label: string;
   apiPath: string;
   defaultVisibleColumns: readonly string[];
-  filterOrder: readonly string[];
-  filterRenderMap: Record<string, FacetRenderType>;
+  facets: readonly SearchFacetConfig[];
 };
+
+export type SearchResultConfig = SearchResultConfigSeed;
 
 export const SEARCH_RESULT_CONFIG = {
   manuscripts: {
@@ -33,22 +39,14 @@ export const SEARCH_RESULT_CONFIG = {
       'Doc. Type',
       'Images',
     ],
-    filterOrder: [
-      'image_availability',
-      'text_date',
-      'format',
-      'type',
-      'repository_city',
-      'repository_name',
+    facets: [
+      { key: 'image_availability', render: 'toggle' },
+      { key: 'text_date', render: 'range' },
+      { key: 'format', render: 'checkbox' },
+      { key: 'type', render: 'checkbox' },
+      { key: 'repository_city', render: 'checkbox' },
+      { key: 'repository_name', render: 'checkbox' },
     ],
-    filterRenderMap: {
-      image_availability: 'toggle',
-      text_date: 'range',
-      format: 'checkbox',
-      type: 'checkbox',
-      repository_city: 'checkbox',
-      repository_name: 'checkbox',
-    },
   },
   images: {
     label: 'Images',
@@ -62,36 +60,25 @@ export const SEARCH_RESULT_CONFIG = {
       'Thumbnail',
       'Ann.',
     ],
-    filterOrder: [
-      'text_date',
-      'locus',
-      'type',
-      'repository_city',
-      'repository_name',
-      'features',
-      'components',
-      'component_features',
+    facets: [
+      { key: 'text_date', render: 'range' },
+      { key: 'locus', render: 'checkbox' },
+      { key: 'type', render: 'checkbox' },
+      { key: 'repository_city', render: 'checkbox' },
+      { key: 'repository_name', render: 'checkbox' },
+      { key: 'features', render: 'checkbox' },
+      { key: 'components', render: 'checkbox' },
+      { key: 'component_features', render: 'checkbox' },
     ],
-    filterRenderMap: {
-      text_date: 'range',
-      features: 'checkbox',
-      components: 'checkbox',
-      component_features: 'checkbox',
-      repository_city: 'checkbox',
-      locus: 'checkbox',
-      type: 'checkbox',
-      repository_name: 'checkbox',
-    },
   },
   scribes: {
     label: 'Scribes',
     apiPath: 'scribes',
     defaultVisibleColumns: ['Scribe Name', 'Date', 'Scriptorium'],
-    filterOrder: ['text_date', 'scriptorium'],
-    filterRenderMap: {
-      text_date: 'range',
-      scriptorium: 'checkbox',
-    },
+    facets: [
+      { key: 'text_date', render: 'range' },
+      { key: 'scriptorium', render: 'checkbox' },
+    ],
   },
   hands: {
     label: 'Hands',
@@ -105,13 +92,12 @@ export const SEARCH_RESULT_CONFIG = {
       'Date',
       'Catalogue Num.',
     ],
-    filterOrder: ['text_date', 'repository_name', 'repository_city', 'place'],
-    filterRenderMap: {
-      text_date: 'range',
-      repository_name: 'checkbox',
-      repository_city: 'checkbox',
-      place: 'checkbox',
-    },
+    facets: [
+      { key: 'text_date', render: 'range' },
+      { key: 'repository_name', render: 'checkbox' },
+      { key: 'repository_city', render: 'checkbox' },
+      { key: 'place', render: 'checkbox' },
+    ],
   },
   graphs: {
     label: 'Graphs',
@@ -124,57 +110,34 @@ export const SEARCH_RESULT_CONFIG = {
       'Allograph',
       'Thumbnail',
     ],
-    filterOrder: [
-      'character',
-      'character_type',
-      'allograph',
-      'place',
-      'repository_name',
-      'repository_city',
-      'features',
-      'components',
-      'component_features',
-      'positions',
+    facets: [
+      { key: 'character', render: 'checkbox' },
+      { key: 'character_type', render: 'checkbox' },
+      { key: 'allograph', render: 'checkbox' },
+      { key: 'place', render: 'checkbox' },
+      { key: 'repository_name', render: 'checkbox' },
+      { key: 'repository_city', render: 'checkbox' },
+      { key: 'features', render: 'checkbox' },
+      { key: 'components', render: 'checkbox' },
+      { key: 'component_features', render: 'checkbox' },
+      { key: 'positions', render: 'checkbox' },
     ],
-    filterRenderMap: {
-      features: 'checkbox',
-      components: 'checkbox',
-      character: 'checkbox',
-      component_features: 'checkbox',
-      allograph: 'checkbox',
-      character_type: 'checkbox',
-      repository_city: 'checkbox',
-      positions: 'checkbox',
-      repository_name: 'checkbox',
-      place: 'checkbox',
-    },
   },
   texts: {
     label: 'Texts',
     apiPath: 'texts',
     defaultVisibleColumns: ['Repository City', 'Repository', 'Shelfmark', 'Text Type', 'MS Date'],
-    filterOrder: [
-      'text_date',
-      'text_type',
-      'type',
-      'repository_city',
-      'repository_name',
-      'status',
-      'language',
-      'places',
-      'people',
+    facets: [
+      { key: 'text_date', render: 'range' },
+      { key: 'text_type', render: 'checkbox' },
+      { key: 'type', render: 'checkbox' },
+      { key: 'repository_city', render: 'checkbox' },
+      { key: 'repository_name', render: 'checkbox' },
+      { key: 'status', render: 'checkbox' },
+      { key: 'language', render: 'checkbox' },
+      { key: 'places', render: 'checkbox' },
+      { key: 'people', render: 'checkbox' },
     ],
-    filterRenderMap: {
-      text_date: 'range',
-      text_type: 'checkbox',
-      type: 'checkbox',
-      repository_city: 'checkbox',
-      repository_name: 'checkbox',
-      status: 'checkbox',
-      language: 'checkbox',
-      places: 'checkbox',
-      people: 'checkbox',
-    },
   },
   clauses: {
     label: 'Clauses',
@@ -189,24 +152,15 @@ export const SEARCH_RESULT_CONFIG = {
       'Text Type',
       'Clause Type',
     ],
-    filterOrder: [
-      'type',
-      'repository_city',
-      'repository_name',
-      'text_date',
-      'text_type',
-      'clause_type',
-      'status',
+    facets: [
+      { key: 'type', render: 'checkbox' },
+      { key: 'repository_city', render: 'checkbox' },
+      { key: 'repository_name', render: 'checkbox' },
+      { key: 'text_date', render: 'range' },
+      { key: 'text_type', render: 'checkbox' },
+      { key: 'clause_type', render: 'checkbox' },
+      { key: 'status', render: 'checkbox' },
     ],
-    filterRenderMap: {
-      text_date: 'range',
-      clause_type: 'checkbox',
-      text_type: 'checkbox',
-      type: 'checkbox',
-      repository_city: 'checkbox',
-      repository_name: 'checkbox',
-      status: 'checkbox',
-    },
   },
   people: {
     label: 'People',
@@ -221,24 +175,15 @@ export const SEARCH_RESULT_CONFIG = {
       'Text Type',
       'Category',
     ],
-    filterOrder: [
-      'type',
-      'repository_city',
-      'repository_name',
-      'text_date',
-      'text_type',
-      'person_type',
-      'status',
+    facets: [
+      { key: 'type', render: 'checkbox' },
+      { key: 'repository_city', render: 'checkbox' },
+      { key: 'repository_name', render: 'checkbox' },
+      { key: 'text_date', render: 'range' },
+      { key: 'text_type', render: 'checkbox' },
+      { key: 'person_type', render: 'checkbox' },
+      { key: 'status', render: 'checkbox' },
     ],
-    filterRenderMap: {
-      text_date: 'range',
-      person_type: 'checkbox',
-      text_type: 'checkbox',
-      type: 'checkbox',
-      repository_city: 'checkbox',
-      repository_name: 'checkbox',
-      status: 'checkbox',
-    },
   },
   places: {
     label: 'Places',
@@ -253,26 +198,31 @@ export const SEARCH_RESULT_CONFIG = {
       'Text Type',
       'Clause Type',
     ],
-    filterOrder: [
-      'type',
-      'repository_city',
-      'repository_name',
-      'text_date',
-      'text_type',
-      'place_type',
-      'status',
+    facets: [
+      { key: 'type', render: 'checkbox' },
+      { key: 'repository_city', render: 'checkbox' },
+      { key: 'repository_name', render: 'checkbox' },
+      { key: 'text_date', render: 'range' },
+      { key: 'text_type', render: 'checkbox' },
+      { key: 'place_type', render: 'checkbox' },
+      { key: 'status', render: 'checkbox' },
     ],
-    filterRenderMap: {
-      text_date: 'range',
-      place_type: 'checkbox',
-      text_type: 'checkbox',
-      type: 'checkbox',
-      repository_city: 'checkbox',
-      repository_name: 'checkbox',
-      status: 'checkbox',
-    },
   },
 } as const satisfies Record<ResultType, SearchResultConfig>;
+
+export function getFacetOrder(resultType: ResultType): readonly string[] {
+  return SEARCH_RESULT_CONFIG[resultType].facets.map((facet) => facet.key);
+}
+
+export function getFacetRenderMap(resultType: ResultType): Record<string, FacetRenderType> {
+  return Object.fromEntries(
+    SEARCH_RESULT_CONFIG[resultType].facets.map((facet) => [facet.key, facet.render])
+  ) as Record<string, FacetRenderType>;
+}
+
+export function getDefaultVisibleColumns(resultType: ResultType): readonly string[] {
+  return SEARCH_RESULT_CONFIG[resultType].defaultVisibleColumns;
+}
 
 export const resultTypeItems = SEARCH_RESULT_TYPES.map((value) => ({
   label: SEARCH_RESULT_CONFIG[value].label,

@@ -27,6 +27,36 @@ export const DEFAULT_QUERY: QueryState = {
 };
 
 const DATE_PARAM_KEYS = ['min_date', 'max_date', 'at_most_or_least', 'date_diff'] as const;
+const FACET_EXACT_SUFFIX = '_exact';
+
+type SearchParamReader = {
+  get(key: string): string | null;
+  getAll(key: string): string[];
+};
+
+function readDateParams(reader: SearchParamReader): Record<string, string> {
+  return DATE_PARAM_KEYS.reduce<Record<string, string>>((acc, key) => {
+    const value = reader.get(key)?.trim();
+    if (value) acc[key] = value;
+    return acc;
+  }, {});
+}
+
+function writeDateParams(params: URLSearchParams, dateParams: Record<string, string>): void {
+  for (const key of DATE_PARAM_KEYS) {
+    const value = dateParams[key];
+    if (value) params.set(key, value);
+  }
+}
+
+function parseNumericParam(value: string | null, fallback: number): number {
+  const parsed = Number.parseInt(value ?? '', 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function facetEntry(facetKey: string, value: string): string {
+  return `${facetKey}${FACET_EXACT_SUFFIX}:${value}`;
+}
 
 export function normalizeKeyword(keyword: string | null | undefined): string {
   return (keyword ?? '').trim().replace(/\s+/g, ' ');
@@ -37,11 +67,10 @@ export function normalizeQueryState(q: QueryState): QueryState {
     ...q,
     selected_facets: [...new Set(q.selected_facets.map((v) => v.trim()).filter(Boolean))].sort(),
     ordering: q.ordering?.trim() || null,
-    dateParams: DATE_PARAM_KEYS.reduce<Record<string, string>>((acc, key) => {
-      const value = q.dateParams[key]?.trim();
-      if (value) acc[key] = value;
-      return acc;
-    }, {}),
+    dateParams: readDateParams({
+      get: (key) => q.dateParams[key] ?? null,
+      getAll: () => [],
+    }),
   };
 }
 
@@ -52,10 +81,7 @@ export function buildQueryString(q: QueryState): string {
   p.set('limit', String(normalized.limit));
   p.set('offset', String(normalized.offset));
   if (normalized.ordering) p.set('ordering', normalized.ordering);
-  for (const k of DATE_PARAM_KEYS) {
-    const v = normalized.dateParams[k];
-    if (v) p.set(k, v);
-  }
+  writeDateParams(p, normalized.dateParams);
   return p.toString();
 }
 
@@ -71,12 +97,7 @@ export function buildApiUrl(base: string, q: QueryState, keyword?: string): stri
 
 export function parseDateParamsFromUrl(url: string, base: string): Record<string, string> {
   const u = new URL(url, base);
-  const out: Record<string, string> = {};
-  for (const k of DATE_PARAM_KEYS) {
-    const v = u.searchParams.get(k);
-    if (v) out[k] = v;
-  }
-  return out;
+  return readDateParams(u.searchParams);
 }
 
 export function stateFromUrl(url: string, base: string): QueryState {
@@ -84,21 +105,13 @@ export function stateFromUrl(url: string, base: string): QueryState {
   return stateFromSearchParams(u.searchParams);
 }
 
-export function stateFromSearchParams(sp: {
-  get(key: string): string | null;
-  getAll(key: string): string[];
-}): QueryState {
-  const out: Record<string, string> = {};
-  for (const k of DATE_PARAM_KEYS) {
-    const v = sp.get(k);
-    if (v) out[k] = v;
-  }
+export function stateFromSearchParams(sp: SearchParamReader): QueryState {
   return {
     selected_facets: sp.getAll('selected_facets'),
-    limit: parseInt(sp.get('limit') || '20', 10),
-    offset: parseInt(sp.get('offset') || '0', 10),
-    ordering: sp.get('ordering') || null,
-    dateParams: out,
+    limit: parseNumericParam(sp.get('limit'), 20),
+    offset: parseNumericParam(sp.get('offset'), 0),
+    ordering: sp.get('ordering')?.trim() || null,
+    dateParams: readDateParams(sp),
   };
 }
 
@@ -135,7 +148,7 @@ export function resolveFacetClick({
         },
       };
     case 'deselectFacet': {
-      const toRemove = `${action.facetKey}_exact:${action.value}`;
+      const toRemove = facetEntry(action.facetKey, action.value);
       return {
         type: 'query',
         value: {
@@ -146,9 +159,9 @@ export function resolveFacetClick({
       };
     }
     case 'selectFacet': {
-      const entry = `${action.facetKey}_exact:${action.value}`;
+      const entry = facetEntry(action.facetKey, action.value);
       const without = queryState.selected_facets.filter(
-        (s) => !s.startsWith(`${action.facetKey}_exact:`)
+        (s) => !s.startsWith(`${action.facetKey}${FACET_EXACT_SUFFIX}:`)
       );
       return {
         type: 'query',
@@ -163,7 +176,7 @@ export function resolveFacetClick({
 }
 
 export function getSelectedForFacet(selectedFacets: string[], facetKey: string): string | null {
-  const prefix = `${facetKey}_exact:`;
+  const prefix = `${facetKey}${FACET_EXACT_SUFFIX}:`;
   const found = selectedFacets.find((s) => s.startsWith(prefix));
   return found ? found.slice(prefix.length) : null;
 }

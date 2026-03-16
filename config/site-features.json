@@ -3,10 +3,10 @@
     "search": true,
     "collection": true,
     "lightbox": true,
-    "news": false,
-    "blogs": false,
+    "news": true,
+    "blogs": true,
     "featureArticles": true,
-    "events": false,
+    "events": true,
     "about": true
   },
   "sectionOrder": [

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { SEARCH_RESULT_CONFIG, type FacetRenderType, type ResultType } from '@/lib/search-types';
+import { getFacetOrder, getFacetRenderMap, type ResultType } from '@/lib/search-types';
 import { getSelectedForFacet, formatFacetTitle, type ActiveFacetTag } from '@/lib/search-query';
 import { useSearchContext } from '@/contexts/search-context';
 import {
@@ -15,7 +15,6 @@ import { FacetDateRangePanel } from '@/components/filters/FacetDateRangePanel';
 
 type DynamicFacetsProps = {
   facets: FacetData;
-  renderConfig: Record<string, FacetRenderType>;
   searchType: ResultType;
   keyword: string;
   onKeywordChange: (value: string) => void;
@@ -31,7 +30,6 @@ type DynamicFacetsProps = {
 
 export function DynamicFacets({
   facets,
-  renderConfig,
   searchType,
   keyword,
   onKeywordChange,
@@ -62,10 +60,8 @@ export function DynamicFacets({
     [onKeywordChange, onKeywordSubmit, onFacetClick]
   );
 
-  const allOrdered = React.useMemo<string[]>(
-    () => [...SEARCH_RESULT_CONFIG[searchType].filterOrder],
-    [searchType]
-  );
+  const allOrdered = React.useMemo<string[]>(() => [...getFacetOrder(searchType)], [searchType]);
+  const renderConfig = React.useMemo(() => getFacetRenderMap(searchType), [searchType]);
   const ordered = React.useMemo(
     () => (visibleFacets ? visibleFacets.filter((k) => allOrdered.includes(k)) : allOrdered),
     [visibleFacets, allOrdered]
@@ -75,6 +71,17 @@ export function DynamicFacets({
       ordered.map((facetKey) => [facetKey, getSelectedForFacet(selectedFacets, facetKey)])
     );
   }, [ordered, selectedFacets]);
+
+  const renderableFacets = React.useMemo(
+    () =>
+      ordered.flatMap((facetKey) => {
+        const facetValue = facets[facetKey];
+        const type = renderConfig[facetKey];
+        if (!facetValue || !type) return [];
+        return [{ facetKey, facetValue, type, title: formatFacetTitle(facetKey, searchType) }];
+      }),
+    [ordered, facets, renderConfig, searchType]
+  );
 
   if (!facets || Object.keys(facets).length === 0) {
     return null;
@@ -112,14 +119,7 @@ export function DynamicFacets({
       </div>
 
       <div className="space-y-4">
-        {ordered.map((facetKey) => {
-          const facetValue = facets[facetKey];
-          if (!facetValue) return null;
-          const type = renderConfig[facetKey];
-          if (!type) return null;
-
-          const title = formatFacetTitle(facetKey, searchType);
-
+        {renderableFacets.map(({ facetKey, facetValue, type, title }) => {
           if (facetValue.kind === 'range') {
             return (
               <FacetDateRangePanel
@@ -139,15 +139,13 @@ export function DynamicFacets({
             );
           }
 
-          const items = facetValue.items;
-
           return (
             <FacetPanel
               key={facetKey}
               id={facetKey}
               title={title}
-              total={items.length}
-              items={items}
+              total={facetValue.items.length}
+              items={facetValue.items}
               baseFacetURL={baseFacetURL}
               selectedValue={selectedByFacet[facetKey] ?? null}
               showSort={type !== 'toggle'}

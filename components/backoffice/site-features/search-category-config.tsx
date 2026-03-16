@@ -6,7 +6,12 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { SEARCH_RESULT_CONFIG, SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
+import {
+  getFacetOrder,
+  SEARCH_RESULT_CONFIG,
+  SEARCH_RESULT_TYPES,
+  type ResultType,
+} from '@/lib/search-types';
 import { formatFacetTitle } from '@/lib/search-query';
 import { DEFAULT_COLUMNS, type SearchCategoryConfig } from '@/lib/site-features';
 import { SortableCheckboxList, type SortableItem } from './sortable-checkbox-list';
@@ -23,7 +28,7 @@ function useColumnItems(type: ResultType): SortableItem[] {
 
 function useFacetItems(type: ResultType): SortableItem[] {
   return useMemo(() => {
-    const facets = SEARCH_RESULT_CONFIG[type].filterOrder;
+    const facets = getFacetOrder(type);
     return facets.map((f) => ({ id: f, label: formatFacetTitle(f, type) }));
   }, [type]);
 }

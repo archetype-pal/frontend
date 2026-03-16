@@ -38,6 +38,17 @@ function isTableOnlyType(type: ResultType): boolean {
   return TABLE_ONLY_TYPE_SET.has(type);
 }
 
+function getNextOrderingUrl(
+  ordering:
+    | { current: string; options: Array<{ name: string; text: string; url: string }> }
+    | undefined,
+  sortKey: string | undefined
+): string | undefined {
+  if (!ordering) return undefined;
+  const group = ordering.options.filter((option) => option.name.endsWith(sortKey ?? ''));
+  return group.find((option) => option.name !== ordering.current)?.url ?? group[0]?.url;
+}
+
 function ResultTypeToggle({
   selectedType,
   onChange,
@@ -130,16 +141,11 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
     (arg: string, action?: FacetClickAction) => {
       setQueryState((prev) => {
         const resolution = resolveFacetClick({ arg, action, queryState: prev, baseFacetURL });
-        switch (resolution.type) {
-          case 'keyword':
-            setDraftKeyword(resolution.value);
-            setSubmittedKeyword(resolution.value);
-            return prev;
-          case 'query':
-            return resolution.value;
-          case 'noop':
-            return prev;
+        if (resolution.type === 'keyword') {
+          setDraftKeyword(resolution.value);
+          setSubmittedKeyword(resolution.value);
         }
+        return resolution.type === 'query' ? resolution.value : prev;
       });
     },
     [baseFacetURL]
@@ -177,29 +183,24 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
 
   const handleRemoveTag = React.useCallback(
     (item: ActiveFacetTag) => {
-      if (item.facetKey === '__keyword__') {
-        handleClearKeyword();
-        return;
-      }
-      if (item.facetKey === '__date__') {
-        handleClearDateFilters();
-        return;
-      }
+      const specialRemovers: Record<string, () => void> = {
+        __keyword__: handleClearKeyword,
+        __date__: handleClearDateFilters,
+      };
+      const remove = specialRemovers[item.facetKey];
+      if (remove) return remove();
       handleFacetClick('', { type: 'deselectFacet', facetKey: item.facetKey, value: item.value });
     },
-    [handleClearKeyword, handleClearDateFilters, handleFacetClick]
+    [handleClearDateFilters, handleClearKeyword, handleFacetClick]
   );
 
   const handleSort = React.useCallback(
     (opts: { sortKey?: string; sortUrl?: string }) => {
       const { sortKey: ck, sortUrl } = opts;
-      if (sortUrl && data.ordering) {
-        const group = data.ordering.options.filter((o) => o.name.endsWith(ck ?? ''));
-        const next = group.find((o) => o.name !== data.ordering!.current) ?? group[0];
-        if (next?.url) {
-          setQueryState(stateFromUrl(next.url, baseFacetURL));
-          return;
-        }
+      const nextOrderingUrl = sortUrl ? getNextOrderingUrl(data.ordering, ck) : undefined;
+      if (nextOrderingUrl) {
+        setQueryState(stateFromUrl(nextOrderingUrl, baseFacetURL));
+        return;
       }
       if (sortUrl) {
         setQueryState(stateFromUrl(sortUrl, baseFacetURL));
@@ -215,7 +216,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
     [data.ordering, sortKey, ascending, baseFacetURL]
   );
 
-  const renderMap = SEARCH_RESULT_CONFIG[resultType].filterRenderMap;
   const showGridToggle = !isTableOnlyType(resultType);
   const resultCount = data.count;
 
@@ -257,7 +257,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           {Object.keys(data.facets).length > 0 ? (
             <DynamicFacets
               facets={data.facets}
-              renderConfig={renderMap}
               searchType={resultType}
               keyword={draftKeyword}
               activeTags={activeTags}

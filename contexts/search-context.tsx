@@ -2,9 +2,8 @@
 
 import * as React from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { fetchFacetsAndResults } from '@/utils/fetch-facets';
-import { buildApiUrl, DEFAULT_QUERY, getSuggestionsPool } from '@/lib/search-query';
-import { API_BASE_URL } from '@/lib/api-fetch';
+import { buildSearchRequestUrl, fetchFacetsAndResults, searchKeys } from '@/utils/fetch-facets';
+import { DEFAULT_QUERY, getSuggestionsPool } from '@/lib/search-query';
 
 type SearchContextType = {
   suggestionsPool: string[];
@@ -21,10 +20,9 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
 
   const loadGlobalSuggestions = React.useCallback(async () => {
     if (suggestionsPool.length > 0) return;
-    const base = `${API_BASE_URL}/api/v1/search/item-parts/facets`;
-    const url = buildApiUrl(base, { ...DEFAULT_QUERY, limit: 100 });
+    const url = buildSearchRequestUrl('manuscripts', { ...DEFAULT_QUERY, limit: 100 }, '');
     const pool = await queryClient.fetchQuery({
-      queryKey: ['search', 'global-suggestions'],
+      queryKey: searchKeys.globalSuggestions(),
       queryFn: async () => {
         const resp = await fetchFacetsAndResults('manuscripts', url);
         if (!resp || !Array.isArray(resp.results)) return [];

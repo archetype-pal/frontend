@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { SEARCH_RESULT_CONFIG, SEARCH_RESULT_TYPES, resultTypeItems } from './search-types';
+import {
+  getFacetOrder,
+  getFacetRenderMap,
+  SEARCH_RESULT_CONFIG,
+  SEARCH_RESULT_TYPES,
+  resultTypeItems,
+} from './search-types';
 
 describe('search type metadata', () => {
   it('defines canonical metadata for every result type', () => {
@@ -20,6 +26,16 @@ describe('search type metadata', () => {
   it('derives default visible columns from canonical metadata', () => {
     for (const type of SEARCH_RESULT_TYPES) {
       expect(SEARCH_RESULT_CONFIG[type].defaultVisibleColumns.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('derives facet order and render map from facet descriptors', () => {
+    for (const type of SEARCH_RESULT_TYPES) {
+      const facets = SEARCH_RESULT_CONFIG[type].facets;
+      expect(getFacetOrder(type)).toEqual(facets.map((facet) => facet.key));
+      expect(getFacetRenderMap(type)).toEqual(
+        Object.fromEntries(facets.map((facet) => [facet.key, facet.render]))
+      );
     }
   });
 });

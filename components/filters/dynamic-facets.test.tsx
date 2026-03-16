@@ -24,7 +24,6 @@ describe('DynamicFacets', () => {
     const html = renderToStaticMarkup(
       <DynamicFacets
         facets={facets}
-        renderConfig={{ repository_name: 'toggle' }}
         searchType="manuscripts"
         keyword=""
         activeTags={[
@@ -67,7 +66,6 @@ describe('DynamicFacets', () => {
       root.render(
         <DynamicFacets
           facets={facets}
-          renderConfig={{ repository_name: 'toggle' }}
           searchType="manuscripts"
           keyword=""
           activeTags={[
@@ -127,7 +125,6 @@ describe('DynamicFacets', () => {
       root.render(
         <DynamicFacets
           facets={facets}
-          renderConfig={{ repository_name: 'toggle' }}
           searchType="manuscripts"
           keyword="draft text"
           activeTags={activeTags}

@@ -1,5 +1,11 @@
 import { API_BASE_URL } from '@/lib/api-fetch';
 import { SEARCH_RESULT_CONFIG, type ResultType } from '@/lib/search-types';
+import {
+  buildApiUrl,
+  normalizeKeyword,
+  normalizeQueryState,
+  type QueryState,
+} from '@/lib/search-query';
 import type { FacetData, FacetListItem } from '@/types/facets';
 
 export type SearchResult = {
@@ -87,6 +93,31 @@ export const EMPTY_SEARCH_RESULT: SearchResult = {
   offset: 0,
 };
 
+export const searchKeys = {
+  all: ['search'] as const,
+  resultType: (resultType: ResultType) => [...searchKeys.all, resultType] as const,
+  facets: (resultType: ResultType, url: string) =>
+    [...searchKeys.resultType(resultType), 'facets', url] as const,
+  globalSuggestions: () => [...searchKeys.all, 'global-suggestions'] as const,
+} as const;
+
+export function getSearchBaseFacetUrl(resultType: ResultType): string {
+  const apiSegment = SEARCH_RESULT_CONFIG[resultType].apiPath;
+  return `${API_BASE_URL}/api/v1/search/${apiSegment}/facets`;
+}
+
+export function buildSearchRequestUrl(
+  resultType: ResultType,
+  queryState: QueryState,
+  keyword: string
+): string {
+  return buildApiUrl(
+    getSearchBaseFacetUrl(resultType),
+    normalizeQueryState(queryState),
+    normalizeKeyword(keyword)
+  );
+}
+
 /** Convert Meilisearch facetDistribution + facetStats into "fields" shape for normalizeFacets. */
 function meilisearchFacetsToFields(
   facetDistribution: Record<string, Record<string, number>> = {},
@@ -116,9 +147,7 @@ export async function fetchFacetsAndResults(
   url?: string,
   signal?: AbortSignal
 ): Promise<SearchResult | null> {
-  const apiSegment = SEARCH_RESULT_CONFIG[resultType].apiPath;
-
-  const endpoint = url || `${API_BASE_URL}/api/v1/search/${apiSegment}/facets`;
+  const endpoint = url || getSearchBaseFacetUrl(resultType);
 
   const parsed = new URL(endpoint);
   const limit = parseInt(parsed.searchParams.get('limit') || '20', 10);

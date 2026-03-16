@@ -1,4 +1,9 @@
-import { SEARCH_RESULT_CONFIG, SEARCH_RESULT_TYPES, type ResultType } from './search-types';
+import {
+  getDefaultVisibleColumns,
+  getFacetOrder,
+  SEARCH_RESULT_TYPES,
+  type ResultType,
+} from './search-types';
 
 export type SectionKey =
   | 'search'
@@ -65,7 +70,7 @@ export function normalizeSectionOrder(order: readonly SectionKey[] | undefined):
 }
 
 const DEFAULT_COLUMNS: Record<ResultType, string[]> = Object.fromEntries(
-  SEARCH_RESULT_TYPES.map((type) => [type, [...SEARCH_RESULT_CONFIG[type].defaultVisibleColumns]])
+  SEARCH_RESULT_TYPES.map((type) => [type, [...getDefaultVisibleColumns(type)]])
 ) as Record<ResultType, string[]>;
 
 export { DEFAULT_COLUMNS };
@@ -82,7 +87,7 @@ export function getDefaultConfig(): SiteFeaturesConfig {
       {
         enabled: true,
         visibleColumns: [...DEFAULT_COLUMNS[type]],
-        visibleFacets: [...SEARCH_RESULT_CONFIG[type].filterOrder],
+        visibleFacets: [...getFacetOrder(type)],
       },
     ])
   ) as Record<ResultType, SearchCategoryConfig>;
