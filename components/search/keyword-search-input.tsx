@@ -6,13 +6,14 @@ import { Input } from '@/components/ui/input';
 
 /** Shared hook for keyword suggestions from a pool (used by Header and DynamicFacets). */
 export function useKeywordSuggestions(keyword: string, pool: string[]) {
+  const deferredKeyword = React.useDeferredValue(keyword);
   return React.useMemo(() => {
-    if (!keyword) return [];
-    const low = keyword.toLowerCase();
+    if (!deferredKeyword) return [];
+    const low = deferredKeyword.toLowerCase();
     return Array.from(
       new Set(pool.filter((s) => s.toLowerCase().startsWith(low) && s.toLowerCase() !== low))
     ).slice(0, 5);
-  }, [keyword, pool]);
+  }, [deferredKeyword, pool]);
 }
 
 type KeywordSearchInputProps = {

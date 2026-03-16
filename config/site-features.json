@@ -98,14 +98,7 @@
     },
     "texts": {
       "enabled": true,
-      "visibleColumns": [
-        "Repository City",
-        "Repository",
-        "Shelfmark",
-        "Text Type",
-        "MS Date",
-        "Thumbnail"
-      ],
+      "visibleColumns": ["Repository City", "Repository", "Shelfmark", "Text Type", "MS Date"],
       "visibleFacets": [
         "text_date",
         "text_type",

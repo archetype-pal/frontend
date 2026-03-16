@@ -4,46 +4,72 @@ import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Grid, List } from 'lucide-react';
-import { ResultTypeToggle, type ResultType } from '@/components/search/search-result-types';
 import { ResultsTable } from '@/components/search/results-table';
 import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';
 import { useSearchContext } from '@/contexts/search-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
-import { FILTER_RENDER_MAP } from '@/lib/filter-config';
+import { SEARCH_RESULT_CONFIG, resultTypeItems, type ResultType } from '@/lib/search-types';
 import { Pagination } from '@/components/search/paginated-search';
 import { useSearchResults } from '@/hooks/search/use-search-results';
-import type { FacetClickOpts } from '@/types/facets';
-import type { ImageListItem } from '@/types/image';
-import type { GraphListItem } from '@/types/graph';
-import type { ManuscriptListItem } from '@/types/manuscript';
-import type { HandListItem } from '@/types/hand';
-import type { ScribeListItem } from '@/types/scribe';
-import type { TextListItem } from '@/types/text';
-import type { PersonListItem } from '@/types/person';
-import type { PlaceListItem } from '@/types/place';
+import type { FacetClickAction } from '@/types/facets';
+import type { GraphListItem, ImageListItem, ResultMap } from '@/types/search';
 import {
+  buildActiveQueryTags,
   buildQueryString,
-  stateFromUrl,
-  stateFromSearchParams,
-  parseDateParamsFromUrl,
-  formatTypeLabel,
-  filterResultsByKeyword,
+  clearAllFacetFilters,
+  clearDateFilters,
+  type ActiveFacetTag,
   getSuggestionsPool,
   type QueryState,
+  resolveFacetClick,
+  stateFromSearchParams,
+  stateFromUrl,
+  withLimit,
+  withOffset,
 } from '@/lib/search-query';
 
-type ResultListItem =
-  | ImageListItem
-  | GraphListItem
-  | ManuscriptListItem
-  | HandListItem
-  | ScribeListItem
-  | TextListItem
-  | PersonListItem
-  | PlaceListItem;
+type ResultListItem = ResultMap[ResultType];
 
-const TABLE_ONLY_TYPES: readonly string[] = ['manuscripts', 'texts', 'people', 'places'];
+const TABLE_ONLY_TYPES: readonly ResultType[] = ['manuscripts', 'texts', 'people', 'places'];
+const TABLE_ONLY_TYPE_SET = new Set<ResultType>(TABLE_ONLY_TYPES);
+
+function isTableOnlyType(type: ResultType): boolean {
+  return TABLE_ONLY_TYPE_SET.has(type);
+}
+
+function ResultTypeToggle({
+  selectedType,
+  onChange,
+  enabledTypes,
+}: {
+  selectedType: ResultType;
+  onChange: (next: ResultType) => void;
+  enabledTypes?: ResultType[];
+}) {
+  const items = enabledTypes
+    ? resultTypeItems.filter((item) => enabledTypes.includes(item.value))
+    : resultTypeItems;
+
+  return (
+    <div className="flex w-full gap-1.5 my-0" role="tablist" aria-label="Search result type">
+      {items.map((item) => (
+        <Button
+          key={item.value}
+          type="button"
+          className="flex-1 min-w-0"
+          variant={selectedType === item.value ? 'toggle' : 'outline'}
+          size="sm"
+          onClick={() => onChange(item.value)}
+          role="tab"
+          aria-selected={selectedType === item.value}
+        >
+          {item.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
 
 export function SearchPage({ resultType: initialType }: { resultType?: ResultType } = {}) {
   const searchParams = useSearchParams();
@@ -52,9 +78,15 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const [queryState, setQueryState] = React.useState<QueryState>(() =>
     stateFromSearchParams(searchParams)
   );
+  const [draftKeyword, setDraftKeyword] = React.useState<string>(
+    () => searchParams.get('keyword') ?? ''
+  );
+  const [submittedKeyword, setSubmittedKeyword] = React.useState<string>(
+    () => searchParams.get('keyword') ?? ''
+  );
   const [sortKey, setSortKey] = React.useState<string | null>(null);
   const [ascending, setAscending] = React.useState(true);
-  const { keyword, setKeyword, setSuggestionsPool } = useSearchContext();
+  const { setSuggestionsPool } = useSearchContext();
   const { enabledCategories, getCategoryConfig } = useSiteFeatures();
   const categoryConfig = getCategoryConfig(resultType);
 
@@ -64,28 +96,26 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
 
   React.useEffect(() => {
     const kw = searchParams.get('keyword');
-    setKeyword(kw ?? '');
-  }, [searchParams, setKeyword]);
+    const value = kw ?? '';
+    setDraftKeyword(value);
+    setSubmittedKeyword(value);
+  }, [searchParams]);
 
   React.useEffect(() => {
     const qs = buildQueryString(queryState);
     const params = new URLSearchParams(qs);
-    if (keyword) params.set('keyword', keyword);
+    if (submittedKeyword) params.set('keyword', submittedKeyword);
     const path = '/search/' + resultType + (params.toString() ? '?' + params.toString() : '');
     window.history.replaceState(null, '', path);
-  }, [resultType, queryState, keyword]);
+  }, [resultType, queryState, submittedKeyword]);
 
   const handleResultTypeChange = React.useCallback((next: ResultType) => {
     setResultType(next);
     setQueryState((prev) => ({ ...prev, selected_facets: [], dateParams: {}, offset: 0 }));
   }, []);
 
-  const { hasMap, baseFacetURL, data } = useSearchResults(resultType, queryState);
-
-  const filtered = React.useMemo(
-    () => filterResultsByKeyword(data.results, keyword),
-    [data.results, keyword]
-  );
+  const { baseFacetURL, data } = useSearchResults(resultType, queryState, submittedKeyword);
+  const filtered = data.results;
 
   React.useEffect(() => {
     setSuggestionsPool(getSuggestionsPool(data.results));
@@ -93,55 +123,72 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   }, [data.results, setSuggestionsPool]);
 
   React.useEffect(() => {
-    if (TABLE_ONLY_TYPES.includes(resultType) && viewMode !== 'table') setViewMode('table');
+    if (isTableOnlyType(resultType) && viewMode !== 'table') setViewMode('table');
   }, [resultType, viewMode]);
 
   const handleFacetClick = React.useCallback(
-    (arg: string, opts?: FacetClickOpts) => {
-      if (!arg.startsWith('http') && !arg.startsWith('/')) {
-        setKeyword(arg);
-        return;
-      }
-      if (opts?.merge) {
-        setQueryState((prev) => ({
-          ...prev,
-          dateParams: parseDateParamsFromUrl(arg, baseFacetURL),
-          offset: 0,
-        }));
-        return;
-      }
-      if (opts?.isDeselect && opts.facetKey != null && opts.value != null) {
-        const toRemove = `${opts.facetKey}_exact:${opts.value}`;
-        setQueryState((prev) => ({
-          ...prev,
-          selected_facets: prev.selected_facets.filter((s) => s !== toRemove),
-          offset: 0,
-        }));
-        return;
-      }
-      if (opts?.facetKey != null && opts.value != null) {
-        const entry = `${opts.facetKey}_exact:${opts.value}`;
-        setQueryState((prev) => {
-          const key = opts.facetKey!;
-          const without = prev.selected_facets.filter((s) => !s.startsWith(`${key}_exact:`));
-          return {
-            ...prev,
-            selected_facets: without.includes(entry) ? without : [...without, entry],
-            offset: 0,
-          };
-        });
-      }
+    (arg: string, action?: FacetClickAction) => {
+      setQueryState((prev) => {
+        const resolution = resolveFacetClick({ arg, action, queryState: prev, baseFacetURL });
+        switch (resolution.type) {
+          case 'keyword':
+            setDraftKeyword(resolution.value);
+            setSubmittedKeyword(resolution.value);
+            return prev;
+          case 'query':
+            return resolution.value;
+          case 'noop':
+            return prev;
+        }
+      });
     },
-    [baseFacetURL, setKeyword]
+    [baseFacetURL]
   );
 
   const handlePage = React.useCallback((page: number) => {
-    setQueryState((prev) => ({ ...prev, offset: (page - 1) * prev.limit }));
+    setQueryState((prev) => withOffset(prev, (page - 1) * prev.limit));
   }, []);
 
   const handleLimitChange = React.useCallback((newLimit: number) => {
-    setQueryState((prev) => ({ ...prev, limit: newLimit, offset: 0 }));
+    setQueryState((prev) => withLimit(prev, newLimit));
   }, []);
+
+  const handleClearAllFilters = React.useCallback(() => {
+    setQueryState((prev) => clearAllFacetFilters(prev));
+  }, []);
+
+  const handleClearKeyword = React.useCallback(() => {
+    setDraftKeyword('');
+    setSubmittedKeyword('');
+  }, []);
+
+  const handleClearDateFilters = React.useCallback(() => {
+    setQueryState((prev) => clearDateFilters(prev));
+  }, []);
+
+  const activeTags = React.useMemo<ActiveFacetTag[]>(() => {
+    return buildActiveQueryTags({
+      submittedKeyword,
+      dateParams: queryState.dateParams,
+      selectedFacets: queryState.selected_facets,
+      searchType: resultType,
+    });
+  }, [submittedKeyword, queryState.dateParams, queryState.selected_facets, resultType]);
+
+  const handleRemoveTag = React.useCallback(
+    (item: ActiveFacetTag) => {
+      if (item.facetKey === '__keyword__') {
+        handleClearKeyword();
+        return;
+      }
+      if (item.facetKey === '__date__') {
+        handleClearDateFilters();
+        return;
+      }
+      handleFacetClick('', { type: 'deselectFacet', facetKey: item.facetKey, value: item.value });
+    },
+    [handleClearKeyword, handleClearDateFilters, handleFacetClick]
+  );
 
   const handleSort = React.useCallback(
     (opts: { sortKey?: string; sortUrl?: string }) => {
@@ -168,21 +215,20 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
     [data.ordering, sortKey, ascending, baseFacetURL]
   );
 
-  const renderMap = FILTER_RENDER_MAP[resultType] ?? {};
-  const showGridToggle = !TABLE_ONLY_TYPES.includes(resultType);
-  const resultCount = keyword ? filtered.length : data.count;
+  const renderMap = SEARCH_RESULT_CONFIG[resultType].filterRenderMap;
+  const showGridToggle = !isTableOnlyType(resultType);
+  const resultCount = data.count;
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       <header className="shrink-0 px-6 py-3 border-b bg-white flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-lg font-semibold shrink-0">
-          Search: {formatTypeLabel(resultType)} ({resultCount})
+          Search: {SEARCH_RESULT_CONFIG[resultType].label} ({resultCount})
         </h1>
         <div className="flex-1 min-w-0 flex items-center px-2">
           <ResultTypeToggle
             selectedType={resultType}
             onChange={handleResultTypeChange}
-            compact
             enabledTypes={enabledCategories}
           />
         </div>
@@ -208,11 +254,18 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
 
       <div className="flex flex-1 min-h-0">
         <aside className="w-64 shrink-0 border-r bg-white py-4 px-4 overflow-y-auto">
-          {hasMap && Object.keys(data.facets).length > 0 ? (
+          {Object.keys(data.facets).length > 0 ? (
             <DynamicFacets
               facets={data.facets}
-              renderConfig={{ ...renderMap, searchType: resultType }}
+              renderConfig={renderMap}
+              searchType={resultType}
+              keyword={draftKeyword}
+              activeTags={activeTags}
+              onKeywordChange={setDraftKeyword}
+              onKeywordSubmit={setSubmittedKeyword}
+              onRemoveTag={handleRemoveTag}
               selectedFacets={queryState.selected_facets}
+              onClearAllFilters={handleClearAllFilters}
               onFacetClick={handleFacetClick}
               baseFacetURL={baseFacetURL}
               visibleFacets={categoryConfig.visibleFacets}
@@ -224,21 +277,21 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
 
         <main className="flex-1 flex flex-col min-w-0">
           <div className="p-4 overflow-auto flex-1 flex flex-col gap-4">
-            {hasMap && filtered.length > 0 ? (
+            {filtered.length > 0 ? (
               viewMode === 'table' ? (
                 <ResultsTable
                   resultType={resultType}
                   results={filtered as ResultListItem[]}
                   ordering={data.ordering}
                   onSort={handleSort}
-                  highlightKeyword={keyword}
+                  highlightKeyword={submittedKeyword}
                   visibleColumns={categoryConfig.visibleColumns}
                 />
               ) : resultType === 'images' || resultType === 'graphs' ? (
                 <SearchGrid
                   results={filtered as (ImageListItem | GraphListItem)[]}
                   resultType={resultType}
-                  highlightKeyword={keyword}
+                  highlightKeyword={submittedKeyword}
                 />
               ) : (
                 <p className="text-center text-sm text-muted-foreground py-8">

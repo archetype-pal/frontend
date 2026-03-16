@@ -4,17 +4,16 @@
 
 The canonical defaults for search category visibility and presentation are defined in:
 
-- `lib/site-features.ts` (`getDefaultConfig()` and `DEFAULT_COLUMNS`)
-- `lib/filter-order.ts` (`FILTER_ORDER_MAP`)
-- `lib/filter-config.ts` (`FILTER_RENDER_MAP`)
+- `lib/search-types.ts` (`SEARCH_RESULT_CONFIG`, `getDefaultVisibleColumns()`)
+- `lib/site-features.ts` (`getDefaultConfig()` consumes derived defaults)
+- `lib/search-types.ts` (`getFilterOrder()`, `getFilterRenderMap()`)
 
 `config/site-features.json` is an environment/runtime override layer and should only contain values
 that intentionally differ from canonical defaults.
 
 ## Ownership Rules
 
-- Add new search category defaults in TypeScript first (`site-features.ts`, `filter-order.ts`,
-  `filter-config.ts`).
+- Add new search category defaults in TypeScript first (`search-types.ts`, `site-features.ts`).
 - Keep `site-features.json` minimal and explicit; do not copy full defaults unless required.
 - When changing default columns/facets, update both TS defaults and any corresponding runtime
   overrides.

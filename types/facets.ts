@@ -1,25 +1,25 @@
-export type FacetItem = {
-  text?: string;
-  label?: string;
+export type FacetListItem = {
+  label: string;
   count: number;
-  narrow_url?: string;
-  href?: string;
-  value?: string;
-  range?: [number, number];
-  defaultValue?: [number, number];
-  active?: boolean;
-
-  options?: {
-    date_min?: FacetItem[];
-    date_max?: FacetItem[];
-  };
+  value: string;
+  href: string;
 };
 
-export type FacetData = Record<string, FacetItem[] | FacetItem>;
-
-export type FacetClickOpts = {
-  merge?: boolean;
-  facetKey?: string;
-  value?: string;
-  isDeselect?: boolean;
+export type FacetListValue = {
+  kind: 'list';
+  items: FacetListItem[];
 };
+
+export type FacetRangeValue = {
+  kind: 'range';
+  range: [number, number];
+  defaultValue: [number, number];
+};
+
+export type FacetValue = FacetListValue | FacetRangeValue;
+export type FacetData = Record<string, FacetValue>;
+
+export type FacetClickAction =
+  | { type: 'mergeDateParams' }
+  | { type: 'selectFacet'; facetKey: string; value: string }
+  | { type: 'deselectFacet'; facetKey: string; value: string };

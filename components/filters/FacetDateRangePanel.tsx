@@ -25,6 +25,7 @@ type FacetDateRangePanelProps = {
 export function FacetDateRangePanel({
   id,
   title = 'Text Date',
+  range,
   defaultValue = [1094, 1250],
   precisionOptions = [
     { label: 'None', value: ' ' },
@@ -33,14 +34,20 @@ export function FacetDateRangePanel({
   ],
   onSearch,
 }: FacetDateRangePanelProps) {
+  const normalizedDefaultValue = range ?? defaultValue;
   const [expanded, setExpanded] = React.useState<boolean>(true);
-  const [sliderValue, setSliderValue] = React.useState<[number, number]>(defaultValue);
+  const [sliderValue, setSliderValue] = React.useState<[number, number]>(normalizedDefaultValue);
   const [precision, setPrecision] = React.useState<string>(precisionOptions[0].value);
   const [year, setYear] = React.useState<number | ''>('');
   const [searchInput, setSearchInput] = React.useState<string>(
-    `${defaultValue[0]}x${defaultValue[1]}`
+    `${normalizedDefaultValue[0]}x${normalizedDefaultValue[1]}`
   );
-  const [endpointMin, endpointMax] = defaultValue;
+  const [endpointMin, endpointMax] = normalizedDefaultValue;
+
+  React.useEffect(() => {
+    setSliderValue(normalizedDefaultValue);
+    setSearchInput(`${normalizedDefaultValue[0]}x${normalizedDefaultValue[1]}`);
+  }, [normalizedDefaultValue]);
 
   const handleSliderChange = (value: number[]) => {
     const [newMin, newMax] = [value[0], value[1]] as [number, number];
@@ -56,7 +63,7 @@ export function FacetDateRangePanel({
     if (minStr != null && maxStr != null) {
       const parsedMin = parseInt(minStr, 10);
       const parsedMax = parseInt(maxStr, 10);
-      const [fixedMin, fixedMax] = defaultValue;
+      const [fixedMin, fixedMax] = normalizedDefaultValue;
 
       if (
         !Number.isNaN(parsedMin) &&

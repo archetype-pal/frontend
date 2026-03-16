@@ -6,24 +6,11 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
-import { FILTER_ORDER_MAP } from '@/lib/filter-order';
+import { SEARCH_RESULT_CONFIG, SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
 import { formatFacetTitle } from '@/lib/search-query';
 import { DEFAULT_COLUMNS, type SearchCategoryConfig } from '@/lib/site-features';
 import { SortableCheckboxList, type SortableItem } from './sortable-checkbox-list';
 import { useModelLabels } from '@/contexts/model-labels-context';
-
-const CATEGORY_LABELS: Record<ResultType, string> = {
-  manuscripts: 'Manuscripts',
-  images: 'Images',
-  scribes: 'Scribes',
-  hands: 'Hands',
-  graphs: 'Graphs',
-  texts: 'Texts',
-  clauses: 'Clauses',
-  people: 'People',
-  places: 'Places',
-};
 
 type Props = {
   categories: Record<ResultType, SearchCategoryConfig>;
@@ -36,7 +23,7 @@ function useColumnItems(type: ResultType): SortableItem[] {
 
 function useFacetItems(type: ResultType): SortableItem[] {
   return useMemo(() => {
-    const facets = FILTER_ORDER_MAP[type] ?? [];
+    const facets = SEARCH_RESULT_CONFIG[type].filterOrder;
     return facets.map((f) => ({ id: f, label: formatFacetTitle(f, type) }));
   }, [type]);
 }
@@ -44,10 +31,16 @@ function useFacetItems(type: ResultType): SortableItem[] {
 export function SearchCategoryConfigPanel({ categories, onChange }: Props) {
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const { getLabel } = useModelLabels();
-  const categoryLabels: Record<ResultType, string> = {
-    ...CATEGORY_LABELS,
-    manuscripts: getLabel('appManuscripts'),
-  };
+  const categoryLabels: Record<ResultType, string> = useMemo(
+    () =>
+      Object.fromEntries(
+        SEARCH_RESULT_TYPES.map((type) => [
+          type,
+          type === 'manuscripts' ? getLabel('appManuscripts') : SEARCH_RESULT_CONFIG[type].label,
+        ])
+      ) as Record<ResultType, string>,
+    [getLabel]
+  );
 
   return (
     <Card>

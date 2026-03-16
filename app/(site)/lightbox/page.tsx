@@ -95,8 +95,8 @@ function LightboxPageContent() {
 
         type ResolvedItem =
           | CollectionItem
-          | import('@/types/image').ImageListItem
-          | import('@/types/graph').GraphListItem;
+          | import('@/types/search').ImageListItem
+          | import('@/types/search').GraphListItem;
         const itemsToLoad: ResolvedItem[] = [];
 
         if (imageId) {

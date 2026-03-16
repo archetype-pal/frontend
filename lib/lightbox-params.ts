@@ -1,6 +1,5 @@
 import type { CollectionItem } from '@/contexts/collection-context';
-import type { ImageListItem } from '@/types/image';
-import type { GraphListItem } from '@/types/graph';
+import type { GraphListItem, ImageListItem } from '@/types/search';
 import { apiFetch } from '@/lib/api-fetch';
 
 type ItemType = 'image' | 'graph';

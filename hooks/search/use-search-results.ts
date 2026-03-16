@@ -1,72 +1,55 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { API_BASE_URL } from '@/lib/api-fetch';
-import { buildApiUrl, type QueryState } from '@/lib/search-query';
-import { searchKeys } from '@/lib/search/query-keys';
-import { fetchFacetsAndResults } from '@/utils/fetch-facets';
-import type { FacetData } from '@/types/facets';
+import { SEARCH_RESULT_CONFIG, type ResultType } from '@/lib/search-types';
+import {
+  buildApiUrl,
+  normalizeKeyword,
+  normalizeQueryState,
+  type QueryState,
+} from '@/lib/search-query';
+import {
+  EMPTY_SEARCH_RESULT,
+  fetchFacetsAndResults,
+  type SearchResult,
+} from '@/utils/fetch-facets';
 
-type SearchData = {
-  facets: FacetData;
-  results: unknown[];
-  count: number;
-  next: string | null;
-  previous: string | null;
-  limit: number;
-  offset: number;
-  ordering?: { current: string; options: Array<{ name: string; text: string; url: string }> };
-};
+const searchKeys = {
+  all: ['search'] as const,
+  resultType: (resultType: ResultType) => [...searchKeys.all, resultType] as const,
+  facets: (resultType: ResultType, querySignature: string) =>
+    [...searchKeys.resultType(resultType), 'facets', querySignature] as const,
+} as const;
 
-const EMPTY: SearchData = {
-  facets: {},
-  results: [],
-  count: 0,
-  next: null,
-  previous: null,
-  limit: 20,
-  offset: 0,
-};
+export function useSearchResults(resultType: ResultType, queryState: QueryState, keyword: string) {
+  const apiSegment = SEARCH_RESULT_CONFIG[resultType].apiPath;
+  const baseFacetURL = `${API_BASE_URL}/api/v1/search/${apiSegment}/facets`;
+  const normalizedQueryState = useMemo(() => normalizeQueryState(queryState), [queryState]);
+  const normalizedKeyword = useMemo(() => normalizeKeyword(keyword), [keyword]);
 
-export function useSearchResults(resultType: string, queryState: QueryState) {
-  const apiSegment = RESULT_TYPE_API_MAP[resultType];
-  const hasMap = Boolean(apiSegment);
-  const baseFacetURL = apiSegment ? `${API_BASE_URL}/api/v1/search/${apiSegment}/facets` : '';
+  const apiUrl = useMemo(
+    () => buildApiUrl(baseFacetURL, normalizedQueryState, normalizedKeyword),
+    [baseFacetURL, normalizedQueryState, normalizedKeyword]
+  );
 
-  const apiUrl = useMemo(() => {
-    if (!baseFacetURL) return '';
-    return buildApiUrl(baseFacetURL, queryState);
-  }, [baseFacetURL, queryState]);
-
-  const query = useQuery({
-    queryKey: searchKeys.facets(resultType, queryState),
-    queryFn: async () => {
-      if (!hasMap || !apiUrl) return EMPTY;
-      const response = await fetchFacetsAndResults(resultType, apiUrl);
-      if (!response.ok) return EMPTY;
-      const { facets, results, count, next, previous, limit, offset, ordering } = response;
-      return {
-        facets,
-        results,
-        count,
-        next,
-        previous,
-        limit,
-        offset,
-        ordering,
-      } satisfies SearchData;
+  const query = useQuery<SearchResult>({
+    queryKey: searchKeys.facets(resultType, apiUrl),
+    queryFn: async ({ signal }) => {
+      const response = await fetchFacetsAndResults(resultType, apiUrl, signal);
+      return response ?? EMPTY_SEARCH_RESULT;
     },
-    enabled: hasMap && !!apiUrl,
+    enabled: !!apiUrl,
     staleTime: 10_000,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
 
   return {
-    hasMap,
     baseFacetURL,
     apiUrl,
-    data: query.data ?? EMPTY,
+    data: query.data ?? EMPTY_SEARCH_RESULT,
     isFetching: query.isFetching,
   };
 }

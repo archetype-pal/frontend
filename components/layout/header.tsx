@@ -50,13 +50,14 @@ export default function Header() {
     localStorage.setItem(BANNER_VISIBLE_KEY, String(next));
   };
   const router = useRouter();
-  const { keyword, setKeyword, suggestionsPool, loadGlobalSuggestions } = useSearchContext();
+  const { suggestionsPool, loadGlobalSuggestions } = useSearchContext();
   const isOnSearchPage = pathname?.startsWith('/search') ?? false;
-  const headerSearchValue = isOnSearchPage ? '' : keyword;
+  const [headerKeyword, setHeaderKeyword] = useState('');
+  const headerSearchValue = isOnSearchPage ? '' : headerKeyword;
   const suggestions = useKeywordSuggestions(headerSearchValue, suggestionsPool);
 
   const handleTriggerSearch = (kw: string) => {
-    setKeyword(kw);
+    setHeaderKeyword(kw);
     if (!isOnSearchPage) {
       const query = kw.trim() ? `?keyword=${encodeURIComponent(kw.trim())}` : '';
       router.push(`/search/manuscripts${query}`);
@@ -64,7 +65,7 @@ export default function Header() {
   };
 
   const handleHeaderSearchChange = (value: string) => {
-    if (!isOnSearchPage) setKeyword(value);
+    if (!isOnSearchPage) setHeaderKeyword(value);
   };
 
   const handleHeaderSearchFocus = () => {

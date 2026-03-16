@@ -7,16 +7,28 @@ interface HighlightProps {
   keyword: string;
 }
 
-export function Highlight({ text, keyword }: HighlightProps) {
-  if (!keyword) return <>{text}</>;
-  const esc = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-  const re = new RegExp(`(${esc})`, 'gi');
-  const parts = text.split(re);
+function HighlightComponent({ text, keyword }: HighlightProps) {
+  const trimmedKeyword = keyword.trim();
+  const parts = React.useMemo(() => {
+    if (!trimmedKeyword) return [text];
+    const escaped = trimmedKeyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const regex = new RegExp(`(${escaped})`, 'gi');
+    return text.split(regex);
+  }, [text, trimmedKeyword]);
+
+  if (!trimmedKeyword) return <>{text}</>;
+  const lowKeyword = trimmedKeyword.toLowerCase();
   return (
     <>
       {parts.map((part, i) =>
-        re.test(part) ? <mark key={i}>{part}</mark> : <span key={i}>{part}</span>
+        part.toLowerCase() === lowKeyword ? (
+          <mark key={i}>{part}</mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
       )}
     </>
   );
 }
+
+export const Highlight = React.memo(HighlightComponent);

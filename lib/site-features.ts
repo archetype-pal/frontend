@@ -1,5 +1,4 @@
-import { SEARCH_RESULT_TYPES, type ResultType } from './search-types';
-import { FILTER_ORDER_MAP } from './filter-order';
+import { SEARCH_RESULT_CONFIG, SEARCH_RESULT_TYPES, type ResultType } from './search-types';
 
 export type SectionKey =
   | 'search'
@@ -65,68 +64,9 @@ export function normalizeSectionOrder(order: readonly SectionKey[] | undefined):
   return ordered;
 }
 
-const DEFAULT_COLUMNS: Record<ResultType, string[]> = {
-  manuscripts: [
-    'Repository City',
-    'Repository',
-    'Shelfmark',
-    'Catalogue Num.',
-    'Text Date',
-    'Doc. Type',
-    'Images',
-  ],
-  images: [
-    'Repository City',
-    'Repository',
-    'Shelfmark',
-    'Category Number',
-    'Doc. Type',
-    'Thumbnail',
-    'Ann.',
-  ],
-  scribes: ['Scribe Name', 'Date', 'Scriptorium'],
-  hands: [
-    'Hand Title',
-    'Repository City',
-    'Repository',
-    'Shelfmark',
-    'Place',
-    'Date',
-    'Catalogue Num.',
-  ],
-  graphs: ['Repository City', 'Repository', 'Shelfmark', 'Document Date', 'Allograph', 'Thumbnail'],
-  texts: ['Repository City', 'Repository', 'Shelfmark', 'Text Type', 'MS Date', 'Thumbnail'],
-  clauses: [
-    'Cat. Num.',
-    'Document Type',
-    'Repository City',
-    'Repository',
-    'Shelfmark',
-    'Text Date',
-    'Text Type',
-    'Clause Type',
-  ],
-  people: [
-    'Cat. Num.',
-    'Document Type',
-    'Repository City',
-    'Repository',
-    'Shelfmark',
-    'Text Date',
-    'Text Type',
-    'Category',
-  ],
-  places: [
-    'Cat. Num.',
-    'Document Type',
-    'Repository City',
-    'Repository',
-    'Shelfmark',
-    'Text Date',
-    'Text Type',
-    'Clause Type',
-  ],
-};
+const DEFAULT_COLUMNS: Record<ResultType, string[]> = Object.fromEntries(
+  SEARCH_RESULT_TYPES.map((type) => [type, [...SEARCH_RESULT_CONFIG[type].defaultVisibleColumns]])
+) as Record<ResultType, string[]>;
 
 export { DEFAULT_COLUMNS };
 
@@ -141,8 +81,8 @@ export function getDefaultConfig(): SiteFeaturesConfig {
       type,
       {
         enabled: true,
-        visibleColumns: DEFAULT_COLUMNS[type],
-        visibleFacets: FILTER_ORDER_MAP[type] ?? [],
+        visibleColumns: [...DEFAULT_COLUMNS[type]],
+        visibleFacets: [...SEARCH_RESULT_CONFIG[type].filterOrder],
       },
     ])
   ) as Record<ResultType, SearchCategoryConfig>;

@@ -1,9 +1,8 @@
-import { normalizeFacets } from './normalise-facets';
-import { RESULT_TYPE_API_MAP } from '@/lib/api-path-map';
 import { API_BASE_URL } from '@/lib/api-fetch';
-import type { FacetData } from '@/types/facets';
+import { SEARCH_RESULT_CONFIG, type ResultType } from '@/lib/search-types';
+import type { FacetData, FacetListItem } from '@/types/facets';
 
-export type SafeSearchResponse = {
+export type SearchResult = {
   facets: FacetData;
   results: unknown[];
   count: number;
@@ -11,11 +10,74 @@ export type SafeSearchResponse = {
   previous: string | null;
   limit: number;
   offset: number;
-  ok: boolean;
   ordering?: { current: string; options: Array<{ name: string; text: string; url: string }> };
 };
 
-const BAD_RESPONSE: SafeSearchResponse = {
+type FacetBucket = {
+  text?: unknown;
+  label?: unknown;
+  count?: unknown;
+  value?: unknown;
+  narrow_url?: unknown;
+  href?: unknown;
+};
+
+function toNumberList(input: unknown): number[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((entry) =>
+      typeof entry === 'object' && entry != null ? (entry as { text?: unknown }).text : null
+    )
+    .filter((value): value is number => typeof value === 'number');
+}
+
+function toListItems(input: unknown): FacetListItem[] {
+  if (!Array.isArray(input)) return [];
+  return input.flatMap((entry): FacetListItem[] => {
+    if (entry == null || typeof entry !== 'object') return [];
+    const bucket = entry as FacetBucket;
+    const rawLabel = bucket.text ?? bucket.label ?? '';
+    const label = String(rawLabel).trim();
+    if (!label) return [];
+    const value = String(bucket.value ?? rawLabel).trim();
+    return [
+      {
+        label,
+        count: typeof bucket.count === 'number' ? bucket.count : 0,
+        value,
+        href: String(bucket.narrow_url ?? bucket.href ?? ''),
+      },
+    ];
+  });
+}
+
+function normalizeFacets(fields: Record<string, unknown>): FacetData {
+  const facets: FacetData = {};
+  const minDates = toNumberList(fields.date_min);
+  const maxDates = toNumberList(fields.date_max);
+
+  if (minDates.length > 0 && maxDates.length > 0) {
+    const min = minDates.reduce((acc, cur) => Math.min(acc, cur), minDates[0]);
+    const max = maxDates.reduce((acc, cur) => Math.max(acc, cur), maxDates[0]);
+    facets.text_date = {
+      kind: 'range',
+      range: [min, max],
+      defaultValue: [min, max],
+    };
+  }
+
+  for (const [key, value] of Object.entries(fields)) {
+    if (key === 'date_min' || key === 'date_max' || key === 'text_date') continue;
+    const items = toListItems(value);
+    if (items.length > 0) {
+      facets[key] = { kind: 'list', items };
+    }
+  }
+
+  return facets;
+}
+
+export const EMPTY_SEARCH_RESULT: SearchResult = {
   facets: {},
   results: [],
   count: 0,
@@ -23,7 +85,6 @@ const BAD_RESPONSE: SafeSearchResponse = {
   previous: null,
   limit: 0,
   offset: 0,
-  ok: false,
 };
 
 /** Convert Meilisearch facetDistribution + facetStats into "fields" shape for normalizeFacets. */
@@ -51,15 +112,11 @@ function meilisearchFacetsToFields(
 }
 
 export async function fetchFacetsAndResults(
-  resultType: string,
+  resultType: ResultType,
   url?: string,
   signal?: AbortSignal
-): Promise<SafeSearchResponse> {
-  const apiSegment = RESULT_TYPE_API_MAP[resultType];
-  if (!apiSegment) {
-    console.warn(`No API segment mapped for resultType "${resultType}"`);
-    return BAD_RESPONSE;
-  }
+): Promise<SearchResult | null> {
+  const apiSegment = SEARCH_RESULT_CONFIG[resultType].apiPath;
 
   const endpoint = url || `${API_BASE_URL}/api/v1/search/${apiSegment}/facets`;
 
@@ -73,9 +130,9 @@ export async function fetchFacetsAndResults(
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     raw = await res.json();
   } catch (e) {
-    if ((e as DOMException)?.name === 'AbortError') return BAD_RESPONSE;
+    if ((e as DOMException)?.name === 'AbortError') return null;
     console.error('Fetch or JSON error:', e);
-    return BAD_RESPONSE;
+    return null;
   }
 
   type ApiResponse = {
@@ -85,24 +142,15 @@ export async function fetchFacetsAndResults(
     total?: number;
     next?: string | null;
     previous?: string | null;
-    ordering?: SafeSearchResponse['ordering'];
+    ordering?: SearchResult['ordering'];
   };
   const data = raw as ApiResponse;
 
   const results: unknown[] = Array.isArray(data.results) ? data.results : [];
   const count = data.total ?? results.length;
-  const hasAnyResult = count > 0;
-
   const fields = meilisearchFacetsToFields(data.facetDistribution ?? {}, data.facetStats ?? {});
-  const facetArrays = Object.values(fields).filter(Array.isArray);
-  const hasAnyFacetEntry = facetArrays.some((arr) => (arr as unknown[]).length > 0);
 
-  if (!hasAnyFacetEntry && !hasAnyResult) {
-    console.warn('Empty payload (no facets AND no results)—treating as bad response');
-    return BAD_RESPONSE;
-  }
-
-  const facets = normalizeFacets(fields) as FacetData;
+  const facets: FacetData = normalizeFacets(fields);
   return {
     facets,
     results,
@@ -111,7 +159,6 @@ export async function fetchFacetsAndResults(
     previous: data.previous ?? null,
     limit,
     offset,
-    ok: true,
     ordering: data.ordering,
   };
 }

@@ -7,19 +7,6 @@ export interface SearchResponse {
   previous?: string | null;
 }
 
-export interface ManuscriptListItem {
-  id: number;
-  repository_name: string;
-  repository_city: string;
-  shelfmark: string;
-  catalogue_numbers: string[];
-  date: string;
-  type: string;
-  number_of_images: number;
-  issuer_name: string;
-  named_beneficiary: string;
-}
-
 export interface Catalogue {
   name: string;
   label: string;

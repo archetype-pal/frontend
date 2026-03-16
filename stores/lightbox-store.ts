@@ -2,8 +2,7 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { getIiifImageUrl, getIiifImageUrlWithBounds, coordinatesFromGeoJson } from '@/utils/iiif';
 import type { LightboxImage, LightboxWorkspace } from '@/lib/lightbox-db';
-import type { ImageListItem } from '@/types/image';
-import type { GraphListItem } from '@/types/graph';
+import type { GraphListItem, ImageListItem } from '@/types/search';
 import type { CollectionItem } from '@/contexts/collection-context';
 
 export interface LightboxState {

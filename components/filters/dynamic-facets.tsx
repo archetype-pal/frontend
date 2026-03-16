@@ -1,21 +1,30 @@
 'use client';
 
 import * as React from 'react';
-import { FACET_COMPONENT_MAP } from '@/lib/facet-component-map';
-import { FILTER_ORDER_MAP } from '@/lib/filter-order';
-import { getSelectedForFacet, formatFacetTitle } from '@/lib/search-query';
+import { SEARCH_RESULT_CONFIG, type FacetRenderType, type ResultType } from '@/lib/search-types';
+import { getSelectedForFacet, formatFacetTitle, type ActiveFacetTag } from '@/lib/search-query';
 import { useSearchContext } from '@/contexts/search-context';
 import {
   KeywordSearchInput,
   useKeywordSuggestions,
 } from '@/components/search/keyword-search-input';
-import type { FacetData, FacetItem, FacetClickOpts } from '@/types/facets';
+import { ActiveFacetTags } from '@/components/filters/active-facet-tags';
+import type { FacetClickAction, FacetData } from '@/types/facets';
+import { FacetPanel } from '@/components/filters/facet-panel';
+import { FacetDateRangePanel } from '@/components/filters/FacetDateRangePanel';
 
 type DynamicFacetsProps = {
   facets: FacetData;
-  renderConfig: Record<string, string>;
+  renderConfig: Record<string, FacetRenderType>;
+  searchType: ResultType;
+  keyword: string;
+  onKeywordChange: (value: string) => void;
+  onKeywordSubmit: (value: string) => void;
+  activeTags: ActiveFacetTag[];
+  onRemoveTag?: (item: ActiveFacetTag) => void;
   selectedFacets?: string[];
-  onFacetClick?: (arg: string, opts?: FacetClickOpts) => void;
+  onClearAllFilters?: () => void;
+  onFacetClick?: (arg: string, action?: FacetClickAction) => void;
   baseFacetURL: string;
   visibleFacets?: string[];
 };
@@ -23,36 +32,79 @@ type DynamicFacetsProps = {
 export function DynamicFacets({
   facets,
   renderConfig,
+  searchType,
+  keyword,
+  onKeywordChange,
+  onKeywordSubmit,
+  activeTags,
+  onRemoveTag,
   selectedFacets = [],
+  onClearAllFilters,
   onFacetClick,
   baseFacetURL,
   visibleFacets,
 }: DynamicFacetsProps) {
-  const { keyword, setKeyword, suggestionsPool } = useSearchContext();
-  const suggestions = useKeywordSuggestions(keyword, suggestionsPool);
+  const { suggestionsPool } = useSearchContext();
+  const [draftKeyword, setDraftKeyword] = React.useState(keyword);
+  const suggestions = useKeywordSuggestions(draftKeyword, suggestionsPool);
+
+  React.useEffect(() => {
+    setDraftKeyword(keyword);
+  }, [keyword]);
 
   const triggerSearch = React.useCallback(
     (kw: string) => {
-      setKeyword(kw);
+      setDraftKeyword(kw);
+      onKeywordChange(kw);
+      onKeywordSubmit(kw);
       onFacetClick?.(kw);
     },
-    [setKeyword, onFacetClick]
+    [onKeywordChange, onKeywordSubmit, onFacetClick]
   );
+
+  const allOrdered = React.useMemo<string[]>(
+    () => [...SEARCH_RESULT_CONFIG[searchType].filterOrder],
+    [searchType]
+  );
+  const ordered = React.useMemo(
+    () => (visibleFacets ? visibleFacets.filter((k) => allOrdered.includes(k)) : allOrdered),
+    [visibleFacets, allOrdered]
+  );
+  const selectedByFacet = React.useMemo(() => {
+    return Object.fromEntries(
+      ordered.map((facetKey) => [facetKey, getSelectedForFacet(selectedFacets, facetKey)])
+    );
+  }, [ordered, selectedFacets]);
 
   if (!facets || Object.keys(facets).length === 0) {
     return null;
   }
 
-  const allOrdered = FILTER_ORDER_MAP[renderConfig.searchType] || Object.keys(facets);
-  const ordered = visibleFacets ? visibleFacets.filter((k) => allOrdered.includes(k)) : allOrdered;
-
   return (
     <div className="space-y-4">
+      <ActiveFacetTags
+        items={activeTags}
+        onRemove={(item) => {
+          if (onRemoveTag) {
+            onRemoveTag(item);
+            return;
+          }
+          onFacetClick?.('', {
+            type: 'deselectFacet',
+            facetKey: item.facetKey,
+            value: item.value,
+          });
+        }}
+        onClearAll={() => onClearAllFilters?.()}
+      />
       <div className="px-4 pt-0 pb-0">
         <h3 className="font-medium text-sm mb-1">Keyword</h3>
         <KeywordSearchInput
-          value={keyword}
-          onChange={setKeyword}
+          value={draftKeyword}
+          onChange={(value) => {
+            setDraftKeyword(value);
+            onKeywordChange(value);
+          }}
           onTriggerSearch={triggerSearch}
           suggestions={suggestions}
           placeholder="Type and press Enter…"
@@ -61,63 +113,51 @@ export function DynamicFacets({
 
       <div className="space-y-4">
         {ordered.map((facetKey) => {
-          const facetItems = facets[facetKey];
-          if (!facetItems) return null;
+          const facetValue = facets[facetKey];
+          if (!facetValue) return null;
           const type = renderConfig[facetKey];
-          const Component = FACET_COMPONENT_MAP[type as keyof typeof FACET_COMPONENT_MAP];
-          if (!Component) return null;
+          if (!type) return null;
 
-          const title = formatFacetTitle(facetKey, renderConfig.searchType);
+          const title = formatFacetTitle(facetKey, searchType);
 
-          if (type.startsWith('range')) {
-            const cfg = Array.isArray(facetItems)
-              ? (facetItems[0] as FacetItem)
-              : (facetItems as FacetItem);
+          if (facetValue.kind === 'range') {
             return (
-              <Component
+              <FacetDateRangePanel
                 key={facetKey}
                 id={facetKey}
                 title={title}
-                range={cfg.range}
-                defaultValue={cfg.defaultValue}
-                baseFacetURL={baseFacetURL}
+                range={facetValue.range}
+                defaultValue={facetValue.defaultValue}
                 onSearch={({ min, max, precision, diff }) => {
                   let url = `${baseFacetURL}?min_date=${min}&max_date=${max}`;
                   if (precision && diff > 0) {
                     url += `&at_most_or_least=${encodeURIComponent(precision)}&date_diff=${diff}`;
                   }
-                  onFacetClick?.(url, { merge: true });
+                  onFacetClick?.(url, { type: 'mergeDateParams' });
                 }}
-                items={[]}
               />
             );
           }
 
-          // list facet
-          const items = Array.isArray(facetItems)
-            ? (facetItems as FacetItem[]).map((it) => ({
-                label: it.text || it.label || '',
-                count: it.count,
-                href: it.narrow_url || it.href || '',
-                value: it.value ?? it.text ?? '',
-              }))
-            : [];
+          const items = facetValue.items;
 
           return (
-            <Component
+            <FacetPanel
               key={facetKey}
               id={facetKey}
               title={title}
               total={items.length}
               items={items}
               baseFacetURL={baseFacetURL}
-              selectedValue={getSelectedForFacet(selectedFacets, facetKey)}
+              selectedValue={selectedByFacet[facetKey] ?? null}
+              showSort={type !== 'toggle'}
               onSelect={(url, val, isDeselect) => {
-                onFacetClick?.(url, {
-                  facetKey,
-                  value: val,
-                  isDeselect: isDeselect ?? false,
-                });
+                onFacetClick?.(
+                  url,
+                  isDeselect
+                    ? { type: 'deselectFacet', facetKey, value: val }
+                    : { type: 'selectFacet', facetKey, value: val }
+                );
               }}
             />
           );
