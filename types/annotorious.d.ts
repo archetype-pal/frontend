@@ -26,6 +26,7 @@ declare module '@recogito/annotorious-openseadragon' {
   export interface AnnotoriousConfig {
     widgets?: Array<{ widget: string }>;
     disableEditor?: boolean;
+    readOnly?: boolean;
   }
 
   export interface AnnotoriousInstance {

@@ -904,6 +904,7 @@ export default function ManuscriptViewer({
               iiifImageUrl={browserSafeIiifUrl(getIiifBaseUrl(manuscriptImage.iiif_image))}
               initialAnnotations={initialA9sAnnots}
               disableEditor={true}
+              readOnly={isPublicDemoMode}
               onCreate={() => {
                 if (typeof window !== 'undefined' && !isPublicDemoMode) {
                   try {

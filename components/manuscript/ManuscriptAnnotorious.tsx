@@ -36,6 +36,7 @@ interface Props {
   exposeApi?: (api: ViewerApi) => void;
   initialAnnotations?: Annotation[];
   disableEditor?: boolean;
+  readOnly?: boolean;
 }
 
 // ---- Component state ----
@@ -54,6 +55,7 @@ export default function ManuscriptAnnotorious({
   exposeApi,
   initialAnnotations = [],
   disableEditor = false,
+  readOnly = false,
 }: Props) {
   const viewerRef = useRef<HTMLDivElement | null>(null);
   const osdRef = useRef<OpenSeadragon.Viewer | null>(null);
@@ -213,8 +215,8 @@ export default function ManuscriptAnnotorious({
 
         if (!annoRef.current) {
           const annoOptions: NonNullable<Parameters<typeof Annotorious>[1]> = disableEditor
-            ? { disableEditor: true }
-            : { widgets: [{ widget: 'COMMENT' as const }] };
+            ? { disableEditor: true, readOnly }
+            : { widgets: [{ widget: 'COMMENT' as const }], readOnly };
           const anno = Annotorious(viewer, annoOptions);
 
           annoRef.current = anno;
@@ -434,7 +436,7 @@ export default function ManuscriptAnnotorious({
         // ignore
       }
     };
-  }, [iiifImageUrl, queueSyncAnnotationClasses, disableEditor]);
+  }, [iiifImageUrl, queueSyncAnnotationClasses, disableEditor, readOnly]);
 
   useEffect(() => {
     const anno = annoRef.current;
