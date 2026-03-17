@@ -2,30 +2,13 @@
 
 import React, { useEffect, useRef } from 'react';
 import OpenSeadragon from 'openseadragon';
-import Annotorious from '@recogito/annotorious-openseadragon';
+import Annotorious, {
+  type AnnotoriousAnnotation,
+  type AnnotoriousInstance,
+} from '@recogito/annotorious-openseadragon';
 import '@recogito/annotorious/dist/annotorious.min.css';
 
-// ---- Annotation data model ----
-export interface Annotation {
-  id: string;
-  type: 'Annotation';
-  body?: {
-    value: string;
-    type?: string;
-    purpose?: string;
-  }[];
-  target: unknown;
-  _meta?: {
-    allographId?: number;
-    handId?: number;
-    numFeatures?: number;
-    isDescribed?: boolean;
-    annotationType?: string;
-    graphcomponentSet?: Array<{ component: number; features: number[] }>;
-    positions?: number[];
-  };
-}
-type AnnotoriousInstance = ReturnType<typeof Annotorious>;
+export type Annotation = AnnotoriousAnnotation;
 
 // ---- API we expose upward (no ref needed) ----
 export type ViewerApi = {
@@ -62,18 +45,6 @@ interface ComponentState {
   isLoading: boolean;
 }
 
-function isAnnotation(x: unknown): x is Annotation {
-  if (!x || typeof x !== 'object') return false;
-  const r = x as Record<string, unknown>;
-  return typeof r.id === 'string' && 'target' in r;
-}
-
-function selectorValueFromAnnotation(a: Annotation): string | null {
-  const target = a.target as { selector?: { value?: unknown } } | null;
-  const v = target?.selector?.value;
-  return typeof v === 'string' ? v : null;
-}
-
 // ---- Component ----
 export default function ManuscriptAnnotorious({
   iiifImageUrl,
@@ -90,7 +61,6 @@ export default function ManuscriptAnnotorious({
   const onCreateRef = useRef(onCreate);
   const onDeleteRef = useRef(onDelete);
   const onSelectRef = useRef(onSelect);
-  const selectedAnnotationRef = useRef<Annotation | null>(null);
   const exposeApiRef = useRef(exposeApi);
   const [state, setState] = React.useState<ComponentState>({
     hasError: false,
@@ -121,7 +91,7 @@ export default function ManuscriptAnnotorious({
       el.classList.add(isDescribed ? 'a9s-described' : 'a9s-undescribed');
     });
 
-    const selected = selectedAnnotationRef.current;
+    const selected = anno.getSelected?.() as Annotation | undefined;
     if (selected) {
       const baseEl = root.querySelector<SVGGElement>(`g.a9s-annotation[data-id="${selected.id}"]`);
       if (baseEl) {
@@ -249,19 +219,10 @@ export default function ManuscriptAnnotorious({
 
           annoRef.current = anno;
 
-          const toApplyNow = initialAnnotsRef.current ?? [];
-          if (Array.isArray(toApplyNow) && toApplyNow.length > 0) {
-            const existing = new Set(anno.getAnnotations().map((a: Annotation) => a.id));
-            for (const a of toApplyNow) {
-              if (!existing.has(a.id)) {
-                try {
-                  anno.addAnnotation(a);
-                } catch {
-                  // skip invalid annotation
-                }
-              }
-            }
-          }
+          const toApplyNow = Array.isArray(initialAnnotsRef.current)
+            ? initialAnnotsRef.current
+            : [];
+          anno.setAnnotations(toApplyNow);
 
           queueSyncAnnotationClasses();
 
@@ -274,18 +235,21 @@ export default function ManuscriptAnnotorious({
             onDeleteRef.current?.(a);
           });
           anno.on('selectAnnotation', (a: Annotation | null) => {
-            selectedAnnotationRef.current = a;
             queueSyncAnnotationClasses();
+
+            if (currentMode === 'delete') {
+              return;
+            }
+
             onSelectRef.current?.(a);
           });
           anno.on('cancelSelected', () => {
-            selectedAnnotationRef.current = null;
             queueSyncAnnotationClasses();
             onSelectRef.current?.(null);
           });
 
           let currentMode: 'pan' | 'draw' | 'delete' = 'pan';
-          let deleteHandler: ((a: Annotation) => void) | null = null;
+          let deleteHandler: ((a: Annotation | null, element?: unknown) => void) | null = null;
           let rearmHandler: (() => void) | null = null;
 
           exposeApiRef.current?.({
@@ -370,10 +334,9 @@ export default function ManuscriptAnnotorious({
               viewerRef.current?.classList.add('osd-mode-delete');
 
               if (deleteHandler) anno.off('selectAnnotation', deleteHandler);
-              deleteHandler = (a: Annotation) => {
+              deleteHandler = (a) => {
                 if (a && currentMode === 'delete') {
                   anno.removeAnnotation(a);
-                  onDeleteRef.current?.(a);
                 }
               };
               anno.on('selectAnnotation', deleteHandler);
@@ -382,22 +345,21 @@ export default function ManuscriptAnnotorious({
             // --- SHOW/HIDE ANNOTATIONS ---
             toggleAnnotations: (visible: boolean) => {
               const anno = annoRef.current;
-              if (anno && typeof anno.setVisible === 'function') {
-                anno.setVisible(visible);
-                if (!visible) {
-                  selectedAnnotationRef.current = null;
-                  queueSyncAnnotationClasses();
-                  anno.setDrawingEnabled(false);
-                  if (deleteHandler) {
-                    anno.off('selectAnnotation', deleteHandler);
-                    deleteHandler = null;
-                  }
-                  currentMode = 'pan';
+              if (!anno) return;
+
+              anno.setVisible(visible);
+
+              if (!visible) {
+                queueSyncAnnotationClasses();
+                onSelectRef.current?.(null);
+                anno.setDrawingEnabled(false);
+
+                if (deleteHandler) {
+                  anno.off('selectAnnotation', deleteHandler);
+                  deleteHandler = null;
                 }
-              } else {
-                const layer =
-                  viewerRef.current?.querySelector<SVGSVGElement>('.a9s-annotationlayer');
-                if (layer) layer.style.display = visible ? 'block' : 'none';
+
+                currentMode = 'pan';
               }
             },
 
@@ -428,64 +390,27 @@ export default function ManuscriptAnnotorious({
             getAnnotations: () => annoRef.current?.getAnnotations?.() ?? [],
 
             centerOnAnnotation: (id: string) => {
-              const viewer = osdRef.current;
-              const anno = annoRef.current;
-              if (!viewer || !anno) return;
-
-              const annots = (anno.getAnnotations?.() ?? []) as unknown[];
-              const a = annots.find((x): x is Annotation => isAnnotation(x) && x.id === id);
-              if (!a) return;
-
-              const value = selectorValueFromAnnotation(a);
-              if (!value) return;
-
-              const m = value.match(/xywh=pixel:([\d.]+),([\d.]+),([\d.]+),([\d.]+)/);
-              if (!m) return;
-
-              const x = Number(m[1]);
-              const y = Number(m[2]);
-              const w = Number(m[3]);
-              const h = Number(m[4]);
-
-              const pad = Math.max(w, h) * 3;
-
-              const px = Math.max(0, x - pad);
-              const py = Math.max(0, y - pad);
-              const pw = w + pad * 2;
-              const ph = h + pad * 2;
-
-              const rect = new OpenSeadragon.Rect(px, py, pw, ph);
-              const vpRect = viewer.viewport.imageToViewportRectangle(rect);
-
-              viewer.viewport.fitBounds(vpRect, true);
+              annoRef.current?.fitBounds?.(id, {
+                immediately: true,
+                padding: 600,
+              });
             },
 
             clearSelection: () => {
-              const anno = annoRef.current;
+              const result = annoRef.current?.cancelSelected?.();
 
-              selectedAnnotationRef.current = null;
-
-              if (
-                anno &&
-                typeof (anno as { cancelSelected?: () => void }).cancelSelected === 'function'
-              ) {
-                (anno as { cancelSelected: () => void }).cancelSelected();
+              if (result && typeof result === 'object' && 'then' in result) {
+                void result.then(() => {
+                  queueSyncAnnotationClasses();
+                });
+              } else {
+                queueSyncAnnotationClasses();
               }
-
-              queueSyncAnnotationClasses();
-              onSelectRef.current?.(null);
             },
+
             selectAnnotationById: (id: string) => {
-              const anno = annoRef.current;
-              if (!anno) return;
-
-              const annots = (anno.getAnnotations?.() ?? []) as unknown[];
-              const selected = annots.find((x): x is Annotation => isAnnotation(x) && x.id === id);
-              if (!selected) return;
-
-              selectedAnnotationRef.current = selected;
+              annoRef.current?.selectAnnotation(id);
               queueSyncAnnotationClasses();
-              onSelectRef.current?.(selected);
             },
           });
         }
@@ -513,19 +438,9 @@ export default function ManuscriptAnnotorious({
 
   useEffect(() => {
     const anno = annoRef.current;
-    if (!anno || !Array.isArray(initialAnnotations) || initialAnnotations.length === 0) return;
+    if (!anno || !Array.isArray(initialAnnotations)) return;
 
-    const existing = new Set(anno.getAnnotations().map((a: Annotation) => a.id));
-    for (const a of initialAnnotations) {
-      if (!existing.has(a.id)) {
-        try {
-          anno.addAnnotation(a);
-        } catch {
-          // skip invalid annotation
-        }
-      }
-    }
-
+    anno.setAnnotations(initialAnnotations);
     queueSyncAnnotationClasses();
   }, [initialAnnotations, iiifImageUrl, queueSyncAnnotationClasses]);
 
