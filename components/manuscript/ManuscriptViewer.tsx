@@ -655,6 +655,7 @@ export default function ManuscriptViewer({
             onAllographHover={setHoveredAllograph}
             activeAllographCount={filteredA9s.length}
             activeAllographLabel={activeAllographLabel}
+            selectedAllographId={selectedAllograph?.id ?? null}
             onOpenAllographModal={() => {
               setHoveredAnnotationId(null);
               setIsAllographModalOpen(true);
@@ -674,6 +675,7 @@ export default function ManuscriptViewer({
           onAllographHover={setHoveredAllograph}
           activeAllographCount={filteredA9s.length}
           activeAllographLabel={activeAllographLabel}
+          selectedAllographId={selectedAllograph?.id ?? null}
           onOpenAllographModal={() => {
             setHoveredAnnotationId(null);
             setIsAllographModalOpen(true);
@@ -946,10 +948,20 @@ export default function ManuscriptViewer({
               }}
               onSelect={(a) => {
                 const selected = (a as A9sWithMeta | null) ?? null;
+
                 setSelectedAnnotation(selected);
                 setPopupTab('components');
                 setIsShareUrlVisible(false);
                 setShareUrl('');
+
+                if (selected?._meta?.allographId != null) {
+                  const matchedAllograph = allographsForThisImage.find(
+                    (item) => item.id === selected._meta?.allographId
+                  );
+                  setSelectedAllograph(matchedAllograph);
+                } else {
+                  setSelectedAllograph(undefined);
+                }
               }}
               exposeApi={handleExposeApi}
             />

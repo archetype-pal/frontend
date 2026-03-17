@@ -29,6 +29,7 @@ interface AnnotationHeaderProps {
   activeAllographCount?: number;
   activeAllographLabel?: string;
   onOpenAllographModal?: () => void;
+  selectedAllographId?: number | null;
 }
 
 export function AnnotationHeader({
@@ -44,12 +45,17 @@ export function AnnotationHeader({
   activeAllographCount,
   activeAllographLabel,
   onOpenAllographModal,
+  selectedAllographId,
 }: AnnotationHeaderProps) {
   const [hands, setHands] = React.useState<HandType[]>([]);
   // const [allographs, setAllographs] = React.useState<Allograph[]>([])
   const [selectedHand, setSelectedHand] = React.useState<string>('');
   const [selectedAllograph, setSelectedAllograph] = React.useState<string>('');
   const [, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    setSelectedAllograph(selectedAllographId != null ? selectedAllographId.toString() : '');
+  }, [selectedAllographId]);
 
   React.useEffect(() => {
     let isMounted = true;
