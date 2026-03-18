@@ -161,12 +161,13 @@ export default function ManuscriptViewer({
 
   const activeHandLabel = selectedHand?.name ?? 'Any';
 
-  const dropdownAllograph = annotationSelectedAllograph ?? filteredAllograph ?? undefined;
+  const dropdownAllograph = filteredAllograph ?? annotationSelectedAllograph ?? undefined;
 
   const displayAllograph =
-    hoveredAllograph ?? annotationSelectedAllograph ?? filteredAllograph ?? undefined;
+    hoveredAllograph ?? filteredAllograph ?? annotationSelectedAllograph ?? undefined;
 
   const activeAllographLabel = displayAllograph?.name ?? undefined;
+
   const countAllographId = displayAllograph?.id ?? null;
 
   const highlightAllographId =
