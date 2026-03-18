@@ -107,7 +107,7 @@ export default function ManuscriptViewer({
   const [manuscript, setManuscript] = React.useState<Manuscript | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [selectedAllograph, setSelectedAllograph] = React.useState<Allograph | undefined>(
+  const [filteredAllograph, setFilteredAllograph] = React.useState<Allograph | undefined>(
     undefined
   );
   const [selectedHand, setSelectedHand] = React.useState<HandType | undefined>(undefined);
@@ -134,8 +134,6 @@ export default function ManuscriptViewer({
 
   const [isAllographModalOpen, setIsAllographModalOpen] = React.useState(false);
   const [hoveredAnnotationId, setHoveredAnnotationId] = React.useState<string | null>(null);
-  const activeAllographLabel = hoveredAllograph?.name ?? selectedAllograph?.name ?? undefined;
-  const activeHandLabel = selectedHand?.name ?? 'Any';
   const [selectedAnnotation, setSelectedAnnotation] = React.useState<A9sWithMeta | null>(null);
   const [popupTab, setPopupTab] = React.useState<'components' | 'positions' | 'notes'>(
     'components'
@@ -159,7 +157,28 @@ export default function ManuscriptViewer({
   };
   const [a9sSnapshot, setA9sSnapshot] = React.useState<A9sAnnotation[]>([]);
 
-  const activeAllographId = hoveredAllograph?.id ?? selectedAllograph?.id ?? null;
+  const annotationSelectedAllograph = React.useMemo(() => {
+    const allographId = selectedAnnotation?._meta?.allographId;
+    if (allographId == null) return undefined;
+    return allographs.find((a) => a.id === allographId);
+  }, [allographs, selectedAnnotation]);
+
+  const activeHandLabel = selectedHand?.name ?? 'Any';
+
+  const dropdownAllograph = annotationSelectedAllograph ?? filteredAllograph ?? undefined;
+
+  const displayAllograph =
+    hoveredAllograph ?? annotationSelectedAllograph ?? filteredAllograph ?? undefined;
+
+  const activeAllographLabel = displayAllograph?.name ?? undefined;
+
+  const countAllographId = displayAllograph?.id ?? null;
+
+  const highlightAllographId =
+    hoveredAllograph?.id ??
+    filteredAllograph?.id ??
+    (isAllographModalOpen ? annotationSelectedAllograph?.id ?? null : null);
+
   const selectedAllographTitle =
     selectedAnnotation?.body?.find((b) => b.purpose === 'commenting')?.value ??
     allographNameById.get(selectedAnnotation?._meta?.allographId ?? -1) ??
@@ -265,11 +284,21 @@ export default function ManuscriptViewer({
   const annotationPopupDrag = useDraggablePosition({ x: 0, y: 300 });
 
   const filteredA9s = React.useMemo(() => {
-    if (activeAllographId == null) return [];
-    return a9sSnapshot.filter((a) => (a as A9sWithMeta)._meta?.allographId === activeAllographId);
-  }, [a9sSnapshot, activeAllographId]);
+    if (countAllographId == null) return [];
+    return a9sSnapshot.filter((a) => (a as A9sWithMeta)._meta?.allographId === countAllographId);
+  }, [a9sSnapshot, countAllographId]);
 
-  const filteredIds = React.useMemo(() => filteredA9s.map((a) => a.id), [filteredA9s]);
+  const highlightedIds = React.useMemo(() => {
+    if (highlightAllographId == null) return [];
+
+    return a9sSnapshot
+      .filter(
+        (a) =>
+          (a as A9sWithMeta)._meta?.allographId === highlightAllographId &&
+          a.id !== selectedAnnotation?.id
+      )
+      .map((a) => a.id);
+  }, [a9sSnapshot, highlightAllographId, selectedAnnotation?.id]);
 
   React.useEffect(() => {
     if (!osdReady) return;
@@ -280,13 +309,13 @@ export default function ManuscriptViewer({
       return;
     }
 
-    if (activeAllographId == null) {
+    if (highlightAllographId == null) {
       viewerApiRef.current?.clearHighlights?.();
       return;
     }
 
-    viewerApiRef.current?.highlightAnnotations?.(filteredIds);
-  }, [osdReady, hoveredAnnotationId, activeAllographId, filteredIds]);
+    viewerApiRef.current?.highlightAnnotations?.(highlightedIds);
+  }, [osdReady, hoveredAnnotationId, highlightAllographId, highlightedIds]);
 
   const handleToggleFullScreen = () => {
     setIsFullScreen((prev) => !prev);
@@ -424,7 +453,7 @@ export default function ManuscriptViewer({
     let isMounted = true;
     const load = async () => {
       try {
-        const allographId = selectedAllograph?.id ? String(selectedAllograph.id) : undefined;
+        const allographId = filteredAllograph?.id ? String(filteredAllograph.id) : undefined;
         const list = await fetchAnnotationsForImage(String(manuscriptImage.id), allographId);
         if (!isMounted) return;
         const dbMapped: A9sAnnotation[] = list.map((a) =>
@@ -467,7 +496,7 @@ export default function ManuscriptViewer({
     return () => {
       isMounted = false;
     };
-  }, [manuscriptImage, imageHeight, selectedAllograph, allographNameById, isPublicDemoMode]);
+  }, [manuscriptImage, imageHeight, filteredAllograph, allographNameById, isPublicDemoMode]);
 
   const handleMoveTool = () => {
     viewerApiRef.current?.enablePan();
@@ -500,7 +529,7 @@ export default function ManuscriptViewer({
             postAnnotation({
               item_image: Number(manuscriptImage!.id),
               annotation: feature,
-              allograph: selectedAllograph?.id ?? 0,
+              allograph: filteredAllograph?.id ?? 0,
               hand: selectedHand?.id ?? 0,
               graphcomponent_set: [],
               positions: [],
@@ -522,7 +551,7 @@ export default function ManuscriptViewer({
       // Reload DB → map → replace cache (drop local-only)
       const refreshed = await fetchAnnotationsForImage(
         String(manuscriptImage!.id),
-        selectedAllograph?.id ? String(selectedAllograph.id) : undefined
+        filteredAllograph?.id ? String(filteredAllograph.id) : undefined
       );
       const mapped = refreshed.map((a) => backendToA9sAnnotation(a, imageHeight));
 
@@ -545,7 +574,7 @@ export default function ManuscriptViewer({
     } catch {
       // save failed — leave unsaved count as is
     }
-  }, [manuscriptImage, imageHeight, selectedAllograph, selectedHand, imageId, isPublicDemoMode]);
+  }, [manuscriptImage, imageHeight, filteredAllograph, selectedHand, imageId, isPublicDemoMode]);
 
   React.useEffect(() => {
     if (isPublicDemoMode) return;
@@ -649,13 +678,13 @@ export default function ManuscriptViewer({
             unsavedCount={unsavedChanges}
             showUnsavedCount={!isPublicDemoMode}
             imageId={imageId}
-            onAllographSelect={setSelectedAllograph}
+            onAllographSelect={setFilteredAllograph}
             onHandSelect={setSelectedHand}
             allographs={allographsForThisImage}
             onAllographHover={setHoveredAllograph}
             activeAllographCount={filteredA9s.length}
             activeAllographLabel={activeAllographLabel}
-            selectedAllographId={selectedAllograph?.id ?? null}
+            selectedAllographId={dropdownAllograph?.id ?? null}
             onOpenAllographModal={() => {
               setHoveredAnnotationId(null);
               setIsAllographModalOpen(true);
@@ -669,13 +698,13 @@ export default function ManuscriptViewer({
           unsavedCount={unsavedChanges}
           showUnsavedCount={!isPublicDemoMode}
           imageId={imageId}
-          onAllographSelect={setSelectedAllograph}
+          onAllographSelect={setFilteredAllograph}
           onHandSelect={setSelectedHand}
           allographs={allographsForThisImage}
           onAllographHover={setHoveredAllograph}
           activeAllographCount={filteredA9s.length}
           activeAllographLabel={activeAllographLabel}
-          selectedAllographId={selectedAllograph?.id ?? null}
+          selectedAllographId={dropdownAllograph?.id ?? null}
           onOpenAllographModal={() => {
             setHoveredAnnotationId(null);
             setIsAllographModalOpen(true);
@@ -954,13 +983,10 @@ export default function ManuscriptViewer({
                 setIsShareUrlVisible(false);
                 setShareUrl('');
 
-                if (selected?._meta?.allographId != null) {
-                  const matchedAllograph = allographsForThisImage.find(
-                    (item) => item.id === selected._meta?.allographId
-                  );
-                  setSelectedAllograph(matchedAllograph);
-                } else {
-                  setSelectedAllograph(undefined);
+                if (selected) {
+                  setFilteredAllograph(undefined);
+                  setHoveredAllograph(undefined);
+                  setHoveredAnnotationId(null);
                 }
               }}
               exposeApi={handleExposeApi}
