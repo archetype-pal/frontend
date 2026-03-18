@@ -18,10 +18,8 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import type { ViewerApi, Annotation as A9sAnnotation } from './ManuscriptAnnotorious';
-import { getSelectorValue, iiifThumbFromSelector, getIiifBaseUrl } from '@/utils/iiif';
-const ManuscriptAnnotorious = dynamic(() => import('./ManuscriptAnnotorious'), { ssr: false });
 
+import { getSelectorValue, iiifThumbFromSelector, getIiifBaseUrl } from '@/utils/iiif';
 import { ManuscriptTabs } from './manuscript-tabs';
 import { Toolbar } from './toolbar';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -51,6 +49,7 @@ import {
   dbIdFromA9s,
 } from '@/lib/annoMapping';
 
+import type { ViewerApi, Annotation as A9sAnnotation } from './ManuscriptAnnotorious';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
 import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
@@ -58,12 +57,26 @@ import type { Manuscript } from '@/types/manuscript';
 
 import { useDraggablePosition } from '@/hooks/useDraggablePosition';
 
+const ManuscriptAnnotorious = dynamic(() => import('./ManuscriptAnnotorious'), { ssr: false });
+
 interface ManuscriptViewerProps {
   imageId: string;
   mode?: 'public' | 'editor';
 }
 
-// small helpers for cache meta
+type A9sWithMeta = A9sAnnotation & {
+  body?: Array<{ value?: string; type?: string; purpose?: string }>;
+  _meta?: {
+    allographId?: number;
+    handId?: number;
+    numFeatures?: number;
+    isDescribed?: boolean;
+    annotationType?: string;
+    graphcomponentSet?: Array<{ component: number; features: number[] }>;
+    positions?: number[];
+  };
+};
+
 const metaKeyFor = (iiif: string) => `annotations:meta:${iiif}`;
 const cacheKeyFor = (iiif: string) => `annotations:${iiif}`;
 const isDbId = (id?: string) => typeof id === 'string' && id.startsWith('db:');
@@ -91,22 +104,14 @@ export default function ManuscriptViewer({
 }: ManuscriptViewerProps): React.JSX.Element {
   const isPublicDemoMode = mode === 'public';
 
-  // Always start with default value to avoid hydration mismatch
+  // ---- State / refs ----
   const [annotationsEnabled, setAnnotationsEnabled] = React.useState<boolean>(true);
-
-  // Load from localStorage only on client after mount
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const saved = localStorage.getItem(`annotationsVisible:${imageId}`);
-    if (saved !== null) {
-      setAnnotationsEnabled(saved === 'true');
-    }
-  }, [imageId]);
 
   const [manuscriptImage, setManuscriptImage] = React.useState<ManuscriptImageType | null>(null);
   const [manuscript, setManuscript] = React.useState<Manuscript | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
+
   const [filteredAllograph, setFilteredAllograph] = React.useState<Allograph | undefined>(
     undefined
   );
@@ -118,20 +123,13 @@ export default function ManuscriptViewer({
   const [osdReady, setOsdReady] = React.useState(false);
 
   const [initialA9sAnnots, setInitialA9sAnnots] = React.useState<A9sAnnotation[]>([]);
+  const [a9sSnapshot, setA9sSnapshot] = React.useState<A9sAnnotation[]>([]);
 
   const [imageHeight, setImageHeight] = React.useState<number>(0);
   const [activeButton, setActiveButton] = React.useState<'move' | 'editorial' | 'delete'>('move');
-
-  // track when OSD is in fullscreen
   const [isFullScreen, setIsFullScreen] = React.useState(false);
 
-  const allographNameById = React.useMemo(
-    () => new Map(allographs.map((a) => [a.id, a.name])),
-    [allographs]
-  );
-
   const [hoveredAllograph, setHoveredAllograph] = React.useState<Allograph | undefined>(undefined);
-
   const [isAllographModalOpen, setIsAllographModalOpen] = React.useState(false);
   const [hoveredAnnotationId, setHoveredAnnotationId] = React.useState<string | null>(null);
   const [selectedAnnotation, setSelectedAnnotation] = React.useState<A9sWithMeta | null>(null);
@@ -143,19 +141,17 @@ export default function ManuscriptViewer({
   const [isShareUrlVisible, setIsShareUrlVisible] = React.useState(false);
   const initialGraphHandledRef = React.useRef(false);
 
-  type A9sWithMeta = A9sAnnotation & {
-    body?: Array<{ value?: string; type?: string; purpose?: string }>;
-    _meta?: {
-      allographId?: number;
-      handId?: number;
-      numFeatures?: number;
-      isDescribed?: boolean;
-      annotationType?: string;
-      graphcomponentSet?: Array<{ component: number; features: number[] }>;
-      positions?: number[];
-    };
-  };
-  const [a9sSnapshot, setA9sSnapshot] = React.useState<A9sAnnotation[]>([]);
+  const [unsavedChanges, setUnsavedChanges] = React.useState<number>(0);
+
+  // ---- Drag hooks ----
+  const allographDialogDrag = useDraggablePosition();
+  const annotationPopupDrag = useDraggablePosition({ x: 0, y: 300 });
+
+  // ---- Derived values ----
+  const allographNameById = React.useMemo(
+    () => new Map(allographs.map((a) => [a.id, a.name])),
+    [allographs]
+  );
 
   const annotationSelectedAllograph = React.useMemo(() => {
     const allographId = selectedAnnotation?._meta?.allographId;
@@ -171,13 +167,12 @@ export default function ManuscriptViewer({
     hoveredAllograph ?? annotationSelectedAllograph ?? filteredAllograph ?? undefined;
 
   const activeAllographLabel = displayAllograph?.name ?? undefined;
-
   const countAllographId = displayAllograph?.id ?? null;
 
   const highlightAllographId =
     hoveredAllograph?.id ??
     filteredAllograph?.id ??
-    (isAllographModalOpen ? annotationSelectedAllograph?.id ?? null : null);
+    (isAllographModalOpen ? (annotationSelectedAllograph?.id ?? null) : null);
 
   const selectedAllographTitle =
     selectedAnnotation?.body?.find((b) => b.purpose === 'commenting')?.value ??
@@ -188,48 +183,26 @@ export default function ManuscriptViewer({
     () => selectedAnnotation?._meta?.positions ?? [],
     [selectedAnnotation]
   );
+
   const hasPositionsTab = selectedPositions.length > 0;
 
-  React.useEffect(() => {
-    if (!hasPositionsTab && popupTab === 'positions') {
-      setPopupTab('components');
-    }
-  }, [hasPositionsTab, popupTab]);
+  const positionNameById = React.useMemo(
+    () => new Map(positions.map((p) => [p.id, p.name])),
+    [positions]
+  );
 
-  const handleShareSelectedAnnotation = () => {
-    if (!selectedAnnotation || typeof window === 'undefined') return;
-
-    const graphId = selectedAnnotation.id.replace(/^db:/, '');
-    if (!graphId) return;
-
-    const url = new URL(window.location.href);
-    url.searchParams.set('graph', graphId);
-
-    setShareUrl(url.toString());
-    setIsShareUrlVisible(true);
-  };
-  const handleCopyShareUrl = async () => {
-    if (!shareUrl) return;
-
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-    } catch {
-      // ignore for now
-    }
-  };
-
-  const selectedAllographData = React.useMemo(() => {
-    const allographId = selectedAnnotation?._meta?.allographId;
-    if (allographId == null) return undefined;
-    return allographs.find((a) => a.id === allographId);
-  }, [allographs, selectedAnnotation]);
+  const selectedPositionLabels = React.useMemo(() => {
+    return selectedPositions.map((positionId) => {
+      return positionNameById.get(positionId) ?? `Position ${positionId}`;
+    });
+  }, [selectedPositions, positionNameById]);
 
   const selectedComponentGroups = React.useMemo(() => {
     const graphComponents = selectedAnnotation?._meta?.graphcomponentSet ?? [];
-    if (!graphComponents.length) return [];
+    if (!graphComponents.length || !annotationSelectedAllograph) return [];
 
     return graphComponents.map((gc) => {
-      const allographComponent = selectedAllographData?.components.find(
+      const allographComponent = annotationSelectedAllograph.components.find(
         (component) => component.component_id === gc.component
       );
 
@@ -245,7 +218,7 @@ export default function ManuscriptViewer({
         featureNames,
       };
     });
-  }, [selectedAnnotation, selectedAllographData]);
+  }, [selectedAnnotation, annotationSelectedAllograph]);
 
   const selectedNotes = React.useMemo(() => {
     return (selectedAnnotation?.body ?? [])
@@ -255,33 +228,6 @@ export default function ManuscriptViewer({
       })
       .map((body) => body.value!.trim());
   }, [selectedAnnotation]);
-
-  const positionNameById = React.useMemo(
-    () => new Map(positions.map((p) => [p.id, p.name])),
-    [positions]
-  );
-
-  const selectedPositionLabels = React.useMemo(() => {
-    return selectedPositions.map((positionId) => {
-      return positionNameById.get(positionId) ?? `Position ${positionId}`;
-    });
-  }, [selectedPositions, positionNameById]);
-
-  const handleCloseSelectedAnnotation = () => {
-    viewerApiRef.current?.clearSelection?.();
-    setSelectedAnnotation(null);
-    setPopupTab('components');
-    setIsShareUrlVisible(false);
-    setShareUrl('');
-    annotationPopupDrag.reset();
-  };
-  React.useEffect(() => {
-    setIsShareUrlVisible(false);
-    setShareUrl('');
-  }, [selectedAnnotation?.id]);
-
-  const allographDialogDrag = useDraggablePosition();
-  const annotationPopupDrag = useDraggablePosition({ x: 0, y: 300 });
 
   const filteredA9s = React.useMemo(() => {
     if (countAllographId == null) return [];
@@ -300,27 +246,67 @@ export default function ManuscriptViewer({
       .map((a) => a.id);
   }, [a9sSnapshot, highlightAllographId, selectedAnnotation?.id]);
 
-  React.useEffect(() => {
-    if (!osdReady) return;
+  const allographsForThisImage = React.useMemo(() => {
+    if (!allographs.length) return [];
 
-    // If hovering a thumbnail, highlight ONLY that annotation
-    if (hoveredAnnotationId) {
-      viewerApiRef.current?.highlightAnnotations?.([hoveredAnnotationId]);
-      return;
+    if (!imageAllographIds.length) return allographs;
+
+    const idSet = new Set(imageAllographIds);
+    return allographs.filter((a) => idSet.has(a.id));
+  }, [allographs, imageAllographIds]);
+
+  // ---- Helpers / handlers ----
+  const persistAnnotationCache = React.useCallback(() => {
+    if (typeof window === 'undefined' || isPublicDemoMode || !manuscriptImage) return;
+
+    try {
+      const iiif = manuscriptImage.iiif_image;
+      const cacheKey = cacheKeyFor(iiif);
+      const metaKey = metaKeyFor(iiif);
+      const all = viewerApiRef.current?.getAnnotations() ?? [];
+
+      localStorage.setItem(cacheKey, JSON.stringify(all));
+      localStorage.setItem(metaKey, JSON.stringify({ imageHeight }));
+    } catch {
+      // ignore
     }
+  }, [imageHeight, isPublicDemoMode, manuscriptImage]);
 
-    if (highlightAllographId == null) {
-      viewerApiRef.current?.clearHighlights?.();
-      return;
+  const handleShareSelectedAnnotation = () => {
+    if (!selectedAnnotation || typeof window === 'undefined') return;
+
+    const graphId = selectedAnnotation.id.replace(/^db:/, '');
+    if (!graphId) return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('graph', graphId);
+
+    setShareUrl(url.toString());
+    setIsShareUrlVisible(true);
+  };
+
+  const handleCopyShareUrl = async () => {
+    if (!shareUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch {
+      // ignore
     }
+  };
 
-    viewerApiRef.current?.highlightAnnotations?.(highlightedIds);
-  }, [osdReady, hoveredAnnotationId, highlightAllographId, highlightedIds]);
+  const handleCloseSelectedAnnotation = () => {
+    viewerApiRef.current?.clearSelection?.();
+    setSelectedAnnotation(null);
+    setPopupTab('components');
+    setIsShareUrlVisible(false);
+    setShareUrl('');
+    annotationPopupDrag.reset();
+  };
 
   const handleToggleFullScreen = () => {
     setIsFullScreen((prev) => !prev);
 
-    // OpenSeadragon recomputes its layout
     if (typeof window !== 'undefined') {
       setTimeout(() => {
         window.dispatchEvent(new Event('resize'));
@@ -332,171 +318,10 @@ export default function ManuscriptViewer({
     viewerApiRef.current = api;
     setOsdReady(true);
 
-    // Initial tool setup
     api.enablePan();
     setActiveButton('move');
-
     setA9sSnapshot(api.getAnnotations?.() ?? []);
   }, []);
-
-  // persist the unsaved counter so it survives reloads
-  // Always start with 0 to avoid hydration mismatch
-  const [unsavedChanges, setUnsavedChanges] = React.useState<number>(0);
-
-  // Load from localStorage only on client after mount
-  React.useEffect(() => {
-    if (typeof window === 'undefined' || isPublicDemoMode) return;
-    try {
-      const saved = Number(localStorage.getItem(`unsaved:${imageId}`) || 0);
-      if (saved > 0) {
-        setUnsavedChanges(saved);
-      }
-    } catch {
-      // ignore
-    }
-  }, [imageId, isPublicDemoMode]);
-
-  React.useEffect(() => {
-    if (typeof window === 'undefined' || isPublicDemoMode) return;
-    try {
-      localStorage.setItem(`unsaved:${imageId}`, String(unsavedChanges));
-    } catch {
-      // ignore
-    }
-  }, [unsavedChanges, imageId, isPublicDemoMode]);
-
-  React.useEffect(() => {
-    if (!osdReady) return;
-    viewerApiRef.current?.toggleAnnotations(annotationsEnabled);
-  }, [annotationsEnabled, osdReady]);
-
-  // load image & size
-  React.useEffect(() => {
-    let isMounted = true;
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const [image, allographsData, positionsData] = await Promise.all([
-          fetchManuscriptImage(imageId),
-          fetchAllographs(),
-          fetchPositions(),
-        ]);
-        if (!isMounted) return;
-        setManuscriptImage(image);
-        setAllographs(allographsData);
-        setPositions(positionsData);
-
-        fetchManuscript(image.item_part).then((m) => {
-          if (isMounted) setManuscript(m);
-        });
-
-        const baseUrl = browserSafeIiifUrl(getIiifBaseUrl(image.iiif_image));
-        const infoUrl = `${baseUrl}/info.json`;
-        try {
-          const infoRes = await fetch(infoUrl);
-          if (!infoRes.ok) throw new Error(`IIIF info: ${infoRes.status}`);
-          const info = await infoRes.json();
-          if (isMounted) setImageHeight(info.height ?? 2000);
-        } catch {
-          if (isMounted) setImageHeight(2000);
-        }
-        if (isMounted) setError(null);
-      } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : 'Failed to load manuscript data');
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    void loadData();
-    return () => {
-      isMounted = false;
-    };
-  }, [imageId]);
-
-  React.useEffect(() => {
-    if (!manuscriptImage) return;
-    let isMounted = true;
-    const loadAllographIds = async () => {
-      try {
-        const graphs = await fetchAnnotationsForImage(String(manuscriptImage.id));
-        if (!isMounted) return;
-        const ids = Array.from(
-          new Set(
-            graphs.map((g) => g.allograph).filter((id): id is number => typeof id === 'number')
-          )
-        );
-        setImageAllographIds(ids);
-      } catch {
-        if (isMounted) setImageAllographIds([]);
-      }
-    };
-    void loadAllographIds();
-    return () => {
-      isMounted = false;
-    };
-  }, [manuscriptImage]);
-
-  const allographsForThisImage = React.useMemo(() => {
-    if (!allographs.length) return [];
-
-    // If there are no graphs yet (new image), fall back to showing all allographs
-    if (!imageAllographIds.length) return allographs;
-
-    const idSet = new Set(imageAllographIds);
-    return allographs.filter((a) => idSet.has(a.id));
-  }, [allographs, imageAllographIds]);
-
-  React.useEffect(() => {
-    if (!manuscriptImage || !imageHeight) return;
-    let isMounted = true;
-    const load = async () => {
-      try {
-        const allographId = filteredAllograph?.id ? String(filteredAllograph.id) : undefined;
-        const list = await fetchAnnotationsForImage(String(manuscriptImage.id), allographId);
-        if (!isMounted) return;
-        const dbMapped: A9sAnnotation[] = list.map((a) =>
-          backendToA9sAnnotation(a, imageHeight, allographNameById.get(a.allograph))
-        );
-        const iiif = manuscriptImage.iiif_image;
-        const cacheKey = cacheKeyFor(iiif);
-        const metaKey = metaKeyFor(iiif);
-        let merged: A9sAnnotation[] = dbMapped;
-        if (typeof window !== 'undefined' && !isPublicDemoMode) {
-          try {
-            const raw = localStorage.getItem(cacheKey);
-            const meta = JSON.parse(localStorage.getItem(metaKey) || '{}') as {
-              imageHeight?: number;
-            };
-            if (raw && meta?.imageHeight === imageHeight) {
-              const cached = JSON.parse(raw) as A9sAnnotation[];
-              const localOnly = Array.isArray(cached) ? cached.filter((a) => !isDbId(a?.id)) : [];
-              const existing = new Set(dbMapped.map((a) => a.id));
-              const extras = localOnly.filter((a) => !existing.has(a.id));
-              merged = [...dbMapped, ...extras];
-            } else if (raw && meta?.imageHeight !== imageHeight) {
-              localStorage.removeItem(cacheKey);
-              localStorage.removeItem(metaKey);
-            }
-          } catch {
-            // ignore
-          }
-        }
-        if (isMounted) setInitialA9sAnnots(merged);
-        if (isMounted) setA9sSnapshot(merged);
-      } catch {
-        if (isMounted) {
-          setInitialA9sAnnots([]);
-          setA9sSnapshot([]);
-        }
-      }
-    };
-    load();
-    return () => {
-      isMounted = false;
-    };
-  }, [manuscriptImage, imageHeight, filteredAllograph, allographNameById, isPublicDemoMode]);
 
   const handleMoveTool = () => {
     viewerApiRef.current?.enablePan();
@@ -513,21 +338,23 @@ export default function ManuscriptViewer({
     setActiveButton('delete');
   };
 
-  // === SAVE ===
   const handleSave = React.useCallback(async (): Promise<void> => {
-    if (isPublicDemoMode) return;
+    if (isPublicDemoMode || !manuscriptImage) return;
+
     try {
       const a9s = viewerApiRef.current?.getAnnotations() ?? [];
       const tasks: Promise<BackendGraph>[] = [];
+
       for (const a of a9s) {
         const feature = a9sToBackendFeature(a, imageHeight);
+
         if (isDbAnnotation(a)) {
           const id = dbIdFromA9s(a)!;
           tasks.push(patchAnnotation(id, { annotation: feature }));
         } else {
           tasks.push(
             postAnnotation({
-              item_image: Number(manuscriptImage!.id),
+              item_image: Number(manuscriptImage.id),
               annotation: feature,
               allograph: filteredAllograph?.id ?? 0,
               hand: selectedHand?.id ?? 0,
@@ -540,6 +367,7 @@ export default function ManuscriptViewer({
 
       await Promise.all(tasks);
       setUnsavedChanges(0);
+
       if (typeof window !== 'undefined') {
         try {
           localStorage.removeItem(`unsaved:${imageId}`);
@@ -548,21 +376,17 @@ export default function ManuscriptViewer({
         }
       }
 
-      // Reload DB → map → replace cache (drop local-only)
       const refreshed = await fetchAnnotationsForImage(
-        String(manuscriptImage!.id),
+        String(manuscriptImage.id),
         filteredAllograph?.id ? String(filteredAllograph.id) : undefined
       );
       const mapped = refreshed.map((a) => backendToA9sAnnotation(a, imageHeight));
 
       if (typeof window !== 'undefined') {
         try {
+          localStorage.setItem(`annotations:${manuscriptImage.iiif_image}`, JSON.stringify(mapped));
           localStorage.setItem(
-            `annotations:${manuscriptImage!.iiif_image}`,
-            JSON.stringify(mapped)
-          );
-          localStorage.setItem(
-            `annotations:meta:${manuscriptImage!.iiif_image}`,
+            `annotations:meta:${manuscriptImage.iiif_image}`,
             JSON.stringify({ imageHeight })
           );
         } catch {
@@ -574,20 +398,258 @@ export default function ManuscriptViewer({
     } catch {
       // save failed — leave unsaved count as is
     }
-  }, [manuscriptImage, imageHeight, filteredAllograph, selectedHand, imageId, isPublicDemoMode]);
+  }, [filteredAllograph, imageHeight, imageId, isPublicDemoMode, manuscriptImage, selectedHand]);
 
+  const handleToggleAnnotations = () => {
+    setAnnotationsEnabled((prev) => {
+      const next = !prev;
+
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(`annotationsVisible:${imageId}`, String(next));
+        } catch {
+          // ignore
+        }
+      }
+
+      viewerApiRef.current?.toggleAnnotations(next);
+      return next;
+    });
+  };
+
+  // ---- Effects ----
+
+  // hydrate annotation visibility from localStorage
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem(`annotationsVisible:${imageId}`);
+    if (saved !== null) {
+      setAnnotationsEnabled(saved === 'true');
+    }
+  }, [imageId]);
+
+  // keep popup share state reset when annotation changes
+  React.useEffect(() => {
+    setIsShareUrlVisible(false);
+    setShareUrl('');
+  }, [selectedAnnotation?.id]);
+
+  // keep popup on valid tab
+  React.useEffect(() => {
+    if (!hasPositionsTab && popupTab === 'positions') {
+      setPopupTab('components');
+    }
+  }, [hasPositionsTab, popupTab]);
+
+  // sync viewer highlight state
+  React.useEffect(() => {
+    if (!osdReady) return;
+
+    if (hoveredAnnotationId) {
+      viewerApiRef.current?.highlightAnnotations?.([hoveredAnnotationId]);
+      return;
+    }
+
+    if (highlightAllographId == null) {
+      viewerApiRef.current?.clearHighlights?.();
+      return;
+    }
+
+    viewerApiRef.current?.highlightAnnotations?.(highlightedIds);
+  }, [osdReady, hoveredAnnotationId, highlightAllographId, highlightedIds]);
+
+  // hydrate unsaved count
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || isPublicDemoMode) return;
+
+    try {
+      const saved = Number(localStorage.getItem(`unsaved:${imageId}`) || 0);
+      if (saved > 0) {
+        setUnsavedChanges(saved);
+      }
+    } catch {
+      // ignore
+    }
+  }, [imageId, isPublicDemoMode]);
+
+  // persist unsaved count
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || isPublicDemoMode) return;
+
+    try {
+      localStorage.setItem(`unsaved:${imageId}`, String(unsavedChanges));
+    } catch {
+      // ignore
+    }
+  }, [unsavedChanges, imageId, isPublicDemoMode]);
+
+  // sync annotation visibility into viewer
+  React.useEffect(() => {
+    if (!osdReady) return;
+    viewerApiRef.current?.toggleAnnotations(annotationsEnabled);
+  }, [annotationsEnabled, osdReady]);
+
+  // load image + manuscript + allographs + positions + IIIF height
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const loadData = async () => {
+      try {
+        setLoading(true);
+
+        const [image, allographsData, positionsData] = await Promise.all([
+          fetchManuscriptImage(imageId),
+          fetchAllographs(),
+          fetchPositions(),
+        ]);
+
+        if (!isMounted) return;
+
+        setManuscriptImage(image);
+        setAllographs(allographsData);
+        setPositions(positionsData);
+
+        fetchManuscript(image.item_part).then((m) => {
+          if (isMounted) setManuscript(m);
+        });
+
+        const baseUrl = browserSafeIiifUrl(getIiifBaseUrl(image.iiif_image));
+        const infoUrl = `${baseUrl}/info.json`;
+
+        try {
+          const infoRes = await fetch(infoUrl);
+          if (!infoRes.ok) throw new Error(`IIIF info: ${infoRes.status}`);
+          const info = await infoRes.json();
+          if (isMounted) setImageHeight(info.height ?? 2000);
+        } catch {
+          if (isMounted) setImageHeight(2000);
+        }
+
+        if (isMounted) setError(null);
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to load manuscript data');
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    void loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [imageId]);
+
+  // load allograph ids present on this image
+  React.useEffect(() => {
+    if (!manuscriptImage) return;
+
+    let isMounted = true;
+
+    const loadAllographIds = async () => {
+      try {
+        const graphs = await fetchAnnotationsForImage(String(manuscriptImage.id));
+        if (!isMounted) return;
+
+        const ids = Array.from(
+          new Set(
+            graphs.map((g) => g.allograph).filter((id): id is number => typeof id === 'number')
+          )
+        );
+
+        setImageAllographIds(ids);
+      } catch {
+        if (isMounted) setImageAllographIds([]);
+      }
+    };
+
+    void loadAllographIds();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [manuscriptImage]);
+
+  // load annotations for current image / allograph filter
+  React.useEffect(() => {
+    if (!manuscriptImage || !imageHeight) return;
+
+    let isMounted = true;
+
+    const load = async () => {
+      try {
+        const allographId = filteredAllograph?.id ? String(filteredAllograph.id) : undefined;
+        const list = await fetchAnnotationsForImage(String(manuscriptImage.id), allographId);
+        if (!isMounted) return;
+
+        const dbMapped: A9sAnnotation[] = list.map((a) =>
+          backendToA9sAnnotation(a, imageHeight, allographNameById.get(a.allograph))
+        );
+
+        const iiif = manuscriptImage.iiif_image;
+        const cacheKey = cacheKeyFor(iiif);
+        const metaKey = metaKeyFor(iiif);
+        let merged: A9sAnnotation[] = dbMapped;
+
+        if (typeof window !== 'undefined' && !isPublicDemoMode) {
+          try {
+            const raw = localStorage.getItem(cacheKey);
+            const meta = JSON.parse(localStorage.getItem(metaKey) || '{}') as {
+              imageHeight?: number;
+            };
+
+            if (raw && meta?.imageHeight === imageHeight) {
+              const cached = JSON.parse(raw) as A9sAnnotation[];
+              const localOnly = Array.isArray(cached) ? cached.filter((a) => !isDbId(a?.id)) : [];
+              const existing = new Set(dbMapped.map((a) => a.id));
+              const extras = localOnly.filter((a) => !existing.has(a.id));
+              merged = [...dbMapped, ...extras];
+            } else if (raw && meta?.imageHeight !== imageHeight) {
+              localStorage.removeItem(cacheKey);
+              localStorage.removeItem(metaKey);
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        if (isMounted) {
+          setInitialA9sAnnots(merged);
+          setA9sSnapshot(merged);
+        }
+      } catch {
+        if (isMounted) {
+          setInitialA9sAnnots([]);
+          setA9sSnapshot([]);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [manuscriptImage, imageHeight, filteredAllograph, allographNameById, isPublicDemoMode]);
+
+  // Ctrl/Cmd+S save
   React.useEffect(() => {
     if (isPublicDemoMode) return;
+
     const handleKeyPress = (e: KeyboardEvent): void => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         if (unsavedChanges > 0) void handleSave();
       }
     };
+
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [unsavedChanges, handleSave, isPublicDemoMode]);
 
+  // open shared ?graph=... annotation on first valid load
   React.useEffect(() => {
     if (initialGraphHandledRef.current) return;
     if (!osdReady || !a9sSnapshot.length || typeof window === 'undefined') return;
@@ -604,7 +666,6 @@ export default function ManuscriptViewer({
     const found = a9sSnapshot.find((a) => a.id === targetId) as A9sWithMeta | undefined;
 
     initialGraphHandledRef.current = true;
-
     if (!found) return;
 
     setSelectedAnnotation(found);
@@ -614,7 +675,11 @@ export default function ManuscriptViewer({
     viewerApiRef.current?.centerOnAnnotation?.(targetId);
   }, [osdReady, a9sSnapshot]);
 
-  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  // ---- Early returns ----
+  if (loading) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
   if (error || !manuscriptImage) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -626,21 +691,28 @@ export default function ManuscriptViewer({
     );
   }
 
-  const handleToggleAnnotations = () => {
-    setAnnotationsEnabled((prev) => {
-      const next = !prev;
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(`annotationsVisible:${imageId}`, String(next));
-        } catch {
-          // ignore
-        }
-      }
-      viewerApiRef.current?.toggleAnnotations(next);
-      return next;
-    });
-  };
+  const annotationHeader = (
+    <AnnotationHeader
+      annotationsEnabled={annotationsEnabled}
+      onToggleAnnotations={handleToggleAnnotations}
+      unsavedCount={unsavedChanges}
+      showUnsavedCount={!isPublicDemoMode}
+      imageId={imageId}
+      onAllographSelect={setFilteredAllograph}
+      onHandSelect={setSelectedHand}
+      allographs={allographsForThisImage}
+      onAllographHover={setHoveredAllograph}
+      activeAllographCount={filteredA9s.length}
+      activeAllographLabel={activeAllographLabel}
+      selectedAllographId={dropdownAllograph?.id ?? null}
+      onOpenAllographModal={() => {
+        setHoveredAnnotationId(null);
+        setIsAllographModalOpen(true);
+      }}
+    />
+  );
 
+  // ---- Render ----
   return (
     <div
       className={
@@ -672,45 +744,12 @@ export default function ManuscriptViewer({
 
       {isFullScreen ? (
         <div className="fixed top-0 left-0 right-0 z-40 bg-card/95 backdrop-blur border-b">
-          <AnnotationHeader
-            annotationsEnabled={annotationsEnabled}
-            onToggleAnnotations={handleToggleAnnotations}
-            unsavedCount={unsavedChanges}
-            showUnsavedCount={!isPublicDemoMode}
-            imageId={imageId}
-            onAllographSelect={setFilteredAllograph}
-            onHandSelect={setSelectedHand}
-            allographs={allographsForThisImage}
-            onAllographHover={setHoveredAllograph}
-            activeAllographCount={filteredA9s.length}
-            activeAllographLabel={activeAllographLabel}
-            selectedAllographId={dropdownAllograph?.id ?? null}
-            onOpenAllographModal={() => {
-              setHoveredAnnotationId(null);
-              setIsAllographModalOpen(true);
-            }}
-          />
+          {annotationHeader}
         </div>
       ) : (
-        <AnnotationHeader
-          annotationsEnabled={annotationsEnabled}
-          onToggleAnnotations={handleToggleAnnotations}
-          unsavedCount={unsavedChanges}
-          showUnsavedCount={!isPublicDemoMode}
-          imageId={imageId}
-          onAllographSelect={setFilteredAllograph}
-          onHandSelect={setSelectedHand}
-          allographs={allographsForThisImage}
-          onAllographHover={setHoveredAllograph}
-          activeAllographCount={filteredA9s.length}
-          activeAllographLabel={activeAllographLabel}
-          selectedAllographId={dropdownAllograph?.id ?? null}
-          onOpenAllographModal={() => {
-            setHoveredAnnotationId(null);
-            setIsAllographModalOpen(true);
-          }}
-        />
+        annotationHeader
       )}
+
       <Dialog
         open={isAllographModalOpen}
         onOpenChange={(open) => {
@@ -796,6 +835,7 @@ export default function ManuscriptViewer({
               </TooltipTrigger>
               <TooltipContent>Reset View</TooltipContent>
             </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -812,6 +852,7 @@ export default function ManuscriptViewer({
               </TooltipTrigger>
               <TooltipContent>{isFullScreen ? 'Exit Full Screen' : 'Full Screen'}</TooltipContent>
             </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={() => viewerApiRef.current?.zoomIn()}>
@@ -820,6 +861,7 @@ export default function ManuscriptViewer({
               </TooltipTrigger>
               <TooltipContent>Zoom In</TooltipContent>
             </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={() => viewerApiRef.current?.zoomOut()}>
@@ -828,6 +870,7 @@ export default function ManuscriptViewer({
               </TooltipTrigger>
               <TooltipContent>Zoom Out</TooltipContent>
             </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -840,6 +883,7 @@ export default function ManuscriptViewer({
               </TooltipTrigger>
               <TooltipContent>Move Tool (m)</TooltipContent>
             </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -852,6 +896,7 @@ export default function ManuscriptViewer({
               </TooltipTrigger>
               <TooltipContent>Create Annotation</TooltipContent>
             </Tooltip>
+
             {!isPublicDemoMode && (
               <>
                 <Tooltip>
@@ -867,6 +912,7 @@ export default function ManuscriptViewer({
                   </TooltipTrigger>
                   <TooltipContent>Save</TooltipContent>
                 </Tooltip>
+
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -879,6 +925,7 @@ export default function ManuscriptViewer({
                   </TooltipTrigger>
                   <TooltipContent>Delete (del)</TooltipContent>
                 </Tooltip>
+
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon">
@@ -887,6 +934,7 @@ export default function ManuscriptViewer({
                   </TooltipTrigger>
                   <TooltipContent>Modify</TooltipContent>
                 </Tooltip>
+
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon">
@@ -897,6 +945,7 @@ export default function ManuscriptViewer({
                 </Tooltip>
               </>
             )}
+
             {manuscriptImage && manuscript && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -937,42 +986,22 @@ export default function ManuscriptViewer({
               disableEditor={true}
               readOnly={isPublicDemoMode}
               onCreate={() => {
-                if (typeof window !== 'undefined' && !isPublicDemoMode) {
-                  try {
-                    const iiif = manuscriptImage.iiif_image;
-                    const cacheKey = cacheKeyFor(iiif);
-                    const metaKey = metaKeyFor(iiif);
-                    const all = viewerApiRef.current?.getAnnotations() ?? [];
-                    localStorage.setItem(cacheKey, JSON.stringify(all));
-                    localStorage.setItem(metaKey, JSON.stringify({ imageHeight }));
-                  } catch {
-                    // ignore
-                  }
-                }
-                // unsaved counter: +1 for creates
+                persistAnnotationCache();
+
                 if (!isPublicDemoMode) {
                   setUnsavedChanges((n) => n + 1);
                 }
+
                 setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? []);
               }}
               onDelete={(a: A9sAnnotation) => {
-                if (typeof window !== 'undefined' && !isPublicDemoMode) {
-                  try {
-                    const iiif = manuscriptImage.iiif_image;
-                    const cacheKey = cacheKeyFor(iiif);
-                    const metaKey = metaKeyFor(iiif);
-                    const all = viewerApiRef.current?.getAnnotations() ?? [];
-                    localStorage.setItem(cacheKey, JSON.stringify(all));
-                    localStorage.setItem(metaKey, JSON.stringify({ imageHeight }));
-                  } catch {
-                    // ignore
-                  }
-                }
+                persistAnnotationCache();
+
                 const id = a?.id as string | undefined;
                 if (!isPublicDemoMode && id && !isDbId(id)) {
-                  // deleting a brand-new unsaved annotation reduces the counter
                   setUnsavedChanges((n) => Math.max(0, n - 1));
                 }
+
                 setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? []);
               }}
               onSelect={(a) => {
@@ -991,6 +1020,7 @@ export default function ManuscriptViewer({
               }}
               exposeApi={handleExposeApi}
             />
+
             {selectedAnnotation && (
               <div
                 className="fixed top-4 right-4 z-50 w-[420px] max-w-[90vw] rounded-lg border bg-background shadow-lg"
