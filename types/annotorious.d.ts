@@ -45,6 +45,11 @@ declare module '@recogito/annotorious-openseadragon' {
     ): void;
 
     panTo(annotationOrId: AnnotoriousAnnotation | string, immediately?: boolean): void;
+    updateSelected(
+      annotation: AnnotoriousAnnotation,
+      saveImmediately?: boolean
+    ): Promise<void> | void;
+    saveSelected(): Promise<void> | void;
     cancelSelected(): void | Promise<void>;
     setDrawingEnabled(enabled: boolean): void;
     setVisible(visible: boolean): void;
@@ -55,10 +60,15 @@ declare module '@recogito/annotorious-openseadragon' {
       event: 'selectAnnotation',
       handler: (annotation: AnnotoriousAnnotation | null, element?: unknown) => void
     ): void;
+    on(event: 'createSelection', handler: (selection: AnnotoriousAnnotation) => void): void;
     on(event: 'cancelSelected', handler: () => void): void;
     on(
       event: 'updateAnnotation',
       handler: (annotation: AnnotoriousAnnotation, previous: AnnotoriousAnnotation) => void
+    ): void;
+    on(
+      event: 'clickAnnotation',
+      handler: (annotation: AnnotoriousAnnotation, event?: PointerEvent) => void
     ): void;
     on(event: string, handler: (...args: unknown[]) => void): void;
 
@@ -68,10 +78,15 @@ declare module '@recogito/annotorious-openseadragon' {
       event: 'selectAnnotation',
       handler: (annotation: AnnotoriousAnnotation | null, element?: unknown) => void
     ): void;
+    off(event: 'createSelection', handler: (selection: AnnotoriousAnnotation) => void): void;
     off(event: 'cancelSelected', handler: () => void): void;
     off(
       event: 'updateAnnotation',
       handler: (annotation: AnnotoriousAnnotation, previous: AnnotoriousAnnotation) => void
+    ): void;
+    off(
+      event: 'clickAnnotation',
+      handler: (annotation: AnnotoriousAnnotation, event?: PointerEvent) => void
     ): void;
     off(event: string, handler: (...args: unknown[]) => void): void;
 

@@ -25,6 +25,8 @@ export type ViewerApi = {
   clearHighlights: () => void;
   clearSelection: () => void;
   selectAnnotationById?: (id: string) => void;
+  updateSelectedDraft?: (annotation: Annotation) => Promise<void>;
+  saveSelectedDraft?: () => Promise<void>;
 };
 
 // ---- Component props ----
@@ -70,6 +72,10 @@ export default function ManuscriptAnnotorious({
     isLoading: true,
   });
 
+  const selectedDisplayIdRef = useRef<string | null>(null);
+  const isDraftAnnotation = (a: Annotation | null | undefined) =>
+    Boolean(a && typeof a.id === 'string' && !a.id.startsWith('db:'));
+
   const syncAnnotationClasses = React.useCallback(() => {
     const root = viewerRef.current;
     const anno = annoRef.current;
@@ -93,9 +99,9 @@ export default function ManuscriptAnnotorious({
       el.classList.add(isDescribed ? 'a9s-described' : 'a9s-undescribed');
     });
 
-    const selected = anno.getSelected?.() as Annotation | undefined;
-    if (selected) {
-      const baseEl = root.querySelector<SVGGElement>(`g.a9s-annotation[data-id="${selected.id}"]`);
+    const selectedId = anno.getSelected?.()?.id ?? selectedDisplayIdRef.current;
+    if (selectedId) {
+      const baseEl = root.querySelector<SVGGElement>(`g.a9s-annotation[data-id="${selectedId}"]`);
       if (baseEl) {
         baseEl.classList.add('a9s-current-selected');
       }
@@ -207,8 +213,6 @@ export default function ManuscriptAnnotorious({
         });
       });
 
-      viewer.addHandler('tile-load-failed', () => {});
-
       viewer.addHandler('open', () => {
         if (!isMounted) return;
         setState((prev) => ({ ...prev, isLoading: false, hasError: false }));
@@ -220,6 +224,7 @@ export default function ManuscriptAnnotorious({
           const anno = Annotorious(viewer, annoOptions);
 
           annoRef.current = anno;
+          anno.readOnly = true;
 
           const toApplyNow = Array.isArray(initialAnnotsRef.current)
             ? initialAnnotsRef.current
@@ -228,24 +233,56 @@ export default function ManuscriptAnnotorious({
 
           queueSyncAnnotationClasses();
 
+          anno.on('createSelection', (selection: Annotation) => {
+            selectedDisplayIdRef.current = selection.id;
+            anno.readOnly = false;
+            queueSyncAnnotationClasses();
+            onSelectRef.current?.(selection);
+          });
+
           anno.on('createAnnotation', (a: Annotation) => {
+            selectedDisplayIdRef.current = a.id;
+            anno.readOnly = false;
             queueSyncAnnotationClasses();
             onCreateRef.current?.(a);
           });
+
           anno.on('deleteAnnotation', (a: Annotation) => {
+            if (selectedDisplayIdRef.current === a.id) {
+              selectedDisplayIdRef.current = null;
+            }
             queueSyncAnnotationClasses();
             onDeleteRef.current?.(a);
           });
-          anno.on('selectAnnotation', (a: Annotation | null) => {
-            queueSyncAnnotationClasses();
 
+          anno.on('clickAnnotation', (a: Annotation) => {
+            if (currentMode === 'pan') {
+              anno.readOnly = isDraftAnnotation(a) ? false : true;
+            } else if (currentMode === 'draw') {
+              anno.readOnly = false;
+            }
+          });
+
+          anno.on('selectAnnotation', (a: Annotation | null) => {
             if (currentMode === 'delete') {
               return;
             }
 
+            selectedDisplayIdRef.current = a?.id ?? null;
+
+            if (currentMode === 'draw') {
+              anno.readOnly = false;
+            } else if (currentMode === 'pan') {
+              anno.readOnly = isDraftAnnotation(a) ? false : true;
+            }
+
+            queueSyncAnnotationClasses();
             onSelectRef.current?.(a);
           });
+
           anno.on('cancelSelected', () => {
+            selectedDisplayIdRef.current = null;
+            anno.readOnly = currentMode === 'draw' ? false : true;
             queueSyncAnnotationClasses();
             onSelectRef.current?.(null);
           });
@@ -283,8 +320,10 @@ export default function ManuscriptAnnotorious({
                 rearmHandler = null;
               }
 
-              anno.setDrawingEnabled(false);
               currentMode = 'pan';
+              const selected = (anno.getSelected?.() as Annotation | undefined) ?? null;
+              anno.readOnly = isDraftAnnotation(selected) ? false : true;
+              anno.setDrawingEnabled(false);
               viewerRef.current?.classList.remove('osd-mode-draw', 'osd-mode-delete');
               viewerRef.current?.classList.add('osd-mode-pan');
             },
@@ -299,19 +338,27 @@ export default function ManuscriptAnnotorious({
                 deleteHandler = null;
               }
 
+              anno.readOnly = false;
               anno.setDrawingEnabled(true);
               currentMode = 'draw';
               viewerRef.current?.classList.remove('osd-mode-pan', 'osd-mode-delete');
               viewerRef.current?.classList.add('osd-mode-draw');
 
               const rearm = () => {
-                if (currentMode === 'draw') setTimeout(() => anno.setDrawingEnabled(true), 0);
+                if (currentMode === 'draw') {
+                  setTimeout(() => {
+                    anno.readOnly = false;
+                    anno.setDrawingEnabled(true);
+                  }, 0);
+                }
               };
+
               if (rearmHandler) {
                 anno.off('createAnnotation', rearmHandler);
                 anno.off('cancelSelected', rearmHandler);
                 anno.off('updateAnnotation', rearmHandler);
               }
+
               rearmHandler = rearm;
               anno.on('createAnnotation', rearmHandler);
               anno.on('cancelSelected', rearmHandler);
@@ -330,6 +377,7 @@ export default function ManuscriptAnnotorious({
                 rearmHandler = null;
               }
 
+              anno.readOnly = true;
               anno.setDrawingEnabled(false);
               currentMode = 'delete';
               viewerRef.current?.classList.remove('osd-mode-pan', 'osd-mode-draw');
@@ -352,6 +400,8 @@ export default function ManuscriptAnnotorious({
               anno.setVisible(visible);
 
               if (!visible) {
+                selectedDisplayIdRef.current = null;
+                anno.readOnly = true;
                 queueSyncAnnotationClasses();
                 onSelectRef.current?.(null);
                 anno.setDrawingEnabled(false);
@@ -399,19 +449,63 @@ export default function ManuscriptAnnotorious({
             },
 
             clearSelection: () => {
+              selectedDisplayIdRef.current = null;
+
               const result = annoRef.current?.cancelSelected?.();
 
               if (result && typeof result === 'object' && 'then' in result) {
                 void result.then(() => {
+                  if (annoRef.current) {
+                    annoRef.current.readOnly = currentMode === 'draw' ? false : true;
+                  }
                   queueSyncAnnotationClasses();
                 });
               } else {
+                if (annoRef.current) {
+                  annoRef.current.readOnly = currentMode === 'draw' ? false : true;
+                }
                 queueSyncAnnotationClasses();
               }
             },
 
             selectAnnotationById: (id: string) => {
+              const selected = annoRef.current?.getAnnotationById?.(id) ?? null;
+
+              if (annoRef.current) {
+                if (currentMode === 'draw') {
+                  annoRef.current.readOnly = false;
+                } else if (currentMode === 'pan') {
+                  annoRef.current.readOnly = isDraftAnnotation(selected) ? false : true;
+                }
+              }
+
+              selectedDisplayIdRef.current = id;
               annoRef.current?.selectAnnotation(id);
+              queueSyncAnnotationClasses();
+            },
+
+            updateSelectedDraft: async (annotation: Annotation) => {
+              const anno = annoRef.current;
+              if (!anno) return;
+
+              const result = anno.updateSelected?.(annotation);
+              if (result && typeof result === 'object' && 'then' in result) {
+                await result;
+              }
+
+              selectedDisplayIdRef.current = annotation.id;
+              queueSyncAnnotationClasses();
+            },
+
+            saveSelectedDraft: async () => {
+              const anno = annoRef.current;
+              if (!anno) return;
+
+              const result = anno.saveSelected?.();
+              if (result && typeof result === 'object' && 'then' in result) {
+                await result;
+              }
+
               queueSyncAnnotationClasses();
             },
           });

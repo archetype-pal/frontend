@@ -77,9 +77,46 @@ type A9sWithMeta = A9sAnnotation & {
   };
 };
 
+type DraftSharePayload = {
+  id: string;
+  target: A9sAnnotation['target'];
+  body?: A9sAnnotation['body'];
+  _meta?: A9sWithMeta['_meta'];
+};
+
 const metaKeyFor = (iiif: string) => `annotations:meta:${iiif}`;
 const cacheKeyFor = (iiif: string) => `annotations:${iiif}`;
 const isDbId = (id?: string) => typeof id === 'string' && id.startsWith('db:');
+
+function toBase64Url(value: string): string {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  bytes.forEach((b) => {
+    binary += String.fromCharCode(b);
+  });
+
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function fromBase64Url(value: string): string {
+  const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function encodeDraftSharePayload(payload: DraftSharePayload): string {
+  return toBase64Url(JSON.stringify(payload));
+}
+
+function decodeDraftSharePayload(value: string): DraftSharePayload | null {
+  try {
+    return JSON.parse(fromBase64Url(value)) as DraftSharePayload;
+  } catch {
+    return null;
+  }
+}
 
 /** Rewrite cross-origin IIIF URL to same-origin /iiif-proxy to avoid CORS. Keeps path encoding (%2F) so Sipi receives a single identifier segment. */
 function browserSafeIiifUrl(raw: string): string {
@@ -143,6 +180,9 @@ export default function ManuscriptViewer({
 
   const [unsavedChanges, setUnsavedChanges] = React.useState<number>(0);
 
+  const [draftAllographText, setDraftAllographText] = React.useState('');
+  const [draftNoteText, setDraftNoteText] = React.useState('');
+
   // ---- Drag hooks ----
   const allographDialogDrag = useDraggablePosition();
   const annotationPopupDrag = useDraggablePosition({ x: 0, y: 300 });
@@ -158,6 +198,8 @@ export default function ManuscriptViewer({
     if (allographId == null) return undefined;
     return allographs.find((a) => a.id === allographId);
   }, [allographs, selectedAnnotation]);
+
+  const isDraftAnnotation = Boolean(selectedAnnotation && !isDbId(selectedAnnotation.id));
 
   const activeHandLabel = selectedHand?.name ?? 'Any';
 
@@ -276,11 +318,46 @@ export default function ManuscriptViewer({
   const handleShareSelectedAnnotation = () => {
     if (!selectedAnnotation || typeof window === 'undefined') return;
 
-    const graphId = selectedAnnotation.id.replace(/^db:/, '');
-    if (!graphId) return;
-
     const url = new URL(window.location.href);
-    url.searchParams.set('graph', graphId);
+
+    if (isDraftAnnotation) {
+      const draftBody: A9sAnnotation['body'] = [
+        ...(draftAllographText.trim()
+          ? [
+              {
+                type: 'TextualBody',
+                purpose: 'commenting',
+                value: draftAllographText.trim(),
+              },
+            ]
+          : []),
+        ...(draftNoteText.trim()
+          ? [
+              {
+                type: 'TextualBody',
+                purpose: 'describing',
+                value: draftNoteText.trim(),
+              },
+            ]
+          : []),
+      ];
+
+      const payload: DraftSharePayload = {
+        id: selectedAnnotation.id,
+        target: selectedAnnotation.target,
+        body: draftBody,
+        _meta: selectedAnnotation._meta,
+      };
+
+      url.searchParams.delete('graph');
+      url.searchParams.set('draft', encodeDraftSharePayload(payload));
+    } else {
+      const graphId = selectedAnnotation.id.replace(/^db:/, '');
+      if (!graphId) return;
+
+      url.searchParams.delete('draft');
+      url.searchParams.set('graph', graphId);
+    }
 
     setShareUrl(url.toString());
     setIsShareUrlVisible(true);
@@ -296,13 +373,81 @@ export default function ManuscriptViewer({
     }
   };
 
-  const handleCloseSelectedAnnotation = () => {
-    viewerApiRef.current?.clearSelection?.();
+  const resetAnnotationPopupState = () => {
     setSelectedAnnotation(null);
     setPopupTab('components');
     setIsShareUrlVisible(false);
     setShareUrl('');
+    setDraftAllographText('');
+    setDraftNoteText('');
     annotationPopupDrag.reset();
+  };
+
+  const rearmCreateTool = () => {
+    setActiveButton('editorial');
+    window.setTimeout(() => {
+      viewerApiRef.current?.enableDraw();
+    }, 0);
+  };
+
+  const handleCloseSelectedAnnotation = () => {
+    viewerApiRef.current?.clearSelection?.();
+    resetAnnotationPopupState();
+  };
+
+  const handleCancelDraftAnnotation = () => {
+    const shouldResumeDraw = activeButton === 'editorial';
+
+    viewerApiRef.current?.clearSelection?.();
+    resetAnnotationPopupState();
+
+    if (shouldResumeDraw) {
+      rearmCreateTool();
+    } else {
+      viewerApiRef.current?.enablePan();
+      setActiveButton('move');
+    }
+  };
+
+  const handleSaveDraftAnnotation = async () => {
+    if (!selectedAnnotation) return;
+
+    const next: A9sAnnotation = {
+      ...selectedAnnotation,
+      body: [
+        {
+          type: 'TextualBody',
+          purpose: 'commenting',
+          value: draftAllographText.trim(),
+        },
+        ...(draftNoteText.trim()
+          ? [
+              {
+                type: 'TextualBody',
+                purpose: 'describing',
+                value: draftNoteText.trim(),
+              },
+            ]
+          : []),
+      ],
+    };
+
+    await viewerApiRef.current?.updateSelectedDraft?.(next);
+    await viewerApiRef.current?.saveSelectedDraft?.();
+  };
+
+  const handleConfirmDraftAnnotation = async () => {
+    const shouldResumeDraw = activeButton === 'editorial';
+
+    await handleSaveDraftAnnotation();
+    resetAnnotationPopupState();
+
+    if (shouldResumeDraw) {
+      rearmCreateTool();
+    } else {
+      viewerApiRef.current?.enablePan();
+      setActiveButton('move');
+    }
   };
 
   const handleToggleFullScreen = () => {
@@ -616,6 +761,29 @@ export default function ManuscriptViewer({
           }
         }
 
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          const draftParam = url.searchParams.get('draft');
+
+          if (draftParam) {
+            const decoded = decodeDraftSharePayload(draftParam);
+
+            if (decoded?.target) {
+              const sharedDraft: A9sAnnotation = {
+                id: decoded.id || 'draft:shared',
+                type: 'Annotation',
+                target: decoded.target,
+                body: decoded.body ?? [],
+                _meta: decoded._meta,
+              };
+
+              if (!merged.some((a) => a.id === sharedDraft.id)) {
+                merged = [...merged, sharedDraft];
+              }
+            }
+          }
+        }
+
         if (isMounted) {
           setInitialA9sAnnots(merged);
           setA9sSnapshot(merged);
@@ -653,11 +821,38 @@ export default function ManuscriptViewer({
   // open shared ?graph=... annotation on first valid load
   React.useEffect(() => {
     if (initialGraphHandledRef.current) return;
-    if (!osdReady || !a9sSnapshot.length || typeof window === 'undefined') return;
+    if (!osdReady || typeof window === 'undefined') return;
 
     const url = new URL(window.location.href);
-    const graphParam = url.searchParams.get('graph');
 
+    const draftParam = url.searchParams.get('draft');
+    if (draftParam) {
+      if (!a9sSnapshot.length) return;
+
+      const decoded = decodeDraftSharePayload(draftParam);
+      const draftId = decoded?.id || 'draft:shared';
+      const found = a9sSnapshot.find((a) => a.id === draftId) as A9sWithMeta | undefined;
+
+      if (!found) return;
+
+      initialGraphHandledRef.current = true;
+      setSelectedAnnotation(found);
+      setPopupTab('components');
+
+      const title = found.body?.find((b) => b.purpose === 'commenting')?.value ?? '';
+      const note = found.body?.find((b) => b.purpose !== 'commenting')?.value ?? '';
+
+      setDraftAllographText(title);
+      setDraftNoteText(note);
+
+      viewerApiRef.current?.selectAnnotationById?.(draftId);
+      viewerApiRef.current?.centerOnAnnotation?.(draftId);
+      return;
+    }
+
+    if (!a9sSnapshot.length) return;
+
+    const graphParam = url.searchParams.get('graph');
     if (!graphParam) {
       initialGraphHandledRef.current = true;
       return;
@@ -985,7 +1180,8 @@ export default function ManuscriptViewer({
               iiifImageUrl={browserSafeIiifUrl(getIiifBaseUrl(manuscriptImage.iiif_image))}
               initialAnnotations={initialA9sAnnots}
               disableEditor={true}
-              readOnly={isPublicDemoMode}
+              // readOnly={isPublicDemoMode}
+              readOnly={false}
               onCreate={() => {
                 persistAnnotationCache();
 
@@ -1017,6 +1213,19 @@ export default function ManuscriptViewer({
                   setFilteredAllograph(undefined);
                   setHoveredAllograph(undefined);
                   setHoveredAnnotationId(null);
+
+                  if (!isDbId(selected.id)) {
+                    const title =
+                      selected.body?.find((b) => b.purpose === 'commenting')?.value ?? '';
+                    const note =
+                      selected.body?.find((b) => b.purpose !== 'commenting')?.value ?? '';
+
+                    setDraftAllographText(title);
+                    setDraftNoteText(note);
+                  }
+                } else {
+                  setDraftAllographText('');
+                  setDraftNoteText('');
                 }
               }}
               exposeApi={handleExposeApi}
@@ -1034,7 +1243,14 @@ export default function ManuscriptViewer({
                   {...annotationPopupDrag.bindDrag}
                 >
                   <div className="min-w-0">
-                    <h3 className="truncate text-base font-semibold">{selectedAllographTitle}</h3>
+                    <h3 className="truncate text-base font-semibold">
+                      {isDraftAnnotation
+                        ? draftAllographText.trim() || 'New Annotation'
+                        : selectedAllographTitle}
+                    </h3>
+                    {isDraftAnnotation && (
+                      <p className="text-xs text-muted-foreground">Temporary annotation</p>
+                    )}
                   </div>
 
                   <div
@@ -1043,35 +1259,57 @@ export default function ManuscriptViewer({
                     onClick={(e) => e.stopPropagation()}
                   >
                     <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={handleShareSelectedAnnotation}
-                            aria-label="Share URL"
-                          >
-                            <Share2 className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Share URL</TooltipContent>
-                      </Tooltip>
+                      {isDraftAnnotation ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={handleShareSelectedAnnotation}
+                              aria-label="Share URL"
+                              type="button"
+                            >
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Share URL</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={handleShareSelectedAnnotation}
+                                aria-label="Share URL"
+                                type="button"
+                              >
+                                <Share2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Share URL</TooltipContent>
+                          </Tooltip>
 
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            disabled
-                            aria-label="Add to Collection"
-                          >
-                            <Star className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Add to Collection</TooltipContent>
-                      </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                disabled
+                                aria-label="Add to Collection"
+                                type="button"
+                              >
+                                <Star className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Add to Collection</TooltipContent>
+                          </Tooltip>
+                        </>
+                      )}
 
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -1081,6 +1319,7 @@ export default function ManuscriptViewer({
                             className="h-8 w-8"
                             onClick={handleCloseSelectedAnnotation}
                             aria-label="Close annotation popup"
+                            type="button"
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -1095,7 +1334,7 @@ export default function ManuscriptViewer({
                   <div className="border-b px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Input readOnly value={shareUrl} className="flex-1 text-sm" />
-                      <Button variant="ghost" size="sm" onClick={handleCopyShareUrl}>
+                      <Button variant="ghost" size="sm" onClick={handleCopyShareUrl} type="button">
                         Copy
                       </Button>
                       <Button
@@ -1103,6 +1342,7 @@ export default function ManuscriptViewer({
                         size="icon"
                         onClick={() => setIsShareUrlVisible(false)}
                         title="Hide URL"
+                        type="button"
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -1110,109 +1350,145 @@ export default function ManuscriptViewer({
                   </div>
                 )}
 
-                <Tabs
-                  value={popupTab}
-                  onValueChange={(value) =>
-                    setPopupTab(value as 'components' | 'positions' | 'notes')
-                  }
-                  className="w-full"
-                >
-                  <div className="border-b px-4 py-2">
-                    <TabsList className="h-auto gap-2 bg-transparent p-0">
-                      <TabsTrigger
-                        value="components"
-                        className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                 data-[state=active]:border data-[state=active]:bg-background
-                 data-[state=active]:shadow-sm"
-                      >
-                        Components
-                      </TabsTrigger>
+                {isDraftAnnotation ? (
+                  <div className="max-h-[320px] overflow-auto px-4 py-4 space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Allograph</label>
+                      <Input
+                        value={draftAllographText}
+                        onChange={(e) => setDraftAllographText(e.target.value)}
+                        placeholder="Type allograph"
+                      />
+                    </div>
 
-                      {hasPositionsTab && (
-                        <TabsTrigger
-                          value="positions"
-                          className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                   data-[state=active]:border data-[state=active]:bg-background
-                   data-[state=active]:shadow-sm"
-                        >
-                          Aspects
-                        </TabsTrigger>
-                      )}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Note</label>
+                      <textarea
+                        value={draftNoteText}
+                        onChange={(e) => setDraftNoteText(e.target.value)}
+                        placeholder="Type note"
+                        rows={5}
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </div>
 
-                      <TabsTrigger
-                        value="notes"
-                        className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                 data-[state=active]:border data-[state=active]:bg-background
-                 data-[state=active]:shadow-sm"
-                      >
-                        Notes
-                      </TabsTrigger>
-                    </TabsList>
+                    <div className="mt-2 flex items-center justify-end gap-2 border-t pt-3">
+                      <Button variant="ghost" onClick={handleCancelDraftAnnotation} type="button">
+                        Cancel
+                      </Button>
+                      <Button onClick={() => void handleConfirmDraftAnnotation()} type="button">
+                        OK
+                      </Button>
+                    </div>
                   </div>
+                ) : (
+                  <Tabs
+                    value={popupTab}
+                    onValueChange={(value) =>
+                      setPopupTab(value as 'components' | 'positions' | 'notes')
+                    }
+                    className="w-full"
+                  >
+                    <div className="border-b px-4 py-2">
+                      <TabsList className="h-auto gap-2 bg-transparent p-0">
+                        <TabsTrigger
+                          value="components"
+                          className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+              data-[state=active]:border data-[state=active]:bg-background
+              data-[state=active]:shadow-sm"
+                        >
+                          Components
+                        </TabsTrigger>
 
-                  <div className="max-h-[320px] overflow-auto px-4 py-4">
-                    <TabsContent value="components" className="mt-0">
-                      <div className="space-y-4">
-                        {selectedComponentGroups.length > 0 ? (
-                          selectedComponentGroups.map((group) => (
-                            <div key={group.componentId}>
-                              <div className="text-sm font-semibold text-foreground">
-                                {group.componentName}
-                              </div>
-                              <Separator className="my-2" />
-                              {group.featureNames.length > 0 ? (
-                                <div className="space-y-1">
-                                  {group.featureNames.map((featureName) => (
-                                    <div
-                                      key={`${group.componentId}-${featureName}`}
-                                      className="text-sm text-muted-foreground"
-                                    >
-                                      {featureName}
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="text-sm text-muted-foreground">
-                                  No features selected.
-                                </div>
-                              )}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-sm text-muted-foreground">
-                            No components defined.
-                          </div>
+                        {hasPositionsTab && (
+                          <TabsTrigger
+                            value="positions"
+                            className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+                data-[state=active]:border data-[state=active]:bg-background
+                data-[state=active]:shadow-sm"
+                          >
+                            Aspects
+                          </TabsTrigger>
                         )}
-                      </div>
-                    </TabsContent>
 
-                    {hasPositionsTab && (
-                      <TabsContent value="positions" className="mt-0">
-                        <div className="space-y-2">
-                          {selectedPositionLabels.map((label) => (
-                            <div key={label} className="text-sm text-muted-foreground">
-                              {label}
+                        <TabsTrigger
+                          value="notes"
+                          className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+              data-[state=active]:border data-[state=active]:bg-background
+              data-[state=active]:shadow-sm"
+                        >
+                          Notes
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
+
+                    <div className="max-h-[320px] overflow-auto px-4 py-4">
+                      <TabsContent value="components" className="mt-0">
+                        <div className="space-y-4">
+                          {selectedComponentGroups.length > 0 ? (
+                            selectedComponentGroups.map((group) => (
+                              <div key={group.componentId}>
+                                <div className="text-sm font-semibold text-foreground">
+                                  {group.componentName}
+                                </div>
+                                <Separator className="my-2" />
+                                {group.featureNames.length > 0 ? (
+                                  <div className="space-y-1">
+                                    {group.featureNames.map((featureName) => (
+                                      <div
+                                        key={`${group.componentId}-${featureName}`}
+                                        className="text-sm text-muted-foreground"
+                                      >
+                                        {featureName}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-muted-foreground">
+                                    No features selected.
+                                  </div>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-sm text-muted-foreground">
+                              No components defined.
                             </div>
-                          ))}
+                          )}
                         </div>
                       </TabsContent>
-                    )}
 
-                    <TabsContent value="notes" className="mt-0">
-                      <div className="space-y-2">
-                        {selectedNotes.length > 0 ? (
-                          selectedNotes.map((note, index) => (
-                            <div key={`${index}-${note}`} className="text-sm text-muted-foreground">
-                              {note}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-sm text-muted-foreground">No notes available.</div>
-                        )}
-                      </div>
-                    </TabsContent>
-                  </div>
-                </Tabs>
+                      {hasPositionsTab && (
+                        <TabsContent value="positions" className="mt-0">
+                          <div className="space-y-2">
+                            {selectedPositionLabels.map((label) => (
+                              <div key={label} className="text-sm text-muted-foreground">
+                                {label}
+                              </div>
+                            ))}
+                          </div>
+                        </TabsContent>
+                      )}
+
+                      <TabsContent value="notes" className="mt-0">
+                        <div className="space-y-2">
+                          {selectedNotes.length > 0 ? (
+                            selectedNotes.map((note, index) => (
+                              <div
+                                key={`${index}-${note}`}
+                                className="text-sm text-muted-foreground"
+                              >
+                                {note}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-sm text-muted-foreground">No notes available.</div>
+                          )}
+                        </div>
+                      </TabsContent>
+                    </div>
+                  </Tabs>
+                )}
               </div>
             )}
           </div>
