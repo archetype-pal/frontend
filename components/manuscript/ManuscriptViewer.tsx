@@ -184,7 +184,7 @@ export default function ManuscriptViewer({
   const [draftNoteText, setDraftNoteText] = React.useState('');
 
   // ---- Drag hooks ----
-  const allographDialogDrag = useDraggablePosition();
+  const allographDialogDrag = useDraggablePosition({ x: 300, y: 60 });
   const annotationPopupDrag = useDraggablePosition({ x: 0, y: 300 });
 
   // ---- Derived values ----
@@ -955,7 +955,7 @@ export default function ManuscriptViewer({
         modal={false}
       >
         <DialogContent
-          className="w-[640px] max-w-[90vw] max-h-[80vh] overflow-auto"
+          className="w-[520px] max-w-[calc(100vw-2rem)] max-h-[72vh] overflow-auto"
           style={{
             transform: `translate(calc(-50% + ${allographDialogDrag.pos.x}px), calc(-50% + ${allographDialogDrag.pos.y}px))`,
           }}
