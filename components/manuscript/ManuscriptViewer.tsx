@@ -1407,7 +1407,7 @@ export default function ManuscriptViewer({
                 data-[state=active]:border data-[state=active]:bg-background
                 data-[state=active]:shadow-sm"
                           >
-                            Aspects
+                            Positions
                           </TabsTrigger>
                         )}
 
