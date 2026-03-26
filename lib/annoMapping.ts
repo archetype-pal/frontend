@@ -67,8 +67,14 @@ export function backendToA9sAnnotation(
       numFeatures,
       isDescribed,
       annotationType: backend.annotation_type,
-      graphcomponentSet: backend.graphcomponent_set,
-      positions: backend.positions,
+      graphcomponentSet: (backend.graphcomponent_set ?? []).map((gc) => ({
+        component: gc.component,
+        componentName: gc.component_name,
+        features: gc.features ?? [],
+        featureDetails: gc.feature_details ?? [],
+      })),
+      positions: backend.positions ?? [],
+      positionDetails: backend.position_details ?? [],
     },
   };
 

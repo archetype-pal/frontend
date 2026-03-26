@@ -30,12 +30,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
-import {
-  fetchManuscriptImage,
-  fetchAllographs,
-  fetchManuscript,
-  fetchPositions,
-} from '@/services/manuscripts';
+import { fetchManuscriptImage, fetchAllographs, fetchManuscript } from '@/services/manuscripts';
 import {
   fetchAnnotationsForImage,
   postAnnotation,
@@ -64,6 +59,23 @@ interface ManuscriptViewerProps {
   mode?: 'public' | 'editor';
 }
 
+type A9sFeatureDetail = {
+  id: number;
+  name: string;
+};
+
+type A9sGraphComponent = {
+  component: number;
+  componentName?: string;
+  features: number[];
+  featureDetails?: A9sFeatureDetail[];
+};
+
+type A9sPositionDetail = {
+  id: number;
+  name: string;
+};
+
 type A9sWithMeta = A9sAnnotation & {
   body?: Array<{ value?: string; type?: string; purpose?: string }>;
   _meta?: {
@@ -72,8 +84,8 @@ type A9sWithMeta = A9sAnnotation & {
     numFeatures?: number;
     isDescribed?: boolean;
     annotationType?: string;
-    graphcomponentSet?: Array<{ component: number; features: number[] }>;
-    positions?: number[];
+    graphcomponentSet?: A9sGraphComponent[];
+    positionDetails?: A9sPositionDetail[];
   };
 };
 
@@ -173,7 +185,6 @@ export default function ManuscriptViewer({
   const [popupTab, setPopupTab] = React.useState<'components' | 'positions' | 'notes'>(
     'components'
   );
-  const [positions, setPositions] = React.useState<Array<{ id: number; name: string }>>([]);
   const [shareUrl, setShareUrl] = React.useState('');
   const [isShareUrlVisible, setIsShareUrlVisible] = React.useState(false);
   const initialGraphHandledRef = React.useRef(false);
@@ -223,45 +234,28 @@ export default function ManuscriptViewer({
     'Annotation';
 
   const selectedPositions = React.useMemo(
-    () => selectedAnnotation?._meta?.positions ?? [],
+    () => selectedAnnotation?._meta?.positionDetails ?? [],
     [selectedAnnotation]
   );
 
   const hasPositionsTab = selectedPositions.length > 0;
 
-  const positionNameById = React.useMemo(
-    () => new Map(positions.map((p) => [p.id, p.name])),
-    [positions]
-  );
-
   const selectedPositionLabels = React.useMemo(() => {
-    return selectedPositions.map((positionId) => {
-      return positionNameById.get(positionId) ?? `Position ${positionId}`;
-    });
-  }, [selectedPositions, positionNameById]);
+    return selectedPositions.map((position) => position.name ?? `Position ${position.id}`);
+  }, [selectedPositions]);
 
   const selectedComponentGroups = React.useMemo(() => {
     const graphComponents = selectedAnnotation?._meta?.graphcomponentSet ?? [];
-    if (!graphComponents.length || !annotationSelectedAllograph) return [];
+    if (!graphComponents.length) return [];
 
-    return graphComponents.map((gc) => {
-      const allographComponent = annotationSelectedAllograph.components.find(
-        (component) => component.component_id === gc.component
-      );
-
-      const featureNames = gc.features
-        .map((featureId) => {
-          return allographComponent?.features.find((feature) => feature.id === featureId)?.name;
-        })
-        .filter((name): name is string => Boolean(name));
-
-      return {
-        componentId: gc.component,
-        componentName: allographComponent?.component_name ?? `Component ${gc.component}`,
-        featureNames,
-      };
-    });
-  }, [selectedAnnotation, annotationSelectedAllograph]);
+    return graphComponents.map((gc) => ({
+      componentId: gc.component,
+      componentName: gc.componentName ?? `Component ${gc.component}`,
+      featureNames:
+        gc.featureDetails?.map((feature) => feature.name) ??
+        gc.features.map((featureId) => `Feature ${featureId}`),
+    }));
+  }, [selectedAnnotation]);
 
   const selectedNotes = React.useMemo(() => {
     return (selectedAnnotation?.body ?? [])
@@ -635,7 +629,7 @@ export default function ManuscriptViewer({
     viewerApiRef.current?.toggleAnnotations(annotationsEnabled);
   }, [annotationsEnabled, osdReady]);
 
-  // load image + manuscript + allographs + positions + IIIF height
+  // load image + manuscript + allographs + IIIF height
   React.useEffect(() => {
     let isMounted = true;
 
@@ -643,17 +637,15 @@ export default function ManuscriptViewer({
       try {
         setLoading(true);
 
-        const [image, allographsData, positionsData] = await Promise.all([
+        const [image, allographsData] = await Promise.all([
           fetchManuscriptImage(imageId),
           fetchAllographs(),
-          fetchPositions(),
         ]);
 
         if (!isMounted) return;
 
         setManuscriptImage(image);
         setAllographs(allographsData);
-        setPositions(positionsData);
 
         fetchManuscript(image.item_part).then((m) => {
           if (isMounted) setManuscript(m);
@@ -726,18 +718,27 @@ export default function ManuscriptViewer({
 
     const load = async () => {
       try {
-        const allographId = filteredAllograph?.id ? String(filteredAllograph.id) : undefined;
-        const list = await fetchAnnotationsForImage(String(manuscriptImage.id), allographId);
+        const list = await fetchAnnotationsForImage(String(manuscriptImage.id));
         if (!isMounted) return;
 
         const dbMapped: A9sAnnotation[] = list.map((a) =>
           backendToA9sAnnotation(a, imageHeight, allographNameById.get(a.allograph))
         );
 
+        // Keep current unsaved local annotations so filter changes do not wipe them out.
+        const currentViewerDrafts = (viewerApiRef.current?.getAnnotations?.() ?? []).filter(
+          (a): a is A9sAnnotation => !isDbId(a?.id)
+        );
+
         const iiif = manuscriptImage.iiif_image;
         const cacheKey = cacheKeyFor(iiif);
         const metaKey = metaKeyFor(iiif);
-        let merged: A9sAnnotation[] = dbMapped;
+
+        const mergedIds = new Set(dbMapped.map((a) => a.id));
+        let merged: A9sAnnotation[] = [
+          ...dbMapped,
+          ...currentViewerDrafts.filter((a) => !mergedIds.has(a.id)),
+        ];
 
         if (typeof window !== 'undefined' && !isPublicDemoMode) {
           try {
@@ -749,9 +750,9 @@ export default function ManuscriptViewer({
             if (raw && meta?.imageHeight === imageHeight) {
               const cached = JSON.parse(raw) as A9sAnnotation[];
               const localOnly = Array.isArray(cached) ? cached.filter((a) => !isDbId(a?.id)) : [];
-              const existing = new Set(dbMapped.map((a) => a.id));
+              const existing = new Set(merged.map((a) => a.id));
               const extras = localOnly.filter((a) => !existing.has(a.id));
-              merged = [...dbMapped, ...extras];
+              merged = [...merged, ...extras];
             } else if (raw && meta?.imageHeight !== imageHeight) {
               localStorage.removeItem(cacheKey);
               localStorage.removeItem(metaKey);
@@ -1208,21 +1209,14 @@ export default function ManuscriptViewer({
                 setPopupTab('components');
                 setIsShareUrlVisible(false);
                 setShareUrl('');
+                setHoveredAnnotationId(null);
 
-                if (selected) {
-                  setFilteredAllograph(undefined);
-                  setHoveredAllograph(undefined);
-                  setHoveredAnnotationId(null);
+                if (selected && !isDbId(selected.id)) {
+                  const title = selected.body?.find((b) => b.purpose === 'commenting')?.value ?? '';
+                  const note = selected.body?.find((b) => b.purpose !== 'commenting')?.value ?? '';
 
-                  if (!isDbId(selected.id)) {
-                    const title =
-                      selected.body?.find((b) => b.purpose === 'commenting')?.value ?? '';
-                    const note =
-                      selected.body?.find((b) => b.purpose !== 'commenting')?.value ?? '';
-
-                    setDraftAllographText(title);
-                    setDraftNoteText(note);
-                  }
+                  setDraftAllographText(title);
+                  setDraftNoteText(note);
                 } else {
                   setDraftAllographText('');
                   setDraftNoteText('');

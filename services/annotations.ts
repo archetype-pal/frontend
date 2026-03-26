@@ -1,3 +1,20 @@
+export interface BackendFeatureDetail {
+  id: number;
+  name: string;
+}
+
+export interface BackendPositionDetail {
+  id: number;
+  name: string;
+}
+
+export interface BackendGraphComponent {
+  component: number;
+  component_name?: string;
+  features: number[];
+  feature_details?: BackendFeatureDetail[];
+}
+
 export interface BackendGraph {
   id: number;
   item_image: number;
@@ -13,8 +30,9 @@ export interface BackendGraph {
   };
   allograph: number;
   hand: number;
-  graphcomponent_set: Array<{ component: number; features: number[] }>;
+  graphcomponent_set: BackendGraphComponent[];
   positions: number[];
+  position_details?: BackendPositionDetail[];
   num_features?: number;
   is_described?: boolean;
 }
