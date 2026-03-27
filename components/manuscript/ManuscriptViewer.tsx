@@ -434,21 +434,21 @@ export default function ManuscriptViewer({
       const draftBody: A9sAnnotation['body'] = [
         ...(draftAllographText.trim()
           ? [
-            {
-              type: 'TextualBody',
-              purpose: 'commenting',
-              value: draftAllographText.trim(),
-            },
-          ]
+              {
+                type: 'TextualBody',
+                purpose: 'commenting',
+                value: draftAllographText.trim(),
+              },
+            ]
           : []),
         ...(draftNoteText.trim()
           ? [
-            {
-              type: 'TextualBody',
-              purpose: 'describing',
-              value: draftNoteText.trim(),
-            },
-          ]
+              {
+                type: 'TextualBody',
+                purpose: 'describing',
+                value: draftNoteText.trim(),
+              },
+            ]
           : []),
       ];
 
@@ -532,12 +532,12 @@ export default function ManuscriptViewer({
         },
         ...(draftNoteText.trim()
           ? [
-            {
-              type: 'TextualBody',
-              purpose: 'describing',
-              value: draftNoteText.trim(),
-            },
-          ]
+              {
+                type: 'TextualBody',
+                purpose: 'describing',
+                value: draftNoteText.trim(),
+              },
+            ]
           : []),
       ],
     };

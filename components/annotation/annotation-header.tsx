@@ -126,10 +126,11 @@ export function AnnotationHeader({
           <div className="flex">
             <button
               onClick={onToggleAnnotations}
-              className={`px-3 py-1 text-sm font-medium transition-colors ${annotationsEnabled
-                ? 'bg-slate-600 text-white'
-                : 'bg-white text-gray-900 border shadow-sm'
-                }`}
+              className={`px-3 py-1 text-sm font-medium transition-colors ${
+                annotationsEnabled
+                  ? 'bg-slate-600 text-white'
+                  : 'bg-white text-gray-900 border shadow-sm'
+              }`}
               style={{
                 borderTopLeftRadius: '4px',
                 borderBottomLeftRadius: '4px',
