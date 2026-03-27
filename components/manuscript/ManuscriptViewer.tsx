@@ -372,7 +372,7 @@ export default function ManuscriptViewer({
     visibilityFiltersReady &&
     (!allAllographFiltersSelected ||
       !allHandFiltersSelected ||
-      !visibilityFilters.showEditorial ||
+      (!isPublicDemoMode && !visibilityFilters.showEditorial) ||
       !visibilityFilters.showPublicAnnotations);
 
   const annotationVisibilityFilter = React.useCallback(
@@ -1252,20 +1252,22 @@ export default function ManuscriptViewer({
                 <div className="pt-4">
                   <Separator className="mb-3" />
 
-                  <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
-                    <input
-                      type="checkbox"
-                      checked={visibilityFilters.showEditorial}
-                      onChange={() =>
-                        setVisibilityFilters((prev) => ({
-                          ...prev,
-                          showEditorial: !prev.showEditorial,
-                        }))
-                      }
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                    <span className="text-sm text-foreground">[Digipal Editor]</span>
-                  </label>
+                  {!isPublicDemoMode && (
+                    <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
+                      <input
+                        type="checkbox"
+                        checked={visibilityFilters.showEditorial}
+                        onChange={() =>
+                          setVisibilityFilters((prev) => ({
+                            ...prev,
+                            showEditorial: !prev.showEditorial,
+                          }))
+                        }
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <span className="text-sm text-foreground">[Digipal Editor]</span>
+                    </label>
+                  )}
 
                   <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
                     <input
