@@ -1,9 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Wrench, Star, Plus } from 'lucide-react';
+import { Wrench, Star, Plus, Eye, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -30,6 +29,8 @@ interface AnnotationHeaderProps {
   activeAllographLabel?: string;
   onOpenAllographModal?: () => void;
   selectedAllographId?: number | null;
+  onOpenFilterPanel?: () => void;
+  isVisibilityFilterActive?: boolean;
 }
 
 export function AnnotationHeader({
@@ -46,6 +47,8 @@ export function AnnotationHeader({
   activeAllographLabel,
   onOpenAllographModal,
   selectedAllographId,
+  onOpenFilterPanel,
+  isVisibilityFilterActive = false,
 }: AnnotationHeaderProps) {
   const [hands, setHands] = React.useState<HandType[]>([]);
   // const [allographs, setAllographs] = React.useState<Allograph[]>([])
@@ -123,11 +126,10 @@ export function AnnotationHeader({
           <div className="flex">
             <button
               onClick={onToggleAnnotations}
-              className={`px-3 py-1 text-sm font-medium transition-colors ${
-                annotationsEnabled
-                  ? 'bg-slate-600 text-white'
-                  : 'bg-white text-gray-900 border shadow-sm'
-              }`}
+              className={`px-3 py-1 text-sm font-medium transition-colors ${annotationsEnabled
+                ? 'bg-slate-600 text-white'
+                : 'bg-white text-gray-900 border shadow-sm'
+                }`}
               style={{
                 borderTopLeftRadius: '4px',
                 borderBottomLeftRadius: '4px',
@@ -139,6 +141,17 @@ export function AnnotationHeader({
             </button>
           </div>
         </div>
+        {onOpenFilterPanel && (
+          <Button
+            variant={isVisibilityFilterActive ? 'default' : 'outline'}
+            className="h-8 px-3 flex items-center gap-2"
+            onClick={() => onOpenFilterPanel()}
+            type="button"
+          >
+            <Filter className="h-4 w-4" />
+            <span className="text-sm">Filter Annotations</span>
+          </Button>
+        )}
         {showUnsavedCount && (
           <div className="flex items-center space-x-1">
             <span className="text-sm text-gray-600">Unsaved</span>

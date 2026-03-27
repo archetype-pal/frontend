@@ -39,6 +39,7 @@ interface Props {
   initialAnnotations?: Annotation[];
   disableEditor?: boolean;
   readOnly?: boolean;
+  annotationFilter?: (annotation: Annotation) => boolean;
 }
 
 // ---- Component state ----
@@ -58,6 +59,7 @@ export default function ManuscriptAnnotorious({
   initialAnnotations = [],
   disableEditor = false,
   readOnly = false,
+  annotationFilter,
 }: Props) {
   const viewerRef = useRef<HTMLDivElement | null>(null);
   const osdRef = useRef<OpenSeadragon.Viewer | null>(null);
@@ -66,6 +68,7 @@ export default function ManuscriptAnnotorious({
   const onDeleteRef = useRef(onDelete);
   const onSelectRef = useRef(onSelect);
   const exposeApiRef = useRef(exposeApi);
+  const annotationFilterRef = useRef<Props['annotationFilter']>(annotationFilter);
   const [state, setState] = React.useState<ComponentState>({
     hasError: false,
     errorMessage: null,
@@ -108,14 +111,48 @@ export default function ManuscriptAnnotorious({
     }
   }, []);
 
+  const applyAnnotationVisibility = React.useCallback(() => {
+    const root = viewerRef.current;
+    const anno = annoRef.current;
+    if (!root || !anno) return;
+
+    const predicate = annotationFilterRef.current;
+    const annotations = (anno.getAnnotations?.() ?? []) as Annotation[];
+    const visibleById = new Map<string, boolean>();
+
+    annotations.forEach((annotation) => {
+      visibleById.set(annotation.id, predicate ? predicate(annotation) : true);
+    });
+
+    root.querySelectorAll<SVGGElement>('g.a9s-annotation').forEach((el) => {
+      const id = el.dataset.id ?? '';
+      const visible = visibleById.get(id) ?? true;
+
+      el.style.display = visible ? '' : 'none';
+      el.classList.toggle('a9s-hidden-by-filter', !visible);
+    });
+
+    const selectedId = anno.getSelected?.()?.id ?? selectedDisplayIdRef.current;
+
+    root.querySelectorAll<SVGGElement>('g.a9s-selection').forEach((el) => {
+      const visible = !selectedId || (visibleById.get(selectedId) ?? true);
+
+      el.style.display = visible ? '' : 'none';
+      el.classList.toggle('a9s-hidden-by-filter', !visible);
+    });
+  }, []);
+
   const queueSyncAnnotationClasses = React.useCallback(() => {
     requestAnimationFrame(() => {
       syncAnnotationClasses();
+      applyAnnotationVisibility();
+
       requestAnimationFrame(() => {
         syncAnnotationClasses();
+        applyAnnotationVisibility();
       });
     });
-  }, [syncAnnotationClasses]);
+  }, [syncAnnotationClasses, applyAnnotationVisibility]);
 
   // keep refs up to date without re-running the heavy OSD effect
   useEffect(() => {
@@ -130,7 +167,10 @@ export default function ManuscriptAnnotorious({
   useEffect(() => {
     exposeApiRef.current = exposeApi;
   }, [exposeApi]);
-
+  useEffect(() => {
+    annotationFilterRef.current = annotationFilter;
+    queueSyncAnnotationClasses();
+  }, [annotationFilter, queueSyncAnnotationClasses]);
   // also keep the latest initial annotations in a ref,
   // so the OSD 'open' handler doesn't capture an old (empty) array
 

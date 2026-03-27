@@ -45,6 +45,9 @@ declare module '@recogito/annotorious-openseadragon' {
       annotationOrId: AnnotoriousAnnotation | string
     ): AnnotoriousAnnotation | undefined;
     setAnnotations(annotations: AnnotoriousAnnotation[]): void;
+    setFilter?(
+      filter?: (annotation: AnnotoriousAnnotation, state?: unknown) => boolean
+    ): void;
     fitBounds(
       annotationOrId: AnnotoriousAnnotation | string,
       options?: boolean | { immediately?: boolean; padding?: number }

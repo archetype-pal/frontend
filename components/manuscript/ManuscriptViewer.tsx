@@ -30,7 +30,12 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
-import { fetchManuscriptImage, fetchAllographs, fetchManuscript } from '@/services/manuscripts';
+import {
+  fetchManuscriptImage,
+  fetchAllographs,
+  fetchManuscript,
+  fetchHands,
+} from '@/services/manuscripts';
 import {
   fetchAnnotationsForImage,
   postAnnotation,
@@ -96,9 +101,26 @@ type DraftSharePayload = {
   _meta?: A9sWithMeta['_meta'];
 };
 
+type AnnotationVisibilityFilters = {
+  allographIds: number[];
+  handIds: number[];
+  showEditorial: boolean;
+  showPublicAnnotations: boolean;
+};
+
 const metaKeyFor = (iiif: string) => `annotations:meta:${iiif}`;
 const cacheKeyFor = (iiif: string) => `annotations:${iiif}`;
 const isDbId = (id?: string) => typeof id === 'string' && id.startsWith('db:');
+
+function toggleNumericId(list: number[], id: number): number[] {
+  return list.includes(id) ? list.filter((value) => value !== id) : [...list, id];
+}
+
+function includesAllIds(available: number[], selected: number[]): boolean {
+  if (!available.length) return true;
+  const selectedSet = new Set(selected);
+  return available.every((id) => selectedSet.has(id));
+}
 
 function toBase64Url(value: string): string {
   const bytes = new TextEncoder().encode(value);
@@ -167,6 +189,20 @@ export default function ManuscriptViewer({
   const [selectedHand, setSelectedHand] = React.useState<HandType | undefined>(undefined);
   const [allographs, setAllographs] = React.useState<Allograph[]>([]);
   const [imageAllographIds, setImageAllographIds] = React.useState<number[]>([]);
+
+  const [hands, setHands] = React.useState<HandType[]>([]);
+  const [handsLoaded, setHandsLoaded] = React.useState(false);
+
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = React.useState(false);
+  const [visibilityFilters, setVisibilityFilters] = React.useState<AnnotationVisibilityFilters>({
+    allographIds: [],
+    handIds: [],
+    showEditorial: true,
+    showPublicAnnotations: true,
+  });
+
+  const [allographFiltersInitialized, setAllographFiltersInitialized] = React.useState(false);
+  const [handFiltersInitialized, setHandFiltersInitialized] = React.useState(false);
 
   const viewerApiRef = React.useRef<ViewerApi | null>(null);
   const [osdReady, setOsdReady] = React.useState(false);
@@ -292,6 +328,86 @@ export default function ManuscriptViewer({
     return allographs.filter((a) => idSet.has(a.id));
   }, [allographs, imageAllographIds]);
 
+  const handIdsInImage = React.useMemo(() => {
+    return Array.from(
+      new Set(
+        a9sSnapshot
+          .map((a) => (a as A9sWithMeta)._meta?.handId)
+          .filter((id): id is number => typeof id === 'number')
+      )
+    );
+  }, [a9sSnapshot]);
+
+  const handsForThisImage = React.useMemo(() => {
+    if (!hands.length) return [];
+    if (!handIdsInImage.length) return hands;
+
+    const idSet = new Set(handIdsInImage);
+    return hands.filter((hand) => idSet.has(hand.id));
+  }, [hands, handIdsInImage]);
+
+  const availableAllographFilterIds = React.useMemo(
+    () => allographsForThisImage.map((allograph) => allograph.id),
+    [allographsForThisImage]
+  );
+
+  const availableHandFilterIds = React.useMemo(
+    () => handsForThisImage.map((hand) => hand.id),
+    [handsForThisImage]
+  );
+
+  const allAllographFiltersSelected = React.useMemo(
+    () => includesAllIds(availableAllographFilterIds, visibilityFilters.allographIds),
+    [availableAllographFilterIds, visibilityFilters.allographIds]
+  );
+
+  const allHandFiltersSelected = React.useMemo(
+    () => includesAllIds(availableHandFilterIds, visibilityFilters.handIds),
+    [availableHandFilterIds, visibilityFilters.handIds]
+  );
+
+  const visibilityFiltersReady = allographFiltersInitialized && handFiltersInitialized;
+
+  const isVisibilityFilterActive =
+    visibilityFiltersReady &&
+    (!allAllographFiltersSelected ||
+      !allHandFiltersSelected ||
+      !visibilityFilters.showEditorial ||
+      !visibilityFilters.showPublicAnnotations);
+
+  const annotationVisibilityFilter = React.useCallback(
+    (annotation: A9sAnnotation) => {
+      if (!visibilityFiltersReady) return true;
+
+      const isDraft = typeof annotation.id === 'string' && !annotation.id.startsWith('db:');
+      if (isDraft) {
+        return visibilityFilters.showPublicAnnotations;
+      }
+
+      const meta = (annotation as A9sWithMeta)._meta;
+      const allographId = meta?.allographId;
+      const handId = meta?.handId;
+
+      const allographPass =
+        !availableAllographFilterIds.length ||
+        allographId == null ||
+        visibilityFilters.allographIds.includes(allographId);
+
+      const handPass =
+        !availableHandFilterIds.length ||
+        handId == null ||
+        visibilityFilters.handIds.includes(handId);
+
+      return allographPass && handPass;
+    },
+    [
+      visibilityFiltersReady,
+      visibilityFilters,
+      availableAllographFilterIds.length,
+      availableHandFilterIds.length,
+    ]
+  );
+
   // ---- Helpers / handlers ----
   const persistAnnotationCache = React.useCallback(() => {
     if (typeof window === 'undefined' || isPublicDemoMode || !manuscriptImage) return;
@@ -318,21 +434,21 @@ export default function ManuscriptViewer({
       const draftBody: A9sAnnotation['body'] = [
         ...(draftAllographText.trim()
           ? [
-              {
-                type: 'TextualBody',
-                purpose: 'commenting',
-                value: draftAllographText.trim(),
-              },
-            ]
+            {
+              type: 'TextualBody',
+              purpose: 'commenting',
+              value: draftAllographText.trim(),
+            },
+          ]
           : []),
         ...(draftNoteText.trim()
           ? [
-              {
-                type: 'TextualBody',
-                purpose: 'describing',
-                value: draftNoteText.trim(),
-              },
-            ]
+            {
+              type: 'TextualBody',
+              purpose: 'describing',
+              value: draftNoteText.trim(),
+            },
+          ]
           : []),
       ];
 
@@ -416,12 +532,12 @@ export default function ManuscriptViewer({
         },
         ...(draftNoteText.trim()
           ? [
-              {
-                type: 'TextualBody',
-                purpose: 'describing',
-                value: draftNoteText.trim(),
-              },
-            ]
+            {
+              type: 'TextualBody',
+              purpose: 'describing',
+              value: draftNoteText.trim(),
+            },
+          ]
           : []),
       ],
     };
@@ -557,7 +673,102 @@ export default function ManuscriptViewer({
     });
   };
 
+  const handleToggleAllographFilter = React.useCallback((allographId: number) => {
+    setVisibilityFilters((prev) => ({
+      ...prev,
+      allographIds: toggleNumericId(prev.allographIds, allographId),
+    }));
+  }, []);
+
+  const handleToggleHandFilter = React.useCallback((handId: number) => {
+    setVisibilityFilters((prev) => ({
+      ...prev,
+      handIds: toggleNumericId(prev.handIds, handId),
+    }));
+  }, []);
+
+  const handleToggleAllAllographFilters = React.useCallback(() => {
+    setVisibilityFilters((prev) => ({
+      ...prev,
+      allographIds: allAllographFiltersSelected ? [] : [...availableAllographFilterIds],
+    }));
+  }, [allAllographFiltersSelected, availableAllographFilterIds]);
+
+  const handleToggleAllHandFilters = React.useCallback(() => {
+    setVisibilityFilters((prev) => ({
+      ...prev,
+      handIds: allHandFiltersSelected ? [] : [...availableHandFilterIds],
+    }));
+  }, [allHandFiltersSelected, availableHandFilterIds]);
+
   // ---- Effects ----
+
+  React.useEffect(() => {
+    setHands([]);
+    setHandsLoaded(false);
+
+    setVisibilityFilters({
+      allographIds: [],
+      handIds: [],
+      showEditorial: true,
+      showPublicAnnotations: true,
+    });
+
+    setAllographFiltersInitialized(false);
+    setHandFiltersInitialized(false);
+    setIsFilterPanelOpen(false);
+  }, [imageId]);
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const loadHands = async () => {
+      try {
+        const handsData = await fetchHands(imageId);
+        if (isMounted) setHands(handsData.results);
+      } catch {
+        if (isMounted) setHands([]);
+      } finally {
+        if (isMounted) setHandsLoaded(true);
+      }
+    };
+
+    void loadHands();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [imageId]);
+
+  React.useEffect(() => {
+    if (allographFiltersInitialized) return;
+    if (!manuscriptImage || !imageHeight) return;
+
+    if (a9sSnapshot.length === 0 || availableAllographFilterIds.length > 0) {
+      setVisibilityFilters((prev) => ({
+        ...prev,
+        allographIds: [...availableAllographFilterIds],
+      }));
+      setAllographFiltersInitialized(true);
+    }
+  }, [
+    allographFiltersInitialized,
+    manuscriptImage,
+    imageHeight,
+    a9sSnapshot.length,
+    availableAllographFilterIds,
+  ]);
+
+  React.useEffect(() => {
+    if (handFiltersInitialized) return;
+    if (!handsLoaded) return;
+
+    setVisibilityFilters((prev) => ({
+      ...prev,
+      handIds: [...availableHandFilterIds],
+    }));
+    setHandFiltersInitialized(true);
+  }, [handFiltersInitialized, handsLoaded, availableHandFilterIds]);
 
   // hydrate annotation visibility from localStorage
   React.useEffect(() => {
@@ -906,6 +1117,8 @@ export default function ManuscriptViewer({
         setHoveredAnnotationId(null);
         setIsAllographModalOpen(true);
       }}
+      onOpenFilterPanel={() => setIsFilterPanelOpen((prev) => !prev)}
+      isVisibilityFilterActive={isVisibilityFilterActive}
     />
   );
 
@@ -945,6 +1158,134 @@ export default function ManuscriptViewer({
         </div>
       ) : (
         annotationHeader
+      )}
+      {isFilterPanelOpen && (
+        <div className="fixed top-24 right-4 z-40 w-[380px] max-w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-lg">
+          <div className="flex items-center justify-between border-b px-4 py-3">
+            <h3 className="text-base font-semibold">Filter Annotations</h3>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setIsFilterPanelOpen(false)}
+              type="button"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="max-h-[70vh] overflow-auto px-4 py-4">
+            <div className="grid gap-6">
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-foreground">Allographs</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={handleToggleAllAllographFilters}
+                  >
+                    Toggle All
+                  </Button>
+                </div>
+
+                <Separator className="mb-3" />
+
+                <div className="max-h-[220px] space-y-2 overflow-auto pr-2">
+                  {allographsForThisImage.length ? (
+                    allographsForThisImage.map((allograph) => (
+                      <label
+                        key={allograph.id}
+                        className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={visibilityFilters.allographIds.includes(allograph.id)}
+                          onChange={() => handleToggleAllographFilter(allograph.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        <span className="text-sm text-foreground">{allograph.name}</span>
+                      </label>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No allographs available.</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-foreground">Hands</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={handleToggleAllHandFilters}
+                  >
+                    Toggle All
+                  </Button>
+                </div>
+
+                <Separator className="mb-3" />
+
+                <div className="max-h-[220px] space-y-2 overflow-auto pr-2">
+                  {handsForThisImage.length ? (
+                    handsForThisImage.map((hand) => (
+                      <label
+                        key={hand.id}
+                        className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={visibilityFilters.handIds.includes(hand.id)}
+                          onChange={() => handleToggleHandFilter(hand.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        <span className="text-sm text-foreground">{hand.name}</span>
+                      </label>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No hands available.</p>
+                  )}
+                </div>
+
+                <div className="pt-4">
+                  <Separator className="mb-3" />
+
+                  <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
+                    <input
+                      type="checkbox"
+                      checked={visibilityFilters.showEditorial}
+                      onChange={() =>
+                        setVisibilityFilters((prev) => ({
+                          ...prev,
+                          showEditorial: !prev.showEditorial,
+                        }))
+                      }
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <span className="text-sm text-foreground">[Digipal Editor]</span>
+                  </label>
+
+                  <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
+                    <input
+                      type="checkbox"
+                      checked={visibilityFilters.showPublicAnnotations}
+                      onChange={() =>
+                        setVisibilityFilters((prev) => ({
+                          ...prev,
+                          showPublicAnnotations: !prev.showPublicAnnotations,
+                        }))
+                      }
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <span className="text-sm text-foreground">Public Annotations</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <Dialog
@@ -1180,6 +1521,7 @@ export default function ManuscriptViewer({
             <ManuscriptAnnotorious
               iiifImageUrl={browserSafeIiifUrl(getIiifBaseUrl(manuscriptImage.iiif_image))}
               initialAnnotations={initialA9sAnnots}
+              annotationFilter={annotationVisibilityFilter}
               disableEditor={true}
               // readOnly={isPublicDemoMode}
               readOnly={false}
