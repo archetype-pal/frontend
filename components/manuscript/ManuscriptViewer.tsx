@@ -108,6 +108,14 @@ type AnnotationVisibilityFilters = {
   showPublicAnnotations: boolean;
 };
 
+type ToolbarPosition = 'vertical' | 'horizontal';
+
+type AnnotationViewerSettings = {
+  allowMultipleBoxes: boolean;
+  selectMultipleAnnotations: boolean;
+  toolbarPosition: ToolbarPosition;
+};
+
 const metaKeyFor = (iiif: string) => `annotations:meta:${iiif}`;
 const cacheKeyFor = (iiif: string) => `annotations:${iiif}`;
 const isDbId = (id?: string) => typeof id === 'string' && id.startsWith('db:');
@@ -230,10 +238,18 @@ export default function ManuscriptViewer({
   const [draftAllographText, setDraftAllographText] = React.useState('');
   const [draftNoteText, setDraftNoteText] = React.useState('');
 
+  const [isSettingsPanelOpen, setIsSettingsPanelOpen] = React.useState(false);
+  const [viewerSettings, setViewerSettings] = React.useState<AnnotationViewerSettings>({
+    allowMultipleBoxes: false,
+    selectMultipleAnnotations: false,
+    toolbarPosition: 'vertical',
+  });
+
   // ---- Drag hooks ----
   const allographDialogDrag = useDraggablePosition({ x: 300, y: 60 });
   const annotationPopupDrag = useDraggablePosition({ x: 0, y: 300 });
   const filterPanelDrag = useDraggablePosition({ x: 0, y: 180 });
+  const settingsPanelDrag = useDraggablePosition({ x: 0, y: 0 });
 
   // ---- Derived values ----
   const allographNameById = React.useMemo(
@@ -771,6 +787,36 @@ export default function ManuscriptViewer({
     setHandFiltersInitialized(true);
   }, [handFiltersInitialized, handsLoaded, availableHandFilterIds]);
 
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const raw = localStorage.getItem('annotationViewerSettings');
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw) as Partial<AnnotationViewerSettings>;
+      setViewerSettings((prev) => ({
+        allowMultipleBoxes: parsed.allowMultipleBoxes ?? prev.allowMultipleBoxes,
+        selectMultipleAnnotations:
+          parsed.selectMultipleAnnotations ?? prev.selectMultipleAnnotations,
+        toolbarPosition:
+          parsed.toolbarPosition === 'horizontal' ? 'horizontal' : prev.toolbarPosition,
+      }));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      localStorage.setItem('annotationViewerSettings', JSON.stringify(viewerSettings));
+    } catch {
+      // ignore
+    }
+  }, [viewerSettings]);
+
   // hydrate annotation visibility from localStorage
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -1126,6 +1172,14 @@ export default function ManuscriptViewer({
         });
       }}
       isVisibilityFilterActive={isVisibilityFilterActive}
+      onOpenSettingsPanel={() => {
+        setIsSettingsPanelOpen((prev) => {
+          const next = !prev;
+          if (!next) settingsPanelDrag.reset();
+          return next;
+        });
+      }}
+      isSettingsActive={isSettingsPanelOpen}
     />
   );
 
@@ -1309,6 +1363,108 @@ export default function ManuscriptViewer({
         </div>
       )}
 
+      {isSettingsPanelOpen && (
+        <div
+          className="fixed top-24 right-4 z-40 w-[360px] max-w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-lg"
+          style={{
+            transform: `translate(${settingsPanelDrag.pos.x}px, ${settingsPanelDrag.pos.y}px)`,
+          }}
+        >
+          <div
+            className="flex items-center justify-between border-b px-4 py-3 cursor-move select-none"
+            {...settingsPanelDrag.bindDrag}
+          >
+            <h3 className="text-base font-semibold">Settings</h3>
+
+            <div onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  setIsSettingsPanelOpen(false);
+                  settingsPanelDrag.reset();
+                }}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="max-h-[70vh] overflow-auto px-4 py-4 space-y-6">
+            <div>
+              <h4 className="text-sm font-semibold text-foreground">Annotation boxes</h4>
+              <Separator className="my-3" />
+
+              <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
+                <input
+                  type="checkbox"
+                  checked={viewerSettings.allowMultipleBoxes}
+                  onChange={() =>
+                    setViewerSettings((prev) => ({
+                      ...prev,
+                      allowMultipleBoxes: !prev.allowMultipleBoxes,
+                    }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm text-foreground">Allow multiple boxes</span>
+              </label>
+
+              <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
+                <input
+                  type="checkbox"
+                  checked={viewerSettings.selectMultipleAnnotations}
+                  onChange={() =>
+                    setViewerSettings((prev) => ({
+                      ...prev,
+                      selectMultipleAnnotations: !prev.selectMultipleAnnotations,
+                    }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm text-foreground">Select multiple annotations</span>
+              </label>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-foreground">Toolbar position</h4>
+              <Separator className="my-3" />
+
+              <div className="flex gap-2">
+                <Button
+                  variant={viewerSettings.toolbarPosition === 'vertical' ? 'default' : 'outline'}
+                  size="sm"
+                  type="button"
+                  onClick={() =>
+                    setViewerSettings((prev) => ({
+                      ...prev,
+                      toolbarPosition: 'vertical',
+                    }))
+                  }
+                >
+                  Vertical
+                </Button>
+
+                <Button
+                  variant={viewerSettings.toolbarPosition === 'horizontal' ? 'default' : 'outline'}
+                  size="sm"
+                  type="button"
+                  onClick={() =>
+                    setViewerSettings((prev) => ({
+                      ...prev,
+                      toolbarPosition: 'horizontal',
+                    }))
+                  }
+                >
+                  Horizontal
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <Dialog
         open={isAllographModalOpen}
         onOpenChange={(open) => {
@@ -1384,7 +1540,7 @@ export default function ManuscriptViewer({
       </Dialog>
 
       <div className={`relative flex flex-1 ${isFullScreen ? 'mt-20' : ''}`}>
-        <Toolbar>
+        <Toolbar orientation={viewerSettings.toolbarPosition}>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

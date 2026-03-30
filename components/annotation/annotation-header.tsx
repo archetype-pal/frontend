@@ -31,6 +31,8 @@ interface AnnotationHeaderProps {
   selectedAllographId?: number | null;
   onOpenFilterPanel?: () => void;
   isVisibilityFilterActive?: boolean;
+  onOpenSettingsPanel?: () => void;
+  isSettingsActive?: boolean;
 }
 
 export function AnnotationHeader({
@@ -49,6 +51,8 @@ export function AnnotationHeader({
   selectedAllographId,
   onOpenFilterPanel,
   isVisibilityFilterActive = false,
+  onOpenSettingsPanel,
+  isSettingsActive = false,
 }: AnnotationHeaderProps) {
   const [hands, setHands] = React.useState<HandType[]>([]);
   // const [allographs, setAllographs] = React.useState<Allograph[]>([])
@@ -163,7 +167,14 @@ export function AnnotationHeader({
         )}
 
         <div className="flex items-center space-x-1">
-          <Button variant="outline" size="icon" className="h-8 w-8">
+          <Button
+            variant={isSettingsActive ? 'default' : 'outline'}
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => onOpenSettingsPanel?.()}
+            type="button"
+            title="Settings"
+          >
             <Wrench className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="icon" className="h-8 w-8">
