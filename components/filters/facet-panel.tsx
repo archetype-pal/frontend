@@ -65,6 +65,11 @@ export function FacetPanel({
   const INITIAL_VISIBLE_COUNT = 10;
   const hasOverflow = filteredItems.length > INITIAL_VISIBLE_COUNT;
   const visibleItems = expandedList ? filteredItems : filteredItems.slice(0, INITIAL_VISIBLE_COUNT);
+  const maxCount = React.useMemo(
+    () => filteredItems.reduce((max, item) => Math.max(max, item.count), 0),
+    [filteredItems]
+  );
+  const showSparklines = filteredItems.length >= 3 && maxCount > 0;
 
   const handleSelect = (item: FacetListItem) => {
     const nextValue = selectedValue === item.value ? null : item.value;
@@ -132,7 +137,19 @@ export function FacetPanel({
                   )}
                 >
                   <span className="truncate min-w-0 flex-1">{item.label}</span>
-                  <span className="text-muted-foreground shrink-0">{item.count}</span>
+                  <span className="inline-flex items-center gap-2 shrink-0">
+                    <span className="text-muted-foreground">{item.count}</span>
+                    {showSparklines && (
+                      <span className="h-1.5 w-14 rounded-full bg-muted overflow-hidden">
+                        <span
+                          className="block h-full bg-primary/60"
+                          style={{
+                            width: `${Math.max(5, Math.round((item.count / maxCount) * 100))}%`,
+                          }}
+                        />
+                      </span>
+                    )}
+                  </span>
                 </button>
               </li>
             ))}

@@ -10,7 +10,7 @@ export const SEARCH_RESULT_TYPES = [
   'places',
 ] as const;
 export type ResultType = (typeof SEARCH_RESULT_TYPES)[number];
-export type FacetRenderType = 'checkbox' | 'toggle' | 'range' | 'number-select';
+export type FacetRenderType = 'checkbox' | 'toggle' | 'range' | 'number-select' | 'tree';
 
 export type SearchFacetConfig = {
   key: string;
@@ -119,7 +119,7 @@ export const SEARCH_RESULT_CONFIG = {
       { key: 'repository_city', render: 'checkbox' },
       { key: 'features', render: 'checkbox' },
       { key: 'components', render: 'checkbox' },
-      { key: 'component_features', render: 'checkbox' },
+      { key: 'component_features', render: 'tree' },
       { key: 'positions', render: 'checkbox' },
     ],
   },

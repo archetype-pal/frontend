@@ -21,6 +21,9 @@ export interface SearchGridProps {
   resultType: ResultType;
   highlightKeyword?: string;
   scrollContainerRef?: React.RefObject<HTMLElement | null>;
+  isFetching?: boolean;
+  compareSelection?: Array<string | number>;
+  onToggleCompare?: (id: string | number) => void;
 }
 
 type GridCard =
@@ -288,6 +291,9 @@ function SearchGridComponent({
   resultType,
   highlightKeyword = '',
   scrollContainerRef,
+  isFetching = false,
+  compareSelection = [],
+  onToggleCompare,
 }: SearchGridProps) {
   const layoutRef = React.useRef<HTMLDivElement | null>(null);
   const [layoutWidth, setLayoutWidth] = React.useState(1280);
@@ -325,48 +331,65 @@ function SearchGridComponent({
 
   const renderCard = React.useCallback(
     (card: GridCard) => {
+      const canCompare = resultType === 'manuscripts' || resultType === 'graphs';
+      const compareControl = canCompare ? (
+        <label className="absolute top-2 left-2 z-30 inline-flex items-center gap-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px]">
+          <input
+            type="checkbox"
+            checked={compareSelection.map(String).includes(String(card.item.id))}
+            onChange={() => onToggleCompare?.(card.item.id)}
+          />
+          Cmp
+        </label>
+      ) : null;
       if (card.kind === 'manuscript') {
         return (
-          <ManuscriptGridCard
-            key={card.item.id}
-            item={card.item}
-            detailUrl={card.detailUrl}
-            imageUrl={card.imageUrl}
-            displayText={card.displayText}
-            formattedDisplayText={card.formattedDisplayText}
-            highlightKeyword={highlightKeyword}
-          />
+          <div key={card.item.id} className="relative">
+            {compareControl}
+            <ManuscriptGridCard
+              item={card.item}
+              detailUrl={card.detailUrl}
+              imageUrl={card.imageUrl}
+              displayText={card.displayText}
+              formattedDisplayText={card.formattedDisplayText}
+              highlightKeyword={highlightKeyword}
+            />
+          </div>
         );
       }
 
       if (card.kind === 'graph' && card.item.image_iiif) {
         return (
-          <GraphGridCard
-            key={card.item.id}
-            item={card.item}
-            displayText={card.displayText}
-            formattedDisplayText={card.formattedDisplayText}
-            highlightKeyword={highlightKeyword}
-          />
+          <div key={card.item.id} className="relative">
+            {compareControl}
+            <GraphGridCard
+              item={card.item}
+              displayText={card.displayText}
+              formattedDisplayText={card.formattedDisplayText}
+              highlightKeyword={highlightKeyword}
+            />
+          </div>
         );
       }
 
       return (
-        <MediaGridCard
-          key={card.item.id}
-          imageUrl={card.kind === 'image' ? card.imageUrl : null}
-          detailUrl={card.detailUrl}
-          displayText={card.displayText}
-          formattedDisplayText={card.formattedDisplayText}
-          highlightKeyword={highlightKeyword}
-          graphItem={card.kind === 'graph' ? card.item : undefined}
-          annotationCount={card.kind === 'image' ? card.item.number_of_annotations : null}
-          item={card.item}
-          itemType={card.kind}
-        />
+        <div key={card.item.id} className="relative">
+          {compareControl}
+          <MediaGridCard
+            imageUrl={card.kind === 'image' ? card.imageUrl : null}
+            detailUrl={card.detailUrl}
+            displayText={card.displayText}
+            formattedDisplayText={card.formattedDisplayText}
+            highlightKeyword={highlightKeyword}
+            graphItem={card.kind === 'graph' ? card.item : undefined}
+            annotationCount={card.kind === 'image' ? card.item.number_of_annotations : null}
+            item={card.item}
+            itemType={card.kind}
+          />
+        </div>
       );
     },
-    [highlightKeyword]
+    [compareSelection, highlightKeyword, onToggleCompare, resultType]
   );
 
   if (!results.length) {
@@ -379,7 +402,9 @@ function SearchGridComponent({
     return (
       <section
         ref={layoutRef}
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
+        className={`relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 ${
+          isFetching ? 'opacity-60' : ''
+        }`}
       >
         {flatCards.map((card) => renderCard(card))}
       </section>
@@ -387,7 +412,7 @@ function SearchGridComponent({
   }
 
   return (
-    <section ref={layoutRef} className="relative">
+    <section ref={layoutRef} className={`relative ${isFetching ? 'opacity-60' : ''}`}>
       <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
         {rowVirtualizer.getVirtualItems().map((virtualRow) => {
           const start = virtualRow.index * columnCount;

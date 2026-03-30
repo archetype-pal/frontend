@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useDeferredValue } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,8 @@ import { useCollection } from '@/contexts/collection-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { normalizeSectionOrder, type SectionKey } from '@/lib/site-features';
+import { addSearchHistory, clearSearchHistory, getSearchHistory } from '@/lib/search-history';
+import { SEARCH_RESULT_CONFIG } from '@/lib/search-types';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 
@@ -50,16 +53,40 @@ export default function Header() {
     localStorage.setItem(BANNER_VISIBLE_KEY, String(next));
   };
   const router = useRouter();
-  const { suggestionsPool, loadGlobalSuggestions } = useSearchContext();
+  const { suggestionsPool, loadGlobalSuggestions, getServerSuggestions } = useSearchContext();
   const isOnSearchPage = pathname?.startsWith('/search') ?? false;
   const [headerKeyword, setHeaderKeyword] = useState('');
+  const [historyItems, setHistoryItems] = useState(() => getSearchHistory());
   const headerSearchValue = isOnSearchPage ? '' : headerKeyword;
-  const suggestions = useKeywordSuggestions(headerSearchValue, suggestionsPool);
+  const localSuggestions = useKeywordSuggestions(headerSearchValue, suggestionsPool);
+  const deferredHeaderKeyword = useDeferredValue(headerSearchValue);
+  const serverSuggestionsQuery = useQuery({
+    queryKey: ['header-suggestions', deferredHeaderKeyword],
+    queryFn: () => getServerSuggestions(deferredHeaderKeyword),
+    enabled: deferredHeaderKeyword.trim().length >= 2,
+    staleTime: 30_000,
+    retry: false,
+  });
+  const effectiveSuggestions =
+    serverSuggestionsQuery.data && serverSuggestionsQuery.data.length > 0
+      ? serverSuggestionsQuery.data
+      : localSuggestions;
+
+  useEffect(() => {
+    if (!isOnSearchPage) {
+      void loadGlobalSuggestions();
+    }
+  }, [isOnSearchPage, loadGlobalSuggestions]);
 
   const handleTriggerSearch = (kw: string) => {
     setHeaderKeyword(kw);
+    const normalized = kw.trim();
+    if (normalized) {
+      addSearchHistory(normalized, 'manuscripts');
+      setHistoryItems(getSearchHistory());
+    }
     if (!isOnSearchPage) {
-      const query = kw.trim() ? `?keyword=${encodeURIComponent(kw.trim())}` : '';
+      const query = normalized ? `?keyword=${encodeURIComponent(normalized)}` : '';
       router.push(`/search/manuscripts${query}`);
     }
   };
@@ -285,12 +312,24 @@ export default function Header() {
                     value={headerSearchValue}
                     onChange={handleHeaderSearchChange}
                     onTriggerSearch={handleTriggerSearch}
-                    suggestions={suggestions}
+                    suggestions={effectiveSuggestions}
                     placeholder="Enter search terms"
                     className="w-full"
                     inputClassName="bg-background text-foreground w-full"
                     clearOnFocus
                     onFocus={handleHeaderSearchFocus}
+                    suggestionsLoading={serverSuggestionsQuery.isFetching}
+                    noSuggestionsText="No suggestions yet. Press Enter to search manuscripts."
+                    recentSearches={historyItems.map((entry, idx) => ({
+                      id: `recent-${idx}-${entry.timestamp}`,
+                      label: entry.keyword,
+                      value: entry.keyword,
+                      meta: SEARCH_RESULT_CONFIG[entry.resultType].label,
+                    }))}
+                    onClearRecentSearches={() => {
+                      clearSearchHistory();
+                      setHistoryItems([]);
+                    }}
                   />
                 </div>
               )}

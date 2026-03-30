@@ -300,6 +300,10 @@ type ResultTypeDescriptor<K extends ResultType> = {
   crossTypeLinks?: CrossTypeLinksFn<ResultMap[K]>;
 };
 
+function isComparableType(resultType: ResultType): boolean {
+  return resultType === 'manuscripts' || resultType === 'graphs';
+}
+
 function buildCrossTypeLinks<T extends { shelfmark: string }>(
   resultType: ResultType
 ): CrossTypeLinksFn<T> | undefined {
@@ -397,6 +401,9 @@ function ResultsTableComponent<K extends ResultType>({
   highlightKeyword = '',
   visibleColumns,
   scrollContainerRef,
+  isFetching = false,
+  compareSelection = [],
+  onToggleCompare,
 }: {
   resultType: K;
   results: ResultMap[K][];
@@ -408,6 +415,9 @@ function ResultsTableComponent<K extends ResultType>({
   highlightKeyword?: string;
   visibleColumns?: string[];
   scrollContainerRef?: React.RefObject<HTMLElement | null>;
+  isFetching?: boolean;
+  compareSelection?: Array<string | number>;
+  onToggleCompare?: (id: string | number) => void;
 }) {
   const descriptor = React.useMemo(() => getDescriptor(resultType), [resultType]);
   const allCols = descriptor.columns;
@@ -439,7 +449,8 @@ function ResultsTableComponent<K extends ResultType>({
 
   const { subRowAccessor, previewAccessor, crossTypeLinks } = descriptor;
   const hasSubRow = !!subRowAccessor;
-  const totalColSpan = cols.length + (hasSubRow ? 1 : 0);
+  const canCompare = isComparableType(resultType);
+  const totalColSpan = cols.length + (hasSubRow ? 1 : 0) + (canCompare ? 1 : 0);
   const localScrollRef = React.useRef<HTMLDivElement | null>(null);
   const shouldVirtualize = results.length > 80;
   const rowEstimate = React.useMemo(() => {
@@ -489,6 +500,20 @@ function ResultsTableComponent<K extends ResultType>({
           <TableRow
             className={`relative cursor-pointer group-hover:bg-muted/50 transition-colors${hasSubRow ? ' border-b-0' : ''}`}
           >
+            {canCompare && (
+              <TableCell className="w-10 py-1.5">
+                <input
+                  type="checkbox"
+                  checked={compareSelection
+                    .map(String)
+                    .includes(String((row as { id: string | number }).id))}
+                  onChange={() => onToggleCompare?.((row as { id: string | number }).id)}
+                  onClick={(event) => event.stopPropagation()}
+                  className="relative z-[3]"
+                  aria-label="Toggle compare selection"
+                />
+              </TableCell>
+            )}
             {hasSubRow && (
               <TableCell className="w-16 py-1.5">
                 <Link
@@ -606,11 +631,14 @@ function ResultsTableComponent<K extends ResultType>({
       );
     },
     [
+      canCompare,
       cols,
+      compareSelection,
       crossTypeLinks,
       descriptor,
       hasSubRow,
       highlightKeyword,
+      onToggleCompare,
       previewAccessor,
       resultType,
       rowKeyOf,
@@ -622,11 +650,12 @@ function ResultsTableComponent<K extends ResultType>({
   return (
     <div
       ref={scrollContainerRef ? undefined : localScrollRef}
-      className={`bg-white border rounded-lg ${scrollContainerRef ? 'overflow-visible' : 'overflow-auto'}`}
+      className={`relative bg-white border rounded-lg ${scrollContainerRef ? 'overflow-visible' : 'overflow-auto'}`}
     >
       <Table>
         <TableHeader>
           <TableRow>
+            {canCompare && <TableHead className="w-10">Cmp</TableHead>}
             {hasSubRow && <TableHead className="w-16" />}
             {cols.map((col) => (
               <TableHead
@@ -634,6 +663,7 @@ function ResultsTableComponent<K extends ResultType>({
                 className={col.className}
                 style={{ cursor: col.sortKey || col.sortUrl ? 'pointer' : undefined }}
                 onClick={() => onSort?.({ sortKey: col.sortKey, sortUrl: col.sortUrl })}
+                title={col.sortKey || col.sortUrl ? 'Click to sort' : undefined}
               >
                 <div className="inline-flex items-center space-x-1">
                   <span>{col.header}</span>
@@ -643,6 +673,9 @@ function ResultsTableComponent<K extends ResultType>({
                     ) : (
                       <ArrowUp className="w-4 h-4 text-muted-foreground" />
                     ))}
+                  {(col.sortKey || col.sortUrl) && col.sortKey !== currKey && (
+                    <ArrowUp className="w-3 h-3 text-muted-foreground/40" />
+                  )}
                 </div>
               </TableHead>
             ))}
@@ -668,6 +701,9 @@ function ResultsTableComponent<K extends ResultType>({
           </tbody>
         )}
       </Table>
+      {isFetching && (
+        <div className="pointer-events-none absolute inset-0 rounded-lg bg-white/35 animate-pulse" />
+      )}
     </div>
   );
 }

@@ -19,6 +19,7 @@ type SavedSearchesDropdownProps = {
   keyword: string;
   filterCount: number;
   resultCount: number;
+  triggerId?: string;
 };
 
 export function SavedSearchesDropdown({
@@ -26,6 +27,7 @@ export function SavedSearchesDropdown({
   keyword,
   filterCount,
   resultCount,
+  triggerId,
 }: SavedSearchesDropdownProps) {
   const [open, setOpen] = React.useState(false);
   const [searches, setSearches] = React.useState<SavedSearch[]>([]);
@@ -72,7 +74,7 @@ export function SavedSearchesDropdown({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm">
+        <Button id={triggerId} variant="ghost" size="sm">
           {justSaved ? (
             <BookmarkCheck className="h-4 w-4 text-green-600" />
           ) : (

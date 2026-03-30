@@ -38,5 +38,6 @@ export function useSearchResults(resultType: ResultType, queryState: QueryState,
     apiUrl,
     data: query.data ?? EMPTY_SEARCH_RESULT,
     isFetching: query.isFetching,
+    isLoading: query.isLoading,
   };
 }

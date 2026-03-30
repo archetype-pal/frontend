@@ -9,6 +9,7 @@ export type QueryState = {
   ordering: string | null;
   selected_facets: string[];
   dateParams: Record<string, string>;
+  extraParams?: Record<string, string>;
 };
 
 export type ActiveFacetTag = {
@@ -24,10 +25,12 @@ export const DEFAULT_QUERY: QueryState = {
   ordering: null,
   selected_facets: [],
   dateParams: {},
+  extraParams: {},
 };
 
 const DATE_PARAM_KEYS = ['min_date', 'max_date', 'at_most_or_least', 'date_diff'] as const;
 const FACET_EXACT_SUFFIX = '_exact';
+const MULTI_SELECT_FACETS = new Set(['component_features']);
 
 type SearchParamReader = {
   get(key: string): string | null;
@@ -46,6 +49,19 @@ function writeDateParams(params: URLSearchParams, dateParams: Record<string, str
   for (const key of DATE_PARAM_KEYS) {
     const value = dateParams[key];
     if (value) params.set(key, value);
+  }
+}
+
+function writeExtraParams(
+  params: URLSearchParams,
+  extraParams: Record<string, string> | undefined
+): void {
+  if (!extraParams) return;
+  for (const [key, value] of Object.entries(extraParams)) {
+    const normalizedKey = key.trim();
+    const normalizedValue = value.trim();
+    if (!normalizedKey || !normalizedValue) continue;
+    params.set(normalizedKey, normalizedValue);
   }
 }
 
@@ -71,6 +87,11 @@ export function normalizeQueryState(q: QueryState): QueryState {
       get: (key) => q.dateParams[key] ?? null,
       getAll: () => [],
     }),
+    extraParams: Object.fromEntries(
+      Object.entries(q.extraParams ?? {})
+        .filter(([key, value]) => key.trim() && value.trim())
+        .sort(([left], [right]) => left.localeCompare(right))
+    ),
   };
 }
 
@@ -82,6 +103,7 @@ export function buildQueryString(q: QueryState): string {
   p.set('offset', String(normalized.offset));
   if (normalized.ordering) p.set('ordering', normalized.ordering);
   writeDateParams(p, normalized.dateParams);
+  writeExtraParams(p, normalized.extraParams);
   return p.toString();
 }
 
@@ -112,7 +134,33 @@ export function stateFromSearchParams(sp: SearchParamReader): QueryState {
     offset: parseNumericParam(sp.get('offset'), 0),
     ordering: sp.get('ordering')?.trim() || null,
     dateParams: readDateParams(sp),
+    extraParams: readExtraParams(sp),
   };
+}
+
+function readExtraParams(sp: SearchParamReader): Record<string, string> {
+  const reserved = new Set([
+    'selected_facets',
+    'limit',
+    'offset',
+    'ordering',
+    'advanced',
+    'keyword',
+    'q',
+    ...DATE_PARAM_KEYS,
+  ]);
+  const extra: Record<string, string> = {};
+  const maybeEntries = (
+    sp as SearchParamReader & { entries?: () => IterableIterator<[string, string]> }
+  ).entries;
+  if (typeof maybeEntries !== 'function') return extra;
+  for (const [key, value] of maybeEntries.call(sp)) {
+    if (reserved.has(key)) continue;
+    const normalized = value.trim();
+    if (!normalized) continue;
+    extra[key] = normalized;
+  }
+  return extra;
 }
 
 export type FacetClickResolution =
@@ -160,9 +208,11 @@ export function resolveFacetClick({
     }
     case 'selectFacet': {
       const entry = facetEntry(action.facetKey, action.value);
-      const without = queryState.selected_facets.filter(
-        (s) => !s.startsWith(`${action.facetKey}${FACET_EXACT_SUFFIX}:`)
-      );
+      const without = MULTI_SELECT_FACETS.has(action.facetKey)
+        ? queryState.selected_facets
+        : queryState.selected_facets.filter(
+            (s) => !s.startsWith(`${action.facetKey}${FACET_EXACT_SUFFIX}:`)
+          );
       return {
         type: 'query',
         value: {
@@ -303,6 +353,7 @@ export function clearAllFacetFilters(queryState: QueryState): QueryState {
     ...queryState,
     selected_facets: [],
     dateParams: {},
+    extraParams: {},
     offset: 0,
   };
 }

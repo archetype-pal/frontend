@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import type { ResultType } from '@/lib/search-types';
 
 /** Shared hook for keyword suggestions from a pool (used by Header and DynamicFacets). */
 export function useKeywordSuggestions(keyword: string, pool: string[]) {
@@ -12,15 +13,31 @@ export function useKeywordSuggestions(keyword: string, pool: string[]) {
     const low = deferredKeyword.toLowerCase();
     return Array.from(
       new Set(pool.filter((s) => s.toLowerCase().startsWith(low) && s.toLowerCase() !== low))
-    ).slice(0, 5);
+    )
+      .slice(0, 5)
+      .map((value) => ({ id: `local:${value}`, label: value, value }));
   }, [deferredKeyword, pool]);
 }
+
+export type KeywordSuggestionItem = {
+  id: string;
+  label: string;
+  value: string;
+  type?: ResultType | 'all';
+};
+
+export type KeywordHistoryItem = {
+  id: string;
+  label: string;
+  value: string;
+  meta?: string;
+};
 
 type KeywordSearchInputProps = {
   value: string;
   onChange: (value: string) => void;
   onTriggerSearch: (keyword: string) => void;
-  suggestions: string[];
+  suggestions: KeywordSuggestionItem[];
   placeholder?: string;
   className?: string;
   inputClassName?: string;
@@ -28,6 +45,11 @@ type KeywordSearchInputProps = {
   clearOnFocus?: boolean;
   /** Called when the input receives focus (e.g. to load suggestions from any page) */
   onFocus?: () => void;
+  suggestionsLoading?: boolean;
+  noSuggestionsText?: string;
+  inputId?: string;
+  recentSearches?: KeywordHistoryItem[];
+  onClearRecentSearches?: () => void;
 };
 
 export function KeywordSearchInput({
@@ -40,13 +62,20 @@ export function KeywordSearchInput({
   inputClassName,
   clearOnFocus = false,
   onFocus: onFocusProp,
+  suggestionsLoading = false,
+  noSuggestionsText = 'No suggestions. Press Enter to search.',
+  inputId,
+  recentSearches = [],
+  onClearRecentSearches,
 }: KeywordSearchInputProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(-1);
+  const [dismissed, setDismissed] = React.useState(false);
 
   const handleChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       onChange(e.currentTarget.value);
       setSelectedIndex(-1);
+      setDismissed(false);
     },
     [onChange]
   );
@@ -69,7 +98,7 @@ export function KeywordSearchInput({
         case 'Enter':
           e.preventDefault();
           if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-            onTriggerSearch(suggestions[selectedIndex]);
+            onTriggerSearch(suggestions[selectedIndex].value);
           } else if (value.trim()) {
             onTriggerSearch(value.trim());
           } else {
@@ -78,6 +107,7 @@ export function KeywordSearchInput({
           break;
         case 'Escape':
           setSelectedIndex(-1);
+          setDismissed(true);
           break;
       }
     },
@@ -89,44 +119,102 @@ export function KeywordSearchInput({
       onChange('');
       setSelectedIndex(-1);
     }
+    setDismissed(false);
     onFocusProp?.();
   }, [clearOnFocus, onChange, onFocusProp]);
 
+  const handleBlur = React.useCallback(() => {}, []);
+
   const handleSuggestionClick = React.useCallback(
-    (s: string) => {
-      onTriggerSearch(s);
+    (item: KeywordSuggestionItem) => {
+      onTriggerSearch(item.value);
+      setDismissed(true);
     },
     [onTriggerSearch]
   );
+
+  const showRecent = value.trim().length === 0 && recentSearches.length > 0;
+  const showDropdown =
+    !dismissed &&
+    (showRecent || suggestionsLoading || suggestions.length > 0 || value.trim().length >= 2);
 
   return (
     <div className={className ? `relative ${className}` : 'relative'}>
       <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
       <Input
+        id={inputId}
         className={inputClassName ? `pl-8 ${inputClassName}` : 'pl-8'}
         placeholder={placeholder}
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
+        onBlur={handleBlur}
         aria-autocomplete="list"
-        aria-expanded={suggestions.length > 0}
+        aria-expanded={showDropdown}
         aria-controls="keyword-suggestions"
+        aria-busy={suggestionsLoading}
         aria-activedescendant={
           selectedIndex >= 0 && suggestions[selectedIndex]
             ? `keyword-suggestion-${selectedIndex}`
             : undefined
         }
       />
-      {suggestions.length > 0 && (
+      {showDropdown && (
         <ul
           id="keyword-suggestions"
           className="absolute z-10 bg-white border border-gray-200 text-gray-900 mt-1 w-full max-h-40 overflow-auto rounded-md shadow-md"
           role="listbox"
+          aria-live="polite"
         >
-          {suggestions.map((s, i) => (
+          {showRecent && (
+            <>
+              <li className="px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                Recent
+              </li>
+              {recentSearches.map((item) => (
+                <li
+                  key={item.id}
+                  role="option"
+                  aria-selected={false}
+                  className="px-2 py-1 cursor-pointer text-gray-900 hover:bg-gray-100"
+                  onClick={() => handleSuggestionClick(item)}
+                >
+                  <span className="inline-flex items-center justify-between w-full gap-2">
+                    <span className="truncate">{item.label}</span>
+                    {item.meta && (
+                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {item.meta}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+              {onClearRecentSearches && (
+                <li className="px-2 py-1 border-t">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onClearRecentSearches();
+                    }}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Clear history
+                  </button>
+                </li>
+              )}
+            </>
+          )}
+          {suggestionsLoading && (
+            <li className="px-2 py-1 text-xs text-muted-foreground" aria-live="polite">
+              Loading suggestions...
+            </li>
+          )}
+          {suggestions.map((item, i) => (
             <li
-              key={s}
+              key={item.id}
               id={`keyword-suggestion-${i}`}
               role="option"
               aria-selected={i === selectedIndex}
@@ -136,11 +224,21 @@ export function KeywordSearchInput({
               }
               onMouseEnter={() => setSelectedIndex(i)}
               onMouseLeave={() => setSelectedIndex(-1)}
-              onClick={() => handleSuggestionClick(s)}
+              onClick={() => handleSuggestionClick(item)}
             >
-              {s}
+              <span className="inline-flex items-center justify-between w-full gap-2">
+                <span className="truncate">{item.label}</span>
+                {item.type && item.type !== 'all' && (
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    {item.type}
+                  </span>
+                )}
+              </span>
             </li>
           ))}
+          {!suggestionsLoading && suggestions.length === 0 && (
+            <li className="px-2 py-1 text-xs text-muted-foreground">{noSuggestionsText}</li>
+          )}
         </ul>
       )}
     </div>

@@ -17,6 +17,8 @@ export type SearchResult = {
   limit: number;
   offset: number;
   ordering?: { current: string; options: Array<{ name: string; text: string; url: string }> };
+  facetDistribution?: Record<string, Record<string, number>>;
+  facetStats?: Record<string, Record<string, number>>;
 };
 
 type FacetBucket = {
@@ -99,6 +101,7 @@ export const searchKeys = {
   facets: (resultType: ResultType, url: string) =>
     [...searchKeys.resultType(resultType), 'facets', url] as const,
   globalSuggestions: () => [...searchKeys.all, 'global-suggestions'] as const,
+  suggestions: (path: string) => [...searchKeys.all, 'suggestions', path] as const,
 } as const;
 
 export function getSearchBaseFacetUrl(resultType: ResultType): string {
@@ -189,5 +192,7 @@ export async function fetchFacetsAndResults(
     limit,
     offset,
     ordering: data.ordering,
+    facetDistribution: data.facetDistribution ?? {},
+    facetStats: data.facetStats ?? {},
   };
 }
