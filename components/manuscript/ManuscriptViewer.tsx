@@ -233,6 +233,7 @@ export default function ManuscriptViewer({
   // ---- Drag hooks ----
   const allographDialogDrag = useDraggablePosition({ x: 300, y: 60 });
   const annotationPopupDrag = useDraggablePosition({ x: 0, y: 300 });
+  const filterPanelDrag = useDraggablePosition({ x: 0, y: 180 });
 
   // ---- Derived values ----
   const allographNameById = React.useMemo(
@@ -1117,7 +1118,13 @@ export default function ManuscriptViewer({
         setHoveredAnnotationId(null);
         setIsAllographModalOpen(true);
       }}
-      onOpenFilterPanel={() => setIsFilterPanelOpen((prev) => !prev)}
+      onOpenFilterPanel={() => {
+        setIsFilterPanelOpen((prev) => {
+          const next = !prev;
+          if (!next) filterPanelDrag.reset();
+          return next;
+        });
+      }}
       isVisibilityFilterActive={isVisibilityFilterActive}
     />
   );
@@ -1160,20 +1167,32 @@ export default function ManuscriptViewer({
         annotationHeader
       )}
       {isFilterPanelOpen && (
-        <div className="fixed top-24 right-4 z-40 w-[380px] max-w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-lg">
-          <div className="flex items-center justify-between border-b px-4 py-3">
+        <div
+          className="fixed top-24 right-4 z-40 w-[380px] max-w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-lg"
+          style={{
+            transform: `translate(${filterPanelDrag.pos.x}px, ${filterPanelDrag.pos.y}px)`,
+          }}
+        >
+          <div
+            className="flex items-center justify-between border-b px-4 py-3 cursor-move select-none"
+            {...filterPanelDrag.bindDrag}
+          >
             <h3 className="text-base font-semibold">Filter Annotations</h3>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setIsFilterPanelOpen(false)}
-              type="button"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  setIsFilterPanelOpen(false);
+                  filterPanelDrag.reset();
+                }}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-
           <div className="max-h-[70vh] overflow-auto px-4 py-4">
             <div className="grid gap-6">
               <div>
