@@ -23,6 +23,8 @@ interface AnnotationPopupCardProps {
 
   popupTransform: string;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
+  zIndex?: number;
+  onPointerDownCapture?: React.PointerEventHandler<HTMLDivElement>;
 
   isShareUrlVisible: boolean;
   shareUrl: string;
@@ -54,6 +56,8 @@ export function AnnotationPopupCard({
   isDraftAnnotation,
   popupTransform,
   dragHandleProps,
+  zIndex,
+  onPointerDownCapture,
   isShareUrlVisible,
   shareUrl,
   onCopyShareUrl,
@@ -75,13 +79,17 @@ export function AnnotationPopupCard({
 }: AnnotationPopupCardProps) {
   return (
     <div
-      className="fixed top-4 right-4 z-50 w-[420px] max-w-[90vw] rounded-lg border bg-background shadow-lg"
+      className="fixed top-4 right-4 rounded-lg border bg-background shadow-lg"
       style={{
         transform: popupTransform,
+        zIndex,
+        width: '420px',
+        maxWidth: '90vw',
       }}
+      onPointerDownCapture={onPointerDownCapture}
     >
       <div
-        className="flex items-center justify-between border-b px-4 py-3 cursor-move select-none"
+        className="flex cursor-move select-none items-center justify-between border-b px-4 py-3"
         {...dragHandleProps}
       >
         <div className="min-w-0">
@@ -220,7 +228,11 @@ export function AnnotationPopupCard({
           </div>
         </div>
       ) : (
-        <Tabs value={popupTab} onValueChange={(value) => onPopupTabChange(value as PopupTab)} className="w-full">
+        <Tabs
+          value={popupTab}
+          onValueChange={(value) => onPopupTabChange(value as PopupTab)}
+          className="w-full"
+        >
           <div className="border-b px-4 py-2">
             <TabsList className="h-auto gap-2 bg-transparent p-0">
               <TabsTrigger
@@ -276,16 +288,12 @@ export function AnnotationPopupCard({
                           ))}
                         </div>
                       ) : (
-                        <div className="text-sm text-muted-foreground">
-                          No features selected.
-                        </div>
+                        <div className="text-sm text-muted-foreground">No features selected.</div>
                       )}
                     </div>
                   ))
                 ) : (
-                  <div className="text-sm text-muted-foreground">
-                    No components defined.
-                  </div>
+                  <div className="text-sm text-muted-foreground">No components defined.</div>
                 )}
               </div>
             </TabsContent>

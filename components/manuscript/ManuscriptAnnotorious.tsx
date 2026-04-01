@@ -20,7 +20,12 @@ export interface Annotation {
     numFeatures?: number;
     isDescribed?: boolean;
     annotationType?: string;
-    graphcomponentSet?: Array<{ component: number; features: number[] }>;
+    graphcomponentSet?: Array<{
+      componentName?: string;
+      component: number;
+      features: number[];
+      featureDetails?: { id: number; name: string }[];
+    }>;
   };
 }
 type AnnotoriousFactory = typeof import('@recogito/annotorious-openseadragon').default;

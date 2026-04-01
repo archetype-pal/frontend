@@ -113,6 +113,16 @@ type AnnotationViewerSettings = {
   toolbarPosition: ToolbarPosition;
 };
 
+type PopupRecord = {
+  id: string;
+  annotation: A9sWithMeta;
+  popupTab: 'components' | 'positions' | 'notes';
+  shareUrl: string;
+  isShareUrlVisible: boolean;
+  draftAllographText: string;
+  draftNoteText: string;
+};
+
 const metaKeyFor = (iiif: string) => `annotations:meta:${iiif}`;
 const cacheKeyFor = (iiif: string) => `annotations:${iiif}`;
 const isDbId = (id?: string) => typeof id === 'string' && id.startsWith('db:');
@@ -174,6 +184,55 @@ function browserSafeIiifUrl(raw: string): string {
   }
 }
 
+type DraggablePopupLayerProps = {
+  popupId: string;
+  initialX: number;
+  initialY: number;
+  zIndex: number;
+  onActivate: (popupId: string) => void;
+  onPositionChange?: (popupId: string, x: number, y: number) => void;
+  children: (props: {
+    popupTransform: string;
+    dragHandleProps: React.HTMLAttributes<HTMLDivElement>;
+    zIndex: number;
+    onPointerDownCapture: React.PointerEventHandler<HTMLDivElement>;
+  }) => React.ReactNode;
+};
+
+function DraggablePopupLayer({
+  popupId,
+  initialX,
+  initialY,
+  zIndex,
+  onActivate,
+  onPositionChange,
+  children,
+}: DraggablePopupLayerProps) {
+  const popupDrag = useDraggablePosition({ x: initialX, y: initialY });
+  const lastReportedPositionRef = React.useRef<{ x: number; y: number } | null>(null);
+
+  React.useEffect(() => {
+    const next = { x: popupDrag.pos.x, y: popupDrag.pos.y };
+    const prev = lastReportedPositionRef.current;
+
+    if (prev && prev.x === next.x && prev.y === next.y) return;
+
+    lastReportedPositionRef.current = next;
+    onPositionChange?.(popupId, next.x, next.y);
+  }, [popupId, popupDrag.pos.x, popupDrag.pos.y, onPositionChange]);
+
+  return (
+    <>
+      {children({
+        popupTransform: `translate(${popupDrag.pos.x}px, ${popupDrag.pos.y}px)`,
+        dragHandleProps: popupDrag.bindDrag,
+        zIndex,
+        onPointerDownCapture: () => onActivate(popupId),
+      })}
+    </>
+  );
+}
+
 export default function ManuscriptViewer({
   imageId,
   mode = 'public',
@@ -222,18 +281,9 @@ export default function ManuscriptViewer({
   const [hoveredAllograph, setHoveredAllograph] = React.useState<Allograph | undefined>(undefined);
   const [isAllographModalOpen, setIsAllographModalOpen] = React.useState(false);
   const [hoveredAnnotationId, setHoveredAnnotationId] = React.useState<string | null>(null);
-  const [selectedAnnotation, setSelectedAnnotation] = React.useState<A9sWithMeta | null>(null);
-  const [popupTab, setPopupTab] = React.useState<'components' | 'positions' | 'notes'>(
-    'components'
-  );
-  const [shareUrl, setShareUrl] = React.useState('');
-  const [isShareUrlVisible, setIsShareUrlVisible] = React.useState(false);
   const initialGraphHandledRef = React.useRef(false);
 
   const [unsavedChanges, setUnsavedChanges] = React.useState<number>(0);
-
-  const [draftAllographText, setDraftAllographText] = React.useState('');
-  const [draftNoteText, setDraftNoteText] = React.useState('');
 
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = React.useState(false);
   const [viewerSettings, setViewerSettings] = React.useState<AnnotationViewerSettings>({
@@ -242,32 +292,52 @@ export default function ManuscriptViewer({
     toolbarPosition: 'vertical',
   });
 
+  const [openPopups, setOpenPopups] = React.useState<PopupRecord[]>([]);
+  const [activePopupId, setActivePopupId] = React.useState<string | null>(null);
+  const [singlePopupPosition, setSinglePopupPosition] = React.useState({ x: 0, y: 300 });
+
   // ---- Drag hooks ----
   const allographDialogDrag = useDraggablePosition({ x: 300, y: 60 });
-  const annotationPopupDrag = useDraggablePosition({ x: 0, y: 300 });
+  // const annotationPopupDrag = useDraggablePosition({ x: 0, y: 300 });
   const filterPanelDrag = useDraggablePosition({ x: 0, y: 180 });
   const settingsPanelDrag = useDraggablePosition({ x: 0, y: 0 });
 
   // ---- Derived values ----
+  const activePopupRecord = React.useMemo(() => {
+    if (!openPopups.length) return null;
+    if (!activePopupId) return openPopups[0] ?? null;
+    return openPopups.find((popup) => popup.id === activePopupId) ?? openPopups[0] ?? null;
+  }, [openPopups, activePopupId]);
+
+  const visiblePopupRecords = React.useMemo(() => {
+    if (!openPopups.length) return [];
+    if (!activePopupId) return openPopups;
+
+    const active = openPopups.find((popup) => popup.id === activePopupId);
+    if (!active) return openPopups;
+
+    return [...openPopups.filter((popup) => popup.id !== activePopupId), active];
+  }, [openPopups, activePopupId]);
+
+  const popupAnnotation = activePopupRecord?.annotation ?? null;
+
+  const popupSelectedAllograph = React.useMemo(() => {
+    const allographId = popupAnnotation?._meta?.allographId;
+    if (allographId == null) return undefined;
+    return allographs.find((a) => a.id === allographId);
+  }, [allographs, popupAnnotation]);
+
   const allographNameById = React.useMemo(
     () => new Map(allographs.map((a) => [a.id, a.name])),
     [allographs]
   );
 
-  const annotationSelectedAllograph = React.useMemo(() => {
-    const allographId = selectedAnnotation?._meta?.allographId;
-    if (allographId == null) return undefined;
-    return allographs.find((a) => a.id === allographId);
-  }, [allographs, selectedAnnotation]);
-
-  const isDraftAnnotation = Boolean(selectedAnnotation && !isDbId(selectedAnnotation.id));
-
   const activeHandLabel = selectedHand?.name ?? 'Any';
 
-  const dropdownAllograph = filteredAllograph ?? annotationSelectedAllograph ?? undefined;
+  const dropdownAllograph = filteredAllograph ?? popupSelectedAllograph ?? undefined;
 
   const displayAllograph =
-    hoveredAllograph ?? filteredAllograph ?? annotationSelectedAllograph ?? undefined;
+    hoveredAllograph ?? filteredAllograph ?? popupSelectedAllograph ?? undefined;
 
   const activeAllographLabel = displayAllograph?.name ?? undefined;
 
@@ -276,45 +346,7 @@ export default function ManuscriptViewer({
   const highlightAllographId =
     hoveredAllograph?.id ??
     filteredAllograph?.id ??
-    (isAllographModalOpen ? (annotationSelectedAllograph?.id ?? null) : null);
-
-  const selectedAllographTitle =
-    selectedAnnotation?.body?.find((b) => b.purpose === 'commenting')?.value ??
-    allographNameById.get(selectedAnnotation?._meta?.allographId ?? -1) ??
-    'Annotation';
-
-  const selectedPositions = React.useMemo(
-    () => selectedAnnotation?._meta?.positionDetails ?? [],
-    [selectedAnnotation]
-  );
-
-  const hasPositionsTab = selectedPositions.length > 0;
-
-  const selectedPositionLabels = React.useMemo(() => {
-    return selectedPositions.map((position) => position.name ?? `Position ${position.id}`);
-  }, [selectedPositions]);
-
-  const selectedComponentGroups = React.useMemo(() => {
-    const graphComponents = selectedAnnotation?._meta?.graphcomponentSet ?? [];
-    if (!graphComponents.length) return [];
-
-    return graphComponents.map((gc) => ({
-      componentId: gc.component,
-      componentName: gc.componentName ?? `Component ${gc.component}`,
-      featureNames:
-        gc.featureDetails?.map((feature) => feature.name) ??
-        gc.features.map((featureId) => `Feature ${featureId}`),
-    }));
-  }, [selectedAnnotation]);
-
-  const selectedNotes = React.useMemo(() => {
-    return (selectedAnnotation?.body ?? [])
-      .filter((body) => {
-        const value = body.value?.trim() ?? '';
-        return value.length > 0 && body.purpose !== 'commenting';
-      })
-      .map((body) => body.value!.trim());
-  }, [selectedAnnotation]);
+    (isAllographModalOpen ? (popupSelectedAllograph?.id ?? null) : null);
 
   const filteredA9s = React.useMemo(() => {
     if (countAllographId == null) return [];
@@ -328,10 +360,10 @@ export default function ManuscriptViewer({
       .filter(
         (a) =>
           (a as A9sWithMeta)._meta?.allographId === highlightAllographId &&
-          a.id !== selectedAnnotation?.id
+          a.id !== popupAnnotation?.id
       )
       .map((a) => a.id);
-  }, [a9sSnapshot, highlightAllographId, selectedAnnotation?.id]);
+  }, [a9sSnapshot, highlightAllographId, popupAnnotation?.id]);
 
   const allographsForThisImage = React.useMemo(() => {
     if (!allographs.length) return [];
@@ -439,72 +471,345 @@ export default function ManuscriptViewer({
     }
   }, [imageHeight, isPublicDemoMode, manuscriptImage]);
 
-  const handleShareSelectedAnnotation = () => {
-    if (!selectedAnnotation || typeof window === 'undefined') return;
+  const handlePopupPositionChange = React.useCallback(
+    (popupId: string, x: number, y: number) => {
+      if (!viewerSettings.allowMultipleBoxes) {
+        setSinglePopupPosition((prev) => {
+          if (prev.x === x && prev.y === y) return prev;
+          return { x, y };
+        });
+      }
 
-    const url = new URL(window.location.href);
+      if (activePopupId !== popupId) {
+        setActivePopupId(popupId);
+      }
+    },
+    [viewerSettings.allowMultipleBoxes, activePopupId]
+  );
 
-    if (isDraftAnnotation) {
-      const draftBody: A9sAnnotation['body'] = [
-        ...(draftAllographText.trim()
-          ? [
-            {
-              type: 'TextualBody',
-              purpose: 'commenting',
-              value: draftAllographText.trim(),
-            },
-          ]
-          : []),
-        ...(draftNoteText.trim()
-          ? [
-            {
-              type: 'TextualBody',
-              purpose: 'describing',
-              value: draftNoteText.trim(),
-            },
-          ]
-          : []),
-      ];
+  const buildPopupRecordFromAnnotation = React.useCallback(
+    (
+      annotation: A9sWithMeta,
+      overrides?: Partial<Omit<PopupRecord, 'id' | 'annotation'>>
+    ): PopupRecord => {
+      const isDraft = !isDbId(annotation.id);
 
-      const payload: DraftSharePayload = {
-        id: selectedAnnotation.id,
-        target: selectedAnnotation.target,
-        body: draftBody,
-        _meta: selectedAnnotation._meta,
+      const defaultDraftAllographText = isDraft
+        ? (annotation.body?.find((b) => b.purpose === 'commenting')?.value ?? '')
+        : '';
+
+      const defaultDraftNoteText = isDraft
+        ? (annotation.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
+        : '';
+
+      return {
+        id: annotation.id,
+        annotation,
+        popupTab: overrides?.popupTab ?? 'components',
+        shareUrl: overrides?.shareUrl ?? '',
+        isShareUrlVisible: overrides?.isShareUrlVisible ?? false,
+        draftAllographText: overrides?.draftAllographText ?? defaultDraftAllographText,
+        draftNoteText: overrides?.draftNoteText ?? defaultDraftNoteText,
+      };
+    },
+    []
+  );
+
+  const replaceSinglePopup = React.useCallback(
+    (
+      annotation: A9sWithMeta | null,
+      overrides?: Partial<Omit<PopupRecord, 'id' | 'annotation'>>
+    ) => {
+      if (!annotation) {
+        setOpenPopups([]);
+        setActivePopupId(null);
+        return;
+      }
+
+      const nextPopup = buildPopupRecordFromAnnotation(annotation, overrides);
+      setOpenPopups([nextPopup]);
+      setActivePopupId(nextPopup.id);
+    },
+    [buildPopupRecordFromAnnotation]
+  );
+
+  const appendPopupWithAutoOffset = React.useCallback(
+    (
+      annotation: A9sWithMeta | null,
+      overrides?: Partial<Omit<PopupRecord, 'id' | 'annotation'>>
+    ) => {
+      if (!annotation) return;
+
+      setActivePopupId(annotation.id);
+
+      setOpenPopups((prev) => {
+        if (prev.some((popup) => popup.id === annotation.id)) {
+          return prev;
+        }
+
+        const nextPopup = buildPopupRecordFromAnnotation(annotation, overrides);
+        return [...prev, nextPopup];
+      });
+    },
+    [buildPopupRecordFromAnnotation]
+  );
+
+  const openPopupCollectionFromAnnotation = React.useCallback(
+    (
+      annotation: A9sWithMeta | null,
+      options?: {
+        mode?: 'replace' | 'append';
+        overrides?: Partial<Omit<PopupRecord, 'id' | 'annotation'>>;
+      }
+    ) => {
+      if (!annotation) {
+        setOpenPopups([]);
+        return;
+      }
+
+      const mode = options?.mode ?? (viewerSettings.allowMultipleBoxes ? 'append' : 'replace');
+
+      if (mode === 'append') {
+        appendPopupWithAutoOffset(annotation, options?.overrides);
+        return;
+      }
+
+      replaceSinglePopup(annotation, options?.overrides);
+    },
+    [appendPopupWithAutoOffset, replaceSinglePopup, viewerSettings.allowMultipleBoxes]
+  );
+
+  const clearPopupCollection = React.useCallback(() => {
+    setOpenPopups([]);
+    setActivePopupId(null);
+  }, []);
+
+  const clearSinglePopupState = React.useCallback(
+    (options?: { clearHover?: boolean }) => {
+      clearPopupCollection();
+
+      if (options?.clearHover) {
+        setHoveredAnnotationId(null);
+      }
+    },
+    [clearPopupCollection]
+  );
+
+  const getPopupById = React.useCallback(
+    (popupId: string) => openPopups.find((popup) => popup.id === popupId) ?? null,
+    [openPopups]
+  );
+
+  const removePopupById = React.useCallback((popupId: string) => {
+    setOpenPopups((prev) => prev.filter((popup) => popup.id !== popupId));
+  }, []);
+
+  const updatePopupById = React.useCallback((popupId: string, updates: Partial<PopupRecord>) => {
+    setOpenPopups((prev) => {
+      let changed = false;
+
+      const next = prev.map((popup) => {
+        if (popup.id !== popupId) return popup;
+
+        const candidate = { ...popup, ...updates };
+
+        const unchanged =
+          candidate.id === popup.id &&
+          candidate.annotation === popup.annotation &&
+          candidate.popupTab === popup.popupTab &&
+          candidate.shareUrl === popup.shareUrl &&
+          candidate.isShareUrlVisible === popup.isShareUrlVisible &&
+          candidate.draftAllographText === popup.draftAllographText &&
+          candidate.draftNoteText === popup.draftNoteText;
+
+        if (unchanged) return popup;
+
+        changed = true;
+        return candidate;
+      });
+
+      return changed ? next : prev;
+    });
+  }, []);
+
+  const handleActivatePopup = React.useCallback((popupId: string) => {
+    setActivePopupId(popupId);
+  }, []);
+
+  const handlePopupTabChange = React.useCallback(
+    (popupId: string, value: 'components' | 'positions' | 'notes') => {
+      updatePopupById(popupId, { popupTab: value });
+    },
+    [updatePopupById]
+  );
+
+  const handleHideShareUrl = React.useCallback(
+    (popupId: string) => {
+      updatePopupById(popupId, { isShareUrlVisible: false });
+    },
+    [updatePopupById]
+  );
+
+  const handleDraftAllographTextChange = React.useCallback(
+    (popupId: string, value: string) => {
+      updatePopupById(popupId, { draftAllographText: value });
+    },
+    [updatePopupById]
+  );
+
+  const handleDraftNoteTextChange = React.useCallback(
+    (popupId: string, value: string) => {
+      updatePopupById(popupId, { draftNoteText: value });
+    },
+    [updatePopupById]
+  );
+
+  const openSinglePopupFromAnnotation = React.useCallback(
+    (annotation: A9sWithMeta | null, options?: { clearHover?: boolean }) => {
+      if (!annotation) {
+        clearSinglePopupState({ clearHover: options?.clearHover });
+        return;
+      }
+
+      if (options?.clearHover) {
+        setHoveredAnnotationId(null);
+      }
+
+      const commonOverrides = {
+        popupTab: 'components' as const,
+        shareUrl: '',
+        isShareUrlVisible: false,
+        draftAllographText: !isDbId(annotation.id)
+          ? (annotation.body?.find((b) => b.purpose === 'commenting')?.value ?? '')
+          : '',
+        draftNoteText: !isDbId(annotation.id)
+          ? (annotation.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
+          : '',
       };
 
-      url.searchParams.delete('graph');
-      url.searchParams.set('draft', encodeDraftSharePayload(payload));
-    } else {
-      const graphId = selectedAnnotation.id.replace(/^db:/, '');
-      if (!graphId) return;
+      openPopupCollectionFromAnnotation(annotation, {
+        mode: viewerSettings.allowMultipleBoxes ? 'append' : 'replace',
+        overrides: commonOverrides,
+      });
+    },
+    [clearSinglePopupState, openPopupCollectionFromAnnotation, viewerSettings.allowMultipleBoxes]
+  );
 
-      url.searchParams.delete('draft');
-      url.searchParams.set('graph', graphId);
-    }
+  const getPopupCardViewData = React.useCallback(
+    (popupRecord: PopupRecord) => {
+      const annotation = popupRecord.annotation;
+      const isDraft = !isDbId(annotation.id);
 
-    setShareUrl(url.toString());
-    setIsShareUrlVisible(true);
-  };
+      const title = isDraft
+        ? popupRecord.draftAllographText.trim() || 'New Annotation'
+        : (annotation.body?.find((b) => b.purpose === 'commenting')?.value ??
+          allographNameById.get(annotation._meta?.allographId ?? -1) ??
+          'Annotation');
 
-  const handleCopyShareUrl = async () => {
-    if (!shareUrl) return;
+      const positions = annotation._meta?.positionDetails ?? [];
+      const hasPositionsTab = positions.length > 0;
+
+      const selectedPositionLabels = positions.map(
+        (position) => position.name ?? `Position ${position.id}`
+      );
+
+      const graphComponents = annotation._meta?.graphcomponentSet ?? [];
+      const selectedComponentGroups =
+        graphComponents.length > 0
+          ? graphComponents.map((gc) => ({
+              componentId: gc.component,
+              componentName: gc.componentName ?? `Component ${gc.component}`,
+              featureNames:
+                gc.featureDetails?.map((feature) => feature.name) ??
+                gc.features.map((featureId) => `Feature ${featureId}`),
+            }))
+          : [];
+
+      const selectedNotes = (annotation.body ?? [])
+        .filter((body) => {
+          const value = body.value?.trim() ?? '';
+          return value.length > 0 && body.purpose !== 'commenting';
+        })
+        .map((body) => body.value!.trim());
+
+      return {
+        annotation,
+        isDraft,
+        title,
+        hasPositionsTab,
+        selectedPositionLabels,
+        selectedComponentGroups,
+        selectedNotes,
+      };
+    },
+    [allographNameById]
+  );
+
+  const handleShareSelectedAnnotation = React.useCallback(
+    (popupId: string) => {
+      const popup = getPopupById(popupId);
+      if (!popup || typeof window === 'undefined') return;
+
+      const annotation = popup.annotation;
+      const isDraft = !isDbId(annotation.id);
+      const url = new URL(window.location.href);
+
+      if (isDraft) {
+        const draftBody: A9sAnnotation['body'] = [
+          ...(popup.draftAllographText.trim()
+            ? [
+                {
+                  type: 'TextualBody',
+                  purpose: 'commenting',
+                  value: popup.draftAllographText.trim(),
+                },
+              ]
+            : []),
+          ...(popup.draftNoteText.trim()
+            ? [
+                {
+                  type: 'TextualBody',
+                  purpose: 'describing',
+                  value: popup.draftNoteText.trim(),
+                },
+              ]
+            : []),
+        ];
+
+        const payload: DraftSharePayload = {
+          id: annotation.id,
+          target: annotation.target,
+          body: draftBody,
+          _meta: annotation._meta,
+        };
+
+        url.searchParams.delete('graph');
+        url.searchParams.set('draft', encodeDraftSharePayload(payload));
+      } else {
+        const graphId = annotation.id.replace(/^db:/, '');
+        if (!graphId) return;
+
+        url.searchParams.delete('draft');
+        url.searchParams.set('graph', graphId);
+      }
+
+      updatePopupById(popupId, {
+        shareUrl: url.toString(),
+        isShareUrlVisible: true,
+      });
+    },
+    [getPopupById, updatePopupById]
+  );
+
+  const handleCopyShareUrl = async (popupId: string) => {
+    const value = getPopupById(popupId)?.shareUrl ?? '';
+    if (!value) return;
 
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(value);
     } catch {
       // ignore
     }
-  };
-
-  const resetAnnotationPopupState = () => {
-    setSelectedAnnotation(null);
-    setPopupTab('components');
-    setIsShareUrlVisible(false);
-    setShareUrl('');
-    setDraftAllographText('');
-    setDraftNoteText('');
-    annotationPopupDrag.reset();
   };
 
   const rearmCreateTool = () => {
@@ -514,65 +819,90 @@ export default function ManuscriptViewer({
     }, 0);
   };
 
-  const handleCloseSelectedAnnotation = () => {
-    viewerApiRef.current?.clearSelection?.();
-    resetAnnotationPopupState();
-  };
+  const handleCloseSelectedAnnotation = React.useCallback(
+    (popupId: string) => {
+      const popup = getPopupById(popupId);
+      const shouldResumeDraw =
+        activeButton === 'editorial' && Boolean(popup && !isDbId(popup.annotation.id));
 
-  const handleCancelDraftAnnotation = () => {
-    const shouldResumeDraw = activeButton === 'editorial';
+      viewerApiRef.current?.clearSelection?.();
+      removePopupById(popupId);
 
-    viewerApiRef.current?.clearSelection?.();
-    resetAnnotationPopupState();
+      if (shouldResumeDraw) {
+        rearmCreateTool();
+      }
+    },
+    [activeButton, getPopupById, removePopupById]
+  );
 
-    if (shouldResumeDraw) {
-      rearmCreateTool();
-    } else {
-      viewerApiRef.current?.enablePan();
-      setActiveButton('move');
-    }
-  };
+  const handleCancelDraftAnnotation = React.useCallback(
+    (popupId: string) => {
+      const popup = getPopupById(popupId);
+      const shouldResumeDraw =
+        activeButton === 'editorial' && Boolean(popup && !isDbId(popup.annotation.id));
 
-  const handleSaveDraftAnnotation = async () => {
-    if (!selectedAnnotation) return;
+      viewerApiRef.current?.clearSelection?.();
+      removePopupById(popupId);
 
-    const next: A9sAnnotation = {
-      ...selectedAnnotation,
-      body: [
-        {
-          type: 'TextualBody',
-          purpose: 'commenting',
-          value: draftAllographText.trim(),
-        },
-        ...(draftNoteText.trim()
-          ? [
-            {
-              type: 'TextualBody',
-              purpose: 'describing',
-              value: draftNoteText.trim(),
-            },
-          ]
-          : []),
-      ],
-    };
+      if (shouldResumeDraw) {
+        rearmCreateTool();
+      } else {
+        viewerApiRef.current?.enablePan();
+        setActiveButton('move');
+      }
+    },
+    [activeButton, getPopupById, removePopupById]
+  );
 
-    await viewerApiRef.current?.updateSelectedDraft?.(next);
-    await viewerApiRef.current?.saveSelectedDraft?.();
-  };
+  const handleSaveDraftAnnotation = React.useCallback(
+    async (popupId: string) => {
+      const popup = getPopupById(popupId);
+      if (!popup) return;
 
-  const handleConfirmDraftAnnotation = async () => {
-    const shouldResumeDraw = activeButton === 'editorial';
+      const next: A9sAnnotation = {
+        ...popup.annotation,
+        body: [
+          {
+            type: 'TextualBody',
+            purpose: 'commenting',
+            value: popup.draftAllographText.trim(),
+          },
+          ...(popup.draftNoteText.trim()
+            ? [
+                {
+                  type: 'TextualBody',
+                  purpose: 'describing',
+                  value: popup.draftNoteText.trim(),
+                },
+              ]
+            : []),
+        ],
+      };
 
-    await handleSaveDraftAnnotation();
-    resetAnnotationPopupState();
+      await viewerApiRef.current?.updateSelectedDraft?.(next);
+      await viewerApiRef.current?.saveSelectedDraft?.();
+    },
+    [getPopupById]
+  );
 
-    if (shouldResumeDraw) {
-      rearmCreateTool();
-    } else {
-      viewerApiRef.current?.enablePan();
-      setActiveButton('move');
-    }
-  };
+  const handleConfirmDraftAnnotation = React.useCallback(
+    async (popupId: string) => {
+      const popup = getPopupById(popupId);
+      const shouldResumeDraw =
+        activeButton === 'editorial' && Boolean(popup && !isDbId(popup.annotation.id));
+
+      await handleSaveDraftAnnotation(popupId);
+      removePopupById(popupId);
+
+      if (shouldResumeDraw) {
+        rearmCreateTool();
+      } else {
+        viewerApiRef.current?.enablePan();
+        setActiveButton('move');
+      }
+    },
+    [activeButton, getPopupById, handleSaveDraftAnnotation, removePopupById]
+  );
 
   const handleToggleFullScreen = () => {
     setIsFullScreen((prev) => !prev);
@@ -823,18 +1153,27 @@ export default function ManuscriptViewer({
     }
   }, [imageId]);
 
-  // keep popup share state reset when annotation changes
-  React.useEffect(() => {
-    setIsShareUrlVisible(false);
-    setShareUrl('');
-  }, [selectedAnnotation?.id]);
-
   // keep popup on valid tab
   React.useEffect(() => {
-    if (!hasPositionsTab && popupTab === 'positions') {
-      setPopupTab('components');
+    if (!activePopupRecord) return;
+
+    const popupCard = getPopupCardViewData(activePopupRecord);
+
+    if (!popupCard.hasPositionsTab && activePopupRecord.popupTab === 'positions') {
+      handlePopupTabChange(activePopupRecord.id, 'components');
     }
-  }, [hasPositionsTab, popupTab]);
+  }, [activePopupRecord, getPopupCardViewData, handlePopupTabChange]);
+
+  React.useEffect(() => {
+    if (!openPopups.length) {
+      if (activePopupId !== null) setActivePopupId(null);
+      return;
+    }
+
+    if (!activePopupId || !openPopups.some((popup) => popup.id === activePopupId)) {
+      setActivePopupId(openPopups[0].id);
+    }
+  }, [openPopups, activePopupId]);
 
   // sync viewer highlight state
   React.useEffect(() => {
@@ -1092,14 +1431,7 @@ export default function ManuscriptViewer({
       if (!found) return;
 
       initialGraphHandledRef.current = true;
-      setSelectedAnnotation(found);
-      setPopupTab('components');
-
-      const title = found.body?.find((b) => b.purpose === 'commenting')?.value ?? '';
-      const note = found.body?.find((b) => b.purpose !== 'commenting')?.value ?? '';
-
-      setDraftAllographText(title);
-      setDraftNoteText(note);
+      openSinglePopupFromAnnotation(found);
 
       viewerApiRef.current?.selectAnnotationById?.(draftId);
       viewerApiRef.current?.centerOnAnnotation?.(draftId);
@@ -1120,12 +1452,11 @@ export default function ManuscriptViewer({
     initialGraphHandledRef.current = true;
     if (!found) return;
 
-    setSelectedAnnotation(found);
-    setPopupTab('components');
+    openSinglePopupFromAnnotation(found);
 
     viewerApiRef.current?.selectAnnotationById?.(targetId);
     viewerApiRef.current?.centerOnAnnotation?.(targetId);
-  }, [osdReady, a9sSnapshot]);
+  }, [osdReady, a9sSnapshot, openSinglePopupFromAnnotation]);
 
   // ---- Early returns ----
   if (loading) {
@@ -1183,6 +1514,7 @@ export default function ManuscriptViewer({
   // ---- Render ----
   return (
     <div
+      data-open-popups-count={openPopups.length}
       className={
         isFullScreen ? 'fixed inset-0 z-50 flex flex-col bg-black' : 'flex h-screen flex-col'
       }
@@ -1720,55 +2052,76 @@ export default function ManuscriptViewer({
               }}
               onSelect={(a) => {
                 const selected = (a as A9sWithMeta | null) ?? null;
+                if (!selected) return;
 
-                setSelectedAnnotation(selected);
-                setPopupTab('components');
-                setIsShareUrlVisible(false);
-                setShareUrl('');
-                setHoveredAnnotationId(null);
-
-                if (selected && !isDbId(selected.id)) {
-                  const title = selected.body?.find((b) => b.purpose === 'commenting')?.value ?? '';
-                  const note = selected.body?.find((b) => b.purpose !== 'commenting')?.value ?? '';
-
-                  setDraftAllographText(title);
-                  setDraftNoteText(note);
-                } else {
-                  setDraftAllographText('');
-                  setDraftNoteText('');
-                }
+                openSinglePopupFromAnnotation(selected, { clearHover: true });
               }}
               exposeApi={handleExposeApi}
             />
 
-            {selectedAnnotation && (
-              <AnnotationPopupCard
-                title={isDraftAnnotation ? draftAllographText.trim() || 'New Annotation' : selectedAllographTitle}
-                isDraftAnnotation={isDraftAnnotation}
-                popupTransform={`translate(${annotationPopupDrag.pos.x}px, ${annotationPopupDrag.pos.y}px)`}
-                dragHandleProps={annotationPopupDrag.bindDrag}
-                isShareUrlVisible={isShareUrlVisible}
-                shareUrl={shareUrl}
-                onCopyShareUrl={handleCopyShareUrl}
-                onHideShareUrl={() => setIsShareUrlVisible(false)}
-                onShareSelectedAnnotation={handleShareSelectedAnnotation}
-                onCloseSelectedAnnotation={handleCloseSelectedAnnotation}
-                draftAllographText={draftAllographText}
-                onDraftAllographTextChange={setDraftAllographText}
-                draftNoteText={draftNoteText}
-                onDraftNoteTextChange={setDraftNoteText}
-                onCancelDraftAnnotation={handleCancelDraftAnnotation}
-                onConfirmDraftAnnotation={() => {
-                  void handleConfirmDraftAnnotation();
-                }}
-                popupTab={popupTab}
-                onPopupTabChange={setPopupTab}
-                hasPositionsTab={hasPositionsTab}
-                selectedComponentGroups={selectedComponentGroups}
-                selectedPositionLabels={selectedPositionLabels}
-                selectedNotes={selectedNotes}
-              />
-            )}
+            {visiblePopupRecords.map((popupRecord, index) => {
+              const popupCard = getPopupCardViewData(popupRecord);
+              const isActive = popupRecord.id === activePopupId;
+
+              const initialX = viewerSettings.allowMultipleBoxes
+                ? index * 24
+                : singlePopupPosition.x;
+              const initialY = viewerSettings.allowMultipleBoxes
+                ? 300 + index * 24
+                : singlePopupPosition.y;
+              const zIndex = isActive ? 80 : 60 + index;
+
+              return (
+                <DraggablePopupLayer
+                  key={popupRecord.id || `popup-${index}`}
+                  popupId={popupRecord.id}
+                  initialX={initialX}
+                  initialY={initialY}
+                  zIndex={zIndex}
+                  onActivate={handleActivatePopup}
+                  onPositionChange={handlePopupPositionChange}
+                >
+                  {({ popupTransform, dragHandleProps, zIndex, onPointerDownCapture }) => (
+                    <AnnotationPopupCard
+                      title={popupCard.title}
+                      isDraftAnnotation={popupCard.isDraft}
+                      popupTransform={popupTransform}
+                      dragHandleProps={dragHandleProps}
+                      zIndex={zIndex}
+                      onPointerDownCapture={onPointerDownCapture}
+                      isShareUrlVisible={popupRecord.isShareUrlVisible}
+                      shareUrl={popupRecord.shareUrl}
+                      onCopyShareUrl={() => void handleCopyShareUrl(popupRecord.id)}
+                      onHideShareUrl={() => handleHideShareUrl(popupRecord.id)}
+                      onShareSelectedAnnotation={() =>
+                        handleShareSelectedAnnotation(popupRecord.id)
+                      }
+                      onCloseSelectedAnnotation={() =>
+                        handleCloseSelectedAnnotation(popupRecord.id)
+                      }
+                      draftAllographText={popupRecord.draftAllographText}
+                      onDraftAllographTextChange={(value) =>
+                        handleDraftAllographTextChange(popupRecord.id, value)
+                      }
+                      draftNoteText={popupRecord.draftNoteText}
+                      onDraftNoteTextChange={(value) =>
+                        handleDraftNoteTextChange(popupRecord.id, value)
+                      }
+                      onCancelDraftAnnotation={() => handleCancelDraftAnnotation(popupRecord.id)}
+                      onConfirmDraftAnnotation={() => {
+                        void handleConfirmDraftAnnotation(popupRecord.id);
+                      }}
+                      popupTab={popupRecord.popupTab}
+                      onPopupTabChange={(value) => handlePopupTabChange(popupRecord.id, value)}
+                      hasPositionsTab={popupCard.hasPositionsTab}
+                      selectedComponentGroups={popupCard.selectedComponentGroups}
+                      selectedPositionLabels={popupCard.selectedPositionLabels}
+                      selectedNotes={popupCard.selectedNotes}
+                    />
+                  )}
+                </DraggablePopupLayer>
+              );
+            })}
           </div>
         </div>
       </div>
