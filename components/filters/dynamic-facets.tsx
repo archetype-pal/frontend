@@ -26,6 +26,8 @@ type DynamicFacetsProps = {
   keyword: string;
   onKeywordChange: (value: string) => void;
   onKeywordSubmit: (value: string) => void;
+  exactPhrase?: boolean;
+  onExactPhraseChange?: (value: boolean) => void;
   activeTags: ActiveFacetTag[];
   onRemoveTag?: (item: ActiveFacetTag) => void;
   selectedFacets?: string[];
@@ -44,6 +46,8 @@ export function DynamicFacets({
   keyword,
   onKeywordChange,
   onKeywordSubmit,
+  exactPhrase = false,
+  onExactPhraseChange,
   activeTags,
   onRemoveTag,
   selectedFacets = [],
@@ -163,6 +167,8 @@ export function DynamicFacets({
             onKeywordChange(value);
           }}
           onTriggerSearch={triggerSearch}
+          exactPhrase={exactPhrase}
+          onExactPhraseChange={onExactPhraseChange}
           suggestions={effectiveSuggestions}
           placeholder="Type and press Enter…"
           suggestionsLoading={serverSuggestionsQuery.isFetching}
@@ -239,6 +245,9 @@ export function DynamicFacets({
                     : { type: 'selectFacet', facetKey, value: val }
                 );
               }}
+              onExclude={(val) =>
+                onFacetClick?.('', { type: 'excludeFacet', facetKey, value: val })
+              }
             />
           );
         })}

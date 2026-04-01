@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search } from 'lucide-react';
+import { Search, Quote } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import type { ResultType } from '@/lib/search-types';
 
@@ -50,6 +50,9 @@ type KeywordSearchInputProps = {
   inputId?: string;
   recentSearches?: KeywordHistoryItem[];
   onClearRecentSearches?: () => void;
+  /** When true, submitted keyword is wrapped in double quotes (phrase search). */
+  exactPhrase?: boolean;
+  onExactPhraseChange?: (value: boolean) => void;
 };
 
 export function KeywordSearchInput({
@@ -67,6 +70,8 @@ export function KeywordSearchInput({
   inputId,
   recentSearches = [],
   onClearRecentSearches,
+  exactPhrase = false,
+  onExactPhraseChange,
 }: KeywordSearchInputProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(-1);
   const [dismissed, setDismissed] = React.useState(false);
@@ -99,10 +104,21 @@ export function KeywordSearchInput({
           e.preventDefault();
           if (selectedIndex >= 0 && suggestions[selectedIndex]) {
             onTriggerSearch(suggestions[selectedIndex].value);
-          } else if (value.trim()) {
-            onTriggerSearch(value.trim());
           } else {
-            onTriggerSearch('');
+            const raw = value.trim();
+            if (!raw) {
+              onTriggerSearch('');
+              break;
+            }
+            if (
+              exactPhrase &&
+              !(raw.startsWith('"') && raw.endsWith('"')) &&
+              !(raw.startsWith("'") && raw.endsWith("'"))
+            ) {
+              onTriggerSearch(`"${raw.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`);
+            } else {
+              onTriggerSearch(raw);
+            }
           }
           break;
         case 'Escape':
@@ -111,7 +127,7 @@ export function KeywordSearchInput({
           break;
       }
     },
-    [suggestions, selectedIndex, value, onTriggerSearch]
+    [suggestions, selectedIndex, value, onTriggerSearch, exactPhrase]
   );
 
   const handleFocus = React.useCallback(() => {
@@ -127,10 +143,20 @@ export function KeywordSearchInput({
 
   const handleSuggestionClick = React.useCallback(
     (item: KeywordSuggestionItem) => {
-      onTriggerSearch(item.value);
+      const raw = item.value.trim();
+      if (
+        exactPhrase &&
+        raw &&
+        !(raw.startsWith('"') && raw.endsWith('"')) &&
+        !(raw.startsWith("'") && raw.endsWith("'"))
+      ) {
+        onTriggerSearch(`"${raw.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`);
+      } else {
+        onTriggerSearch(item.value);
+      }
       setDismissed(true);
     },
-    [onTriggerSearch]
+    [exactPhrase, onTriggerSearch]
   );
 
   const showRecent = value.trim().length === 0 && recentSearches.length > 0;
@@ -141,9 +167,29 @@ export function KeywordSearchInput({
   return (
     <div className={className ? `relative ${className}` : 'relative'}>
       <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+      {onExactPhraseChange && (
+        <button
+          type="button"
+          title={exactPhrase ? 'Phrase search on' : 'Match exact phrase'}
+          aria-pressed={exactPhrase}
+          onClick={() => onExactPhraseChange(!exactPhrase)}
+          className={
+            'absolute right-2 top-1.5 z-[1] rounded p-1 transition-colors ' +
+            (exactPhrase
+              ? 'bg-primary/15 text-primary'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground')
+          }
+        >
+          <Quote className="h-4 w-4" />
+        </button>
+      )}
       <Input
         id={inputId}
-        className={inputClassName ? `pl-8 ${inputClassName}` : 'pl-8'}
+        className={
+          inputClassName
+            ? `pl-8 ${onExactPhraseChange ? 'pr-10 ' : ''}${inputClassName}`
+            : `pl-8${onExactPhraseChange ? ' pr-10' : ''}`
+        }
         placeholder={placeholder}
         value={value}
         onChange={handleChange}

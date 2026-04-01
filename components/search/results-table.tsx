@@ -21,7 +21,7 @@ import type {
 } from '@/types/search';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
-import { Highlight } from './highlight';
+import { Highlight, MatchSnippet } from './highlight';
 import { CollectionStar } from '@/components/collection/collection-star';
 import { getImageDetailUrl, getGraphDetailUrl } from '@/lib/media-url';
 import {
@@ -572,6 +572,26 @@ function ResultsTableComponent<K extends ResultType>({
               );
             })}
           </TableRow>
+          {['texts', 'clauses', 'people', 'places'].includes(resultType) &&
+            highlightKeyword.trim() &&
+            (() => {
+              const ff = getFormattedFields(row);
+              const content = ff?.content;
+              if (typeof content !== 'string' || !content.includes('__hl_start__')) return null;
+              return (
+                <TableRow key={`${String(rowKey)}-snippet`}>
+                  <TableCell
+                    colSpan={totalColSpan}
+                    className="border-b bg-muted/20 py-1.5 pl-4 pr-4 text-xs"
+                  >
+                    <span className="mb-0.5 block text-[10px] font-semibold uppercase text-muted-foreground">
+                      Text match
+                    </span>
+                    <MatchSnippet formatted={content} />
+                  </TableCell>
+                </TableRow>
+              );
+            })()}
           {preview && (
             <TableRow className="relative cursor-pointer group-hover:bg-muted/50 transition-colors">
               <TableCell
@@ -598,7 +618,19 @@ function ResultsTableComponent<K extends ResultType>({
                   className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
                 >
                   {highlightKeyword ? (
-                    <Highlight text={subRowAccessor(row)} keyword={highlightKeyword} />
+                    <Highlight
+                      text={subRowAccessor(row)}
+                      keyword={highlightKeyword}
+                      formattedText={(() => {
+                        const f = getFormattedFields(row);
+                        const keys = ['content', 'display_label', 'shelfmark', 'name'] as const;
+                        for (const k of keys) {
+                          const v = f?.[k];
+                          if (typeof v === 'string' && v.includes('__hl_start__')) return v;
+                        }
+                        return undefined;
+                      })()}
+                    />
                   ) : (
                     subRowAccessor(row)
                   )}

@@ -46,7 +46,12 @@ export function ActiveFacetTags({
         {visibleItems.map((item) => (
           <span
             key={item.id}
-            className="inline-flex items-center gap-1 rounded-full border bg-muted px-2 py-1 text-xs text-foreground"
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs text-foreground',
+              item.exclude
+                ? 'border-destructive/40 bg-destructive/5 line-through decoration-destructive/60'
+                : 'bg-muted'
+            )}
           >
             <span className="max-w-[180px] truncate">{item.label}</span>
             <button

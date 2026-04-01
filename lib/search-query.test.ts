@@ -16,6 +16,7 @@ describe('buildActiveQueryTags', () => {
       dateParams: { min_date: '1100', max_date: '1200' },
       selectedFacets: ['repository_name_exact:Durham'],
       searchType: 'manuscripts',
+      extraParams: {},
     });
 
     expect(tags.map((t) => t.label)).toEqual([
@@ -138,6 +139,18 @@ describe('resolveFacetClick', () => {
       'repository_name_exact:St Andrews',
     ]);
     expect(result.value.offset).toBe(0);
+  });
+
+  it('adds exclusion tags from extraParams', () => {
+    const tags = buildActiveQueryTags({
+      submittedKeyword: '',
+      dateParams: {},
+      selectedFacets: [],
+      searchType: 'manuscripts',
+      extraParams: { repository_name__not: ['A', 'B'] },
+    });
+    expect(tags.some((t) => t.exclude && t.value === 'A')).toBe(true);
+    expect(tags.some((t) => t.exclude && t.value === 'B')).toBe(true);
   });
 
   it('returns noop for URL arg without facet options', () => {

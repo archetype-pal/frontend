@@ -35,10 +35,16 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 import type { FacetClickAction } from '@/types/facets';
 import type { ResultMap } from '@/types/search';
 import {
+  areExtraParamsEqual,
   buildActiveQueryTags,
+  buildAdvancedExtraParams,
   buildQueryString,
   clearAllFacetFilters,
   clearDateFilters,
+  mergeAdvancedIntoExtraParams,
+  parseQueryRootFromUrl,
+  removeExclusionFromExtraParams,
+  stripAdvancedExtraParams,
   type ActiveFacetTag,
   getSuggestionsPool,
   type QueryState,
@@ -89,11 +95,14 @@ function getNextOrderingUrl(
   return group.find((option) => option.name !== ordering.current)?.url ?? group[0]?.url;
 }
 
-function areStringRecordValuesEqual(a: Record<string, string>, b: Record<string, string>): boolean {
-  const aEntries = Object.entries(a);
-  const bEntries = Object.entries(b);
-  if (aEntries.length !== bEntries.length) return false;
-  return aEntries.every(([key, value]) => b[key] === value);
+function parseViewModeParam(raw: string | null, resultType: ResultType): ViewMode | null {
+  if (!raw) return null;
+  const v = raw as ViewMode;
+  const allowed: ViewMode[] = ['table', 'grid', 'timeline', 'distribution', 'map'];
+  if (!allowed.includes(v)) return null;
+  if (v === 'distribution' && resultType !== 'graphs') return null;
+  if ((v === 'map' || v === 'grid') && isTableOnlyType(resultType)) return null;
+  return v;
 }
 
 function ResultTypeToggle({
@@ -178,7 +187,7 @@ type SearchActionsMenuProps = {
   handleExport: (format: 'csv' | 'json' | 'bibtex', scope: 'page' | 'all') => Promise<void>;
   exportBusy: boolean;
   resultType: ResultType;
-  crossTypeLinks: ResultType[];
+  crossTypeLinks: readonly ResultType[];
 };
 
 function SearchActionsMenu({
@@ -388,6 +397,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const [advancedSearch, setAdvancedSearch] = React.useState<AdvancedSearchState>(
     DEFAULT_ADVANCED_SEARCH_STATE
   );
+  const [exactPhraseKeyword, setExactPhraseKeyword] = React.useState(false);
   const [compareIds, setCompareIds] = React.useState<string[]>([]);
   const [compareOpen, setCompareOpen] = React.useState(false);
   const [filtersSidebarCollapsed, setFiltersSidebarCollapsed] = React.useState(false);
@@ -459,27 +469,28 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
       Array.from(searchParams.entries()).find(([key]) => key.endsWith('__min')) ?? null;
     const rangeMaxEntry =
       Array.from(searchParams.entries()).find(([key]) => key.endsWith('__max')) ?? null;
+    const viewFromUrl = parseViewModeParam(searchParams.get('view'), resultType);
+    if (viewFromUrl) setViewMode(viewFromUrl);
     setAdvancedSearch((prev) => ({
       ...prev,
       enabled:
         searchParams.get('advanced') === 'true' ||
         searchParams.get('matching_strategy') != null ||
         searchParams.get('search_field') != null ||
+        searchParams.get('qb') != null ||
         notFacetEntry != null ||
         rangeMinEntry != null ||
         rangeMaxEntry != null,
       matchingStrategy:
-        (searchParams.get('matching_strategy') as AdvancedSearchState['matchingStrategy']) ??
-        prev.matchingStrategy,
+        searchParams.get('matching_strategy') === 'last'
+          ? 'last'
+          : searchParams.get('matching_strategy') === 'all'
+            ? 'all'
+            : prev.matchingStrategy,
       searchField: searchParams.get('search_field') ?? '',
-      notFacetKey: notFacetEntry ? notFacetEntry[0].replace(/__not$/, '') : '',
-      notFacetValue: notFacetEntry?.[1] ?? '',
-      rangeField:
-        (rangeMinEntry?.[0] ?? rangeMaxEntry?.[0] ?? '').replace(/__(min|max)$/, '') ?? '',
-      rangeMin: rangeMinEntry?.[1] ?? '',
-      rangeMax: rangeMaxEntry?.[1] ?? '',
+      queryRoot: parseQueryRootFromUrl(searchParams),
     }));
-  }, [searchParams]);
+  }, [searchParams, resultType]);
 
   React.useEffect(() => {
     const qs = buildQueryString(queryState);
@@ -489,18 +500,28 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
     if (compareIds.length > 0) {
       params.set('compare', compareIds.join(','));
     }
+    if (viewMode !== 'table') {
+      params.set('view', viewMode);
+    }
     const path = '/search/' + resultType + (params.toString() ? '?' + params.toString() : '');
     const currentPath = window.location.pathname + window.location.search;
     if (path !== currentPath) {
       isInternalUrlUpdate.current = true;
       window.history.replaceState(null, '', path);
     }
-  }, [advancedSearch.enabled, compareIds, queryState, resultType, submittedKeyword]);
+  }, [advancedSearch.enabled, compareIds, queryState, resultType, submittedKeyword, viewMode]);
 
   const handleResultTypeChange = React.useCallback((next: ResultType) => {
     setResultType(next);
-    setQueryState((prev) => ({ ...prev, selected_facets: [], dateParams: {}, offset: 0 }));
+    setQueryState((prev) => ({
+      ...prev,
+      selected_facets: [],
+      dateParams: {},
+      extraParams: {},
+      offset: 0,
+    }));
     setCompareIds([]);
+    setAdvancedSearch(DEFAULT_ADVANCED_SEARCH_STATE);
   }, []);
 
   const { baseFacetURL, data, isFetching, isLoading } = useSearchResults(
@@ -643,8 +664,15 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
       dateParams: queryState.dateParams,
       selectedFacets: queryState.selected_facets,
       searchType: resultType,
+      extraParams: queryState.extraParams,
     });
-  }, [submittedKeyword, queryState.dateParams, queryState.selected_facets, resultType]);
+  }, [
+    submittedKeyword,
+    queryState.dateParams,
+    queryState.selected_facets,
+    queryState.extraParams,
+    resultType,
+  ]);
   const activeFilterCount = activeTags.length;
   const [mobileQueryDraft, setMobileQueryDraft] = React.useState<QueryState>(queryState);
   const [mobileKeywordDraft, setMobileKeywordDraft] = React.useState(draftKeyword);
@@ -658,43 +686,33 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
       dateParams: mobileQueryDraft.dateParams,
       selectedFacets: mobileQueryDraft.selected_facets,
       searchType: resultType,
+      extraParams: mobileQueryDraft.extraParams,
     });
   }, [
     mobileKeywordDraft,
     mobileQueryDraft.dateParams,
     mobileQueryDraft.selected_facets,
+    mobileQueryDraft.extraParams,
     resultType,
   ]);
 
   React.useEffect(() => {
     setQueryState((prev) => {
-      const nextExtra = { ...(prev.extraParams ?? {}) };
-      delete nextExtra.matching_strategy;
-      delete nextExtra.search_field;
-      if (advancedSearch.notFacetKey) {
-        delete nextExtra[`${advancedSearch.notFacetKey}__not`];
+      const withoutAdv = stripAdvancedExtraParams(prev.extraParams);
+      if (!advancedSearch.enabled) {
+        if (areExtraParamsEqual(prev.extraParams, withoutAdv)) return prev;
+        return { ...prev, extraParams: withoutAdv, offset: 0 };
       }
-      if (advancedSearch.rangeField) {
-        delete nextExtra[`${advancedSearch.rangeField}__min`];
-        delete nextExtra[`${advancedSearch.rangeField}__max`];
-      }
-      if (advancedSearch.enabled) {
-        nextExtra.matching_strategy = advancedSearch.matchingStrategy;
-        if (advancedSearch.searchField) nextExtra.search_field = advancedSearch.searchField;
-        if (advancedSearch.notFacetKey && advancedSearch.notFacetValue) {
-          nextExtra[`${advancedSearch.notFacetKey}__not`] = advancedSearch.notFacetValue;
-        }
-        if (advancedSearch.rangeField && advancedSearch.rangeMin) {
-          nextExtra[`${advancedSearch.rangeField}__min`] = advancedSearch.rangeMin;
-        }
-        if (advancedSearch.rangeField && advancedSearch.rangeMax) {
-          nextExtra[`${advancedSearch.rangeField}__max`] = advancedSearch.rangeMax;
-        }
-      }
-      const prevExtra = prev.extraParams ?? {};
-      if (areStringRecordValuesEqual(prevExtra, nextExtra)) {
-        return prev;
-      }
+      const nextExtra = mergeAdvancedIntoExtraParams(
+        withoutAdv,
+        buildAdvancedExtraParams({
+          enabled: true,
+          matchingStrategy: advancedSearch.matchingStrategy,
+          searchField: advancedSearch.searchField,
+          queryRoot: advancedSearch.queryRoot,
+        })
+      );
+      if (areExtraParamsEqual(prev.extraParams, nextExtra)) return prev;
       return { ...prev, extraParams: nextExtra, offset: 0 };
     });
   }, [advancedSearch]);
@@ -712,6 +730,10 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
       };
       const remove = specialRemovers[item.facetKey];
       if (remove) return remove();
+      if (item.exclude) {
+        setQueryState((prev) => removeExclusionFromExtraParams(prev, item.facetKey, item.value));
+        return;
+      }
       handleFacetClick('', { type: 'deselectFacet', facetKey: item.facetKey, value: item.value });
     },
     [handleClearDateFilters, handleClearKeyword, handleFacetClick]
@@ -954,9 +976,18 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 setMobileKeywordDraft('');
               }}
               onApply={() => {
+                let kw = mobileKeywordDraft.trim();
+                if (
+                  exactPhraseKeyword &&
+                  kw &&
+                  !(kw.startsWith('"') && kw.endsWith('"')) &&
+                  !(kw.startsWith("'") && kw.endsWith("'"))
+                ) {
+                  kw = `"${kw.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+                }
                 setQueryState(mobileQueryDraft);
                 setDraftKeyword(mobileKeywordDraft);
-                setSubmittedKeyword(mobileKeywordDraft);
+                setSubmittedKeyword(kw);
               }}
             >
               <DynamicFacets
@@ -966,6 +997,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 activeTags={mobileActiveTags}
                 onKeywordChange={setMobileKeywordDraft}
                 onKeywordSubmit={setMobileKeywordDraft}
+                exactPhrase={exactPhraseKeyword}
+                onExactPhraseChange={setExactPhraseKeyword}
                 onRemoveTag={(item) => {
                   if (item.facetKey === '__keyword__') {
                     setMobileKeywordDraft('');
@@ -973,6 +1006,12 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   }
                   if (item.facetKey === '__date__') {
                     setMobileQueryDraft((prev) => clearDateFilters(prev));
+                    return;
+                  }
+                  if (item.exclude) {
+                    setMobileQueryDraft((prev) =>
+                      removeExclusionFromExtraParams(prev, item.facetKey, item.value)
+                    );
                     return;
                   }
                   handleMobileFacetClick('', {
@@ -1061,6 +1100,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               activeTags={activeTags}
               onKeywordChange={setDraftKeyword}
               onKeywordSubmit={setSubmittedKeyword}
+              exactPhrase={exactPhraseKeyword}
+              onExactPhraseChange={setExactPhraseKeyword}
               onRemoveTag={handleRemoveTag}
               selectedFacets={queryState.selected_facets}
               onClearAllFilters={handleClearAllFilters}
@@ -1091,6 +1132,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   resultType={resultType}
                   value={advancedSearch}
                   onChange={setAdvancedSearch}
+                  facetDistribution={data.facetDistribution}
                 />
                 {filtered.length > 0 ? (
                   viewMode === 'table' ? (

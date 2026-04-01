@@ -22,4 +22,5 @@ export type FacetData = Record<string, FacetValue>;
 export type FacetClickAction =
   | { type: 'mergeDateParams' }
   | { type: 'selectFacet'; facetKey: string; value: string }
-  | { type: 'deselectFacet'; facetKey: string; value: string };
+  | { type: 'deselectFacet'; facetKey: string; value: string }
+  | { type: 'excludeFacet'; facetKey: string; value: string };

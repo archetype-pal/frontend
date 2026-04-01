@@ -9,7 +9,8 @@ export type QueryState = {
   ordering: string | null;
   selected_facets: string[];
   dateParams: Record<string, string>;
-  extraParams?: Record<string, string>;
+  /** Values can repeat in the URL (e.g. multiple `field__not`). */
+  extraParams?: Record<string, string | string[]>;
 };
 
 export type ActiveFacetTag = {
@@ -17,6 +18,8 @@ export type ActiveFacetTag = {
   facetKey: string;
   value: string;
   label: string;
+  /** When true, render as an exclusion (e.g. NOT repository X). */
+  exclude?: boolean;
 };
 
 export const DEFAULT_QUERY: QueryState = {
@@ -31,6 +34,23 @@ export const DEFAULT_QUERY: QueryState = {
 const DATE_PARAM_KEYS = ['min_date', 'max_date', 'at_most_or_least', 'date_diff'] as const;
 const FACET_EXACT_SUFFIX = '_exact';
 const MULTI_SELECT_FACETS = new Set(['component_features']);
+
+/** URL keys handled outside extraParams / not stored in QueryState.extraParams */
+const RESERVED_URL_KEYS = new Set([
+  'selected_facets',
+  'limit',
+  'offset',
+  'ordering',
+  'advanced',
+  'keyword',
+  'q',
+  'qb',
+  'view',
+  'compare',
+  'format',
+  'scope',
+  ...DATE_PARAM_KEYS,
+]);
 
 type SearchParamReader = {
   get(key: string): string | null;
@@ -54,14 +74,21 @@ function writeDateParams(params: URLSearchParams, dateParams: Record<string, str
 
 function writeExtraParams(
   params: URLSearchParams,
-  extraParams: Record<string, string> | undefined
+  extraParams: Record<string, string | string[]> | undefined
 ): void {
   if (!extraParams) return;
   for (const [key, value] of Object.entries(extraParams)) {
     const normalizedKey = key.trim();
-    const normalizedValue = value.trim();
-    if (!normalizedKey || !normalizedValue) continue;
-    params.set(normalizedKey, normalizedValue);
+    if (!normalizedKey) continue;
+    if (Array.isArray(value)) {
+      for (const v of value) {
+        const t = v.trim();
+        if (t) params.append(normalizedKey, t);
+      }
+    } else {
+      const t = value.trim();
+      if (t) params.set(normalizedKey, t);
+    }
   }
 }
 
@@ -78,6 +105,25 @@ export function normalizeKeyword(keyword: string | null | undefined): string {
   return (keyword ?? '').trim().replace(/\s+/g, ' ');
 }
 
+function normalizeExtraParams(
+  extra: Record<string, string | string[]> | undefined
+): Record<string, string | string[]> {
+  if (!extra) return {};
+  const out: Record<string, string | string[]> = {};
+  for (const [key, value] of Object.entries(extra)) {
+    const k = key.trim();
+    if (!k) continue;
+    if (Array.isArray(value)) {
+      const arr = [...new Set(value.map((v) => v.trim()).filter(Boolean))].sort();
+      if (arr.length) out[k] = arr.length === 1 ? arr[0]! : arr;
+    } else {
+      const t = value.trim();
+      if (t) out[k] = t;
+    }
+  }
+  return Object.fromEntries(Object.entries(out).sort(([a], [b]) => a.localeCompare(b)));
+}
+
 export function normalizeQueryState(q: QueryState): QueryState {
   return {
     ...q,
@@ -87,11 +133,7 @@ export function normalizeQueryState(q: QueryState): QueryState {
       get: (key) => q.dateParams[key] ?? null,
       getAll: () => [],
     }),
-    extraParams: Object.fromEntries(
-      Object.entries(q.extraParams ?? {})
-        .filter(([key, value]) => key.trim() && value.trim())
-        .sort(([left], [right]) => left.localeCompare(right))
-    ),
+    extraParams: normalizeExtraParams(q.extraParams),
   };
 }
 
@@ -138,27 +180,25 @@ export function stateFromSearchParams(sp: SearchParamReader): QueryState {
   };
 }
 
-function readExtraParams(sp: SearchParamReader): Record<string, string> {
-  const reserved = new Set([
-    'selected_facets',
-    'limit',
-    'offset',
-    'ordering',
-    'advanced',
-    'keyword',
-    'q',
-    ...DATE_PARAM_KEYS,
-  ]);
-  const extra: Record<string, string> = {};
+function readExtraParams(sp: SearchParamReader): Record<string, string | string[]> {
+  const extra: Record<string, string | string[]> = {};
   const maybeEntries = (
     sp as SearchParamReader & { entries?: () => IterableIterator<[string, string]> }
   ).entries;
   if (typeof maybeEntries !== 'function') return extra;
+
+  const keyToValues = new Map<string, string[]>();
   for (const [key, value] of maybeEntries.call(sp)) {
-    if (reserved.has(key)) continue;
+    if (RESERVED_URL_KEYS.has(key)) continue;
     const normalized = value.trim();
     if (!normalized) continue;
-    extra[key] = normalized;
+    const list = keyToValues.get(key) ?? [];
+    list.push(normalized);
+    keyToValues.set(key, list);
+  }
+  for (const [key, values] of keyToValues) {
+    const uniq = [...new Set(values)].sort();
+    extra[key] = uniq.length === 1 ? uniq[0]! : uniq;
   }
   return extra;
 }
@@ -222,6 +262,32 @@ export function resolveFacetClick({
         },
       };
     }
+    case 'excludeFacet': {
+      const k = `${action.facetKey}__not`;
+      const prev = queryState.extraParams ?? {};
+      const nextExtra = { ...prev };
+      const existing = nextExtra[k];
+      const val = action.value.trim();
+      if (!val) {
+        return { type: 'query', value: { ...queryState, offset: 0 } };
+      }
+      if (existing === undefined) {
+        nextExtra[k] = val;
+      } else if (Array.isArray(existing)) {
+        nextExtra[k] = [...new Set([...existing.map((x) => x.trim()), val])].sort();
+      } else {
+        const e = existing.trim();
+        nextExtra[k] = e === val ? e : [e, val].sort();
+      }
+      return {
+        type: 'query',
+        value: {
+          ...queryState,
+          extraParams: nextExtra,
+          offset: 0,
+        },
+      };
+    }
   }
 }
 
@@ -254,6 +320,31 @@ export function buildActiveFacetTags(
     .filter((item): item is ActiveFacetTag => item != null);
 }
 
+function buildExclusionTagsFromExtraParams(
+  extraParams: Record<string, string | string[]> | undefined,
+  searchType?: string
+): ActiveFacetTag[] {
+  if (!extraParams) return [];
+  const tags: ActiveFacetTag[] = [];
+  for (const [key, value] of Object.entries(extraParams)) {
+    if (!key.endsWith('__not')) continue;
+    const facetKey = key.slice(0, -5);
+    const values = Array.isArray(value) ? value : [value];
+    for (const v of values) {
+      const t = v.trim();
+      if (!t) continue;
+      tags.push({
+        id: `__not__:${facetKey}:${t}`,
+        facetKey,
+        value: t,
+        label: `NOT ${formatFacetTitle(facetKey, searchType)}: ${t}`,
+        exclude: true,
+      });
+    }
+  }
+  return tags;
+}
+
 export function buildDateFilterTag(dateParams: Record<string, string>): ActiveFacetTag | null {
   const min = dateParams.min_date?.trim();
   const max = dateParams.max_date?.trim();
@@ -278,11 +369,13 @@ export function buildActiveQueryTags({
   dateParams,
   selectedFacets,
   searchType,
+  extraParams,
 }: {
   submittedKeyword: string;
   dateParams: Record<string, string>;
   selectedFacets: string[];
   searchType?: string;
+  extraParams?: Record<string, string | string[]>;
 }): ActiveFacetTag[] {
   const tags: ActiveFacetTag[] = [];
   const keywordValue = normalizeKeyword(submittedKeyword);
@@ -296,6 +389,7 @@ export function buildActiveQueryTags({
   }
   const dateTag = buildDateFilterTag(dateParams);
   if (dateTag) tags.push(dateTag);
+  tags.push(...buildExclusionTagsFromExtraParams(extraParams, searchType));
   return [...tags, ...buildActiveFacetTags(selectedFacets, searchType)];
 }
 
@@ -364,4 +458,256 @@ export function clearDateFilters(queryState: QueryState): QueryState {
     dateParams: {},
     offset: 0,
   };
+}
+
+export function removeExclusionFromExtraParams(
+  queryState: QueryState,
+  facetKey: string,
+  value: string
+): QueryState {
+  const k = `${facetKey}__not`;
+  const prev = queryState.extraParams ?? {};
+  const raw = prev[k];
+  if (raw === undefined) return queryState;
+  const nextExtra = { ...prev };
+  if (Array.isArray(raw)) {
+    const filtered = raw.filter((x) => x.trim() !== value);
+    if (filtered.length === 0) delete nextExtra[k];
+    else nextExtra[k] = filtered.length === 1 ? filtered[0]! : filtered;
+  } else if (raw.trim() === value) {
+    delete nextExtra[k];
+  }
+  return { ...queryState, extraParams: nextExtra, offset: 0 };
+}
+
+// --- Query builder (advanced search) ---
+
+export type ConditionOperator =
+  | 'is'
+  | 'is_not'
+  | 'contains'
+  | 'starts_with'
+  | 'gt'
+  | 'lt'
+  | 'between'
+  | 'is_empty'
+  | 'is_not_empty';
+
+export type QueryCondition = {
+  id: string;
+  t: 'cond';
+  field: string;
+  op: ConditionOperator;
+  value: string;
+  valueTo?: string;
+};
+
+export type QueryGroup = {
+  id: string;
+  t: 'group';
+  op: 'AND' | 'OR';
+  items: QueryBuilderNode[];
+};
+
+type QueryBuilderNode = QueryCondition | QueryGroup;
+
+function newId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `id_${Math.random().toString(36).slice(2)}`;
+}
+
+export function createEmptyQueryGroup(op: 'AND' | 'OR' = 'AND'): QueryGroup {
+  return { id: newId(), t: 'group', op, items: [] };
+}
+
+function countConditionsInTreeItem(node: QueryBuilderNode): number {
+  if (node.t === 'cond') return node.field.trim() ? 1 : 0;
+  return node.items.reduce((acc, child) => acc + countConditionsInTreeItem(child), 0);
+}
+
+function countConditionsInRoot(root: QueryGroup): number {
+  return root.items.reduce((acc, child) => acc + countConditionsInTreeItem(child), 0);
+}
+
+/** Base64url-encode JSON for `qb` API param. */
+function encodeQueryBuilderRoot(root: QueryGroup): string {
+  const json = JSON.stringify(root);
+  const utf8 = new TextEncoder().encode(json);
+  let bin = '';
+  for (const b of utf8) {
+    bin += String.fromCharCode(b);
+  }
+  const b64 =
+    typeof btoa !== 'undefined' ? btoa(bin) : Buffer.from(json, 'utf-8').toString('base64');
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function decodeQueryBuilderRoot(raw: string): QueryGroup | null {
+  try {
+    let b64 = raw.trim().replace(/-/g, '+').replace(/_/g, '/');
+    const pad = -b64.length % 4;
+    if (pad) b64 += '='.repeat(pad);
+    let json: string;
+    if (typeof atob !== 'undefined') {
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      json = new TextDecoder().decode(bytes);
+    } else {
+      json = Buffer.from(b64, 'base64').toString('utf-8');
+    }
+    const data = JSON.parse(json) as unknown;
+    return migrateQueryBuilderRoot(data);
+  } catch {
+    return null;
+  }
+}
+
+function migrateQueryBuilderRoot(data: unknown): QueryGroup | null {
+  if (!data || typeof data !== 'object') return null;
+  const o = data as Record<string, unknown>;
+  if (o.t !== 'group') return null;
+  const op = o.op === 'OR' ? 'OR' : 'AND';
+  const itemsRaw = o.items;
+  if (!Array.isArray(itemsRaw)) return null;
+  const items: QueryBuilderNode[] = [];
+  for (const item of itemsRaw) {
+    if (!item || typeof item !== 'object') continue;
+    const it = item as Record<string, unknown>;
+    if (it.t === 'group') {
+      const nested = migrateQueryBuilderRoot(item);
+      if (nested) items.push(nested);
+    } else if (it.t === 'cond') {
+      items.push({
+        id: typeof it.id === 'string' ? it.id : newId(),
+        t: 'cond',
+        field: String(it.field ?? ''),
+        op: (it.op as ConditionOperator) || 'is',
+        value: String(it.value ?? ''),
+        valueTo: it.valueTo != null ? String(it.valueTo) : undefined,
+      });
+    }
+  }
+  return {
+    id: typeof o.id === 'string' ? o.id : newId(),
+    t: 'group',
+    op,
+    items,
+  };
+}
+
+/** Build extraParams from advanced panel (matching, search_field, qb). Excludes legacy flat keys we manage via qb. */
+export function buildAdvancedExtraParams(params: {
+  enabled: boolean;
+  matchingStrategy: 'all' | 'last';
+  searchField: string;
+  queryRoot: QueryGroup;
+}): Record<string, string | string[]> {
+  if (!params.enabled) return {};
+  const out: Record<string, string | string[]> = {
+    matching_strategy: params.matchingStrategy,
+  };
+  if (params.searchField.trim()) {
+    out.search_field = params.searchField.trim();
+  }
+  const n = countConditionsInRoot(params.queryRoot);
+  if (n > 0) {
+    out.qb = encodeQueryBuilderRoot(params.queryRoot);
+  }
+  return out;
+}
+
+/** Strip advanced-controlled keys from extraParams; used before merging fresh advanced params. */
+const ADVANCED_EXTRA_KEYS = new Set(['matching_strategy', 'search_field', 'qb']);
+
+export function stripAdvancedExtraParams(
+  extra: Record<string, string | string[]> | undefined
+): Record<string, string | string[]> {
+  if (!extra) return {};
+  const next: Record<string, string | string[]> = {};
+  for (const [k, v] of Object.entries(extra)) {
+    if (ADVANCED_EXTRA_KEYS.has(k)) continue;
+    next[k] = v;
+  }
+  return next;
+}
+
+export function mergeAdvancedIntoExtraParams(
+  base: Record<string, string | string[]> | undefined,
+  advanced: ReturnType<typeof buildAdvancedExtraParams>
+): Record<string, string | string[]> {
+  const cleaned = stripAdvancedExtraParams(base);
+  return normalizeExtraParams({ ...cleaned, ...advanced });
+}
+
+export function areExtraParamsEqual(
+  a: Record<string, string | string[]> | undefined,
+  b: Record<string, string | string[]> | undefined
+): boolean {
+  const na = normalizeExtraParams(a);
+  const nb = normalizeExtraParams(b);
+  const keysA = Object.keys(na);
+  const keysB = Object.keys(nb);
+  if (keysA.length !== keysB.length) return false;
+  for (const k of keysA) {
+    const va = na[k];
+    const vb = nb[k];
+    if (Array.isArray(va) && Array.isArray(vb)) {
+      if (va.length !== vb.length) return false;
+      if (!va.every((x, i) => x === vb[i])) return false;
+    } else if (va !== vb) return false;
+  }
+  return true;
+}
+
+/** Load query builder tree from `qb` or legacy flat __not / __min / __max params. */
+export function parseQueryRootFromUrl(sp: URLSearchParams): QueryGroup {
+  const qb = sp.get('qb');
+  if (qb) {
+    const decoded = decodeQueryBuilderRoot(qb);
+    if (decoded) return decoded;
+  }
+  return rebuildQueryRootFromFlatSearchParams(sp);
+}
+
+function rebuildQueryRootFromFlatSearchParams(sp: URLSearchParams): QueryGroup {
+  const items: QueryBuilderNode[] = [];
+  for (const key of new Set([...sp.keys()])) {
+    if (RESERVED_URL_KEYS.has(key)) continue;
+    if (key.endsWith('__not')) {
+      const field = key.slice(0, -5);
+      for (const value of sp.getAll(key)) {
+        const t = value.trim();
+        if (!t) continue;
+        items.push({
+          id: newId(),
+          t: 'cond',
+          field,
+          op: 'is_not',
+          value: t,
+        });
+      }
+    }
+  }
+  const minKeys = [...new Set([...sp.keys()])].filter((k) => k.endsWith('__min'));
+  for (const minKey of minKeys) {
+    const field = minKey.replace(/__min$/, '');
+    const lo = sp.get(minKey) ?? '';
+    const hi = sp.get(`${field}__max`) ?? '';
+    if (lo && hi) {
+      items.push({
+        id: newId(),
+        t: 'cond',
+        field,
+        op: 'between',
+        value: lo,
+        valueTo: hi,
+      });
+    } else if (lo) {
+      items.push({ id: newId(), t: 'cond', field, op: 'gt', value: lo });
+    } else if (hi) {
+      items.push({ id: newId(), t: 'cond', field, op: 'lt', value: hi });
+    }
+  }
+  return { id: newId(), t: 'group', op: 'AND', items };
 }

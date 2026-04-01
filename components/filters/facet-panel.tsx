@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { Ban, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import type { FacetListItem } from '@/types/facets';
@@ -13,6 +13,8 @@ type FacetPanelProps = {
   items: FacetListItem[];
   expanded?: boolean;
   onSelect?: (url: string, value: string, isDeselect?: boolean) => void;
+  /** Exclude this facet value (NOT filter) */
+  onExclude?: (value: string) => void;
   baseFacetURL: string;
   selectedValue?: string | null;
   showSort?: boolean;
@@ -25,6 +27,7 @@ export function FacetPanel({
   items,
   expanded = true,
   onSelect,
+  onExclude,
   baseFacetURL,
   selectedValue,
   showSort = true,
@@ -127,12 +130,13 @@ export function FacetPanel({
           </div>
           <ul className="p-2 space-y-2 text-sm">
             {visibleItems.map((item) => (
-              <li key={item.label}>
+              <li key={item.label} className="flex items-stretch gap-0.5">
                 <button
+                  type="button"
                   onClick={() => handleSelect(item)}
                   aria-label={`${item.label}, ${item.count}`}
                   className={cn(
-                    'w-full text-left flex justify-between items-center px-2 py-1 rounded hover:bg-muted transition-colors gap-2',
+                    'min-w-0 flex-1 text-left flex justify-between items-center px-2 py-1 rounded hover:bg-muted transition-colors gap-2',
                     selectedValue === item.value && 'bg-muted font-semibold'
                   )}
                 >
@@ -151,6 +155,21 @@ export function FacetPanel({
                     )}
                   </span>
                 </button>
+                {onExclude && (
+                  <button
+                    type="button"
+                    title="Exclude this value"
+                    aria-label={`Exclude ${item.label}`}
+                    className="shrink-0 self-center rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onExclude(item.value);
+                    }}
+                  >
+                    <Ban className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </li>
             ))}
             {visibleItems.length === 0 && (
