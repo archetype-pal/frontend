@@ -71,6 +71,7 @@ describe('search-query utilities', () => {
       offset: 0,
       ordering: null,
       dateParams: {},
+      extraParams: {},
     });
   });
 

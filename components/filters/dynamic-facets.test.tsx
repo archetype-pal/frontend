@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -9,8 +10,25 @@ import type { FacetData } from '@/types/facets';
 import type { ActiveFacetTag } from '@/lib/search-query';
 
 vi.mock('@/contexts/search-context', () => ({
-  useSearchContext: () => ({ suggestionsPool: [] }),
+  useSearchContext: () => ({
+    suggestionsPool: [],
+    getServerSuggestions: vi.fn().mockResolvedValue([]),
+    setSuggestionsPool: vi.fn(),
+    loadGlobalSuggestions: vi.fn(),
+  }),
 }));
+
+function createTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+    },
+  });
+}
+
+function withQueryClient(ui: React.ReactElement) {
+  return <QueryClientProvider client={createTestQueryClient()}>{ui}</QueryClientProvider>;
+}
 
 describe('DynamicFacets', () => {
   it('renders active filters section above keyword search', () => {
@@ -22,25 +40,27 @@ describe('DynamicFacets', () => {
     };
 
     const html = renderToStaticMarkup(
-      <DynamicFacets
-        facets={facets}
-        searchType="manuscripts"
-        keyword=""
-        activeTags={[
-          {
-            id: 'repository_name:Durham',
-            facetKey: 'repository_name',
-            value: 'Durham',
-            label: 'Repository: Durham',
-          },
-        ]}
-        onKeywordChange={() => {}}
-        onKeywordSubmit={() => {}}
-        selectedFacets={['repository_name_exact:Durham']}
-        onFacetClick={() => {}}
-        onClearAllFilters={() => {}}
-        baseFacetURL="http://localhost:8000/api/v1/search/item-parts/facets"
-      />
+      withQueryClient(
+        <DynamicFacets
+          facets={facets}
+          searchType="manuscripts"
+          keyword=""
+          activeTags={[
+            {
+              id: 'repository_name:Durham',
+              facetKey: 'repository_name',
+              value: 'Durham',
+              label: 'Repository: Durham',
+            },
+          ]}
+          onKeywordChange={() => {}}
+          onKeywordSubmit={() => {}}
+          selectedFacets={['repository_name_exact:Durham']}
+          onFacetClick={() => {}}
+          onClearAllFilters={() => {}}
+          baseFacetURL="http://localhost:8000/api/v1/search/item-parts/facets"
+        />
+      )
     );
 
     const activeFiltersIndex = html.indexOf('Active filters');
@@ -64,25 +84,27 @@ describe('DynamicFacets', () => {
 
     act(() => {
       root.render(
-        <DynamicFacets
-          facets={facets}
-          searchType="manuscripts"
-          keyword=""
-          activeTags={[
-            {
-              id: 'repository_name:Durham',
-              facetKey: 'repository_name',
-              value: 'Durham',
-              label: 'Repository: Durham',
-            },
-          ]}
-          onKeywordChange={() => {}}
-          onKeywordSubmit={() => {}}
-          selectedFacets={['repository_name_exact:Durham']}
-          onFacetClick={onFacetClick}
-          onClearAllFilters={() => {}}
-          baseFacetURL="http://localhost:8000/api/v1/search/item-parts/facets"
-        />
+        withQueryClient(
+          <DynamicFacets
+            facets={facets}
+            searchType="manuscripts"
+            keyword=""
+            activeTags={[
+              {
+                id: 'repository_name:Durham',
+                facetKey: 'repository_name',
+                value: 'Durham',
+                label: 'Repository: Durham',
+              },
+            ]}
+            onKeywordChange={() => {}}
+            onKeywordSubmit={() => {}}
+            selectedFacets={['repository_name_exact:Durham']}
+            onFacetClick={onFacetClick}
+            onClearAllFilters={() => {}}
+            baseFacetURL="http://localhost:8000/api/v1/search/item-parts/facets"
+          />
+        )
       );
     });
 
@@ -123,19 +145,21 @@ describe('DynamicFacets', () => {
 
     act(() => {
       root.render(
-        <DynamicFacets
-          facets={facets}
-          searchType="manuscripts"
-          keyword="draft text"
-          activeTags={activeTags}
-          onKeywordChange={() => {}}
-          onKeywordSubmit={() => {}}
-          onRemoveTag={onRemoveTag}
-          selectedFacets={[]}
-          onFacetClick={() => {}}
-          onClearAllFilters={() => {}}
-          baseFacetURL="http://localhost:8000/api/v1/search/item-parts/facets"
-        />
+        withQueryClient(
+          <DynamicFacets
+            facets={facets}
+            searchType="manuscripts"
+            keyword="draft text"
+            activeTags={activeTags}
+            onKeywordChange={() => {}}
+            onKeywordSubmit={() => {}}
+            onRemoveTag={onRemoveTag}
+            selectedFacets={[]}
+            onFacetClick={() => {}}
+            onClearAllFilters={() => {}}
+            baseFacetURL="http://localhost:8000/api/v1/search/item-parts/facets"
+          />
+        )
       );
     });
 
