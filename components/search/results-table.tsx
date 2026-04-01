@@ -95,13 +95,13 @@ function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
   if (!infoUrl) return <span className="text-xs text-muted-foreground">N/A</span>;
   if (!src) {
     return (
-      <div className="relative inline-block w-20 h-20 flex items-center justify-center bg-gray-50 rounded overflow-hidden">
+      <div className="relative inline-block w-20 h-20 flex items-center justify-center bg-muted rounded overflow-hidden">
         <span className="text-xs text-muted-foreground">…</span>
       </div>
     );
   }
   return (
-    <div className="relative z-[2] inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded overflow-hidden">
+    <div className="relative z-[2] inline-block group w-20 h-20 flex items-center justify-center bg-muted rounded overflow-hidden">
       <Image
         src={src}
         alt={`Thumbnail for ${graph.shelfmark}`}
@@ -181,7 +181,7 @@ export const COLUMNS = {
         }
 
         return (
-          <div className="relative z-[2] inline-block group w-20 h-20 flex items-center justify-center bg-gray-50 rounded overflow-hidden">
+          <div className="relative z-[2] inline-block group w-20 h-20 flex items-center justify-center bg-muted rounded overflow-hidden">
             <Image
               src={src}
               alt={i.shelfmark || 'Image thumbnail'}
@@ -498,7 +498,7 @@ function ResultsTableComponent<K extends ResultType>({
           ref={measure ? (el) => measure(el) : undefined}
         >
           <TableRow
-            className={`relative cursor-pointer group-hover:bg-muted/50 transition-colors${hasSubRow ? ' border-b-0' : ''}`}
+            className={`relative cursor-pointer transition-colors group-hover:bg-muted/50 ${ri % 2 === 0 ? 'bg-muted/[0.07]' : ''}${hasSubRow ? ' border-b-0' : ''}`}
           >
             {canCompare && (
               <TableCell className="w-10 py-1.5">
@@ -650,7 +650,7 @@ function ResultsTableComponent<K extends ResultType>({
   return (
     <div
       ref={scrollContainerRef ? undefined : localScrollRef}
-      className={`relative bg-white border rounded-lg ${scrollContainerRef ? 'overflow-visible' : 'overflow-auto'}`}
+      className={`relative rounded-lg border border-border bg-card ${scrollContainerRef ? 'overflow-visible' : 'overflow-auto'}`}
     >
       <Table>
         <TableHeader>
@@ -702,7 +702,7 @@ function ResultsTableComponent<K extends ResultType>({
         )}
       </Table>
       {isFetching && (
-        <div className="pointer-events-none absolute inset-0 rounded-lg bg-white/35 animate-pulse" />
+        <div className="pointer-events-none absolute inset-0 rounded-lg bg-card/35 animate-pulse" />
       )}
     </div>
   );

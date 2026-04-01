@@ -4,17 +4,23 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { BarChart3, Clock3, Download, Globe2, Grid, List, Share2, Sparkles } from 'lucide-react';
+import { Bookmark, Check, MoreVertical, PanelLeftClose, PanelLeftOpen, Share2 } from 'lucide-react';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ResultsTable } from '@/components/search/results-table';
 import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';
-import { SavedSearchesDropdown } from '@/components/search/saved-searches';
+import { SavedSearchesPanel } from '@/components/search/saved-searches';
 import { useSearchContext } from '@/contexts/search-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import {
@@ -57,6 +63,7 @@ import { SearchMapView } from '@/components/search/search-map-view';
 import { useHotkeys } from '@/hooks/use-hotkeys';
 import { addSearchHistory } from '@/lib/search-history';
 import { ComparisonView } from '@/components/search/comparison-view';
+import { cn } from '@/lib/utils';
 
 type ResultListItem = ResultMap[ResultType];
 type ViewMode = 'table' | 'grid' | 'timeline' | 'distribution' | 'map';
@@ -64,6 +71,7 @@ type ViewMode = 'table' | 'grid' | 'timeline' | 'distribution' | 'map';
 const TABLE_ONLY_TYPES: readonly ResultType[] = ['texts', 'people', 'places'];
 const TABLE_ONLY_TYPE_SET = new Set<ResultType>(TABLE_ONLY_TYPES);
 const VIEW_PREFS_KEY = 'search-view-prefs';
+const FILTERS_SIDEBAR_COLLAPSED_KEY = 'search-filters-sidebar-collapsed';
 const MAX_COMPARE_ITEMS = 3;
 
 function isTableOnlyType(type: ResultType): boolean {
@@ -104,25 +112,251 @@ function ResultTypeToggle({
     : resultTypeItems;
 
   return (
-    <div className="flex w-full gap-1.5 my-0" role="tablist" aria-label="Search result type">
-      {items.map((item) => (
-        <Button
-          key={item.value}
-          type="button"
-          className="flex-1 min-w-0"
-          variant={selectedType === item.value ? 'toggle' : 'outline'}
-          size="sm"
-          onClick={() => onChange(item.value)}
-          role="tab"
-          aria-selected={selectedType === item.value}
+    <div className="relative w-full min-w-0">
+      <div className="rounded-lg border border-border/60 bg-muted/40 p-0.5">
+        <div
+          className="flex w-full snap-x snap-mandatory gap-0.5 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          role="tablist"
+          aria-label="Search result type"
         >
-          {item.label}
-          {typeof counts?.[item.value] === 'number' && (
-            <span className="ml-1 text-[11px] opacity-80">({counts[item.value]})</span>
-          )}
-        </Button>
-      ))}
+          {items.map((item) => (
+            <Button
+              key={item.value}
+              type="button"
+              className="min-h-9 shrink-0 snap-start min-w-0 whitespace-nowrap px-2.5 sm:min-h-8"
+              variant={selectedType === item.value ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => onChange(item.value)}
+              role="tab"
+              aria-selected={selectedType === item.value}
+            >
+              {item.label}
+              {typeof counts?.[item.value] === 'number' && (
+                <span className="ml-1 text-[11px] opacity-80">({counts[item.value]})</span>
+              )}
+            </Button>
+          ))}
+        </div>
+      </div>
+      <div
+        className="pointer-events-none absolute right-0 top-0 z-[1] h-full w-9 bg-gradient-to-l from-background to-transparent"
+        aria-hidden
+      />
     </div>
+  );
+}
+
+type SearchActionsMenuProps = {
+  triggerId?: string;
+  keyword: string;
+  filterCount: number;
+  resultCount: number;
+  viewMode: ViewMode;
+  setViewMode: React.Dispatch<React.SetStateAction<ViewMode>>;
+  showGridToggle: boolean;
+  showTimelineToggle: boolean;
+  showDistributionToggle: boolean;
+  showMapToggle: boolean;
+  hasTimelineData: boolean;
+  distributionEnabled: boolean;
+  handleShareSearch: () => Promise<void>;
+  shareFeedback: 'idle' | 'copied' | 'error';
+  advancedEnabled: boolean;
+  onToggleAdvanced: () => void;
+  orderingOptions: Array<{ name: string; text: string; url: string }> | undefined;
+  setQueryState: React.Dispatch<React.SetStateAction<QueryState>>;
+  baseFacetURL: string;
+  compareEnabled: boolean;
+  compareCount: number;
+  onOpenCompare: () => void;
+  handleExport: (format: 'csv' | 'json' | 'bibtex', scope: 'page' | 'all') => Promise<void>;
+  exportBusy: boolean;
+  resultType: ResultType;
+  crossTypeLinks: ResultType[];
+};
+
+function SearchActionsMenu({
+  triggerId,
+  keyword,
+  filterCount,
+  resultCount,
+  viewMode,
+  setViewMode,
+  showGridToggle,
+  showTimelineToggle,
+  showDistributionToggle,
+  showMapToggle,
+  hasTimelineData,
+  distributionEnabled,
+  handleShareSearch,
+  shareFeedback,
+  advancedEnabled,
+  onToggleAdvanced,
+  orderingOptions,
+  setQueryState,
+  baseFacetURL,
+  compareEnabled,
+  compareCount,
+  onOpenCompare,
+  handleExport,
+  exportBusy,
+  resultType,
+  crossTypeLinks,
+}: SearchActionsMenuProps) {
+  const [menuOpen, setMenuOpen] = React.useState(false);
+
+  const viewItem = (mode: ViewMode, label: string, disabled?: boolean) => (
+    <DropdownMenuItem
+      disabled={disabled}
+      onClick={() => setViewMode(mode)}
+      className="flex items-center gap-2"
+    >
+      {viewMode === mode ? (
+        <Check className="h-4 w-4 shrink-0" />
+      ) : (
+        <span className="w-4 shrink-0" />
+      )}
+      {label}
+    </DropdownMenuItem>
+  );
+
+  return (
+    <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          id={triggerId}
+          variant="outline"
+          size="sm"
+          className="h-11 min-h-11 min-w-11 shrink-0 gap-1.5 px-2.5 sm:h-9 sm:min-h-9 sm:min-w-0 sm:px-3"
+          title="Search actions — saved searches, view, share, export, and more"
+          aria-label="Search actions"
+        >
+          <MoreVertical className="h-4 w-4 shrink-0" />
+          <span className="hidden text-sm sm:inline">Actions</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Bookmark className="mr-2 h-4 w-4" />
+            Saved searches
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-80 p-0" sideOffset={6}>
+            <SavedSearchesPanel
+              resultType={resultType}
+              keyword={keyword}
+              filterCount={filterCount}
+              resultCount={resultCount}
+              onNavigate={() => setMenuOpen(false)}
+            />
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>View</DropdownMenuLabel>
+        {viewItem('table', 'Table')}
+        {showGridToggle && viewItem('grid', 'Grid')}
+        {showTimelineToggle && viewItem('timeline', 'Timeline', !hasTimelineData)}
+        {showDistributionToggle && viewItem('distribution', 'Charts', !distributionEnabled)}
+        {showMapToggle && viewItem('map', 'Map')}
+        {crossTypeLinks.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Search in</DropdownMenuLabel>
+            {crossTypeLinks.map((type) => (
+              <DropdownMenuItem key={type} asChild>
+                <Link
+                  href={`/search/${type}${keyword ? '?keyword=' + encodeURIComponent(keyword) : ''}`}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {SEARCH_RESULT_CONFIG[type].label}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => {
+            void handleShareSearch();
+          }}
+        >
+          <Share2 className="mr-2 h-4 w-4" />
+          {shareFeedback === 'copied'
+            ? 'Link copied'
+            : shareFeedback === 'error'
+              ? 'Copy failed'
+              : 'Share link'}
+        </DropdownMenuItem>
+        <DropdownMenuCheckboxItem
+          checked={advancedEnabled}
+          onCheckedChange={() => onToggleAdvanced()}
+          onSelect={(e) => e.preventDefault()}
+        >
+          Advanced search
+        </DropdownMenuCheckboxItem>
+        {orderingOptions && orderingOptions.length > 0 && (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>Sort</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {orderingOptions.map((option) => (
+                <DropdownMenuItem
+                  key={option.name}
+                  onClick={() => setQueryState(stateFromUrl(option.url, baseFacetURL))}
+                >
+                  {option.text}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        )}
+        {compareEnabled && (
+          <DropdownMenuItem
+            disabled={compareCount < 2}
+            onClick={() => {
+              setMenuOpen(false);
+              onOpenCompare();
+            }}
+          >
+            Compare ({compareCount})
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger disabled={exportBusy}>Export</DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuItem
+              disabled={exportBusy}
+              onClick={() => void handleExport('csv', 'page')}
+            >
+              Export page as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={exportBusy} onClick={() => void handleExport('csv', 'all')}>
+              Export all as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={exportBusy}
+              onClick={() => void handleExport('json', 'page')}
+            >
+              Export page as JSON
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={exportBusy}
+              onClick={() => void handleExport('json', 'all')}
+            >
+              Export all as JSON
+            </DropdownMenuItem>
+            {resultType === 'manuscripts' && (
+              <DropdownMenuItem
+                disabled={exportBusy}
+                onClick={() => void handleExport('bibtex', 'all')}
+              >
+                Export all as BibTeX
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -150,6 +384,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   );
   const [compareIds, setCompareIds] = React.useState<string[]>([]);
   const [compareOpen, setCompareOpen] = React.useState(false);
+  const [filtersSidebarCollapsed, setFiltersSidebarCollapsed] = React.useState(false);
   const { setSuggestionsPool } = useSearchContext();
   const { enabledCategories, getCategoryConfig } = useSiteFeatures();
   const categoryConfig = getCategoryConfig(resultType);
@@ -157,6 +392,27 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   React.useEffect(() => {
     if (initialType != null) setResultType(initialType);
   }, [initialType]);
+
+  React.useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(FILTERS_SIDEBAR_COLLAPSED_KEY);
+      if (raw === 'true') setFiltersSidebarCollapsed(true);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const toggleFiltersSidebar = React.useCallback(() => {
+    setFiltersSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(FILTERS_SIDEBAR_COLLAPSED_KEY, next ? 'true' : 'false');
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
 
   React.useEffect(() => {
     try {
@@ -580,10 +836,10 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
         altKey: true,
         handler: (event: KeyboardEvent) => {
           event.preventDefault();
-          const savedButton = document.getElementById(
-            'saved-searches-trigger'
+          const actionsBtn = document.getElementById(
+            'search-actions-trigger'
           ) as HTMLButtonElement | null;
-          savedButton?.click();
+          actionsBtn?.click();
         },
       },
       {
@@ -591,18 +847,17 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
         altKey: true,
         handler: (event: KeyboardEvent) => {
           event.preventDefault();
-          const aside = document.getElementById('search-filters-aside');
-          const mobileBtn = document.getElementById('search-filters-mobile-trigger');
           if (window.matchMedia('(min-width: 768px)').matches) {
-            aside?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          } else {
-            mobileBtn?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            mobileBtn?.focus();
+            toggleFiltersSidebar();
+            return;
           }
+          const mobileBtn = document.getElementById('search-filters-mobile-trigger');
+          mobileBtn?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          mobileBtn?.focus();
         },
       },
     ],
-    [handleResultTypeChange, hasTimelineData, resultType]
+    [handleResultTypeChange, hasTimelineData, resultType, toggleFiltersSidebar]
   );
 
   useHotkeys(searchHotkeys);
@@ -643,30 +898,12 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   );
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      <header className="shrink-0 px-6 py-3 border-b bg-white flex items-center justify-between gap-4 flex-wrap">
-        <div className="shrink-0">
-          <h1 className="text-lg font-semibold">
-            Search: {SEARCH_RESULT_CONFIG[resultType].label} ({resultCount})
-          </h1>
-          {crossTypeLinks.length > 0 && (
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-[11px] text-muted-foreground">Also in:</span>
-              {crossTypeLinks.map((type, i) => (
-                <React.Fragment key={type}>
-                  {i > 0 && <span className="text-[11px] text-muted-foreground/40">·</span>}
-                  <Link
-                    href={`/search/${type}${submittedKeyword ? '?keyword=' + encodeURIComponent(submittedKeyword) : ''}`}
-                    className="text-[11px] text-primary hover:underline"
-                  >
-                    {SEARCH_RESULT_CONFIG[type].label}
-                  </Link>
-                </React.Fragment>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0 flex items-center px-2">
+    <div className="flex h-screen flex-col bg-muted/30">
+      <header className="relative z-10 flex shrink-0 items-center gap-2 border-b bg-background px-3 py-2 shadow-sm sm:gap-3 sm:px-4">
+        <h1 className="sr-only">
+          {`Search ${SEARCH_RESULT_CONFIG[resultType].label}: ${resultCount.toLocaleString()} results`}
+        </h1>
+        <div className="min-w-0 flex-1">
           <ResultTypeToggle
             selectedType={resultType}
             onChange={handleResultTypeChange}
@@ -674,229 +911,129 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             counts={countsByType}
           />
         </div>
-        <div className="flex gap-2 shrink-0 items-center">
-          <SavedSearchesDropdown
-            triggerId="saved-searches-trigger"
-            resultType={resultType}
+        <div
+          className="hidden shrink-0 flex-col items-end text-right sm:flex"
+          title={`${SEARCH_RESULT_CONFIG[resultType].label} — ${resultCount.toLocaleString()} results`}
+        >
+          <span className="text-xs font-semibold tabular-nums leading-tight">
+            {resultCount.toLocaleString()}
+          </span>
+          <span className="text-[10px] leading-tight text-muted-foreground">
+            {SEARCH_RESULT_CONFIG[resultType].label}
+          </span>
+        </div>
+        <p
+          className="shrink-0 text-[11px] tabular-nums text-muted-foreground sm:hidden"
+          aria-hidden
+          title={`${SEARCH_RESULT_CONFIG[resultType].label} — ${resultCount.toLocaleString()} results`}
+        >
+          <span className="font-semibold text-foreground">{resultCount.toLocaleString()}</span>
+        </p>
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="hidden h-9 w-9 shrink-0 md:inline-flex"
+            aria-label={filtersSidebarCollapsed ? 'Show filters panel' : 'Hide filters panel'}
+            title={filtersSidebarCollapsed ? 'Show filters (Alt+F)' : 'Hide filters (Alt+F)'}
+            onClick={toggleFiltersSidebar}
+          >
+            {filtersSidebarCollapsed ? (
+              <PanelLeftOpen className="h-4 w-4" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" />
+            )}
+          </Button>
+          <div className="md:hidden">
+            <MobileFilterSheet
+              activeFilterCount={activeFilterCount}
+              onClearAll={() => {
+                setMobileQueryDraft((prev) => clearAllFacetFilters(prev));
+                setMobileKeywordDraft('');
+              }}
+              onApply={() => {
+                setQueryState(mobileQueryDraft);
+                setDraftKeyword(mobileKeywordDraft);
+                setSubmittedKeyword(mobileKeywordDraft);
+              }}
+            >
+              <DynamicFacets
+                facets={data.facets}
+                searchType={resultType}
+                keyword={mobileKeywordDraft}
+                activeTags={mobileActiveTags}
+                onKeywordChange={setMobileKeywordDraft}
+                onKeywordSubmit={setMobileKeywordDraft}
+                onRemoveTag={(item) => {
+                  if (item.facetKey === '__keyword__') {
+                    setMobileKeywordDraft('');
+                    return;
+                  }
+                  if (item.facetKey === '__date__') {
+                    setMobileQueryDraft((prev) => clearDateFilters(prev));
+                    return;
+                  }
+                  handleMobileFacetClick('', {
+                    type: 'deselectFacet',
+                    facetKey: item.facetKey,
+                    value: item.value,
+                  });
+                }}
+                selectedFacets={mobileQueryDraft.selected_facets}
+                onClearAllFilters={() => setMobileQueryDraft((prev) => clearAllFacetFilters(prev))}
+                onFacetClick={handleMobileFacetClick}
+                baseFacetURL={baseFacetURL}
+                visibleFacets={categoryConfig.visibleFacets}
+                activeFilterCount={mobileActiveTags.length}
+              />
+            </MobileFilterSheet>
+          </div>
+          <SearchActionsMenu
+            triggerId="search-actions-trigger"
             keyword={submittedKeyword}
             filterCount={activeFilterCount}
             resultCount={resultCount}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            showGridToggle={showGridToggle}
+            showTimelineToggle={showTimelineToggle}
+            showDistributionToggle={showDistributionToggle}
+            showMapToggle={showMapToggle}
+            hasTimelineData={hasTimelineData}
+            distributionEnabled={distributionEnabled}
+            handleShareSearch={handleShareSearch}
+            shareFeedback={shareFeedback}
+            advancedEnabled={advancedSearch.enabled}
+            onToggleAdvanced={() =>
+              setAdvancedSearch((prev) => ({ ...prev, enabled: !prev.enabled }))
+            }
+            orderingOptions={data.ordering?.options}
+            setQueryState={setQueryState}
+            baseFacetURL={baseFacetURL}
+            compareEnabled={compareEnabled}
+            compareCount={selectedCompareItems.length}
+            onOpenCompare={() => setCompareOpen(true)}
+            handleExport={handleExport}
+            exportBusy={exportBusy}
+            resultType={resultType}
+            crossTypeLinks={crossTypeLinks}
           />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => void handleShareSearch()}
-            title="Copy current search URL"
-            aria-label="Share current search URL"
-          >
-            <Share2 className="h-4 w-4" />
-            <span className="ml-1 hidden sm:inline">
-              {shareFeedback === 'copied'
-                ? 'Copied'
-                : shareFeedback === 'error'
-                  ? 'Failed'
-                  : 'Share'}
-            </span>
-          </Button>
-          <Button
-            variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setViewMode('table')}
-            title="View results as a sortable table"
-            aria-label="Switch to table view"
-          >
-            <List className="h-4 w-4" />
-            <span className="ml-1 hidden lg:inline">Table</span>
-          </Button>
-          {showGridToggle && (
-            <Button
-              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-              title="View results as image cards"
-              aria-label="Switch to grid view"
-            >
-              <Grid className="h-4 w-4" />
-              <span className="ml-1 hidden lg:inline">Grid</span>
-            </Button>
-          )}
-          {showTimelineToggle && (
-            <Button
-              variant={viewMode === 'timeline' ? 'secondary' : 'ghost'}
-              size="sm"
-              disabled={!hasTimelineData}
-              onClick={() => setViewMode('timeline')}
-              title={
-                hasTimelineData
-                  ? 'See result distribution across decades; click a bar to filter'
-                  : 'No date data available'
-              }
-              aria-label="Switch to timeline view"
-            >
-              <Clock3 className="h-4 w-4" />
-              <span className="ml-1 hidden lg:inline">Timeline</span>
-            </Button>
-          )}
-          {showDistributionToggle && (
-            <Button
-              variant={viewMode === 'distribution' ? 'secondary' : 'ghost'}
-              size="sm"
-              disabled={!distributionEnabled}
-              onClick={() => setViewMode('distribution')}
-              title={
-                distributionEnabled
-                  ? 'Charts for distribution by date, repository, and hand'
-                  : 'Distribution charts are available for graphs'
-              }
-              aria-label="Switch to distribution charts view"
-            >
-              <BarChart3 className="h-4 w-4" />
-              <span className="ml-1 hidden lg:inline">Charts</span>
-            </Button>
-          )}
-          {showMapToggle && (
-            <Button
-              variant={viewMode === 'map' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('map')}
-              title="Map repositories by city and filter from markers"
-              aria-label="Switch to map view"
-            >
-              <Globe2 className="h-4 w-4" />
-              <span className="ml-1 hidden lg:inline">Map</span>
-            </Button>
-          )}
-          <Button
-            variant={advancedSearch.enabled ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setAdvancedSearch((prev) => ({ ...prev, enabled: !prev.enabled }))}
-            title="Toggle advanced search controls"
-            aria-label="Toggle advanced search controls"
-          >
-            <Sparkles className="h-4 w-4" />
-            <span className="ml-1 hidden lg:inline">Advanced</span>
-          </Button>
-          {data.ordering?.options && data.ordering.options.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  title="Sort options"
-                  aria-label="Open sort options"
-                >
-                  <span className="text-xs">Sort</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {data.ordering.options.map((option) => (
-                  <DropdownMenuItem
-                    key={option.name}
-                    onClick={() => setQueryState(stateFromUrl(option.url, baseFacetURL))}
-                  >
-                    {option.text}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-          {compareEnabled && (
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={selectedCompareItems.length < 2}
-              onClick={() => setCompareOpen(true)}
-              title="Compare selected items"
-            >
-              Compare ({selectedCompareItems.length})
-            </Button>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={exportBusy}
-                title="Export search results"
-                aria-label="Open export menu"
-              >
-                <Download className="h-4 w-4" />
-                <span className="ml-1 hidden lg:inline">Export</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => void handleExport('csv', 'page')}>
-                Export page as CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => void handleExport('csv', 'all')}>
-                Export all as CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => void handleExport('json', 'page')}>
-                Export page as JSON
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => void handleExport('json', 'all')}>
-                Export all as JSON
-              </DropdownMenuItem>
-              {resultType === 'manuscripts' && (
-                <DropdownMenuItem onClick={() => void handleExport('bibtex', 'all')}>
-                  Export all as BibTeX
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </header>
 
-      <div className="flex flex-1 min-h-0">
-        <div className="absolute right-4 top-[76px] z-20">
-          <MobileFilterSheet
-            activeFilterCount={activeFilterCount}
-            onClearAll={() => {
-              setMobileQueryDraft((prev) => clearAllFacetFilters(prev));
-              setMobileKeywordDraft('');
-            }}
-            onApply={() => {
-              setQueryState(mobileQueryDraft);
-              setDraftKeyword(mobileKeywordDraft);
-              setSubmittedKeyword(mobileKeywordDraft);
-            }}
-          >
-            <DynamicFacets
-              facets={data.facets}
-              searchType={resultType}
-              keyword={mobileKeywordDraft}
-              activeTags={mobileActiveTags}
-              onKeywordChange={setMobileKeywordDraft}
-              onKeywordSubmit={setMobileKeywordDraft}
-              onRemoveTag={(item) => {
-                if (item.facetKey === '__keyword__') {
-                  setMobileKeywordDraft('');
-                  return;
-                }
-                if (item.facetKey === '__date__') {
-                  setMobileQueryDraft((prev) => clearDateFilters(prev));
-                  return;
-                }
-                handleMobileFacetClick('', {
-                  type: 'deselectFacet',
-                  facetKey: item.facetKey,
-                  value: item.value,
-                });
-              }}
-              selectedFacets={mobileQueryDraft.selected_facets}
-              onClearAllFilters={() => setMobileQueryDraft((prev) => clearAllFacetFilters(prev))}
-              onFacetClick={handleMobileFacetClick}
-              baseFacetURL={baseFacetURL}
-              visibleFacets={categoryConfig.visibleFacets}
-              activeFilterCount={mobileActiveTags.length}
-            />
-          </MobileFilterSheet>
-        </div>
+      <div className="flex min-h-0 flex-1">
         <aside
           id="search-filters-aside"
-          className="hidden md:block w-64 shrink-0 border-r bg-white py-4 px-4 overflow-y-auto"
+          aria-hidden={filtersSidebarCollapsed}
+          className={cn(
+            'hidden border-r bg-card transition-[width,opacity,border-color] duration-200 ease-out md:flex md:flex-col',
+            filtersSidebarCollapsed
+              ? 'md:pointer-events-none md:w-0 md:min-w-0 md:overflow-hidden md:border-transparent md:p-0 md:opacity-0'
+              : 'md:w-64 md:shrink-0 md:overflow-y-auto md:px-3 md:py-3'
+          )}
         >
-          <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="sticky top-0 z-[1] -mx-3 mb-2 flex items-center justify-between gap-2 border-b border-border/60 bg-card px-3 pb-2 pt-0">
             <h2 className="text-sm font-semibold">
               Filters
               {activeFilterCount > 0 && (
@@ -930,134 +1067,138 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               baseFacetURL={baseFacetURL}
               visibleFacets={categoryConfig.visibleFacets}
               activeFilterCount={activeFilterCount}
+              density="sidebar"
             />
           ) : (
             <div className="text-sm text-muted-foreground">No filters for this type</div>
           )}
         </aside>
 
-        <main className="flex-1 flex flex-col min-w-0">
+        <main className="flex min-w-0 flex-1 flex-col">
           <div
             ref={resultsScrollRef}
-            className="p-4 overflow-auto flex-1 flex flex-col gap-4 relative"
+            className="relative flex flex-1 flex-col overflow-auto p-2 sm:p-3"
           >
-            {isFetching && !isLoading && (
-              <div className="h-1 w-full overflow-hidden rounded bg-muted">
-                <div className="h-full w-1/3 animate-pulse bg-primary/60" />
-              </div>
-            )}
-            <AdvancedSearchPanel
-              resultType={resultType}
-              value={advancedSearch}
-              onChange={setAdvancedSearch}
-            />
-            {filtered.length > 0 ? (
-              viewMode === 'table' ? (
-                <ResultsTable
-                  resultType={resultType}
-                  results={filtered as ResultListItem[]}
-                  ordering={data.ordering}
-                  onSort={handleSort}
-                  highlightKeyword={submittedKeyword}
-                  visibleColumns={categoryConfig.visibleColumns}
-                  scrollContainerRef={resultsScrollRef}
-                  isFetching={isFetching}
-                  compareSelection={compareIds}
-                  onToggleCompare={toggleCompare}
-                />
-              ) : viewMode === 'timeline' ? (
-                <SearchTimelineView
-                  dateDistribution={timelineDistribution}
-                  onApplyRange={(min, max) =>
-                    setQueryState((prev) => ({
-                      ...prev,
-                      dateParams: {
-                        ...prev.dateParams,
-                        min_date: String(min),
-                        max_date: String(max),
-                      },
-                      offset: 0,
-                    }))
-                  }
-                />
-              ) : viewMode === 'map' ? (
-                <SearchMapView
-                  cityDistribution={cityDistribution}
-                  onSelectCity={(city) =>
-                    handleFacetClick('', {
-                      type: 'selectFacet',
-                      facetKey: 'repository_city',
-                      value: city,
-                    })
-                  }
-                />
-              ) : viewMode === 'distribution' ? (
-                <SearchDistributionPanel
-                  byDate={graphDistributionQuery.data?.facetDistribution?.date_min}
-                  byRepository={graphDistributionQuery.data?.facetDistribution?.repository_name}
-                  byHand={graphDistributionQuery.data?.facetDistribution?.hand_name}
-                  byComponentFeature={
-                    graphDistributionQuery.data?.facetDistribution?.component_features
-                  }
-                  isLoading={graphDistributionQuery.isFetching}
-                  errorMessage={
-                    graphDistributionQuery.isError
-                      ? 'Could not load distribution stats. Please retry by toggling the Charts view.'
-                      : null
-                  }
-                />
-              ) : (
-                <SearchGrid
-                  results={filtered as Parameters<typeof SearchGrid>[0]['results']}
-                  resultType={resultType}
-                  highlightKeyword={submittedKeyword}
-                  scrollContainerRef={resultsScrollRef}
-                  isFetching={isFetching}
-                  compareSelection={compareIds}
-                  onToggleCompare={toggleCompare}
-                />
-              )
-            ) : (
-              <section className="rounded-lg border bg-white p-6 text-center">
-                <h3 className="text-base font-semibold">No results found</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {submittedKeyword
-                    ? `No ${SEARCH_RESULT_CONFIG[resultType].label.toLowerCase()} matched "${submittedKeyword}".`
-                    : `No ${SEARCH_RESULT_CONFIG[resultType].label.toLowerCase()} matched the current filters.`}
-                </p>
-                <div className="mt-4 flex flex-wrap justify-center gap-2">
-                  {activeFilterCount > 0 && (
-                    <Button variant="outline" size="sm" onClick={handleClearAllFilters}>
-                      Clear all filters
-                    </Button>
-                  )}
-                  {submittedKeyword && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setDraftKeyword('');
-                        setSubmittedKeyword('');
-                      }}
-                    >
-                      Clear keyword
-                    </Button>
-                  )}
+            <div className="flex min-h-0 flex-col rounded-xl border border-border/80 bg-card shadow-sm">
+              {isFetching && !isLoading && (
+                <div className="h-1 w-full shrink-0 overflow-hidden rounded-t-xl bg-muted">
+                  <div className="h-full w-1/3 animate-pulse bg-primary/60" />
                 </div>
-              </section>
-            )}
-
-            {data.count > 0 && (
-              <div className="shrink-0 flex justify-center border rounded-md bg-white py-2 px-4">
-                <Pagination
-                  count={data.count}
-                  limit={queryState.limit}
-                  offset={queryState.offset}
-                  onPageChange={handlePage}
-                  onLimitChange={handleLimitChange}
+              )}
+              <div className="flex min-w-0 flex-col gap-3 p-3">
+                <AdvancedSearchPanel
+                  resultType={resultType}
+                  value={advancedSearch}
+                  onChange={setAdvancedSearch}
                 />
+                {filtered.length > 0 ? (
+                  viewMode === 'table' ? (
+                    <ResultsTable
+                      resultType={resultType}
+                      results={filtered as ResultListItem[]}
+                      ordering={data.ordering}
+                      onSort={handleSort}
+                      highlightKeyword={submittedKeyword}
+                      visibleColumns={categoryConfig.visibleColumns}
+                      scrollContainerRef={resultsScrollRef}
+                      isFetching={isFetching}
+                      compareSelection={compareIds}
+                      onToggleCompare={toggleCompare}
+                    />
+                  ) : viewMode === 'timeline' ? (
+                    <SearchTimelineView
+                      dateDistribution={timelineDistribution}
+                      onApplyRange={(min, max) =>
+                        setQueryState((prev) => ({
+                          ...prev,
+                          dateParams: {
+                            ...prev.dateParams,
+                            min_date: String(min),
+                            max_date: String(max),
+                          },
+                          offset: 0,
+                        }))
+                      }
+                    />
+                  ) : viewMode === 'map' ? (
+                    <SearchMapView
+                      cityDistribution={cityDistribution}
+                      onSelectCity={(city) =>
+                        handleFacetClick('', {
+                          type: 'selectFacet',
+                          facetKey: 'repository_city',
+                          value: city,
+                        })
+                      }
+                    />
+                  ) : viewMode === 'distribution' ? (
+                    <SearchDistributionPanel
+                      byDate={graphDistributionQuery.data?.facetDistribution?.date_min}
+                      byRepository={graphDistributionQuery.data?.facetDistribution?.repository_name}
+                      byHand={graphDistributionQuery.data?.facetDistribution?.hand_name}
+                      byComponentFeature={
+                        graphDistributionQuery.data?.facetDistribution?.component_features
+                      }
+                      isLoading={graphDistributionQuery.isFetching}
+                      errorMessage={
+                        graphDistributionQuery.isError
+                          ? 'Could not load distribution stats. Please retry by toggling the Charts view.'
+                          : null
+                      }
+                    />
+                  ) : (
+                    <SearchGrid
+                      results={filtered as Parameters<typeof SearchGrid>[0]['results']}
+                      resultType={resultType}
+                      highlightKeyword={submittedKeyword}
+                      scrollContainerRef={resultsScrollRef}
+                      isFetching={isFetching}
+                      compareSelection={compareIds}
+                      onToggleCompare={toggleCompare}
+                    />
+                  )
+                ) : (
+                  <section className="py-10 text-center">
+                    <h3 className="text-base font-semibold">No results found</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {submittedKeyword
+                        ? `No ${SEARCH_RESULT_CONFIG[resultType].label.toLowerCase()} matched "${submittedKeyword}".`
+                        : `No ${SEARCH_RESULT_CONFIG[resultType].label.toLowerCase()} matched the current filters.`}
+                    </p>
+                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                      {activeFilterCount > 0 && (
+                        <Button variant="outline" size="sm" onClick={handleClearAllFilters}>
+                          Clear all filters
+                        </Button>
+                      )}
+                      {submittedKeyword && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setDraftKeyword('');
+                            setSubmittedKeyword('');
+                          }}
+                        >
+                          Clear keyword
+                        </Button>
+                      )}
+                    </div>
+                  </section>
+                )}
               </div>
-            )}
+              {data.count > 0 && (
+                <div className="flex shrink-0 justify-center rounded-b-xl border-t border-border/80 bg-card px-3 py-1.5">
+                  <Pagination
+                    count={data.count}
+                    limit={queryState.limit}
+                    offset={queryState.offset}
+                    onPageChange={handlePage}
+                    onLimitChange={handleLimitChange}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </main>
       </div>

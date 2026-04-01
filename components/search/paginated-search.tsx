@@ -46,7 +46,7 @@ export function Pagination({ count, limit, offset, onPageChange, onLimitChange }
   return (
     <div className="flex items-center justify-between gap-4 w-full flex-wrap px-1">
       {/* Results per page */}
-      <div className="flex items-center gap-2 text-sm text-gray-600">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Select value={String(limit)} onValueChange={(value) => onLimitChange?.(parseInt(value))}>
           <SelectTrigger className="w-[110px] h-8 text-sm">
             <SelectValue />
@@ -76,7 +76,7 @@ export function Pagination({ count, limit, offset, onPageChange, onLimitChange }
 
           {pages.map((page, i) =>
             page === 'ellipsis' ? (
-              <span key={`ellipsis-${i}`} className="px-2 text-gray-500">
+              <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">
                 …
               </span>
             ) : (

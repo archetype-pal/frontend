@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { ActiveFacetTag } from '@/lib/search-query';
 
 type ActiveFacetTagsProps = {
@@ -9,6 +10,7 @@ type ActiveFacetTagsProps = {
   title?: string;
   onRemove: (item: ActiveFacetTag) => void;
   onClearAll: () => void;
+  className?: string;
 };
 
 export function ActiveFacetTags({
@@ -16,6 +18,7 @@ export function ActiveFacetTags({
   title = 'Active filters',
   onRemove,
   onClearAll,
+  className,
 }: ActiveFacetTagsProps) {
   const [expanded, setExpanded] = React.useState(false);
   const maxVisible = 4;
@@ -25,7 +28,7 @@ export function ActiveFacetTags({
   if (items.length === 0) return null;
 
   return (
-    <section className="px-4 pt-0 pb-0" aria-label={title}>
+    <section className={cn('px-4 pt-0 pb-0', className)} aria-label={title}>
       <div className="mb-2 flex items-center justify-between gap-2">
         <h3 className="text-sm font-medium">{title}</h3>
         {items.length > 1 && (

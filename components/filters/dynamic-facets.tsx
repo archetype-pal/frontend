@@ -16,6 +16,9 @@ import { FacetDateRangePanel } from '@/components/filters/FacetDateRangePanel';
 import { FacetTreePanel } from '@/components/filters/facet-tree-panel';
 import { clearSearchHistory, getSearchHistory } from '@/lib/search-history';
 import { SEARCH_RESULT_CONFIG } from '@/lib/search-types';
+import { cn } from '@/lib/utils';
+
+export type DynamicFacetsDensity = 'default' | 'sidebar';
 
 type DynamicFacetsProps = {
   facets: FacetData;
@@ -31,6 +34,8 @@ type DynamicFacetsProps = {
   baseFacetURL: string;
   visibleFacets?: string[];
   activeFilterCount?: number;
+  /** Sidebar omits extra horizontal padding so content aligns with aside padding. */
+  density?: DynamicFacetsDensity;
 };
 
 export function DynamicFacets({
@@ -47,6 +52,7 @@ export function DynamicFacets({
   baseFacetURL,
   visibleFacets,
   activeFilterCount = 0,
+  density = 'default',
 }: DynamicFacetsProps) {
   const { suggestionsPool, getServerSuggestions } = useSearchContext();
   const [draftKeyword, setDraftKeyword] = React.useState(keyword);
@@ -133,6 +139,7 @@ export function DynamicFacets({
       <ActiveFacetTags
         items={activeTags}
         title={activeFilterCount > 0 ? `Active filters (${activeFilterCount})` : 'Active filters'}
+        className={density === 'sidebar' ? 'px-0' : undefined}
         onRemove={(item) => {
           if (onRemoveTag) {
             onRemoveTag(item);
@@ -146,7 +153,7 @@ export function DynamicFacets({
         }}
         onClearAll={() => onClearAllFilters?.()}
       />
-      <div className="px-4 pt-0 pb-0">
+      <div className={cn('pt-0 pb-0', density === 'default' && 'px-4')}>
         <h3 className="font-medium text-sm mb-1">Keyword</h3>
         <KeywordSearchInput
           inputId="search-keyword-input"

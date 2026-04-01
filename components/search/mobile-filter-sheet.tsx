@@ -32,7 +32,7 @@ export function MobileFilterSheet({
         type="button"
         variant="outline"
         size="sm"
-        className="md:hidden"
+        className="min-h-11 min-w-11 touch-manipulation px-3 md:hidden"
         onClick={() => setOpen(true)}
       >
         <SlidersHorizontal className="h-4 w-4 mr-1" />
