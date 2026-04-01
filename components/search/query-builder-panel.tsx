@@ -303,9 +303,7 @@ function GroupBlock({
                   resultType={resultType}
                   group={node}
                   path={childPath}
-                  onChangeRoot={(nextChild) => {
-                    onChangeRoot(replaceGroupAtPath(root, childPath, nextChild));
-                  }}
+                  onChangeRoot={onChangeRoot}
                   root={root}
                   facetDistribution={facetDistribution}
                 />
