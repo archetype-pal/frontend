@@ -112,34 +112,40 @@ function ResultTypeToggle({
     : resultTypeItems;
 
   return (
-    <div className="relative w-full min-w-0">
-      <div className="rounded-lg border border-border/60 bg-muted/40 p-0.5">
-        <div
-          className="flex w-full snap-x snap-mandatory gap-0.5 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          role="tablist"
-          aria-label="Search result type"
-        >
-          {items.map((item) => (
-            <Button
+    <div className="relative min-h-0 w-full min-w-0">
+      <div
+        className="flex w-full snap-x snap-mandatory gap-0.5 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="tablist"
+        aria-label="Search result type"
+      >
+        {items.map((item) => {
+          const isActive = selectedType === item.value;
+          return (
+            <button
               key={item.value}
               type="button"
-              className="min-h-9 shrink-0 snap-start min-w-0 whitespace-nowrap px-2.5 sm:min-h-8"
-              variant={selectedType === item.value ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => onChange(item.value)}
               role="tab"
-              aria-selected={selectedType === item.value}
+              aria-selected={isActive}
+              onClick={() => onChange(item.value)}
+              className={cn(
+                'min-h-8 shrink-0 snap-start whitespace-nowrap border-b-2 px-2 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-2.5 sm:py-2',
+                isActive
+                  ? 'border-b-primary font-semibold text-foreground'
+                  : 'border-b-transparent font-medium text-muted-foreground hover:text-foreground'
+              )}
             >
               {item.label}
               {typeof counts?.[item.value] === 'number' && (
-                <span className="ml-1 text-[11px] opacity-80">({counts[item.value]})</span>
+                <span className="ml-1 text-xs text-muted-foreground">
+                  ({counts[item.value]!.toLocaleString()})
+                </span>
               )}
-            </Button>
-          ))}
-        </div>
+            </button>
+          );
+        })}
       </div>
       <div
-        className="pointer-events-none absolute right-0 top-0 z-[1] h-full w-9 bg-gradient-to-l from-background to-transparent"
+        className="pointer-events-none absolute right-0 top-0 z-[1] h-full w-9 bg-gradient-to-l from-background to-transparent md:hidden"
         aria-hidden
       />
     </div>
@@ -903,7 +909,20 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
         <h1 className="sr-only">
           {`Search ${SEARCH_RESULT_CONFIG[resultType].label}: ${resultCount.toLocaleString()} results`}
         </h1>
-        <div className="min-w-0 flex-1">
+        <div
+          className="shrink-0"
+          title={`${SEARCH_RESULT_CONFIG[resultType].label} — ${resultCount.toLocaleString()} results`}
+        >
+          <div className="flex items-baseline gap-1.5 whitespace-nowrap sm:gap-2">
+            <span className="text-lg font-bold tabular-nums tracking-tight sm:text-2xl">
+              {resultCount.toLocaleString()}
+            </span>
+            <span className="max-w-[min(28vw,9rem)] truncate text-xs text-muted-foreground sm:max-w-none sm:text-sm">
+              results in {SEARCH_RESULT_CONFIG[resultType].label}
+            </span>
+          </div>
+        </div>
+        <div className="flex min-h-0 min-w-0 flex-1 items-center">
           <ResultTypeToggle
             selectedType={resultType}
             onChange={handleResultTypeChange}
@@ -911,24 +930,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             counts={countsByType}
           />
         </div>
-        <div
-          className="hidden shrink-0 flex-col items-end text-right sm:flex"
-          title={`${SEARCH_RESULT_CONFIG[resultType].label} — ${resultCount.toLocaleString()} results`}
-        >
-          <span className="text-xs font-semibold tabular-nums leading-tight">
-            {resultCount.toLocaleString()}
-          </span>
-          <span className="text-[10px] leading-tight text-muted-foreground">
-            {SEARCH_RESULT_CONFIG[resultType].label}
-          </span>
-        </div>
-        <p
-          className="shrink-0 text-[11px] tabular-nums text-muted-foreground sm:hidden"
-          aria-hidden
-          title={`${SEARCH_RESULT_CONFIG[resultType].label} — ${resultCount.toLocaleString()} results`}
-        >
-          <span className="font-semibold text-foreground">{resultCount.toLocaleString()}</span>
-        </p>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <Button
             type="button"
