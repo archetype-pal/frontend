@@ -26,6 +26,8 @@ export interface Annotation {
       features: number[];
       featureDetails?: { id: number; name: string }[];
     }>;
+    positions?: number[];
+    positionDetails?: { id: number; name: string }[];
   };
 }
 type AnnotoriousFactory = typeof import('@recogito/annotorious-openseadragon').default;
