@@ -127,6 +127,12 @@ const metaKeyFor = (iiif: string) => `annotations:meta:${iiif}`;
 const cacheKeyFor = (iiif: string) => `annotations:${iiif}`;
 const isDbId = (id?: string) => typeof id === 'string' && id.startsWith('db:');
 
+const DEFAULT_SINGLE_POPUP_POSITION = { x: 0, y: 300 };
+const MULTI_POPUP_OFFSET_STEP = 24;
+const MULTI_POPUP_BASE_Y = 300;
+const ACTIVE_POPUP_Z_INDEX = 80;
+const INACTIVE_POPUP_BASE_Z_INDEX = 60;
+
 function toggleNumericId(list: number[], id: number): number[] {
   return list.includes(id) ? list.filter((value) => value !== id) : [...list, id];
 }
@@ -294,11 +300,12 @@ export default function ManuscriptViewer({
 
   const [openPopups, setOpenPopups] = React.useState<PopupRecord[]>([]);
   const [activePopupId, setActivePopupId] = React.useState<string | null>(null);
-  const [singlePopupPosition, setSinglePopupPosition] = React.useState({ x: 0, y: 300 });
+  const [singlePopupPosition, setSinglePopupPosition] = React.useState(
+    DEFAULT_SINGLE_POPUP_POSITION
+  );
 
   // ---- Drag hooks ----
   const allographDialogDrag = useDraggablePosition({ x: 300, y: 60 });
-  // const annotationPopupDrag = useDraggablePosition({ x: 0, y: 300 });
   const filterPanelDrag = useDraggablePosition({ x: 0, y: 180 });
   const settingsPanelDrag = useDraggablePosition({ x: 0, y: 0 });
 
@@ -1045,6 +1052,60 @@ export default function ManuscriptViewer({
     }));
   }, [allHandFiltersSelected, availableHandFilterIds]);
 
+  const closeFilterPanel = React.useCallback(() => {
+    setIsFilterPanelOpen(false);
+    filterPanelDrag.reset();
+  }, [filterPanelDrag]);
+
+  const toggleFilterPanel = React.useCallback(() => {
+    setIsFilterPanelOpen((prev) => {
+      const next = !prev;
+      if (!next) filterPanelDrag.reset();
+      return next;
+    });
+  }, [filterPanelDrag]);
+
+  const closeSettingsPanel = React.useCallback(() => {
+    setIsSettingsPanelOpen(false);
+    settingsPanelDrag.reset();
+  }, [settingsPanelDrag]);
+
+  const toggleSettingsPanel = React.useCallback(() => {
+    setIsSettingsPanelOpen((prev) => {
+      const next = !prev;
+      if (!next) settingsPanelDrag.reset();
+      return next;
+    });
+  }, [settingsPanelDrag]);
+
+  const handleSelectAnnotationFromViewer = React.useCallback(
+    (annotation: A9sAnnotation | null) => {
+      const selected = (annotation as A9sWithMeta | null) ?? null;
+      if (!selected) return;
+
+      openSinglePopupFromAnnotation(selected, { clearHover: true });
+    },
+    [openSinglePopupFromAnnotation]
+  );
+
+  const getPopupInitialPosition = React.useCallback(
+    (index: number) => {
+      if (!viewerSettings.allowMultipleBoxes) {
+        return singlePopupPosition;
+      }
+
+      return {
+        x: index * MULTI_POPUP_OFFSET_STEP,
+        y: MULTI_POPUP_BASE_Y + index * MULTI_POPUP_OFFSET_STEP,
+      };
+    },
+    [viewerSettings.allowMultipleBoxes, singlePopupPosition]
+  );
+
+  const getPopupZIndex = React.useCallback((index: number, isActive: boolean) => {
+    return isActive ? ACTIVE_POPUP_Z_INDEX : INACTIVE_POPUP_BASE_Z_INDEX + index;
+  }, []);
+
   // ---- Effects ----
 
   React.useEffect(() => {
@@ -1492,21 +1553,9 @@ export default function ManuscriptViewer({
         setHoveredAnnotationId(null);
         setIsAllographModalOpen(true);
       }}
-      onOpenFilterPanel={() => {
-        setIsFilterPanelOpen((prev) => {
-          const next = !prev;
-          if (!next) filterPanelDrag.reset();
-          return next;
-        });
-      }}
+      onOpenFilterPanel={toggleFilterPanel}
       isVisibilityFilterActive={isVisibilityFilterActive}
-      onOpenSettingsPanel={() => {
-        setIsSettingsPanelOpen((prev) => {
-          const next = !prev;
-          if (!next) settingsPanelDrag.reset();
-          return next;
-        });
-      }}
+      onOpenSettingsPanel={toggleSettingsPanel}
       isSettingsActive={isSettingsPanelOpen}
     />
   );
@@ -1566,10 +1615,7 @@ export default function ManuscriptViewer({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => {
-                  setIsFilterPanelOpen(false);
-                  filterPanelDrag.reset();
-                }}
+                onClick={closeFilterPanel}
                 type="button"
               >
                 <X className="h-4 w-4" />
@@ -1710,10 +1756,7 @@ export default function ManuscriptViewer({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => {
-                  setIsSettingsPanelOpen(false);
-                  settingsPanelDrag.reset();
-                }}
+                onClick={closeSettingsPanel}
                 type="button"
               >
                 <X className="h-4 w-4" />
@@ -2050,26 +2093,15 @@ export default function ManuscriptViewer({
 
                 setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? []);
               }}
-              onSelect={(a) => {
-                const selected = (a as A9sWithMeta | null) ?? null;
-                if (!selected) return;
-
-                openSinglePopupFromAnnotation(selected, { clearHover: true });
-              }}
+              onSelect={handleSelectAnnotationFromViewer}
               exposeApi={handleExposeApi}
             />
 
             {visiblePopupRecords.map((popupRecord, index) => {
               const popupCard = getPopupCardViewData(popupRecord);
               const isActive = popupRecord.id === activePopupId;
-
-              const initialX = viewerSettings.allowMultipleBoxes
-                ? index * 24
-                : singlePopupPosition.x;
-              const initialY = viewerSettings.allowMultipleBoxes
-                ? 300 + index * 24
-                : singlePopupPosition.y;
-              const zIndex = isActive ? 80 : 60 + index;
+              const { x: initialX, y: initialY } = getPopupInitialPosition(index);
+              const zIndex = getPopupZIndex(index, isActive);
 
               return (
                 <DraggablePopupLayer
