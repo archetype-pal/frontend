@@ -19,6 +19,7 @@ import Link from 'next/link';
 
 import { getSelectorValue, iiifThumbFromSelector, getIiifBaseUrl } from '@/utils/iiif';
 import { ManuscriptTabs } from './manuscript-tabs';
+import { DraggablePopupLayer } from './draggable-popup-layer';
 import { Toolbar } from './toolbar';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -51,6 +52,24 @@ import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-
 import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 import type { Manuscript } from '@/types/manuscript';
+import type {
+  A9sWithMeta,
+  DraftSharePayload,
+  AnnotationVisibilityFilters,
+  AnnotationViewerSettings,
+  PopupRecord,
+} from '@/types/annotation-viewer';
+
+import {
+  browserSafeIiifUrl,
+  cacheKeyFor,
+  decodeDraftSharePayload,
+  encodeDraftSharePayload,
+  includesAllIds,
+  isDbId,
+  metaKeyFor,
+  toggleNumericId,
+} from '@/lib/annotation-popup-utils';
 
 import { useDraggablePosition } from '@/hooks/useDraggablePosition';
 
@@ -61,183 +80,11 @@ interface ManuscriptViewerProps {
   mode?: 'public' | 'editor';
 }
 
-type A9sFeatureDetail = {
-  id: number;
-  name: string;
-};
-
-type A9sGraphComponent = {
-  component: number;
-  componentName?: string;
-  features: number[];
-  featureDetails?: A9sFeatureDetail[];
-};
-
-type A9sPositionDetail = {
-  id: number;
-  name: string;
-};
-
-type A9sWithMeta = A9sAnnotation & {
-  body?: Array<{ value?: string; type?: string; purpose?: string }>;
-  _meta?: {
-    allographId?: number;
-    handId?: number;
-    numFeatures?: number;
-    isDescribed?: boolean;
-    annotationType?: string;
-    graphcomponentSet?: A9sGraphComponent[];
-    positionDetails?: A9sPositionDetail[];
-  };
-};
-
-type DraftSharePayload = {
-  id: string;
-  target: A9sAnnotation['target'];
-  body?: A9sAnnotation['body'];
-  _meta?: A9sWithMeta['_meta'];
-};
-
-type AnnotationVisibilityFilters = {
-  allographIds: number[];
-  handIds: number[];
-  showEditorial: boolean;
-  showPublicAnnotations: boolean;
-};
-
-type ToolbarPosition = 'vertical' | 'horizontal';
-
-type AnnotationViewerSettings = {
-  allowMultipleBoxes: boolean;
-  selectMultipleAnnotations: boolean;
-  toolbarPosition: ToolbarPosition;
-};
-
-type PopupRecord = {
-  id: string;
-  annotation: A9sWithMeta;
-  popupTab: 'components' | 'positions' | 'notes';
-  shareUrl: string;
-  isShareUrlVisible: boolean;
-  draftAllographText: string;
-  draftNoteText: string;
-};
-
-const metaKeyFor = (iiif: string) => `annotations:meta:${iiif}`;
-const cacheKeyFor = (iiif: string) => `annotations:${iiif}`;
-const isDbId = (id?: string) => typeof id === 'string' && id.startsWith('db:');
-
 const DEFAULT_SINGLE_POPUP_POSITION = { x: 0, y: 300 };
 const MULTI_POPUP_OFFSET_STEP = 24;
 const MULTI_POPUP_BASE_Y = 300;
 const ACTIVE_POPUP_Z_INDEX = 80;
 const INACTIVE_POPUP_BASE_Z_INDEX = 60;
-
-function toggleNumericId(list: number[], id: number): number[] {
-  return list.includes(id) ? list.filter((value) => value !== id) : [...list, id];
-}
-
-function includesAllIds(available: number[], selected: number[]): boolean {
-  if (!available.length) return true;
-  const selectedSet = new Set(selected);
-  return available.every((id) => selectedSet.has(id));
-}
-
-function toBase64Url(value: string): string {
-  const bytes = new TextEncoder().encode(value);
-  let binary = '';
-  bytes.forEach((b) => {
-    binary += String.fromCharCode(b);
-  });
-
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function fromBase64Url(value: string): string {
-  const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
-  const binary = atob(padded);
-  const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
-}
-
-function encodeDraftSharePayload(payload: DraftSharePayload): string {
-  return toBase64Url(JSON.stringify(payload));
-}
-
-function decodeDraftSharePayload(value: string): DraftSharePayload | null {
-  try {
-    return JSON.parse(fromBase64Url(value)) as DraftSharePayload;
-  } catch {
-    return null;
-  }
-}
-
-/** Rewrite cross-origin IIIF URL to same-origin /iiif-proxy to avoid CORS. Keeps path encoding (%2F) so Sipi receives a single identifier segment. */
-function browserSafeIiifUrl(raw: string): string {
-  const base = raw.replace(/\/info\.json$/, '');
-  if (typeof window === 'undefined') return base;
-
-  try {
-    const u = new URL(raw);
-    if (u.origin !== window.location.origin) {
-      const path = u.pathname.replace(/\/info\.json$/i, '');
-      return `${window.location.origin}/iiif-proxy${path}`;
-    }
-    return base;
-  } catch {
-    return base;
-  }
-}
-
-type DraggablePopupLayerProps = {
-  popupId: string;
-  initialX: number;
-  initialY: number;
-  zIndex: number;
-  onActivate: (popupId: string) => void;
-  onPositionChange?: (popupId: string, x: number, y: number) => void;
-  children: (props: {
-    popupTransform: string;
-    dragHandleProps: React.HTMLAttributes<HTMLDivElement>;
-    zIndex: number;
-    onPointerDownCapture: React.PointerEventHandler<HTMLDivElement>;
-  }) => React.ReactNode;
-};
-
-function DraggablePopupLayer({
-  popupId,
-  initialX,
-  initialY,
-  zIndex,
-  onActivate,
-  onPositionChange,
-  children,
-}: DraggablePopupLayerProps) {
-  const popupDrag = useDraggablePosition({ x: initialX, y: initialY });
-  const lastReportedPositionRef = React.useRef<{ x: number; y: number } | null>(null);
-
-  React.useEffect(() => {
-    const next = { x: popupDrag.pos.x, y: popupDrag.pos.y };
-    const prev = lastReportedPositionRef.current;
-
-    if (prev && prev.x === next.x && prev.y === next.y) return;
-
-    lastReportedPositionRef.current = next;
-    onPositionChange?.(popupId, next.x, next.y);
-  }, [popupId, popupDrag.pos.x, popupDrag.pos.y, onPositionChange]);
-
-  return (
-    <>
-      {children({
-        popupTransform: `translate(${popupDrag.pos.x}px, ${popupDrag.pos.y}px)`,
-        dragHandleProps: popupDrag.bindDrag,
-        zIndex,
-        onPointerDownCapture: () => onActivate(popupId),
-      })}
-    </>
-  );
-}
 
 export default function ManuscriptViewer({
   imageId,
@@ -685,6 +532,8 @@ export default function ManuscriptViewer({
         clearSinglePopupState({ clearHover: options?.clearHover });
         return;
       }
+
+      setFilteredAllograph(undefined);
 
       if (options?.clearHover) {
         setHoveredAnnotationId(null);
@@ -1180,6 +1029,17 @@ export default function ManuscriptViewer({
     a9sSnapshot.length,
     availableAllographFilterIds,
   ]);
+
+  React.useEffect(() => {
+    if (!isAllographModalOpen) return;
+
+    const hasContextAllograph = Boolean(filteredAllograph || popupSelectedAllograph);
+
+    if (!hasContextAllograph) {
+      setIsAllographModalOpen(false);
+      allographDialogDrag.reset();
+    }
+  }, [isAllographModalOpen, filteredAllograph, popupSelectedAllograph, allographDialogDrag]);
 
   React.useEffect(() => {
     if (handFiltersInitialized) return;
@@ -1876,6 +1736,8 @@ export default function ManuscriptViewer({
             transform: `translate(calc(-50% + ${allographDialogDrag.pos.x}px), calc(-50% + ${allographDialogDrag.pos.y}px))`,
           }}
           onOpenAutoFocus={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
         >
           <DialogHeader className="cursor-move select-none" {...allographDialogDrag.bindDrag}>
             <DialogTitle className="mb-2">
