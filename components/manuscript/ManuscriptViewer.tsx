@@ -288,6 +288,7 @@ export default function ManuscriptViewer({
   const [isAllographModalOpen, setIsAllographModalOpen] = React.useState(false);
   const [hoveredAnnotationId, setHoveredAnnotationId] = React.useState<string | null>(null);
   const initialGraphHandledRef = React.useRef(false);
+  const pendingPopupClearRef = React.useRef<number | null>(null);
 
   const [unsavedChanges, setUnsavedChanges] = React.useState<number>(0);
 
@@ -601,6 +602,13 @@ export default function ManuscriptViewer({
     },
     [clearPopupCollection]
   );
+
+  const cancelPendingPopupClear = React.useCallback(() => {
+    if (pendingPopupClearRef.current !== null) {
+      window.clearTimeout(pendingPopupClearRef.current);
+      pendingPopupClearRef.current = null;
+    }
+  }, []);
 
   const getPopupById = React.useCallback(
     (popupId: string) => openPopups.find((popup) => popup.id === popupId) ?? null,
@@ -1080,12 +1088,21 @@ export default function ManuscriptViewer({
 
   const handleSelectAnnotationFromViewer = React.useCallback(
     (annotation: A9sAnnotation | null) => {
-      const selected = (annotation as A9sWithMeta | null) ?? null;
-      if (!selected) return;
+      cancelPendingPopupClear();
 
-      openSinglePopupFromAnnotation(selected, { clearHover: true });
+      const selected = (annotation as A9sWithMeta | null) ?? null;
+
+      if (selected) {
+        openSinglePopupFromAnnotation(selected, { clearHover: true });
+        return;
+      }
+
+      pendingPopupClearRef.current = window.setTimeout(() => {
+        pendingPopupClearRef.current = null;
+        clearSinglePopupState({ clearHover: true });
+      }, 50);
     },
-    [openSinglePopupFromAnnotation]
+    [cancelPendingPopupClear, clearSinglePopupState, openSinglePopupFromAnnotation]
   );
 
   const getPopupInitialPosition = React.useCallback(
@@ -1204,6 +1221,14 @@ export default function ManuscriptViewer({
       // ignore
     }
   }, [viewerSettings]);
+
+  React.useEffect(() => {
+    return () => {
+      if (pendingPopupClearRef.current !== null) {
+        window.clearTimeout(pendingPopupClearRef.current);
+      }
+    };
+  }, []);
 
   // hydrate annotation visibility from localStorage
   React.useEffect(() => {
