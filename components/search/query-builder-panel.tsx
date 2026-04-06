@@ -82,18 +82,25 @@ type ConditionRowProps = {
   facetHints?: string[];
 };
 
-function ConditionRow({
+const ConditionRow = React.memo(function ConditionRow({
   resultType,
   condition,
   onChange,
   onRemove,
   facetHints,
 }: ConditionRowProps) {
-  const fields = mergedFieldOptions(resultType);
-  const ops = operatorsForField(resultType, condition.field);
-  const opList = ops.some((o) => o.value === condition.op)
-    ? ops
-    : [...ops, { value: condition.op, label: condition.op }];
+  const fields = React.useMemo(() => mergedFieldOptions(resultType), [resultType]);
+  const ops = React.useMemo(
+    () => operatorsForField(resultType, condition.field),
+    [resultType, condition.field]
+  );
+  const opList = React.useMemo(
+    () =>
+      ops.some((o) => o.value === condition.op)
+        ? ops
+        : [...ops, { value: condition.op, label: condition.op }],
+    [ops, condition.op]
+  );
 
   return (
     <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-muted/30 p-2">
@@ -202,7 +209,7 @@ function ConditionRow({
       </Button>
     </div>
   );
-}
+});
 
 /** Replace the group at `path` with `replacement` (path [] = root). */
 function replaceGroupAtPath(root: QueryGroup, path: number[], replacement: QueryGroup): QueryGroup {

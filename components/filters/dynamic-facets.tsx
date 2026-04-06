@@ -14,7 +14,11 @@ import type { FacetClickAction, FacetData } from '@/types/facets';
 import { FacetPanel } from '@/components/filters/facet-panel';
 import { FacetDateRangePanel } from '@/components/filters/FacetDateRangePanel';
 import { FacetTreePanel } from '@/components/filters/facet-tree-panel';
-import { clearSearchHistory, getSearchHistory } from '@/lib/search-history';
+import {
+  clearSearchHistory,
+  getSearchHistory,
+  type SearchHistoryEntry,
+} from '@/lib/search-history';
 import { SEARCH_RESULT_CONFIG } from '@/lib/search-types';
 import { cn } from '@/lib/utils';
 
@@ -60,9 +64,13 @@ export function DynamicFacets({
 }: DynamicFacetsProps) {
   const { suggestionsPool, getServerSuggestions } = useSearchContext();
   const [draftKeyword, setDraftKeyword] = React.useState(keyword);
-  const [historyItems, setHistoryItems] = React.useState(() => getSearchHistory());
+  const [historyItems, setHistoryItems] = React.useState<SearchHistoryEntry[]>([]);
   const localSuggestions = useKeywordSuggestions(draftKeyword, suggestionsPool);
   const deferredKeyword = React.useDeferredValue(draftKeyword);
+
+  React.useEffect(() => {
+    setHistoryItems(getSearchHistory());
+  }, []);
 
   React.useEffect(() => {
     setDraftKeyword(keyword);

@@ -168,12 +168,18 @@ const NUMERIC_FIELDS_BY_TYPE: Partial<Record<ResultType, string[]>> = {
   places: ['id', 'date_min', 'date_max'],
 };
 
+const _fieldOptionsCache = new Map<ResultType, string[]>();
+
 export function mergedFieldOptions(resultType: ResultType): string[] {
+  const cached = _fieldOptionsCache.get(resultType);
+  if (cached) return cached;
   const a = new Set<string>([
     ...(FILTERABLE_FIELDS_BY_TYPE[resultType] ?? []),
     ...(SEARCHABLE_FIELDS_BY_TYPE[resultType] ?? []),
   ]);
-  return [...a].sort((x, y) => x.localeCompare(y));
+  const result = [...a].sort((x, y) => x.localeCompare(y));
+  _fieldOptionsCache.set(resultType, result);
+  return result;
 }
 
 export function isNumericField(resultType: ResultType, field: string): boolean {

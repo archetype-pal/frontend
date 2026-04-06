@@ -26,7 +26,12 @@ import { useCollection } from '@/contexts/collection-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { normalizeSectionOrder, type SectionKey } from '@/lib/site-features';
-import { addSearchHistory, clearSearchHistory, getSearchHistory } from '@/lib/search-history';
+import {
+  addSearchHistory,
+  clearSearchHistory,
+  getSearchHistory,
+  type SearchHistoryEntry,
+} from '@/lib/search-history';
 import { SEARCH_RESULT_CONFIG } from '@/lib/search-types';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
@@ -56,7 +61,10 @@ export default function Header() {
   const { suggestionsPool, loadGlobalSuggestions, getServerSuggestions } = useSearchContext();
   const isOnSearchPage = pathname?.startsWith('/search') ?? false;
   const [headerKeyword, setHeaderKeyword] = useState('');
-  const [historyItems, setHistoryItems] = useState(() => getSearchHistory());
+  const [historyItems, setHistoryItems] = useState<SearchHistoryEntry[]>([]);
+  useEffect(() => {
+    setHistoryItems(getSearchHistory());
+  }, []);
   const headerSearchValue = isOnSearchPage ? '' : headerKeyword;
   const localSuggestions = useKeywordSuggestions(headerSearchValue, suggestionsPool);
   const deferredHeaderKeyword = useDeferredValue(headerSearchValue);
