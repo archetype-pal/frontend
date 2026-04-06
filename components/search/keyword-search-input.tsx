@@ -74,7 +74,7 @@ export function KeywordSearchInput({
   onExactPhraseChange,
 }: KeywordSearchInputProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(-1);
-  const [dismissed, setDismissed] = React.useState(false);
+  const [dismissed, setDismissed] = React.useState(true);
 
   const handleChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,7 +139,10 @@ export function KeywordSearchInput({
     onFocusProp?.();
   }, [clearOnFocus, onChange, onFocusProp]);
 
-  const handleBlur = React.useCallback(() => {}, []);
+  const handleBlur = React.useCallback(() => {
+    // Delay so clicks on suggestions register before dismissing
+    setTimeout(() => setDismissed(true), 150);
+  }, []);
 
   const handleSuggestionClick = React.useCallback(
     (item: KeywordSuggestionItem) => {
