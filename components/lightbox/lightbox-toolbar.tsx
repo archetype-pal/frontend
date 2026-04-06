@@ -221,7 +221,18 @@ export function LightboxToolbar({
         <Button variant="ghost" size="sm" onClick={onExport} title="Export">
           <Download className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="sm" title="Fullscreen">
+        <Button
+          variant="ghost"
+          size="sm"
+          title="Fullscreen"
+          onClick={() => {
+            if (document.fullscreenElement) {
+              document.exitFullscreen();
+            } else {
+              document.documentElement.requestFullscreen();
+            }
+          }}
+        >
           <Maximize2 className="h-4 w-4" />
         </Button>
       </div>

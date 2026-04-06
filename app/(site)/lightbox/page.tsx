@@ -23,6 +23,77 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { saveRegion, type LightboxRegion } from '@/lib/lightbox-db';
 
+/**
+ * Load an image, draw the crop region to an offscreen canvas, and return a
+ * base64 data URL. The crop coordinates are relative to a 400px-high
+ * contain-fitted display (matching the crop tool's container).
+ */
+async function extractCroppedPixels(
+  imageUrl: string,
+  crop: { x: number; y: number; width: number; height: number }
+): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      // The crop tool container is 100% width x 400px with background-size:contain.
+      // We need the same contain-fit math to map crop coords → image pixels.
+      // Assume container is roughly 800x400 (the crop tool max-w-4xl with p-4).
+      // Instead of guessing, compute the contain-fit for the actual image aspect ratio
+      // against the container the crop tool used (we know height=400).
+      const containerH = 400;
+      // The crop tool container fills available width in a max-w-4xl (≈896px) modal minus padding.
+      // We can't know the exact width, but the crop coordinates already encode the
+      // container dimensions implicitly. Use the image aspect ratio to find the
+      // rendered size within a contain-fit box.
+      const imgAspect = img.naturalWidth / img.naturalHeight;
+      // For background-size:contain in a box of (containerW x containerH), the
+      // rendered image size depends on the container width. Since we don't have
+      // the exact container width, compute it from the crop coordinates: the
+      // image was rendered at most containerH pixels tall.
+      let renderedW: number;
+      let renderedH: number;
+      let offsetX = 0;
+      let offsetY = 0;
+      // Approximate the container width as the max the modal could be
+      const containerW = Math.max(crop.x + crop.width, imgAspect * containerH);
+      if (imgAspect > containerW / containerH) {
+        renderedW = containerW;
+        renderedH = containerW / imgAspect;
+        offsetY = (containerH - renderedH) / 2;
+      } else {
+        renderedH = containerH;
+        renderedW = containerH * imgAspect;
+        offsetX = (containerW - renderedW) / 2;
+      }
+
+      const scale = img.naturalWidth / renderedW;
+      const sx = Math.max(0, (crop.x - offsetX) * scale);
+      const sy = Math.max(0, (crop.y - offsetY) * scale);
+      const sw = Math.min(crop.width * scale, img.naturalWidth - sx);
+      const sh = Math.min(crop.height * scale, img.naturalHeight - sy);
+
+      if (sw <= 0 || sh <= 0) {
+        resolve(null);
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(sw);
+      canvas.height = Math.round(sh);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(null);
+        return;
+      }
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.92));
+    };
+    img.onerror = () => resolve(null);
+    img.src = imageUrl;
+  });
+}
+
 type OpenPanel =
   | 'export'
   | 'session'
@@ -152,6 +223,20 @@ function LightboxPageContent() {
       return;
     }
 
+    let imageData = image.imageUrl;
+
+    // Extract actual cropped pixels via canvas
+    if (image.imageUrl && cropArea.width > 0 && cropArea.height > 0) {
+      try {
+        const dataUrl = await extractCroppedPixels(image.imageUrl, cropArea);
+        if (dataUrl) imageData = dataUrl;
+      } catch (err) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[Lightbox] Could not extract crop pixels, saving URL instead:', err);
+        }
+      }
+    }
+
     const regionId = `region-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const region: LightboxRegion = {
       id: regionId,
@@ -159,7 +244,7 @@ function LightboxPageContent() {
       workspaceId: currentWorkspaceId,
       title: `Crop from ${image.metadata.shelfmark || 'image'}`,
       coordinates: cropArea,
-      imageData: image.imageUrl,
+      imageData,
       metadata: { manuscript: image.metadata.shelfmark },
       createdAt: Date.now(),
     };

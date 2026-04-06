@@ -17,8 +17,10 @@ export function LightboxTransformPanel() {
   const selectedImages = useSelectedImages();
   const firstImage = selectedImages[0];
 
+  // Save history once when a slider drag starts, not on every tick
+  const handleSliderPointerDown = () => saveHistory();
+
   const handleOpacityChange = (value: number[]) => {
-    saveHistory();
     const opacity = value[0] / 100;
     selectedImages.forEach((img) =>
       updateImage(img.id, { transform: { ...img.transform, opacity } })
@@ -26,7 +28,6 @@ export function LightboxTransformPanel() {
   };
 
   const handleBrightnessChange = (value: number[]) => {
-    saveHistory();
     const brightness = value[0];
     selectedImages.forEach((img) =>
       updateImage(img.id, { transform: { ...img.transform, brightness } })
@@ -34,7 +35,6 @@ export function LightboxTransformPanel() {
   };
 
   const handleContrastChange = (value: number[]) => {
-    saveHistory();
     const contrast = value[0];
     selectedImages.forEach((img) =>
       updateImage(img.id, { transform: { ...img.transform, contrast } })
@@ -91,6 +91,7 @@ export function LightboxTransformPanel() {
               id="opacity"
               value={[(firstImage?.transform.opacity || 1) * 100]}
               onValueChange={handleOpacityChange}
+              onPointerDown={handleSliderPointerDown}
               min={0}
               max={100}
               step={1}
@@ -108,6 +109,7 @@ export function LightboxTransformPanel() {
               id="brightness"
               value={[firstImage?.transform.brightness || 100]}
               onValueChange={handleBrightnessChange}
+              onPointerDown={handleSliderPointerDown}
               min={0}
               max={200}
               step={1}
@@ -125,6 +127,7 @@ export function LightboxTransformPanel() {
               id="contrast"
               value={[firstImage?.transform.contrast || 100]}
               onValueChange={handleContrastChange}
+              onPointerDown={handleSliderPointerDown}
               min={0}
               max={200}
               step={1}

@@ -13,8 +13,12 @@ interface LightboxExportProps {
 }
 
 export function LightboxExport({ onClose }: LightboxExportProps) {
-  const { currentWorkspaceId, workspaces } = useLightboxStore();
+  const { currentWorkspaceId, workspaces, selectedImageIds } = useLightboxStore();
   const workspaceImages = useWorkspaceImages();
+  const targetImages =
+    selectedImageIds.size > 0
+      ? workspaceImages.filter((img) => selectedImageIds.has(img.id))
+      : workspaceImages;
   const [exportFormat, setExportFormat] = useState<'pdf' | 'image' | 'json' | 'tei'>('pdf');
   const [isExporting, setIsExporting] = useState(false);
 
@@ -28,16 +32,16 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
 
       switch (exportFormat) {
         case 'pdf':
-          await exportAsPDF(workspaceImages);
+          await exportAsPDF(targetImages);
           break;
         case 'image':
-          await exportAsImage(workspaceImages);
+          await exportAsImage(targetImages);
           break;
         case 'json':
-          await exportAsJSON(workspaceImages);
+          await exportAsJSON(targetImages);
           break;
         case 'tei':
-          await exportAsTEI(workspaceImages);
+          await exportAsTEI(targetImages);
           break;
       }
     } catch (error) {
@@ -138,33 +142,36 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
     }
   };
 
-  const exportAsImage = async (workspaceImages: LightboxImage[]) => {
-    if (workspaceImages.length === 0) {
+  const exportAsImage = async (imagesToExport: LightboxImage[]) => {
+    if (imagesToExport.length === 0) {
       toast.error('No images to export');
       return;
     }
 
-    // Export first selected image or first image in workspace
-    const image = workspaceImages[0];
-    if (!image.imageUrl) {
-      toast.error('Image URL not available');
-      return;
+    let failed = 0;
+    for (const image of imagesToExport) {
+      if (!image.imageUrl) {
+        failed++;
+        continue;
+      }
+      try {
+        const response = await fetch(image.imageUrl);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${image.metadata.shelfmark || 'image'}-${image.id}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error(`Image export failed for ${image.id}:`, error);
+        failed++;
+      }
     }
-
-    try {
-      const response = await fetch(image.imageUrl);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${image.metadata.shelfmark || 'image'}-${image.id}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Image export failed:', error);
-      toast.error('Failed to export image');
+    if (failed > 0) {
+      toast.error(`Failed to export ${failed} image${failed > 1 ? 's' : ''}`);
     }
   };
 
@@ -278,7 +285,7 @@ ${annotationElements ? annotationElements + '\n' : ''}    </surface>`;
         <div className="p-4 border-b flex items-center justify-between">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Download className="h-5 w-5" />
-            Export Workspace
+            Export {selectedImageIds.size > 0 ? `${selectedImageIds.size} Selected` : 'Workspace'}
           </h3>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
