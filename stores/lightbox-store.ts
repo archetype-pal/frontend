@@ -1,6 +1,11 @@
+import * as React from 'react';
 import { create } from 'zustand';
-import { useShallow } from 'zustand/react/shallow';
-import { getIiifImageUrl, getIiifImageUrlWithBounds, coordinatesFromGeoJson } from '@/utils/iiif';
+import {
+  getIiifImageUrl,
+  getIiifImageUrlWithBounds,
+  fetchIiifImageInfo,
+  coordinatesFromGeoJson,
+} from '@/utils/iiif';
 import type { LightboxImage, LightboxWorkspace } from '@/lib/lightbox-db';
 import type { GraphListItem, ImageListItem } from '@/types/search';
 import type { CollectionItem } from '@/contexts/collection-context';
@@ -37,6 +42,7 @@ export interface LightboxState {
   loadImages: (items: (CollectionItem | ImageListItem | GraphListItem)[]) => Promise<string[]>;
   removeImage: (imageId: string) => Promise<void>;
   updateImage: (imageId: string, updates: Partial<LightboxImage>) => Promise<void>;
+  updateImages: (updates: Map<string, Partial<LightboxImage>>) => void;
   selectImage: (imageId: string) => void;
   deselectImage: (imageId: string) => void;
   selectAll: () => void;
@@ -56,6 +62,9 @@ export interface LightboxState {
   redo: () => void;
   saveHistory: () => void;
 }
+
+// Debounce timer for batched IndexedDB writes (used by updateImages)
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -187,14 +196,22 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
     // Build IIIF image URLs from image_iiif (and coordinates for graphs)
     let imageUrl = '';
     let thumbnailUrl = '';
+    let naturalWidth = 0;
+    let naturalHeight = 0;
 
     if (type === 'image') {
       const imgItem = item as ImageListItem | CollectionItem;
       const infoUrl =
         (imgItem as ImageListItem).image_iiif ?? (imgItem as CollectionItem).image_iiif ?? '';
       if (infoUrl) {
-        imageUrl = getIiifImageUrl(infoUrl);
+        imageUrl = getIiifImageUrl(infoUrl, { maxSize: 1200 });
         thumbnailUrl = getIiifImageUrl(infoUrl, { thumbnail: true });
+        // Fetch info.json for aspect ratio (cached, fast)
+        const info = await fetchIiifImageInfo(infoUrl);
+        if (info) {
+          naturalWidth = info.width;
+          naturalHeight = info.height;
+        }
       }
     } else {
       const graphItem = item as GraphListItem | CollectionItem;
@@ -207,9 +224,16 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
             ? coordinatesFromGeoJson(String((graphItem as CollectionItem).coordinates))
             : undefined;
       if (infoUrl) {
-        const opts = { coordinates: coords ?? undefined, flipY: true };
-        imageUrl = await getIiifImageUrlWithBounds(infoUrl, opts);
-        thumbnailUrl = await getIiifImageUrlWithBounds(infoUrl, { ...opts, thumbnail: true });
+        const opts = { coordinates: coords ?? undefined, flipY: true, maxSize: 1200 };
+        [imageUrl, thumbnailUrl] = await Promise.all([
+          getIiifImageUrlWithBounds(infoUrl, opts),
+          getIiifImageUrlWithBounds(infoUrl, { ...opts, thumbnail: true }),
+        ]);
+        // Use coordinate dimensions for graphs
+        if (coords) {
+          naturalWidth = coords.w;
+          naturalHeight = coords.h;
+        }
       }
     }
 
@@ -219,6 +243,30 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
           `image_iiif=${JSON.stringify((item as Record<string, unknown>).image_iiif)}`
       );
     }
+
+    // Compute aspect-correct default size
+    const MAX_DEFAULT_DIM = 400;
+    let width = MAX_DEFAULT_DIM;
+    let height = MAX_DEFAULT_DIM;
+    if (naturalWidth > 0 && naturalHeight > 0) {
+      const aspect = naturalWidth / naturalHeight;
+      if (aspect > 1) {
+        height = Math.round(MAX_DEFAULT_DIM / aspect);
+      } else {
+        width = Math.round(MAX_DEFAULT_DIM * aspect);
+      }
+    }
+
+    // Tiling layout: place images in a grid instead of random positions
+    const existingCount = Array.from(state.images.values()).filter(
+      (img) => img.workspaceId === workspaceId
+    ).length;
+    const COLS = 4;
+    const GAP = 20;
+    const col = existingCount % COLS;
+    const row = Math.floor(existingCount / COLS);
+    const posX = GAP + col * (MAX_DEFAULT_DIM + GAP);
+    const posY = GAP + row * (MAX_DEFAULT_DIM + GAP);
 
     const lightboxImage: LightboxImage = {
       id: imageId,
@@ -235,14 +283,11 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       },
       workspaceId,
       position: {
-        x: Math.random() * 200,
-        y: Math.random() * 200,
+        x: posX,
+        y: posY,
         zIndex: state.images.size + 1,
       },
-      size: {
-        width: 400,
-        height: 400,
-      },
+      size: { width, height },
       transform: {
         opacity: 1,
         brightness: 100,
@@ -256,44 +301,32 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       updatedAt: Date.now(),
     };
 
-    // Update workspace
+    // Persist to IndexedDB and update state in parallel
+    const { saveImage, saveWorkspace } = await import('@/lib/lightbox-db');
     const workspace = state.workspaces.find((w) => w.id === workspaceId);
-    if (workspace) {
-      const updatedWorkspace = {
-        ...workspace,
-        images: [...workspace.images, imageId],
-        updatedAt: Date.now(),
-      };
-      const { saveWorkspace } = await import('@/lib/lightbox-db');
-      await saveWorkspace(updatedWorkspace);
+    const updatedWorkspace = workspace
+      ? { ...workspace, images: [...workspace.images, imageId], updatedAt: Date.now() }
+      : null;
 
-      // Update workspace in state
-      set((state) => ({
-        workspaces: state.workspaces.map((w) => (w.id === workspaceId ? updatedWorkspace : w)),
-      }));
-    }
+    await Promise.all([
+      saveImage(lightboxImage),
+      updatedWorkspace ? saveWorkspace(updatedWorkspace) : Promise.resolve(),
+    ]);
 
-    // Save image
-    const { saveImage } = await import('@/lib/lightbox-db');
-    await saveImage(lightboxImage);
-
-    // Update state
     set((state) => {
       const images = new Map(state.images);
       images.set(imageId, lightboxImage);
-      return { images };
+      const workspaces = updatedWorkspace
+        ? state.workspaces.map((w) => (w.id === workspaceId ? updatedWorkspace : w))
+        : state.workspaces;
+      return { images, workspaces };
     });
 
     return imageId;
   },
 
   loadImages: async (items) => {
-    const imageIds: string[] = [];
-    for (const item of items) {
-      const id = await get().loadImage(item);
-      imageIds.push(id);
-    }
-    return imageIds;
+    return Promise.all(items.map((item) => get().loadImage(item)));
   },
 
   removeImage: async (imageId) => {
@@ -342,6 +375,30 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
 
     const { saveImage } = await import('@/lib/lightbox-db');
     await saveImage(updated);
+  },
+
+  updateImages: (updates) => {
+    const state = get();
+    const now = Date.now();
+    const images = new Map(state.images);
+    const changed: LightboxImage[] = [];
+
+    for (const [imageId, partial] of updates) {
+      const image = images.get(imageId);
+      if (!image) continue;
+      const updated = { ...image, ...partial, updatedAt: now };
+      images.set(imageId, updated);
+      changed.push(updated);
+    }
+
+    set({ images });
+
+    // Debounced IndexedDB persist
+    if (persistTimer) clearTimeout(persistTimer);
+    persistTimer = setTimeout(async () => {
+      const { saveImage } = await import('@/lib/lightbox-db');
+      await Promise.all(changed.map((img) => saveImage(img)));
+    }, 300);
   },
 
   selectImage: (imageId) => {
@@ -560,25 +617,29 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
   },
 }));
 
-/** Images in the current workspace. Use in components instead of duplicating filter logic. */
+const EMPTY_IMAGES: LightboxImage[] = [];
+
+/** Images in the current workspace. Stable reference — only recomputes when images or workspace changes. */
 export function useWorkspaceImages(): LightboxImage[] {
-  return useLightboxStore(
-    useShallow((state) => {
-      if (!state.currentWorkspaceId) return [];
-      return Array.from(state.images.values()).filter(
-        (img) => img.workspaceId === state.currentWorkspaceId
-      );
-    })
-  );
+  const workspaceId = useLightboxStore((s) => s.currentWorkspaceId);
+  const images = useLightboxStore((s) => s.images);
+  return React.useMemo(() => {
+    if (!workspaceId) return EMPTY_IMAGES;
+    return Array.from(images.values()).filter((img) => img.workspaceId === workspaceId);
+  }, [workspaceId, images]);
 }
 
-/** Selected images (resolved from selectedImageIds). Use instead of duplicating map+filter. */
+/** Selected images (resolved from selectedImageIds). Stable reference — only recomputes when selection or images change. */
 export function useSelectedImages(): LightboxImage[] {
-  return useLightboxStore(
-    useShallow((state) =>
-      Array.from(state.selectedImageIds)
-        .map((id) => state.images.get(id))
-        .filter((img): img is LightboxImage => img != null)
-    )
-  );
+  const selectedImageIds = useLightboxStore((s) => s.selectedImageIds);
+  const images = useLightboxStore((s) => s.images);
+  return React.useMemo(() => {
+    if (selectedImageIds.size === 0) return EMPTY_IMAGES;
+    const result: LightboxImage[] = [];
+    for (const id of selectedImageIds) {
+      const img = images.get(id);
+      if (img) result.push(img);
+    }
+    return result;
+  }, [selectedImageIds, images]);
 }

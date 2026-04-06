@@ -11,6 +11,8 @@ export type IIIFImageUrlOptions = {
   thumbnail?: boolean;
   /** Flip Y from bottom-left origin (legacy GeoJSON) to top-left origin (IIIF). */
   flipY?: boolean;
+  /** Max pixel dimension for the longer side. Uses IIIF `!w,h` (best fit) syntax. */
+  maxSize?: number;
 };
 
 /** IIIF Image Information 2.x – width/height from info.json. */
@@ -181,6 +183,8 @@ export function getIiifImageUrl(infoUrl: string, options?: IIIFImageUrlOptions):
     } else {
       size = `${DEFAULT_THUMBNAIL_SIZE},`;
     }
+  } else if (typeof options?.maxSize === 'number' && options.maxSize > 0) {
+    size = `!${options.maxSize},${options.maxSize}`;
   } else {
     size = 'max';
   }

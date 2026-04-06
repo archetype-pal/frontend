@@ -28,32 +28,60 @@ export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}
     useLightboxStore();
   const workspaceImages = useWorkspaceImages();
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const canvasRef = React.useRef<HTMLDivElement>(null);
+  const panRef = React.useRef({ x: 0, y: 0 });
 
-  // Wheel-to-zoom and pinch-to-zoom
+  // Apply the transform directly to the DOM element (avoids re-render)
+  const applyTransform = React.useCallback((z: number, pan: { x: number; y: number }) => {
+    const el = canvasRef.current;
+    if (!el) return;
+    el.style.transform = `translate(${pan.x}px, ${pan.y}px) scale(${z})`;
+  }, []);
+
+  // Cursor-centered wheel zoom and pinch-to-zoom
   React.useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
-    // Mouse wheel zoom
     const onWheel = (e: WheelEvent) => {
-      if (!e.ctrlKey && !e.metaKey) return; // Only zoom with Ctrl/Cmd+scroll
+      if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
       const currentZoom = useLightboxStore.getState().zoom;
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      setZoom(Math.min(5, Math.max(0.1, currentZoom + delta)));
+      const newZoom = Math.min(5, Math.max(0.1, currentZoom + delta));
+
+      // Adjust pan so the point under the cursor stays fixed
+      const rect = el.getBoundingClientRect();
+      const cursorX = e.clientX - rect.left;
+      const cursorY = e.clientY - rect.top;
+      const scale = newZoom / currentZoom;
+      const pan = panRef.current;
+      panRef.current = {
+        x: cursorX - scale * (cursorX - pan.x),
+        y: cursorY - scale * (cursorY - pan.y),
+      };
+
+      setZoom(newZoom);
+      applyTransform(newZoom, panRef.current);
     };
 
     // Pinch-to-zoom on touch devices
     let lastDistance = 0;
     let baseZoom = 1;
+    let basePan = { x: 0, y: 0 };
 
     const getDistance = (t1: Touch, t2: Touch) =>
       Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    const getMidpoint = (t1: Touch, t2: Touch) => ({
+      x: (t1.clientX + t2.clientX) / 2,
+      y: (t1.clientY + t2.clientY) / 2,
+    });
 
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         lastDistance = getDistance(e.touches[0], e.touches[1]);
         baseZoom = useLightboxStore.getState().zoom;
+        basePan = { ...panRef.current };
       }
     };
 
@@ -63,7 +91,19 @@ export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}
         const dist = getDistance(e.touches[0], e.touches[1]);
         const scale = dist / lastDistance;
         const newZoom = Math.min(5, Math.max(0.1, baseZoom * scale));
+
+        const rect = el.getBoundingClientRect();
+        const mid = getMidpoint(e.touches[0], e.touches[1]);
+        const cx = mid.x - rect.left;
+        const cy = mid.y - rect.top;
+        const s = newZoom / baseZoom;
+        panRef.current = {
+          x: cx - s * (cx - basePan.x),
+          y: cy - s * (cy - basePan.y),
+        };
+
         setZoom(newZoom);
+        applyTransform(newZoom, panRef.current);
       }
     };
 
@@ -75,7 +115,12 @@ export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
     };
-  }, [setZoom]);
+  }, [setZoom, applyTransform]);
+
+  // Sync the DOM when zoom changes from toolbar buttons (not from wheel/pinch)
+  React.useEffect(() => {
+    applyTransform(zoom, panRef.current);
+  }, [zoom, applyTransform]);
 
   if (!currentWorkspaceId) {
     return (
@@ -103,11 +148,11 @@ export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}
   return (
     <div ref={containerRef} className="relative h-full w-full bg-gray-100 overflow-hidden">
       <div
-        className="absolute inset-0 origin-top-left"
+        ref={canvasRef}
+        className="absolute inset-0"
         style={{
+          transformOrigin: '0 0',
           transform: `scale(${zoom})`,
-          width: `${100 / zoom}%`,
-          height: `${100 / zoom}%`,
         }}
       >
         {showGrid && <LightboxGridOverlay />}

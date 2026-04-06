@@ -49,17 +49,20 @@ export async function resolveItemsByIds(
   const label = type === 'image' ? 'image' : 'graph';
   const failed: string[] = [];
 
-  for (const id of missingIds) {
-    try {
+  const results = await Promise.allSettled(
+    missingIds.map(async (id) => {
       const response = await apiFetch(`/api/v1/search/${endpoint}/${id}`);
-      if (response.ok) {
-        const data = await response.json();
-        itemsToLoad.push({ ...data, type } as ResolvedItem);
-      } else {
-        failed.push(`${label} ${id} (${response.status})`);
-      }
-    } catch (err) {
-      failed.push(`${label} ${id}: ${err instanceof Error ? err.message : String(err)}`);
+      if (!response.ok) throw new Error(`${label} ${id} (${response.status})`);
+      const data = await response.json();
+      return { ...data, type } as ResolvedItem;
+    })
+  );
+
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      itemsToLoad.push(result.value);
+    } else {
+      failed.push(result.reason instanceof Error ? result.reason.message : String(result.reason));
     }
   }
 

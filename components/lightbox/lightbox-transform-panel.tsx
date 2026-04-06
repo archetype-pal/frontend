@@ -11,60 +11,68 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import type { LightboxImage } from '@/lib/lightbox-db';
 
 export function LightboxTransformPanel() {
-  const { updateImage, saveHistory } = useLightboxStore();
+  const { updateImages, saveHistory } = useLightboxStore();
   const selectedImages = useSelectedImages();
   const firstImage = selectedImages[0];
 
   // Save history once when a slider drag starts, not on every tick
   const handleSliderPointerDown = () => saveHistory();
 
+  const batchTransformUpdate = React.useCallback(
+    (images: LightboxImage[], getUpdates: (img: LightboxImage) => Partial<LightboxImage>) => {
+      const updates = new Map<string, Partial<LightboxImage>>();
+      for (const img of images) {
+        updates.set(img.id, getUpdates(img));
+      }
+      updateImages(updates);
+    },
+    [updateImages]
+  );
+
   const handleOpacityChange = (value: number[]) => {
     const opacity = value[0] / 100;
-    selectedImages.forEach((img) =>
-      updateImage(img.id, { transform: { ...img.transform, opacity } })
-    );
+    batchTransformUpdate(selectedImages, (img) => ({
+      transform: { ...img.transform, opacity },
+    }));
   };
 
   const handleBrightnessChange = (value: number[]) => {
     const brightness = value[0];
-    selectedImages.forEach((img) =>
-      updateImage(img.id, { transform: { ...img.transform, brightness } })
-    );
+    batchTransformUpdate(selectedImages, (img) => ({
+      transform: { ...img.transform, brightness },
+    }));
   };
 
   const handleContrastChange = (value: number[]) => {
     const contrast = value[0];
-    selectedImages.forEach((img) =>
-      updateImage(img.id, { transform: { ...img.transform, contrast } })
-    );
+    batchTransformUpdate(selectedImages, (img) => ({
+      transform: { ...img.transform, contrast },
+    }));
   };
 
   const handleGrayscaleToggle = () => {
     saveHistory();
-    selectedImages.forEach((img) =>
-      updateImage(img.id, {
-        transform: { ...img.transform, grayscale: !img.transform.grayscale },
-      })
-    );
+    batchTransformUpdate(selectedImages, (img) => ({
+      transform: { ...img.transform, grayscale: !img.transform.grayscale },
+    }));
   };
 
   const handleReset = () => {
     saveHistory();
-    selectedImages.forEach((img) =>
-      updateImage(img.id, {
-        transform: {
-          opacity: 1,
-          brightness: 100,
-          contrast: 100,
-          rotation: 0,
-          flipX: false,
-          flipY: false,
-          grayscale: false,
-        },
-      })
-    );
+    batchTransformUpdate(selectedImages, () => ({
+      transform: {
+        opacity: 1,
+        brightness: 100,
+        contrast: 100,
+        rotation: 0,
+        flipX: false,
+        flipY: false,
+        grayscale: false,
+      },
+    }));
   };
 
   if (selectedImages.length === 0) {

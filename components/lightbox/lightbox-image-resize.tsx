@@ -6,9 +6,10 @@ import type { LightboxImage } from '@/lib/lightbox-db';
 
 interface LightboxImageResizeProps {
   image: LightboxImage;
+  containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
-export function LightboxImageResize({ image }: LightboxImageResizeProps) {
+export function LightboxImageResize({ image, containerRef }: LightboxImageResizeProps) {
   const { updateImage } = useLightboxStore();
 
   const handleMouseDown = (e: React.MouseEvent, handle: 'se' | 'sw' | 'ne' | 'nw') => {
@@ -23,6 +24,13 @@ export function LightboxImageResize({ image }: LightboxImageResizeProps) {
     const startHeight = image.size.height;
     const startLeft = image.position.x;
     const startTop = image.position.y;
+    const aspectRatio = startWidth / startHeight;
+    const el = containerRef.current;
+
+    let finalWidth = startWidth;
+    let finalHeight = startHeight;
+    let finalX = startLeft;
+    let finalY = startTop;
 
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - startX;
@@ -33,23 +41,18 @@ export function LightboxImageResize({ image }: LightboxImageResizeProps) {
       let newX = startLeft;
       let newY = startTop;
 
-      // Calculate new size based on handle
       if (handle === 'se') {
-        // Southeast - resize bottom-right
         newWidth = Math.max(100, startWidth + deltaX);
         newHeight = Math.max(100, startHeight + deltaY);
       } else if (handle === 'sw') {
-        // Southwest - resize bottom-left
         newWidth = Math.max(100, startWidth - deltaX);
         newHeight = Math.max(100, startHeight + deltaY);
         newX = startLeft + (startWidth - newWidth);
       } else if (handle === 'ne') {
-        // Northeast - resize top-right
         newWidth = Math.max(100, startWidth + deltaX);
         newHeight = Math.max(100, startHeight - deltaY);
         newY = startTop + (startHeight - newHeight);
       } else if (handle === 'nw') {
-        // Northwest - resize top-left
         newWidth = Math.max(100, startWidth - deltaX);
         newHeight = Math.max(100, startHeight - deltaY);
         newX = startLeft + (startWidth - newWidth);
@@ -57,7 +60,6 @@ export function LightboxImageResize({ image }: LightboxImageResizeProps) {
       }
 
       // Maintain aspect ratio
-      const aspectRatio = startWidth / startHeight;
       if (Math.abs(deltaX) > Math.abs(deltaY)) {
         newHeight = newWidth / aspectRatio;
         if (handle === 'sw' || handle === 'nw') {
@@ -70,15 +72,28 @@ export function LightboxImageResize({ image }: LightboxImageResizeProps) {
         }
       }
 
-      updateImage(image.id, {
-        size: { width: newWidth, height: newHeight },
-        position: { ...image.position, x: newX, y: newY },
-      });
+      finalWidth = newWidth;
+      finalHeight = newHeight;
+      finalX = newX;
+      finalY = newY;
+
+      // Direct DOM mutation — no React re-render during resize
+      if (el) {
+        el.style.width = `${newWidth}px`;
+        el.style.height = `${newHeight}px`;
+        el.style.left = `${newX}px`;
+        el.style.top = `${newY}px`;
+      }
     };
 
     const handleMouseUp = () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      // Commit final values to store once
+      updateImage(image.id, {
+        size: { width: finalWidth, height: finalHeight },
+        position: { ...image.position, x: finalX, y: finalY },
+      });
     };
 
     document.addEventListener('mousemove', handleMouseMove);

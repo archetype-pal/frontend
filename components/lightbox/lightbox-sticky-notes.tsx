@@ -17,16 +17,16 @@ function generateId(): string {
   return `note-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+// Debounce timer for text input persistence
+let textPersistTimer: ReturnType<typeof setTimeout> | null = null;
+
 interface LightboxStickyNotesProps {
   workspaceId: string;
 }
 
 export function LightboxStickyNotes({ workspaceId }: LightboxStickyNotesProps) {
   const [notes, setNotes] = React.useState<LightboxStickyNote[]>([]);
-  const [dragState, setDragState] = React.useState<{
-    noteId: string;
-    offset: { x: number; y: number };
-  } | null>(null);
+  const noteRefsMap = React.useRef(new Map<string, HTMLDivElement>());
 
   React.useEffect(() => {
     let cancelled = false;
@@ -65,71 +65,71 @@ export function LightboxStickyNotes({ workspaceId }: LightboxStickyNotesProps) {
     return () => window.removeEventListener('lightbox:add-sticky-note', handler);
   }, [addNote]);
 
-  const updateNote = async (id: string, updates: Partial<LightboxStickyNote>) => {
-    setNotes((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, ...updates, updatedAt: Date.now() } : n))
-    );
-    const note = notes.find((n) => n.id === id);
-    if (note) {
-      await saveStickyNote({ ...note, ...updates, updatedAt: Date.now() });
-    }
-  };
+  const updateNoteText = React.useCallback((id: string, text: string) => {
+    setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, text, updatedAt: Date.now() } : n)));
+    // Debounce DB persist for text input
+    if (textPersistTimer) clearTimeout(textPersistTimer);
+    textPersistTimer = setTimeout(() => {
+      setNotes((current) => {
+        const note = current.find((n) => n.id === id);
+        if (note) saveStickyNote({ ...note, updatedAt: Date.now() });
+        return current;
+      });
+    }, 500);
+  }, []);
 
   const removeNote = async (id: string) => {
+    noteRefsMap.current.delete(id);
     await deleteStickyNote(id);
     setNotes((prev) => prev.filter((n) => n.id !== id));
   };
 
+  // Ref-based drag: DOM mutation during mousemove, commit to state on mouseup
   const handleMouseDown = (e: React.MouseEvent, noteId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    const noteEl = (e.target as HTMLElement).closest('[data-note-id]') as HTMLElement;
+    const noteEl = noteRefsMap.current.get(noteId);
     if (!noteEl) return;
     const rect = noteEl.getBoundingClientRect();
-    setDragState({
-      noteId,
-      offset: { x: e.clientX - rect.left, y: e.clientY - rect.top },
-    });
-  };
+    const offset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    noteEl.style.cursor = 'grabbing';
 
-  React.useEffect(() => {
-    if (!dragState) return;
+    let finalX = 0;
+    let finalY = 0;
 
     const handleMouseMove = (e: MouseEvent) => {
       const container = document.querySelector('.lightbox-container');
       if (!container) return;
       const containerRect = container.getBoundingClientRect();
-      const x = e.clientX - containerRect.left - dragState.offset.x;
-      const y = e.clientY - containerRect.top - dragState.offset.y;
-      setNotes((prev) =>
-        prev.map((n) =>
-          n.id === dragState.noteId
-            ? { ...n, position: { x: Math.max(0, x), y: Math.max(0, y) } }
-            : n
-        )
-      );
+      finalX = Math.max(0, e.clientX - containerRect.left - offset.x);
+      finalY = Math.max(0, e.clientY - containerRect.top - offset.y);
+      // Direct DOM mutation — no React re-render
+      noteEl.style.left = `${finalX}px`;
+      noteEl.style.top = `${finalY}px`;
     };
 
     const handleMouseUp = () => {
-      if (dragState) {
-        const note = notes.find((n) => n.id === dragState.noteId);
-        if (note) {
-          saveStickyNote({ ...note, updatedAt: Date.now() });
-        }
-      }
-      setDragState(null);
+      noteEl.style.cursor = '';
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      // Commit final position to React state + persist
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.id === noteId ? { ...n, position: { x: finalX, y: finalY }, updatedAt: Date.now() } : n
+        )
+      );
+      setNotes((current) => {
+        const note = current.find((n) => n.id === noteId);
+        if (note) saveStickyNote({ ...note, updatedAt: Date.now() });
+        return current;
+      });
     };
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [dragState, notes]);
+  };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
-    // Only create a note when double-clicking the container background
     if ((e.target as HTMLElement).closest('[data-note-id]')) return;
     const container = e.currentTarget as HTMLElement;
     const rect = container.getBoundingClientRect();
@@ -146,6 +146,9 @@ export function LightboxStickyNotes({ workspaceId }: LightboxStickyNotesProps) {
           <div
             key={note.id}
             data-note-id={note.id}
+            ref={(el) => {
+              if (el) noteRefsMap.current.set(note.id, el);
+            }}
             className={`absolute pointer-events-auto ${c.bg} ${c.border} border rounded-md shadow-md flex flex-col`}
             style={{
               left: `${note.position.x}px`,
@@ -153,7 +156,6 @@ export function LightboxStickyNotes({ workspaceId }: LightboxStickyNotesProps) {
               width: `${note.size.width}px`,
               minHeight: `${note.size.height}px`,
               zIndex: 1000,
-              cursor: dragState?.noteId === note.id ? 'grabbing' : 'grab',
             }}
           >
             <div
@@ -179,7 +181,7 @@ export function LightboxStickyNotes({ workspaceId }: LightboxStickyNotesProps) {
               className={`flex-1 ${c.bg} text-xs text-gray-800 p-2 resize-none border-none outline-none rounded-b-md`}
               value={note.text}
               placeholder="Type a note…"
-              onChange={(e) => updateNote(note.id, { text: e.target.value })}
+              onChange={(e) => updateNoteText(note.id, e.target.value)}
               onMouseDown={(e) => e.stopPropagation()}
             />
           </div>
