@@ -48,6 +48,10 @@ export interface LightboxState {
   loadSession: (sessionId: string) => Promise<void>;
   setShowAnnotations: (show: boolean) => void;
   setShowGrid: (show: boolean) => void;
+  bringToFront: (imageId: string) => void;
+  sendToBack: (imageId: string) => void;
+  moveUp: (imageId: string) => void;
+  moveDown: (imageId: string) => void;
   undo: () => void;
   redo: () => void;
   saveHistory: () => void;
@@ -432,6 +436,84 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
 
   setShowGrid: (show) => {
     set({ showGrid: show });
+  },
+
+  bringToFront: (imageId) => {
+    get().saveHistory();
+    const state = get();
+    let maxZ = 0;
+    state.images.forEach((img) => {
+      if (img.position.zIndex > maxZ) maxZ = img.position.zIndex;
+    });
+    const image = state.images.get(imageId);
+    if (image && image.position.zIndex < maxZ) {
+      get().updateImage(imageId, { position: { ...image.position, zIndex: maxZ + 1 } });
+    }
+  },
+
+  sendToBack: (imageId) => {
+    get().saveHistory();
+    const state = get();
+    let minZ = Infinity;
+    state.images.forEach((img) => {
+      if (img.position.zIndex < minZ) minZ = img.position.zIndex;
+    });
+    const image = state.images.get(imageId);
+    if (image && image.position.zIndex > minZ) {
+      get().updateImage(imageId, {
+        position: { ...image.position, zIndex: Math.max(0, minZ - 1) },
+      });
+    }
+  },
+
+  moveUp: (imageId) => {
+    get().saveHistory();
+    const state = get();
+    const image = state.images.get(imageId);
+    if (!image) return;
+    // Find the next higher zIndex
+    let nextZ = Infinity;
+    let swapId: string | null = null;
+    state.images.forEach((img, id) => {
+      if (img.position.zIndex > image.position.zIndex && img.position.zIndex < nextZ) {
+        nextZ = img.position.zIndex;
+        swapId = id;
+      }
+    });
+    if (swapId) {
+      const swapImg = state.images.get(swapId)!;
+      get().updateImage(imageId, {
+        position: { ...image.position, zIndex: swapImg.position.zIndex },
+      });
+      get().updateImage(swapId, {
+        position: { ...swapImg.position, zIndex: image.position.zIndex },
+      });
+    }
+  },
+
+  moveDown: (imageId) => {
+    get().saveHistory();
+    const state = get();
+    const image = state.images.get(imageId);
+    if (!image) return;
+    // Find the next lower zIndex
+    let prevZ = -Infinity;
+    let swapId: string | null = null;
+    state.images.forEach((img, id) => {
+      if (img.position.zIndex < image.position.zIndex && img.position.zIndex > prevZ) {
+        prevZ = img.position.zIndex;
+        swapId = id;
+      }
+    });
+    if (swapId) {
+      const swapImg = state.images.get(swapId)!;
+      get().updateImage(imageId, {
+        position: { ...image.position, zIndex: swapImg.position.zIndex },
+      });
+      get().updateImage(swapId, {
+        position: { ...swapImg.position, zIndex: image.position.zIndex },
+      });
+    }
   },
 
   saveHistory: () => {

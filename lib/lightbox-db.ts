@@ -89,12 +89,24 @@ export interface LightboxRegion {
   createdAt: number;
 }
 
+export interface LightboxStickyNote {
+  id: string;
+  workspaceId: string;
+  text: string;
+  color: string;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  createdAt: number;
+  updatedAt: number;
+}
+
 class LightboxDatabase extends Dexie {
   images!: Table<LightboxImage>;
   workspaces!: Table<LightboxWorkspace>;
   sessions!: Table<LightboxSession>;
   annotations!: Table<LightboxAnnotation>;
   regions!: Table<LightboxRegion>;
+  stickyNotes!: Table<LightboxStickyNote>;
 
   constructor() {
     super('LightboxDatabase');
@@ -104,6 +116,14 @@ class LightboxDatabase extends Dexie {
       sessions: 'id, name, createdAt',
       annotations: 'id, imageId, createdAt',
       regions: 'id, imageId, workspaceId, createdAt',
+    });
+    this.version(2).stores({
+      images: 'id, originalId, type, workspaceId, createdAt',
+      workspaces: 'id, createdAt',
+      sessions: 'id, name, createdAt',
+      annotations: 'id, imageId, createdAt',
+      regions: 'id, imageId, workspaceId, createdAt',
+      stickyNotes: 'id, workspaceId, createdAt',
     });
   }
 }
@@ -189,4 +209,16 @@ export async function getImageAnnotations(imageId: string): Promise<LightboxAnno
 
 export async function deleteAnnotation(id: string): Promise<void> {
   await getDb().annotations.delete(id);
+}
+
+export async function saveStickyNote(note: LightboxStickyNote): Promise<string> {
+  return await getDb().stickyNotes.put(note);
+}
+
+export async function getWorkspaceStickyNotes(workspaceId: string): Promise<LightboxStickyNote[]> {
+  return await getDb().stickyNotes.where('workspaceId').equals(workspaceId).toArray();
+}
+
+export async function deleteStickyNote(id: string): Promise<void> {
+  await getDb().stickyNotes.delete(id);
 }

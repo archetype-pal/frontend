@@ -83,55 +83,88 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
   }>({ imageId: null, offset: { x: 0, y: 0 }, lastPosition: null });
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  const handleMouseDown = (e: React.MouseEvent, imageId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const startDrag = (imageId: string, clientX: number, clientY: number, targetEl: HTMLElement) => {
     const image = images.find((img) => img.id === imageId);
     if (!image) return;
 
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const rect = targetEl.getBoundingClientRect();
     dragRef.current = {
       imageId,
-      offset: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+      offset: { x: clientX - rect.left, y: clientY - rect.top },
       lastPosition: null,
     };
     setDraggedImage(imageId);
     setDragPosition(null);
+  };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (dragRef.current.imageId !== imageId || !containerRef.current) return;
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const currentImage = images.find((img) => img.id === imageId);
-      if (!currentImage) return;
+  const moveDrag = (imageId: string, clientX: number, clientY: number) => {
+    if (dragRef.current.imageId !== imageId || !containerRef.current) return;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const currentImage = images.find((img) => img.id === imageId);
+    if (!currentImage) return;
 
-      const rawX = e.clientX - containerRect.left - dragRef.current.offset.x;
-      const rawY = e.clientY - containerRect.top - dragRef.current.offset.y;
-      const pos = clampPosition(rawX, rawY, containerRect, currentImage.size);
-      dragRef.current.lastPosition = pos;
-      setDragPosition(pos);
-    };
+    const rawX = clientX - containerRect.left - dragRef.current.offset.x;
+    const rawY = clientY - containerRect.top - dragRef.current.offset.y;
+    const pos = clampPosition(rawX, rawY, containerRect, currentImage.size);
+    dragRef.current.lastPosition = pos;
+    setDragPosition(pos);
+  };
 
+  const endDrag = () => {
+    const { imageId: commitId, lastPosition: commitPos } = dragRef.current;
+    dragRef.current = { imageId: null, offset: { x: 0, y: 0 }, lastPosition: null };
+    setDraggedImage(null);
+    setDragPosition(null);
+
+    if (commitId && commitPos != null) {
+      const currentImage = images.find((img) => img.id === commitId);
+      if (currentImage) {
+        useLightboxStore.getState().saveHistory();
+        updateImage(commitId, {
+          position: { ...currentImage.position, ...commitPos },
+        });
+      }
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent, imageId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    startDrag(imageId, e.clientX, e.clientY, e.currentTarget as HTMLElement);
+
+    const handleMouseMove = (e: MouseEvent) => moveDrag(imageId, e.clientX, e.clientY);
     const handleMouseUp = () => {
-      const { imageId: commitId, lastPosition: commitPos } = dragRef.current;
-      dragRef.current = { imageId: null, offset: { x: 0, y: 0 }, lastPosition: null };
-      setDraggedImage(null);
-      setDragPosition(null);
+      endDrag();
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
-
-      if (commitId && commitPos != null) {
-        const currentImage = images.find((img) => img.id === commitId);
-        if (currentImage) {
-          useLightboxStore.getState().saveHistory();
-          updateImage(commitId, {
-            position: { ...currentImage.position, ...commitPos },
-          });
-        }
-      }
     };
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent, imageId: string) => {
+    // Only handle single-finger drag; let multi-touch (pinch) bubble up
+    if (e.touches.length !== 1) return;
+    e.stopPropagation();
+    const touch = e.touches[0];
+    startDrag(imageId, touch.clientX, touch.clientY, e.currentTarget as HTMLElement);
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      e.preventDefault(); // Prevent scroll while dragging
+      moveDrag(imageId, e.touches[0].clientX, e.touches[0].clientY);
+    };
+    const handleTouchEnd = () => {
+      endDrag();
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('touchcancel', handleTouchEnd);
+    };
+
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+    document.addEventListener('touchcancel', handleTouchEnd);
   };
 
   const handleImageClick = (e: React.MouseEvent, imageId: string) => {
@@ -184,6 +217,7 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
               isSelected ? 'border-blue-500 shadow-lg' : 'border-transparent hover:border-gray-300'
             )}
             onMouseDown={(e) => handleMouseDown(e, image.id)}
+            onTouchStart={(e) => handleTouchStart(e, image.id)}
             onClick={(e) => handleImageClick(e, image.id)}
           >
             <div className="relative w-full h-full">

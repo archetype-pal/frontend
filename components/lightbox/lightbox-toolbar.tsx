@@ -21,6 +21,11 @@ import {
   Upload,
   Undo2,
   Redo2,
+  ArrowUpToLine,
+  ArrowDownToLine,
+  ChevronUp,
+  ChevronDown,
+  StickyNote,
 } from 'lucide-react';
 import { useLightboxStore, useSelectedImages } from '@/stores/lightbox-store';
 import { LightboxTransformPanel } from './lightbox-transform-panel';
@@ -34,6 +39,7 @@ interface LightboxToolbarProps {
   onToggleMeasurement?: () => void;
   onToggleComparison?: () => void;
   onToggleRegionComparison?: () => void;
+  onAddStickyNote?: () => void;
 }
 
 export function LightboxToolbar({
@@ -45,6 +51,7 @@ export function LightboxToolbar({
   onToggleMeasurement,
   onToggleComparison,
   onToggleRegionComparison,
+  onAddStickyNote,
 }: LightboxToolbarProps = {}) {
   const {
     updateImage,
@@ -55,6 +62,10 @@ export function LightboxToolbar({
     setShowAnnotations,
     showGrid,
     setShowGrid,
+    bringToFront,
+    sendToBack,
+    moveUp,
+    moveDown,
     undo,
     redo,
     historyIndex,
@@ -130,6 +141,40 @@ export function LightboxToolbar({
           <Button variant="ghost" size="sm" onClick={handleFlipY} title="Flip Vertical">
             <FlipVertical className="h-4 w-4" />
           </Button>
+          <div className="flex items-center gap-0.5 border-l pl-2 ml-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => selectedImages.forEach((img) => bringToFront(img.id))}
+              title="Bring to Front"
+            >
+              <ArrowUpToLine className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => selectedImages.forEach((img) => moveUp(img.id))}
+              title="Move Up"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => selectedImages.forEach((img) => moveDown(img.id))}
+              title="Move Down"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => selectedImages.forEach((img) => sendToBack(img.id))}
+              title="Send to Back"
+            >
+              <ArrowDownToLine className="h-4 w-4" />
+            </Button>
+          </div>
         </>
       )}
 
@@ -180,6 +225,11 @@ export function LightboxToolbar({
         >
           <Grid3x3 className="h-4 w-4" />
         </Button>
+        {onAddStickyNote && (
+          <Button variant="ghost" size="sm" onClick={onAddStickyNote} title="Add Sticky Note">
+            <StickyNote className="h-4 w-4" />
+          </Button>
+        )}
         {hasSelection && selectedImages.length === 1 && (
           <Button
             variant={showAnnotations ? 'default' : 'ghost'}

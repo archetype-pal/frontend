@@ -306,6 +306,7 @@ function LightboxPageContent() {
             onToggleMeasurement={togglePanel('measurement')}
             onToggleComparison={togglePanel('comparison')}
             onToggleRegionComparison={togglePanel('region-comparison')}
+            onAddStickyNote={() => window.dispatchEvent(new Event('lightbox:add-sticky-note'))}
           />
         </header>
 
