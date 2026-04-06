@@ -54,7 +54,7 @@ export async function resolveItemsByIds(
       const response = await apiFetch(`/api/v1/search/${endpoint}/${id}`);
       if (response.ok) {
         const data = await response.json();
-        itemsToLoad.push(data as ResolvedItem);
+        itemsToLoad.push({ ...data, type } as ResolvedItem);
       } else {
         failed.push(`${label} ${id} (${response.status})`);
       }

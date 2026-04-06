@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import NextImage from 'next/image';
+import { AlertTriangle, RotateCw } from 'lucide-react';
 import type { LightboxImage } from '@/lib/lightbox-db';
 import { useLightboxStore } from '@/stores/lightbox-store';
 import { cn } from '@/lib/utils';
@@ -21,6 +22,54 @@ function clampPosition(
     x: Math.max(0, Math.min(x, containerRect.width - imageSize.width)),
     y: Math.max(0, Math.min(y, containerRect.height - imageSize.height)),
   };
+}
+
+function ImageWithErrorHandler({ image }: { image: LightboxImage }) {
+  const [loadError, setLoadError] = React.useState(false);
+  const [retryKey, setRetryKey] = React.useState(0);
+
+  if (!image.imageUrl) {
+    return (
+      <div className="w-full h-full bg-gray-200 flex flex-col items-center justify-center text-sm text-gray-500 gap-1">
+        <AlertTriangle className="h-5 w-5 text-gray-400" />
+        <span>No image URL</span>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="w-full h-full bg-gray-200 flex flex-col items-center justify-center text-sm text-gray-500 gap-2">
+        <AlertTriangle className="h-5 w-5 text-amber-500" />
+        <span>Failed to load</span>
+        <button
+          type="button"
+          className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
+          onClick={(e) => {
+            e.stopPropagation();
+            setLoadError(false);
+            setRetryKey((k) => k + 1);
+          }}
+        >
+          <RotateCw className="h-3 w-3" />
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <NextImage
+      key={retryKey}
+      src={image.imageUrl}
+      alt={image.metadata.shelfmark || image.metadata.locus || 'Image'}
+      fill
+      className="object-contain"
+      unoptimized
+      draggable={false}
+      onError={() => setLoadError(true)}
+    />
+  );
 }
 
 export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
@@ -138,20 +187,7 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
             onClick={(e) => handleImageClick(e, image.id)}
           >
             <div className="relative w-full h-full">
-              {image.imageUrl ? (
-                <NextImage
-                  src={image.imageUrl}
-                  alt={image.metadata.shelfmark || image.metadata.locus || 'Image'}
-                  fill
-                  className="object-contain"
-                  unoptimized
-                  draggable={false}
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-sm text-gray-500">
-                  No image
-                </div>
-              )}
+              <ImageWithErrorHandler image={image} />
               {(image.metadata.shelfmark || image.metadata.locus) && (
                 <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate pointer-events-none">
                   {image.metadata.locus || image.metadata.shelfmark}

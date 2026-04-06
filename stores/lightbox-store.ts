@@ -203,10 +203,17 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
             ? coordinatesFromGeoJson(String((graphItem as CollectionItem).coordinates))
             : undefined;
       if (infoUrl) {
-        const opts = { coordinates: coords ?? undefined };
+        const opts = { coordinates: coords ?? undefined, flipY: true };
         imageUrl = await getIiifImageUrlWithBounds(infoUrl, opts);
         thumbnailUrl = await getIiifImageUrlWithBounds(infoUrl, { ...opts, thumbnail: true });
       }
+    }
+
+    if (!imageUrl && process.env.NODE_ENV === 'development') {
+      console.warn(
+        `[Lightbox] No image URL resolved for ${type} id=${item.id}. ` +
+          `image_iiif=${JSON.stringify((item as Record<string, unknown>).image_iiif)}`
+      );
     }
 
     const lightboxImage: LightboxImage = {

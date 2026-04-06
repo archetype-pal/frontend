@@ -9,6 +9,30 @@ import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store';
 import { useCollection } from '@/contexts/collection-context';
 import { cn } from '@/lib/utils';
 
+function SidebarThumbnail({ image }: { image: import('@/lib/lightbox-db').LightboxImage }) {
+  const [error, setError] = React.useState(false);
+  const src = image.thumbnailUrl || image.imageUrl;
+
+  if (!src || error) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <ImageIcon className="h-6 w-6 text-gray-400" />
+      </div>
+    );
+  }
+
+  return (
+    <NextImage
+      src={src}
+      alt={image.metadata.shelfmark || 'Image'}
+      fill
+      className="object-cover rounded"
+      unoptimized
+      onError={() => setError(true)}
+    />
+  );
+}
+
 export function LightboxSidebar() {
   const {
     currentWorkspaceId,
@@ -155,19 +179,7 @@ export function LightboxSidebar() {
                   >
                     <div className="flex items-start gap-2">
                       <div className="relative w-16 h-16 bg-gray-100 rounded shrink-0">
-                        {image.thumbnailUrl || image.imageUrl ? (
-                          <NextImage
-                            src={image.thumbnailUrl || image.imageUrl}
-                            alt={image.metadata.shelfmark || 'Image'}
-                            fill
-                            className="object-cover rounded"
-                            unoptimized
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <ImageIcon className="h-6 w-6 text-gray-400" />
-                          </div>
-                        )}
+                        <SidebarThumbnail image={image} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-xs font-medium truncate">
