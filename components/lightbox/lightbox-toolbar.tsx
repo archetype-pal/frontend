@@ -26,9 +26,11 @@ import {
   ChevronUp,
   ChevronDown,
   StickyNote,
+  CircleHelp,
 } from 'lucide-react';
 import { useLightboxStore, useSelectedImages } from '@/stores/lightbox-store';
 import { LightboxTransformPanel } from './lightbox-transform-panel';
+import { LightboxHelpDialog } from './lightbox-help-dialog';
 
 interface LightboxToolbarProps {
   onCrop?: (imageId: string) => void;
@@ -111,6 +113,7 @@ export function LightboxToolbar({
     );
   };
 
+  const [helpOpen, setHelpOpen] = React.useState(false);
   const hasSelection = selectedImages.length > 0;
 
   return (
@@ -285,7 +288,11 @@ export function LightboxToolbar({
         >
           <Maximize2 className="h-4 w-4" />
         </Button>
+        <Button variant="ghost" size="sm" title="Help" onClick={() => setHelpOpen(true)}>
+          <CircleHelp className="h-4 w-4" />
+        </Button>
       </div>
+      <LightboxHelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }
