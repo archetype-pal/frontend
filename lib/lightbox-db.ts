@@ -54,10 +54,18 @@ export interface LightboxSession {
   updatedAt: number;
 }
 
+export type AnnotationShape =
+  | { type: 'rect'; x: number; y: number; width: number; height: number }
+  | { type: 'freehand'; points: { x: number; y: number }[] };
+
 export interface LightboxAnnotation {
   id: string;
   imageId: string;
-  annotation: unknown; // Annotorious annotation format
+  shape: AnnotationShape;
+  label: string;
+  color: string;
+  /** @deprecated Use `shape` instead. Kept for compatibility with older records. */
+  annotation?: unknown;
   createdAt: number;
   updatedAt: number;
 }
@@ -177,4 +185,8 @@ export async function saveAnnotation(annotation: LightboxAnnotation): Promise<st
 
 export async function getImageAnnotations(imageId: string): Promise<LightboxAnnotation[]> {
   return await getDb().annotations.where('imageId').equals(imageId).toArray();
+}
+
+export async function deleteAnnotation(id: string): Promise<void> {
+  await getDb().annotations.delete(id);
 }

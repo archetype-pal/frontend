@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, X, FileJson, FileText } from 'lucide-react';
 import { useLightboxStore } from '@/stores/lightbox-store';
 import type { CollectionItem } from '@/contexts/collection-context';
-import { saveImage } from '@/lib/lightbox-db';
+import { saveImage, type LightboxAnnotation } from '@/lib/lightbox-db';
 import type { LightboxImage } from '@/lib/lightbox-db';
 
 interface LightboxImportProps {
@@ -80,13 +80,22 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
           };
           await saveImage(lightboxImage);
           if (Array.isArray(imgData.annotations)) {
-            for (const annotation of imgData.annotations as Array<{ id?: string }>) {
+            for (const ann of imgData.annotations as Array<Record<string, unknown>>) {
               await saveAnnotation({
                 id:
-                  annotation.id ||
+                  (ann.id as string) ||
                   `annotation-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
                 imageId: lightboxImage.id,
-                annotation,
+                shape: (ann.shape as LightboxAnnotation['shape']) ?? {
+                  type: 'rect',
+                  x: 0,
+                  y: 0,
+                  width: 10,
+                  height: 10,
+                },
+                label: (ann.label as string) ?? '',
+                color: (ann.color as string) ?? '#ef4444',
+                annotation: ann.annotation ?? ann,
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
               });

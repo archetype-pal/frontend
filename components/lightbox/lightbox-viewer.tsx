@@ -66,10 +66,17 @@ export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}
           <LightboxImageLayer images={workspaceImages} />
         </div>
         {showAnnotations && selectedImage && (
-          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
-            <div className="w-full h-full pointer-events-auto">
-              <LightboxAnnotations image={selectedImage} />
-            </div>
+          <div
+            className="absolute pointer-events-auto"
+            style={{
+              left: `${selectedImage.position.x}px`,
+              top: `${selectedImage.position.y}px`,
+              width: `${selectedImage.size.width}px`,
+              height: `${selectedImage.size.height}px`,
+              zIndex: selectedImage.position.zIndex + 1,
+            }}
+          >
+            <LightboxAnnotations image={selectedImage} />
           </div>
         )}
       </div>
