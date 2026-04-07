@@ -61,10 +61,9 @@ export default function Header() {
   const { suggestionsPool, loadGlobalSuggestions, getServerSuggestions } = useSearchContext();
   const isOnSearchPage = pathname?.startsWith('/search') ?? false;
   const [headerKeyword, setHeaderKeyword] = useState('');
-  const [historyItems, setHistoryItems] = useState<SearchHistoryEntry[]>([]);
-  useEffect(() => {
-    setHistoryItems(getSearchHistory());
-  }, []);
+  const [historyItems, setHistoryItems] = useState<SearchHistoryEntry[]>(() =>
+    typeof window !== 'undefined' ? getSearchHistory() : []
+  );
   const headerSearchValue = isOnSearchPage ? '' : headerKeyword;
   const localSuggestions = useKeywordSuggestions(headerSearchValue, suggestionsPool);
   const deferredHeaderKeyword = useDeferredValue(headerSearchValue);
