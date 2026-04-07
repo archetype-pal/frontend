@@ -12,7 +12,6 @@ import {
   Trash2,
   Expand,
   SquarePen,
-  X,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -21,6 +20,8 @@ import { getSelectorValue, iiifThumbFromSelector, getIiifBaseUrl } from '@/utils
 import { ManuscriptTabs } from './manuscript-tabs';
 import { DraggablePopupLayer } from './draggable-popup-layer';
 import { Toolbar } from './toolbar';
+import { AnnotationFilterPanel } from './annotation-filter-panel';
+import { AnnotationSettingsPanel } from './annotation-settings-panel';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -909,11 +910,6 @@ export default function ManuscriptViewer({
     }));
   }, [allHandFiltersSelected, availableHandFilterIds]);
 
-  const closeFilterPanel = React.useCallback(() => {
-    setIsFilterPanelOpen(false);
-    filterPanelDrag.reset();
-  }, [filterPanelDrag]);
-
   const toggleFilterPanel = React.useCallback(() => {
     setIsFilterPanelOpen((prev) => {
       const next = !prev;
@@ -921,11 +917,6 @@ export default function ManuscriptViewer({
       return next;
     });
   }, [filterPanelDrag]);
-
-  const closeSettingsPanel = React.useCallback(() => {
-    setIsSettingsPanelOpen(false);
-    settingsPanelDrag.reset();
-  }, [settingsPanelDrag]);
 
   const toggleSettingsPanel = React.useCallback(() => {
     setIsSettingsPanelOpen((prev) => {
@@ -972,6 +963,50 @@ export default function ManuscriptViewer({
     return isActive ? ACTIVE_POPUP_Z_INDEX : INACTIVE_POPUP_BASE_Z_INDEX + index;
   }, []);
 
+  const handleCloseFilterPanel = React.useCallback(() => {
+    setIsFilterPanelOpen(false);
+    filterPanelDrag.reset();
+  }, [filterPanelDrag]);
+
+  const handleCloseSettingsPanel = React.useCallback(() => {
+    setIsSettingsPanelOpen(false);
+    settingsPanelDrag.reset();
+  }, [settingsPanelDrag]);
+
+  const handleToggleEditorialVisibility = React.useCallback(() => {
+    setVisibilityFilters((prev) => ({
+      ...prev,
+      showEditorial: !prev.showEditorial,
+    }));
+  }, []);
+
+  const handleTogglePublicAnnotationsVisibility = React.useCallback(() => {
+    setVisibilityFilters((prev) => ({
+      ...prev,
+      showPublicAnnotations: !prev.showPublicAnnotations,
+    }));
+  }, []);
+
+  const handleToggleAllowMultipleBoxes = React.useCallback(() => {
+    setViewerSettings((prev) => ({
+      ...prev,
+      allowMultipleBoxes: !prev.allowMultipleBoxes,
+    }));
+  }, []);
+
+  const handleToggleSelectMultipleAnnotations = React.useCallback(() => {
+    setViewerSettings((prev) => ({
+      ...prev,
+      selectMultipleAnnotations: !prev.selectMultipleAnnotations,
+    }));
+  }, []);
+
+  const handleSetToolbarPosition = React.useCallback((position: 'vertical' | 'horizontal') => {
+    setViewerSettings((prev) => ({
+      ...prev,
+      toolbarPosition: position,
+    }));
+  }, []);
   // ---- Effects ----
 
   React.useEffect(() => {
@@ -1483,245 +1518,36 @@ export default function ManuscriptViewer({
       ) : (
         annotationHeader
       )}
-      {isFilterPanelOpen && (
-        <div
-          className="fixed top-24 right-4 z-40 w-[380px] max-w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-lg"
-          style={{
-            transform: `translate(${filterPanelDrag.pos.x}px, ${filterPanelDrag.pos.y}px)`,
-          }}
-        >
-          <div
-            className="flex items-center justify-between border-b px-4 py-3 cursor-move select-none"
-            {...filterPanelDrag.bindDrag}
-          >
-            <h3 className="text-base font-semibold">Filter Annotations</h3>
-            <div onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={closeFilterPanel}
-                type="button"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          <div className="max-h-[70vh] overflow-auto px-4 py-4">
-            <div className="grid gap-6">
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-foreground">Allographs</h4>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    type="button"
-                    onClick={handleToggleAllAllographFilters}
-                  >
-                    Toggle All
-                  </Button>
-                </div>
+      <AnnotationFilterPanel
+        isOpen={isFilterPanelOpen}
+        transform={`translate(${filterPanelDrag.pos.x}px, ${filterPanelDrag.pos.y}px)`}
+        dragHandleProps={filterPanelDrag.bindDrag}
+        allographs={allographsForThisImage}
+        hands={handsForThisImage}
+        selectedAllographIds={visibilityFilters.allographIds}
+        selectedHandIds={visibilityFilters.handIds}
+        showEditorialToggle={!isPublicDemoMode}
+        showEditorial={visibilityFilters.showEditorial}
+        showPublicAnnotations={visibilityFilters.showPublicAnnotations}
+        onClose={handleCloseFilterPanel}
+        onToggleAllAllographs={handleToggleAllAllographFilters}
+        onToggleAllHands={handleToggleAllHandFilters}
+        onToggleAllograph={handleToggleAllographFilter}
+        onToggleHand={handleToggleHandFilter}
+        onToggleEditorial={handleToggleEditorialVisibility}
+        onTogglePublicAnnotations={handleTogglePublicAnnotationsVisibility}
+      />
 
-                <Separator className="mb-3" />
-
-                <div className="max-h-[220px] space-y-2 overflow-auto pr-2">
-                  {allographsForThisImage.length ? (
-                    allographsForThisImage.map((allograph) => (
-                      <label
-                        key={allograph.id}
-                        className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibilityFilters.allographIds.includes(allograph.id)}
-                          onChange={() => handleToggleAllographFilter(allograph.id)}
-                          className="h-4 w-4 rounded border-gray-300"
-                        />
-                        <span className="text-sm text-foreground">{allograph.name}</span>
-                      </label>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No allographs available.</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-foreground">Hands</h4>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    type="button"
-                    onClick={handleToggleAllHandFilters}
-                  >
-                    Toggle All
-                  </Button>
-                </div>
-
-                <Separator className="mb-3" />
-
-                <div className="max-h-[220px] space-y-2 overflow-auto pr-2">
-                  {handsForThisImage.length ? (
-                    handsForThisImage.map((hand) => (
-                      <label
-                        key={hand.id}
-                        className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibilityFilters.handIds.includes(hand.id)}
-                          onChange={() => handleToggleHandFilter(hand.id)}
-                          className="h-4 w-4 rounded border-gray-300"
-                        />
-                        <span className="text-sm text-foreground">{hand.name}</span>
-                      </label>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No hands available.</p>
-                  )}
-                </div>
-
-                <div className="pt-4">
-                  <Separator className="mb-3" />
-
-                  {!isPublicDemoMode && (
-                    <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
-                      <input
-                        type="checkbox"
-                        checked={visibilityFilters.showEditorial}
-                        onChange={() =>
-                          setVisibilityFilters((prev) => ({
-                            ...prev,
-                            showEditorial: !prev.showEditorial,
-                          }))
-                        }
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <span className="text-sm text-foreground">[Digipal Editor]</span>
-                    </label>
-                  )}
-
-                  <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
-                    <input
-                      type="checkbox"
-                      checked={visibilityFilters.showPublicAnnotations}
-                      onChange={() =>
-                        setVisibilityFilters((prev) => ({
-                          ...prev,
-                          showPublicAnnotations: !prev.showPublicAnnotations,
-                        }))
-                      }
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                    <span className="text-sm text-foreground">Public Annotations</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isSettingsPanelOpen && (
-        <div
-          className="fixed top-24 right-4 z-40 w-[360px] max-w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-lg"
-          style={{
-            transform: `translate(${settingsPanelDrag.pos.x}px, ${settingsPanelDrag.pos.y}px)`,
-          }}
-        >
-          <div
-            className="flex items-center justify-between border-b px-4 py-3 cursor-move select-none"
-            {...settingsPanelDrag.bindDrag}
-          >
-            <h3 className="text-base font-semibold">Settings</h3>
-
-            <div onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={closeSettingsPanel}
-                type="button"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="max-h-[70vh] overflow-auto px-4 py-4 space-y-6">
-            <div>
-              <h4 className="text-sm font-semibold text-foreground">Annotation boxes</h4>
-              <Separator className="my-3" />
-
-              <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
-                <input
-                  type="checkbox"
-                  checked={viewerSettings.allowMultipleBoxes}
-                  onChange={() =>
-                    setViewerSettings((prev) => ({
-                      ...prev,
-                      allowMultipleBoxes: !prev.allowMultipleBoxes,
-                    }))
-                  }
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                <span className="text-sm text-foreground">Allow multiple boxes</span>
-              </label>
-
-              <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
-                <input
-                  type="checkbox"
-                  checked={viewerSettings.selectMultipleAnnotations}
-                  onChange={() =>
-                    setViewerSettings((prev) => ({
-                      ...prev,
-                      selectMultipleAnnotations: !prev.selectMultipleAnnotations,
-                    }))
-                  }
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                <span className="text-sm text-foreground">Select multiple annotations</span>
-              </label>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-semibold text-foreground">Toolbar position</h4>
-              <Separator className="my-3" />
-
-              <div className="flex gap-2">
-                <Button
-                  variant={viewerSettings.toolbarPosition === 'vertical' ? 'default' : 'outline'}
-                  size="sm"
-                  type="button"
-                  onClick={() =>
-                    setViewerSettings((prev) => ({
-                      ...prev,
-                      toolbarPosition: 'vertical',
-                    }))
-                  }
-                >
-                  Vertical
-                </Button>
-
-                <Button
-                  variant={viewerSettings.toolbarPosition === 'horizontal' ? 'default' : 'outline'}
-                  size="sm"
-                  type="button"
-                  onClick={() =>
-                    setViewerSettings((prev) => ({
-                      ...prev,
-                      toolbarPosition: 'horizontal',
-                    }))
-                  }
-                >
-                  Horizontal
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnnotationSettingsPanel
+        isOpen={isSettingsPanelOpen}
+        transform={`translate(${settingsPanelDrag.pos.x}px, ${settingsPanelDrag.pos.y}px)`}
+        dragHandleProps={settingsPanelDrag.bindDrag}
+        viewerSettings={viewerSettings}
+        onClose={handleCloseSettingsPanel}
+        onToggleAllowMultipleBoxes={handleToggleAllowMultipleBoxes}
+        onToggleSelectMultipleAnnotations={handleToggleSelectMultipleAnnotations}
+        onSetToolbarPosition={handleSetToolbarPosition}
+      />
       <Dialog
         open={isAllographModalOpen}
         onOpenChange={(open) => {
