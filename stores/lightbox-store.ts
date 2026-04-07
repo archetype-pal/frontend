@@ -87,30 +87,49 @@ async function initializeStore(): Promise<{
   const workspaces = await getAllWorkspaces();
   const imagesMap = new Map<string, LightboxImage>();
 
+  // One-time migration: fix stale URLs, sizes, and positions from old lightbox data
+  const MIGRATION_VERSION = 1;
+  const MIGRATION_KEY = 'lightbox-migration-version';
+  const currentVersion = Number(
+    typeof localStorage !== 'undefined' ? (localStorage.getItem(MIGRATION_KEY) ?? '0') : '0'
+  );
+  const needsMigration = currentVersion < MIGRATION_VERSION;
+
   for (const workspace of workspaces) {
     const workspaceImages = await getWorkspaceImages(workspace.id);
-    let migrationIdx = 0;
-    workspaceImages.forEach((img) => {
-      // Migrate stale full/max URLs persisted before the maxSize change
-      if (img.imageUrl?.includes('/full/max/')) {
-        img.imageUrl = img.imageUrl.replace('/full/max/', '/full/!1200,1200/');
-        // Reset oversized containers and off-screen positions
-        const MAX_DIM = 400;
-        const GAP = 20;
-        const COLS = 4;
-        const col = migrationIdx % COLS;
-        const row = Math.floor(migrationIdx / COLS);
-        img.size = { width: MAX_DIM, height: MAX_DIM };
+
+    if (needsMigration && workspaceImages.length > 0) {
+      const MAX_DIM = 400;
+      const GAP = 20;
+      const COLS = 4;
+      workspaceImages.forEach((img, idx) => {
+        // Fix stale full/max URLs
+        if (img.imageUrl?.includes('/full/max/')) {
+          img.imageUrl = img.imageUrl.replace('/full/max/', '/full/!1200,1200/');
+        }
+        // Fix oversized containers
+        if (img.size.width > MAX_DIM * 1.5 || img.size.height > MAX_DIM * 1.5) {
+          img.size = { width: MAX_DIM, height: MAX_DIM };
+        }
+        // Re-layout all images into a grid
+        const col = idx % COLS;
+        const row = Math.floor(idx / COLS);
         img.position = {
           ...img.position,
           x: GAP + col * (MAX_DIM + GAP),
           y: GAP + row * (MAX_DIM + GAP),
         };
-        migrationIdx++;
         saveImage(img).catch(() => {});
-      }
+      });
+    }
+
+    for (const img of workspaceImages) {
       imagesMap.set(img.id, img);
-    });
+    }
+  }
+
+  if (needsMigration && typeof localStorage !== 'undefined') {
+    localStorage.setItem(MIGRATION_KEY, String(MIGRATION_VERSION));
   }
 
   return { workspaces, images: imagesMap };
