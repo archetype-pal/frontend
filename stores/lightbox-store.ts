@@ -83,13 +83,32 @@ async function initializeStore(): Promise<{
   workspaces: LightboxWorkspace[];
   images: Map<string, LightboxImage>;
 }> {
-  const { getAllWorkspaces, getWorkspaceImages } = await import('@/lib/lightbox-db');
+  const { getAllWorkspaces, getWorkspaceImages, saveImage } = await import('@/lib/lightbox-db');
   const workspaces = await getAllWorkspaces();
   const imagesMap = new Map<string, LightboxImage>();
 
   for (const workspace of workspaces) {
     const workspaceImages = await getWorkspaceImages(workspace.id);
+    let migrationIdx = 0;
     workspaceImages.forEach((img) => {
+      // Migrate stale full/max URLs persisted before the maxSize change
+      if (img.imageUrl?.includes('/full/max/')) {
+        img.imageUrl = img.imageUrl.replace('/full/max/', '/full/!1200,1200/');
+        // Reset oversized containers and off-screen positions
+        const MAX_DIM = 400;
+        const GAP = 20;
+        const COLS = 4;
+        const col = migrationIdx % COLS;
+        const row = Math.floor(migrationIdx / COLS);
+        img.size = { width: MAX_DIM, height: MAX_DIM };
+        img.position = {
+          ...img.position,
+          x: GAP + col * (MAX_DIM + GAP),
+          y: GAP + row * (MAX_DIM + GAP),
+        };
+        migrationIdx++;
+        saveImage(img).catch(() => {});
+      }
       imagesMap.set(img.id, img);
     });
   }
