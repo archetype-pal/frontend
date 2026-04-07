@@ -88,7 +88,7 @@ async function initializeStore(): Promise<{
   const imagesMap = new Map<string, LightboxImage>();
 
   // One-time migration: fix stale URLs, sizes, and positions from old lightbox data
-  const MIGRATION_VERSION = 1;
+  const MIGRATION_VERSION = 2;
   const MIGRATION_KEY = 'lightbox-migration-version';
   const currentVersion = Number(
     typeof localStorage !== 'undefined' ? (localStorage.getItem(MIGRATION_KEY) ?? '0') : '0'
@@ -101,7 +101,7 @@ async function initializeStore(): Promise<{
     if (needsMigration && workspaceImages.length > 0) {
       const MAX_DIM = 400;
       const GAP = 20;
-      const COLS = 4;
+      const COLS = 2;
       workspaceImages.forEach((img, idx) => {
         // Fix stale full/max URLs
         if (img.imageUrl?.includes('/full/max/')) {
@@ -111,7 +111,7 @@ async function initializeStore(): Promise<{
         if (img.size.width > MAX_DIM * 1.5 || img.size.height > MAX_DIM * 1.5) {
           img.size = { width: MAX_DIM, height: MAX_DIM };
         }
-        // Re-layout all images into a grid
+        // Re-layout all images into a 2-col grid (fits any viewport)
         const col = idx % COLS;
         const row = Math.floor(idx / COLS);
         img.position = {
@@ -299,7 +299,7 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
     const existingCount = Array.from(state.images.values()).filter(
       (img) => img.workspaceId === workspaceId
     ).length;
-    const COLS = 4;
+    const COLS = 2;
     const GAP = 20;
     const col = existingCount % COLS;
     const row = Math.floor(existingCount / COLS);
