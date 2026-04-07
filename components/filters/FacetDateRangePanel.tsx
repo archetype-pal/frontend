@@ -46,9 +46,11 @@ export function FacetDateRangePanel({
   const initialPrecision = precisionOptions[0].value;
   const [endpointMin, endpointMax] = normalizedDefaultValue;
   const applySignatureRef = React.useRef<string>('');
-  const isFirstDebounceRef = React.useRef(true);
+  const userInteractedRef = React.useRef(false);
 
   React.useEffect(() => {
+    // Reset interaction flag when new range data arrives (e.g. result type change)
+    userInteractedRef.current = false;
     setSliderValue(normalizedDefaultValue);
     setSearchInput(`${normalizedDefaultValue[0]}x${normalizedDefaultValue[1]}`);
   }, [normalizedDefaultValue]);
@@ -64,12 +66,14 @@ export function FacetDateRangePanel({
   }, [initialPrecision, precision, sliderValue, year]);
 
   const handleSliderChange = (value: number[]) => {
+    userInteractedRef.current = true;
     const [newMin, newMax] = [value[0], value[1]] as [number, number];
     setSliderValue([newMin, newMax]);
     setSearchInput(`${newMin}x${newMax}`);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    userInteractedRef.current = true;
     const raw = e.target.value;
     setSearchInput(raw);
 
@@ -100,6 +104,7 @@ export function FacetDateRangePanel({
   }, [buildPayload, onSearch]);
 
   const handlePrecisionChange = (val: string) => {
+    userInteractedRef.current = true;
     setPrecision(val);
     if (val === precisionOptions[0].value) {
       setYear('');
@@ -107,6 +112,7 @@ export function FacetDateRangePanel({
   };
 
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    userInteractedRef.current = true;
     const val = e.target.value ? parseInt(e.target.value, 10) : '';
     if (precision === precisionOptions[0].value) {
       setYear('');
@@ -127,11 +133,8 @@ export function FacetDateRangePanel({
   }, [initialPrecision, normalizedDefaultValue, onSearch]);
 
   React.useEffect(() => {
+    if (!userInteractedRef.current) return;
     const timer = window.setTimeout(() => {
-      if (isFirstDebounceRef.current) {
-        isFirstDebounceRef.current = false;
-        return;
-      }
       handleSearchSubmit();
     }, 300);
     return () => window.clearTimeout(timer);
