@@ -108,7 +108,6 @@ function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
         width={80}
         height={80}
         className="w-full h-full object-contain"
-        unoptimized
       />
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
       <CollectionStar itemId={graph.id} itemType="graph" item={graph} size={16} />
@@ -138,7 +137,6 @@ function AnnotationInlinePreview({
       height={140}
       sizes="(max-width: 768px) 100vw, 360px"
       className="block h-auto w-full max-h-40 max-w-[360px] object-contain"
-      unoptimized
     />
   );
 }
@@ -188,7 +186,6 @@ export const COLUMNS = {
               width={64}
               height={64}
               className="h-full w-auto object-contain"
-              unoptimized
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
             <CollectionStar itemId={i.id} itemType="image" item={i} size={16} />

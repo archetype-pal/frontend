@@ -54,21 +54,38 @@ import {
   withLimit,
   withOffset,
 } from '@/lib/search-query';
-import { SearchTimelineView } from '@/components/search/search-timeline-view';
-import { SearchDistributionPanel } from '@/components/search/search-distribution-panel';
+const SearchTimelineView = React.lazy(() =>
+  import('@/components/search/search-timeline-view').then((m) => ({
+    default: m.SearchTimelineView,
+  }))
+);
+const SearchDistributionPanel = React.lazy(() =>
+  import('@/components/search/search-distribution-panel').then((m) => ({
+    default: m.SearchDistributionPanel,
+  }))
+);
 import {
   AdvancedSearchPanel,
   DEFAULT_ADVANCED_SEARCH_STATE,
   type AdvancedSearchState,
 } from '@/components/search/advanced-search-panel';
-import { fetchFacetsAndResults, getSearchBaseFacetUrl, searchKeys } from '@/utils/fetch-facets';
+import {
+  fetchCount,
+  fetchFacetsAndResults,
+  getSearchBaseFacetUrl,
+  searchKeys,
+} from '@/utils/fetch-facets';
 import { API_BASE_URL } from '@/lib/api-fetch';
 import { toast } from 'sonner';
 import { MobileFilterSheet } from '@/components/search/mobile-filter-sheet';
-import { SearchMapView } from '@/components/search/search-map-view';
+const SearchMapView = React.lazy(() =>
+  import('@/components/search/search-map-view').then((m) => ({ default: m.SearchMapView }))
+);
 import { useHotkeys } from '@/hooks/use-hotkeys';
 import { addSearchHistory } from '@/lib/search-history';
-import { ComparisonView } from '@/components/search/comparison-view';
+const ComparisonView = React.lazy(() =>
+  import('@/components/search/comparison-view').then((m) => ({ default: m.ComparisonView }))
+);
 import { cn } from '@/lib/utils';
 
 type ResultListItem = ResultMap[ResultType];
@@ -542,11 +559,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
       const url = `${getSearchBaseFacetUrl(item.value)}?${params.toString()}`;
       return {
         queryKey: searchKeys.facets(item.value, `${url}|quick-stats`),
-        queryFn: async () => {
-          const payload = await fetchFacetsAndResults(item.value, url);
-          return payload?.count ?? 0;
-        },
-        staleTime: 60_000,
+        queryFn: async ({ signal }: { signal: AbortSignal }) => fetchCount(item.value, url, signal),
+        staleTime: 5 * 60_000,
       };
     }),
   });
@@ -1149,46 +1163,72 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                       onToggleCompare={toggleCompare}
                     />
                   ) : viewMode === 'timeline' ? (
-                    <SearchTimelineView
-                      dateDistribution={timelineDistribution}
-                      onApplyRange={(min, max) =>
-                        setQueryState((prev) => ({
-                          ...prev,
-                          dateParams: {
-                            ...prev.dateParams,
-                            min_date: String(min),
-                            max_date: String(max),
-                          },
-                          offset: 0,
-                        }))
+                    <React.Suspense
+                      fallback={
+                        <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
+                          Loading timeline…
+                        </div>
                       }
-                    />
+                    >
+                      <SearchTimelineView
+                        dateDistribution={timelineDistribution}
+                        onApplyRange={(min, max) =>
+                          setQueryState((prev) => ({
+                            ...prev,
+                            dateParams: {
+                              ...prev.dateParams,
+                              min_date: String(min),
+                              max_date: String(max),
+                            },
+                            offset: 0,
+                          }))
+                        }
+                      />
+                    </React.Suspense>
                   ) : viewMode === 'map' ? (
-                    <SearchMapView
-                      cityDistribution={cityDistribution}
-                      onSelectCity={(city) =>
-                        handleFacetClick('', {
-                          type: 'selectFacet',
-                          facetKey: 'repository_city',
-                          value: city,
-                        })
+                    <React.Suspense
+                      fallback={
+                        <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
+                          Loading map…
+                        </div>
                       }
-                    />
+                    >
+                      <SearchMapView
+                        cityDistribution={cityDistribution}
+                        onSelectCity={(city) =>
+                          handleFacetClick('', {
+                            type: 'selectFacet',
+                            facetKey: 'repository_city',
+                            value: city,
+                          })
+                        }
+                      />
+                    </React.Suspense>
                   ) : viewMode === 'distribution' ? (
-                    <SearchDistributionPanel
-                      byDate={graphDistributionQuery.data?.facetDistribution?.date_min}
-                      byRepository={graphDistributionQuery.data?.facetDistribution?.repository_name}
-                      byHand={graphDistributionQuery.data?.facetDistribution?.hand_name}
-                      byComponentFeature={
-                        graphDistributionQuery.data?.facetDistribution?.component_features
+                    <React.Suspense
+                      fallback={
+                        <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
+                          Loading charts…
+                        </div>
                       }
-                      isLoading={graphDistributionQuery.isFetching}
-                      errorMessage={
-                        graphDistributionQuery.isError
-                          ? 'Could not load distribution stats. Please retry by toggling the Charts view.'
-                          : null
-                      }
-                    />
+                    >
+                      <SearchDistributionPanel
+                        byDate={graphDistributionQuery.data?.facetDistribution?.date_min}
+                        byRepository={
+                          graphDistributionQuery.data?.facetDistribution?.repository_name
+                        }
+                        byHand={graphDistributionQuery.data?.facetDistribution?.hand_name}
+                        byComponentFeature={
+                          graphDistributionQuery.data?.facetDistribution?.component_features
+                        }
+                        isLoading={graphDistributionQuery.isFetching}
+                        errorMessage={
+                          graphDistributionQuery.isError
+                            ? 'Could not load distribution stats. Please retry by toggling the Charts view.'
+                            : null
+                        }
+                      />
+                    </React.Suspense>
                   ) : (
                     <SearchGrid
                       results={filtered as Parameters<typeof SearchGrid>[0]['results']}
@@ -1245,12 +1285,16 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           </div>
         </main>
       </div>
-      <ComparisonView
-        open={compareOpen}
-        onOpenChange={setCompareOpen}
-        items={selectedCompareItems as Parameters<typeof ComparisonView>[0]['items']}
-        resultType={resultType}
-      />
+      {compareOpen && (
+        <React.Suspense fallback={null}>
+          <ComparisonView
+            open={compareOpen}
+            onOpenChange={setCompareOpen}
+            items={selectedCompareItems as Parameters<typeof ComparisonView>[0]['items']}
+            resultType={resultType}
+          />
+        </React.Suspense>
+      )}
     </div>
   );
 }

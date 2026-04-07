@@ -131,7 +131,6 @@ const MediaGridCard = React.memo(function MediaGridCard({
                   fill
                   className="object-contain transition-transform duration-300 group-hover:scale-105"
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
-                  unoptimized
                 />
               </GraphDetailLink>
             ) : (
@@ -145,7 +144,6 @@ const MediaGridCard = React.memo(function MediaGridCard({
                   fill
                   className="object-contain transition-transform duration-300 group-hover:scale-105"
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
-                  unoptimized
                 />
               </Link>
             )}
@@ -245,7 +243,6 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
               fill
               className="object-contain transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
-              unoptimized
             />
           ) : (
             <div className="bg-gray-100 w-full h-full flex items-center justify-center text-sm text-gray-400">

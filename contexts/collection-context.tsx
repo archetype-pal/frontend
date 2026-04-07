@@ -80,11 +80,14 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     setItems((prev) => prev.filter((i) => !(i.id === id && i.type === type)));
   }, []);
 
-  const isInCollection = React.useCallback(
-    (id: number, type: 'image' | 'graph') => {
-      return items.some((i) => i.id === id && i.type === type);
-    },
+  const collectionSet = React.useMemo(
+    () => new Set(items.map((i) => `${i.type}:${i.id}`)),
     [items]
+  );
+
+  const isInCollection = React.useCallback(
+    (id: number, type: 'image' | 'graph') => collectionSet.has(`${type}:${id}`),
+    [collectionSet]
   );
 
   const clearCollection = React.useCallback(() => {

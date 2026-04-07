@@ -9,7 +9,8 @@ import { getIiifImageUrlWithBounds, coordinatesFromGeoJson } from '@/utils/iiif'
  */
 export function useIiifThumbnailUrl(
   infoUrl: string,
-  coordinatesJson?: string | null
+  coordinatesJson?: string | null,
+  maxSize?: number
 ): string | null {
   const trimmed = (infoUrl || '').trim();
   // Use the raw JSON string as the dependency (stable primitive) instead of
@@ -24,7 +25,12 @@ export function useIiifThumbnailUrl(
     }
     const coords = coordinatesFromGeoJson(coordsKey || undefined) ?? undefined;
     let cancelled = false;
-    getIiifImageUrlWithBounds(trimmed, { coordinates: coords, thumbnail: true, flipY: true })
+    getIiifImageUrlWithBounds(trimmed, {
+      coordinates: coords,
+      thumbnail: true,
+      flipY: true,
+      ...(maxSize ? { maxSize } : {}),
+    })
       .then((u) => {
         if (!cancelled) setUrl(u);
       })
@@ -34,7 +40,7 @@ export function useIiifThumbnailUrl(
     return () => {
       cancelled = true;
     };
-  }, [trimmed, coordsKey]);
+  }, [trimmed, coordsKey, maxSize]);
 
   return url;
 }

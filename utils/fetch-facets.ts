@@ -145,6 +145,26 @@ function meilisearchFacetsToFields(
   return fields;
 }
 
+/**
+ * Lightweight fetch that returns only the total count, skipping facet normalization.
+ * Used by quick-stats tab queries where only the count is needed.
+ */
+export async function fetchCount(
+  resultType: ResultType,
+  url?: string,
+  signal?: AbortSignal
+): Promise<number> {
+  const endpoint = url || getSearchBaseFacetUrl(resultType);
+  try {
+    const res = await fetch(endpoint, { cache: 'no-store', signal });
+    if (!res.ok) return 0;
+    const data = (await res.json()) as { total?: number; results?: unknown[] };
+    return data.total ?? (Array.isArray(data.results) ? data.results.length : 0);
+  } catch {
+    return 0;
+  }
+}
+
 export async function fetchFacetsAndResults(
   resultType: ResultType,
   url?: string,
