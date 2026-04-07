@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import Image from 'next/image';
+import { IiifImage } from '@/components/ui/iiif-image';
 import Link from 'next/link';
 import type { GraphListItem, ImageListItem, ManuscriptListItem } from '@/types/search';
 import type { ResultType } from '@/lib/search-types';
@@ -125,7 +125,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
                 graph={graphItem}
                 className="block w-full h-full relative z-0 pointer-events-auto"
               >
-                <Image
+                <IiifImage
                   src={imageUrl}
                   alt={displayText}
                   fill
@@ -138,7 +138,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
                 href={detailUrl ?? '#'}
                 className="block w-full h-full relative z-0 pointer-events-auto"
               >
-                <Image
+                <IiifImage
                   src={imageUrl}
                   alt={displayText}
                   fill
@@ -237,7 +237,7 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
       <div className="relative aspect-4/3 bg-white overflow-hidden">
         <Link href={detailUrl} className="block w-full h-full relative z-0">
           {imageUrl ? (
-            <Image
+            <IiifImage
               src={imageUrl}
               alt={displayText}
               fill

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Table, TableHeader, TableRow, TableCell, TableHead } from '@/components/ui/table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import Image from 'next/image';
+import { IiifImage } from '@/components/ui/iiif-image';
 import Link from 'next/link';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import type { ResultType } from '@/lib/search-types';
@@ -102,7 +102,7 @@ function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
   }
   return (
     <div className="relative z-[2] inline-block group w-20 h-20 flex items-center justify-center bg-muted rounded overflow-hidden">
-      <Image
+      <IiifImage
         src={src}
         alt={`Thumbnail for ${graph.shelfmark}`}
         width={80}
@@ -130,7 +130,7 @@ function AnnotationInlinePreview({
   if (!infoUrl || !src) return null;
 
   return (
-    <Image
+    <IiifImage
       src={src}
       alt={alt}
       width={360}
@@ -180,7 +180,7 @@ export const COLUMNS = {
 
         return (
           <div className="relative z-[2] inline-block group w-20 h-20 flex items-center justify-center bg-muted rounded overflow-hidden">
-            <Image
+            <IiifImage
               src={src}
               alt={i.shelfmark || 'Image thumbnail'}
               width={64}
