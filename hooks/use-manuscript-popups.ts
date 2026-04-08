@@ -70,15 +70,13 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
   );
 
   const handlePopupPositionChange = React.useCallback(
-    (popupId: string, x: number, y: number) => {
+    (_popupId: string, x: number, y: number) => {
       if (!allowMultipleBoxes) {
         setSinglePopupPosition((prev) => {
           if (prev.x === x && prev.y === y) return prev;
           return { x, y };
         });
       }
-
-      setActivePopupId((prev) => (prev === popupId ? prev : popupId));
     },
     [allowMultipleBoxes]
   );
