@@ -52,7 +52,6 @@ import type {
   A9sWithMeta,
   DraftSharePayload,
   AnnotationVisibilityFilters,
-  AnnotationViewerSettings,
 } from '@/types/annotation-viewer';
 
 import {
@@ -81,6 +80,7 @@ import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotatio
 
 import { useManuscriptPopups } from '@/hooks/use-manuscript-popups';
 import { useDraggablePosition } from '@/hooks/useDraggablePosition';
+import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
 
 const ManuscriptAnnotorious = dynamic(() => import('./ManuscriptAnnotorious'), { ssr: false });
 
@@ -143,11 +143,13 @@ export default function ManuscriptViewer({
   const [unsavedChanges, setUnsavedChanges] = React.useState<number>(0);
 
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = React.useState(false);
-  const [viewerSettings, setViewerSettings] = React.useState<AnnotationViewerSettings>({
-    allowMultipleBoxes: false,
-    selectMultipleAnnotations: false,
-    toolbarPosition: 'vertical',
-  });
+
+  const {
+    viewerSettings,
+    handleToggleAllowMultipleBoxes,
+    handleToggleSelectMultipleAnnotations,
+    handleSetToolbarPosition,
+  } = useAnnotationViewerSettings();
 
   const {
     openPopups,
@@ -772,26 +774,6 @@ export default function ManuscriptViewer({
     }));
   }, []);
 
-  const handleToggleAllowMultipleBoxes = React.useCallback(() => {
-    setViewerSettings((prev) => ({
-      ...prev,
-      allowMultipleBoxes: !prev.allowMultipleBoxes,
-    }));
-  }, []);
-
-  const handleToggleSelectMultipleAnnotations = React.useCallback(() => {
-    setViewerSettings((prev) => ({
-      ...prev,
-      selectMultipleAnnotations: !prev.selectMultipleAnnotations,
-    }));
-  }, []);
-
-  const handleSetToolbarPosition = React.useCallback((position: 'vertical' | 'horizontal') => {
-    setViewerSettings((prev) => ({
-      ...prev,
-      toolbarPosition: position,
-    }));
-  }, []);
   // ---- Effects ----
 
   React.useEffect(() => {
@@ -878,36 +860,6 @@ export default function ManuscriptViewer({
     }));
     setHandFiltersInitialized(true);
   }, [handFiltersInitialized, handsLoaded, availableHandFilterIds]);
-
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    try {
-      const raw = localStorage.getItem('annotationViewerSettings');
-      if (!raw) return;
-
-      const parsed = JSON.parse(raw) as Partial<AnnotationViewerSettings>;
-      setViewerSettings((prev) => ({
-        allowMultipleBoxes: parsed.allowMultipleBoxes ?? prev.allowMultipleBoxes,
-        selectMultipleAnnotations:
-          parsed.selectMultipleAnnotations ?? prev.selectMultipleAnnotations,
-        toolbarPosition:
-          parsed.toolbarPosition === 'horizontal' ? 'horizontal' : prev.toolbarPosition,
-      }));
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    try {
-      localStorage.setItem('annotationViewerSettings', JSON.stringify(viewerSettings));
-    } catch {
-      // ignore
-    }
-  }, [viewerSettings]);
 
   React.useEffect(() => {
     return () => {
