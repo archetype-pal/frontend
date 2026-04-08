@@ -130,7 +130,7 @@ export function FacetPanel({
           </div>
           <ul className="p-2 space-y-2 text-sm">
             {visibleItems.map((item) => (
-              <li key={item.label} className="flex items-stretch gap-0.5">
+              <li key={item.value} className="flex items-stretch gap-0.5">
                 <button
                   type="button"
                   onClick={() => handleSelect(item)}

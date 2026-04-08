@@ -196,7 +196,7 @@ export const SEARCH_RESULT_CONFIG = {
       'Shelfmark',
       'Text Date',
       'Text Type',
-      'Clause Type',
+      'Place Type',
     ],
     facets: [
       { key: 'type', render: 'checkbox' },

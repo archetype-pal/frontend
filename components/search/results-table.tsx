@@ -273,7 +273,7 @@ export const COLUMNS = {
     shelfmarkColumn<PlaceListItem>(),
     textDateColumn<PlaceListItem>(),
     textTypeColumn<PlaceListItem>(),
-    makeColumn('Clause Type', (p: PlaceListItem) => p.place_type, 'place_type_exact'),
+    makeColumn('Place Type', (p: PlaceListItem) => p.place_type, 'place_type_exact'),
   ],
 } satisfies { [K in ResultType]: Column<ResultMap[K]>[] };
 

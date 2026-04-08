@@ -173,8 +173,8 @@ export async function fetchFacetsAndResults(
   const endpoint = url || getSearchBaseFacetUrl(resultType);
 
   const parsed = new URL(endpoint);
-  const limit = parseInt(parsed.searchParams.get('limit') || '20', 10);
-  const offset = parseInt(parsed.searchParams.get('offset') || '0', 10);
+  const limit = parseInt(parsed.searchParams.get('limit') || '20', 10) || 20;
+  const offset = parseInt(parsed.searchParams.get('offset') || '0', 10) || 0;
 
   let raw: unknown;
   try {
