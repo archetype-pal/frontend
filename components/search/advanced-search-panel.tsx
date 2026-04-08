@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { ResultType } from '@/lib/search-types';
+import { SEARCHABLE_FIELDS_BY_TYPE } from '@/lib/query-builder-fields';
 import { QueryBuilderPanel } from '@/components/search/query-builder-panel';
 import { createEmptyQueryGroup, type QueryGroup } from '@/lib/search-query';
 
@@ -26,41 +27,6 @@ type AdvancedSearchPanelProps = {
   value: AdvancedSearchState;
   onChange: (next: AdvancedSearchState) => void;
   facetDistribution?: Record<string, Record<string, number>>;
-};
-
-const SEARCHABLE_FIELDS: Record<ResultType, string[]> = {
-  manuscripts: [
-    'display_label',
-    'repository_name',
-    'repository_city',
-    'shelfmark',
-    'catalogue_numbers',
-    'type',
-  ],
-  images: ['locus', 'repository_name', 'shelfmark', 'components', 'features'],
-  scribes: ['name', 'scriptorium'],
-  hands: ['name', 'place', 'description', 'repository_name', 'shelfmark'],
-  graphs: [
-    'display_label',
-    'repository_name',
-    'shelfmark',
-    'allograph',
-    'character',
-    'hand_name',
-    'components',
-  ],
-  texts: [
-    'content',
-    'repository_name',
-    'shelfmark',
-    'catalogue_numbers',
-    'text_type',
-    'places',
-    'people',
-  ],
-  clauses: ['content', 'clause_type', 'repository_name', 'shelfmark'],
-  people: ['name', 'person_type', 'ref', 'repository_name', 'shelfmark'],
-  places: ['name', 'place_type', 'ref', 'repository_name', 'shelfmark'],
 };
 
 export const DEFAULT_ADVANCED_SEARCH_STATE: AdvancedSearchState = {
@@ -135,7 +101,7 @@ export function AdvancedSearchPanel({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all">All searchable fields</SelectItem>
-              {SEARCHABLE_FIELDS[resultType]?.map((field) => (
+              {SEARCHABLE_FIELDS_BY_TYPE[resultType]?.map((field) => (
                 <SelectItem key={field} value={field}>
                   {field}
                 </SelectItem>

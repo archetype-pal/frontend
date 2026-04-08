@@ -406,7 +406,7 @@ const FACET_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
     person_type: 'Category',
   },
   places: {
-    place_type: 'Clause Type',
+    place_type: 'Place Type',
   },
 };
 
