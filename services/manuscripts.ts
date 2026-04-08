@@ -34,8 +34,8 @@ export async function fetchManuscriptImage(id: string): Promise<ManuscriptImage>
   return response.json();
 }
 
-export async function fetchHands(itemImageId: string): Promise<HandsResponse> {
-  const response = await apiFetch(`/api/v1/hands?item_image=${itemImageId}`);
+export async function fetchHands(itemPartId: string | number): Promise<HandsResponse> {
+  const response = await apiFetch(`/api/v1/hands/?item_part=${itemPartId}`);
 
   if (!response.ok) {
     throw new Error('Failed to fetch hands');

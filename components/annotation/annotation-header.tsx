@@ -10,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { fetchHands /* fetchAllographs */ } from '@/services/manuscripts';
 import type { HandType } from '@/types/hands';
 import type { Allograph } from '@/types/allographs';
 // import { toast } from "sonner"
@@ -20,15 +19,16 @@ interface AnnotationHeaderProps {
   onToggleAnnotations: () => void;
   unsavedCount: number;
   showUnsavedCount?: boolean;
-  imageId?: string;
   onAllographSelect: (allograph: Allograph | undefined) => void;
   onHandSelect: (hand: HandType | undefined) => void;
   allographs: Allograph[];
+  hands: HandType[];
   onAllographHover?: (allograph: Allograph | undefined) => void;
   activeAllographCount?: number;
   activeAllographLabel?: string;
   onOpenAllographModal?: () => void;
   selectedAllographId?: number | null;
+  selectedHandId?: number | null;
   onOpenFilterPanel?: () => void;
   isVisibilityFilterActive?: boolean;
   onOpenSettingsPanel?: () => void;
@@ -40,52 +40,26 @@ export function AnnotationHeader({
   onToggleAnnotations,
   unsavedCount = 0,
   showUnsavedCount = true,
-  imageId,
   onAllographSelect,
   onHandSelect,
   allographs,
+  hands,
   onAllographHover,
   activeAllographCount,
   activeAllographLabel,
   onOpenAllographModal,
   selectedAllographId,
+  selectedHandId,
   onOpenFilterPanel,
   isVisibilityFilterActive = false,
   onOpenSettingsPanel,
   isSettingsActive = false,
 }: AnnotationHeaderProps) {
-  const [hands, setHands] = React.useState<HandType[]>([]);
-  // const [allographs, setAllographs] = React.useState<Allograph[]>([])
-  const [selectedHand, setSelectedHand] = React.useState<string>('');
   const [selectedAllograph, setSelectedAllograph] = React.useState<string>('');
-  const [, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     setSelectedAllograph(selectedAllographId != null ? selectedAllographId.toString() : '');
   }, [selectedAllographId]);
-
-  React.useEffect(() => {
-    let isMounted = true;
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        if (!imageId) {
-          if (isMounted) setHands([]);
-          return;
-        }
-        const handsData = await fetchHands(imageId);
-        if (isMounted) setHands(handsData.results);
-      } catch {
-        if (isMounted) setHands([]);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    loadData();
-    return () => {
-      isMounted = false;
-    };
-  }, [imageId]);
 
   React.useEffect(() => {
     if (!selectedAllograph) return;
@@ -117,7 +91,11 @@ export function AnnotationHeader({
   };
 
   const handleHandChange = (handId: string) => {
-    setSelectedHand(handId);
+    if (handId === '__all__') {
+      onHandSelect(undefined);
+      return;
+    }
+
     const selectedHandData = hands.find((h) => h.id.toString() === handId);
     onHandSelect(selectedHandData);
   };
@@ -188,11 +166,15 @@ export function AnnotationHeader({
       </div>
 
       <div className="flex items-center space-x-2">
-        <Select value={selectedHand} onValueChange={handleHandChange}>
+        <Select
+          value={selectedHandId != null ? selectedHandId.toString() : '__all__'}
+          onValueChange={handleHandChange}
+        >
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Select Hand" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="__all__">Select Hand</SelectItem>
             {hands.map((hand) => (
               <SelectItem key={hand.id} value={hand.id.toString()}>
                 {hand.name}

@@ -183,12 +183,19 @@ export default function ManuscriptViewer({
     return allographs.find((a) => a.id === allographId);
   }, [allographs, popupAnnotation]);
 
+  const popupSelectedHand = React.useMemo(() => {
+    const handId = popupAnnotation?._meta?.handId;
+    if (handId == null) return undefined;
+    return hands.find((hand) => hand.id === handId);
+  }, [hands, popupAnnotation]);
+
   const allographNameById = React.useMemo(
     () => new Map(allographs.map((a) => [a.id, a.name])),
     [allographs]
   );
 
-  const activeHandLabel = selectedHand?.name ?? 'Any';
+  const displayedHand = popupSelectedHand ?? selectedHand ?? undefined;
+  const activeHandLabel = displayedHand?.name ?? 'Any';
 
   const dropdownAllograph = filteredAllograph ?? popupSelectedAllograph ?? undefined;
 
@@ -300,13 +307,16 @@ export default function ManuscriptViewer({
         handId == null ||
         visibilityFilters.handIds.includes(handId);
 
-      return allographPass && handPass;
+      const selectedHandPass = !selectedHand || (handId != null && handId === selectedHand.id);
+
+      return allographPass && handPass && selectedHandPass;
     },
     [
       visibilityFiltersReady,
       visibilityFilters,
       availableAllographFilterIds.length,
       availableHandFilterIds.length,
+      selectedHand,
     ]
   );
 
@@ -1012,6 +1022,7 @@ export default function ManuscriptViewer({
   React.useEffect(() => {
     setHands([]);
     setHandsLoaded(false);
+    setSelectedHand(undefined);
 
     setVisibilityFilters({
       allographIds: [],
@@ -1026,11 +1037,17 @@ export default function ManuscriptViewer({
   }, [imageId]);
 
   React.useEffect(() => {
+    if (!manuscriptImage?.item_part) {
+      setHands([]);
+      setHandsLoaded(false);
+      return;
+    }
+
     let isMounted = true;
 
     const loadHands = async () => {
       try {
-        const handsData = await fetchHands(imageId);
+        const handsData = await fetchHands(manuscriptImage.item_part);
         if (isMounted) setHands(handsData.results);
       } catch {
         if (isMounted) setHands([]);
@@ -1044,7 +1061,7 @@ export default function ManuscriptViewer({
     return () => {
       isMounted = false;
     };
-  }, [imageId]);
+  }, [manuscriptImage?.item_part]);
 
   React.useEffect(() => {
     if (allographFiltersInitialized) return;
@@ -1461,14 +1478,15 @@ export default function ManuscriptViewer({
       onToggleAnnotations={handleToggleAnnotations}
       unsavedCount={unsavedChanges}
       showUnsavedCount={!isPublicDemoMode}
-      imageId={imageId}
       onAllographSelect={setFilteredAllograph}
       onHandSelect={setSelectedHand}
       allographs={allographsForThisImage}
+      hands={handsForThisImage}
       onAllographHover={setHoveredAllograph}
       activeAllographCount={filteredA9s.length}
       activeAllographLabel={activeAllographLabel}
       selectedAllographId={dropdownAllograph?.id ?? null}
+      selectedHandId={displayedHand?.id ?? null}
       onOpenAllographModal={() => {
         setHoveredAnnotationId(null);
         setIsAllographModalOpen(true);
