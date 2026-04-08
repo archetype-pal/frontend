@@ -77,6 +77,8 @@ import {
   fetchManuscriptViewerBaseData,
 } from '@/lib/manuscript-viewer-data';
 
+import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
+
 import { useManuscriptPopups } from '@/hooks/use-manuscript-popups';
 import { useDraggablePosition } from '@/hooks/useDraggablePosition';
 
@@ -1049,72 +1051,14 @@ export default function ManuscriptViewer({
 
     const load = async () => {
       try {
-        const list = await fetchAnnotationsForImage(String(manuscriptImage.id));
-        if (!isMounted) return;
-
-        const dbMapped: A9sAnnotation[] = list.map((a) =>
-          backendToA9sAnnotation(a, imageHeight, allographNameById.get(a.allograph))
-        );
-
-        // Keep current unsaved local annotations so filter changes do not wipe them out.
-        const currentViewerDrafts = (viewerApiRef.current?.getAnnotations?.() ?? []).filter(
-          (a): a is A9sAnnotation => !isDbId(a?.id)
-        );
-
-        const iiif = manuscriptImage.iiif_image;
-        const cacheKey = cacheKeyFor(iiif);
-        const metaKey = metaKeyFor(iiif);
-
-        const mergedIds = new Set(dbMapped.map((a) => a.id));
-        let merged: A9sAnnotation[] = [
-          ...dbMapped,
-          ...currentViewerDrafts.filter((a) => !mergedIds.has(a.id)),
-        ];
-
-        if (typeof window !== 'undefined' && !isPublicDemoMode) {
-          try {
-            const raw = localStorage.getItem(cacheKey);
-            const meta = JSON.parse(localStorage.getItem(metaKey) || '{}') as {
-              imageHeight?: number;
-            };
-
-            if (raw && meta?.imageHeight === imageHeight) {
-              const cached = JSON.parse(raw) as A9sAnnotation[];
-              const localOnly = Array.isArray(cached) ? cached.filter((a) => !isDbId(a?.id)) : [];
-              const existing = new Set(merged.map((a) => a.id));
-              const extras = localOnly.filter((a) => !existing.has(a.id));
-              merged = [...merged, ...extras];
-            } else if (raw && meta?.imageHeight !== imageHeight) {
-              localStorage.removeItem(cacheKey);
-              localStorage.removeItem(metaKey);
-            }
-          } catch {
-            // ignore
-          }
-        }
-
-        if (typeof window !== 'undefined') {
-          const url = new URL(window.location.href);
-          const draftParam = url.searchParams.get('draft');
-
-          if (draftParam) {
-            const decoded = decodeDraftSharePayload(draftParam);
-
-            if (decoded?.target) {
-              const sharedDraft: A9sAnnotation = {
-                id: decoded.id || 'draft:shared',
-                type: 'Annotation',
-                target: decoded.target,
-                body: decoded.body ?? [],
-                _meta: decoded._meta,
-              };
-
-              if (!merged.some((a) => a.id === sharedDraft.id)) {
-                merged = [...merged, sharedDraft];
-              }
-            }
-          }
-        }
+        const merged = await buildInitialViewerAnnotations({
+          itemImageId: String(manuscriptImage.id),
+          iiifImage: manuscriptImage.iiif_image,
+          imageHeight,
+          allographNameById,
+          isPublicDemoMode,
+          currentViewerAnnotations: viewerApiRef.current?.getAnnotations?.() ?? [],
+        });
 
         if (isMounted) {
           setInitialA9sAnnots(merged);
