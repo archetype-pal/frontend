@@ -16,7 +16,7 @@ import {
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
-import { getSelectorValue, iiifThumbFromSelector, getIiifBaseUrl } from '@/utils/iiif';
+import { getIiifBaseUrl, getSelectorValue, iiifThumbFromSelector } from '@/utils/iiif';
 import { ManuscriptTabs } from './manuscript-tabs';
 import { DraggablePopupLayer } from './draggable-popup-layer';
 import { Toolbar } from './toolbar';
@@ -29,12 +29,7 @@ import { Separator } from '@/components/ui/separator';
 import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupCard } from '@/components/annotation/annotation-popup-card';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
-import {
-  fetchManuscriptImage,
-  fetchAllographs,
-  fetchManuscript,
-  fetchHands,
-} from '@/services/manuscripts';
+import { fetchHands } from '@/services/manuscripts';
 import {
   fetchAnnotationsForImage,
   postAnnotation,
@@ -70,11 +65,17 @@ import {
   metaKeyFor,
   toggleNumericId,
 } from '@/lib/annotation-popup-utils';
+
 import {
   getPopupCardViewData,
   getPopupInitialPosition,
   getPopupZIndex,
 } from '@/lib/manuscript-viewer-popup-utils';
+
+import {
+  fetchImageAllographIds,
+  fetchManuscriptViewerBaseData,
+} from '@/lib/manuscript-viewer-data';
 
 import { useManuscriptPopups } from '@/hooks/use-manuscript-popups';
 import { useDraggablePosition } from '@/hooks/useDraggablePosition';
@@ -990,33 +991,16 @@ export default function ManuscriptViewer({
       try {
         setLoading(true);
 
-        const [image, allographsData] = await Promise.all([
-          fetchManuscriptImage(imageId),
-          fetchAllographs(),
-        ]);
+        const { image, manuscript, allographs, imageHeight } =
+          await fetchManuscriptViewerBaseData(imageId);
 
         if (!isMounted) return;
 
         setManuscriptImage(image);
-        setAllographs(allographsData);
-
-        fetchManuscript(image.item_part).then((m) => {
-          if (isMounted) setManuscript(m);
-        });
-
-        const baseUrl = browserSafeIiifUrl(getIiifBaseUrl(image.iiif_image));
-        const infoUrl = `${baseUrl}/info.json`;
-
-        try {
-          const infoRes = await fetch(infoUrl);
-          if (!infoRes.ok) throw new Error(`IIIF info: ${infoRes.status}`);
-          const info = await infoRes.json();
-          if (isMounted) setImageHeight(info.height ?? 2000);
-        } catch {
-          if (isMounted) setImageHeight(2000);
-        }
-
-        if (isMounted) setError(null);
+        setManuscript(manuscript);
+        setAllographs(allographs);
+        setImageHeight(imageHeight);
+        setError(null);
       } catch (err) {
         if (isMounted) {
           setError(err instanceof Error ? err.message : 'Failed to load manuscript data');
@@ -1041,14 +1025,8 @@ export default function ManuscriptViewer({
 
     const loadAllographIds = async () => {
       try {
-        const graphs = await fetchAnnotationsForImage(String(manuscriptImage.id));
+        const ids = await fetchImageAllographIds(String(manuscriptImage.id));
         if (!isMounted) return;
-
-        const ids = Array.from(
-          new Set(
-            graphs.map((g) => g.allograph).filter((id): id is number => typeof id === 'number')
-          )
-        );
 
         setImageAllographIds(ids);
       } catch {
