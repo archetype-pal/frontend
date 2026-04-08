@@ -406,8 +406,10 @@ export default function ManuscriptViewer({
           : '',
       };
 
+      const isDraft = !isDbId(annotation.id);
+
       openPopupCollectionFromAnnotation(annotation, {
-        mode: viewerSettings.allowMultipleBoxes ? 'append' : 'replace',
+        mode: isDraft ? 'replace' : viewerSettings.allowMultipleBoxes ? 'append' : 'replace',
         overrides: commonOverrides,
       });
     },
