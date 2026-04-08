@@ -16,16 +16,15 @@ import {
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
-import { getIiifBaseUrl, getSelectorValue, iiifThumbFromSelector } from '@/utils/iiif';
+import { getIiifBaseUrl } from '@/utils/iiif';
 import { ManuscriptTabs } from './manuscript-tabs';
 import { DraggablePopupLayer } from './draggable-popup-layer';
 import { Toolbar } from './toolbar';
 import { AnnotationFilterPanel } from './annotation-filter-panel';
 import { AnnotationSettingsPanel } from './annotation-settings-panel';
+import { AllographGalleryDialog } from './allograph-gallery-dialog';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
 import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupCard } from '@/components/annotation/annotation-popup-card';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
@@ -687,6 +686,16 @@ export default function ManuscriptViewer({
     });
   };
 
+  const handleAllographDialogOpenChange = React.useCallback(
+    (open: boolean) => {
+      setIsAllographModalOpen(open);
+      if (!open) {
+        allographDialogDrag.reset();
+      }
+    },
+    [allographDialogDrag]
+  );
+
   const handleToggleAllographFilter = React.useCallback((allographId: number) => {
     setVisibilityFilters((prev) => ({
       ...prev,
@@ -1201,81 +1210,21 @@ export default function ManuscriptViewer({
         onToggleSelectMultipleAnnotations={handleToggleSelectMultipleAnnotations}
         onSetToolbarPosition={handleSetToolbarPosition}
       />
-      <Dialog
+
+      <AllographGalleryDialog
         open={isAllographModalOpen}
-        onOpenChange={(open) => {
-          setIsAllographModalOpen(open);
-          if (!open) allographDialogDrag.reset();
+        onOpenChange={handleAllographDialogOpenChange}
+        transform={`translate(calc(-50% + ${allographDialogDrag.pos.x}px), calc(-50% + ${allographDialogDrag.pos.y}px))`}
+        dragHandleProps={allographDialogDrag.bindDrag}
+        activeAllographLabel={activeAllographLabel}
+        activeHandLabel={activeHandLabel}
+        annotations={filteredA9s}
+        iiifImage={manuscriptImage?.iiif_image ?? null}
+        onAnnotationHover={setHoveredAnnotationId}
+        onAnnotationClick={(annotationId) => {
+          viewerApiRef.current?.centerOnAnnotation?.(annotationId);
         }}
-        modal={false}
-      >
-        <DialogContent
-          className="w-[520px] max-w-[calc(100vw-2rem)] max-h-[72vh] overflow-auto"
-          style={{
-            transform: `translate(calc(-50% + ${allographDialogDrag.pos.x}px), calc(-50% + ${allographDialogDrag.pos.y}px))`,
-          }}
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
-        >
-          <DialogHeader className="cursor-move select-none" {...allographDialogDrag.bindDrag}>
-            <DialogTitle className="mb-2">
-              {activeAllographLabel ? `Allograph: ${activeAllographLabel}` : 'Allograph'}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="px-5 pb-4">
-            <div className="text-sm text-muted-foreground">
-              <span className="flex items-center gap-2">
-                Hand:
-                <span className="text-foreground font-medium">{activeHandLabel}</span>
-                <span className="inline-flex items-center justify-center rounded bg-muted px-2 py-0.5 text-xs text-foreground">
-                  {filteredA9s.length}
-                </span>
-              </span>
-            </div>
-
-            <Separator className="my-4" />
-
-            <div className="grid grid-cols-4 gap-3">
-              {filteredA9s.map((a) => {
-                const v = getSelectorValue(a);
-                if (!v || !manuscriptImage) return null;
-
-                const base = browserSafeIiifUrl(getIiifBaseUrl(manuscriptImage.iiif_image));
-                const src = iiifThumbFromSelector(base, v, 200);
-                if (!src) return null;
-
-                return (
-                  <button
-                    key={a.id}
-                    className="group rounded-md border bg-background overflow-hidden text-left hover:shadow-sm"
-                    onMouseEnter={() => setHoveredAnnotationId(a.id)}
-                    onMouseLeave={() => setHoveredAnnotationId(null)}
-                    onClick={() => {
-                      viewerApiRef.current?.centerOnAnnotation?.(a.id);
-                    }}
-                    title={a.id}
-                    type="button"
-                  >
-                    <div className="w-full aspect-square bg-muted flex items-center justify-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={src}
-                        alt={`Annotation thumbnail: ${a.id}`}
-                        className="max-h-full max-w-full object-contain"
-                        loading="lazy"
-                        onError={() => console.warn('thumb failed:', src)}
-                      />
-                    </div>
-                    <div className="px-2 py-1 text-xs text-muted-foreground truncate">{a.id}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      />
 
       <div className={`relative flex flex-1 ${isFullScreen ? 'mt-20' : ''}`}>
         <Toolbar orientation={viewerSettings.toolbarPosition}>
