@@ -71,6 +71,13 @@ import {
   metaKeyFor,
   toggleNumericId,
 } from '@/lib/annotation-popup-utils';
+import {
+  DEFAULT_SINGLE_POPUP_POSITION,
+  getPopupCardViewData,
+  getPopupInitialPosition,
+  getPopupZIndex,
+  type PopupPosition,
+} from '@/lib/manuscript-viewer-popup-utils';
 
 import { useDraggablePosition } from '@/hooks/useDraggablePosition';
 
@@ -80,12 +87,6 @@ interface ManuscriptViewerProps {
   imageId: string;
   mode?: 'public' | 'editor';
 }
-
-const DEFAULT_SINGLE_POPUP_POSITION = { x: 0, y: 300 };
-const MULTI_POPUP_OFFSET_STEP = 24;
-const MULTI_POPUP_BASE_Y = 300;
-const ACTIVE_POPUP_Z_INDEX = 80;
-const INACTIVE_POPUP_BASE_Z_INDEX = 60;
 
 export default function ManuscriptViewer({
   imageId,
@@ -149,7 +150,7 @@ export default function ManuscriptViewer({
 
   const [openPopups, setOpenPopups] = React.useState<PopupRecord[]>([]);
   const [activePopupId, setActivePopupId] = React.useState<string | null>(null);
-  const [singlePopupPosition, setSinglePopupPosition] = React.useState(
+  const [singlePopupPosition, setSinglePopupPosition] = React.useState<PopupPosition>(
     DEFAULT_SINGLE_POPUP_POSITION
   );
 
@@ -570,56 +571,6 @@ export default function ManuscriptViewer({
     [clearSinglePopupState, openPopupCollectionFromAnnotation, viewerSettings.allowMultipleBoxes]
   );
 
-  const getPopupCardViewData = React.useCallback(
-    (popupRecord: PopupRecord) => {
-      const annotation = popupRecord.annotation;
-      const isDraft = !isDbId(annotation.id);
-
-      const title = isDraft
-        ? popupRecord.draftAllographText.trim() || 'New Annotation'
-        : (annotation.body?.find((b) => b.purpose === 'commenting')?.value ??
-          allographNameById.get(annotation._meta?.allographId ?? -1) ??
-          'Annotation');
-
-      const positions = annotation._meta?.positionDetails ?? [];
-      const hasPositionsTab = positions.length > 0;
-
-      const selectedPositionLabels = positions.map(
-        (position) => position.name ?? `Position ${position.id}`
-      );
-
-      const graphComponents = annotation._meta?.graphcomponentSet ?? [];
-      const selectedComponentGroups =
-        graphComponents.length > 0
-          ? graphComponents.map((gc) => ({
-              componentId: gc.component,
-              componentName: gc.componentName ?? `Component ${gc.component}`,
-              featureNames:
-                gc.featureDetails?.map((feature) => feature.name) ??
-                gc.features.map((featureId) => `Feature ${featureId}`),
-            }))
-          : [];
-
-      const selectedNotes = (annotation.body ?? [])
-        .filter((body) => {
-          const value = body.value?.trim() ?? '';
-          return value.length > 0 && body.purpose !== 'commenting';
-        })
-        .map((body) => body.value!.trim());
-
-      return {
-        annotation,
-        isDraft,
-        title,
-        hasPositionsTab,
-        selectedPositionLabels,
-        selectedComponentGroups,
-        selectedNotes,
-      };
-    },
-    [allographNameById]
-  );
-
   const handleShareSelectedAnnotation = React.useCallback(
     (popupId: string) => {
       const popup = getPopupById(popupId);
@@ -955,24 +906,6 @@ export default function ManuscriptViewer({
     [cancelPendingPopupClear, clearSinglePopupState, openSinglePopupFromAnnotation]
   );
 
-  const getPopupInitialPosition = React.useCallback(
-    (index: number) => {
-      if (!viewerSettings.allowMultipleBoxes) {
-        return singlePopupPosition;
-      }
-
-      return {
-        x: index * MULTI_POPUP_OFFSET_STEP,
-        y: MULTI_POPUP_BASE_Y + index * MULTI_POPUP_OFFSET_STEP,
-      };
-    },
-    [viewerSettings.allowMultipleBoxes, singlePopupPosition]
-  );
-
-  const getPopupZIndex = React.useCallback((index: number, isActive: boolean) => {
-    return isActive ? ACTIVE_POPUP_Z_INDEX : INACTIVE_POPUP_BASE_Z_INDEX + index;
-  }, []);
-
   const handleCloseFilterPanel = React.useCallback(() => {
     setIsFilterPanelOpen(false);
     filterPanelDrag.reset();
@@ -1155,12 +1088,12 @@ export default function ManuscriptViewer({
   React.useEffect(() => {
     if (!activePopupRecord) return;
 
-    const popupCard = getPopupCardViewData(activePopupRecord);
+    const popupCard = getPopupCardViewData(activePopupRecord, allographNameById);
 
     if (!popupCard.hasPositionsTab && activePopupRecord.popupTab === 'positions') {
       handlePopupTabChange(activePopupRecord.id, 'components');
     }
-  }, [activePopupRecord, getPopupCardViewData, handlePopupTabChange]);
+  }, [activePopupRecord, allographNameById, handlePopupTabChange]);
 
   React.useEffect(() => {
     if (!openPopups.length) {
@@ -1829,9 +1762,13 @@ export default function ManuscriptViewer({
             />
 
             {visiblePopupRecords.map((popupRecord, index) => {
-              const popupCard = getPopupCardViewData(popupRecord);
+              const popupCard = getPopupCardViewData(popupRecord, allographNameById);
               const isActive = popupRecord.id === activePopupId;
-              const { x: initialX, y: initialY } = getPopupInitialPosition(index);
+              const { x: initialX, y: initialY } = getPopupInitialPosition(
+                index,
+                viewerSettings.allowMultipleBoxes,
+                singlePopupPosition
+              );
               const zIndex = getPopupZIndex(index, isActive);
 
               return (
