@@ -1077,7 +1077,7 @@ export default function ManuscriptViewer({
     return () => {
       isMounted = false;
     };
-  }, [manuscriptImage, imageHeight, filteredAllograph, allographNameById, isPublicDemoMode]);
+  }, [manuscriptImage, imageHeight, allographNameById, isPublicDemoMode]);
 
   // Ctrl/Cmd+S save
   React.useEffect(() => {
