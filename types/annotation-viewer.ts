@@ -63,45 +63,44 @@ export type PopupRecord = {
 };
 
 export type ViewerMode = 'public' | 'editor';
+export type AnnotationCreationKind = 'public' | 'editorial';
 
 export interface ViewerCapabilities {
   /**
-   * Public mode already allows temporary/demo annotation creation,
-   * so this is true for both public and editor layers.
+   * Public annotation creation:
+   * - public user: yes, but draft/demo only
+   * - logged-in editor/admin: yes, and can persist
    */
-  canCreateAnnotations: boolean;
+  canCreatePublicAnnotations: boolean;
+  canPersistPublicAnnotations: boolean;
 
   /**
-   * Persist changes to the backend.
-   * Public mode: false
-   * Editor/admin mode: true
+   * Editorial annotation creation:
+   * - public user: no
+   * - logged-in editor/admin: yes, and can persist
    */
-  canPersistAnnotations: boolean;
+  canCreateEditorialAnnotations: boolean;
+  canPersistEditorialAnnotations: boolean;
 
   /**
-   * Delete existing persisted annotations.
-   * Public mode: false
-   * Editor/admin mode: true
+   * Existing persisted annotation operations.
    */
   canDeleteAnnotations: boolean;
-
-  /**
-   * Modify existing persisted annotation geometry/content.
-   * Public mode: false
-   * Editor/admin mode: true
-   */
   canModifyAnnotations: boolean;
 
   /**
-   * Show editorial-only controls/filters/settings.
-   * Public mode: false
-   * Editor/admin mode: true
+   * Show editorial-only controls in shared UI.
    */
   canViewEditorialControls: boolean;
 
   /**
-   * Show/open viewer settings.
-   * Public mode currently already has this, so true for both.
+   * Settings button is available in both public and logged-in layers.
    */
   canUseSettings: boolean;
+
+  /**
+   * Logged-in/editor-only settings options.
+   * The settings panel remains shared; its contents differ by capability.
+   */
+  canUseEditorSettings: boolean;
 }

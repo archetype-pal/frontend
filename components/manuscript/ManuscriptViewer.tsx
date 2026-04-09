@@ -42,7 +42,11 @@ import {
   dbIdFromA9s,
 } from '@/lib/annoMapping';
 
-import { getViewerCapabilities } from '@/lib/viewer-capabilities';
+import {
+  canCreateAnnotationKind,
+  getDefaultAnnotationCreationKind,
+  getViewerCapabilities,
+} from '@/lib/viewer-capabilities';
 
 import type { ViewerApi, Annotation as A9sAnnotation } from './ManuscriptAnnotorious';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
@@ -55,6 +59,7 @@ import type {
   AnnotationVisibilityFilters,
   ViewerCapabilities,
   ViewerMode,
+  AnnotationCreationKind,
 } from '@/types/annotation-viewer';
 
 import {
@@ -105,12 +110,17 @@ export default function ManuscriptViewer({
 
   const isPublicDemoMode = mode === 'public';
 
-  const canCreateAnnotations = viewerCapabilities.canCreateAnnotations;
-  const canPersistAnnotations = viewerCapabilities.canPersistAnnotations;
+  const canCreatePublicAnnotations = viewerCapabilities.canCreatePublicAnnotations;
+  const canPersistPublicAnnotations = viewerCapabilities.canPersistPublicAnnotations;
+  const canCreateEditorialAnnotations = viewerCapabilities.canCreateEditorialAnnotations;
+  const canPersistEditorialAnnotations = viewerCapabilities.canPersistEditorialAnnotations;
   const canDeleteAnnotations = viewerCapabilities.canDeleteAnnotations;
   const canModifyAnnotations = viewerCapabilities.canModifyAnnotations;
   const canViewEditorialControls = viewerCapabilities.canViewEditorialControls;
   const canUseSettings = viewerCapabilities.canUseSettings;
+  const canUseEditorSettings = viewerCapabilities.canUseEditorSettings;
+
+  const canPersistAnyAnnotations = canPersistPublicAnnotations || canPersistEditorialAnnotations;
 
   // ---- State / refs ----
   const [annotationsEnabled, setAnnotationsEnabled] = React.useState<boolean>(true);
@@ -148,7 +158,10 @@ export default function ManuscriptViewer({
   const [a9sSnapshot, setA9sSnapshot] = React.useState<A9sAnnotation[]>([]);
 
   const [imageHeight, setImageHeight] = React.useState<number>(0);
-  const [activeButton, setActiveButton] = React.useState<'move' | 'editorial' | 'delete'>('move');
+  const [activeTool, setActiveTool] = React.useState<'move' | 'draw' | 'delete'>('move');
+  const [currentCreationKind, setCurrentCreationKind] =
+    React.useState<AnnotationCreationKind>('public');
+
   const [isFullScreen, setIsFullScreen] = React.useState(false);
 
   const [hoveredAllograph, setHoveredAllograph] = React.useState<Allograph | undefined>(undefined);
@@ -502,7 +515,7 @@ export default function ManuscriptViewer({
   };
 
   const rearmCreateTool = () => {
-    setActiveButton('editorial');
+    setActiveTool('draw');
     window.setTimeout(() => {
       viewerApiRef.current?.enableDraw();
     }, 0);
@@ -512,7 +525,7 @@ export default function ManuscriptViewer({
     (popupId: string) => {
       const popup = getPopupById(popupId);
       const shouldResumeDraw =
-        activeButton === 'editorial' && Boolean(popup && !isDbId(popup.annotation.id));
+        activeTool === 'draw' && Boolean(popup && !isDbId(popup.annotation.id));
 
       viewerApiRef.current?.clearSelection?.();
       removePopupById(popupId);
@@ -521,14 +534,14 @@ export default function ManuscriptViewer({
         rearmCreateTool();
       }
     },
-    [activeButton, getPopupById, removePopupById]
+    [activeTool, getPopupById, removePopupById]
   );
 
   const handleCancelDraftAnnotation = React.useCallback(
     (popupId: string) => {
       const popup = getPopupById(popupId);
       const shouldResumeDraw =
-        activeButton === 'editorial' && Boolean(popup && !isDbId(popup.annotation.id));
+        activeTool === 'draw' && Boolean(popup && !isDbId(popup.annotation.id));
 
       viewerApiRef.current?.clearSelection?.();
       removePopupById(popupId);
@@ -537,10 +550,10 @@ export default function ManuscriptViewer({
         rearmCreateTool();
       } else {
         viewerApiRef.current?.enablePan();
-        setActiveButton('move');
+        setActiveTool('move');
       }
     },
-    [activeButton, getPopupById, removePopupById]
+    [activeTool, getPopupById, removePopupById]
   );
 
   const handleSaveDraftAnnotation = React.useCallback(
@@ -578,7 +591,7 @@ export default function ManuscriptViewer({
     async (popupId: string) => {
       const popup = getPopupById(popupId);
       const shouldResumeDraw =
-        activeButton === 'editorial' && Boolean(popup && !isDbId(popup.annotation.id));
+        activeTool === 'draw' && Boolean(popup && !isDbId(popup.annotation.id));
 
       await handleSaveDraftAnnotation(popupId);
       removePopupById(popupId);
@@ -587,10 +600,10 @@ export default function ManuscriptViewer({
         rearmCreateTool();
       } else {
         viewerApiRef.current?.enablePan();
-        setActiveButton('move');
+        setActiveTool('move');
       }
     },
-    [activeButton, getPopupById, handleSaveDraftAnnotation, removePopupById]
+    [activeTool, getPopupById, handleSaveDraftAnnotation, removePopupById]
   );
 
   const handleToggleFullScreen = () => {
@@ -608,31 +621,34 @@ export default function ManuscriptViewer({
     setOsdReady(true);
 
     api.enablePan();
-    setActiveButton('move');
+    setActiveTool('move');
     setA9sSnapshot(api.getAnnotations?.() ?? []);
   }, []);
 
   const handleMoveTool = () => {
     viewerApiRef.current?.enablePan();
-    setActiveButton('move');
+    setActiveTool('move');
   };
 
-  const handleCreateAnnotation = () => {
-    if (!canCreateAnnotations) return;
+  const handleCreateAnnotation = (kind?: AnnotationCreationKind) => {
+    const nextKind = kind ?? getDefaultAnnotationCreationKind(viewerCapabilities);
+    if (!nextKind) return;
+    if (!canCreateAnnotationKind(viewerCapabilities, nextKind)) return;
 
+    setCurrentCreationKind(nextKind);
     viewerApiRef.current?.enableDraw();
-    setActiveButton('editorial');
+    setActiveTool('draw');
   };
 
   const handleDeleteTool = () => {
     if (!canDeleteAnnotations) return;
 
     viewerApiRef.current?.enableDelete();
-    setActiveButton('delete');
+    setActiveTool('delete');
   };
 
   const handleSave = React.useCallback(async (): Promise<void> => {
-    if (!canPersistAnnotations || !manuscriptImage) return;
+    if (!canPersistAnyAnnotations || !manuscriptImage) return;
 
     try {
       const a9s = viewerApiRef.current?.getAnnotations() ?? [];
@@ -695,7 +711,7 @@ export default function ManuscriptViewer({
     filteredAllograph,
     imageHeight,
     imageId,
-    canPersistAnnotations,
+    canPersistAnyAnnotations,
     manuscriptImage,
     selectedHand,
   ]);
@@ -817,6 +833,15 @@ export default function ManuscriptViewer({
   }, []);
 
   // ---- Effects ----
+
+  React.useEffect(() => {
+    if (canCreateAnnotationKind(viewerCapabilities, currentCreationKind)) return;
+
+    const fallbackKind = getDefaultAnnotationCreationKind(viewerCapabilities);
+    if (fallbackKind) {
+      setCurrentCreationKind(fallbackKind);
+    }
+  }, [viewerCapabilities, currentCreationKind]);
 
   React.useEffect(() => {
     setHands([]);
@@ -1154,7 +1179,7 @@ export default function ManuscriptViewer({
       annotationsEnabled={annotationsEnabled}
       onToggleAnnotations={handleToggleAnnotations}
       unsavedCount={unsavedChanges}
-      showUnsavedCount={canPersistAnnotations}
+      showUnsavedCount={canPersistAnyAnnotations}
       onAllographSelect={setFilteredAllograph}
       onHandSelect={setSelectedHand}
       allographs={allographsForThisImage}
@@ -1239,6 +1264,7 @@ export default function ManuscriptViewer({
         transform={`translate(${settingsPanelDrag.pos.x}px, ${settingsPanelDrag.pos.y}px)`}
         dragHandleProps={settingsPanelDrag.bindDrag}
         viewerSettings={viewerSettings}
+        showEditorSettings={canUseEditorSettings}
         onClose={handleCloseSettingsPanel}
         onToggleAllowMultipleBoxes={handleToggleAllowMultipleBoxes}
         onToggleSelectMultipleAnnotations={handleToggleSelectMultipleAnnotations}
@@ -1310,7 +1336,7 @@ export default function ManuscriptViewer({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant={activeButton === 'move' ? 'default' : 'ghost'}
+                  variant={activeTool === 'move' ? 'default' : 'ghost'}
                   size="icon"
                   onClick={handleMoveTool}
                 >
@@ -1323,9 +1349,9 @@ export default function ManuscriptViewer({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant={activeButton === 'editorial' ? 'default' : 'ghost'}
+                  variant={activeTool === 'draw' ? 'default' : 'ghost'}
                   size="icon"
-                  onClick={handleCreateAnnotation}
+                  onClick={() => handleCreateAnnotation()}
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -1333,9 +1359,9 @@ export default function ManuscriptViewer({
               <TooltipContent>Create Annotation</TooltipContent>
             </Tooltip>
 
-            {(canPersistAnnotations || canDeleteAnnotations || canModifyAnnotations) && (
+            {(canPersistAnyAnnotations || canDeleteAnnotations || canModifyAnnotations) && (
               <>
-                {canPersistAnnotations && (
+                {canPersistAnyAnnotations && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -1355,7 +1381,7 @@ export default function ManuscriptViewer({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        variant={activeButton === 'delete' ? 'default' : 'ghost'}
+                        variant={activeTool === 'delete' ? 'default' : 'ghost'}
                         size="icon"
                         onClick={handleDeleteTool}
                       >

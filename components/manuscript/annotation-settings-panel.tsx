@@ -13,6 +13,7 @@ interface AnnotationSettingsPanelProps {
   transform: string;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
   viewerSettings: AnnotationViewerSettings;
+  showEditorSettings?: boolean;
   onClose: () => void;
   onToggleAllowMultipleBoxes: () => void;
   onToggleSelectMultipleAnnotations: () => void;
@@ -24,6 +25,7 @@ export function AnnotationSettingsPanel({
   transform,
   dragHandleProps,
   viewerSettings,
+  showEditorSettings = false,
   onClose,
   onToggleAllowMultipleBoxes,
   onToggleSelectMultipleAnnotations,
