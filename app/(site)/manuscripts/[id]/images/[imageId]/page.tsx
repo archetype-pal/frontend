@@ -1,13 +1,3 @@
-// import ManuscriptViewer from '@/components/manuscript/ManuscriptViewer';
-
-// export default async function Page({
-//   params,
-// }: {
-//   params: Promise<{ id: string; imageId: string }>;
-// }) {
-//   const { imageId } = await params;
-//   return <ManuscriptViewer imageId={imageId} />;
-// }
 import ManuscriptViewer from '@/components/manuscript/ManuscriptViewer';
 import { getViewerCapabilities } from '@/lib/viewer-capabilities';
 import type { ViewerMode } from '@/types/annotation-viewer';
