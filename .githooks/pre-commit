@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "==> Running pre-commit checks..."
+
+echo "  Checking ESLint..."
+pnpm lint
+
+echo "  Checking Prettier..."
+pnpm format
+
+echo "==> All pre-commit checks passed."
