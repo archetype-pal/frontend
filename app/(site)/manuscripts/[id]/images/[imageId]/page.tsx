@@ -1,6 +1,5 @@
 import ManuscriptViewer from '@/components/manuscript/ManuscriptViewer';
-import { getViewerCapabilities } from '@/lib/viewer-capabilities';
-import type { ViewerMode } from '@/types/annotation-viewer';
+import { resolveManuscriptViewerAccess } from '@/lib/manuscript-viewer-access';
 
 interface PageProps {
   params: Promise<{
@@ -12,10 +11,18 @@ interface PageProps {
 export default async function Page({ params }: PageProps) {
   const { imageId } = await params;
 
-  // Step 1: keep the current page explicitly on the public baseline.
-  // Later this will be resolved from authentication/session.
-  const mode: ViewerMode = 'public';
-  const capabilities = getViewerCapabilities(mode);
+  // keep current behaviour on the public baseline until real auth is wired.
+  const viewerAccess = resolveManuscriptViewerAccess({
+    isAuthenticated: false,
+    isEditor: false,
+    isAdmin: false,
+  });
 
-  return <ManuscriptViewer imageId={imageId} mode={mode} capabilities={capabilities} />;
+  return (
+    <ManuscriptViewer
+      imageId={imageId}
+      mode={viewerAccess.mode}
+      capabilities={viewerAccess.capabilities}
+    />
+  );
 }

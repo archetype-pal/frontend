@@ -118,3 +118,12 @@ export interface AnnotationEditorRecord {
 }
 
 export type AnnotationEditorRecordMap = Record<string, AnnotationEditorRecord>;
+
+export type ViewerRole = 'public' | 'editor' | 'admin';
+
+export interface ViewerAccessContext {
+  isAuthenticated: boolean;
+  role: ViewerRole;
+  mode: ViewerMode;
+  capabilities: ViewerCapabilities;
+}
