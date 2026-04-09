@@ -25,7 +25,7 @@ export function AnnotationSettingsPanel({
   transform,
   dragHandleProps,
   viewerSettings,
-  showEditorSettings = false,
+  showEditorSettings: _showEditorSettings = false,
   onClose,
   onToggleAllowMultipleBoxes,
   onToggleSelectMultipleAnnotations,

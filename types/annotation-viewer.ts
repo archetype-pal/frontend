@@ -104,3 +104,17 @@ export interface ViewerCapabilities {
    */
   canUseEditorSettings: boolean;
 }
+
+export type AnnotationEditorSource = 'persisted' | 'draft';
+export type AnnotationEditorDirtyState = 'clean' | 'created' | 'updated' | 'deleted';
+
+export interface AnnotationEditorRecord {
+  id: string;
+  annotation: A9sWithMeta;
+  source: AnnotationEditorSource;
+  dirtyState: AnnotationEditorDirtyState;
+  isDeleted: boolean;
+  lastTouchedAt: number;
+}
+
+export type AnnotationEditorRecordMap = Record<string, AnnotationEditorRecord>;

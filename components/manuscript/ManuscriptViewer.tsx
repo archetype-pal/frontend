@@ -60,6 +60,7 @@ import type {
   ViewerCapabilities,
   ViewerMode,
   AnnotationCreationKind,
+  AnnotationEditorRecordMap,
 } from '@/types/annotation-viewer';
 
 import {
@@ -86,6 +87,14 @@ import {
 
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
 
+import {
+  buildHydratedEditorRecordMap,
+  countDirtyEditorRecords,
+  markAnnotationCreated,
+  markAnnotationDeleted,
+  markAnnotationUpdated,
+} from '@/lib/manuscript-viewer-editor-state';
+
 import { useManuscriptPopups } from '@/hooks/use-manuscript-popups';
 import { useDraggablePosition } from '@/hooks/useDraggablePosition';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
@@ -110,9 +119,7 @@ export default function ManuscriptViewer({
 
   const isPublicDemoMode = mode === 'public';
 
-  const canCreatePublicAnnotations = viewerCapabilities.canCreatePublicAnnotations;
   const canPersistPublicAnnotations = viewerCapabilities.canPersistPublicAnnotations;
-  const canCreateEditorialAnnotations = viewerCapabilities.canCreateEditorialAnnotations;
   const canPersistEditorialAnnotations = viewerCapabilities.canPersistEditorialAnnotations;
   const canDeleteAnnotations = viewerCapabilities.canDeleteAnnotations;
   const canModifyAnnotations = viewerCapabilities.canModifyAnnotations;
@@ -156,6 +163,7 @@ export default function ManuscriptViewer({
 
   const [initialA9sAnnots, setInitialA9sAnnots] = React.useState<A9sAnnotation[]>([]);
   const [a9sSnapshot, setA9sSnapshot] = React.useState<A9sAnnotation[]>([]);
+  const [editorRecords, setEditorRecords] = React.useState<AnnotationEditorRecordMap>({});
 
   const [imageHeight, setImageHeight] = React.useState<number>(0);
   const [activeTool, setActiveTool] = React.useState<'move' | 'draw' | 'delete'>('move');
@@ -170,7 +178,10 @@ export default function ManuscriptViewer({
   const initialGraphHandledRef = React.useRef(false);
   const pendingPopupClearRef = React.useRef<number | null>(null);
 
-  const [unsavedChanges, setUnsavedChanges] = React.useState<number>(0);
+  const unsavedChanges = React.useMemo(
+    () => countDirtyEditorRecords(editorRecords),
+    [editorRecords]
+  );
 
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = React.useState(false);
 
@@ -583,6 +594,13 @@ export default function ManuscriptViewer({
 
       await viewerApiRef.current?.updateSelectedDraft?.(next);
       await viewerApiRef.current?.saveSelectedDraft?.();
+
+      const latest =
+        viewerApiRef.current?.getAnnotations?.().find((annotation) => annotation.id === next.id) ??
+        next;
+
+      setEditorRecords((prev) => markAnnotationUpdated(prev, latest));
+      setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? []);
     },
     [getPopupById]
   );
@@ -651,45 +669,56 @@ export default function ManuscriptViewer({
     if (!canPersistAnyAnnotations || !manuscriptImage) return;
 
     try {
-      const a9s = viewerApiRef.current?.getAnnotations() ?? [];
+      const dirtyRecords = Object.values(editorRecords).filter(
+        (record) => record.dirtyState === 'created' || record.dirtyState === 'updated'
+      );
+
+      const locallyDeletedRecords = Object.values(editorRecords).filter(
+        (record) => record.dirtyState === 'deleted'
+      );
+
       const tasks: Promise<BackendGraph>[] = [];
 
-      for (const a of a9s) {
-        const feature = a9sToBackendFeature(a, imageHeight);
+      for (const record of dirtyRecords) {
+        const annotation = record.annotation;
+        const feature = a9sToBackendFeature(annotation, imageHeight);
 
-        if (isDbAnnotation(a)) {
-          const id = dbIdFromA9s(a)!;
-          tasks.push(patchAnnotation(id, { annotation: feature }));
-        } else {
-          tasks.push(
-            postAnnotation({
-              item_image: Number(manuscriptImage.id),
-              annotation: feature,
-              allograph: filteredAllograph?.id ?? 0,
-              hand: selectedHand?.id ?? 0,
-              graphcomponent_set: [],
-              positions: [],
-            })
-          );
+        if (record.source === 'persisted' && isDbAnnotation(annotation)) {
+          const id = dbIdFromA9s(annotation);
+          if (id != null) {
+            tasks.push(patchAnnotation(id, { annotation: feature }));
+          }
+          continue;
         }
+
+        tasks.push(
+          postAnnotation({
+            item_image: Number(manuscriptImage.id),
+            annotation: feature,
+            allograph: annotation._meta?.allographId ?? filteredAllograph?.id ?? 0,
+            hand: annotation._meta?.handId ?? selectedHand?.id ?? 0,
+            graphcomponent_set: [],
+            positions: [],
+          })
+        );
       }
 
       await Promise.all(tasks);
-      setUnsavedChanges(0);
-
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.removeItem(`unsaved:${imageId}`);
-        } catch {
-          // ignore
-        }
-      }
 
       const refreshed = await fetchAnnotationsForImage(
         String(manuscriptImage.id),
         filteredAllograph?.id ? String(filteredAllograph.id) : undefined
       );
       const mapped = refreshed.map((a) => backendToA9sAnnotation(a, imageHeight));
+
+      const locallyDeletedIds = new Set(locallyDeletedRecords.map((record) => record.id));
+      const visibleMapped = mapped.filter((annotation) => !locallyDeletedIds.has(annotation.id));
+
+      const nextEditorRecords = buildHydratedEditorRecordMap(mapped);
+
+      for (const deletedRecord of locallyDeletedRecords) {
+        nextEditorRecords[deletedRecord.id] = deletedRecord;
+      }
 
       if (typeof window !== 'undefined') {
         try {
@@ -703,15 +732,17 @@ export default function ManuscriptViewer({
         }
       }
 
-      setInitialA9sAnnots(mapped);
+      setInitialA9sAnnots(visibleMapped);
+      setA9sSnapshot(visibleMapped);
+      setEditorRecords(nextEditorRecords);
     } catch {
-      // save failed — leave unsaved count as is
+      // save failed — keep local dirty state intact
     }
   }, [
+    canPersistAnyAnnotations,
+    editorRecords,
     filteredAllograph,
     imageHeight,
-    imageId,
-    canPersistAnyAnnotations,
     manuscriptImage,
     selectedHand,
   ]);
@@ -847,6 +878,7 @@ export default function ManuscriptViewer({
     setHands([]);
     setHandsLoaded(false);
     setSelectedHand(undefined);
+    setEditorRecords({});
 
     setVisibilityFilters({
       allographIds: [],
@@ -973,31 +1005,6 @@ export default function ManuscriptViewer({
     viewerApiRef.current?.highlightAnnotations?.(highlightedIds);
   }, [osdReady, hoveredAnnotationId, highlightAllographId, highlightedIds]);
 
-  // hydrate unsaved count
-  React.useEffect(() => {
-    if (typeof window === 'undefined' || isPublicDemoMode) return;
-
-    try {
-      const saved = Number(localStorage.getItem(`unsaved:${imageId}`) || 0);
-      if (saved > 0) {
-        setUnsavedChanges(saved);
-      }
-    } catch {
-      // ignore
-    }
-  }, [imageId, isPublicDemoMode]);
-
-  // persist unsaved count
-  React.useEffect(() => {
-    if (typeof window === 'undefined' || isPublicDemoMode) return;
-
-    try {
-      localStorage.setItem(`unsaved:${imageId}`, String(unsavedChanges));
-    } catch {
-      // ignore
-    }
-  }, [unsavedChanges, imageId, isPublicDemoMode]);
-
   // sync annotation visibility into viewer
   React.useEffect(() => {
     if (!osdReady) return;
@@ -1082,11 +1089,13 @@ export default function ManuscriptViewer({
         if (isMounted) {
           setInitialA9sAnnots(merged);
           setA9sSnapshot(merged);
+          setEditorRecords(buildHydratedEditorRecordMap(merged));
         }
       } catch {
         if (isMounted) {
           setInitialA9sAnnots([]);
           setA9sSnapshot([]);
+          setEditorRecords({});
         }
       }
     };
@@ -1457,23 +1466,14 @@ export default function ManuscriptViewer({
               disableEditor={true}
               // readOnly={isPublicDemoMode}
               readOnly={false}
-              onCreate={() => {
+              onCreate={(annotation: A9sAnnotation) => {
                 persistAnnotationCache();
-
-                if (!isPublicDemoMode) {
-                  setUnsavedChanges((n) => n + 1);
-                }
-
+                setEditorRecords((prev) => markAnnotationCreated(prev, annotation));
                 setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? []);
               }}
-              onDelete={(a: A9sAnnotation) => {
+              onDelete={(annotation: A9sAnnotation) => {
                 persistAnnotationCache();
-
-                const id = a?.id as string | undefined;
-                if (!isPublicDemoMode && id && !isDbId(id)) {
-                  setUnsavedChanges((n) => Math.max(0, n - 1));
-                }
-
+                setEditorRecords((prev) => markAnnotationDeleted(prev, annotation.id));
                 setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? []);
               }}
               onSelect={handleSelectAnnotationFromViewer}
