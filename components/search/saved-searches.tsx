@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { Bookmark, BookmarkCheck, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { SEARCH_RESULT_CONFIG, type ResultType } from '@/lib/search-types';
+import { type ResultType } from '@/lib/search-types';
+import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
+import { useModelLabels } from '@/contexts/model-labels-context';
 import {
   type SavedSearch,
   addSavedSearch,
@@ -38,6 +40,7 @@ export function SavedSearchesPanel({
 }: SavedSearchesPanelProps) {
   const [searches, setSearches] = React.useState<SavedSearch[]>(() => getSavedSearches());
   const [label, setLabel] = React.useState('');
+  const { getLabel: getModelLabel } = useModelLabels();
 
   const handleSave = React.useCallback(() => {
     const trimmed = label.trim();
@@ -90,7 +93,7 @@ export function SavedSearchesPanel({
           </Button>
         </div>
         <p className="text-[11px] text-muted-foreground mt-1.5">
-          {SEARCH_RESULT_CONFIG[resultType].label}
+          {resolveResultTypeLabel(resultType, getModelLabel)}
           {keyword ? ` · "${keyword}"` : ''}
           {filterCount > 0 ? ` · ${filterCount} filter${filterCount > 1 ? 's' : ''}` : ''}
           {resultCount > 0 ? ` · ${resultCount.toLocaleString()} results` : ''}

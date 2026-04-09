@@ -8,7 +8,9 @@ import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';
 import { ResultTypeToggle } from '@/components/search/result-type-toggle';
 import { SearchActionsMenu } from '@/components/search/search-actions-menu';
-import { SEARCH_RESULT_CONFIG, type ResultType } from '@/lib/search-types';
+import { type ResultType } from '@/lib/search-types';
+import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
+import { useModelLabels } from '@/contexts/model-labels-context';
 import { Pagination } from '@/components/search/paginated-search';
 import type { ResultMap } from '@/types/search';
 import {
@@ -41,23 +43,25 @@ type ResultListItem = ResultMap[ResultType];
 
 export function SearchPage({ resultType: initialType }: { resultType?: ResultType } = {}) {
   const s = useSearchPageState(initialType);
+  const { getLabel } = useModelLabels();
+  const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
 
   return (
     <div className="flex h-screen flex-col bg-muted/30">
       <header className="relative z-10 flex shrink-0 items-center gap-2 border-b bg-background px-3 py-2 shadow-sm sm:gap-3 sm:px-4">
         <h1 className="sr-only">
-          {`Search ${SEARCH_RESULT_CONFIG[s.resultType].label}: ${s.resultCount.toLocaleString()} results`}
+          {`Search ${typeLabel}: ${s.resultCount.toLocaleString()} results`}
         </h1>
         <div
           className="shrink-0"
-          title={`${SEARCH_RESULT_CONFIG[s.resultType].label} — ${s.resultCount.toLocaleString()} results`}
+          title={`${typeLabel} — ${s.resultCount.toLocaleString()} results`}
         >
           <div className="flex items-baseline gap-1.5 whitespace-nowrap sm:gap-2">
             <span className="text-lg font-bold tabular-nums tracking-tight sm:text-2xl">
               {s.resultCount.toLocaleString()}
             </span>
             <span className="max-w-[min(28vw,9rem)] truncate text-xs text-muted-foreground sm:max-w-none sm:text-sm">
-              results in {SEARCH_RESULT_CONFIG[s.resultType].label}
+              results in {typeLabel}
             </span>
           </div>
         </div>
@@ -350,8 +354,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     <h3 className="text-base font-semibold">No results found</h3>
                     <p className="mt-2 text-sm text-muted-foreground">
                       {s.submittedKeyword
-                        ? `No ${SEARCH_RESULT_CONFIG[s.resultType].label.toLowerCase()} matched "${s.submittedKeyword}".`
-                        : `No ${SEARCH_RESULT_CONFIG[s.resultType].label.toLowerCase()} matched the current filters.`}
+                        ? `No ${typeLabel.toLowerCase()} matched "${s.submittedKeyword}".`
+                        : `No ${typeLabel.toLowerCase()} matched the current filters.`}
                     </p>
                     <div className="mt-4 flex flex-wrap justify-center gap-2">
                       {s.activeFilterCount > 0 && (

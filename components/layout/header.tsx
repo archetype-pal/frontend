@@ -32,7 +32,8 @@ import {
   getSearchHistory,
   type SearchHistoryEntry,
 } from '@/lib/search-history';
-import { SEARCH_RESULT_CONFIG } from '@/lib/search-types';
+import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 
@@ -40,6 +41,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
   const { items } = useCollection();
+  const { getLabel } = useModelLabels();
   const { token, user, logout } = useAuth();
   const { config, isSectionEnabled } = useSiteFeatures();
   const pathname = usePathname();
@@ -331,7 +333,7 @@ export default function Header() {
                       id: `recent-${idx}-${entry.timestamp}`,
                       label: entry.keyword,
                       value: entry.keyword,
-                      meta: SEARCH_RESULT_CONFIG[entry.resultType].label,
+                      meta: resolveResultTypeLabel(entry.resultType, getLabel),
                     }))}
                     onClearRecentSearches={() => {
                       clearSearchHistory();

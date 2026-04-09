@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Languages, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
@@ -20,7 +21,7 @@ const fieldMeta: Array<{ key: ModelLabelKey; title: string; description: string 
   {
     key: 'appManuscripts',
     title: 'App Name: Manuscripts',
-    description: 'Label used for the manuscripts app section in backoffice.',
+    description: 'Label used for the manuscripts section across the site.',
   },
   {
     key: 'historicalItem',
@@ -30,12 +31,12 @@ const fieldMeta: Array<{ key: ModelLabelKey; title: string; description: string 
   {
     key: 'catalogueNumber',
     title: 'Catalogue Number',
-    description: 'Label used for catalogue number forms and tables.',
+    description: 'Label used for catalogue number headings and table columns.',
   },
   {
     key: 'position',
     title: 'Position',
-    description: 'Label used in palaeography/annotation position management.',
+    description: 'Label used for annotation positions across the site.',
   },
   {
     key: 'date',
@@ -50,7 +51,7 @@ const fieldMeta: Array<{ key: ModelLabelKey; title: string; description: string 
   {
     key: 'fieldShelfmark',
     title: 'Field: Shelfmark',
-    description: 'Display label for shelfmark fields and shelfmark table headers.',
+    description: 'Display label for shelfmark fields and table columns across the site.',
   },
   {
     key: 'fieldDateMinWeight',
@@ -91,6 +92,7 @@ async function saveModelLabels(
 
 export default function TranslationsPage() {
   const { token } = useAuth();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const defaults = getDefaultModelLabelsConfig();
 
@@ -116,6 +118,7 @@ export default function TranslationsPage() {
       toast.success('Model labels saved');
       queryClient.setQueryData(['model-labels'], saved);
       setDirty(false);
+      router.refresh();
     },
     onError: (err: Error) => {
       toast.error('Failed to save model labels', { description: err.message });
@@ -154,7 +157,7 @@ export default function TranslationsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Translations</h1>
           <p className="text-sm text-muted-foreground">
-            Manage domain-specific labels used across the backoffice.
+            Manage domain-specific labels used across the site.
           </p>
         </div>
       </div>

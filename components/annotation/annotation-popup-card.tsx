@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 type PopupTab = 'components' | 'positions' | 'notes';
 
@@ -77,6 +78,8 @@ export function AnnotationPopupCard({
   selectedPositionLabels,
   selectedNotes,
 }: AnnotationPopupCardProps) {
+  const { getPluralLabel } = useModelLabels();
+
   return (
     <div
       className="fixed top-4 right-4 rounded-lg border bg-background shadow-lg"
@@ -251,7 +254,7 @@ export function AnnotationPopupCard({
                   data-[state=active]:border data-[state=active]:bg-background
                   data-[state=active]:shadow-sm"
                 >
-                  Positions
+                  {getPluralLabel('position')}
                 </TabsTrigger>
               )}
 

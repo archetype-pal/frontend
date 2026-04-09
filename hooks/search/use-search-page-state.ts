@@ -12,6 +12,8 @@ import {
   resultTypeItems,
   type ResultType,
 } from '@/lib/search-types';
+import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
+import { useModelLabels } from '@/contexts/model-labels-context';
 import { useSearchResults } from '@/hooks/search/use-search-results';
 import {
   areExtraParamsEqual,
@@ -83,6 +85,7 @@ function parseViewModeParam(raw: string | null, resultType: ResultType): ViewMod
 
 export function useSearchPageState(initialType?: ResultType) {
   const searchParams = useSearchParams();
+  const { getLabel } = useModelLabels();
   const resultsScrollRef = React.useRef<HTMLDivElement | null>(null);
   const isInternalUrlUpdate = React.useRef(false);
   const [viewMode, setViewMode] = React.useState<ViewMode>('table');
@@ -634,7 +637,7 @@ export function useSearchPageState(initialType?: ResultType) {
         a.click();
         URL.revokeObjectURL(a.href);
         toast.success(
-          `Exported ${SEARCH_RESULT_CONFIG[resultType].label} as ${format.toUpperCase()}`
+          `Exported ${resolveResultTypeLabel(resultType, getLabel)} as ${format.toUpperCase()}`
         );
       } catch {
         toast.error('Export failed. Try reducing results or choosing another format.');
@@ -642,7 +645,7 @@ export function useSearchPageState(initialType?: ResultType) {
         setExportBusy(false);
       }
     },
-    [queryState, resultType, submittedKeyword]
+    [queryState, resultType, submittedKeyword, getLabel]
   );
 
   return {

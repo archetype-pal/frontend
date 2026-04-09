@@ -21,19 +21,24 @@ import type {
 } from '@/types/search';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
+import { useModelLabels } from '@/contexts/model-labels-context';
+import type { ModelLabelKey } from '@/lib/model-labels';
 import { Highlight, MatchSnippet } from './highlight';
 import { CollectionStar } from '@/components/collection/collection-star';
 import { getImageDetailUrl, getGraphDetailUrl } from '@/lib/media-url';
 import {
   SEARCH_RESULT_TYPES,
-  SEARCH_RESULT_CONFIG,
   getRowCrossTypeTargets,
   buildShelfmarkFilterUrl,
 } from '@/lib/search-types';
+import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
 
 export type Column<T> = {
+  /** Stable identifier — used for visibleColumns matching and as fallback display text. */
   header: string;
+  /** When set, the display header is resolved from model labels at render time. */
+  labelKey?: ModelLabelKey;
   sortKey?: string;
   sortUrl?: string;
   formattedKey?: string;
@@ -46,11 +51,13 @@ function makeColumn<T>(
   accessor: (item: T) => React.ReactNode,
   sortKey?: string,
   className?: string,
-  formattedKey?: string
+  formattedKey?: string,
+  labelKey?: ModelLabelKey
 ): Column<T> {
   const inferredFormattedKey = sortKey?.replace(/_exact$/, '');
   return {
     header,
+    labelKey,
     accessor,
     sortKey,
     className,
@@ -74,7 +81,14 @@ const repositoryColumn = <T extends { repository_name: string }>(): Column<T> =>
   makeColumn('Repository', (item) => item.repository_name, 'repository_name_exact');
 
 const shelfmarkColumn = <T extends { shelfmark: string }>(): Column<T> =>
-  makeColumn('Shelfmark', (item) => item.shelfmark, 'shelfmark_exact');
+  makeColumn(
+    'Shelfmark',
+    (item) => item.shelfmark,
+    'shelfmark_exact',
+    undefined,
+    undefined,
+    'fieldShelfmark'
+  );
 
 const documentTypeColumn = <T extends { type: string }>(): Column<T> =>
   makeColumn('Document Type', (item) => item.type, 'type_exact');
@@ -86,7 +100,14 @@ const textTypeColumn = <T extends { text_type: string }>(): Column<T> =>
   makeColumn('Text Type', (item) => item.text_type);
 
 const catalogueNumColumn = <T extends { catalogue_numbers: string | string[] }>(): Column<T> =>
-  makeColumn('Cat. Num.', (item) => item.catalogue_numbers);
+  makeColumn(
+    'Cat. Num.',
+    (item) => item.catalogue_numbers,
+    undefined,
+    undefined,
+    undefined,
+    'catalogueNumber'
+  );
 
 function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
   const infoUrl = (graph.image_iiif || '').trim();
@@ -149,7 +170,10 @@ export const COLUMNS = {
     makeColumn(
       'Catalogue Num.',
       (m: ManuscriptListItem) => m.catalogue_numbers,
-      'catalogue_numbers_exact'
+      'catalogue_numbers_exact',
+      undefined,
+      undefined,
+      'catalogueNumber'
     ),
     makeColumn('Text Date', (m: ManuscriptListItem) => m.date),
     makeColumn('Doc. Type', (m: ManuscriptListItem) => m.type, 'type_exact'),
@@ -217,6 +241,7 @@ export const COLUMNS = {
     makeColumn('Date', (h: HandListItem) => h.date ?? '—'),
     {
       header: 'Catalogue Num.',
+      labelKey: 'catalogueNumber' as ModelLabelKey,
       accessor: (h) => h.catalogue_numbers,
       sortKey: 'catalogue_numbers_exact',
     },
@@ -308,7 +333,7 @@ function buildCrossTypeLinks<T extends { shelfmark: string }>(
   if (!targets) return undefined;
   return (item: T) =>
     targets.map((target) => ({
-      label: SEARCH_RESULT_CONFIG[target].label,
+      label: target,
       href: buildShelfmarkFilterUrl(target, item.shelfmark),
     }));
 }
@@ -416,6 +441,11 @@ function ResultsTableComponent<K extends ResultType>({
   compareSelection?: Array<string | number>;
   onToggleCompare?: (id: string | number) => void;
 }) {
+  const { getLabel } = useModelLabels();
+  const resolveHeader = React.useCallback(
+    (col: Column<ResultMap[K]>) => (col.labelKey ? getLabel(col.labelKey) : col.header),
+    [getLabel]
+  );
   const descriptor = React.useMemo(() => getDescriptor(resultType), [resultType]);
   const allCols = descriptor.columns;
   const baseCols = React.useMemo(
@@ -649,7 +679,7 @@ function ResultsTableComponent<K extends ResultType>({
                       href={link.href}
                       className="relative z-[2] text-[11px] text-primary hover:underline px-1.5 py-0.5 rounded hover:bg-primary/5 transition-colors"
                     >
-                      {link.label}
+                      {resolveResultTypeLabel(link.label as ResultType, getLabel)}
                     </Link>
                   ))}
                 </div>
@@ -695,7 +725,7 @@ function ResultsTableComponent<K extends ResultType>({
                 title={col.sortKey || col.sortUrl ? 'Click to sort' : undefined}
               >
                 <div className="inline-flex items-center space-x-1">
-                  <span>{col.header}</span>
+                  <span>{resolveHeader(col)}</span>
                   {col.sortKey === currKey &&
                     (isDesc ? (
                       <ArrowDown className="w-4 h-4 text-muted-foreground" />

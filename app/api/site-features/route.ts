@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { readSiteFeatures, writeSiteFeatures } from '@/lib/site-features-server';
 import type { SiteFeaturesConfig } from '@/lib/site-features';
@@ -43,5 +44,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid config shape' }, { status: 400 });
   }
   await writeSiteFeatures(body as SiteFeaturesConfig);
+  revalidatePath('/', 'layout');
   return NextResponse.json(body);
 }

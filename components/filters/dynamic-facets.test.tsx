@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
 import { DynamicFacets } from './dynamic-facets';
+import { ModelLabelsProvider } from '@/contexts/model-labels-context';
 import type { FacetData } from '@/types/facets';
 import type { ActiveFacetTag } from '@/lib/search-query';
 
@@ -26,8 +27,12 @@ function createTestQueryClient() {
   });
 }
 
-function withQueryClient(ui: React.ReactElement) {
-  return <QueryClientProvider client={createTestQueryClient()}>{ui}</QueryClientProvider>;
+function withProviders(ui: React.ReactElement) {
+  return (
+    <QueryClientProvider client={createTestQueryClient()}>
+      <ModelLabelsProvider>{ui}</ModelLabelsProvider>
+    </QueryClientProvider>
+  );
 }
 
 describe('DynamicFacets', () => {
@@ -40,7 +45,7 @@ describe('DynamicFacets', () => {
     };
 
     const html = renderToStaticMarkup(
-      withQueryClient(
+      withProviders(
         <DynamicFacets
           facets={facets}
           searchType="manuscripts"
@@ -84,7 +89,7 @@ describe('DynamicFacets', () => {
 
     act(() => {
       root.render(
-        withQueryClient(
+        withProviders(
           <DynamicFacets
             facets={facets}
             searchType="manuscripts"
@@ -145,7 +150,7 @@ describe('DynamicFacets', () => {
 
     act(() => {
       root.render(
-        withQueryClient(
+        withProviders(
           <DynamicFacets
             facets={facets}
             searchType="manuscripts"

@@ -15,7 +15,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SavedSearchesPanel } from '@/components/search/saved-searches';
-import { SEARCH_RESULT_CONFIG, type ResultType } from '@/lib/search-types';
+import { type ResultType } from '@/lib/search-types';
+import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
+import { useModelLabels } from '@/contexts/model-labels-context';
 import { stateFromUrl, type QueryState } from '@/lib/search-query';
 
 export type ViewMode = 'table' | 'grid' | 'timeline' | 'distribution' | 'map';
@@ -78,6 +80,7 @@ export function SearchActionsMenu({
   crossTypeLinks,
 }: SearchActionsMenuProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const { getLabel } = useModelLabels();
 
   const viewItem = (mode: ViewMode, label: string, disabled?: boolean) => (
     <DropdownMenuItem
@@ -142,7 +145,7 @@ export function SearchActionsMenu({
                   href={`/search/${type}${keyword ? '?keyword=' + encodeURIComponent(keyword) : ''}`}
                   onClick={() => setMenuOpen(false)}
                 >
-                  {SEARCH_RESULT_CONFIG[type].label}
+                  {resolveResultTypeLabel(type, getLabel)}
                 </Link>
               </DropdownMenuItem>
             ))}

@@ -19,7 +19,8 @@ import {
   getSearchHistory,
   type SearchHistoryEntry,
 } from '@/lib/search-history';
-import { SEARCH_RESULT_CONFIG } from '@/lib/search-types';
+import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
+import { useModelLabels } from '@/contexts/model-labels-context';
 import { cn } from '@/lib/utils';
 
 export type DynamicFacetsDensity = 'default' | 'sidebar';
@@ -63,6 +64,7 @@ export function DynamicFacets({
   density = 'default',
 }: DynamicFacetsProps) {
   const { suggestionsPool, getServerSuggestions } = useSearchContext();
+  const { getLabel } = useModelLabels();
   const [draftKeyword, setDraftKeyword] = React.useState(keyword);
   const [historyItems, setHistoryItems] = React.useState<SearchHistoryEntry[]>([]);
   const localSuggestions = useKeywordSuggestions(draftKeyword, suggestionsPool);
@@ -185,7 +187,7 @@ export function DynamicFacets({
             id: `facet-recent-${idx}-${entry.timestamp}`,
             label: entry.keyword,
             value: entry.keyword,
-            meta: SEARCH_RESULT_CONFIG[entry.resultType].label,
+            meta: resolveResultTypeLabel(entry.resultType, getLabel),
           }))}
           onClearRecentSearches={() => {
             clearSearchHistory();

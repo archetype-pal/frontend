@@ -1,4 +1,6 @@
 import { resultTypeItems, type ResultType } from '@/lib/search-types';
+import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
+import { useModelLabels } from '@/contexts/model-labels-context';
 import { cn } from '@/lib/utils';
 
 export function ResultTypeToggle({
@@ -12,6 +14,7 @@ export function ResultTypeToggle({
   enabledTypes?: ResultType[];
   counts?: Partial<Record<ResultType, number>>;
 }) {
+  const { getLabel } = useModelLabels();
   const items = enabledTypes
     ? resultTypeItems.filter((item) => enabledTypes.includes(item.value))
     : resultTypeItems;
@@ -39,7 +42,7 @@ export function ResultTypeToggle({
                   : 'border-b-transparent font-medium text-muted-foreground hover:text-foreground'
               )}
             >
-              {item.label}
+              {resolveResultTypeLabel(item.value, getLabel)}
               {typeof counts?.[item.value] === 'number' && (
                 <span className="ml-1 text-xs text-muted-foreground">
                   ({counts[item.value]!.toLocaleString()})

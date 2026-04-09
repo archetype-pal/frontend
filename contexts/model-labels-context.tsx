@@ -36,6 +36,13 @@ export function ModelLabelsProvider({
   const [config, setConfig] = useState<ModelLabelsConfig>(initialConfig ?? defaults);
   const [loading, setLoading] = useState(!initialConfig);
 
+  // Sync with server-provided config (e.g. after router.refresh())
+  useEffect(() => {
+    if (initialConfig) {
+      setConfig(initialConfig);
+    }
+  }, [initialConfig]);
+
   useEffect(() => {
     if (initialConfig) return;
     fetch('/api/model-labels')

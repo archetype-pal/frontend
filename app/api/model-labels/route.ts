@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/env';
 import { readModelLabels, writeModelLabels } from '@/lib/model-labels-server';
@@ -48,5 +49,6 @@ export async function PUT(request: NextRequest) {
     labels: normalizeModelLabels((body as { labels?: unknown }).labels as Record<string, unknown>),
   };
   await writeModelLabels(config);
+  revalidatePath('/', 'layout');
   return NextResponse.json(config);
 }

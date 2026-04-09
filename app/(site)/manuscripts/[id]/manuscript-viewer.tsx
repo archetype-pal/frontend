@@ -6,6 +6,7 @@ import type { Manuscript, ManuscriptImage } from '@/types/manuscript';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { getIiifImageUrl } from '@/utils/iiif';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 const TAB_VALUES = ['information', 'descriptions', 'images', 'texts'] as const;
 const DEFAULT_TAB = 'information';
@@ -28,6 +29,7 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { getLabel, getPluralLabel } = useModelLabels();
 
   const tabFromUrl = searchParams.get('tab');
   const activeTab =
@@ -90,7 +92,7 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
               </dd>
               <dt className="text-gray-600">Town or City</dt>
               <dd>{manuscript.current_item.repository.place}</dd>
-              <dt className="text-gray-600">Shelfmark</dt>
+              <dt className="text-gray-600">{getLabel('fieldShelfmark')}</dt>
               <dd>{manuscript.current_item.shelfmark}</dd>
             </dl>
           </section>
@@ -98,7 +100,7 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
           <section>
             <h2 className="text-2xl mb-4">Other information</h2>
             <dl className="grid grid-cols-[200px_1fr] gap-2">
-              <dt className="text-gray-600">Catalogue Numbers</dt>
+              <dt className="text-gray-600">{getPluralLabel('catalogueNumber')}</dt>
               <dd>
                 <ul className="list-none space-y-1">
                   {manuscript.historical_item.catalogue_numbers.map((cat, index) => (

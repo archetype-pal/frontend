@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ToggleLeft, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -46,6 +47,7 @@ async function saveSiteFeatures(
 
 export default function SiteFeaturesPage() {
   const { token } = useAuth();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const defaults = getDefaultConfig();
 
@@ -72,6 +74,7 @@ export default function SiteFeaturesPage() {
       toast.success('Site features saved');
       queryClient.setQueryData(['site-features'], saved);
       setDirty(false);
+      router.refresh();
     },
     onError: (err: Error) => {
       toast.error('Failed to save site features', { description: err.message });
