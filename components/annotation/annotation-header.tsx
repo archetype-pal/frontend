@@ -33,6 +33,7 @@ interface AnnotationHeaderProps {
   isVisibilityFilterActive?: boolean;
   onOpenSettingsPanel?: () => void;
   isSettingsActive?: boolean;
+  showSettingsButton?: boolean;
 }
 
 export function AnnotationHeader({
@@ -54,6 +55,7 @@ export function AnnotationHeader({
   isVisibilityFilterActive = false,
   onOpenSettingsPanel,
   isSettingsActive = false,
+  showSettingsButton = true,
 }: AnnotationHeaderProps) {
   const [selectedAllograph, setSelectedAllograph] = React.useState<string>('');
 
@@ -145,16 +147,19 @@ export function AnnotationHeader({
         )}
 
         <div className="flex items-center space-x-1">
-          <Button
-            variant={isSettingsActive ? 'default' : 'outline'}
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => onOpenSettingsPanel?.()}
-            type="button"
-            title="Settings"
-          >
-            <Wrench className="h-4 w-4" />
-          </Button>
+          {showSettingsButton && (
+            <Button
+              variant={isSettingsActive ? 'default' : 'outline'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => onOpenSettingsPanel?.()}
+              type="button"
+              title="Settings"
+            >
+              <Wrench className="h-4 w-4" />
+            </Button>
+          )}
+
           <Button variant="outline" size="icon" className="h-8 w-8">
             <Star className="h-4 w-4" />
           </Button>

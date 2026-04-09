@@ -42,6 +42,8 @@ import {
   dbIdFromA9s,
 } from '@/lib/annoMapping';
 
+import { getViewerCapabilities } from '@/lib/viewer-capabilities';
+
 import type { ViewerApi, Annotation as A9sAnnotation } from './ManuscriptAnnotorious';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
 import type { Allograph } from '@/types/allographs';
@@ -51,6 +53,8 @@ import type {
   A9sWithMeta,
   DraftSharePayload,
   AnnotationVisibilityFilters,
+  ViewerCapabilities,
+  ViewerMode,
 } from '@/types/annotation-viewer';
 
 import {
@@ -85,14 +89,28 @@ const ManuscriptAnnotorious = dynamic(() => import('./ManuscriptAnnotorious'), {
 
 interface ManuscriptViewerProps {
   imageId: string;
-  mode?: 'public' | 'editor';
+  mode?: ViewerMode;
+  capabilities?: ViewerCapabilities;
 }
 
 export default function ManuscriptViewer({
   imageId,
   mode = 'public',
+  capabilities,
 }: ManuscriptViewerProps): React.JSX.Element {
+  const viewerCapabilities = React.useMemo(
+    () => capabilities ?? getViewerCapabilities(mode),
+    [capabilities, mode]
+  );
+
   const isPublicDemoMode = mode === 'public';
+
+  const canCreateAnnotations = viewerCapabilities.canCreateAnnotations;
+  const canPersistAnnotations = viewerCapabilities.canPersistAnnotations;
+  const canDeleteAnnotations = viewerCapabilities.canDeleteAnnotations;
+  const canModifyAnnotations = viewerCapabilities.canModifyAnnotations;
+  const canViewEditorialControls = viewerCapabilities.canViewEditorialControls;
+  const canUseSettings = viewerCapabilities.canUseSettings;
 
   // ---- State / refs ----
   const [annotationsEnabled, setAnnotationsEnabled] = React.useState<boolean>(true);
@@ -600,17 +618,21 @@ export default function ManuscriptViewer({
   };
 
   const handleCreateAnnotation = () => {
+    if (!canCreateAnnotations) return;
+
     viewerApiRef.current?.enableDraw();
     setActiveButton('editorial');
   };
 
   const handleDeleteTool = () => {
+    if (!canDeleteAnnotations) return;
+
     viewerApiRef.current?.enableDelete();
     setActiveButton('delete');
   };
 
   const handleSave = React.useCallback(async (): Promise<void> => {
-    if (isPublicDemoMode || !manuscriptImage) return;
+    if (!canPersistAnnotations || !manuscriptImage) return;
 
     try {
       const a9s = viewerApiRef.current?.getAnnotations() ?? [];
@@ -669,7 +691,14 @@ export default function ManuscriptViewer({
     } catch {
       // save failed — leave unsaved count as is
     }
-  }, [filteredAllograph, imageHeight, imageId, isPublicDemoMode, manuscriptImage, selectedHand]);
+  }, [
+    filteredAllograph,
+    imageHeight,
+    imageId,
+    canPersistAnnotations,
+    manuscriptImage,
+    selectedHand,
+  ]);
 
   const handleToggleAnnotations = () => {
     setAnnotationsEnabled((prev) => {
@@ -735,12 +764,14 @@ export default function ManuscriptViewer({
   }, [filterPanelDrag]);
 
   const toggleSettingsPanel = React.useCallback(() => {
+    if (!canUseSettings) return;
+
     setIsSettingsPanelOpen((prev) => {
       const next = !prev;
       if (!next) settingsPanelDrag.reset();
       return next;
     });
-  }, [settingsPanelDrag]);
+  }, [canUseSettings, settingsPanelDrag]);
 
   const handleSelectAnnotationFromViewer = React.useCallback(
     (annotation: A9sAnnotation | null) => {
@@ -1123,7 +1154,7 @@ export default function ManuscriptViewer({
       annotationsEnabled={annotationsEnabled}
       onToggleAnnotations={handleToggleAnnotations}
       unsavedCount={unsavedChanges}
-      showUnsavedCount={!isPublicDemoMode}
+      showUnsavedCount={canPersistAnnotations}
       onAllographSelect={setFilteredAllograph}
       onHandSelect={setSelectedHand}
       allographs={allographsForThisImage}
@@ -1139,8 +1170,9 @@ export default function ManuscriptViewer({
       }}
       onOpenFilterPanel={toggleFilterPanel}
       isVisibilityFilterActive={isVisibilityFilterActive}
-      onOpenSettingsPanel={toggleSettingsPanel}
-      isSettingsActive={isSettingsPanelOpen}
+      onOpenSettingsPanel={canUseSettings ? toggleSettingsPanel : undefined}
+      isSettingsActive={canUseSettings ? isSettingsPanelOpen : false}
+      showSettingsButton={canUseSettings}
     />
   );
 
@@ -1190,7 +1222,7 @@ export default function ManuscriptViewer({
         hands={handsForThisImage}
         selectedAllographIds={visibilityFilters.allographIds}
         selectedHandIds={visibilityFilters.handIds}
-        showEditorialToggle={!isPublicDemoMode}
+        showEditorialToggle={canViewEditorialControls}
         showEditorial={visibilityFilters.showEditorial}
         showPublicAnnotations={visibilityFilters.showPublicAnnotations}
         onClose={handleCloseFilterPanel}
@@ -1301,52 +1333,60 @@ export default function ManuscriptViewer({
               <TooltipContent>Create Annotation</TooltipContent>
             </Tooltip>
 
-            {!isPublicDemoMode && (
+            {(canPersistAnnotations || canDeleteAnnotations || canModifyAnnotations) && (
               <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => void handleSave()}
-                      disabled={unsavedChanges === 0}
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Save</TooltipContent>
-                </Tooltip>
+                {canPersistAnnotations && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void handleSave()}
+                        disabled={unsavedChanges === 0}
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Save</TooltipContent>
+                  </Tooltip>
+                )}
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeButton === 'delete' ? 'default' : 'ghost'}
-                      size="icon"
-                      onClick={handleDeleteTool}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Delete (del)</TooltipContent>
-                </Tooltip>
+                {canDeleteAnnotations && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={activeButton === 'delete' ? 'default' : 'ghost'}
+                        size="icon"
+                        onClick={handleDeleteTool}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Delete (del)</TooltipContent>
+                  </Tooltip>
+                )}
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Expand className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Modify</TooltipContent>
-                </Tooltip>
+                {canModifyAnnotations && (
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Expand className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Modify</TooltipContent>
+                    </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <SquarePen className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Draw</TooltipContent>
-                </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <SquarePen className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Draw</TooltipContent>
+                    </Tooltip>
+                  </>
+                )}
               </>
             )}
 

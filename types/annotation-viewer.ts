@@ -61,3 +61,47 @@ export type PopupRecord = {
   draftAllographText: string;
   draftNoteText: string;
 };
+
+export type ViewerMode = 'public' | 'editor';
+
+export interface ViewerCapabilities {
+  /**
+   * Public mode already allows temporary/demo annotation creation,
+   * so this is true for both public and editor layers.
+   */
+  canCreateAnnotations: boolean;
+
+  /**
+   * Persist changes to the backend.
+   * Public mode: false
+   * Editor/admin mode: true
+   */
+  canPersistAnnotations: boolean;
+
+  /**
+   * Delete existing persisted annotations.
+   * Public mode: false
+   * Editor/admin mode: true
+   */
+  canDeleteAnnotations: boolean;
+
+  /**
+   * Modify existing persisted annotation geometry/content.
+   * Public mode: false
+   * Editor/admin mode: true
+   */
+  canModifyAnnotations: boolean;
+
+  /**
+   * Show editorial-only controls/filters/settings.
+   * Public mode: false
+   * Editor/admin mode: true
+   */
+  canViewEditorialControls: boolean;
+
+  /**
+   * Show/open viewer settings.
+   * Public mode currently already has this, so true for both.
+   */
+  canUseSettings: boolean;
+}
