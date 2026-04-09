@@ -44,6 +44,7 @@ import {
 
 import {
   canCreateAnnotationKind,
+  canPersistAnnotationKind,
   getDefaultAnnotationCreationKind,
   getViewerCapabilities,
 } from '@/lib/viewer-capabilities';
@@ -119,10 +120,12 @@ export default function ManuscriptViewer({
 
   const isPublicDemoMode = mode === 'public';
 
+  const canCreatePublicAnnotations = viewerCapabilities.canCreatePublicAnnotations;
   const canPersistPublicAnnotations = viewerCapabilities.canPersistPublicAnnotations;
+  const canCreateEditorialAnnotations = viewerCapabilities.canCreateEditorialAnnotations;
   const canPersistEditorialAnnotations = viewerCapabilities.canPersistEditorialAnnotations;
   const canDeleteAnnotations = viewerCapabilities.canDeleteAnnotations;
-  const canModifyAnnotations = viewerCapabilities.canModifyAnnotations;
+  const _canModifyAnnotations = viewerCapabilities.canModifyAnnotations;
   const canViewEditorialControls = viewerCapabilities.canViewEditorialControls;
   const canUseSettings = viewerCapabilities.canUseSettings;
   const canUseEditorSettings = viewerCapabilities.canUseEditorSettings;
@@ -321,19 +324,22 @@ export default function ManuscriptViewer({
     visibilityFiltersReady &&
     (!allAllographFiltersSelected ||
       !allHandFiltersSelected ||
-      (!isPublicDemoMode && !visibilityFilters.showEditorial) ||
+      (canViewEditorialControls && !visibilityFilters.showEditorial) ||
       !visibilityFilters.showPublicAnnotations);
 
   const annotationVisibilityFilter = React.useCallback(
     (annotation: A9sAnnotation) => {
       if (!visibilityFiltersReady) return true;
 
-      const isDraft = typeof annotation.id === 'string' && !annotation.id.startsWith('db:');
-      if (isDraft) {
-        return visibilityFilters.showPublicAnnotations;
-      }
-
       const meta = (annotation as A9sWithMeta)._meta;
+      const annotationKind: AnnotationCreationKind =
+        meta?.annotationType === 'editorial' ? 'editorial' : 'public';
+
+      const kindPass =
+        annotationKind === 'editorial'
+          ? visibilityFilters.showEditorial
+          : visibilityFilters.showPublicAnnotations;
+
       const allographId = meta?.allographId;
       const handId = meta?.handId;
 
@@ -349,7 +355,7 @@ export default function ManuscriptViewer({
 
       const selectedHandPass = !selectedHand || (handId != null && handId === selectedHand.id);
 
-      return allographPass && handPass && selectedHandPass;
+      return kindPass && allographPass && handPass && selectedHandPass;
     },
     [
       visibilityFiltersReady,
@@ -376,6 +382,53 @@ export default function ManuscriptViewer({
       // ignore
     }
   }, [imageHeight, isPublicDemoMode, manuscriptImage]);
+
+  const getAnnotationKind = React.useCallback(
+    (annotation: A9sAnnotation): AnnotationCreationKind =>
+      annotation._meta?.annotationType === 'editorial' ? 'editorial' : 'public',
+    []
+  );
+
+  const decorateCreatedAnnotation = React.useCallback(
+    (annotation: A9sAnnotation): A9sWithMeta => {
+      return {
+        ...annotation,
+        _meta: {
+          ...annotation._meta,
+          allographId: filteredAllograph?.id ?? annotation._meta?.allographId,
+          handId: selectedHand?.id ?? annotation._meta?.handId,
+          annotationType: currentCreationKind,
+        },
+      } as A9sWithMeta;
+    },
+    [filteredAllograph?.id, selectedHand?.id, currentCreationKind]
+  );
+
+  const handleViewerCreate = React.useCallback(
+    (annotation: A9sAnnotation) => {
+      persistAnnotationCache();
+
+      const enriched = decorateCreatedAnnotation(annotation);
+
+      const syncCreatedAnnotation = async () => {
+        await viewerApiRef.current?.updateSelectedDraft?.(enriched);
+
+        updatePopupById(enriched.id, { annotation: enriched });
+
+        setEditorRecords((prev) => markAnnotationCreated(prev, enriched));
+
+        const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
+        const nextAnnotations = currentAnnotations.some((item) => item.id === enriched.id)
+          ? currentAnnotations.map((item) => (item.id === enriched.id ? enriched : item))
+          : [...currentAnnotations, enriched];
+
+        setA9sSnapshot(nextAnnotations);
+      };
+
+      void syncCreatedAnnotation();
+    },
+    [decorateCreatedAnnotation, persistAnnotationCache, updatePopupById]
+  );
 
   const clearSinglePopupState = React.useCallback(
     (options?: { clearHover?: boolean }) => {
@@ -669,9 +722,13 @@ export default function ManuscriptViewer({
     if (!canPersistAnyAnnotations || !manuscriptImage) return;
 
     try {
-      const dirtyRecords = Object.values(editorRecords).filter(
-        (record) => record.dirtyState === 'created' || record.dirtyState === 'updated'
-      );
+      const dirtyRecords = Object.values(editorRecords).filter((record) => {
+        if (record.dirtyState !== 'created' && record.dirtyState !== 'updated') {
+          return false;
+        }
+
+        return canPersistAnnotationKind(viewerCapabilities, getAnnotationKind(record.annotation));
+      });
 
       const locallyDeletedRecords = Object.values(editorRecords).filter(
         (record) => record.dirtyState === 'deleted'
@@ -745,6 +802,8 @@ export default function ManuscriptViewer({
     imageHeight,
     manuscriptImage,
     selectedHand,
+    getAnnotationKind,
+    viewerCapabilities,
   ]);
 
   const handleToggleAnnotations = () => {
@@ -1355,74 +1414,75 @@ export default function ManuscriptViewer({
               <TooltipContent>Move Tool (m)</TooltipContent>
             </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={activeTool === 'draw' ? 'default' : 'ghost'}
-                  size="icon"
-                  onClick={() => handleCreateAnnotation()}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Create Annotation</TooltipContent>
-            </Tooltip>
+            {canCreatePublicAnnotations && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={
+                      activeTool === 'draw' && currentCreationKind === 'public'
+                        ? 'default'
+                        : 'ghost'
+                    }
+                    size="icon"
+                    onClick={() => handleCreateAnnotation('public')}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {canCreateEditorialAnnotations ? 'Create Public Annotation' : 'Create Annotation'}
+                </TooltipContent>
+              </Tooltip>
+            )}
 
-            {(canPersistAnyAnnotations || canDeleteAnnotations || canModifyAnnotations) && (
-              <>
-                {canPersistAnyAnnotations && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => void handleSave()}
-                        disabled={unsavedChanges === 0}
-                      >
-                        <Save className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Save</TooltipContent>
-                  </Tooltip>
-                )}
+            {canCreateEditorialAnnotations && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={
+                      activeTool === 'draw' && currentCreationKind === 'editorial'
+                        ? 'default'
+                        : 'ghost'
+                    }
+                    size="icon"
+                    onClick={() => handleCreateAnnotation('editorial')}
+                  >
+                    <SquarePen className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Create Editorial Annotation</TooltipContent>
+              </Tooltip>
+            )}
 
-                {canDeleteAnnotations && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={activeTool === 'delete' ? 'default' : 'ghost'}
-                        size="icon"
-                        onClick={handleDeleteTool}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Delete (del)</TooltipContent>
-                  </Tooltip>
-                )}
+            {canPersistAnyAnnotations && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => void handleSave()}
+                    disabled={unsavedChanges === 0}
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Save</TooltipContent>
+              </Tooltip>
+            )}
 
-                {canModifyAnnotations && (
-                  <>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Expand className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Modify</TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <SquarePen className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Draw</TooltipContent>
-                    </Tooltip>
-                  </>
-                )}
-              </>
+            {canDeleteAnnotations && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={activeTool === 'delete' ? 'default' : 'ghost'}
+                    size="icon"
+                    onClick={handleDeleteTool}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Delete (del)</TooltipContent>
+              </Tooltip>
             )}
 
             {manuscriptImage && manuscript && (
@@ -1466,11 +1526,7 @@ export default function ManuscriptViewer({
               disableEditor={true}
               // readOnly={isPublicDemoMode}
               readOnly={false}
-              onCreate={(annotation: A9sAnnotation) => {
-                persistAnnotationCache();
-                setEditorRecords((prev) => markAnnotationCreated(prev, annotation));
-                setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? []);
-              }}
+              onCreate={handleViewerCreate}
               onDelete={(annotation: A9sAnnotation) => {
                 persistAnnotationCache();
                 setEditorRecords((prev) => markAnnotationDeleted(prev, annotation.id));

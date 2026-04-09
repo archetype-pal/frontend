@@ -25,7 +25,7 @@ export function AnnotationSettingsPanel({
   transform,
   dragHandleProps,
   viewerSettings,
-  showEditorSettings: _showEditorSettings = false,
+  showEditorSettings = false,
   onClose,
   onToggleAllowMultipleBoxes,
   onToggleSelectMultipleAnnotations,
@@ -65,16 +65,6 @@ export function AnnotationSettingsPanel({
             />
             <span className="text-sm text-foreground">Allow multiple boxes</span>
           </label>
-
-          <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
-            <input
-              type="checkbox"
-              checked={viewerSettings.selectMultipleAnnotations}
-              onChange={onToggleSelectMultipleAnnotations}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            <span className="text-sm text-foreground">Select multiple annotations</span>
-          </label>
         </div>
 
         <div>
@@ -101,6 +91,24 @@ export function AnnotationSettingsPanel({
             </Button>
           </div>
         </div>
+        {showEditorSettings && (
+          <div>
+            <h4 className="text-sm font-semibold text-foreground">Editor settings</h4>
+            <Separator className="my-3" />
+            <p className="text-sm text-muted-foreground">
+              Additional editor-specific settings will appear here in the next step.
+            </p>
+            <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
+              <input
+                type="checkbox"
+                checked={viewerSettings.selectMultipleAnnotations}
+                onChange={onToggleSelectMultipleAnnotations}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <span className="text-sm text-foreground">Select multiple annotations</span>
+            </label>
+          </div>
+        )}
       </div>
     </div>
   );
