@@ -42,7 +42,7 @@ import { useSearchPageState } from '@/hooks/search/use-search-page-state';
 type ResultListItem = ResultMap[ResultType];
 
 export function SearchPage({ resultType: initialType }: { resultType?: ResultType } = {}) {
-  const s = useSearchPageState(initialType);
+  const { resultsScrollRef, ...s } = useSearchPageState(initialType);
   const { getLabel } = useModelLabels();
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
 
@@ -241,7 +241,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
 
         <main className="flex min-w-0 flex-1 flex-col">
           <div
-            ref={s.resultsScrollRef}
+            ref={resultsScrollRef}
             className="relative flex flex-1 flex-col overflow-auto p-2 sm:p-3"
           >
             <div className="flex min-h-0 flex-col rounded-xl border border-border/80 bg-card shadow-sm">
@@ -266,7 +266,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                       onSort={s.handleSort}
                       highlightKeyword={s.submittedKeyword}
                       visibleColumns={s.categoryConfig.visibleColumns}
-                      scrollContainerRef={s.resultsScrollRef}
+                      scrollContainerRef={resultsScrollRef}
                       isFetching={s.isFetching}
                       compareSelection={s.compareIds}
                       onToggleCompare={s.toggleCompare}
@@ -343,7 +343,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                       results={s.filtered as Parameters<typeof SearchGrid>[0]['results']}
                       resultType={s.resultType}
                       highlightKeyword={s.submittedKeyword}
-                      scrollContainerRef={s.resultsScrollRef}
+                      scrollContainerRef={resultsScrollRef}
                       isFetching={s.isFetching}
                       compareSelection={s.compareIds}
                       onToggleCompare={s.toggleCompare}

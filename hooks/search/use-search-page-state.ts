@@ -36,7 +36,6 @@ import {
   withOffset,
 } from '@/lib/search-query';
 import {
-  AdvancedSearchPanel,
   DEFAULT_ADVANCED_SEARCH_STATE,
   type AdvancedSearchState,
 } from '@/components/search/advanced-search-panel';

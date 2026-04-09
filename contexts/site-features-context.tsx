@@ -39,11 +39,11 @@ export function SiteFeaturesProvider({
   const [loading, setLoading] = useState(!initialConfig);
 
   // Sync with server-provided config (e.g. after router.refresh())
-  useEffect(() => {
-    if (initialConfig) {
-      setConfig(initialConfig);
-    }
-  }, [initialConfig]);
+  const [prevInitialConfig, setPrevInitialConfig] = useState(initialConfig);
+  if (initialConfig && initialConfig !== prevInitialConfig) {
+    setPrevInitialConfig(initialConfig);
+    setConfig(initialConfig);
+  }
 
   useEffect(() => {
     if (initialConfig) return;
