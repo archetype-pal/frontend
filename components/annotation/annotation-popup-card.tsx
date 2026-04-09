@@ -3,6 +3,11 @@
 import * as React from 'react';
 import { Share2, Star, X } from 'lucide-react';
 
+import type {
+  AnnotationCreationKind,
+  AnnotationPopupCapabilities,
+} from '@/types/annotation-viewer';
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -21,6 +26,8 @@ type SelectedComponentGroup = {
 interface AnnotationPopupCardProps {
   title: string;
   isDraftAnnotation: boolean;
+  annotationKind: AnnotationCreationKind;
+  popupCapabilities: AnnotationPopupCapabilities;
 
   popupTransform: string;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
@@ -55,6 +62,8 @@ interface AnnotationPopupCardProps {
 export function AnnotationPopupCard({
   title,
   isDraftAnnotation,
+  annotationKind,
+  popupCapabilities,
   popupTransform,
   dragHandleProps,
   zIndex,
@@ -97,9 +106,20 @@ export function AnnotationPopupCard({
       >
         <div className="min-w-0">
           <h3 className="truncate text-base font-semibold">{title}</h3>
-          {isDraftAnnotation && (
-            <p className="text-xs text-muted-foreground">Temporary annotation</p>
-          )}
+
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            {isDraftAnnotation ? (
+              <span>
+                {popupCapabilities.canPersistDraft ? 'Unsaved draft' : 'Temporary annotation'}
+              </span>
+            ) : (
+              <span>Saved annotation</span>
+            )}
+
+            <span className="rounded border px-1.5 py-0.5">
+              {annotationKind === 'editorial' ? 'Editorial' : 'Public'}
+            </span>
+          </div>
         </div>
 
         <div
@@ -221,13 +241,21 @@ export function AnnotationPopupCard({
             />
           </div>
 
-          <div className="mt-2 flex items-center justify-end gap-2 border-t pt-3">
-            <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
-              Cancel
-            </Button>
-            <Button onClick={onConfirmDraftAnnotation} type="button">
-              OK
-            </Button>
+          <div className="mt-2 flex items-center justify-between gap-2 border-t pt-3">
+            <div className="text-xs text-muted-foreground">
+              {popupCapabilities.canPersistDraft
+                ? 'This draft can be saved by the current user.'
+                : 'This annotation remains a local temporary draft.'}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
+                Cancel
+              </Button>
+              <Button onClick={onConfirmDraftAnnotation} type="button">
+                OK
+              </Button>
+            </div>
           </div>
         </div>
       ) : (

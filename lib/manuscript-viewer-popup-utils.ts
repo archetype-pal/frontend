@@ -1,4 +1,9 @@
-import type { PopupRecord } from '@/types/annotation-viewer';
+import type {
+  AnnotationCreationKind,
+  AnnotationPopupCapabilities,
+  PopupRecord,
+  ViewerCapabilities,
+} from '@/types/annotation-viewer';
 import { isDbId } from '@/lib/annotation-popup-utils';
 
 export type PopupPosition = {
@@ -12,11 +17,38 @@ export const MULTI_POPUP_BASE_Y = 300;
 export const ACTIVE_POPUP_Z_INDEX = 80;
 export const INACTIVE_POPUP_BASE_Z_INDEX = 60;
 
+export function getAnnotationKindFromPopupRecord(popupRecord: PopupRecord): AnnotationCreationKind {
+  return popupRecord.annotation._meta?.annotationType === 'editorial' ? 'editorial' : 'public';
+}
+
+export function getPopupCapabilities(
+  popupRecord: PopupRecord,
+  viewerCapabilities: ViewerCapabilities
+): AnnotationPopupCapabilities {
+  const isDraft = !isDbId(popupRecord.annotation.id);
+  const kind = getAnnotationKindFromPopupRecord(popupRecord);
+
+  const canPersistDraft =
+    isDraft &&
+    (kind === 'editorial'
+      ? viewerCapabilities.canPersistEditorialAnnotations
+      : viewerCapabilities.canPersistPublicAnnotations);
+
+  return {
+    canShare: true,
+    canUseCollection: !isDraft,
+    canEditDraft: isDraft,
+    canPersistDraft,
+    canViewEditorMeta: viewerCapabilities.canViewEditorialControls,
+  };
+}
+
 export function getPopupCardViewData(
   popupRecord: PopupRecord,
   allographNameById: Map<number, string>
 ) {
   const annotation = popupRecord.annotation;
+  const annotationKind = annotation._meta?.annotationType === 'editorial' ? 'editorial' : 'public';
   const isDraft = !isDbId(annotation.id);
 
   const title = isDraft
@@ -53,6 +85,7 @@ export function getPopupCardViewData(
 
   return {
     annotation,
+    annotationKind,
     isDraft,
     title,
     hasPositionsTab,

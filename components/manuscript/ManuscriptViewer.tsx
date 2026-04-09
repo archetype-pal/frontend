@@ -76,6 +76,8 @@ import {
 } from '@/lib/annotation-popup-utils';
 
 import {
+  getAnnotationKindFromPopupRecord,
+  getPopupCapabilities,
   getPopupCardViewData,
   getPopupInitialPosition,
   getPopupZIndex,
@@ -1538,6 +1540,8 @@ export default function ManuscriptViewer({
 
             {visiblePopupRecords.map((popupRecord, index) => {
               const popupCard = getPopupCardViewData(popupRecord, allographNameById);
+              const popupCapabilities = getPopupCapabilities(popupRecord, viewerCapabilities);
+              const annotationKind = getAnnotationKindFromPopupRecord(popupRecord);
               const isActive = popupRecord.id === activePopupId;
               const { x: initialX, y: initialY } = getPopupInitialPosition(
                 index,
@@ -1560,6 +1564,8 @@ export default function ManuscriptViewer({
                     <AnnotationPopupCard
                       title={popupCard.title}
                       isDraftAnnotation={popupCard.isDraft}
+                      annotationKind={annotationKind}
+                      popupCapabilities={popupCapabilities}
                       popupTransform={popupTransform}
                       dragHandleProps={dragHandleProps}
                       zIndex={zIndex}

@@ -127,3 +127,11 @@ export interface ViewerAccessContext {
   mode: ViewerMode;
   capabilities: ViewerCapabilities;
 }
+
+export interface AnnotationPopupCapabilities {
+  canShare: boolean;
+  canUseCollection: boolean;
+  canEditDraft: boolean;
+  canPersistDraft: boolean;
+  canViewEditorMeta: boolean;
+}
