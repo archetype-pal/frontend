@@ -53,9 +53,17 @@ export interface PresetFilter<TData> {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  /** Key of the column used for the global search input. */
+  /** Key of the column used for the global search input (client-side filtering). */
   searchColumn?: string;
   searchPlaceholder?: string;
+  /**
+   * Controlled search value for server-side search.
+   * When provided together with `onSearchChange`, the search input is controlled
+   * externally and no client-side column filtering is applied.
+   */
+  searchValue?: string;
+  /** Callback fired when the search input changes (server-side search mode). */
+  onSearchChange?: (value: string) => void;
   /** Actions rendered in the toolbar (e.g. a "New" button). */
   toolbarActions?: React.ReactNode;
   /** Enable client-side pagination (default: true). */
@@ -84,6 +92,8 @@ export function DataTable<TData, TValue>({
   data,
   searchColumn,
   searchPlaceholder = 'Search...',
+  searchValue,
+  onSearchChange,
   toolbarActions,
   pagination = true,
   pageSize = 20,
@@ -103,9 +113,11 @@ export function DataTable<TData, TValue>({
   const [activePreset, setActivePreset] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const hasSearch = !!(searchColumn || onSearchChange);
+
   // "/" shortcut to focus search input
   useEffect(() => {
-    if (!searchColumn) return;
+    if (!hasSearch) return;
     function onKeyDown(e: KeyboardEvent) {
       if (
         e.key === '/' &&
@@ -122,7 +134,7 @@ export function DataTable<TData, TValue>({
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [searchColumn]);
+  }, [hasSearch]);
 
   // Apply preset filter to data
   const filteredData =
@@ -247,16 +259,24 @@ export function DataTable<TData, TValue>({
       {filterBar && <div className="flex flex-wrap items-center gap-2">{filterBar}</div>}
 
       {/* Toolbar */}
-      {(searchColumn || toolbarActions || enableColumnVisibility || enableExport) && (
+      {(hasSearch || toolbarActions || enableColumnVisibility || enableExport) && (
         <div className="flex items-center gap-2">
-          {searchColumn && (
+          {hasSearch && (
             <div className="relative max-w-sm flex-1">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 ref={searchInputRef}
                 placeholder={searchPlaceholder}
-                value={(table.getColumn(searchColumn)?.getFilterValue() as string) ?? ''}
-                onChange={(e) => table.getColumn(searchColumn)?.setFilterValue(e.target.value)}
+                value={
+                  onSearchChange
+                    ? (searchValue ?? '')
+                    : ((table.getColumn(searchColumn!)?.getFilterValue() as string) ?? '')
+                }
+                onChange={(e) =>
+                  onSearchChange
+                    ? onSearchChange(e.target.value)
+                    : table.getColumn(searchColumn!)?.setFilterValue(e.target.value)
+                }
                 className="pl-8 pr-8 h-9"
               />
               <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none hidden sm:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">

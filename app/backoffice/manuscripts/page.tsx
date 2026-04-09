@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
@@ -19,7 +19,19 @@ export default function ManuscriptsPage() {
   const { token } = useAuth();
   const router = useRouter();
   const [page, setPage] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const { getLabel, getPluralLabel } = useModelLabels();
+
+  // Debounce search input → server query
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => {
+    debounceRef.current = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchInput]);
   const historicalItemLabel = getLabel('historicalItem');
   const historicalItemPlural = getPluralLabel('historicalItem');
   const catalogueLabel = getLabel('catalogueNumber');
@@ -104,9 +116,15 @@ export default function ManuscriptsPage() {
     [catalogueLabel, dateLabel, historicalItemLabel, shelfmarkLabel]
   );
 
+  const queryParams = {
+    limit: 50,
+    offset: page * 50,
+    ...(search ? { search } : {}),
+  };
+
   const { data } = useQuery({
-    queryKey: backofficeKeys.manuscripts.list({ offset: page * 50 }),
-    queryFn: () => getHistoricalItems(token!, { limit: 50, offset: page * 50 }),
+    queryKey: backofficeKeys.manuscripts.list(queryParams),
+    queryFn: () => getHistoricalItems(token!, queryParams),
     enabled: !!token,
   });
 
@@ -131,9 +149,10 @@ export default function ManuscriptsPage() {
       <DataTable
         columns={columns}
         data={data?.results ?? []}
-        searchColumn="location_display"
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
         searchPlaceholder={`Search by shelfmark or ${catalogueLabel.toLowerCase()}...`}
-        pageSize={50}
+        pagination={false}
         enableColumnVisibility
         enableExport
         exportFilename="manuscripts"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -24,7 +24,19 @@ export default function PhysicalVolumesPage() {
   const { getLabel } = useModelLabels();
   const [repoFilter, setRepoFilter] = useState<string>('__all');
   const [page, setPage] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const shelfmarkLabel = getLabel('fieldShelfmark');
+
+  // Debounce search input → server query
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => {
+    debounceRef.current = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchInput]);
   const appManuscriptsLabel = getLabel('appManuscripts');
 
   const columns: ColumnDef<CurrentItemOption>[] = [
@@ -83,6 +95,7 @@ export default function PhysicalVolumesPage() {
 
   const filterParams = {
     ...(repoFilter !== '__all' ? { repository: Number(repoFilter) } : {}),
+    ...(search ? { search } : {}),
     limit: 50,
     offset: page * 50,
   };
@@ -131,9 +144,10 @@ export default function PhysicalVolumesPage() {
       <DataTable
         columns={columns}
         data={data?.results ?? []}
-        searchColumn="shelfmark"
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
         searchPlaceholder={`Search by ${shelfmarkLabel.toLowerCase()}...`}
-        pageSize={50}
+        pagination={false}
         enableColumnVisibility
         enableExport
         exportFilename="physical-volumes"
