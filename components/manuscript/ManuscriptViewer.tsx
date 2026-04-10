@@ -221,6 +221,13 @@ export default function ManuscriptViewer({
   const settingsPanelDrag = useDraggablePosition({ x: 0, y: 0 });
 
   // ---- Derived values ----
+  const getCanonicalAnnotation = React.useCallback(
+    (annotation: A9sAnnotation): A9sWithMeta => {
+      return (editorRecords[annotation.id]?.annotation ?? annotation) as A9sWithMeta;
+    },
+    [editorRecords]
+  );
+
   const popupAnnotation = activePopupRecord?.annotation ?? null;
 
   const popupSelectedAllograph = React.useMemo(() => {
@@ -338,14 +345,15 @@ export default function ManuscriptViewer({
     (annotation: A9sAnnotation) => {
       if (!visibilityFiltersReady) return true;
 
-      const isDraft = !isDbId(annotation.id);
-      const meta = (annotation as A9sWithMeta)._meta;
+      const canonical = getCanonicalAnnotation(annotation);
+      const isDraft = !isDbId(canonical.id);
+      const meta = canonical._meta;
       const isExplicitEditorial = meta?.annotationType === 'editorial';
 
-      const kindPass = isDraft
-        ? visibilityFilters.showPublicAnnotations
-        : isExplicitEditorial
-          ? visibilityFilters.showEditorial
+      const kindPass = isExplicitEditorial
+        ? visibilityFilters.showEditorial
+        : isDraft
+          ? visibilityFilters.showPublicAnnotations
           : true;
 
       const allographId = meta?.allographId;
@@ -371,6 +379,7 @@ export default function ManuscriptViewer({
       availableAllographFilterIds.length,
       availableHandFilterIds.length,
       selectedHand,
+      getCanonicalAnnotation,
     ]
   );
 
@@ -392,9 +401,11 @@ export default function ManuscriptViewer({
   }, [imageHeight, isPublicDemoMode, manuscriptImage]);
 
   const getAnnotationKind = React.useCallback(
-    (annotation: A9sAnnotation): AnnotationCreationKind =>
-      annotation._meta?.annotationType === 'editorial' ? 'editorial' : 'public',
-    []
+    (annotation: A9sAnnotation): AnnotationCreationKind => {
+      const canonical = getCanonicalAnnotation(annotation);
+      return canonical._meta?.annotationType === 'editorial' ? 'editorial' : 'public';
+    },
+    [getCanonicalAnnotation]
   );
 
   const decorateCreatedAnnotation = React.useCallback(
