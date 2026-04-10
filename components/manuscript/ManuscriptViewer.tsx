@@ -644,6 +644,8 @@ export default function ManuscriptViewer({
       const popup = getPopupById(popupId);
       if (!popup) return;
 
+      const previousId = popup.annotation.id;
+
       const next: A9sAnnotation = {
         ...popup.annotation,
         body: [
@@ -667,12 +669,25 @@ export default function ManuscriptViewer({
       await viewerApiRef.current?.updateSelectedDraft?.(next);
       await viewerApiRef.current?.saveSelectedDraft?.();
 
+      const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
       const latest =
-        viewerApiRef.current?.getAnnotations?.().find((annotation) => annotation.id === next.id) ??
+        currentAnnotations.find((annotation) => annotation.id === next.id) ??
+        currentAnnotations[currentAnnotations.length - 1] ??
         next;
 
-      setEditorRecords((prev) => markAnnotationUpdated(prev, latest));
-      setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? []);
+      setEditorRecords((prev) => {
+        const reconciled = { ...prev };
+
+        // If Annotorious replaced the draft with a new local id,
+        // drop the stale old record so the same draft is not counted twice.
+        if (latest.id !== previousId) {
+          delete reconciled[previousId];
+        }
+
+        return markAnnotationUpdated(reconciled, latest);
+      });
+
+      setA9sSnapshot(currentAnnotations);
     },
     [getPopupById]
   );
