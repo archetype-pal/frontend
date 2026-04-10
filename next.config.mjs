@@ -88,12 +88,21 @@ const nextConfig = {
       {
         source: '/:path*',
         headers: [
-          // TODO: Tighten CSP: prefer nonces/hashes for inline scripts and avoid 'unsafe-eval' where possible.
           {
             key: 'Content-Security-Policy',
-            value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http: https:; font-src 'self' data:; connect-src 'self' http: https:; frame-src 'self'",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: http: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' http: https:",
+              "frame-src 'self'",
+            ].join('; '),
           },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         ],
       },
       {

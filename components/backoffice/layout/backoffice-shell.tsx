@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { getAuthTokenCookie } from '@/lib/auth-token-cookie';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BackofficeSidebar } from './backoffice-sidebar';
 import { BackofficeHeader } from './backoffice-header';
@@ -17,9 +18,8 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
   // Auth guard — redirect non-authenticated or non-superusers
   useEffect(() => {
     if (token === null) {
-      // Wait for initial token load from localStorage
-      const stored = localStorage.getItem('token');
-      if (!stored) {
+      // Wait for initial token load from cookie
+      if (!getAuthTokenCookie()) {
         router.replace('/login');
       }
     }

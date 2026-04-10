@@ -3,7 +3,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUserProfile } from '@/utils/api';
-import { clearAuthTokenCookie, setAuthTokenCookie } from '@/lib/auth-token-cookie';
+import {
+  clearAuthTokenCookie,
+  getAuthTokenCookie,
+  setAuthTokenCookie,
+} from '@/lib/auth-token-cookie';
 import type { UserProfile } from '@/types';
 
 interface AuthContextType {
@@ -23,11 +27,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setAuthToken = useCallback((nextToken: string | null) => {
     setToken(nextToken);
     if (nextToken) {
-      localStorage.setItem('token', nextToken);
       setAuthTokenCookie(nextToken);
       return;
     }
-    localStorage.removeItem('token');
     clearAuthTokenCookie();
   }, []);
 
@@ -38,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router, setAuthToken]);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
+    const storedToken = getAuthTokenCookie();
     if (storedToken) {
       queueMicrotask(() => setAuthToken(storedToken));
     }

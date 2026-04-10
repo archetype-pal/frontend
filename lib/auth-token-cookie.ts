@@ -24,4 +24,12 @@ export function clearAuthTokenCookie(): void {
   document.cookie = `${AUTH_TOKEN_COOKIE_NAME}=; Path=/; Max-Age=0; SameSite=Lax${secureSuffix()}`;
 }
 
+export function getAuthTokenCookie(): string | null {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  const match = document.cookie.match(new RegExp(`(?:^|; )${AUTH_TOKEN_COOKIE_NAME}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 export const AUTH_TOKEN_COOKIE = AUTH_TOKEN_COOKIE_NAME;

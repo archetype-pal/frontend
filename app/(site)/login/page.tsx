@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { loginUser, getUserProfile } from '@/utils/api';
-import { setAuthTokenCookie } from '@/lib/auth-token-cookie';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,8 +33,6 @@ export default function LoginPage() {
 
     try {
       const response = await loginUser(username, password);
-      localStorage.setItem('token', response.auth_token);
-      setAuthTokenCookie(response.auth_token);
       setToken(response.auth_token);
 
       const profile = await getUserProfile(response.auth_token);
