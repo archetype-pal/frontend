@@ -338,14 +338,15 @@ export default function ManuscriptViewer({
     (annotation: A9sAnnotation) => {
       if (!visibilityFiltersReady) return true;
 
+      const isDraft = !isDbId(annotation.id);
       const meta = (annotation as A9sWithMeta)._meta;
-      const annotationKind: AnnotationCreationKind =
-        meta?.annotationType === 'editorial' ? 'editorial' : 'public';
+      const isExplicitEditorial = meta?.annotationType === 'editorial';
 
-      const kindPass =
-        annotationKind === 'editorial'
+      const kindPass = isDraft
+        ? visibilityFilters.showPublicAnnotations
+        : isExplicitEditorial
           ? visibilityFilters.showEditorial
-          : visibilityFilters.showPublicAnnotations;
+          : true;
 
       const allographId = meta?.allographId;
       const handId = meta?.handId;
