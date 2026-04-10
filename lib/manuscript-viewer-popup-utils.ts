@@ -1,6 +1,7 @@
 import type {
   AnnotationCreationKind,
   AnnotationPopupCapabilities,
+  AnnotationPopupMetaSummary,
   PopupRecord,
   ViewerCapabilities,
 } from '@/types/annotation-viewer';
@@ -112,4 +113,23 @@ export function getPopupInitialPosition(
 
 export function getPopupZIndex(index: number, isActive: boolean) {
   return isActive ? ACTIVE_POPUP_Z_INDEX : INACTIVE_POPUP_BASE_Z_INDEX + index;
+}
+
+export function getPopupMetaSummary(
+  popupRecord: PopupRecord,
+  allographNameById: Map<number, string>,
+  handNameById: Map<number, string>
+): AnnotationPopupMetaSummary {
+  const meta = popupRecord.annotation._meta;
+  const annotationKind: AnnotationCreationKind =
+    meta?.annotationType === 'editorial' ? 'editorial' : 'public';
+
+  return {
+    kindLabel: annotationKind === 'editorial' ? 'Editorial' : 'Public',
+    allographLabel:
+      typeof meta?.allographId === 'number'
+        ? (allographNameById.get(meta.allographId) ?? null)
+        : null,
+    handLabel: typeof meta?.handId === 'number' ? (handNameById.get(meta.handId) ?? null) : null,
+  };
 }

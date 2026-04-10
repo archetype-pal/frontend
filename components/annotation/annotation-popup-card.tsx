@@ -6,6 +6,7 @@ import { Share2, Star, X } from 'lucide-react';
 import type {
   AnnotationCreationKind,
   AnnotationPopupCapabilities,
+  AnnotationPopupMetaSummary,
 } from '@/types/annotation-viewer';
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -28,6 +29,7 @@ interface AnnotationPopupCardProps {
   isDraftAnnotation: boolean;
   annotationKind: AnnotationCreationKind;
   popupCapabilities: AnnotationPopupCapabilities;
+  metaSummary?: AnnotationPopupMetaSummary;
 
   popupTransform: string;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
@@ -59,11 +61,41 @@ interface AnnotationPopupCardProps {
   selectedNotes: string[];
 }
 
+function AnnotationMetaSummaryBlock({ metaSummary }: { metaSummary?: AnnotationPopupMetaSummary }) {
+  if (!metaSummary) return null;
+
+  return (
+    <div className="rounded-md border bg-muted/20 px-3 py-3">
+      <div className="mb-2 text-xs font-semibold text-foreground">Annotation details</div>
+
+      <div className="grid grid-cols-[88px_1fr] gap-x-2 gap-y-1 text-xs">
+        <div className="text-muted-foreground">Type</div>
+        <div>{metaSummary.kindLabel}</div>
+
+        {metaSummary.allographLabel ? (
+          <>
+            <div className="text-muted-foreground">Allograph</div>
+            <div>{metaSummary.allographLabel}</div>
+          </>
+        ) : null}
+
+        {metaSummary.handLabel ? (
+          <>
+            <div className="text-muted-foreground">Hand</div>
+            <div>{metaSummary.handLabel}</div>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function AnnotationPopupCard({
   title,
   isDraftAnnotation,
   annotationKind,
   popupCapabilities,
+  metaSummary,
   popupTransform,
   dragHandleProps,
   zIndex,
@@ -221,6 +253,10 @@ export function AnnotationPopupCard({
 
       {isDraftAnnotation ? (
         <div className="max-h-[320px] overflow-auto px-4 py-4 space-y-4">
+          {popupCapabilities.canViewEditorMeta && (
+            <AnnotationMetaSummaryBlock metaSummary={metaSummary} />
+          )}
+
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Allograph</label>
             <Input
@@ -296,6 +332,12 @@ export function AnnotationPopupCard({
               </TabsTrigger>
             </TabsList>
           </div>
+
+          {popupCapabilities.canViewEditorMeta && (
+            <div className="border-b px-4 py-3">
+              <AnnotationMetaSummaryBlock metaSummary={metaSummary} />
+            </div>
+          )}
 
           <div className="max-h-[320px] overflow-auto px-4 py-4">
             <TabsContent value="components" className="mt-0">

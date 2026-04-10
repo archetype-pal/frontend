@@ -80,6 +80,7 @@ import {
   getPopupCapabilities,
   getPopupCardViewData,
   getPopupInitialPosition,
+  getPopupMetaSummary,
   getPopupZIndex,
 } from '@/lib/manuscript-viewer-popup-utils';
 
@@ -237,6 +238,10 @@ export default function ManuscriptViewer({
   const allographNameById = React.useMemo(
     () => new Map(allographs.map((a) => [a.id, a.name])),
     [allographs]
+  );
+  const handNameById = React.useMemo(
+    () => new Map(hands.map((hand) => [hand.id, hand.name])),
+    [hands]
   );
 
   const displayedHand = popupSelectedHand ?? selectedHand ?? undefined;
@@ -1542,6 +1547,7 @@ export default function ManuscriptViewer({
               const popupCard = getPopupCardViewData(popupRecord, allographNameById);
               const popupCapabilities = getPopupCapabilities(popupRecord, viewerCapabilities);
               const annotationKind = getAnnotationKindFromPopupRecord(popupRecord);
+              const metaSummary = getPopupMetaSummary(popupRecord, allographNameById, handNameById);
               const isActive = popupRecord.id === activePopupId;
               const { x: initialX, y: initialY } = getPopupInitialPosition(
                 index,
@@ -1566,6 +1572,7 @@ export default function ManuscriptViewer({
                       isDraftAnnotation={popupCard.isDraft}
                       annotationKind={annotationKind}
                       popupCapabilities={popupCapabilities}
+                      metaSummary={metaSummary}
                       popupTransform={popupTransform}
                       dragHandleProps={dragHandleProps}
                       zIndex={zIndex}

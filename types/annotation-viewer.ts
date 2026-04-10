@@ -135,3 +135,9 @@ export interface AnnotationPopupCapabilities {
   canPersistDraft: boolean;
   canViewEditorMeta: boolean;
 }
+
+export interface AnnotationPopupMetaSummary {
+  kindLabel: string;
+  allographLabel?: string | null;
+  handLabel?: string | null;
+}
