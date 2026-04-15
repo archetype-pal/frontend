@@ -63,6 +63,7 @@ interface Props {
   disableEditor?: boolean;
   readOnly?: boolean;
   annotationFilter?: (annotation: Annotation) => boolean;
+  confirmDelete?: (annotation: Annotation) => boolean;
 }
 
 // ---- Component state ----
@@ -83,6 +84,7 @@ export default function ManuscriptAnnotorious({
   disableEditor = false,
   readOnly = false,
   annotationFilter,
+  confirmDelete,
 }: Props) {
   const viewerRef = useRef<HTMLDivElement | null>(null);
   const osdRef = useRef<OpenSeadragon.Viewer | null>(null);
@@ -92,6 +94,7 @@ export default function ManuscriptAnnotorious({
   } | null>(null);
   const onCreateRef = useRef(onCreate);
   const onDeleteRef = useRef(onDelete);
+  const confirmDeleteRef = useRef(confirmDelete);
   const onSelectRef = useRef(onSelect);
   const exposeApiRef = useRef(exposeApi);
   const annotationFilterRef = useRef<Props['annotationFilter']>(annotationFilter);
@@ -197,6 +200,11 @@ export default function ManuscriptAnnotorious({
     annotationFilterRef.current = annotationFilter;
     queueSyncAnnotationClasses();
   }, [annotationFilter, queueSyncAnnotationClasses]);
+
+  useEffect(() => {
+    confirmDeleteRef.current = confirmDelete;
+  }, [confirmDelete]);
+
   // also keep the latest initial annotations in a ref,
   // so the OSD 'open' handler doesn't capture an old (empty) array
 
@@ -325,6 +333,16 @@ export default function ManuscriptAnnotorious({
 
           queueSyncAnnotationClasses();
 
+          const notifyDelete = (a: Annotation) => {
+            if (selectedDisplayIdRef.current === a.id) {
+              selectedDisplayIdRef.current = null;
+            }
+
+            queueSyncAnnotationClasses();
+            onDeleteRef.current?.(a);
+            onSelectRef.current?.(null);
+          };
+
           anno.on('createSelection', (selection: Annotation) => {
             selectedDisplayIdRef.current = selection.id;
             anno.readOnly = false;
@@ -337,14 +355,6 @@ export default function ManuscriptAnnotorious({
             anno.readOnly = false;
             queueSyncAnnotationClasses();
             onCreateRef.current?.(a);
-          });
-
-          anno.on('deleteAnnotation', (a: Annotation) => {
-            if (selectedDisplayIdRef.current === a.id) {
-              selectedDisplayIdRef.current = null;
-            }
-            queueSyncAnnotationClasses();
-            onDeleteRef.current?.(a);
           });
 
           anno.on('clickAnnotation', (a: Annotation) => {
@@ -477,9 +487,13 @@ export default function ManuscriptAnnotorious({
 
               if (deleteHandler) anno.off('selectAnnotation', deleteHandler);
               deleteHandler = (a) => {
-                if (a && currentMode === 'delete') {
-                  anno.removeAnnotation(a);
-                }
+                if (!a || currentMode !== 'delete') return;
+
+                const confirmed = confirmDeleteRef.current?.(a) ?? true;
+                if (!confirmed) return;
+
+                anno.removeAnnotation(a);
+                notifyDelete(a);
               };
               anno.on('selectAnnotation', deleteHandler);
             },

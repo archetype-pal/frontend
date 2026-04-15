@@ -711,6 +711,21 @@ export default function ManuscriptViewer({
     [activeTool, getPopupById, handleSaveDraftAnnotation, removePopupById]
   );
 
+  const handleConfirmDelete = React.useCallback(
+    (annotation: A9sAnnotation) => {
+      const canonical = getCanonicalAnnotation(annotation);
+      const kind = getAnnotationKind(canonical);
+      const isDraft = !isDbId(canonical.id);
+
+      return window.confirm(
+        isDraft
+          ? `Delete this ${kind} draft annotation?\n\nThis will discard it locally.`
+          : `Delete this saved ${kind} annotation?\n\nThis will mark it for deletion. Press Save to persist the deletion.`
+      );
+    },
+    [getCanonicalAnnotation, getAnnotationKind]
+  );
+
   const handleToggleFullScreen = () => {
     setIsFullScreen((prev) => !prev);
 
@@ -1558,14 +1573,19 @@ export default function ManuscriptViewer({
               initialAnnotations={initialA9sAnnots}
               annotationFilter={annotationVisibilityFilter}
               disableEditor={true}
-              // readOnly={isPublicDemoMode}
               readOnly={false}
               onCreate={handleViewerCreate}
               onDelete={(annotation: A9sAnnotation) => {
-                persistAnnotationCache();
                 setEditorRecords((prev) => markAnnotationDeleted(prev, annotation.id));
-                setA9sSnapshot(viewerApiRef.current?.getAnnotations?.() ?? []);
+
+                const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
+                setInitialA9sAnnots(currentAnnotations);
+                setA9sSnapshot(currentAnnotations);
+
+                persistAnnotationCache();
+                removePopupById(annotation.id);
               }}
+              confirmDelete={handleConfirmDelete}
               onSelect={handleSelectAnnotationFromViewer}
               exposeApi={handleExposeApi}
             />
