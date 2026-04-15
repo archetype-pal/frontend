@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
-import { ChevronDown, Image as ImageIcon, Plus, Trash2, Save, Loader2 } from 'lucide-react';
+import { ChevronDown, Image as ImageIcon, Pencil, Plus, Trash2, Save, Loader2 } from 'lucide-react';
 import { IiifThumbnail } from '@/components/backoffice/common/iiif-thumbnail';
+import { ItemImageEditDialog } from './item-image-edit-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +17,7 @@ import { CurrentItemCombobox } from './current-item-combobox';
 import { createItemPart, updateItemPart, deleteItemPart } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
-import type { ItemPartNested } from '@/types/backoffice';
+import type { ItemPartImage, ItemPartNested } from '@/types/backoffice';
 
 interface ItemPartsTabProps {
   historicalItemId: number;
@@ -209,18 +210,11 @@ function ItemPartCard({
               </p>
               <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                 {part.images.map((img) => (
-                  <IiifThumbnail
+                  <EditableImageThumbnail
                     key={img.id}
-                    image={img.image}
-                    alt={img.locus || `Image ${img.id}`}
-                    locus={img.locus}
-                  >
-                    {img.text_count > 0 && (
-                      <Badge className="absolute top-0.5 right-0.5 h-4 px-1 text-[9px] z-10">
-                        {img.text_count}T
-                      </Badge>
-                    )}
-                  </IiifThumbnail>
+                    image={img}
+                    historicalItemId={historicalItemId}
+                  />
                 ))}
               </div>
             </div>
@@ -266,3 +260,48 @@ function ItemPartCard({
     </Collapsible>
   );
 }
+
+function EditableImageThumbnail({
+  image,
+  historicalItemId,
+}: {
+  image: ItemPartImage;
+  historicalItemId: number;
+}) {
+  const [editOpen, setEditOpen] = useState(false);
+
+  return (
+    <>
+      <div className="group relative">
+        <IiifThumbnail
+          image={image.image}
+          alt={image.locus || `Image ${image.id}`}
+          locus={image.locus}
+        >
+          {image.text_count > 0 && (
+            <Badge className="absolute top-0.5 right-0.5 h-4 px-1 text-[9px] z-10">
+              {image.text_count}T
+            </Badge>
+          )}
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            aria-label={`Edit image ${image.locus || image.id}`}
+            className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 opacity-0 transition-opacity hover:opacity-100 focus:opacity-100 focus:outline-none"
+          >
+            <Pencil className="h-4 w-4 text-white" />
+          </button>
+        </IiifThumbnail>
+      </div>
+      {editOpen && (
+        <ItemImageEditDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          image={image}
+          historicalItemId={historicalItemId}
+        />
+      )}
+    </>
+  );
+}
+

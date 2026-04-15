@@ -58,15 +58,20 @@ export interface MediaPickerContent {
   images: MediaPickerImage[];
 }
 
+const itemImagesCrud = createCrudService<PaginatedResponse<AdminItemImage>, AdminItemImage>(
+  '/api/v1/manuscripts/management/item-images/'
+);
+
 export function getItemImages(
   token: string,
   params?: { item_part?: number; limit?: number; offset?: number }
 ) {
-  const crud = createCrudService<PaginatedResponse<AdminItemImage>, AdminItemImage>(
-    '/api/v1/manuscripts/management/item-images/'
-  );
-  return crud.list(token, params);
+  return itemImagesCrud.list(token, params);
 }
+
+export const createItemImage = itemImagesCrud.create;
+export const updateItemImage = itemImagesCrud.update;
+export const deleteItemImage = itemImagesCrud.remove;
 
 export function getMediaPickerContent(token: string, path = ''): Promise<MediaPickerContent> {
   const qs = new URLSearchParams();
