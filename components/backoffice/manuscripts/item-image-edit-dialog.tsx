@@ -47,7 +47,7 @@ export function ItemImageEditDialog({
 
   useEffect(() => {
     if (open) {
-      setLocus(image.locus);
+      setLocus(image.locus); // eslint-disable-line react-hooks/set-state-in-effect
       setImagePath(image.image ?? '');
     }
   }, [open, image.id, image.locus, image.image]);
