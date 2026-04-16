@@ -3,7 +3,8 @@
 import { useCallback, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
-import { SEARCH_RESULT_CONFIG, getFacetOrder, type ResultType } from '@/lib/search-types';
+import { getFacetOrder, type ResultType } from '@/lib/search-types';
+import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
 
 export type FieldVisibility = {
   visibleColumns: string[];
@@ -18,7 +19,7 @@ function storageKey(type: ResultType) {
 
 function allFieldsFor(type: ResultType): FieldVisibility {
   return {
-    visibleColumns: [...SEARCH_RESULT_CONFIG[type].defaultVisibleColumns],
+    visibleColumns: [...COLUMN_HEADERS_BY_TYPE[type]],
     visibleFacets: [...getFacetOrder(type)],
   };
 }

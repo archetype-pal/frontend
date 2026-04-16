@@ -8,7 +8,8 @@ import {
   SortableCheckboxList,
   type SortableItem,
 } from '@/components/backoffice/site-features/sortable-checkbox-list';
-import { getFacetOrder, getDefaultVisibleColumns, type ResultType } from '@/lib/search-types';
+import { getFacetOrder, type ResultType } from '@/lib/search-types';
+import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
 import { formatFacetTitle } from '@/lib/search-query';
 
 type Props = {
@@ -29,7 +30,7 @@ export function FieldVisibilityMenu({
   onReset,
 }: Props) {
   const columnItems = useMemo<SortableItem[]>(
-    () => getDefaultVisibleColumns(resultType).map((col) => ({ id: col, label: col })),
+    () => COLUMN_HEADERS_BY_TYPE[resultType].map((col) => ({ id: col, label: col })),
     [resultType]
   );
   const facetItems = useMemo<SortableItem[]>(

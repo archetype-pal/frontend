@@ -1,11 +1,13 @@
 export interface ManuscriptListItem {
   id: number;
+  display_label?: string;
   repository_name: string;
   repository_city: string;
   shelfmark: string;
   catalogue_numbers: string[];
   date: string;
   type: string;
+  format?: string;
   number_of_images: number;
   issuer_name: string;
   named_beneficiary: string;
@@ -39,6 +41,10 @@ export interface GraphListItem {
   image_iiif: string;
   coordinates: string;
   is_annotated: boolean;
+  allograph?: string;
+  character?: string;
+  character_type?: string;
+  hand_name?: string;
 }
 
 export interface ScribeListItem {

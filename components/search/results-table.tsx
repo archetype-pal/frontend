@@ -184,6 +184,8 @@ export const COLUMNS = {
       className: 'text-center',
       sortKey: 'number_of_images_exact',
     },
+    makeColumn('Format', (m: ManuscriptListItem) => m.format ?? '—', 'format_exact'),
+    makeColumn('Display Label', (m: ManuscriptListItem) => m.display_label ?? '—'),
   ],
 
   images: [
@@ -224,12 +226,15 @@ export const COLUMNS = {
       className: 'text-center',
       sortKey: 'number_of_annotations_exact',
     },
+    makeColumn('Date', (i: ImageListItem) => i.date ?? '—'),
+    makeColumn('Locus', (i: ImageListItem) => i.locus ?? '—'),
   ],
 
   scribes: [
     makeColumn('Scribe Name', (s: ScribeListItem) => s.name, 'name_exact'),
     makeColumn('Date', (s: ScribeListItem) => s.period),
     makeColumn('Scriptorium', (s: ScribeListItem) => s.scriptorium, 'scriptorium_exact'),
+    makeColumn('Period', (s: ScribeListItem) => s.period ?? '—'),
   ],
 
   hands: [
@@ -245,6 +250,7 @@ export const COLUMNS = {
       accessor: (h) => h.catalogue_numbers,
       sortKey: 'catalogue_numbers_exact',
     },
+    makeColumn('Description', (h: HandListItem) => h.description ?? '—'),
   ],
 
   graphs: [
@@ -258,6 +264,13 @@ export const COLUMNS = {
       accessor: (g) => <GraphThumbnailCell graph={g} />,
       className: 'text-center',
     },
+    makeColumn('Character', (g: GraphListItem) => g.character ?? '—', 'character_exact'),
+    makeColumn(
+      'Character Type',
+      (g: GraphListItem) => g.character_type ?? '—',
+      'character_type_exact'
+    ),
+    makeColumn('Hand Name', (g: GraphListItem) => g.hand_name ?? '—', 'hand_name_exact'),
   ],
 
   texts: [
@@ -266,6 +279,9 @@ export const COLUMNS = {
     shelfmarkColumn<TextListItem>(),
     makeColumn('Text Type', (t: TextListItem) => t.text_type, 'text_type_exact'),
     makeColumn('MS Date', (t: TextListItem) => t.date ?? '—'),
+    makeColumn('Locus', (t: TextListItem) => t.locus ?? '—'),
+    makeColumn('Status', (t: TextListItem) => t.status ?? '—', 'status_exact'),
+    makeColumn('Language', (t: TextListItem) => t.language ?? '—', 'language_exact'),
   ],
 
   clauses: [
@@ -277,6 +293,8 @@ export const COLUMNS = {
     textDateColumn<ClauseListItem>(),
     textTypeColumn<ClauseListItem>(),
     makeColumn('Clause Type', (c: ClauseListItem) => c.clause_type, 'clause_type_exact'),
+    makeColumn('Locus', (c: ClauseListItem) => c.locus ?? '—'),
+    makeColumn('Status', (c: ClauseListItem) => c.status ?? '—', 'status_exact'),
   ],
 
   people: [
@@ -288,6 +306,9 @@ export const COLUMNS = {
     textDateColumn<PersonListItem>(),
     textTypeColumn<PersonListItem>(),
     makeColumn('Category', (p: PersonListItem) => p.person_type, 'person_type_exact'),
+    makeColumn('Name', (p: PersonListItem) => p.name ?? '—'),
+    makeColumn('Locus', (p: PersonListItem) => p.locus ?? '—'),
+    makeColumn('Status', (p: PersonListItem) => p.status ?? '—', 'status_exact'),
   ],
 
   places: [
@@ -299,6 +320,9 @@ export const COLUMNS = {
     textDateColumn<PlaceListItem>(),
     textTypeColumn<PlaceListItem>(),
     makeColumn('Place Type', (p: PlaceListItem) => p.place_type, 'place_type_exact'),
+    makeColumn('Name', (p: PlaceListItem) => p.name ?? '—'),
+    makeColumn('Locus', (p: PlaceListItem) => p.locus ?? '—'),
+    makeColumn('Status', (p: PlaceListItem) => p.status ?? '—', 'status_exact'),
   ],
 } satisfies { [K in ResultType]: Column<ResultMap[K]>[] };
 

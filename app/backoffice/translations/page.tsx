@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Languages, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
+import { useStaffGuard } from '@/hooks/backoffice/use-staff-guard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -92,6 +93,7 @@ async function saveModelLabels(
 
 export default function TranslationsPage() {
   const { token } = useAuth();
+  useStaffGuard();
   const router = useRouter();
   const queryClient = useQueryClient();
   const defaults = getDefaultModelLabelsConfig();
