@@ -16,6 +16,8 @@ import {
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
+import { useAuth } from '@/contexts/auth-context';
+
 import { getIiifBaseUrl } from '@/utils/iiif';
 import { ManuscriptTabs } from './manuscript-tabs';
 import { DraggablePopupLayer } from './draggable-popup-layer';
@@ -31,8 +33,8 @@ import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { fetchHands } from '@/services/manuscripts';
 import {
   fetchAnnotationsForImage,
-  postAnnotation,
-  patchAnnotation,
+  createViewerAnnotation,
+  updateViewerAnnotation,
   type BackendGraph,
 } from '@/services/annotations';
 import {
@@ -120,6 +122,8 @@ export default function ManuscriptViewer({
     () => capabilities ?? getViewerCapabilities(mode),
     [capabilities, mode]
   );
+
+  const { token } = useAuth();
 
   const isPublicDemoMode = mode === 'public';
 
@@ -406,6 +410,30 @@ export default function ManuscriptViewer({
       return canonical._meta?.annotationType === 'editorial' ? 'editorial' : 'public';
     },
     [getCanonicalAnnotation]
+  );
+
+  const getStandardSaveValidationError = React.useCallback(
+    (annotation: A9sAnnotation): string | null => {
+      const kind = getAnnotationKind(annotation);
+
+      if (kind === 'editorial') {
+        return 'Saving editorial annotations is not implemented yet.';
+      }
+
+      const allographId = annotation._meta?.allographId;
+      const handId = annotation._meta?.handId;
+
+      if (typeof allographId !== 'number' || allographId <= 0) {
+        return 'Choose an allograph from the dropdown before saving a new annotation.';
+      }
+
+      if (typeof handId !== 'number' || handId <= 0) {
+        return 'Choose a hand from the dropdown before saving a new annotation.';
+      }
+
+      return null;
+    },
+    [getAnnotationKind]
   );
 
   const decorateCreatedAnnotation = React.useCallback(
@@ -770,6 +798,20 @@ export default function ManuscriptViewer({
   const handleSave = React.useCallback(async (): Promise<void> => {
     if (!canPersistAnyAnnotations || !manuscriptImage) return;
 
+    if (!token) {
+      window.alert('Please log in again before saving annotations.');
+      return;
+    }
+
+    const hasDeletedRecords = Object.values(editorRecords).some(
+      (record) => record.dirtyState === 'deleted'
+    );
+
+    if (hasDeletedRecords) {
+      window.alert('Saving deleted existing annotations is not implemented yet.');
+      return;
+    }
+
     try {
       const dirtyRecords = Object.values(editorRecords).filter((record) => {
         if (record.dirtyState !== 'created' && record.dirtyState !== 'updated') {
@@ -779,9 +821,14 @@ export default function ManuscriptViewer({
         return canPersistAnnotationKind(viewerCapabilities, getAnnotationKind(record.annotation));
       });
 
-      const locallyDeletedRecords = Object.values(editorRecords).filter(
-        (record) => record.dirtyState === 'deleted'
-      );
+      const validationError = dirtyRecords
+        .map((record) => getStandardSaveValidationError(record.annotation))
+        .find((message): message is string => Boolean(message));
+
+      if (validationError) {
+        window.alert(validationError);
+        return;
+      }
 
       const tasks: Promise<BackendGraph>[] = [];
 
@@ -792,39 +839,33 @@ export default function ManuscriptViewer({
         if (record.source === 'persisted' && isDbAnnotation(annotation)) {
           const id = dbIdFromA9s(annotation);
           if (id != null) {
-            tasks.push(patchAnnotation(id, { annotation: feature }));
+            tasks.push(
+              updateViewerAnnotation(token, id, {
+                annotation: feature,
+              })
+            );
           }
           continue;
         }
 
         tasks.push(
-          postAnnotation({
+          createViewerAnnotation(token, {
             item_image: Number(manuscriptImage.id),
             annotation: feature,
-            allograph: annotation._meta?.allographId ?? filteredAllograph?.id ?? 0,
-            hand: annotation._meta?.handId ?? selectedHand?.id ?? 0,
-            graphcomponent_set: [],
+            allograph: annotation._meta?.allographId ?? 0,
+            hand: annotation._meta?.handId ?? 0,
             positions: [],
+            graphcomponent_set: [],
           })
         );
       }
 
       await Promise.all(tasks);
 
-      const refreshed = await fetchAnnotationsForImage(
-        String(manuscriptImage.id),
-        filteredAllograph?.id ? String(filteredAllograph.id) : undefined
+      const refreshed = await fetchAnnotationsForImage(String(manuscriptImage.id));
+      const mapped = refreshed.map((annotation) =>
+        backendToA9sAnnotation(annotation, imageHeight, allographNameById.get(annotation.allograph))
       );
-      const mapped = refreshed.map((a) => backendToA9sAnnotation(a, imageHeight));
-
-      const locallyDeletedIds = new Set(locallyDeletedRecords.map((record) => record.id));
-      const visibleMapped = mapped.filter((annotation) => !locallyDeletedIds.has(annotation.id));
-
-      const nextEditorRecords = buildHydratedEditorRecordMap(mapped);
-
-      for (const deletedRecord of locallyDeletedRecords) {
-        nextEditorRecords[deletedRecord.id] = deletedRecord;
-      }
 
       if (typeof window !== 'undefined') {
         try {
@@ -838,20 +879,26 @@ export default function ManuscriptViewer({
         }
       }
 
-      setInitialA9sAnnots(visibleMapped);
-      setA9sSnapshot(visibleMapped);
-      setEditorRecords(nextEditorRecords);
-    } catch {
-      // save failed — keep local dirty state intact
+      viewerApiRef.current?.clearSelection?.();
+      clearPopupCollection();
+
+      setInitialA9sAnnots(mapped);
+      setA9sSnapshot(mapped);
+      setEditorRecords(buildHydratedEditorRecordMap(mapped));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save annotations.';
+      window.alert(message);
     }
   }, [
+    allographNameById,
     canPersistAnyAnnotations,
+    clearPopupCollection,
     editorRecords,
-    filteredAllograph,
+    getAnnotationKind,
+    getStandardSaveValidationError,
     imageHeight,
     manuscriptImage,
-    selectedHand,
-    getAnnotationKind,
+    token,
     viewerCapabilities,
   ]);
 

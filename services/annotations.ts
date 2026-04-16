@@ -79,3 +79,61 @@ export async function patchAnnotation(id: number, partial: Partial<Omit<BackendG
   }
   return res.json() as Promise<BackendGraph>;
 }
+
+export async function createViewerAnnotation(
+  token: string,
+  payload: Omit<BackendGraph, 'id' | 'annotation_type'> & { annotation_type?: 'image' }
+) {
+  const res = await apiFetch(`/api/v1/annotations/graphs/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Token ${token}`,
+    },
+    body: JSON.stringify({
+      ...payload,
+      annotation_type: 'image',
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`POST failed: ${res.status} ${text}`);
+  }
+  return res.json() as Promise<BackendGraph>;
+}
+
+export async function updateViewerAnnotation(
+  token: string,
+  id: number,
+  partial: Partial<Omit<BackendGraph, 'id' | 'annotation_type'>> & { annotation_type?: 'image' }
+) {
+  const res = await apiFetch(`/api/v1/annotations/graphs/${id}/`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Token ${token}`,
+    },
+    body: JSON.stringify({
+      ...partial,
+      annotation_type: 'image',
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`PATCH failed: ${res.status} ${text}`);
+  }
+  return res.json() as Promise<BackendGraph>;
+}
+
+export async function deleteViewerAnnotation(token: string, id: number): Promise<void> {
+  const res = await apiFetch(`/api/v1/annotations/graphs/${id}/`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Token ${token}`,
+    },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`DELETE failed: ${res.status} ${text}`);
+  }
+}
