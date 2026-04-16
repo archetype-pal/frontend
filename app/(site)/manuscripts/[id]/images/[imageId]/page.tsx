@@ -1,5 +1,4 @@
-import ManuscriptViewer from '@/components/manuscript/ManuscriptViewer';
-import { resolveManuscriptViewerAccess } from '@/lib/manuscript-viewer-access';
+import ManuscriptViewerAuthGate from '@/components/manuscript/manuscript-viewer-auth-gate';
 
 interface PageProps {
   params: Promise<{
@@ -8,21 +7,8 @@ interface PageProps {
   }>;
 }
 
-export default async function Page({ params }: PageProps) {
+export default async function ManuscriptImagePage({ params }: PageProps) {
   const { imageId } = await params;
 
-  // keep current behaviour on the public baseline until real auth is wired.
-  const viewerAccess = resolveManuscriptViewerAccess({
-    isAuthenticated: false,
-    isEditor: false,
-    isAdmin: false,
-  });
-
-  return (
-    <ManuscriptViewer
-      imageId={imageId}
-      mode={viewerAccess.mode}
-      capabilities={viewerAccess.capabilities}
-    />
-  );
+  return <ManuscriptViewerAuthGate imageId={imageId} />;
 }
