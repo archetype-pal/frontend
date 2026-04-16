@@ -35,7 +35,7 @@ import {
   fetchAnnotationsForImage,
   createViewerAnnotation,
   updateViewerAnnotation,
-  type BackendGraph,
+  deleteViewerAnnotation,
 } from '@/services/annotations';
 import {
   backendToA9sAnnotation,
@@ -926,17 +926,8 @@ export default function ManuscriptViewer({
       return;
     }
 
-    const hasDeletedRecords = Object.values(editorRecords).some(
-      (record) => record.dirtyState === 'deleted'
-    );
-
-    if (hasDeletedRecords) {
-      window.alert('Saving deleted existing annotations is not implemented yet.');
-      return;
-    }
-
     try {
-      const dirtyRecords = Object.values(editorRecords).filter((record) => {
+      const upsertRecords = Object.values(editorRecords).filter((record) => {
         if (record.dirtyState !== 'created' && record.dirtyState !== 'updated') {
           return false;
         }
@@ -944,7 +935,11 @@ export default function ManuscriptViewer({
         return canPersistAnnotationKind(viewerCapabilities, getAnnotationKind(record.annotation));
       });
 
-      const validationError = dirtyRecords
+      const deleteRecords = Object.values(editorRecords).filter(
+        (record) => record.dirtyState === 'deleted' && record.source === 'persisted'
+      );
+
+      const validationError = upsertRecords
         .map((record) => getStandardSaveValidationError(record.annotation))
         .find((message): message is string => Boolean(message));
 
@@ -953,9 +948,9 @@ export default function ManuscriptViewer({
         return;
       }
 
-      const tasks: Promise<BackendGraph>[] = [];
+      const tasks: Promise<unknown>[] = [];
 
-      for (const record of dirtyRecords) {
+      for (const record of upsertRecords) {
         const annotation = record.annotation;
         const feature = a9sToBackendFeature(annotation, imageHeight);
 
@@ -981,6 +976,13 @@ export default function ManuscriptViewer({
             graphcomponent_set: [],
           })
         );
+      }
+
+      for (const record of deleteRecords) {
+        const id = dbIdFromA9s(record.annotation);
+        if (id != null) {
+          tasks.push(deleteViewerAnnotation(token, id));
+        }
       }
 
       await Promise.all(tasks);
