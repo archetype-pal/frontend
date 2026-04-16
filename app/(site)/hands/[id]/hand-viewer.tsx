@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
 import { sanitizeHtml } from '@/lib/sanitize-html';
+import { BackofficeLink } from '@/components/common/backoffice-link';
 
 const TAB_VALUES = ['information', 'description', 'images', 'graphs'] as const;
 const DEFAULT_TAB = 'information';
@@ -197,10 +198,13 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
             </>
           )}
         </p>
-        <h1 className="text-3xl font-medium text-foreground">
-          <span className="text-muted-foreground font-normal">Hand: </span>
-          {hand.name}
-        </h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-3xl font-medium text-foreground">
+            <span className="text-muted-foreground font-normal">Hand: </span>
+            {hand.name}
+          </h1>
+          <BackofficeLink kind="hand" id={hand.id} />
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">

@@ -695,6 +695,7 @@ function ResultsTableComponent<K extends ResultType>({
       compareSelection,
       crossTypeLinks,
       descriptor,
+      getLabel,
       hasSubRow,
       highlightKeyword,
       onToggleCompare,

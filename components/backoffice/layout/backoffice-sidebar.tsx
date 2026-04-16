@@ -65,8 +65,12 @@ interface NavGroup {
  *
  * "View public site" stays in the footer as a standalone escape hatch.
  */
-function getNavigation(datesLabel: string, manuscriptsAppLabel: string): NavGroup[] {
-  return [
+function getNavigation(
+  datesLabel: string,
+  manuscriptsAppLabel: string,
+  includeAdmin: boolean
+): NavGroup[] {
+  const groups: NavGroup[] = [
     {
       label: 'Manuscripts & Palaeography',
       icon: BookOpen,
@@ -100,7 +104,9 @@ function getNavigation(datesLabel: string, manuscriptsAppLabel: string): NavGrou
         { label: 'Carousel', href: '/backoffice/carousel', icon: Image },
       ],
     },
-    {
+  ];
+  if (includeAdmin) {
+    groups.push({
       label: 'Administration',
       icon: Settings,
       items: [
@@ -109,8 +115,9 @@ function getNavigation(datesLabel: string, manuscriptsAppLabel: string): NavGrou
         { label: 'Translations', href: '/backoffice/translations', icon: Languages },
         { label: 'Site Features', href: '/backoffice/site-features', icon: ToggleLeft },
       ],
-    },
-  ];
+    });
+  }
+  return groups;
 }
 
 interface BackofficeSidebarProps {
@@ -119,11 +126,12 @@ interface BackofficeSidebarProps {
 
 export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
   const pathname = usePathname();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { getLabel, getPluralLabel } = useModelLabels();
+  const includeAdmin = Boolean(user?.is_staff);
   const navigation = useMemo(
-    () => getNavigation(getPluralLabel('date'), getLabel('appManuscripts')),
-    [getLabel, getPluralLabel]
+    () => getNavigation(getPluralLabel('date'), getLabel('appManuscripts'), includeAdmin),
+    [getLabel, getPluralLabel, includeAdmin]
   );
 
   // Lightweight poll for pending comments (60s)

@@ -46,10 +46,16 @@ async function saveSiteFeatures(
 }
 
 export default function SiteFeaturesPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const defaults = getDefaultConfig();
+
+  useEffect(() => {
+    if (user && !user.is_staff) {
+      router.replace('/backoffice');
+    }
+  }, [user, router]);
 
   const { data: serverConfig, isLoading } = useQuery({
     queryKey: ['site-features'],

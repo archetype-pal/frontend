@@ -2,8 +2,10 @@
 
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
-import { getCrossTypeLinks, type ResultType } from '@/lib/search-types';
+import { getCrossTypeLinks, SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
 import { useSiteFeatures } from '@/contexts/site-features-context';
+import { useAuth } from '@/contexts/auth-context';
+import { useSearchVisibility } from '@/lib/search-visibility';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { useSearchResults } from '@/hooks/search/use-search-results';
 import { stateFromSearchParams } from '@/lib/search-query';
@@ -37,8 +39,21 @@ export function useSearchPageState(initialType?: ResultType) {
   const [advancedSearch, setAdvancedSearch] = React.useState<AdvancedSearchState>(
     DEFAULT_ADVANCED_SEARCH_STATE
   );
-  const { enabledCategories, getCategoryConfig } = useSiteFeatures();
-  const categoryConfig = getCategoryConfig(resultType);
+  const { enabledCategories: guestEnabledCategories } = useSiteFeatures();
+  const { token } = useAuth();
+  const visibility = useSearchVisibility(resultType);
+  const enabledCategories = React.useMemo(
+    () => (token ? [...SEARCH_RESULT_TYPES] : guestEnabledCategories),
+    [token, guestEnabledCategories]
+  );
+  const categoryConfig = React.useMemo(
+    () => ({
+      enabled: true,
+      visibleColumns: visibility.visibleColumns,
+      visibleFacets: visibility.visibleFacets,
+    }),
+    [visibility.visibleColumns, visibility.visibleFacets]
+  );
   // Track previous ordering from search results so it can be passed to useSearchQuery.
   // On the first render ordering is undefined; it gets populated once data loads.
   const orderingRef = React.useRef<
@@ -275,5 +290,6 @@ export function useSearchPageState(initialType?: ResultType) {
     // Config
     enabledCategories,
     categoryConfig,
+    visibility,
   };
 }

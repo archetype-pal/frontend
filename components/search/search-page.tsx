@@ -30,6 +30,7 @@ const SearchDistributionPanel = React.lazy(() =>
 );
 import { AdvancedSearchPanel } from '@/components/search/advanced-search-panel';
 import { MobileFilterSheet } from '@/components/search/mobile-filter-sheet';
+import { FieldVisibilityMenu } from '@/components/search/field-visibility-menu';
 const SearchMapView = React.lazy(() =>
   import('@/components/search/search-map-view').then((m) => ({ default: m.SearchMapView }))
 );
@@ -152,6 +153,16 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               />
             </MobileFilterSheet>
           </div>
+          {s.visibility.isResearcher && (
+            <FieldVisibilityMenu
+              resultType={s.resultType}
+              visibleColumns={s.visibility.visibleColumns}
+              visibleFacets={s.visibility.visibleFacets}
+              onColumnsChange={s.visibility.setVisibleColumns}
+              onFacetsChange={s.visibility.setVisibleFacets}
+              onReset={s.visibility.resetToDefault}
+            />
+          )}
           <SearchActionsMenu
             triggerId="search-actions-trigger"
             keyword={s.submittedKeyword}

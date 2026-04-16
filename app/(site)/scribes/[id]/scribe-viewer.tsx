@@ -14,6 +14,7 @@ import { useTabNavigation } from '@/hooks/use-tab-navigation';
 import type { ScribeDetail, ScribeHand } from '@/types/scribe-detail';
 import { Calendar, Building2, User, PenTool, Pen } from 'lucide-react';
 import { sanitizeHtml } from '@/lib/sanitize-html';
+import { BackofficeLink } from '@/components/common/backoffice-link';
 
 const TAB_VALUES = ['information', 'hands', 'idiographs'] as const;
 const DEFAULT_TAB = 'information';
@@ -37,10 +38,13 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
             Scribes
           </Link>
         </p>
-        <h1 className="text-3xl font-medium text-foreground">
-          <span className="text-muted-foreground font-normal">Scribe: </span>
-          {scribe.name}
-        </h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-3xl font-medium text-foreground">
+            <span className="text-muted-foreground font-normal">Scribe: </span>
+            {scribe.name}
+          </h1>
+          <BackofficeLink kind="scribe" id={scribe.id} />
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">

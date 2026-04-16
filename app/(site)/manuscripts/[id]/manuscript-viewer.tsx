@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { BackofficeLink } from '@/components/common/backoffice-link';
 
 const TAB_VALUES = ['information', 'descriptions', 'images', 'texts'] as const;
 const DEFAULT_TAB = 'information';
@@ -50,7 +51,10 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
 
   return (
     <main className="container mx-auto p-4 max-w-6xl">
-      <h1 className="text-3xl font-medium text-gray-800 mb-6">{manuscript.display_label}</h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-3xl font-medium text-gray-800">{manuscript.display_label}</h1>
+        <BackofficeLink kind="item-part" id={manuscript.id} />
+      </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="bg-gray-100 p-1">

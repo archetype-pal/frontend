@@ -12,6 +12,7 @@ import {
 } from '@/utils/api';
 import { PUBLICATION_KIND_CONFIG, type PublicationKind } from '@/lib/publications';
 import { PageLoadingState } from '@/components/page/page-loading-state';
+import { BackofficeLink } from '@/components/common/backoffice-link';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +80,9 @@ export async function PublicationDetailPage({
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row gap-8">
         <main className="flex-1">
+          <div className="mb-2 flex justify-end">
+            <BackofficeLink kind="publication" id={item.slug} />
+          </div>
           <BlogPostPreview
             key={item.id}
             title={item.title}
