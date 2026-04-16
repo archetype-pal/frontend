@@ -60,6 +60,8 @@ export type PopupRecord = {
   isShareUrlVisible: boolean;
   draftAllographText: string;
   draftNoteText: string;
+  draftAllographId: number | null;
+  draftHandId: number | null;
 };
 
 export type ViewerMode = 'public' | 'editor';

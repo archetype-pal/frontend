@@ -64,6 +64,8 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
         isShareUrlVisible: overrides?.isShareUrlVisible ?? false,
         draftAllographText: overrides?.draftAllographText ?? defaultDraftAllographText,
         draftNoteText: overrides?.draftNoteText ?? defaultDraftNoteText,
+        draftAllographId: overrides?.draftAllographId ?? annotation._meta?.allographId ?? null,
+        draftHandId: overrides?.draftHandId ?? annotation._meta?.handId ?? null,
       };
     },
     []
@@ -170,7 +172,9 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
           candidate.shareUrl === popup.shareUrl &&
           candidate.isShareUrlVisible === popup.isShareUrlVisible &&
           candidate.draftAllographText === popup.draftAllographText &&
-          candidate.draftNoteText === popup.draftNoteText;
+          candidate.draftNoteText === popup.draftNoteText &&
+          candidate.draftAllographId === popup.draftAllographId &&
+          candidate.draftHandId === popup.draftHandId;
 
         if (unchanged) return popup;
 

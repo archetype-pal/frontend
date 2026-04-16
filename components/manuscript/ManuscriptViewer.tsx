@@ -509,6 +509,112 @@ export default function ManuscriptViewer({
     [updatePopupById]
   );
 
+  const syncExistingEditorRecord = React.useCallback(
+    (
+      records: AnnotationEditorRecordMap,
+      previousId: string,
+      nextAnnotation: A9sAnnotation
+    ): AnnotationEditorRecordMap => {
+      const existing = records[previousId] ?? records[nextAnnotation.id];
+      if (!existing) {
+        return records;
+      }
+
+      const nextRecords = { ...records };
+
+      if (previousId !== nextAnnotation.id) {
+        delete nextRecords[previousId];
+      }
+
+      nextRecords[nextAnnotation.id] = {
+        ...existing,
+        id: nextAnnotation.id,
+        annotation: nextAnnotation as A9sWithMeta,
+        lastTouchedAt: Date.now(),
+      };
+
+      return nextRecords;
+    },
+    []
+  );
+
+  const handleDraftAllographIdChange = React.useCallback(
+    async (popupId: string, value: number | null) => {
+      const popup = getPopupById(popupId);
+      if (!popup) return;
+
+      const previousId = popup.annotation.id;
+
+      const nextAnnotation: A9sAnnotation = {
+        ...popup.annotation,
+        _meta: {
+          ...popup.annotation._meta,
+          allographId: value ?? undefined,
+        },
+      };
+
+      await viewerApiRef.current?.updateSelectedDraft?.(nextAnnotation);
+
+      const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
+      const nextAnnotations = currentAnnotations.map((annotation) =>
+        annotation.id === nextAnnotation.id ? nextAnnotation : annotation
+      );
+
+      updatePopupById(popupId, {
+        annotation: nextAnnotation as A9sWithMeta,
+        draftAllographId: value,
+        draftAllographText: value != null ? (allographNameById.get(value) ?? '') : '',
+      });
+
+      setEditorRecords((prev) => syncExistingEditorRecord(prev, previousId, nextAnnotation));
+
+      setA9sSnapshot(nextAnnotations);
+      persistAnnotationCache();
+    },
+    [
+      allographNameById,
+      getPopupById,
+      persistAnnotationCache,
+      syncExistingEditorRecord,
+      updatePopupById,
+    ]
+  );
+
+  const handleDraftHandIdChange = React.useCallback(
+    async (popupId: string, value: number | null) => {
+      const popup = getPopupById(popupId);
+      if (!popup) return;
+
+      const previousId = popup.annotation.id;
+
+      const nextAnnotation: A9sAnnotation = {
+        ...popup.annotation,
+        _meta: {
+          ...popup.annotation._meta,
+          handId: value ?? undefined,
+        },
+      };
+
+      await viewerApiRef.current?.updateSelectedDraft?.(nextAnnotation);
+
+      const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
+      const nextAnnotations = currentAnnotations.map((annotation) =>
+        annotation.id === nextAnnotation.id ? nextAnnotation : annotation
+      );
+
+      updatePopupById(popupId, {
+        annotation: nextAnnotation as A9sWithMeta,
+        draftHandId: value,
+      });
+
+      setEditorRecords((prev) => syncExistingEditorRecord(prev, previousId, nextAnnotation));
+
+      setA9sSnapshot(nextAnnotations);
+      persistAnnotationCache();
+    },
+    [getPopupById, persistAnnotationCache, syncExistingEditorRecord, updatePopupById]
+  );
+
   const handleDraftAllographTextChange = React.useCallback(
     (popupId: string, value: string) => {
       updatePopupById(popupId, { draftAllographText: value });
@@ -546,6 +652,8 @@ export default function ManuscriptViewer({
         draftNoteText: !isDbId(annotation.id)
           ? (annotation.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
           : '',
+        draftAllographId: annotation._meta?.allographId ?? null,
+        draftHandId: annotation._meta?.handId ?? null,
       };
 
       const isDraft = !isDbId(annotation.id);
@@ -676,6 +784,11 @@ export default function ManuscriptViewer({
 
       const next: A9sAnnotation = {
         ...popup.annotation,
+        _meta: {
+          ...popup.annotation._meta,
+          allographId: popup.draftAllographId ?? undefined,
+          handId: popup.draftHandId ?? undefined,
+        },
         body: [
           {
             type: 'TextualBody',
@@ -703,19 +816,29 @@ export default function ManuscriptViewer({
         currentAnnotations[currentAnnotations.length - 1] ??
         next;
 
+      const latestWithMeta: A9sAnnotation = {
+        ...latest,
+        _meta: {
+          ...latest._meta,
+          ...next._meta,
+        },
+      };
+
       setEditorRecords((prev) => {
         const reconciled = { ...prev };
 
-        // If Annotorious replaced the draft with a new local id,
-        // drop the stale old record so the same draft is not counted twice.
-        if (latest.id !== previousId) {
+        if (latestWithMeta.id !== previousId) {
           delete reconciled[previousId];
         }
 
-        return markAnnotationUpdated(reconciled, latest);
+        return markAnnotationUpdated(reconciled, latestWithMeta);
       });
 
-      setA9sSnapshot(currentAnnotations);
+      const nextSnapshot = currentAnnotations.map((annotation) =>
+        annotation.id === latestWithMeta.id ? latestWithMeta : annotation
+      );
+
+      setA9sSnapshot(nextSnapshot);
     },
     [getPopupById]
   );
@@ -979,7 +1102,7 @@ export default function ManuscriptViewer({
     (annotation: A9sAnnotation | null) => {
       cancelPendingPopupClear();
 
-      const selected = (annotation as A9sWithMeta | null) ?? null;
+      const selected = annotation ? getCanonicalAnnotation(annotation) : null;
 
       if (selected) {
         openSinglePopupFromAnnotation(selected, { clearHover: true });
@@ -991,7 +1114,12 @@ export default function ManuscriptViewer({
         clearSinglePopupState({ clearHover: true });
       }, 50);
     },
-    [cancelPendingPopupClear, clearSinglePopupState, openSinglePopupFromAnnotation]
+    [
+      cancelPendingPopupClear,
+      clearSinglePopupState,
+      getCanonicalAnnotation,
+      openSinglePopupFromAnnotation,
+    ]
   );
 
   const handleCloseFilterPanel = React.useCallback(() => {
@@ -1688,6 +1816,22 @@ export default function ManuscriptViewer({
                       draftNoteText={popupRecord.draftNoteText}
                       onDraftNoteTextChange={(value) =>
                         handleDraftNoteTextChange(popupRecord.id, value)
+                      }
+                      allographOptions={allographs.map((allograph) => ({
+                        id: allograph.id,
+                        name: allograph.name,
+                      }))}
+                      handOptions={hands.map((hand) => ({
+                        id: hand.id,
+                        name: hand.name,
+                      }))}
+                      draftAllographId={popupRecord.draftAllographId}
+                      draftHandId={popupRecord.draftHandId}
+                      onDraftAllographIdChange={(value) =>
+                        void handleDraftAllographIdChange(popupRecord.id, value)
+                      }
+                      onDraftHandIdChange={(value) =>
+                        void handleDraftHandIdChange(popupRecord.id, value)
                       }
                       onCancelDraftAnnotation={() => handleCancelDraftAnnotation(popupRecord.id)}
                       onConfirmDraftAnnotation={() => {

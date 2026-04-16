@@ -9,6 +9,13 @@ import type {
   AnnotationPopupMetaSummary,
 } from '@/types/annotation-viewer';
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -48,6 +55,13 @@ interface AnnotationPopupCardProps {
 
   draftNoteText: string;
   onDraftNoteTextChange: (value: string) => void;
+
+  allographOptions: Array<{ id: number; name: string }>;
+  handOptions: Array<{ id: number; name: string }>;
+  draftAllographId: number | null;
+  draftHandId: number | null;
+  onDraftAllographIdChange: (value: number | null) => void;
+  onDraftHandIdChange: (value: number | null) => void;
 
   onCancelDraftAnnotation: () => void;
   onConfirmDraftAnnotation: () => void;
@@ -110,6 +124,12 @@ export function AnnotationPopupCard({
   onDraftAllographTextChange,
   draftNoteText,
   onDraftNoteTextChange,
+  allographOptions,
+  handOptions,
+  draftAllographId,
+  draftHandId,
+  onDraftAllographIdChange,
+  onDraftHandIdChange,
   onCancelDraftAnnotation,
   onConfirmDraftAnnotation,
   popupTab,
@@ -120,6 +140,8 @@ export function AnnotationPopupCard({
   selectedNotes,
 }: AnnotationPopupCardProps) {
   const { getPluralLabel } = useModelLabels();
+  const showEditorStandardDraftControls =
+    isDraftAnnotation && annotationKind === 'public' && popupCapabilities.canPersistDraft;
 
   return (
     <div
@@ -253,45 +275,99 @@ export function AnnotationPopupCard({
 
       {isDraftAnnotation ? (
         <div className="max-h-[320px] overflow-auto px-4 py-4 space-y-4">
-          {popupCapabilities.canViewEditorMeta && (
-            <AnnotationMetaSummaryBlock metaSummary={metaSummary} />
+          {showEditorStandardDraftControls ? (
+            <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Allograph</label>
+                <Select
+                  value={draftAllographId != null ? String(draftAllographId) : '__unset__'}
+                  onValueChange={(value) =>
+                    onDraftAllographIdChange(value === '__unset__' ? null : Number(value))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose an allograph" />
+                  </SelectTrigger>
+                  <SelectContent className="z-[200]">
+                    <SelectItem value="__unset__">Choose an allograph</SelectItem>
+                    {allographOptions.map((allograph) => (
+                      <SelectItem key={allograph.id} value={String(allograph.id)}>
+                        {allograph.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {draftAllographId == null && (
+                  <p className="text-xs text-muted-foreground">
+                    Choose an allograph for this annotation.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Hand</label>
+                <Select
+                  value={draftHandId != null ? String(draftHandId) : '__unset__'}
+                  onValueChange={(value) =>
+                    onDraftHandIdChange(value === '__unset__' ? null : Number(value))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a hand" />
+                  </SelectTrigger>
+                  <SelectContent className="z-[200]">
+                    <SelectItem value="__unset__">Choose a hand</SelectItem>
+                    {handOptions.map((hand) => (
+                      <SelectItem key={hand.id} value={String(hand.id)}>
+                        {hand.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Note</label>
+                <textarea
+                  value={draftNoteText}
+                  onChange={(e) => onDraftNoteTextChange(e.target.value)}
+                  placeholder="Type note"
+                  rows={5}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Allograph</label>
+                <Input
+                  value={draftAllographText}
+                  onChange={(e) => onDraftAllographTextChange(e.target.value)}
+                  placeholder="Type allograph"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Note</label>
+                <textarea
+                  value={draftNoteText}
+                  onChange={(e) => onDraftNoteTextChange(e.target.value)}
+                  placeholder="Type note"
+                  rows={5}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </>
           )}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Allograph</label>
-            <Input
-              value={draftAllographText}
-              onChange={(e) => onDraftAllographTextChange(e.target.value)}
-              placeholder="Type allograph"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Note</label>
-            <textarea
-              value={draftNoteText}
-              onChange={(e) => onDraftNoteTextChange(e.target.value)}
-              placeholder="Type note"
-              rows={5}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          <div className="mt-2 flex items-center justify-between gap-2 border-t pt-3">
-            <div className="text-xs text-muted-foreground">
-              {popupCapabilities.canPersistDraft
-                ? 'This draft can be saved by the current user.'
-                : 'This annotation remains a local temporary draft.'}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
-                Cancel
-              </Button>
-              <Button onClick={onConfirmDraftAnnotation} type="button">
-                OK
-              </Button>
-            </div>
+          <div className="mt-2 flex items-center justify-end gap-2 border-t pt-3">
+            <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
+              Cancel
+            </Button>
+            <Button onClick={onConfirmDraftAnnotation} type="button">
+              OK
+            </Button>
           </div>
         </div>
       ) : (
