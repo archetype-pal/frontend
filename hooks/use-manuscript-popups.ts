@@ -56,6 +56,14 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
         ? (annotation.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
         : '';
 
+      const defaultDraftInternalNoteText = isDraft
+        ? (annotation.body?.find((b) => b.purpose === 'commenting')?.value ?? '')
+        : '';
+
+      const defaultDraftPublicNoteText = isDraft
+        ? (annotation.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
+        : '';
+
       return {
         id: annotation.id,
         annotation,
@@ -66,6 +74,8 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
         draftNoteText: overrides?.draftNoteText ?? defaultDraftNoteText,
         draftAllographId: overrides?.draftAllographId ?? annotation._meta?.allographId ?? null,
         draftHandId: overrides?.draftHandId ?? annotation._meta?.handId ?? null,
+        draftInternalNoteText: overrides?.draftInternalNoteText ?? defaultDraftInternalNoteText,
+        draftPublicNoteText: overrides?.draftPublicNoteText ?? defaultDraftPublicNoteText,
       };
     },
     []
@@ -174,7 +184,9 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
           candidate.draftAllographText === popup.draftAllographText &&
           candidate.draftNoteText === popup.draftNoteText &&
           candidate.draftAllographId === popup.draftAllographId &&
-          candidate.draftHandId === popup.draftHandId;
+          candidate.draftHandId === popup.draftHandId &&
+          candidate.draftInternalNoteText === popup.draftInternalNoteText &&
+          candidate.draftPublicNoteText === popup.draftPublicNoteText;
 
         if (unchanged) return popup;
 

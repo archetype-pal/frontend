@@ -1,6 +1,7 @@
 import type {
   AnnotationCreationKind,
   AnnotationPopupCapabilities,
+  AnnotationPopupEditorMode,
   AnnotationPopupMetaSummary,
   PopupRecord,
   ViewerCapabilities,
@@ -132,4 +133,22 @@ export function getPopupMetaSummary(
         : null,
     handLabel: typeof meta?.handId === 'number' ? (handNameById.get(meta.handId) ?? null) : null,
   };
+}
+
+export function getPopupEditorMode(
+  popupRecord: PopupRecord,
+  popupCapabilities: AnnotationPopupCapabilities
+): AnnotationPopupEditorMode {
+  const isDraft = !isDbId(popupRecord.annotation.id);
+  const isEditorial = popupRecord.annotation._meta?.annotationType === 'editorial';
+
+  if (!isDraft) {
+    return popupCapabilities.canViewEditorMeta ? 'standard_existing' : 'public_existing';
+  }
+
+  if (isEditorial) {
+    return 'editorial_draft';
+  }
+
+  return popupCapabilities.canPersistDraft ? 'standard_draft' : 'public_demo_draft';
 }

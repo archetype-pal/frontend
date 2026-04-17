@@ -84,6 +84,7 @@ import {
   getPopupInitialPosition,
   getPopupMetaSummary,
   getPopupZIndex,
+  getPopupEditorMode,
 } from '@/lib/manuscript-viewer-popup-utils';
 
 import {
@@ -629,6 +630,20 @@ export default function ManuscriptViewer({
     [updatePopupById]
   );
 
+  const handleDraftInternalNoteTextChange = React.useCallback(
+    (popupId: string, value: string) => {
+      updatePopupById(popupId, { draftInternalNoteText: value });
+    },
+    [updatePopupById]
+  );
+
+  const handleDraftPublicNoteTextChange = React.useCallback(
+    (popupId: string, value: string) => {
+      updatePopupById(popupId, { draftPublicNoteText: value });
+    },
+    [updatePopupById]
+  );
+
   const openSinglePopupFromAnnotation = React.useCallback(
     (annotation: A9sWithMeta | null, options?: { clearHover?: boolean }) => {
       if (!annotation) {
@@ -654,6 +669,12 @@ export default function ManuscriptViewer({
           : '',
         draftAllographId: annotation._meta?.allographId ?? null,
         draftHandId: annotation._meta?.handId ?? null,
+        draftInternalNoteText: !isDbId(annotation.id)
+          ? (annotation.body?.find((b) => b.purpose === 'commenting')?.value ?? '')
+          : '',
+        draftPublicNoteText: !isDbId(annotation.id)
+          ? (annotation.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
+          : '',
       };
 
       const isDraft = !isDbId(annotation.id);
@@ -1770,6 +1791,7 @@ export default function ManuscriptViewer({
             {visiblePopupRecords.map((popupRecord, index) => {
               const popupCard = getPopupCardViewData(popupRecord, allographNameById);
               const popupCapabilities = getPopupCapabilities(popupRecord, viewerCapabilities);
+              const popupEditorMode = getPopupEditorMode(popupRecord, popupCapabilities);
               const annotationKind = getAnnotationKindFromPopupRecord(popupRecord);
               const metaSummary = getPopupMetaSummary(popupRecord, allographNameById, handNameById);
               const isActive = popupRecord.id === activePopupId;
@@ -1796,6 +1818,15 @@ export default function ManuscriptViewer({
                       isDraftAnnotation={popupCard.isDraft}
                       annotationKind={annotationKind}
                       popupCapabilities={popupCapabilities}
+                      popupEditorMode={popupEditorMode}
+                      draftInternalNoteText={popupRecord.draftInternalNoteText}
+                      draftPublicNoteText={popupRecord.draftPublicNoteText}
+                      onDraftInternalNoteTextChange={(value) =>
+                        handleDraftInternalNoteTextChange(popupRecord.id, value)
+                      }
+                      onDraftPublicNoteTextChange={(value) =>
+                        handleDraftPublicNoteTextChange(popupRecord.id, value)
+                      }
                       metaSummary={metaSummary}
                       popupTransform={popupTransform}
                       dragHandleProps={dragHandleProps}

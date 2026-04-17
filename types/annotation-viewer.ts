@@ -1,5 +1,12 @@
 import type { Annotation as A9sAnnotation } from '@/components/manuscript/ManuscriptAnnotorious';
 
+export type AnnotationPopupEditorMode =
+  | 'public_demo_draft'
+  | 'public_existing'
+  | 'standard_draft'
+  | 'standard_existing'
+  | 'editorial_draft';
+
 export type A9sFeatureDetail = {
   id: number;
   name: string;
@@ -62,6 +69,8 @@ export type PopupRecord = {
   draftNoteText: string;
   draftAllographId: number | null;
   draftHandId: number | null;
+  draftInternalNoteText: string;
+  draftPublicNoteText: string;
 };
 
 export type ViewerMode = 'public' | 'editor';

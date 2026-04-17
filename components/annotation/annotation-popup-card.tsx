@@ -6,6 +6,7 @@ import { Share2, Star, X } from 'lucide-react';
 import type {
   AnnotationCreationKind,
   AnnotationPopupCapabilities,
+  AnnotationPopupEditorMode,
   AnnotationPopupMetaSummary,
 } from '@/types/annotation-viewer';
 
@@ -56,12 +57,19 @@ interface AnnotationPopupCardProps {
   draftNoteText: string;
   onDraftNoteTextChange: (value: string) => void;
 
+  popupEditorMode: AnnotationPopupEditorMode;
+
   allographOptions: Array<{ id: number; name: string }>;
   handOptions: Array<{ id: number; name: string }>;
   draftAllographId: number | null;
   draftHandId: number | null;
   onDraftAllographIdChange: (value: number | null) => void;
   onDraftHandIdChange: (value: number | null) => void;
+
+  draftInternalNoteText: string;
+  draftPublicNoteText: string;
+  onDraftInternalNoteTextChange: (value: string) => void;
+  onDraftPublicNoteTextChange: (value: string) => void;
 
   onCancelDraftAnnotation: () => void;
   onConfirmDraftAnnotation: () => void;
@@ -124,12 +132,17 @@ export function AnnotationPopupCard({
   onDraftAllographTextChange,
   draftNoteText,
   onDraftNoteTextChange,
+  popupEditorMode,
   allographOptions,
   handOptions,
   draftAllographId,
   draftHandId,
   onDraftAllographIdChange,
   onDraftHandIdChange,
+  draftInternalNoteText,
+  draftPublicNoteText,
+  onDraftInternalNoteTextChange,
+  onDraftPublicNoteTextChange,
   onCancelDraftAnnotation,
   onConfirmDraftAnnotation,
   popupTab,
@@ -140,9 +153,62 @@ export function AnnotationPopupCard({
   selectedNotes,
 }: AnnotationPopupCardProps) {
   const { getPluralLabel } = useModelLabels();
-  const showEditorStandardDraftControls =
-    isDraftAnnotation && annotationKind === 'public' && popupCapabilities.canPersistDraft;
 
+  const isPublicDemoDraft = popupEditorMode === 'public_demo_draft';
+  const isPublicExisting = popupEditorMode === 'public_existing';
+  const isStandardDraft = popupEditorMode === 'standard_draft';
+  const isStandardExisting = popupEditorMode === 'standard_existing';
+  const isEditorialDraft = popupEditorMode === 'editorial_draft';
+
+  const standardIdentityFields = (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Allograph</label>
+        <Select
+          value={draftAllographId != null ? String(draftAllographId) : '__unset__'}
+          onValueChange={(value) =>
+            onDraftAllographIdChange(value === '__unset__' ? null : Number(value))
+          }
+          disabled={isStandardExisting}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Choose an allograph" />
+          </SelectTrigger>
+          <SelectContent className="z-[200]">
+            <SelectItem value="__unset__">Choose an allograph</SelectItem>
+            {allographOptions.map((allograph) => (
+              <SelectItem key={allograph.id} value={String(allograph.id)}>
+                {allograph.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Hand</label>
+        <Select
+          value={draftHandId != null ? String(draftHandId) : '__unset__'}
+          onValueChange={(value) =>
+            onDraftHandIdChange(value === '__unset__' ? null : Number(value))
+          }
+          disabled={isStandardExisting}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Choose a hand" />
+          </SelectTrigger>
+          <SelectContent className="z-[200]">
+            <SelectItem value="__unset__">Choose a hand</SelectItem>
+            {handOptions.map((hand) => (
+              <SelectItem key={hand.id} value={String(hand.id)}>
+                {hand.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
   return (
     <div
       className="fixed top-4 right-4 rounded-lg border bg-background shadow-lg"
@@ -273,93 +339,27 @@ export function AnnotationPopupCard({
         </div>
       )}
 
-      {isDraftAnnotation ? (
+      {isPublicDemoDraft ? (
         <div className="max-h-[320px] overflow-auto px-4 py-4 space-y-4">
-          {showEditorStandardDraftControls ? (
-            <>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Allograph</label>
-                <Select
-                  value={draftAllographId != null ? String(draftAllographId) : '__unset__'}
-                  onValueChange={(value) =>
-                    onDraftAllographIdChange(value === '__unset__' ? null : Number(value))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose an allograph" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[200]">
-                    <SelectItem value="__unset__">Choose an allograph</SelectItem>
-                    {allographOptions.map((allograph) => (
-                      <SelectItem key={allograph.id} value={String(allograph.id)}>
-                        {allograph.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {draftAllographId == null && (
-                  <p className="text-xs text-muted-foreground">
-                    Choose an allograph for this annotation.
-                  </p>
-                )}
-              </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Allograph</label>
+            <Input
+              value={draftAllographText}
+              onChange={(e) => onDraftAllographTextChange(e.target.value)}
+              placeholder="Type allograph"
+            />
+          </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Hand</label>
-                <Select
-                  value={draftHandId != null ? String(draftHandId) : '__unset__'}
-                  onValueChange={(value) =>
-                    onDraftHandIdChange(value === '__unset__' ? null : Number(value))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a hand" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[200]">
-                    <SelectItem value="__unset__">Choose a hand</SelectItem>
-                    {handOptions.map((hand) => (
-                      <SelectItem key={hand.id} value={String(hand.id)}>
-                        {hand.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Note</label>
-                <textarea
-                  value={draftNoteText}
-                  onChange={(e) => onDraftNoteTextChange(e.target.value)}
-                  placeholder="Type note"
-                  rows={5}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Allograph</label>
-                <Input
-                  value={draftAllographText}
-                  onChange={(e) => onDraftAllographTextChange(e.target.value)}
-                  placeholder="Type allograph"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Note</label>
-                <textarea
-                  value={draftNoteText}
-                  onChange={(e) => onDraftNoteTextChange(e.target.value)}
-                  placeholder="Type note"
-                  rows={5}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-            </>
-          )}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Note</label>
+            <textarea
+              value={draftNoteText}
+              onChange={(e) => onDraftNoteTextChange(e.target.value)}
+              placeholder="Type note"
+              rows={5}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
 
           <div className="mt-2 flex items-center justify-end gap-2 border-t pt-3">
             <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
@@ -370,7 +370,198 @@ export function AnnotationPopupCard({
             </Button>
           </div>
         </div>
-      ) : (
+      ) : isStandardDraft ? (
+        <div className="max-h-[420px] overflow-auto px-4 py-4 space-y-4">
+          {standardIdentityFields}
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Components / Features</label>
+            <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+              {draftAllographId == null
+                ? 'Choose an allograph to load the related components and features.'
+                : 'Components and features for the selected allograph will be wired in the next step.'}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              {getPluralLabel('position')}
+            </label>
+            <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+              {getPluralLabel('position')} selection will be wired in the next step.
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Notes</label>
+            <textarea
+              value={draftNoteText}
+              onChange={(e) => onDraftNoteTextChange(e.target.value)}
+              placeholder="Type note"
+              rows={5}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div className="mt-2 flex items-center justify-end gap-2 border-t pt-3">
+            <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
+              Cancel
+            </Button>
+            <Button onClick={onConfirmDraftAnnotation} type="button">
+              OK
+            </Button>
+          </div>
+        </div>
+      ) : isStandardExisting ? (
+        <div className="max-h-[420px] overflow-auto px-4 py-4 space-y-4">
+          {standardIdentityFields}
+
+          {popupCapabilities.canViewEditorMeta && (
+            <AnnotationMetaSummaryBlock metaSummary={metaSummary} />
+          )}
+
+          <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+            Existing annotation metadata is shown below. Editing of existing components,
+            {` ${getPluralLabel('position').toLowerCase()}, `}
+            and notes will be wired in the next step.
+          </div>
+
+          <Tabs
+            value={popupTab}
+            onValueChange={(value) => onPopupTabChange(value as PopupTab)}
+            className="w-full"
+          >
+            <div className="border-b pb-2">
+              <TabsList className="h-auto gap-2 bg-transparent p-0">
+                <TabsTrigger
+                  value="components"
+                  className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+                  data-[state=active]:border data-[state=active]:bg-background
+                  data-[state=active]:shadow-sm"
+                >
+                  Components
+                </TabsTrigger>
+
+                {hasPositionsTab && (
+                  <TabsTrigger
+                    value="positions"
+                    className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+                    data-[state=active]:border data-[state=active]:bg-background
+                    data-[state=active]:shadow-sm"
+                  >
+                    {getPluralLabel('position')}
+                  </TabsTrigger>
+                )}
+
+                <TabsTrigger
+                  value="notes"
+                  className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+                  data-[state=active]:border data-[state=active]:bg-background
+                  data-[state=active]:shadow-sm"
+                >
+                  Notes
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <div className="pt-4">
+              <TabsContent value="components" className="mt-0">
+                <div className="space-y-4">
+                  {selectedComponentGroups.length > 0 ? (
+                    selectedComponentGroups.map((group) => (
+                      <div key={group.componentId}>
+                        <div className="text-sm font-semibold text-foreground">
+                          {group.componentName}
+                        </div>
+                        <Separator className="my-2" />
+                        {group.featureNames.length > 0 ? (
+                          <div className="space-y-1">
+                            {group.featureNames.map((featureName) => (
+                              <div
+                                key={`${group.componentId}-${featureName}`}
+                                className="text-sm text-muted-foreground"
+                              >
+                                {featureName}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground">No features selected.</div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-muted-foreground">No components defined.</div>
+                  )}
+                </div>
+              </TabsContent>
+
+              {hasPositionsTab && (
+                <TabsContent value="positions" className="mt-0">
+                  <div className="space-y-2">
+                    {selectedPositionLabels.map((label) => (
+                      <div key={label} className="text-sm text-muted-foreground">
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+                </TabsContent>
+              )}
+
+              <TabsContent value="notes" className="mt-0">
+                <div className="space-y-2">
+                  {selectedNotes.length > 0 ? (
+                    selectedNotes.map((note, index) => (
+                      <div key={`${index}-${note}`} className="text-sm text-muted-foreground">
+                        {note}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-muted-foreground">No notes available.</div>
+                  )}
+                </div>
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
+      ) : isEditorialDraft ? (
+        <div className="max-h-[360px] overflow-auto px-4 py-4 space-y-4">
+          <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+            Editorial annotation draft. Persistence will be wired in a later step.
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Internal note</label>
+            <textarea
+              value={draftInternalNoteText}
+              onChange={(e) => onDraftInternalNoteTextChange(e.target.value)}
+              placeholder="Type internal note"
+              rows={4}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Public note</label>
+            <textarea
+              value={draftPublicNoteText}
+              onChange={(e) => onDraftPublicNoteTextChange(e.target.value)}
+              placeholder="Type public note"
+              rows={4}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div className="mt-2 flex items-center justify-end gap-2 border-t pt-3">
+            <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
+              Cancel
+            </Button>
+            <Button onClick={onConfirmDraftAnnotation} type="button">
+              OK
+            </Button>
+          </div>
+        </div>
+      ) : isPublicExisting ? (
         <Tabs
           value={popupTab}
           onValueChange={(value) => onPopupTabChange(value as PopupTab)}
@@ -474,7 +665,7 @@ export function AnnotationPopupCard({
             </TabsContent>
           </div>
         </Tabs>
-      )}
+      ) : null}
     </div>
   );
 }
