@@ -41,6 +41,7 @@ export function ItemImageEditDialog({
   const queryClient = useQueryClient();
 
   const [locus, setLocus] = useState(image.locus);
+  const [tags, setTags] = useState(image.tags ?? '');
   const [imagePath, setImagePath] = useState(image.image ?? '');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -48,9 +49,10 @@ export function ItemImageEditDialog({
   useEffect(() => {
     if (open) {
       setLocus(image.locus); // eslint-disable-line react-hooks/set-state-in-effect
+      setTags(image.tags ?? '');
       setImagePath(image.image ?? '');
     }
-  }, [open, image.id, image.locus, image.image]);
+  }, [open, image.id, image.locus, image.tags, image.image]);
 
   const invalidate = () =>
     queryClient.invalidateQueries({
@@ -61,6 +63,7 @@ export function ItemImageEditDialog({
     mutationFn: () =>
       updateItemImage(token!, image.id, {
         locus,
+        tags,
         image: imagePath || null,
       }),
     onSuccess: () => {
@@ -132,6 +135,19 @@ export function ItemImageEditDialog({
                 value={locus}
                 onChange={(e) => setLocus(e.target.value)}
                 placeholder="e.g. f.1r"
+                className="h-9"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor={`tags-${image.id}`} className="text-xs">
+                Tags
+              </Label>
+              <Input
+                id={`tags-${image.id}`}
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="e.g. damaged, illuminated"
                 className="h-9"
               />
             </div>

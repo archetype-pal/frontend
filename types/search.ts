@@ -28,6 +28,7 @@ export interface ImageListItem {
   locus: string;
   number_of_annotations: number;
   components: string[];
+  tags?: string[];
 }
 
 export interface GraphListItem {

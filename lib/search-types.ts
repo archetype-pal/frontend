@@ -69,6 +69,7 @@ export const SEARCH_RESULT_CONFIG = {
       { key: 'features', render: 'checkbox' },
       { key: 'components', render: 'checkbox' },
       { key: 'component_features', render: 'checkbox' },
+      { key: 'tags', render: 'checkbox' },
     ],
   },
   scribes: {

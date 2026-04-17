@@ -25,6 +25,7 @@ const COLUMN_FIELD_MAP: Record<ResultType, Record<string, string>> = {
     'Ann.': 'number_of_annotations',
     Date: 'date',
     Locus: 'locus',
+    Tags: 'tags',
   },
   scribes: {
     'Scribe Name': 'name',

@@ -228,6 +228,7 @@ export const COLUMNS = {
     },
     makeColumn('Date', (i: ImageListItem) => i.date ?? '—'),
     makeColumn('Locus', (i: ImageListItem) => i.locus ?? '—'),
+    makeColumn('Tags', (i: ImageListItem) => i.tags?.join(', ') ?? '—'),
   ],
 
   scribes: [
