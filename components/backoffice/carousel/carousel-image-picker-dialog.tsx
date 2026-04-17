@@ -66,9 +66,7 @@ export function CarouselImagePickerDialog({
       <DialogContent className="max-w-5xl">
         <DialogHeader>
           <DialogTitle>Choose Existing Image</DialogTitle>
-          <DialogDescription>
-            Browse backend media folders and select an image for this carousel item.
-          </DialogDescription>
+          <DialogDescription>Browse available images and select one.</DialogDescription>
         </DialogHeader>
 
         <div className="px-5 pb-2">
