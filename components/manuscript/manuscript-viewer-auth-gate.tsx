@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import ManuscriptViewer from '@/components/manuscript/ManuscriptViewer';
 import { useAuth } from '@/contexts/auth-context';
-import type { ViewerMode } from '@/types/annotation-viewer';
+import { resolveManuscriptViewerAccess } from '@/lib/manuscript-viewer-access';
 
 interface ManuscriptViewerAuthGateProps {
   imageId: string;
@@ -19,7 +19,17 @@ export default function ManuscriptViewerAuthGate({
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
 
-  const mode: ViewerMode = token && user ? 'editor' : 'public';
+  const viewerAccess = resolveManuscriptViewerAccess({
+    isAuthenticated: Boolean(token && user),
+    isEditor: false,
+    isAdmin: false,
+  });
 
-  return <ManuscriptViewer imageId={imageId} mode={mode} />;
+  return (
+    <ManuscriptViewer
+      imageId={imageId}
+      mode={viewerAccess.mode}
+      capabilities={viewerAccess.capabilities}
+    />
+  );
 }
