@@ -657,34 +657,51 @@ export default function ManuscriptViewer({
         setHoveredAnnotationId(null);
       }
 
+      const isDraft = !isDbId(annotation.id);
+
+      const annotationForPopup: A9sWithMeta =
+        isDraft && activeTool === 'draw'
+          ? ({
+              ...annotation,
+              _meta: {
+                ...annotation._meta,
+                annotationType: annotation._meta?.annotationType ?? currentCreationKind,
+              },
+            } as A9sWithMeta)
+          : annotation;
+
       const commonOverrides = {
         popupTab: 'components' as const,
         shareUrl: '',
         isShareUrlVisible: false,
-        draftAllographText: !isDbId(annotation.id)
-          ? (annotation.body?.find((b) => b.purpose === 'commenting')?.value ?? '')
+        draftAllographText: !isDbId(annotationForPopup.id)
+          ? (annotationForPopup.body?.find((b) => b.purpose === 'commenting')?.value ?? '')
           : '',
-        draftNoteText: !isDbId(annotation.id)
-          ? (annotation.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
+        draftNoteText: !isDbId(annotationForPopup.id)
+          ? (annotationForPopup.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
           : '',
-        draftAllographId: annotation._meta?.allographId ?? null,
-        draftHandId: annotation._meta?.handId ?? null,
-        draftInternalNoteText: !isDbId(annotation.id)
-          ? (annotation.body?.find((b) => b.purpose === 'commenting')?.value ?? '')
+        draftAllographId: annotationForPopup._meta?.allographId ?? null,
+        draftHandId: annotationForPopup._meta?.handId ?? null,
+        draftInternalNoteText: !isDbId(annotationForPopup.id)
+          ? (annotationForPopup.body?.find((b) => b.purpose === 'commenting')?.value ?? '')
           : '',
-        draftPublicNoteText: !isDbId(annotation.id)
-          ? (annotation.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
+        draftPublicNoteText: !isDbId(annotationForPopup.id)
+          ? (annotationForPopup.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
           : '',
       };
 
-      const isDraft = !isDbId(annotation.id);
-
-      openPopupCollectionFromAnnotation(annotation, {
+      openPopupCollectionFromAnnotation(annotationForPopup, {
         mode: isDraft ? 'replace' : viewerSettings.allowMultipleBoxes ? 'append' : 'replace',
         overrides: commonOverrides,
       });
     },
-    [clearSinglePopupState, openPopupCollectionFromAnnotation, viewerSettings.allowMultipleBoxes]
+    [
+      activeTool,
+      clearSinglePopupState,
+      currentCreationKind,
+      openPopupCollectionFromAnnotation,
+      viewerSettings.allowMultipleBoxes,
+    ]
   );
 
   const handleShareSelectedAnnotation = React.useCallback(
@@ -1677,7 +1694,7 @@ export default function ManuscriptViewer({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {canCreateEditorialAnnotations ? 'Create Public Annotation' : 'Create Annotation'}
+                  {canCreateEditorialAnnotations ? 'Create Annotation' : 'Create Public Annotation'}
                 </TooltipContent>
               </Tooltip>
             )}

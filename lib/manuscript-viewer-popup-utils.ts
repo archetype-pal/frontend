@@ -54,7 +54,9 @@ export function getPopupCardViewData(
   const isDraft = !isDbId(annotation.id);
 
   const title = isDraft
-    ? popupRecord.draftAllographText.trim() || 'New Annotation'
+    ? annotationKind === 'editorial'
+      ? 'Editorial Annotation'
+      : popupRecord.draftAllographText.trim() || 'New Annotation'
     : (annotation.body?.find((b) => b.purpose === 'commenting')?.value ??
       allographNameById.get(annotation._meta?.allographId ?? -1) ??
       'Annotation');
