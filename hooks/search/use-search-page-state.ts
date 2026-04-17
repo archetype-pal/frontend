@@ -112,6 +112,7 @@ export function useSearchPageState(initialType?: ResultType) {
     resultType,
     submittedKeyword,
     getLabel,
+    visibleColumns: visibility.visibleColumns,
   });
 
   const mobileHook = useSearchMobileFilters({
@@ -286,6 +287,7 @@ export function useSearchPageState(initialType?: ResultType) {
     handleSort: queryHook.handleSort,
     handleShareSearch: exportHook.handleShareSearch,
     handleExport: exportHook.handleExport,
+    handleFormattedExport: exportHook.handleFormattedExport,
     toggleCompare: compareHook.toggleCompare,
     // Config
     enabledCategories,

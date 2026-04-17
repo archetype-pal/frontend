@@ -46,9 +46,11 @@ export type SearchActionsMenuProps = {
   compareCount: number;
   onOpenCompare: () => void;
   handleExport: (format: 'csv' | 'json' | 'bibtex', scope: 'page' | 'all') => Promise<void>;
+  handleFormattedExport: (format: 'csv' | 'json', scope: 'page' | 'all') => Promise<void>;
   exportBusy: boolean;
   resultType: ResultType;
   crossTypeLinks: readonly ResultType[];
+  isResearcher: boolean;
 };
 
 export function SearchActionsMenu({
@@ -75,9 +77,11 @@ export function SearchActionsMenu({
   compareCount,
   onOpenCompare,
   handleExport,
+  handleFormattedExport,
   exportBusy,
   resultType,
   crossTypeLinks,
+  isResearcher,
 }: SearchActionsMenuProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const { getLabel } = useModelLabels();
@@ -222,13 +226,41 @@ export function SearchActionsMenu({
             >
               Export all as JSON
             </DropdownMenuItem>
-            {resultType === 'manuscripts' && (
+            {(resultType === 'manuscripts' ||
+              resultType === 'scribes' ||
+              resultType === 'hands') && (
               <DropdownMenuItem
                 disabled={exportBusy}
                 onClick={() => void handleExport('bibtex', 'all')}
               >
                 Export all as BibTeX
               </DropdownMenuItem>
+            )}
+            {isResearcher && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  Visible columns only
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  disabled={exportBusy}
+                  onClick={() => void handleFormattedExport('csv', 'page')}
+                >
+                  Export page (formatted CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={exportBusy}
+                  onClick={() => void handleFormattedExport('csv', 'all')}
+                >
+                  Export all (formatted CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={exportBusy}
+                  onClick={() => void handleFormattedExport('json', 'all')}
+                >
+                  Export all (formatted JSON)
+                </DropdownMenuItem>
+              </>
             )}
           </DropdownMenuSubContent>
         </DropdownMenuSub>

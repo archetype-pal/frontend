@@ -189,9 +189,11 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             compareCount={s.selectedCompareItems.length}
             onOpenCompare={() => s.setCompareOpen(true)}
             handleExport={s.handleExport}
+            handleFormattedExport={s.handleFormattedExport}
             exportBusy={s.exportBusy}
             resultType={s.resultType}
             crossTypeLinks={s.crossTypeLinks}
+            isResearcher={s.visibility.isResearcher}
           />
         </div>
       </header>
