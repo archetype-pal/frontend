@@ -1,12 +1,3 @@
-export interface SearchResponse {
-  results: Manuscript[];
-  total: number;
-  limit?: number;
-  offset?: number;
-  next?: string | null;
-  previous?: string | null;
-}
-
 export interface Catalogue {
   name: string;
   label: string;

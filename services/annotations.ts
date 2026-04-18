@@ -54,32 +54,6 @@ export async function fetchAnnotationsForImage(
   return res.json();
 }
 
-export async function postAnnotation(payload: Omit<BackendGraph, 'id'>) {
-  const res = await apiFetch(`/api/v1/manuscripts/graphs/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`POST failed: ${res.status} ${text}`);
-  }
-  return res.json() as Promise<BackendGraph>;
-}
-
-export async function patchAnnotation(id: number, partial: Partial<Omit<BackendGraph, 'id'>>) {
-  const res = await apiFetch(`/api/v1/manuscripts/graphs/${id}/`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(partial),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`PATCH failed: ${res.status} ${text}`);
-  }
-  return res.json() as Promise<BackendGraph>;
-}
-
 export async function createViewerAnnotation(
   token: string,
   payload: Omit<BackendGraph, 'id' | 'annotation_type'> & { annotation_type?: 'image' }
