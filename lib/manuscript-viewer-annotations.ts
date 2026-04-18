@@ -1,7 +1,7 @@
 import { fetchAnnotationsForImage } from '@/services/annotations';
-import { backendToA9sAnnotation } from '@/lib/annoMapping';
+import { backendToA9sAnnotation } from '@/lib/anno-mapping';
 
-import type { Annotation as A9sAnnotation } from '@/components/manuscript/ManuscriptAnnotorious';
+import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
 
 import {
   cacheKeyFor,

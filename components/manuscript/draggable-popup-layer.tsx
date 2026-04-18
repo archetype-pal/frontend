@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { useDraggablePosition } from '@/hooks/useDraggablePosition';
+import { useDraggablePosition } from '@/hooks/use-draggable-position';
 
 export type DraggablePopupLayerProps = {
   popupId: string;

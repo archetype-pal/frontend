@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import ManuscriptViewer from '@/components/manuscript/ManuscriptViewer';
+import ManuscriptViewer from '@/components/manuscript/manuscript-viewer';
 import { useAuth } from '@/contexts/auth-context';
 import { resolveManuscriptViewerAccess } from '@/lib/manuscript-viewer-access';
 

@@ -1,4 +1,4 @@
-import type { Annotation as A9sAnnotation } from '@/components/manuscript/ManuscriptAnnotorious';
+import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
 
 export type AnnotationPopupEditorMode =
   | 'public_demo_draft'

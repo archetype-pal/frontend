@@ -12,7 +12,7 @@ import {
 import { ActiveFacetTags } from '@/components/filters/active-facet-tags';
 import type { FacetClickAction, FacetData } from '@/types/facets';
 import { FacetPanel } from '@/components/filters/facet-panel';
-import { FacetDateRangePanel } from '@/components/filters/FacetDateRangePanel';
+import { FacetDateRangePanel } from '@/components/filters/facet-date-range-panel';
 import { FacetTreePanel } from '@/components/filters/facet-tree-panel';
 import {
   clearSearchHistory,

@@ -6,7 +6,7 @@ import { getIiifBaseUrl, getSelectorValue, iiifThumbFromSelector } from '@/utils
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 
-import type { Annotation as A9sAnnotation } from './ManuscriptAnnotorious';
+import type { Annotation as A9sAnnotation } from './manuscript-annotorious';
 
 import { browserSafeIiifUrl } from '@/lib/annotation-popup-utils';
 

@@ -25,7 +25,7 @@
   - Token login/profile calls target backend `/api/v1/auth/*`.
   - Backoffice shell enforces authenticated + staff-only access client-side.
 
-## Frontend Commands (run in `/home/green/hub/archetype/v3/frontend`)
+## Frontend Commands (run in this directory)
 
 - `pnpm dev`
 - `pnpm build`

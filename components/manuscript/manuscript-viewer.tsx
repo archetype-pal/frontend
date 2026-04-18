@@ -42,7 +42,7 @@ import {
   a9sToBackendFeature,
   isDbAnnotation,
   dbIdFromA9s,
-} from '@/lib/annoMapping';
+} from '@/lib/anno-mapping';
 
 import {
   canCreateAnnotationKind,
@@ -51,7 +51,7 @@ import {
   getViewerCapabilities,
 } from '@/lib/viewer-capabilities';
 
-import type { ViewerApi, Annotation as A9sAnnotation } from './ManuscriptAnnotorious';
+import type { ViewerApi, Annotation as A9sAnnotation } from './manuscript-annotorious';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
 import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
@@ -103,10 +103,10 @@ import {
 } from '@/lib/manuscript-viewer-editor-state';
 
 import { useManuscriptPopups } from '@/hooks/use-manuscript-popups';
-import { useDraggablePosition } from '@/hooks/useDraggablePosition';
+import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
 
-const ManuscriptAnnotorious = dynamic(() => import('./ManuscriptAnnotorious'), { ssr: false });
+const ManuscriptAnnotorious = dynamic(() => import('./manuscript-annotorious'), { ssr: false });
 
 interface ManuscriptViewerProps {
   imageId: string;

@@ -1,4 +1,3 @@
-// hooks/useDraggablePosition.ts
 'use client';
 
 import * as React from 'react';

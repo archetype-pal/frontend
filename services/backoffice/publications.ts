@@ -75,9 +75,9 @@ export interface CarouselItemPayload {
   image?: File | string | null;
 }
 
-function buildCarouselFormData(data: CarouselItemPayload): FormData {
+function buildCarouselFormData(data: Partial<CarouselItemPayload>): FormData {
   const fd = new FormData();
-  fd.append('title', data.title);
+  if (data.title !== undefined) fd.append('title', data.title);
   if (data.url !== undefined) fd.append('url', data.url);
   if (data.ordering !== undefined) fd.append('ordering', String(data.ordering));
   if (data.image instanceof File) {
@@ -102,14 +102,9 @@ export function updateCarouselItem(
   id: number,
   data: Partial<CarouselItemPayload>
 ): Promise<CarouselItem> {
-  const fd = new FormData();
-  if (data.title !== undefined) fd.append('title', data.title);
-  if (data.url !== undefined) fd.append('url', data.url);
-  if (data.ordering !== undefined) fd.append('ordering', String(data.ordering));
-  if (data.image instanceof File) {
-    fd.append('image', data.image);
-  } else if (typeof data.image === 'string' && data.image.trim().length > 0) {
-    fd.append('image', normalizeCarouselImagePath(data.image));
-  }
-  return backofficePatchFormData<CarouselItem>(`${CAROUSEL_PATH}${id}/`, token, fd);
+  return backofficePatchFormData<CarouselItem>(
+    `${CAROUSEL_PATH}${id}/`,
+    token,
+    buildCarouselFormData(data)
+  );
 }
