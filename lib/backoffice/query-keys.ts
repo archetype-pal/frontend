@@ -81,9 +81,6 @@ export const backofficeKeys = {
       [...backofficeKeys.hands.all(), 'list', filters] as const,
     detail: (id: number) => [...backofficeKeys.hands.all(), 'detail', id] as const,
   },
-  scripts: {
-    all: () => [...backofficeKeys.all, 'scripts'] as const,
-  },
 
   // ── Annotations ──────────────────────────────────────────
   graphs: {
@@ -91,11 +88,6 @@ export const backofficeKeys = {
     list: (filters?: Record<string, unknown>) =>
       [...backofficeKeys.all, 'graphs', 'list', filters] as const,
     detail: (id: number) => [...backofficeKeys.all, 'graphs', 'detail', id] as const,
-  },
-
-  // ── Stats (dashboard) ─────────────────────────────────────
-  stats: {
-    all: () => [...backofficeKeys.all, 'stats'] as const,
   },
 
   // ── Users ────────────────────────────────────────────────────

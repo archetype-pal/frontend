@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/select';
 import type { HandType } from '@/types/hands';
 import type { Allograph } from '@/types/allographs';
-// import { toast } from "sonner"
 
 interface AnnotationHeaderProps {
   annotationsEnabled: boolean;

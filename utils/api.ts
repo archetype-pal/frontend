@@ -1,5 +1,6 @@
 import { apiFetch, API_BASE_URL } from '@/lib/api-fetch';
 import type { CarouselItem } from '@/types/backoffice';
+import type { UserProfile } from '@/types';
 
 export interface PublicationAuthor {
   first_name: string;
@@ -28,16 +29,6 @@ export interface Publication {
 
 interface AuthToken {
   auth_token: string;
-}
-
-interface UserProfile {
-  id: number;
-  username: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  is_staff: boolean;
-  is_superuser: boolean;
 }
 
 interface PaginatedPublications {
