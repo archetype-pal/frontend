@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Languages, Loader2, Save } from 'lucide-react';
+import { Languages, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
 import { useStaffGuard } from '@/hooks/backoffice/use-staff-guard';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { UnsavedChangesBar } from '@/components/backoffice/common/unsaved-changes-bar';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import {
@@ -134,6 +134,13 @@ export default function TranslationsPage() {
 
   useKeyboardShortcut('mod+s', handleSave);
 
+  const handleDiscard = useCallback(() => {
+    if (serverConfig) {
+      setConfig(serverConfig);
+      setDirty(false);
+    }
+  }, [serverConfig]);
+
   const handleLabelChange = (key: ModelLabelKey, value: string) => {
     setConfig((prev) => ({
       labels: {
@@ -191,21 +198,12 @@ export default function TranslationsPage() {
         </div>
       </div>
 
-      {dirty && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
-          <div className="flex items-center justify-between px-6 py-3 max-w-7xl mx-auto">
-            <p className="text-sm text-muted-foreground">You have unsaved changes</p>
-            <Button onClick={handleSave} disabled={saveMut.isPending || !token} size="sm">
-              {saveMut.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-              ) : (
-                <Save className="h-4 w-4 mr-1" />
-              )}
-              Save changes
-            </Button>
-          </div>
-        </div>
-      )}
+      <UnsavedChangesBar
+        visible={dirty}
+        onSave={handleSave}
+        onDiscard={handleDiscard}
+        saving={saveMut.isPending}
+      />
     </div>
   );
 }

@@ -8,7 +8,7 @@ type ParamValue = string | number | boolean | undefined | null;
  * Append query parameters to a base path.
  * Skips `undefined` and `null` values.
  */
-export function buildUrl(basePath: string, params?: Record<string, ParamValue>): string {
+function buildUrl(basePath: string, params?: Record<string, ParamValue>): string {
   if (!params) return basePath;
   const qs = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
@@ -10,28 +10,18 @@ import { BookOpen, Plus, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
+import { ServerPagination } from '@/components/backoffice/common/server-pagination';
 import { getHistoricalItems } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import type { HistoricalItemListItem } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 
 export default function ManuscriptsPage() {
   const { token } = useAuth();
   const router = useRouter();
-  const [page, setPage] = useState(0);
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
+  const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
   const { getLabel, getPluralLabel } = useModelLabels();
-
-  // Debounce search input → server query
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => {
-    debounceRef.current = setTimeout(() => {
-      setSearch(searchInput);
-      setPage(0);
-    }, 300);
-    return () => clearTimeout(debounceRef.current);
-  }, [searchInput]);
   const historicalItemLabel = getLabel('historicalItem');
   const historicalItemPlural = getPluralLabel('historicalItem');
   const catalogueLabel = getLabel('catalogueNumber');
@@ -158,29 +148,14 @@ export default function ManuscriptsPage() {
         exportFilename="manuscripts"
       />
 
-      {/* Server-side pagination controls */}
-      {data && data.count > 50 && (
-        <div className="flex items-center justify-center gap-2 pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page === 0}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground tabular-nums">
-            Page {page + 1} of {Math.ceil(data.count / 50)}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!data.next}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Next
-          </Button>
-        </div>
+      {data && (
+        <ServerPagination
+          total={data.count}
+          pageSize={50}
+          page={page}
+          hasNext={!!data.next}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

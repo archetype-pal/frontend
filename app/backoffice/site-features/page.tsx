@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ToggleLeft, Save, Loader2 } from 'lucide-react';
+import { ToggleLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { useStaffGuard } from '@/hooks/backoffice/use-staff-guard';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
+import { UnsavedChangesBar } from '@/components/backoffice/common/unsaved-changes-bar';
 import { SectionToggles } from '@/components/backoffice/site-features/section-toggles';
 import { SearchCategoryConfigPanel } from '@/components/backoffice/site-features/search-category-config';
 import {
@@ -90,6 +90,13 @@ export default function SiteFeaturesPage() {
 
   useKeyboardShortcut('mod+s', handleSave);
 
+  const handleDiscard = useCallback(() => {
+    if (serverConfig) {
+      setConfig(serverConfig);
+      setDirty(false);
+    }
+  }, [serverConfig]);
+
   const handleSectionChange = (key: SectionKey, enabled: boolean) => {
     setConfig((prev) => ({
       ...prev,
@@ -145,21 +152,12 @@ export default function SiteFeaturesPage() {
         onChange={handleCategoryChange}
       />
 
-      {dirty && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
-          <div className="flex items-center justify-between px-6 py-3 max-w-7xl mx-auto">
-            <p className="text-sm text-muted-foreground">You have unsaved changes</p>
-            <Button onClick={handleSave} disabled={saveMut.isPending} size="sm">
-              {saveMut.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-              ) : (
-                <Save className="h-4 w-4 mr-1" />
-              )}
-              Save changes
-            </Button>
-          </div>
-        </div>
-      )}
+      <UnsavedChangesBar
+        visible={dirty}
+        onSave={handleSave}
+        onDiscard={handleDiscard}
+        saving={saveMut.isPending}
+      />
     </div>
   );
 }

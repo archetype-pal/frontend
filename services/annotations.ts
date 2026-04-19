@@ -39,6 +39,13 @@ export interface BackendGraph {
 
 import { apiFetch } from '@/lib/api-fetch';
 
+function authHeaders(token: string): HeadersInit {
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Token ${token}`,
+  };
+}
+
 export async function fetchAnnotationsForImage(
   imageId: string,
   allographId?: string,
@@ -60,10 +67,7 @@ export async function createViewerAnnotation(
 ) {
   const res = await apiFetch(`/api/v1/annotations/graphs/`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Token ${token}`,
-    },
+    headers: authHeaders(token),
     body: JSON.stringify({
       ...payload,
       annotation_type: 'image',
@@ -83,10 +87,7 @@ export async function updateViewerAnnotation(
 ) {
   const res = await apiFetch(`/api/v1/annotations/graphs/${id}/`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Token ${token}`,
-    },
+    headers: authHeaders(token),
     body: JSON.stringify({
       ...partial,
       annotation_type: 'image',
@@ -102,9 +103,7 @@ export async function updateViewerAnnotation(
 export async function deleteViewerAnnotation(token: string, id: number): Promise<void> {
   const res = await apiFetch(`/api/v1/annotations/graphs/${id}/`, {
     method: 'DELETE',
-    headers: {
-      Authorization: `Token ${token}`,
-    },
+    headers: authHeaders(token),
   });
   if (!res.ok) {
     const text = await res.text();
