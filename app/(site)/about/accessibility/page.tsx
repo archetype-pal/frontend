@@ -1,10 +1,12 @@
 import Link from 'next/link';
+import { PageBanner } from '@/components/layout/page-banner';
 
 export default function AccessibilityStatement() {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <main className="max-w-3xl">
-        <h1 className="text-3xl font-bold mb-6">Accessibility Statement</h1>
+    <div>
+      <PageBanner title="Accessibility Statement" />
+      <div className="container mx-auto px-4 py-12">
+        <main className="max-w-3xl">
 
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-3">Our commitment</h2>
@@ -56,6 +58,7 @@ export default function AccessibilityStatement() {
           This statement was last updated in February 2026.
         </p>
       </main>
+      </div>
     </div>
   );
 }

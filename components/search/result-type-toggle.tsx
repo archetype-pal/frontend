@@ -36,10 +36,10 @@ export function ResultTypeToggle({
               aria-selected={isActive}
               onClick={() => onChange(item.value)}
               className={cn(
-                'min-h-8 shrink-0 snap-start whitespace-nowrap border-b-2 px-2 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-2.5 sm:py-2',
+                'min-h-8 shrink-0 snap-start whitespace-nowrap rounded-full px-3 py-1.5 text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-3.5 sm:py-2',
                 isActive
-                  ? 'border-b-primary font-semibold text-foreground'
-                  : 'border-b-transparent font-medium text-muted-foreground hover:text-foreground'
+                  ? 'bg-white text-primary font-semibold shadow-sm'
+                  : 'font-medium text-primary-foreground/70 hover:text-white hover:bg-primary-foreground/10'
               )}
             >
               {resolveResultTypeLabel(item.value, getLabel)}
@@ -53,7 +53,7 @@ export function ResultTypeToggle({
         })}
       </div>
       <div
-        className="pointer-events-none absolute right-0 top-0 z-[1] h-full w-9 bg-gradient-to-l from-background to-transparent md:hidden"
+        className="pointer-events-none absolute right-0 top-0 z-[1] h-full w-9 bg-gradient-to-l from-primary to-transparent md:hidden"
         aria-hidden
       />
     </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useDeferredValue } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useSearchContext } from '@/contexts/search-context';
@@ -120,6 +121,14 @@ export default function Header() {
 
   const orderedSections = normalizeSectionOrder(config.sectionOrder);
 
+  const navLinkClass = (active: boolean) =>
+    cn(
+      'transition-colors w-full md:w-auto justify-start',
+      active
+        ? 'text-white font-semibold border-b-2 border-accent rounded-none'
+        : 'text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10'
+    );
+
   const renderSectionButton = (sectionKey: SectionKey) => {
     if (!isSectionEnabled(sectionKey)) {
       return null;
@@ -133,11 +142,7 @@ export default function Header() {
               asChild
               variant="ghost"
               size="sm"
-              className={`transition-colors w-full md:w-auto justify-start group ${
-                isActive('/search')
-                  ? 'bg-primary-foreground/30 text-white'
-                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-              }`}
+              className={cn('group', navLinkClass(!!isActive('/search')))}
             >
               <Link href="/search/manuscripts">
                 <Search className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
@@ -153,11 +158,7 @@ export default function Header() {
               asChild
               variant="ghost"
               size="sm"
-              className={`transition-colors w-full md:w-auto justify-start group ${
-                isActive('/collection', true)
-                  ? 'bg-primary-foreground/30 text-white'
-                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-              }`}
+              className={cn('group', navLinkClass(!!isActive('/collection', true)))}
             >
               <Link href="/collection">
                 <FolderOpen className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
@@ -173,11 +174,7 @@ export default function Header() {
               asChild
               variant="ghost"
               size="sm"
-              className={`transition-colors w-full md:w-auto justify-start group ${
-                isActive('/lightbox', true)
-                  ? 'bg-primary-foreground/30 text-white'
-                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-              }`}
+              className={cn('group', navLinkClass(!!isActive('/lightbox', true)))}
             >
               <Link href="/lightbox">Lightbox</Link>
             </Button>
@@ -190,11 +187,7 @@ export default function Header() {
               asChild
               variant="ghost"
               size="sm"
-              className={`transition-colors w-full md:w-auto justify-start ${
-                isActive('/publications/news')
-                  ? 'bg-primary-foreground/30 text-white'
-                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-              }`}
+              className={navLinkClass(!!isActive('/publications/news'))}
             >
               <Link href="/publications/news">News</Link>
             </Button>
@@ -207,11 +200,7 @@ export default function Header() {
               asChild
               variant="ghost"
               size="sm"
-              className={`transition-colors w-full md:w-auto justify-start ${
-                isActive('/publications/blogs')
-                  ? 'bg-primary-foreground/30 text-white'
-                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-              }`}
+              className={navLinkClass(!!isActive('/publications/blogs'))}
             >
               <Link href="/publications/blogs">Blogs</Link>
             </Button>
@@ -224,11 +213,7 @@ export default function Header() {
               asChild
               variant="ghost"
               size="sm"
-              className={`transition-colors w-full md:w-auto justify-start ${
-                isActive('/publications/feature')
-                  ? 'bg-primary-foreground/30 text-white'
-                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-              }`}
+              className={navLinkClass(!!isActive('/publications/feature'))}
             >
               <Link href="/publications/feature">Feature Articles</Link>
             </Button>
@@ -243,11 +228,7 @@ export default function Header() {
               asChild
               variant="ghost"
               size="sm"
-              className={`transition-colors w-full md:w-auto justify-start ${
-                isActive('/about')
-                  ? 'bg-primary-foreground/30 text-white'
-                  : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-              }`}
+              className={navLinkClass(!!isActive('/about'))}
             >
               <Link href="/about/about-models-of-authority">About</Link>
             </Button>
@@ -259,30 +240,27 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-gray-100 border-b border-gray-200">
+    <header className="sticky top-0 z-50 bg-primary text-primary-foreground shadow-md">
       {isBannerVisible && (
-        <div className="container mx-auto py-2">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex flex-col md:flex-row items-start md:items-end">
-              <h1 className="text-4xl md:text-4xl font-serif text-primary leading-tight mb-2 md:mb-0 md:mr-6">
-                Models of Authority
-              </h1>
-              <div className="text-lg md:text-base text-[#555] border-l-2 border-primary font-sans max-w-md pl-4">
-                <p>Scottish Charters</p>
-                <p>and the Emergence of Government 1100-1250</p>
-              </div>
-            </div>
+        <div className="container mx-auto px-4 py-4 md:py-5">
+          <div className="flex items-end gap-6">
+            <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight text-primary-foreground leading-tight">
+              Models of Authority
+            </h1>
+            <p className="hidden md:block text-sm text-primary-foreground/65 max-w-xs pb-0.5">
+              Scottish Charters and the Emergence of Government, 1100–1250
+            </p>
           </div>
         </div>
       )}
-      <nav className="bg-primary text-primary-foreground p-2">
+      <nav className="border-t border-primary-foreground/15 px-2 py-1.5">
         <div className="container mx-auto">
           <div className="flex items-center justify-between md:hidden mb-2">
-            <span className="text-sm font-medium">Menu</span>
+            <span className="text-sm font-medium text-primary-foreground">Menu</span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+              className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/10"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
             >
@@ -300,11 +278,7 @@ export default function Header() {
                   asChild
                   variant="ghost"
                   size="sm"
-                  className={`transition-colors w-full md:w-auto justify-start group ${
-                    isActive('/', true)
-                      ? 'bg-primary-foreground/30 text-white'
-                      : 'text-primary-foreground hover:bg-primary-foreground/20 hover:text-white'
-                  }`}
+                  className={cn('group', navLinkClass(!!isActive('/', true)))}
                 >
                   <Link href="/">
                     <Home className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
@@ -324,7 +298,7 @@ export default function Header() {
                     suggestions={effectiveSuggestions}
                     placeholder="Enter search terms"
                     className="w-full"
-                    inputClassName="bg-background text-foreground w-full"
+                    inputClassName="bg-primary-foreground/15 text-white placeholder:text-primary-foreground/50 w-full rounded-full border-0"
                     clearOnFocus
                     onFocus={handleHeaderSearchFocus}
                     suggestionsLoading={serverSuggestionsQuery.isFetching}
@@ -350,7 +324,7 @@ export default function Header() {
                         asChild
                         variant="ghost"
                         size="sm"
-                        className="text-primary-foreground hover:bg-primary-foreground/20 hover:text-white"
+                        className="text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
                       >
                         <Link href="/backoffice">
                           <Shield className="h-4 w-4 mr-1" />
@@ -361,7 +335,7 @@ export default function Header() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+                      className="h-8 w-8 text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
                       onClick={logout}
                       title="Sign out"
                     >
@@ -373,7 +347,7 @@ export default function Header() {
                     asChild
                     variant="ghost"
                     size="sm"
-                    className="text-primary-foreground hover:bg-primary-foreground/20 hover:text-white"
+                    className="text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
                   >
                     <Link href="/login">
                       <LogIn className="h-4 w-4 mr-1" />
@@ -384,7 +358,7 @@ export default function Header() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+                  className="h-8 w-8 text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
                   onClick={toggleBanner}
                   aria-label={isBannerVisible ? 'Hide banner' : 'Show banner'}
                   title={isBannerVisible ? 'Hide banner' : 'Show banner'}

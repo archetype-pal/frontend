@@ -97,7 +97,7 @@ export async function PublicationDetailPage({
         </main>
         <aside className="w-full md:w-80">
           <section className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 mb-4">
+            <h2 className="text-lg font-serif font-semibold text-foreground border-b border-border pb-2 mb-4">
               Recent {config.title}
             </h2>
             <ul className="space-y-2">
@@ -117,7 +117,7 @@ export async function PublicationDetailPage({
             </ul>
           </section>
           <section>
-            <h2 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 mb-4">
+            <h2 className="text-lg font-serif font-semibold text-foreground border-b border-border pb-2 mb-4">
               Back to list
             </h2>
             <Link href={config.routeBase} className="text-sm text-primary hover:underline">

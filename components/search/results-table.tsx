@@ -550,7 +550,7 @@ function ResultsTableComponent<K extends ResultType>({
           ref={measure ? (el) => measure(el) : undefined}
         >
           <TableRow
-            className={`relative cursor-pointer transition-colors group-hover:bg-muted/50 ${ri % 2 === 0 ? 'bg-muted/[0.07]' : ''}${hasSubRow ? ' border-b-0' : ''}`}
+            className={`relative cursor-pointer transition-colors group-hover:bg-secondary/80 ${ri % 2 === 0 ? 'bg-secondary/30' : ''}${hasSubRow ? ' border-b-0' : ''}`}
           >
             {canCompare && (
               <TableCell className="w-10 py-1.5">

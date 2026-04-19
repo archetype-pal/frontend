@@ -70,7 +70,7 @@ export default async function ManuscriptPage({ params }: { params: Promise<{ id:
           <p className="text-muted-foreground mb-4">
             The manuscript service is currently unavailable. Please try again shortly.
           </p>
-          <Link href="/search/manuscripts" className="text-blue-600 hover:underline">
+          <Link href="/search/manuscripts" className="text-primary hover:underline">
             Back to manuscripts
           </Link>
         </div>

@@ -48,8 +48,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
 
   return (
-    <div className="flex h-screen flex-col bg-muted/30">
-      <header className="relative z-10 flex shrink-0 items-center gap-2 border-b bg-background px-3 py-2 shadow-sm sm:gap-3 sm:px-4">
+    <div className="flex h-screen flex-col bg-background">
+      <header className="relative z-10 flex shrink-0 items-center gap-2 border-b border-primary-foreground/15 bg-primary text-primary-foreground px-3 py-2 shadow-sm sm:gap-3 sm:px-4">
         <h1 className="sr-only">
           {`Search ${typeLabel}: ${s.resultCount.toLocaleString()} results`}
         </h1>
@@ -58,10 +58,10 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           title={`${typeLabel} — ${s.resultCount.toLocaleString()} results`}
         >
           <div className="flex items-baseline gap-1.5 whitespace-nowrap sm:gap-2">
-            <span className="text-lg font-bold tabular-nums tracking-tight sm:text-2xl">
+            <span className="text-lg font-bold tabular-nums tracking-tight sm:text-2xl text-white">
               {s.resultCount.toLocaleString()}
             </span>
-            <span className="max-w-[min(28vw,9rem)] truncate text-xs text-muted-foreground sm:max-w-none sm:text-sm">
+            <span className="max-w-[min(28vw,9rem)] truncate text-xs text-primary-foreground/70 sm:max-w-none sm:text-sm">
               results in {typeLabel}
             </span>
           </div>
@@ -77,9 +77,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="hidden h-9 w-9 shrink-0 md:inline-flex"
+            className="hidden h-9 w-9 shrink-0 md:inline-flex text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
             aria-label={s.filtersSidebarCollapsed ? 'Show filters panel' : 'Hide filters panel'}
             title={s.filtersSidebarCollapsed ? 'Show filters (Alt+F)' : 'Hide filters (Alt+F)'}
             onClick={s.toggleFiltersSidebar}

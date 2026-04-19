@@ -48,8 +48,8 @@ function CollectionGraphCard({
   const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined);
 
   return (
-    <div className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden group cursor-pointer">
-      <div className="relative aspect-4/3 bg-gray-50 overflow-hidden">
+    <div className="relative bg-card border border-border rounded-lg shadow-sm hover:shadow-lg hover:border-border/80 transition-all duration-300 overflow-hidden group cursor-pointer">
+      <div className="relative aspect-4/3 bg-secondary overflow-hidden">
         {imageUrl ? (
           <>
             <Link href={getUrl(item)} className="block w-full h-full">
@@ -65,7 +65,7 @@ function CollectionGraphCard({
             <div className="absolute inset-0 bg-linear-to-t from-black/0 via-black/0 to-black/0 group-hover:from-black/5 group-hover:via-black/0 group-hover:to-black/0 transition-all duration-300 pointer-events-none" />
           </>
         ) : (
-          <div className="bg-linear-to-br from-gray-100 to-gray-200 w-full h-full flex items-center justify-center text-xs text-gray-500">
+          <div className="bg-linear-to-br from-secondary to-muted w-full h-full flex items-center justify-center text-xs text-muted-foreground">
             {infoUrl ? '…' : 'No Image'}
           </div>
         )}
@@ -80,11 +80,11 @@ function CollectionGraphCard({
         </div>
       </div>
       <div className="p-3 text-center space-y-1 bg-white">
-        <div className="font-medium text-gray-900 truncate text-xs sm:text-sm" title={title}>
+        <div className="font-medium text-foreground truncate text-xs sm:text-sm" title={title}>
           {title}
         </div>
         {item.repository_name && (
-          <div className="text-xs text-gray-500 truncate" title={item.repository_name}>
+          <div className="text-xs text-muted-foreground truncate" title={item.repository_name}>
             {item.repository_name}
           </div>
         )}
@@ -110,9 +110,9 @@ function CollectionPageContent() {
       <div className="container mx-auto px-4 py-16 sm:py-20">
         <div className="max-w-2xl mx-auto text-center">
           <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-linear-to-br from-gray-50 to-gray-100 mb-6 shadow-sm">
-            <Star className="h-12 w-12 text-gray-400" />
+            <Star className="h-12 w-12 text-muted-foreground" />
           </div>
-          <h1 className="text-4xl font-bold mb-4 text-gray-900">My Collection</h1>
+          <h1 className="text-4xl font-bold mb-4 text-foreground">My Collection</h1>
           <p className="text-muted-foreground text-lg mb-10 leading-relaxed max-w-md mx-auto">
             Your collection is empty. Start adding items by hovering over thumbnails in the search
             pages and clicking the star icon.
@@ -147,9 +147,9 @@ function CollectionPageContent() {
     return (
       <div
         key={`image-${item.id}`}
-        className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden group cursor-pointer"
+        className="relative bg-card border border-border rounded-lg shadow-sm hover:shadow-lg hover:border-border/80 transition-all duration-300 overflow-hidden group cursor-pointer"
       >
-        <div className="relative aspect-4/3 bg-gray-50 overflow-hidden">
+        <div className="relative aspect-4/3 bg-secondary overflow-hidden">
           {imageUrl ? (
             <>
               <Link href={getUrl(item)} className="block w-full h-full">
@@ -165,7 +165,7 @@ function CollectionPageContent() {
               <div className="absolute inset-0 bg-linear-to-t from-black/0 via-black/0 to-black/0 group-hover:from-black/5 group-hover:via-black/0 group-hover:to-black/0 transition-all duration-300 pointer-events-none" />
             </>
           ) : (
-            <div className="bg-linear-to-br from-gray-100 to-gray-200 w-full h-full flex items-center justify-center text-xs text-gray-500">
+            <div className="bg-linear-to-br from-secondary to-muted w-full h-full flex items-center justify-center text-xs text-muted-foreground">
               No Image
             </div>
           )}
@@ -180,11 +180,11 @@ function CollectionPageContent() {
           </div>
         </div>
         <div className="p-3 text-center space-y-1 bg-white">
-          <div className="font-medium text-gray-900 truncate text-xs sm:text-sm" title={title}>
+          <div className="font-medium text-foreground truncate text-xs sm:text-sm" title={title}>
             {title}
           </div>
           {item.repository_name && (
-            <div className="text-xs text-gray-500 truncate" title={item.repository_name}>
+            <div className="text-xs text-muted-foreground truncate" title={item.repository_name}>
               {item.repository_name}
             </div>
           )}
@@ -204,8 +204,8 @@ function CollectionPageContent() {
     return (
       <section>
         <div className="flex items-center gap-2 mb-6">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900">{title}</h2>
-          <span className="text-sm text-muted-foreground bg-gray-100 px-3 py-1 rounded-full font-medium">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">{title}</h2>
+          <span className="text-sm text-muted-foreground bg-secondary px-3 py-1 rounded-full font-medium">
             {items.length} {items.length === 1 ? 'item' : 'items'}
             {items.length !== allItems.length && ` of ${allItems.length}`}
           </span>
@@ -215,7 +215,7 @@ function CollectionPageContent() {
             {items.map((item) => renderCard(item, type))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="text-center py-12 bg-secondary rounded-lg border border-border">
             <p className="text-sm text-muted-foreground">
               No {title.toLowerCase()} match the current filter.
             </p>
@@ -230,7 +230,7 @@ function CollectionPageContent() {
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-gray-900">My Collection</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-foreground">My Collection</h1>
             <p className="text-muted-foreground text-sm sm:text-base">
               {items.length} {items.length === 1 ? 'item' : 'items'} saved
             </p>
@@ -253,7 +253,7 @@ function CollectionPageContent() {
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+          <div className="flex gap-2 bg-secondary p-1 rounded-lg">
             {(['all', 'image', 'graph'] as FilterType[]).map((f) => (
               <Button
                 key={f}
@@ -266,7 +266,7 @@ function CollectionPageContent() {
               </Button>
             ))}
           </div>
-          <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+          <div className="flex gap-2 bg-secondary p-1 rounded-lg">
             {(['added', 'name', 'repository'] as SortOption[]).map((s) => (
               <Button
                 key={s}

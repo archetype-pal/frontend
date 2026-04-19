@@ -31,19 +31,19 @@ export default function BlogPostPreview({
       : 'News';
 
   return (
-    <article className="mb-8">
-      <h2 className="text-2xl font-semibold text-[#2B4C6F] mb-3">
+    <article className="mb-0">
+      <h2 className="text-2xl font-semibold text-primary mb-3">
         <Link href={`${slug}`} className="hover:underline">
           {title}
         </Link>
       </h2>
-      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 mb-4">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-4">
         <span className="flex items-center">
           <User className="h-4 w-4 mr-1" />
           Posted by:
         </span>
-        <span className="text-[#2B4C6F] font-medium">{author}</span>
-        <span className="mx-1">|</span>
+        <span className="text-primary font-medium">{author}</span>
+        <span className="mx-1">·</span>
         <span className="flex items-center">
           <Calendar className="h-4 w-4 mr-1" />
           <time dateTime={date}>
@@ -54,13 +54,13 @@ export default function BlogPostPreview({
             })}
           </time>
         </span>
-        <span className="mx-1">|</span>
-        <Link href={slug} className="flex items-center text-[#2B4C6F] hover:underline">
+        <span className="mx-1">·</span>
+        <Link href={slug} className="flex items-center text-primary hover:underline">
           <Newspaper className="h-4 w-4 mr-1" />
           {publicationLabel}
         </Link>
-        <span className="mx-1">|</span>
-        <Link href={`${slug}`} className="flex items-center text-[#2B4C6F] hover:underline">
+        <span className="mx-1">·</span>
+        <Link href={`${slug}`} className="flex items-center text-primary hover:underline">
           <MessageSquare className="h-4 w-4 mr-1" />
           {commentsCount} Comments
         </Link>
@@ -70,7 +70,7 @@ export default function BlogPostPreview({
       {showReadMoreBtn && (
         <Link
           href={`${slug}`}
-          className="inline-flex items-center px-4 py-2 text-sm text-[#2B4C6F] border border-[#2B4C6F] rounded hover:bg-[#2B4C6F] hover:text-white transition-colors"
+          className="inline-flex items-center px-4 py-2 text-sm text-primary border border-primary rounded hover:bg-primary hover:text-white transition-colors"
         >
           Read more
           <ArrowRight className="h-4 w-4 ml-2" />

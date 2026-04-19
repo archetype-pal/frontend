@@ -48,7 +48,7 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="bg-gray-100 p-1">
+        <TabsList className="bg-secondary p-1">
           <TabsTrigger value="information">Information</TabsTrigger>
           <TabsTrigger value="hands">Hands ({hands.length})</TabsTrigger>
           <TabsTrigger value="idiographs">

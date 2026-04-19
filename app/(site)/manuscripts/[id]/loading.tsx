@@ -8,7 +8,7 @@ export default function Loading() {
       <Skeleton className="h-10 w-2/3 mb-6" />
 
       <Tabs defaultValue="information" className="space-y-6">
-        <TabsList className="bg-gray-100 p-1">
+        <TabsList className="bg-secondary p-1">
           <TabsTrigger value="information">Information</TabsTrigger>
           <TabsTrigger value="descriptions">Descriptions</TabsTrigger>
           <TabsTrigger value="images">Images</TabsTrigger>

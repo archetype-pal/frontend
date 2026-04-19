@@ -56,7 +56,7 @@ export default function ShareButtons({ title, author, slug }: ShareButtonsProps)
       <Button
         variant="ghost"
         size="sm"
-        className="text-[#2B4C6F] hover:text-[#2B4C6F]/80"
+        className="text-primary hover:text-primary/80"
         onClick={() => handleShare('twitter')}
         disabled={!currentUrl}
       >
@@ -65,7 +65,7 @@ export default function ShareButtons({ title, author, slug }: ShareButtonsProps)
       <Button
         variant="ghost"
         size="sm"
-        className="text-[#2B4C6F] hover:text-[#2B4C6F]/80"
+        className="text-primary hover:text-primary/80"
         onClick={() => handleShare('facebook')}
         disabled={!currentUrl}
       >

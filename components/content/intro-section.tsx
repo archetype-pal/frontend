@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { CarouselItem } from '@/types/backoffice';
@@ -50,151 +49,130 @@ export default function Component() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="relative overflow-hidden animate-pulse">
-            <CardContent className="p-0">
-              <div className="relative h-[400px] bg-gray-200" />
-            </CardContent>
-          </Card>
-          <div className="space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-3/4" />
-            <div className="h-20 bg-gray-200 rounded" />
-            <div className="h-20 bg-gray-200 rounded" />
-          </div>
-        </div>
-      </div>
+      <section className="relative w-full">
+        <div className="relative h-[500px] md:h-[600px] bg-secondary animate-pulse" />
+      </section>
     );
   }
 
   // Error or no items state
   if (error || carouselItems.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="relative overflow-hidden">
-            <CardContent className="p-0">
-              <div className="relative h-[400px] flex items-center justify-center bg-gray-100">
-                <p className="text-gray-500">No carousel images available</p>
-              </div>
-            </CardContent>
-          </Card>
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold">
-              Models of Authority: Scottish Charters and the Emergence of Government
+      <section className="relative w-full bg-primary">
+        <div className="container mx-auto px-6 md:px-8 py-20">
+          <div className="max-w-xl space-y-5">
+            <h2 className="text-3xl md:text-5xl font-serif font-bold text-primary-foreground tracking-tight leading-tight">
+              Scottish Charters and the Emergence of Government
             </h2>
-            <p className="text-gray-600">
-              Models of Authority is a resource for the study of the contents, script and physical
-              appearance of the corpus of Scottish charters which survives from 1100–1250.
+            <p className="text-base md:text-lg text-primary-foreground/85 leading-relaxed">
+              A resource for the study of the contents, script and physical appearance of the
+              corpus of Scottish charters which survives from 1100–1250.
             </p>
-            <p className="text-gray-600">
-              The project is funded by the AHRC (2014-2017) and is a collaboration between scholars
-              from the Universities of Glasgow, Cambridge and King&apos;s College London.
-            </p>
-            <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 ">
-              <Button className="w-full sm:w-auto" asChild>
-                <Link href="/about/about-models-of-authority">Read more about the project</Link>
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button
+                size="lg"
+                className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
+                asChild
+              >
+                <Link href="/about/about-models-of-authority">About the project</Link>
               </Button>
-              <Button className="w-full sm:w-auto" asChild variant="outline">
-                <Link href="/search/manuscripts">Start searching</Link>
-              </Button>
-              <Button className="w-full sm:w-auto" asChild variant="outline">
-                <Link href="/search/images">Browse images</Link>
+              <Button
+                size="lg"
+                asChild
+                className="border-2 border-primary-foreground bg-transparent text-primary-foreground hover:bg-primary-foreground/10 font-semibold"
+              >
+                <Link href="/search/manuscripts">Search charters</Link>
               </Button>
             </div>
           </div>
         </div>
-      </div>
+      </section>
     );
   }
 
   // Main content with carousel
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="relative overflow-hidden">
-          <CardContent className="p-0">
-            <div className="relative h-[400px]">
-              {carouselItems[currentImage] && (
-                <>
-                  <Image
-                    src={getCarouselImageUrl(carouselItems[currentImage].image)}
-                    alt={carouselItems[currentImage].title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    priority
-                    unoptimized
-                  />
-                  <div className="absolute inset-0 bg-black/50" aria-hidden />
-                </>
-              )}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                {carouselItems.map((_, index) => (
-                  <span
-                    key={index}
-                    className={`h-2 w-2 rounded-full ${
-                      index === currentImage ? 'bg-white' : 'bg-gray-400'
-                    }`}
-                  />
-                ))}
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-1/2 left-2 transform -translate-y-1/2 text-white"
-                onClick={prevImage}
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-1/2 right-2 transform -translate-y-1/2 text-white"
-                onClick={nextImage}
-              >
-                <ChevronRight className="h-6 w-6" />
-              </Button>
-            </div>
-          </CardContent>
+    <section className="relative w-full overflow-hidden">
+      {/* Hero with full-width carousel */}
+      <div className="relative h-[500px] md:h-[600px]">
+        {carouselItems[currentImage] && (
+          <Image
+            src={getCarouselImageUrl(carouselItems[currentImage].image)}
+            alt={carouselItems[currentImage].title}
+            fill
+            className="object-cover"
+            sizes="100vw"
+            priority
+            unoptimized
+          />
+        )}
+        {/* Gradient overlay */}
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/20"
+          aria-hidden
+        />
 
-          {carouselItems[currentImage] && carouselItems[currentImage].url && (
-            <Link
-              href={carouselItems[currentImage].url}
-              className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-2 text-center"
-            >
-              {carouselItems[currentImage].title}
-            </Link>
-          )}
-        </Card>
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold">
-            Models of Authority: Scottish Charters and the Emergence of Government
-          </h2>
-          <p className="text-gray-600">
-            Models of Authority is a resource for the study of the contents, script and physical
-            appearance of the corpus of Scottish charters which survives from 1100–1250. Through
-            close examination of the diplomatic and palaeographic features of the charters, the
-            project will explore the evidence for developments in the perception of royal government
-            during a crucial period in Scottish history.
-          </p>
-          <p className="text-gray-600">
-            The project is funded by the AHRC (2014-2017) and is a collaboration between scholars
-            from the Universities of Glasgow, Cambridge and King&apos;s College London.
-          </p>
-          <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 ">
-            <Button className="w-full sm:w-auto" asChild>
-              <Link href="/about/about-models-of-authority/">Read more about the project</Link>
-            </Button>
-            <Button className="w-full sm:w-auto" asChild variant="outline">
-              <Link href="/search/manuscripts">Start searching</Link>
-            </Button>
-            <Button className="w-full sm:w-auto" asChild variant="outline">
-              <Link href="/search/images">Browse images</Link>
-            </Button>
+        {/* Hero text overlay */}
+        <div className="absolute inset-0 flex items-center">
+          <div className="container mx-auto px-6 md:px-8">
+            <div className="max-w-xl space-y-5">
+              <h2 className="text-3xl md:text-5xl font-serif font-bold text-white tracking-tight leading-tight">
+                Scottish Charters and the Emergence of Government
+              </h2>
+              <p className="text-base md:text-lg text-white/85 leading-relaxed">
+                A resource for the study of the contents, script and physical appearance of the
+                corpus of Scottish charters which survives from 1100–1250.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <Button
+                  size="lg"
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold shadow-lg"
+                  asChild
+                >
+                  <Link href="/about/about-models-of-authority/">About the project</Link>
+                </Button>
+                <Button
+                  size="lg"
+                  asChild
+                  className="border-2 border-white bg-transparent text-white hover:bg-white/20 shadow-lg font-semibold"
+                >
+                  <Link href="/search/manuscripts">Search charters</Link>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Carousel controls */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+          {carouselItems.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentImage(index)}
+              className={`h-2.5 rounded-full transition-all duration-300 ${
+                index === currentImage ? 'w-8 bg-white' : 'w-2.5 bg-white/50 hover:bg-white/75'
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-1/2 left-4 -translate-y-1/2 text-white/80 hover:text-white hover:bg-white/10 h-10 w-10"
+          onClick={prevImage}
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-1/2 right-4 -translate-y-1/2 text-white/80 hover:text-white hover:bg-white/10 h-10 w-10"
+          onClick={nextImage}
+        >
+          <ChevronRight className="h-6 w-6" />
+        </Button>
       </div>
-    </div>
+    </section>
   );
 }

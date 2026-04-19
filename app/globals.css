@@ -1,136 +1,151 @@
 @import 'tailwindcss';
 @config "../tailwind.config.ts";
 
-/* Tailwind v4 theme configuration - static values required */
-@theme {
-  /* Light mode colors (default) */
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(240 10% 3.9%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(240 10% 3.9%);
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(240 10% 3.9%);
-  --color-primary: hsl(201 90% 27%);
-  --color-primary-foreground: hsl(0 0% 98%);
-  --color-secondary: hsl(240 4.8% 95.9%);
-  --color-secondary-foreground: hsl(240 5.9% 10%);
-  --color-muted: hsl(240 4.8% 95.9%);
-  --color-muted-foreground: hsl(240 3.8% 46.1%);
-  --color-accent: hsl(240 4.8% 95.9%);
-  --color-accent-foreground: hsl(240 5.9% 10%);
-  --color-destructive: hsl(0 84.2% 60.2%);
-  --color-destructive-foreground: hsl(0 0% 98%);
-  --color-border: hsl(240 5.9% 90%);
-  --color-input: hsl(240 5.9% 90%);
-  --color-ring: hsl(240 10% 3.9%);
-  --color-chart-1: hsl(12 76% 61%);
-  --color-chart-2: hsl(173 58% 39%);
-  --color-chart-3: hsl(197 37% 24%);
-  --color-chart-4: hsl(43 74% 66%);
-  --color-chart-5: hsl(27 87% 67%);
+/*
+ * Tailwind v4 theme — bridge CSS variables to utility classes.
+ *
+ * `@theme inline` tells Tailwind "these are your utility values" without
+ * generating extra CSS variables. The actual values live in :root / .dark
+ * below, enabling runtime theming and dark-mode switching.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
 
-  /* Border radius */
-  --radius-sm: calc(0.5rem - 4px);
-  --radius-md: calc(0.5rem - 2px);
-  --radius-lg: 0.5rem;
-  --radius-xl: calc(0.5rem + 4px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-serif: var(--font-lora), Georgia, Cambria, serif;
 }
 
-/* CSS variables for runtime theming (legacy support) */
+/* ── Light theme (warm academic palette) ─────────────────────────────── */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 201 90% 27%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --background: hsl(39 25% 96%);
+    --foreground: hsl(25 15% 15%);
+    --card: hsl(39 30% 99%);
+    --card-foreground: hsl(25 15% 15%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(25 15% 15%);
+    --primary: hsl(201 90% 27%);
+    --primary-foreground: hsl(40 30% 97%);
+    --secondary: hsl(35 25% 91%);
+    --secondary-foreground: hsl(25 15% 15%);
+    --muted: hsl(35 20% 93%);
+    --muted-foreground: hsl(25 8% 45%);
+    --accent: hsl(38 92% 50%);
+    --accent-foreground: hsl(0 0% 100%);
+    --destructive: hsl(0 84.2% 60.2%);
+    --destructive-foreground: hsl(0 0% 98%);
+    --border: hsl(33 18% 82%);
+    --input: hsl(33 18% 82%);
+    --ring: hsl(201 90% 27%);
+    --chart-1: hsl(12 76% 61%);
+    --chart-2: hsl(173 58% 39%);
+    --chart-3: hsl(197 37% 24%);
+    --chart-4: hsl(43 74% 66%);
+    --chart-5: hsl(27 87% 67%);
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --background: hsl(240 10% 3.9%);
+    --foreground: hsl(0 0% 98%);
+    --card: hsl(240 10% 3.9%);
+    --card-foreground: hsl(0 0% 98%);
+    --popover: hsl(240 10% 3.9%);
+    --popover-foreground: hsl(0 0% 98%);
+    --primary: hsl(0 0% 98%);
+    --primary-foreground: hsl(240 5.9% 10%);
+    --secondary: hsl(240 3.7% 15.9%);
+    --secondary-foreground: hsl(0 0% 98%);
+    --muted: hsl(240 3.7% 15.9%);
+    --muted-foreground: hsl(240 5% 64.9%);
+    --accent: hsl(240 3.7% 15.9%);
+    --accent-foreground: hsl(0 0% 98%);
+    --destructive: hsl(0 62.8% 30.6%);
+    --destructive-foreground: hsl(0 0% 98%);
+    --border: hsl(240 3.7% 15.9%);
+    --input: hsl(240 3.7% 15.9%);
+    --ring: hsl(240 4.9% 83.9%);
+    --chart-1: hsl(220 70% 50%);
+    --chart-2: hsl(160 60% 45%);
+    --chart-3: hsl(30 80% 55%);
+    --chart-4: hsl(280 65% 60%);
+    --chart-5: hsl(340 75% 55%);
   }
 }
 
 @layer base {
   * {
-    border-color: hsl(var(--border));
+    border-color: var(--border);
   }
 
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    background-color: var(--background);
+    color: var(--foreground);
     font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+    line-height: 1.625;
   }
 }
 
 /*
  * Backoffice contrast overrides.
  *
- * The backoffice handles dense data at small font sizes, so it needs
- * stronger contrast than the marketing/public pages. These overrides
- * are scoped to .backoffice-shell so they don't affect the public site.
- *
- * Changes vs global theme:
- * - muted-foreground: 46% → 35% lightness (much more readable)
- * - border/input: 90% → 83% lightness (visible borders)
- * - muted/secondary/accent bg: 95.9% → 94% (subtle but more distinct)
+ * Dense data at small font sizes needs stronger contrast than public pages.
+ * Scoped to .backoffice-shell so they don't affect the public site.
  */
 .backoffice-shell {
-  --muted-foreground: 240 5% 35%;
-  --border: 240 6% 83%;
-  --input: 240 6% 83%;
-  --muted: 240 5% 94%;
-  --secondary: 240 5% 94%;
-  --accent: 240 5% 94%;
+  --muted-foreground: hsl(240 5% 35%);
+  --border: hsl(240 6% 83%);
+  --input: hsl(240 6% 83%);
+  --muted: hsl(240 5% 94%);
+  --secondary: hsl(240 5% 94%);
+  --accent: hsl(240 5% 94%);
 }
 
 .backoffice-shell .dark {
-  --muted-foreground: 240 5% 70%;
-  --border: 240 4% 22%;
-  --input: 240 4% 22%;
+  --muted-foreground: hsl(240 5% 70%);
+  --border: hsl(240 4% 22%);
+  --input: hsl(240 4% 22%);
+}
+
+/* ── Decorative elements (scriptorial touches) ──────────────────────── */
+
+.drop-cap::first-letter {
+  float: left;
+  font-family: var(--font-lora), Georgia, serif;
+  font-size: 3.5rem;
+  line-height: 0.8;
+  margin-right: 0.6rem;
+  margin-top: 0.15rem;
+  color: var(--primary);
+  font-weight: 700;
 }
 
 /* --- Viewer Interaction Cursors --- */

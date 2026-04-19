@@ -267,7 +267,7 @@ function LightboxPageContent() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-foreground mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading lightbox...</p>
         </div>
       </div>
@@ -288,7 +288,7 @@ function LightboxPageContent() {
   return (
     <LightboxErrorBoundary>
       <LightboxKeyboardShortcuts />
-      <div className="h-screen flex flex-col bg-gray-50">
+      <div className="h-screen flex flex-col bg-secondary">
         <header className="shrink-0 border-b bg-white px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={handleBack}>

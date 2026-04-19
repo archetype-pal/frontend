@@ -52,12 +52,12 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
   return (
     <main className="container mx-auto p-4 max-w-6xl">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-3xl font-medium text-gray-800">{manuscript.display_label}</h1>
+        <h1 className="text-3xl font-serif font-bold tracking-tight text-foreground">{manuscript.display_label}</h1>
         <BackofficeLink kind="item-part" id={manuscript.id} />
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="bg-gray-100 p-1">
+        <TabsList className="bg-secondary p-1">
           <TabsTrigger value="information">Information</TabsTrigger>
           <TabsTrigger value="descriptions">
             Descriptions ({manuscript.historical_item.descriptions.length})
@@ -70,23 +70,23 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
           <section>
             {manuscript.historical_item.descriptions.map((desc, index) => (
               <div key={index} className="prose max-w-none">
-                <h2 className="text-2xl mb-4 ">
+                <h2 className="text-2xl font-serif font-bold tracking-tight mb-4 ">
                   Description
                   {desc.source && (
-                    <span className="text-gray-500 font-normal"> (from {desc.source.name})</span>
+                    <span className="text-muted-foreground font-normal"> (from {desc.source.name})</span>
                   )}
                 </h2>
                 <p>{desc.content}</p>
               </div>
             ))}
-            <h2 className="text-2xl mb-4">Current location</h2>
+            <h2 className="text-2xl font-serif font-bold tracking-tight mb-4">Current location</h2>
             <dl className="grid grid-cols-[200px_1fr] gap-2">
-              <dt className="text-gray-600">Repository</dt>
+              <dt className="text-muted-foreground">Repository</dt>
               <dd>
                 {manuscript.current_item.repository.url ? (
                   <Link
                     href={manuscript.current_item.repository.url}
-                    className="text-blue-600 hover:underline"
+                    className="text-primary hover:underline"
                   >
                     {manuscript.current_item.repository.name}
                   </Link>
@@ -94,23 +94,23 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
                   manuscript.current_item.repository.name
                 )}
               </dd>
-              <dt className="text-gray-600">Town or City</dt>
+              <dt className="text-muted-foreground">Town or City</dt>
               <dd>{manuscript.current_item.repository.place}</dd>
-              <dt className="text-gray-600">{getLabel('fieldShelfmark')}</dt>
+              <dt className="text-muted-foreground">{getLabel('fieldShelfmark')}</dt>
               <dd>{manuscript.current_item.shelfmark}</dd>
             </dl>
           </section>
 
           <section>
-            <h2 className="text-2xl mb-4">Other information</h2>
+            <h2 className="text-2xl font-serif font-bold tracking-tight mb-4">Other information</h2>
             <dl className="grid grid-cols-[200px_1fr] gap-2">
-              <dt className="text-gray-600">{getPluralLabel('catalogueNumber')}</dt>
+              <dt className="text-muted-foreground">{getPluralLabel('catalogueNumber')}</dt>
               <dd>
                 <ul className="list-none space-y-1">
                   {manuscript.historical_item.catalogue_numbers.map((cat, index) => (
                     <li key={index}>
                       {cat.url ? (
-                        <Link href={cat.url} className="text-blue-600 hover:underline">
+                        <Link href={cat.url} className="text-primary hover:underline">
                           {cat.number}
                         </Link>
                       ) : (
@@ -121,9 +121,9 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
                   ))}
                 </ul>
               </dd>
-              <dt className="text-gray-600">Format</dt>
+              <dt className="text-muted-foreground">Format</dt>
               <dd>{manuscript.historical_item.format}</dd>
-              <dt className="text-gray-600">Text Date</dt>
+              <dt className="text-muted-foreground">Text Date</dt>
               <dd>{manuscript.historical_item.date_display ?? '-'}</dd>
             </dl>
           </section>
@@ -133,10 +133,10 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
           <div className="space-y-8">
             {manuscript.historical_item.descriptions.map((desc, index) => (
               <div key={index} className="prose max-w-none">
-                <h2 className="text-2xl mb-4">
+                <h2 className="text-2xl font-serif font-bold tracking-tight mb-4">
                   Description
                   {desc.source && (
-                    <span className="text-gray-500 font-normal"> (from {desc.source.name})</span>
+                    <span className="text-muted-foreground font-normal"> (from {desc.source.name})</span>
                   )}
                 </h2>
                 <p>{desc.content}</p>
@@ -148,11 +148,11 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
         <TabsContent value="images" className="space-y-6">
           <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {images?.map((image) => (
-              <div key={image.id} className="relative bg-white p-4 rounded-lg shadow">
+              <div key={image.id} className="relative bg-card p-4 rounded-lg shadow">
                 <div className="relative aspect-square">
                   <Link
                     href={`/manuscripts/${manuscript.id}/images/${image.id}`}
-                    className="text-blue-600 hover:underline"
+                    className="text-primary hover:underline"
                   >
                     <Image
                       src={
@@ -168,8 +168,8 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
                   </Link>
                 </div>
                 <div className="mt-2 text-center">
-                  <span className="text-gray-700">{image.locus}</span>
-                  <div className="text-sm text-gray-500">
+                  <span className="text-foreground">{image.locus}</span>
+                  <div className="text-sm text-muted-foreground">
                     {image.number_of_annotations} Annotations
                   </div>
                 </div>
@@ -179,7 +179,7 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
         </TabsContent>
 
         <TabsContent value="texts">
-          <div className="h-48 flex items-center justify-center text-gray-500">
+          <div className="h-48 flex items-center justify-center text-muted-foreground">
             Text content would appear here
           </div>
         </TabsContent>

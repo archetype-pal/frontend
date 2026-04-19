@@ -208,7 +208,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="bg-gray-100 p-1">
+        <TabsList className="bg-secondary p-1">
           <TabsTrigger value="information">Information</TabsTrigger>
           <TabsTrigger value="description">Description</TabsTrigger>
           <TabsTrigger value="images">Manuscript Images ({images.length})</TabsTrigger>

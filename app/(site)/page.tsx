@@ -31,29 +31,31 @@ export default async function Home() {
   ]);
 
   return (
-    <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
+    <main>
       <IntroSection />
 
-      <div className="container mx-auto px-4 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 my-8">
-          {showNews && (
-            <ArticleList
-              title="News"
-              articles={newsArticles}
-              moreLink="/publications/news"
-              limit={3}
-            />
-          )}
-          {showFeatureArticles && (
-            <ArticleList
-              title="Feature Articles"
-              articles={featureArticles}
-              moreLink="/publications/feature"
-              limit={3}
-            />
-          )}
+      <section className="bg-secondary py-20">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            {showNews && (
+              <ArticleList
+                title="News"
+                articles={newsArticles}
+                moreLink="/publications/news"
+                limit={3}
+              />
+            )}
+            {showFeatureArticles && (
+              <ArticleList
+                title="Feature Articles"
+                articles={featureArticles}
+                moreLink="/publications/feature"
+                limit={3}
+              />
+            )}
+          </div>
         </div>
-      </div>
+      </section>
     </main>
   );
 }

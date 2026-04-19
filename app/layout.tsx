@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
+import { Lora } from 'next/font/google';
 import { Toaster } from 'sonner';
 import './globals.css';
 import { AuthProvider } from '@/contexts/auth-context';
@@ -21,6 +22,11 @@ const geistMono = localFont({
   src: './fonts/GeistMonoVF.woff',
   variable: '--font-geist-mono',
   weight: '100 900',
+});
+const lora = Lora({
+  subsets: ['latin'],
+  variable: '--font-lora',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -50,7 +56,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} antialiased`}>
         <AuthProvider>
           <SiteFeaturesProvider initialConfig={siteFeaturesConfig}>
             <ModelLabelsProvider initialConfig={modelLabelsConfig}>
