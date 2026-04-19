@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
 
 interface Author {
   first_name: string;
@@ -35,46 +35,50 @@ export default function ArticleList({
   const displayed = typeof limit === 'number' ? articles.slice(0, limit) : articles;
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-serif font-bold text-foreground tracking-tight">
+    <div>
+      <h2
+        className="text-3xl md:text-4xl font-light tracking-tight text-foreground mb-8"
+        style={{ fontFamily: 'var(--font-display)' }}
+      >
         {title}
-        <span className="block mt-2 w-12 h-1 bg-accent rounded-full" />
       </h2>
+
       {displayed.length > 0 ? (
-        <ul className="space-y-4">
+        <ul className="divide-y divide-border">
           {displayed.map((article) => (
-            <li
-              key={article.id}
-              className="group rounded-lg border border-border border-l-4 border-l-accent bg-card p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
-            >
+            <li key={article.id} className="group py-5 first:pt-0">
               <Link
                 href={joinPath(moreLink, article.slug)}
-                className="text-primary group-hover:text-primary/80 font-serif font-semibold"
+                className="block"
               >
-                {article.title}
+                <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+                  {new Date(article.published_at).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                  {article.author &&
+                    (article.author.first_name || article.author.last_name) &&
+                    ` · ${[article.author.first_name, article.author.last_name].filter(Boolean).join(' ')}`}
+                </p>
+                <h3 className="text-base md:text-lg font-serif font-semibold text-foreground group-hover:text-primary transition-colors leading-snug">
+                  {article.title}
+                </h3>
               </Link>
-              <p className="text-sm text-muted-foreground mt-1">
-                {`${new Date(article.published_at).toLocaleDateString('en-GB', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                })}${
-                  article.author && (article.author.first_name || article.author.last_name)
-                    ? ` · ${[article.author.first_name, article.author.last_name].filter(Boolean).join(' ')}`
-                    : ''
-                }`}
-              </p>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-muted-foreground">No articles available.</p>
+        <p className="text-muted-foreground italic">No articles available.</p>
       )}
-      <Button asChild variant="outline">
-        <Link href={moreLink}>
-          More {typeof title === 'string' ? title.toLowerCase() : 'articles'} →
-        </Link>
-      </Button>
+
+      <Link
+        href={moreLink}
+        className="inline-flex items-center gap-2 mt-6 text-sm font-medium text-primary hover:gap-3 transition-all group"
+      >
+        All {typeof title === 'string' ? title.toLowerCase() : 'articles'}
+        <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+      </Link>
     </div>
   );
 }

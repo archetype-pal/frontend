@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
-import { Lora } from 'next/font/google';
+import { Lora, Cormorant_Garamond } from 'next/font/google';
 import { Toaster } from 'sonner';
 import './globals.css';
 import { AuthProvider } from '@/contexts/auth-context';
@@ -26,6 +26,12 @@ const geistMono = localFont({
 const lora = Lora({
   subsets: ['latin'],
   variable: '--font-lora',
+  display: 'swap',
+});
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  variable: '--font-cormorant',
+  weight: ['300', '400', '500', '600', '700'],
   display: 'swap',
 });
 
@@ -56,7 +62,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${cormorant.variable} antialiased`}>
         <AuthProvider>
           <SiteFeaturesProvider initialConfig={siteFeaturesConfig}>
             <ModelLabelsProvider initialConfig={modelLabelsConfig}>

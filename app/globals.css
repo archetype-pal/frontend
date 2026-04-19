@@ -40,6 +40,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   --font-serif: var(--font-lora), Georgia, Cambria, serif;
+  --font-display: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
 }
 
 /* ── Light theme (warm academic palette) ─────────────────────────────── */
@@ -139,13 +140,109 @@
 
 .drop-cap::first-letter {
   float: left;
-  font-family: var(--font-lora), Georgia, serif;
-  font-size: 3.5rem;
-  line-height: 0.8;
-  margin-right: 0.6rem;
-  margin-top: 0.15rem;
+  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  font-size: 4rem;
+  line-height: 0.75;
+  margin-right: 0.75rem;
+  margin-top: 0.1rem;
   color: var(--primary);
-  font-weight: 700;
+  font-weight: 600;
+}
+
+/* ── Homepage animations ──────────────────────────────────────────────── */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes draw-line {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes ken-burns {
+  0%   { transform: scale(1); }
+  100% { transform: scale(1.08); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.8s ease both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-draw-line {
+  transform-origin: left;
+  animation: draw-line 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-ken-burns {
+  animation: ken-burns 20s ease-in-out alternate infinite;
+}
+
+/* Stagger delays */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+.delay-700 { animation-delay: 700ms; }
+
+/* Ornamental divider */
+.ornament-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ornament-divider::before,
+.ornament-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border), transparent);
+}
+
+/* Noise texture overlay for depth */
+.noise-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* --- Viewer Interaction Cursors --- */
