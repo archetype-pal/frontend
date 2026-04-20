@@ -52,7 +52,9 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
   return (
     <main className="container mx-auto p-4 max-w-6xl">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-3xl font-serif font-bold tracking-tight text-foreground">{manuscript.display_label}</h1>
+        <h1 className="text-3xl font-serif font-bold tracking-tight text-foreground">
+          {manuscript.display_label}
+        </h1>
         <BackofficeLink kind="item-part" id={manuscript.id} />
       </div>
 
@@ -73,7 +75,10 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
                 <h2 className="text-2xl font-serif font-bold tracking-tight mb-4 ">
                   Description
                   {desc.source && (
-                    <span className="text-muted-foreground font-normal"> (from {desc.source.name})</span>
+                    <span className="text-muted-foreground font-normal">
+                      {' '}
+                      (from {desc.source.name})
+                    </span>
                   )}
                 </h2>
                 <p>{desc.content}</p>
@@ -136,7 +141,10 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
                 <h2 className="text-2xl font-serif font-bold tracking-tight mb-4">
                   Description
                   {desc.source && (
-                    <span className="text-muted-foreground font-normal"> (from {desc.source.name})</span>
+                    <span className="text-muted-foreground font-normal">
+                      {' '}
+                      (from {desc.source.name})
+                    </span>
                   )}
                 </h2>
                 <p>{desc.content}</p>

@@ -32,8 +32,7 @@ export default async function Home() {
   ]);
 
   const hasArticles =
-    (showNews && newsArticles.length > 0) ||
-    (showFeatureArticles && featureArticles.length > 0);
+    (showNews && newsArticles.length > 0) || (showFeatureArticles && featureArticles.length > 0);
 
   return (
     <main>
@@ -50,9 +49,9 @@ export default async function Home() {
               className="text-2xl md:text-3xl lg:text-4xl leading-snug tracking-tight text-foreground font-light"
               style={{ fontFamily: 'var(--font-display)' }}
             >
-              &ldquo;Government as we recognise it today first emerged in Western Europe
-              in the twelfth century. One of the cardinal points on which our understanding
-              of this development turns is the evidence of charters.&rdquo;
+              &ldquo;Government as we recognise it today first emerged in Western Europe in the
+              twelfth century. One of the cardinal points on which our understanding of this
+              development turns is the evidence of charters.&rdquo;
             </blockquote>
             <div className="mt-8 flex items-center justify-center gap-4">
               <span className="block w-12 h-px bg-border" />

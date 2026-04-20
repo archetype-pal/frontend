@@ -62,7 +62,9 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${cormorant.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${cormorant.variable} antialiased`}
+      >
         <AuthProvider>
           <SiteFeaturesProvider initialConfig={siteFeaturesConfig}>
             <ModelLabelsProvider initialConfig={modelLabelsConfig}>

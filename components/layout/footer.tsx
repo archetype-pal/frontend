@@ -36,9 +36,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
           {/* About column */}
           <div className="space-y-3">
-            <h3 className="font-serif text-lg font-semibold tracking-tight">
-              Models of Authority
-            </h3>
+            <h3 className="font-serif text-lg font-semibold tracking-tight">Models of Authority</h3>
             <p className="text-sm text-primary-foreground/70 leading-relaxed">
               Scottish Charters and the Emergence of Government, 1100–1250. A resource for the study
               of the contents, script and physical appearance of the corpus of Scottish charters.

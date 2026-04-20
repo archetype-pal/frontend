@@ -47,10 +47,7 @@ export default function ArticleList({
         <ul className="divide-y divide-border">
           {displayed.map((article) => (
             <li key={article.id} className="group py-5 first:pt-0">
-              <Link
-                href={joinPath(moreLink, article.slug)}
-                className="block"
-              >
+              <Link href={joinPath(moreLink, article.slug)} className="block">
                 <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
                   {new Date(article.published_at).toLocaleDateString('en-GB', {
                     day: 'numeric',

@@ -4,13 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import {
-  ChevronRight,
-  ChevronLeft,
-  ChevronDown,
-  Search,
-  BookOpen,
-} from 'lucide-react';
+import { ChevronRight, ChevronLeft, ChevronDown, Search, BookOpen } from 'lucide-react';
 import type { CarouselItem } from '@/types/backoffice';
 import { fetchCarouselItems, getCarouselImageUrl } from '@/utils/api';
 
@@ -43,9 +37,7 @@ export default function IntroSection() {
   const startAutoplay = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
-      setCurrentImage((prev) =>
-        carouselItems.length > 0 ? (prev + 1) % carouselItems.length : 0
-      );
+      setCurrentImage((prev) => (carouselItems.length > 0 ? (prev + 1) % carouselItems.length : 0));
     }, 6000);
   }, [carouselItems.length]);
 
@@ -70,9 +62,7 @@ export default function IntroSection() {
 
   const prevSlide = () => {
     if (carouselItems.length === 0) return;
-    goToSlide(
-      (currentImage - 1 + carouselItems.length) % carouselItems.length
-    );
+    goToSlide((currentImage - 1 + carouselItems.length) % carouselItems.length);
   };
 
   // Loading skeleton
@@ -116,9 +106,8 @@ export default function IntroSection() {
 
                 {/* Subtitle */}
                 <p className="animate-fade-up delay-200 text-base text-white/70 leading-relaxed max-w-md font-serif">
-                  Scottish Charters and the Emergence of Government — a resource
-                  for the study of the contents, script and physical appearance
-                  of the surviving charter corpus.
+                  Scottish Charters and the Emergence of Government — a resource for the study of
+                  the contents, script and physical appearance of the surviving charter corpus.
                 </p>
 
                 {/* CTAs */}
@@ -154,8 +143,7 @@ export default function IntroSection() {
             <div
               className="absolute inset-0 z-10 pointer-events-none"
               style={{
-                background:
-                  'linear-gradient(105deg, var(--primary) 2%, transparent 30%)',
+                background: 'linear-gradient(105deg, var(--primary) 2%, transparent 30%)',
               }}
             />
 
@@ -182,10 +170,7 @@ export default function IntroSection() {
                       }`}
                     >
                       {item.url ? (
-                        <Link
-                          href={item.url}
-                          className="block absolute inset-0"
-                        >
+                        <Link href={item.url} className="block absolute inset-0">
                           {slide}
                         </Link>
                       ) : (
@@ -308,16 +293,12 @@ export default function IntroSection() {
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 animate-fade-in delay-700">
           <button
             onClick={() =>
-              document
-                .getElementById('explore')
-                ?.scrollIntoView({ behavior: 'smooth' })
+              document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth' })
             }
             className="flex flex-col items-center gap-1 text-white/40 hover:text-white/70 transition-colors"
             aria-label="Scroll to explore"
           >
-            <span className="text-[10px] uppercase tracking-[0.25em]">
-              Explore
-            </span>
+            <span className="text-[10px] uppercase tracking-[0.25em]">Explore</span>
             <ChevronDown className="h-4 w-4 animate-bounce" />
           </button>
         </div>
@@ -360,10 +341,7 @@ export default function IntroSection() {
                 href={card.href}
                 className={`animate-fade-up ${card.delay} group relative bg-card rounded-xl border border-border overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300`}
               >
-                <span
-                  className="block h-1"
-                  style={{ background: card.accent }}
-                />
+                <span className="block h-1" style={{ background: card.accent }} />
                 <div className="p-6">
                   <h3
                     className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors"
@@ -371,9 +349,7 @@ export default function IntroSection() {
                   >
                     {card.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                    {card.desc}
-                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">{card.desc}</p>
                   <span className="inline-flex items-center text-sm font-medium text-primary group-hover:gap-2 gap-1 transition-all">
                     Explore <ChevronRight className="h-3.5 w-3.5" />
                   </span>
