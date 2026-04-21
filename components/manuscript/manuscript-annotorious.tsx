@@ -48,6 +48,7 @@ export type ViewerApi = {
   clearHighlights: () => void;
   clearSelection: () => void;
   selectAnnotationById?: (id: string) => void;
+  removeAnnotationById?: (id: string) => void;
   updateSelectedDraft?: (annotation: Annotation) => Promise<void>;
   saveSelectedDraft?: () => Promise<void>;
 };
@@ -587,6 +588,21 @@ export default function ManuscriptAnnotorious({
 
               selectedDisplayIdRef.current = id;
               annoRef.current?.selectAnnotation(id);
+              queueSyncAnnotationClasses();
+            },
+
+            removeAnnotationById: (id: string) => {
+              const anno = annoRef.current;
+              if (!anno) return;
+
+              const annotation = anno.getAnnotationById?.(id) ?? null;
+              if (!annotation) return;
+
+              if (selectedDisplayIdRef.current === id) {
+                selectedDisplayIdRef.current = null;
+              }
+
+              anno.removeAnnotation(annotation);
               queueSyncAnnotationClasses();
             },
 
