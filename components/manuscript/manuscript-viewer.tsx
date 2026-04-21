@@ -390,21 +390,24 @@ export default function ManuscriptViewer({
   );
 
   // ---- Helpers / handlers ----
-  const persistAnnotationCache = React.useCallback(() => {
-    if (typeof window === 'undefined' || isPublicDemoMode || !manuscriptImage) return;
+  const persistAnnotationCache = React.useCallback(
+    (annotations?: A9sAnnotation[]) => {
+      if (typeof window === 'undefined' || isPublicDemoMode || !manuscriptImage) return;
 
-    try {
-      const iiif = manuscriptImage.iiif_image;
-      const cacheKey = cacheKeyFor(iiif);
-      const metaKey = metaKeyFor(iiif);
-      const all = viewerApiRef.current?.getAnnotations() ?? [];
+      try {
+        const iiif = manuscriptImage.iiif_image;
+        const cacheKey = cacheKeyFor(iiif);
+        const metaKey = metaKeyFor(iiif);
+        const all = annotations ?? viewerApiRef.current?.getAnnotations() ?? [];
 
-      localStorage.setItem(cacheKey, JSON.stringify(all));
-      localStorage.setItem(metaKey, JSON.stringify({ imageHeight }));
-    } catch {
-      // ignore
-    }
-  }, [imageHeight, isPublicDemoMode, manuscriptImage]);
+        localStorage.setItem(cacheKey, JSON.stringify(all));
+        localStorage.setItem(metaKey, JSON.stringify({ imageHeight }));
+      } catch {
+        // ignore
+      }
+    },
+    [imageHeight, isPublicDemoMode, manuscriptImage]
+  );
 
   const getAnnotationKind = React.useCallback(
     (annotation: A9sAnnotation): AnnotationCreationKind => {
@@ -781,12 +784,12 @@ export default function ManuscriptViewer({
     }
   };
 
-  const rearmCreateTool = () => {
+  const rearmCreateTool = React.useCallback(() => {
     setActiveTool('draw');
     window.setTimeout(() => {
       viewerApiRef.current?.enableDraw();
     }, 0);
-  };
+  }, []);
 
   const handleCloseSelectedAnnotation = React.useCallback(
     (popupId: string) => {
@@ -801,7 +804,7 @@ export default function ManuscriptViewer({
         rearmCreateTool();
       }
     },
-    [activeTool, getPopupById, removePopupById]
+    [activeTool, getPopupById, removePopupById, rearmCreateTool]
   );
 
   const handleCancelDraftAnnotation = React.useCallback(
@@ -810,8 +813,23 @@ export default function ManuscriptViewer({
       const shouldResumeDraw =
         activeTool === 'draw' && Boolean(popup && !isDbId(popup.annotation.id));
 
-      viewerApiRef.current?.clearSelection?.();
       removePopupById(popupId);
+
+      if (popup && !isDbId(popup.annotation.id)) {
+        const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
+        const nextAnnotations = currentAnnotations.filter(
+          (annotation) => annotation.id !== popup.annotation.id
+        );
+
+        viewerApiRef.current?.removeAnnotationById?.(popup.annotation.id);
+
+        setInitialA9sAnnots(nextAnnotations);
+        setA9sSnapshot(nextAnnotations);
+        setEditorRecords((prev) => markAnnotationDeleted(prev, popup.annotation.id));
+        persistAnnotationCache(nextAnnotations);
+      } else {
+        viewerApiRef.current?.clearSelection?.();
+      }
 
       if (shouldResumeDraw) {
         rearmCreateTool();
@@ -820,7 +838,7 @@ export default function ManuscriptViewer({
         setActiveTool('move');
       }
     },
-    [activeTool, getPopupById, removePopupById]
+    [activeTool, getPopupById, persistAnnotationCache, rearmCreateTool, removePopupById]
   );
 
   const handleSaveDraftAnnotation = React.useCallback(
@@ -908,7 +926,7 @@ export default function ManuscriptViewer({
         setActiveTool('move');
       }
     },
-    [activeTool, getPopupById, handleSaveDraftAnnotation, removePopupById]
+    [activeTool, getPopupById, handleSaveDraftAnnotation, removePopupById, rearmCreateTool]
   );
 
   const handleConfirmDelete = React.useCallback(
