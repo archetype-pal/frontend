@@ -57,6 +57,7 @@ import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 import type { Manuscript } from '@/types/manuscript';
 import type {
+  A9sGraphComponent,
   A9sWithMeta,
   DraftSharePayload,
   AnnotationVisibilityFilters,
@@ -565,6 +566,7 @@ export default function ManuscriptViewer({
         annotation: nextAnnotation as A9sWithMeta,
         draftAllographId: value,
         draftAllographText: value != null ? (allographNameById.get(value) ?? '') : '',
+        draftGraphcomponentSet: [],
       });
 
       setEditorRecords((prev) => syncExistingEditorRecord(prev, previousId, nextAnnotation));
@@ -619,6 +621,13 @@ export default function ManuscriptViewer({
   const handleDraftAllographTextChange = React.useCallback(
     (popupId: string, value: string) => {
       updatePopupById(popupId, { draftAllographText: value });
+    },
+    [updatePopupById]
+  );
+
+  const handleDraftGraphcomponentSetChange = React.useCallback(
+    (popupId: string, value: A9sGraphComponent[]) => {
+      updatePopupById(popupId, { draftGraphcomponentSet: value });
     },
     [updatePopupById]
   );
@@ -688,6 +697,7 @@ export default function ManuscriptViewer({
         draftPublicNoteText: !isDbId(annotationForPopup.id)
           ? (annotationForPopup.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
           : '',
+        draftGraphcomponentSet: annotationForPopup._meta?.graphcomponentSet ?? [],
       };
 
       openPopupCollectionFromAnnotation(annotationForPopup, {
@@ -826,6 +836,7 @@ export default function ManuscriptViewer({
           ...popup.annotation._meta,
           allographId: popup.draftAllographId ?? undefined,
           handId: popup.draftHandId ?? undefined,
+          graphcomponentSet: popup.draftGraphcomponentSet,
         },
         body: [
           {
@@ -1867,16 +1878,17 @@ export default function ManuscriptViewer({
                       onDraftNoteTextChange={(value) =>
                         handleDraftNoteTextChange(popupRecord.id, value)
                       }
-                      allographOptions={allographs.map((allograph) => ({
-                        id: allograph.id,
-                        name: allograph.name,
-                      }))}
+                      allographOptions={allographs}
                       handOptions={hands.map((hand) => ({
                         id: hand.id,
                         name: hand.name,
                       }))}
                       draftAllographId={popupRecord.draftAllographId}
                       draftHandId={popupRecord.draftHandId}
+                      draftGraphcomponentSet={popupRecord.draftGraphcomponentSet}
+                      onDraftGraphcomponentSetChange={(value) =>
+                        handleDraftGraphcomponentSetChange(popupRecord.id, value)
+                      }
                       onDraftAllographIdChange={(value) =>
                         void handleDraftAllographIdChange(popupRecord.id, value)
                       }

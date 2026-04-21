@@ -3,7 +3,10 @@
 import * as React from 'react';
 import { Share2, Star, X } from 'lucide-react';
 
+import type { Allograph } from '@/types/allographs';
+
 import type {
+  A9sGraphComponent,
   AnnotationCreationKind,
   AnnotationPopupCapabilities,
   AnnotationPopupEditorMode,
@@ -59,12 +62,15 @@ interface AnnotationPopupCardProps {
 
   popupEditorMode: AnnotationPopupEditorMode;
 
-  allographOptions: Array<{ id: number; name: string }>;
+  allographOptions: Allograph[];
   handOptions: Array<{ id: number; name: string }>;
   draftAllographId: number | null;
   draftHandId: number | null;
   onDraftAllographIdChange: (value: number | null) => void;
   onDraftHandIdChange: (value: number | null) => void;
+
+  draftGraphcomponentSet: A9sGraphComponent[];
+  onDraftGraphcomponentSetChange: (value: A9sGraphComponent[]) => void;
 
   draftInternalNoteText: string;
   draftPublicNoteText: string;
@@ -139,6 +145,8 @@ export function AnnotationPopupCard({
   draftHandId,
   onDraftAllographIdChange,
   onDraftHandIdChange,
+  draftGraphcomponentSet,
+  onDraftGraphcomponentSetChange,
   draftInternalNoteText,
   draftPublicNoteText,
   onDraftInternalNoteTextChange,
@@ -209,6 +217,86 @@ export function AnnotationPopupCard({
       </div>
     </div>
   );
+
+  const selectedAllograph =
+    draftAllographId != null
+      ? (allographOptions.find((allograph) => allograph.id === draftAllographId) ?? null)
+      : null;
+
+  const isComponentSelected = (componentId: number) =>
+    draftGraphcomponentSet.some((component) => component.component === componentId);
+
+  const toggleComponentSelection = (
+    componentId: number,
+    componentName: string,
+    checked: boolean,
+    availableFeatures: Array<{ id: number; name: string; set_by_default: boolean }>
+  ) => {
+    if (checked) {
+      if (isComponentSelected(componentId)) return;
+
+      const defaultFeatures = availableFeatures.filter((feature) => feature.set_by_default);
+
+      onDraftGraphcomponentSetChange([
+        ...draftGraphcomponentSet,
+        {
+          component: componentId,
+          componentName,
+          features: defaultFeatures.map((feature) => feature.id),
+          featureDetails: defaultFeatures.map((feature) => ({
+            id: feature.id,
+            name: feature.name,
+          })),
+        },
+      ]);
+      return;
+    }
+
+    onDraftGraphcomponentSetChange(
+      draftGraphcomponentSet.filter((component) => component.component !== componentId)
+    );
+  };
+
+  const toggleFeatureSelection = (
+    componentId: number,
+    componentName: string,
+    featureId: number,
+    featureName: string,
+    checked: boolean
+  ) => {
+    const existingComponent = draftGraphcomponentSet.find(
+      (component) => component.component === componentId
+    );
+
+    if (!existingComponent) return;
+
+    const nextGraphcomponentSet = draftGraphcomponentSet.map((component) => {
+      if (component.component !== componentId) return component;
+
+      const nextFeatures = checked
+        ? Array.from(new Set([...(component.features ?? []), featureId]))
+        : (component.features ?? []).filter((id) => id !== featureId);
+
+      const nextFeatureDetails = checked
+        ? Array.from(
+            new Map(
+              [...(component.featureDetails ?? []), { id: featureId, name: featureName }].map(
+                (item) => [item.id, item]
+              )
+            ).values()
+          )
+        : (component.featureDetails ?? []).filter((feature) => feature.id !== featureId);
+
+      return {
+        ...component,
+        componentName,
+        features: nextFeatures,
+        featureDetails: nextFeatureDetails,
+      };
+    });
+
+    onDraftGraphcomponentSetChange(nextGraphcomponentSet);
+  };
   return (
     <div
       className="fixed top-4 right-4 rounded-lg border bg-background shadow-lg"
@@ -376,11 +464,91 @@ export function AnnotationPopupCard({
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Components / Features</label>
-            <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-              {draftAllographId == null
-                ? 'Choose an allograph to load the related components and features.'
-                : 'Components and features for the selected allograph will be wired in the next step.'}
-            </div>
+
+            {draftAllographId == null ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                Choose an allograph to load the related components and features.
+              </div>
+            ) : !selectedAllograph ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No allograph data available.
+              </div>
+            ) : selectedAllograph.components.length === 0 ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No components are defined for this allograph.
+              </div>
+            ) : (
+              <div className="space-y-3 rounded-md border p-3">
+                {selectedAllograph.components.map((component) => {
+                  const selectedComponent = draftGraphcomponentSet.find(
+                    (item) => item.component === component.component_id
+                  );
+
+                  return (
+                    <div key={component.component_id} className="space-y-2 rounded-md border p-3">
+                      <label className="flex items-center gap-2 text-sm font-medium">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(selectedComponent)}
+                          onChange={(e) =>
+                            toggleComponentSelection(
+                              component.component_id,
+                              component.component_name,
+                              e.target.checked,
+                              component.features
+                            )
+                          }
+                        />
+                        <span>{component.component_name}</span>
+                      </label>
+
+                      {selectedComponent ? (
+                        component.features.length > 0 ? (
+                          <div className="ml-6 space-y-2">
+                            {component.features.map((feature) => {
+                              const checked = (selectedComponent.features ?? []).includes(
+                                feature.id
+                              );
+
+                              return (
+                                <label
+                                  key={feature.id}
+                                  className="flex items-center gap-2 text-sm text-muted-foreground"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) =>
+                                      toggleFeatureSelection(
+                                        component.component_id,
+                                        component.component_name,
+                                        feature.id,
+                                        feature.name,
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                  <span>{feature.name}</span>
+                                  {feature.set_by_default ? (
+                                    <span className="rounded border px-1.5 py-0.5 text-[10px]">
+                                      default
+                                    </span>
+                                  ) : null}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="ml-6 text-sm text-muted-foreground">
+                            This component has no selectable features.
+                          </div>
+                        )
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

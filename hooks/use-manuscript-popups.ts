@@ -64,6 +64,8 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
         ? (annotation.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
         : '';
 
+      const defaultDraftGraphcomponentSet = annotation._meta?.graphcomponentSet ?? [];
+
       return {
         id: annotation.id,
         annotation,
@@ -76,6 +78,7 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
         draftHandId: overrides?.draftHandId ?? annotation._meta?.handId ?? null,
         draftInternalNoteText: overrides?.draftInternalNoteText ?? defaultDraftInternalNoteText,
         draftPublicNoteText: overrides?.draftPublicNoteText ?? defaultDraftPublicNoteText,
+        draftGraphcomponentSet: overrides?.draftGraphcomponentSet ?? defaultDraftGraphcomponentSet,
       };
     },
     []
@@ -186,7 +189,8 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
           candidate.draftAllographId === popup.draftAllographId &&
           candidate.draftHandId === popup.draftHandId &&
           candidate.draftInternalNoteText === popup.draftInternalNoteText &&
-          candidate.draftPublicNoteText === popup.draftPublicNoteText;
+          candidate.draftPublicNoteText === popup.draftPublicNoteText &&
+          candidate.draftGraphcomponentSet === popup.draftGraphcomponentSet;
 
         if (unchanged) return popup;
 

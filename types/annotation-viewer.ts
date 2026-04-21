@@ -71,6 +71,7 @@ export type PopupRecord = {
   draftHandId: number | null;
   draftInternalNoteText: string;
   draftPublicNoteText: string;
+  draftGraphcomponentSet: A9sGraphComponent[];
 };
 
 export type ViewerMode = 'public' | 'editor';
