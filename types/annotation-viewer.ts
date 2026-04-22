@@ -33,6 +33,7 @@ export type A9sWithMeta = A9sAnnotation & {
     isDescribed?: boolean;
     annotationType?: string;
     graphcomponentSet?: A9sGraphComponent[];
+    positions?: number[];
     positionDetails?: A9sPositionDetail[];
   };
 };
@@ -72,6 +73,7 @@ export type PopupRecord = {
   draftInternalNoteText: string;
   draftPublicNoteText: string;
   draftGraphcomponentSet: A9sGraphComponent[];
+  draftPositionIds: number[];
 };
 
 export type ViewerMode = 'public' | 'editor';

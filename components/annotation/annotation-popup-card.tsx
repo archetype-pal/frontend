@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Share2, Star, X } from 'lucide-react';
 
-import type { Allograph } from '@/types/allographs';
+import type { Allograph, Position as SymbolPosition } from '@/types/allographs';
 
 import type {
   A9sGraphComponent,
@@ -71,6 +71,10 @@ interface AnnotationPopupCardProps {
 
   draftGraphcomponentSet: A9sGraphComponent[];
   onDraftGraphcomponentSetChange: (value: A9sGraphComponent[]) => void;
+
+  positionOptions: SymbolPosition[];
+  draftPositionIds: number[];
+  onDraftPositionIdsChange: (value: number[]) => void;
 
   draftInternalNoteText: string;
   draftPublicNoteText: string;
@@ -147,6 +151,9 @@ export function AnnotationPopupCard({
   onDraftHandIdChange,
   draftGraphcomponentSet,
   onDraftGraphcomponentSetChange,
+  positionOptions,
+  draftPositionIds,
+  onDraftPositionIdsChange,
   draftInternalNoteText,
   draftPublicNoteText,
   onDraftInternalNoteTextChange,
@@ -297,6 +304,15 @@ export function AnnotationPopupCard({
 
     onDraftGraphcomponentSetChange(nextGraphcomponentSet);
   };
+
+  const togglePositionId = (positionId: number, checked: boolean) => {
+    onDraftPositionIdsChange(
+      checked
+        ? Array.from(new Set([...draftPositionIds, positionId]))
+        : draftPositionIds.filter((id) => id !== positionId)
+    );
+  };
+
   return (
     <div
       className="fixed top-4 right-4 rounded-lg border bg-background shadow-lg"
@@ -555,9 +571,28 @@ export function AnnotationPopupCard({
             <label className="text-sm font-medium text-foreground">
               {getPluralLabel('position')}
             </label>
-            <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-              {getPluralLabel('position')} selection will be wired in the next step.
-            </div>
+
+            {positionOptions.length === 0 ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No {getPluralLabel('position').toLowerCase()} are available.
+              </div>
+            ) : (
+              <div className="space-y-2 rounded-md border p-3">
+                {positionOptions.map((position) => (
+                  <label
+                    key={position.id}
+                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={draftPositionIds.includes(position.id)}
+                      onChange={(e) => togglePositionId(position.id, e.target.checked)}
+                    />
+                    <span>{position.name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

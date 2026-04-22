@@ -1,7 +1,7 @@
 import type { Manuscript } from '@/types/manuscript';
 import type { ManuscriptImage } from '@/types/manuscript-image';
 import type { HandsResponse } from '@/types/hands';
-import type { AllographsResponse } from '@/types/allographs';
+import type { AllographsResponse, Position as SymbolPosition } from '@/types/allographs';
 import { notFound } from 'next/navigation';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -43,6 +43,16 @@ export async function fetchManuscript(id: number): Promise<Manuscript> {
       notFound();
     }
     throw new Error('Failed to fetch manuscript');
+  }
+
+  return response.json();
+}
+
+export async function fetchPositions(): Promise<SymbolPosition[]> {
+  const response = await apiFetch(`/api/v1/symbols_structure/positions/`);
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch positions');
   }
 
   return response.json();
