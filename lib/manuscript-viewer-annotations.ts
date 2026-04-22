@@ -3,12 +3,7 @@ import { backendToA9sAnnotation } from '@/lib/anno-mapping';
 
 import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
 
-import {
-  cacheKeyFor,
-  decodeDraftSharePayload,
-  isDbId,
-  metaKeyFor,
-} from '@/lib/annotation-popup-utils';
+import { decodeDraftSharePayload, isDbId } from '@/lib/annotation-popup-utils';
 
 export async function buildInitialViewerAnnotations(params: {
   itemImageId: string;
@@ -19,15 +14,8 @@ export async function buildInitialViewerAnnotations(params: {
   currentViewerAnnotations: A9sAnnotation[];
   currentUrl?: string;
 }): Promise<A9sAnnotation[]> {
-  const {
-    itemImageId,
-    iiifImage,
-    imageHeight,
-    allographNameById,
-    isPublicDemoMode,
-    currentViewerAnnotations,
-    currentUrl,
-  } = params;
+  const { itemImageId, imageHeight, allographNameById, currentViewerAnnotations, currentUrl } =
+    params;
 
   const list = await fetchAnnotationsForImage(itemImageId);
 
@@ -44,30 +32,6 @@ export async function buildInitialViewerAnnotations(params: {
     ...dbMapped,
     ...currentViewerDrafts.filter((annotation) => !mergedIds.has(annotation.id)),
   ];
-
-  if (typeof window !== 'undefined' && !isPublicDemoMode) {
-    try {
-      const raw = localStorage.getItem(cacheKeyFor(iiifImage));
-      const meta = JSON.parse(localStorage.getItem(metaKeyFor(iiifImage)) || '{}') as {
-        imageHeight?: number;
-      };
-
-      if (raw && meta?.imageHeight === imageHeight) {
-        const cached = JSON.parse(raw) as A9sAnnotation[];
-        const localOnly = Array.isArray(cached)
-          ? cached.filter((annotation) => !isDbId(annotation?.id))
-          : [];
-        const existing = new Set(merged.map((annotation) => annotation.id));
-        const extras = localOnly.filter((annotation) => !existing.has(annotation.id));
-        merged = [...merged, ...extras];
-      } else if (raw && meta?.imageHeight !== imageHeight) {
-        localStorage.removeItem(cacheKeyFor(iiifImage));
-        localStorage.removeItem(metaKeyFor(iiifImage));
-      }
-    } catch {
-      // ignore cache failures
-    }
-  }
 
   const resolvedUrl =
     currentUrl ?? (typeof window !== 'undefined' ? window.location.href : undefined);

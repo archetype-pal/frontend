@@ -69,12 +69,10 @@ import type {
 
 import {
   browserSafeIiifUrl,
-  cacheKeyFor,
   decodeDraftSharePayload,
   encodeDraftSharePayload,
   includesAllIds,
   isDbId,
-  metaKeyFor,
   toggleNumericId,
 } from '@/lib/annotation-popup-utils';
 
@@ -392,25 +390,6 @@ export default function ManuscriptViewer({
   );
 
   // ---- Helpers / handlers ----
-  const persistAnnotationCache = React.useCallback(
-    (annotations?: A9sAnnotation[]) => {
-      if (typeof window === 'undefined' || isPublicDemoMode || !manuscriptImage) return;
-
-      try {
-        const iiif = manuscriptImage.iiif_image;
-        const cacheKey = cacheKeyFor(iiif);
-        const metaKey = metaKeyFor(iiif);
-        const all = annotations ?? viewerApiRef.current?.getAnnotations() ?? [];
-
-        localStorage.setItem(cacheKey, JSON.stringify(all));
-        localStorage.setItem(metaKey, JSON.stringify({ imageHeight }));
-      } catch {
-        // ignore
-      }
-    },
-    [imageHeight, isPublicDemoMode, manuscriptImage]
-  );
-
   const getAnnotationKind = React.useCallback(
     (annotation: A9sAnnotation): AnnotationCreationKind => {
       const canonical = getCanonicalAnnotation(annotation);
@@ -460,8 +439,6 @@ export default function ManuscriptViewer({
 
   const handleViewerCreate = React.useCallback(
     (annotation: A9sAnnotation) => {
-      persistAnnotationCache();
-
       const enriched = decorateCreatedAnnotation(annotation);
 
       const syncCreatedAnnotation = async () => {
@@ -481,7 +458,7 @@ export default function ManuscriptViewer({
 
       void syncCreatedAnnotation();
     },
-    [decorateCreatedAnnotation, persistAnnotationCache, updatePopupById]
+    [decorateCreatedAnnotation, updatePopupById]
   );
 
   const clearSinglePopupState = React.useCallback(
@@ -516,111 +493,25 @@ export default function ManuscriptViewer({
     [updatePopupById]
   );
 
-  const syncExistingEditorRecord = React.useCallback(
-    (
-      records: AnnotationEditorRecordMap,
-      previousId: string,
-      nextAnnotation: A9sAnnotation
-    ): AnnotationEditorRecordMap => {
-      const existing = records[previousId] ?? records[nextAnnotation.id];
-      if (!existing) {
-        return records;
-      }
-
-      const nextRecords = { ...records };
-
-      if (previousId !== nextAnnotation.id) {
-        delete nextRecords[previousId];
-      }
-
-      nextRecords[nextAnnotation.id] = {
-        ...existing,
-        id: nextAnnotation.id,
-        annotation: nextAnnotation as A9sWithMeta,
-        lastTouchedAt: Date.now(),
-      };
-
-      return nextRecords;
-    },
-    []
-  );
-
   const handleDraftAllographIdChange = React.useCallback(
-    async (popupId: string, value: number | null) => {
-      const popup = getPopupById(popupId);
-      if (!popup) return;
-
-      const previousId = popup.annotation.id;
-
-      const nextAnnotation: A9sAnnotation = {
-        ...popup.annotation,
-        _meta: {
-          ...popup.annotation._meta,
-          allographId: value ?? undefined,
-        },
-      };
-
-      await viewerApiRef.current?.updateSelectedDraft?.(nextAnnotation);
-
-      const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
-      const nextAnnotations = currentAnnotations.map((annotation) =>
-        annotation.id === nextAnnotation.id ? nextAnnotation : annotation
-      );
-
+    (popupId: string, value: number | null) => {
       updatePopupById(popupId, {
-        annotation: nextAnnotation as A9sWithMeta,
         draftAllographId: value,
         draftAllographText: value != null ? (allographNameById.get(value) ?? '') : '',
         draftGraphcomponentSet: [],
+        draftPositionIds: [],
       });
-
-      setEditorRecords((prev) => syncExistingEditorRecord(prev, previousId, nextAnnotation));
-
-      setA9sSnapshot(nextAnnotations);
-      persistAnnotationCache();
     },
-    [
-      allographNameById,
-      getPopupById,
-      persistAnnotationCache,
-      syncExistingEditorRecord,
-      updatePopupById,
-    ]
+    [allographNameById, updatePopupById]
   );
 
   const handleDraftHandIdChange = React.useCallback(
-    async (popupId: string, value: number | null) => {
-      const popup = getPopupById(popupId);
-      if (!popup) return;
-
-      const previousId = popup.annotation.id;
-
-      const nextAnnotation: A9sAnnotation = {
-        ...popup.annotation,
-        _meta: {
-          ...popup.annotation._meta,
-          handId: value ?? undefined,
-        },
-      };
-
-      await viewerApiRef.current?.updateSelectedDraft?.(nextAnnotation);
-
-      const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
-      const nextAnnotations = currentAnnotations.map((annotation) =>
-        annotation.id === nextAnnotation.id ? nextAnnotation : annotation
-      );
-
+    (popupId: string, value: number | null) => {
       updatePopupById(popupId, {
-        annotation: nextAnnotation as A9sWithMeta,
         draftHandId: value,
       });
-
-      setEditorRecords((prev) => syncExistingEditorRecord(prev, previousId, nextAnnotation));
-
-      setA9sSnapshot(nextAnnotations);
-      persistAnnotationCache();
     },
-    [getPopupById, persistAnnotationCache, syncExistingEditorRecord, updatePopupById]
+    [updatePopupById]
   );
 
   const handleDraftAllographTextChange = React.useCallback(
@@ -801,45 +692,16 @@ export default function ManuscriptViewer({
     }, 0);
   }, []);
 
-  const handleCloseSelectedAnnotation = React.useCallback(
+  const closeDraftPopup = React.useCallback(
     (popupId: string) => {
       const popup = getPopupById(popupId);
-      const shouldResumeDraw =
-        activeTool === 'draw' && Boolean(popup && !isDbId(popup.annotation.id));
+      if (!popup) return;
 
+      const shouldResumeDraw = activeTool === 'draw' && Boolean(!isDbId(popup.annotation.id));
+
+      cancelPendingPopupClear();
       viewerApiRef.current?.clearSelection?.();
       removePopupById(popupId);
-
-      if (shouldResumeDraw) {
-        rearmCreateTool();
-      }
-    },
-    [activeTool, getPopupById, removePopupById, rearmCreateTool]
-  );
-
-  const handleCancelDraftAnnotation = React.useCallback(
-    (popupId: string) => {
-      const popup = getPopupById(popupId);
-      const shouldResumeDraw =
-        activeTool === 'draw' && Boolean(popup && !isDbId(popup.annotation.id));
-
-      removePopupById(popupId);
-
-      if (popup && !isDbId(popup.annotation.id)) {
-        const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
-        const nextAnnotations = currentAnnotations.filter(
-          (annotation) => annotation.id !== popup.annotation.id
-        );
-
-        viewerApiRef.current?.removeAnnotationById?.(popup.annotation.id);
-
-        setInitialA9sAnnots(nextAnnotations);
-        setA9sSnapshot(nextAnnotations);
-        setEditorRecords((prev) => markAnnotationDeleted(prev, popup.annotation.id));
-        persistAnnotationCache(nextAnnotations);
-      } else {
-        viewerApiRef.current?.clearSelection?.();
-      }
 
       if (shouldResumeDraw) {
         rearmCreateTool();
@@ -848,7 +710,21 @@ export default function ManuscriptViewer({
         setActiveTool('move');
       }
     },
-    [activeTool, getPopupById, persistAnnotationCache, rearmCreateTool, removePopupById]
+    [activeTool, cancelPendingPopupClear, getPopupById, removePopupById, rearmCreateTool]
+  );
+
+  const handleCloseSelectedAnnotation = React.useCallback(
+    (popupId: string) => {
+      closeDraftPopup(popupId);
+    },
+    [closeDraftPopup]
+  );
+
+  const handleCancelDraftAnnotation = React.useCallback(
+    (popupId: string) => {
+      closeDraftPopup(popupId);
+    },
+    [closeDraftPopup]
   );
 
   const handleSaveDraftAnnotation = React.useCallback(
@@ -1077,18 +953,6 @@ export default function ManuscriptViewer({
       const mapped = refreshed.map((annotation) =>
         backendToA9sAnnotation(annotation, imageHeight, allographNameById.get(annotation.allograph))
       );
-
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(`annotations:${manuscriptImage.iiif_image}`, JSON.stringify(mapped));
-          localStorage.setItem(
-            `annotations:meta:${manuscriptImage.iiif_image}`,
-            JSON.stringify({ imageHeight })
-          );
-        } catch {
-          // ignore
-        }
-      }
 
       viewerApiRef.current?.clearSelection?.();
       clearPopupCollection();
@@ -1864,7 +1728,6 @@ export default function ManuscriptViewer({
                 setInitialA9sAnnots(currentAnnotations);
                 setA9sSnapshot(currentAnnotations);
 
-                persistAnnotationCache();
                 removePopupById(annotation.id);
               }}
               confirmDelete={handleConfirmDelete}
