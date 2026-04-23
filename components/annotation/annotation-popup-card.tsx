@@ -182,7 +182,6 @@ export function AnnotationPopupCard({
           onValueChange={(value) =>
             onDraftAllographIdChange(value === '__unset__' ? null : Number(value))
           }
-          disabled={isStandardExisting}
         >
           <SelectTrigger>
             <SelectValue placeholder="Choose an allograph" />
@@ -205,7 +204,6 @@ export function AnnotationPopupCard({
           onValueChange={(value) =>
             onDraftHandIdChange(value === '__unset__' ? null : Number(value))
           }
-          disabled={isStandardExisting}
         >
           <SelectTrigger>
             <SelectValue placeholder="Choose a hand" />
@@ -673,108 +671,164 @@ export function AnnotationPopupCard({
           )}
 
           <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-            Existing annotation metadata is shown below. Editing of existing components,
-            {` ${getPluralLabel('position').toLowerCase()}, `}
-            and notes will be wired in the next step.
+            Changes remain local until you press the main Save button in the toolbar.
           </div>
 
-          <Tabs
-            value={popupTab}
-            onValueChange={(value) => onPopupTabChange(value as PopupTab)}
-            className="w-full"
-          >
-            <div className="border-b pb-2">
-              <TabsList className="h-auto gap-2 bg-transparent p-0">
-                <TabsTrigger
-                  value="components"
-                  className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                  data-[state=active]:border data-[state=active]:bg-background
-                  data-[state=active]:shadow-sm"
-                >
-                  Components
-                </TabsTrigger>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Components / Features</label>
 
-                {hasPositionsTab && (
-                  <TabsTrigger
-                    value="positions"
-                    className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                    data-[state=active]:border data-[state=active]:bg-background
-                    data-[state=active]:shadow-sm"
-                  >
-                    {getPluralLabel('position')}
-                  </TabsTrigger>
-                )}
+            {draftAllographId == null ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                Choose an allograph to load the related components and features.
+              </div>
+            ) : !selectedAllograph ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No allograph data available.
+              </div>
+            ) : selectedAllograph.components.length === 0 ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No components are defined for this allograph.
+              </div>
+            ) : (
+              <div className="space-y-3 rounded-md border p-3">
+                {selectedAllograph.components.map((component) => {
+                  const selectedComponent = draftGraphcomponentSet.find(
+                    (item) => item.component === component.component_id
+                  );
 
-                <TabsTrigger
-                  value="notes"
-                  className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                  data-[state=active]:border data-[state=active]:bg-background
-                  data-[state=active]:shadow-sm"
-                >
-                  Notes
-                </TabsTrigger>
-              </TabsList>
-            </div>
+                  return (
+                    <div key={component.component_id} className="space-y-2 rounded-md border p-3">
+                      <label className="flex items-center gap-2 text-sm font-medium">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(selectedComponent)}
+                          onChange={(e) =>
+                            toggleComponentSelection(
+                              component.component_id,
+                              component.component_name,
+                              e.target.checked,
+                              component.features
+                            )
+                          }
+                        />
+                        <span>{component.component_name}</span>
+                      </label>
 
-            <div className="pt-4">
-              <TabsContent value="components" className="mt-0">
-                <div className="space-y-4">
-                  {selectedComponentGroups.length > 0 ? (
-                    selectedComponentGroups.map((group) => (
-                      <div key={group.componentId}>
-                        <div className="text-sm font-semibold text-foreground">
-                          {group.componentName}
-                        </div>
-                        <Separator className="my-2" />
-                        {group.featureNames.length > 0 ? (
-                          <div className="space-y-1">
-                            {group.featureNames.map((featureName) => (
-                              <div
-                                key={`${group.componentId}-${featureName}`}
-                                className="text-sm text-muted-foreground"
-                              >
-                                {featureName}
-                              </div>
-                            ))}
+                      {selectedComponent ? (
+                        component.features.length > 0 ? (
+                          <div className="ml-6 space-y-2">
+                            {component.features.map((feature) => {
+                              const checked = (selectedComponent.features ?? []).includes(
+                                feature.id
+                              );
+
+                              return (
+                                <label
+                                  key={feature.id}
+                                  className="flex items-center gap-2 text-sm text-muted-foreground"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) =>
+                                      toggleFeatureSelection(
+                                        component.component_id,
+                                        component.component_name,
+                                        feature.id,
+                                        feature.name,
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                  <span>{feature.name}</span>
+                                  {feature.set_by_default ? (
+                                    <span className="rounded border px-1.5 py-0.5 text-[10px]">
+                                      default
+                                    </span>
+                                  ) : null}
+                                </label>
+                              );
+                            })}
                           </div>
                         ) : (
-                          <div className="text-sm text-muted-foreground">No features selected.</div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-muted-foreground">No components defined.</div>
-                  )}
-                </div>
-              </TabsContent>
+                          <div className="ml-6 text-sm text-muted-foreground">
+                            This component has no selectable features.
+                          </div>
+                        )
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
-              {hasPositionsTab && (
-                <TabsContent value="positions" className="mt-0">
-                  <div className="space-y-2">
-                    {selectedPositionLabels.map((label) => (
-                      <div key={label} className="text-sm text-muted-foreground">
-                        {label}
-                      </div>
-                    ))}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              {getPluralLabel('position')}
+            </label>
+
+            {draftAllographId == null ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                Choose an allograph to load the related {getPluralLabel('position').toLowerCase()}.
+              </div>
+            ) : !selectedAllograph ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No allograph data available.
+              </div>
+            ) : selectedAllograph.positions.length === 0 ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No {getPluralLabel('position').toLowerCase()} are defined for this allograph.
+              </div>
+            ) : (
+              <div className="space-y-2 rounded-md border p-3">
+                {selectedAllograph.positions.map((position) => (
+                  <label
+                    key={position.id}
+                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={draftPositionIds.includes(position.id)}
+                      onChange={(e) => togglePositionId(position.id, e.target.checked)}
+                    />
+                    <span>{position.name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Notes</label>
+
+            {selectedNotes.length > 0 ? (
+              <div className="space-y-2 rounded-md border p-3">
+                {selectedNotes.map((note, index) => (
+                  <div key={`${index}-${note}`} className="text-sm text-muted-foreground">
+                    {note}
                   </div>
-                </TabsContent>
-              )}
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No notes available.
+              </div>
+            )}
 
-              <TabsContent value="notes" className="mt-0">
-                <div className="space-y-2">
-                  {selectedNotes.length > 0 ? (
-                    selectedNotes.map((note, index) => (
-                      <div key={`${index}-${note}`} className="text-sm text-muted-foreground">
-                        {note}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-muted-foreground">No notes available.</div>
-                  )}
-                </div>
-              </TabsContent>
-            </div>
-          </Tabs>
+            <p className="text-xs text-muted-foreground">
+              Editing notes for existing standard annotations is not wired yet.
+            </p>
+          </div>
+
+          <div className="mt-2 flex items-center justify-end gap-2 border-t pt-3">
+            <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
+              Cancel
+            </Button>
+            <Button onClick={onConfirmDraftAnnotation} type="button">
+              OK
+            </Button>
+          </div>
         </div>
       ) : isEditorialDraft ? (
         <div className="max-h-[360px] overflow-auto px-4 py-4 space-y-4">

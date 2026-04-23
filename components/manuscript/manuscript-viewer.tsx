@@ -733,6 +733,33 @@ export default function ManuscriptViewer({
     [closeDraftPopup]
   );
 
+  const buildStandardAnnotationFromPopup = React.useCallback(
+    (popupId: string): A9sAnnotation | null => {
+      const popup = getPopupById(popupId);
+      if (!popup) return null;
+
+      const nextPositionDetails = popup.draftPositionIds
+        .map((id) => {
+          const name = positionNameById.get(id);
+          return name ? { id, name } : null;
+        })
+        .filter((value): value is { id: number; name: string } => value !== null);
+
+      return {
+        ...popup.annotation,
+        _meta: {
+          ...popup.annotation._meta,
+          allographId: popup.draftAllographId ?? undefined,
+          handId: popup.draftHandId ?? undefined,
+          graphcomponentSet: popup.draftGraphcomponentSet,
+          positions: popup.draftPositionIds,
+          positionDetails: nextPositionDetails,
+        },
+      };
+    },
+    [getPopupById, positionNameById]
+  );
+
   const handleSaveDraftAnnotation = React.useCallback(
     async (popupId: string) => {
       const popup = getPopupById(popupId);
@@ -814,8 +841,37 @@ export default function ManuscriptViewer({
   const handleConfirmDraftAnnotation = React.useCallback(
     async (popupId: string) => {
       const popup = getPopupById(popupId);
+      if (!popup) return;
+
       const shouldResumeDraw =
         activeTool === 'draw' && Boolean(popup && !isDbId(popup.annotation.id));
+
+      const isExistingStandard =
+        isDbId(popup.annotation.id) && getAnnotationKind(popup.annotation) === 'public';
+
+      if (isExistingStandard) {
+        const next = buildStandardAnnotationFromPopup(popupId);
+        if (!next) return;
+
+        updatePopupById(popupId, { annotation: next as A9sWithMeta });
+
+        setEditorRecords((prev) => markAnnotationUpdated(prev, next));
+
+        setA9sSnapshot((prev) =>
+          prev.map((annotation) => (annotation.id === next.id ? next : annotation))
+        );
+
+        setInitialA9sAnnots((prev) =>
+          prev.map((annotation) => (annotation.id === next.id ? next : annotation))
+        );
+
+        removePopupById(popupId);
+
+        viewerApiRef.current?.clearSelection?.();
+        viewerApiRef.current?.enablePan();
+        setActiveTool('move');
+        return;
+      }
 
       await handleSaveDraftAnnotation(popupId);
       removePopupById(popupId);
@@ -827,7 +883,16 @@ export default function ManuscriptViewer({
         setActiveTool('move');
       }
     },
-    [activeTool, getPopupById, handleSaveDraftAnnotation, removePopupById, rearmCreateTool]
+    [
+      activeTool,
+      buildStandardAnnotationFromPopup,
+      getAnnotationKind,
+      getPopupById,
+      handleSaveDraftAnnotation,
+      rearmCreateTool,
+      removePopupById,
+      updatePopupById,
+    ]
   );
 
   const handleConfirmDelete = React.useCallback(
