@@ -1,7 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { ChevronDown, ChevronRight, Share2, Star, X } from 'lucide-react';
+import {
+  CheckCheck,
+  ChevronDown,
+  ChevronRight,
+  RotateCcw,
+  Share2,
+  Sparkles,
+  Star,
+  X,
+} from 'lucide-react';
 
 import type { Allograph } from '@/types/allographs';
 
@@ -386,6 +395,8 @@ export function AnnotationPopupCard({
             const defaultFeatureCount = component.features.filter(
               (feature) => feature.set_by_default
             ).length;
+            const selectedFeatureCount = selectedComponent?.features?.length ?? 0;
+            const totalFeatureCount = component.features.length;
 
             return (
               <div key={component.component_id} className="space-y-2 rounded-md border p-3">
@@ -408,47 +419,70 @@ export function AnnotationPopupCard({
                 {selectedComponent ? (
                   component.features.length > 0 ? (
                     <div className="ml-6 space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            checkAllFeatures(
-                              component.component_id,
-                              component.component_name,
-                              component.features
-                            )
-                          }
-                        >
-                          Check all
-                        </Button>
+                      <div className="rounded-md border bg-muted/20 px-3 py-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="text-xs text-muted-foreground">
+                            {totalFeatureCount > 0 ? (
+                              <>
+                                <span className="font-medium text-foreground">
+                                  {selectedFeatureCount}
+                                </span>
+                                {` / ${totalFeatureCount} selected`}
+                                {defaultFeatureCount > 0 ? ` · ${defaultFeatureCount} default` : ''}
+                              </>
+                            ) : (
+                              'No features available'
+                            )}
+                          </div>
 
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            uncheckAllFeatures(
-                              component.component_id,
-                              component.component_name,
-                              component.features
-                            )
-                          }
-                        >
-                          Uncheck all
-                        </Button>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8"
+                              onClick={() =>
+                                checkAllFeatures(
+                                  component.component_id,
+                                  component.component_name,
+                                  component.features
+                                )
+                              }
+                            >
+                              <CheckCheck className="mr-1 h-3.5 w-3.5" />
+                              Check all
+                            </Button>
 
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled
-                          title="Defaults action UI only for now"
-                        >
-                          Check defaults
-                          {defaultFeatureCount > 0 ? ` (${defaultFeatureCount})` : ''}
-                        </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8"
+                              onClick={() =>
+                                uncheckAllFeatures(
+                                  component.component_id,
+                                  component.component_name,
+                                  component.features
+                                )
+                              }
+                            >
+                              <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                              Uncheck all
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8"
+                              disabled
+                              title="Defaults action UI only for now"
+                            >
+                              <Sparkles className="mr-1 h-3.5 w-3.5" />
+                              Check defaults
+                            </Button>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-2">
