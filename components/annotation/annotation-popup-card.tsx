@@ -361,6 +361,19 @@ export function AnnotationPopupCard({
     setComponentFeatures(componentId, componentName, availableFeatures, []);
   };
 
+  const checkDefaultFeatures = (
+    componentId: number,
+    componentName: string,
+    availableFeatures: Array<{ id: number; name: string; set_by_default: boolean }>
+  ) => {
+    setComponentFeatures(
+      componentId,
+      componentName,
+      availableFeatures,
+      availableFeatures.filter((feature) => feature.set_by_default).map((feature) => feature.id)
+    );
+  };
+
   const togglePositionId = (positionId: number, checked: boolean) => {
     onDraftPositionIdsChange(
       checked
@@ -475,8 +488,19 @@ export function AnnotationPopupCard({
                               variant="outline"
                               size="sm"
                               className="h-8"
-                              disabled
-                              title="Defaults action UI only for now"
+                              disabled={defaultFeatureCount === 0}
+                              title={
+                                defaultFeatureCount === 0
+                                  ? 'No default features are defined for this component'
+                                  : 'Select only the default features for this component'
+                              }
+                              onClick={() =>
+                                checkDefaultFeatures(
+                                  component.component_id,
+                                  component.component_name,
+                                  component.features
+                                )
+                              }
                             >
                               <Sparkles className="mr-1 h-3.5 w-3.5" />
                               Check defaults
