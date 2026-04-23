@@ -276,11 +276,46 @@ export function AnnotationPopupCard({
     );
   };
 
+  const setComponentFeatures = (
+    componentId: number,
+    componentName: string,
+    availableFeatures: Array<{ id: number; name: string; set_by_default: boolean }>,
+    nextFeatureIds: number[]
+  ) => {
+    const existingComponent = draftGraphcomponentSet.find(
+      (component) => component.component === componentId
+    );
+
+    if (!existingComponent) return;
+
+    const nextFeatureIdSet = new Set(nextFeatureIds);
+
+    const nextFeatureDetails = availableFeatures
+      .filter((feature) => nextFeatureIdSet.has(feature.id))
+      .map((feature) => ({
+        id: feature.id,
+        name: feature.name,
+      }));
+
+    const nextGraphcomponentSet = draftGraphcomponentSet.map((component) => {
+      if (component.component !== componentId) return component;
+
+      return {
+        ...component,
+        componentName,
+        features: nextFeatureIds,
+        featureDetails: nextFeatureDetails,
+      };
+    });
+
+    onDraftGraphcomponentSetChange(nextGraphcomponentSet);
+  };
+
   const toggleFeatureSelection = (
     componentId: number,
     componentName: string,
+    availableFeatures: Array<{ id: number; name: string; set_by_default: boolean }>,
     featureId: number,
-    featureName: string,
     checked: boolean
   ) => {
     const existingComponent = draftGraphcomponentSet.find(
@@ -289,32 +324,32 @@ export function AnnotationPopupCard({
 
     if (!existingComponent) return;
 
-    const nextGraphcomponentSet = draftGraphcomponentSet.map((component) => {
-      if (component.component !== componentId) return component;
+    const nextFeatureIds = checked
+      ? Array.from(new Set([...(existingComponent.features ?? []), featureId]))
+      : (existingComponent.features ?? []).filter((id) => id !== featureId);
 
-      const nextFeatures = checked
-        ? Array.from(new Set([...(component.features ?? []), featureId]))
-        : (component.features ?? []).filter((id) => id !== featureId);
+    setComponentFeatures(componentId, componentName, availableFeatures, nextFeatureIds);
+  };
 
-      const nextFeatureDetails = checked
-        ? Array.from(
-            new Map(
-              [...(component.featureDetails ?? []), { id: featureId, name: featureName }].map(
-                (item) => [item.id, item]
-              )
-            ).values()
-          )
-        : (component.featureDetails ?? []).filter((feature) => feature.id !== featureId);
+  const checkAllFeatures = (
+    componentId: number,
+    componentName: string,
+    availableFeatures: Array<{ id: number; name: string; set_by_default: boolean }>
+  ) => {
+    setComponentFeatures(
+      componentId,
+      componentName,
+      availableFeatures,
+      availableFeatures.map((feature) => feature.id)
+    );
+  };
 
-      return {
-        ...component,
-        componentName,
-        features: nextFeatures,
-        featureDetails: nextFeatureDetails,
-      };
-    });
-
-    onDraftGraphcomponentSetChange(nextGraphcomponentSet);
+  const uncheckAllFeatures = (
+    componentId: number,
+    componentName: string,
+    availableFeatures: Array<{ id: number; name: string; set_by_default: boolean }>
+  ) => {
+    setComponentFeatures(componentId, componentName, availableFeatures, []);
   };
 
   const togglePositionId = (positionId: number, checked: boolean) => {
@@ -324,6 +359,144 @@ export function AnnotationPopupCard({
         : draftPositionIds.filter((id) => id !== positionId)
     );
   };
+
+  const editableComponentFeatureSection = (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-foreground">Components / Features</label>
+
+      {draftAllographId == null ? (
+        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+          Choose an allograph to load the related components and features.
+        </div>
+      ) : !selectedAllograph ? (
+        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+          No allograph data available.
+        </div>
+      ) : selectedAllograph.components.length === 0 ? (
+        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+          No components are defined for this allograph.
+        </div>
+      ) : (
+        <div className="space-y-3 rounded-md border p-3">
+          {selectedAllograph.components.map((component) => {
+            const selectedComponent = draftGraphcomponentSet.find(
+              (item) => item.component === component.component_id
+            );
+
+            const defaultFeatureCount = component.features.filter(
+              (feature) => feature.set_by_default
+            ).length;
+
+            return (
+              <div key={component.component_id} className="space-y-2 rounded-md border p-3">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(selectedComponent)}
+                    onChange={(e) =>
+                      toggleComponentSelection(
+                        component.component_id,
+                        component.component_name,
+                        e.target.checked,
+                        component.features
+                      )
+                    }
+                  />
+                  <span>{component.component_name}</span>
+                </label>
+
+                {selectedComponent ? (
+                  component.features.length > 0 ? (
+                    <div className="ml-6 space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            checkAllFeatures(
+                              component.component_id,
+                              component.component_name,
+                              component.features
+                            )
+                          }
+                        >
+                          Check all
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            uncheckAllFeatures(
+                              component.component_id,
+                              component.component_name,
+                              component.features
+                            )
+                          }
+                        >
+                          Uncheck all
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled
+                          title="Defaults action UI only for now"
+                        >
+                          Check defaults
+                          {defaultFeatureCount > 0 ? ` (${defaultFeatureCount})` : ''}
+                        </Button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {component.features.map((feature) => {
+                          const checked = (selectedComponent.features ?? []).includes(feature.id);
+
+                          return (
+                            <label
+                              key={feature.id}
+                              className="flex items-center gap-2 text-sm text-muted-foreground"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) =>
+                                  toggleFeatureSelection(
+                                    component.component_id,
+                                    component.component_name,
+                                    component.features,
+                                    feature.id,
+                                    e.target.checked
+                                  )
+                                }
+                              />
+                              <span>{feature.name}</span>
+                              {feature.set_by_default ? (
+                                <span className="rounded border px-1.5 py-0.5 text-[10px]">
+                                  default
+                                </span>
+                              ) : null}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="ml-6 text-sm text-muted-foreground">
+                      This component has no selectable features.
+                    </div>
+                  )
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div
@@ -490,94 +663,7 @@ export function AnnotationPopupCard({
         <div className="max-h-[420px] overflow-auto px-4 py-4 space-y-4">
           {standardIdentityFields}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Components / Features</label>
-
-            {draftAllographId == null ? (
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                Choose an allograph to load the related components and features.
-              </div>
-            ) : !selectedAllograph ? (
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                No allograph data available.
-              </div>
-            ) : selectedAllograph.components.length === 0 ? (
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                No components are defined for this allograph.
-              </div>
-            ) : (
-              <div className="space-y-3 rounded-md border p-3">
-                {selectedAllograph.components.map((component) => {
-                  const selectedComponent = draftGraphcomponentSet.find(
-                    (item) => item.component === component.component_id
-                  );
-
-                  return (
-                    <div key={component.component_id} className="space-y-2 rounded-md border p-3">
-                      <label className="flex items-center gap-2 text-sm font-medium">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(selectedComponent)}
-                          onChange={(e) =>
-                            toggleComponentSelection(
-                              component.component_id,
-                              component.component_name,
-                              e.target.checked,
-                              component.features
-                            )
-                          }
-                        />
-                        <span>{component.component_name}</span>
-                      </label>
-
-                      {selectedComponent ? (
-                        component.features.length > 0 ? (
-                          <div className="ml-6 space-y-2">
-                            {component.features.map((feature) => {
-                              const checked = (selectedComponent.features ?? []).includes(
-                                feature.id
-                              );
-
-                              return (
-                                <label
-                                  key={feature.id}
-                                  className="flex items-center gap-2 text-sm text-muted-foreground"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) =>
-                                      toggleFeatureSelection(
-                                        component.component_id,
-                                        component.component_name,
-                                        feature.id,
-                                        feature.name,
-                                        e.target.checked
-                                      )
-                                    }
-                                  />
-                                  <span>{feature.name}</span>
-                                  {feature.set_by_default ? (
-                                    <span className="rounded border px-1.5 py-0.5 text-[10px]">
-                                      default
-                                    </span>
-                                  ) : null}
-                                </label>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="ml-6 text-sm text-muted-foreground">
-                            This component has no selectable features.
-                          </div>
-                        )
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {editableComponentFeatureSection}
 
           <div className="space-y-2">
             <div className="rounded-md border">
@@ -674,94 +760,7 @@ export function AnnotationPopupCard({
             Changes remain local until you press the main Save button in the toolbar.
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Components / Features</label>
-
-            {draftAllographId == null ? (
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                Choose an allograph to load the related components and features.
-              </div>
-            ) : !selectedAllograph ? (
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                No allograph data available.
-              </div>
-            ) : selectedAllograph.components.length === 0 ? (
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                No components are defined for this allograph.
-              </div>
-            ) : (
-              <div className="space-y-3 rounded-md border p-3">
-                {selectedAllograph.components.map((component) => {
-                  const selectedComponent = draftGraphcomponentSet.find(
-                    (item) => item.component === component.component_id
-                  );
-
-                  return (
-                    <div key={component.component_id} className="space-y-2 rounded-md border p-3">
-                      <label className="flex items-center gap-2 text-sm font-medium">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(selectedComponent)}
-                          onChange={(e) =>
-                            toggleComponentSelection(
-                              component.component_id,
-                              component.component_name,
-                              e.target.checked,
-                              component.features
-                            )
-                          }
-                        />
-                        <span>{component.component_name}</span>
-                      </label>
-
-                      {selectedComponent ? (
-                        component.features.length > 0 ? (
-                          <div className="ml-6 space-y-2">
-                            {component.features.map((feature) => {
-                              const checked = (selectedComponent.features ?? []).includes(
-                                feature.id
-                              );
-
-                              return (
-                                <label
-                                  key={feature.id}
-                                  className="flex items-center gap-2 text-sm text-muted-foreground"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) =>
-                                      toggleFeatureSelection(
-                                        component.component_id,
-                                        component.component_name,
-                                        feature.id,
-                                        feature.name,
-                                        e.target.checked
-                                      )
-                                    }
-                                  />
-                                  <span>{feature.name}</span>
-                                  {feature.set_by_default ? (
-                                    <span className="rounded border px-1.5 py-0.5 text-[10px]">
-                                      default
-                                    </span>
-                                  ) : null}
-                                </label>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="ml-6 text-sm text-muted-foreground">
-                            This component has no selectable features.
-                          </div>
-                        )
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {editableComponentFeatureSection}
 
           <div className="space-y-2">
             <div className="rounded-md border">
