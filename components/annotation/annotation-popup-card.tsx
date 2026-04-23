@@ -764,39 +764,66 @@ export function AnnotationPopupCard({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              {getPluralLabel('position')}
-            </label>
+            <div className="rounded-md border">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between px-3 py-2 text-left"
+                onClick={() => setIsPositionsOpen((prev) => !prev)}
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  {isPositionsOpen ? (
+                    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  )}
 
-            {draftAllographId == null ? (
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                Choose an allograph to load the related {getPluralLabel('position').toLowerCase()}.
-              </div>
-            ) : !selectedAllograph ? (
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                No allograph data available.
-              </div>
-            ) : selectedAllograph.positions.length === 0 ? (
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                No {getPluralLabel('position').toLowerCase()} are defined for this allograph.
-              </div>
-            ) : (
-              <div className="space-y-2 rounded-md border p-3">
-                {selectedAllograph.positions.map((position) => (
-                  <label
-                    key={position.id}
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={draftPositionIds.includes(position.id)}
-                      onChange={(e) => togglePositionId(position.id, e.target.checked)}
-                    />
-                    <span>{position.name}</span>
-                  </label>
-                ))}
-              </div>
-            )}
+                  <span className="text-sm font-medium text-foreground">
+                    {getPluralLabel('position')}
+                  </span>
+                </div>
+
+                <span className="text-xs text-muted-foreground">
+                  {selectedPositionsCount > 0
+                    ? `${selectedPositionsCount} selected`
+                    : 'None selected'}
+                </span>
+              </button>
+
+              {isPositionsOpen && (
+                <div className="border-t px-3 py-3">
+                  {draftAllographId == null ? (
+                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                      Choose an allograph to load the related{' '}
+                      {getPluralLabel('position').toLowerCase()}.
+                    </div>
+                  ) : !selectedAllograph ? (
+                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                      No allograph data available.
+                    </div>
+                  ) : selectedAllograph.positions.length === 0 ? (
+                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                      No {getPluralLabel('position').toLowerCase()} are defined for this allograph.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {selectedAllograph.positions.map((position) => (
+                        <label
+                          key={position.id}
+                          className="flex items-center gap-2 text-sm text-muted-foreground"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={draftPositionIds.includes(position.id)}
+                            onChange={(e) => togglePositionId(position.id, e.target.checked)}
+                          />
+                          <span>{position.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
