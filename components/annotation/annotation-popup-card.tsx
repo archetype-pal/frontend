@@ -34,6 +34,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { useModelLabels } from '@/contexts/model-labels-context';
 
 type PopupTab = 'components' | 'positions' | 'notes';
@@ -186,24 +187,19 @@ export function AnnotationPopupCard({
     <div className="space-y-4">
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">Allograph</label>
-        <Select
-          value={draftAllographId != null ? String(draftAllographId) : '__unset__'}
-          onValueChange={(value) =>
-            onDraftAllographIdChange(value === '__unset__' ? null : Number(value))
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Choose an allograph" />
-          </SelectTrigger>
-          <SelectContent className="z-[200]">
-            <SelectItem value="__unset__">Choose an allograph</SelectItem>
-            {allographOptions.map((allograph) => (
-              <SelectItem key={allograph.id} value={String(allograph.id)}>
-                {allograph.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          options={allographOptions.map((allograph) => ({
+            value: String(allograph.id),
+            label: allograph.name,
+          }))}
+          value={draftAllographId != null ? String(draftAllographId) : null}
+          onValueChange={(value) => onDraftAllographIdChange(value ? Number(value) : null)}
+          placeholder="Choose an allograph"
+          searchPlaceholder="Search allographs..."
+          emptyText="No allographs found."
+          clearLabel="Choose an allograph"
+          contentClassName="z-[250]"
+        />
       </div>
 
       <div className="space-y-2">

@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import type { HandType } from '@/types/hands';
 import type { Allograph } from '@/types/allographs';
 
@@ -187,31 +188,29 @@ export function AnnotationHeader({
           </SelectContent>
         </Select>
 
-        <Select
-          value={selectedAllograph}
-          onValueChange={handleAllographChange}
-          onOpenChange={(open) => {
-            if (!open) onAllographHover?.(undefined);
-          }}
-        >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Select Allograph" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All allographs</SelectItem>
-
-            {allographs.map((allograph) => (
-              <SelectItem
-                key={allograph.id}
-                value={allograph.id.toString()}
-                onPointerEnter={() => handleAllographHover(allograph.id.toString())}
-                onFocus={() => handleAllographHover(allograph.id.toString())}
-              >
-                {allograph.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="w-[200px]">
+          <SearchableSelect
+            options={allographs.map((allograph) => ({
+              value: allograph.id.toString(),
+              label: allograph.name,
+            }))}
+            value={selectedAllograph || null}
+            onValueChange={(value) => handleAllographChange(value ?? '__all__')}
+            onOptionHover={(value) => {
+              if (!value) {
+                onAllographHover?.(undefined);
+                return;
+              }
+              handleAllographHover(value);
+            }}
+            placeholder="Select Allograph"
+            searchPlaceholder="Search allographs..."
+            emptyText="No allographs found."
+            clearLabel="All allographs"
+            triggerClassName="w-full"
+            contentClassName="z-[250]"
+          />
+        </div>
 
         <Button
           variant="outline"
