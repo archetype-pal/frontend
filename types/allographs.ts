@@ -19,6 +19,7 @@ export interface Allograph {
   id: number;
   name: string;
   components: Component[];
+  positions: Position[];
 }
 
 export type AllographsResponse = Allograph[];

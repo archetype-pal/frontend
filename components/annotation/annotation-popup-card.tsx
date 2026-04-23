@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Share2, Star, X } from 'lucide-react';
 
-import type { Allograph, Position as SymbolPosition } from '@/types/allographs';
+import type { Allograph } from '@/types/allographs';
 
 import type {
   A9sGraphComponent,
@@ -72,7 +72,6 @@ interface AnnotationPopupCardProps {
   draftGraphcomponentSet: A9sGraphComponent[];
   onDraftGraphcomponentSetChange: (value: A9sGraphComponent[]) => void;
 
-  positionOptions: SymbolPosition[];
   draftPositionIds: number[];
   onDraftPositionIdsChange: (value: number[]) => void;
 
@@ -151,7 +150,6 @@ export function AnnotationPopupCard({
   onDraftHandIdChange,
   draftGraphcomponentSet,
   onDraftGraphcomponentSetChange,
-  positionOptions,
   draftPositionIds,
   onDraftPositionIdsChange,
   draftInternalNoteText,
@@ -572,13 +570,21 @@ export function AnnotationPopupCard({
               {getPluralLabel('position')}
             </label>
 
-            {positionOptions.length === 0 ? (
+            {draftAllographId == null ? (
               <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                No {getPluralLabel('position').toLowerCase()} are available.
+                Choose an allograph to load the related {getPluralLabel('position').toLowerCase()}.
+              </div>
+            ) : !selectedAllograph ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No allograph data available.
+              </div>
+            ) : selectedAllograph.positions.length === 0 ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No {getPluralLabel('position').toLowerCase()} are defined for this allograph.
               </div>
             ) : (
               <div className="space-y-2 rounded-md border p-3">
-                {positionOptions.map((position) => (
+                {selectedAllograph.positions.map((position) => (
                   <label
                     key={position.id}
                     className="flex items-center gap-2 text-sm text-muted-foreground"

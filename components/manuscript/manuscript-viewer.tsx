@@ -30,7 +30,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupCard } from '@/components/annotation/annotation-popup-card';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
-import { fetchHands, fetchPositions } from '@/services/manuscripts';
+import { fetchHands } from '@/services/manuscripts';
 import {
   fetchAnnotationsForImage,
   createViewerAnnotation,
@@ -53,7 +53,7 @@ import {
 
 import type { ViewerApi, Annotation as A9sAnnotation } from './manuscript-annotorious';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
-import type { Allograph, Position as SymbolPosition } from '@/types/allographs';
+import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 import type { Manuscript } from '@/types/manuscript';
 import type {
@@ -157,8 +157,6 @@ export default function ManuscriptViewer({
   const [hands, setHands] = React.useState<HandType[]>([]);
   const [handsLoaded, setHandsLoaded] = React.useState(false);
 
-  const [positions, setPositions] = React.useState<SymbolPosition[]>([]);
-
   const [isFilterPanelOpen, setIsFilterPanelOpen] = React.useState(false);
   const [visibilityFilters, setVisibilityFilters] = React.useState<AnnotationVisibilityFilters>({
     allographIds: [],
@@ -256,6 +254,14 @@ export default function ManuscriptViewer({
     () => new Map(hands.map((hand) => [hand.id, hand.name])),
     [hands]
   );
+
+  const positionNameById = React.useMemo(() => {
+    const entries = allographs.flatMap((allograph) =>
+      (allograph.positions ?? []).map((position) => [position.id, position.name] as const)
+    );
+
+    return new Map<number, string>(entries);
+  }, [allographs]);
 
   const displayedHand = popupSelectedHand ?? selectedHand ?? undefined;
   const activeHandLabel = displayedHand?.name ?? 'Any';
@@ -734,12 +740,12 @@ export default function ManuscriptViewer({
 
       const previousId = popup.annotation.id;
 
-      const nextPositionDetails = positions
-        .filter((position) => popup.draftPositionIds.includes(position.id))
-        .map((position) => ({
-          id: position.id,
-          name: position.name,
-        }));
+      const nextPositionDetails = popup.draftPositionIds
+        .map((id) => {
+          const name = positionNameById.get(id);
+          return name ? { id, name } : null;
+        })
+        .filter((value): value is { id: number; name: string } => value !== null);
 
       const next: A9sAnnotation = {
         ...popup.annotation,
@@ -802,7 +808,7 @@ export default function ManuscriptViewer({
 
       setA9sSnapshot(nextSnapshot);
     },
-    [getPopupById, positions]
+    [getPopupById, positionNameById]
   );
 
   const handleConfirmDraftAnnotation = React.useCallback(
@@ -916,12 +922,22 @@ export default function ManuscriptViewer({
         const annotation = record.annotation;
         const feature = a9sToBackendFeature(annotation, imageHeight);
 
+        const positionsPayload = annotation._meta?.positions ?? [];
+        const graphcomponentPayload = (annotation._meta?.graphcomponentSet ?? []).map((item) => ({
+          component: item.component,
+          features: item.features ?? [],
+        }));
+
         if (record.source === 'persisted' && isDbAnnotation(annotation)) {
           const id = dbIdFromA9s(annotation);
           if (id != null) {
             tasks.push(
               updateViewerAnnotation(token, id, {
                 annotation: feature,
+                allograph: annotation._meta?.allographId ?? 0,
+                hand: annotation._meta?.handId ?? 0,
+                positions: positionsPayload,
+                graphcomponent_set: graphcomponentPayload,
               })
             );
           }
@@ -934,8 +950,8 @@ export default function ManuscriptViewer({
             annotation: feature,
             allograph: annotation._meta?.allographId ?? 0,
             hand: annotation._meta?.handId ?? 0,
-            positions: [],
-            graphcomponent_set: [],
+            positions: positionsPayload,
+            graphcomponent_set: graphcomponentPayload,
           })
         );
       }
@@ -1402,25 +1418,6 @@ export default function ManuscriptViewer({
     viewerApiRef.current?.centerOnAnnotation?.(targetId);
   }, [osdReady, a9sSnapshot, openSinglePopupFromAnnotation]);
 
-  React.useEffect(() => {
-    let isMounted = true;
-
-    const loadPositions = async () => {
-      try {
-        const data = await fetchPositions();
-        if (isMounted) setPositions(data);
-      } catch {
-        if (isMounted) setPositions([]);
-      }
-    };
-
-    void loadPositions();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
   // ---- Early returns ----
   if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
@@ -1805,7 +1802,6 @@ export default function ManuscriptViewer({
                       draftAllographId={popupRecord.draftAllographId}
                       draftHandId={popupRecord.draftHandId}
                       draftGraphcomponentSet={popupRecord.draftGraphcomponentSet}
-                      positionOptions={positions}
                       draftPositionIds={popupRecord.draftPositionIds}
                       onDraftPositionIdsChange={(value) =>
                         handleDraftPositionIdsChange(popupRecord.id, value)
