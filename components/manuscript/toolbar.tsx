@@ -11,13 +11,20 @@ export function Toolbar({ children, orientation = 'vertical' }: ToolbarProps) {
   return (
     <div
       className={[
-        'fixed z-50 border bg-white p-2',
-        isHorizontal
-          ? 'top-68 left-1/5 flex -translate-x-1/2 flex-row items-center gap-1'
-          : 'top-96 flex w-12 flex-col items-center gap-1',
+        'absolute z-20 pointer-events-none',
+        isHorizontal ? 'top-3 left-3' : 'top-3 left-3',
       ].join(' ')}
     >
-      {children}
+      <div
+        className={[
+          'pointer-events-auto rounded-lg border bg-white/95 p-2 shadow-sm backdrop-blur',
+          isHorizontal
+            ? 'inline-flex max-w-[calc(100vw-6rem)] flex-row flex-wrap items-center gap-1'
+            : 'flex w-12 flex-col items-center gap-1',
+        ].join(' ')}
+      >
+        {children}
+      </div>
     </div>
   );
 }

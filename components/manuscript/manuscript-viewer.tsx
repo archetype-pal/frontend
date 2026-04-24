@@ -221,8 +221,8 @@ export default function ManuscriptViewer({
 
   // ---- Drag hooks ----
   const allographDialogDrag = useDraggablePosition({ x: 300, y: 60 });
-  const filterPanelDrag = useDraggablePosition({ x: 0, y: 180 });
-  const settingsPanelDrag = useDraggablePosition({ x: 0, y: 0 });
+  const filterPanelDrag = useDraggablePosition({ x: 0, y: 250 });
+  const settingsPanelDrag = useDraggablePosition({ x: 0, y: 250 });
 
   // ---- Derived values ----
   const getCanonicalAnnotation = React.useCallback(
@@ -1612,170 +1612,190 @@ export default function ManuscriptViewer({
       />
 
       <div className={`relative flex flex-1 ${isFullScreen ? 'mt-20' : ''}`}>
-        <Toolbar orientation={viewerSettings.toolbarPosition}>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => viewerApiRef.current?.goHome()}>
-                  <Home className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reset View</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={isFullScreen ? 'default' : 'ghost'}
-                  size="icon"
-                  onClick={handleToggleFullScreen}
-                >
-                  {isFullScreen ? (
-                    <Expand className="h-4 w-4" />
-                  ) : (
-                    <LaptopMinimal className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{isFullScreen ? 'Exit Full Screen' : 'Full Screen'}</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => viewerApiRef.current?.zoomIn()}>
-                  <ZoomIn className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Zoom In</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => viewerApiRef.current?.zoomOut()}>
-                  <ZoomOut className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Zoom Out</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={activeTool === 'move' ? 'default' : 'ghost'}
-                  size="icon"
-                  onClick={handleMoveTool}
-                >
-                  <Hand className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Move Tool (m)</TooltipContent>
-            </Tooltip>
-
-            {canCreatePublicAnnotations && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={
-                      activeTool === 'draw' && currentCreationKind === 'public'
-                        ? 'default'
-                        : 'ghost'
-                    }
-                    size="icon"
-                    onClick={() => handleCreateAnnotation('public')}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {canCreateEditorialAnnotations ? 'Create Annotation' : 'Create Public Annotation'}
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            {canCreateEditorialAnnotations && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={
-                      activeTool === 'draw' && currentCreationKind === 'editorial'
-                        ? 'default'
-                        : 'ghost'
-                    }
-                    size="icon"
-                    onClick={() => handleCreateAnnotation('editorial')}
-                  >
-                    <SquarePen className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Create Editorial Annotation</TooltipContent>
-              </Tooltip>
-            )}
-
-            {canPersistAnyAnnotations && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => void handleSave()}
-                    disabled={unsavedChanges === 0}
-                  >
-                    <Save className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Save</TooltipContent>
-              </Tooltip>
-            )}
-
-            {canDeleteAnnotations && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={activeTool === 'delete' ? 'default' : 'ghost'}
-                    size="icon"
-                    onClick={handleDeleteTool}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Delete (del)</TooltipContent>
-              </Tooltip>
-            )}
-
-            {manuscriptImage && manuscript && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <OpenLightboxButton
-                      item={{
-                        id: Number(imageId),
-                        type: 'image',
-                        image_iiif: manuscriptImage.iiif_image,
-                        shelfmark: manuscript.current_item?.shelfmark || '',
-                        locus: manuscriptImage.locus,
-                        repository_name: manuscript.current_item?.repository?.name || '',
-                        repository_city: manuscript.current_item?.repository?.place || '',
-                        date: manuscript.historical_item?.date || '',
-                      }}
-                      variant="ghost"
-                      size="icon"
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>Open in Lightbox</TooltipContent>
-              </Tooltip>
-            )}
-          </TooltipProvider>
-        </Toolbar>
-
-        <div className={isFullScreen ? 'flex-1 overflow-hidden p-0' : 'flex-1 overflow-hidden p-4'}>
+        <div
+          className={
+            isFullScreen ? 'flex flex-1 overflow-hidden p-0' : 'flex flex-1 overflow-hidden p-4'
+          }
+        >
           <div
             className={
               isFullScreen
                 ? 'relative h-full w-full overflow-hidden rounded-lg border bg-accent/50'
-                : 'relative h-[calc(100%-3rem)] w-full overflow-hidden rounded-lg border bg-accent/50 ml-10'
+                : 'relative h-[calc(100%-3rem)] w-full overflow-hidden rounded-lg border bg-accent/50'
             }
           >
+            <Toolbar orientation={viewerSettings.toolbarPosition}>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => viewerApiRef.current?.goHome()}
+                    >
+                      <Home className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reset View</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isFullScreen ? 'default' : 'ghost'}
+                      size="icon"
+                      onClick={handleToggleFullScreen}
+                    >
+                      {isFullScreen ? (
+                        <Expand className="h-4 w-4" />
+                      ) : (
+                        <LaptopMinimal className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isFullScreen ? 'Exit Full Screen' : 'Full Screen'}
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => viewerApiRef.current?.zoomIn()}
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Zoom In</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => viewerApiRef.current?.zoomOut()}
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Zoom Out</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={activeTool === 'move' ? 'default' : 'ghost'}
+                      size="icon"
+                      onClick={handleMoveTool}
+                    >
+                      <Hand className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Move Tool (m)</TooltipContent>
+                </Tooltip>
+
+                {canCreatePublicAnnotations && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={
+                          activeTool === 'draw' && currentCreationKind === 'public'
+                            ? 'default'
+                            : 'ghost'
+                        }
+                        size="icon"
+                        onClick={() => handleCreateAnnotation('public')}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {canCreateEditorialAnnotations
+                        ? 'Create Annotation'
+                        : 'Create Public Annotation'}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
+                {canCreateEditorialAnnotations && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={
+                          activeTool === 'draw' && currentCreationKind === 'editorial'
+                            ? 'default'
+                            : 'ghost'
+                        }
+                        size="icon"
+                        onClick={() => handleCreateAnnotation('editorial')}
+                      >
+                        <SquarePen className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Create Editorial Annotation</TooltipContent>
+                  </Tooltip>
+                )}
+
+                {canPersistAnyAnnotations && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void handleSave()}
+                        disabled={unsavedChanges === 0}
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Save</TooltipContent>
+                  </Tooltip>
+                )}
+
+                {canDeleteAnnotations && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={activeTool === 'delete' ? 'default' : 'ghost'}
+                        size="icon"
+                        onClick={handleDeleteTool}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Delete (del)</TooltipContent>
+                  </Tooltip>
+                )}
+
+                {manuscriptImage && manuscript && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <OpenLightboxButton
+                          item={{
+                            id: Number(imageId),
+                            type: 'image',
+                            image_iiif: manuscriptImage.iiif_image,
+                            shelfmark: manuscript.current_item?.shelfmark || '',
+                            locus: manuscriptImage.locus,
+                            repository_name: manuscript.current_item?.repository?.name || '',
+                            repository_city: manuscript.current_item?.repository?.place || '',
+                            date: manuscript.historical_item?.date || '',
+                          }}
+                          variant="ghost"
+                          size="icon"
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>Open in Lightbox</TooltipContent>
+                  </Tooltip>
+                )}
+              </TooltipProvider>
+            </Toolbar>
+
             <ManuscriptAnnotorious
               iiifImageUrl={browserSafeIiifUrl(getIiifBaseUrl(manuscriptImage.iiif_image))}
               initialAnnotations={initialA9sAnnots}
