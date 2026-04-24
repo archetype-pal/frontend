@@ -156,6 +156,7 @@
     opacity: 0;
     transform: translateY(24px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -166,6 +167,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -176,6 +178,7 @@
     opacity: 0;
     transform: scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -186,6 +189,7 @@
   from {
     transform: scaleX(0);
   }
+
   to {
     transform: scaleX(1);
   }
@@ -195,6 +199,7 @@
   0% {
     transform: scale(1);
   }
+
   100% {
     transform: scale(1.08);
   }
@@ -225,21 +230,27 @@
 .delay-100 {
   animation-delay: 100ms;
 }
+
 .delay-200 {
   animation-delay: 200ms;
 }
+
 .delay-300 {
   animation-delay: 300ms;
 }
+
 .delay-400 {
   animation-delay: 400ms;
 }
+
 .delay-500 {
   animation-delay: 500ms;
 }
+
 .delay-600 {
   animation-delay: 600ms;
 }
+
 .delay-700 {
   animation-delay: 700ms;
 }
@@ -419,4 +430,19 @@ g.a9s-selection:hover .a9s-outer {
   stroke: cornflowerblue !important;
   stroke-width: 4px !important;
   fill: transparent !important;
+}
+
+g.a9s-annotation.a9s-multi-selected .a9s-inner,
+g.a9s-annotation.a9s-multi-selected rect,
+g.a9s-annotation.a9s-multi-selected polygon,
+g.a9s-annotation.a9s-multi-selected path {
+  stroke: #2563eb !important;
+  fill: rgba(37, 99, 235, 0.18) !important;
+  stroke-width: 3px !important;
+}
+
+g.a9s-annotation.a9s-multi-selected .a9s-outer {
+  stroke: #2563eb !important;
+  fill: rgba(100, 149, 237, 0.24) !important;
+  stroke: cornflowerblue !important;
 }

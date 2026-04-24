@@ -1802,6 +1802,7 @@ export default function ManuscriptViewer({
               annotationFilter={annotationVisibilityFilter}
               disableEditor={true}
               readOnly={false}
+              allowMultipleSelection={viewerSettings.selectMultipleAnnotations}
               onCreate={handleViewerCreate}
               onDelete={(annotation: A9sAnnotation) => {
                 setEditorRecords((prev) => markAnnotationDeleted(prev, annotation.id));

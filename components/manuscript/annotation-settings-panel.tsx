@@ -95,9 +95,7 @@ export function AnnotationSettingsPanel({
           <div>
             <h4 className="text-sm font-semibold text-foreground">Editor settings</h4>
             <Separator className="my-3" />
-            <p className="text-sm text-muted-foreground">
-              Additional editor-specific settings will appear here in the next step.
-            </p>
+
             <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
               <input
                 type="checkbox"
@@ -107,6 +105,10 @@ export function AnnotationSettingsPanel({
               />
               <span className="text-sm text-foreground">Select multiple annotations</span>
             </label>
+            <p className="px-2 text-xs text-muted-foreground">
+              When enabled, multiple existing annotations can remain selected at the same time in
+              move mode.
+            </p>
           </div>
         )}
       </div>

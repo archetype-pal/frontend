@@ -43,6 +43,8 @@ export type ViewerApi = {
   enableDelete: () => void;
   toggleAnnotations: (visible: boolean) => void;
   getAnnotations: () => Annotation[];
+  getSelectedAnnotationIds?: () => string[];
+  clearSelectedAnnotationIds?: () => void;
   centerOnAnnotation?: (id: string) => void;
   highlightAnnotations: (ids: string[]) => void;
   clearHighlights: () => void;
@@ -65,6 +67,7 @@ interface Props {
   readOnly?: boolean;
   annotationFilter?: (annotation: Annotation) => boolean;
   confirmDelete?: (annotation: Annotation) => boolean;
+  allowMultipleSelection?: boolean;
 }
 
 // ---- Component state ----
@@ -86,6 +89,7 @@ export default function ManuscriptAnnotorious({
   readOnly = false,
   annotationFilter,
   confirmDelete,
+  allowMultipleSelection = false,
 }: Props) {
   const viewerRef = useRef<HTMLDivElement | null>(null);
   const osdRef = useRef<OpenSeadragon.Viewer | null>(null);
@@ -106,6 +110,8 @@ export default function ManuscriptAnnotorious({
   });
 
   const selectedDisplayIdRef = useRef<string | null>(null);
+  const multiSelectedIdsRef = useRef<Set<string>>(new Set());
+  const allowMultipleSelectionRef = useRef(allowMultipleSelection);
   const isDraftAnnotation = (a: Annotation | null | undefined) =>
     Boolean(a && typeof a.id === 'string' && !a.id.startsWith('db:'));
 
@@ -115,7 +121,12 @@ export default function ManuscriptAnnotorious({
     if (!root || !anno) return;
 
     root.querySelectorAll<SVGGElement>('g.a9s-annotation').forEach((el) => {
-      el.classList.remove('a9s-described', 'a9s-undescribed', 'a9s-current-selected');
+      el.classList.remove(
+        'a9s-described',
+        'a9s-undescribed',
+        'a9s-current-selected',
+        'a9s-multi-selected'
+      );
     });
 
     root.querySelectorAll<SVGGElement>('g.a9s-selection').forEach((el) => {
@@ -130,6 +141,13 @@ export default function ManuscriptAnnotorious({
 
       const isDescribed = a._meta?.isDescribed === true;
       el.classList.add(isDescribed ? 'a9s-described' : 'a9s-undescribed');
+    });
+
+    multiSelectedIdsRef.current.forEach((id) => {
+      const el = root.querySelector<SVGGElement>(`g.a9s-annotation[data-id="${id}"]`);
+      if (el) {
+        el.classList.add('a9s-multi-selected');
+      }
     });
 
     const selectedId = anno.getSelected?.()?.id ?? selectedDisplayIdRef.current;
@@ -201,6 +219,10 @@ export default function ManuscriptAnnotorious({
     annotationFilterRef.current = annotationFilter;
     queueSyncAnnotationClasses();
   }, [annotationFilter, queueSyncAnnotationClasses]);
+
+  useEffect(() => {
+    allowMultipleSelectionRef.current = allowMultipleSelection;
+  }, [allowMultipleSelection]);
 
   useEffect(() => {
     confirmDeleteRef.current = confirmDelete;
@@ -339,6 +361,10 @@ export default function ManuscriptAnnotorious({
               selectedDisplayIdRef.current = null;
             }
 
+            if (multiSelectedIdsRef.current.has(a.id)) {
+              multiSelectedIdsRef.current.delete(a.id);
+            }
+
             queueSyncAnnotationClasses();
             onDeleteRef.current?.(a);
             onSelectRef.current?.(null);
@@ -372,6 +398,23 @@ export default function ManuscriptAnnotorious({
             }
 
             selectedDisplayIdRef.current = a?.id ?? null;
+
+            if (
+              allowMultipleSelectionRef.current &&
+              currentMode === 'pan' &&
+              a &&
+              !isDraftAnnotation(a)
+            ) {
+              const next = new Set(multiSelectedIdsRef.current);
+
+              if (next.has(a.id)) {
+                next.delete(a.id);
+              } else {
+                next.add(a.id);
+              }
+
+              multiSelectedIdsRef.current = next;
+            }
 
             if (currentMode === 'draw') {
               anno.readOnly = false;
@@ -508,6 +551,7 @@ export default function ManuscriptAnnotorious({
 
               if (!visible) {
                 selectedDisplayIdRef.current = null;
+                multiSelectedIdsRef.current.clear();
                 anno.readOnly = true;
                 queueSyncAnnotationClasses();
                 onSelectRef.current?.(null);
@@ -548,6 +592,13 @@ export default function ManuscriptAnnotorious({
 
             getAnnotations: () => annoRef.current?.getAnnotations?.() ?? [],
 
+            getSelectedAnnotationIds: () => Array.from(multiSelectedIdsRef.current),
+
+            clearSelectedAnnotationIds: () => {
+              multiSelectedIdsRef.current.clear();
+              queueSyncAnnotationClasses();
+            },
+
             centerOnAnnotation: (id: string) => {
               annoRef.current?.fitBounds?.(id, {
                 immediately: true,
@@ -587,6 +638,13 @@ export default function ManuscriptAnnotorious({
               }
 
               selectedDisplayIdRef.current = id;
+
+              if (allowMultipleSelectionRef.current && selected && !isDraftAnnotation(selected)) {
+                const next = new Set(multiSelectedIdsRef.current);
+                next.add(id);
+                multiSelectedIdsRef.current = next;
+              }
+
               annoRef.current?.selectAnnotation(id);
               queueSyncAnnotationClasses();
             },
@@ -600,6 +658,10 @@ export default function ManuscriptAnnotorious({
 
               if (selectedDisplayIdRef.current === id) {
                 selectedDisplayIdRef.current = null;
+              }
+
+              if (multiSelectedIdsRef.current.has(id)) {
+                multiSelectedIdsRef.current.delete(id);
               }
 
               anno.removeAnnotation(annotation);
