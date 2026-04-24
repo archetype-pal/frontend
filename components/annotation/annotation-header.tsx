@@ -18,6 +18,7 @@ interface AnnotationHeaderProps {
   annotationsEnabled: boolean;
   onToggleAnnotations: () => void;
   unsavedCount: number;
+  selectedAnnotationsCount?: number;
   showUnsavedCount?: boolean;
   onAllographSelect: (allograph: Allograph | undefined) => void;
   onHandSelect: (hand: HandType | undefined) => void;
@@ -40,6 +41,7 @@ export function AnnotationHeader({
   annotationsEnabled,
   onToggleAnnotations,
   unsavedCount = 0,
+  selectedAnnotationsCount = 0,
   showUnsavedCount = true,
   onAllographSelect,
   onHandSelect,
@@ -142,6 +144,14 @@ export function AnnotationHeader({
             <span className="text-sm text-gray-600">Unsaved</span>
             <span className="inline-flex items-center justify-center w-6 h-6 text-sm font-medium text-gray-600 bg-gray-100 rounded">
               {unsavedCount}
+            </span>
+          </div>
+        )}
+        {selectedAnnotationsCount > 0 && (
+          <div className="flex items-center space-x-1">
+            <span className="text-sm text-gray-600">Selected</span>
+            <span className="inline-flex items-center justify-center min-w-6 h-6 px-1.5 text-sm font-medium text-blue-700 bg-blue-100 rounded">
+              {selectedAnnotationsCount}
             </span>
           </div>
         )}

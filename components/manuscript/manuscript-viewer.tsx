@@ -173,6 +173,7 @@ export default function ManuscriptViewer({
 
   const [initialA9sAnnots, setInitialA9sAnnots] = React.useState<A9sAnnotation[]>([]);
   const [a9sSnapshot, setA9sSnapshot] = React.useState<A9sAnnotation[]>([]);
+  const [selectedAnnotationIds, setSelectedAnnotationIds] = React.useState<string[]>([]);
   const [editorRecords, setEditorRecords] = React.useState<AnnotationEditorRecordMap>({});
 
   const [imageHeight, setImageHeight] = React.useState<number>(0);
@@ -910,6 +911,38 @@ export default function ManuscriptViewer({
     [getCanonicalAnnotation, getAnnotationKind]
   );
 
+  const handleConfirmDeleteMany = React.useCallback(
+    (annotations: A9sAnnotation[]) => {
+      const canonical = annotations.map((annotation) => getCanonicalAnnotation(annotation));
+      const draftCount = canonical.filter((annotation) => !isDbId(annotation.id)).length;
+      const savedCount = canonical.length - draftCount;
+
+      const parts: string[] = [`Delete ${canonical.length} selected annotations?`];
+
+      if (draftCount > 0 && savedCount > 0) {
+        parts.push(
+          '',
+          `This will discard ${draftCount} draft annotation${draftCount === 1 ? '' : 's'} locally and mark ${savedCount} saved annotation${savedCount === 1 ? '' : 's'} for deletion.`,
+          'Press Save to persist saved deletions.'
+        );
+      } else if (draftCount > 0) {
+        parts.push(
+          '',
+          `This will discard ${draftCount} draft annotation${draftCount === 1 ? '' : 's'} locally.`
+        );
+      } else {
+        parts.push(
+          '',
+          `This will mark ${savedCount} saved annotation${savedCount === 1 ? '' : 's'} for deletion.`,
+          'Press Save to persist the deletion.'
+        );
+      }
+
+      return window.confirm(parts.join('\n'));
+    },
+    [getCanonicalAnnotation]
+  );
+
   const handleToggleFullScreen = () => {
     setIsFullScreen((prev) => !prev);
 
@@ -1195,6 +1228,7 @@ export default function ManuscriptViewer({
     setHandsLoaded(false);
     setSelectedHand(undefined);
     setEditorRecords({});
+    setSelectedAnnotationIds([]);
 
     setVisibilityFilters({
       allographIds: [],
@@ -1504,6 +1538,7 @@ export default function ManuscriptViewer({
       annotationsEnabled={annotationsEnabled}
       onToggleAnnotations={handleToggleAnnotations}
       unsavedCount={unsavedChanges}
+      selectedAnnotationsCount={selectedAnnotationIds.length}
       showUnsavedCount={canPersistAnyAnnotations}
       onAllographSelect={setFilteredAllograph}
       onHandSelect={setSelectedHand}
@@ -1803,6 +1838,7 @@ export default function ManuscriptViewer({
               disableEditor={true}
               readOnly={false}
               allowMultipleSelection={viewerSettings.selectMultipleAnnotations}
+              onSelectionIdsChange={setSelectedAnnotationIds}
               onCreate={handleViewerCreate}
               onDelete={(annotation: A9sAnnotation) => {
                 setEditorRecords((prev) => markAnnotationDeleted(prev, annotation.id));
@@ -1814,6 +1850,7 @@ export default function ManuscriptViewer({
                 removePopupById(annotation.id);
               }}
               confirmDelete={handleConfirmDelete}
+              confirmDeleteMany={handleConfirmDeleteMany}
               onSelect={handleSelectAnnotationFromViewer}
               exposeApi={handleExposeApi}
             />

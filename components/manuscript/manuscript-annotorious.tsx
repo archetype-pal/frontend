@@ -61,12 +61,14 @@ interface Props {
   onCreate?: (annotation: Annotation) => void;
   onDelete?: (annotation: Annotation) => void;
   onSelect?: (annotation: Annotation | null) => void;
+  onSelectionIdsChange?: (ids: string[]) => void;
   exposeApi?: (api: ViewerApi) => void;
   initialAnnotations?: Annotation[];
   disableEditor?: boolean;
   readOnly?: boolean;
   annotationFilter?: (annotation: Annotation) => boolean;
   confirmDelete?: (annotation: Annotation) => boolean;
+  confirmDeleteMany?: (annotations: Annotation[]) => boolean;
   allowMultipleSelection?: boolean;
 }
 
@@ -83,12 +85,14 @@ export default function ManuscriptAnnotorious({
   onCreate,
   onDelete,
   onSelect,
+  onSelectionIdsChange,
   exposeApi,
   initialAnnotations = [],
   disableEditor = false,
   readOnly = false,
   annotationFilter,
   confirmDelete,
+  confirmDeleteMany,
   allowMultipleSelection = false,
 }: Props) {
   const viewerRef = useRef<HTMLDivElement | null>(null);
@@ -100,7 +104,9 @@ export default function ManuscriptAnnotorious({
   const onCreateRef = useRef(onCreate);
   const onDeleteRef = useRef(onDelete);
   const confirmDeleteRef = useRef(confirmDelete);
+  const confirmDeleteManyRef = useRef(confirmDeleteMany);
   const onSelectRef = useRef(onSelect);
+  const onSelectionIdsChangeRef = useRef(onSelectionIdsChange);
   const exposeApiRef = useRef(exposeApi);
   const annotationFilterRef = useRef<Props['annotationFilter']>(annotationFilter);
   const [state, setState] = React.useState<ComponentState>({
@@ -114,6 +120,10 @@ export default function ManuscriptAnnotorious({
   const allowMultipleSelectionRef = useRef(allowMultipleSelection);
   const isDraftAnnotation = (a: Annotation | null | undefined) =>
     Boolean(a && typeof a.id === 'string' && !a.id.startsWith('db:'));
+
+  const emitSelectionIdsChange = React.useCallback(() => {
+    onSelectionIdsChangeRef.current?.(Array.from(multiSelectedIdsRef.current));
+  }, []);
 
   const syncAnnotationClasses = React.useCallback(() => {
     const root = viewerRef.current;
@@ -221,12 +231,29 @@ export default function ManuscriptAnnotorious({
   }, [annotationFilter, queueSyncAnnotationClasses]);
 
   useEffect(() => {
+    onSelectionIdsChangeRef.current = onSelectionIdsChange;
+  }, [onSelectionIdsChange]);
+
+  useEffect(() => {
     allowMultipleSelectionRef.current = allowMultipleSelection;
   }, [allowMultipleSelection]);
 
   useEffect(() => {
     confirmDeleteRef.current = confirmDelete;
   }, [confirmDelete]);
+  useEffect(() => {
+    confirmDeleteManyRef.current = confirmDeleteMany;
+  }, [confirmDeleteMany]);
+
+  useEffect(() => {
+    if (allowMultipleSelection) return;
+
+    if (multiSelectedIdsRef.current.size > 0) {
+      multiSelectedIdsRef.current.clear();
+      emitSelectionIdsChange();
+      queueSyncAnnotationClasses();
+    }
+  }, [allowMultipleSelection, emitSelectionIdsChange, queueSyncAnnotationClasses]);
 
   // also keep the latest initial annotations in a ref,
   // so the OSD 'open' handler doesn't capture an old (empty) array
@@ -363,6 +390,7 @@ export default function ManuscriptAnnotorious({
 
             if (multiSelectedIdsRef.current.has(a.id)) {
               multiSelectedIdsRef.current.delete(a.id);
+              emitSelectionIdsChange();
             }
 
             queueSyncAnnotationClasses();
@@ -414,6 +442,7 @@ export default function ManuscriptAnnotorious({
               }
 
               multiSelectedIdsRef.current = next;
+              emitSelectionIdsChange();
             }
 
             if (currentMode === 'draw') {
@@ -533,6 +562,40 @@ export default function ManuscriptAnnotorious({
               deleteHandler = (a) => {
                 if (!a || currentMode !== 'delete') return;
 
+                const selectedIds = Array.from(multiSelectedIdsRef.current);
+                const shouldBatchDelete =
+                  allowMultipleSelectionRef.current &&
+                  selectedIds.length > 1 &&
+                  selectedIds.includes(a.id);
+
+                if (shouldBatchDelete) {
+                  const annotationsToDelete = selectedIds
+                    .map((id) => anno.getAnnotationById?.(id) ?? null)
+                    .filter((item): item is Annotation => item !== null);
+
+                  if (!annotationsToDelete.length) return;
+
+                  const confirmed = confirmDeleteManyRef.current?.(annotationsToDelete) ?? true;
+                  if (!confirmed) return;
+
+                  selectedDisplayIdRef.current = null;
+                  multiSelectedIdsRef.current.clear();
+                  emitSelectionIdsChange();
+
+                  annotationsToDelete.forEach((annotation) => {
+                    anno.removeAnnotation(annotation);
+                  });
+
+                  queueSyncAnnotationClasses();
+
+                  annotationsToDelete.forEach((annotation) => {
+                    onDeleteRef.current?.(annotation);
+                  });
+
+                  onSelectRef.current?.(null);
+                  return;
+                }
+
                 const confirmed = confirmDeleteRef.current?.(a) ?? true;
                 if (!confirmed) return;
 
@@ -552,6 +615,7 @@ export default function ManuscriptAnnotorious({
               if (!visible) {
                 selectedDisplayIdRef.current = null;
                 multiSelectedIdsRef.current.clear();
+                emitSelectionIdsChange();
                 anno.readOnly = true;
                 queueSyncAnnotationClasses();
                 onSelectRef.current?.(null);
@@ -596,6 +660,7 @@ export default function ManuscriptAnnotorious({
 
             clearSelectedAnnotationIds: () => {
               multiSelectedIdsRef.current.clear();
+              emitSelectionIdsChange();
               queueSyncAnnotationClasses();
             },
 
@@ -643,6 +708,7 @@ export default function ManuscriptAnnotorious({
                 const next = new Set(multiSelectedIdsRef.current);
                 next.add(id);
                 multiSelectedIdsRef.current = next;
+                emitSelectionIdsChange();
               }
 
               annoRef.current?.selectAnnotation(id);
@@ -662,6 +728,7 @@ export default function ManuscriptAnnotorious({
 
               if (multiSelectedIdsRef.current.has(id)) {
                 multiSelectedIdsRef.current.delete(id);
+                emitSelectionIdsChange();
               }
 
               anno.removeAnnotation(annotation);
@@ -714,7 +781,7 @@ export default function ManuscriptAnnotorious({
         // ignore
       }
     };
-  }, [iiifImageUrl, queueSyncAnnotationClasses, disableEditor, readOnly]);
+  }, [iiifImageUrl, emitSelectionIdsChange, queueSyncAnnotationClasses, disableEditor, readOnly]);
 
   useEffect(() => {
     const anno = annoRef.current;
