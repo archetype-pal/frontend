@@ -487,9 +487,13 @@ function ResultsTableComponent<K extends ResultType>({
       ordering?.options
         ? baseCols.map((col) => {
             if (!col.sortKey) return col;
-            const asc = ordering.options.find((o) => o.name === col.sortKey);
-            const desc = ordering.options.find((o) => o.name === `-${col.sortKey}`);
-            const next = ordering.current === col.sortKey ? desc || asc : asc || desc;
+            // Server emits canonical attribute names (without `_exact`); columns
+            // declare their sortKey in the same `_exact` convention used for
+            // filters. Strip the suffix when looking up the ordering option.
+            const canonicalKey = col.sortKey.replace(/_exact$/, '');
+            const asc = ordering.options.find((o) => o.name === canonicalKey);
+            const desc = ordering.options.find((o) => o.name === `-${canonicalKey}`);
+            const next = ordering.current === canonicalKey ? desc || asc : asc || desc;
             return next ? { ...col, sortUrl: next.url } : col;
           })
         : baseCols,
@@ -752,15 +756,16 @@ function ResultsTableComponent<K extends ResultType>({
               >
                 <div className="inline-flex items-center space-x-1">
                   <span>{resolveHeader(col)}</span>
-                  {col.sortKey === currKey &&
+                  {col.sortKey?.replace(/_exact$/, '') === currKey &&
                     (isDesc ? (
                       <ArrowDown className="w-4 h-4 text-muted-foreground" />
                     ) : (
                       <ArrowUp className="w-4 h-4 text-muted-foreground" />
                     ))}
-                  {(col.sortKey || col.sortUrl) && col.sortKey !== currKey && (
-                    <ArrowUp className="w-3 h-3 text-muted-foreground/40" />
-                  )}
+                  {(col.sortKey || col.sortUrl) &&
+                    col.sortKey?.replace(/_exact$/, '') !== currKey && (
+                      <ArrowUp className="w-3 h-3 text-muted-foreground/40" />
+                    )}
                 </div>
               </TableHead>
             ))}
