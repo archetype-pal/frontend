@@ -14,12 +14,10 @@ import {
   SquarePen,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 
 import { useAuth } from '@/contexts/auth-context';
 
 import { getIiifBaseUrl } from '@/utils/iiif';
-import { ManuscriptTabs } from './manuscript-tabs';
 import { DraggablePopupLayer } from './draggable-popup-layer';
 import { Toolbar } from './toolbar';
 import { AnnotationFilterPanel } from './annotation-filter-panel';
@@ -1569,29 +1567,6 @@ export default function ManuscriptViewer({
         isFullScreen ? 'fixed inset-0 z-50 flex flex-col bg-black' : 'flex h-screen flex-col'
       }
     >
-      {!isFullScreen && (
-        <>
-          <header className="border-b bg-card px-4 py-2">
-            <h1 className="text-lg font-semibold">
-              Manuscript Image:{' '}
-              <Link
-                href={`/manuscripts/${manuscript?.id}`}
-                className="text-blue-600 hover:underline"
-              >
-                {manuscript?.display_label}
-              </Link>
-              : {manuscriptImage.locus}
-            </h1>
-            <p className="text-sm text-muted-foreground line-clamp-3">
-              {manuscript?.historical_item?.descriptions?.[0]?.content ||
-                'No description available'}
-            </p>
-          </header>
-
-          <ManuscriptTabs />
-        </>
-      )}
-
       {isFullScreen ? (
         <div className="fixed top-0 left-0 right-0 z-40 bg-card/95 backdrop-blur border-b">
           {annotationHeader}

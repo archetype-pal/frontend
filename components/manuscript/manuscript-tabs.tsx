@@ -1,39 +1,70 @@
 'use client';
 
-import { Book, FileText, ImageIcon, Info, Lock } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import * as React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Book, FileText, ImageIcon, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export function ManuscriptTabs() {
+interface ManuscriptTabsProps {
+  manuscriptId: string;
+  imageId: string;
+  counts?: {
+    annotations?: number;
+    texts?: number;
+    otherImages?: number;
+  };
+}
+
+interface TabDef {
+  segment: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  countKey?: 'annotations' | 'texts' | 'otherImages';
+}
+
+const TABS: TabDef[] = [
+  { segment: '', label: 'Manuscript Image', icon: ImageIcon },
+  { segment: 'annotations', label: 'Annotations', icon: FileText, countKey: 'annotations' },
+  { segment: 'texts', label: 'Texts', icon: Book, countKey: 'texts' },
+  { segment: 'other-images', label: 'Other Images', icon: ImageIcon, countKey: 'otherImages' },
+  { segment: 'copyright', label: 'Image Copyright', icon: Info },
+];
+
+export function ManuscriptTabs({ manuscriptId, imageId, counts }: ManuscriptTabsProps) {
+  const pathname = usePathname();
+  const base = `/manuscripts/${manuscriptId}/images/${imageId}`;
+
   return (
-    <div className="flex items-center gap-4 border-b px-4 py-2">
-      <Tabs defaultValue="manuscript" className="w-full">
-        <TabsList className="grid w-fit grid-cols-6 gap-4">
-          <TabsTrigger value="manuscript" className="gap-2">
-            <ImageIcon className="h-4 w-4" />
-            <span>Manuscript Image</span>
-          </TabsTrigger>
-          <TabsTrigger value="annotations" className="gap-2">
-            <FileText className="h-4 w-4" />
-            <span>Annotations (0)</span>
-          </TabsTrigger>
-          <TabsTrigger value="texts" className="gap-2">
-            <Book className="h-4 w-4" />
-            <span>Texts (2)</span>
-          </TabsTrigger>
-          <TabsTrigger value="other-images" className="gap-2">
-            <ImageIcon className="h-4 w-4" />
-            <span>Other Images (1)</span>
-          </TabsTrigger>
-          <TabsTrigger value="document" className="gap-2">
-            <Lock className="h-4 w-4" />
-            <span>Document</span>
-          </TabsTrigger>
-          <TabsTrigger value="copyright" className="gap-2">
-            <Info className="h-4 w-4" />
-            <span>Image Copyright</span>
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-    </div>
+    <nav className="flex items-center gap-1 border-b px-4" aria-label="Image tabs">
+      {TABS.map((tab) => {
+        const href = tab.segment ? `${base}/${tab.segment}` : base;
+        const isActive = tab.segment
+          ? pathname === href || pathname.startsWith(`${href}/`)
+          : pathname === base;
+        const Icon = tab.icon;
+        const count = tab.countKey ? counts?.[tab.countKey] : undefined;
+
+        return (
+          <Link
+            key={tab.segment || 'root'}
+            href={href}
+            className={cn(
+              'inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
+              isActive
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            )}
+            aria-current={isActive ? 'page' : undefined}
+          >
+            <Icon className="h-4 w-4" />
+            <span>
+              {tab.label}
+              {typeof count === 'number' && ` (${count})`}
+            </span>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
