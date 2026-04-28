@@ -118,6 +118,7 @@ export default function ManuscriptAnnotorious({
   const selectedDisplayIdRef = useRef<string | null>(null);
   const multiSelectedIdsRef = useRef<Set<string>>(new Set());
   const allowMultipleSelectionRef = useRef(allowMultipleSelection);
+  const suppressReselectIdRef = useRef<string | null>(null);
   const isDraftAnnotation = (a: Annotation | null | undefined) =>
     Boolean(a && typeof a.id === 'string' && !a.id.startsWith('db:'));
 
@@ -412,7 +413,119 @@ export default function ManuscriptAnnotorious({
             onCreateRef.current?.(a);
           });
 
+          let currentMode: 'pan' | 'draw' | 'delete' = 'pan';
+          let deleteHandler: ((a: Annotation | null, element?: unknown) => void) | null = null;
+          let rearmHandler: (() => void) | null = null;
+
+          const getLastMultiSelectedAnnotation = (): Annotation | null => {
+            const ids = Array.from(multiSelectedIdsRef.current);
+            const lastId = ids.length > 0 ? ids[ids.length - 1] : null;
+            if (!lastId) return null;
+
+            return (anno.getAnnotationById?.(lastId) ?? null) as Annotation | null;
+          };
+
+          const finalizeAfterActiveDeselect = () => {
+            const nextActive = getLastMultiSelectedAnnotation();
+            selectedDisplayIdRef.current = nextActive?.id ?? null;
+            anno.readOnly = nextActive ? isDraftAnnotation(nextActive) === false : true;
+            queueSyncAnnotationClasses();
+            onSelectRef.current?.(nextActive);
+          };
+
+          const clearSuppressedReselectLater = (annotationId: string) => {
+            window.setTimeout(() => {
+              if (suppressReselectIdRef.current === annotationId) {
+                suppressReselectIdRef.current = null;
+              }
+            }, 0);
+          };
+
+          const toggleOffActiveAnnotation = (annotation: Annotation): boolean => {
+            if (!allowMultipleSelectionRef.current) return false;
+            if (currentMode !== 'pan') return false;
+            if (isDraftAnnotation(annotation)) return false;
+            if (selectedDisplayIdRef.current !== annotation.id) return false;
+            if (!multiSelectedIdsRef.current.has(annotation.id)) return false;
+
+            const nextSelectedIds = new Set(multiSelectedIdsRef.current);
+            nextSelectedIds.delete(annotation.id);
+            multiSelectedIdsRef.current = nextSelectedIds;
+            emitSelectionIdsChange();
+
+            suppressReselectIdRef.current = annotation.id;
+            selectedDisplayIdRef.current = null;
+
+            const result = anno.cancelSelected?.();
+
+            if (result && typeof result === 'object' && 'then' in result) {
+              void result.then(() => {
+                finalizeAfterActiveDeselect();
+                clearSuppressedReselectLater(annotation.id);
+              });
+            } else {
+              finalizeAfterActiveDeselect();
+              clearSuppressedReselectLater(annotation.id);
+            }
+
+            return true;
+          };
+
+          const deleteFromActiveAnnotation = (annotation: Annotation): boolean => {
+            if (currentMode !== 'delete') return false;
+            if (selectedDisplayIdRef.current !== annotation.id) return false;
+
+            const selectedIds = Array.from(multiSelectedIdsRef.current);
+            const shouldBatchDelete =
+              allowMultipleSelectionRef.current &&
+              selectedIds.length > 1 &&
+              selectedIds.includes(annotation.id);
+
+            if (shouldBatchDelete) {
+              const annotationsToDelete = selectedIds
+                .map((id) => anno.getAnnotationById?.(id) ?? null)
+                .filter((item): item is Annotation => item !== null);
+
+              if (!annotationsToDelete.length) return true;
+
+              const confirmed = confirmDeleteManyRef.current?.(annotationsToDelete) ?? true;
+              if (!confirmed) return true;
+
+              selectedDisplayIdRef.current = null;
+              multiSelectedIdsRef.current.clear();
+              emitSelectionIdsChange();
+
+              annotationsToDelete.forEach((item) => {
+                anno.removeAnnotation(item);
+              });
+
+              queueSyncAnnotationClasses();
+
+              annotationsToDelete.forEach((item) => {
+                onDeleteRef.current?.(item);
+              });
+
+              onSelectRef.current?.(null);
+              return true;
+            }
+
+            const confirmed = confirmDeleteRef.current?.(annotation) ?? true;
+            if (!confirmed) return true;
+
+            anno.removeAnnotation(annotation);
+            notifyDelete(annotation);
+            return true;
+          };
+
           anno.on('clickAnnotation', (a: Annotation) => {
+            if (deleteFromActiveAnnotation(a)) {
+              return;
+            }
+
+            if (toggleOffActiveAnnotation(a)) {
+              return;
+            }
+
             if (currentMode === 'pan') {
               anno.readOnly = isDraftAnnotation(a) ? false : true;
             } else if (currentMode === 'draw') {
@@ -422,6 +535,23 @@ export default function ManuscriptAnnotorious({
 
           anno.on('selectAnnotation', (a: Annotation | null) => {
             if (currentMode === 'delete') {
+              return;
+            }
+
+            if (a && currentMode === 'pan' && suppressReselectIdRef.current === a.id) {
+              suppressReselectIdRef.current = null;
+              selectedDisplayIdRef.current = null;
+
+              const result = anno.cancelSelected?.();
+
+              if (result && typeof result === 'object' && 'then' in result) {
+                void result.then(() => {
+                  finalizeAfterActiveDeselect();
+                });
+              } else {
+                finalizeAfterActiveDeselect();
+              }
+
               return;
             }
 
@@ -461,10 +591,6 @@ export default function ManuscriptAnnotorious({
             queueSyncAnnotationClasses();
             onSelectRef.current?.(null);
           });
-
-          let currentMode: 'pan' | 'draw' | 'delete' = 'pan';
-          let deleteHandler: ((a: Annotation | null, element?: unknown) => void) | null = null;
-          let rearmHandler: (() => void) | null = null;
 
           exposeApiRef.current?.({
             zoomIn: () => {
