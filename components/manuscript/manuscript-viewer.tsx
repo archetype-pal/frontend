@@ -759,6 +759,62 @@ export default function ManuscriptViewer({
     [getPopupById, positionNameById]
   );
 
+  const getSelectedDraftIdsForPopup = React.useCallback(
+    (popupId: string): string[] => {
+      const popup = getPopupById(popupId);
+      if (!popup || isDbId(popup.annotation.id)) return [];
+
+      const selectedIds = viewerSettings.selectMultipleAnnotations
+        ? (viewerApiRef.current?.getSelectedAnnotationIds?.() ?? [])
+        : [];
+
+      const draftIds = selectedIds.filter((id) => !isDbId(id));
+
+      return draftIds.includes(popup.annotation.id) ? draftIds : [popup.annotation.id];
+    },
+    [getPopupById, viewerSettings.selectMultipleAnnotations]
+  );
+
+  const applyPopupIdentityToDraftAnnotation = React.useCallback(
+    (annotation: A9sAnnotation, popupId: string): A9sAnnotation => {
+      const popup = getPopupById(popupId);
+      if (!popup) return annotation;
+
+      const nextAllographId = popup.draftAllographId ?? undefined;
+      const nextHandId = popup.draftHandId ?? undefined;
+      const allographChanged = annotation._meta?.allographId !== nextAllographId;
+
+      const remainingBodies = (annotation.body ?? []).filter(
+        (body) => body.purpose !== 'commenting'
+      );
+
+      return {
+        ...annotation,
+        _meta: {
+          ...annotation._meta,
+          allographId: nextAllographId,
+          handId: nextHandId,
+          graphcomponentSet: allographChanged ? [] : (annotation._meta?.graphcomponentSet ?? []),
+          positions: allographChanged ? [] : (annotation._meta?.positions ?? []),
+          positionDetails: allographChanged ? [] : (annotation._meta?.positionDetails ?? []),
+        },
+        body: [
+          ...(popup.draftAllographText.trim()
+            ? [
+                {
+                  type: 'TextualBody',
+                  purpose: 'commenting',
+                  value: popup.draftAllographText.trim(),
+                },
+              ]
+            : []),
+          ...remainingBodies,
+        ],
+      };
+    },
+    [getPopupById]
+  );
+
   const handleSaveDraftAnnotation = React.useCallback(
     async (popupId: string) => {
       const popup = getPopupById(popupId);
@@ -872,8 +928,45 @@ export default function ManuscriptViewer({
         return;
       }
 
+      const selectedDraftIds = getSelectedDraftIdsForPopup(popupId);
+      const activeDraftId = popup.annotation.id;
+
       await handleSaveDraftAnnotation(popupId);
+
+      if (selectedDraftIds.length > 1) {
+        const otherSelectedIds = selectedDraftIds.filter((id) => id !== activeDraftId);
+
+        if (otherSelectedIds.length > 0) {
+          const otherSelectedIdSet = new Set(otherSelectedIds);
+          const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
+
+          const nextAnnotations = currentAnnotations.map((annotation) => {
+            if (!otherSelectedIdSet.has(annotation.id) || isDbId(annotation.id)) {
+              return annotation;
+            }
+
+            return applyPopupIdentityToDraftAnnotation(annotation, popupId);
+          });
+
+          setInitialA9sAnnots(nextAnnotations);
+          setA9sSnapshot(nextAnnotations);
+
+          setEditorRecords((prev) => {
+            let nextRecords = prev;
+
+            nextAnnotations.forEach((annotation) => {
+              if (otherSelectedIdSet.has(annotation.id)) {
+                nextRecords = markAnnotationUpdated(nextRecords, annotation);
+              }
+            });
+
+            return nextRecords;
+          });
+        }
+      }
+
       removePopupById(popupId);
+      viewerApiRef.current?.clearSelectedAnnotationIds?.();
 
       if (shouldResumeDraw) {
         rearmCreateTool();
@@ -884,9 +977,11 @@ export default function ManuscriptViewer({
     },
     [
       activeTool,
+      applyPopupIdentityToDraftAnnotation,
       buildStandardAnnotationFromPopup,
       getAnnotationKind,
       getPopupById,
+      getSelectedDraftIdsForPopup,
       handleSaveDraftAnnotation,
       rearmCreateTool,
       removePopupById,

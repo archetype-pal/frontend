@@ -444,7 +444,6 @@ export default function ManuscriptAnnotorious({
           const toggleOffActiveAnnotation = (annotation: Annotation): boolean => {
             if (!allowMultipleSelectionRef.current) return false;
             if (currentMode !== 'pan') return false;
-            if (isDraftAnnotation(annotation)) return false;
             if (selectedDisplayIdRef.current !== annotation.id) return false;
             if (!multiSelectedIdsRef.current.has(annotation.id)) return false;
 
@@ -557,12 +556,7 @@ export default function ManuscriptAnnotorious({
 
             selectedDisplayIdRef.current = a?.id ?? null;
 
-            if (
-              allowMultipleSelectionRef.current &&
-              currentMode === 'pan' &&
-              a &&
-              !isDraftAnnotation(a)
-            ) {
+            if (allowMultipleSelectionRef.current && currentMode === 'pan' && a) {
               const next = new Set(multiSelectedIdsRef.current);
 
               if (next.has(a.id)) {
@@ -830,7 +824,7 @@ export default function ManuscriptAnnotorious({
 
               selectedDisplayIdRef.current = id;
 
-              if (allowMultipleSelectionRef.current && selected && !isDraftAnnotation(selected)) {
+              if (allowMultipleSelectionRef.current && selected) {
                 const next = new Set(multiSelectedIdsRef.current);
                 next.add(id);
                 multiSelectedIdsRef.current = next;
