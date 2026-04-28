@@ -145,7 +145,7 @@ export function AnnotationFilterPanel({
                     onChange={onToggleEditorial}
                     className="h-4 w-4 rounded border-gray-300"
                   />
-                  <span className="text-sm text-foreground">[Digipal Editor]</span>
+                  <span className="text-sm text-foreground">Editorial Annotations</span>
                 </label>
               )}
 
