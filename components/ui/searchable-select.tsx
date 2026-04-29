@@ -5,19 +5,14 @@ import { Check, ChevronsUpDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { rankSearchableOptions, type SearchableOption } from '@/lib/searchable-option-ranking';
 import {
   Command,
-  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-
-type SearchableOption = {
-  value: string;
-  label: string;
-};
 
 interface SearchableSelectProps {
   options: SearchableOption[];
@@ -47,8 +42,14 @@ export function SearchableSelect({
   onOptionHover,
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState('');
 
   const selected = options.find((option) => option.value === value) ?? null;
+  const hasSearch = search.trim().length > 0;
+  const rankedOptions = React.useMemo(
+    () => rankSearchableOptions(options, search),
+    [options, search]
+  );
 
   return (
     <Popover
@@ -56,6 +57,7 @@ export function SearchableSelect({
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen);
         if (!nextOpen) {
+          setSearch('');
           onOptionHover?.(null);
         }
       }}
@@ -75,26 +77,33 @@ export function SearchableSelect({
       </PopoverTrigger>
 
       <PopoverContent align="start" className={`w-[320px] p-0 ${contentClassName ?? ''}`}>
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+        <Command shouldFilter={false}>
+          <CommandInput value={search} onValueChange={setSearch} placeholder={searchPlaceholder} />
           <CommandList>
-            <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
-              <CommandItem
-                value="__clear__"
-                onSelect={() => {
-                  onValueChange(null);
-                  setOpen(false);
-                }}
-              >
-                <Check className={`mr-2 h-4 w-4 ${value == null ? 'opacity-100' : 'opacity-0'}`} />
-                <span className="text-muted-foreground">{clearLabel}</span>
-              </CommandItem>
+              {!hasSearch ? (
+                <CommandItem
+                  value="__clear__"
+                  onSelect={() => {
+                    onValueChange(null);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={`mr-2 h-4 w-4 ${value == null ? 'opacity-100' : 'opacity-0'}`}
+                  />
+                  <span className="text-muted-foreground">{clearLabel}</span>
+                </CommandItem>
+              ) : null}
 
-              {options.map((option) => (
+              {rankedOptions.length === 0 ? (
+                <div className="py-6 text-center text-sm">{emptyText}</div>
+              ) : null}
+
+              {rankedOptions.map((option) => (
                 <CommandItem
                   key={option.value}
-                  value={option.label}
+                  value={option.value}
                   onSelect={() => {
                     onValueChange(option.value);
                     setOpen(false);

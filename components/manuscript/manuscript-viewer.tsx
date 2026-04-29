@@ -271,7 +271,9 @@ export default function ManuscriptViewer({
   const displayAllograph =
     hoveredAllograph ?? filteredAllograph ?? popupSelectedAllograph ?? undefined;
 
-  const activeAllographLabel = displayAllograph ? formatAllographLabel(displayAllograph) : undefined;
+  const activeAllographLabel = displayAllograph
+    ? formatAllographLabel(displayAllograph)
+    : undefined;
 
   const countAllographId = displayAllograph?.id ?? null;
 
