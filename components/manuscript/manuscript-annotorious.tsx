@@ -33,6 +33,24 @@ export interface Annotation {
 type AnnotoriousFactory = typeof import('@recogito/annotorious-openseadragon').default;
 type AnnotoriousInstance = ReturnType<AnnotoriousFactory>;
 
+const createDraftAnnotationId = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `#${crypto.randomUUID()}`;
+  }
+
+  return `#${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+};
+
+const withDraftAnnotationId = (annotation: Annotation): Annotation => {
+  if (annotation.id && annotation.type === 'Annotation') return annotation;
+
+  return {
+    ...annotation,
+    id: annotation.id || createDraftAnnotationId(),
+    type: 'Annotation',
+  };
+};
+
 // ---- API we expose upward (no ref needed) ----
 export type ViewerApi = {
   zoomIn: () => void;
@@ -70,6 +88,7 @@ interface Props {
   confirmDelete?: (annotation: Annotation) => boolean;
   confirmDeleteMany?: (annotations: Annotation[]) => boolean;
   allowMultipleSelection?: boolean;
+  autoCommitDrawSelections?: boolean;
 }
 
 // ---- Component state ----
@@ -94,6 +113,7 @@ export default function ManuscriptAnnotorious({
   confirmDelete,
   confirmDeleteMany,
   allowMultipleSelection = false,
+  autoCommitDrawSelections = false,
 }: Props) {
   const viewerRef = useRef<HTMLDivElement | null>(null);
   const osdRef = useRef<OpenSeadragon.Viewer | null>(null);
@@ -118,6 +138,7 @@ export default function ManuscriptAnnotorious({
   const selectedDisplayIdRef = useRef<string | null>(null);
   const multiSelectedIdsRef = useRef<Set<string>>(new Set());
   const allowMultipleSelectionRef = useRef(allowMultipleSelection);
+  const autoCommitDrawSelectionsRef = useRef(autoCommitDrawSelections);
   const suppressReselectIdRef = useRef<string | null>(null);
   const isDraftAnnotation = (a: Annotation | null | undefined) =>
     Boolean(a && typeof a.id === 'string' && !a.id.startsWith('db:'));
@@ -238,6 +259,10 @@ export default function ManuscriptAnnotorious({
   useEffect(() => {
     allowMultipleSelectionRef.current = allowMultipleSelection;
   }, [allowMultipleSelection]);
+
+  useEffect(() => {
+    autoCommitDrawSelectionsRef.current = autoCommitDrawSelections;
+  }, [autoCommitDrawSelections]);
 
   useEffect(() => {
     confirmDeleteRef.current = confirmDelete;
@@ -384,6 +409,10 @@ export default function ManuscriptAnnotorious({
 
           queueSyncAnnotationClasses();
 
+          let currentMode: 'pan' | 'draw' | 'delete' = 'pan';
+          let deleteHandler: ((a: Annotation | null, element?: unknown) => void) | null = null;
+          let rearmHandler: (() => void) | null = null;
+
           const notifyDelete = (a: Annotation) => {
             if (selectedDisplayIdRef.current === a.id) {
               selectedDisplayIdRef.current = null;
@@ -399,23 +428,66 @@ export default function ManuscriptAnnotorious({
             onSelectRef.current?.(null);
           };
 
+          const addMultiSelectedId = (id: string) => {
+            const next = new Set(multiSelectedIdsRef.current);
+
+            if (next.has(id)) return;
+
+            next.add(id);
+            multiSelectedIdsRef.current = next;
+            emitSelectionIdsChange();
+          };
+
+          const shouldAutoCommitDrawSelection = () =>
+            allowMultipleSelectionRef.current &&
+            autoCommitDrawSelectionsRef.current &&
+            currentMode === 'draw';
+
+          const commitDrawSelectionForContinuousDrawing = (selectionId: string) => {
+            window.setTimeout(() => {
+              if (!shouldAutoCommitDrawSelection()) return;
+
+              const anno = annoRef.current;
+              if (!anno) return;
+
+              const selected = anno.getSelected?.();
+              if (!selected) return;
+
+              const draftAnnotation: Annotation = {
+                ...selected,
+                id: selectionId,
+                type: 'Annotation',
+                body: selected.body ?? [],
+              };
+
+              anno.updateSelected?.(draftAnnotation, true);
+            }, 0);
+          };
+
           anno.on('createSelection', (selection: Annotation) => {
-            selectedDisplayIdRef.current = selection.id;
+            const selectionWithId = withDraftAnnotationId(selection);
+
+            selectedDisplayIdRef.current = selectionWithId.id;
             anno.readOnly = false;
             queueSyncAnnotationClasses();
-            onSelectRef.current?.(selection);
+            onSelectRef.current?.(selectionWithId);
+
+            if (shouldAutoCommitDrawSelection()) {
+              commitDrawSelectionForContinuousDrawing(selectionWithId.id);
+            }
           });
 
           anno.on('createAnnotation', (a: Annotation) => {
             selectedDisplayIdRef.current = a.id;
             anno.readOnly = false;
+
+            if (shouldAutoCommitDrawSelection()) {
+              addMultiSelectedId(a.id);
+            }
+
             queueSyncAnnotationClasses();
             onCreateRef.current?.(a);
           });
-
-          let currentMode: 'pan' | 'draw' | 'delete' = 'pan';
-          let deleteHandler: ((a: Annotation | null, element?: unknown) => void) | null = null;
-          let rearmHandler: (() => void) | null = null;
 
           const getLastMultiSelectedAnnotation = (): Annotation | null => {
             const ids = Array.from(multiSelectedIdsRef.current);
@@ -859,9 +931,19 @@ export default function ManuscriptAnnotorious({
               const anno = annoRef.current;
               if (!anno) return;
 
-              const result = anno.updateSelected?.(annotation);
-              if (result && typeof result === 'object' && 'then' in result) {
-                await result;
+              const selected = anno.getSelected?.();
+              const selectedId = selected?.id;
+              const existing = anno.getAnnotationById?.(annotation.id);
+
+              if (selected && (!selectedId || selectedId === annotation.id)) {
+                const result = anno.updateSelected?.(annotation);
+                if (result && typeof result === 'object' && 'then' in result) {
+                  await result;
+                } else {
+                  await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+                }
+              } else if (existing) {
+                anno.addAnnotation(annotation);
               }
 
               selectedDisplayIdRef.current = annotation.id;

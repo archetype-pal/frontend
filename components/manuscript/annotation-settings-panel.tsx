@@ -106,8 +106,8 @@ export function AnnotationSettingsPanel({
               <span className="text-sm text-foreground">Select multiple annotations</span>
             </label>
             <p className="px-2 text-xs text-muted-foreground">
-              When enabled, multiple existing annotations can remain selected at the same time in
-              move mode.
+              When enabled, multiple annotations can remain selected; standard drafts drawn in
+              sequence stay selected for a shared popup edit.
             </p>
           </div>
         )}

@@ -582,6 +582,8 @@ export default function ManuscriptViewer({
               ...annotation,
               _meta: {
                 ...annotation._meta,
+                allographId: annotation._meta?.allographId ?? filteredAllograph?.id,
+                handId: annotation._meta?.handId ?? selectedHand?.id,
                 annotationType: annotation._meta?.annotationType ?? currentCreationKind,
               },
             } as A9sWithMeta)
@@ -618,7 +620,9 @@ export default function ManuscriptViewer({
       activeTool,
       clearSinglePopupState,
       currentCreationKind,
+      filteredAllograph?.id,
       openPopupCollectionFromAnnotation,
+      selectedHand?.id,
       viewerSettings.allowMultipleBoxes,
     ]
   );
@@ -746,6 +750,7 @@ export default function ManuscriptViewer({
 
       return {
         ...popup.annotation,
+        type: 'Annotation',
         _meta: {
           ...popup.annotation._meta,
           allographId: popup.draftAllographId ?? undefined,
@@ -775,28 +780,30 @@ export default function ManuscriptViewer({
     [getPopupById, viewerSettings.selectMultipleAnnotations]
   );
 
-  const applyPopupIdentityToDraftAnnotation = React.useCallback(
+  const applyPopupValuesToDraftAnnotation = React.useCallback(
     (annotation: A9sAnnotation, popupId: string): A9sAnnotation => {
       const popup = getPopupById(popupId);
       if (!popup) return annotation;
 
       const nextAllographId = popup.draftAllographId ?? undefined;
       const nextHandId = popup.draftHandId ?? undefined;
-      const allographChanged = annotation._meta?.allographId !== nextAllographId;
-
-      const remainingBodies = (annotation.body ?? []).filter(
-        (body) => body.purpose !== 'commenting'
-      );
+      const nextPositionDetails = popup.draftPositionIds
+        .map((id) => {
+          const name = positionNameById.get(id);
+          return name ? { id, name } : null;
+        })
+        .filter((value): value is { id: number; name: string } => value !== null);
 
       return {
         ...annotation,
+        type: 'Annotation',
         _meta: {
           ...annotation._meta,
           allographId: nextAllographId,
           handId: nextHandId,
-          graphcomponentSet: allographChanged ? [] : (annotation._meta?.graphcomponentSet ?? []),
-          positions: allographChanged ? [] : (annotation._meta?.positions ?? []),
-          positionDetails: allographChanged ? [] : (annotation._meta?.positionDetails ?? []),
+          graphcomponentSet: popup.draftGraphcomponentSet,
+          positions: popup.draftPositionIds,
+          positionDetails: nextPositionDetails,
         },
         body: [
           ...(popup.draftAllographText.trim()
@@ -808,11 +815,19 @@ export default function ManuscriptViewer({
                 },
               ]
             : []),
-          ...remainingBodies,
+          ...(popup.draftNoteText.trim()
+            ? [
+                {
+                  type: 'TextualBody',
+                  purpose: 'describing',
+                  value: popup.draftNoteText.trim(),
+                },
+              ]
+            : []),
         ],
       };
     },
-    [getPopupById]
+    [getPopupById, positionNameById]
   );
 
   const handleSaveDraftAnnotation = React.useCallback(
@@ -831,6 +846,7 @@ export default function ManuscriptViewer({
 
       const next: A9sAnnotation = {
         ...popup.annotation,
+        type: 'Annotation',
         _meta: {
           ...popup.annotation._meta,
           allographId: popup.draftAllographId ?? undefined,
@@ -945,7 +961,7 @@ export default function ManuscriptViewer({
               return annotation;
             }
 
-            return applyPopupIdentityToDraftAnnotation(annotation, popupId);
+            return applyPopupValuesToDraftAnnotation(annotation, popupId);
           });
 
           setInitialA9sAnnots(nextAnnotations);
@@ -977,7 +993,7 @@ export default function ManuscriptViewer({
     },
     [
       activeTool,
-      applyPopupIdentityToDraftAnnotation,
+      applyPopupValuesToDraftAnnotation,
       buildStandardAnnotationFromPopup,
       getAnnotationKind,
       getPopupById,
@@ -1908,6 +1924,9 @@ export default function ManuscriptViewer({
               disableEditor={true}
               readOnly={false}
               allowMultipleSelection={viewerSettings.selectMultipleAnnotations}
+              autoCommitDrawSelections={
+                viewerSettings.selectMultipleAnnotations && currentCreationKind === 'public'
+              }
               onSelectionIdsChange={setSelectedAnnotationIds}
               onCreate={handleViewerCreate}
               onDelete={(annotation: A9sAnnotation) => {
