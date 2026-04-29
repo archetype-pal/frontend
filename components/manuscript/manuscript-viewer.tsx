@@ -90,6 +90,7 @@ import {
 } from '@/lib/manuscript-viewer-data';
 
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
+import { formatAllographLabel } from '@/lib/allograph-labels';
 
 import {
   buildHydratedEditorRecordMap,
@@ -270,7 +271,7 @@ export default function ManuscriptViewer({
   const displayAllograph =
     hoveredAllograph ?? filteredAllograph ?? popupSelectedAllograph ?? undefined;
 
-  const activeAllographLabel = displayAllograph?.name ?? undefined;
+  const activeAllographLabel = displayAllograph ? formatAllographLabel(displayAllograph) : undefined;
 
   const countAllographId = displayAllograph?.id ?? null;
 

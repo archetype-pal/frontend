@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { formatAllographLabel } from '@/lib/allograph-labels';
 import type { HandType } from '@/types/hands';
 import type { Allograph } from '@/types/allographs';
 
@@ -202,7 +203,7 @@ export function AnnotationHeader({
           <SearchableSelect
             options={allographs.map((allograph) => ({
               value: allograph.id.toString(),
-              label: allograph.name,
+              label: formatAllographLabel(allograph),
             }))}
             value={selectedAllograph || null}
             onValueChange={(value) => handleAllographChange(value ?? '__all__')}

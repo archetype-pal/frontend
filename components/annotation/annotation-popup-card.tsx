@@ -36,6 +36,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { formatAllographLabel } from '@/lib/allograph-labels';
 
 type PopupTab = 'components' | 'positions' | 'notes';
 
@@ -190,7 +191,7 @@ export function AnnotationPopupCard({
         <SearchableSelect
           options={allographOptions.map((allograph) => ({
             value: String(allograph.id),
-            label: allograph.name,
+            label: formatAllographLabel(allograph),
           }))}
           value={draftAllographId != null ? String(draftAllographId) : null}
           onValueChange={(value) => onDraftAllographIdChange(value ? Number(value) : null)}

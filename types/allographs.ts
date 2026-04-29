@@ -18,6 +18,7 @@ export interface Component {
 export interface Allograph {
   id: number;
   name: string;
+  character_name?: string | null;
   components: Component[];
   positions: Position[];
 }

@@ -5,6 +5,8 @@ import { X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { formatAllographLabel } from '@/lib/allograph-labels';
+import type { Allograph } from '@/types/allographs';
 
 type FilterOption = {
   id: number;
@@ -15,7 +17,7 @@ interface AnnotationFilterPanelProps {
   isOpen: boolean;
   transform: string;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
-  allographs: FilterOption[];
+  allographs: Allograph[];
   hands: FilterOption[];
   selectedAllographIds: number[];
   selectedHandIds: number[];
@@ -94,7 +96,9 @@ export function AnnotationFilterPanel({
                       onChange={() => onToggleAllograph(allograph.id)}
                       className="h-4 w-4 rounded border-gray-300"
                     />
-                    <span className="text-sm text-foreground">{allograph.name}</span>
+                    <span className="text-sm text-foreground">
+                      {formatAllographLabel(allograph)}
+                    </span>
                   </label>
                 ))
               ) : (
