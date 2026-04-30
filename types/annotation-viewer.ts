@@ -71,7 +71,6 @@ export type PopupRecord = {
   draftAllographId: number | null;
   draftHandId: number | null;
   draftInternalNoteText: string;
-  draftPublicNoteText: string;
   draftGraphcomponentSet: A9sGraphComponent[];
   draftPositionIds: number[];
 };

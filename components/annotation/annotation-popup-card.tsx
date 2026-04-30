@@ -88,9 +88,7 @@ interface AnnotationPopupCardProps {
   onDraftPositionIdsChange: (value: number[]) => void;
 
   draftInternalNoteText: string;
-  draftPublicNoteText: string;
   onDraftInternalNoteTextChange: (value: string) => void;
-  onDraftPublicNoteTextChange: (value: string) => void;
 
   onCancelDraftAnnotation: () => void;
   onConfirmDraftAnnotation: () => void;
@@ -174,9 +172,7 @@ export function AnnotationPopupCard({
   draftPositionIds,
   onDraftPositionIdsChange,
   draftInternalNoteText,
-  draftPublicNoteText,
   onDraftInternalNoteTextChange,
-  onDraftPublicNoteTextChange,
   onCancelDraftAnnotation,
   onConfirmDraftAnnotation,
   popupTab,
@@ -954,17 +950,6 @@ export function AnnotationPopupCard({
               value={draftInternalNoteText}
               onChange={(e) => onDraftInternalNoteTextChange(e.target.value)}
               placeholder="Type internal note"
-              rows={4}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Public note</label>
-            <textarea
-              value={draftPublicNoteText}
-              onChange={(e) => onDraftPublicNoteTextChange(e.target.value)}
-              placeholder="Type public note"
               rows={4}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             />

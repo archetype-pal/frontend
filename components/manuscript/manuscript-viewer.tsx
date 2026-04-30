@@ -557,13 +557,6 @@ export default function ManuscriptViewer({
     [updatePopupById]
   );
 
-  const handleDraftPublicNoteTextChange = React.useCallback(
-    (popupId: string, value: string) => {
-      updatePopupById(popupId, { draftPublicNoteText: value });
-    },
-    [updatePopupById]
-  );
-
   const openSinglePopupFromAnnotation = React.useCallback(
     (annotation: A9sWithMeta | null, options?: { clearHover?: boolean }) => {
       if (!annotation) {
@@ -606,9 +599,6 @@ export default function ManuscriptViewer({
         draftHandId: annotationForPopup._meta?.handId ?? null,
         draftInternalNoteText: !isDbId(annotationForPopup.id)
           ? (annotationForPopup.body?.find((b) => b.purpose === 'commenting')?.value ?? '')
-          : '',
-        draftPublicNoteText: !isDbId(annotationForPopup.id)
-          ? (annotationForPopup.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
           : '',
         draftGraphcomponentSet: annotationForPopup._meta?.graphcomponentSet ?? [],
         draftPositionIds: annotationForPopup._meta?.positions ?? [],
@@ -1979,12 +1969,8 @@ export default function ManuscriptViewer({
                       popupCapabilities={popupCapabilities}
                       popupEditorMode={popupEditorMode}
                       draftInternalNoteText={popupRecord.draftInternalNoteText}
-                      draftPublicNoteText={popupRecord.draftPublicNoteText}
                       onDraftInternalNoteTextChange={(value) =>
                         handleDraftInternalNoteTextChange(popupRecord.id, value)
-                      }
-                      onDraftPublicNoteTextChange={(value) =>
-                        handleDraftPublicNoteTextChange(popupRecord.id, value)
                       }
                       metaSummary={metaSummary}
                       popupTransform={popupTransform}
