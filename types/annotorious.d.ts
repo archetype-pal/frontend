@@ -11,6 +11,8 @@ declare module '@recogito/annotorious-openseadragon' {
     numFeatures?: number;
     isDescribed?: boolean;
     annotationType?: string;
+    note?: string;
+    internalNote?: string;
     graphcomponentSet?: Array<{
       component: number;
       componentName?: string;

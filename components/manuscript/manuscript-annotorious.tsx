@@ -20,6 +20,8 @@ export interface Annotation {
     numFeatures?: number;
     isDescribed?: boolean;
     annotationType?: string;
+    note?: string;
+    internalNote?: string;
     graphcomponentSet?: Array<{
       componentName?: string;
       component: number;

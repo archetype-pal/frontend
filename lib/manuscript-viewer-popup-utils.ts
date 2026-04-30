@@ -7,6 +7,7 @@ import type {
   ViewerCapabilities,
 } from '@/types/annotation-viewer';
 import { isDbId } from '@/lib/annotation-popup-utils';
+import { getAllographBodyText, getStandardAnnotationNote } from '@/lib/annotation-notes';
 
 export type PopupPosition = {
   x: number;
@@ -57,9 +58,11 @@ export function getPopupCardViewData(
     ? annotationKind === 'editorial'
       ? 'Editorial Annotation'
       : popupRecord.draftAllographText.trim() || 'New Annotation'
-    : (annotation.body?.find((b) => b.purpose === 'commenting')?.value ??
-      allographNameById.get(annotation._meta?.allographId ?? -1) ??
-      'Annotation');
+    : annotationKind === 'editorial'
+      ? 'Editorial Annotation'
+      : getAllographBodyText(annotation) ||
+        allographNameById.get(annotation._meta?.allographId ?? -1) ||
+        'Annotation';
 
   const positions = annotation._meta?.positionDetails ?? [];
   const hasPositionsTab = positions.length > 0;
@@ -80,12 +83,8 @@ export function getPopupCardViewData(
         }))
       : [];
 
-  const selectedNotes = (annotation.body ?? [])
-    .filter((body) => {
-      const value = body.value?.trim() ?? '';
-      return value.length > 0 && body.purpose !== 'commenting';
-    })
-    .map((body) => body.value!.trim());
+  const selectedNote = getStandardAnnotationNote(annotation);
+  const selectedNotes = selectedNote ? [selectedNote] : [];
 
   return {
     annotation,
@@ -145,6 +144,7 @@ export function getPopupEditorMode(
   const isEditorial = popupRecord.annotation._meta?.annotationType === 'editorial';
 
   if (!isDraft) {
+    if (isEditorial) return 'editorial_existing';
     return popupCapabilities.canViewEditorMeta ? 'standard_existing' : 'public_existing';
   }
 

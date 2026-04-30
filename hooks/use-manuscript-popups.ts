@@ -5,6 +5,11 @@ import * as React from 'react';
 import type { A9sWithMeta, PopupRecord } from '@/types/annotation-viewer';
 import { isDbId } from '@/lib/annotation-popup-utils';
 import {
+  getAllographBodyText,
+  getEditorialInternalNote,
+  getStandardAnnotationNote,
+} from '@/lib/annotation-notes';
+import {
   DEFAULT_SINGLE_POPUP_POSITION,
   type PopupPosition,
 } from '@/lib/manuscript-viewer-popup-utils';
@@ -48,17 +53,11 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
     ): PopupRecord => {
       const isDraft = !isDbId(annotation.id);
 
-      const defaultDraftAllographText = isDraft
-        ? (annotation.body?.find((b) => b.purpose === 'commenting')?.value ?? '')
-        : '';
+      const defaultDraftAllographText = isDraft ? getAllographBodyText(annotation) : '';
 
-      const defaultDraftNoteText = isDraft
-        ? (annotation.body?.find((b) => b.purpose !== 'commenting')?.value ?? '')
-        : '';
+      const defaultDraftNoteText = getStandardAnnotationNote(annotation);
 
-      const defaultDraftInternalNoteText = isDraft
-        ? (annotation.body?.find((b) => b.purpose === 'commenting')?.value ?? '')
-        : '';
+      const defaultDraftInternalNoteText = getEditorialInternalNote(annotation);
 
       const defaultDraftGraphcomponentSet = annotation._meta?.graphcomponentSet ?? [];
 

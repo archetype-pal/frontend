@@ -30,6 +30,8 @@ function groupAnnotations(
   const handMap = new Map<number | null, Map<number, BackendGraph[]>>();
 
   for (const graph of graphs) {
+    if (typeof graph.allograph !== 'number') continue;
+
     const handKey = typeof graph.hand === 'number' ? graph.hand : null;
     let allographMap = handMap.get(handKey);
     if (!allographMap) {

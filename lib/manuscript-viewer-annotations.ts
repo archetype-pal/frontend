@@ -11,16 +11,33 @@ export async function buildInitialViewerAnnotations(params: {
   imageHeight: number;
   allographNameById: Map<number, string>;
   isPublicDemoMode: boolean;
+  includeEditorial?: boolean;
+  token?: string | null;
   currentViewerAnnotations: A9sAnnotation[];
   currentUrl?: string;
 }): Promise<A9sAnnotation[]> {
-  const { itemImageId, imageHeight, allographNameById, currentViewerAnnotations, currentUrl } =
-    params;
+  const {
+    itemImageId,
+    imageHeight,
+    allographNameById,
+    includeEditorial = false,
+    token,
+    currentViewerAnnotations,
+    currentUrl,
+  } = params;
 
-  const list = await fetchAnnotationsForImage(itemImageId);
+  const imageAnnotations = await fetchAnnotationsForImage(itemImageId, undefined, 'image', token);
+  const editorialAnnotations = includeEditorial
+    ? await fetchAnnotationsForImage(itemImageId, undefined, 'editorial', token)
+    : [];
+  const list = [...imageAnnotations, ...editorialAnnotations];
 
   const dbMapped: A9sAnnotation[] = list.map((annotation) =>
-    backendToA9sAnnotation(annotation, imageHeight, allographNameById.get(annotation.allograph))
+    backendToA9sAnnotation(
+      annotation,
+      imageHeight,
+      annotation.allograph != null ? allographNameById.get(annotation.allograph) : undefined
+    )
   );
 
   const currentViewerDrafts = currentViewerAnnotations.filter(

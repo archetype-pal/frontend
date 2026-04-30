@@ -190,6 +190,7 @@ export function AnnotationPopupCard({
   const isStandardDraft = popupEditorMode === 'standard_draft';
   const isStandardExisting = popupEditorMode === 'standard_existing';
   const isEditorialDraft = popupEditorMode === 'editorial_draft';
+  const isEditorialExisting = popupEditorMode === 'editorial_existing';
   const canUseAllographShortcut = isActive && (isStandardDraft || isStandardExisting);
 
   React.useEffect(() => {
@@ -909,24 +910,13 @@ export function AnnotationPopupCard({
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Notes</label>
-
-            {selectedNotes.length > 0 ? (
-              <div className="space-y-2 rounded-md border p-3">
-                {selectedNotes.map((note, index) => (
-                  <div key={`${index}-${note}`} className="text-sm text-muted-foreground">
-                    {note}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                No notes available.
-              </div>
-            )}
-
-            <p className="text-xs text-muted-foreground">
-              Editing notes for existing standard annotations is not wired yet.
-            </p>
+            <textarea
+              value={draftNoteText}
+              onChange={(e) => onDraftNoteTextChange(e.target.value)}
+              placeholder="Type note"
+              rows={5}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
           </div>
 
           <div className="mt-2 flex items-center justify-end gap-2 border-t pt-3">
@@ -938,11 +928,13 @@ export function AnnotationPopupCard({
             </Button>
           </div>
         </div>
-      ) : isEditorialDraft ? (
+      ) : isEditorialDraft || isEditorialExisting ? (
         <div className="max-h-[360px] overflow-auto px-4 py-4 space-y-4">
-          <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-            Editorial annotation draft. Persistence will be wired in a later step.
-          </div>
+          {isEditorialExisting ? (
+            <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+              Changes remain local until you press the main Save button in the toolbar.
+            </div>
+          ) : null}
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Internal note</label>

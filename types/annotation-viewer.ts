@@ -5,7 +5,8 @@ export type AnnotationPopupEditorMode =
   | 'public_existing'
   | 'standard_draft'
   | 'standard_existing'
-  | 'editorial_draft';
+  | 'editorial_draft'
+  | 'editorial_existing';
 
 export type A9sFeatureDetail = {
   id: number;
@@ -32,6 +33,8 @@ export type A9sWithMeta = A9sAnnotation & {
     numFeatures?: number;
     isDescribed?: boolean;
     annotationType?: string;
+    note?: string;
+    internalNote?: string;
     graphcomponentSet?: A9sGraphComponent[];
     positions?: number[];
     positionDetails?: A9sPositionDetail[];

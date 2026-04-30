@@ -1,5 +1,6 @@
 import type { Annotation } from '@/components/manuscript/manuscript-annotorious';
 import type { BackendGraph } from '@/services/annotations';
+import { buildStandardAnnotationBody } from '@/lib/annotation-notes';
 
 // Convert rect (xywh) <-> Polygon for the backend.
 
@@ -51,6 +52,10 @@ export function backendToA9sAnnotation(
   const numFeatures = backend.num_features ?? fallbackNumFeatures(backend);
   const isDescribed = backend.is_described ?? numFeatures > 0;
 
+  const isEditorial = backend.annotation_type === 'editorial';
+  const note = backend.note?.trim() ?? '';
+  const internalNote = backend.internal_note?.trim() ?? '';
+
   const base: Annotation = {
     id: `db:${backend.id}`,
     type: 'Annotation',
@@ -62,11 +67,13 @@ export function backendToA9sAnnotation(
       },
     },
     _meta: {
-      allographId: backend.allograph,
-      handId: backend.hand,
+      allographId: backend.allograph ?? undefined,
+      handId: backend.hand ?? undefined,
       numFeatures,
       isDescribed,
-      annotationType: backend.annotation_type,
+      annotationType: backend.annotation_type ?? undefined,
+      note,
+      internalNote,
       graphcomponentSet: (backend.graphcomponent_set ?? []).map((gc) => ({
         component: gc.component,
         componentName: gc.component_name,
@@ -78,14 +85,8 @@ export function backendToA9sAnnotation(
     },
   };
 
-  if (allographLabel) {
-    base.body = [
-      {
-        type: 'TextualBody',
-        purpose: 'commenting',
-        value: allographLabel,
-      },
-    ];
+  if (!isEditorial) {
+    base.body = buildStandardAnnotationBody(allographLabel ?? '', note);
   }
 
   return base;

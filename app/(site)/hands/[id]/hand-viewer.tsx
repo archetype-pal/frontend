@@ -78,7 +78,7 @@ function enrichGraphs(
   return backendGraphs
     .map((g) => {
       const iiifImage = imageMap.get(g.item_image);
-      if (!iiifImage) return null;
+      if (!iiifImage || typeof g.allograph !== 'number') return null;
 
       return {
         id: g.id,

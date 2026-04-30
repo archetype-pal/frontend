@@ -18,7 +18,9 @@ export interface BackendGraphComponent {
 export interface BackendGraph {
   id: number;
   item_image: number;
-  annotation_type?: string;
+  annotation_type?: 'image' | 'text' | 'editorial' | 'unknown' | null;
+  note?: string;
+  internal_note?: string;
   annotation: {
     type: 'Feature';
     geometry: {
@@ -28,8 +30,8 @@ export interface BackendGraph {
     properties?: Record<string, unknown>;
     crs?: unknown;
   };
-  allograph: number;
-  hand: number;
+  allograph: number | null;
+  hand: number | null;
   graphcomponent_set: BackendGraphComponent[];
   positions: number[];
   position_details?: BackendPositionDetail[];
@@ -46,31 +48,49 @@ function authHeaders(token: string): HeadersInit {
   };
 }
 
+function optionalAuthHeaders(token?: string | null): HeadersInit | undefined {
+  return token ? { Authorization: `Token ${token}` } : undefined;
+}
+
 export async function fetchAnnotationsForImage(
   imageId: string,
   allographId?: string,
-  annotationType: string = 'image'
+  annotationType: string | null = 'image',
+  token?: string | null
 ): Promise<BackendGraph[]> {
   const params = new URLSearchParams({ item_image: imageId });
   if (allographId) params.set('allograph', allographId);
   if (annotationType) params.set('annotation_type', annotationType);
   const res = await apiFetch(`/api/v1/manuscripts/graphs/?${params.toString()}`, {
     cache: 'no-store',
+    headers: optionalAuthHeaders(token),
   });
   if (!res.ok) throw new Error('Failed to load annotations');
   return res.json();
 }
 
+type ViewerAnnotationWritePayload = {
+  item_image?: number;
+  annotation: BackendGraph['annotation'];
+  annotation_type?: 'image' | 'editorial';
+  allograph?: number | null;
+  hand?: number | null;
+  graphcomponent_set?: BackendGraphComponent[];
+  positions?: number[];
+  note?: string;
+  internal_note?: string;
+};
+
 export async function createViewerAnnotation(
   token: string,
-  payload: Omit<BackendGraph, 'id' | 'annotation_type'> & { annotation_type?: 'image' }
+  payload: ViewerAnnotationWritePayload & { item_image: number }
 ) {
   const res = await apiFetch(`/api/v1/annotations/graphs/`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify({
       ...payload,
-      annotation_type: 'image',
+      annotation_type: payload.annotation_type ?? 'image',
     }),
   });
   if (!res.ok) {
@@ -83,15 +103,12 @@ export async function createViewerAnnotation(
 export async function updateViewerAnnotation(
   token: string,
   id: number,
-  partial: Partial<Omit<BackendGraph, 'id' | 'annotation_type'>> & { annotation_type?: 'image' }
+  partial: ViewerAnnotationWritePayload
 ) {
   const res = await apiFetch(`/api/v1/annotations/graphs/${id}/`, {
     method: 'PATCH',
     headers: authHeaders(token),
-    body: JSON.stringify({
-      ...partial,
-      annotation_type: 'image',
-    }),
+    body: JSON.stringify(partial),
   });
   if (!res.ok) {
     const text = await res.text();
