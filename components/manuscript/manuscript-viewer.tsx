@@ -1991,6 +1991,7 @@ export default function ManuscriptViewer({
                       dragHandleProps={dragHandleProps}
                       zIndex={zIndex}
                       onPointerDownCapture={onPointerDownCapture}
+                      isActive={isActive}
                       isShareUrlVisible={popupRecord.isShareUrlVisible}
                       shareUrl={popupRecord.shareUrl}
                       onCopyShareUrl={() => void handleCopyShareUrl(popupRecord.id)}

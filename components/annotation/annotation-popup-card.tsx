@@ -34,7 +34,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { SearchableSelect } from '@/components/ui/searchable-select';
+import { SearchableSelect, type SearchableSelectHandle } from '@/components/ui/searchable-select';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 
@@ -57,6 +57,7 @@ interface AnnotationPopupCardProps {
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
   zIndex?: number;
   onPointerDownCapture?: React.PointerEventHandler<HTMLDivElement>;
+  isActive?: boolean;
 
   isShareUrlVisible: boolean;
   shareUrl: string;
@@ -132,6 +133,14 @@ function AnnotationMetaSummaryBlock({ metaSummary }: { metaSummary?: AnnotationP
   );
 }
 
+function isTextEntryTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+
+  const tagName = target.tagName.toLowerCase();
+  return tagName === 'input' || tagName === 'textarea' || tagName === 'select';
+}
+
 export function AnnotationPopupCard({
   title,
   isDraftAnnotation,
@@ -142,6 +151,7 @@ export function AnnotationPopupCard({
   dragHandleProps,
   zIndex,
   onPointerDownCapture,
+  isActive = true,
   isShareUrlVisible,
   shareUrl,
   onCopyShareUrl,
@@ -177,18 +187,39 @@ export function AnnotationPopupCard({
   selectedNotes,
 }: AnnotationPopupCardProps) {
   const { getPluralLabel } = useModelLabels();
+  const allographSelectRef = React.useRef<SearchableSelectHandle>(null);
 
   const isPublicDemoDraft = popupEditorMode === 'public_demo_draft';
   const isPublicExisting = popupEditorMode === 'public_existing';
   const isStandardDraft = popupEditorMode === 'standard_draft';
   const isStandardExisting = popupEditorMode === 'standard_existing';
   const isEditorialDraft = popupEditorMode === 'editorial_draft';
+  const canUseAllographShortcut = isActive && (isStandardDraft || isStandardExisting);
+
+  React.useEffect(() => {
+    if (!canUseAllographShortcut) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if (event.repeat) return;
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.key.toLowerCase() !== 'a') return;
+      if (isTextEntryTarget(event.target)) return;
+
+      event.preventDefault();
+      allographSelectRef.current?.open();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canUseAllographShortcut]);
 
   const standardIdentityFields = (
     <div className="space-y-4">
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">Allograph</label>
         <SearchableSelect
+          ref={allographSelectRef}
           options={allographOptions.map((allograph) => ({
             value: String(allograph.id),
             label: formatAllographLabel(allograph),
