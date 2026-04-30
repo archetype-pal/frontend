@@ -408,12 +408,12 @@ g.a9s-selection .a9s-inner,
 g.a9s-selection rect,
 g.a9s-selection polygon,
 g.a9s-selection path {
-  stroke: cornflowerblue !important;
+  stroke: rgb(45, 212, 191) !important;
   fill: transparent !important;
 }
 
 g.a9s-selection .a9s-outer {
-  stroke: cornflowerblue !important;
+  stroke: rgb(45, 212, 191) !important;
   stroke-width: 4px !important;
   fill: transparent !important;
 }
@@ -422,12 +422,12 @@ g.a9s-selection:hover .a9s-inner,
 g.a9s-selection:hover rect,
 g.a9s-selection:hover polygon,
 g.a9s-selection:hover path {
-  stroke: cornflowerblue !important;
+  stroke: rgb(45, 212, 191) !important;
   fill: transparent !important;
 }
 
 g.a9s-selection:hover .a9s-outer {
-  stroke: cornflowerblue !important;
+  stroke: rgb(45, 212, 191) !important;
   stroke-width: 4px !important;
   fill: transparent !important;
 }
@@ -445,4 +445,68 @@ g.a9s-annotation.a9s-multi-selected .a9s-outer {
   stroke: #2563eb !important;
   fill: rgba(100, 149, 237, 0.24) !important;
   stroke: cornflowerblue !important;
+}
+
+g.a9s-annotation.a9s-editorial .a9s-inner,
+g.a9s-annotation.a9s-editorial rect,
+g.a9s-annotation.a9s-editorial polygon,
+g.a9s-annotation.a9s-editorial path,
+g.a9s-selection.a9s-editorial .a9s-inner,
+g.a9s-selection.a9s-editorial rect,
+g.a9s-selection.a9s-editorial polygon,
+g.a9s-selection.a9s-editorial path {
+  stroke: rgb(34, 34, 34) !important;
+  fill: rgba(34, 34, 34, 0.16) !important;
+}
+
+g.a9s-annotation.a9s-editorial .a9s-outer,
+g.a9s-selection.a9s-editorial .a9s-outer {
+  stroke: rgb(34, 34, 34) !important;
+  fill: transparent !important;
+  stroke-width: 4px !important;
+}
+
+g.a9s-annotation.a9s-editorial:hover .a9s-inner,
+g.a9s-annotation.a9s-editorial:hover .a9s-outer,
+g.a9s-annotation.a9s-editorial:hover rect,
+g.a9s-annotation.a9s-editorial:hover polygon,
+g.a9s-annotation.a9s-editorial:hover path {
+  stroke: rgb(34, 34, 34) !important;
+  stroke-width: 4px !important;
+  fill: rgba(34, 34, 34, 0.2) !important;
+}
+
+g.a9s-annotation.a9s-draft .a9s-inner,
+g.a9s-annotation.a9s-draft rect,
+g.a9s-annotation.a9s-draft polygon,
+g.a9s-annotation.a9s-draft path,
+g.a9s-selection.a9s-draft .a9s-inner,
+g.a9s-selection.a9s-draft rect,
+g.a9s-selection.a9s-draft polygon,
+g.a9s-selection.a9s-draft path {
+  stroke: rgb(254, 45, 235) !important;
+  fill: rgba(254, 45, 235, 0.18) !important;
+  stroke-width: 4px !important;
+}
+
+g.a9s-annotation.a9s-draft .a9s-outer,
+g.a9s-selection.a9s-draft .a9s-outer {
+  stroke: rgb(254, 45, 235) !important;
+  fill: transparent !important;
+  stroke-width: 4px !important;
+}
+
+g.a9s-annotation.a9s-draft:hover .a9s-inner,
+g.a9s-annotation.a9s-draft:hover .a9s-outer,
+g.a9s-annotation.a9s-draft:hover rect,
+g.a9s-annotation.a9s-draft:hover polygon,
+g.a9s-annotation.a9s-draft:hover path,
+g.a9s-selection.a9s-draft:hover .a9s-inner,
+g.a9s-selection.a9s-draft:hover .a9s-outer,
+g.a9s-selection.a9s-draft:hover rect,
+g.a9s-selection.a9s-draft:hover polygon,
+g.a9s-selection.a9s-draft:hover path {
+  stroke: rgb(254, 45, 235) !important;
+  stroke-width: 4px !important;
+  fill: rgba(254, 45, 235, 0.22) !important;
 }

@@ -144,6 +144,8 @@ export default function ManuscriptAnnotorious({
   const suppressReselectIdRef = useRef<string | null>(null);
   const isDraftAnnotation = (a: Annotation | null | undefined) =>
     Boolean(a && typeof a.id === 'string' && !a.id.startsWith('db:'));
+  const isEditorialAnnotation = (a: Annotation | null | undefined) =>
+    a?._meta?.annotationType === 'editorial';
 
   const emitSelectionIdsChange = React.useCallback(() => {
     onSelectionIdsChangeRef.current?.(Array.from(multiSelectedIdsRef.current));
@@ -159,12 +161,14 @@ export default function ManuscriptAnnotorious({
         'a9s-described',
         'a9s-undescribed',
         'a9s-current-selected',
-        'a9s-multi-selected'
+        'a9s-multi-selected',
+        'a9s-editorial',
+        'a9s-draft'
       );
     });
 
     root.querySelectorAll<SVGGElement>('g.a9s-selection').forEach((el) => {
-      el.classList.remove('a9s-described', 'a9s-undescribed');
+      el.classList.remove('a9s-described', 'a9s-undescribed', 'a9s-editorial', 'a9s-draft');
     });
 
     const annotations = (anno.getAnnotations?.() ?? []) as Annotation[];
@@ -172,6 +176,16 @@ export default function ManuscriptAnnotorious({
     annotations.forEach((a) => {
       const el = root.querySelector<SVGGElement>(`g.a9s-annotation[data-id="${a.id}"]`);
       if (!el) return;
+
+      if (isDraftAnnotation(a)) {
+        el.classList.add('a9s-draft');
+        return;
+      }
+
+      if (isEditorialAnnotation(a)) {
+        el.classList.add('a9s-editorial');
+        return;
+      }
 
       const isDescribed = a._meta?.isDescribed === true;
       el.classList.add(isDescribed ? 'a9s-described' : 'a9s-undescribed');
@@ -184,13 +198,41 @@ export default function ManuscriptAnnotorious({
       }
     });
 
-    const selectedId = anno.getSelected?.()?.id ?? selectedDisplayIdRef.current;
+    const selectedAnnotation = (anno.getSelected?.() ?? null) as Annotation | null;
+    const selectedId = selectedAnnotation?.id || selectedDisplayIdRef.current;
+    const selectedIsDraft =
+      isDraftAnnotation(selectedAnnotation) ||
+      Boolean(selectedDisplayIdRef.current && !selectedDisplayIdRef.current.startsWith('db:'));
+    const selectedIsEditorial = !selectedIsDraft && isEditorialAnnotation(selectedAnnotation);
+
+    root
+      .querySelectorAll<SVGGElement>(
+        'g.a9s-selection, g.a9s-annotation.selected, g.a9s-annotation.editable'
+      )
+      .forEach((el) => {
+        el.classList.remove('a9s-described', 'a9s-undescribed', 'a9s-editorial', 'a9s-draft');
+
+        if (selectedIsDraft) {
+          el.classList.add('a9s-draft');
+        } else if (selectedIsEditorial) {
+          el.classList.add('a9s-editorial');
+        }
+      });
+
     if (selectedId) {
       const baseEl = root.querySelector<SVGGElement>(`g.a9s-annotation[data-id="${selectedId}"]`);
       if (baseEl) {
         baseEl.classList.add('a9s-current-selected');
       }
     }
+
+    root.querySelectorAll<SVGGElement>('g.a9s-selection').forEach((el) => {
+      if (selectedIsDraft) {
+        el.classList.add('a9s-draft');
+      } else if (selectedIsEditorial) {
+        el.classList.add('a9s-editorial');
+      }
+    });
   }, []);
 
   const applyAnnotationVisibility = React.useCallback(() => {
@@ -214,7 +256,7 @@ export default function ManuscriptAnnotorious({
       el.classList.toggle('a9s-hidden-by-filter', !visible);
     });
 
-    const selectedId = anno.getSelected?.()?.id ?? selectedDisplayIdRef.current;
+    const selectedId = anno.getSelected?.()?.id || selectedDisplayIdRef.current;
 
     root.querySelectorAll<SVGGElement>('g.a9s-selection').forEach((el) => {
       const visible = !selectedId || (visibleById.get(selectedId) ?? true);
