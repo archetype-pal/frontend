@@ -24,6 +24,7 @@ import { AnnotationFilterPanel } from './annotation-filter-panel';
 import { AnnotationSettingsPanel } from './annotation-settings-panel';
 import { AllographGalleryDialog } from './allograph-gallery-dialog';
 import { Button } from '@/components/ui/button';
+import { dismissActionNotification, showActionNotification } from '@/components/ui/action-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupCard } from '@/components/annotation/annotation-popup-card';
@@ -112,6 +113,40 @@ import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
 
 const ManuscriptAnnotorious = dynamic(() => import('./manuscript-annotorious'), { ssr: false });
+const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
+
+function annotationCountLabel(count: number): string {
+  return `${count} annotation${count === 1 ? '' : 's'}`;
+}
+
+function countPhrase(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function joinCountPhrases(parts: string[]): string {
+  if (parts.length <= 1) return parts[0] ?? '';
+  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+
+  return `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`;
+}
+
+function formatSavedAnnotationDescription({
+  createdCount,
+  updatedCount,
+  deletedCount,
+}: {
+  createdCount: number;
+  updatedCount: number;
+  deletedCount: number;
+}): string {
+  const parts = [
+    createdCount > 0 ? countPhrase(createdCount, 'created annotation', 'created annotations') : '',
+    updatedCount > 0 ? countPhrase(updatedCount, 'updated annotation', 'updated annotations') : '',
+    deletedCount > 0 ? countPhrase(deletedCount, 'deleted annotation', 'deleted annotations') : '',
+  ].filter(Boolean);
+
+  return parts.length > 0 ? `Saved ${joinCountPhrases(parts)}.` : 'No annotation changes to save.';
+}
 
 interface ManuscriptViewerProps {
   imageId: string;
@@ -435,6 +470,84 @@ export default function ManuscriptViewer({
       return null;
     },
     [getAnnotationKind]
+  );
+
+  const notifyLocalAnnotationUpdate = React.useCallback(
+    (count: number) => {
+      const isBulk = count > 1;
+
+      showActionNotification({
+        kind: isBulk ? 'bulk-updated' : 'updated',
+        title: isBulk ? `${annotationCountLabel(count)} updated` : 'Annotation updated',
+        description: canPersistAnyAnnotations
+          ? 'Pending save.'
+          : `${isBulk ? 'Selected annotations were' : 'The annotation was'} updated in the viewer.`,
+      });
+    },
+    [canPersistAnyAnnotations]
+  );
+
+  const notifyLocalAnnotationCreate = React.useCallback(
+    (count: number) => {
+      const isBulk = count > 1;
+
+      showActionNotification({
+        kind: isBulk ? 'bulk-created' : 'created',
+        title: isBulk ? `${annotationCountLabel(count)} created` : 'Annotation created',
+        description: canPersistAnyAnnotations
+          ? 'Pending save.'
+          : `${isBulk ? 'Annotations were' : 'Annotation was'} created in the viewer.`,
+      });
+    },
+    [canPersistAnyAnnotations]
+  );
+
+  const notifyDeletedAnnotations = React.useCallback(
+    (annotations: A9sAnnotation[]) => {
+      if (annotations.length === 0) return;
+
+      const canonical = annotations.map((annotation) => getCanonicalAnnotation(annotation));
+      const draftCount = canonical.filter((annotation) => !isDbId(annotation.id)).length;
+      const savedCount = canonical.length - draftCount;
+      const isBulk = canonical.length > 1;
+
+      const description =
+        savedCount > 0 && canPersistAnyAnnotations
+          ? 'Pending save.'
+          : `${annotationCountLabel(canonical.length)} removed from the viewer.`;
+
+      showActionNotification({
+        kind: isBulk ? 'bulk-deleted' : 'deleted',
+        title: isBulk
+          ? `${annotationCountLabel(canonical.length)} deleted`
+          : draftCount === 1
+            ? 'Draft annotation deleted'
+            : 'Annotation marked for deletion',
+        description,
+      });
+    },
+    [canPersistAnyAnnotations, getCanonicalAnnotation]
+  );
+
+  const handleSelectionIdsChange = React.useCallback(
+    (ids: string[]) => {
+      setSelectedAnnotationIds(ids);
+
+      if (!viewerSettings.selectMultipleAnnotations) return;
+
+      if (ids.length === 0) {
+        dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
+        return;
+      }
+
+      showActionNotification({
+        kind: 'selected',
+        title: `${annotationCountLabel(ids.length)} selected`,
+        description: 'Selection updated.',
+        duration: 1800,
+      });
+    },
+    [viewerSettings.selectMultipleAnnotations]
   );
 
   const decorateCreatedAnnotation = React.useCallback(
@@ -931,6 +1044,7 @@ export default function ManuscriptViewer({
         viewerApiRef.current?.clearSelection?.();
         viewerApiRef.current?.enablePan();
         setActiveTool('move');
+        notifyLocalAnnotationUpdate(1);
         return;
       }
 
@@ -973,6 +1087,7 @@ export default function ManuscriptViewer({
 
       removePopupById(popupId);
       viewerApiRef.current?.clearSelectedAnnotationIds?.();
+      notifyLocalAnnotationCreate(selectedDraftIds.length);
 
       if (shouldResumeDraw) {
         rearmCreateTool();
@@ -990,6 +1105,8 @@ export default function ManuscriptViewer({
       getPopupById,
       getSelectedDraftIdsForPopup,
       handleSaveDraftAnnotation,
+      notifyLocalAnnotationCreate,
+      notifyLocalAnnotationUpdate,
       rearmCreateTool,
       removePopupById,
       updatePopupById,
@@ -1043,6 +1160,30 @@ export default function ManuscriptViewer({
     [getCanonicalAnnotation]
   );
 
+  const handleViewerDelete = React.useCallback(
+    (annotation: A9sAnnotation, context?: { bulk: boolean }) => {
+      setEditorRecords((prev) => markAnnotationDeleted(prev, annotation.id));
+
+      const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
+      setInitialA9sAnnots(currentAnnotations);
+      setA9sSnapshot(currentAnnotations);
+
+      removePopupById(annotation.id);
+
+      if (!context?.bulk) {
+        notifyDeletedAnnotations([annotation]);
+      }
+    },
+    [notifyDeletedAnnotations, removePopupById]
+  );
+
+  const handleViewerDeleteMany = React.useCallback(
+    (annotations: A9sAnnotation[]) => {
+      notifyDeletedAnnotations(annotations);
+    },
+    [notifyDeletedAnnotations]
+  );
+
   const handleToggleFullScreen = () => {
     setIsFullScreen((prev) => !prev);
 
@@ -1088,7 +1229,11 @@ export default function ManuscriptViewer({
     if (!canPersistAnyAnnotations || !manuscriptImage) return;
 
     if (!token) {
-      window.alert('Please log in again before saving annotations.');
+      showActionNotification({
+        kind: 'error',
+        title: 'Sign in required',
+        description: 'Please log in again before saving annotations.',
+      });
       return;
     }
 
@@ -1110,9 +1255,17 @@ export default function ManuscriptViewer({
         .find((message): message is string => Boolean(message));
 
       if (validationError) {
-        window.alert(validationError);
+        showActionNotification({
+          kind: 'error',
+          title: 'Annotation details required',
+          description: validationError,
+        });
         return;
       }
+
+      const createdCount = upsertRecords.filter((record) => record.dirtyState === 'created').length;
+      const updatedCount = upsertRecords.filter((record) => record.dirtyState === 'updated').length;
+      const deletedCount = deleteRecords.length;
 
       const tasks: Promise<unknown>[] = [];
 
@@ -1198,9 +1351,23 @@ export default function ManuscriptViewer({
       setInitialA9sAnnots(mapped);
       setA9sSnapshot(mapped);
       setEditorRecords(buildHydratedEditorRecordMap(mapped));
+
+      showActionNotification({
+        kind: 'saved',
+        title: 'Annotations saved',
+        description: formatSavedAnnotationDescription({
+          createdCount,
+          updatedCount,
+          deletedCount,
+        }),
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save annotations.';
-      window.alert(message);
+      showActionNotification({
+        kind: 'error',
+        title: 'Failed to save annotations',
+        description: message,
+      });
     }
   }, [
     allographNameById,
@@ -1296,9 +1463,23 @@ export default function ManuscriptViewer({
       const selected = annotation ? getCanonicalAnnotation(annotation) : null;
 
       if (selected) {
+        if (!viewerSettings.selectMultipleAnnotations) {
+          const isDrawnDraft = activeTool === 'draw' && !isDbId(selected.id);
+
+          showActionNotification({
+            id: ANNOTATION_SELECTION_TOAST_ID,
+            kind: isDrawnDraft ? 'created' : 'selected',
+            title: isDrawnDraft ? 'Draft annotation drawn' : 'Annotation selected',
+            description: isDrawnDraft ? 'Draft annotation created.' : 'Selection updated.',
+            duration: 1800,
+          });
+        }
+
         openSinglePopupFromAnnotation(selected, { clearHover: true });
         return;
       }
+
+      dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
 
       pendingPopupClearRef.current = window.setTimeout(() => {
         pendingPopupClearRef.current = null;
@@ -1308,8 +1489,10 @@ export default function ManuscriptViewer({
     [
       cancelPendingPopupClear,
       clearSinglePopupState,
+      activeTool,
       getCanonicalAnnotation,
       openSinglePopupFromAnnotation,
+      viewerSettings.selectMultipleAnnotations,
     ]
   );
 
@@ -1952,17 +2135,10 @@ export default function ManuscriptViewer({
               autoCommitDrawSelections={
                 viewerSettings.selectMultipleAnnotations && currentCreationKind === 'public'
               }
-              onSelectionIdsChange={setSelectedAnnotationIds}
+              onSelectionIdsChange={handleSelectionIdsChange}
               onCreate={handleViewerCreate}
-              onDelete={(annotation: A9sAnnotation) => {
-                setEditorRecords((prev) => markAnnotationDeleted(prev, annotation.id));
-
-                const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
-                setInitialA9sAnnots(currentAnnotations);
-                setA9sSnapshot(currentAnnotations);
-
-                removePopupById(annotation.id);
-              }}
+              onDelete={handleViewerDelete}
+              onDeleteMany={handleViewerDeleteMany}
               confirmDelete={handleConfirmDelete}
               confirmDeleteMany={handleConfirmDeleteMany}
               onSelect={handleSelectAnnotationFromViewer}

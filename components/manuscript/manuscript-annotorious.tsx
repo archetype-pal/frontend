@@ -79,7 +79,8 @@ export type ViewerApi = {
 interface Props {
   iiifImageUrl: string;
   onCreate?: (annotation: Annotation) => void;
-  onDelete?: (annotation: Annotation) => void;
+  onDelete?: (annotation: Annotation, context?: { bulk: boolean }) => void;
+  onDeleteMany?: (annotations: Annotation[]) => void;
   onSelect?: (annotation: Annotation | null) => void;
   onSelectionIdsChange?: (ids: string[]) => void;
   exposeApi?: (api: ViewerApi) => void;
@@ -105,6 +106,7 @@ export default function ManuscriptAnnotorious({
   iiifImageUrl,
   onCreate,
   onDelete,
+  onDeleteMany,
   onSelect,
   onSelectionIdsChange,
   exposeApi,
@@ -125,6 +127,7 @@ export default function ManuscriptAnnotorious({
   } | null>(null);
   const onCreateRef = useRef(onCreate);
   const onDeleteRef = useRef(onDelete);
+  const onDeleteManyRef = useRef(onDeleteMany);
   const confirmDeleteRef = useRef(confirmDelete);
   const confirmDeleteManyRef = useRef(confirmDeleteMany);
   const onSelectRef = useRef(onSelect);
@@ -142,6 +145,7 @@ export default function ManuscriptAnnotorious({
   const allowMultipleSelectionRef = useRef(allowMultipleSelection);
   const autoCommitDrawSelectionsRef = useRef(autoCommitDrawSelections);
   const suppressReselectIdRef = useRef<string | null>(null);
+  const multiSelectionHandledByClickIdRef = useRef<string | null>(null);
   const isDraftAnnotation = (a: Annotation | null | undefined) =>
     Boolean(a && typeof a.id === 'string' && !a.id.startsWith('db:'));
   const isEditorialAnnotation = (a: Annotation | null | undefined) =>
@@ -285,6 +289,9 @@ export default function ManuscriptAnnotorious({
   useEffect(() => {
     onDeleteRef.current = onDelete;
   }, [onDelete]);
+  useEffect(() => {
+    onDeleteManyRef.current = onDeleteMany;
+  }, [onDeleteMany]);
   useEffect(() => {
     onSelectRef.current = onSelect;
   }, [onSelect]);
@@ -482,6 +489,26 @@ export default function ManuscriptAnnotorious({
             emitSelectionIdsChange();
           };
 
+          const toggleMultiSelectedIdFromClick = (id: string) => {
+            const next = new Set(multiSelectedIdsRef.current);
+
+            if (next.has(id)) {
+              next.delete(id);
+            } else {
+              next.add(id);
+            }
+
+            multiSelectedIdsRef.current = next;
+            multiSelectionHandledByClickIdRef.current = id;
+            emitSelectionIdsChange();
+
+            window.setTimeout(() => {
+              if (multiSelectionHandledByClickIdRef.current === id) {
+                multiSelectionHandledByClickIdRef.current = null;
+              }
+            }, 50);
+          };
+
           const shouldAutoCommitDrawSelection = () =>
             allowMultipleSelectionRef.current &&
             autoCommitDrawSelectionsRef.current &&
@@ -617,9 +644,10 @@ export default function ManuscriptAnnotorious({
               queueSyncAnnotationClasses();
 
               annotationsToDelete.forEach((item) => {
-                onDeleteRef.current?.(item);
+                onDeleteRef.current?.(item, { bulk: true });
               });
 
+              onDeleteManyRef.current?.(annotationsToDelete);
               onSelectRef.current?.(null);
               return true;
             }
@@ -639,6 +667,11 @@ export default function ManuscriptAnnotorious({
 
             if (toggleOffActiveAnnotation(a)) {
               return;
+            }
+
+            if (allowMultipleSelectionRef.current && currentMode === 'pan') {
+              toggleMultiSelectedIdFromClick(a.id);
+              queueSyncAnnotationClasses();
             }
 
             if (currentMode === 'pan') {
@@ -673,16 +706,20 @@ export default function ManuscriptAnnotorious({
             selectedDisplayIdRef.current = a?.id ?? null;
 
             if (allowMultipleSelectionRef.current && currentMode === 'pan' && a) {
-              const next = new Set(multiSelectedIdsRef.current);
-
-              if (next.has(a.id)) {
-                next.delete(a.id);
+              if (multiSelectionHandledByClickIdRef.current === a.id) {
+                multiSelectionHandledByClickIdRef.current = null;
               } else {
-                next.add(a.id);
-              }
+                const next = new Set(multiSelectedIdsRef.current);
 
-              multiSelectedIdsRef.current = next;
-              emitSelectionIdsChange();
+                if (next.has(a.id)) {
+                  next.delete(a.id);
+                } else {
+                  next.add(a.id);
+                }
+
+                multiSelectedIdsRef.current = next;
+                emitSelectionIdsChange();
+              }
             }
 
             if (currentMode === 'draw') {
@@ -825,9 +862,10 @@ export default function ManuscriptAnnotorious({
                   queueSyncAnnotationClasses();
 
                   annotationsToDelete.forEach((annotation) => {
-                    onDeleteRef.current?.(annotation);
+                    onDeleteRef.current?.(annotation, { bulk: true });
                   });
 
+                  onDeleteManyRef.current?.(annotationsToDelete);
                   onSelectRef.current?.(null);
                   return;
                 }

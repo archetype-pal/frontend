@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ChevronLeft, ChevronRight, Search, Columns, Download, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { dismissActionNotification, showActionNotification } from '@/components/ui/action-toast';
 
 export interface BulkAction {
   label: string;
@@ -198,6 +199,32 @@ export function DataTable<TData, TValue>({
 
   const selectedCount = Object.keys(rowSelection).length;
   const selectedIds = Object.keys(rowSelection);
+  const previousSelectedCountRef = useRef(0);
+
+  useEffect(() => {
+    if (!enableRowSelection || !bulkActions?.length) return;
+
+    if (selectedCount === 0) {
+      if (previousSelectedCountRef.current > 0) {
+        dismissActionNotification('data-table-selection-toast');
+      }
+
+      previousSelectedCountRef.current = selectedCount;
+      return;
+    }
+
+    if (selectedCount !== previousSelectedCountRef.current) {
+      showActionNotification({
+        id: 'data-table-selection-toast',
+        kind: 'selected',
+        title: `${selectedCount} row${selectedCount === 1 ? '' : 's'} selected`,
+        description: 'Selection updated.',
+        duration: 1800,
+      });
+    }
+
+    previousSelectedCountRef.current = selectedCount;
+  }, [bulkActions?.length, enableRowSelection, selectedCount]);
 
   function handleExport() {
     const headers = table
