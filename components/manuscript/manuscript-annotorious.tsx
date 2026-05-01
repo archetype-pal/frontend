@@ -35,6 +35,26 @@ export interface Annotation {
 type AnnotoriousFactory = typeof import('@recogito/annotorious-openseadragon').default;
 type AnnotoriousInstance = ReturnType<AnnotoriousFactory>;
 
+export type ViewerImageAdjustments = {
+  brightness: number;
+  contrast: number;
+  saturation: number;
+};
+
+function normalizeRotation(degrees: number): number {
+  return ((degrees % 360) + 360) % 360;
+}
+
+function buildViewerImageFilter(adjustments: ViewerImageAdjustments): string {
+  const { brightness, contrast, saturation } = adjustments;
+
+  if (brightness === 100 && contrast === 100 && saturation === 100) {
+    return 'none';
+  }
+
+  return `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+}
+
 const createDraftAnnotationId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return `#${crypto.randomUUID()}`;
@@ -58,6 +78,9 @@ export type ViewerApi = {
   zoomIn: () => void;
   zoomOut: () => void;
   goHome: () => void;
+  rotateBy: (degrees: number) => void;
+  resetRotation: () => void;
+  setImageAdjustments: (adjustments: ViewerImageAdjustments) => void;
   enablePan: () => void;
   enableDraw: () => void;
   enableDelete: () => void;
@@ -751,6 +774,22 @@ export default function ManuscriptAnnotorious({
               v?.viewport.applyConstraints();
             },
             goHome: () => osdRef.current?.viewport.goHome(),
+            rotateBy: (degrees: number) => {
+              const viewer = osdRef.current;
+              if (!viewer) return;
+
+              const currentRotation = viewer.viewport.getRotation();
+              viewer.viewport.setRotation(normalizeRotation(currentRotation + degrees), true);
+            },
+            resetRotation: () => {
+              osdRef.current?.viewport.setRotation(0, true);
+            },
+            setImageAdjustments: (adjustments: ViewerImageAdjustments) => {
+              viewerRef.current?.style.setProperty(
+                '--manuscript-image-filter',
+                buildViewerImageFilter(adjustments)
+              );
+            },
 
             // --- MOVE TOOL ---
             enablePan: () => {
@@ -1133,6 +1172,7 @@ export default function ManuscriptAnnotorious({
       )}
       <div
         ref={viewerRef}
+        className="manuscript-osd-viewer"
         style={{ width: '100%', height: '100%', background: '#000', position: 'relative' }}
       />
     </div>

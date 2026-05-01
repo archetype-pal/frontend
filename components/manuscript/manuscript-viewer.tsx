@@ -12,6 +12,10 @@ import {
   Trash2,
   Expand,
   SquarePen,
+  RefreshCcw,
+  RotateCcw,
+  RotateCw,
+  SlidersHorizontal,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -25,6 +29,8 @@ import { AnnotationSettingsPanel } from './annotation-settings-panel';
 import { AllographGalleryDialog } from './allograph-gallery-dialog';
 import { Button } from '@/components/ui/button';
 import { dismissActionNotification, showActionNotification } from '@/components/ui/action-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupCard } from '@/components/annotation/annotation-popup-card';
@@ -50,7 +56,11 @@ import {
   getViewerCapabilities,
 } from '@/lib/viewer-capabilities';
 
-import type { ViewerApi, Annotation as A9sAnnotation } from './manuscript-annotorious';
+import type {
+  ViewerApi,
+  Annotation as A9sAnnotation,
+  ViewerImageAdjustments,
+} from './manuscript-annotorious';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
 import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
@@ -114,9 +124,20 @@ import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-setti
 
 const ManuscriptAnnotorious = dynamic(() => import('./manuscript-annotorious'), { ssr: false });
 const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
+const DEFAULT_IMAGE_ADJUSTMENTS: ViewerImageAdjustments = {
+  brightness: 100,
+  contrast: 100,
+  saturation: 100,
+};
+
+type ImageAdjustmentKey = keyof ViewerImageAdjustments;
 
 function annotationCountLabel(count: number): string {
   return `${count} annotation${count === 1 ? '' : 's'}`;
+}
+
+function normalizeViewerRotation(degrees: number): number {
+  return ((degrees % 360) + 360) % 360;
 }
 
 function countPhrase(count: number, singular: string, plural: string): string {
@@ -146,6 +167,37 @@ function formatSavedAnnotationDescription({
   ].filter(Boolean);
 
   return parts.length > 0 ? `Saved ${joinCountPhrases(parts)}.` : 'No annotation changes to save.';
+}
+
+function ImageAdjustmentSlider({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3 text-xs">
+        <span className="font-medium text-foreground">{label}</span>
+        <span className="tabular-nums text-muted-foreground">{value}%</span>
+      </div>
+      <Slider
+        aria-label={label}
+        min={min}
+        max={max}
+        step={5}
+        value={[value]}
+        onValueChange={(nextValue) => onChange(nextValue[0] ?? value)}
+      />
+    </div>
+  );
 }
 
 interface ManuscriptViewerProps {
@@ -221,6 +273,9 @@ export default function ManuscriptViewer({
   const [activeTool, setActiveTool] = React.useState<'move' | 'draw' | 'delete'>('move');
   const [currentCreationKind, setCurrentCreationKind] =
     React.useState<AnnotationCreationKind>('public');
+  const [viewerRotation, setViewerRotation] = React.useState(0);
+  const [imageAdjustments, setImageAdjustments] =
+    React.useState<ViewerImageAdjustments>(DEFAULT_IMAGE_ADJUSTMENTS);
 
   const [isFullScreen, setIsFullScreen] = React.useState(false);
 
@@ -236,6 +291,12 @@ export default function ManuscriptViewer({
   );
 
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = React.useState(false);
+
+  const hasImageAdjustments =
+    imageAdjustments.brightness !== DEFAULT_IMAGE_ADJUSTMENTS.brightness ||
+    imageAdjustments.contrast !== DEFAULT_IMAGE_ADJUSTMENTS.contrast ||
+    imageAdjustments.saturation !== DEFAULT_IMAGE_ADJUSTMENTS.saturation;
+  const hasImageToolChanges = hasImageAdjustments || viewerRotation !== 0;
 
   const {
     viewerSettings,
@@ -1203,6 +1264,27 @@ export default function ManuscriptViewer({
     setA9sSnapshot(api.getAnnotations?.() ?? []);
   }, []);
 
+  const handleRotateViewer = React.useCallback((degrees: number) => {
+    viewerApiRef.current?.rotateBy(degrees);
+    setViewerRotation((prev) => normalizeViewerRotation(prev + degrees));
+  }, []);
+
+  const handleImageAdjustmentChange = React.useCallback(
+    (key: ImageAdjustmentKey, value: number) => {
+      setImageAdjustments((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
+    },
+    []
+  );
+
+  const handleResetImageTools = React.useCallback(() => {
+    setImageAdjustments(DEFAULT_IMAGE_ADJUSTMENTS);
+    viewerApiRef.current?.resetRotation();
+    setViewerRotation(0);
+  }, []);
+
   const handleMoveTool = () => {
     viewerApiRef.current?.enablePan();
     setActiveTool('move');
@@ -1537,6 +1619,8 @@ export default function ManuscriptViewer({
     setSelectedHand(undefined);
     setEditorRecords({});
     setSelectedAnnotationIds([]);
+    setViewerRotation(0);
+    setImageAdjustments(DEFAULT_IMAGE_ADJUSTMENTS);
 
     setVisibilityFilters({
       allographIds: [],
@@ -1625,6 +1709,11 @@ export default function ManuscriptViewer({
       }
     };
   }, []);
+
+  React.useEffect(() => {
+    if (!osdReady) return;
+    viewerApiRef.current?.setImageAdjustments(imageAdjustments);
+  }, [imageAdjustments, osdReady]);
 
   // hydrate annotation visibility from localStorage
   React.useEffect(() => {
@@ -2012,6 +2101,94 @@ export default function ManuscriptViewer({
                   </TooltipTrigger>
                   <TooltipContent>Zoom Out</TooltipContent>
                 </Tooltip>
+
+                <Popover>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={hasImageToolChanges ? 'default' : 'ghost'}
+                          size="icon"
+                          aria-label="Image tools"
+                        >
+                          <SlidersHorizontal className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Image Tools</TooltipContent>
+                  </Tooltip>
+                  <PopoverContent
+                    align="start"
+                    side={viewerSettings.toolbarPosition === 'horizontal' ? 'bottom' : 'right'}
+                    className="w-72 space-y-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold leading-none">Image tools</div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          Rotation and tile adjustments
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 gap-1"
+                        onClick={handleResetImageTools}
+                      >
+                        <RefreshCcw className="h-3.5 w-3.5" />
+                        Reset
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-1"
+                        onClick={() => handleRotateViewer(-90)}
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Left
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-1"
+                        onClick={() => handleRotateViewer(90)}
+                      >
+                        <RotateCw className="h-3.5 w-3.5" />
+                        Right
+                      </Button>
+                    </div>
+
+                    <div className="space-y-4 border-t pt-4">
+                      <ImageAdjustmentSlider
+                        label="Brightness"
+                        min={50}
+                        max={150}
+                        value={imageAdjustments.brightness}
+                        onChange={(value) => handleImageAdjustmentChange('brightness', value)}
+                      />
+                      <ImageAdjustmentSlider
+                        label="Contrast"
+                        min={50}
+                        max={150}
+                        value={imageAdjustments.contrast}
+                        onChange={(value) => handleImageAdjustmentChange('contrast', value)}
+                      />
+                      <ImageAdjustmentSlider
+                        label="Saturation"
+                        min={0}
+                        max={200}
+                        value={imageAdjustments.saturation}
+                        onChange={(value) => handleImageAdjustmentChange('saturation', value)}
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
 
                 <Tooltip>
                   <TooltipTrigger asChild>

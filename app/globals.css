@@ -300,6 +300,11 @@
   cursor: not-allowed !important;
 }
 
+.manuscript-osd-viewer .openseadragon-canvas canvas,
+.manuscript-osd-viewer .openseadragon-canvas img {
+  filter: var(--manuscript-image-filter, none);
+}
+
 /* Allograph hover/highlight - use purple so it does not clash with undescribed yellow */
 g.a9s-annotation.a9s-highlight rect.a9s-outer,
 g.a9s-annotation.a9s-highlight rect.a9s-inner,
