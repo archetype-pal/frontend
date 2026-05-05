@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Maximize2, ExternalLink } from 'lucide-react';
+import { GalleryHorizontal, ExternalLink } from 'lucide-react';
 import {
   openLightboxWithImage,
   openLightboxWithGraph,
@@ -44,7 +44,11 @@ export function OpenLightboxButton({
   }
 
   const icon =
-    size === 'icon' ? <Maximize2 className="h-4 w-4" /> : <ExternalLink className="h-4 w-4 mr-2" />;
+    size === 'icon' ? (
+      <GalleryHorizontal className="h-4 w-4" />
+    ) : (
+      <ExternalLink className="h-4 w-4 mr-2" />
+    );
   const label = size !== 'icon' ? 'Open in Lightbox' : undefined;
 
   return (
