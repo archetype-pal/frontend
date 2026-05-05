@@ -192,6 +192,12 @@ export function AnnotationPopupCard({
   const isEditorialDraft = popupEditorMode === 'editorial_draft';
   const isEditorialExisting = popupEditorMode === 'editorial_existing';
   const canUseAllographShortcut = isActive && (isStandardDraft || isStandardExisting);
+  const annotationKindLabel =
+    isStandardDraft || isStandardExisting
+      ? 'Standard'
+      : annotationKind === 'editorial'
+        ? 'Editorial'
+        : 'Public';
 
   React.useEffect(() => {
     if (!canUseAllographShortcut) return;
@@ -608,9 +614,7 @@ export function AnnotationPopupCard({
               <span>Saved annotation</span>
             )}
 
-            <span className="rounded border px-1.5 py-0.5">
-              {annotationKind === 'editorial' ? 'Editorial' : 'Public'}
-            </span>
+            <span className="rounded border px-1.5 py-0.5">{annotationKindLabel}</span>
           </div>
         </div>
 
