@@ -119,7 +119,7 @@ export function getPopupZIndex(index: number, isActive: boolean) {
 
 export function getPopupMetaSummary(
   popupRecord: PopupRecord,
-  allographNameById: Map<number, string>,
+  allographLabelById: Map<number, string>,
   handNameById: Map<number, string>
 ): AnnotationPopupMetaSummary {
   const meta = popupRecord.annotation._meta;
@@ -130,7 +130,7 @@ export function getPopupMetaSummary(
     kindLabel: annotationKind === 'editorial' ? 'Editorial' : 'Public',
     allographLabel:
       typeof meta?.allographId === 'number'
-        ? (allographNameById.get(meta.allographId) ?? null)
+        ? (allographLabelById.get(meta.allographId) ?? null)
         : null,
     handLabel: typeof meta?.handId === 'number' ? (handNameById.get(meta.handId) ?? null) : null,
   };

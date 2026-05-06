@@ -6,6 +6,7 @@ import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 import type { BackendGraph } from '@/services/annotations';
+import { formatAllographLabel } from '@/lib/allograph-labels';
 import { cn } from '@/lib/utils';
 
 interface AllographGroup {
@@ -26,7 +27,7 @@ function groupAnnotations(
   allographs: Allograph[]
 ): HandGroup[] {
   const handLabelById = new Map(hands.map((h) => [h.id, h.name]));
-  const allographLabelById = new Map(allographs.map((a) => [a.id, a.name]));
+  const allographLabelById = new Map(allographs.map((a) => [a.id, formatAllographLabel(a)]));
   const handMap = new Map<number | null, Map<number, BackendGraph[]>>();
 
   for (const graph of graphs) {

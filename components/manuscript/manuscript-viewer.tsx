@@ -353,6 +353,10 @@ export default function ManuscriptViewer({
     () => new Map(allographs.map((a) => [a.id, a.name])),
     [allographs]
   );
+  const allographLabelById = React.useMemo(
+    () => new Map(allographs.map((a) => [a.id, formatAllographLabel(a)])),
+    [allographs]
+  );
   const handNameById = React.useMemo(
     () => new Map(hands.map((hand) => [hand.id, hand.name])),
     [hands]
@@ -2327,7 +2331,11 @@ export default function ManuscriptViewer({
               const popupCapabilities = getPopupCapabilities(popupRecord, viewerCapabilities);
               const popupEditorMode = getPopupEditorMode(popupRecord, popupCapabilities);
               const annotationKind = getAnnotationKindFromPopupRecord(popupRecord);
-              const metaSummary = getPopupMetaSummary(popupRecord, allographNameById, handNameById);
+              const metaSummary = getPopupMetaSummary(
+                popupRecord,
+                allographLabelById,
+                handNameById
+              );
               const isActive = popupRecord.id === activePopupId;
               const { x: initialX, y: initialY } = getPopupInitialPosition(
                 index,
