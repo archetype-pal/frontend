@@ -34,3 +34,23 @@ export async function apiFetch(path: string, init?: RequestInit): Promise<Respon
     throw err;
   }
 }
+
+/**
+ * apiFetch with the `Authorization: Token …` header pre-set.
+ *
+ * Accepts a nullable token so optional-auth services (read endpoints that
+ * upgrade their response when authenticated) can call this unconditionally
+ * instead of branching at every call site. When token is null/undefined or
+ * empty, no Authorization header is set.
+ */
+export async function authFetch(
+  path: string,
+  token: string | null | undefined,
+  init?: RequestInit
+): Promise<Response> {
+  const headers = new Headers(init?.headers);
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Token ${token}`);
+  }
+  return apiFetch(path, { ...init, headers });
+}
