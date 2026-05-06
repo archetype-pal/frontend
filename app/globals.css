@@ -41,6 +41,18 @@
 
   --font-serif: var(--font-lora), Georgia, Cambria, serif;
   --font-display: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+
+  /*
+   * Editorial colour pair used by the texts dashboard (Transcription vs
+   * Translation). Components consume these as named utilities
+   * (`bg-transcription`, `border-translation/30`, …) and as raw HSL
+   * channels for bespoke wash backgrounds via
+   * `bg-[hsl(var(--c-transcription-h)_50%_96%)]`.
+   */
+  --color-transcription: hsl(
+    var(--c-transcription-h) var(--c-transcription-s) var(--c-transcription-l)
+  );
+  --color-translation: hsl(var(--c-translation-h) var(--c-translation-s) var(--c-translation-l));
 }
 
 /* ── Light theme (warm academic palette) ─────────────────────────────── */
@@ -72,6 +84,12 @@
     --chart-4: hsl(43 74% 66%);
     --chart-5: hsl(27 87% 67%);
     --radius: 0.5rem;
+    --c-transcription-h: 31;
+    --c-transcription-s: 55%;
+    --c-transcription-l: 50%;
+    --c-translation-h: 201;
+    --c-translation-s: 45%;
+    --c-translation-l: 50%;
   }
 
   .dark {
@@ -99,6 +117,12 @@
     --chart-3: hsl(30 80% 55%);
     --chart-4: hsl(280 65% 60%);
     --chart-5: hsl(340 75% 55%);
+    --c-transcription-h: 31;
+    --c-transcription-s: 55%;
+    --c-transcription-l: 60%;
+    --c-translation-h: 201;
+    --c-translation-s: 45%;
+    --c-translation-l: 60%;
   }
 }
 
