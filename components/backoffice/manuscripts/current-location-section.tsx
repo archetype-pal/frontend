@@ -20,12 +20,13 @@ import {
   createItemPart,
   updateItemPart,
   createCurrentItem,
-  getCurrentItems,
   getRepositories,
 } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
-import type { ItemPartNested, Repository } from '@/types/backoffice';
+import { walkPaginated } from '@/lib/backoffice/walk-paginated';
+import { authFetch } from '@/lib/api-fetch';
+import type { CurrentItemOption, ItemPartNested, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
 
 interface CurrentLocationSectionProps {
@@ -68,11 +69,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
     enabled: !!token,
   });
 
-  const repositories: Repository[] = !repositoriesData
-    ? []
-    : Array.isArray(repositoriesData)
-      ? repositoriesData
-      : repositoriesData.results;
+  const repositories: Repository[] = repositoriesData ?? [];
 
   const [saving, setSaving] = useState(false);
 
@@ -80,12 +77,16 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
     if (!token || !repository || !shelfmark.trim()) return;
     setSaving(true);
     try {
-      const existingItems = await getCurrentItems(token, {
-        repository: Number(repository),
-        limit: 500,
-      });
+      // Walk all pages — `limit: 500` was silently capped at DRF's
+      // max_limit (100), so a heavily-curated repository's late current_items
+      // would be missed by the find-match step and we'd create a duplicate
+      // `(repository, shelfmark)` row.
+      const existingItems = await walkPaginated<CurrentItemOption>(
+        `/api/v1/manuscripts/management/current-items/?repository=${Number(repository)}&limit=100`,
+        (path) => authFetch(path, token)
+      );
       let currentItemId: number;
-      const match = existingItems.results.find(
+      const match = existingItems.find(
         (ci) => ci.shelfmark.toLowerCase() === shelfmark.trim().toLowerCase()
       );
       if (match) {

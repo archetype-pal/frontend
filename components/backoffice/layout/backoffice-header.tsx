@@ -36,7 +36,18 @@ function useBreadcrumbs(segmentLabels: Record<string, string>) {
 
   return segments.map((segment, index) => {
     const href = '/' + segments.slice(0, index + 1).join('/');
-    let label = segmentLabels[segment] ?? decodeURIComponent(segment);
+    // `decodeURIComponent` throws URIError on malformed percent-encoding
+    // (e.g. a stray `%` from a hand-typed URL). Without the guard, the
+    // entire breadcrumb component crashes — and through React's error
+    // propagation, the backoffice header along with it. Fall back to the
+    // raw segment so the page still renders.
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(segment);
+    } catch {
+      decoded = segment;
+    }
+    let label = segmentLabels[segment] ?? decoded;
 
     // Try to resolve entity name from recent entities for dynamic segments
     if (!segmentLabels[segment] && index > 1) {

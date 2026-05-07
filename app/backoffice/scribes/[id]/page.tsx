@@ -13,11 +13,14 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { EntityEditorActions } from '@/components/backoffice/common/entity-editor-actions';
-import { getScribe, updateScribe, deleteScribe, getHands } from '@/services/backoffice/scribes';
+import { getScribe, updateScribe, deleteScribe } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
+import { walkPaginated } from '@/lib/backoffice/walk-paginated';
+import { authFetch } from '@/lib/api-fetch';
+import type { HandListItem } from '@/types/backoffice';
 
 export default function ScribeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: rawId } = use(params);
@@ -32,9 +35,17 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
     enabled: !!token,
   });
 
+  // Walk all pages — `getHands(token, { scribe })` returned only the
+  // first DRF page (default 20). A productive scribe can have many hands
+  // across many manuscripts; the per-scribe listing in the editor would
+  // hide entries 21+ and the count would lie about the actual breadth.
   const { data: hands } = useQuery({
     queryKey: backofficeKeys.hands.list({ scribe: id }),
-    queryFn: () => getHands(token!, { scribe: id }),
+    queryFn: () =>
+      walkPaginated<HandListItem>(
+        `/api/v1/management/scribes/hands/?scribe=${id}&limit=100`,
+        (path) => authFetch(path, token!)
+      ),
     enabled: !!token,
   });
 
@@ -156,15 +167,15 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
       {/* Hands list */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium">Hands ({hands?.results?.length ?? 0})</h3>
+          <h3 className="text-sm font-medium">Hands ({hands?.length ?? 0})</h3>
         </div>
-        {hands?.results?.length === 0 ? (
+        {hands?.length === 0 ? (
           <div className="rounded-md border border-dashed p-6 text-center text-muted-foreground text-sm">
             No hands associated with this scribe.
           </div>
         ) : (
           <div className="rounded-md border divide-y">
-            {hands?.results?.map((hand) => (
+            {hands?.map((hand) => (
               <Link
                 key={hand.id}
                 href={`/backoffice/hands/${hand.id}`}

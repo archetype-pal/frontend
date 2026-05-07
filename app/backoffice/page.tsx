@@ -155,7 +155,17 @@ export default function BackofficeDashboardPage() {
 
   const publications = useQuery({
     queryKey: backofficeKeys.publications.all(),
-    queryFn: () => getPublications(token!, { limit: 200 }),
+    queryFn: () => getPublications(token!, { limit: 1 }),
+    enabled: !!token,
+  });
+
+  // Separate count-only query for the draft pending-tasks indicator. The
+  // earlier `publications.data?.results?.filter(...).length` only counted
+  // drafts in the first 100 publications (DRF max_limit), silently lying
+  // about the queue depth when a busy editor had >100 publications.
+  const draftPublications = useQuery({
+    queryKey: backofficeKeys.publications.list({ status: 'Draft' }),
+    queryFn: () => getPublications(token!, { limit: 1, status: 'Draft' }),
     enabled: !!token,
   });
 
@@ -179,7 +189,7 @@ export default function BackofficeDashboardPage() {
   });
 
   const pendingCount = pendingComments.data?.count ?? 0;
-  const draftCount = publications.data?.results?.filter((p) => p.status === 'Draft').length ?? 0;
+  const draftCount = draftPublications.data?.count ?? 0;
   const outOfSyncIndexes = searchStats.data?.indexes?.filter((i) => !i.in_sync) ?? [];
   const hasPendingTasks = pendingCount > 0 || draftCount > 0 || outOfSyncIndexes.length > 0;
 
@@ -195,12 +205,20 @@ export default function BackofficeDashboardPage() {
 
   return (
     <div className="space-y-8 max-w-5xl">
-      {/* Greeting */}
+      {/* Greeting — `getGreeting` and `formatDate` read the local clock, so
+          their output depends on timezone. Server (typically UTC) and the
+          researcher's browser (any zone) routinely disagree, which produced
+          a React hydration mismatch warning AND a brief flash of the wrong
+          greeting. `suppressHydrationWarning` lets the client value win
+          without React complaining; the day/greeting then matches the
+          researcher's actual time of day. */}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-2xl font-semibold tracking-tight" suppressHydrationWarning>
           {getGreeting()}, {firstName}
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">{formatDate()}</p>
+        <p className="text-sm text-muted-foreground mt-1" suppressHydrationWarning>
+          {formatDate()}
+        </p>
       </div>
 
       {/* Pending Tasks */}

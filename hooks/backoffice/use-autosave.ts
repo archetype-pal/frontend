@@ -9,6 +9,22 @@ interface AutosaveData<T> {
   savedAt: number;
 }
 
+// Validate a parsed value matches the AutosaveData<T> shape: a plain
+// object carrying both `data` and a numeric `savedAt`. `'null'`, arrays,
+// and old-format objects without these keys would otherwise leak undefined
+// into callers — the editor's recovery prompt would offer to restore a
+// draft that doesn't actually exist. Module-scope so its identity is
+// stable across renders (the hook's useCallbacks don't need it in deps).
+function isAutosavePayload(value: unknown): value is { data: unknown; savedAt: number } {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    'data' in value &&
+    typeof (value as { savedAt?: unknown }).savedAt === 'number'
+  );
+}
+
 /**
  * Autosave hook that periodically saves form data to localStorage.
  *
@@ -57,13 +73,24 @@ export function useAutosave<T>(key: string, data: T, dirty: boolean, intervalMs 
     }
 
     setStatus('idle');
+    // Track the inner "Saving..." → save() timer so cleanup cancels it.
+    // Without this, a manual server save (which flips dirty back to false
+    // and triggers cleanup) could race with an in-flight 300ms timer and
+    // write a stale localStorage draft after the cleanup ran — the next
+    // page load would then offer recovery for an already-saved record.
+    let pendingSaveTimer: ReturnType<typeof setTimeout> | null = null;
     const timer = setInterval(() => {
       setStatus('saving');
-      // Small delay so the "Saving..." text is visible
-      setTimeout(() => save(), 300);
+      pendingSaveTimer = setTimeout(() => {
+        pendingSaveTimer = null;
+        save();
+      }, 300);
     }, intervalMs);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      if (pendingSaveTimer !== null) clearTimeout(pendingSaveTimer);
+    };
   }, [dirty, intervalMs, save]);
 
   // Recover saved draft
@@ -71,8 +98,8 @@ export function useAutosave<T>(key: string, data: T, dirty: boolean, intervalMs 
     try {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return null;
-      const parsed: AutosaveData<T> = JSON.parse(raw);
-      return parsed.data;
+      const parsed: unknown = JSON.parse(raw);
+      return isAutosavePayload(parsed) ? (parsed.data as T) : null;
     } catch {
       return null;
     }
@@ -83,7 +110,8 @@ export function useAutosave<T>(key: string, data: T, dirty: boolean, intervalMs 
     try {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return { exists: false, savedAt: null };
-      const parsed: AutosaveData<T> = JSON.parse(raw);
+      const parsed: unknown = JSON.parse(raw);
+      if (!isAutosavePayload(parsed)) return { exists: false, savedAt: null };
       return { exists: true, savedAt: parsed.savedAt };
     } catch {
       return { exists: false, savedAt: null };

@@ -26,6 +26,7 @@ import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { getGraphs, deleteGraph } from '@/services/backoffice/annotations';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import type { GraphItem } from '@/types/backoffice';
 import { toast } from 'sonner';
 
@@ -193,13 +194,14 @@ export default function AnnotationsPage() {
       variant: 'destructive',
       icon: <Trash2 className="h-3 w-3" />,
       action: async (ids) => {
-        try {
-          await Promise.all(ids.map((id) => deleteGraph(token!, Number(id))));
-          toast.success(`${ids.length} annotation(s) deleted`);
-          queryClient.invalidateQueries({ queryKey: backofficeKeys.graphs.all() });
-        } catch {
-          toast.error('Failed to delete some annotations');
-        }
+        await runBulkAction({
+          ids,
+          action: (id) => deleteGraph(token!, Number(id)),
+          invalidate: () =>
+            queryClient.invalidateQueries({ queryKey: backofficeKeys.graphs.all() }),
+          pastTense: 'deleted',
+          noun: 'annotation',
+        });
       },
     },
   ];

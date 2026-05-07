@@ -152,7 +152,10 @@ export function SearchCommand() {
   // Register Cmd+K / Ctrl+K shortcut
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+      // Caps Lock makes `e.key` come through as 'K', so the literal
+      // 'k' check would silently break the quick-search shortcut for
+      // caps-locked users.
+      if (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setOpen((prev) => !prev);
       }

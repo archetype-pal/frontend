@@ -27,10 +27,28 @@ function emitChange() {
   for (const listener of listeners) listener();
 }
 
+function isValidRecentEntity(value: unknown): value is RecentEntity {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const v = value as Partial<RecentEntity>;
+  return (
+    typeof v.label === 'string' &&
+    typeof v.href === 'string' &&
+    typeof v.type === 'string' &&
+    typeof v.visitedAt === 'number'
+  );
+}
+
 function readFromStorage(): RecentEntity[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    // Guard against `'null'`, scalars, or `'{...}'` in storage — older
+    // clients or hand-edited values that would otherwise crash every
+    // downstream `.filter` / `.find` on the result. Per-item validation
+    // protects `e.href.startsWith(...)` calls in the dashboard from
+    // partially-malformed entries inside an otherwise-valid array.
+    return Array.isArray(parsed) ? parsed.filter(isValidRecentEntity) : [];
   } catch {
     return [];
   }
@@ -41,7 +59,19 @@ function getSnapshot(): RecentEntity[] {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw === cachedRaw) return cachedSnapshot;
   cachedRaw = raw;
-  cachedSnapshot = raw ? JSON.parse(raw) : [];
+  // Guard against corrupted / manually-edited localStorage. Without this,
+  // a malformed value would throw on every backoffice render via
+  // useSyncExternalStore.
+  try {
+    if (!raw) {
+      cachedSnapshot = [];
+    } else {
+      const parsed = JSON.parse(raw);
+      cachedSnapshot = Array.isArray(parsed) ? parsed.filter(isValidRecentEntity) : [];
+    }
+  } catch {
+    cachedSnapshot = [];
+  }
   return cachedSnapshot;
 }
 

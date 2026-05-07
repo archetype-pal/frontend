@@ -1,5 +1,7 @@
 import { backofficeGet } from './api-client';
 import { createCrudService } from './crud-factory';
+import { walkPaginated } from '@/lib/backoffice/walk-paginated';
+import { authFetch } from '@/lib/api-fetch';
 import type {
   PaginatedResponse,
   HistoricalItemListItem,
@@ -134,7 +136,14 @@ const repositoriesCrud = createCrudService<PaginatedResponse<Repository>, Reposi
   '/api/v1/manuscripts/management/repositories/'
 );
 
-export const getRepositories = (token: string) => repositoriesCrud.list(token);
+// Walk all pages so consumers (the repositories CRUD page and the
+// physical-volumes filter dropdown) see every repository. The earlier
+// `repositoriesCrud.list(token)` returned the first DRF page only,
+// silently capping the list at 20.
+export const getRepositories = (token: string): Promise<Repository[]> =>
+  walkPaginated<Repository>('/api/v1/manuscripts/management/repositories/?limit=100', (path) =>
+    authFetch(path, token)
+  );
 export const createRepository = repositoriesCrud.create;
 export const updateRepository = repositoriesCrud.update;
 export const deleteRepository = repositoriesCrud.remove;

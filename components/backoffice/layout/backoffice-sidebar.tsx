@@ -13,6 +13,7 @@ import {
   PenTool,
   Type,
   FileText,
+  ScrollText,
   MessageSquare,
   Image,
   Users,
@@ -79,6 +80,7 @@ function getNavigation(
         { label: 'Scribes', href: '/backoffice/scribes', icon: Users },
         { label: 'Hands', href: '/backoffice/hands', icon: Hand },
         { label: 'Annotations', href: '/backoffice/annotations', icon: PenTool },
+        { label: 'Texts', href: '/backoffice/texts', icon: ScrollText },
         { label: 'Characters', href: '/backoffice/symbols', icon: Type },
       ],
       subGroups: [
@@ -112,6 +114,7 @@ function getNavigation(
       items: [
         { label: 'User Management', href: '/backoffice/users', icon: UserCog },
         { label: 'Search Engine', href: '/backoffice/search-engine', icon: Search },
+        { label: 'Data Quality', href: '/backoffice/quality', icon: Settings },
         { label: 'Translations', href: '/backoffice/translations', icon: Languages },
         { label: 'Site Features', href: '/backoffice/site-features', icon: ToggleLeft },
       ],
@@ -225,7 +228,12 @@ function useSubGroupOpen(label: string, defaultOpen: boolean) {
   const toggle = useCallback(() => {
     setOpen((prev) => {
       const next = !prev;
-      localStorage.setItem(key, next ? '1' : '0');
+      try {
+        localStorage.setItem(key, next ? '1' : '0');
+      } catch {
+        // Quota exceeded / private mode — the sidebar still toggles via
+        // state; the preference just won't persist across reloads.
+      }
       return next;
     });
   }, [key]);

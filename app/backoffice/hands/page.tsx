@@ -8,8 +8,9 @@ import { PenTool, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
-import { getHands } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { walkPaginated } from '@/lib/backoffice/walk-paginated';
+import { authFetch } from '@/lib/api-fetch';
 import type { HandListItem } from '@/types/backoffice';
 
 const columns: ColumnDef<HandListItem>[] = [
@@ -81,9 +82,16 @@ const columns: ColumnDef<HandListItem>[] = [
 export default function HandsPage() {
   const { token } = useAuth();
 
+  // The earlier `getHands(token)` returned only the first DRF page (20),
+  // but the header showed `data.count` — admins saw "150 hands" with only
+  // 20 rows visible. Walk all pages so the count and the table agree, and
+  // client-side search/pagination on the DataTable spans the full set.
   const { data } = useQuery({
     queryKey: backofficeKeys.hands.all(),
-    queryFn: () => getHands(token!),
+    queryFn: () =>
+      walkPaginated<HandListItem>('/api/v1/management/scribes/hands/?limit=100', (path) =>
+        authFetch(path, token!)
+      ),
     enabled: !!token,
   });
 
@@ -93,13 +101,13 @@ export default function HandsPage() {
         <PenTool className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Hands</h1>
-          <p className="text-sm text-muted-foreground">{data?.count ?? '...'} hands</p>
+          <p className="text-sm text-muted-foreground">{data?.length ?? '...'} hands</p>
         </div>
       </div>
 
       <DataTable
         columns={columns}
-        data={data?.results ?? []}
+        data={data ?? []}
         searchColumn="name"
         searchPlaceholder="Search hands..."
         pageSize={25}

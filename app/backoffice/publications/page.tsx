@@ -24,14 +24,12 @@ import {
 } from '@/components/backoffice/common/data-table';
 import { FilterBar, type FilterConfig } from '@/components/backoffice/common/filter-bar';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
-import {
-  getPublications,
-  updatePublication,
-  deletePublication,
-} from '@/services/backoffice/publications';
+import { updatePublication, deletePublication } from '@/services/backoffice/publications';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { walkPaginated } from '@/lib/backoffice/walk-paginated';
+import { authFetch } from '@/lib/api-fetch';
+import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import type { PublicationListItem } from '@/types/backoffice';
-import { toast } from 'sonner';
 
 const pubFilters: FilterConfig[] = [
   {
@@ -156,14 +154,22 @@ export default function PublicationsPage() {
     execute: (slugs: string[]) => Promise<void>;
   } | null>(null);
 
+  // Walk all pages so the client-side filter spans every publication.
+  // The earlier `getPublications(token, { limit: 200 })` was silently
+  // capped to 100 by DRF's BoundedLimitOffsetPagination, hiding row 101+
+  // from this page (admins doing bulk publish/unpublish couldn't reach them).
   const { data } = useQuery({
     queryKey: backofficeKeys.publications.all(),
-    queryFn: () => getPublications(token!, { limit: 200 }),
+    queryFn: () =>
+      walkPaginated<PublicationListItem>(
+        '/api/v1/media/management/publications/?limit=100',
+        (path) => authFetch(path, token!)
+      ),
     enabled: !!token,
   });
 
   // Client-side filtering
-  const filtered = (data?.results ?? []).filter((pub) => {
+  const filtered = (data ?? []).filter((pub) => {
     if (filterValues.status && filterValues.status !== '__all') {
       if (pub.status !== filterValues.status) return false;
     }
@@ -175,20 +181,21 @@ export default function PublicationsPage() {
     return true;
   });
 
+  const invalidatePubs = () =>
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
+
   const bulkActions: BulkAction[] = [
     {
       label: 'Publish',
       icon: <CheckCircle className="h-3 w-3" />,
       action: async (slugs) => {
-        try {
-          await Promise.all(
-            slugs.map((slug) => updatePublication(token!, slug, { status: 'Published' }))
-          );
-          toast.success(`${slugs.length} publication(s) published`);
-          queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
-        } catch {
-          toast.error('Failed to publish some publications');
-        }
+        await runBulkAction({
+          ids: slugs,
+          action: (slug) => updatePublication(token!, slug, { status: 'Published' }),
+          invalidate: invalidatePubs,
+          pastTense: 'published',
+          noun: 'publication',
+        });
       },
     },
     {
@@ -199,15 +206,13 @@ export default function PublicationsPage() {
           label: 'Unpublish',
           slugs,
           execute: async (s) => {
-            try {
-              await Promise.all(
-                s.map((slug) => updatePublication(token!, slug, { status: 'Draft' }))
-              );
-              toast.success(`${s.length} publication(s) unpublished`);
-              queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
-            } catch {
-              toast.error('Failed to unpublish some publications');
-            }
+            await runBulkAction({
+              ids: s,
+              action: (slug) => updatePublication(token!, slug, { status: 'Draft' }),
+              invalidate: invalidatePubs,
+              pastTense: 'unpublished',
+              noun: 'publication',
+            });
           },
         });
         setBulkConfirmOpen(true);
@@ -222,13 +227,13 @@ export default function PublicationsPage() {
           label: 'Delete',
           slugs,
           execute: async (s) => {
-            try {
-              await Promise.all(s.map((slug) => deletePublication(token!, slug)));
-              toast.success(`${s.length} publication(s) deleted`);
-              queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
-            } catch {
-              toast.error('Failed to delete some publications');
-            }
+            await runBulkAction({
+              ids: s,
+              action: (slug) => deletePublication(token!, slug),
+              invalidate: invalidatePubs,
+              pastTense: 'deleted',
+              noun: 'publication',
+            });
           },
         });
         setBulkConfirmOpen(true);
@@ -243,7 +248,7 @@ export default function PublicationsPage() {
           <Newspaper className="h-6 w-6 text-primary" />
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Publications</h1>
-            <p className="text-sm text-muted-foreground">{data?.count ?? '...'} publications</p>
+            <p className="text-sm text-muted-foreground">{data?.length ?? '...'} publications</p>
           </div>
         </div>
         <Button size="sm" onClick={() => router.push('/backoffice/publications/new')}>

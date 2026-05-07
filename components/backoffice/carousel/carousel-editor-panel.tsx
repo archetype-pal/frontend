@@ -70,7 +70,10 @@ export function CarouselEditorPanel({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+      // Caps Lock makes `e.key` come through as 'S', so lower-case the
+      // letter before comparing — otherwise Cmd/Ctrl+S silently fails to
+      // save for caps-locked users.
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         handleSave();
       }
