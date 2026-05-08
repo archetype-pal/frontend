@@ -124,6 +124,7 @@ import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-setti
 
 const ManuscriptAnnotorious = dynamic(() => import('./manuscript-annotorious'), { ssr: false });
 const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
+const LEGACY_SHORTCUT_PAN_STEP = 60;
 const DEFAULT_IMAGE_ADJUSTMENTS: ViewerImageAdjustments = {
   brightness: 100,
   contrast: 100,
@@ -149,6 +150,14 @@ function joinCountPhrases(parts: string[]): string {
   if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
 
   return `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`;
+}
+
+function isShortcutTextEntryTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+
+  const tagName = target.tagName.toLowerCase();
+  return tagName === 'input' || tagName === 'textarea' || tagName === 'select';
 }
 
 function formatSavedAnnotationDescription({
@@ -1249,7 +1258,7 @@ export default function ManuscriptViewer({
     [notifyDeletedAnnotations]
   );
 
-  const handleToggleFullScreen = () => {
+  const handleToggleFullScreen = React.useCallback(() => {
     setIsFullScreen((prev) => !prev);
 
     if (typeof window !== 'undefined') {
@@ -1257,7 +1266,7 @@ export default function ManuscriptViewer({
         window.dispatchEvent(new Event('resize'));
       }, 0);
     }
-  };
+  }, []);
 
   const handleExposeApi = React.useCallback((api: ViewerApi) => {
     viewerApiRef.current = api;
@@ -1289,27 +1298,30 @@ export default function ManuscriptViewer({
     setViewerRotation(0);
   }, []);
 
-  const handleMoveTool = () => {
+  const handleMoveTool = React.useCallback(() => {
     viewerApiRef.current?.enablePan();
     setActiveTool('move');
-  };
+  }, []);
 
-  const handleCreateAnnotation = (kind?: AnnotationCreationKind) => {
-    const nextKind = kind ?? getDefaultAnnotationCreationKind(viewerCapabilities);
-    if (!nextKind) return;
-    if (!canCreateAnnotationKind(viewerCapabilities, nextKind)) return;
+  const handleCreateAnnotation = React.useCallback(
+    (kind?: AnnotationCreationKind) => {
+      const nextKind = kind ?? getDefaultAnnotationCreationKind(viewerCapabilities);
+      if (!nextKind) return;
+      if (!canCreateAnnotationKind(viewerCapabilities, nextKind)) return;
 
-    setCurrentCreationKind(nextKind);
-    viewerApiRef.current?.enableDraw();
-    setActiveTool('draw');
-  };
+      setCurrentCreationKind(nextKind);
+      viewerApiRef.current?.enableDraw();
+      setActiveTool('draw');
+    },
+    [viewerCapabilities]
+  );
 
-  const handleDeleteTool = () => {
+  const handleDeleteTool = React.useCallback(() => {
     if (!canDeleteAnnotations) return;
 
     viewerApiRef.current?.enableDelete();
     setActiveTool('delete');
-  };
+  }, [canDeleteAnnotations]);
 
   const handleSave = React.useCallback(async (): Promise<void> => {
     if (!canPersistAnyAnnotations || !manuscriptImage) return;
@@ -1867,20 +1879,115 @@ export default function ManuscriptViewer({
     token,
   ]);
 
-  // Ctrl/Cmd+S save
+  // Legacy DigiPal toolbar shortcuts, adapted to the current viewer tools.
   React.useEffect(() => {
-    if (isPublicDemoMode) return;
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      const key = event.key.toLowerCase();
+      const canSave = canPersistAnyAnnotations && !isPublicDemoMode && unsavedChanges > 0;
 
-    const handleKeyPress = (e: KeyboardEvent): void => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        if (unsavedChanges > 0) void handleSave();
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && key === 's') {
+        if (!canPersistAnyAnnotations || isPublicDemoMode) return;
+        event.preventDefault();
+        if (canSave) void handleSave();
+        return;
+      }
+
+      if (isShortcutTextEntryTarget(event.target)) return;
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+
+      if (key === 'home') {
+        event.preventDefault();
+        viewerApiRef.current?.goHome();
+        return;
+      }
+
+      if (key === 'f') {
+        event.preventDefault();
+        handleToggleFullScreen();
+        return;
+      }
+
+      if (key === 'g' || key === 'm') {
+        event.preventDefault();
+        handleMoveTool();
+        return;
+      }
+
+      if (key === 'd' || key === 'r') {
+        event.preventDefault();
+        handleCreateAnnotation();
+        return;
+      }
+
+      if (key === 'e') {
+        if (!canCreateEditorialAnnotations) return;
+        event.preventDefault();
+        handleCreateAnnotation('editorial');
+        return;
+      }
+
+      if (key === 's') {
+        if (!canSave) return;
+        event.preventDefault();
+        void handleSave();
+        return;
+      }
+
+      if (key === 'delete' || (event.shiftKey && key === 'backspace')) {
+        if (!canDeleteAnnotations) return;
+        event.preventDefault();
+        handleDeleteTool();
+        return;
+      }
+
+      if (key === 'z' || key === '+' || key === '=') {
+        event.preventDefault();
+        viewerApiRef.current?.zoomIn();
+        return;
+      }
+
+      if (key === '-' || key === '_') {
+        event.preventDefault();
+        viewerApiRef.current?.zoomOut();
+        return;
+      }
+
+      if (!event.shiftKey) return;
+
+      switch (key) {
+        case 'arrowup':
+          event.preventDefault();
+          viewerApiRef.current?.panByPixels(0, -LEGACY_SHORTCUT_PAN_STEP);
+          break;
+        case 'arrowdown':
+          event.preventDefault();
+          viewerApiRef.current?.panByPixels(0, LEGACY_SHORTCUT_PAN_STEP);
+          break;
+        case 'arrowleft':
+          event.preventDefault();
+          viewerApiRef.current?.panByPixels(-LEGACY_SHORTCUT_PAN_STEP, 0);
+          break;
+        case 'arrowright':
+          event.preventDefault();
+          viewerApiRef.current?.panByPixels(LEGACY_SHORTCUT_PAN_STEP, 0);
+          break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [unsavedChanges, handleSave, isPublicDemoMode]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    canCreateEditorialAnnotations,
+    canDeleteAnnotations,
+    canPersistAnyAnnotations,
+    handleCreateAnnotation,
+    handleDeleteTool,
+    handleMoveTool,
+    handleSave,
+    handleToggleFullScreen,
+    isPublicDemoMode,
+    unsavedChanges,
+  ]);
 
   // open shared ?graph=... annotation on first valid load
   React.useEffect(() => {
@@ -2053,6 +2160,8 @@ export default function ManuscriptViewer({
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Reset view"
+                      aria-keyshortcuts="Home"
                       onClick={() => viewerApiRef.current?.goHome()}
                     >
                       <Home className="h-4 w-4" />
@@ -2066,6 +2175,8 @@ export default function ManuscriptViewer({
                     <Button
                       variant={isFullScreen ? 'default' : 'ghost'}
                       size="icon"
+                      aria-label={isFullScreen ? 'Exit full screen' : 'Full screen'}
+                      aria-keyshortcuts="F Shift+F"
                       onClick={handleToggleFullScreen}
                     >
                       {isFullScreen ? (
@@ -2085,6 +2196,8 @@ export default function ManuscriptViewer({
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Zoom in"
+                      aria-keyshortcuts="Z Shift+Z ="
                       onClick={() => viewerApiRef.current?.zoomIn()}
                     >
                       <ZoomIn className="h-4 w-4" />
@@ -2098,6 +2211,8 @@ export default function ManuscriptViewer({
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Zoom out"
+                      aria-keyshortcuts="-"
                       onClick={() => viewerApiRef.current?.zoomOut()}
                     >
                       <ZoomOut className="h-4 w-4" />
@@ -2199,12 +2314,14 @@ export default function ManuscriptViewer({
                     <Button
                       variant={activeTool === 'move' ? 'default' : 'ghost'}
                       size="icon"
+                      aria-label="Move tool"
+                      aria-keyshortcuts="G Shift+G M Shift+M"
                       onClick={handleMoveTool}
                     >
                       <Hand className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Move Tool (m)</TooltipContent>
+                  <TooltipContent>Move Tool</TooltipContent>
                 </Tooltip>
 
                 {canCreatePublicAnnotations && (
@@ -2217,6 +2334,12 @@ export default function ManuscriptViewer({
                             : 'ghost'
                         }
                         size="icon"
+                        aria-label={
+                          canCreateEditorialAnnotations
+                            ? 'Create annotation'
+                            : 'Create public annotation'
+                        }
+                        aria-keyshortcuts="D Shift+D R Shift+R"
                         onClick={() => handleCreateAnnotation('public')}
                       >
                         <Pencil className="h-4 w-4" />
@@ -2240,6 +2363,8 @@ export default function ManuscriptViewer({
                             : 'ghost'
                         }
                         size="icon"
+                        aria-label="Create editorial annotation"
+                        aria-keyshortcuts="E Shift+E"
                         onClick={() => handleCreateAnnotation('editorial')}
                       >
                         <SquarePen className="h-4 w-4" />
@@ -2255,6 +2380,8 @@ export default function ManuscriptViewer({
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label="Save annotations"
+                        aria-keyshortcuts="S Shift+S Control+S Meta+S"
                         onClick={() => void handleSave()}
                         disabled={unsavedChanges === 0}
                       >
@@ -2271,12 +2398,14 @@ export default function ManuscriptViewer({
                       <Button
                         variant={activeTool === 'delete' ? 'default' : 'ghost'}
                         size="icon"
+                        aria-label="Delete tool"
+                        aria-keyshortcuts="Delete Shift+Backspace"
                         onClick={handleDeleteTool}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Delete (del)</TooltipContent>
+                    <TooltipContent>Delete Tool</TooltipContent>
                   </Tooltip>
                 )}
 

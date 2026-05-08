@@ -78,6 +78,7 @@ export type ViewerApi = {
   zoomIn: () => void;
   zoomOut: () => void;
   goHome: () => void;
+  panByPixels: (x: number, y: number) => void;
   rotateBy: (degrees: number) => void;
   resetRotation: () => void;
   setImageAdjustments: (adjustments: ViewerImageAdjustments) => void;
@@ -147,6 +148,7 @@ export default function ManuscriptAnnotorious({
   const annoRef = useRef<AnnotoriousInstance | null>(null);
   const osdModuleRef = useRef<{
     Rect: new (x: number, y: number, w: number, h: number) => unknown;
+    Point: new (x: number, y: number) => OpenSeadragon.Point;
   } | null>(null);
   const onCreateRef = useRef(onCreate);
   const onDeleteRef = useRef(onDelete);
@@ -395,6 +397,7 @@ export default function ManuscriptAnnotorious({
       let OpenSeadragonCtor: {
         (options: Record<string, unknown>): OpenSeadragon.Viewer;
         Rect: new (x: number, y: number, w: number, h: number) => unknown;
+        Point: new (x: number, y: number) => OpenSeadragon.Point;
       };
       let AnnotoriousCtor: AnnotoriousFactory;
       try {
@@ -405,6 +408,7 @@ export default function ManuscriptAnnotorious({
         OpenSeadragonCtor = osdModule.default as unknown as {
           (options: Record<string, unknown>): OpenSeadragon.Viewer;
           Rect: new (x: number, y: number, w: number, h: number) => unknown;
+          Point: new (x: number, y: number) => OpenSeadragon.Point;
         };
         AnnotoriousCtor = annoModule.default;
         osdModuleRef.current = OpenSeadragonCtor;
@@ -774,6 +778,17 @@ export default function ManuscriptAnnotorious({
               v?.viewport.applyConstraints();
             },
             goHome: () => osdRef.current?.viewport.goHome(),
+            panByPixels: (x: number, y: number) => {
+              const viewer = osdRef.current;
+              const Point = osdModuleRef.current?.Point;
+              if (!viewer || !Point) return;
+
+              viewer.viewport.panBy(
+                viewer.viewport.deltaPointsFromPixels(new Point(x, y), true),
+                false
+              );
+              viewer.viewport.applyConstraints();
+            },
             rotateBy: (degrees: number) => {
               const viewer = osdRef.current;
               if (!viewer) return;
