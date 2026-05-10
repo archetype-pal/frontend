@@ -1,0 +1,5707 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Archetype V3",
+    "version": "1.0.0 (v1)"
+  },
+  "paths": {
+    "/api/v1/schema/": {
+      "get": {
+        "operationId": "placeholder",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          }
+        },
+        "tags": [
+          "docs"
+        ]
+      }
+    },
+    "/api/v1/management/common/dates/": {
+      "get": {
+        "operationId": "management-dates-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List dates for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ManagementDate"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "common-management"
+        ]
+      },
+      "post": {
+        "operationId": "management-dates-create",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManagementDateWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created date.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagementDate"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "common-management"
+        ]
+      }
+    },
+    "/api/v1/management/common/dates/{id}/": {
+      "patch": {
+        "operationId": "management-dates-update",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated date.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagementDate"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "common-management"
+        ]
+      },
+      "delete": {
+        "operationId": "management-dates-delete",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Date deleted."
+          }
+        },
+        "tags": [
+          "common-management"
+        ]
+      }
+    },
+    "/api/v1/search/management/stats/": {
+      "get": {
+        "operationId": "management-search-stats",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search index health and stats.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchManagementStats"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "search-management"
+        ]
+      }
+    },
+    "/api/v1/search/management/actions/": {
+      "post": {
+        "operationId": "management-search-actions",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted search management action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchManagementActionResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "search-management"
+        ]
+      }
+    },
+    "/api/v1/search/management/tasks/{task_id}/": {
+      "get": {
+        "operationId": "management-search-task-status",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search management task status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchManagementTaskStatus"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "search-management"
+        ]
+      }
+    },
+    "/api/v1/auth/management/users/": {
+      "get": {
+        "operationId": "users-management-list",
+        "tags": [
+          "users-management"
+        ],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List users for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserManagementListItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "users-management-create",
+        "tags": [
+          "users-management"
+        ],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserManagementWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserManagementListItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/management/users/{id}/": {
+      "get": {
+        "operationId": "users-management-detail",
+        "tags": [
+          "users-management"
+        ],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User detail for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserManagementListItem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "users-management-update",
+        "tags": [
+          "users-management"
+        ],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserManagementWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserManagementListItem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "users-management-delete",
+        "tags": [
+          "users-management"
+        ],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "User deleted."
+          }
+        }
+      }
+    },
+    "/api/v1/auth/token/login": {
+      "post": {
+        "operationId": "users-login",
+        "tags": [
+          "users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Wrong credentials"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/token/logout": {
+      "post": {
+        "operationId": "users-logout",
+        "tags": [
+          "users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/profile": {
+      "get": {
+        "operationId": "users-profile",
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/media/carousel-items/": {
+      "get": {
+        "operationId": "carousel-items-list",
+        "responses": {
+          "200": {
+            "description": "List of carousel items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/carouselItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Media & publications"
+        ]
+      }
+    },
+    "/api/v1/media/events/": {
+      "get": {
+        "operationId": "events-list",
+        "responses": {
+          "200": {
+            "description": "List of events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    },
+                    "next": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "previous": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/eventListItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Media & publications"
+        ]
+      }
+    },
+    "/api/v1/media/events/{slug}/": {
+      "get": {
+        "operationId": "events-detail",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/eventDetailItem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Media & publications"
+        ]
+      }
+    },
+    "/api/v1/media/management/publications/": {
+      "get": {
+        "operationId": "management-publications-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List publications for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/publicationManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "media-management"
+        ]
+      },
+      "post": {
+        "operationId": "management-publications-create",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/publicationManagementWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created publication.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/publicationManagementItem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "media-management"
+        ]
+      }
+    },
+    "/api/v1/media/management/events/": {
+      "get": {
+        "operationId": "management-events-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List events for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/eventDetailItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "media-management"
+        ]
+      }
+    },
+    "/api/v1/media/management/comments/": {
+      "get": {
+        "operationId": "management-comments-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List comments for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/commentManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "media-management"
+        ]
+      }
+    },
+    "/api/v1/media/management/carousel-items/": {
+      "get": {
+        "operationId": "management-carousel-items-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List carousel items for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/carouselManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "media-management"
+        ]
+      }
+    },
+    "/api/v1/media/publications/": {
+      "get": {
+        "operationId": "publications-list",
+        "parameters": [
+          {
+            "name": "is_blog_post",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "is_news",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "is_featured",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "recent_posts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "When set to true, returns the 5 most recent posts ordered by their `published_at` field, regardless of any category filters."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "No response body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    },
+                    "next": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "previous": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/publicationListItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Media & publications"
+        ]
+      }
+    },
+    "/api/v1/media/publications/{slug}/": {
+      "get": {
+        "operationId": "publications-detail",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/publicationDetailItem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Media & publications"
+        ]
+      }
+    },
+    "/api/v1/symbols_structure/allographs/": {
+      "get": {
+        "operationId": "allographs-list",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Allograph"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Symbols Structure"
+        ]
+      }
+    },
+    "/api/v1/symbols_structure/positions/": {
+      "get": {
+        "operationId": "positions-list",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Position"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Symbols Structure"
+        ]
+      }
+    },
+    "/api/v1/symbols_structure/management/symbols/characters/": {
+      "get": {
+        "operationId": "management-characters-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List characters for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CharacterManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "symbols-management"
+        ]
+      }
+    },
+    "/api/v1/symbols_structure/management/symbols/allographs/": {
+      "get": {
+        "operationId": "management-allographs-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List allographs for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AllographManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "symbols-management"
+        ]
+      }
+    },
+    "/api/v1/symbols_structure/management/symbols/components/": {
+      "get": {
+        "operationId": "management-components-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List components for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "features": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "symbols-management"
+        ]
+      }
+    },
+    "/api/v1/symbols_structure/management/symbols/features/": {
+      "get": {
+        "operationId": "management-features-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List features for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "symbols-management"
+        ]
+      }
+    },
+    "/api/v1/symbols_structure/management/symbols/positions/": {
+      "get": {
+        "operationId": "management-positions-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List positions for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Position"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "symbols-management"
+        ]
+      }
+    },
+    "/api/v1/symbols_structure/management/symbols/allograph-components/": {
+      "get": {
+        "operationId": "management-allograph-components-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List allograph components for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "allograph": {
+                        "type": "integer"
+                      },
+                      "component": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "symbols-management"
+        ]
+      }
+    },
+    "/api/v1/symbols_structure/management/symbols/allograph-component-features/": {
+      "get": {
+        "operationId": "management-allograph-component-features-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List allograph component features for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "allograph_component": {
+                        "type": "integer"
+                      },
+                      "feature": {
+                        "type": "integer"
+                      },
+                      "set_by_default": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "symbols-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/item-parts/": {
+      "get": {
+        "operationId": "item-part-list",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemPart"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/item-parts/{id}/": {
+      "get": {
+        "operationId": "item-part-detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemPartDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/item-images/": {
+      "get": {
+        "operationId": "item-part-images-list",
+        "parameters": [
+          {
+            "name": "item_part",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemPartImage"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/item-images/{id}/": {
+      "get": {
+        "operationId": "item-part-images-retrieve",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemPartImage"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/item-images/{item_image_id}/{kind}/": {
+      "get": {
+        "operationId": "item-image-sole-text-retrieve",
+        "description": "Returns the single ImageText (transcription or translation) for the\ngiven item_image. Anonymous callers see only Live or Reviewed.\nReturns 404 if no row exists.\n",
+        "parameters": [
+          {
+            "name": "item_image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "transcription",
+                "translation"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageText"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No matching ImageText row."
+          }
+        },
+        "tags": [
+          "manuscripts"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/image-texts/": {
+      "get": {
+        "operationId": "image-texts-list",
+        "parameters": [
+          {
+            "name": "item_image",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    },
+                    "next": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "previous": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ImageText"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/image-texts/{id}/": {
+      "get": {
+        "operationId": "image-texts-retrieve",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageText"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/text-annotations/": {
+      "get": {
+        "operationId": "text-annotations-list",
+        "parameters": [
+          {
+            "name": "image_text",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "item_image",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "bbox",
+            "in": "query",
+            "required": false,
+            "description": "Comma-separated `x1,y1,x2,y2` viewport for spatial filtering.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    },
+                    "next": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "previous": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TextAnnotation"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/text-annotations/{id}/": {
+      "get": {
+        "operationId": "text-annotations-retrieve",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextAnnotation"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts"
+        ]
+      }
+    },
+    "/api/v1/search/item-parts/facets/": {
+      "get": {
+        "operationId": "search-item-parts-facets",
+        "parameters": [
+          {
+            "name": "min_date",
+            "in": "query",
+            "description": "Start of the date range to filter. Provide an integer representing a year or numeric date value (e.g., 1200).",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "max_date",
+            "in": "query",
+            "description": "End of the date range to filter. Provide an integer representing a year or numeric date value (e.g., 1300).",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "at_most_or_least",
+            "in": "query",
+            "description": "Filter objects with a date difference. Use `at most` to set a maximum difference or `at least` to set a minimum difference.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "at most",
+                "at least"
+              ]
+            }
+          },
+          {
+            "name": "date_diff",
+            "in": "query",
+            "description": "Integer value to specify the date difference for filtering. Works with `at_most_or_least` to apply the filter.",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fields": {
+                      "type": "object",
+                      "properties": {
+                        "__facet_name__": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "text": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              },
+                              "narrow_url": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "dates": {
+                      "type": "object"
+                    },
+                    "queries": {
+                      "type": "object"
+                    },
+                    "objects": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "next": {
+                          "type": "string"
+                        },
+                        "previous": {
+                          "type": "string"
+                        },
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ItemPartSearchResult"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/api/v1/search/item-images/facets/": {
+      "get": {
+        "operationId": "search-item-images-facets",
+        "parameters": [
+          {
+            "name": "min_date",
+            "in": "query",
+            "description": "Start of the date range to filter. Provide an integer representing a year or numeric date value (e.g., 1200).",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "max_date",
+            "in": "query",
+            "description": "End of the date range to filter. Provide an integer representing a year or numeric date value (e.g., 1300).",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "at_most_or_least",
+            "in": "query",
+            "description": "Filter objects with a date difference. Use `at most` to set a maximum difference or `at least` to set a minimum difference.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "at most",
+                "at least"
+              ]
+            }
+          },
+          {
+            "name": "date_diff",
+            "in": "query",
+            "description": "Integer value to specify the date difference for filtering. Works with `at_most_or_least` to apply the filter.",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fields": {
+                      "type": "object",
+                      "properties": {
+                        "__facet_name__": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "text": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              },
+                              "narrow_url": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "dates": {
+                      "type": "object"
+                    },
+                    "queries": {
+                      "type": "object"
+                    },
+                    "objects": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "next": {
+                          "type": "string"
+                        },
+                        "previous": {
+                          "type": "string"
+                        },
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ItemPartImage"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/historical-items/": {
+      "get": {
+        "operationId": "management-historical-items-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List historical items for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HistoricalItemManagementListItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      },
+      "post": {
+        "operationId": "management-historical-items-create",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HistoricalItemManagementWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created historical item.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalItemManagementListItem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/item-parts/": {
+      "get": {
+        "operationId": "management-item-parts-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List item parts for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemPartManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/item-images/": {
+      "get": {
+        "operationId": "management-item-images-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List item images for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemImageManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/image-texts/": {
+      "get": {
+        "operationId": "management-image-texts-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List image texts for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ImageTextManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/image-texts/{id}/": {
+      "patch": {
+        "operationId": "management-image-texts-update",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageTextWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageTextManagementItem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/item-images/{item_image_id}/{kind}/": {
+      "put": {
+        "operationId": "management-item-image-sole-text-upsert",
+        "description": "Idempotent upsert of the single ImageText (transcription or translation)\nfor the given item_image. The (item_image, type) pair is unique.\n",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "transcription",
+                "translation"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageTextWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageTextManagementItem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown item_image."
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/review-queue/": {
+      "get": {
+        "operationId": "review-queue-list",
+        "summary": "List ImageText rows currently in Review status, oldest-first.",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ImageTextManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/image-texts/{id}/transition/": {
+      "post": {
+        "operationId": "management-image-text-transition",
+        "summary": "Move an ImageText through Draft \u2192 Review \u2192 Live \u2192 Reviewed with audit.",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "to_status"
+                ],
+                "properties": {
+                  "to_status": {
+                    "type": "string",
+                    "enum": [
+                      "Draft",
+                      "Review",
+                      "Live",
+                      "Reviewed"
+                    ]
+                  },
+                  "note": {
+                    "type": "string"
+                  },
+                  "assignee": {
+                    "type": "integer",
+                    "description": "Reviewer user id (only meaningful for to_status=Review)."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageTextManagementItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown status."
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/text-annotations/sync/": {
+      "post": {
+        "operationId": "management-text-annotations-sync",
+        "description": "Commits a diff of TextAnnotation links for one ImageText in a single\ntransaction. Each link is either an `upsert` (with region) or a\n`delete` (by element_id).\n",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextAnnotationSyncRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextAnnotationSyncResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Required fields missing."
+          },
+          "404": {
+            "description": "Unknown image_text or item_image."
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/catalogue-numbers/": {
+      "get": {
+        "operationId": "management-catalogue-numbers-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List catalogue numbers for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CatalogueNumberManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/descriptions/": {
+      "get": {
+        "operationId": "management-descriptions-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List descriptions for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HistoricalItemDescriptionManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/repositories/": {
+      "get": {
+        "operationId": "management-repositories-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List repositories for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RepositoryManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/current-items/": {
+      "get": {
+        "operationId": "management-current-items-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List current items for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CurrentItemManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/sources/": {
+      "get": {
+        "operationId": "management-sources-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List bibliographic sources for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BibliographicSourceManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/formats/": {
+      "get": {
+        "operationId": "management-formats-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List formats for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemFormatManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/management/image-picker-content/": {
+      "get": {
+        "operationId": "management-image-picker-content",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List folders and images for picker popup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "folders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "images": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manuscripts-management"
+        ]
+      }
+    },
+    "/api/v1/scribes/": {
+      "get": {
+        "operationId": "scribes-list",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    },
+                    "next": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "previous": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Scribe"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "scribes"
+        ]
+      }
+    },
+    "/api/v1/scribes/{id}/": {
+      "get": {
+        "operationId": "scribes-details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Scribe"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "scribes"
+        ]
+      }
+    },
+    "/api/v1/hands/": {
+      "get": {
+        "operationId": "hands-list",
+        "parameters": [
+          {
+            "name": "item_part",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "item_part_images",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "scribe",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    },
+                    "next": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "previous": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Hand"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "scribes"
+        ]
+      }
+    },
+    "/api/v1/hands/{id}/": {
+      "get": {
+        "operationId": "hands-details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Hand"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "scribes"
+        ]
+      }
+    },
+    "/api/v1/search/scribes/facets/": {
+      "get": {
+        "operationId": "search-scribes-facets",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fields": {
+                      "type": "object",
+                      "properties": {
+                        "__facet_name__": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "text": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              },
+                              "narrow_url": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "dates": {
+                      "type": "object"
+                    },
+                    "queries": {
+                      "type": "object"
+                    },
+                    "objects": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "next": {
+                          "type": "string"
+                        },
+                        "previous": {
+                          "type": "string"
+                        },
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ScribeSearchResult"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/api/v1/search/hands/facets/": {
+      "get": {
+        "operationId": "search-hands-facets",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fields": {
+                      "type": "object",
+                      "properties": {
+                        "__facet_name__": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "text": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              },
+                              "narrow_url": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "queries": {
+                      "type": "object"
+                    },
+                    "objects": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "next": {
+                          "type": "string"
+                        },
+                        "previous": {
+                          "type": "string"
+                        },
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/HandSearchResult"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/api/v1/management/scribes/scribes/": {
+      "get": {
+        "operationId": "management-scribes-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List scribes for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScribeManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "scribes-management"
+        ]
+      }
+    },
+    "/api/v1/management/scribes/hands/": {
+      "get": {
+        "operationId": "management-hands-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List hands for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HandManagementItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "scribes-management"
+        ]
+      }
+    },
+    "/api/v1/management/scribes/scripts/": {
+      "get": {
+        "operationId": "management-scripts-list",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List scripts for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "scribes-management"
+        ]
+      }
+    },
+    "/api/v1/management/scribes/get_item_images/": {
+      "get": {
+        "operationId": "management-get-item-images",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_part_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List item images for selected item part."
+          }
+        },
+        "tags": [
+          "scribes-management"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/graphs/": {
+      "get": {
+        "operationId": "graphs-list",
+        "summary": "List graph annotations (read-only). Filter by item_image, annotation_type, hand, allograph, or bbox viewport.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "item_image",
+            "schema": {
+              "type": "integer"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "allograph",
+            "schema": {
+              "type": "integer"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "hand",
+            "schema": {
+              "type": "integer"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "annotation_type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "image",
+                "text",
+                "editorial",
+                "unknown"
+              ],
+              "nullable": true
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "description": "Comma-separated `x1,y1,x2,y2` viewport for spatial filtering.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Graph"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Annotations"
+        ]
+      }
+    },
+    "/api/v1/manuscripts/graphs/{id}/": {
+      "get": {
+        "operationId": "graphs-retrieve",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Annotations"
+        ]
+      }
+    },
+    "/api/v1/annotations/graphs/": {
+      "post": {
+        "operationId": "viewer-graphs-create",
+        "summary": "Create a new viewer (image-mode) graph annotation. Requires authentication.",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Graph"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Annotations"
+        ]
+      }
+    },
+    "/api/v1/annotations/graphs/{id}/": {
+      "patch": {
+        "operationId": "viewer-graphs-update",
+        "summary": "Update fields on a viewer graph annotation.",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Graph"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Annotations"
+        ]
+      },
+      "delete": {
+        "operationId": "viewer-graphs-delete",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Graph deleted."
+          }
+        },
+        "tags": [
+          "Annotations"
+        ]
+      }
+    },
+    "/api/v1/annotations/comments/": {
+      "get": {
+        "operationId": "comments-list",
+        "summary": "List threaded comments on a graph or text-annotation.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "graph",
+            "schema": {
+              "type": "integer"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "text_annotation",
+            "schema": {
+              "type": "integer"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "parent",
+            "schema": {
+              "type": "integer"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "resolved",
+            "schema": {
+              "type": "boolean"
+            },
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    },
+                    "next": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "previous": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AnnotationComment"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Annotations"
+        ]
+      },
+      "post": {
+        "operationId": "comments-create",
+        "summary": "Create a comment on a graph or text-annotation. Exactly one of `graph` or `text_annotation` is required.",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnotationCommentWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationComment"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Annotations"
+        ]
+      }
+    },
+    "/api/v1/annotations/comments/{id}/": {
+      "get": {
+        "operationId": "comments-retrieve",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationComment"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Annotations"
+        ]
+      },
+      "patch": {
+        "operationId": "comments-update",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnotationCommentWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationComment"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Annotations"
+        ]
+      },
+      "delete": {
+        "operationId": "comments-delete",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Comment deleted."
+          }
+        },
+        "tags": [
+          "Annotations"
+        ]
+      }
+    },
+    "/api/v1/search/graphs/facets/": {
+      "get": {
+        "operationId": "search-graphs-facets",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fields": {
+                      "type": "object",
+                      "properties": {
+                        "__facet_name__": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "text": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              },
+                              "narrow_url": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "objects": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "next": {
+                          "type": "string"
+                        },
+                        "previous": {
+                          "type": "string"
+                        },
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/GraphSearchResult"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/api/v1/annotations/notifications/": {
+      "get": {
+        "operationId": "notifications-list",
+        "summary": "List the calling user's @-mention notifications.",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "read",
+            "schema": {
+              "type": "boolean"
+            },
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    },
+                    "next": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "previous": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommentNotification"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Annotations"
+        ]
+      }
+    },
+    "/api/v1/annotations/notifications/{id}/": {
+      "patch": {
+        "operationId": "notifications-update",
+        "summary": "Mark a single notification read/unread.",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "read": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentNotification"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Annotations"
+        ]
+      }
+    },
+    "/api/v1/annotations/notifications/mark-all-read/": {
+      "post": {
+        "operationId": "notifications-mark-all-read",
+        "summary": "Mark every unread notification as read in one round trip.",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updated": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Annotations"
+        ]
+      }
+    },
+    "/api/v1/management/annotations/graphs/": {
+      "get": {
+        "operationId": "management-graphs-list",
+        "summary": "List graphs for management",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List graphs for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Graph"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "annotations-management"
+        ]
+      },
+      "post": {
+        "operationId": "management-graphs-create",
+        "summary": "Create graph for management",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Graph"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created graph.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "annotations-management"
+        ]
+      }
+    },
+    "/api/v1/management/annotations/graph-components/": {
+      "get": {
+        "operationId": "management-graph-components-list",
+        "summary": "List graph components for management",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List graph components for management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "graph": {
+                        "type": "integer"
+                      },
+                      "component": {
+                        "type": "integer"
+                      },
+                      "component_name": {
+                        "type": "string"
+                      },
+                      "features": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "annotations-management"
+        ]
+      }
+    },
+    "/api/v1/worksets/": {
+      "get": {
+        "operationId": "worksets-list",
+        "summary": "List worksets visible to the caller (public + owned).",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    },
+                    "next": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "previous": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WorksetListItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "worksets"
+        ]
+      },
+      "post": {
+        "operationId": "worksets-create",
+        "summary": "Create a new workset owned by the calling user.",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorksetWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Workset"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "worksets"
+        ]
+      }
+    },
+    "/api/v1/worksets/{id}/": {
+      "get": {
+        "operationId": "worksets-retrieve",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Workset"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "worksets"
+        ]
+      },
+      "patch": {
+        "operationId": "worksets-update",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorksetWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Workset"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "worksets"
+        ]
+      },
+      "delete": {
+        "operationId": "worksets-delete",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Workset deleted."
+          }
+        },
+        "tags": [
+          "worksets"
+        ]
+      }
+    },
+    "/api/v1/worksets/by-slug/{slug}/": {
+      "get": {
+        "operationId": "worksets-by-slug",
+        "summary": "Lookup by URL slug. 404 unless public or caller is the owner.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Workset"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No workset with that slug visible to this caller."
+          }
+        },
+        "tags": [
+          "worksets"
+        ]
+      }
+    },
+    "/api/v1/worksets/{id}/rotate-share-token/": {
+      "post": {
+        "operationId": "worksets-rotate-share-token",
+        "summary": "Generate a fresh share token for this workset (owner only).",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "share_token": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "worksets"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "docs": {
+        "type": "object"
+      },
+      "ManagementDate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "date": {
+            "type": "string"
+          },
+          "min_weight": {
+            "type": "integer"
+          },
+          "max_weight": {
+            "type": "integer"
+          }
+        }
+      },
+      "ManagementDateWrite": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "min_weight": {
+            "type": "integer"
+          },
+          "max_weight": {
+            "type": "integer"
+          }
+        }
+      },
+      "SearchManagementIndexStat": {
+        "type": "object",
+        "properties": {
+          "index_type": {
+            "type": "string"
+          },
+          "uid": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "meilisearch_count": {
+            "type": "integer"
+          },
+          "db_count": {
+            "type": "integer"
+          },
+          "in_sync": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SearchManagementStats": {
+        "type": "object",
+        "properties": {
+          "healthy": {
+            "type": "boolean"
+          },
+          "total_meilisearch": {
+            "type": "integer"
+          },
+          "total_database": {
+            "type": "integer"
+          },
+          "indexes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchManagementIndexStat"
+            }
+          }
+        }
+      },
+      "SearchManagementActionResponse": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string"
+          },
+          "task_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SearchManagementTaskStatus": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "progress": {
+            "type": "object",
+            "nullable": true
+          },
+          "result": {
+            "type": "object",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "is_staff": {
+            "type": "boolean"
+          },
+          "is_superuser": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UserManagementListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "is_staff": {
+            "type": "boolean"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "date_joined": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_login": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "UserManagementWrite": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "is_staff": {
+            "type": "boolean"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "carouselItem": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "eventListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "eventDetailItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "publicationListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "author": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "number_of_comments": {
+            "type": "integer"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "preview": {
+            "type": "string"
+          }
+        }
+      },
+      "publicationDetailItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "author": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "number_of_comments": {
+            "type": "integer"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "content": {
+            "type": "string"
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "author_name": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          }
+        }
+      },
+      "publicationManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "preview": {
+            "type": "string"
+          },
+          "author": {
+            "type": "integer",
+            "nullable": true
+          },
+          "author_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "is_blog_post": {
+            "type": "boolean"
+          },
+          "is_news": {
+            "type": "boolean"
+          },
+          "is_featured": {
+            "type": "boolean"
+          },
+          "allow_comments": {
+            "type": "boolean"
+          },
+          "comment_count": {
+            "type": "integer"
+          }
+        }
+      },
+      "publicationManagementWrite": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "preview": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "is_blog_post": {
+            "type": "boolean"
+          },
+          "is_news": {
+            "type": "boolean"
+          },
+          "is_featured": {
+            "type": "boolean"
+          },
+          "allow_comments": {
+            "type": "boolean"
+          }
+        }
+      },
+      "commentManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "post": {
+            "type": "integer"
+          },
+          "post_title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "author_name": {
+            "type": "string"
+          },
+          "author_email": {
+            "type": "string"
+          },
+          "author_website": {
+            "type": "string"
+          },
+          "is_approved": {
+            "type": "boolean"
+          }
+        }
+      },
+      "carouselManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "ordering": {
+            "type": "integer"
+          }
+        }
+      },
+      "CharacterManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "allograph_count": {
+            "type": "integer"
+          }
+        }
+      },
+      "Allograph": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "component_id": {
+                  "type": "integer"
+                },
+                "component_name": {
+                  "type": "string"
+                },
+                "features": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "set_by_default": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Position"
+            }
+          }
+        }
+      },
+      "AllographManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "character": {
+            "type": "integer"
+          },
+          "character_name": {
+            "type": "string"
+          }
+        }
+      },
+      "Position": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "Repository": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "ItemPartSearchResult": {
+        "type": "object",
+        "properties": {
+          "repository_name": {
+            "type": "string"
+          },
+          "repository_city": {
+            "type": "string"
+          },
+          "shelfmark": {
+            "type": "string"
+          },
+          "catalogue_numbers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "date": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "number_of_images": {
+            "type": "integer"
+          }
+        }
+      },
+      "ItemPartDetails": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "display_label": {
+            "type": "string"
+          },
+          "historical_item": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "format": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string"
+              },
+              "catalogue_numbers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "number": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "catalogue": {
+                      "type": "object",
+                      "$ref": "#/components/schemas/Repository"
+                    }
+                  }
+                }
+              },
+              "descriptions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "object",
+                      "$ref": "#/components/schemas/Repository"
+                    },
+                    "content": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "current_item": {
+            "type": "object",
+            "properties": {
+              "shelfmark": {
+                "type": "string"
+              },
+              "repository": {
+                "type": "object",
+                "$ref": "#/components/schemas/Repository"
+              }
+            }
+          }
+        }
+      },
+      "ItemPart": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "shelfmark": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "hair_type": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "repository_id": {
+            "type": "integer"
+          },
+          "display_label": {
+            "type": "string"
+          }
+        }
+      },
+      "ItemPartImage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "iiif_image": {
+            "type": "string"
+          },
+          "locus": {
+            "type": "string"
+          },
+          "number_of_annotations": {
+            "type": "integer"
+          },
+          "item_part": {
+            "type": "integer"
+          },
+          "texts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "RepositoryManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "place": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "BibliographicSourceManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "ItemFormatManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "CurrentItemManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "description": {
+            "type": "string"
+          },
+          "repository": {
+            "type": "integer"
+          },
+          "repository_name": {
+            "type": "string"
+          },
+          "shelfmark": {
+            "type": "string"
+          },
+          "part_count": {
+            "type": "integer"
+          }
+        }
+      },
+      "ImageTextManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "item_image": {
+            "type": "integer"
+          },
+          "content": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "review_assignee": {
+            "type": "integer",
+            "nullable": true
+          },
+          "review_assignee_username": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "last_transition": {
+            "type": "object",
+            "nullable": true,
+            "readOnly": true,
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "from_status": {
+                "type": "string"
+              },
+              "to_status": {
+                "type": "string"
+              },
+              "actor": {
+                "type": "integer",
+                "nullable": true
+              },
+              "actor_username": {
+                "type": "string",
+                "nullable": true
+              },
+              "note": {
+                "type": "string"
+              },
+              "created": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        }
+      },
+      "ItemImageManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "item_part": {
+            "type": "integer"
+          },
+          "image": {
+            "type": "string"
+          },
+          "locus": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "annotation_count": {
+            "type": "integer"
+          },
+          "texts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageTextManagementItem"
+            }
+          }
+        }
+      },
+      "CatalogueNumberManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "historical_item": {
+            "type": "integer"
+          },
+          "number": {
+            "type": "string"
+          },
+          "catalogue": {
+            "type": "integer"
+          },
+          "catalogue_label": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "HistoricalItemDescriptionManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "historical_item": {
+            "type": "integer"
+          },
+          "source": {
+            "type": "integer"
+          },
+          "source_label": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "ItemPartManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "historical_item": {
+            "type": "integer"
+          },
+          "custom_label": {
+            "type": "string"
+          },
+          "current_item": {
+            "type": "integer",
+            "nullable": true
+          },
+          "current_item_display": {
+            "type": "string",
+            "nullable": true
+          },
+          "current_item_locus": {
+            "type": "string",
+            "nullable": true
+          },
+          "display_label": {
+            "type": "string"
+          },
+          "image_count": {
+            "type": "integer"
+          }
+        }
+      },
+      "HistoricalItemManagementListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "format": {
+            "type": "integer",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          },
+          "hair_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "integer",
+            "nullable": true
+          }
+        }
+      },
+      "HistoricalItemManagementWrite": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "format": {
+            "type": "integer",
+            "nullable": true
+          },
+          "language": {
+            "type": "string"
+          },
+          "hair_type": {
+            "type": "string"
+          },
+          "date": {
+            "type": "integer",
+            "nullable": true
+          }
+        }
+      },
+      "ImageText": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "item_image": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        }
+      },
+      "ImageTextWrite": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        }
+      },
+      "TextAnnotation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "image_text": {
+            "type": "integer"
+          },
+          "item_image": {
+            "type": "integer"
+          },
+          "element_id": {
+            "type": "object"
+          },
+          "region": {
+            "type": "object"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        }
+      },
+      "TextAnnotationSyncLink": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "upsert",
+              "delete"
+            ]
+          },
+          "element_id": {
+            "type": "object"
+          },
+          "region": {
+            "type": "object",
+            "nullable": true
+          }
+        }
+      },
+      "TextAnnotationSyncRequest": {
+        "type": "object",
+        "required": [
+          "image_text",
+          "item_image",
+          "links"
+        ],
+        "properties": {
+          "image_text": {
+            "type": "integer"
+          },
+          "item_image": {
+            "type": "integer"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TextAnnotationSyncLink"
+            }
+          }
+        }
+      },
+      "TextAnnotationSyncResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TextAnnotation"
+            }
+          }
+        }
+      },
+      "ScribeSearchResult": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "scriptorium": {
+            "type": "string"
+          }
+        }
+      },
+      "HandSearchResult": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "place": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "repository_name": {
+            "type": "string"
+          },
+          "repository_city": {
+            "type": "string"
+          },
+          "shelfmark": {
+            "type": "string"
+          },
+          "catalogue_numbers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Idiograph": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "character": {
+            "type": "string"
+          }
+        }
+      },
+      "Scribe": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "scriptorium": {
+            "type": "string"
+          },
+          "idiographs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Idiograph"
+            }
+          }
+        }
+      },
+      "Hand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "scribe": {
+            "type": "integer"
+          },
+          "item_part": {
+            "type": "integer"
+          },
+          "date": {
+            "type": "integer",
+            "nullable": true
+          },
+          "place": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string"
+          },
+          "scriptorium": {
+            "type": "string",
+            "readOnly": true
+          }
+        }
+      },
+      "ScribeManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "period": {
+            "type": "integer",
+            "nullable": true
+          },
+          "period_display": {
+            "type": "string",
+            "nullable": true
+          },
+          "scriptorium": {
+            "type": "string",
+            "nullable": true
+          },
+          "hand_count": {
+            "type": "integer"
+          }
+        }
+      },
+      "HandManagementItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "scribe": {
+            "type": "integer"
+          },
+          "scribe_name": {
+            "type": "string"
+          },
+          "item_part": {
+            "type": "integer"
+          },
+          "item_part_display": {
+            "type": "string"
+          },
+          "script": {
+            "type": "integer",
+            "nullable": true
+          },
+          "script_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "integer",
+            "nullable": true
+          },
+          "date_display": {
+            "type": "string",
+            "nullable": true
+          },
+          "place": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "item_part_images": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "GraphSearchResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "item_image": {
+            "type": "integer"
+          },
+          "annotation": {
+            "type": "object"
+          },
+          "annotation_type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "text",
+              "editorial",
+              "unknown"
+            ],
+            "nullable": true
+          },
+          "allograph": {
+            "type": "integer"
+          },
+          "allograph_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "hand": {
+            "type": "integer"
+          },
+          "graphcomponent_set": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "component": {
+                  "type": "integer"
+                },
+                "component_name": {
+                  "type": "string",
+                  "readOnly": true
+                },
+                "features": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                "feature_details": {
+                  "type": "array",
+                  "readOnly": true,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "position_details": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "num_features": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "is_described": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        }
+      },
+      "Graph": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "item_image": {
+            "type": "integer"
+          },
+          "annotation": {
+            "type": "object"
+          },
+          "annotation_type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "text",
+              "editorial",
+              "unknown"
+            ],
+            "nullable": true
+          },
+          "allograph": {
+            "type": "integer"
+          },
+          "allograph_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "hand": {
+            "type": "integer"
+          },
+          "graphcomponent_set": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "component": {
+                  "type": "integer"
+                },
+                "component_name": {
+                  "type": "string",
+                  "readOnly": true
+                },
+                "features": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                "feature_details": {
+                  "type": "array",
+                  "readOnly": true,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "example": [
+              1,
+              2,
+              3
+            ]
+          },
+          "position_details": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "num_features": {
+            "type": "integer",
+            "readOnly": true,
+            "example": 4
+          },
+          "is_described": {
+            "type": "boolean",
+            "readOnly": true,
+            "example": true
+          }
+        }
+      },
+      "AnnotationComment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "graph": {
+            "type": "integer",
+            "nullable": true
+          },
+          "text_annotation": {
+            "type": "integer",
+            "nullable": true
+          },
+          "parent": {
+            "type": "integer",
+            "nullable": true
+          },
+          "author": {
+            "type": "integer",
+            "nullable": true,
+            "readOnly": true
+          },
+          "author_username": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "body": {
+            "type": "string"
+          },
+          "resolved": {
+            "type": "boolean"
+          },
+          "mention_usernames": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        }
+      },
+      "AnnotationCommentWrite": {
+        "type": "object",
+        "description": "Exactly one of `graph` or `text_annotation` must be provided. The\nbackend rejects payloads that set both or neither.\n",
+        "properties": {
+          "graph": {
+            "type": "integer",
+            "nullable": true
+          },
+          "text_annotation": {
+            "type": "integer",
+            "nullable": true
+          },
+          "parent": {
+            "type": "integer",
+            "nullable": true
+          },
+          "body": {
+            "type": "string"
+          },
+          "resolved": {
+            "type": "boolean"
+          },
+          "mention_usernames_input": {
+            "type": "array",
+            "description": "Usernames to @-mention. Notifications are fanned out on save.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CommentNotification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "recipient": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "comment": {
+            "type": "integer"
+          },
+          "comment_body": {
+            "type": "string",
+            "readOnly": true
+          },
+          "comment_author": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "comment_graph": {
+            "type": "integer",
+            "nullable": true,
+            "readOnly": true
+          },
+          "comment_text_annotation": {
+            "type": "integer",
+            "nullable": true,
+            "readOnly": true
+          },
+          "read": {
+            "type": "boolean"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        }
+      },
+      "WorksetItem": {
+        "type": "object",
+        "required": [
+          "kind",
+          "id"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "graph",
+              "item_image",
+              "text_annotation",
+              "image_text"
+            ]
+          },
+          "id": {
+            "type": "integer"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "WorksetListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "owner_username": {
+            "type": "string",
+            "readOnly": true
+          },
+          "is_public": {
+            "type": "boolean"
+          },
+          "item_count": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        }
+      },
+      "Workset": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "readOnly": true
+          },
+          "description": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "owner_username": {
+            "type": "string",
+            "readOnly": true
+          },
+          "is_public": {
+            "type": "boolean"
+          },
+          "share_token": {
+            "type": "string",
+            "readOnly": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorksetItem"
+            }
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        }
+      },
+      "WorksetWrite": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "is_public": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorksetItem"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "api_key": {
+        "type": "apiKey",
+        "description": "value should start with 'Token' followed by a space then the token",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "docs",
+      "description": "API documentation in OpenAPI format"
+    },
+    {
+      "name": "common-management",
+      "description": "Management endpoints for shared lookup data"
+    },
+    {
+      "name": "search-management",
+      "description": "Search index management operations"
+    },
+    {
+      "name": "users"
+    },
+    {
+      "name": "users-management"
+    },
+    {
+      "name": "events"
+    },
+    {
+      "name": "Media & publications"
+    },
+    {
+      "name": "media-management"
+    },
+    {
+      "name": "Symbols Structure"
+    },
+    {
+      "name": "symbols-management"
+    },
+    {
+      "name": "manuscripts"
+    },
+    {
+      "name": "manuscripts-management"
+    },
+    {
+      "name": "scribes"
+    },
+    {
+      "name": "scribes-management"
+    },
+    {
+      "name": "Annotations"
+    },
+    {
+      "name": "annotations-management"
+    },
+    {
+      "name": "worksets"
+    }
+  ]
+}
