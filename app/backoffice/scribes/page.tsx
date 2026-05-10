@@ -18,9 +18,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
-import { getScribes, createScribe } from '@/services/backoffice/scribes';
+import { createScribe } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { walkPaginated } from '@/lib/backoffice/walk-paginated';
+import { authFetch } from '@/lib/api-fetch';
 import { toast } from 'sonner';
 import type { ScribeListItem } from '@/types/backoffice';
 
@@ -82,9 +84,16 @@ export default function ScribesPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState('');
 
+  // Walk all pages so the displayed count and rows agree — the earlier
+  // `getScribes(token)` returned only the first DRF page (20), but the
+  // header showed `data.count`, leaving admins with "150 scribes" + 20
+  // visible rows and no pagination control.
   const { data } = useQuery({
     queryKey: backofficeKeys.scribes.all(),
-    queryFn: () => getScribes(token!),
+    queryFn: () =>
+      walkPaginated<ScribeListItem>('/api/v1/management/scribes/scribes/?limit=100', (path) =>
+        authFetch(path, token!)
+      ),
     enabled: !!token,
   });
 
@@ -109,13 +118,13 @@ export default function ScribesPage() {
         <Users className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Scribes</h1>
-          <p className="text-sm text-muted-foreground">{data?.count ?? '...'} scribes</p>
+          <p className="text-sm text-muted-foreground">{data?.length ?? '...'} scribes</p>
         </div>
       </div>
 
       <DataTable
         columns={columns}
-        data={data?.results ?? []}
+        data={data ?? []}
         searchColumn="name"
         searchPlaceholder="Search scribes..."
         toolbarActions={

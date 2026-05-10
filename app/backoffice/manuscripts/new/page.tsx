@@ -21,14 +21,15 @@ import {
   createHistoricalItem,
   createItemPart,
   createCurrentItem,
-  getCurrentItems,
   getRepositories,
   getDates,
 } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { walkPaginated } from '@/lib/backoffice/walk-paginated';
+import { authFetch } from '@/lib/api-fetch';
 import { toast } from 'sonner';
-import type { Repository } from '@/types/backoffice';
+import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
 
 const ITEM_TYPES = [
@@ -67,25 +68,26 @@ export default function NewManuscriptPage() {
     enabled: !!token,
   });
 
-  const repositories: Repository[] = !repositoriesData
-    ? []
-    : Array.isArray(repositoriesData)
-      ? repositoriesData
-      : repositoriesData.results;
+  const repositories: Repository[] = repositoriesData ?? [];
   const dates = datesData ?? [];
 
   const createMut = useMutation({
     mutationFn: async () => {
       if (!token) throw new Error('Not authenticated');
 
-      // Step 1: Find or create CurrentItem (if repository & shelfmark provided)
+      // Step 1: Find or create CurrentItem (if repository & shelfmark provided).
+      // Walk all pages — `limit: 500` was silently capped at DRF's max_limit
+      // (100), so for repositories with >100 current items the find could
+      // miss an existing match and create a duplicate `(repository, shelfmark)`
+      // row. The endpoint doesn't expose `?shelfmark=` filtering, so a full
+      // walk is the only correct option.
       let currentItemId: number | null = null;
       if (repository && shelfmark.trim()) {
-        const existing = await getCurrentItems(token, {
-          repository: Number(repository),
-          limit: 500,
-        });
-        const match = existing.results.find(
+        const existing = await walkPaginated<CurrentItemOption>(
+          `/api/v1/manuscripts/management/current-items/?repository=${Number(repository)}&limit=100`,
+          (path) => authFetch(path, token)
+        );
+        const match = existing.find(
           (ci) => ci.shelfmark.toLowerCase() === shelfmark.trim().toLowerCase()
         );
         if (match) {

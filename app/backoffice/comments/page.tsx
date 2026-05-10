@@ -9,14 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
-import {
-  getComments,
-  approveComment,
-  rejectComment,
-  deleteComment,
-} from '@/services/backoffice/publications';
+import { approveComment, rejectComment, deleteComment } from '@/services/backoffice/publications';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { runBulkAction } from '@/lib/backoffice/bulk-action';
+import { walkPaginated } from '@/lib/backoffice/walk-paginated';
+import { authFetch } from '@/lib/api-fetch';
 import type { CommentItem } from '@/types/backoffice';
 
 export default function CommentsPage() {
@@ -28,10 +26,20 @@ export default function CommentsPage() {
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | 'delete' | null>(null);
 
+  // Walk all pages so the moderation queue shows every matching comment.
+  // The earlier `getComments(token, ...)` returned only the first DRF page
+  // (20), and the page has no pagination control — pending comments past
+  // the 20th would be invisible to moderators until earlier ones cleared.
   const { data } = useQuery({
     queryKey: backofficeKeys.comments.list(filter),
-    queryFn: () =>
-      getComments(token!, filter === 'all' ? undefined : { is_approved: filter === 'approved' }),
+    queryFn: () => {
+      const params = new URLSearchParams({ limit: '100' });
+      if (filter !== 'all') params.set('is_approved', String(filter === 'approved'));
+      return walkPaginated<CommentItem>(
+        `/api/v1/media/management/comments/?${params.toString()}`,
+        (path) => authFetch(path, token!)
+      );
+    },
     enabled: !!token,
   });
 
@@ -80,7 +88,7 @@ export default function CommentsPage() {
     },
   });
 
-  const comments = data?.results ?? [];
+  const comments = data ?? [];
 
   const toggleSelect = (id: number) => {
     setSelected((prev) => {
@@ -102,21 +110,18 @@ export default function CommentsPage() {
   const handleBulkAction = async () => {
     if (!bulkAction || selected.size === 0) return;
     const ids = Array.from(selected);
-    try {
-      if (bulkAction === 'approve') {
-        await Promise.all(ids.map((id) => approveComment(token!, id)));
-        toast.success(`${ids.length} comment(s) approved`);
-      } else if (bulkAction === 'reject') {
-        await Promise.all(ids.map((id) => rejectComment(token!, id)));
-        toast.success(`${ids.length} comment(s) rejected`);
-      } else if (bulkAction === 'delete') {
-        await Promise.all(ids.map((id) => deleteComment(token!, id)));
-        toast.success(`${ids.length} comment(s) deleted`);
-      }
-      invalidate();
-    } catch {
-      toast.error(`Failed to ${bulkAction} some comments`);
-    }
+    const opts = {
+      approve: { action: (id: number) => approveComment(token!, id), pastTense: 'approved' },
+      reject: { action: (id: number) => rejectComment(token!, id), pastTense: 'rejected' },
+      delete: { action: (id: number) => deleteComment(token!, id), pastTense: 'deleted' },
+    }[bulkAction];
+    await runBulkAction({
+      ids,
+      action: opts.action,
+      invalidate,
+      pastTense: opts.pastTense,
+      noun: 'comment',
+    });
     setBulkConfirmOpen(false);
     setBulkAction(null);
   };
@@ -132,7 +137,7 @@ export default function CommentsPage() {
         <MessageSquare className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Comment Moderation</h1>
-          <p className="text-sm text-muted-foreground">{data?.count ?? '...'} comments</p>
+          <p className="text-sm text-muted-foreground">{data?.length ?? '...'} comments</p>
         </div>
       </div>
 

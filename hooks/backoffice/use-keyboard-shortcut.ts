@@ -32,10 +32,14 @@ export function useKeyboardShortcut(combo: string, handler: ShortcutHandler, ena
     const key = parts.filter((p) => p !== 'mod' && p !== 'shift' && p !== 'alt')[0];
 
     function onKeyDown(e: KeyboardEvent) {
+      // Require exact modifier match: every flag the combo specifies must
+      // be pressed AND every flag it doesn't specify must NOT be pressed.
+      // Without the second half, `mod+s` would fire on Cmd+Shift+S (which
+      // collides with the native macOS "Save As") and on Cmd+Alt+S.
       const mod = e.metaKey || e.ctrlKey;
-      if (needMod && !mod) return;
-      if (needShift && !e.shiftKey) return;
-      if (needAlt && !e.altKey) return;
+      if (needMod !== mod) return;
+      if (needShift !== e.shiftKey) return;
+      if (needAlt !== e.altKey) return;
 
       // Match the key
       const eventKey = e.key.toLowerCase();

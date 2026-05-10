@@ -26,6 +26,7 @@ import {
   type ImageTextDetail,
   type ImageTextStatus,
 } from '@/services/image-texts';
+import { fetchManuscriptImage } from '@/services/manuscripts';
 
 const STATUSES: ImageTextStatus[] = ['Draft', 'Review', 'Live', 'Reviewed'];
 const TYPES = ['Transcription', 'Translation'];
@@ -38,10 +39,25 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
   const { token } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: text, isLoading } = useQuery<ImageTextDetail | null>({
+  const {
+    data: text,
+    isLoading,
+    isError,
+    error: fetchError,
+  } = useQuery<ImageTextDetail | null>({
     queryKey: queryKey(textId),
     queryFn: () => fetchImageText(textId, token!),
     enabled: !!token && Number.isFinite(textId),
+  });
+
+  // The text record carries `item_image` but not the parent `item_part`,
+  // which the public-viewer URL needs for the back-link in the layout
+  // header. Resolve it once the text loads so the "Public viewer" link is
+  // valid (the previous hard-coded `/manuscripts/0/...` 404'd the back-link).
+  const { data: image } = useQuery({
+    queryKey: ['backoffice', 'item-image', text?.item_image],
+    queryFn: () => fetchManuscriptImage(String(text!.item_image)),
+    enabled: !!text,
   });
 
   const [content, setContent] = useState('');
@@ -83,6 +99,19 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
     dirty
   );
 
+  if (isError) {
+    // The service throws on non-404 errors so a transient outage doesn't
+    // get hidden behind a perpetual spinner. Surface the error message so
+    // the user knows to retry rather than wait indefinitely.
+    return (
+      <div className="flex h-64 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+        <p>Could not load image text.</p>
+        <p className="text-xs">
+          {fetchError instanceof Error ? fetchError.message : String(fetchError)}
+        </p>
+      </div>
+    );
+  }
   if (isLoading || !text) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -183,14 +212,18 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
       </div>
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Link
-          href={`/manuscripts/0/images/${text.item_image}/texts/${text.id}`}
-          className="inline-flex items-center gap-1 hover:underline"
-          target="_blank"
-        >
-          <ExternalLink className="h-3 w-3" /> Public viewer
-        </Link>
-        <span>·</span>
+        {image && (
+          <>
+            <Link
+              href={`/manuscripts/${image.item_part}/images/${text.item_image}/texts`}
+              className="inline-flex items-center gap-1 hover:underline"
+              target="_blank"
+            >
+              <ExternalLink className="h-3 w-3" /> Public viewer
+            </Link>
+            <span>·</span>
+          </>
+        )}
         <span>Modified {new Date(text.modified).toLocaleString()}</span>
       </div>
     </div>

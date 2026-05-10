@@ -20,7 +20,12 @@ export function useUnsavedGuard(dirty: boolean) {
     if (!dirty) return;
 
     function handler(e: BeforeUnloadEvent) {
+      // Modern Chrome/Firefox honor preventDefault() alone, but Safari and
+      // Chrome <120 still require setting `returnValue` to actually surface
+      // the leave-page dialog. Set both so the guard works cross-browser
+      // and unsaved publication/manuscript edits aren't silently lost.
       e.preventDefault();
+      e.returnValue = '';
     }
 
     window.addEventListener('beforeunload', handler);

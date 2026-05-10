@@ -90,9 +90,16 @@ export function FieldLabel({
     >
       {children}
       {required && (
-        <span className="text-destructive" aria-hidden="true">
-          *
-        </span>
+        <>
+          <span className="text-destructive" aria-hidden="true">
+            *
+          </span>
+          {/* Screen readers need a programmatic signal that the field is
+              required — the asterisk alone is aria-hidden, so without this
+              announcement assistive tech users had no way to tell a field
+              was required from the label. */}
+          <span className="sr-only">(required)</span>
+        </>
       )}
       {helpField && <HelpTooltip field={helpField} entry={helpEntry} />}
     </label>

@@ -167,23 +167,31 @@ export default function CarouselPage() {
       // Optimistic cache update
       queryClient.setQueryData(backofficeKeys.carousel.all(), updated);
 
-      Promise.all(
-        updated
-          .filter(
-            (item, i) =>
-              currentSorted[i]?.id !== item.id || currentSorted[i]?.ordering !== item.ordering
-          )
-          .map((item) =>
-            updateCarouselItemJson(token!, item.id, {
-              ordering: item.ordering,
-            })
-          )
-      )
-        .then(() => invalidate())
-        .catch(() => {
-          toast.error('Failed to reorder items');
-          invalidate();
-        });
+      // `allSettled` so a single failed PATCH doesn't make the whole
+      // reorder appear to fail when most items repositioned correctly.
+      // Always invalidate — successes still need to be reflected, and the
+      // optimistic state must reconcile with the server's truth.
+      const updates = updated.filter(
+        (item, i) =>
+          currentSorted[i]?.id !== item.id || currentSorted[i]?.ordering !== item.ordering
+      );
+      Promise.allSettled(
+        updates.map((item) =>
+          updateCarouselItemJson(token!, item.id, {
+            ordering: item.ordering,
+          })
+        )
+      ).then((results) => {
+        invalidate();
+        const failed = results.filter((r) => r.status === 'rejected').length;
+        if (failed > 0) {
+          toast.error(
+            failed === results.length
+              ? 'Failed to reorder items'
+              : `${failed} of ${results.length} updates failed`
+          );
+        }
+      });
     },
     [items, token, queryClient, invalidate]
   );

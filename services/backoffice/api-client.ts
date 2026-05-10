@@ -1,16 +1,17 @@
-import { apiFetch } from '@/lib/api-fetch';
+import { authFetch } from '@/lib/api-fetch';
 
 const TRANSIENT_STATUSES = [502, 503, 504];
 
 async function fetchWithRetry(
   path: string,
+  token: string,
   init?: RequestInit,
   retries = 2,
   delay = 500
 ): Promise<Response> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await apiFetch(path, init);
+      const res = await authFetch(path, token, init);
       if (attempt < retries && TRANSIENT_STATUSES.includes(res.status)) {
         await new Promise((r) => setTimeout(r, delay * (attempt + 1)));
         continue;
@@ -39,11 +40,10 @@ export class BackofficeApiError extends Error {
  * Sends requests to the provided API path and adds the auth token header.
  */
 async function apiRequest<T>(path: string, token: string, init?: RequestInit): Promise<T> {
-  const res = await fetchWithRetry(path, {
+  const res = await fetchWithRetry(path, token, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Token ${token}`,
       ...init?.headers,
     },
   });
@@ -95,11 +95,8 @@ async function apiRequestFormData<T>(
   method: string,
   formData: FormData
 ): Promise<T> {
-  const res = await fetchWithRetry(path, {
+  const res = await fetchWithRetry(path, token, {
     method,
-    headers: {
-      Authorization: `Token ${token}`,
-    },
     body: formData,
   });
 

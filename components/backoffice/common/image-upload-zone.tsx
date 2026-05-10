@@ -65,12 +65,33 @@ export function ImageUploadZone({
   const handleFile = useCallback(
     (file: File) => {
       if (!validate(file)) return;
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+      // Revoke the previous preview URL before overwriting it. Picking a
+      // second file in succession would otherwise orphan the first blob
+      // URL — the browser holds the blob in memory until full page
+      // reload, leaking ~10 MB per replaced upload.
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(file);
+      });
       onFileSelect(file);
     },
     [validate, onFileSelect]
   );
+
+  // Revoke any staged preview URL on unmount so navigating away from a
+  // form with a chosen-but-not-saved file doesn't leak the blob. Read
+  // the latest previewUrl through a ref so the cleanup only runs on
+  // unmount (not on every change — intermediate replacements are
+  // revoked inline by handleFile / handleClear).
+  const previewUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    previewUrlRef.current = previewUrl;
+  }, [previewUrl]);
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
+  }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {

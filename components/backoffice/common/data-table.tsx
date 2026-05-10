@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ChevronLeft, ChevronRight, Search, Columns, Download, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { dismissActionNotification, showActionNotification } from '@/components/ui/action-toast';
+import { escapeCsvField } from '@/lib/backoffice/csv-escape';
 
 export interface BulkAction {
   label: string;
@@ -199,32 +199,6 @@ export function DataTable<TData, TValue>({
 
   const selectedCount = Object.keys(rowSelection).length;
   const selectedIds = Object.keys(rowSelection);
-  const previousSelectedCountRef = useRef(0);
-
-  useEffect(() => {
-    if (!enableRowSelection || !bulkActions?.length) return;
-
-    if (selectedCount === 0) {
-      if (previousSelectedCountRef.current > 0) {
-        dismissActionNotification('data-table-selection-toast');
-      }
-
-      previousSelectedCountRef.current = selectedCount;
-      return;
-    }
-
-    if (selectedCount !== previousSelectedCountRef.current) {
-      showActionNotification({
-        id: 'data-table-selection-toast',
-        kind: 'selected',
-        title: `${selectedCount} row${selectedCount === 1 ? '' : 's'} selected`,
-        description: 'Selection updated.',
-        duration: 1800,
-      });
-    }
-
-    previousSelectedCountRef.current = selectedCount;
-  }, [bulkActions?.length, enableRowSelection, selectedCount]);
 
   function handleExport() {
     const headers = table
@@ -236,19 +210,34 @@ export function DataTable<TData, TValue>({
       headers
         .map((h) => {
           const val = row.getValue(h);
-          const str = String(val ?? '');
-          return str.includes(',') || str.includes('"') ? `"${str.replace(/"/g, '""')}"` : str;
+          // `escapeCsvField` handles delimiters/quotes/newlines AND neutralizes
+          // formula-injection prefixes (`=`, `+`, `-`, `@`, tab, `\r`) so a
+          // backoffice CSV opened in Excel/Sheets can't execute hostile
+          // content from a researcher-edited description or name field.
+          return escapeCsvField(String(val ?? ''));
         })
         .join(',')
     );
 
-    const csv = [headers.join(','), ...rows].join('\n');
+    // Escape the header row through the same path as the data cells —
+    // column ids today are machine identifiers, but a future renaming
+    // could introduce a comma, quote, or formula-prefix character that
+    // would otherwise break CSV alignment for the whole file.
+    const csv = [headers.map(escapeCsvField).join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `${exportFilename}.csv`;
+    // Append-click-remove instead of bare `.click()` on a detached node.
+    // Modern Chrome/Firefox/Safari trigger the download fine, but older
+    // Firefox versions and some mobile Safari builds silently no-op the
+    // click on an unattached anchor — admins on those browsers got no
+    // export file. Same fix as cycle 179's search-results exporter and
+    // cycle 149's lightbox exporter.
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }
 

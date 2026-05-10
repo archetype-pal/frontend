@@ -22,8 +22,10 @@ import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { EntityEditorActions } from '@/components/backoffice/common/entity-editor-actions';
 import { getHand, updateHand, deleteHand } from '@/services/backoffice/scribes';
-import { getItemImages } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { walkPaginated } from '@/lib/backoffice/walk-paginated';
+import { authFetch } from '@/lib/api-fetch';
+import type { AdminItemImage } from '@/services/backoffice/manuscripts';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
@@ -49,14 +51,21 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
   const [dirty, setDirty] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  // Fetch images for the hand's item part
+  // Fetch images for the hand's item part. Walk all pages — `limit: 200`
+  // was silently capped at DRF's max_limit=100, so editors associating a
+  // hand with images on a multi-folio cartulary couldn't reach folios
+  // past the 100th.
   const { data: imagesData, isLoading: imagesLoading } = useQuery({
     queryKey: ['backoffice', 'item-images', hand?.item_part],
-    queryFn: () => getItemImages(token!, { item_part: hand!.item_part, limit: 200 }),
+    queryFn: () =>
+      walkPaginated<AdminItemImage>(
+        `/api/v1/manuscripts/management/item-images/?item_part=${hand!.item_part}&limit=100`,
+        (path) => authFetch(path, token!)
+      ),
     enabled: !!token && !!hand?.item_part,
   });
 
-  const availableImages = useMemo(() => imagesData?.results ?? [], [imagesData]);
+  const availableImages = useMemo(() => imagesData ?? [], [imagesData]);
 
   useEffect(() => {
     if (hand) {

@@ -41,6 +41,7 @@ import {
 import { getUsers, createUser, updateUser, deleteUser } from '@/services/backoffice/users';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { toast } from 'sonner';
 import type { UserListItem, UserCreatePayload, UserUpdatePayload } from '@/types/backoffice';
 
@@ -212,17 +213,20 @@ export default function UsersPage() {
     },
   });
 
+  // Use `runBulkAction` so a single failed delete doesn't black-hole the
+  // cache invalidation — successful deletes still need to be reflected in
+  // the table even when one row 4xx/5xxs.
   const bulkDeleteMut = useMutation({
-    mutationFn: async (ids: string[]) => {
-      await Promise.all(ids.map((id) => deleteUser(token!, Number(id))));
-    },
+    mutationFn: (ids: string[]) =>
+      runBulkAction({
+        ids,
+        action: (id) => deleteUser(token!, Number(id)),
+        invalidate,
+        pastTense: 'deleted',
+        noun: 'user',
+      }),
     onSuccess: () => {
-      toast.success(`${bulkDeleteIds.length} user(s) deleted`);
-      invalidate();
       setBulkDeleteIds([]);
-    },
-    onError: (err) => {
-      toast.error('Bulk delete failed', { description: formatApiError(err) });
     },
   });
 
@@ -239,16 +243,24 @@ export default function UsersPage() {
     });
   }
 
-  async function handleBulkActivate(ids: string[]) {
-    await Promise.all(ids.map((id) => updateUser(token!, Number(id), { is_active: true })));
-    toast.success(`${ids.length} user(s) activated`);
-    invalidate();
+  function handleBulkActivate(ids: string[]) {
+    return runBulkAction({
+      ids,
+      action: (id) => updateUser(token!, Number(id), { is_active: true }),
+      invalidate,
+      pastTense: 'activated',
+      noun: 'user',
+    });
   }
 
-  async function handleBulkDeactivate(ids: string[]) {
-    await Promise.all(ids.map((id) => updateUser(token!, Number(id), { is_active: false })));
-    toast.success(`${ids.length} user(s) deactivated`);
-    invalidate();
+  function handleBulkDeactivate(ids: string[]) {
+    return runBulkAction({
+      ids,
+      action: (id) => updateUser(token!, Number(id), { is_active: false }),
+      invalidate,
+      pastTense: 'deactivated',
+      noun: 'user',
+    });
   }
 
   function handleBulkDelete(ids: string[]) {
