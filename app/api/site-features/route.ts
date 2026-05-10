@@ -1,14 +1,12 @@
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
+import { authFetch } from '@/lib/api-fetch';
 import { readSiteFeatures, writeSiteFeatures } from '@/lib/site-features-server';
 import type { SiteFeaturesConfig } from '@/lib/site-features';
-import { env } from '@/lib/env';
 
 async function verifyStaff(token: string): Promise<boolean> {
   try {
-    const res = await fetch(`${env.apiUrl}/api/v1/auth/profile`, {
-      headers: { Authorization: `Token ${token}` },
-    });
+    const res = await authFetch('/api/v1/auth/profile', token);
     if (!res.ok) return false;
     const user = await res.json();
     return user.is_staff === true;
@@ -43,7 +41,9 @@ export async function PUT(request: NextRequest) {
   if (!body || typeof body !== 'object' || !('sections' in body) || !('searchCategories' in body)) {
     return NextResponse.json({ error: 'Invalid config shape' }, { status: 400 });
   }
-  await writeSiteFeatures(body as SiteFeaturesConfig);
+  const normalized = await writeSiteFeatures(body as SiteFeaturesConfig);
   revalidatePath('/', 'layout');
-  return NextResponse.json(body);
+  // Return the normalized config (with sectionOrder canonicalized) so the
+  // client's cache reflects what's actually on disk.
+  return NextResponse.json(normalized);
 }

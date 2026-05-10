@@ -12,7 +12,13 @@ export async function readModelLabels(): Promise<ModelLabelsConfig> {
   const defaults = getDefaultModelLabelsConfig();
   try {
     const raw = await readFile(CONFIG_PATH, 'utf-8');
-    const parsed = JSON.parse(raw) as Partial<ModelLabelsConfig>;
+    const rawParsed: unknown = JSON.parse(raw);
+    // If the file was hand-edited to `null`, an array, or a primitive, we
+    // would have crashed on `parsed.labels` reading below. Bail out to
+    // defaults so SSR doesn't 500 over a broken config file. Mirrors the
+    // same defense in lib/site-features-server.ts (cycle 131).
+    if (!rawParsed || typeof rawParsed !== 'object' || Array.isArray(rawParsed)) return defaults;
+    const parsed = rawParsed as Partial<ModelLabelsConfig>;
     return {
       labels: normalizeModelLabels(parsed.labels),
     };
