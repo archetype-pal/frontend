@@ -1,14 +1,12 @@
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
-import { env } from '@/lib/env';
+import { authFetch } from '@/lib/api-fetch';
 import { readModelLabels, writeModelLabels } from '@/lib/model-labels-server';
 import { normalizeModelLabels, type ModelLabelsConfig } from '@/lib/model-labels';
 
 async function verifySuperuser(token: string): Promise<boolean> {
   try {
-    const res = await fetch(`${env.apiUrl}/api/v1/auth/profile`, {
-      headers: { Authorization: `Token ${token}` },
-    });
+    const res = await authFetch('/api/v1/auth/profile', token);
     if (!res.ok) return false;
     const user = await res.json();
     return user.is_superuser === true;
