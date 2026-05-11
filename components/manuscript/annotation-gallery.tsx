@@ -706,16 +706,17 @@ function GraphThumb({
   // button is the way into the editor dialog. In view mode the thumb links
   // into the manuscript viewer like before.
   //
-  // Image fills the entire thumbnail area (object-cover, no muted bg), so
-  // there's no visible "box" around the allograph itself. The bg-muted only
-  // surfaces while the IIIF thumb is loading and gets covered the moment
-  // the image arrives.
+  // object-contain so the full glyph shows (object-cover would crop tall
+  // or wide letters into the square). The container is transparent — no
+  // muted bg, so the unfilled corners just show the page background and
+  // there's still no visible "box" around the image. The bg-muted span
+  // only surfaces while the IIIF thumb is loading.
   const thumbInner = thumb ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={thumb}
       alt={`Annotation ${graph.id}`}
-      className="h-full w-full object-cover"
+      className="max-h-full max-w-full object-contain"
       loading="lazy"
     />
   ) : (
