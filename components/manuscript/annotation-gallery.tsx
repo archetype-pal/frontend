@@ -209,6 +209,15 @@ export function AnnotationGallery({
       .filter((handGroup) => handGroup.allographs.length > 0);
   }, [groups, allographFilter]);
 
+  const totalAllographCount = React.useMemo(
+    () => groups.reduce((sum, g) => sum + g.allographs.length, 0),
+    [groups]
+  );
+  const filteredAllographCount = React.useMemo(
+    () => filteredGroups.reduce((sum, g) => sum + g.allographs.length, 0),
+    [filteredGroups]
+  );
+
   // Single source of truth for "add graphs to the collection" — used by both
   // the per-allograph "Add selected" and the top toolbar's "Add to collection."
   const addToCollection = React.useCallback(
@@ -245,6 +254,8 @@ export function AnnotationGallery({
         <GalleryToolbar
           allographFilter={allographFilter}
           onAllographFilterChange={setAllographFilter}
+          totalAllographCount={totalAllographCount}
+          filteredAllographCount={filteredAllographCount}
           canEdit={canEdit}
           annotatingMode={annotatingMode}
           onAnnotatingModeChange={setAnnotatingMode}
@@ -273,9 +284,17 @@ export function AnnotationGallery({
         )}
 
         {filteredGroups.length === 0 && allographFilter.trim() && (
-          <p className="text-sm text-muted-foreground">
-            No allographs match &ldquo;{allographFilter.trim()}&rdquo;.
-          </p>
+          <div className="flex items-center justify-between rounded-md border border-dashed bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+            <span>No allographs match &ldquo;{allographFilter.trim()}&rdquo;.</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7"
+              onClick={() => setAllographFilter('')}
+            >
+              Clear filter
+            </Button>
+          </div>
         )}
 
         {filteredGroups.map((handGroup) => (
@@ -332,6 +351,8 @@ export function AnnotationGallery({
 interface GalleryToolbarProps {
   allographFilter: string;
   onAllographFilterChange: (value: string) => void;
+  totalAllographCount: number;
+  filteredAllographCount: number;
   canEdit: boolean;
   annotatingMode: boolean;
   onAnnotatingModeChange: (value: boolean) => void;
@@ -344,6 +365,8 @@ interface GalleryToolbarProps {
 function GalleryToolbar({
   allographFilter,
   onAllographFilterChange,
+  totalAllographCount,
+  filteredAllographCount,
   canEdit,
   annotatingMode,
   onAnnotatingModeChange,
@@ -352,19 +375,38 @@ function GalleryToolbar({
   onAddSelectedToCollection,
   onEditSelected,
 }: GalleryToolbarProps) {
+  const isFiltering = allographFilter.trim().length > 0;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card px-3 py-2">
-      <div className="flex flex-1 items-center gap-3">
-        <Input
-          type="search"
-          placeholder="Filter allographs…"
-          value={allographFilter}
-          onChange={(e) => onAllographFilterChange(e.target.value)}
-          className="h-8 max-w-xs"
-          aria-label="Filter allographs by name"
-        />
+    // Sticky so the filter and selection actions stay reachable when scrolling
+    // through long pages with many hands. `top-0` puts it just below whatever
+    // the page-level layout's chrome ends up being; bg-card/backdrop-blur
+    // keeps content behind it readable.
+    <div className="sticky top-0 z-20 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <div className="flex flex-1 flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Input
+            type="search"
+            placeholder="Filter allographs…"
+            value={allographFilter}
+            onChange={(e) => onAllographFilterChange(e.target.value)}
+            className="h-8 w-56"
+            aria-label="Filter allographs by name"
+          />
+          {isFiltering && (
+            <span className="text-xs text-muted-foreground" aria-live="polite">
+              {filteredAllographCount} of {totalAllographCount}
+            </span>
+          )}
+        </div>
         {canEdit && (
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <label
+            className={cn(
+              'flex cursor-pointer items-center gap-2 rounded border px-2 py-1 text-xs transition',
+              annotatingMode
+                ? 'border-primary bg-primary/10 text-foreground'
+                : 'border-transparent text-muted-foreground hover:border-border'
+            )}
+          >
             <Switch
               checked={annotatingMode}
               onCheckedChange={onAnnotatingModeChange}
@@ -377,7 +419,9 @@ function GalleryToolbar({
 
       {selectionCount > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-muted-foreground">{selectionCount} selected</span>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
+            {selectionCount} selected
+          </span>
           {annotatingMode ? (
             <Button size="sm" variant="default" className="h-7 gap-1.5" onClick={onEditSelected}>
               <Pencil className="h-3.5 w-3.5" />
@@ -637,19 +681,21 @@ function GraphThumb({
         isSelected ? 'border-primary ring-2 ring-primary/40' : 'border-border hover:border-primary'
       )}
     >
+      {/* Always-visible selection toggle: prior version was opacity-60 until
+          hover, which made the entire selection workflow undiscoverable. */}
       <button
         type="button"
         onClick={onToggleSelected}
         aria-pressed={isSelected}
         aria-label={isSelected ? 'Unselect graph' : 'Select graph'}
         className={cn(
-          'absolute left-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded border bg-background/80 text-[10px]',
+          'absolute left-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded border text-[10px] shadow-sm transition',
           isSelected
             ? 'border-primary bg-primary text-primary-foreground'
-            : 'border-muted-foreground/40 opacity-60 group-hover:opacity-100'
+            : 'border-muted-foreground/60 bg-background/95 text-transparent hover:border-primary hover:text-primary group-hover:text-muted-foreground'
         )}
       >
-        {isSelected ? '✓' : ''}
+        ✓
       </button>
 
       <Tooltip>

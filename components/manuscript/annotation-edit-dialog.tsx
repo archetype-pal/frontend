@@ -252,6 +252,15 @@ function DialogBody({
     React.useCallback((id) => deriveTriState(graphs, (g) => graphHasPosition(g, id)), [graphs])
   );
 
+  // True when at least one editable surface has a value diverging from the
+  // initial selection — drives Save-button enabled state and Save-button copy.
+  const hasPendingChanges =
+    (allographId != null &&
+      allographId !== (initialAllograph === MIXED ? null : initialAllograph)) ||
+    (hand !== MIXED && !Object.is(hand, initialHand)) ||
+    featureMap.hasMeaningfulEdits ||
+    positionMap.hasMeaningfulEdits;
+
   // Reset per-feature/per-position pending edits when the selection changes,
   // for the same reason `setError(null)` resets above.
   React.useEffect(() => {
@@ -377,6 +386,15 @@ function DialogBody({
 
           {schemaAllograph ? (
             <>
+              {isMulti && (
+                <p className="rounded border border-muted-foreground/20 bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+                  Click a checkbox to cycle: <span className="font-medium">all</span> (apply to
+                  every selected graph) → <span className="font-medium">none</span> (remove from
+                  every selected graph) → <span className="font-medium">mixed</span> (leave each
+                  graph alone — current per-graph values are preserved on save).
+                </p>
+              )}
+
               <section>
                 <h3 className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
                   Components &amp; features
@@ -441,9 +459,9 @@ function DialogBody({
           <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancel
           </Button>
-          <Button size="sm" onClick={handleSave} disabled={saving}>
+          <Button size="sm" onClick={handleSave} disabled={saving || !hasPendingChanges}>
             {saving && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
-            Save
+            {isMulti ? `Save ${graphs.length} graphs` : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>
