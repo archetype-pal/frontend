@@ -1,4 +1,9 @@
-import { fetchManuscriptImage, fetchAllographs, fetchHands } from '@/services/manuscripts';
+import {
+  fetchManuscriptImage,
+  fetchAllographs,
+  fetchHands,
+  fetchManuscript,
+} from '@/services/manuscripts';
 import { fetchAnnotationsForImage } from '@/services/annotations';
 import { AnnotationGallery } from '@/components/manuscript/annotation-gallery';
 
@@ -16,7 +21,7 @@ export default async function AnnotationsTabPage({ params }: PageProps) {
     return <div className="px-4 py-6 text-muted-foreground">Unable to load image.</div>;
   }
 
-  const [graphs, allographs, hands] = await Promise.all([
+  const [graphs, allographs, hands, manuscript] = await Promise.all([
     fetchAnnotationsForImage(imageId).catch(() => []),
     fetchAllographs().catch(() => []),
     fetchHands(image.item_part).catch(() => ({
@@ -25,6 +30,7 @@ export default async function AnnotationsTabPage({ params }: PageProps) {
       previous: null,
       results: [],
     })),
+    fetchManuscript(image.item_part).catch(() => null),
   ]);
 
   return (
@@ -32,7 +38,11 @@ export default async function AnnotationsTabPage({ params }: PageProps) {
       <AnnotationGallery
         manuscriptId={id}
         imageId={imageId}
+        itemImageId={image.id}
+        itemPartId={image.item_part}
         iiifImage={image.iiif_image}
+        locus={image.locus ?? ''}
+        shelfmark={manuscript?.display_label ?? ''}
         graphs={graphs}
         hands={hands.results}
         allographs={allographs}
