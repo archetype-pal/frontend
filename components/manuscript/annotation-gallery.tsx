@@ -723,9 +723,15 @@ function GraphThumb({
   );
   // The allograph is the card — image fills a square that's larger than
   // the prior 96×96 so the glyph is actually readable. With the box gone
-  // there's no chrome competing with the image.
-  const thumbClassName =
-    'flex aspect-square w-[10.5rem] items-center justify-center overflow-hidden rounded';
+  // there's no chrome competing with the image. Selection / hover ring
+  // is on the image element itself so it hugs the glyph instead of
+  // wrapping the reserved footer slot below it.
+  const thumbClassName = cn(
+    'flex aspect-square w-[10.5rem] items-center justify-center overflow-hidden rounded transition',
+    isSelected
+      ? 'ring-2 ring-primary ring-offset-2'
+      : 'hover:ring-2 hover:ring-primary/40 hover:ring-offset-2'
+  );
   const tooltipLabel = annotatingMode
     ? isSelected
       ? 'Unselect graph'
@@ -735,17 +741,10 @@ function GraphThumb({
       : 'View graph in the manuscript viewer';
 
   return (
-    <div
-      className={cn(
-        // No border, no card background, no padding — the allograph image is
-        // the card. Selection / hover are expressed as a ring around the
-        // image edge so we keep the affordance without re-introducing a box.
-        'group relative flex flex-col gap-1.5 rounded transition',
-        isSelected
-          ? 'ring-2 ring-primary ring-offset-2'
-          : 'hover:ring-2 hover:ring-primary/40 hover:ring-offset-2'
-      )}
-    >
+    // No border, no card background, no padding — the allograph image is
+    // the card. The selection ring lives on the image (see thumbClassName)
+    // so it hugs the glyph and doesn't wrap the reserved footer slot.
+    <div className="group relative flex flex-col gap-1.5">
       {/* Always-visible selection toggle. Bumped to 6×6 with a stronger
           contrast border so it reads as an interactive control even at rest,
           not just on hover. */}
