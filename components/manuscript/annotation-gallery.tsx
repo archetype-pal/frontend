@@ -2,22 +2,21 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { ArrowUp, Check, ListChecks, Loader2, Square, Star } from 'lucide-react';
+import { ArrowUp, ListChecks, Pencil, Square, Star } from 'lucide-react';
 
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { useAuth } from '@/contexts/auth-context';
 import { useCollection, type CollectionItem } from '@/contexts/collection-context';
 import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
-import { updateViewerAnnotation, type BackendGraph } from '@/services/annotations';
+import type { BackendGraph } from '@/services/annotations';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { SearchableOption } from '@/lib/searchable-option-ranking';
+import { AnnotationEditDialog } from '@/components/manuscript/annotation-edit-dialog';
 
 // ---------------------------------------------------------------------------
 // Grouping
@@ -38,18 +37,14 @@ interface HandGroup {
 function groupAnnotations(
   graphs: BackendGraph[],
   hands: HandType[],
-  allographs: Allograph[],
-  pendingAllographs: Record<number, number> = {}
+  allographs: Allograph[]
 ): HandGroup[] {
   const handLabelById = new Map(hands.map((h) => [h.id, h.name]));
   const allographLabelById = new Map(allographs.map((a) => [a.id, formatAllographLabel(a)]));
   const handMap = new Map<number | null, Map<number, BackendGraph[]>>();
 
   for (const graph of graphs) {
-    // Pending optimistic reassignment from in-page edit takes precedence over
-    // the server-rendered allograph until the next refresh.
-    const effectiveAllograph = pendingAllographs[graph.id] ?? graph.allograph;
-    if (typeof effectiveAllograph !== 'number') continue;
+    if (typeof graph.allograph !== 'number') continue;
 
     const handKey = typeof graph.hand === 'number' ? graph.hand : null;
     let allographMap = handMap.get(handKey);
@@ -57,9 +52,9 @@ function groupAnnotations(
       allographMap = new Map();
       handMap.set(handKey, allographMap);
     }
-    const list = allographMap.get(effectiveAllograph) ?? [];
+    const list = allographMap.get(graph.allograph) ?? [];
     list.push(graph);
-    allographMap.set(effectiveAllograph, list);
+    allographMap.set(graph.allograph, list);
   }
 
   return Array.from(handMap, ([handKey, allographMap]) => ({
@@ -86,10 +81,7 @@ interface GraphThumbProps {
   onToggleSelected: () => void;
   canEdit: boolean;
   annotatingMode: boolean;
-  allographOptions: SearchableOption[];
-  pendingAllographId: number | null;
-  saveStatus: SaveStatus;
-  onAllographChange: (graphId: number, allographId: number) => void;
+  onEdit: () => void;
 }
 
 function GraphThumb({
@@ -101,10 +93,7 @@ function GraphThumb({
   onToggleSelected,
   canEdit,
   annotatingMode,
-  allographOptions,
-  pendingAllographId,
-  saveStatus,
-  onAllographChange,
+  onEdit,
 }: GraphThumbProps) {
   // Legacy GeoJSON polygons are stored with bottom-left origin (Web Mercator);
   // useIiifThumbnailUrl handles the y-flip and bounds clamping via info.json.
@@ -112,10 +101,9 @@ function GraphThumb({
   const thumb = useIiifThumbnailUrl(iiifImage, annotationJson, 250);
   const href = `/manuscripts/${manuscriptId}/images/${imageId}?graph=${graph.id}`;
 
-  // In annotating mode we stay on this page — the thumb becomes a selection
-  // toggle (so power-users can shift-build a multi-graph selection) and the
-  // edit picker takes over the navigation slot. In view mode it links into
-  // the manuscript viewer like before.
+  // In annotating mode the thumb is a selection toggle; the inline Edit
+  // button is the way into the editor dialog. In view mode the thumb links
+  // into the manuscript viewer like before.
   const thumbInner = thumb ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -136,8 +124,6 @@ function GraphThumb({
     : canEdit
       ? 'Edit graph'
       : 'View graph in the manuscript viewer';
-
-  const effectiveAllographValue = String(pendingAllographId ?? graph.allograph ?? '');
 
   return (
     <div
@@ -183,49 +169,20 @@ function GraphThumb({
 
       {annotatingMode && (
         <div className="mt-1 w-[10rem] space-y-1">
-          <div className="flex items-center gap-1">
-            <SearchableSelect
-              options={allographOptions}
-              value={effectiveAllographValue || null}
-              onValueChange={(v) => {
-                if (!v) return;
-                const next = Number(v);
-                if (Number.isFinite(next) && next !== graph.allograph) {
-                  onAllographChange(graph.id, next);
-                }
-              }}
-              placeholder="Allograph…"
-              searchPlaceholder="Search allographs…"
-              emptyText="No allographs"
-              triggerClassName="h-7 flex-1 text-[11px]"
-              disabled={saveStatus === 'saving'}
-            />
-            <SaveIndicator status={saveStatus} />
-          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 w-full gap-1.5 text-[11px]"
+            onClick={onEdit}
+          >
+            <Pencil className="h-3 w-3" />
+            Edit
+          </Button>
           <AnnotatingDetails graph={graph} />
         </div>
       )}
     </div>
   );
-}
-
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
-
-function SaveIndicator({ status }: { status: SaveStatus }) {
-  if (status === 'saving') {
-    return <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />;
-  }
-  if (status === 'saved') {
-    return <Check className="h-3.5 w-3.5 text-emerald-600" />;
-  }
-  if (status === 'error') {
-    return (
-      <span className="text-[10px] font-medium text-destructive" title="Save failed">
-        !
-      </span>
-    );
-  }
-  return <span className="h-3.5 w-3.5" aria-hidden />;
 }
 
 // ---------------------------------------------------------------------------
@@ -294,7 +251,7 @@ export function AnnotationGallery({
   hands,
   allographs,
 }: AnnotationGalleryProps) {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const { addItem, isInCollection } = useCollection();
   const canEdit = Boolean(user?.is_staff);
 
@@ -303,62 +260,36 @@ export function AnnotationGallery({
   const [annotatingMode, setAnnotatingMode] = React.useState(false);
   const [showBackToTop, setShowBackToTop] = React.useState(false);
 
-  // Optimistic, locally-applied allograph reassignments. The server is the
-  // source of truth, but writes are slow and we want the picker + thumbnail
-  // group to update immediately. Reverted on save failure.
-  const [pendingAllographs, setPendingAllographs] = React.useState<Record<number, number>>({});
-  const [saveStatus, setSaveStatus] = React.useState<Record<number, SaveStatus>>({});
-  const [bulkAllographValue, setBulkAllographValue] = React.useState<string | null>(null);
-  const [bulkSaving, setBulkSaving] = React.useState(false);
-  const [bulkError, setBulkError] = React.useState<string | null>(null);
+  // Saved-graph overrides keep edits visible immediately (especially the
+  // re-grouping that follows an allograph change) without waiting for a
+  // route refresh. Each entry shadows the corresponding prop graph.
+  const [graphOverrides, setGraphOverrides] = React.useState<Record<number, BackendGraph>>({});
 
-  // Selection still works in annotating mode (it powers bulk-set), but the
-  // "add to collection" affordances are swapped for "set allograph for N".
+  // Dialog state — `editingGraphs` holds the actual graphs the dialog
+  // should target (single or many). Resolved through overrides so the
+  // dialog always sees the freshest values.
+  const [editingGraphIds, setEditingGraphIds] = React.useState<number[] | null>(null);
+
   const handleAnnotatingModeChange = React.useCallback((next: boolean) => {
     setAnnotatingMode(next);
-    setBulkAllographValue(null);
-    setBulkError(null);
   }, []);
 
-  const allographOptions = React.useMemo<SearchableOption[]>(
-    () =>
-      allographs
-        .map((a) => ({ value: String(a.id), label: formatAllographLabel(a) }))
-        .sort((a, b) => a.label.localeCompare(b.label)),
-    [allographs]
+  // Effective list of graphs (server values shadowed by any optimistic
+  // override from a recent save).
+  const effectiveGraphs = React.useMemo(
+    () => graphs.map((g) => graphOverrides[g.id] ?? g),
+    [graphs, graphOverrides]
   );
 
-  const markStatus = React.useCallback((id: number, status: SaveStatus) => {
-    setSaveStatus((prev) => ({ ...prev, [id]: status }));
+  const handleGraphSaved = React.useCallback((graph: BackendGraph) => {
+    setGraphOverrides((prev) => ({ ...prev, [graph.id]: graph }));
   }, []);
 
-  const saveAllograph = React.useCallback(
-    async (graphId: number, allographId: number) => {
-      if (!token) {
-        markStatus(graphId, 'error');
-        return false;
-      }
-      setPendingAllographs((prev) => ({ ...prev, [graphId]: allographId }));
-      markStatus(graphId, 'saving');
-      try {
-        await updateViewerAnnotation(token, graphId, { allograph: allographId });
-        markStatus(graphId, 'saved');
-        // Brief visual confirmation, then idle.
-        window.setTimeout(() => markStatus(graphId, 'idle'), 1500);
-        return true;
-      } catch {
-        // Revert the optimistic value so the picker snaps back to the saved one.
-        setPendingAllographs((prev) => {
-          const next = { ...prev };
-          delete next[graphId];
-          return next;
-        });
-        markStatus(graphId, 'error');
-        return false;
-      }
-    },
-    [markStatus, token]
-  );
+  const editingGraphs = React.useMemo(() => {
+    if (!editingGraphIds) return [];
+    const byId = new Map(effectiveGraphs.map((g) => [g.id, g]));
+    return editingGraphIds.map((id) => byId.get(id)).filter((g): g is BackendGraph => Boolean(g));
+  }, [editingGraphIds, effectiveGraphs]);
 
   // Show back-to-top once the user has scrolled meaningfully past the fold.
   // 600px is "past the Hands TOC and the first hand's allograph header on a
@@ -372,8 +303,8 @@ export function AnnotationGallery({
   }, []);
 
   const groups = React.useMemo(
-    () => groupAnnotations(graphs, hands, allographs, pendingAllographs),
-    [graphs, hands, allographs, pendingAllographs]
+    () => groupAnnotations(effectiveGraphs, hands, allographs),
+    [effectiveGraphs, hands, allographs]
   );
 
   // Apply allograph filter (substring, case-insensitive) — drop allograph
@@ -504,43 +435,15 @@ export function AnnotationGallery({
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="text-muted-foreground">{selectionCount} selected</span>
               {annotatingMode ? (
-                <>
-                  <SearchableSelect
-                    options={allographOptions}
-                    value={bulkAllographValue}
-                    onValueChange={(v) => setBulkAllographValue(v)}
-                    placeholder="Set allograph…"
-                    searchPlaceholder="Search allographs…"
-                    emptyText="No allographs"
-                    triggerClassName="h-7 w-48 text-xs"
-                    disabled={bulkSaving}
-                  />
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="h-7 gap-1.5"
-                    disabled={!bulkAllographValue || bulkSaving}
-                    onClick={async () => {
-                      if (!bulkAllographValue) return;
-                      const allographId = Number(bulkAllographValue);
-                      if (!Number.isFinite(allographId)) return;
-                      setBulkSaving(true);
-                      setBulkError(null);
-                      const ids = Array.from(selectedIds);
-                      const results = await Promise.all(
-                        ids.map((gid) => saveAllograph(gid, allographId))
-                      );
-                      setBulkSaving(false);
-                      const failed = results.filter((ok) => !ok).length;
-                      if (failed > 0) setBulkError(`${failed} of ${ids.length} failed`);
-                      else setBulkAllographValue(null);
-                    }}
-                  >
-                    {bulkSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    Apply
-                  </Button>
-                  {bulkError && <span className="text-destructive">{bulkError}</span>}
-                </>
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="h-7 gap-1.5"
+                  onClick={() => setEditingGraphIds(Array.from(selectedIds))}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit selected
+                </Button>
               ) : (
                 <Button
                   size="sm"
@@ -687,10 +590,7 @@ export function AnnotationGallery({
                             onToggleSelected={() => toggleGraph(graph.id)}
                             canEdit={canEdit}
                             annotatingMode={annotatingMode}
-                            allographOptions={allographOptions}
-                            pendingAllographId={pendingAllographs[graph.id] ?? null}
-                            saveStatus={saveStatus[graph.id] ?? 'idle'}
-                            onAllographChange={saveAllograph}
+                            onEdit={() => setEditingGraphIds([graph.id])}
                           />
                         ))}
                       </div>
@@ -719,6 +619,17 @@ export function AnnotationGallery({
             <TooltipContent side="left">Back to top</TooltipContent>
           </Tooltip>
         )}
+
+        <AnnotationEditDialog
+          open={editingGraphs.length > 0}
+          onOpenChange={(open) => {
+            if (!open) setEditingGraphIds(null);
+          }}
+          graphs={editingGraphs}
+          allographs={allographs}
+          hands={hands}
+          onGraphSaved={handleGraphSaved}
+        />
       </div>
     </TooltipProvider>
   );
