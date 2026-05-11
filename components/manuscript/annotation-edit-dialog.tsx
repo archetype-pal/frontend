@@ -10,7 +10,7 @@ import {
   type BackendGraphComponent,
 } from '@/services/annotations';
 import { formatAllographLabel } from '@/lib/allograph-labels';
-import type { Allograph, Feature } from '@/types/allographs';
+import type { Allograph, Component, Feature } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 
 import { Button } from '@/components/ui/button';
@@ -26,33 +26,17 @@ import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import type { SearchableOption } from '@/lib/searchable-option-ranking';
 
-// ---------------------------------------------------------------------------
-// Tri-state model
-// ---------------------------------------------------------------------------
-//
-// In multi-graph mode, each toggleable thing (a feature, a position) is in one
-// of three states across the selected set:
-//   - 'all'  : every selected graph has it set
-//   - 'none' : no selected graph has it set
-//   - 'mixed': some selected graphs have it, others don't
-//
-// The user can move a checkbox to 'all' (apply to all) or 'none' (remove from
-// all). 'mixed' is initial-only and means "leave per-graph values alone."
-//
-// In single-graph mode there's no 'mixed' — it's just a normal binary checkbox.
+// Tri-state model: every toggleable thing (feature, position) is 'all' (set
+// on every selected graph), 'none' (set on none), or 'mixed' (some have it).
+// Cycle is mixed → all → none → mixed. Only all/none commit on save; mixed
+// means "leave each graph alone." In single-graph mode mixed is unreachable.
 
 type TriState = 'all' | 'none' | 'mixed';
-
-function nextTriState(current: TriState): TriState {
-  // Cycle: mixed -> all -> none -> mixed (mixed reachable only by re-derive,
-  // but we let the user "undo" their pending change back to it via this cycle).
-  if (current === 'mixed') return 'all';
-  if (current === 'all') return 'none';
-  return 'mixed';
-}
+const MIXED = 'mixed' as const;
+const NEXT_STATE = { mixed: 'all', all: 'none', none: 'mixed' } as const;
+const CHECKBOX_VALUE = { all: true, none: false, mixed: 'indeterminate' } as const;
 
 function deriveTriState(graphs: BackendGraph[], hasIt: (g: BackendGraph) => boolean): TriState {
-  if (graphs.length === 0) return 'none';
   let trueCount = 0;
   for (const g of graphs) if (hasIt(g)) trueCount += 1;
   if (trueCount === 0) return 'none';
@@ -60,79 +44,107 @@ function deriveTriState(graphs: BackendGraph[], hasIt: (g: BackendGraph) => bool
   return 'mixed';
 }
 
-function checkboxValue(state: TriState): boolean | 'indeterminate' {
-  if (state === 'all') return true;
-  if (state === 'none') return false;
-  return 'indeterminate';
-}
-
-// ---------------------------------------------------------------------------
-// Common-allograph + common-component derivation
-// ---------------------------------------------------------------------------
-
-function commonAllographId(graphs: BackendGraph[]): number | null {
-  if (graphs.length === 0) return null;
-  const first = graphs[0].allograph;
-  if (first == null) return null;
-  for (let i = 1; i < graphs.length; i += 1) {
-    if (graphs[i].allograph !== first) return null;
+// `consensus(items, get)` returns the unique value of `get(item)` across the
+// set, or the MIXED sentinel when items disagree. Unifies the prior pair of
+// allograph-/hand-specific helpers that used two different sentinels (null vs
+// 'mixed') for the same concept.
+type Consensus<T> = T | typeof MIXED;
+function consensus<T>(items: BackendGraph[], get: (g: BackendGraph) => T): Consensus<T> {
+  const first = get(items[0]);
+  for (let i = 1; i < items.length; i += 1) {
+    if (!Object.is(get(items[i]), first)) return MIXED;
   }
   return first;
 }
 
-function commonHandId(graphs: BackendGraph[]): number | null | 'mixed' {
-  if (graphs.length === 0) return null;
-  const first = graphs[0].hand ?? null;
-  for (let i = 1; i < graphs.length; i += 1) {
-    if ((graphs[i].hand ?? null) !== first) return 'mixed';
-  }
-  return first;
+function findComponent(graph: BackendGraph, componentId: number) {
+  return (graph.graphcomponent_set ?? []).find((c) => c.component === componentId);
 }
-
-// "Common components" = components present on all selected graphs (intersected
-// by component id). Each common component carries the union of its features
-// across selected graphs (so the user can toggle features on graphs that
-// already share the component).
-interface CommonComponent {
-  componentId: number;
-  componentName: string;
-  features: Feature[];
-}
-
-function commonComponents(graphs: BackendGraph[], allograph: Allograph | null): CommonComponent[] {
-  if (graphs.length === 0 || allograph == null) return [];
-
-  // The intersection of component ids across all selected graphs.
-  const idSets = graphs.map((g) => new Set((g.graphcomponent_set ?? []).map((c) => c.component)));
-  const sharedIds = new Set<number>();
-  for (const id of idSets[0]) {
-    if (idSets.every((set) => set.has(id))) sharedIds.add(id);
-  }
-
-  // Pull feature definitions from the (single) common allograph schema; this
-  // is the only authoritative source we have for *what features mean*. If a
-  // component is shared by graphs but isn't on the allograph schema, skip it
-  // — there are no feature definitions to render.
-  return allograph.components
-    .filter((c) => sharedIds.has(c.component_id))
-    .map((c) => ({
-      componentId: c.component_id,
-      componentName: c.component_name,
-      features: c.features,
-    }));
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function graphHasFeature(graph: BackendGraph, componentId: number, featureId: number) {
-  const c = (graph.graphcomponent_set ?? []).find((x) => x.component === componentId);
-  return c ? c.features.includes(featureId) : false;
+  return findComponent(graph, componentId)?.features.includes(featureId) ?? false;
 }
-
 function graphHasPosition(graph: BackendGraph, positionId: number) {
   return (graph.positions ?? []).includes(positionId);
+}
+
+// Multi-mode shows only components present on every selected graph; single
+// mode shows all allograph-defined components. Feature definitions always
+// come from the allograph schema (graph rows just store ids).
+function visibleComponents(
+  graphs: BackendGraph[],
+  allograph: Allograph,
+  isMulti: boolean
+): Component[] {
+  if (!isMulti) return allograph.components;
+  return allograph.components.filter((c) =>
+    graphs.every((g) => Boolean(findComponent(g, c.component_id)))
+  );
+}
+
+// Single hook used by both the features and positions sections: a pending
+// per-key tri-state map that shadows a baseline derived from the graphs.
+interface TriStateMap<K extends string | number> {
+  get: (key: K) => TriState;
+  cycle: (key: K) => void;
+  hasMeaningfulEdits: boolean;
+  reset: () => void;
+  edits: Partial<Record<K, TriState>>;
+}
+
+function useTriStateMap<K extends string | number>(baseline: (key: K) => TriState): TriStateMap<K> {
+  const [edits, setEdits] = React.useState<Partial<Record<K, TriState>>>({});
+  return {
+    edits,
+    get: (key) => edits[key] ?? baseline(key),
+    cycle: (key) =>
+      setEdits((prev) => ({ ...prev, [key]: NEXT_STATE[prev[key] ?? baseline(key)] })),
+    reset: () => setEdits({}),
+    hasMeaningfulEdits: Object.values(edits).some((s) => s !== MIXED),
+  };
+}
+
+const FEATURE_KEY_SEP = ':' as const;
+const featureKey = (componentId: number, featureId: number) =>
+  `${componentId}${FEATURE_KEY_SEP}${featureId}`;
+
+function applyFeatureEdits(
+  current: BackendGraphComponent[],
+  edits: Partial<Record<string, TriState>>
+): BackendGraphComponent[] {
+  // Deep-ish clone: we mutate the features array in place per component.
+  const next: BackendGraphComponent[] = current.map((c) => ({ ...c, features: [...c.features] }));
+
+  for (const [key, state] of Object.entries(edits)) {
+    if (!state || state === MIXED) continue;
+    const [componentIdRaw, featureIdRaw] = key.split(FEATURE_KEY_SEP);
+    const componentId = Number(componentIdRaw);
+    const featureId = Number(featureIdRaw);
+
+    let entry = next.find((c) => c.component === componentId);
+    if (state === 'all') {
+      if (!entry) {
+        entry = { component: componentId, features: [] };
+        next.push(entry);
+      }
+      if (!entry.features.includes(featureId)) entry.features.push(featureId);
+    } else if (entry) {
+      entry.features = entry.features.filter((f) => f !== featureId);
+    }
+  }
+
+  // Drop component rows that ended up with no features so we don't persist
+  // dangling components.
+  return next.filter((c) => c.features.length > 0);
+}
+
+function applyPositionEdits(current: number[], edits: Partial<Record<number, TriState>>): number[] {
+  const set = new Set(current);
+  for (const [posIdRaw, state] of Object.entries(edits)) {
+    if (!state || state === MIXED) continue;
+    if (state === 'all') set.add(Number(posIdRaw));
+    else set.delete(Number(posIdRaw));
+  }
+  return Array.from(set).sort((a, b) => a - b);
 }
 
 // ---------------------------------------------------------------------------
@@ -145,15 +157,22 @@ export interface AnnotationEditDialogProps {
   graphs: BackendGraph[];
   allographs: Allograph[];
   hands: HandType[];
-  // Called after every successful per-graph PATCH so the parent can update
-  // its optimistic view immediately. Receives the freshly-saved graph from
-  // the server.
+  /** Called for every successful per-graph PATCH so the parent can apply an
+   *  optimistic override immediately. */
   onGraphSaved?: (graph: BackendGraph) => void;
-  // Called once the dialog finishes its save batch (success or partial).
+  /** Called once the dialog finishes its save batch (success or partial). */
   onComplete?: (result: { savedCount: number; failedCount: number }) => void;
 }
 
-export function AnnotationEditDialog({
+// The body is a separate component so the hooks below can rely on the
+// invariant that `graphs[0]` exists. The wrapper handles the empty-selection
+// short-circuit before any hook call.
+export function AnnotationEditDialog(props: AnnotationEditDialogProps) {
+  if (!props.open || props.graphs.length === 0) return null;
+  return <DialogBody {...props} />;
+}
+
+function DialogBody({
   open,
   onOpenChange,
   graphs,
@@ -172,7 +191,6 @@ export function AnnotationEditDialog({
         .sort((a, b) => a.label.localeCompare(b.label)),
     [allographs]
   );
-
   const handOptions = React.useMemo<SearchableOption[]>(
     () =>
       hands
@@ -181,95 +199,71 @@ export function AnnotationEditDialog({
     [hands]
   );
 
-  // ---- Initial values from the selection ---------------------------------
-  const initialAllographId = React.useMemo(() => commonAllographId(graphs), [graphs]);
-  const initialHand = React.useMemo(() => commonHandId(graphs), [graphs]);
+  // ---- Initial values from the selection ----------------------------------
+  // Allograph: 'mixed' means the user must pick one before component/position
+  // editing makes sense. Hand: 'mixed' means "leave each graph's hand alone."
+  const initialAllograph = React.useMemo(() => consensus(graphs, (g) => g.allograph), [graphs]);
+  const initialHand = React.useMemo(() => consensus(graphs, (g) => g.hand ?? null), [graphs]);
 
-  // ---- Editable state ----------------------------------------------------
-  const [allographId, setAllographId] = React.useState<number | null>(initialAllographId);
-  const [handId, setHandId] = React.useState<number | null | 'mixed'>(initialHand);
-  // Per-feature pending state, keyed by `${componentId}:${featureId}`.
-  const [featureStates, setFeatureStates] = React.useState<Record<string, TriState>>({});
-  // Per-position pending state, keyed by positionId.
-  const [positionStates, setPositionStates] = React.useState<Record<number, TriState>>({});
+  // ---- Editable state -----------------------------------------------------
+  const [allographId, setAllographId] = React.useState<number | null>(
+    initialAllograph === MIXED ? null : initialAllograph
+  );
+  const [hand, setHand] = React.useState<Consensus<number | null>>(initialHand);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Reset draft state whenever the selection changes or the dialog reopens —
-  // otherwise switching selection mid-dialog leaves stale tri-state values.
+  // Reset draft state whenever the selection (and therefore the initial
+  // values) changes — otherwise switching selection mid-dialog leaves stale
+  // tri-state values.
   React.useEffect(() => {
-    if (!open) return;
-    setAllographId(initialAllographId);
-    setHandId(initialHand);
-    setFeatureStates({});
-    setPositionStates({});
+    setAllographId(initialAllograph === MIXED ? null : initialAllograph);
+    setHand(initialHand);
     setError(null);
-  }, [open, initialAllographId, initialHand]);
+  }, [initialAllograph, initialHand]);
 
   const selectedAllograph = React.useMemo(
-    () => (allographId != null ? (allographs.find((a) => a.id === allographId) ?? null) : null),
+    () => allographs.find((a) => a.id === allographId) ?? null,
     [allographs, allographId]
   );
 
-  // The "schema source" for what features/positions are editable. In multi-
-  // mode that's the common allograph (and only when all selected agree on it
-  // — otherwise we hide the components/positions sections and prompt the user
-  // to pick one).
+  // The schema source for editable components/positions. In multi-mode we
+  // only have one when every selected graph already agrees on its allograph
+  // — otherwise we hide those sections and prompt the user to pick one.
   const schemaAllograph: Allograph | null =
-    isMulti && initialAllographId == null ? null : selectedAllograph;
+    isMulti && initialAllograph === MIXED ? null : selectedAllograph;
 
-  const components: CommonComponent[] = React.useMemo(() => {
-    if (!schemaAllograph) return [];
-    if (!isMulti) {
-      // Single-graph mode: show every component the allograph defines.
-      return schemaAllograph.components.map((c) => ({
-        componentId: c.component_id,
-        componentName: c.component_name,
-        features: c.features,
-      }));
-    }
-    // Multi: only components common to every selected graph (and on schema).
-    return commonComponents(graphs, schemaAllograph);
-  }, [graphs, schemaAllograph, isMulti]);
-
-  // Resolve initial tri-state for a feature from the selected graphs.
-  const featureStateFor = React.useCallback(
-    (componentId: number, featureId: number): TriState => {
-      const key = `${componentId}:${featureId}`;
-      const pending = featureStates[key];
-      if (pending) return pending;
-      return deriveTriState(graphs, (g) => graphHasFeature(g, componentId, featureId));
-    },
-    [graphs, featureStates]
+  const components = React.useMemo<Component[]>(
+    () => (schemaAllograph ? visibleComponents(graphs, schemaAllograph, isMulti) : []),
+    [graphs, schemaAllograph, isMulti]
   );
 
-  const positionStateFor = React.useCallback(
-    (positionId: number): TriState => {
-      const pending = positionStates[positionId];
-      if (pending) return pending;
-      return deriveTriState(graphs, (g) => graphHasPosition(g, positionId));
-    },
-    [graphs, positionStates]
+  // ---- Tri-state maps for features and positions --------------------------
+  const featureMap = useTriStateMap<string>(
+    React.useCallback(
+      (key) => {
+        const [c, f] = key.split(FEATURE_KEY_SEP).map(Number);
+        return deriveTriState(graphs, (g) => graphHasFeature(g, c, f));
+      },
+      [graphs]
+    )
+  );
+  const positionMap = useTriStateMap<number>(
+    React.useCallback((id) => deriveTriState(graphs, (g) => graphHasPosition(g, id)), [graphs])
   );
 
-  const cycleFeature = (componentId: number, featureId: number) => {
-    const key = `${componentId}:${featureId}`;
-    const current = featureStateFor(componentId, featureId);
-    setFeatureStates((prev) => ({ ...prev, [key]: nextTriState(current) }));
-  };
+  // Reset per-feature/per-position pending edits when the selection changes,
+  // for the same reason `setError(null)` resets above.
+  React.useEffect(() => {
+    featureMap.reset();
+    positionMap.reset();
+    // Intentionally only on selection change — not on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphs]);
 
-  const cyclePosition = (positionId: number) => {
-    const current = positionStateFor(positionId);
-    setPositionStates((prev) => ({ ...prev, [positionId]: nextTriState(current) }));
-  };
+  // ---- Save ---------------------------------------------------------------
 
-  // ---- Save --------------------------------------------------------------
-
-  // Compute the new graphcomponent_set + positions for one specific graph
-  // by applying the dialog's pending tri-states on top of the graph's current
-  // values. Only edits that resolve to 'all' or 'none' are applied; 'mixed'
-  // means "leave alone."
-  const buildPatchForGraph = (graph: BackendGraph) => {
+  function buildPatchForGraph(graph: BackendGraph) {
     const patch: {
       allograph?: number;
       hand?: number | null;
@@ -280,61 +274,20 @@ export function AnnotationEditDialog({
     if (allographId != null && allographId !== graph.allograph) {
       patch.allograph = allographId;
     }
-    if (handId !== 'mixed' && handId !== (graph.hand ?? null)) {
-      patch.hand = handId;
+    if (hand !== MIXED && hand !== (graph.hand ?? null)) {
+      patch.hand = hand;
     }
-
-    // Compose feature/position changes only if the user touched something.
-    const hasFeatureEdits = Object.keys(featureStates).length > 0;
-    const hasPositionEdits = Object.keys(positionStates).length > 0;
-
-    if (hasFeatureEdits) {
-      // Start from current per-graph component set; we mutate per-feature
-      // entries in place and may add/remove component rows as features are
-      // toggled on/off entirely.
-      const next: BackendGraphComponent[] = (graph.graphcomponent_set ?? []).map((c) => ({
-        ...c,
-        features: [...c.features],
-      }));
-
-      for (const [key, state] of Object.entries(featureStates)) {
-        if (state === 'mixed') continue;
-        const [componentIdRaw, featureIdRaw] = key.split(':');
-        const componentId = Number(componentIdRaw);
-        const featureId = Number(featureIdRaw);
-        const wantSet = state === 'all';
-
-        let entry = next.find((c) => c.component === componentId);
-
-        if (wantSet) {
-          if (!entry) {
-            entry = { component: componentId, features: [] };
-            next.push(entry);
-          }
-          if (!entry.features.includes(featureId)) entry.features.push(featureId);
-        } else if (entry) {
-          entry.features = entry.features.filter((f) => f !== featureId);
-        }
-      }
-
-      // Drop empty component rows (no features left) so we don't persist
-      // dangling components.
-      patch.graphcomponent_set = next.filter((c) => c.features.length > 0);
+    if (featureMap.hasMeaningfulEdits) {
+      patch.graphcomponent_set = applyFeatureEdits(
+        graph.graphcomponent_set ?? [],
+        featureMap.edits
+      );
     }
-
-    if (hasPositionEdits) {
-      const set = new Set<number>(graph.positions ?? []);
-      for (const [posIdRaw, state] of Object.entries(positionStates)) {
-        if (state === 'mixed') continue;
-        const posId = Number(posIdRaw);
-        if (state === 'all') set.add(posId);
-        else set.delete(posId);
-      }
-      patch.positions = Array.from(set).sort((a, b) => a - b);
+    if (positionMap.hasMeaningfulEdits) {
+      patch.positions = applyPositionEdits(graph.positions ?? [], positionMap.edits);
     }
-
     return patch;
-  };
+  }
 
   const handleSave = async () => {
     if (!token) {
@@ -350,9 +303,9 @@ export function AnnotationEditDialog({
     await Promise.all(
       graphs.map(async (graph) => {
         const patch = buildPatchForGraph(graph);
-        // Skip graphs with nothing to save (for example: in multi mode, the
-        // user only edited features that 'mixed' kept untouched).
         if (Object.keys(patch).length === 0) {
+          // Nothing to do for this graph (e.g. multi-mode where only 'mixed'
+          // states stayed mixed) — count as success and skip the round trip.
           savedCount += 1;
           return;
         }
@@ -369,31 +322,23 @@ export function AnnotationEditDialog({
     setSaving(false);
     onComplete?.({ savedCount, failedCount });
 
-    if (failedCount > 0) {
-      setError(`${failedCount} of ${graphs.length} failed to save.`);
-    } else {
-      onOpenChange(false);
-    }
+    if (failedCount > 0) setError(`${failedCount} of ${graphs.length} failed to save.`);
+    else onOpenChange(false);
   };
 
-  // ---- Render ------------------------------------------------------------
-
-  const allographValue = allographId != null ? String(allographId) : null;
-  const handValue = handId === 'mixed' || handId == null ? null : String(handId);
-
-  const positions = schemaAllograph?.positions ?? [];
+  // ---- Render -------------------------------------------------------------
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] w-[640px] max-w-[calc(100vw-2rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isMulti ? `Edit ${graphs.length} graphs` : `Edit graph #${graphs[0]?.id ?? ''}`}
+            {isMulti ? `Edit ${graphs.length} graphs` : `Edit graph #${graphs[0].id}`}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5">
-          {isMulti && initialAllographId == null && (
+          {isMulti && initialAllograph === MIXED && (
             <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
               Selected graphs use different allographs. Choose one to set on all of them, or close
               and refine the selection.
@@ -405,10 +350,10 @@ export function AnnotationEditDialog({
               <Label className="mb-1 block text-xs">Allograph</Label>
               <SearchableSelect
                 options={allographOptions}
-                value={allographValue}
+                value={allographId != null ? String(allographId) : null}
                 onValueChange={(v) => setAllographId(v ? Number(v) : null)}
                 placeholder={
-                  isMulti && initialAllographId == null ? 'Mixed — pick one' : 'Allograph'
+                  isMulti && initialAllograph === MIXED ? 'Mixed — pick one' : 'Allograph'
                 }
                 searchPlaceholder="Search allographs…"
                 emptyText="No allographs"
@@ -419,13 +364,13 @@ export function AnnotationEditDialog({
               <Label className="mb-1 block text-xs">Hand</Label>
               <SearchableSelect
                 options={handOptions}
-                value={handValue}
-                onValueChange={(v) => setHandId(v ? Number(v) : null)}
-                placeholder={handId === 'mixed' ? 'Mixed — pick one' : 'Hand'}
+                value={hand === MIXED || hand == null ? null : String(hand)}
+                onValueChange={(v) => setHand(v ? Number(v) : null)}
+                placeholder={hand === MIXED ? 'Mixed — pick one' : 'Hand'}
                 searchPlaceholder="Search hands…"
                 emptyText="No hands"
-                triggerClassName="h-8 w-full text-xs"
                 clearLabel="No hand"
+                triggerClassName="h-8 w-full text-xs"
               />
             </div>
           </div>
@@ -436,7 +381,7 @@ export function AnnotationEditDialog({
                 <h3 className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
                   Components &amp; features
                   {isMulti && (
-                    <span className="ml-2 normal-case font-normal text-muted-foreground/80">
+                    <span className="ml-2 font-normal normal-case text-muted-foreground/80">
                       (showing only components shared by all selected)
                     </span>
                   )}
@@ -451,10 +396,10 @@ export function AnnotationEditDialog({
                   <div className="space-y-3">
                     {components.map((c) => (
                       <ComponentBlock
-                        key={c.componentId}
+                        key={c.component_id}
                         component={c}
-                        getFeatureState={(fId) => featureStateFor(c.componentId, fId)}
-                        onToggleFeature={(fId) => cycleFeature(c.componentId, fId)}
+                        getFeatureState={(fId) => featureMap.get(featureKey(c.component_id, fId))}
+                        onToggleFeature={(fId) => featureMap.cycle(featureKey(c.component_id, fId))}
                       />
                     ))}
                   </div>
@@ -465,27 +410,20 @@ export function AnnotationEditDialog({
                 <h3 className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
                   Positions
                 </h3>
-                {positions.length === 0 ? (
+                {schemaAllograph.positions.length === 0 ? (
                   <p className="text-xs text-muted-foreground">
                     This allograph has no defined positions.
                   </p>
                 ) : (
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
-                    {positions.map((p) => {
-                      const state = positionStateFor(p.id);
-                      return (
-                        <label
-                          key={p.id}
-                          className="flex cursor-pointer items-center gap-2 text-xs"
-                        >
-                          <Checkbox
-                            checked={checkboxValue(state)}
-                            onCheckedChange={() => cyclePosition(p.id)}
-                          />
-                          {p.name}
-                        </label>
-                      );
-                    })}
+                    {schemaAllograph.positions.map((p) => (
+                      <TriCheckbox
+                        key={p.id}
+                        label={p.name}
+                        state={positionMap.get(p.id)}
+                        onToggle={() => positionMap.cycle(p.id)}
+                      />
+                    ))}
                   </div>
                 )}
               </section>
@@ -513,8 +451,12 @@ export function AnnotationEditDialog({
   );
 }
 
+// ---------------------------------------------------------------------------
+// Subcomponents
+// ---------------------------------------------------------------------------
+
 interface ComponentBlockProps {
-  component: CommonComponent;
+  component: Component;
   getFeatureState: (featureId: number) => TriState;
   onToggleFeature: (featureId: number) => void;
 }
@@ -522,25 +464,36 @@ interface ComponentBlockProps {
 function ComponentBlock({ component, getFeatureState, onToggleFeature }: ComponentBlockProps) {
   return (
     <div className="rounded border bg-card p-3">
-      <div className="mb-2 text-xs font-medium">{component.componentName}</div>
+      <div className="mb-2 text-xs font-medium">{component.component_name}</div>
       {component.features.length === 0 ? (
         <p className="text-xs italic text-muted-foreground">No features.</p>
       ) : (
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
-          {component.features.map((f: Feature) => {
-            const state = getFeatureState(f.id);
-            return (
-              <label key={f.id} className="flex cursor-pointer items-center gap-2 text-xs">
-                <Checkbox
-                  checked={checkboxValue(state)}
-                  onCheckedChange={() => onToggleFeature(f.id)}
-                />
-                {f.name}
-              </label>
-            );
-          })}
+          {component.features.map((f: Feature) => (
+            <TriCheckbox
+              key={f.id}
+              label={f.name}
+              state={getFeatureState(f.id)}
+              onToggle={() => onToggleFeature(f.id)}
+            />
+          ))}
         </div>
       )}
     </div>
+  );
+}
+
+interface TriCheckboxProps {
+  label: string;
+  state: TriState;
+  onToggle: () => void;
+}
+
+function TriCheckbox({ label, state, onToggle }: TriCheckboxProps) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2 text-xs">
+      <Checkbox checked={CHECKBOX_VALUE[state]} onCheckedChange={onToggle} />
+      {label}
+    </label>
   );
 }
