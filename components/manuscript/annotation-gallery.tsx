@@ -697,7 +697,9 @@ function GraphThumb({
   // Legacy GeoJSON polygons are stored with bottom-left origin (Web Mercator);
   // useIiifThumbnailUrl handles the y-flip and bounds clamping via info.json.
   const annotationJson = React.useMemo(() => JSON.stringify(graph.annotation), [graph.annotation]);
-  const thumb = useIiifThumbnailUrl(iiifImage, annotationJson, 250);
+  // 168px display × ~3× retina headroom — covers 2x sharply and 3x decently
+  // without doubling bandwidth past usefulness.
+  const thumb = useIiifThumbnailUrl(iiifImage, annotationJson, 500);
   const href = `/manuscripts/${manuscriptId}/images/${imageId}?graph=${graph.id}`;
 
   // In annotating mode the thumb is a selection toggle; the inline Edit
