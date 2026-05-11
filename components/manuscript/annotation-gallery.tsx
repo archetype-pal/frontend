@@ -426,7 +426,7 @@ function GalleryToolbar({
     // (margin-left: auto on a sized block right-aligns it).
     <div
       className={cn(
-        'sticky top-0 z-30 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card/95 px-4 py-3 shadow-sm backdrop-blur transition-all duration-200 supports-[backdrop-filter]:bg-card/85',
+        'sticky top-4 z-30 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card/95 px-4 py-3 shadow-sm backdrop-blur transition-all duration-200 supports-[backdrop-filter]:bg-card/85',
         isScrolled ? 'ml-auto w-full sm:w-1/2' : 'w-auto'
       )}
     >
@@ -608,12 +608,13 @@ function AllographGroupSection({
   return (
     <div id={`${anchorId}-allograph-${allographGroup.allographId}`} className="space-y-3">
       {/* Sticky inside the section so the per-allograph actions follow the
-          user down a long thumb grid. `top-[64px]` clears the page-level
-          toolbar; bg-background/blur keeps the seam clean. Actions sit
-          immediately next to the title (left-aligned cluster) instead of
-          across the row, so the "Select all" / "Add selected" buttons are
-          visually anchored to the allograph they act on. */}
-      <div className="sticky top-[64px] z-20 -mx-1 flex flex-wrap items-center gap-3 rounded-md bg-background/95 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+          user down a long thumb grid. `top-[88px]` clears the page-level
+          toolbar (top-4 offset + ~64px height + ~8px gap); bg-background/blur
+          keeps the seam clean. Actions sit immediately next to the title
+          (left-aligned cluster) instead of across the row, so the "Select
+          all" / "Add selected" buttons are visually anchored to the
+          allograph they act on. */}
+      <div className="sticky top-[88px] z-20 -mx-1 flex flex-wrap items-center gap-3 rounded-md bg-background/95 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/85">
         <h3 className="flex items-baseline gap-2 text-lg font-semibold">
           {allographGroup.allographName}
           <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
