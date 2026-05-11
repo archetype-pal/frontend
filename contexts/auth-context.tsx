@@ -63,7 +63,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const profile = await getUserProfile(token);
         setUser(profile);
       } catch {
-        logout();
+        // Stale/invalid token or transient API failure: clear local auth state
+        // silently. Do not navigate — public pages must stay viewable for guests.
+        setAuthToken(null);
+        setUser(null);
         return;
       } finally {
         setIsReady(true);
@@ -71,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     void fetchUserProfile();
-  }, [token, logout]);
+  }, [token, setAuthToken]);
 
   const value = useMemo<AuthContextType>(
     () => ({ token, user, isReady, setToken: setAuthToken, logout }),
