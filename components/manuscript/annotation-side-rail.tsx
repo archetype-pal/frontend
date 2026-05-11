@@ -56,7 +56,9 @@ export function AnnotationSideRail({ target, token, onClose }: AnnotationSideRai
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2 text-xs">
                 <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="font-medium text-foreground">{e.actor_username ?? 'unknown'}</span>
+                  <span className="font-medium text-foreground">
+                    {e.actor_username ?? 'unknown'}
+                  </span>
                   <time dateTime={e.created}>{new Date(e.created).toLocaleString()}</time>
                 </div>
                 <p className="text-foreground">

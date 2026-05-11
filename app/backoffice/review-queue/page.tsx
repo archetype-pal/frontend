@@ -20,7 +20,11 @@ import { toast } from 'sonner';
 
 import { useAuth } from '@/contexts/auth-context';
 import { useStaffGuard } from '@/hooks/backoffice/use-staff-guard';
-import { fetchReviewQueue, transitionImageText, type QueueEntry } from '@/services/backoffice/review-queue';
+import {
+  fetchReviewQueue,
+  transitionImageText,
+  type QueueEntry,
+} from '@/services/backoffice/review-queue';
 import { Button } from '@/components/ui/button';
 
 export default function ReviewQueuePage() {
