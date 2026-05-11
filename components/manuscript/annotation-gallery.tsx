@@ -268,7 +268,7 @@ export function AnnotationGallery({
 
   if (groups.length === 0) {
     return (
-      <div className="rounded-md border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
+      <div className="rounded-md border border-dashed bg-muted/40 p-6 text-base text-muted-foreground">
         No annotations on this image yet.
       </div>
     );
@@ -276,7 +276,7 @@ export function AnnotationGallery({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="space-y-8">
+      <div className="space-y-10">
         <GalleryToolbar
           allographFilter={allographFilter}
           onAllographFilterChange={setAllographFilter}
@@ -294,31 +294,32 @@ export function AnnotationGallery({
 
         {filteredGroups.length > 1 && (
           <nav aria-label="Hands on this image">
-            <h2 className="text-base font-semibold">Hands</h2>
-            <ul className="mt-2 flex flex-wrap gap-2 text-sm">
-              {filteredGroups.map((g) => (
-                <li key={g.handId ?? 'unattributed'}>
-                  <a
-                    href={`#${handAnchorId(g.handId)}`}
-                    className="rounded border bg-card px-2 py-1 hover:border-primary"
-                  >
-                    {g.handName}
-                  </a>
-                </li>
-              ))}
+            <h2 className="text-lg font-semibold">Hands</h2>
+            <ul className="mt-3 flex flex-wrap gap-2 text-sm">
+              {filteredGroups.map((g) => {
+                const count = g.allographs.reduce((sum, a) => sum + a.graphs.length, 0);
+                return (
+                  <li key={g.handId ?? 'unattributed'}>
+                    <a
+                      href={`#${handAnchorId(g.handId)}`}
+                      className="inline-flex items-center gap-2 rounded-md border bg-card px-3 py-1.5 font-medium text-foreground shadow-sm transition hover:border-primary hover:bg-primary/5"
+                    >
+                      {g.handName}
+                      <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                        {count}
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </nav>
         )}
 
         {filteredGroups.length === 0 && allographFilter.trim() && (
-          <div className="flex items-center justify-between rounded-md border border-dashed bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          <div className="flex items-center justify-between gap-3 rounded-md border border-dashed bg-muted/40 px-4 py-3 text-base text-muted-foreground">
             <span>No allographs match &ldquo;{allographFilter.trim()}&rdquo;.</span>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7"
-              onClick={() => setAllographFilter('')}
-            >
+            <Button size="sm" variant="ghost" onClick={() => setAllographFilter('')}>
               Clear filter
             </Button>
           </div>
@@ -345,11 +346,11 @@ export function AnnotationGallery({
               <Button
                 size="icon"
                 variant="default"
-                className="fixed bottom-6 right-6 z-50 h-10 w-10 rounded-full shadow-lg"
+                className="fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full shadow-lg"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 aria-label="Back to top"
               >
-                <ArrowUp className="h-4 w-4" />
+                <ArrowUp className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="left">Back to top</TooltipContent>
@@ -410,7 +411,7 @@ function GalleryToolbar({
     // through long pages with many hands. `top-0` puts it just below whatever
     // the page-level layout's chrome ends up being; bg-card/backdrop-blur
     // keeps content behind it readable.
-    <div className="sticky top-0 z-20 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+    <div className="sticky top-0 z-30 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/85">
       <div className="flex flex-1 flex-wrap items-center gap-3">
         <div className="relative flex items-center gap-2">
           <Input
@@ -419,14 +420,14 @@ function GalleryToolbar({
             placeholder="Filter allographs…"
             value={allographFilter}
             onChange={(e) => onAllographFilterChange(e.target.value)}
-            className="h-8 w-56 pr-8"
+            className="h-9 w-64 pr-9 text-sm"
             aria-label="Filter allographs by name. Press / to focus."
           />
           {!isFiltering && (
-            <Kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">/</Kbd>
+            <Kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">/</Kbd>
           )}
           {isFiltering && (
-            <span className="text-xs text-muted-foreground" aria-live="polite">
+            <span className="text-sm text-muted-foreground" aria-live="polite">
               {filteredAllographCount} of {totalAllographCount}
             </span>
           )}
@@ -436,10 +437,10 @@ function GalleryToolbar({
             <TooltipTrigger asChild>
               <label
                 className={cn(
-                  'flex cursor-pointer items-center gap-2 rounded border px-2 py-1 text-xs transition',
+                  'flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition',
                   annotatingMode
                     ? 'border-primary bg-primary/10 text-foreground'
-                    : 'border-transparent text-muted-foreground hover:border-border'
+                    : 'border-transparent text-muted-foreground hover:border-border hover:bg-muted/50'
                 )}
               >
                 <Switch
@@ -457,27 +458,27 @@ function GalleryToolbar({
       </div>
 
       {selectionCount > 0 && (
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="rounded-full bg-primary/10 px-2.5 py-1 font-medium text-primary">
             {selectionCount} selected
           </span>
           {annotatingMode ? (
-            <Button size="sm" variant="default" className="h-7 gap-1.5" onClick={onEditSelected}>
-              <Pencil className="h-3.5 w-3.5" />
+            <Button size="sm" variant="default" className="gap-1.5" onClick={onEditSelected}>
+              <Pencil className="h-4 w-4" />
               Edit selected
             </Button>
           ) : (
             <Button
               size="sm"
               variant="default"
-              className="h-7 gap-1.5"
+              className="gap-1.5"
               onClick={onAddSelectedToCollection}
             >
-              <Star className="h-3.5 w-3.5" />
+              <Star className="h-4 w-4" />
               Add to collection
             </Button>
           )}
-          <Button size="sm" variant="ghost" onClick={onClearSelection} className="h-7">
+          <Button size="sm" variant="ghost" onClick={onClearSelection}>
             Clear
           </Button>
         </div>
@@ -515,23 +516,27 @@ function HandSection({
 }: HandSectionProps) {
   const anchorId = handAnchorId(handGroup.handId);
   return (
-    <section id={anchorId}>
-      <h2 className="text-lg font-semibold">{handGroup.handName}</h2>
+    <section id={anchorId} className="space-y-4">
+      <header className="border-b pb-3">
+        <h2 className="text-2xl font-semibold tracking-tight">{handGroup.handName}</h2>
+        <ul className="mt-3 flex flex-wrap gap-2 text-sm">
+          {handGroup.allographs.map((a) => (
+            <li key={a.allographId}>
+              <a
+                href={`#${anchorId}-allograph-${a.allographId}`}
+                className="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 text-foreground/80 transition hover:border-primary hover:text-foreground"
+              >
+                {a.allographName}
+                <span className="rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">
+                  {a.graphs.length}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </header>
 
-      <ul className="mt-1 mb-3 flex flex-wrap gap-2 text-sm">
-        {handGroup.allographs.map((a) => (
-          <li key={a.allographId}>
-            <a
-              href={`#${anchorId}-allograph-${a.allographId}`}
-              className="rounded border bg-muted px-2 py-0.5 text-muted-foreground hover:border-primary hover:text-foreground"
-            >
-              {a.allographName} ({a.graphs.length})
-            </a>
-          </li>
-        ))}
-      </ul>
-
-      <div className="space-y-6">
+      <div className="space-y-8">
         {handGroup.allographs.map((allographGroup) => (
           <AllographGroupSection
             key={allographGroup.allographId}
@@ -583,65 +588,66 @@ function AllographGroupSection({
   const allSelected = groupSelectedCount > 0 && groupSelectedCount === allographGroup.graphs.length;
 
   return (
-    <div id={`${anchorId}-allograph-${allographGroup.allographId}`} className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-medium">
-          {allographGroup.allographName}{' '}
-          <span className="text-xs font-normal text-muted-foreground">
-            ({allographGroup.graphs.length})
+    <div id={`${anchorId}-allograph-${allographGroup.allographId}`} className="space-y-3">
+      {/* Sticky inside the section so the per-allograph actions follow the
+          user down a long thumb grid. `top-[64px]` clears the page-level
+          toolbar; bg-background/blur keeps the seam clean. Actions sit
+          immediately next to the title (left-aligned cluster) instead of
+          across the row, so the "Select all" / "Add selected" buttons are
+          visually anchored to the allograph they act on. */}
+      <div className="sticky top-[64px] z-20 -mx-1 flex flex-wrap items-center gap-3 rounded-md bg-background/95 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+        <h3 className="flex items-baseline gap-2 text-lg font-semibold">
+          {allographGroup.allographName}
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            {allographGroup.graphs.length}
           </span>
+          {groupSelectedCount > 0 && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+              {groupSelectedCount} selected
+            </span>
+          )}
         </h3>
 
-        {/* Icon-only per-allograph toolbar with tooltips. Repeats once per
-            allograph; the prior text-button version added too much visual
-            noise on long pages. Tooltips carry the explicit action label. */}
-        <div className="flex items-center gap-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7"
-                aria-label={allSelected ? 'Unselect all in group' : 'Select all in group'}
-                onClick={() =>
-                  allSelected
-                    ? selection.removeMany(allographGroup.graphs.map((g) => g.id))
-                    : selection.addMany(allographGroup.graphs.map((g) => g.id))
-                }
-              >
-                {allSelected ? (
-                  <Square className="h-3.5 w-3.5" />
-                ) : (
-                  <ListChecks className="h-3.5 w-3.5" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              {allSelected ? 'Unselect all in this allograph' : 'Select all in this allograph'}
-            </TooltipContent>
-          </Tooltip>
+        <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 gap-1.5"
+            onClick={() =>
+              allSelected
+                ? selection.removeMany(allographGroup.graphs.map((g) => g.id))
+                : selection.addMany(allographGroup.graphs.map((g) => g.id))
+            }
+          >
+            {allSelected ? (
+              <>
+                <Square className="h-3.5 w-3.5" />
+                Unselect all
+              </>
+            ) : (
+              <>
+                <ListChecks className="h-3.5 w-3.5" />
+                Select all
+              </>
+            )}
+          </Button>
 
           {!annotatingMode && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7"
-                  aria-label="Add selected graphs to collection"
-                  disabled={groupSelectedCount === 0}
-                  onClick={onAddGroupToCollection}
-                >
-                  <Star className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">Add selected graphs to collection</TooltipContent>
-            </Tooltip>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5"
+              disabled={groupSelectedCount === 0}
+              onClick={onAddGroupToCollection}
+            >
+              <Star className="h-3.5 w-3.5" />
+              Add selected
+            </Button>
           )}
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-3">
         {allographGroup.graphs.map((graph) => (
           <GraphThumb
             key={graph.id}
@@ -721,22 +727,25 @@ function GraphThumb({
   return (
     <div
       className={cn(
-        'group relative flex flex-col gap-1 rounded border bg-card p-2 transition',
-        isSelected ? 'border-primary ring-2 ring-primary/40' : 'border-border hover:border-primary'
+        'group relative flex flex-col gap-1.5 rounded-md border bg-card p-2.5 shadow-sm transition',
+        isSelected
+          ? 'border-primary ring-2 ring-primary/40'
+          : 'border-border hover:border-primary hover:shadow'
       )}
     >
-      {/* Always-visible selection toggle: prior version was opacity-60 until
-          hover, which made the entire selection workflow undiscoverable. */}
+      {/* Always-visible selection toggle. Bumped to 6×6 with a stronger
+          contrast border so it reads as an interactive control even at rest,
+          not just on hover. */}
       <button
         type="button"
         onClick={onToggleSelected}
         aria-pressed={isSelected}
         aria-label={isSelected ? 'Unselect graph' : 'Select graph'}
         className={cn(
-          'absolute left-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded border text-[10px] shadow-sm transition',
+          'absolute left-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md border text-xs shadow-sm transition',
           isSelected
             ? 'border-primary bg-primary text-primary-foreground'
-            : 'border-muted-foreground/60 bg-background/95 text-transparent hover:border-primary hover:text-primary group-hover:text-muted-foreground'
+            : 'border-foreground/30 bg-background/95 text-transparent hover:border-primary hover:text-primary group-hover:text-muted-foreground'
         )}
       >
         ✓
@@ -767,17 +776,17 @@ function GraphThumb({
           grid. Inactive footers are visibility:hidden but still take layout. */}
       {canEdit && (
         <div
-          className={cn('mt-1 w-[10rem] space-y-1', !annotatingMode && 'invisible')}
+          className={cn('mt-1 w-[10.5rem] space-y-1.5', !annotatingMode && 'invisible')}
           aria-hidden={!annotatingMode}
         >
           <Button
             size="sm"
             variant="outline"
-            className="h-7 w-full gap-1.5 text-[11px]"
+            className="h-8 w-full gap-1.5 text-xs"
             onClick={onEdit}
             tabIndex={annotatingMode ? 0 : -1}
           >
-            <Pencil className="h-3 w-3" />
+            <Pencil className="h-3.5 w-3.5" />
             Edit
           </Button>
           <AnnotatingDetails graph={graph} />

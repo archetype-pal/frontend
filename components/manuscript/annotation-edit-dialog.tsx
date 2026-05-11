@@ -357,20 +357,20 @@ function DialogBody({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-lg"
+        className="w-full sm:max-w-xl"
         // Don't auto-focus the first input on open — the SearchableSelect
         // popovers can interact badly with focus capture inside the sheet.
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <SheetHeader>
-          <SheetTitle>
+          <SheetTitle className="text-xl">
             {isMulti ? `Edit ${graphs.length} graphs` : `Edit graph #${graphs[0].id}`}
           </SheetTitle>
         </SheetHeader>
 
-        <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
+        <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
           {isMulti && initialAllograph === MIXED && (
-            <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
               Selected graphs use different allographs. Choose one to set on all of them, or close
               and refine the selection.
             </p>
@@ -378,7 +378,7 @@ function DialogBody({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label className="mb-1 block text-xs">Allograph</Label>
+              <Label className="mb-1.5 block text-sm font-medium">Allograph</Label>
               <SearchableSelect
                 options={allographOptions}
                 value={allographId != null ? String(allographId) : null}
@@ -388,11 +388,11 @@ function DialogBody({
                 }
                 searchPlaceholder="Search allographs…"
                 emptyText="No allographs"
-                triggerClassName="h-8 w-full text-xs"
+                triggerClassName="h-9 w-full text-sm"
               />
             </div>
             <div>
-              <Label className="mb-1 block text-xs">Hand</Label>
+              <Label className="mb-1.5 block text-sm font-medium">Hand</Label>
               <SearchableSelect
                 options={handOptions}
                 value={hand === MIXED || hand == null ? null : String(hand)}
@@ -401,7 +401,7 @@ function DialogBody({
                 searchPlaceholder="Search hands…"
                 emptyText="No hands"
                 clearLabel="No hand"
-                triggerClassName="h-8 w-full text-xs"
+                triggerClassName="h-9 w-full text-sm"
               />
             </div>
           </div>
@@ -409,7 +409,7 @@ function DialogBody({
           {schemaAllograph ? (
             <>
               {isMulti && (
-                <p className="rounded border border-muted-foreground/20 bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+                <p className="rounded-md border border-muted-foreground/20 bg-muted/40 px-3 py-2.5 text-sm leading-relaxed text-muted-foreground">
                   Each row has three options: <span className="font-medium">All</span> applies to
                   every selected graph, <span className="font-medium">None</span> removes from every
                   selected graph, and <span className="font-medium">Mixed</span> leaves each
@@ -418,16 +418,16 @@ function DialogBody({
               )}
 
               <section>
-                <h3 className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+                <h3 className="mb-3 text-sm font-semibold text-foreground">
                   Components &amp; features
                   {isMulti && (
-                    <span className="ml-2 font-normal normal-case text-muted-foreground/80">
-                      (showing only components shared by all selected)
+                    <span className="ml-2 font-normal text-muted-foreground/80">
+                      (only components shared by all selected)
                     </span>
                   )}
                 </h3>
                 {components.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     {isMulti
                       ? 'No components are shared across the selected graphs.'
                       : 'This allograph has no defined components.'}
@@ -450,11 +450,9 @@ function DialogBody({
               </section>
 
               <section>
-                <h3 className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
-                  Positions
-                </h3>
+                <h3 className="mb-3 text-sm font-semibold text-foreground">Positions</h3>
                 {schemaAllograph.positions.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     This allograph has no defined positions.
                   </p>
                 ) : (
@@ -522,12 +520,12 @@ function ComponentBlock({
   onSetFeatureState,
 }: ComponentBlockProps) {
   return (
-    <div className="rounded border bg-card p-3">
-      <div className="mb-2 text-xs font-medium">{component.component_name}</div>
+    <div className="rounded-md border bg-card p-3.5 shadow-sm">
+      <div className="mb-2.5 text-sm font-semibold text-foreground">{component.component_name}</div>
       {component.features.length === 0 ? (
-        <p className="text-xs italic text-muted-foreground">No features.</p>
+        <p className="text-sm italic text-muted-foreground">No features.</p>
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {component.features.map((f: Feature) => (
             <TriRow
               key={f.id}
@@ -557,11 +555,11 @@ interface TriRowProps {
 // All/None/Mixed labels make the model obvious.
 function TriRow({ label, isMulti, state, onSet }: TriRowProps) {
   return (
-    <div className="flex items-center gap-2 text-xs">
+    <div className="flex items-center gap-2.5 text-sm">
       <div
         role="radiogroup"
         aria-label={label}
-        className="inline-flex shrink-0 overflow-hidden rounded border"
+        className="inline-flex shrink-0 overflow-hidden rounded-md border"
       >
         <SegmentedButton
           active={state === 'all'}
@@ -587,7 +585,7 @@ function TriRow({ label, isMulti, state, onSet }: TriRowProps) {
           </SegmentedButton>
         )}
       </div>
-      <span className="leading-tight">{label}</span>
+      <span className="leading-snug text-foreground">{label}</span>
     </div>
   );
 }
@@ -611,10 +609,10 @@ function SegmentedButton({
       aria-label={ariaLabel}
       onClick={onClick}
       className={cn(
-        'min-w-[2.75rem] border-l px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide transition first:border-l-0',
+        'min-w-[3rem] border-l px-2.5 py-1 text-xs font-medium transition first:border-l-0',
         active
           ? 'bg-primary text-primary-foreground'
-          : 'bg-background text-muted-foreground hover:bg-muted'
+          : 'bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
       )}
     >
       {children}
