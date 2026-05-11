@@ -703,19 +703,29 @@ function GraphThumb({
   // In annotating mode the thumb is a selection toggle; the inline Edit
   // button is the way into the editor dialog. In view mode the thumb links
   // into the manuscript viewer like before.
+  //
+  // Image fills the entire thumbnail area (object-cover, no muted bg), so
+  // there's no visible "box" around the allograph itself. The bg-muted only
+  // surfaces while the IIIF thumb is loading and gets covered the moment
+  // the image arrives.
   const thumbInner = thumb ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={thumb}
       alt={`Annotation ${graph.id}`}
-      className="max-h-full max-w-full object-contain"
+      className="h-full w-full object-cover"
       loading="lazy"
     />
   ) : (
-    <span className="text-xs text-muted-foreground">…</span>
+    <span className="flex h-full w-full items-center justify-center bg-muted text-xs text-muted-foreground">
+      …
+    </span>
   );
+  // The allograph is the card — image fills a square that's larger than
+  // the prior 96×96 so the glyph is actually readable. With the box gone
+  // there's no chrome competing with the image.
   const thumbClassName =
-    'flex h-24 w-24 items-center justify-center overflow-hidden rounded bg-muted';
+    'flex aspect-square w-[10.5rem] items-center justify-center overflow-hidden rounded';
   const tooltipLabel = annotatingMode
     ? isSelected
       ? 'Unselect graph'
@@ -727,10 +737,13 @@ function GraphThumb({
   return (
     <div
       className={cn(
-        'group relative flex flex-col gap-1.5 rounded-md border bg-card p-2.5 shadow-sm transition',
+        // No border, no card background, no padding — the allograph image is
+        // the card. Selection / hover are expressed as a ring around the
+        // image edge so we keep the affordance without re-introducing a box.
+        'group relative flex flex-col gap-1.5 rounded transition',
         isSelected
-          ? 'border-primary ring-2 ring-primary/40'
-          : 'border-border hover:border-primary hover:shadow'
+          ? 'ring-2 ring-primary ring-offset-2'
+          : 'hover:ring-2 hover:ring-primary/40 hover:ring-offset-2'
       )}
     >
       {/* Always-visible selection toggle. Bumped to 6×6 with a stronger
