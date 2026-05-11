@@ -80,6 +80,7 @@ interface GraphThumbProps {
   onToggleSelected: () => void;
   canEdit: boolean;
   annotatingMode: boolean;
+  selectionEnabled: boolean;
 }
 
 function GraphThumb({
@@ -91,6 +92,7 @@ function GraphThumb({
   onToggleSelected,
   canEdit,
   annotatingMode,
+  selectionEnabled,
 }: GraphThumbProps) {
   // Legacy GeoJSON polygons are stored with bottom-left origin (Web Mercator);
   // useIiifThumbnailUrl handles the y-flip and bounds clamping via info.json.
@@ -106,21 +108,24 @@ function GraphThumb({
         isSelected ? 'border-primary ring-2 ring-primary/40' : 'border-border hover:border-primary'
       )}
     >
-      {/* Selection toggle: top-left corner, click anywhere on the box-edge to toggle. */}
-      <button
-        type="button"
-        onClick={onToggleSelected}
-        aria-pressed={isSelected}
-        aria-label={isSelected ? 'Unselect graph' : 'Select graph'}
-        className={cn(
-          'absolute left-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded border bg-background/80 text-[10px]',
-          isSelected
-            ? 'border-primary bg-primary text-primary-foreground'
-            : 'border-muted-foreground/40 opacity-60 group-hover:opacity-100'
-        )}
-      >
-        {isSelected ? '✓' : ''}
-      </button>
+      {/* Selection toggle: hidden in annotating mode — that mode is for editing,
+          not for building a collection, so the add-to-collection workflow is off. */}
+      {selectionEnabled && (
+        <button
+          type="button"
+          onClick={onToggleSelected}
+          aria-pressed={isSelected}
+          aria-label={isSelected ? 'Unselect graph' : 'Select graph'}
+          className={cn(
+            'absolute left-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded border bg-background/80 text-[10px]',
+            isSelected
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-muted-foreground/40 opacity-60 group-hover:opacity-100'
+          )}
+        >
+          {isSelected ? '✓' : ''}
+        </button>
+      )}
 
       <Tooltip>
         <TooltipTrigger asChild>
@@ -227,6 +232,15 @@ export function AnnotationGallery({
   const [allographFilter, setAllographFilter] = React.useState('');
   const [annotatingMode, setAnnotatingMode] = React.useState(false);
   const [showBackToTop, setShowBackToTop] = React.useState(false);
+
+  // Annotating mode is an editor-focused view; the add-to-collection workflow
+  // (selection + per-group/global "Add to collection" buttons) is hidden while
+  // it's on. Drop any in-flight selection so toggling back later starts clean.
+  const selectionEnabled = !annotatingMode;
+  const handleAnnotatingModeChange = React.useCallback((next: boolean) => {
+    setAnnotatingMode(next);
+    if (next) setSelectedIds(new Set());
+  }, []);
 
   // Show back-to-top once the user has scrolled meaningfully past the fold.
   // 600px is "past the Hands TOC and the first hand's allograph header on a
@@ -360,7 +374,7 @@ export function AnnotationGallery({
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Switch
                   checked={annotatingMode}
-                  onCheckedChange={setAnnotatingMode}
+                  onCheckedChange={handleAnnotatingModeChange}
                   aria-label="Annotating mode"
                 />
                 Annotating mode
@@ -368,7 +382,7 @@ export function AnnotationGallery({
             )}
           </div>
 
-          {selectionCount > 0 && (
+          {selectionEnabled && selectionCount > 0 && (
             <div className="flex items-center gap-2 text-xs">
               <span className="text-muted-foreground">{selectionCount} selected</span>
               <Button
@@ -454,49 +468,52 @@ export function AnnotationGallery({
                           </span>
                         </h3>
 
-                        {/* Per-allograph toolbar: Select all / Unselect all / Add to collection. */}
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 gap-1.5 text-xs"
-                            onClick={() =>
-                              allSelected
-                                ? unselectAllInGroup(allographGroup.graphs)
-                                : selectAllInGroup(allographGroup.graphs)
-                            }
-                          >
-                            {allSelected ? (
-                              <>
-                                <Square className="h-3.5 w-3.5" />
-                                Unselect all
-                              </>
-                            ) : (
-                              <>
-                                <ListChecks className="h-3.5 w-3.5" />
-                                Select all
-                              </>
-                            )}
-                          </Button>
+                        {/* Per-allograph toolbar: Select all / Unselect all / Add to collection.
+                            Hidden in annotating mode (editor view, no collection workflow). */}
+                        {selectionEnabled && (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 gap-1.5 text-xs"
+                              onClick={() =>
+                                allSelected
+                                  ? unselectAllInGroup(allographGroup.graphs)
+                                  : selectAllInGroup(allographGroup.graphs)
+                              }
+                            >
+                              {allSelected ? (
+                                <>
+                                  <Square className="h-3.5 w-3.5" />
+                                  Unselect all
+                                </>
+                              ) : (
+                                <>
+                                  <ListChecks className="h-3.5 w-3.5" />
+                                  Select all
+                                </>
+                              )}
+                            </Button>
 
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 gap-1.5 text-xs"
-                                disabled={groupSelectedCount === 0}
-                                onClick={() => addGroupToCollection(allographGroup.graphs)}
-                              >
-                                <Star className="h-3.5 w-3.5" />
-                                Add selected
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">
-                              Add selected graphs to collection
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 gap-1.5 text-xs"
+                                  disabled={groupSelectedCount === 0}
+                                  onClick={() => addGroupToCollection(allographGroup.graphs)}
+                                >
+                                  <Star className="h-3.5 w-3.5" />
+                                  Add selected
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                Add selected graphs to collection
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex flex-wrap gap-2">
@@ -511,6 +528,7 @@ export function AnnotationGallery({
                             onToggleSelected={() => toggleGraph(graph.id)}
                             canEdit={canEdit}
                             annotatingMode={annotatingMode}
+                            selectionEnabled={selectionEnabled}
                           />
                         ))}
                       </div>
