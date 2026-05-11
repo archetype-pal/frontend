@@ -2,20 +2,22 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { ArrowUp, ListChecks, Square, Star } from 'lucide-react';
+import { ArrowUp, Check, ListChecks, Loader2, Square, Star } from 'lucide-react';
 
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { useAuth } from '@/contexts/auth-context';
 import { useCollection, type CollectionItem } from '@/contexts/collection-context';
 import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
-import type { BackendGraph } from '@/services/annotations';
+import { updateViewerAnnotation, type BackendGraph } from '@/services/annotations';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { SearchableOption } from '@/lib/searchable-option-ranking';
 
 // ---------------------------------------------------------------------------
 // Grouping
@@ -36,14 +38,18 @@ interface HandGroup {
 function groupAnnotations(
   graphs: BackendGraph[],
   hands: HandType[],
-  allographs: Allograph[]
+  allographs: Allograph[],
+  pendingAllographs: Record<number, number> = {}
 ): HandGroup[] {
   const handLabelById = new Map(hands.map((h) => [h.id, h.name]));
   const allographLabelById = new Map(allographs.map((a) => [a.id, formatAllographLabel(a)]));
   const handMap = new Map<number | null, Map<number, BackendGraph[]>>();
 
   for (const graph of graphs) {
-    if (typeof graph.allograph !== 'number') continue;
+    // Pending optimistic reassignment from in-page edit takes precedence over
+    // the server-rendered allograph until the next refresh.
+    const effectiveAllograph = pendingAllographs[graph.id] ?? graph.allograph;
+    if (typeof effectiveAllograph !== 'number') continue;
 
     const handKey = typeof graph.hand === 'number' ? graph.hand : null;
     let allographMap = handMap.get(handKey);
@@ -51,9 +57,9 @@ function groupAnnotations(
       allographMap = new Map();
       handMap.set(handKey, allographMap);
     }
-    const list = allographMap.get(graph.allograph) ?? [];
+    const list = allographMap.get(effectiveAllograph) ?? [];
     list.push(graph);
-    allographMap.set(graph.allograph, list);
+    allographMap.set(effectiveAllograph, list);
   }
 
   return Array.from(handMap, ([handKey, allographMap]) => ({
@@ -80,7 +86,10 @@ interface GraphThumbProps {
   onToggleSelected: () => void;
   canEdit: boolean;
   annotatingMode: boolean;
-  selectionEnabled: boolean;
+  allographOptions: SearchableOption[];
+  pendingAllographId: number | null;
+  saveStatus: SaveStatus;
+  onAllographChange: (graphId: number, allographId: number) => void;
 }
 
 function GraphThumb({
@@ -92,14 +101,43 @@ function GraphThumb({
   onToggleSelected,
   canEdit,
   annotatingMode,
-  selectionEnabled,
+  allographOptions,
+  pendingAllographId,
+  saveStatus,
+  onAllographChange,
 }: GraphThumbProps) {
   // Legacy GeoJSON polygons are stored with bottom-left origin (Web Mercator);
   // useIiifThumbnailUrl handles the y-flip and bounds clamping via info.json.
   const annotationJson = React.useMemo(() => JSON.stringify(graph.annotation), [graph.annotation]);
   const thumb = useIiifThumbnailUrl(iiifImage, annotationJson, 250);
   const href = `/manuscripts/${manuscriptId}/images/${imageId}?graph=${graph.id}`;
-  const tooltipLabel = canEdit ? 'Edit graph' : 'View graph in the manuscript viewer';
+
+  // In annotating mode we stay on this page — the thumb becomes a selection
+  // toggle (so power-users can shift-build a multi-graph selection) and the
+  // edit picker takes over the navigation slot. In view mode it links into
+  // the manuscript viewer like before.
+  const thumbInner = thumb ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={thumb}
+      alt={`Annotation ${graph.id}`}
+      className="max-h-full max-w-full object-contain"
+      loading="lazy"
+    />
+  ) : (
+    <span className="text-xs text-muted-foreground">…</span>
+  );
+  const thumbClassName =
+    'flex h-24 w-24 items-center justify-center overflow-hidden rounded bg-muted';
+  const tooltipLabel = annotatingMode
+    ? isSelected
+      ? 'Unselect graph'
+      : 'Select graph'
+    : canEdit
+      ? 'Edit graph'
+      : 'View graph in the manuscript viewer';
+
+  const effectiveAllographValue = String(pendingAllographId ?? graph.allograph ?? '');
 
   return (
     <div
@@ -108,50 +146,86 @@ function GraphThumb({
         isSelected ? 'border-primary ring-2 ring-primary/40' : 'border-border hover:border-primary'
       )}
     >
-      {/* Selection toggle: hidden in annotating mode — that mode is for editing,
-          not for building a collection, so the add-to-collection workflow is off. */}
-      {selectionEnabled && (
-        <button
-          type="button"
-          onClick={onToggleSelected}
-          aria-pressed={isSelected}
-          aria-label={isSelected ? 'Unselect graph' : 'Select graph'}
-          className={cn(
-            'absolute left-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded border bg-background/80 text-[10px]',
-            isSelected
-              ? 'border-primary bg-primary text-primary-foreground'
-              : 'border-muted-foreground/40 opacity-60 group-hover:opacity-100'
-          )}
-        >
-          {isSelected ? '✓' : ''}
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={onToggleSelected}
+        aria-pressed={isSelected}
+        aria-label={isSelected ? 'Unselect graph' : 'Select graph'}
+        className={cn(
+          'absolute left-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded border bg-background/80 text-[10px]',
+          isSelected
+            ? 'border-primary bg-primary text-primary-foreground'
+            : 'border-muted-foreground/40 opacity-60 group-hover:opacity-100'
+        )}
+      >
+        {isSelected ? '✓' : ''}
+      </button>
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Link
-            href={href}
-            className="flex h-24 w-24 items-center justify-center overflow-hidden rounded bg-muted"
-          >
-            {thumb ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={thumb}
-                alt={`Annotation ${graph.id}`}
-                className="max-h-full max-w-full object-contain"
-                loading="lazy"
-              />
-            ) : (
-              <span className="text-xs text-muted-foreground">…</span>
-            )}
-          </Link>
+          {annotatingMode ? (
+            <button
+              type="button"
+              onClick={onToggleSelected}
+              className={thumbClassName}
+              aria-label={tooltipLabel}
+            >
+              {thumbInner}
+            </button>
+          ) : (
+            <Link href={href} className={thumbClassName}>
+              {thumbInner}
+            </Link>
+          )}
         </TooltipTrigger>
         <TooltipContent side="top">{tooltipLabel}</TooltipContent>
       </Tooltip>
 
-      {annotatingMode && <AnnotatingDetails graph={graph} />}
+      {annotatingMode && (
+        <div className="mt-1 w-[10rem] space-y-1">
+          <div className="flex items-center gap-1">
+            <SearchableSelect
+              options={allographOptions}
+              value={effectiveAllographValue || null}
+              onValueChange={(v) => {
+                if (!v) return;
+                const next = Number(v);
+                if (Number.isFinite(next) && next !== graph.allograph) {
+                  onAllographChange(graph.id, next);
+                }
+              }}
+              placeholder="Allograph…"
+              searchPlaceholder="Search allographs…"
+              emptyText="No allographs"
+              triggerClassName="h-7 flex-1 text-[11px]"
+              disabled={saveStatus === 'saving'}
+            />
+            <SaveIndicator status={saveStatus} />
+          </div>
+          <AnnotatingDetails graph={graph} />
+        </div>
+      )}
     </div>
   );
+}
+
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+function SaveIndicator({ status }: { status: SaveStatus }) {
+  if (status === 'saving') {
+    return <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />;
+  }
+  if (status === 'saved') {
+    return <Check className="h-3.5 w-3.5 text-emerald-600" />;
+  }
+  if (status === 'error') {
+    return (
+      <span className="text-[10px] font-medium text-destructive" title="Save failed">
+        !
+      </span>
+    );
+  }
+  return <span className="h-3.5 w-3.5" aria-hidden />;
 }
 
 // ---------------------------------------------------------------------------
@@ -163,15 +237,11 @@ function AnnotatingDetails({ graph }: { graph: BackendGraph }) {
   const positions = graph.position_details ?? [];
 
   if (components.length === 0 && positions.length === 0) {
-    return (
-      <p className="mt-1 max-w-[10rem] text-center text-[10px] italic text-muted-foreground">
-        Undescribed
-      </p>
-    );
+    return <p className="text-center text-[10px] italic text-muted-foreground">Undescribed</p>;
   }
 
   return (
-    <div className="mt-1 max-w-[10rem] space-y-1 text-[10px] leading-tight text-muted-foreground">
+    <div className="space-y-0.5 text-[10px] leading-tight text-muted-foreground">
       {components.map((c, i) => (
         <div key={`${c.component}-${i}`}>
           <span className="font-medium text-foreground">
@@ -224,7 +294,7 @@ export function AnnotationGallery({
   hands,
   allographs,
 }: AnnotationGalleryProps) {
-  const { user } = useAuth();
+  const { token, user } = useAuth();
   const { addItem, isInCollection } = useCollection();
   const canEdit = Boolean(user?.is_staff);
 
@@ -233,14 +303,62 @@ export function AnnotationGallery({
   const [annotatingMode, setAnnotatingMode] = React.useState(false);
   const [showBackToTop, setShowBackToTop] = React.useState(false);
 
-  // Annotating mode is an editor-focused view; the add-to-collection workflow
-  // (selection + per-group/global "Add to collection" buttons) is hidden while
-  // it's on. Drop any in-flight selection so toggling back later starts clean.
-  const selectionEnabled = !annotatingMode;
+  // Optimistic, locally-applied allograph reassignments. The server is the
+  // source of truth, but writes are slow and we want the picker + thumbnail
+  // group to update immediately. Reverted on save failure.
+  const [pendingAllographs, setPendingAllographs] = React.useState<Record<number, number>>({});
+  const [saveStatus, setSaveStatus] = React.useState<Record<number, SaveStatus>>({});
+  const [bulkAllographValue, setBulkAllographValue] = React.useState<string | null>(null);
+  const [bulkSaving, setBulkSaving] = React.useState(false);
+  const [bulkError, setBulkError] = React.useState<string | null>(null);
+
+  // Selection still works in annotating mode (it powers bulk-set), but the
+  // "add to collection" affordances are swapped for "set allograph for N".
   const handleAnnotatingModeChange = React.useCallback((next: boolean) => {
     setAnnotatingMode(next);
-    if (next) setSelectedIds(new Set());
+    setBulkAllographValue(null);
+    setBulkError(null);
   }, []);
+
+  const allographOptions = React.useMemo<SearchableOption[]>(
+    () =>
+      allographs
+        .map((a) => ({ value: String(a.id), label: formatAllographLabel(a) }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [allographs]
+  );
+
+  const markStatus = React.useCallback((id: number, status: SaveStatus) => {
+    setSaveStatus((prev) => ({ ...prev, [id]: status }));
+  }, []);
+
+  const saveAllograph = React.useCallback(
+    async (graphId: number, allographId: number) => {
+      if (!token) {
+        markStatus(graphId, 'error');
+        return false;
+      }
+      setPendingAllographs((prev) => ({ ...prev, [graphId]: allographId }));
+      markStatus(graphId, 'saving');
+      try {
+        await updateViewerAnnotation(token, graphId, { allograph: allographId });
+        markStatus(graphId, 'saved');
+        // Brief visual confirmation, then idle.
+        window.setTimeout(() => markStatus(graphId, 'idle'), 1500);
+        return true;
+      } catch {
+        // Revert the optimistic value so the picker snaps back to the saved one.
+        setPendingAllographs((prev) => {
+          const next = { ...prev };
+          delete next[graphId];
+          return next;
+        });
+        markStatus(graphId, 'error');
+        return false;
+      }
+    },
+    [markStatus, token]
+  );
 
   // Show back-to-top once the user has scrolled meaningfully past the fold.
   // 600px is "past the Hands TOC and the first hand's allograph header on a
@@ -254,8 +372,8 @@ export function AnnotationGallery({
   }, []);
 
   const groups = React.useMemo(
-    () => groupAnnotations(graphs, hands, allographs),
-    [graphs, hands, allographs]
+    () => groupAnnotations(graphs, hands, allographs, pendingAllographs),
+    [graphs, hands, allographs, pendingAllographs]
   );
 
   // Apply allograph filter (substring, case-insensitive) — drop allograph
@@ -382,18 +500,58 @@ export function AnnotationGallery({
             )}
           </div>
 
-          {selectionEnabled && selectionCount > 0 && (
-            <div className="flex items-center gap-2 text-xs">
+          {selectionCount > 0 && (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="text-muted-foreground">{selectionCount} selected</span>
-              <Button
-                size="sm"
-                variant="default"
-                onClick={() => addAllSelectedToCollection()}
-                className="h-7 gap-1.5"
-              >
-                <Star className="h-3.5 w-3.5" />
-                Add to collection
-              </Button>
+              {annotatingMode ? (
+                <>
+                  <SearchableSelect
+                    options={allographOptions}
+                    value={bulkAllographValue}
+                    onValueChange={(v) => setBulkAllographValue(v)}
+                    placeholder="Set allograph…"
+                    searchPlaceholder="Search allographs…"
+                    emptyText="No allographs"
+                    triggerClassName="h-7 w-48 text-xs"
+                    disabled={bulkSaving}
+                  />
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="h-7 gap-1.5"
+                    disabled={!bulkAllographValue || bulkSaving}
+                    onClick={async () => {
+                      if (!bulkAllographValue) return;
+                      const allographId = Number(bulkAllographValue);
+                      if (!Number.isFinite(allographId)) return;
+                      setBulkSaving(true);
+                      setBulkError(null);
+                      const ids = Array.from(selectedIds);
+                      const results = await Promise.all(
+                        ids.map((gid) => saveAllograph(gid, allographId))
+                      );
+                      setBulkSaving(false);
+                      const failed = results.filter((ok) => !ok).length;
+                      if (failed > 0) setBulkError(`${failed} of ${ids.length} failed`);
+                      else setBulkAllographValue(null);
+                    }}
+                  >
+                    {bulkSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    Apply
+                  </Button>
+                  {bulkError && <span className="text-destructive">{bulkError}</span>}
+                </>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={() => addAllSelectedToCollection()}
+                  className="h-7 gap-1.5"
+                >
+                  <Star className="h-3.5 w-3.5" />
+                  Add to collection
+                </Button>
+              )}
               <Button size="sm" variant="ghost" onClick={clearSelection} className="h-7">
                 Clear
               </Button>
@@ -468,33 +626,34 @@ export function AnnotationGallery({
                           </span>
                         </h3>
 
-                        {/* Per-allograph toolbar: Select all / Unselect all / Add to collection.
-                            Hidden in annotating mode (editor view, no collection workflow). */}
-                        {selectionEnabled && (
-                          <div className="flex items-center gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 gap-1.5 text-xs"
-                              onClick={() =>
-                                allSelected
-                                  ? unselectAllInGroup(allographGroup.graphs)
-                                  : selectAllInGroup(allographGroup.graphs)
-                              }
-                            >
-                              {allSelected ? (
-                                <>
-                                  <Square className="h-3.5 w-3.5" />
-                                  Unselect all
-                                </>
-                              ) : (
-                                <>
-                                  <ListChecks className="h-3.5 w-3.5" />
-                                  Select all
-                                </>
-                              )}
-                            </Button>
+                        {/* Per-allograph toolbar: Select all / Unselect all stay
+                            in annotating mode (powers bulk-set). The collection
+                            button is the only annotating-mode casualty. */}
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 gap-1.5 text-xs"
+                            onClick={() =>
+                              allSelected
+                                ? unselectAllInGroup(allographGroup.graphs)
+                                : selectAllInGroup(allographGroup.graphs)
+                            }
+                          >
+                            {allSelected ? (
+                              <>
+                                <Square className="h-3.5 w-3.5" />
+                                Unselect all
+                              </>
+                            ) : (
+                              <>
+                                <ListChecks className="h-3.5 w-3.5" />
+                                Select all
+                              </>
+                            )}
+                          </Button>
 
+                          {!annotatingMode && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -512,8 +671,8 @@ export function AnnotationGallery({
                                 Add selected graphs to collection
                               </TooltipContent>
                             </Tooltip>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex flex-wrap gap-2">
@@ -528,7 +687,10 @@ export function AnnotationGallery({
                             onToggleSelected={() => toggleGraph(graph.id)}
                             canEdit={canEdit}
                             annotatingMode={annotatingMode}
-                            selectionEnabled={selectionEnabled}
+                            allographOptions={allographOptions}
+                            pendingAllographId={pendingAllographs[graph.id] ?? null}
+                            saveStatus={saveStatus[graph.id] ?? 'idle'}
+                            onAllographChange={saveAllograph}
                           />
                         ))}
                       </div>

@@ -71,7 +71,7 @@ export async function fetchAnnotationsForImage(
 
 type ViewerAnnotationWritePayload = {
   item_image?: number;
-  annotation: BackendGraph['annotation'];
+  annotation?: BackendGraph['annotation'];
   annotation_type?: 'image' | 'editorial';
   allograph?: number | null;
   hand?: number | null;
@@ -83,7 +83,10 @@ type ViewerAnnotationWritePayload = {
 
 export async function createViewerAnnotation(
   token: string,
-  payload: ViewerAnnotationWritePayload & { item_image: number }
+  payload: ViewerAnnotationWritePayload & {
+    item_image: number;
+    annotation: BackendGraph['annotation'];
+  }
 ) {
   const res = await apiFetch(`/api/v1/annotations/graphs/`, {
     method: 'POST',
