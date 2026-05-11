@@ -153,11 +153,18 @@ export function AnnotationGallery({
   const selection = useSelectionSet<number>();
   const [allographFilter, setAllographFilter] = React.useState('');
   const [annotatingMode, setAnnotatingMode] = React.useState(false);
-  // Show back-to-top once the user has scrolled past the fold (600px is past
-  // the Hands TOC + first allograph header on a typical 1080p viewport).
+  // Two scroll thresholds drive UI affordances:
+  //   - isScrolled (>16px): the sticky toolbar collapses to the right half
+  //     of the page so gallery content underneath stays visible on the left.
+  //   - showBackToTop (>600px): the floating back-to-top button appears.
+  const [isScrolled, setIsScrolled] = React.useState(false);
   const [showBackToTop, setShowBackToTop] = React.useState(false);
   React.useEffect(() => {
-    const onScroll = () => setShowBackToTop(window.scrollY > 600);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setIsScrolled(y > 16);
+      setShowBackToTop(y > 600);
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -290,6 +297,7 @@ export function AnnotationGallery({
           onClearSelection={selection.clear}
           onAddSelectedToCollection={() => addToCollection(effectiveGraphs)}
           onEditSelected={() => setEditingGraphIds(Array.from(selection.selected))}
+          isScrolled={isScrolled}
         />
 
         {filteredGroups.length > 1 && (
@@ -389,6 +397,7 @@ interface GalleryToolbarProps {
   onClearSelection: () => void;
   onAddSelectedToCollection: () => void;
   onEditSelected: () => void;
+  isScrolled: boolean;
 }
 
 function GalleryToolbar({
@@ -404,6 +413,7 @@ function GalleryToolbar({
   onClearSelection,
   onAddSelectedToCollection,
   onEditSelected,
+  isScrolled,
 }: GalleryToolbarProps) {
   const isFiltering = allographFilter.trim().length > 0;
   return (
@@ -411,7 +421,15 @@ function GalleryToolbar({
     // through long pages with many hands. `top-0` puts it just below whatever
     // the page-level layout's chrome ends up being; bg-card/backdrop-blur
     // keeps content behind it readable.
-    <div className="sticky top-0 z-30 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/85">
+    // Once the page scrolls past the top, the toolbar shrinks to the right
+    // half of the page so the gallery content is visible to its left
+    // (margin-left: auto on a sized block right-aligns it).
+    <div
+      className={cn(
+        'sticky top-0 z-30 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card/95 px-4 py-3 shadow-sm backdrop-blur transition-all duration-200 supports-[backdrop-filter]:bg-card/85',
+        isScrolled ? 'ml-auto w-full sm:w-1/2' : 'w-auto'
+      )}
+    >
       <div className="flex flex-1 flex-wrap items-center gap-3">
         <div className="relative flex items-center gap-2">
           <Input
