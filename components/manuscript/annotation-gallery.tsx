@@ -163,6 +163,32 @@ export function AnnotationGallery({
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const filterInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Page-level keyboard shortcuts:
+  //   `/`  — focus the allograph filter
+  //   `A`  — toggle annotating mode (admin only)
+  // Both are skipped when the user is typing into a form field, so they don't
+  // hijack normal input.
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) {
+        return;
+      }
+      if (e.key === '/') {
+        e.preventDefault();
+        filterInputRef.current?.focus();
+      } else if ((e.key === 'a' || e.key === 'A') && canEdit) {
+        e.preventDefault();
+        setAnnotatingMode((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [canEdit]);
+
   // Saved-graph overrides keep edits visible immediately (especially the
   // re-grouping that follows an allograph change) without waiting for a
   // route refresh. Each entry shadows the corresponding prop graph.
@@ -254,6 +280,7 @@ export function AnnotationGallery({
         <GalleryToolbar
           allographFilter={allographFilter}
           onAllographFilterChange={setAllographFilter}
+          filterInputRef={filterInputRef}
           totalAllographCount={totalAllographCount}
           filteredAllographCount={filteredAllographCount}
           canEdit={canEdit}
@@ -351,6 +378,7 @@ export function AnnotationGallery({
 interface GalleryToolbarProps {
   allographFilter: string;
   onAllographFilterChange: (value: string) => void;
+  filterInputRef: React.RefObject<HTMLInputElement | null>;
   totalAllographCount: number;
   filteredAllographCount: number;
   canEdit: boolean;
@@ -365,6 +393,7 @@ interface GalleryToolbarProps {
 function GalleryToolbar({
   allographFilter,
   onAllographFilterChange,
+  filterInputRef,
   totalAllographCount,
   filteredAllographCount,
   canEdit,
@@ -383,15 +412,19 @@ function GalleryToolbar({
     // keeps content behind it readable.
     <div className="sticky top-0 z-20 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="flex flex-1 flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
           <Input
+            ref={filterInputRef}
             type="search"
             placeholder="Filter allographs…"
             value={allographFilter}
             onChange={(e) => onAllographFilterChange(e.target.value)}
-            className="h-8 w-56"
-            aria-label="Filter allographs by name"
+            className="h-8 w-56 pr-8"
+            aria-label="Filter allographs by name. Press / to focus."
           />
+          {!isFiltering && (
+            <Kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">/</Kbd>
+          )}
           {isFiltering && (
             <span className="text-xs text-muted-foreground" aria-live="polite">
               {filteredAllographCount} of {totalAllographCount}
@@ -399,21 +432,27 @@ function GalleryToolbar({
           )}
         </div>
         {canEdit && (
-          <label
-            className={cn(
-              'flex cursor-pointer items-center gap-2 rounded border px-2 py-1 text-xs transition',
-              annotatingMode
-                ? 'border-primary bg-primary/10 text-foreground'
-                : 'border-transparent text-muted-foreground hover:border-border'
-            )}
-          >
-            <Switch
-              checked={annotatingMode}
-              onCheckedChange={onAnnotatingModeChange}
-              aria-label="Annotating mode"
-            />
-            Annotating mode
-          </label>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <label
+                className={cn(
+                  'flex cursor-pointer items-center gap-2 rounded border px-2 py-1 text-xs transition',
+                  annotatingMode
+                    ? 'border-primary bg-primary/10 text-foreground'
+                    : 'border-transparent text-muted-foreground hover:border-border'
+                )}
+              >
+                <Switch
+                  checked={annotatingMode}
+                  onCheckedChange={onAnnotatingModeChange}
+                  aria-label="Annotating mode"
+                />
+                Annotating mode
+                <Kbd>A</Kbd>
+              </label>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Toggle inline graph editing (press A)</TooltipContent>
+          </Tooltip>
         )}
       </div>
 
@@ -553,42 +592,47 @@ function AllographGroupSection({
           </span>
         </h3>
 
-        <div className="flex items-center gap-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 gap-1.5 text-xs"
-            onClick={() =>
-              allSelected
-                ? selection.removeMany(allographGroup.graphs.map((g) => g.id))
-                : selection.addMany(allographGroup.graphs.map((g) => g.id))
-            }
-          >
-            {allSelected ? (
-              <>
-                <Square className="h-3.5 w-3.5" />
-                Unselect all
-              </>
-            ) : (
-              <>
-                <ListChecks className="h-3.5 w-3.5" />
-                Select all
-              </>
-            )}
-          </Button>
+        {/* Icon-only per-allograph toolbar with tooltips. Repeats once per
+            allograph; the prior text-button version added too much visual
+            noise on long pages. Tooltips carry the explicit action label. */}
+        <div className="flex items-center gap-0.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7"
+                aria-label={allSelected ? 'Unselect all in group' : 'Select all in group'}
+                onClick={() =>
+                  allSelected
+                    ? selection.removeMany(allographGroup.graphs.map((g) => g.id))
+                    : selection.addMany(allographGroup.graphs.map((g) => g.id))
+                }
+              >
+                {allSelected ? (
+                  <Square className="h-3.5 w-3.5" />
+                ) : (
+                  <ListChecks className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              {allSelected ? 'Unselect all in this allograph' : 'Select all in this allograph'}
+            </TooltipContent>
+          </Tooltip>
 
           {!annotatingMode && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  size="sm"
+                  size="icon"
                   variant="ghost"
-                  className="h-7 gap-1.5 text-xs"
+                  className="h-7 w-7"
+                  aria-label="Add selected graphs to collection"
                   disabled={groupSelectedCount === 0}
                   onClick={onAddGroupToCollection}
                 >
                   <Star className="h-3.5 w-3.5" />
-                  Add selected
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top">Add selected graphs to collection</TooltipContent>
@@ -718,13 +762,20 @@ function GraphThumb({
         <TooltipContent side="top">{tooltipLabel}</TooltipContent>
       </Tooltip>
 
-      {annotatingMode && (
-        <div className="mt-1 w-[10rem] space-y-1">
+      {/* When the user can edit (admin), always render the footer slot — even
+          in view mode — so toggling annotating mode doesn't reflow the entire
+          grid. Inactive footers are visibility:hidden but still take layout. */}
+      {canEdit && (
+        <div
+          className={cn('mt-1 w-[10rem] space-y-1', !annotatingMode && 'invisible')}
+          aria-hidden={!annotatingMode}
+        >
           <Button
             size="sm"
             variant="outline"
             className="h-7 w-full gap-1.5 text-[11px]"
             onClick={onEdit}
+            tabIndex={annotatingMode ? 0 : -1}
           >
             <Pencil className="h-3 w-3" />
             Edit
@@ -745,25 +796,45 @@ function AnnotatingDetails({ graph }: { graph: BackendGraph }) {
   const positions = graph.position_details ?? [];
 
   if (components.length === 0 && positions.length === 0) {
-    return <p className="text-center text-[10px] italic text-muted-foreground">Undescribed</p>;
+    return <p className="text-center text-[11px] italic text-muted-foreground/80">Undescribed</p>;
   }
 
   return (
-    <div className="space-y-0.5 text-[10px] leading-tight text-muted-foreground">
+    // Bumped from 10px (verging on illegible) to 11px with stronger contrast
+    // for the supporting feature/position text. Component names use the
+    // foreground colour for readable scanning at 11px.
+    <div className="space-y-0.5 text-[11px] leading-snug text-muted-foreground">
       {components.map((c, i) => (
         <div key={`${c.component}-${i}`}>
           <span className="font-medium text-foreground">
             {c.component_name ?? `#${c.component}`}
           </span>
           {c.feature_details && c.feature_details.length > 0 && (
-            <span> — {c.feature_details.map((f) => f.name).join(', ')}</span>
+            <span className="text-foreground/70">
+              {' — '}
+              {c.feature_details.map((f) => f.name).join(', ')}
+            </span>
           )}
         </div>
       ))}
       {positions.length > 0 && (
-        <div className="italic">{positions.map((p) => p.name).join(', ')}</div>
+        <div className="italic text-foreground/70">{positions.map((p) => p.name).join(', ')}</div>
       )}
     </div>
+  );
+}
+
+// Tiny inline keyboard-shortcut chip; styled like the GitHub/Linear pattern.
+function Kbd({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <kbd
+      className={cn(
+        'inline-flex h-4 min-w-4 items-center justify-center rounded border bg-muted px-1 font-sans text-[10px] font-medium text-muted-foreground',
+        className
+      )}
+    >
+      {children}
+    </kbd>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { useAuth } from '@/contexts/auth-context';
 import {
@@ -14,17 +15,11 @@ import type { Allograph, Component, Feature } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import type { SearchableOption } from '@/lib/searchable-option-ranking';
+import { cn } from '@/lib/utils';
 
 // Tri-state model: every toggleable thing (feature, position) is 'all' (set
 // on every selected graph), 'none' (set on none), or 'mixed' (some have it).
@@ -33,8 +28,6 @@ import type { SearchableOption } from '@/lib/searchable-option-ranking';
 
 type TriState = 'all' | 'none' | 'mixed';
 const MIXED = 'mixed' as const;
-const NEXT_STATE = { mixed: 'all', all: 'none', none: 'mixed' } as const;
-const CHECKBOX_VALUE = { all: true, none: false, mixed: 'indeterminate' } as const;
 
 function deriveTriState(graphs: BackendGraph[], hasIt: (g: BackendGraph) => boolean): TriState {
   let trueCount = 0;
@@ -85,7 +78,7 @@ function visibleComponents(
 // per-key tri-state map that shadows a baseline derived from the graphs.
 interface TriStateMap<K extends string | number> {
   get: (key: K) => TriState;
-  cycle: (key: K) => void;
+  set: (key: K, state: TriState) => void;
   hasMeaningfulEdits: boolean;
   reset: () => void;
   edits: Partial<Record<K, TriState>>;
@@ -96,8 +89,7 @@ function useTriStateMap<K extends string | number>(baseline: (key: K) => TriStat
   return {
     edits,
     get: (key) => edits[key] ?? baseline(key),
-    cycle: (key) =>
-      setEdits((prev) => ({ ...prev, [key]: NEXT_STATE[prev[key] ?? baseline(key)] })),
+    set: (key, state) => setEdits((prev) => ({ ...prev, [key]: state })),
     reset: () => setEdits({}),
     hasMeaningfulEdits: Object.values(edits).some((s) => s !== MIXED),
   };
@@ -331,22 +323,52 @@ function DialogBody({
     setSaving(false);
     onComplete?.({ savedCount, failedCount });
 
-    if (failedCount > 0) setError(`${failedCount} of ${graphs.length} failed to save.`);
-    else onOpenChange(false);
+    if (failedCount > 0) {
+      // Keep the dialog open and surface the inline notice; also toast so the
+      // user sees the failure if the dialog is scrolled past it.
+      setError(`${failedCount} of ${graphs.length} failed to save.`);
+      toast.error(`${failedCount} of ${graphs.length} graphs failed to save`);
+    } else {
+      toast.success(savedCount > 1 ? `Saved ${savedCount} graphs` : 'Saved');
+      onOpenChange(false);
+    }
   };
+
+  // ⌘/Ctrl+Enter to save without reaching for the mouse. Skips when there's
+  // nothing to commit or a save is already in flight.
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        if (saving || !hasPendingChanges) return;
+        e.preventDefault();
+        void handleSave();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // handleSave closes over state at this render — using a stale closure
+    // would replay stale edits, so we depend only on the gating flags.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saving, hasPendingChanges]);
 
   // ---- Render -------------------------------------------------------------
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] w-[640px] max-w-[calc(100vw-2rem)] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-lg"
+        // Don't auto-focus the first input on open — the SearchableSelect
+        // popovers can interact badly with focus capture inside the sheet.
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <SheetHeader>
+          <SheetTitle>
             {isMulti ? `Edit ${graphs.length} graphs` : `Edit graph #${graphs[0].id}`}
-          </DialogTitle>
-        </DialogHeader>
+          </SheetTitle>
+        </SheetHeader>
 
-        <div className="space-y-5">
+        <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
           {isMulti && initialAllograph === MIXED && (
             <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
               Selected graphs use different allographs. Choose one to set on all of them, or close
@@ -388,10 +410,10 @@ function DialogBody({
             <>
               {isMulti && (
                 <p className="rounded border border-muted-foreground/20 bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
-                  Click a checkbox to cycle: <span className="font-medium">all</span> (apply to
-                  every selected graph) → <span className="font-medium">none</span> (remove from
-                  every selected graph) → <span className="font-medium">mixed</span> (leave each
-                  graph alone — current per-graph values are preserved on save).
+                  Each row has three options: <span className="font-medium">All</span> applies to
+                  every selected graph, <span className="font-medium">None</span> removes from every
+                  selected graph, and <span className="font-medium">Mixed</span> leaves each
+                  graph&apos;s current value alone on save.
                 </p>
               )}
 
@@ -416,8 +438,11 @@ function DialogBody({
                       <ComponentBlock
                         key={c.component_id}
                         component={c}
+                        isMulti={isMulti}
                         getFeatureState={(fId) => featureMap.get(featureKey(c.component_id, fId))}
-                        onToggleFeature={(fId) => featureMap.cycle(featureKey(c.component_id, fId))}
+                        onSetFeatureState={(fId, s) =>
+                          featureMap.set(featureKey(c.component_id, fId), s)
+                        }
                       />
                     ))}
                   </div>
@@ -433,13 +458,14 @@ function DialogBody({
                     This allograph has no defined positions.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+                  <div className="space-y-1">
                     {schemaAllograph.positions.map((p) => (
-                      <TriCheckbox
+                      <TriRow
                         key={p.id}
                         label={p.name}
+                        isMulti={isMulti}
                         state={positionMap.get(p.id)}
-                        onToggle={() => positionMap.cycle(p.id)}
+                        onSet={(s) => positionMap.set(p.id, s)}
                       />
                     ))}
                   </div>
@@ -455,17 +481,26 @@ function DialogBody({
           {error && <p className="text-xs text-destructive">{error}</p>}
         </div>
 
-        <DialogFooter className="gap-2">
+        <SheetFooter className="gap-2">
           <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancel
           </Button>
-          <Button size="sm" onClick={handleSave} disabled={saving || !hasPendingChanges}>
-            {saving && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={saving || !hasPendingChanges}
+            title="⌘/Ctrl+Enter to save"
+            className="gap-2"
+          >
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             {isMulti ? `Save ${graphs.length} graphs` : 'Save'}
+            <kbd className="ml-1 hidden rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1 text-[10px] font-medium sm:inline">
+              ⌘↵
+            </kbd>
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -475,24 +510,31 @@ function DialogBody({
 
 interface ComponentBlockProps {
   component: Component;
+  isMulti: boolean;
   getFeatureState: (featureId: number) => TriState;
-  onToggleFeature: (featureId: number) => void;
+  onSetFeatureState: (featureId: number, state: TriState) => void;
 }
 
-function ComponentBlock({ component, getFeatureState, onToggleFeature }: ComponentBlockProps) {
+function ComponentBlock({
+  component,
+  isMulti,
+  getFeatureState,
+  onSetFeatureState,
+}: ComponentBlockProps) {
   return (
     <div className="rounded border bg-card p-3">
       <div className="mb-2 text-xs font-medium">{component.component_name}</div>
       {component.features.length === 0 ? (
         <p className="text-xs italic text-muted-foreground">No features.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
+        <div className="space-y-1">
           {component.features.map((f: Feature) => (
-            <TriCheckbox
+            <TriRow
               key={f.id}
               label={f.name}
+              isMulti={isMulti}
               state={getFeatureState(f.id)}
-              onToggle={() => onToggleFeature(f.id)}
+              onSet={(s) => onSetFeatureState(f.id, s)}
             />
           ))}
         </div>
@@ -501,17 +543,81 @@ function ComponentBlock({ component, getFeatureState, onToggleFeature }: Compone
   );
 }
 
-interface TriCheckboxProps {
+interface TriRowProps {
   label: string;
+  isMulti: boolean;
   state: TriState;
-  onToggle: () => void;
+  onSet: (state: TriState) => void;
 }
 
-function TriCheckbox({ label, state, onToggle }: TriCheckboxProps) {
+// One row in the components/positions sections: a 3-button segmented control
+// (or 2-button in single-graph mode where 'mixed' is unreachable) followed by
+// the option label. Replaces the prior cycle-on-click checkbox UI, which was
+// fast for power users but undiscoverable for everyone else — the explicit
+// All/None/Mixed labels make the model obvious.
+function TriRow({ label, isMulti, state, onSet }: TriRowProps) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 text-xs">
-      <Checkbox checked={CHECKBOX_VALUE[state]} onCheckedChange={onToggle} />
-      {label}
-    </label>
+    <div className="flex items-center gap-2 text-xs">
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="inline-flex shrink-0 overflow-hidden rounded border"
+      >
+        <SegmentedButton
+          active={state === 'all'}
+          onClick={() => onSet('all')}
+          ariaLabel={`Set ${label} on all selected`}
+        >
+          All
+        </SegmentedButton>
+        <SegmentedButton
+          active={state === 'none'}
+          onClick={() => onSet('none')}
+          ariaLabel={`Remove ${label} from all selected`}
+        >
+          None
+        </SegmentedButton>
+        {isMulti && (
+          <SegmentedButton
+            active={state === 'mixed'}
+            onClick={() => onSet('mixed')}
+            ariaLabel={`Leave ${label} unchanged per graph`}
+          >
+            Mixed
+          </SegmentedButton>
+        )}
+      </div>
+      <span className="leading-tight">{label}</span>
+    </div>
+  );
+}
+
+function SegmentedButton({
+  active,
+  onClick,
+  ariaLabel,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  ariaLabel: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      aria-label={ariaLabel}
+      onClick={onClick}
+      className={cn(
+        'min-w-[2.75rem] border-l px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide transition first:border-l-0',
+        active
+          ? 'bg-primary text-primary-foreground'
+          : 'bg-background text-muted-foreground hover:bg-muted'
+      )}
+    >
+      {children}
+    </button>
   );
 }
