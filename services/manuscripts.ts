@@ -15,14 +15,71 @@ export async function fetchManuscriptImage(id: string): Promise<ManuscriptImage>
   return response.json();
 }
 
-export async function fetchHands(itemPartId: string | number): Promise<HandsResponse> {
-  const response = await apiFetch(`/api/v1/hands/?item_part=${itemPartId}`);
+function toRelativePath(next: string | null): string | null {
+  if (!next) return null;
+
+  try {
+    const url = new URL(next);
+    return url.pathname + url.search;
+  } catch {
+    return next;
+  }
+}
+
+async function fetchHandsPage(path: string): Promise<HandsResponse> {
+  const response = await apiFetch(path);
 
   if (!response.ok) {
     throw new Error('Failed to fetch hands');
   }
 
   return response.json();
+}
+
+async function fetchAllHandsFromPath(path: string): Promise<HandsResponse> {
+  let nextPath: string | null = path;
+  let count = 0;
+  const results: HandsResponse['results'] = [];
+
+  while (nextPath) {
+    const page = await fetchHandsPage(nextPath);
+    count = page.count;
+    results.push(...page.results);
+    nextPath = toRelativePath(page.next);
+  }
+
+  return {
+    count: count || results.length,
+    next: null,
+    previous: null,
+    results,
+  };
+}
+
+function buildHandsPath(itemPartId: string | number, itemImageId?: string | number): string {
+  const params = new URLSearchParams({
+    item_part: String(itemPartId),
+    limit: '100',
+  });
+
+  if (itemImageId != null) {
+    params.set('item_part_images', String(itemImageId));
+  }
+
+  return `/api/v1/hands/?${params.toString()}`;
+}
+
+export async function fetchHands(
+  itemPartId: string | number,
+  itemImageId?: string | number
+): Promise<HandsResponse> {
+  const imageScopedHands = await fetchAllHandsFromPath(buildHandsPath(itemPartId, itemImageId));
+
+  if (itemImageId == null || imageScopedHands.results.length > 0) {
+    return imageScopedHands;
+  }
+
+  return fetchAllHandsFromPath(buildHandsPath(itemPartId));
 }
 
 export async function fetchAllographs(): Promise<AllographsResponse> {

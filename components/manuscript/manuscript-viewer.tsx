@@ -109,6 +109,7 @@ import {
 
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
 import { formatAllographLabel } from '@/lib/allograph-labels';
+import { getDefaultHand, sortHandsByPriority } from '@/lib/hand-ordering';
 
 import {
   buildHydratedEditorRecordMap,
@@ -252,7 +253,7 @@ export default function ManuscriptViewer({
   const [filteredAllograph, setFilteredAllograph] = React.useState<Allograph | undefined>(
     undefined
   );
-  const [selectedHand, setSelectedHand] = React.useState<HandType | undefined>(undefined);
+  const [selectedHand, setSelectedHand] = React.useState<HandType | null | undefined>(undefined);
   const [allographs, setAllographs] = React.useState<Allograph[]>([]);
   const [imageAllographIds, setImageAllographIds] = React.useState<number[]>([]);
 
@@ -352,12 +353,6 @@ export default function ManuscriptViewer({
     return allographs.find((a) => a.id === allographId);
   }, [allographs, popupAnnotation]);
 
-  const popupSelectedHand = React.useMemo(() => {
-    const handId = popupAnnotation?._meta?.handId;
-    if (handId == null) return undefined;
-    return hands.find((hand) => hand.id === handId);
-  }, [hands, popupAnnotation]);
-
   const allographNameById = React.useMemo(
     () => new Map(allographs.map((a) => [a.id, a.name])),
     [allographs]
@@ -366,9 +361,11 @@ export default function ManuscriptViewer({
     () => new Map(allographs.map((a) => [a.id, formatAllographLabel(a)])),
     [allographs]
   );
+  const handsForThisImage = React.useMemo(() => sortHandsByPriority(hands), [hands]);
+
   const handNameById = React.useMemo(
-    () => new Map(hands.map((hand) => [hand.id, hand.name])),
-    [hands]
+    () => new Map(handsForThisImage.map((hand) => [hand.id, hand.name])),
+    [handsForThisImage]
   );
 
   const positionNameById = React.useMemo(() => {
@@ -379,8 +376,10 @@ export default function ManuscriptViewer({
     return new Map<number, string>(entries);
   }, [allographs]);
 
-  const displayedHand = popupSelectedHand ?? selectedHand ?? undefined;
-  const activeHandLabel = displayedHand?.name ?? 'Any';
+  const defaultHand = React.useMemo(() => getDefaultHand(handsForThisImage), [handsForThisImage]);
+  const activeAssignmentHand =
+    selectedHand === undefined ? defaultHand : (selectedHand ?? undefined);
+  const activeHandLabel = activeAssignmentHand?.name ?? 'Any';
 
   const dropdownAllograph = filteredAllograph ?? popupSelectedAllograph ?? undefined;
 
@@ -404,16 +403,27 @@ export default function ManuscriptViewer({
   }, [a9sSnapshot, countAllographId]);
 
   const highlightedIds = React.useMemo(() => {
-    if (highlightAllographId == null) return [];
+    if (highlightAllographId != null) {
+      return a9sSnapshot
+        .filter(
+          (a) =>
+            (a as A9sWithMeta)._meta?.allographId === highlightAllographId &&
+            a.id !== popupAnnotation?.id
+        )
+        .map((a) => a.id);
+    }
 
-    return a9sSnapshot
-      .filter(
-        (a) =>
-          (a as A9sWithMeta)._meta?.allographId === highlightAllographId &&
-          a.id !== popupAnnotation?.id
-      )
-      .map((a) => a.id);
-  }, [a9sSnapshot, highlightAllographId, popupAnnotation?.id]);
+    if (selectedHand?.id != null) {
+      return a9sSnapshot
+        .filter(
+          (a) =>
+            (a as A9sWithMeta)._meta?.handId === selectedHand.id && a.id !== popupAnnotation?.id
+        )
+        .map((a) => a.id);
+    }
+
+    return [];
+  }, [a9sSnapshot, highlightAllographId, popupAnnotation?.id, selectedHand?.id]);
 
   const allographsForThisImage = React.useMemo(() => {
     if (!allographs.length) return [];
@@ -423,24 +433,6 @@ export default function ManuscriptViewer({
     const idSet = new Set(imageAllographIds);
     return allographs.filter((a) => idSet.has(a.id));
   }, [allographs, imageAllographIds]);
-
-  const handIdsInImage = React.useMemo(() => {
-    return Array.from(
-      new Set(
-        a9sSnapshot
-          .map((a) => (a as A9sWithMeta)._meta?.handId)
-          .filter((id): id is number => typeof id === 'number')
-      )
-    );
-  }, [a9sSnapshot]);
-
-  const handsForThisImage = React.useMemo(() => {
-    if (!hands.length) return [];
-    if (!handIdsInImage.length) return hands;
-
-    const idSet = new Set(handIdsInImage);
-    return hands.filter((hand) => idSet.has(hand.id));
-  }, [hands, handIdsInImage]);
 
   const availableAllographFilterIds = React.useMemo(
     () => allographsForThisImage.map((allograph) => allograph.id),
@@ -499,16 +491,13 @@ export default function ManuscriptViewer({
         handId == null ||
         visibilityFilters.handIds.includes(handId);
 
-      const selectedHandPass = !selectedHand || (handId != null && handId === selectedHand.id);
-
-      return kindPass && allographPass && handPass && selectedHandPass;
+      return kindPass && allographPass && handPass;
     },
     [
       visibilityFiltersReady,
       visibilityFilters,
       availableAllographFilterIds.length,
       availableHandFilterIds.length,
-      selectedHand,
       getCanonicalAnnotation,
     ]
   );
@@ -631,12 +620,12 @@ export default function ManuscriptViewer({
         _meta: {
           ...annotation._meta,
           allographId: filteredAllograph?.id ?? annotation._meta?.allographId,
-          handId: selectedHand?.id ?? annotation._meta?.handId,
+          handId: annotation._meta?.handId ?? activeAssignmentHand?.id,
           annotationType: currentCreationKind,
         },
       } as A9sWithMeta;
     },
-    [filteredAllograph?.id, selectedHand?.id, currentCreationKind]
+    [filteredAllograph?.id, activeAssignmentHand?.id, currentCreationKind]
   );
 
   const handleViewerCreate = React.useCallback(
@@ -773,7 +762,7 @@ export default function ManuscriptViewer({
               _meta: {
                 ...annotation._meta,
                 allographId: annotation._meta?.allographId ?? filteredAllograph?.id,
-                handId: annotation._meta?.handId ?? selectedHand?.id,
+                handId: annotation._meta?.handId ?? activeAssignmentHand?.id,
                 annotationType: annotation._meta?.annotationType ?? currentCreationKind,
               },
             } as A9sWithMeta)
@@ -803,7 +792,7 @@ export default function ManuscriptViewer({
       currentCreationKind,
       filteredAllograph?.id,
       openPopupCollectionFromAnnotation,
-      selectedHand?.id,
+      activeAssignmentHand?.id,
       viewerSettings.allowMultipleBoxes,
     ]
   );
@@ -1661,7 +1650,7 @@ export default function ManuscriptViewer({
 
     const loadHands = async () => {
       try {
-        const handsData = await fetchHands(manuscriptImage.item_part);
+        const handsData = await fetchHands(manuscriptImage.item_part, manuscriptImage.id);
         if (isMounted) setHands(handsData.results);
       } catch {
         if (isMounted) setHands([]);
@@ -1675,7 +1664,14 @@ export default function ManuscriptViewer({
     return () => {
       isMounted = false;
     };
-  }, [manuscriptImage?.item_part]);
+  }, [manuscriptImage?.id, manuscriptImage?.item_part]);
+
+  React.useEffect(() => {
+    if (!selectedHand) return;
+    if (handsForThisImage.some((hand) => hand.id === selectedHand.id)) return;
+
+    setSelectedHand(undefined);
+  }, [handsForThisImage, selectedHand]);
 
   React.useEffect(() => {
     if (allographFiltersInitialized) return;
@@ -2065,7 +2061,9 @@ export default function ManuscriptViewer({
       activeAllographCount={filteredA9s.length}
       activeAllographLabel={activeAllographLabel}
       selectedAllographId={dropdownAllograph?.id ?? null}
-      selectedHandId={displayedHand?.id ?? null}
+      selectedHandId={
+        selectedHand === undefined ? (defaultHand?.id ?? null) : (selectedHand?.id ?? null)
+      }
       onOpenAllographModal={() => {
         setHoveredAnnotationId(null);
         setIsAllographModalOpen(true);
@@ -2519,7 +2517,7 @@ export default function ManuscriptViewer({
                         handleDraftNoteTextChange(popupRecord.id, value)
                       }
                       allographOptions={allographs}
-                      handOptions={hands.map((hand) => ({
+                      handOptions={handsForThisImage.map((hand) => ({
                         id: hand.id,
                         name: hand.name,
                       }))}

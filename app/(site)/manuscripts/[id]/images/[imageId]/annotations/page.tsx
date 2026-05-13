@@ -6,6 +6,7 @@ import {
 } from '@/services/manuscripts';
 import { fetchAnnotationsForImage } from '@/services/annotations';
 import { AnnotationGallery } from '@/components/manuscript/annotation-gallery';
+import { sortHandsByPriority } from '@/lib/hand-ordering';
 
 interface PageProps {
   params: Promise<{ id: string; imageId: string }>;
@@ -24,7 +25,7 @@ export default async function AnnotationsTabPage({ params }: PageProps) {
   const [graphs, allographs, hands, manuscript] = await Promise.all([
     fetchAnnotationsForImage(imageId).catch(() => []),
     fetchAllographs().catch(() => []),
-    fetchHands(image.item_part).catch(() => ({
+    fetchHands(image.item_part, image.id).catch(() => ({
       count: 0,
       next: null,
       previous: null,
@@ -44,7 +45,7 @@ export default async function AnnotationsTabPage({ params }: PageProps) {
         locus={image.locus ?? ''}
         shelfmark={manuscript?.display_label ?? ''}
         graphs={graphs}
-        hands={hands.results}
+        hands={sortHandsByPriority(hands.results)}
         allographs={allographs}
       />
     </div>

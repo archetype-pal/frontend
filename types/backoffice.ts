@@ -214,6 +214,9 @@ export interface HandListItem {
   item_part_display: string;
   script: number | null;
   script_name: string | null;
+  num: number;
+  priority: number;
+  is_default: boolean;
   date: number | null;
   date_display: string | null;
   place: string;

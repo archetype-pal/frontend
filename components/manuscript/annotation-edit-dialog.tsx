@@ -11,6 +11,7 @@ import {
   type BackendGraphComponent,
 } from '@/services/annotations';
 import { formatAllographLabel } from '@/lib/allograph-labels';
+import { sortHandsByPriority } from '@/lib/hand-ordering';
 import type { Allograph, Component, Feature } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 
@@ -184,10 +185,7 @@ function DialogBody({
     [allographs]
   );
   const handOptions = React.useMemo<SearchableOption[]>(
-    () =>
-      hands
-        .map((h) => ({ value: String(h.id), label: h.name }))
-        .sort((a, b) => a.label.localeCompare(b.label)),
+    () => sortHandsByPriority(hands).map((h) => ({ value: String(h.id), label: h.name })),
     [hands]
   );
 

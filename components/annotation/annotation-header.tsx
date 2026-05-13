@@ -22,7 +22,7 @@ interface AnnotationHeaderProps {
   selectedAnnotationsCount?: number;
   showUnsavedCount?: boolean;
   onAllographSelect: (allograph: Allograph | undefined) => void;
-  onHandSelect: (hand: HandType | undefined) => void;
+  onHandSelect: (hand: HandType | null) => void;
   allographs: Allograph[];
   hands: HandType[];
   onAllographHover?: (allograph: Allograph | undefined) => void;
@@ -96,13 +96,13 @@ export function AnnotationHeader({
   };
 
   const handleHandChange = (handId: string) => {
-    if (handId === '__all__') {
-      onHandSelect(undefined);
+    if (handId === '__unset__') {
+      onHandSelect(null);
       return;
     }
 
     const selectedHandData = hands.find((h) => h.id.toString() === handId);
-    onHandSelect(selectedHandData);
+    onHandSelect(selectedHandData ?? null);
   };
 
   return (
@@ -183,14 +183,14 @@ export function AnnotationHeader({
 
       <div className="flex items-center space-x-2">
         <Select
-          value={selectedHandId != null ? selectedHandId.toString() : '__all__'}
+          value={selectedHandId != null ? selectedHandId.toString() : '__unset__'}
           onValueChange={handleHandChange}
         >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Select Hand" />
+          <SelectTrigger className="w-[220px]" disabled={!hands.length}>
+            <SelectValue placeholder="Choose a hand" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__all__">Select Hand</SelectItem>
+            <SelectItem value="__unset__">Choose a hand</SelectItem>
             {hands.map((hand) => (
               <SelectItem key={hand.id} value={hand.id.toString()}>
                 {hand.name}

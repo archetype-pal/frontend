@@ -11,6 +11,7 @@ import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 import type { BackendGraph } from '@/services/annotations';
 import { formatAllographLabel } from '@/lib/allograph-labels';
+import { sortHandsByPriority } from '@/lib/hand-ordering';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,7 +40,9 @@ function groupAnnotations(
   hands: HandType[],
   allographs: Allograph[]
 ): HandGroup[] {
-  const handLabelById = new Map(hands.map((h) => [h.id, h.name]));
+  const sortedHands = sortHandsByPriority(hands);
+  const handLabelById = new Map(sortedHands.map((h) => [h.id, h.name]));
+  const handRankById = new Map(sortedHands.map((h, index) => [h.id, index]));
   const allographLabelById = new Map(allographs.map((a) => [a.id, formatAllographLabel(a)]));
   const handMap = new Map<number | null, Map<number, BackendGraph[]>>();
 
@@ -65,7 +68,17 @@ function groupAnnotations(
       allographName: allographLabelById.get(allographId) ?? `Allograph ${allographId}`,
       graphs,
     })).sort((a, b) => a.allographName.localeCompare(b.allographName)),
-  })).sort((a, b) => a.handName.localeCompare(b.handName));
+  })).sort((a, b) => {
+    if (a.handId === null && b.handId === null) return 0;
+    if (a.handId === null) return 1;
+    if (b.handId === null) return -1;
+
+    const rankDelta =
+      (handRankById.get(a.handId) ?? Number.MAX_SAFE_INTEGER) -
+      (handRankById.get(b.handId) ?? Number.MAX_SAFE_INTEGER);
+
+    return rankDelta || a.handName.localeCompare(b.handName);
+  });
 }
 
 const handAnchorId = (handId: number | null) => `hand-${handId ?? 'unattributed'}`;

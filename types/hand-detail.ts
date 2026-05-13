@@ -6,6 +6,13 @@ export interface HandDetail {
   date: string | null;
   place: string | null;
   description: string | null;
+  num?: number | null;
+  order?: number | null;
+  ordering?: number | null;
+  sort_order?: number | null;
+  display_order?: number | null;
+  priority?: number | null;
+  is_default?: boolean | null;
   // Additional fields that may come from the API
   script?: string | null;
   repository_name?: string;
