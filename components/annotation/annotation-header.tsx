@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import type { HandType } from '@/types/hands';
 import type { Allograph } from '@/types/allographs';
@@ -36,6 +37,8 @@ interface AnnotationHeaderProps {
   onOpenSettingsPanel?: () => void;
   isSettingsActive?: boolean;
   showSettingsButton?: boolean;
+  lightboxControl?: React.ReactNode;
+  imageToolsControl?: React.ReactNode;
 }
 
 export function AnnotationHeader({
@@ -59,6 +62,8 @@ export function AnnotationHeader({
   onOpenSettingsPanel,
   isSettingsActive = false,
   showSettingsButton = true,
+  lightboxControl,
+  imageToolsControl,
 }: AnnotationHeaderProps) {
   const [selectedAllograph, setSelectedAllograph] = React.useState<string>('');
 
@@ -106,138 +111,142 @@ export function AnnotationHeader({
   };
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-white border-b">
-      <div className="flex items-center space-x-2">
+    <TooltipProvider>
+      <div className="flex items-center justify-between px-4 py-2 bg-white border-b">
         <div className="flex items-center space-x-2">
-          <span className="text-sm font-medium text-gray-700">Annotations</span>
-          <div className="flex">
-            <button
-              onClick={onToggleAnnotations}
-              className={`px-3 py-1 text-sm font-medium transition-colors ${
-                annotationsEnabled
-                  ? 'bg-slate-600 text-white'
-                  : 'bg-white text-gray-900 border shadow-sm'
-              }`}
-              style={{
-                borderTopLeftRadius: '4px',
-                borderBottomLeftRadius: '4px',
-                borderTopRightRadius: '4px',
-                borderBottomRightRadius: '4px',
-              }}
-            >
-              {annotationsEnabled ? 'ON' : 'OFF'}
-            </button>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium text-gray-700">Annotations</span>
+            <div className="flex">
+              <button
+                onClick={onToggleAnnotations}
+                className={`px-3 py-1 text-sm font-medium transition-colors ${
+                  annotationsEnabled
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-white text-gray-900 border shadow-sm'
+                }`}
+                style={{
+                  borderTopLeftRadius: '4px',
+                  borderBottomLeftRadius: '4px',
+                  borderTopRightRadius: '4px',
+                  borderBottomRightRadius: '4px',
+                }}
+              >
+                {annotationsEnabled ? 'ON' : 'OFF'}
+              </button>
+            </div>
           </div>
-        </div>
-        {onOpenFilterPanel && (
-          <Button
-            variant={isVisibilityFilterActive ? 'default' : 'outline'}
-            className="h-8 px-3 flex items-center gap-2"
-            onClick={() => onOpenFilterPanel()}
-            type="button"
-          >
-            <Filter className="h-4 w-4" />
-            <span className="text-sm">Filter Annotations</span>
-          </Button>
-        )}
-        {showUnsavedCount && (
-          <div className="flex items-center space-x-1">
-            <span className="text-sm text-gray-600">Unsaved</span>
-            <span className="inline-flex items-center justify-center w-6 h-6 text-sm font-medium text-gray-600 bg-gray-100 rounded">
-              {unsavedCount}
-            </span>
-          </div>
-        )}
-        {selectedAnnotationsCount > 0 && (
-          <div className="flex items-center space-x-1">
-            <span className="text-sm text-gray-600">Selected</span>
-            <span className="inline-flex items-center justify-center min-w-6 h-6 px-1.5 text-sm font-medium text-blue-700 bg-blue-100 rounded">
-              {selectedAnnotationsCount}
-            </span>
-          </div>
-        )}
-
-        <div className="flex items-center space-x-1">
-          {showSettingsButton && (
+          {onOpenFilterPanel && (
             <Button
-              variant={isSettingsActive ? 'default' : 'outline'}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => onOpenSettingsPanel?.()}
+              variant={isVisibilityFilterActive ? 'default' : 'outline'}
+              className="h-8 px-3 flex items-center gap-2"
+              onClick={() => onOpenFilterPanel()}
               type="button"
-              title="Settings"
             >
-              <Wrench className="h-4 w-4" />
+              <Filter className="h-4 w-4" />
+              <span className="text-sm">Filter Annotations</span>
             </Button>
           )}
+          {showUnsavedCount && (
+            <div className="flex items-center space-x-1">
+              <span className="text-sm text-gray-600">Unsaved</span>
+              <span className="inline-flex items-center justify-center w-6 h-6 text-sm font-medium text-gray-600 bg-gray-100 rounded">
+                {unsavedCount}
+              </span>
+            </div>
+          )}
+          {selectedAnnotationsCount > 0 && (
+            <div className="flex items-center space-x-1">
+              <span className="text-sm text-gray-600">Selected</span>
+              <span className="inline-flex items-center justify-center min-w-6 h-6 px-1.5 text-sm font-medium text-blue-700 bg-blue-100 rounded">
+                {selectedAnnotationsCount}
+              </span>
+            </div>
+          )}
 
-          <Button variant="outline" size="icon" className="h-8 w-8">
-            <Star className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" className="h-8 w-8">
-            <Star className="h-4 w-4" />
-            <Plus className="h-3 w-3 absolute -top-1 -right-1" />
+          <div className="flex items-center space-x-1">
+            {showSettingsButton && (
+              <Button
+                variant={isSettingsActive ? 'default' : 'outline'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => onOpenSettingsPanel?.()}
+                type="button"
+                title="Settings"
+              >
+                <Wrench className="h-4 w-4" />
+              </Button>
+            )}
+
+            <Button variant="outline" size="icon" className="h-8 w-8">
+              <Star className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-8 w-8">
+              <Star className="h-4 w-4" />
+              <Plus className="h-3 w-3 absolute -top-1 -right-1" />
+            </Button>
+            {lightboxControl}
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          {imageToolsControl}
+          <Select
+            value={selectedHandId != null ? selectedHandId.toString() : '__unset__'}
+            onValueChange={handleHandChange}
+          >
+            <SelectTrigger className="w-[220px]" disabled={!hands.length}>
+              <SelectValue placeholder="Choose a hand" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__unset__">Choose a hand</SelectItem>
+              {hands.map((hand) => (
+                <SelectItem key={hand.id} value={hand.id.toString()}>
+                  {hand.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="w-[200px]">
+            <SearchableSelect
+              options={allographs.map((allograph) => ({
+                value: allograph.id.toString(),
+                label: formatAllographLabel(allograph),
+              }))}
+              value={selectedAllograph || null}
+              onValueChange={(value) => handleAllographChange(value ?? '__all__')}
+              onOptionHover={(value) => {
+                if (!value) {
+                  onAllographHover?.(undefined);
+                  return;
+                }
+                handleAllographHover(value);
+              }}
+              placeholder="Select Allograph"
+              searchPlaceholder="Search allographs..."
+              emptyText="No allographs found."
+              clearLabel="All allographs"
+              triggerClassName="w-full"
+              contentClassName="z-[250]"
+            />
+          </div>
+
+          <Button
+            variant="outline"
+            className="h-8 px-2 flex items-center gap-2"
+            onClick={() => onOpenAllographModal?.()}
+            disabled={!activeAllographLabel}
+            title={
+              activeAllographLabel
+                ? `${activeAllographLabel}: ${activeAllographCount ?? 0}`
+                : 'Select an allograph first'
+            }
+          >
+            <Eye className="h-4 w-4 text-gray-500" />
+            <span className="text-sm">{activeAllographCount ?? 0}</span>
           </Button>
         </div>
       </div>
-
-      <div className="flex items-center space-x-2">
-        <Select
-          value={selectedHandId != null ? selectedHandId.toString() : '__unset__'}
-          onValueChange={handleHandChange}
-        >
-          <SelectTrigger className="w-[220px]" disabled={!hands.length}>
-            <SelectValue placeholder="Choose a hand" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__unset__">Choose a hand</SelectItem>
-            {hands.map((hand) => (
-              <SelectItem key={hand.id} value={hand.id.toString()}>
-                {hand.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <div className="w-[200px]">
-          <SearchableSelect
-            options={allographs.map((allograph) => ({
-              value: allograph.id.toString(),
-              label: formatAllographLabel(allograph),
-            }))}
-            value={selectedAllograph || null}
-            onValueChange={(value) => handleAllographChange(value ?? '__all__')}
-            onOptionHover={(value) => {
-              if (!value) {
-                onAllographHover?.(undefined);
-                return;
-              }
-              handleAllographHover(value);
-            }}
-            placeholder="Select Allograph"
-            searchPlaceholder="Search allographs..."
-            emptyText="No allographs found."
-            clearLabel="All allographs"
-            triggerClassName="w-full"
-            contentClassName="z-[250]"
-          />
-        </div>
-
-        <Button
-          variant="outline"
-          className="h-8 px-2 flex items-center gap-2"
-          onClick={() => onOpenAllographModal?.()}
-          disabled={!activeAllographLabel}
-          title={
-            activeAllographLabel
-              ? `${activeAllographLabel}: ${activeAllographCount ?? 0}`
-              : 'Select an allograph first'
-          }
-        >
-          <Eye className="h-4 w-4 text-gray-500" />
-          <span className="text-sm">{activeAllographCount ?? 0}</span>
-        </Button>
-      </div>
-    </div>
+    </TooltipProvider>
   );
 }

@@ -2046,6 +2046,117 @@ export default function ManuscriptViewer({
     );
   }
 
+  const imageToolsControl = (
+    <Popover>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              variant={hasImageToolChanges ? 'default' : 'outline'}
+              size="icon"
+              className="h-8 w-8"
+              aria-label="Image tools"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent>Image Tools</TooltipContent>
+      </Tooltip>
+      <PopoverContent align="end" side="bottom" className="w-72 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold leading-none">Image tools</div>
+            <div className="mt-1 text-xs text-muted-foreground">Rotation and tile adjustments</div>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1"
+            onClick={handleResetImageTools}
+          >
+            <RefreshCcw className="h-3.5 w-3.5" />
+            Reset
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1"
+            onClick={() => handleRotateViewer(-90)}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Left
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1"
+            onClick={() => handleRotateViewer(90)}
+          >
+            <RotateCw className="h-3.5 w-3.5" />
+            Right
+          </Button>
+        </div>
+
+        <div className="space-y-4 border-t pt-4">
+          <ImageAdjustmentSlider
+            label="Brightness"
+            min={50}
+            max={150}
+            value={imageAdjustments.brightness}
+            onChange={(value) => handleImageAdjustmentChange('brightness', value)}
+          />
+          <ImageAdjustmentSlider
+            label="Contrast"
+            min={50}
+            max={150}
+            value={imageAdjustments.contrast}
+            onChange={(value) => handleImageAdjustmentChange('contrast', value)}
+          />
+          <ImageAdjustmentSlider
+            label="Saturation"
+            min={0}
+            max={200}
+            value={imageAdjustments.saturation}
+            onChange={(value) => handleImageAdjustmentChange('saturation', value)}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+
+  const lightboxControl =
+    manuscriptImage && manuscript ? (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div>
+            <OpenLightboxButton
+              item={{
+                id: Number(imageId),
+                type: 'image',
+                image_iiif: manuscriptImage.iiif_image,
+                shelfmark: manuscript.current_item?.shelfmark || '',
+                locus: manuscriptImage.locus,
+                repository_name: manuscript.current_item?.repository?.name || '',
+                repository_city: manuscript.current_item?.repository?.place || '',
+                date: manuscript.historical_item?.date || '',
+              }}
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+            />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>Open in Lightbox</TooltipContent>
+      </Tooltip>
+    ) : null;
+
   const annotationHeader = (
     <AnnotationHeader
       annotationsEnabled={annotationsEnabled}
@@ -2073,6 +2184,8 @@ export default function ManuscriptViewer({
       onOpenSettingsPanel={canUseSettings ? toggleSettingsPanel : undefined}
       isSettingsActive={canUseSettings ? isSettingsPanelOpen : false}
       showSettingsButton={canUseSettings}
+      lightboxControl={lightboxControl}
+      imageToolsControl={imageToolsControl}
     />
   );
 
@@ -2219,94 +2332,6 @@ export default function ManuscriptViewer({
                   <TooltipContent>Zoom Out</TooltipContent>
                 </Tooltip>
 
-                <Popover>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={hasImageToolChanges ? 'default' : 'ghost'}
-                          size="icon"
-                          aria-label="Image tools"
-                        >
-                          <SlidersHorizontal className="h-4 w-4" />
-                        </Button>
-                      </PopoverTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>Image Tools</TooltipContent>
-                  </Tooltip>
-                  <PopoverContent
-                    align="start"
-                    side={viewerSettings.toolbarPosition === 'horizontal' ? 'bottom' : 'right'}
-                    className="w-72 space-y-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-semibold leading-none">Image tools</div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          Rotation and tile adjustments
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 gap-1"
-                        onClick={handleResetImageTools}
-                      >
-                        <RefreshCcw className="h-3.5 w-3.5" />
-                        Reset
-                      </Button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="gap-1"
-                        onClick={() => handleRotateViewer(-90)}
-                      >
-                        <RotateCcw className="h-3.5 w-3.5" />
-                        Left
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="gap-1"
-                        onClick={() => handleRotateViewer(90)}
-                      >
-                        <RotateCw className="h-3.5 w-3.5" />
-                        Right
-                      </Button>
-                    </div>
-
-                    <div className="space-y-4 border-t pt-4">
-                      <ImageAdjustmentSlider
-                        label="Brightness"
-                        min={50}
-                        max={150}
-                        value={imageAdjustments.brightness}
-                        onChange={(value) => handleImageAdjustmentChange('brightness', value)}
-                      />
-                      <ImageAdjustmentSlider
-                        label="Contrast"
-                        min={50}
-                        max={150}
-                        value={imageAdjustments.contrast}
-                        onChange={(value) => handleImageAdjustmentChange('contrast', value)}
-                      />
-                      <ImageAdjustmentSlider
-                        label="Saturation"
-                        min={0}
-                        max={200}
-                        value={imageAdjustments.saturation}
-                        onChange={(value) => handleImageAdjustmentChange('saturation', value)}
-                      />
-                    </div>
-                  </PopoverContent>
-                </Popover>
-
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -2404,30 +2429,6 @@ export default function ManuscriptViewer({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Delete Tool</TooltipContent>
-                  </Tooltip>
-                )}
-
-                {manuscriptImage && manuscript && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div>
-                        <OpenLightboxButton
-                          item={{
-                            id: Number(imageId),
-                            type: 'image',
-                            image_iiif: manuscriptImage.iiif_image,
-                            shelfmark: manuscript.current_item?.shelfmark || '',
-                            locus: manuscriptImage.locus,
-                            repository_name: manuscript.current_item?.repository?.name || '',
-                            repository_city: manuscript.current_item?.repository?.place || '',
-                            date: manuscript.historical_item?.date || '',
-                          }}
-                          variant="ghost"
-                          size="icon"
-                        />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>Open in Lightbox</TooltipContent>
                   </Tooltip>
                 )}
               </TooltipProvider>
