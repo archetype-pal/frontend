@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import {
-  Home,
   LaptopMinimal,
   ZoomIn,
   ZoomOut,
@@ -1316,6 +1315,49 @@ export default function ManuscriptViewer({
     setViewerRotation(0);
   }, []);
 
+  const handleDefaultZoom = React.useCallback(async () => {
+    viewerApiRef.current?.goHome();
+    viewerApiRef.current?.clearSelection?.();
+    viewerApiRef.current?.clearSelectedAnnotationIds?.();
+    clearPopupCollection();
+    setSelectedAnnotationIds([]);
+    dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
+
+    if (!manuscriptImage || !imageHeight) return;
+
+    try {
+      const refreshed = await buildInitialViewerAnnotations({
+        itemImageId: String(manuscriptImage.id),
+        iiifImage: manuscriptImage.iiif_image,
+        imageHeight,
+        allographNameById,
+        isPublicDemoMode,
+        includeEditorial: canViewEditorialControls,
+        token,
+        currentViewerAnnotations: [],
+        currentUrl: '',
+      });
+
+      setInitialA9sAnnots(refreshed);
+      setA9sSnapshot(refreshed);
+      setEditorRecords(buildHydratedEditorRecordMap(refreshed));
+    } catch {
+      showActionNotification({
+        kind: 'error',
+        title: 'Failed to reset annotations',
+        description: 'Could not reload the saved annotations for this image.',
+      });
+    }
+  }, [
+    allographNameById,
+    canViewEditorialControls,
+    clearPopupCollection,
+    imageHeight,
+    isPublicDemoMode,
+    manuscriptImage,
+    token,
+  ]);
+
   const handleMoveTool = React.useCallback(() => {
     viewerApiRef.current?.enablePan();
     setActiveTool('move');
@@ -1935,7 +1977,7 @@ export default function ManuscriptViewer({
 
       if (key === 'home') {
         event.preventDefault();
-        viewerApiRef.current?.goHome();
+        void handleDefaultZoom();
         return;
       }
 
@@ -2026,6 +2068,7 @@ export default function ManuscriptViewer({
     canPersistAnyAnnotations,
     handleCreateAnnotation,
     handleDeleteTool,
+    handleDefaultZoom,
     handleModifyTool,
     handleMoveTool,
     handleSave,
@@ -2318,21 +2361,6 @@ export default function ManuscriptViewer({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Reset view"
-                      aria-keyshortcuts="Home"
-                      onClick={() => viewerApiRef.current?.goHome()}
-                    >
-                      <Home className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Reset View</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
                       variant={isFullScreen ? 'default' : 'ghost'}
                       size="icon"
                       aria-label={isFullScreen ? 'Exit full screen' : 'Full screen'}
@@ -2390,6 +2418,21 @@ export default function ManuscriptViewer({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Zoom Out</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Refresh"
+                      aria-keyshortcuts="Home"
+                      onClick={() => void handleDefaultZoom()}
+                    >
+                      <RefreshCcw className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Refresh</TooltipContent>
                 </Tooltip>
 
                 {canCreateEditorialAnnotations && (
