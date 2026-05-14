@@ -1977,7 +1977,7 @@ export default function ManuscriptViewer({
         return;
       }
 
-      if (key === 'delete' || (event.shiftKey && key === 'backspace')) {
+      if (key === 'x' || key === 'delete' || (event.shiftKey && key === 'backspace')) {
         if (!canDeleteAnnotations) return;
         event.preventDefault();
         handleDeleteTool();
@@ -2339,16 +2339,27 @@ export default function ManuscriptViewer({
                       aria-keyshortcuts="F Shift+F"
                       onClick={handleToggleFullScreen}
                     >
-                      {isFullScreen ? (
-                        <Expand className="h-4 w-4" />
-                      ) : (
-                        <LaptopMinimal className="h-4 w-4" />
-                      )}
+                      <LaptopMinimal className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     {isFullScreen ? 'Exit Full Screen' : 'Full Screen'}
                   </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={activeTool === 'move' ? 'default' : 'ghost'}
+                      size="icon"
+                      aria-label="Select/Drag (g)"
+                      aria-keyshortcuts="G Shift+G"
+                      onClick={handleMoveTool}
+                    >
+                      <Hand className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Select/Drag (g)</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -2381,65 +2392,6 @@ export default function ManuscriptViewer({
                   <TooltipContent>Zoom Out</TooltipContent>
                 </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeTool === 'move' ? 'default' : 'ghost'}
-                      size="icon"
-                      aria-label="Move tool"
-                      aria-keyshortcuts="G Shift+G"
-                      onClick={handleMoveTool}
-                    >
-                      <Hand className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Move Tool</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeTool === 'modify' ? 'default' : 'ghost'}
-                      size="icon"
-                      aria-label="Modify annotations"
-                      aria-keyshortcuts="M Shift+M"
-                      onClick={handleModifyTool}
-                    >
-                      <Expand className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Modify</TooltipContent>
-                </Tooltip>
-
-                {canCreatePublicAnnotations && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={
-                          activeTool === 'draw' && currentCreationKind === 'public'
-                            ? 'default'
-                            : 'ghost'
-                        }
-                        size="icon"
-                        aria-label={
-                          canCreateEditorialAnnotations
-                            ? 'Create annotation'
-                            : 'Create public annotation'
-                        }
-                        aria-keyshortcuts="D Shift+D R Shift+R"
-                        onClick={() => handleCreateAnnotation('public')}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {canCreateEditorialAnnotations
-                        ? 'Create Annotation'
-                        : 'Create Public Annotation'}
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
                 {canCreateEditorialAnnotations && (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -2454,7 +2406,7 @@ export default function ManuscriptViewer({
                         aria-keyshortcuts="E Shift+E"
                         onClick={() => handleCreateAnnotation('editorial')}
                       >
-                        <SquarePen className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Create Editorial Annotation</TooltipContent>
@@ -2467,7 +2419,7 @@ export default function ManuscriptViewer({
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label="Save annotations"
+                        aria-label="Save (s)"
                         aria-keyshortcuts="S Shift+S Control+S Meta+S"
                         onClick={() => void handleSave()}
                         disabled={unsavedChanges === 0}
@@ -2475,7 +2427,7 @@ export default function ManuscriptViewer({
                         <Save className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Save</TooltipContent>
+                    <TooltipContent>Save (s)</TooltipContent>
                   </Tooltip>
                 )}
 
@@ -2485,14 +2437,50 @@ export default function ManuscriptViewer({
                       <Button
                         variant={activeTool === 'delete' ? 'default' : 'ghost'}
                         size="icon"
-                        aria-label="Delete tool"
-                        aria-keyshortcuts="Delete Shift+Backspace"
+                        aria-label="Delete (x)"
+                        aria-keyshortcuts="X Delete Shift+Backspace"
                         onClick={handleDeleteTool}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Delete Tool</TooltipContent>
+                    <TooltipContent>Delete (x)</TooltipContent>
+                  </Tooltip>
+                )}
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={activeTool === 'modify' ? 'default' : 'ghost'}
+                      size="icon"
+                      aria-label="Modify (m)"
+                      aria-keyshortcuts="M Shift+M"
+                      onClick={handleModifyTool}
+                    >
+                      <Expand className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Modify (m)</TooltipContent>
+                </Tooltip>
+
+                {canCreatePublicAnnotations && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={
+                          activeTool === 'draw' && currentCreationKind === 'public'
+                            ? 'default'
+                            : 'ghost'
+                        }
+                        size="icon"
+                        aria-label="Draw (d)"
+                        aria-keyshortcuts="D Shift+D R Shift+R"
+                        onClick={() => handleCreateAnnotation('public')}
+                      >
+                        <SquarePen className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Draw (d)</TooltipContent>
                   </Tooltip>
                 )}
               </TooltipProvider>
