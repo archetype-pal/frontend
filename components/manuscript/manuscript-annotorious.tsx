@@ -83,6 +83,7 @@ export type ViewerApi = {
   resetRotation: () => void;
   setImageAdjustments: (adjustments: ViewerImageAdjustments) => void;
   enablePan: () => void;
+  enableModify: () => void;
   enableDraw: () => void;
   enableDelete: () => void;
   toggleAnnotations: (visible: boolean) => void;
@@ -103,6 +104,7 @@ export type ViewerApi = {
 interface Props {
   iiifImageUrl: string;
   onCreate?: (annotation: Annotation) => void;
+  onUpdate?: (annotation: Annotation) => void;
   onDelete?: (annotation: Annotation, context?: { bulk: boolean }) => void;
   onDeleteMany?: (annotations: Annotation[]) => void;
   onSelect?: (annotation: Annotation | null) => void;
@@ -129,6 +131,7 @@ interface ComponentState {
 export default function ManuscriptAnnotorious({
   iiifImageUrl,
   onCreate,
+  onUpdate,
   onDelete,
   onDeleteMany,
   onSelect,
@@ -151,6 +154,7 @@ export default function ManuscriptAnnotorious({
     Point: new (x: number, y: number) => OpenSeadragon.Point;
   } | null>(null);
   const onCreateRef = useRef(onCreate);
+  const onUpdateRef = useRef(onUpdate);
   const onDeleteRef = useRef(onDelete);
   const onDeleteManyRef = useRef(onDeleteMany);
   const confirmDeleteRef = useRef(confirmDelete);
@@ -311,6 +315,9 @@ export default function ManuscriptAnnotorious({
   useEffect(() => {
     onCreateRef.current = onCreate;
   }, [onCreate]);
+  useEffect(() => {
+    onUpdateRef.current = onUpdate;
+  }, [onUpdate]);
   useEffect(() => {
     onDeleteRef.current = onDelete;
   }, [onDelete]);
@@ -487,7 +494,7 @@ export default function ManuscriptAnnotorious({
 
           queueSyncAnnotationClasses();
 
-          let currentMode: 'pan' | 'draw' | 'delete' = 'pan';
+          let currentMode: 'pan' | 'modify' | 'draw' | 'delete' = 'pan';
           let deleteHandler: ((a: Annotation | null, element?: unknown) => void) | null = null;
           let rearmHandler: (() => void) | null = null;
 
@@ -541,6 +548,15 @@ export default function ManuscriptAnnotorious({
             autoCommitDrawSelectionsRef.current &&
             currentMode === 'draw';
 
+          const reselectCurrentAnnotation = () => {
+            const selected = anno.getSelected?.();
+            if (!selected?.id) return;
+
+            selectedDisplayIdRef.current = selected.id;
+            anno.selectAnnotation(selected.id);
+            queueSyncAnnotationClasses();
+          };
+
           const commitDrawSelectionForContinuousDrawing = (selectionId: string) => {
             window.setTimeout(() => {
               if (!shouldAutoCommitDrawSelection()) return;
@@ -585,6 +601,27 @@ export default function ManuscriptAnnotorious({
 
             queueSyncAnnotationClasses();
             onCreateRef.current?.(a);
+          });
+
+          anno.on('updateAnnotation', (a: Annotation) => {
+            selectedDisplayIdRef.current = a.id;
+            queueSyncAnnotationClasses();
+
+            if (currentMode === 'modify') {
+              onUpdateRef.current?.(a);
+            }
+          });
+
+          anno.on('changeSelectionTarget', (target: unknown) => {
+            if (currentMode !== 'modify') return;
+
+            const selected = anno.getSelected?.();
+            if (!selected) return;
+
+            onUpdateRef.current?.({
+              ...selected,
+              target,
+            });
           });
 
           const getLastMultiSelectedAnnotation = (): Annotation | null => {
@@ -703,6 +740,8 @@ export default function ManuscriptAnnotorious({
 
             if (currentMode === 'pan') {
               anno.readOnly = isDraftAnnotation(a) ? false : true;
+            } else if (currentMode === 'modify') {
+              anno.readOnly = false;
             } else if (currentMode === 'draw') {
               anno.readOnly = false;
             }
@@ -751,6 +790,8 @@ export default function ManuscriptAnnotorious({
 
             if (currentMode === 'draw') {
               anno.readOnly = false;
+            } else if (currentMode === 'modify') {
+              anno.readOnly = false;
             } else if (currentMode === 'pan') {
               anno.readOnly = isDraftAnnotation(a) ? false : true;
             }
@@ -761,7 +802,7 @@ export default function ManuscriptAnnotorious({
 
           anno.on('cancelSelected', () => {
             selectedDisplayIdRef.current = null;
-            anno.readOnly = currentMode === 'draw' ? false : true;
+            anno.readOnly = currentMode === 'draw' || currentMode === 'modify' ? false : true;
             queueSyncAnnotationClasses();
             onSelectRef.current?.(null);
           });
@@ -826,8 +867,41 @@ export default function ManuscriptAnnotorious({
               const selected = (anno.getSelected?.() as Annotation | undefined) ?? null;
               anno.readOnly = isDraftAnnotation(selected) ? false : true;
               anno.setDrawingEnabled(false);
-              viewerRef.current?.classList.remove('osd-mode-draw', 'osd-mode-delete');
+              viewerRef.current?.classList.remove(
+                'osd-mode-modify',
+                'osd-mode-draw',
+                'osd-mode-delete'
+              );
               viewerRef.current?.classList.add('osd-mode-pan');
+              reselectCurrentAnnotation();
+            },
+
+            // --- MODIFY TOOL ---
+            enableModify: () => {
+              const anno = annoRef.current;
+              if (!anno) return;
+
+              if (deleteHandler) {
+                anno.off('selectAnnotation', deleteHandler);
+                deleteHandler = null;
+              }
+              if (rearmHandler) {
+                anno.off('createAnnotation', rearmHandler);
+                anno.off('cancelSelected', rearmHandler);
+                anno.off('updateAnnotation', rearmHandler);
+                rearmHandler = null;
+              }
+
+              currentMode = 'modify';
+              anno.readOnly = false;
+              anno.setDrawingEnabled(false);
+              viewerRef.current?.classList.remove(
+                'osd-mode-pan',
+                'osd-mode-draw',
+                'osd-mode-delete'
+              );
+              viewerRef.current?.classList.add('osd-mode-modify');
+              reselectCurrentAnnotation();
             },
 
             // --- DRAW TOOL ---
@@ -843,7 +917,11 @@ export default function ManuscriptAnnotorious({
               anno.readOnly = false;
               anno.setDrawingEnabled(true);
               currentMode = 'draw';
-              viewerRef.current?.classList.remove('osd-mode-pan', 'osd-mode-delete');
+              viewerRef.current?.classList.remove(
+                'osd-mode-pan',
+                'osd-mode-modify',
+                'osd-mode-delete'
+              );
               viewerRef.current?.classList.add('osd-mode-draw');
 
               const rearm = () => {
@@ -882,7 +960,11 @@ export default function ManuscriptAnnotorious({
               anno.readOnly = true;
               anno.setDrawingEnabled(false);
               currentMode = 'delete';
-              viewerRef.current?.classList.remove('osd-mode-pan', 'osd-mode-draw');
+              viewerRef.current?.classList.remove(
+                'osd-mode-pan',
+                'osd-mode-modify',
+                'osd-mode-draw'
+              );
               viewerRef.current?.classList.add('osd-mode-delete');
 
               if (deleteHandler) anno.off('selectAnnotation', deleteHandler);
@@ -1007,13 +1089,15 @@ export default function ManuscriptAnnotorious({
               if (result && typeof result === 'object' && 'then' in result) {
                 void result.then(() => {
                   if (annoRef.current) {
-                    annoRef.current.readOnly = currentMode === 'draw' ? false : true;
+                    annoRef.current.readOnly =
+                      currentMode === 'draw' || currentMode === 'modify' ? false : true;
                   }
                   queueSyncAnnotationClasses();
                 });
               } else {
                 if (annoRef.current) {
-                  annoRef.current.readOnly = currentMode === 'draw' ? false : true;
+                  annoRef.current.readOnly =
+                    currentMode === 'draw' || currentMode === 'modify' ? false : true;
                 }
                 queueSyncAnnotationClasses();
               }
@@ -1023,7 +1107,7 @@ export default function ManuscriptAnnotorious({
               const selected = annoRef.current?.getAnnotationById?.(id) ?? null;
 
               if (annoRef.current) {
-                if (currentMode === 'draw') {
+                if (currentMode === 'draw' || currentMode === 'modify') {
                   annoRef.current.readOnly = false;
                 } else if (currentMode === 'pan') {
                   annoRef.current.readOnly = isDraftAnnotation(selected) ? false : true;

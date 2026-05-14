@@ -320,6 +320,15 @@
   cursor: crosshair !important;
 }
 
+.osd-mode-modify {
+  cursor: pointer !important;
+}
+
+.osd-mode-modify g.a9s-annotation.editable .a9s-inner,
+.osd-mode-modify g.a9s-annotation.editable .a9s-outer {
+  pointer-events: none;
+}
+
 .osd-mode-delete {
   cursor: not-allowed !important;
 }

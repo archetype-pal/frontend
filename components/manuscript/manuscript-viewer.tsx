@@ -133,6 +133,7 @@ const DEFAULT_IMAGE_ADJUSTMENTS: ViewerImageAdjustments = {
 };
 
 type ImageAdjustmentKey = keyof ViewerImageAdjustments;
+type ActiveViewerTool = 'move' | 'modify' | 'draw' | 'delete';
 
 function annotationCountLabel(count: number): string {
   return `${count} annotation${count === 1 ? '' : 's'}`;
@@ -159,6 +160,21 @@ function isShortcutTextEntryTarget(target: EventTarget | null) {
 
   const tagName = target.tagName.toLowerCase();
   return tagName === 'input' || tagName === 'textarea' || tagName === 'select';
+}
+
+function mergeAnnotationUpdate(
+  existing: A9sAnnotation | undefined,
+  updated: A9sAnnotation
+): A9sWithMeta {
+  return {
+    ...(existing ?? updated),
+    ...updated,
+    body: updated.body !== undefined ? updated.body : existing?.body,
+    _meta: {
+      ...(existing as A9sWithMeta | undefined)?._meta,
+      ...(updated as A9sWithMeta)._meta,
+    },
+  } as A9sWithMeta;
 }
 
 function formatSavedAnnotationDescription({
@@ -280,7 +296,7 @@ export default function ManuscriptViewer({
   const [editorRecords, setEditorRecords] = React.useState<AnnotationEditorRecordMap>({});
 
   const [imageHeight, setImageHeight] = React.useState<number>(0);
-  const [activeTool, setActiveTool] = React.useState<'move' | 'draw' | 'delete'>('move');
+  const [activeTool, setActiveTool] = React.useState<ActiveViewerTool>('move');
   const [currentCreationKind, setCurrentCreationKind] =
     React.useState<AnnotationCreationKind>('public');
   const [viewerRotation, setViewerRotation] = React.useState(0);
@@ -651,6 +667,19 @@ export default function ManuscriptViewer({
     },
     [decorateCreatedAnnotation, updatePopupById]
   );
+
+  const handleViewerUpdate = React.useCallback((annotation: A9sAnnotation) => {
+    setEditorRecords((prev) => {
+      const next = mergeAnnotationUpdate(prev[annotation.id]?.annotation, annotation);
+      return markAnnotationUpdated(prev, next);
+    });
+
+    setA9sSnapshot((prev) =>
+      prev.map((item) =>
+        item.id === annotation.id ? mergeAnnotationUpdate(item, annotation) : item
+      )
+    );
+  }, []);
 
   const clearSinglePopupState = React.useCallback(
     (options?: { clearHover?: boolean }) => {
@@ -1292,6 +1321,14 @@ export default function ManuscriptViewer({
     setActiveTool('move');
   }, []);
 
+  const handleModifyTool = React.useCallback(() => {
+    cancelPendingPopupClear();
+    clearPopupCollection();
+    dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
+    viewerApiRef.current?.enableModify();
+    setActiveTool('modify');
+  }, [cancelPendingPopupClear, clearPopupCollection]);
+
   const handleCreateAnnotation = React.useCallback(
     (kind?: AnnotationCreationKind) => {
       const nextKind = kind ?? getDefaultAnnotationCreationKind(viewerCapabilities);
@@ -1550,6 +1587,11 @@ export default function ManuscriptViewer({
       const selected = annotation ? getCanonicalAnnotation(annotation) : null;
 
       if (selected) {
+        if (activeTool === 'modify') {
+          dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
+          return;
+        }
+
         if (!viewerSettings.selectMultipleAnnotations) {
           const isDrawnDraft = activeTool === 'draw' && !isDbId(selected.id);
 
@@ -1903,9 +1945,15 @@ export default function ManuscriptViewer({
         return;
       }
 
-      if (key === 'g' || key === 'm') {
+      if (key === 'g') {
         event.preventDefault();
         handleMoveTool();
+        return;
+      }
+
+      if (key === 'm') {
+        event.preventDefault();
+        handleModifyTool();
         return;
       }
 
@@ -1978,6 +2026,7 @@ export default function ManuscriptViewer({
     canPersistAnyAnnotations,
     handleCreateAnnotation,
     handleDeleteTool,
+    handleModifyTool,
     handleMoveTool,
     handleSave,
     handleToggleFullScreen,
@@ -2338,13 +2387,28 @@ export default function ManuscriptViewer({
                       variant={activeTool === 'move' ? 'default' : 'ghost'}
                       size="icon"
                       aria-label="Move tool"
-                      aria-keyshortcuts="G Shift+G M Shift+M"
+                      aria-keyshortcuts="G Shift+G"
                       onClick={handleMoveTool}
                     >
                       <Hand className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Move Tool</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={activeTool === 'modify' ? 'default' : 'ghost'}
+                      size="icon"
+                      aria-label="Modify annotations"
+                      aria-keyshortcuts="M Shift+M"
+                      onClick={handleModifyTool}
+                    >
+                      <Expand className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Modify</TooltipContent>
                 </Tooltip>
 
                 {canCreatePublicAnnotations && (
@@ -2446,6 +2510,7 @@ export default function ManuscriptViewer({
               }
               onSelectionIdsChange={handleSelectionIdsChange}
               onCreate={handleViewerCreate}
+              onUpdate={handleViewerUpdate}
               onDelete={handleViewerDelete}
               onDeleteMany={handleViewerDeleteMany}
               confirmDelete={handleConfirmDelete}
