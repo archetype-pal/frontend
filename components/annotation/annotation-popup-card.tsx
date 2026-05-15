@@ -37,6 +37,7 @@ import { Input } from '@/components/ui/input';
 import { SearchableSelect, type SearchableSelectHandle } from '@/components/ui/searchable-select';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { formatAllographLabel } from '@/lib/allograph-labels';
+import { cn } from '@/lib/utils';
 
 type PopupTab = 'components' | 'positions' | 'notes';
 
@@ -65,6 +66,8 @@ interface AnnotationPopupCardProps {
   onHideShareUrl: () => void;
   onShareSelectedAnnotation: () => void;
   onCloseSelectedAnnotation: () => void;
+  isAnnotationInCollection?: boolean;
+  onToggleAnnotationCollection?: () => void;
 
   draftAllographText: string;
   onDraftAllographTextChange: (value: string) => void;
@@ -156,6 +159,8 @@ export function AnnotationPopupCard({
   onHideShareUrl,
   onShareSelectedAnnotation,
   onCloseSelectedAnnotation,
+  isAnnotationInCollection = false,
+  onToggleAnnotationCollection,
   draftAllographText,
   onDraftAllographTextChange,
   draftNoteText,
@@ -198,6 +203,7 @@ export function AnnotationPopupCard({
       : annotationKind === 'editorial'
         ? 'Editorial'
         : 'Public';
+  const collectionLabel = isAnnotationInCollection ? 'Remove from Collection' : 'Add to Collection';
 
   React.useEffect(() => {
     if (!canUseAllographShortcut) return;
@@ -664,14 +670,23 @@ export function AnnotationPopupCard({
                       variant="outline"
                       size="icon"
                       className="h-8 w-8"
-                      disabled
-                      aria-label="Add to Collection"
+                      onClick={onToggleAnnotationCollection}
+                      disabled={
+                        !popupCapabilities.canUseCollection || !onToggleAnnotationCollection
+                      }
+                      aria-label={collectionLabel}
+                      aria-pressed={isAnnotationInCollection}
                       type="button"
                     >
-                      <Star className="h-4 w-4" />
+                      <Star
+                        className={cn(
+                          'h-4 w-4',
+                          isAnnotationInCollection && 'fill-amber-400 text-amber-400'
+                        )}
+                      />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Add to Collection</TooltipContent>
+                  <TooltipContent>{collectionLabel}</TooltipContent>
                 </Tooltip>
               </>
             )}

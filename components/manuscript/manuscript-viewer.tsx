@@ -19,6 +19,7 @@ import {
 import dynamic from 'next/dynamic';
 
 import { useAuth } from '@/contexts/auth-context';
+import { useCollection, type CollectionItem } from '@/contexts/collection-context';
 
 import { getIiifBaseUrl } from '@/utils/iiif';
 import { DraggablePopupLayer } from './draggable-popup-layer';
@@ -153,6 +154,59 @@ function joinCountPhrases(parts: string[]): string {
   return `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`;
 }
 
+type ViewerCollectionContext = {
+  itemPartId: number;
+  itemImageId: number;
+  iiifImage: string;
+  locus: string;
+  shelfmark: string;
+  repositoryName: string;
+  repositoryCity: string;
+  date: string;
+};
+
+function buildImageCollectionItem(ctx: ViewerCollectionContext): CollectionItem {
+  return {
+    id: ctx.itemImageId,
+    type: 'image',
+    item_part: ctx.itemPartId,
+    item_image: ctx.itemImageId,
+    image_iiif: ctx.iiifImage,
+    shelfmark: ctx.shelfmark,
+    locus: ctx.locus,
+    repository_name: ctx.repositoryName,
+    repository_city: ctx.repositoryCity,
+    date: ctx.date,
+  };
+}
+
+function buildAnnotationCollectionItem(
+  annotation: A9sAnnotation,
+  imageHeight: number,
+  ctx: ViewerCollectionContext
+): CollectionItem | null {
+  const graphId = dbIdFromA9s(annotation);
+  if (graphId == null) return null;
+
+  try {
+    return {
+      id: graphId,
+      type: 'graph',
+      item_part: ctx.itemPartId,
+      item_image: ctx.itemImageId,
+      image_iiif: ctx.iiifImage,
+      coordinates: JSON.stringify(a9sToBackendFeature(annotation, imageHeight)),
+      shelfmark: ctx.shelfmark,
+      locus: ctx.locus,
+      repository_name: ctx.repositoryName,
+      repository_city: ctx.repositoryCity,
+      date: ctx.date,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function isShortcutTextEntryTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
@@ -242,6 +296,7 @@ export default function ManuscriptViewer({
   );
 
   const { token } = useAuth();
+  const { addItem, removeItem, isInCollection, clearCollection } = useCollection();
 
   const isPublicDemoMode = mode === 'public';
 
@@ -322,6 +377,41 @@ export default function ManuscriptViewer({
     imageAdjustments.contrast !== DEFAULT_IMAGE_ADJUSTMENTS.contrast ||
     imageAdjustments.saturation !== DEFAULT_IMAGE_ADJUSTMENTS.saturation;
   const hasImageToolChanges = hasImageAdjustments || viewerRotation !== 0;
+
+  const collectionContext = React.useMemo<ViewerCollectionContext | null>(() => {
+    if (!manuscriptImage) return null;
+
+    return {
+      itemPartId: manuscriptImage.item_part,
+      itemImageId: manuscriptImage.id,
+      iiifImage: manuscriptImage.iiif_image,
+      locus: manuscriptImage.locus ?? '',
+      shelfmark: manuscript?.current_item?.shelfmark || manuscript?.display_label || '',
+      repositoryName: manuscript?.current_item?.repository?.name || '',
+      repositoryCity: manuscript?.current_item?.repository?.place || '',
+      date: manuscript?.historical_item?.date || '',
+    };
+  }, [manuscript, manuscriptImage]);
+
+  const pageCollectionItem = React.useMemo(
+    () => (collectionContext ? buildImageCollectionItem(collectionContext) : null),
+    [collectionContext]
+  );
+
+  const pageAnnotationCollectionItems = React.useMemo(() => {
+    if (!collectionContext || !imageHeight) return [];
+
+    return Object.values(editorRecords)
+      .filter((record) => record.source === 'persisted' && !record.isDeleted)
+      .map((record) =>
+        buildAnnotationCollectionItem(record.annotation, imageHeight, collectionContext)
+      )
+      .filter((item): item is CollectionItem => item !== null);
+  }, [collectionContext, editorRecords, imageHeight]);
+
+  const isPageInCollection = pageCollectionItem
+    ? isInCollection(pageCollectionItem.id, 'image')
+    : false;
 
   const {
     viewerSettings,
@@ -1315,6 +1405,49 @@ export default function ManuscriptViewer({
     setViewerRotation(0);
   }, []);
 
+  const handleTogglePageCollection = React.useCallback(() => {
+    if (!pageCollectionItem) return;
+
+    if (isInCollection(pageCollectionItem.id, 'image')) {
+      removeItem(pageCollectionItem.id, 'image');
+      return;
+    }
+
+    addItem(pageCollectionItem);
+  }, [addItem, isInCollection, pageCollectionItem, removeItem]);
+
+  const handleCreateAnnotationCollection = React.useCallback(() => {
+    if (pageAnnotationCollectionItems.length === 0) return;
+
+    clearCollection();
+    pageAnnotationCollectionItems.forEach((item) => addItem(item));
+
+    showActionNotification({
+      kind: 'saved',
+      title: 'Collection updated',
+      description: `Created a collection with ${annotationCountLabel(
+        pageAnnotationCollectionItems.length
+      )} from this page.`,
+    });
+  }, [addItem, clearCollection, pageAnnotationCollectionItems]);
+
+  const handleToggleAnnotationCollection = React.useCallback(
+    (annotation: A9sAnnotation) => {
+      if (!collectionContext || !imageHeight) return;
+
+      const item = buildAnnotationCollectionItem(annotation, imageHeight, collectionContext);
+      if (!item) return;
+
+      if (isInCollection(item.id, 'graph')) {
+        removeItem(item.id, 'graph');
+        return;
+      }
+
+      addItem(item);
+    },
+    [addItem, collectionContext, imageHeight, isInCollection, removeItem]
+  );
+
   const handleDefaultZoom = React.useCallback(async () => {
     viewerApiRef.current?.goHome();
     viewerApiRef.current?.clearSelection?.();
@@ -2278,6 +2411,12 @@ export default function ManuscriptViewer({
       showSettingsButton={canUseSettings}
       lightboxControl={lightboxControl}
       imageToolsControl={imageToolsControl}
+      isPageInCollection={isPageInCollection}
+      onTogglePageCollection={pageCollectionItem ? handleTogglePageCollection : undefined}
+      annotationCollectionCount={pageAnnotationCollectionItems.length}
+      onCreateAnnotationCollection={
+        pageAnnotationCollectionItems.length > 0 ? handleCreateAnnotationCollection : undefined
+      }
     />
   );
 
@@ -2567,6 +2706,18 @@ export default function ManuscriptViewer({
                 singlePopupPosition
               );
               const zIndex = getPopupZIndex(index, isActive);
+              const popupCollectionAnnotation = getCanonicalAnnotation(popupRecord.annotation);
+              const popupCollectionItem =
+                collectionContext && imageHeight
+                  ? buildAnnotationCollectionItem(
+                      popupCollectionAnnotation,
+                      imageHeight,
+                      collectionContext
+                    )
+                  : null;
+              const isPopupAnnotationInCollection = popupCollectionItem
+                ? isInCollection(popupCollectionItem.id, 'graph')
+                : false;
 
               return (
                 <DraggablePopupLayer
@@ -2604,6 +2755,12 @@ export default function ManuscriptViewer({
                       }
                       onCloseSelectedAnnotation={() =>
                         handleCloseSelectedAnnotation(popupRecord.id)
+                      }
+                      isAnnotationInCollection={isPopupAnnotationInCollection}
+                      onToggleAnnotationCollection={
+                        popupCollectionItem
+                          ? () => handleToggleAnnotationCollection(popupCollectionAnnotation)
+                          : undefined
                       }
                       draftAllographText={popupRecord.draftAllographText}
                       onDraftAllographTextChange={(value) =>

@@ -11,8 +11,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatAllographLabel } from '@/lib/allograph-labels';
+import { cn } from '@/lib/utils';
 import type { HandType } from '@/types/hands';
 import type { Allograph } from '@/types/allographs';
 
@@ -39,6 +40,10 @@ interface AnnotationHeaderProps {
   showSettingsButton?: boolean;
   lightboxControl?: React.ReactNode;
   imageToolsControl?: React.ReactNode;
+  isPageInCollection?: boolean;
+  onTogglePageCollection?: () => void;
+  annotationCollectionCount?: number;
+  onCreateAnnotationCollection?: () => void;
 }
 
 export function AnnotationHeader({
@@ -64,6 +69,10 @@ export function AnnotationHeader({
   showSettingsButton = true,
   lightboxControl,
   imageToolsControl,
+  isPageInCollection = false,
+  onTogglePageCollection,
+  annotationCollectionCount = 0,
+  onCreateAnnotationCollection,
 }: AnnotationHeaderProps) {
   const [selectedAllograph, setSelectedAllograph] = React.useState<string>('');
 
@@ -109,6 +118,12 @@ export function AnnotationHeader({
     const selectedHandData = hands.find((h) => h.id.toString() === handId);
     onHandSelect(selectedHandData ?? null);
   };
+
+  const pageCollectionLabel = isPageInCollection
+    ? 'Remove page from collection'
+    : 'Add page to collection';
+  const canCreateAnnotationCollection =
+    Boolean(onCreateAnnotationCollection) && annotationCollectionCount > 0;
 
   return (
     <TooltipProvider>
@@ -177,13 +192,47 @@ export function AnnotationHeader({
               </Button>
             )}
 
-            <Button variant="outline" size="icon" className="h-8 w-8">
-              <Star className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" className="h-8 w-8">
-              <Star className="h-4 w-4" />
-              <Plus className="h-3 w-3 absolute -top-1 -right-1" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={onTogglePageCollection}
+                  disabled={!onTogglePageCollection}
+                  aria-label={pageCollectionLabel}
+                  aria-pressed={isPageInCollection}
+                  title={pageCollectionLabel}
+                  type="button"
+                >
+                  <Star
+                    className={cn('h-4 w-4', isPageInCollection && 'fill-amber-400 text-amber-400')}
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{pageCollectionLabel}</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="relative h-8 w-8"
+                  onClick={onCreateAnnotationCollection}
+                  disabled={!canCreateAnnotationCollection}
+                  aria-label="Create a new Collection containing all of the annotations on this page"
+                  title="Create a new Collection containing all of the annotations on this page"
+                  type="button"
+                >
+                  <Star className="h-4 w-4" />
+                  <Plus className="absolute -right-1 -top-1 h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Create a new Collection containing all of the annotations on this page
+              </TooltipContent>
+            </Tooltip>
             {lightboxControl}
           </div>
         </div>
