@@ -122,6 +122,7 @@ import {
   useViewerImageAdjustments,
   type ImageAdjustmentKey,
 } from '@/hooks/use-viewer-image-adjustments';
+import { useViewerChromeState } from '@/hooks/use-viewer-chrome-state';
 
 const ManuscriptAnnotorious = dynamic(() => import('./manuscript-annotorious'), { ssr: false });
 const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
@@ -320,7 +321,6 @@ export default function ManuscriptViewer({
   const [hands, setHands] = React.useState<HandType[]>([]);
   const [handsLoaded, setHandsLoaded] = React.useState(false);
 
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = React.useState(false);
   const [visibilityFilters, setVisibilityFilters] = React.useState<AnnotationVisibilityFilters>({
     allographIds: [],
     handIds: [],
@@ -346,8 +346,6 @@ export default function ManuscriptViewer({
   const imageTools = useViewerImageAdjustments();
   const { adjustments: imageAdjustments, hasChanges: hasImageToolChanges } = imageTools;
 
-  const [isFullScreen, setIsFullScreen] = React.useState(false);
-
   const [hoveredAllograph, setHoveredAllograph] = React.useState<Allograph | undefined>(undefined);
   const [isAllographModalOpen, setIsAllographModalOpen] = React.useState(false);
   const [hoveredAnnotationId, setHoveredAnnotationId] = React.useState<string | null>(null);
@@ -358,8 +356,6 @@ export default function ManuscriptViewer({
     () => countDirtyEditorRecords(editorRecords),
     [editorRecords]
   );
-
-  const [isSettingsPanelOpen, setIsSettingsPanelOpen] = React.useState(false);
 
   const collectionContext = React.useMemo<ViewerCollectionContext | null>(() => {
     if (!manuscriptImage) return null;
@@ -424,6 +420,18 @@ export default function ManuscriptViewer({
   const allographDialogDrag = useDraggablePosition({ x: 300, y: 60 });
   const filterPanelDrag = useDraggablePosition({ x: 0, y: 250 });
   const settingsPanelDrag = useDraggablePosition({ x: 0, y: 250 });
+
+  // ---- Overlay chrome (fullscreen + drawer panels) ----
+  const {
+    isFullScreen,
+    isFilterPanelOpen,
+    isSettingsPanelOpen,
+    toggleFullScreen,
+    toggleFilterPanel,
+    toggleSettingsPanel,
+    closeFilterPanel,
+    closeSettingsPanel,
+  } = useViewerChromeState({ filterPanelDrag, settingsPanelDrag, canUseSettings });
 
   // ---- Derived values ----
   const getCanonicalAnnotation = React.useCallback(
@@ -1349,14 +1357,14 @@ export default function ManuscriptViewer({
   );
 
   const handleToggleFullScreen = React.useCallback(() => {
-    setIsFullScreen((prev) => !prev);
+    toggleFullScreen();
 
     if (typeof window !== 'undefined') {
       setTimeout(() => {
         window.dispatchEvent(new Event('resize'));
       }, 0);
     }
-  }, []);
+  }, [toggleFullScreen]);
 
   const handleExposeApi = React.useCallback((api: ViewerApi) => {
     viewerApiRef.current = api;
@@ -1719,24 +1727,6 @@ export default function ManuscriptViewer({
     }));
   }, [allHandFiltersSelected, availableHandFilterIds]);
 
-  const toggleFilterPanel = React.useCallback(() => {
-    setIsFilterPanelOpen((prev) => {
-      const next = !prev;
-      if (!next) filterPanelDrag.reset();
-      return next;
-    });
-  }, [filterPanelDrag]);
-
-  const toggleSettingsPanel = React.useCallback(() => {
-    if (!canUseSettings) return;
-
-    setIsSettingsPanelOpen((prev) => {
-      const next = !prev;
-      if (!next) settingsPanelDrag.reset();
-      return next;
-    });
-  }, [canUseSettings, settingsPanelDrag]);
-
   const handleSelectAnnotationFromViewer = React.useCallback(
     (annotation: A9sAnnotation | null) => {
       cancelPendingPopupClear();
@@ -1782,16 +1772,6 @@ export default function ManuscriptViewer({
     ]
   );
 
-  const handleCloseFilterPanel = React.useCallback(() => {
-    setIsFilterPanelOpen(false);
-    filterPanelDrag.reset();
-  }, [filterPanelDrag]);
-
-  const handleCloseSettingsPanel = React.useCallback(() => {
-    setIsSettingsPanelOpen(false);
-    settingsPanelDrag.reset();
-  }, [settingsPanelDrag]);
-
   const handleToggleEditorialVisibility = React.useCallback(() => {
     setVisibilityFilters((prev) => ({
       ...prev,
@@ -1834,9 +1814,8 @@ export default function ManuscriptViewer({
 
     setAllographFiltersInitialized(false);
     setHandFiltersInitialized(false);
-    setIsFilterPanelOpen(false);
-    // imageTools.reset is stable (returned from a useReducer-backed hook with useCallback),
-    // but we depend on imageId to retrigger on image change only.
+    closeFilterPanel();
+    // imageTools.reset and closeFilterPanel are stable; depend on imageId only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageId]);
 
@@ -2430,7 +2409,7 @@ export default function ManuscriptViewer({
         showEditorialToggle={canViewEditorialControls}
         showEditorial={visibilityFilters.showEditorial}
         showPublicAnnotations={visibilityFilters.showPublicAnnotations}
-        onClose={handleCloseFilterPanel}
+        onClose={closeFilterPanel}
         onToggleAllAllographs={handleToggleAllAllographFilters}
         onToggleAllHands={handleToggleAllHandFilters}
         onToggleAllograph={handleToggleAllographFilter}
@@ -2445,7 +2424,7 @@ export default function ManuscriptViewer({
         dragHandleProps={settingsPanelDrag.bindDrag}
         viewerSettings={viewerSettings}
         showEditorSettings={canUseEditorSettings}
-        onClose={handleCloseSettingsPanel}
+        onClose={closeSettingsPanel}
         onToggleAllowMultipleBoxes={handleToggleAllowMultipleBoxes}
         onToggleSelectMultipleAnnotations={handleToggleSelectMultipleAnnotations}
         onSetToolbarPosition={handleSetToolbarPosition}
