@@ -361,12 +361,13 @@ const CoverageDonut = memo(function CoverageDonut({
       {
         label: 'Transcription only',
         value: Math.max(0, coverage.with_transcription - coverage.with_both),
-        color: 'hsl(31 55% 50%)',
+        // Use design token from globals.css so the palette stays in sync.
+        color: 'hsl(var(--c-transcription-h) var(--c-transcription-s) var(--c-transcription-l))',
       },
       {
         label: 'Translation only',
         value: Math.max(0, coverage.with_translation - coverage.with_both),
-        color: 'hsl(201 45% 50%)',
+        color: 'hsl(var(--c-translation-h) var(--c-translation-s) var(--c-translation-l))',
       },
       { label: 'Neither', value: coverage.with_neither, color: 'hsl(25 8% 80%)' },
     ],
