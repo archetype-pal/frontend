@@ -56,11 +56,7 @@ import {
   getViewerCapabilities,
 } from '@/lib/viewer-capabilities';
 
-import type {
-  ViewerApi,
-  Annotation as A9sAnnotation,
-  ViewerImageAdjustments,
-} from './manuscript-annotorious';
+import type { ViewerApi, Annotation as A9sAnnotation } from './manuscript-annotorious';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
 import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
@@ -122,25 +118,19 @@ import {
 import { useManuscriptPopups } from '@/hooks/use-manuscript-popups';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
+import {
+  useViewerImageAdjustments,
+  type ImageAdjustmentKey,
+} from '@/hooks/use-viewer-image-adjustments';
 
 const ManuscriptAnnotorious = dynamic(() => import('./manuscript-annotorious'), { ssr: false });
 const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
 const LEGACY_SHORTCUT_PAN_STEP = 60;
-const DEFAULT_IMAGE_ADJUSTMENTS: ViewerImageAdjustments = {
-  brightness: 100,
-  contrast: 100,
-  saturation: 100,
-};
 
-type ImageAdjustmentKey = keyof ViewerImageAdjustments;
 type ActiveViewerTool = 'move' | 'modify' | 'draw' | 'delete';
 
 function annotationCountLabel(count: number): string {
   return `${count} annotation${count === 1 ? '' : 's'}`;
-}
-
-function normalizeViewerRotation(degrees: number): number {
-  return ((degrees % 360) + 360) % 360;
 }
 
 function countPhrase(count: number, singular: string, plural: string): string {
@@ -353,9 +343,8 @@ export default function ManuscriptViewer({
   const [activeTool, setActiveTool] = React.useState<ActiveViewerTool>('move');
   const [currentCreationKind, setCurrentCreationKind] =
     React.useState<AnnotationCreationKind>('public');
-  const [viewerRotation, setViewerRotation] = React.useState(0);
-  const [imageAdjustments, setImageAdjustments] =
-    React.useState<ViewerImageAdjustments>(DEFAULT_IMAGE_ADJUSTMENTS);
+  const imageTools = useViewerImageAdjustments();
+  const { adjustments: imageAdjustments, hasChanges: hasImageToolChanges } = imageTools;
 
   const [isFullScreen, setIsFullScreen] = React.useState(false);
 
@@ -371,12 +360,6 @@ export default function ManuscriptViewer({
   );
 
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = React.useState(false);
-
-  const hasImageAdjustments =
-    imageAdjustments.brightness !== DEFAULT_IMAGE_ADJUSTMENTS.brightness ||
-    imageAdjustments.contrast !== DEFAULT_IMAGE_ADJUSTMENTS.contrast ||
-    imageAdjustments.saturation !== DEFAULT_IMAGE_ADJUSTMENTS.saturation;
-  const hasImageToolChanges = hasImageAdjustments || viewerRotation !== 0;
 
   const collectionContext = React.useMemo<ViewerCollectionContext | null>(() => {
     if (!manuscriptImage) return null;
@@ -1384,26 +1367,25 @@ export default function ManuscriptViewer({
     setA9sSnapshot(api.getAnnotations?.() ?? []);
   }, []);
 
-  const handleRotateViewer = React.useCallback((degrees: number) => {
-    viewerApiRef.current?.rotateBy(degrees);
-    setViewerRotation((prev) => normalizeViewerRotation(prev + degrees));
-  }, []);
+  const handleRotateViewer = React.useCallback(
+    (degrees: number) => {
+      viewerApiRef.current?.rotateBy(degrees);
+      imageTools.rotate(degrees);
+    },
+    [imageTools]
+  );
 
   const handleImageAdjustmentChange = React.useCallback(
     (key: ImageAdjustmentKey, value: number) => {
-      setImageAdjustments((prev) => ({
-        ...prev,
-        [key]: value,
-      }));
+      imageTools.setAdjustment(key, value);
     },
-    []
+    [imageTools]
   );
 
   const handleResetImageTools = React.useCallback(() => {
-    setImageAdjustments(DEFAULT_IMAGE_ADJUSTMENTS);
     viewerApiRef.current?.resetRotation();
-    setViewerRotation(0);
-  }, []);
+    imageTools.reset();
+  }, [imageTools]);
 
   const handleTogglePageCollection = React.useCallback(() => {
     if (!pageCollectionItem) return;
@@ -1841,8 +1823,7 @@ export default function ManuscriptViewer({
     setSelectedHand(undefined);
     setEditorRecords({});
     setSelectedAnnotationIds([]);
-    setViewerRotation(0);
-    setImageAdjustments(DEFAULT_IMAGE_ADJUSTMENTS);
+    imageTools.reset();
 
     setVisibilityFilters({
       allographIds: [],
@@ -1854,6 +1835,9 @@ export default function ManuscriptViewer({
     setAllographFiltersInitialized(false);
     setHandFiltersInitialized(false);
     setIsFilterPanelOpen(false);
+    // imageTools.reset is stable (returned from a useReducer-backed hook with useCallback),
+    // but we depend on imageId to retrigger on image change only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageId]);
 
   React.useEffect(() => {
