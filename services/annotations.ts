@@ -39,18 +39,9 @@ export interface BackendGraph {
   is_described?: boolean;
 }
 
-import { apiFetch } from '@/lib/api-fetch';
+import { authFetch } from '@/lib/api-fetch';
 
-function authHeaders(token: string): HeadersInit {
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Token ${token}`,
-  };
-}
-
-function optionalAuthHeaders(token?: string | null): HeadersInit | undefined {
-  return token ? { Authorization: `Token ${token}` } : undefined;
-}
+const JSON_HEADERS: HeadersInit = { 'Content-Type': 'application/json' };
 
 export async function fetchAnnotationsForImage(
   imageId: string,
@@ -61,9 +52,8 @@ export async function fetchAnnotationsForImage(
   const params = new URLSearchParams({ item_image: imageId });
   if (allographId) params.set('allograph', allographId);
   if (annotationType) params.set('annotation_type', annotationType);
-  const res = await apiFetch(`/api/v1/manuscripts/graphs/?${params.toString()}`, {
+  const res = await authFetch(`/api/v1/manuscripts/graphs/?${params.toString()}`, token ?? null, {
     cache: 'no-store',
-    headers: optionalAuthHeaders(token),
   });
   if (!res.ok) throw new Error('Failed to load annotations');
   return res.json();
@@ -88,9 +78,9 @@ export async function createViewerAnnotation(
     annotation: BackendGraph['annotation'];
   }
 ) {
-  const res = await apiFetch(`/api/v1/annotations/graphs/`, {
+  const res = await authFetch(`/api/v1/annotations/graphs/`, token, {
     method: 'POST',
-    headers: authHeaders(token),
+    headers: JSON_HEADERS,
     body: JSON.stringify({
       ...payload,
       annotation_type: payload.annotation_type ?? 'image',
@@ -108,9 +98,9 @@ export async function updateViewerAnnotation(
   id: number,
   partial: ViewerAnnotationWritePayload
 ) {
-  const res = await apiFetch(`/api/v1/annotations/graphs/${id}/`, {
+  const res = await authFetch(`/api/v1/annotations/graphs/${id}/`, token, {
     method: 'PATCH',
-    headers: authHeaders(token),
+    headers: JSON_HEADERS,
     body: JSON.stringify(partial),
   });
   if (!res.ok) {
@@ -121,9 +111,8 @@ export async function updateViewerAnnotation(
 }
 
 export async function deleteViewerAnnotation(token: string, id: number): Promise<void> {
-  const res = await apiFetch(`/api/v1/annotations/graphs/${id}/`, {
+  const res = await authFetch(`/api/v1/annotations/graphs/${id}/`, token, {
     method: 'DELETE',
-    headers: authHeaders(token),
   });
   if (!res.ok) {
     const text = await res.text();
