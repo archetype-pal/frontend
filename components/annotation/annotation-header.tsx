@@ -134,6 +134,9 @@ export function AnnotationHeader({
             <div className="flex">
               <button
                 onClick={onToggleAnnotations}
+                type="button"
+                aria-pressed={annotationsEnabled}
+                aria-label={annotationsEnabled ? 'Annotations on' : 'Annotations off'}
                 className={`px-3 py-1 text-sm font-medium transition-colors ${
                   annotationsEnabled
                     ? 'bg-slate-600 text-white'
@@ -156,6 +159,7 @@ export function AnnotationHeader({
               className="h-8 px-3 flex items-center gap-2"
               onClick={() => onOpenFilterPanel()}
               type="button"
+              aria-pressed={isVisibilityFilterActive}
             >
               <Filter className="h-4 w-4" />
               <span className="text-sm">Filter Annotations</span>
@@ -187,6 +191,8 @@ export function AnnotationHeader({
                 onClick={() => onOpenSettingsPanel?.()}
                 type="button"
                 title="Settings"
+                aria-label="Settings"
+                aria-pressed={isSettingsActive}
               >
                 <Wrench className="h-4 w-4" />
               </Button>
