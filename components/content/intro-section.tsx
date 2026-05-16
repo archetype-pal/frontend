@@ -318,7 +318,7 @@ export default function IntroSection() {
                   desc: 'Browse and search the corpus of surviving Scottish charters from the twelfth and thirteenth centuries.',
                   href: '/search/manuscripts',
                   delay: 'delay-100',
-                  accent: 'hsl(201 90% 27%)',
+                  accent: 'var(--primary)',
                 },
                 {
                   title: 'Scribal Hands',
