@@ -26,16 +26,18 @@ function buildCsp(nonce: string): string {
       ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
       : `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https:",
+    isProduction ? "img-src 'self' data: blob: https:" : "img-src 'self' data: blob: https: http:",
     "font-src 'self' data:",
-    "connect-src 'self' https:",
+    isProduction ? "connect-src 'self' https:" : "connect-src 'self' https: http: ws: wss:",
     "frame-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'self'",
-    'upgrade-insecure-requests',
   ];
+  if (isProduction) {
+    directives.push('upgrade-insecure-requests');
+  }
   return directives.join('; ');
 }
 
