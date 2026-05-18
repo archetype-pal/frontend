@@ -1,4 +1,4 @@
-import { apiFetch, API_BASE_URL } from '@/lib/api-fetch';
+import { apiFetch, authFetch, API_BASE_URL } from '@/lib/api-fetch';
 import type { CarouselItem } from '@/types/backoffice';
 import type { UserProfile } from '@/types';
 
@@ -101,10 +101,9 @@ export async function loginUser(username: string, password: string): Promise<Aut
 }
 
 export async function logoutUser(token: string) {
-  const response = await apiFetch(`/api/v1/auth/token/logout`, {
+  const response = await authFetch(`/api/v1/auth/token/logout`, token, {
     method: 'POST',
     headers: {
-      Authorization: `Token ${token}`,
       'Content-Type': 'application/json',
     },
   });
@@ -115,11 +114,7 @@ export async function logoutUser(token: string) {
 }
 
 export async function getUserProfile(token: string): Promise<UserProfile> {
-  const response = await apiFetch(`/api/v1/auth/profile`, {
-    headers: {
-      Authorization: `Token ${token}`,
-    },
-  });
+  const response = await authFetch(`/api/v1/auth/profile`, token);
 
   if (!response.ok) {
     throw new Error('Failed to fetch user profile');
