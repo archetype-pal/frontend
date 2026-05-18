@@ -49,8 +49,8 @@ export function QualityDashboard() {
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                     card.count === 0
-                      ? 'bg-emerald-500/15 text-emerald-700'
-                      : 'bg-amber-500/15 text-amber-800'
+                      ? 'bg-severity-success/15 text-[hsl(var(--c-severity-success-h)_var(--c-severity-success-s)_28%)] dark:text-[hsl(var(--c-severity-success-h)_var(--c-severity-success-s)_75%)]'
+                      : 'bg-severity-warning/15 text-[hsl(var(--c-severity-warning-h)_var(--c-severity-warning-s)_28%)] dark:text-[hsl(var(--c-severity-warning-h)_var(--c-severity-warning-s)_75%)]'
                   }`}
                 >
                   {card.count}

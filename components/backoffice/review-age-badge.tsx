@@ -23,12 +23,16 @@ import {
 } from '@/lib/backoffice/review-queue-sla';
 import { cn } from '@/lib/utils';
 
+// Severity classes route through the `--c-severity-*` design tokens so the
+// SLA palette is editable in one place. Borders use the named utility with
+// an opacity modifier; foreground text needs a darker shade so it consumes
+// the raw H/S channels with a tuned L.
 const SEVERITY_CLASS = {
   fresh: 'border-muted bg-background text-muted-foreground',
   warning:
-    'border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-700/50 dark:bg-amber-900/40 dark:text-amber-100',
+    'border-severity-warning/40 bg-severity-warning/15 text-[hsl(var(--c-severity-warning-h)_var(--c-severity-warning-s)_28%)] dark:border-severity-warning/50 dark:bg-severity-warning/25 dark:text-[hsl(var(--c-severity-warning-h)_var(--c-severity-warning-s)_85%)]',
   overdue:
-    'border-rose-300 bg-rose-100 text-rose-900 dark:border-rose-700/50 dark:bg-rose-900/40 dark:text-rose-100',
+    'border-severity-overdue/40 bg-severity-overdue/15 text-[hsl(var(--c-severity-overdue-h)_var(--c-severity-overdue-s)_32%)] dark:border-severity-overdue/50 dark:bg-severity-overdue/25 dark:text-[hsl(var(--c-severity-overdue-h)_var(--c-severity-overdue-s)_85%)]',
 };
 
 export interface ReviewAgeBadgeProps {

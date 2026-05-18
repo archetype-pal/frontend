@@ -45,7 +45,7 @@ export function ComparisonMatrix({
             Has component with features
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-3 rounded-sm bg-amber-100 border border-amber-300 dark:bg-amber-900/30 dark:border-amber-700" />
+            <span className="inline-block h-3 w-3 rounded-sm bg-severity-warning/15 border border-severity-warning/40 dark:bg-severity-warning/25 dark:border-severity-warning/50" />
             Has component, no features
           </span>
           <span className="flex items-center gap-1.5">
@@ -101,7 +101,7 @@ export function ComparisonMatrix({
                     if (hasComponent && featureCount > 0) {
                       cellClass = 'bg-primary/10';
                     } else if (hasComponent) {
-                      cellClass = 'bg-amber-50 dark:bg-amber-900/20';
+                      cellClass = 'bg-severity-warning/10 dark:bg-severity-warning/20';
                     }
 
                     const cellContent = hasComponent ? (
@@ -111,7 +111,7 @@ export function ComparisonMatrix({
                             {featureCount}
                           </span>
                         ) : (
-                          <span className="inline-block h-2 w-2 rounded-full bg-amber-400 dark:bg-amber-600" />
+                          <span className="inline-block h-2 w-2 rounded-full bg-severity-warning" />
                         )}
                         {defaultFeatures.length > 0 && (
                           <span className="text-[9px] text-muted-foreground">

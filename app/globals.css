@@ -53,6 +53,43 @@
     var(--c-transcription-h) var(--c-transcription-s) var(--c-transcription-l)
   );
   --color-translation: hsl(var(--c-translation-h) var(--c-translation-s) var(--c-translation-l));
+
+  /*
+   * Editorial lifecycle statuses (Draft → Review → Live → Reviewed). Exposed
+   * as named utilities so call sites can use `bg-status-draft/10`,
+   * `border-status-review/20` etc. — mirroring the transcription/translation
+   * pattern above. Role-tuned text shades still route through the raw HSL
+   * channels (`--c-status-*-h/s/l`) via arbitrary classes.
+   */
+  --color-status-draft: hsl(
+    var(--c-status-draft-h) var(--c-status-draft-s) var(--c-status-draft-l)
+  );
+  --color-status-review: hsl(
+    var(--c-status-review-h) var(--c-status-review-s) var(--c-status-review-l)
+  );
+  --color-status-live: hsl(var(--c-status-live-h) var(--c-status-live-s) var(--c-status-live-l));
+  --color-status-reviewed: hsl(
+    var(--c-status-reviewed-h) var(--c-status-reviewed-s) var(--c-status-reviewed-l)
+  );
+
+  /*
+   * Severity palette — distinct from the editorial lifecycle above. Used
+   * by quality-dashboard cards, review-age badges, notification badges,
+   * and any UI that needs to say "this is fine / something to watch /
+   * actually broken". Colours overlap with lifecycle by intention today
+   * (warning ≈ draft amber, success ≈ live emerald) but the *vocabulary*
+   * is separated so a future repaint of either can move without breaking
+   * the other.
+   */
+  --color-severity-warning: hsl(
+    var(--c-severity-warning-h) var(--c-severity-warning-s) var(--c-severity-warning-l)
+  );
+  --color-severity-success: hsl(
+    var(--c-severity-success-h) var(--c-severity-success-s) var(--c-severity-success-l)
+  );
+  --color-severity-overdue: hsl(
+    var(--c-severity-overdue-h) var(--c-severity-overdue-s) var(--c-severity-overdue-l)
+  );
 }
 
 /* ── Light theme (warm academic palette) ─────────────────────────────── */
@@ -90,6 +127,69 @@
     --c-translation-h: 201;
     --c-translation-s: 45%;
     --c-translation-l: 50%;
+    /*
+     * Editorial lifecycle status tokens. Approximate Tailwind 500-band hues
+     * (amber/sky/emerald/violet) so the migration is visually faithful, while
+     * letting a single source drive the palette. Consumed via
+     * `hsl(var(--c-status-draft-h) var(--c-status-draft-s) var(--c-status-draft-l))`
+     * and arbitrary Tailwind classes (see `STATUS_TONE` in texts-monitor.tsx).
+     */
+    --c-status-draft-h: 38;
+    --c-status-draft-s: 92%;
+    --c-status-draft-l: 50%;
+    --c-status-review-h: 200;
+    --c-status-review-s: 98%;
+    --c-status-review-l: 48%;
+    --c-status-live-h: 160;
+    --c-status-live-s: 84%;
+    --c-status-live-l: 39%;
+    --c-status-reviewed-h: 258;
+    --c-status-reviewed-s: 90%;
+    --c-status-reviewed-l: 60%;
+    /*
+     * Severity tokens — see @theme above for the semantic split from
+     * editorial lifecycle.
+     */
+    --c-severity-warning-h: 38;
+    --c-severity-warning-s: 92%;
+    --c-severity-warning-l: 50%;
+    --c-severity-success-h: 160;
+    --c-severity-success-s: 84%;
+    --c-severity-success-l: 39%;
+    --c-severity-overdue-h: 350;
+    --c-severity-overdue-s: 78%;
+    --c-severity-overdue-l: 50%;
+    /*
+     * Annotorious overlay palette. One hue per annotation state; alpha
+     * is applied at the call site via `hsl(H S L / a)`. No dark-mode
+     * override — the overlay sits on top of the manuscript image, not
+     * on the page background, so the hues stay constant regardless of
+     * UI theme.
+     */
+    --c-annot-described-h: 131;
+    --c-annot-described-s: 55%;
+    --c-annot-described-l: 40%;
+    --c-annot-undescribed-h: 44;
+    --c-annot-undescribed-s: 100%;
+    --c-annot-undescribed-l: 44%;
+    --c-annot-current-selected-h: 219;
+    --c-annot-current-selected-s: 79%;
+    --c-annot-current-selected-l: 66%;
+    --c-annot-multi-selected-h: 221;
+    --c-annot-multi-selected-s: 83%;
+    --c-annot-multi-selected-l: 53%;
+    --c-annot-editorial-h: 0;
+    --c-annot-editorial-s: 0%;
+    --c-annot-editorial-l: 13%;
+    --c-annot-draft-h: 304;
+    --c-annot-draft-s: 99%;
+    --c-annot-draft-l: 59%;
+    --c-annot-selection-h: 172;
+    --c-annot-selection-s: 66%;
+    --c-annot-selection-l: 50%;
+    --c-annot-highlight-h: 262;
+    --c-annot-highlight-s: 83%;
+    --c-annot-highlight-l: 58%;
   }
 
   .dark {
@@ -123,6 +223,52 @@
     --c-translation-h: 201;
     --c-translation-s: 45%;
     --c-translation-l: 60%;
+    --c-status-draft-h: 38;
+    --c-status-draft-s: 92%;
+    --c-status-draft-l: 60%;
+    --c-status-review-h: 200;
+    --c-status-review-s: 98%;
+    --c-status-review-l: 58%;
+    --c-status-live-h: 160;
+    --c-status-live-s: 70%;
+    --c-status-live-l: 48%;
+    --c-status-reviewed-h: 258;
+    --c-status-reviewed-s: 80%;
+    --c-status-reviewed-l: 70%;
+    --c-severity-warning-h: 38;
+    --c-severity-warning-s: 92%;
+    --c-severity-warning-l: 60%;
+    --c-severity-success-h: 160;
+    --c-severity-success-s: 70%;
+    --c-severity-success-l: 48%;
+    --c-severity-overdue-h: 350;
+    --c-severity-overdue-s: 78%;
+    --c-severity-overdue-l: 62%;
+    /* Annotorious overlay tokens — same values as light mode (see :root). */
+    --c-annot-described-h: 131;
+    --c-annot-described-s: 55%;
+    --c-annot-described-l: 40%;
+    --c-annot-undescribed-h: 44;
+    --c-annot-undescribed-s: 100%;
+    --c-annot-undescribed-l: 44%;
+    --c-annot-current-selected-h: 219;
+    --c-annot-current-selected-s: 79%;
+    --c-annot-current-selected-l: 66%;
+    --c-annot-multi-selected-h: 221;
+    --c-annot-multi-selected-s: 83%;
+    --c-annot-multi-selected-l: 53%;
+    --c-annot-editorial-h: 0;
+    --c-annot-editorial-s: 0%;
+    --c-annot-editorial-l: 13%;
+    --c-annot-draft-h: 304;
+    --c-annot-draft-s: 99%;
+    --c-annot-draft-l: 59%;
+    --c-annot-selection-h: 172;
+    --c-annot-selection-s: 66%;
+    --c-annot-selection-l: 50%;
+    --c-annot-highlight-h: 262;
+    --c-annot-highlight-s: 83%;
+    --c-annot-highlight-l: 58%;
   }
 }
 
@@ -338,29 +484,48 @@
   filter: var(--manuscript-image-filter, none);
 }
 
-/* Allograph hover/highlight - use purple so it does not clash with undescribed yellow */
+/*
+ * Annotorious overlay palette.
+ *
+ * All hues come from `--c-annot-*` design tokens (see `:root` / `.dark`).
+ * Per-state alpha is applied inline via `hsl(H S L / a)` so a single set
+ * of tokens drives stroke + base fill + hover fill. To repaint the
+ * overlay palette, change the tokens and don't touch this block.
+ *
+ * The `!important` decoration is required because Annotorious ships its
+ * own colour rules inline on the SVG nodes; our stylesheet has to win.
+ */
+
+/* Hover/highlight pin — violet so it stands out against described
+ * green and undescribed amber. */
 g.a9s-annotation.a9s-highlight rect.a9s-outer,
 g.a9s-annotation.a9s-highlight rect.a9s-inner,
 g.a9s-annotation.a9s-highlight path,
 g.a9s-annotation.a9s-highlight polygon {
   stroke-width: 4px !important;
-  stroke: #7c3aed !important;
+  stroke: hsl(
+    var(--c-annot-highlight-h) var(--c-annot-highlight-s) var(--c-annot-highlight-l)
+  ) !important;
 }
 
-/* ------------------------------
-   Base described / undescribed
-   ------------------------------ */
+/* ── Described / undescribed ─────────────────────────────────────────── */
 
 g.a9s-annotation.a9s-described .a9s-inner,
 g.a9s-annotation.a9s-described rect,
 g.a9s-annotation.a9s-described polygon,
 g.a9s-annotation.a9s-described path {
-  stroke: #2f9e44 !important;
-  fill: rgba(47, 158, 68, 0.18) !important;
+  stroke: hsl(
+    var(--c-annot-described-h) var(--c-annot-described-s) var(--c-annot-described-l)
+  ) !important;
+  fill: hsl(
+    var(--c-annot-described-h) var(--c-annot-described-s) var(--c-annot-described-l) / 0.18
+  ) !important;
 }
 
 g.a9s-annotation.a9s-described .a9s-outer {
-  stroke: #2f9e44 !important;
+  stroke: hsl(
+    var(--c-annot-described-h) var(--c-annot-described-s) var(--c-annot-described-l)
+  ) !important;
   fill: transparent !important;
 }
 
@@ -368,27 +533,35 @@ g.a9s-annotation.a9s-undescribed .a9s-inner,
 g.a9s-annotation.a9s-undescribed rect,
 g.a9s-annotation.a9s-undescribed polygon,
 g.a9s-annotation.a9s-undescribed path {
-  stroke: #e0a800 !important;
-  fill: rgba(224, 168, 0, 0.18) !important;
+  stroke: hsl(
+    var(--c-annot-undescribed-h) var(--c-annot-undescribed-s) var(--c-annot-undescribed-l)
+  ) !important;
+  fill: hsl(
+    var(--c-annot-undescribed-h) var(--c-annot-undescribed-s) var(--c-annot-undescribed-l) / 0.18
+  ) !important;
 }
 
 g.a9s-annotation.a9s-undescribed .a9s-outer {
-  stroke: #e0a800 !important;
+  stroke: hsl(
+    var(--c-annot-undescribed-h) var(--c-annot-undescribed-s) var(--c-annot-undescribed-l)
+  ) !important;
   fill: transparent !important;
 }
 
-/* ------------------------------
-   Hover keeps family colour
-   ------------------------------ */
+/* Hover deepens the family colour without changing hue. */
 
 g.a9s-annotation.a9s-described:hover .a9s-inner,
 g.a9s-annotation.a9s-described:hover .a9s-outer,
 g.a9s-annotation.a9s-described:hover rect,
 g.a9s-annotation.a9s-described:hover polygon,
 g.a9s-annotation.a9s-described:hover path {
-  stroke: #2f9e44 !important;
+  stroke: hsl(
+    var(--c-annot-described-h) var(--c-annot-described-s) var(--c-annot-described-l)
+  ) !important;
   stroke-width: 4px !important;
-  fill: rgba(47, 158, 68, 0.22) !important;
+  fill: hsl(
+    var(--c-annot-described-h) var(--c-annot-described-s) var(--c-annot-described-l) / 0.22
+  ) !important;
 }
 
 g.a9s-annotation.a9s-undescribed:hover .a9s-inner,
@@ -396,62 +569,81 @@ g.a9s-annotation.a9s-undescribed:hover .a9s-outer,
 g.a9s-annotation.a9s-undescribed:hover rect,
 g.a9s-annotation.a9s-undescribed:hover polygon,
 g.a9s-annotation.a9s-undescribed:hover path {
-  stroke: #e0a800 !important;
+  stroke: hsl(
+    var(--c-annot-undescribed-h) var(--c-annot-undescribed-s) var(--c-annot-undescribed-l)
+  ) !important;
   stroke-width: 4px !important;
-  fill: rgba(224, 168, 0, 0.22) !important;
+  fill: hsl(
+    var(--c-annot-undescribed-h) var(--c-annot-undescribed-s) var(--c-annot-undescribed-l) / 0.22
+  ) !important;
 }
 
-/* ------------------------------
-   Selection overlay
-   Blue-ish selected state with fill
-   ------------------------------ */
+/* ── Single-selection (cornflower blue) ──────────────────────────────── */
 
 g.a9s-annotation.a9s-current-selected .a9s-inner,
 g.a9s-annotation.a9s-current-selected rect,
 g.a9s-annotation.a9s-current-selected polygon,
 g.a9s-annotation.a9s-current-selected path {
-  stroke: cornflowerblue !important;
-  fill: rgba(100, 149, 237, 0.24) !important;
+  stroke: hsl(
+    var(--c-annot-current-selected-h) var(--c-annot-current-selected-s)
+      var(--c-annot-current-selected-l)
+  ) !important;
+  fill: hsl(
+    var(--c-annot-current-selected-h) var(--c-annot-current-selected-s)
+      var(--c-annot-current-selected-l) / 0.24
+  ) !important;
   stroke-width: 4px !important;
 }
 
 g.a9s-annotation.a9s-current-selected .a9s-outer {
-  stroke: cornflowerblue !important;
+  stroke: hsl(
+    var(--c-annot-current-selected-h) var(--c-annot-current-selected-s)
+      var(--c-annot-current-selected-l)
+  ) !important;
   fill: transparent !important;
   stroke-width: 4px !important;
 }
 
-/* Hovering while selected stays blue-ish */
 g.a9s-annotation.a9s-current-selected:hover .a9s-inner,
 g.a9s-annotation.a9s-current-selected:hover rect,
 g.a9s-annotation.a9s-current-selected:hover polygon,
 g.a9s-annotation.a9s-current-selected:hover path {
-  stroke: cornflowerblue !important;
-  fill: rgba(100, 149, 237, 0.24) !important;
+  stroke: hsl(
+    var(--c-annot-current-selected-h) var(--c-annot-current-selected-s)
+      var(--c-annot-current-selected-l)
+  ) !important;
+  fill: hsl(
+    var(--c-annot-current-selected-h) var(--c-annot-current-selected-s)
+      var(--c-annot-current-selected-l) / 0.24
+  ) !important;
   stroke-width: 4px !important;
 }
 
 g.a9s-annotation.a9s-current-selected:hover .a9s-outer {
-  stroke: cornflowerblue !important;
+  stroke: hsl(
+    var(--c-annot-current-selected-h) var(--c-annot-current-selected-s)
+      var(--c-annot-current-selected-l)
+  ) !important;
   fill: transparent !important;
   stroke-width: 4px !important;
 }
 
-/* ------------------------------
-   Selection overlay
-   Keep family fill, blue outer border
-   ------------------------------ */
+/* ── In-progress selection (drag-to-create rectangle, teal outline) ─── */
 
 g.a9s-selection .a9s-inner,
 g.a9s-selection rect,
 g.a9s-selection polygon,
 g.a9s-selection path {
-  stroke: rgb(45, 212, 191) !important;
+  stroke: hsl(
+    var(--c-annot-selection-h) var(--c-annot-selection-s) var(--c-annot-selection-l)
+  ) !important;
   fill: transparent !important;
 }
 
 g.a9s-selection .a9s-outer {
-  stroke: rgb(45, 212, 191) !important;
+  stroke: hsl(
+    var(--c-annot-selection-h) var(--c-annot-selection-s) var(--c-annot-selection-l)
+  ) !important;
   stroke-width: 4px !important;
   fill: transparent !important;
 }
@@ -460,30 +652,51 @@ g.a9s-selection:hover .a9s-inner,
 g.a9s-selection:hover rect,
 g.a9s-selection:hover polygon,
 g.a9s-selection:hover path {
-  stroke: rgb(45, 212, 191) !important;
+  stroke: hsl(
+    var(--c-annot-selection-h) var(--c-annot-selection-s) var(--c-annot-selection-l)
+  ) !important;
   fill: transparent !important;
 }
 
 g.a9s-selection:hover .a9s-outer {
-  stroke: rgb(45, 212, 191) !important;
+  stroke: hsl(
+    var(--c-annot-selection-h) var(--c-annot-selection-s) var(--c-annot-selection-l)
+  ) !important;
   stroke-width: 4px !important;
   fill: transparent !important;
 }
+
+/* ── Multi-select (royal blue inner + cornflower outer) ──────────────── */
 
 g.a9s-annotation.a9s-multi-selected .a9s-inner,
 g.a9s-annotation.a9s-multi-selected rect,
 g.a9s-annotation.a9s-multi-selected polygon,
 g.a9s-annotation.a9s-multi-selected path {
-  stroke: #2563eb !important;
-  fill: rgba(37, 99, 235, 0.18) !important;
+  stroke: hsl(
+    var(--c-annot-multi-selected-h) var(--c-annot-multi-selected-s) var(--c-annot-multi-selected-l)
+  ) !important;
+  fill: hsl(
+    var(--c-annot-multi-selected-h) var(--c-annot-multi-selected-s)
+      var(--c-annot-multi-selected-l) / 0.18
+  ) !important;
   stroke-width: 3px !important;
 }
 
 g.a9s-annotation.a9s-multi-selected .a9s-outer {
-  stroke: #2563eb !important;
-  fill: rgba(100, 149, 237, 0.24) !important;
-  stroke: cornflowerblue !important;
+  /* The outer border keeps the cornflower-blue family (selection hue) so
+   * the multi-select state stays visually anchored to the single-select
+   * scheme; the inner shape carries the royal-blue distinguisher. */
+  stroke: hsl(
+    var(--c-annot-current-selected-h) var(--c-annot-current-selected-s)
+      var(--c-annot-current-selected-l)
+  ) !important;
+  fill: hsl(
+    var(--c-annot-current-selected-h) var(--c-annot-current-selected-s)
+      var(--c-annot-current-selected-l) / 0.24
+  ) !important;
 }
+
+/* ── Editorial (near-black ink mark) ─────────────────────────────────── */
 
 g.a9s-annotation.a9s-editorial .a9s-inner,
 g.a9s-annotation.a9s-editorial rect,
@@ -493,13 +706,19 @@ g.a9s-selection.a9s-editorial .a9s-inner,
 g.a9s-selection.a9s-editorial rect,
 g.a9s-selection.a9s-editorial polygon,
 g.a9s-selection.a9s-editorial path {
-  stroke: rgb(34, 34, 34) !important;
-  fill: rgba(34, 34, 34, 0.16) !important;
+  stroke: hsl(
+    var(--c-annot-editorial-h) var(--c-annot-editorial-s) var(--c-annot-editorial-l)
+  ) !important;
+  fill: hsl(
+    var(--c-annot-editorial-h) var(--c-annot-editorial-s) var(--c-annot-editorial-l) / 0.16
+  ) !important;
 }
 
 g.a9s-annotation.a9s-editorial .a9s-outer,
 g.a9s-selection.a9s-editorial .a9s-outer {
-  stroke: rgb(34, 34, 34) !important;
+  stroke: hsl(
+    var(--c-annot-editorial-h) var(--c-annot-editorial-s) var(--c-annot-editorial-l)
+  ) !important;
   fill: transparent !important;
   stroke-width: 4px !important;
 }
@@ -509,10 +728,16 @@ g.a9s-annotation.a9s-editorial:hover .a9s-outer,
 g.a9s-annotation.a9s-editorial:hover rect,
 g.a9s-annotation.a9s-editorial:hover polygon,
 g.a9s-annotation.a9s-editorial:hover path {
-  stroke: rgb(34, 34, 34) !important;
+  stroke: hsl(
+    var(--c-annot-editorial-h) var(--c-annot-editorial-s) var(--c-annot-editorial-l)
+  ) !important;
   stroke-width: 4px !important;
-  fill: rgba(34, 34, 34, 0.2) !important;
+  fill: hsl(
+    var(--c-annot-editorial-h) var(--c-annot-editorial-s) var(--c-annot-editorial-l) / 0.2
+  ) !important;
 }
+
+/* ── Draft (magenta, deliberately loud) ──────────────────────────────── */
 
 g.a9s-annotation.a9s-draft .a9s-inner,
 g.a9s-annotation.a9s-draft rect,
@@ -522,14 +747,14 @@ g.a9s-selection.a9s-draft .a9s-inner,
 g.a9s-selection.a9s-draft rect,
 g.a9s-selection.a9s-draft polygon,
 g.a9s-selection.a9s-draft path {
-  stroke: rgb(254, 45, 235) !important;
-  fill: rgba(254, 45, 235, 0.18) !important;
+  stroke: hsl(var(--c-annot-draft-h) var(--c-annot-draft-s) var(--c-annot-draft-l)) !important;
+  fill: hsl(var(--c-annot-draft-h) var(--c-annot-draft-s) var(--c-annot-draft-l) / 0.18) !important;
   stroke-width: 4px !important;
 }
 
 g.a9s-annotation.a9s-draft .a9s-outer,
 g.a9s-selection.a9s-draft .a9s-outer {
-  stroke: rgb(254, 45, 235) !important;
+  stroke: hsl(var(--c-annot-draft-h) var(--c-annot-draft-s) var(--c-annot-draft-l)) !important;
   fill: transparent !important;
   stroke-width: 4px !important;
 }
@@ -544,7 +769,7 @@ g.a9s-selection.a9s-draft:hover .a9s-outer,
 g.a9s-selection.a9s-draft:hover rect,
 g.a9s-selection.a9s-draft:hover polygon,
 g.a9s-selection.a9s-draft:hover path {
-  stroke: rgb(254, 45, 235) !important;
+  stroke: hsl(var(--c-annot-draft-h) var(--c-annot-draft-s) var(--c-annot-draft-l)) !important;
   stroke-width: 4px !important;
-  fill: rgba(254, 45, 235, 0.22) !important;
+  fill: hsl(var(--c-annot-draft-h) var(--c-annot-draft-s) var(--c-annot-draft-l) / 0.22) !important;
 }

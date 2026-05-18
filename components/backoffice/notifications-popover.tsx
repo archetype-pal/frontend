@@ -91,7 +91,7 @@ function NotificationRow({ notification, onSelect, now }: RowProps) {
             'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
             read
               ? 'bg-muted text-muted-foreground'
-              : 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100'
+              : 'bg-severity-warning/20 text-[hsl(var(--c-severity-warning-h)_var(--c-severity-warning-s)_25%)] dark:bg-severity-warning/30 dark:text-[hsl(var(--c-severity-warning-h)_var(--c-severity-warning-s)_85%)]'
           )}
         >
           <Icon className="h-3 w-3" />
