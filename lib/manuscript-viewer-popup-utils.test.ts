@@ -1,6 +1,63 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildPositionDetails } from './manuscript-viewer-popup-utils';
+import {
+  ACTIVE_POPUP_Z_INDEX,
+  buildPositionDetails,
+  DEFAULT_SINGLE_POPUP_POSITION,
+  getAnnotationKindFromPopupRecord,
+  getPopupCapabilities,
+  getPopupCardViewData,
+  getPopupEditorMode,
+  getPopupInitialPosition,
+  getPopupMetaSummary,
+  getPopupZIndex,
+  INACTIVE_POPUP_BASE_Z_INDEX,
+  MULTI_POPUP_BASE_Y,
+  MULTI_POPUP_OFFSET_STEP,
+} from './manuscript-viewer-popup-utils';
+import type {
+  AnnotationPopupCapabilities,
+  PopupRecord,
+  ViewerCapabilities,
+} from '@/types/annotation-viewer';
+
+function makePopup(overrides: Partial<PopupRecord> = {}): PopupRecord {
+  return {
+    id: 'local-uuid',
+    annotation: {
+      id: 'local-uuid',
+      type: 'Annotation',
+      target: {},
+      _meta: {},
+    },
+    popupTab: 'components',
+    shareUrl: '',
+    isShareUrlVisible: false,
+    draftAllographText: '',
+    draftNoteText: '',
+    draftAllographId: null,
+    draftHandId: null,
+    draftInternalNoteText: '',
+    draftGraphcomponentSet: [],
+    draftPositionIds: [],
+    ...overrides,
+  } as PopupRecord;
+}
+
+function makeCaps(overrides: Partial<ViewerCapabilities> = {}): ViewerCapabilities {
+  return {
+    canCreatePublicAnnotations: true,
+    canPersistPublicAnnotations: true,
+    canCreateEditorialAnnotations: true,
+    canPersistEditorialAnnotations: true,
+    canDeleteAnnotations: true,
+    canModifyAnnotations: true,
+    canViewEditorialControls: true,
+    canUseSettings: true,
+    canUseEditorSettings: true,
+    ...overrides,
+  } as ViewerCapabilities;
+}
 
 describe('buildPositionDetails', () => {
   it('looks up names from the map when present', () => {
@@ -38,5 +95,296 @@ describe('buildPositionDetails', () => {
       [3, 'C'],
     ]);
     expect(buildPositionDetails([3, 1, 2], lookup).map((p) => p.id)).toEqual([3, 1, 2]);
+  });
+});
+
+describe('getAnnotationKindFromPopupRecord', () => {
+  it('returns editorial when annotationType is editorial', () => {
+    const popup = makePopup({
+      annotation: { ...makePopup().annotation, _meta: { annotationType: 'editorial' } },
+    });
+    expect(getAnnotationKindFromPopupRecord(popup)).toBe('editorial');
+  });
+
+  it('returns public for any other annotationType', () => {
+    const popup = makePopup({
+      annotation: { ...makePopup().annotation, _meta: { annotationType: 'image' } },
+    });
+    expect(getAnnotationKindFromPopupRecord(popup)).toBe('public');
+  });
+
+  it('returns public when _meta is missing', () => {
+    expect(getAnnotationKindFromPopupRecord(makePopup())).toBe('public');
+  });
+});
+
+describe('getPopupCapabilities', () => {
+  it('draft + can-persist-public → canPersistDraft, canEditDraft, no collection', () => {
+    const popup = makePopup({ annotation: { ...makePopup().annotation, id: 'local-uuid' } });
+    const caps = getPopupCapabilities(popup, makeCaps());
+    expect(caps.canEditDraft).toBe(true);
+    expect(caps.canPersistDraft).toBe(true);
+    expect(caps.canUseCollection).toBe(false);
+    expect(caps.canShare).toBe(true);
+  });
+
+  it('persisted graph (db:) → canUseCollection, !canEditDraft, !canPersistDraft', () => {
+    const popup = makePopup({ annotation: { ...makePopup().annotation, id: 'db:42' } });
+    const caps = getPopupCapabilities(popup, makeCaps());
+    expect(caps.canEditDraft).toBe(false);
+    expect(caps.canPersistDraft).toBe(false);
+    expect(caps.canUseCollection).toBe(true);
+  });
+
+  it('editorial draft routes through canPersistEditorialAnnotations, not the public one', () => {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        id: 'local-uuid',
+        _meta: { annotationType: 'editorial' },
+      },
+    });
+    const noEditorial = getPopupCapabilities(
+      popup,
+      makeCaps({ canPersistEditorialAnnotations: false, canPersistPublicAnnotations: true })
+    );
+    expect(noEditorial.canPersistDraft).toBe(false);
+
+    const withEditorial = getPopupCapabilities(
+      popup,
+      makeCaps({ canPersistEditorialAnnotations: true, canPersistPublicAnnotations: false })
+    );
+    expect(withEditorial.canPersistDraft).toBe(true);
+  });
+
+  it('canViewEditorMeta passes through viewerCapabilities', () => {
+    const popup = makePopup();
+    expect(
+      getPopupCapabilities(popup, makeCaps({ canViewEditorialControls: false })).canViewEditorMeta
+    ).toBe(false);
+    expect(
+      getPopupCapabilities(popup, makeCaps({ canViewEditorialControls: true })).canViewEditorMeta
+    ).toBe(true);
+  });
+});
+
+describe('getPopupCardViewData', () => {
+  it('uses draftAllographText for a new public draft', () => {
+    const popup = makePopup({ draftAllographText: '  Alpha  ' });
+    const view = getPopupCardViewData(popup, new Map());
+    expect(view.title).toBe('Alpha');
+    expect(view.isDraft).toBe(true);
+    expect(view.annotationKind).toBe('public');
+  });
+
+  it('falls back to "New Annotation" when draftAllographText is empty', () => {
+    expect(getPopupCardViewData(makePopup(), new Map()).title).toBe('New Annotation');
+  });
+
+  it('uses allographNameById for a persisted annotation when body text is absent', () => {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        id: 'db:1',
+        _meta: { allographId: 5 },
+      },
+    });
+    const lookup = new Map<number, string>([[5, 'Alpha allograph']]);
+    expect(getPopupCardViewData(popup, lookup).title).toBe('Alpha allograph');
+  });
+
+  it('falls back to "Annotation" for persisted with neither body text nor allograph name', () => {
+    const popup = makePopup({
+      annotation: { ...makePopup().annotation, id: 'db:99' },
+    });
+    expect(getPopupCardViewData(popup, new Map()).title).toBe('Annotation');
+  });
+
+  it('renders "Editorial Annotation" for editorial draft and existing', () => {
+    const draft = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        id: 'local-uuid',
+        _meta: { annotationType: 'editorial' },
+      },
+    });
+    expect(getPopupCardViewData(draft, new Map()).title).toBe('Editorial Annotation');
+
+    const existing = makePopup({
+      annotation: { ...makePopup().annotation, id: 'db:1', _meta: { annotationType: 'editorial' } },
+    });
+    expect(getPopupCardViewData(existing, new Map()).title).toBe('Editorial Annotation');
+  });
+
+  it('exposes hasPositionsTab when positionDetails is non-empty', () => {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        _meta: {
+          positionDetails: [{ id: 1, name: 'Initial' }],
+        },
+      },
+    });
+    const view = getPopupCardViewData(popup, new Map());
+    expect(view.hasPositionsTab).toBe(true);
+    expect(view.selectedPositionLabels).toEqual(['Initial']);
+  });
+
+  it('falls back to "Position {id}" labels when name missing on positionDetails', () => {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        _meta: {
+          // @ts-expect-error force missing name to exercise fallback
+          positionDetails: [{ id: 7 }],
+        },
+      },
+    });
+    expect(getPopupCardViewData(popup, new Map()).selectedPositionLabels).toEqual(['Position 7']);
+  });
+
+  it('builds component group labels with feature fallbacks', () => {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        _meta: {
+          graphcomponentSet: [
+            {
+              component: 11,
+              componentName: 'Stem',
+              features: [21, 22],
+              featureDetails: [
+                { id: 21, name: 'Curved' },
+                { id: 22, name: 'Long' },
+              ],
+            },
+            {
+              // No name → falls back to "Component {id}"; no featureDetails → falls back to "Feature {id}"
+              component: 12,
+              features: [33],
+            },
+          ],
+        },
+      },
+    });
+    const view = getPopupCardViewData(popup, new Map());
+    expect(view.selectedComponentGroups).toEqual([
+      { componentId: 11, componentName: 'Stem', featureNames: ['Curved', 'Long'] },
+      { componentId: 12, componentName: 'Component 12', featureNames: ['Feature 33'] },
+    ]);
+  });
+});
+
+describe('getPopupInitialPosition', () => {
+  it('returns the single popup position when allowMultipleBoxes is false', () => {
+    const result = getPopupInitialPosition(3, false, DEFAULT_SINGLE_POPUP_POSITION);
+    expect(result).toBe(DEFAULT_SINGLE_POPUP_POSITION);
+  });
+
+  it('stacks multi-popup positions by index using the offset step', () => {
+    expect(getPopupInitialPosition(0, true, DEFAULT_SINGLE_POPUP_POSITION)).toEqual({
+      x: 0,
+      y: MULTI_POPUP_BASE_Y,
+    });
+    expect(getPopupInitialPosition(2, true, DEFAULT_SINGLE_POPUP_POSITION)).toEqual({
+      x: 2 * MULTI_POPUP_OFFSET_STEP,
+      y: MULTI_POPUP_BASE_Y + 2 * MULTI_POPUP_OFFSET_STEP,
+    });
+  });
+});
+
+describe('getPopupZIndex', () => {
+  it('returns the active z-index when isActive', () => {
+    expect(getPopupZIndex(2, true)).toBe(ACTIVE_POPUP_Z_INDEX);
+  });
+
+  it('stacks inactive popups above the base by index', () => {
+    expect(getPopupZIndex(0, false)).toBe(INACTIVE_POPUP_BASE_Z_INDEX);
+    expect(getPopupZIndex(5, false)).toBe(INACTIVE_POPUP_BASE_Z_INDEX + 5);
+  });
+});
+
+describe('getPopupMetaSummary', () => {
+  it('looks up allograph and hand labels by id', () => {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        _meta: { allographId: 5, handId: 7, annotationType: 'image' },
+      },
+    });
+    const summary = getPopupMetaSummary(popup, new Map([[5, 'Alpha']]), new Map([[7, 'Hand A']]));
+    expect(summary).toEqual({ kindLabel: 'Public', allographLabel: 'Alpha', handLabel: 'Hand A' });
+  });
+
+  it('returns nulls when ids are missing from the lookup maps', () => {
+    const popup = makePopup({
+      annotation: { ...makePopup().annotation, _meta: { allographId: 99, handId: 99 } },
+    });
+    const summary = getPopupMetaSummary(popup, new Map(), new Map());
+    expect(summary.allographLabel).toBeNull();
+    expect(summary.handLabel).toBeNull();
+  });
+
+  it('reports Editorial kindLabel for editorial annotations', () => {
+    const popup = makePopup({
+      annotation: { ...makePopup().annotation, _meta: { annotationType: 'editorial' } },
+    });
+    expect(getPopupMetaSummary(popup, new Map(), new Map()).kindLabel).toBe('Editorial');
+  });
+});
+
+describe('getPopupEditorMode', () => {
+  function modeFor(args: {
+    id: string;
+    editorial: boolean;
+    caps: Partial<AnnotationPopupCapabilities>;
+  }) {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        id: args.id,
+        _meta: { annotationType: args.editorial ? 'editorial' : undefined },
+      },
+    });
+    return getPopupEditorMode(popup, {
+      canShare: true,
+      canUseCollection: false,
+      canEditDraft: false,
+      canPersistDraft: false,
+      canViewEditorMeta: false,
+      ...args.caps,
+    });
+  }
+
+  it('persisted editorial → editorial_existing', () => {
+    expect(modeFor({ id: 'db:1', editorial: true, caps: {} })).toBe('editorial_existing');
+  });
+
+  it('persisted public with editor meta access → standard_existing', () => {
+    expect(modeFor({ id: 'db:1', editorial: false, caps: { canViewEditorMeta: true } })).toBe(
+      'standard_existing'
+    );
+  });
+
+  it('persisted public without editor meta access → public_existing', () => {
+    expect(modeFor({ id: 'db:1', editorial: false, caps: { canViewEditorMeta: false } })).toBe(
+      'public_existing'
+    );
+  });
+
+  it('editorial draft → editorial_draft', () => {
+    expect(modeFor({ id: 'local-uuid', editorial: true, caps: {} })).toBe('editorial_draft');
+  });
+
+  it('public draft that can persist → standard_draft', () => {
+    expect(modeFor({ id: 'local-uuid', editorial: false, caps: { canPersistDraft: true } })).toBe(
+      'standard_draft'
+    );
+  });
+
+  it('public draft that cannot persist → public_demo_draft', () => {
+    expect(modeFor({ id: 'local-uuid', editorial: false, caps: { canPersistDraft: false } })).toBe(
+      'public_demo_draft'
+    );
   });
 });
