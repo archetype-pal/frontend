@@ -20,6 +20,7 @@ function makeBackendGraph(
 ): BackendGraph {
   return {
     id,
+    item_image: 42,
     annotation_type: annotationType,
     allograph: null,
     hand: null,
@@ -42,7 +43,7 @@ function makeBackendGraph(
       },
       properties: { saved: 1 },
     },
-  } as BackendGraph;
+  };
 }
 
 function makeDraft(id: string): A9sAnnotation {

@@ -339,9 +339,19 @@ export default function ManuscriptViewer({
   const [osdReady, setOsdReady] = React.useState(false);
 
   const [initialA9sAnnots, setInitialA9sAnnots] = React.useState<A9sAnnotation[]>([]);
-  const [a9sSnapshot, setA9sSnapshot] = React.useState<A9sAnnotation[]>([]);
-  const [selectedAnnotationIds, setSelectedAnnotationIds] = React.useState<string[]>([]);
+  // Derived from editorRecords (the single source of truth). The previous
+  // triple-state design — editorRecords + a9sSnapshot + initialA9sAnnots —
+  // kept three parallel copies in sync via 12 dual-update sites and was the
+  // structural cause of several drag-edit / save races. Phase 0.9.
   const [editorRecords, setEditorRecords] = React.useState<AnnotationEditorRecordMap>({});
+  const a9sSnapshot = React.useMemo<A9sAnnotation[]>(
+    () =>
+      Object.values(editorRecords)
+        .filter((record) => !record.isDeleted)
+        .map((record) => record.annotation),
+    [editorRecords]
+  );
+  const [selectedAnnotationIds, setSelectedAnnotationIds] = React.useState<string[]>([]);
 
   const [imageHeight, setImageHeight] = React.useState<number>(0);
   const [activeTool, setActiveTool] = React.useState<ActiveViewerTool>('move');
@@ -737,14 +747,9 @@ export default function ManuscriptViewer({
 
         updatePopupById(enriched.id, { annotation: enriched });
 
+        // editorRecords is the single source of truth; a9sSnapshot is
+        // derived from it via useMemo, so no separate snapshot update.
         setEditorRecords((prev) => markAnnotationCreated(prev, enriched));
-
-        const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
-        const nextAnnotations = currentAnnotations.some((item) => item.id === enriched.id)
-          ? currentAnnotations.map((item) => (item.id === enriched.id ? enriched : item))
-          : [...currentAnnotations, enriched];
-
-        setA9sSnapshot(nextAnnotations);
       };
 
       void syncCreatedAnnotation();
@@ -775,13 +780,6 @@ export default function ManuscriptViewer({
       }
       return next;
     });
-
-    setA9sSnapshot((prev) =>
-      prev.map((item) => {
-        const buffered = batch.get(item.id);
-        return buffered ? mergeAnnotationUpdate(item, buffered) : item;
-      })
-    );
   }, []);
 
   const handleViewerUpdate = React.useCallback(
@@ -1198,12 +1196,6 @@ export default function ManuscriptViewer({
 
         return markAnnotationUpdated(reconciled, latestWithMeta);
       });
-
-      const nextSnapshot = currentAnnotations.map((annotation) =>
-        annotation.id === latestWithMeta.id ? latestWithMeta : annotation
-      );
-
-      setA9sSnapshot(nextSnapshot);
     },
     [getAnnotationKind, getPopupById, positionNameById]
   );
@@ -1231,13 +1223,10 @@ export default function ManuscriptViewer({
 
         setEditorRecords((prev) => markAnnotationUpdated(prev, next));
 
-        setA9sSnapshot((prev) =>
-          prev.map((annotation) => (annotation.id === next.id ? next : annotation))
-        );
-
-        setInitialA9sAnnots((prev) =>
-          prev.map((annotation) => (annotation.id === next.id ? next : annotation))
-        );
+        // Snapshot is derived from editorRecords (updated above); no
+        // separate write needed. Annotorious's own internal state retains
+        // the polygon shape — only metadata changed, and the next select
+        // event recovers canonical metadata via getCanonicalAnnotation.
 
         removePopupById(popupId);
 
@@ -1272,9 +1261,9 @@ export default function ManuscriptViewer({
             return applyPopupValuesToDraftAnnotationFromRecord(annotation, popup);
           });
 
-          setInitialA9sAnnots(nextAnnotations);
-          setA9sSnapshot(nextAnnotations);
-
+          // Snapshot derives from editorRecords; only the records map
+          // needs updating. We don't re-seed Annotorious — its internal
+          // state for these polygons is unchanged (only _meta differs).
           setEditorRecords((prev) => {
             let nextRecords = prev;
 
@@ -1366,15 +1355,13 @@ export default function ManuscriptViewer({
 
   const handleViewerDelete = React.useCallback(
     (annotation: A9sAnnotation, context?: { bulk: boolean }) => {
+      // markAnnotationDeleted handles both draft (removed outright) and
+      // persisted (marked isDeleted=true) cases. The derived a9sSnapshot
+      // filters out isDeleted records, matching what Annotorious already
+      // did locally when it fired the delete event. We deliberately do
+      // NOT touch initialA9sAnnots — bumping that prop re-seeds the OSD
+      // layer and drops in-flight selection / mid-draw polygons.
       setEditorRecords((prev) => markAnnotationDeleted(prev, annotation.id));
-
-      // Don't write to initialA9sAnnots here: Annotorious already removed
-      // the annotation as part of firing the delete event, and bumping the
-      // prop re-seeds the OSD layer (manuscript-annotorious.tsx:1208-1214) —
-      // which drops in-flight selection state, mid-draw polygons, and any
-      // bulk-delete UI that is still open.
-      const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
-      setA9sSnapshot(currentAnnotations);
 
       removePopupById(annotation.id);
 
@@ -1408,7 +1395,6 @@ export default function ManuscriptViewer({
 
     api.enablePan();
     setActiveTool('move');
-    setA9sSnapshot(api.getAnnotations?.() ?? []);
   }, []);
 
   const handleRotateViewer = React.useCallback(
@@ -1498,7 +1484,6 @@ export default function ManuscriptViewer({
       });
 
       setInitialA9sAnnots(refreshed);
-      setA9sSnapshot(refreshed);
       setEditorRecords(buildHydratedEditorRecordMap(refreshed));
     } catch {
       showActionNotification({
@@ -1709,8 +1694,11 @@ export default function ManuscriptViewer({
         viewerApiRef.current?.clearSelection?.();
         clearPopupCollection();
 
+        // initialA9sAnnots is the OSD re-seed handle: server-assigned ids
+        // for newly-created records mean we need Annotorious to swap its
+        // internal store. a9sSnapshot is derived, so just setting records
+        // and the seed prop is enough.
         setInitialA9sAnnots(nextSnapshot);
-        setA9sSnapshot(nextSnapshot);
         setEditorRecords(nextEditorRecords);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to refresh annotations.';
@@ -2121,13 +2109,11 @@ export default function ManuscriptViewer({
 
         if (isMounted) {
           setInitialA9sAnnots(merged);
-          setA9sSnapshot(merged);
           setEditorRecords(buildHydratedEditorRecordMap(merged));
         }
       } catch {
         if (isMounted) {
           setInitialA9sAnnots([]);
-          setA9sSnapshot([]);
           setEditorRecords({});
         }
       }
