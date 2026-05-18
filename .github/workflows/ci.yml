@@ -79,6 +79,9 @@ jobs:
       - name: Build project
         run: pnpm build
 
+      - name: Check bundle budget
+        run: pnpm bundle-budget
+
   lighthouse:
     runs-on: ubuntu-latest
     needs: build

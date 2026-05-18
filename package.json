@@ -11,6 +11,8 @@
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "analyze": "ANALYZE=true next build",
+    "bundle-budget": "node scripts/check-bundle-budget.mjs",
+    "bundle-budget:update": "node scripts/check-bundle-budget.mjs --update",
     "audit": "pnpm audit",
     "lhci": "lhci autorun",
     "test": "vitest run",
