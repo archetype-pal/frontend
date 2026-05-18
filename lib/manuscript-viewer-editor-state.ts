@@ -104,3 +104,84 @@ export function markAnnotationDeleted(
     },
   };
 }
+
+export interface SaveResultPartition {
+  succeededUpsertRecordIds: Set<string>;
+  failedUpsertRecordIds: Set<string>;
+  succeededDeleteRecordIds: Set<string>;
+  failedDeleteRecordIds: Set<string>;
+  succeededCreatedCount: number;
+  succeededUpdatedCount: number;
+  succeededDeletedCount: number;
+  firstError: string | null;
+}
+
+// Pair settled save promises with their source records and tally outcomes.
+// Lets the caller distinguish "5 of 6 succeeded" from "all failed" so
+// partial successes keep their server-side commits and failures stay
+// dirty for retry.
+export function partitionSaveResults(
+  upsertRecords: AnnotationEditorRecord[],
+  upsertResults: PromiseSettledResult<unknown>[],
+  deleteRecords: AnnotationEditorRecord[],
+  deleteResults: PromiseSettledResult<unknown>[]
+): SaveResultPartition {
+  const partition: SaveResultPartition = {
+    succeededUpsertRecordIds: new Set(),
+    failedUpsertRecordIds: new Set(),
+    succeededDeleteRecordIds: new Set(),
+    failedDeleteRecordIds: new Set(),
+    succeededCreatedCount: 0,
+    succeededUpdatedCount: 0,
+    succeededDeletedCount: 0,
+    firstError: null,
+  };
+
+  const captureError = (reason: unknown) => {
+    if (partition.firstError) return;
+    partition.firstError = reason instanceof Error ? reason.message : String(reason);
+  };
+
+  upsertRecords.forEach((record, index) => {
+    const result = upsertResults[index];
+    if (!result) return;
+    if (result.status === 'fulfilled') {
+      partition.succeededUpsertRecordIds.add(record.id);
+      if (record.dirtyState === 'created') partition.succeededCreatedCount += 1;
+      else if (record.dirtyState === 'updated') partition.succeededUpdatedCount += 1;
+    } else {
+      partition.failedUpsertRecordIds.add(record.id);
+      captureError(result.reason);
+    }
+  });
+
+  deleteRecords.forEach((record, index) => {
+    const result = deleteResults[index];
+    if (!result) return;
+    if (result.status === 'fulfilled') {
+      partition.succeededDeleteRecordIds.add(record.id);
+      partition.succeededDeletedCount += 1;
+    } else {
+      partition.failedDeleteRecordIds.add(record.id);
+      captureError(result.reason);
+    }
+  });
+
+  return partition;
+}
+
+// After a partial save, overlay failed records on top of the server
+// refresh so they stay locally dirty and visible for retry. Server state
+// for successful records is authoritative; failed records keep their
+// pre-save annotation (the user's in-flight edits).
+export function mergeFailedRecordsIntoRefresh(
+  refreshedMap: AnnotationEditorRecordMap,
+  failedRecords: AnnotationEditorRecord[]
+): AnnotationEditorRecordMap {
+  if (failedRecords.length === 0) return refreshedMap;
+  const next = { ...refreshedMap };
+  for (const record of failedRecords) {
+    next[record.id] = record;
+  }
+  return next;
+}

@@ -24,6 +24,21 @@ export function getAnnotationKindFromPopupRecord(popupRecord: PopupRecord): Anno
   return popupRecord.annotation._meta?.annotationType === 'editorial' ? 'editorial' : 'public';
 }
 
+// Build position-detail objects from the draft id list, falling back to
+// "Position {id}" when the name isn't in the lookup. Without the fallback,
+// reassigning an allograph (which swaps positionNameById to a different
+// set) silently drops any position label not present in the new allograph
+// — the backend keeps the id, but the popup renders "0 positions."
+export function buildPositionDetails(
+  positionIds: number[],
+  positionNameById: Map<number, string>
+): { id: number; name: string }[] {
+  return positionIds.map((id) => ({
+    id,
+    name: positionNameById.get(id) ?? `Position ${id}`,
+  }));
+}
+
 export function getPopupCapabilities(
   popupRecord: PopupRecord,
   viewerCapabilities: ViewerCapabilities
