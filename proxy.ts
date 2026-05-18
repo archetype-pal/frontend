@@ -3,6 +3,8 @@ import { AUTH_TOKEN_COOKIE } from '@/lib/auth-token-cookie';
 import type { SectionKey } from '@/lib/site-features';
 import type { ResultType } from '@/lib/search-types';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const SECTION_ROUTE_MAP: Partial<Record<SectionKey, string>> = {
   search: '/search',
   collection: '/collection',
@@ -12,6 +14,42 @@ const SECTION_ROUTE_MAP: Partial<Record<SectionKey, string>> = {
   featureArticles: '/publications/feature',
   about: '/about',
 };
+
+// CSP / security-header concerns previously lived in middleware.ts. Next 16
+// requires middleware to be merged into proxy.ts, so they ride along here.
+// Dev keeps 'unsafe-inline'/'unsafe-eval' so React Fast Refresh works; prod
+// uses a per-request nonce with strict-dynamic.
+function buildCsp(nonce: string): string {
+  const directives: string[] = [
+    "default-src 'self'",
+    isProduction
+      ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
+      : `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https:",
+    "frame-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+    'upgrade-insecure-requests',
+  ];
+  return directives.join('; ');
+}
+
+function attachSecurityHeaders(response: NextResponse, nonce: string, csp: string): NextResponse {
+  response.headers.set('Content-Security-Policy', csp);
+  if (isProduction) {
+    response.headers.set(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains; preload'
+    );
+  }
+  response.headers.set('x-nonce', nonce);
+  return response;
+}
 
 type MinConfig = {
   sections: Record<string, boolean>;
@@ -48,24 +86,33 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const origin = request.nextUrl.origin;
 
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const csp = buildCsp(nonce);
+
+  // Propagate nonce + CSP into the inner request so RSC components can read
+  // them via headers() — needed for Next's nonce-aware script injection.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('content-security-policy', csp);
+
   if (pathname === '/backoffice' || pathname.startsWith('/backoffice/')) {
     const tokenCookie = request.cookies.get(AUTH_TOKEN_COOKIE)?.value;
     if (!tokenCookie) {
       const url = request.nextUrl.clone();
       url.pathname = '/login';
       url.searchParams.set('next', pathname);
-      return NextResponse.redirect(url);
+      return attachSecurityHeaders(NextResponse.redirect(url), nonce, csp);
     }
   }
 
-  const config = await loadConfig(origin);
+  const featureConfig = await loadConfig(origin);
 
   for (const [sectionKey, routePrefix] of Object.entries(SECTION_ROUTE_MAP)) {
     if (pathname === routePrefix || pathname.startsWith(routePrefix + '/')) {
-      if (config.sections[sectionKey] === false) {
+      if (featureConfig.sections[sectionKey] === false) {
         const url = request.nextUrl.clone();
         url.pathname = '/not-found';
-        return NextResponse.rewrite(url);
+        return attachSecurityHeaders(NextResponse.rewrite(url), nonce, csp);
       }
     }
   }
@@ -73,28 +120,32 @@ export async function proxy(request: NextRequest) {
   const searchMatch = pathname.match(/^\/search\/([^/]+)/);
   if (searchMatch) {
     const categoryType = searchMatch[1] as ResultType;
-    const catConfig = config.searchCategories[categoryType];
+    const catConfig = featureConfig.searchCategories[categoryType];
     if (catConfig && catConfig.enabled === false) {
       const url = request.nextUrl.clone();
       url.pathname = '/not-found';
-      return NextResponse.rewrite(url);
+      return attachSecurityHeaders(NextResponse.rewrite(url), nonce, csp);
     }
   }
 
-  return NextResponse.next();
+  return attachSecurityHeaders(
+    NextResponse.next({ request: { headers: requestHeaders } }),
+    nonce,
+    csp
+  );
 }
 
+// Matcher inherited from the former middleware (broad — every HTML response
+// needs the CSP). API routes, Next internals, and static assets are excluded
+// because they don't render HTML and CSP-on-asset just bloats every request.
 export const config = {
   matcher: [
-    '/backoffice',
-    '/backoffice/:path*',
-    '/search/:path*',
-    '/collection/:path*',
-    '/collection',
-    '/lightbox/:path*',
-    '/lightbox',
-    '/publications/:path*',
-    '/about/:path*',
-    '/about',
+    {
+      source: '/((?!api|_next/static|_next/image|favicon.ico).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
   ],
 };
