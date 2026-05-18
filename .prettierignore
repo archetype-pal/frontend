@@ -13,6 +13,7 @@ yarn.lock
 *.min.css
 .openapi.json
 .pytest_cache/
+.lighthouseci/
 
 # Ignore config that may use different style
 tailwind.config.ts

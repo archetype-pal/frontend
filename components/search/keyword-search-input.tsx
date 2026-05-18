@@ -199,6 +199,7 @@ export function KeywordSearchInput({
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
         onBlur={handleBlur}
+        role="combobox"
         aria-autocomplete="list"
         aria-expanded={showDropdown}
         aria-controls="keyword-suggestions"

@@ -9,6 +9,7 @@ package-lock.json
 
 # testing
 /coverage
+/.lighthouseci/
 
 # next.js
 /.next/

@@ -247,7 +247,7 @@ export default function Header() {
             <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight text-primary-foreground leading-tight">
               Models of Authority
             </h1>
-            <p className="hidden md:block text-sm text-primary-foreground/65 max-w-xs pb-0.5">
+            <p className="hidden md:block text-sm text-primary-foreground/85 max-w-xs pb-0.5">
               Scottish Charters and the Emergence of Government, 1100–1250
             </p>
           </div>

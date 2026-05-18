@@ -36,24 +36,24 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
           {/* About column */}
           <div className="space-y-3">
-            <h3 className="font-serif text-lg font-semibold tracking-tight">Models of Authority</h3>
-            <p className="text-sm text-primary-foreground/70 leading-relaxed">
+            <h2 className="font-serif text-lg font-semibold tracking-tight">Models of Authority</h2>
+            <p className="text-sm text-primary-foreground/85 leading-relaxed">
               Scottish Charters and the Emergence of Government, 1100–1250. A resource for the study
               of the contents, script and physical appearance of the corpus of Scottish charters.
             </p>
-            <p className="text-sm text-primary-foreground/70">
+            <p className="text-sm text-primary-foreground/85">
               Funded by the Arts and Humanities Research Council (AHRC).
             </p>
           </div>
 
           {/* Links column */}
           <div className="space-y-3">
-            <h3 className="font-serif text-lg font-semibold tracking-tight">Quick Links</h3>
+            <h2 className="font-serif text-lg font-semibold tracking-tight">Quick Links</h2>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link
                   href="/search/manuscripts"
-                  className="text-primary-foreground/70 hover:text-white transition-colors"
+                  className="text-primary-foreground/85 hover:text-white transition-colors"
                 >
                   Search Charters
                 </Link>
@@ -61,7 +61,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/about/about-models-of-authority"
-                  className="text-primary-foreground/70 hover:text-white transition-colors"
+                  className="text-primary-foreground/85 hover:text-white transition-colors"
                 >
                   About the Project
                 </Link>
@@ -69,7 +69,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/about/accessibility"
-                  className="text-primary-foreground/70 hover:text-white transition-colors"
+                  className="text-primary-foreground/85 hover:text-white transition-colors"
                 >
                   Accessibility Statement
                 </Link>
@@ -77,7 +77,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/login"
-                  className="text-primary-foreground/70 hover:text-white transition-colors"
+                  className="text-primary-foreground/85 hover:text-white transition-colors"
                 >
                   Log in
                 </Link>
@@ -87,7 +87,7 @@ export default function Footer() {
 
           {/* Partners column */}
           <div className="space-y-3">
-            <h3 className="font-serif text-lg font-semibold tracking-tight">Partners</h3>
+            <h2 className="font-serif text-lg font-semibold tracking-tight">Partners</h2>
             <div className="flex flex-wrap gap-4">
               {partners.map((partner) => (
                 <div
@@ -110,7 +110,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-primary-foreground/20 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-primary-foreground/50 text-center md:text-left max-w-2xl">
+          <p className="text-xs text-primary-foreground/85 text-center md:text-left max-w-2xl">
             ©2015–17 Models of Authority. Some parts available under CC-BY licence. All manuscript
             images are copyright of their respective repositories. Website by DDH / KDL. Built with
             Archetype.
@@ -118,14 +118,14 @@ export default function Footer() {
           <div className="flex items-center gap-3">
             <Link
               href="https://github.com/archetype-pal"
-              className="text-primary-foreground/50 hover:text-white transition-colors"
+              className="text-primary-foreground/85 hover:text-white transition-colors"
               aria-label="GitHub"
             >
               <Github className="h-5 w-5" />
             </Link>
             <Link
               href="/about/about-models-of-authority"
-              className="text-primary-foreground/50 hover:text-white transition-colors"
+              className="text-primary-foreground/85 hover:text-white transition-colors"
               aria-label="Project website"
             >
               <ExternalLink className="h-5 w-5" />
