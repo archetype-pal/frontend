@@ -208,6 +208,7 @@ export function CatalogueNumbersSection({
                 size="icon"
                 className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
                 onClick={() => deleteMut.mutate(cn.id)}
+                aria-label="Delete catalogue number"
               >
                 <Trash2 className="h-3 w-3" />
               </Button>

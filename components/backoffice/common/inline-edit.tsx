@@ -94,6 +94,7 @@ export function InlineEdit({
           onMouseDown={(e) => e.preventDefault()} // prevent blur before click
           onClick={save}
           disabled={saving}
+          aria-label="Save edit"
         >
           <Check className="h-3.5 w-3.5" />
         </Button>
@@ -104,6 +105,7 @@ export function InlineEdit({
           onMouseDown={(e) => e.preventDefault()}
           onClick={cancel}
           disabled={saving}
+          aria-label="Cancel edit"
         >
           <X className="h-3.5 w-3.5" />
         </Button>

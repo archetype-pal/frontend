@@ -67,6 +67,7 @@ export function NamedEntityManager<T extends EntityBase>({
         size="icon"
         className="h-5 w-5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
         onClick={() => setDeleteTarget(item)}
+        aria-label={`Delete ${item.name}`}
       >
         <Trash2 className="h-3 w-3" />
       </Button>
@@ -94,6 +95,7 @@ export function NamedEntityManager<T extends EntityBase>({
           size="icon"
           className="h-8 w-8 shrink-0"
           disabled={!newName.trim() || createMut.isPending}
+          aria-label={placeholder}
         >
           <Plus className="h-3.5 w-3.5" />
         </Button>

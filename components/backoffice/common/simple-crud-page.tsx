@@ -186,6 +186,7 @@ export function SimpleCrudPage<T extends { id: number }>({
           size="icon"
           className="h-7 w-7 text-muted-foreground hover:text-destructive"
           onClick={() => setDeleteTarget(row.original)}
+          aria-label={`Delete ${singularLabel.toLowerCase()}`}
         >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
@@ -194,7 +195,7 @@ export function SimpleCrudPage<T extends { id: number }>({
     });
 
     return generated;
-  }, [fields, showIdColumn, updateMut]);
+  }, [fields, showIdColumn, updateMut, singularLabel]);
 
   if (isLoading) {
     return (

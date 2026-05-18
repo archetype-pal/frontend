@@ -160,6 +160,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                       size="icon"
                       className="h-6 w-6"
                       onClick={() => setEditingSourceId(null)}
+                      aria-label="Cancel source edit"
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -191,6 +192,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                             data: { content: editContent },
                           })
                         }
+                        aria-label="Save description"
                       >
                         <Check className="h-3 w-3" />
                       </Button>
@@ -199,6 +201,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                         size="icon"
                         className="h-6 w-6"
                         onClick={() => setEditingId(null)}
+                        aria-label="Cancel description edit"
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -213,6 +216,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                           setEditingId(desc.id);
                           setEditContent(desc.content);
                         }}
+                        aria-label="Edit description"
                       >
                         <Pencil className="h-3 w-3" />
                       </Button>
@@ -221,6 +225,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                         size="icon"
                         className="h-6 w-6 text-muted-foreground hover:text-destructive"
                         onClick={() => deleteMut.mutate(desc.id)}
+                        aria-label="Delete description"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>

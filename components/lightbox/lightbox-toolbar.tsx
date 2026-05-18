@@ -120,13 +120,25 @@ export function LightboxToolbar({
     <div className="flex items-center gap-2">
       {/* Zoom Controls */}
       <div className="flex items-center gap-1 border-r pr-2">
-        <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.1}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleZoomOut}
+          disabled={zoom <= 0.1}
+          aria-label="Zoom out"
+        >
           <ZoomOut className="h-4 w-4" />
         </Button>
         <span className="text-sm text-muted-foreground min-w-[60px] text-center">
           {Math.round(zoom * 100)}%
         </span>
-        <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={zoom >= 10}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleZoomIn}
+          disabled={zoom >= 10}
+          aria-label="Zoom in"
+        >
           <ZoomIn className="h-4 w-4" />
         </Button>
       </div>
@@ -225,6 +237,8 @@ export function LightboxToolbar({
           size="sm"
           onClick={() => setShowGrid(!showGrid)}
           title="Toggle Grid"
+          aria-label="Toggle grid overlay"
+          aria-pressed={showGrid}
         >
           <Grid3x3 className="h-4 w-4" />
         </Button>
@@ -239,6 +253,8 @@ export function LightboxToolbar({
             size="sm"
             onClick={() => setShowAnnotations(!showAnnotations)}
             title="Toggle Annotations"
+            aria-label="Toggle annotations overlay"
+            aria-pressed={showAnnotations}
           >
             <MessageSquare className="h-4 w-4" />
           </Button>

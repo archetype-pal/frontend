@@ -64,7 +64,14 @@ export function LightboxSidebar() {
   if (isCollapsed) {
     return (
       <div className="w-12 border-r bg-white flex flex-col items-center py-2">
-        <Button variant="ghost" size="sm" onClick={() => setIsCollapsed(false)} className="mb-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsCollapsed(false)}
+          className="mb-2"
+          aria-label="Expand workspaces sidebar"
+          aria-expanded={false}
+        >
           <Folder className="h-4 w-4" />
         </Button>
       </div>
@@ -76,7 +83,13 @@ export function LightboxSidebar() {
       {/* Header */}
       <div className="p-4 border-b flex items-center justify-between">
         <h2 className="font-semibold text-sm">Workspaces</h2>
-        <Button variant="ghost" size="sm" onClick={() => setIsCollapsed(true)}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsCollapsed(true)}
+          aria-label="Collapse workspaces sidebar"
+          aria-expanded={true}
+        >
           <X className="h-4 w-4" />
         </Button>
       </div>
