@@ -36,18 +36,7 @@ import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupCard } from '@/components/annotation/annotation-popup-card';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { fetchHands } from '@/services/manuscripts';
-import {
-  fetchAnnotationsForImage,
-  createViewerAnnotation,
-  updateViewerAnnotation,
-  deleteViewerAnnotation,
-} from '@/services/annotations';
-import {
-  backendToA9sAnnotation,
-  a9sToBackendFeature,
-  isDbAnnotation,
-  dbIdFromA9s,
-} from '@/lib/anno-mapping';
+import { a9sToBackendFeature, dbIdFromA9s } from '@/lib/anno-mapping';
 
 import {
   canCreateAnnotationKind,
@@ -69,7 +58,6 @@ import type {
   ViewerCapabilities,
   ViewerMode,
   AnnotationCreationKind,
-  AnnotationEditorRecordMap,
   PopupRecord,
 } from '@/types/annotation-viewer';
 
@@ -109,15 +97,7 @@ import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotatio
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { getDefaultHand, sortHandsByPriority } from '@/lib/hand-ordering';
 
-import {
-  buildHydratedEditorRecordMap,
-  countDirtyEditorRecords,
-  markAnnotationCreated,
-  markAnnotationDeleted,
-  markAnnotationUpdated,
-  mergeFailedRecordsIntoRefresh,
-  partitionSaveResults,
-} from '@/lib/manuscript-viewer-editor-state';
+import { useAnnotationEditorState } from '@/hooks/use-annotation-editor-state';
 
 import { useManuscriptPopups } from '@/hooks/use-manuscript-popups';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
@@ -208,21 +188,6 @@ function isShortcutTextEntryTarget(target: EventTarget | null) {
 
   const tagName = target.tagName.toLowerCase();
   return tagName === 'input' || tagName === 'textarea' || tagName === 'select';
-}
-
-function mergeAnnotationUpdate(
-  existing: A9sAnnotation | undefined,
-  updated: A9sAnnotation
-): A9sWithMeta {
-  return {
-    ...(existing ?? updated),
-    ...updated,
-    body: updated.body !== undefined ? updated.body : existing?.body,
-    _meta: {
-      ...(existing as A9sWithMeta | undefined)?._meta,
-      ...(updated as A9sWithMeta)._meta,
-    },
-  } as A9sWithMeta;
 }
 
 function formatSavedAnnotationDescription({
@@ -339,18 +304,6 @@ export default function ManuscriptViewer({
   const [osdReady, setOsdReady] = React.useState(false);
 
   const [initialA9sAnnots, setInitialA9sAnnots] = React.useState<A9sAnnotation[]>([]);
-  // Derived from editorRecords (the single source of truth). The previous
-  // triple-state design — editorRecords + a9sSnapshot + initialA9sAnnots —
-  // kept three parallel copies in sync via 12 dual-update sites and was the
-  // structural cause of several drag-edit / save races. Phase 0.9.
-  const [editorRecords, setEditorRecords] = React.useState<AnnotationEditorRecordMap>({});
-  const a9sSnapshot = React.useMemo<A9sAnnotation[]>(
-    () =>
-      Object.values(editorRecords)
-        .filter((record) => !record.isDeleted)
-        .map((record) => record.annotation),
-    [editorRecords]
-  );
   const [selectedAnnotationIds, setSelectedAnnotationIds] = React.useState<string[]>([]);
 
   const [imageHeight, setImageHeight] = React.useState<number>(0);
@@ -365,11 +318,6 @@ export default function ManuscriptViewer({
   const [hoveredAnnotationId, setHoveredAnnotationId] = React.useState<string | null>(null);
   const initialGraphHandledRef = React.useRef(false);
   const pendingPopupClearRef = React.useRef<number | null>(null);
-
-  const unsavedChanges = React.useMemo(
-    () => countDirtyEditorRecords(editorRecords),
-    [editorRecords]
-  );
 
   const collectionContext = React.useMemo<ViewerCollectionContext | null>(() => {
     if (!manuscriptImage) return null;
@@ -390,17 +338,6 @@ export default function ManuscriptViewer({
     () => (collectionContext ? buildImageCollectionItem(collectionContext) : null),
     [collectionContext]
   );
-
-  const pageAnnotationCollectionItems = React.useMemo(() => {
-    if (!collectionContext || !imageHeight) return [];
-
-    return Object.values(editorRecords)
-      .filter((record) => record.source === 'persisted' && !record.isDeleted)
-      .map((record) =>
-        buildAnnotationCollectionItem(record.annotation, imageHeight, collectionContext)
-      )
-      .filter((item): item is CollectionItem => item !== null);
-  }, [collectionContext, editorRecords, imageHeight]);
 
   const isPageInCollection = pageCollectionItem
     ? isInCollection(pageCollectionItem.id, 'image')
@@ -448,13 +385,6 @@ export default function ManuscriptViewer({
   } = useViewerChromeState({ filterPanelDrag, settingsPanelDrag, canUseSettings });
 
   // ---- Derived values ----
-  const getCanonicalAnnotation = React.useCallback(
-    (annotation: A9sAnnotation): A9sWithMeta => {
-      return (editorRecords[annotation.id]?.annotation ?? annotation) as A9sWithMeta;
-    },
-    [editorRecords]
-  );
-
   const popupAnnotation = activePopupRecord?.annotation ?? null;
 
   const popupSelectedAllograph = React.useMemo(() => {
@@ -467,6 +397,34 @@ export default function ManuscriptViewer({
     () => new Map(allographs.map((a) => [a.id, a.name])),
     [allographs]
   );
+
+  // Phase A.1 — annotation editor state lives in a dedicated hook.
+  // Owns: editorRecords, the per-frame update debounce, save flow.
+  // Returns derived a9sSnapshot, dirtyCount, isDirty, getCanonicalAnnotation.
+  const editorState = useAnnotationEditorState({
+    token,
+    manuscriptImage,
+    imageHeight,
+    allographNameById,
+    viewerCapabilities,
+    canViewEditorialControls,
+    canPersistAnnotationKind,
+  });
+  const { editorRecords, a9sSnapshot, getCanonicalAnnotation } = editorState;
+
+  const unsavedChanges = editorState.dirtyCount;
+
+  const pageAnnotationCollectionItems = React.useMemo(() => {
+    if (!collectionContext || !imageHeight) return [];
+
+    return Object.values(editorRecords)
+      .filter((record) => record.source === 'persisted' && !record.isDeleted)
+      .map((record) =>
+        buildAnnotationCollectionItem(record.annotation, imageHeight, collectionContext)
+      )
+      .filter((item): item is CollectionItem => item !== null);
+  }, [collectionContext, editorRecords, imageHeight]);
+
   const allographLabelById = React.useMemo(
     () => new Map(allographs.map((a) => [a.id, formatAllographLabel(a)])),
     [allographs]
@@ -746,60 +704,24 @@ export default function ManuscriptViewer({
         await viewerApiRef.current?.updateSelectedDraft?.(enriched);
 
         updatePopupById(enriched.id, { annotation: enriched });
-
-        // editorRecords is the single source of truth; a9sSnapshot is
-        // derived from it via useMemo, so no separate snapshot update.
-        setEditorRecords((prev) => markAnnotationCreated(prev, enriched));
+        editorState.markCreated(enriched);
       };
 
       void syncCreatedAnnotation();
     },
-    [decorateCreatedAnnotation, updatePopupById]
+    [decorateCreatedAnnotation, updatePopupById, editorState]
   );
 
-  // Coalesce per-frame Annotorious update fires (one per pointermove during
-  // a modify drag) into a single state commit on the trailing edge. Without
-  // this, dragging a polygon for 30 s caused hundreds of React state updates
-  // and forced the entire viewer to re-render every frame. The 50 ms window
-  // is short enough that a follow-up save picks up the latest shape via the
-  // exhaustive-deps closure refresh.
-  const pendingViewerUpdatesRef = React.useRef<Map<string, A9sAnnotation>>(new Map());
-  const viewerUpdateFlushTimerRef = React.useRef<number | null>(null);
-
-  const flushPendingViewerUpdates = React.useCallback(() => {
-    viewerUpdateFlushTimerRef.current = null;
-    const batch = pendingViewerUpdatesRef.current;
-    if (batch.size === 0) return;
-    pendingViewerUpdatesRef.current = new Map();
-
-    setEditorRecords((prev) => {
-      let next = prev;
-      for (const annotation of batch.values()) {
-        const merged = mergeAnnotationUpdate(next[annotation.id]?.annotation, annotation);
-        next = markAnnotationUpdated(next, merged);
-      }
-      return next;
-    });
-  }, []);
-
+  // The per-frame Annotorious update coalescing buffer + flush-on-unmount
+  // live in useAnnotationEditorState. Forward the OSD modify-drag event
+  // to the hook with debounced=true so 60 fps pointermove fires collapse
+  // into one state commit on the trailing edge.
   const handleViewerUpdate = React.useCallback(
     (annotation: A9sAnnotation) => {
-      pendingViewerUpdatesRef.current.set(annotation.id, annotation);
-      if (viewerUpdateFlushTimerRef.current !== null) return;
-      viewerUpdateFlushTimerRef.current = window.setTimeout(flushPendingViewerUpdates, 50);
+      editorState.markUpdated(annotation, { debounced: true });
     },
-    [flushPendingViewerUpdates]
+    [editorState]
   );
-
-  React.useEffect(() => {
-    return () => {
-      if (viewerUpdateFlushTimerRef.current !== null) {
-        window.clearTimeout(viewerUpdateFlushTimerRef.current);
-      }
-      // Flush on unmount so any buffered shape edits aren't dropped.
-      flushPendingViewerUpdates();
-    };
-  }, [flushPendingViewerUpdates]);
 
   const clearSinglePopupState = React.useCallback(
     (options?: { clearHover?: boolean }) => {
@@ -1187,17 +1109,9 @@ export default function ManuscriptViewer({
         },
       };
 
-      setEditorRecords((prev) => {
-        const reconciled = { ...prev };
-
-        if (latestWithMeta.id !== previousId) {
-          delete reconciled[previousId];
-        }
-
-        return markAnnotationUpdated(reconciled, latestWithMeta);
-      });
+      editorState.replaceLocalAnnotation(previousId, latestWithMeta);
     },
-    [getAnnotationKind, getPopupById, positionNameById]
+    [getAnnotationKind, getPopupById, positionNameById, editorState]
   );
 
   const handleConfirmDraftAnnotation = React.useCallback(
@@ -1221,12 +1135,10 @@ export default function ManuscriptViewer({
 
         updatePopupById(popupId, { annotation: next as A9sWithMeta });
 
-        setEditorRecords((prev) => markAnnotationUpdated(prev, next));
-
-        // Snapshot is derived from editorRecords (updated above); no
-        // separate write needed. Annotorious's own internal state retains
-        // the polygon shape — only metadata changed, and the next select
-        // event recovers canonical metadata via getCanonicalAnnotation.
+        editorState.markUpdated(next);
+        // Annotorious keeps the polygon shape locally; only _meta changed.
+        // The next select event recovers canonical metadata via
+        // editorState.getCanonicalAnnotation, so no OSD re-seed needed.
 
         removePopupById(popupId);
 
@@ -1264,17 +1176,7 @@ export default function ManuscriptViewer({
           // Snapshot derives from editorRecords; only the records map
           // needs updating. We don't re-seed Annotorious — its internal
           // state for these polygons is unchanged (only _meta differs).
-          setEditorRecords((prev) => {
-            let nextRecords = prev;
-
-            nextAnnotations.forEach((annotation) => {
-              if (otherSelectedIdSet.has(annotation.id)) {
-                nextRecords = markAnnotationUpdated(nextRecords, annotation);
-              }
-            });
-
-            return nextRecords;
-          });
+          editorState.markManyUpdated(nextAnnotations.filter((a) => otherSelectedIdSet.has(a.id)));
         }
       }
 
@@ -1303,6 +1205,7 @@ export default function ManuscriptViewer({
       rearmCreateTool,
       removePopupById,
       updatePopupById,
+      editorState,
     ]
   );
 
@@ -1355,13 +1258,13 @@ export default function ManuscriptViewer({
 
   const handleViewerDelete = React.useCallback(
     (annotation: A9sAnnotation, context?: { bulk: boolean }) => {
-      // markAnnotationDeleted handles both draft (removed outright) and
-      // persisted (marked isDeleted=true) cases. The derived a9sSnapshot
-      // filters out isDeleted records, matching what Annotorious already
-      // did locally when it fired the delete event. We deliberately do
-      // NOT touch initialA9sAnnots — bumping that prop re-seeds the OSD
+      // markDeleted handles both draft (removed outright) and persisted
+      // (marked isDeleted=true) cases. The derived a9sSnapshot filters
+      // out isDeleted records, matching what Annotorious already did
+      // locally when it fired the delete event. We deliberately do NOT
+      // touch initialA9sAnnots — bumping that prop re-seeds the OSD
       // layer and drops in-flight selection / mid-draw polygons.
-      setEditorRecords((prev) => markAnnotationDeleted(prev, annotation.id));
+      editorState.markDeleted(annotation.id);
 
       removePopupById(annotation.id);
 
@@ -1369,7 +1272,7 @@ export default function ManuscriptViewer({
         notifyDeletedAnnotations([annotation]);
       }
     },
-    [notifyDeletedAnnotations, removePopupById]
+    [notifyDeletedAnnotations, removePopupById, editorState]
   );
 
   const handleViewerDeleteMany = React.useCallback(
@@ -1484,7 +1387,7 @@ export default function ManuscriptViewer({
       });
 
       setInitialA9sAnnots(refreshed);
-      setEditorRecords(buildHydratedEditorRecordMap(refreshed));
+      editorState.resetFrom(refreshed);
     } catch {
       showActionNotification({
         kind: 'error',
@@ -1500,6 +1403,7 @@ export default function ManuscriptViewer({
     isPublicDemoMode,
     manuscriptImage,
     token,
+    editorState,
   ]);
 
   const handleMoveTool = React.useCallback(() => {
@@ -1536,31 +1440,13 @@ export default function ManuscriptViewer({
   }, [canDeleteAnnotations]);
 
   const handleSave = React.useCallback(async (): Promise<void> => {
-    if (!canPersistAnyAnnotations || !manuscriptImage) return;
-
-    if (!token) {
-      showActionNotification({
-        kind: 'error',
-        title: 'Sign in required',
-        description: 'Please log in again before saving annotations.',
-      });
-      return;
-    }
-
-    const upsertCandidates = Object.values(editorRecords).filter((record) => {
-      if (record.dirtyState !== 'created' && record.dirtyState !== 'updated') {
-        return false;
-      }
-      return canPersistAnnotationKind(viewerCapabilities, getAnnotationKind(record.annotation));
-    });
-
-    const deleteCandidates = Object.values(editorRecords).filter(
-      (record) => record.dirtyState === 'deleted' && record.source === 'persisted'
-    );
-
-    const validationError = upsertCandidates
-      .map((record) => getStandardSaveValidationError(record.annotation))
-      .find((message): message is string => Boolean(message));
+    // Pre-flight validation lives in the viewer because the rules depend
+    // on viewer-side classification (getAnnotationKind uses getCanonicalAnnotation).
+    // The hook stays validation-free.
+    const validationError = Object.values(editorRecords)
+      .filter((r) => r.dirtyState === 'created' || r.dirtyState === 'updated')
+      .map((r) => getStandardSaveValidationError(r.annotation))
+      .find((m): m is string => Boolean(m));
 
     if (validationError) {
       showActionNotification({
@@ -1571,182 +1457,63 @@ export default function ManuscriptViewer({
       return;
     }
 
-    // Pair each candidate record with its API call. Records that can't
-    // produce a task (e.g. persisted-but-missing-id, which shouldn't
-    // happen) are dropped here so partition indices stay 1:1.
-    const upsertTasks: Promise<unknown>[] = [];
-    const upsertRecords: typeof upsertCandidates = [];
-    for (const record of upsertCandidates) {
-      const annotation = record.annotation;
-      const annotationKind = getAnnotationKind(annotation);
-      const isEditorial = annotationKind === 'editorial';
-      const feature = a9sToBackendFeature(annotation, imageHeight);
+    const outcome = await editorState.saveAll();
 
-      const positionsPayload = annotation._meta?.positions ?? [];
-      const graphcomponentPayload = (annotation._meta?.graphcomponentSet ?? []).map((item) => ({
-        component: item.component,
-        features: item.features ?? [],
-      }));
-      const writePayload = isEditorial
-        ? {
-            annotation: feature,
-            annotation_type: 'editorial' as const,
-            allograph: null,
-            hand: null,
-            positions: [],
-            graphcomponent_set: [],
-            note: '',
-            internal_note: getEditorialInternalNote(annotation),
-          }
-        : {
-            annotation: feature,
-            annotation_type: 'image' as const,
-            allograph: annotation._meta?.allographId ?? null,
-            hand: annotation._meta?.handId ?? null,
-            positions: positionsPayload,
-            graphcomponent_set: graphcomponentPayload,
-            note: getStandardAnnotationNote(annotation),
-            internal_note: '',
-          };
-
-      if (record.source === 'persisted' && isDbAnnotation(annotation)) {
-        const id = dbIdFromA9s(annotation);
-        if (id == null) continue;
-        upsertTasks.push(updateViewerAnnotation(token, id, writePayload));
-      } else {
-        upsertTasks.push(
-          createViewerAnnotation(token, {
-            ...writePayload,
-            item_image: Number(manuscriptImage.id),
-          })
-        );
-      }
-      upsertRecords.push(record);
-    }
-
-    const deleteTasks: Promise<unknown>[] = [];
-    const deleteRecords: typeof deleteCandidates = [];
-    for (const record of deleteCandidates) {
-      const id = dbIdFromA9s(record.annotation);
-      if (id == null) continue;
-      deleteTasks.push(deleteViewerAnnotation(token, id));
-      deleteRecords.push(record);
-    }
-
-    // Per-task isolation: one failure used to abort the whole save, which
-    // left succeeded records still marked dirty and re-creating duplicates
-    // on retry. allSettled keeps every commit and lets us report partial
-    // outcomes honestly.
-    const upsertResults = await Promise.allSettled(upsertTasks);
-    const deleteResults = await Promise.allSettled(deleteTasks);
-
-    const partition = partitionSaveResults(
-      upsertRecords,
-      upsertResults,
-      deleteRecords,
-      deleteResults
-    );
-
-    const succeededTotal =
-      partition.succeededUpsertRecordIds.size + partition.succeededDeleteRecordIds.size;
-    const failedTotal = partition.failedUpsertRecordIds.size + partition.failedDeleteRecordIds.size;
-
-    // Only refetch when something actually committed; if every task failed
-    // the server state is unchanged and the local editorRecords already
-    // reflect the user's intent.
-    if (succeededTotal > 0) {
-      try {
-        const refreshedImageAnnotations = await fetchAnnotationsForImage(
-          String(manuscriptImage.id),
-          undefined,
-          'image',
-          token
-        );
-        const refreshedEditorialAnnotations = canViewEditorialControls
-          ? await fetchAnnotationsForImage(
-              String(manuscriptImage.id),
-              undefined,
-              'editorial',
-              token
-            )
-          : [];
-        const refreshed = [...refreshedImageAnnotations, ...refreshedEditorialAnnotations];
-        const mapped = refreshed.map((annotation) =>
-          backendToA9sAnnotation(
-            annotation,
-            imageHeight,
-            annotation.allograph != null ? allographNameById.get(annotation.allograph) : undefined
-          )
-        );
-
-        const failedRecords = [
-          ...upsertRecords.filter((r) => partition.failedUpsertRecordIds.has(r.id)),
-          ...deleteRecords.filter((r) => partition.failedDeleteRecordIds.has(r.id)),
-        ];
-        const nextEditorRecords = mergeFailedRecordsIntoRefresh(
-          buildHydratedEditorRecordMap(mapped),
-          failedRecords
-        );
-        const nextSnapshot = Object.values(nextEditorRecords)
-          .filter((r) => !r.isDeleted)
-          .map((r) => r.annotation);
-
-        viewerApiRef.current?.clearSelection?.();
-        clearPopupCollection();
-
-        // initialA9sAnnots is the OSD re-seed handle: server-assigned ids
-        // for newly-created records mean we need Annotorious to swap its
-        // internal store. a9sSnapshot is derived, so just setting records
-        // and the seed prop is enough.
-        setInitialA9sAnnots(nextSnapshot);
-        setEditorRecords(nextEditorRecords);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to refresh annotations.';
+    switch (outcome.kind) {
+      case 'no-token':
+        showActionNotification({
+          kind: 'error',
+          title: 'Sign in required',
+          description: 'Please log in again before saving annotations.',
+        });
+        return;
+      case 'no-image':
+      case 'no-capability':
+      case 'no-changes':
+        // Silent — the toolbar's Save button is already gated on isDirty,
+        // so reaching these branches means there was nothing meaningful
+        // to commit.
+        return;
+      case 'all-failed':
+        showActionNotification({
+          kind: 'error',
+          title: 'Failed to save annotations',
+          description: outcome.firstError ?? `${outcome.failedCount} could not be saved.`,
+        });
+        return;
+      case 'saved-but-refresh-failed':
         showActionNotification({
           kind: 'error',
           title: 'Saved but could not refresh',
-          description: `${succeededTotal} saved on the server, but reloading failed: ${message}. Reload the page to see the latest state.`,
+          description: `${outcome.succeededCount} saved on the server, but reloading failed: ${outcome.message}. Reload the page to see the latest state.`,
         });
         return;
-      }
+      case 'all-succeeded':
+        viewerApiRef.current?.clearSelection?.();
+        clearPopupCollection();
+        setInitialA9sAnnots(outcome.seed);
+        showActionNotification({
+          kind: 'saved',
+          title: 'Annotations saved',
+          description: formatSavedAnnotationDescription({
+            createdCount: outcome.counts.created,
+            updatedCount: outcome.counts.updated,
+            deletedCount: outcome.counts.deleted,
+          }),
+        });
+        return;
+      case 'partial':
+        viewerApiRef.current?.clearSelection?.();
+        clearPopupCollection();
+        setInitialA9sAnnots(outcome.seed);
+        showActionNotification({
+          kind: 'error',
+          title: 'Some annotations could not be saved',
+          description: `${outcome.succeededCount} saved, ${outcome.failedCount} still unsaved. Try again to retry the failed entries.`,
+        });
+        return;
     }
-
-    if (failedTotal === 0) {
-      showActionNotification({
-        kind: 'saved',
-        title: 'Annotations saved',
-        description: formatSavedAnnotationDescription({
-          createdCount: partition.succeededCreatedCount,
-          updatedCount: partition.succeededUpdatedCount,
-          deletedCount: partition.succeededDeletedCount,
-        }),
-      });
-    } else if (succeededTotal === 0) {
-      showActionNotification({
-        kind: 'error',
-        title: 'Failed to save annotations',
-        description: partition.firstError ?? `${failedTotal} could not be saved.`,
-      });
-    } else {
-      showActionNotification({
-        kind: 'error',
-        title: 'Some annotations could not be saved',
-        description: `${succeededTotal} saved, ${failedTotal} still unsaved. Try again to retry the failed entries.`,
-      });
-    }
-  }, [
-    allographNameById,
-    canPersistAnyAnnotations,
-    canViewEditorialControls,
-    clearPopupCollection,
-    editorRecords,
-    getAnnotationKind,
-    getStandardSaveValidationError,
-    imageHeight,
-    manuscriptImage,
-    token,
-    viewerCapabilities,
-  ]);
+  }, [editorRecords, getStandardSaveValidationError, editorState, clearPopupCollection]);
 
   const handleToggleAnnotations = () => {
     setAnnotationsEnabled((prev) => {
@@ -1877,7 +1644,7 @@ export default function ManuscriptViewer({
     setHands([]);
     setHandsLoaded(false);
     setSelectedHand(undefined);
-    setEditorRecords({});
+    editorState.resetFrom([]);
     setSelectedAnnotationIds([]);
     imageTools.reset();
     // Re-arm the share-URL effect so ?graph=… / ?draft=… is honoured on the
@@ -2109,12 +1876,12 @@ export default function ManuscriptViewer({
 
         if (isMounted) {
           setInitialA9sAnnots(merged);
-          setEditorRecords(buildHydratedEditorRecordMap(merged));
+          editorState.resetFrom(merged);
         }
       } catch {
         if (isMounted) {
           setInitialA9sAnnots([]);
-          setEditorRecords({});
+          editorState.resetFrom([]);
         }
       }
     };
@@ -2131,6 +1898,7 @@ export default function ManuscriptViewer({
     isPublicDemoMode,
     canViewEditorialControls,
     token,
+    editorState,
   ]);
 
   // Legacy DigiPal toolbar shortcuts, adapted to the current viewer tools.
