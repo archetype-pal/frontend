@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ACTIVE_POPUP_Z_INDEX,
+  buildPopupAnnotationPayload,
   buildPositionDetails,
   DEFAULT_SINGLE_POPUP_POSITION,
   getAnnotationKindFromPopupRecord,
@@ -386,5 +387,98 @@ describe('getPopupEditorMode', () => {
     expect(modeFor({ id: 'local-uuid', editorial: false, caps: { canPersistDraft: false } })).toBe(
       'public_demo_draft'
     );
+  });
+});
+
+describe('buildPopupAnnotationPayload', () => {
+  const positionNameById = new Map<number, string>([
+    [1, 'Initial'],
+    [2, 'Medial'],
+  ]);
+
+  function popupWithDrafts(): PopupRecord {
+    return makePopup({
+      annotation: { ...makePopup().annotation, _meta: { allographId: 99 } },
+      draftAllographId: 5,
+      draftAllographText: '  alpha  ',
+      draftHandId: 7,
+      draftNoteText: '  some note  ',
+      draftInternalNoteText: '  editorial commentary  ',
+      draftGraphcomponentSet: [{ component: 11, features: [21] }],
+      draftPositionIds: [1, 2, 99],
+    });
+  }
+
+  it('standard payload pulls draft fields onto popup.annotation', () => {
+    const popup = popupWithDrafts();
+    const out = buildPopupAnnotationPayload({ popup, isEditorial: false, positionNameById });
+    expect(out._meta?.allographId).toBe(5);
+    expect(out._meta?.handId).toBe(7);
+    expect(out._meta?.note).toBe('some note'); // trimmed
+    expect(out._meta?.graphcomponentSet).toEqual([{ component: 11, features: [21] }]);
+    expect(out._meta?.positions).toEqual([1, 2, 99]);
+    expect(out._meta?.positionDetails).toEqual([
+      { id: 1, name: 'Initial' },
+      { id: 2, name: 'Medial' },
+      { id: 99, name: 'Position 99' }, // fallback for unmapped id
+    ]);
+  });
+
+  it('standard payload preserves non-overridden _meta from source', () => {
+    // `annotationType` from source survives; allographId is overridden.
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        _meta: { allographId: 1, annotationType: 'image', internalNote: 'keep me' },
+      },
+      draftAllographId: 5,
+    });
+    const out = buildPopupAnnotationPayload({ popup, isEditorial: false, positionNameById });
+    expect(out._meta?.allographId).toBe(5);
+    expect(out._meta?.annotationType).toBe('image');
+    expect(out._meta?.internalNote).toBe('keep me');
+  });
+
+  it('editorial payload zeros out allograph/hand/components/positions', () => {
+    const popup = popupWithDrafts();
+    const out = buildPopupAnnotationPayload({ popup, isEditorial: true, positionNameById });
+    expect(out._meta?.annotationType).toBe('editorial');
+    expect(out._meta?.allographId).toBeUndefined();
+    expect(out._meta?.handId).toBeUndefined();
+    expect(out._meta?.graphcomponentSet).toEqual([]);
+    expect(out._meta?.positions).toEqual([]);
+    expect(out._meta?.positionDetails).toEqual([]);
+    expect(out._meta?.internalNote).toBe('editorial commentary');
+  });
+
+  it('editorial body is internal-note only', () => {
+    const popup = popupWithDrafts();
+    const out = buildPopupAnnotationPayload({ popup, isEditorial: true, positionNameById });
+    expect(out.body).toBeDefined();
+    // Standard body would include the draftAllographText; editorial path skips it.
+    expect(JSON.stringify(out.body)).not.toContain('alpha');
+  });
+
+  it('explicit base overrides popup.annotation as the merge target', () => {
+    const popup = popupWithDrafts();
+    const otherBase = {
+      id: 'other-draft',
+      type: 'Annotation',
+      target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:9,9,9,9' } },
+      _meta: { allographId: 1, internalNote: 'sticky-from-base' },
+    } as PopupRecord['annotation'];
+    const out = buildPopupAnnotationPayload({
+      popup,
+      isEditorial: false,
+      positionNameById,
+      base: otherBase,
+    });
+    // The base's id + target survive (only _meta and body are rebuilt).
+    expect(out.id).toBe('other-draft');
+    expect(JSON.stringify(out.target)).toContain('9,9,9,9');
+    // Standard payload still applies the popup's draft allograph onto the base's _meta.
+    expect(out._meta?.allographId).toBe(5);
+    // Base's _meta.internalNote survives (not overridden by the standard path).
+    expect(out._meta?.internalNote).toBe('sticky-from-base');
   });
 });

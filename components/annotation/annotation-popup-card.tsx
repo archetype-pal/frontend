@@ -33,6 +33,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
+import { isEditableTarget } from '@/hooks/use-hotkeys';
 import { Input } from '@/components/ui/input';
 import { SearchableSelect, type SearchableSelectHandle } from '@/components/ui/searchable-select';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -134,14 +135,6 @@ function AnnotationMetaSummaryBlock({ metaSummary }: { metaSummary?: AnnotationP
   );
 }
 
-function isTextEntryTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-  if (target.isContentEditable) return true;
-
-  const tagName = target.tagName.toLowerCase();
-  return tagName === 'input' || tagName === 'textarea' || tagName === 'select';
-}
-
 export function AnnotationPopupCard({
   title,
   isDraftAnnotation,
@@ -213,7 +206,7 @@ export function AnnotationPopupCard({
       if (event.repeat) return;
       if (event.altKey || event.ctrlKey || event.metaKey) return;
       if (event.key.toLowerCase() !== 'a') return;
-      if (isTextEntryTarget(event.target)) return;
+      if (isEditableTarget(event.target)) return;
 
       event.preventDefault();
       allographSelectRef.current?.open();

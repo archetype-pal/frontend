@@ -6,8 +6,14 @@ import type {
   PopupRecord,
   ViewerCapabilities,
 } from '@/types/annotation-viewer';
+import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
 import { isDbId } from '@/lib/annotation-popup-utils';
-import { getAllographBodyText, getStandardAnnotationNote } from '@/lib/annotation-notes';
+import {
+  buildEditorialAnnotationBody,
+  buildStandardAnnotationBody,
+  getAllographBodyText,
+  getStandardAnnotationNote,
+} from '@/lib/annotation-notes';
 
 export type PopupPosition = {
   x: number;
@@ -37,6 +43,53 @@ export function buildPositionDetails(
     id,
     name: positionNameById.get(id) ?? `Position ${id}`,
   }));
+}
+
+// Project a popup's draft fields onto an annotation. Three callers used to
+// inline near-identical shape construction (buildStandardAnnotationFromPopup,
+// buildEditorialAnnotationFromPopup, and the inline `next` build in
+// handleSaveDraftAnnotation). The base annotation defaults to the popup's
+// own annotation; pass an explicit base for bulk-apply paths that propagate
+// one popup's metadata to other selected drafts.
+export function buildPopupAnnotationPayload({
+  popup,
+  isEditorial,
+  positionNameById,
+  base,
+}: {
+  popup: PopupRecord;
+  isEditorial: boolean;
+  positionNameById: Map<number, string>;
+  base?: A9sAnnotation;
+}): A9sAnnotation {
+  const source = base ?? popup.annotation;
+  return {
+    ...source,
+    type: 'Annotation',
+    _meta: isEditorial
+      ? {
+          ...source._meta,
+          annotationType: 'editorial',
+          allographId: undefined,
+          handId: undefined,
+          graphcomponentSet: [],
+          positions: [],
+          positionDetails: [],
+          internalNote: popup.draftInternalNoteText.trim(),
+        }
+      : {
+          ...source._meta,
+          allographId: popup.draftAllographId ?? undefined,
+          handId: popup.draftHandId ?? undefined,
+          note: popup.draftNoteText.trim(),
+          graphcomponentSet: popup.draftGraphcomponentSet,
+          positions: popup.draftPositionIds,
+          positionDetails: buildPositionDetails(popup.draftPositionIds, positionNameById),
+        },
+    body: isEditorial
+      ? buildEditorialAnnotationBody(popup.draftInternalNoteText)
+      : buildStandardAnnotationBody(popup.draftAllographText, popup.draftNoteText),
+  };
 }
 
 export function getPopupCapabilities(

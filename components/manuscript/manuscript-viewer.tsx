@@ -68,14 +68,16 @@ import {
   toggleNumericId,
 } from '@/lib/annotation-popup-utils';
 import {
-  buildEditorialAnnotationBody,
   buildStandardAnnotationBody,
   getAllographBodyText,
   getEditorialInternalNote,
   getStandardAnnotationNote,
 } from '@/lib/annotation-notes';
 
-import { buildPositionDetails, getPopupCardViewData } from '@/lib/manuscript-viewer-popup-utils';
+import {
+  buildPopupAnnotationPayload,
+  getPopupCardViewData,
+} from '@/lib/manuscript-viewer-popup-utils';
 
 import {
   fetchImageAllographIds,
@@ -957,21 +959,7 @@ export default function ManuscriptViewer({
     (popupId: string): A9sAnnotation | null => {
       const popup = getPopupById(popupId);
       if (!popup) return null;
-
-      return {
-        ...popup.annotation,
-        type: 'Annotation',
-        _meta: {
-          ...popup.annotation._meta,
-          allographId: popup.draftAllographId ?? undefined,
-          handId: popup.draftHandId ?? undefined,
-          note: popup.draftNoteText.trim(),
-          graphcomponentSet: popup.draftGraphcomponentSet,
-          positions: popup.draftPositionIds,
-          positionDetails: buildPositionDetails(popup.draftPositionIds, positionNameById),
-        },
-        body: buildStandardAnnotationBody(popup.draftAllographText, popup.draftNoteText),
-      };
+      return buildPopupAnnotationPayload({ popup, isEditorial: false, positionNameById });
     },
     [getPopupById, positionNameById]
   );
@@ -980,24 +968,9 @@ export default function ManuscriptViewer({
     (popupId: string): A9sAnnotation | null => {
       const popup = getPopupById(popupId);
       if (!popup) return null;
-
-      return {
-        ...popup.annotation,
-        type: 'Annotation',
-        _meta: {
-          ...popup.annotation._meta,
-          annotationType: 'editorial',
-          allographId: undefined,
-          handId: undefined,
-          graphcomponentSet: [],
-          positions: [],
-          positionDetails: [],
-          internalNote: popup.draftInternalNoteText.trim(),
-        },
-        body: buildEditorialAnnotationBody(popup.draftInternalNoteText),
-      };
+      return buildPopupAnnotationPayload({ popup, isEditorial: true, positionNameById });
     },
-    [getPopupById]
+    [getPopupById, positionNameById]
   );
 
   const getSelectedDraftIdsForPopup = React.useCallback(
@@ -1020,22 +993,13 @@ export default function ManuscriptViewer({
   // awaiting `handleSaveDraftAnnotation` and not race the createAnnotation
   // event that may evict the popup at that id.
   const applyPopupValuesToDraftAnnotationFromRecord = React.useCallback(
-    (annotation: A9sAnnotation, popup: PopupRecord): A9sAnnotation => {
-      return {
-        ...annotation,
-        type: 'Annotation',
-        _meta: {
-          ...annotation._meta,
-          allographId: popup.draftAllographId ?? undefined,
-          handId: popup.draftHandId ?? undefined,
-          note: popup.draftNoteText.trim(),
-          graphcomponentSet: popup.draftGraphcomponentSet,
-          positions: popup.draftPositionIds,
-          positionDetails: buildPositionDetails(popup.draftPositionIds, positionNameById),
-        },
-        body: buildStandardAnnotationBody(popup.draftAllographText, popup.draftNoteText),
-      };
-    },
+    (annotation: A9sAnnotation, popup: PopupRecord): A9sAnnotation =>
+      buildPopupAnnotationPayload({
+        popup,
+        isEditorial: false,
+        positionNameById,
+        base: annotation,
+      }),
     [positionNameById]
   );
 
@@ -1047,33 +1011,11 @@ export default function ManuscriptViewer({
       const previousId = popup.annotation.id;
       const isEditorial = getAnnotationKind(popup.annotation) === 'editorial';
 
-      const next: A9sAnnotation = {
-        ...popup.annotation,
-        type: 'Annotation',
-        _meta: isEditorial
-          ? {
-              ...popup.annotation._meta,
-              annotationType: 'editorial',
-              allographId: undefined,
-              handId: undefined,
-              graphcomponentSet: [],
-              positions: [],
-              positionDetails: [],
-              internalNote: popup.draftInternalNoteText.trim(),
-            }
-          : {
-              ...popup.annotation._meta,
-              allographId: popup.draftAllographId ?? undefined,
-              handId: popup.draftHandId ?? undefined,
-              note: popup.draftNoteText.trim(),
-              graphcomponentSet: popup.draftGraphcomponentSet,
-              positions: popup.draftPositionIds,
-              positionDetails: buildPositionDetails(popup.draftPositionIds, positionNameById),
-            },
-        body: isEditorial
-          ? buildEditorialAnnotationBody(popup.draftInternalNoteText)
-          : buildStandardAnnotationBody(popup.draftAllographText, popup.draftNoteText),
-      };
+      const next = buildPopupAnnotationPayload({
+        popup,
+        isEditorial,
+        positionNameById,
+      });
 
       await viewerApiRef.current?.updateSelectedDraft?.(next);
 

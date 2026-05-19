@@ -16,7 +16,11 @@ export type HotkeyDefinition = {
   handler: (event: KeyboardEvent) => void;
 };
 
-function isEditableTarget(target: EventTarget | null): boolean {
+// Whether a keyboard event target is "user is typing" — an input,
+// textarea, contenteditable, or select. Used both by useHotkeys (to
+// gate global shortcuts) and by per-component keyboard handlers that
+// need to skip when focus is in a form field.
+export function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
   const tag = target.tagName.toLowerCase();
