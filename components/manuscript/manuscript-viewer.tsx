@@ -97,6 +97,7 @@ import {
   type ImageAdjustmentKey,
 } from '@/hooks/use-viewer-image-adjustments';
 import { useViewerChromeState } from '@/hooks/use-viewer-chrome-state';
+import { useHotkeys, type HotkeyDefinition } from '@/hooks/use-hotkeys';
 
 const ManuscriptAnnotorious = dynamic(() => import('./manuscript-annotorious'), { ssr: false });
 const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
@@ -168,14 +169,6 @@ function buildAnnotationCollectionItem(
   } catch {
     return null;
   }
-}
-
-function isShortcutTextEntryTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-  if (target.isContentEditable) return true;
-
-  const tagName = target.tagName.toLowerCase();
-  return tagName === 'input' || tagName === 'textarea' || tagName === 'select';
 }
 
 function formatSavedAnnotationDescription({
@@ -1884,122 +1877,99 @@ export default function ManuscriptViewer({
   ]);
 
   // Legacy DigiPal toolbar shortcuts, adapted to the current viewer tools.
-  React.useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent): void => {
-      const key = event.key.toLowerCase();
-      const canSave = canPersistAnyAnnotations && !isPublicDemoMode && unsavedChanges > 0;
-
-      if ((event.ctrlKey || event.metaKey) && !event.altKey && key === 's') {
-        if (!canPersistAnyAnnotations || isPublicDemoMode) return;
-        event.preventDefault();
-        if (canSave) void handleSave();
-        return;
-      }
-
-      if (isShortcutTextEntryTarget(event.target)) return;
-      if (event.altKey || event.ctrlKey || event.metaKey) return;
-
-      if (key === 'home') {
-        event.preventDefault();
-        void handleDefaultZoom();
-        return;
-      }
-
-      if (key === 'f') {
-        event.preventDefault();
-        handleToggleFullScreen();
-        return;
-      }
-
-      if (key === 'g') {
-        event.preventDefault();
-        handleMoveTool();
-        return;
-      }
-
-      if (key === 'm') {
-        event.preventDefault();
-        handleModifyTool();
-        return;
-      }
-
-      if (key === 'd' || key === 'r') {
-        event.preventDefault();
-        handleCreateAnnotation();
-        return;
-      }
-
-      if (key === 'e') {
-        if (!canCreateEditorialAnnotations) return;
-        event.preventDefault();
-        handleCreateAnnotation('editorial');
-        return;
-      }
-
-      if (key === 's') {
-        if (!canSave) return;
-        event.preventDefault();
-        void handleSave();
-        return;
-      }
-
-      if (key === 'x' || key === 'delete' || (event.shiftKey && key === 'backspace')) {
-        if (!canDeleteAnnotations) return;
-        event.preventDefault();
-        handleDeleteTool();
-        return;
-      }
-
-      if (key === 'z' || key === '+' || key === '=') {
-        event.preventDefault();
-        viewerApiRef.current?.zoomIn();
-        return;
-      }
-
-      if (key === '-' || key === '_') {
-        event.preventDefault();
-        viewerApiRef.current?.zoomOut();
-        return;
-      }
-
-      if (!event.shiftKey) return;
-
-      switch (key) {
-        case 'arrowup':
-          event.preventDefault();
-          viewerApiRef.current?.panByPixels(0, -LEGACY_SHORTCUT_PAN_STEP);
-          break;
-        case 'arrowdown':
-          event.preventDefault();
-          viewerApiRef.current?.panByPixels(0, LEGACY_SHORTCUT_PAN_STEP);
-          break;
-        case 'arrowleft':
-          event.preventDefault();
-          viewerApiRef.current?.panByPixels(-LEGACY_SHORTCUT_PAN_STEP, 0);
-          break;
-        case 'arrowright':
-          event.preventDefault();
-          viewerApiRef.current?.panByPixels(LEGACY_SHORTCUT_PAN_STEP, 0);
-          break;
-      }
+  // Single useHotkeys subscription; each entry knows whether it should fire
+  // inside text inputs (only Cmd/Ctrl+S — the rest skip when typing).
+  const canSaveNow = canPersistAnyAnnotations && !isPublicDemoMode && unsavedChanges > 0;
+  const zoomIn = React.useCallback(() => viewerApiRef.current?.zoomIn(), []);
+  const zoomOut = React.useCallback(() => viewerApiRef.current?.zoomOut(), []);
+  const panBy = React.useCallback((dx: number, dy: number) => {
+    viewerApiRef.current?.panByPixels(dx, dy);
+  }, []);
+  const viewerHotkeys = React.useMemo<HotkeyDefinition[]>(() => {
+    const accept = (handler: () => void) => (event: KeyboardEvent) => {
+      event.preventDefault();
+      handler();
     };
+    const saveIfDirty = (event: KeyboardEvent) => {
+      if (!canPersistAnyAnnotations || isPublicDemoMode) return;
+      event.preventDefault();
+      if (canSaveNow) void handleSave();
+    };
+    const defs: HotkeyDefinition[] = [
+      // Cmd/Ctrl+S — only shortcut that's allowed inside text inputs.
+      { key: 's', metaKey: true, allowInEditable: true, handler: saveIfDirty },
+      { key: 's', ctrlKey: true, allowInEditable: true, handler: saveIfDirty },
+      // Plain S also saves (no modifier). Outside text inputs only.
+      { key: 's', handler: saveIfDirty },
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+      { key: 'Home', handler: accept(() => void handleDefaultZoom()) },
+      { key: 'f', handler: accept(handleToggleFullScreen) },
+      { key: 'g', handler: accept(handleMoveTool) },
+      { key: 'm', handler: accept(handleModifyTool) },
+      { key: 'd', handler: accept(() => handleCreateAnnotation()) },
+      { key: 'r', handler: accept(() => handleCreateAnnotation()) },
+
+      // Zoom in: Z, +, =
+      { key: 'z', handler: accept(zoomIn) },
+      { key: '+', handler: accept(zoomIn) },
+      { key: '=', handler: accept(zoomIn) },
+      // Zoom out: -, _
+      { key: '-', handler: accept(zoomOut) },
+      { key: '_', handler: accept(zoomOut) },
+
+      // Shift-Arrow pan (Shift required so plain arrow keys still belong to OSD)
+      {
+        key: 'ArrowUp',
+        shiftKey: true,
+        handler: accept(() => panBy(0, -LEGACY_SHORTCUT_PAN_STEP)),
+      },
+      {
+        key: 'ArrowDown',
+        shiftKey: true,
+        handler: accept(() => panBy(0, LEGACY_SHORTCUT_PAN_STEP)),
+      },
+      {
+        key: 'ArrowLeft',
+        shiftKey: true,
+        handler: accept(() => panBy(-LEGACY_SHORTCUT_PAN_STEP, 0)),
+      },
+      {
+        key: 'ArrowRight',
+        shiftKey: true,
+        handler: accept(() => panBy(LEGACY_SHORTCUT_PAN_STEP, 0)),
+      },
+    ];
+
+    if (canCreateEditorialAnnotations) {
+      defs.push({ key: 'e', handler: accept(() => handleCreateAnnotation('editorial')) });
+    }
+
+    if (canDeleteAnnotations) {
+      const del = accept(handleDeleteTool);
+      defs.push({ key: 'x', handler: del });
+      defs.push({ key: 'Delete', handler: del });
+      defs.push({ key: 'Backspace', shiftKey: true, handler: del });
+    }
+
+    return defs;
   }, [
     canCreateEditorialAnnotations,
     canDeleteAnnotations,
     canPersistAnyAnnotations,
+    canSaveNow,
     handleCreateAnnotation,
-    handleDeleteTool,
     handleDefaultZoom,
+    handleDeleteTool,
     handleModifyTool,
     handleMoveTool,
     handleSave,
     handleToggleFullScreen,
     isPublicDemoMode,
-    unsavedChanges,
+    panBy,
+    zoomIn,
+    zoomOut,
   ]);
+  useHotkeys(viewerHotkeys);
 
   // open shared ?graph=... annotation on first valid load
   React.useEffect(() => {

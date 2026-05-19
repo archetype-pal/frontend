@@ -29,6 +29,7 @@ export function useSearchHotkeys(opts: {
       {
         key: 'k',
         metaKey: true,
+        allowInEditable: true,
         handler: (event: KeyboardEvent) => {
           event.preventDefault();
           const el = document.getElementById('search-keyword-input') as HTMLInputElement | null;
@@ -38,6 +39,7 @@ export function useSearchHotkeys(opts: {
       {
         key: 'k',
         ctrlKey: true,
+        allowInEditable: true,
         handler: (event: KeyboardEvent) => {
           event.preventDefault();
           const el = document.getElementById('search-keyword-input') as HTMLInputElement | null;
@@ -46,6 +48,7 @@ export function useSearchHotkeys(opts: {
       },
       {
         key: 'Escape',
+        allowInEditable: true,
         handler: () => {
           setDraftKeyword('');
         },

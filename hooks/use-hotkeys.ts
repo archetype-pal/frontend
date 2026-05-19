@@ -8,6 +8,11 @@ export type HotkeyDefinition = {
   ctrlKey?: boolean;
   metaKey?: boolean;
   shiftKey?: boolean;
+  /** When true, the hotkey fires even if the focused element is an input,
+   * textarea, contenteditable, or select. Default false. Use sparingly —
+   * mostly for global commit shortcuts like Cmd+S, Cmd+Enter, Cmd+K, or
+   * Escape that should escape from form fields. */
+  allowInEditable?: boolean;
   handler: (event: KeyboardEvent) => void;
 };
 
@@ -33,9 +38,7 @@ export function useHotkeys(definitions: HotkeyDefinition[]) {
         if ((def.ctrlKey ?? false) !== event.ctrlKey) continue;
         if ((def.metaKey ?? false) !== event.metaKey) continue;
         if ((def.shiftKey ?? false) !== event.shiftKey) continue;
-        if (targetIsEditable && !(def.key === 'Escape' || (def.metaKey && def.key === 'k'))) {
-          continue;
-        }
+        if (targetIsEditable && !def.allowInEditable) continue;
         def.handler(event);
         break;
       }
