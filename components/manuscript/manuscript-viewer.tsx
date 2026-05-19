@@ -98,6 +98,7 @@ import { formatAllographLabel } from '@/lib/allograph-labels';
 import { getDefaultHand, sortHandsByPriority } from '@/lib/hand-ordering';
 
 import { useAnnotationEditorState } from '@/hooks/use-annotation-editor-state';
+import { useViewerEditorUiState } from '@/hooks/use-viewer-editor-ui-state';
 
 import { useManuscriptPopups } from '@/hooks/use-manuscript-popups';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
@@ -111,8 +112,6 @@ import { useViewerChromeState } from '@/hooks/use-viewer-chrome-state';
 const ManuscriptAnnotorious = dynamic(() => import('./manuscript-annotorious'), { ssr: false });
 const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
 const LEGACY_SHORTCUT_PAN_STEP = 60;
-
-type ActiveViewerTool = 'move' | 'modify' | 'draw' | 'delete';
 
 function annotationCountLabel(count: number): string {
   return `${count} annotation${count === 1 ? '' : 's'}`;
@@ -280,10 +279,6 @@ export default function ManuscriptViewer({
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  const [filteredAllograph, setFilteredAllograph] = React.useState<Allograph | undefined>(
-    undefined
-  );
-  const [selectedHand, setSelectedHand] = React.useState<HandType | null | undefined>(undefined);
   const [allographs, setAllographs] = React.useState<Allograph[]>([]);
   const [imageAllographIds, setImageAllographIds] = React.useState<number[]>([]);
 
@@ -307,15 +302,9 @@ export default function ManuscriptViewer({
   const [selectedAnnotationIds, setSelectedAnnotationIds] = React.useState<string[]>([]);
 
   const [imageHeight, setImageHeight] = React.useState<number>(0);
-  const [activeTool, setActiveTool] = React.useState<ActiveViewerTool>('move');
-  const [currentCreationKind, setCurrentCreationKind] =
-    React.useState<AnnotationCreationKind>('public');
   const imageTools = useViewerImageAdjustments();
   const { adjustments: imageAdjustments, hasChanges: hasImageToolChanges } = imageTools;
 
-  const [hoveredAllograph, setHoveredAllograph] = React.useState<Allograph | undefined>(undefined);
-  const [isAllographModalOpen, setIsAllographModalOpen] = React.useState(false);
-  const [hoveredAnnotationId, setHoveredAnnotationId] = React.useState<string | null>(null);
   const initialGraphHandledRef = React.useRef(false);
   const pendingPopupClearRef = React.useRef<number | null>(null);
 
@@ -443,6 +432,36 @@ export default function ManuscriptViewer({
 
     return new Map<number, string>(entries);
   }, [allographs]);
+
+  // Phase A.2 — editor-side transient UI state (active tool, creation kind,
+  // allograph picker, hand selection, hovered annotation) + the three
+  // invariants that gate them (capability-kind fallback, hand reset on
+  // image change, modal auto-close when no context allograph).
+  const editorUi = useViewerEditorUiState({
+    viewerCapabilities,
+    handsForThisImage,
+    popupSelectedAllograph,
+    onAllographModalAutoClose: React.useCallback(
+      () => allographDialogDrag.reset(),
+      [allographDialogDrag]
+    ),
+  });
+  const {
+    activeTool,
+    setActiveTool,
+    currentCreationKind,
+    setCurrentCreationKind,
+    filteredAllograph,
+    setFilteredAllograph,
+    hoveredAllograph,
+    setHoveredAllograph,
+    isAllographModalOpen,
+    setIsAllographModalOpen,
+    selectedHand,
+    setSelectedHand,
+    hoveredAnnotationId,
+    setHoveredAnnotationId,
+  } = editorUi;
 
   const defaultHand = React.useMemo(() => getDefaultHand(handsForThisImage), [handsForThisImage]);
   const activeAssignmentHand =
@@ -731,7 +750,7 @@ export default function ManuscriptViewer({
         setHoveredAnnotationId(null);
       }
     },
-    [clearPopupCollection]
+    [clearPopupCollection, setHoveredAnnotationId]
   );
 
   const cancelPendingPopupClear = React.useCallback(() => {
@@ -865,6 +884,8 @@ export default function ManuscriptViewer({
       openPopupCollectionFromAnnotation,
       activeAssignmentHand?.id,
       viewerSettings.allowMultipleBoxes,
+      setFilteredAllograph,
+      setHoveredAnnotationId,
     ]
   );
 
@@ -924,7 +945,7 @@ export default function ManuscriptViewer({
     window.setTimeout(() => {
       viewerApiRef.current?.enableDraw();
     }, 0);
-  }, []);
+  }, [setActiveTool]);
 
   const closeDraftPopup = React.useCallback(
     (popupId: string) => {
@@ -944,7 +965,14 @@ export default function ManuscriptViewer({
         setActiveTool('move');
       }
     },
-    [activeTool, cancelPendingPopupClear, getPopupById, removePopupById, rearmCreateTool]
+    [
+      activeTool,
+      cancelPendingPopupClear,
+      getPopupById,
+      removePopupById,
+      rearmCreateTool,
+      setActiveTool,
+    ]
   );
 
   const handleCloseSelectedAnnotation = React.useCallback(
@@ -1206,6 +1234,7 @@ export default function ManuscriptViewer({
       removePopupById,
       updatePopupById,
       editorState,
+      setActiveTool,
     ]
   );
 
@@ -1292,13 +1321,16 @@ export default function ManuscriptViewer({
     }
   }, [toggleFullScreen]);
 
-  const handleExposeApi = React.useCallback((api: ViewerApi) => {
-    viewerApiRef.current = api;
-    setOsdReady(true);
+  const handleExposeApi = React.useCallback(
+    (api: ViewerApi) => {
+      viewerApiRef.current = api;
+      setOsdReady(true);
 
-    api.enablePan();
-    setActiveTool('move');
-  }, []);
+      api.enablePan();
+      setActiveTool('move');
+    },
+    [setActiveTool]
+  );
 
   const handleRotateViewer = React.useCallback(
     (degrees: number) => {
@@ -1409,7 +1441,7 @@ export default function ManuscriptViewer({
   const handleMoveTool = React.useCallback(() => {
     viewerApiRef.current?.enablePan();
     setActiveTool('move');
-  }, []);
+  }, [setActiveTool]);
 
   const handleModifyTool = React.useCallback(() => {
     cancelPendingPopupClear();
@@ -1417,7 +1449,7 @@ export default function ManuscriptViewer({
     dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
     viewerApiRef.current?.enableModify();
     setActiveTool('modify');
-  }, [cancelPendingPopupClear, clearPopupCollection]);
+  }, [cancelPendingPopupClear, clearPopupCollection, setActiveTool]);
 
   const handleCreateAnnotation = React.useCallback(
     (kind?: AnnotationCreationKind) => {
@@ -1429,7 +1461,7 @@ export default function ManuscriptViewer({
       viewerApiRef.current?.enableDraw();
       setActiveTool('draw');
     },
-    [viewerCapabilities]
+    [viewerCapabilities, setActiveTool, setCurrentCreationKind]
   );
 
   const handleDeleteTool = React.useCallback(() => {
@@ -1437,7 +1469,7 @@ export default function ManuscriptViewer({
 
     viewerApiRef.current?.enableDelete();
     setActiveTool('delete');
-  }, [canDeleteAnnotations]);
+  }, [canDeleteAnnotations, setActiveTool]);
 
   const handleSave = React.useCallback(async (): Promise<void> => {
     // Pre-flight validation lives in the viewer because the rules depend
@@ -1539,7 +1571,7 @@ export default function ManuscriptViewer({
         allographDialogDrag.reset();
       }
     },
-    [allographDialogDrag]
+    [allographDialogDrag, setIsAllographModalOpen]
   );
 
   const handleToggleAllographFilter = React.useCallback((allographId: number) => {
@@ -1631,14 +1663,7 @@ export default function ManuscriptViewer({
 
   // ---- Effects ----
 
-  React.useEffect(() => {
-    if (canCreateAnnotationKind(viewerCapabilities, currentCreationKind)) return;
-
-    const fallbackKind = getDefaultAnnotationCreationKind(viewerCapabilities);
-    if (fallbackKind) {
-      setCurrentCreationKind(fallbackKind);
-    }
-  }, [viewerCapabilities, currentCreationKind]);
+  // (currentCreationKind fallback invariant moved into useViewerEditorUiState — Phase A.2)
 
   React.useEffect(() => {
     setHands([]);
@@ -1693,12 +1718,7 @@ export default function ManuscriptViewer({
     };
   }, [manuscriptImage?.id, manuscriptImage?.item_part]);
 
-  React.useEffect(() => {
-    if (!selectedHand) return;
-    if (handsForThisImage.some((hand) => hand.id === selectedHand.id)) return;
-
-    setSelectedHand(undefined);
-  }, [handsForThisImage, selectedHand]);
+  // (selectedHand reset invariant moved into useViewerEditorUiState — Phase A.2)
 
   React.useEffect(() => {
     if (allographFiltersInitialized) return;
@@ -1719,16 +1739,7 @@ export default function ManuscriptViewer({
     availableAllographFilterIds,
   ]);
 
-  React.useEffect(() => {
-    if (!isAllographModalOpen) return;
-
-    const hasContextAllograph = Boolean(filteredAllograph || popupSelectedAllograph);
-
-    if (!hasContextAllograph) {
-      setIsAllographModalOpen(false);
-      allographDialogDrag.reset();
-    }
-  }, [isAllographModalOpen, filteredAllograph, popupSelectedAllograph, allographDialogDrag]);
+  // (allograph-modal auto-close invariant moved into useViewerEditorUiState — Phase A.2)
 
   React.useEffect(() => {
     if (handFiltersInitialized) return;
