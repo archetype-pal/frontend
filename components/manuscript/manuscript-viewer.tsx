@@ -22,7 +22,6 @@ import { useAuth } from '@/contexts/auth-context';
 import { useCollection, type CollectionItem } from '@/contexts/collection-context';
 
 import { getIiifBaseUrl } from '@/utils/iiif';
-import { DraggablePopupLayer } from './draggable-popup-layer';
 import { Toolbar } from './toolbar';
 import { AnnotationFilterPanel } from './annotation-filter-panel';
 import { AnnotationSettingsPanel } from './annotation-settings-panel';
@@ -33,7 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnnotationHeader } from '@/components/annotation/annotation-header';
-import { AnnotationPopupCard } from '@/components/annotation/annotation-popup-card';
+import { AnnotationPopupLayer } from '@/components/annotation/annotation-popup-layer';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { fetchHands } from '@/services/manuscripts';
 import { a9sToBackendFeature, dbIdFromA9s } from '@/lib/anno-mapping';
@@ -51,7 +50,6 @@ import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 import type { Manuscript } from '@/types/manuscript';
 import type {
-  A9sGraphComponent,
   A9sWithMeta,
   DraftSharePayload,
   AnnotationVisibilityFilters,
@@ -77,16 +75,7 @@ import {
   getStandardAnnotationNote,
 } from '@/lib/annotation-notes';
 
-import {
-  buildPositionDetails,
-  getAnnotationKindFromPopupRecord,
-  getPopupCapabilities,
-  getPopupCardViewData,
-  getPopupInitialPosition,
-  getPopupMetaSummary,
-  getPopupZIndex,
-  getPopupEditorMode,
-} from '@/lib/manuscript-viewer-popup-utils';
+import { buildPositionDetails, getPopupCardViewData } from '@/lib/manuscript-viewer-popup-utils';
 
 import {
   fetchImageAllographIds,
@@ -413,6 +402,18 @@ export default function ManuscriptViewer({
       )
       .filter((item): item is CollectionItem => item !== null);
   }, [collectionContext, editorRecords, imageHeight]);
+
+  // Closes over collectionContext + imageHeight so AnnotationPopupLayer
+  // doesn't need to know either type. Returns null when collection items
+  // can't be constructed (no context, no image height, or the annotation
+  // has no db id).
+  const getCollectionItemFor = React.useCallback(
+    (annotation: A9sAnnotation): CollectionItem | null => {
+      if (!collectionContext || !imageHeight) return null;
+      return buildAnnotationCollectionItem(annotation, imageHeight, collectionContext);
+    },
+    [collectionContext, imageHeight]
+  );
 
   const allographLabelById = React.useMemo(
     () => new Map(allographs.map((a) => [a.id, formatAllographLabel(a)])),
@@ -795,40 +796,10 @@ export default function ManuscriptViewer({
     [updatePopupById]
   );
 
-  const handleDraftAllographTextChange = React.useCallback(
-    (popupId: string, value: string) => {
-      updatePopupById(popupId, { draftAllographText: value });
-    },
-    [updatePopupById]
-  );
-
-  const handleDraftGraphcomponentSetChange = React.useCallback(
-    (popupId: string, value: A9sGraphComponent[]) => {
-      updatePopupById(popupId, { draftGraphcomponentSet: value });
-    },
-    [updatePopupById]
-  );
-
-  const handleDraftPositionIdsChange = React.useCallback(
-    (popupId: string, value: number[]) => {
-      updatePopupById(popupId, { draftPositionIds: value });
-    },
-    [updatePopupById]
-  );
-
-  const handleDraftNoteTextChange = React.useCallback(
-    (popupId: string, value: string) => {
-      updatePopupById(popupId, { draftNoteText: value });
-    },
-    [updatePopupById]
-  );
-
-  const handleDraftInternalNoteTextChange = React.useCallback(
-    (popupId: string, value: string) => {
-      updatePopupById(popupId, { draftInternalNoteText: value });
-    },
-    [updatePopupById]
-  );
+  // Trivial draft-field handlers (text, note, internal note, positions,
+  // graphcomponentSet) moved into AnnotationPopupLayer where they're
+  // inlined via updatePopupById. Only the non-trivial cascade — change
+  // allograph clears related fields — stays here.
 
   const openSinglePopupFromAnnotation = React.useCallback(
     (annotation: A9sWithMeta | null, options?: { clearHover?: boolean }) => {
@@ -2512,123 +2483,34 @@ export default function ManuscriptViewer({
               exposeApi={handleExposeApi}
             />
 
-            {visiblePopupRecords.map((popupRecord, index) => {
-              const popupCard = getPopupCardViewData(popupRecord, allographNameById);
-              const popupCapabilities = getPopupCapabilities(popupRecord, viewerCapabilities);
-              const popupEditorMode = getPopupEditorMode(popupRecord, popupCapabilities);
-              const annotationKind = getAnnotationKindFromPopupRecord(popupRecord);
-              const metaSummary = getPopupMetaSummary(
-                popupRecord,
-                allographLabelById,
-                handNameById
-              );
-              const isActive = popupRecord.id === activePopupId;
-              const { x: initialX, y: initialY } = getPopupInitialPosition(
-                index,
-                viewerSettings.allowMultipleBoxes,
-                singlePopupPosition
-              );
-              const zIndex = getPopupZIndex(index, isActive);
-              const popupCollectionAnnotation = getCanonicalAnnotation(popupRecord.annotation);
-              const popupCollectionItem =
-                collectionContext && imageHeight
-                  ? buildAnnotationCollectionItem(
-                      popupCollectionAnnotation,
-                      imageHeight,
-                      collectionContext
-                    )
-                  : null;
-              const isPopupAnnotationInCollection = popupCollectionItem
-                ? isInCollection(popupCollectionItem.id, 'graph')
-                : false;
-
-              return (
-                <DraggablePopupLayer
-                  key={popupRecord.id || `popup-${index}`}
-                  popupId={popupRecord.id}
-                  initialX={initialX}
-                  initialY={initialY}
-                  zIndex={zIndex}
-                  onActivate={handleActivatePopup}
-                  onPositionChange={handlePopupPositionChange}
-                >
-                  {({ popupTransform, dragHandleProps, zIndex, onPointerDownCapture }) => (
-                    <AnnotationPopupCard
-                      title={popupCard.title}
-                      isDraftAnnotation={popupCard.isDraft}
-                      annotationKind={annotationKind}
-                      popupCapabilities={popupCapabilities}
-                      popupEditorMode={popupEditorMode}
-                      draftInternalNoteText={popupRecord.draftInternalNoteText}
-                      onDraftInternalNoteTextChange={(value) =>
-                        handleDraftInternalNoteTextChange(popupRecord.id, value)
-                      }
-                      metaSummary={metaSummary}
-                      popupTransform={popupTransform}
-                      dragHandleProps={dragHandleProps}
-                      zIndex={zIndex}
-                      onPointerDownCapture={onPointerDownCapture}
-                      isActive={isActive}
-                      isShareUrlVisible={popupRecord.isShareUrlVisible}
-                      shareUrl={popupRecord.shareUrl}
-                      onCopyShareUrl={() => void handleCopyShareUrl(popupRecord.id)}
-                      onHideShareUrl={() => handleHideShareUrl(popupRecord.id)}
-                      onShareSelectedAnnotation={() =>
-                        handleShareSelectedAnnotation(popupRecord.id)
-                      }
-                      onCloseSelectedAnnotation={() =>
-                        handleCloseSelectedAnnotation(popupRecord.id)
-                      }
-                      isAnnotationInCollection={isPopupAnnotationInCollection}
-                      onToggleAnnotationCollection={
-                        popupCollectionItem
-                          ? () => handleToggleAnnotationCollection(popupCollectionAnnotation)
-                          : undefined
-                      }
-                      draftAllographText={popupRecord.draftAllographText}
-                      onDraftAllographTextChange={(value) =>
-                        handleDraftAllographTextChange(popupRecord.id, value)
-                      }
-                      draftNoteText={popupRecord.draftNoteText}
-                      onDraftNoteTextChange={(value) =>
-                        handleDraftNoteTextChange(popupRecord.id, value)
-                      }
-                      allographOptions={allographs}
-                      handOptions={handsForThisImage.map((hand) => ({
-                        id: hand.id,
-                        name: hand.name,
-                      }))}
-                      draftAllographId={popupRecord.draftAllographId}
-                      draftHandId={popupRecord.draftHandId}
-                      draftGraphcomponentSet={popupRecord.draftGraphcomponentSet}
-                      draftPositionIds={popupRecord.draftPositionIds}
-                      onDraftPositionIdsChange={(value) =>
-                        handleDraftPositionIdsChange(popupRecord.id, value)
-                      }
-                      onDraftGraphcomponentSetChange={(value) =>
-                        handleDraftGraphcomponentSetChange(popupRecord.id, value)
-                      }
-                      onDraftAllographIdChange={(value) =>
-                        void handleDraftAllographIdChange(popupRecord.id, value)
-                      }
-                      onDraftHandIdChange={(value) =>
-                        void handleDraftHandIdChange(popupRecord.id, value)
-                      }
-                      onCancelDraftAnnotation={() => handleCancelDraftAnnotation(popupRecord.id)}
-                      onConfirmDraftAnnotation={() => {
-                        void handleConfirmDraftAnnotation(popupRecord.id);
-                      }}
-                      popupTab={popupRecord.popupTab}
-                      onPopupTabChange={(value) => handlePopupTabChange(popupRecord.id, value)}
-                      hasPositionsTab={popupCard.hasPositionsTab}
-                      selectedComponentGroups={popupCard.selectedComponentGroups}
-                      selectedPositionLabels={popupCard.selectedPositionLabels}
-                      selectedNotes={popupCard.selectedNotes}
-                    />
-                  )}
-                </DraggablePopupLayer>
-              );
-            })}
+            <AnnotationPopupLayer
+              visiblePopupRecords={visiblePopupRecords}
+              activePopupId={activePopupId}
+              viewerCapabilities={viewerCapabilities}
+              allographs={allographs}
+              allographNameById={allographNameById}
+              allographLabelById={allographLabelById}
+              handsForThisImage={handsForThisImage}
+              handNameById={handNameById}
+              allowMultipleBoxes={viewerSettings.allowMultipleBoxes}
+              singlePopupPosition={singlePopupPosition}
+              getCollectionItemFor={getCollectionItemFor}
+              isInCollection={isInCollection}
+              getCanonicalAnnotation={getCanonicalAnnotation}
+              onActivatePopup={handleActivatePopup}
+              onPopupPositionChange={handlePopupPositionChange}
+              updatePopupById={updatePopupById}
+              onDraftAllographIdChange={handleDraftAllographIdChange}
+              onDraftHandIdChange={handleDraftHandIdChange}
+              onPopupTabChange={handlePopupTabChange}
+              onCopyShareUrl={(id) => void handleCopyShareUrl(id)}
+              onHideShareUrl={handleHideShareUrl}
+              onShareSelectedAnnotation={handleShareSelectedAnnotation}
+              onCloseSelectedAnnotation={handleCloseSelectedAnnotation}
+              onToggleAnnotationCollection={handleToggleAnnotationCollection}
+              onCancelDraftAnnotation={handleCancelDraftAnnotation}
+              onConfirmDraftAnnotation={handleConfirmDraftAnnotation}
+            />
           </div>
         </div>
       </div>
