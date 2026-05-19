@@ -383,7 +383,12 @@ export default function ManuscriptViewer({
     canViewEditorialControls,
     canPersistAnnotationKind,
   });
-  const { editorRecords, a9sSnapshot, getCanonicalAnnotation } = editorState;
+  const {
+    editorRecords,
+    a9sSnapshot,
+    getCanonicalAnnotation,
+    resetFrom: resetEditorFrom,
+  } = editorState;
 
   const unsavedChanges = editorState.dirtyCount;
 
@@ -1793,12 +1798,12 @@ export default function ManuscriptViewer({
 
         if (isMounted) {
           setInitialA9sAnnots(merged);
-          editorState.resetFrom(merged);
+          resetEditorFrom(merged);
         }
       } catch {
         if (isMounted) {
           setInitialA9sAnnots([]);
-          editorState.resetFrom([]);
+          resetEditorFrom([]);
         }
       }
     };
@@ -1815,7 +1820,7 @@ export default function ManuscriptViewer({
     isPublicDemoMode,
     canViewEditorialControls,
     token,
-    editorState,
+    resetEditorFrom,
   ]);
 
   // Legacy DigiPal toolbar shortcuts, adapted to the current viewer tools.
