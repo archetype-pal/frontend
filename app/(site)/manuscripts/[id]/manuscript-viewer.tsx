@@ -178,7 +178,7 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
                 <div className="mt-2 text-center">
                   <span className="text-foreground">{image.locus}</span>
                   <div className="text-sm text-muted-foreground">
-                    {image.number_of_annotations} Annotations
+                    {image.number_of_image_annotations ?? image.number_of_annotations} Annotations
                   </div>
                 </div>
               </div>

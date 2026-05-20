@@ -54,6 +54,7 @@ export interface ManuscriptImage {
   thumbnail: string;
   locus: string;
   number_of_annotations: number;
+  number_of_image_annotations?: number;
   texts: {
     type: string;
     content: string;
