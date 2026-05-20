@@ -12,6 +12,7 @@ import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { getImageDetailUrl as buildImageDetailUrl } from '@/lib/media-url';
+import { GraphDetailLink } from '@/components/search/graph-detail-link';
 import {
   useCollectionViewState,
   type FilterType,
@@ -35,15 +36,7 @@ function getImageDetailUrl(item: CollectionItem): string {
 }
 
 /** Card for a graph item: thumbnail URL with bounds (no upscaling). */
-function CollectionGraphCard({
-  item,
-  getUrl,
-  title,
-}: {
-  item: CollectionItem;
-  getUrl: (item: CollectionItem) => string;
-  title: string;
-}) {
+function CollectionGraphCard({ item, title }: { item: CollectionItem; title: string }) {
   const infoUrl = (item.image_iiif || '').trim();
   const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined);
 
@@ -52,7 +45,7 @@ function CollectionGraphCard({
       <div className="relative aspect-4/3 bg-secondary overflow-hidden">
         {imageUrl ? (
           <>
-            <Link href={getUrl(item)} className="block w-full h-full">
+            <GraphDetailLink graph={item} className="block w-full h-full">
               <Image
                 src={imageUrl}
                 alt={title}
@@ -61,13 +54,16 @@ function CollectionGraphCard({
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw"
                 unoptimized
               />
-            </Link>
+            </GraphDetailLink>
             <div className="absolute inset-0 bg-linear-to-t from-black/0 via-black/0 to-black/0 group-hover:from-black/5 group-hover:via-black/0 group-hover:to-black/0 transition-all duration-300 pointer-events-none" />
           </>
         ) : (
-          <div className="bg-linear-to-br from-secondary to-muted w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+          <GraphDetailLink
+            graph={item}
+            className="bg-linear-to-br from-secondary to-muted w-full h-full flex items-center justify-center text-xs text-muted-foreground"
+          >
             {infoUrl ? '…' : 'No Image'}
-          </div>
+          </GraphDetailLink>
         )}
         <div className="absolute top-2 right-2 z-10 flex gap-1">
           <OpenLightboxButton
@@ -138,9 +134,7 @@ function CollectionPageContent() {
     const title = getItemTitle(item);
 
     if (type === 'graph') {
-      return (
-        <CollectionGraphCard key={`graph-${item.id}`} item={item} getUrl={getUrl} title={title} />
-      );
+      return <CollectionGraphCard key={`graph-${item.id}`} item={item} title={title} />;
     }
 
     const imageUrl = getImageItemThumbnailUrl(item);

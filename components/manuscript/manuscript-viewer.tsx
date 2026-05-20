@@ -151,6 +151,8 @@ function buildAnnotationCollectionItem(
   imageHeight: number,
   ctx: ViewerCollectionContext
 ): CollectionItem | null {
+  if ((annotation as A9sWithMeta)._meta?.annotationType === 'editorial') return null;
+
   const graphId = dbIdFromA9s(annotation);
   if (graphId == null) return null;
 
@@ -161,6 +163,7 @@ function buildAnnotationCollectionItem(
       item_part: ctx.itemPartId,
       item_image: ctx.itemImageId,
       image_iiif: ctx.iiifImage,
+      annotation_type: 'image',
       coordinates: JSON.stringify(a9sToBackendFeature(annotation, imageHeight)),
       shelfmark: ctx.shelfmark,
       locus: ctx.locus,

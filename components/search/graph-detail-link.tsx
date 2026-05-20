@@ -3,42 +3,42 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getGraphDetailUrl, resolveGraphDetailUrl } from '@/lib/media-url';
-import type { GraphListItem } from '@/types/search';
+import { getGraphDetailUrl, resolveGraphDetailUrl, type GraphRouteInput } from '@/lib/media-url';
 
 type GraphDetailLinkProps = {
-  graph: GraphListItem;
+  graph: GraphRouteInput;
   className?: string;
   children: React.ReactNode;
   title?: string;
 };
 
-const resolvedHrefCache = new Map<number, string | null>();
-const pendingHrefCache = new Map<number, Promise<string | null>>();
+const resolvedHrefCache = new Map<string, string | null>();
+const pendingHrefCache = new Map<string, Promise<string | null>>();
 
-async function resolveGraphHrefCached(graph: GraphListItem): Promise<string | null> {
+async function resolveGraphHrefCached(graph: GraphRouteInput): Promise<string | null> {
   const directHref = getGraphDetailUrl(graph);
   if (directHref) return directHref;
 
-  if (resolvedHrefCache.has(graph.id)) {
-    return resolvedHrefCache.get(graph.id) ?? null;
+  const cacheKey = String(graph.id);
+  if (resolvedHrefCache.has(cacheKey)) {
+    return resolvedHrefCache.get(cacheKey) ?? null;
   }
 
-  const pending = pendingHrefCache.get(graph.id);
+  const pending = pendingHrefCache.get(cacheKey);
   if (pending) return pending;
 
   const request = resolveGraphDetailUrl(graph)
     .then((href) => {
-      resolvedHrefCache.set(graph.id, href ?? null);
-      pendingHrefCache.delete(graph.id);
+      resolvedHrefCache.set(cacheKey, href ?? null);
+      pendingHrefCache.delete(cacheKey);
       return href ?? null;
     })
     .catch(() => {
-      pendingHrefCache.delete(graph.id);
+      pendingHrefCache.delete(cacheKey);
       return null;
     });
 
-  pendingHrefCache.set(graph.id, request);
+  pendingHrefCache.set(cacheKey, request);
   return request;
 }
 

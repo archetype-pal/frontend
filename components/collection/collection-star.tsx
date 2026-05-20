@@ -14,6 +14,7 @@ export interface CollectionStarProps {
     item_image?: number | null;
     image_iiif?: string;
     coordinates?: string;
+    annotation_type?: string | null;
     shelfmark?: string;
     locus?: string;
     repository_name?: string;
@@ -45,6 +46,7 @@ export function CollectionStar({
     if (isCollected) {
       removeItem(itemId, itemType);
     } else {
+      if (itemType === 'graph' && item.annotation_type === 'editorial') return;
       addItem({
         ...item,
         id: itemId,
