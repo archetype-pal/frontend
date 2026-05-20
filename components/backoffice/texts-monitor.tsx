@@ -27,6 +27,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { TextsList } from '@/components/backoffice/texts-list';
 import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 import {
@@ -104,11 +105,15 @@ export function TextsMonitor() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <ActivitySpark activity={data.activity} />
+            <ActivitySpark activity={data.activity} lastEditAt={data.recent[0]?.modified ?? null} />
             <LanguageBreakdown languages={data.languages} />
           </div>
 
           <RecentEdits rows={data.recent} />
+
+          <div id="list" className="scroll-mt-4">
+            <TextsList />
+          </div>
         </>
       ) : (
         <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
@@ -181,6 +186,10 @@ const KpiStrip = memo(function KpiStrip({
       value: matrix.totals.Transcription,
       sub: `${matrix.empty_by_kind.Transcription} empty`,
       tone: 'transcription' as const,
+      // The KPI is a corpus-wide aggregate; clicking it should filter the
+      // list to just that kind so editors can jump from "X transcriptions"
+      // to the actual rows in one move.
+      href: '?kind=Transcription#list',
     },
     {
       icon: BookOpenText,
@@ -188,6 +197,7 @@ const KpiStrip = memo(function KpiStrip({
       value: matrix.totals.Translation,
       sub: `${matrix.empty_by_kind.Translation} empty`,
       tone: 'translation' as const,
+      href: '?kind=Translation#list',
     },
     {
       icon: Sparkles,
@@ -195,6 +205,7 @@ const KpiStrip = memo(function KpiStrip({
       value: pct(coverage.with_either, coverage.images_total),
       sub: `${coverage.with_either.toLocaleString()} of ${coverage.images_total.toLocaleString()} images`,
       tone: 'neutral' as const,
+      href: undefined,
     },
     {
       icon: Activity,
@@ -202,20 +213,21 @@ const KpiStrip = memo(function KpiStrip({
       value: health.average_annotations_per_text.toFixed(2),
       sub: `${health.annotations_total.toLocaleString()} regions linked`,
       tone: 'neutral' as const,
+      href: undefined,
     },
   ];
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {kpis.map((k) => {
         const Icon = k.icon;
-        return (
+        const card = (
           <div
-            key={k.label}
             className={cn(
               'relative overflow-hidden rounded-xl border bg-card px-5 py-4 shadow-[0_1px_0_rgba(31,21,5,0.04)]',
               k.tone === 'transcription' &&
                 'ring-1 ring-[hsl(var(--c-transcription-h)_45%_60%)]/15',
-              k.tone === 'translation' && 'ring-1 ring-[hsl(var(--c-translation-h)_45%_60%)]/15'
+              k.tone === 'translation' && 'ring-1 ring-[hsl(var(--c-translation-h)_45%_60%)]/15',
+              k.href && 'cursor-pointer transition-shadow hover:shadow-md'
             )}
           >
             <div className="flex items-center justify-between">
@@ -243,6 +255,13 @@ const KpiStrip = memo(function KpiStrip({
               )}
             />
           </div>
+        );
+        return k.href ? (
+          <Link key={k.label} href={k.href} scroll>
+            {card}
+          </Link>
+        ) : (
+          <div key={k.label}>{card}</div>
         );
       })}
     </div>
@@ -311,7 +330,16 @@ const StatusMatrix = memo(function StatusMatrix({
                 const n = matrix.by_kind[kind]?.[s] ?? 0;
                 const w = max ? Math.max(2, (n / max) * 100) : 0;
                 return (
-                  <div key={s} className="flex flex-col gap-1">
+                  <Link
+                    key={s}
+                    href={`?kind=${kind}&status=${s}#list`}
+                    scroll
+                    className={cn(
+                      'flex flex-col gap-1 rounded-md px-1 py-0.5',
+                      n > 0 && 'hover:bg-accent/30'
+                    )}
+                    title={`Show ${n.toLocaleString()} ${kind.toLowerCase()}${n === 1 ? '' : 's'} in ${s}`}
+                  >
                     <span className="font-display text-lg font-semibold leading-none">
                       {n.toLocaleString()}
                     </span>
@@ -328,7 +356,7 @@ const StatusMatrix = memo(function StatusMatrix({
                         style={{ width: n ? `${w}%` : 0 }}
                       />
                     </span>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -444,7 +472,13 @@ const CoverageDonut = memo(function CoverageDonut({
 
 // ──────────────────── Activity sparkline ────────────────────
 
-const ActivitySpark = memo(function ActivitySpark({ activity }: { activity: ActivityBucket[] }) {
+const ActivitySpark = memo(function ActivitySpark({
+  activity,
+  lastEditAt,
+}: {
+  activity: ActivityBucket[];
+  lastEditAt: string | null;
+}) {
   const max = Math.max(1, ...activity.map((a) => a.transcription + a.translation));
   return (
     <Card>
@@ -454,7 +488,20 @@ const ActivitySpark = memo(function ActivitySpark({ activity }: { activity: Acti
       </CardHeader>
       <CardContent>
         {activity.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No edits in the last 30 days.</p>
+          <p className="text-sm text-muted-foreground">
+            No edits in the last 30 days.
+            {lastEditAt && (
+              <>
+                {' '}
+                <span className="text-muted-foreground/80">
+                  Last edit {daysSince(lastEditAt)} ago
+                  {' ('}
+                  {new Date(lastEditAt).toLocaleDateString()}
+                  {')'}.
+                </span>
+              </>
+            )}
+          </p>
         ) : (
           <div className="flex h-32 items-end gap-1">
             {activity.map((a) => {
@@ -518,32 +565,41 @@ const LanguageBreakdown = memo(function LanguageBreakdown({
           <p className="text-sm text-muted-foreground">No languages recorded.</p>
         ) : (
           <ul className="space-y-2">
-            {languages.map((l) => (
-              <li key={l.language} className="grid grid-cols-[80px_1fr_64px] items-center gap-3">
-                <span
-                  className={cn(
-                    'truncate font-mono text-xs uppercase tracking-wider',
-                    l.language === '(unset)' && 'italic text-muted-foreground'
-                  )}
-                >
-                  {l.language}
-                </span>
-                <span className="relative block h-2 overflow-hidden rounded-full bg-muted">
-                  <span
-                    className="absolute inset-y-0 left-0 bg-transcription/70"
-                    style={{ width: `${(l.transcription / max) * 100}%` }}
-                  />
-                  <span
-                    className="absolute inset-y-0 bg-translation/70"
-                    style={{
-                      left: `${(l.transcription / max) * 100}%`,
-                      width: `${(l.translation / max) * 100}%`,
-                    }}
-                  />
-                </span>
-                <span className="text-right font-mono text-xs">{l.total.toLocaleString()}</span>
-              </li>
-            ))}
+            {languages.map((l) => {
+              const filterValue = l.language === '(unset)' ? '__unset__' : l.language;
+              return (
+                <li key={l.language}>
+                  <Link
+                    href={`?language=${encodeURIComponent(filterValue)}#list`}
+                    scroll
+                    className="grid grid-cols-[80px_1fr_64px] items-center gap-3 rounded-md py-0.5 hover:bg-accent/30"
+                  >
+                    <span
+                      className={cn(
+                        'truncate font-mono text-xs uppercase tracking-wider',
+                        l.language === '(unset)' && 'italic text-muted-foreground'
+                      )}
+                    >
+                      {l.language}
+                    </span>
+                    <span className="relative block h-2 overflow-hidden rounded-full bg-muted">
+                      <span
+                        className="absolute inset-y-0 left-0 bg-transcription/70"
+                        style={{ width: `${(l.transcription / max) * 100}%` }}
+                      />
+                      <span
+                        className="absolute inset-y-0 bg-translation/70"
+                        style={{
+                          left: `${(l.transcription / max) * 100}%`,
+                          width: `${(l.translation / max) * 100}%`,
+                        }}
+                      />
+                    </span>
+                    <span className="text-right font-mono text-xs">{l.total.toLocaleString()}</span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </CardContent>
@@ -562,7 +618,8 @@ const RecentEdits = memo(function RecentEdits({ rows }: { rows: RecentRow[] }) {
         <div>
           <CardTitle className="text-base font-medium">Recent edits</CardTitle>
           <p className="text-xs text-muted-foreground">
-            The {rows.length} most-recently modified image-texts. Click → for the editor.
+            The {rows.length} most-recently modified image-texts. Click the row to edit; ↗ opens the
+            public viewer.
           </p>
         </div>
         <Tabs value={filter} onValueChange={(v) => setFilter(v as 'all' | Kind)}>
@@ -601,11 +658,18 @@ const RecentEdits = memo(function RecentEdits({ rows }: { rows: RecentRow[] }) {
               <TableBody>
                 {filtered.map((r) => {
                   const panel = r.type === 'Transcription' ? 'transcription' : 'translation';
-                  const partLink = r.item_part_id
+                  const editorLink = `/backoffice/image-texts/${r.id}`;
+                  const viewerLink = r.item_part_id
                     ? `/manuscripts/${r.item_part_id}/images/${r.item_image_id}#mode=text&panel=${panel}`
                     : null;
                   return (
-                    <TableRow key={r.id} className="group">
+                    <TableRow
+                      key={r.id}
+                      className="group cursor-pointer hover:bg-accent/30"
+                      onClick={() => {
+                        window.location.href = editorLink;
+                      }}
+                    >
                       <TableCell>
                         <Badge
                           variant="outline"
@@ -618,14 +682,20 @@ const RecentEdits = memo(function RecentEdits({ rows }: { rows: RecentRow[] }) {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium leading-tight">{r.label}</span>
+                        <Link
+                          href={editorLink}
+                          className="flex flex-col"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <span className="font-medium leading-tight hover:underline">
+                            {r.label}
+                          </span>
                           {r.locus && (
                             <span className="text-[11px] text-muted-foreground">
                               folio {r.locus}
                             </span>
                           )}
-                        </div>
+                        </Link>
                       </TableCell>
                       <TableCell>
                         <span
@@ -665,11 +735,14 @@ const RecentEdits = memo(function RecentEdits({ rows }: { rows: RecentRow[] }) {
                         <RelativeTime iso={r.modified} />
                       </TableCell>
                       <TableCell>
-                        {partLink ? (
+                        {viewerLink ? (
                           <Link
-                            href={partLink}
+                            href={viewerLink}
+                            target="_blank"
+                            rel="noopener"
+                            onClick={(e) => e.stopPropagation()}
                             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                            title="Open in viewer"
+                            title="Open in public viewer"
                           >
                             <ArrowUpRight className="h-3.5 w-3.5" />
                           </Link>
@@ -736,4 +809,12 @@ function RelativeTime({ iso }: { iso: string }) {
 function pct(part: number, whole: number): string {
   if (!whole) return '—';
   return `${Math.round((part / whole) * 100)}%`;
+}
+
+function daysSince(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  if (days <= 0) return 'today';
+  if (days === 1) return '1 day';
+  return `${days} days`;
 }
