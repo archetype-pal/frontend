@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -75,6 +75,20 @@ export function RichTextEditor({
       },
     },
   });
+
+  // TipTap's `useEditor` reads `content` once on mount; later prop changes
+  // are ignored. Every consumer here (image-texts, hands, publications,
+  // descriptions) initialises the controlled value to `''` and hydrates it
+  // from a useQuery `useEffect` after the editor has already mounted — so
+  // without this sync the editor renders blank even when the row has
+  // content. The `getHTML() === content` guard short-circuits the loop
+  // that would otherwise fire on every keystroke (onUpdate → parent state
+  // → this effect → setContent → onUpdate …).
+  useEffect(() => {
+    if (!editor) return;
+    if (editor.getHTML() === content) return;
+    editor.commands.setContent(content, { emitUpdate: false });
+  }, [content, editor]);
 
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
