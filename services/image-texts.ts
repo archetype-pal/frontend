@@ -62,3 +62,42 @@ export async function updateImageText(
   }
   return response.json();
 }
+
+export interface CreateImageTextPayload {
+  item_image: number;
+  type: 'Transcription' | 'Translation';
+  language?: string;
+  content?: string;
+  status?: ImageTextStatus;
+}
+
+export async function createImageText(
+  token: string,
+  payload: CreateImageTextPayload
+): Promise<ImageTextDetail> {
+  const response = await authFetch(`/api/v1/manuscripts/management/image-texts/`, token, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      status: 'Draft',
+      content: '',
+      language: '',
+      ...payload,
+    }),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Failed to create image text: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function deleteImageText(token: string, textId: number): Promise<void> {
+  const response = await authFetch(`/api/v1/manuscripts/management/image-texts/${textId}/`, token, {
+    method: 'DELETE',
+  });
+  if (!response.ok && response.status !== 204) {
+    const text = await response.text();
+    throw new Error(text || `Failed to delete image text: ${response.status}`);
+  }
+}

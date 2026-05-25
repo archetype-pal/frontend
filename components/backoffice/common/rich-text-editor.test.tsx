@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { act, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { useState } from 'react';
 
 import { RichTextEditor } from './rich-text-editor';

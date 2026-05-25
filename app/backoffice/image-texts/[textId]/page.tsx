@@ -2,8 +2,9 @@
 
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ExternalLink, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Loader2, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -26,10 +27,12 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RichTextEditor } from '@/components/backoffice/common/rich-text-editor';
+import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import {
+  deleteImageText,
   fetchImageText,
   updateImageText,
   type ImageTextDetail,
@@ -49,8 +52,10 @@ const historyKey = (textId: number) =>
 export default function ImageTextEditorPage({ params }: { params: Promise<{ textId: string }> }) {
   const { textId: rawId } = use(params);
   const textId = Number(rawId);
+  const router = useRouter();
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const {
     data: text,
@@ -126,6 +131,19 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
       setStatus(saved.status);
     },
     onError: (err) => toast.error('Transition failed', { description: formatApiError(err) }),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: () => deleteImageText(token!, textId),
+    onSuccess: () => {
+      toast.success(`Deleted image-text #${textId}`);
+      queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['backoffice', 'texts-monitor', 'overview'] });
+      // The detail query would 404 if we left it cached.
+      queryClient.removeQueries({ queryKey: queryKey(textId) });
+      router.push('/backoffice/texts');
+    },
+    onError: (err) => toast.error('Delete failed', { description: formatApiError(err) }),
   });
 
   useKeyboardShortcut(
@@ -205,6 +223,17 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setConfirmDelete(true)}
+            disabled={deleteMut.isPending}
+            title="Delete this image-text"
+          >
+            <Trash2 className="mr-1 h-3.5 w-3.5" />
+            Delete
+          </Button>
           <TransitionAction
             currentStatus={status}
             pending={transitionMut.isPending}
@@ -220,6 +249,17 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={`Delete image-text #${textId}?`}
+        description={`This permanently removes the ${text.type.toLowerCase()} and any associated status history. This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        loading={deleteMut.isPending}
+        onConfirm={() => deleteMut.mutate()}
+      />
 
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-1.5">

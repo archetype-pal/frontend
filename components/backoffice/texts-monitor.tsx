@@ -28,11 +28,13 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { TextsList } from '@/components/backoffice/texts-list';
+import { UncoveredImages } from '@/components/backoffice/uncovered-images';
 import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 import {
   fetchTextsOverview,
   type ActivityBucket,
+  type AnnotationActivityBucket,
   type Kind,
   type LanguageRow,
   type RecentRow,
@@ -109,7 +111,14 @@ export function TextsMonitor() {
             <LanguageBreakdown languages={data.languages} />
           </div>
 
-          <RecentEdits rows={data.recent} />
+          <div className="grid gap-6 lg:grid-cols-2">
+            <AnnotationActivity series={data.annotation_activity} />
+            <RecentEdits rows={data.recent} />
+          </div>
+
+          <div id="uncovered" className="scroll-mt-4">
+            <UncoveredImages />
+          </div>
 
           <div id="list" className="scroll-mt-4">
             <TextsList />
@@ -391,21 +400,36 @@ const CoverageDonut = memo(function CoverageDonut({
   className?: string;
 }) {
   const total = Math.max(1, coverage.images_total);
+  // Each segment carries the uncovered-images mode it should drill into
+  // when clicked (or null for segments that don't correspond to a
+  // straightforward "show me what's missing" view).
   const segs = useMemo(
     () => [
-      { label: 'Both', value: coverage.with_both, color: 'hsl(160 55% 38%)' },
+      {
+        label: 'Both',
+        value: coverage.with_both,
+        color: 'hsl(160 55% 38%)',
+        coverage: null as string | null,
+      },
       {
         label: 'Transcription only',
         value: Math.max(0, coverage.with_transcription - coverage.with_both),
         // Use design token from globals.css so the palette stays in sync.
         color: 'hsl(var(--c-transcription-h) var(--c-transcription-s) var(--c-transcription-l))',
+        coverage: 'translation', // missing translation
       },
       {
         label: 'Translation only',
         value: Math.max(0, coverage.with_translation - coverage.with_both),
         color: 'hsl(var(--c-translation-h) var(--c-translation-s) var(--c-translation-l))',
+        coverage: 'transcription', // missing transcription
       },
-      { label: 'Neither', value: coverage.with_neither, color: 'hsl(25 8% 80%)' },
+      {
+        label: 'Neither',
+        value: coverage.with_neither,
+        color: 'hsl(25 8% 80%)',
+        coverage: 'either', // missing both
+      },
     ],
     [coverage]
   );
@@ -445,24 +469,41 @@ const CoverageDonut = memo(function CoverageDonut({
             </div>
           </div>
           <ul className="flex-1 space-y-2 text-sm">
-            {segs.map((s) => (
-              <li key={s.label} className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2">
-                  <span
-                    aria-hidden
-                    className="h-2.5 w-2.5 rounded-full"
-                    style={{ background: s.color }}
-                  />
-                  <span className="text-muted-foreground">{s.label}</span>
-                </span>
-                <span className="font-mono text-xs">
-                  {s.value.toLocaleString()}
-                  <span className="ml-1 text-muted-foreground">
-                    ({pct(s.value, coverage.images_total)})
+            {segs.map((s) => {
+              const display = (
+                <>
+                  <span className="flex items-center gap-2">
+                    <span
+                      aria-hidden
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ background: s.color }}
+                    />
+                    <span className="text-muted-foreground">{s.label}</span>
                   </span>
-                </span>
-              </li>
-            ))}
+                  <span className="font-mono text-xs">
+                    {s.value.toLocaleString()}
+                    <span className="ml-1 text-muted-foreground">
+                      ({pct(s.value, coverage.images_total)})
+                    </span>
+                  </span>
+                </>
+              );
+              return s.coverage && s.value > 0 ? (
+                <li key={s.label}>
+                  <Link
+                    href={`?coverage=${s.coverage}#uncovered`}
+                    scroll
+                    className="flex items-center justify-between gap-3 rounded-md px-1 py-0.5 hover:bg-accent/30"
+                  >
+                    {display}
+                  </Link>
+                </li>
+              ) : (
+                <li key={s.label} className="flex items-center justify-between gap-3 px-1">
+                  {display}
+                </li>
+              );
+            })}
           </ul>
         </div>
       </CardContent>
@@ -538,6 +579,61 @@ const ActivitySpark = memo(function ActivitySpark({
             Translation
           </span>
         </div>
+      </CardContent>
+    </Card>
+  );
+});
+
+// ──────────────────── Annotation activity ────────────────────
+
+// New text-annotation Graph rows over the last 30 days. Complements
+// `ActivitySpark` (which tracks text edits, not region drawing).
+const AnnotationActivity = memo(function AnnotationActivity({
+  series,
+}: {
+  series: AnnotationActivityBucket[];
+}) {
+  const max = Math.max(1, ...series.map((s) => s.count));
+  const total = series.reduce((a, s) => a + s.count, 0);
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-medium">30-day region drawing</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          New text-region annotations per day. {total.toLocaleString()} drawn in the last 30 days.
+        </p>
+      </CardHeader>
+      <CardContent>
+        {series.length === 0 ? (
+          // Historical Graphs predate the `created` timestamp added in
+          // migration 0008, so the sparkline starts empty even on a fully
+          // populated corpus. Calling that out beats showing nothing.
+          <p className="text-sm text-muted-foreground">
+            No regions drawn in the last 30 days. (Annotations created before this trend was added
+            are dated only from the time they&rsquo;re next edited.)
+          </p>
+        ) : (
+          <div className="flex h-32 items-end gap-1">
+            {series.map((s) => {
+              const h = (s.count / max) * 100;
+              return (
+                <div
+                  key={s.date}
+                  className="group relative flex flex-1 flex-col-reverse"
+                  title={`${s.date}: ${s.count} region${s.count === 1 ? '' : 's'}`}
+                >
+                  <span
+                    className="rounded-t-sm bg-[hsl(160_55%_45%)]/80"
+                    style={{ height: `${h}%` }}
+                  />
+                  <span className="absolute -top-6 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-[10px] shadow-md group-hover:block">
+                    {s.date} · {s.count}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

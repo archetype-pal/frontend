@@ -1,7 +1,17 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, ExternalLink, Filter as FilterIcon, Loader2, Search, X } from 'lucide-react';
+import {
+  ArrowUpRight,
+  Download,
+  ExternalLink,
+  Filter as FilterIcon,
+  Loader2,
+  Plus,
+  Search,
+  Trash2,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -10,6 +20,13 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -20,6 +37,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { NewImageTextDialog } from '@/components/backoffice/new-image-text-dialog';
 import { ServerPagination } from '@/components/backoffice/common/server-pagination';
 import {
   Table,
@@ -30,6 +49,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuth } from '@/contexts/auth-context';
+import { API_BASE_URL } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import {
   IMAGE_TEXT_PAGE_SIZE,
@@ -38,6 +58,7 @@ import {
   type ImageTextListParams,
   type ImageTextListRow,
 } from '@/services/backoffice/image-texts-list';
+import { bulkActionImageTexts } from '@/services/backoffice/image-texts-bulk';
 import { transitionImageText, type ImageTextStatus } from '@/services/backoffice/review-queue';
 
 const STATUS_TONE: Record<ImageTextStatus, string> = {
@@ -91,6 +112,17 @@ function parseFilters(sp: URLSearchParams): UrlFilterState {
   };
 }
 
+function buildExportQuery(filters: UrlFilterState, format: 'csv' | 'json'): string {
+  const qs = new URLSearchParams();
+  qs.set('format', format);
+  if (filters.kind) qs.set('type', filters.kind);
+  if (filters.status) qs.set('status', filters.status);
+  if (filters.language) qs.set('language', filters.language);
+  if (filters.empty) qs.set('empty', filters.empty);
+  if (filters.search) qs.set('search', filters.search);
+  return qs.toString();
+}
+
 export function TextsList() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -103,12 +135,21 @@ export function TextsList() {
   );
 
   const [searchInput, setSearchInput] = useState(filters.search);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [newDialogOpen, setNewDialogOpen] = useState(false);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
   // Mirror the URL value into the local input when the URL is the source of
   // truth (e.g. KPI drilldown). Without this the input would lag a navigation.
   useEffect(() => {
     setSearchInput(filters.search);
   }, [filters.search]);
+
+  // Drop any selected ids that fall out of view when filters/page change —
+  // otherwise a "Delete N selected" would silently target hidden rows.
+  useEffect(() => {
+    setSelected(new Set());
+  }, [filters.kind, filters.status, filters.language, filters.empty, filters.search, filters.page]);
 
   // Debounced commit of the search input back into the URL — 350ms is the
   // same cadence /backoffice/manuscripts uses, fast enough to feel live but
@@ -157,6 +198,30 @@ export function TextsList() {
   const total = data?.count ?? 0;
   const rows = data?.results ?? [];
 
+  const allVisibleSelected = rows.length > 0 && rows.every((r) => selected.has(r.id));
+  const someVisibleSelected = rows.some((r) => selected.has(r.id));
+
+  function toggleAllVisible() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        for (const r of rows) next.delete(r.id);
+      } else {
+        for (const r of rows) next.add(r.id);
+      }
+      return next;
+    });
+  }
+
+  function toggleOne(id: number) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   const activeFilterCount =
     (filters.kind ? 1 : 0) +
     (filters.status ? 1 : 0) +
@@ -175,125 +240,233 @@ export function TextsList() {
     });
   }
 
-  function onTransitioned() {
+  function invalidate() {
     queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts', 'list'] });
     queryClient.invalidateQueries({ queryKey: ['backoffice', 'texts-monitor', 'overview'] });
     queryClient.invalidateQueries({ queryKey: ['review-queue'] });
+    queryClient.invalidateQueries({ queryKey: ['backoffice', 'uncovered-images'] });
   }
 
+  const bulkDelete = useMutation({
+    mutationFn: () => bulkActionImageTexts(token!, { ids: Array.from(selected), action: 'delete' }),
+    onSuccess: ({ affected }) => {
+      toast.success(`Deleted ${affected} image-text${affected === 1 ? '' : 's'}`);
+      setSelected(new Set());
+      setConfirmBulkDelete(false);
+      invalidate();
+    },
+    onError: (err: Error) => toast.error('Bulk delete failed', { description: err.message }),
+  });
+
+  async function exportTo(format: 'csv' | 'json') {
+    if (!token) return;
+    // Authenticated download path: fetch with the token, then synthesize an
+    // <a download> link from the blob. Direct navigation to the URL would
+    // skip the Authorization header and 401.
+    const qs = buildExportQuery(filters, format);
+    const url = `${API_BASE_URL}/api/v1/manuscripts/management/image-texts/export/?${qs}`;
+    const toastId = toast.loading('Preparing export…');
+    try {
+      const res = await fetch(url, { headers: { Authorization: `Token ${token}` } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const filename = `image-texts.${format}`;
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(objectUrl);
+      toast.success(`Downloaded ${filename}`, { id: toastId });
+    } catch (err) {
+      toast.error('Export failed', {
+        id: toastId,
+        description: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  const selectedCount = selected.size;
+
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-base font-medium">Browse image-texts</CardTitle>
-            <p className="text-xs text-muted-foreground">
-              {total.toLocaleString()} matching {total === 1 ? 'row' : 'rows'}
-              {activeFilterCount > 0
-                ? ` · ${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'} active`
-                : ''}
-            </p>
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-base font-medium">Browse image-texts</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                {total.toLocaleString()} matching {total === 1 ? 'row' : 'rows'}
+                {activeFilterCount > 0
+                  ? ` · ${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'} active`
+                  : ''}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {activeFilterCount > 0 && (
+                <Button size="sm" variant="ghost" onClick={clearAll} className="h-7 text-xs">
+                  <X className="mr-1 h-3 w-3" /> Clear filters
+                </Button>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-7 text-xs">
+                    <Download className="mr-1 h-3 w-3" /> Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => void exportTo('csv')}>
+                    CSV (all matching rows)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => void exportTo('json')}>
+                    JSON (all matching rows)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button size="sm" className="h-7 text-xs" onClick={() => setNewDialogOpen(true)}>
+                <Plus className="mr-1 h-3 w-3" /> New
+              </Button>
+            </div>
           </div>
-          {activeFilterCount > 0 && (
-            <Button size="sm" variant="ghost" onClick={clearAll} className="h-7 text-xs">
-              <X className="mr-1 h-3 w-3" /> Clear filters
-            </Button>
+        </CardHeader>
+        <CardContent className="space-y-3 px-0 pb-0">
+          <div className="flex flex-wrap items-center gap-2 px-6">
+            <div className="relative w-64">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search content or language…"
+                className="h-8 pl-8 text-sm"
+              />
+            </div>
+            <FilterSelect
+              label="Kind"
+              value={filters.kind}
+              options={KINDS}
+              onChange={(v) => setParams({ kind: v || null, page: null })}
+            />
+            <FilterSelect
+              label="Status"
+              value={filters.status}
+              options={STATUSES}
+              onChange={(v) => setParams({ status: v || null, page: null })}
+            />
+            <FilterSelect
+              label="Language"
+              value={filters.language}
+              options={[
+                { value: '__unset__', label: '(unset)' },
+                { value: 'la', label: 'la' },
+                { value: 'en', label: 'en' },
+                { value: 'fr', label: 'fr' },
+                { value: 'enm', label: 'enm' },
+              ]}
+              onChange={(v) => setParams({ language: v || null, page: null })}
+            />
+            <FilterSelect
+              label="Content"
+              value={filters.empty}
+              options={[
+                { value: 'true', label: 'Empty only' },
+                { value: 'false', label: 'Non-empty' },
+              ]}
+              onChange={(v) => setParams({ empty: v || null, page: null })}
+            />
+            {isFetching && (
+              <Loader2 className="ml-auto h-4 w-4 animate-spin text-muted-foreground" />
+            )}
+          </div>
+
+          {selectedCount > 0 && (
+            <BulkActionBar
+              ids={Array.from(selected)}
+              token={token!}
+              onCleared={() => setSelected(new Set())}
+              onInvalidated={invalidate}
+              onAskDelete={() => setConfirmBulkDelete(true)}
+            />
           )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3 px-0 pb-0">
-        <div className="flex flex-wrap items-center gap-2 px-6">
-          <div className="relative w-64">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search content or language…"
-              className="h-8 pl-8 text-sm"
+
+          {error && (
+            <div className="mx-6 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+              Could not load list: {(error as Error).message}
+            </div>
+          )}
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[32px]">
+                    <Checkbox
+                      checked={allVisibleSelected || (someVisibleSelected && 'indeterminate')}
+                      onCheckedChange={toggleAllVisible}
+                      aria-label="Select all visible"
+                    />
+                  </TableHead>
+                  <TableHead className="w-[110px]">Kind</TableHead>
+                  <TableHead>Image</TableHead>
+                  <TableHead className="w-[100px]">Status</TableHead>
+                  <TableHead className="w-[80px]">Lang</TableHead>
+                  <TableHead className="w-[90px] text-right">Chars</TableHead>
+                  <TableHead className="w-[200px]">Modified</TableHead>
+                  <TableHead className="w-[180px]" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={8}
+                      className="h-24 text-center text-sm text-muted-foreground"
+                    >
+                      {isFetching ? 'Loading…' : 'No image-texts match.'}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  rows.map((row) => (
+                    <ListRow
+                      key={row.id}
+                      row={row}
+                      selected={selected.has(row.id)}
+                      onToggle={() => toggleOne(row.id)}
+                      onTransitioned={invalidate}
+                      token={token!}
+                    />
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="px-6 pb-4">
+            <ServerPagination
+              total={total}
+              pageSize={IMAGE_TEXT_PAGE_SIZE}
+              page={filters.page}
+              hasNext={!!data?.next}
+              onPageChange={(p) => setParams({ page: p > 0 ? p : null })}
             />
           </div>
-          <FilterSelect
-            label="Kind"
-            value={filters.kind}
-            options={KINDS}
-            onChange={(v) => setParams({ kind: v || null, page: null })}
-          />
-          <FilterSelect
-            label="Status"
-            value={filters.status}
-            options={STATUSES}
-            onChange={(v) => setParams({ status: v || null, page: null })}
-          />
-          <FilterSelect
-            label="Language"
-            value={filters.language}
-            options={[
-              { value: '__unset__', label: '(unset)' },
-              { value: 'la', label: 'la' },
-              { value: 'en', label: 'en' },
-              { value: 'fr', label: 'fr' },
-              { value: 'enm', label: 'enm' },
-            ]}
-            onChange={(v) => setParams({ language: v || null, page: null })}
-          />
-          <FilterSelect
-            label="Content"
-            value={filters.empty}
-            options={[
-              { value: 'true', label: 'Empty only' },
-              { value: 'false', label: 'Non-empty' },
-            ]}
-            onChange={(v) => setParams({ empty: v || null, page: null })}
-          />
-          {isFetching && <Loader2 className="ml-auto h-4 w-4 animate-spin text-muted-foreground" />}
-        </div>
+        </CardContent>
+      </Card>
 
-        {error && (
-          <div className="mx-6 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
-            Could not load list: {(error as Error).message}
-          </div>
-        )}
+      <NewImageTextDialog open={newDialogOpen} onOpenChange={setNewDialogOpen} />
 
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[110px]">Kind</TableHead>
-                <TableHead>Image</TableHead>
-                <TableHead className="w-[100px]">Status</TableHead>
-                <TableHead className="w-[80px]">Lang</TableHead>
-                <TableHead className="w-[90px] text-right">Chars</TableHead>
-                <TableHead className="w-[200px]">Modified</TableHead>
-                <TableHead className="w-[180px]" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-sm text-muted-foreground">
-                    {isFetching ? 'Loading…' : 'No image-texts match.'}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                rows.map((row) => (
-                  <ListRow key={row.id} row={row} onTransitioned={onTransitioned} token={token!} />
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-
-        <div className="px-6 pb-4">
-          <ServerPagination
-            total={total}
-            pageSize={IMAGE_TEXT_PAGE_SIZE}
-            page={filters.page}
-            hasNext={!!data?.next}
-            onPageChange={(p) => setParams({ page: p > 0 ? p : null })}
-          />
-        </div>
-      </CardContent>
-    </Card>
+      <ConfirmDialog
+        open={confirmBulkDelete}
+        onOpenChange={setConfirmBulkDelete}
+        title={`Delete ${selectedCount} image-text${selectedCount === 1 ? '' : 's'}?`}
+        description="This permanently removes the rows and their status history. This cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        loading={bulkDelete.isPending}
+        onConfirm={() => bulkDelete.mutate()}
+      />
+    </>
   );
 }
 
@@ -329,12 +502,181 @@ function FilterSelect({
   );
 }
 
+function BulkActionBar({
+  ids,
+  token,
+  onCleared,
+  onInvalidated,
+  onAskDelete,
+}: {
+  ids: number[];
+  token: string;
+  onCleared: () => void;
+  onInvalidated: () => void;
+  onAskDelete: () => void;
+}) {
+  const [transitionOpen, setTransitionOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const [toStatus, setToStatus] = useState<ImageTextStatus>('Review');
+  const [note, setNote] = useState('');
+  const [language, setLanguage] = useState('');
+
+  const transitionMut = useMutation({
+    mutationFn: () =>
+      bulkActionImageTexts(token, {
+        ids,
+        action: 'transition',
+        payload: { to_status: toStatus, note: note.trim() || undefined },
+      }),
+    onSuccess: ({ affected }) => {
+      toast.success(`Transitioned ${affected} → ${toStatus}`);
+      setTransitionOpen(false);
+      setNote('');
+      onCleared();
+      onInvalidated();
+    },
+    onError: (err: Error) => toast.error('Bulk transition failed', { description: err.message }),
+  });
+
+  const languageMut = useMutation({
+    mutationFn: () =>
+      bulkActionImageTexts(token, {
+        ids,
+        action: 'set_language',
+        payload: { language },
+      }),
+    onSuccess: ({ affected }) => {
+      toast.success(`Set language on ${affected} rows`);
+      setLanguageOpen(false);
+      setLanguage('');
+      onCleared();
+      onInvalidated();
+    },
+    onError: (err: Error) => toast.error('Bulk set-language failed', { description: err.message }),
+  });
+
+  return (
+    <div className="mx-6 flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-xs">
+      <span className="font-medium">{ids.length} selected</span>
+      <div className="ml-auto flex items-center gap-2">
+        <Popover open={transitionOpen} onOpenChange={setTransitionOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-7 text-xs">
+              Transition…
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-72 space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Target status</Label>
+              <Select value={toStatus} onValueChange={(v) => setToStatus(v as ImageTextStatus)}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Note (optional)</Label>
+              <Input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="What changed?"
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setTransitionOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="h-7 text-xs"
+                disabled={transitionMut.isPending}
+                onClick={() => transitionMut.mutate()}
+              >
+                {transitionMut.isPending ? 'Saving…' : `→ ${toStatus}`}
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Popover open={languageOpen} onOpenChange={setLanguageOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-7 text-xs">
+              Set language…
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-64 space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Language</Label>
+              <Input
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                placeholder='e.g. la, en, enm. Empty for "(unset)"'
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setLanguageOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="h-7 text-xs"
+                disabled={languageMut.isPending}
+                onClick={() => languageMut.mutate()}
+              >
+                {languageMut.isPending ? 'Saving…' : 'Apply'}
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+          onClick={onAskDelete}
+        >
+          <Trash2 className="mr-1 h-3 w-3" />
+          Delete
+        </Button>
+
+        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onCleared}>
+          <X className="mr-1 h-3 w-3" />
+          Clear
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function ListRow({
   row,
+  selected,
+  onToggle,
   onTransitioned,
   token,
 }: {
   row: ImageTextListRow;
+  selected: boolean;
+  onToggle: () => void;
   onTransitioned: () => void;
   token: string;
 }) {
@@ -345,7 +687,14 @@ function ListRow({
     : null;
 
   return (
-    <TableRow className="group">
+    <TableRow className="group" data-state={selected ? 'selected' : undefined}>
+      <TableCell>
+        <Checkbox
+          checked={selected}
+          onCheckedChange={onToggle}
+          aria-label={`Select image-text ${row.id}`}
+        />
+      </TableCell>
       <TableCell>
         <Badge
           variant="outline"

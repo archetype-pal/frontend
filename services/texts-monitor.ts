@@ -49,6 +49,11 @@ export type ActivityBucket = {
   translation: number;
 };
 
+export type AnnotationActivityBucket = {
+  date: string;
+  count: number;
+};
+
 export type AnnotationHealth = {
   image_texts_total: number;
   image_texts_with_content: number;
@@ -63,6 +68,7 @@ export type TextsOverview = {
   languages: LanguageRow[];
   recent: RecentRow[];
   activity: ActivityBucket[];
+  annotation_activity: AnnotationActivityBucket[];
   annotation_health: AnnotationHealth;
 };
 
