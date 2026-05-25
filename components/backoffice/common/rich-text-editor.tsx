@@ -23,6 +23,7 @@ import {
   Undo,
   Redo,
   CodeSquare,
+  FileCode2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
@@ -84,11 +85,18 @@ export function RichTextEditor({
   // content. The `getHTML() === content` guard short-circuits the loop
   // that would otherwise fire on every keystroke (onUpdate → parent state
   // → this effect → setContent → onUpdate …).
+  //
+  // In raw mode the textarea is the source of truth, so we skip the sync
+  // (TipTap would otherwise re-parse — and normalise — the source on every
+  // keystroke). Switching back to rich re-runs the effect via the `mode`
+  // dep and hydrates the editor once from the raw-edited HTML.
+  const [mode, setMode] = useState<'rich' | 'raw'>('rich');
   useEffect(() => {
     if (!editor) return;
+    if (mode === 'raw') return;
     if (editor.getHTML() === content) return;
     editor.commands.setContent(content, { emitUpdate: false });
-  }, [content, editor]);
+  }, [content, editor, mode]);
 
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
@@ -117,220 +125,254 @@ export function RichTextEditor({
     <div className={cn('rounded-md border', className)}>
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 border-b px-2 py-1.5">
-        <Toggle
-          size="sm"
-          pressed={editor.isActive('bold')}
-          onPressedChange={() => editor.chain().focus().toggleBold().run()}
-          aria-label="Bold"
-        >
-          <Bold className="h-4 w-4" />
-        </Toggle>
-        <Toggle
-          size="sm"
-          pressed={editor.isActive('italic')}
-          onPressedChange={() => editor.chain().focus().toggleItalic().run()}
-          aria-label="Italic"
-        >
-          <Italic className="h-4 w-4" />
-        </Toggle>
-        <Toggle
-          size="sm"
-          pressed={editor.isActive('strike')}
-          onPressedChange={() => editor.chain().focus().toggleStrike().run()}
-          aria-label="Strikethrough"
-        >
-          <Strikethrough className="h-4 w-4" />
-        </Toggle>
-        <Toggle
-          size="sm"
-          pressed={editor.isActive('code')}
-          onPressedChange={() => editor.chain().focus().toggleCode().run()}
-          aria-label="Inline code"
-        >
-          <Code className="h-4 w-4" />
-        </Toggle>
-
-        <Separator orientation="vertical" className="mx-1 h-6" />
-
-        {!minimal && (
-          <>
-            <Toggle
-              size="sm"
-              pressed={editor.isActive('heading', { level: 1 })}
-              onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-              aria-label="Heading 1"
-            >
-              <Heading1 className="h-4 w-4" />
-            </Toggle>
-            <Toggle
-              size="sm"
-              pressed={editor.isActive('heading', { level: 2 })}
-              onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-              aria-label="Heading 2"
-            >
-              <Heading2 className="h-4 w-4" />
-            </Toggle>
-            <Toggle
-              size="sm"
-              pressed={editor.isActive('heading', { level: 3 })}
-              onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-              aria-label="Heading 3"
-            >
-              <Heading3 className="h-4 w-4" />
-            </Toggle>
-
-            <Separator orientation="vertical" className="mx-1 h-6" />
-          </>
+        {mode === 'raw' && (
+          <span className="px-1.5 text-xs text-muted-foreground">Editing raw HTML source</span>
         )}
-
-        <Toggle
-          size="sm"
-          pressed={editor.isActive('bulletList')}
-          onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
-          aria-label="Bullet list"
-        >
-          <List className="h-4 w-4" />
-        </Toggle>
-        <Toggle
-          size="sm"
-          pressed={editor.isActive('orderedList')}
-          onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
-          aria-label="Ordered list"
-        >
-          <ListOrdered className="h-4 w-4" />
-        </Toggle>
-
-        {!minimal && (
+        {mode === 'rich' && (
           <>
             <Toggle
               size="sm"
-              pressed={editor.isActive('blockquote')}
-              onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
-              aria-label="Blockquote"
+              pressed={editor.isActive('bold')}
+              onPressedChange={() => editor.chain().focus().toggleBold().run()}
+              aria-label="Bold"
             >
-              <Quote className="h-4 w-4" />
+              <Bold className="h-4 w-4" />
             </Toggle>
             <Toggle
               size="sm"
-              pressed={editor.isActive('codeBlock')}
-              onPressedChange={() => editor.chain().focus().toggleCodeBlock().run()}
-              aria-label="Code block"
+              pressed={editor.isActive('italic')}
+              onPressedChange={() => editor.chain().focus().toggleItalic().run()}
+              aria-label="Italic"
             >
-              <CodeSquare className="h-4 w-4" />
+              <Italic className="h-4 w-4" />
+            </Toggle>
+            <Toggle
+              size="sm"
+              pressed={editor.isActive('strike')}
+              onPressedChange={() => editor.chain().focus().toggleStrike().run()}
+              aria-label="Strikethrough"
+            >
+              <Strikethrough className="h-4 w-4" />
+            </Toggle>
+            <Toggle
+              size="sm"
+              pressed={editor.isActive('code')}
+              onPressedChange={() => editor.chain().focus().toggleCode().run()}
+              aria-label="Inline code"
+            >
+              <Code className="h-4 w-4" />
             </Toggle>
 
             <Separator orientation="vertical" className="mx-1 h-6" />
 
-            <Button
-              variant="ghost"
+            {!minimal && (
+              <>
+                <Toggle
+                  size="sm"
+                  pressed={editor.isActive('heading', { level: 1 })}
+                  onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                  aria-label="Heading 1"
+                >
+                  <Heading1 className="h-4 w-4" />
+                </Toggle>
+                <Toggle
+                  size="sm"
+                  pressed={editor.isActive('heading', { level: 2 })}
+                  onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                  aria-label="Heading 2"
+                >
+                  <Heading2 className="h-4 w-4" />
+                </Toggle>
+                <Toggle
+                  size="sm"
+                  pressed={editor.isActive('heading', { level: 3 })}
+                  onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                  aria-label="Heading 3"
+                >
+                  <Heading3 className="h-4 w-4" />
+                </Toggle>
+
+                <Separator orientation="vertical" className="mx-1 h-6" />
+              </>
+            )}
+
+            <Toggle
               size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => editor.chain().focus().setHorizontalRule().run()}
-              title="Horizontal rule"
+              pressed={editor.isActive('bulletList')}
+              onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
+              aria-label="Bullet list"
             >
-              <Minus className="h-4 w-4" />
-            </Button>
-          </>
-        )}
+              <List className="h-4 w-4" />
+            </Toggle>
+            <Toggle
+              size="sm"
+              pressed={editor.isActive('orderedList')}
+              onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
+              aria-label="Ordered list"
+            >
+              <ListOrdered className="h-4 w-4" />
+            </Toggle>
 
-        <Separator orientation="vertical" className="mx-1 h-6" />
+            {!minimal && (
+              <>
+                <Toggle
+                  size="sm"
+                  pressed={editor.isActive('blockquote')}
+                  onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
+                  aria-label="Blockquote"
+                >
+                  <Quote className="h-4 w-4" />
+                </Toggle>
+                <Toggle
+                  size="sm"
+                  pressed={editor.isActive('codeBlock')}
+                  onPressedChange={() => editor.chain().focus().toggleCodeBlock().run()}
+                  aria-label="Code block"
+                >
+                  <CodeSquare className="h-4 w-4" />
+                </Toggle>
 
-        <Popover open={linkOpen} onOpenChange={setLinkOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Add link">
-              <LinkIcon className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80 p-3" align="start">
-            <div className="space-y-2">
-              <Input
-                placeholder="https://example.com"
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && insertLink()}
-                autoFocus
-              />
-              <div className="flex justify-end gap-2">
+                <Separator orientation="vertical" className="mx-1 h-6" />
+
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    setLinkUrl('');
-                    setLinkOpen(false);
-                  }}
+                  className="h-8 w-8 p-0"
+                  onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                  title="Horizontal rule"
                 >
-                  Cancel
+                  <Minus className="h-4 w-4" />
                 </Button>
-                <Button size="sm" onClick={insertLink}>
-                  Insert
-                </Button>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+              </>
+            )}
 
-        {!minimal && (
-          <Popover open={imageOpen} onOpenChange={setImageOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Add image">
-                <ImageIcon className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-3" align="start">
-              <div className="space-y-2">
-                <Input
-                  placeholder="https://example.com/image.png"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && insertImage()}
-                  autoFocus
-                />
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setImageUrl('');
-                      setImageOpen(false);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button size="sm" onClick={insertImage}>
-                    Insert
-                  </Button>
+            <Separator orientation="vertical" className="mx-1 h-6" />
+
+            <Popover open={linkOpen} onOpenChange={setLinkOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Add link">
+                  <LinkIcon className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-3" align="start">
+                <div className="space-y-2">
+                  <Input
+                    placeholder="https://example.com"
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && insertLink()}
+                    autoFocus
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setLinkUrl('');
+                        setLinkOpen(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button size="sm" onClick={insertLink}>
+                      Insert
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverContent>
+            </Popover>
+
+            {!minimal && (
+              <Popover open={imageOpen} onOpenChange={setImageOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Add image">
+                    <ImageIcon className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-3" align="start">
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="https://example.com/image.png"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && insertImage()}
+                      autoFocus
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setImageUrl('');
+                          setImageOpen(false);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button size="sm" onClick={insertImage}>
+                        Insert
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+          </>
         )}
 
         <div className="ml-auto flex items-center gap-0.5">
-          <Button
-            variant="ghost"
+          {mode === 'rich' && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => editor.chain().focus().undo().run()}
+                disabled={!editor.can().undo()}
+                title="Undo"
+              >
+                <Undo className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => editor.chain().focus().redo().run()}
+                disabled={!editor.can().redo()}
+                title="Redo"
+              >
+                <Redo className="h-4 w-4" />
+              </Button>
+              <Separator orientation="vertical" className="mx-1 h-6" />
+            </>
+          )}
+          <Toggle
             size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => editor.chain().focus().undo().run()}
-            disabled={!editor.can().undo()}
-            title="Undo"
+            pressed={mode === 'raw'}
+            onPressedChange={(pressed) => setMode(pressed ? 'raw' : 'rich')}
+            aria-label="Edit raw HTML source"
+            title="Toggle raw HTML source"
           >
-            <Undo className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => editor.chain().focus().redo().run()}
-            disabled={!editor.can().redo()}
-            title="Redo"
-          >
-            <Redo className="h-4 w-4" />
-          </Button>
+            <FileCode2 className="h-4 w-4" />
+          </Toggle>
         </div>
       </div>
 
       {/* Editor content */}
-      <EditorContent editor={editor} />
+      {mode === 'rich' ? (
+        <EditorContent editor={editor} />
+      ) : (
+        <textarea
+          value={content}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          spellCheck={false}
+          className={cn(
+            'block w-full resize-y bg-transparent px-4 py-3 font-mono text-xs leading-relaxed focus:outline-none',
+            minimal ? 'min-h-[120px]' : 'min-h-[200px]'
+          )}
+        />
+      )}
     </div>
   );
 }
