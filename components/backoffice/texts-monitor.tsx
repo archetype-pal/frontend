@@ -6,14 +6,19 @@ import {
   ArrowUpRight,
   BookOpenText,
   ExternalLink,
+  History,
+  ImageOff,
   Languages as LanguagesIcon,
+  LayoutDashboard,
+  ListFilter,
   Loader2,
   RefreshCcw,
   ScrollText,
   Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
-import { memo, useMemo, useState, useSyncExternalStore } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { memo, useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -73,8 +78,16 @@ const KIND_TONE: Record<Kind, string> = {
     'border-translation/30 bg-[hsl(var(--c-translation-h)_40%_96%)] text-[hsl(var(--c-translation-h)_45%_30%)] dark:bg-[hsl(var(--c-translation-h)_40%_18%)]/40 dark:text-[hsl(var(--c-translation-h)_40%_75%)]',
 };
 
+type View = 'overview' | 'recent' | 'browse' | 'uncovered';
+
+function isView(value: string | null): value is View {
+  return value === 'overview' || value === 'recent' || value === 'browse' || value === 'uncovered';
+}
+
 export function TextsMonitor() {
   const { token } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { data, isFetching, error, refetch } = useQuery({
     queryKey: ['backoffice', 'texts-monitor', 'overview'],
     queryFn: () => fetchTextsOverview(token!),
@@ -82,6 +95,20 @@ export function TextsMonitor() {
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
+
+  const viewParam = searchParams?.get('view') ?? null;
+  const view: View = isView(viewParam) ? viewParam : 'overview';
+
+  const setView = useCallback(
+    (next: View) => {
+      const sp = new URLSearchParams(searchParams?.toString() ?? '');
+      if (next === 'overview') sp.delete('view');
+      else sp.set('view', next);
+      const qs = sp.toString();
+      router.replace(qs ? `?${qs}` : '?', { scroll: false });
+    },
+    [router, searchParams]
+  );
 
   return (
     <div className="space-y-8 px-6 py-8">
@@ -101,28 +128,38 @@ export function TextsMonitor() {
         <>
           <KpiStrip matrix={data.matrix} coverage={data.coverage} health={data.annotation_health} />
 
-          <div className="grid gap-6 xl:grid-cols-5">
-            <StatusMatrix matrix={data.matrix} className="xl:col-span-3" />
-            <CoverageDonut coverage={data.coverage} className="xl:col-span-2" />
-          </div>
+          <ViewSwitcher
+            view={view}
+            onChange={setView}
+            counts={{
+              recent: data.recent.length,
+              browse: data.matrix.totals.Transcription + data.matrix.totals.Translation,
+              uncovered: data.coverage.with_neither,
+            }}
+          />
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <ActivitySpark activity={data.activity} lastEditAt={data.recent[0]?.modified ?? null} />
-            <LanguageBreakdown languages={data.languages} />
-          </div>
+          {view === 'overview' && (
+            <div className="space-y-6">
+              <div className="grid gap-6 xl:grid-cols-5">
+                <StatusMatrix matrix={data.matrix} className="xl:col-span-3" />
+                <CoverageDonut coverage={data.coverage} className="xl:col-span-2" />
+              </div>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <ActivitySpark
+                  activity={data.activity}
+                  lastEditAt={data.recent[0]?.modified ?? null}
+                />
+                <LanguageBreakdown languages={data.languages} />
+              </div>
+              <AnnotationActivity series={data.annotation_activity} />
+            </div>
+          )}
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <AnnotationActivity series={data.annotation_activity} />
-            <RecentEdits rows={data.recent} />
-          </div>
+          {view === 'recent' && <RecentEdits rows={data.recent} />}
 
-          <div id="uncovered" className="scroll-mt-4">
-            <UncoveredImages />
-          </div>
+          {view === 'uncovered' && <UncoveredImages />}
 
-          <div id="list" className="scroll-mt-4">
-            <TextsList />
-          </div>
+          {view === 'browse' && <TextsList />}
         </>
       ) : (
         <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
@@ -132,6 +169,116 @@ export function TextsMonitor() {
     </div>
   );
 }
+
+// ──────────────────── View switcher ────────────────────
+
+// A sticky segmented control that swaps the page between one focused panel at
+// a time — the dashboard charts, or one of the three data tables — instead of
+// stacking everything in a single long scroll. Drill-down links from the KPI
+// strip and charts route here via the `view` URL param.
+const VIEW_META: {
+  key: View;
+  label: string;
+  hint: string;
+  icon: typeof LayoutDashboard;
+}[] = [
+  {
+    key: 'overview',
+    label: 'Overview',
+    hint: 'Lifecycle, coverage, activity and language charts.',
+    icon: LayoutDashboard,
+  },
+  {
+    key: 'browse',
+    label: 'Browse',
+    hint: 'Search, filter, transition and export every image-text.',
+    icon: ListFilter,
+  },
+  {
+    key: 'uncovered',
+    label: 'Uncovered',
+    hint: 'Images still missing a transcription or translation.',
+    icon: ImageOff,
+  },
+  {
+    key: 'recent',
+    label: 'Recent edits',
+    hint: 'The most-recently modified image-texts.',
+    icon: History,
+  },
+];
+
+const ViewSwitcher = memo(function ViewSwitcher({
+  view,
+  onChange,
+  counts,
+}: {
+  view: View;
+  onChange: (view: View) => void;
+  counts: { recent: number; browse: number; uncovered: number };
+}) {
+  const active = VIEW_META.find((v) => v.key === view) ?? VIEW_META[0];
+  return (
+    <div className="sticky top-0 z-20 -mx-6 border-b border-border/60 bg-background/85 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/65">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div
+          role="tablist"
+          aria-label="Choose a view"
+          className="inline-flex items-center gap-1 rounded-xl border bg-muted/30 p-1"
+        >
+          {VIEW_META.map((v) => {
+            const Icon = v.icon;
+            const isActive = v.key === view;
+            const count =
+              v.key === 'recent'
+                ? counts.recent
+                : v.key === 'browse'
+                  ? counts.browse
+                  : v.key === 'uncovered'
+                    ? counts.uncovered
+                    : null;
+            return (
+              <button
+                key={v.key}
+                role="tab"
+                type="button"
+                aria-selected={isActive}
+                onClick={() => onChange(v.key)}
+                className={cn(
+                  'group flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all',
+                  isActive
+                    ? 'bg-card text-foreground shadow-sm ring-1 ring-border'
+                    : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'
+                )}
+              >
+                <Icon
+                  className={cn(
+                    'h-4 w-4 shrink-0',
+                    isActive
+                      ? 'text-[hsl(var(--c-transcription-h)_55%_45%)]'
+                      : 'text-muted-foreground'
+                  )}
+                />
+                <span>{v.label}</span>
+                {count !== null && (
+                  <span
+                    className={cn(
+                      'rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums',
+                      isActive ? 'bg-muted text-foreground' : 'bg-muted/60 text-muted-foreground'
+                    )}
+                  >
+                    {count.toLocaleString()}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <p className="hidden text-xs text-muted-foreground md:block">{active.hint}</p>
+      </div>
+    </div>
+  );
+});
 
 // ──────────────────── Header ────────────────────
 
@@ -195,10 +342,10 @@ const KpiStrip = memo(function KpiStrip({
       value: matrix.totals.Transcription,
       sub: `${matrix.empty_by_kind.Transcription} empty`,
       tone: 'transcription' as const,
-      // The KPI is a corpus-wide aggregate; clicking it should filter the
-      // list to just that kind so editors can jump from "X transcriptions"
-      // to the actual rows in one move.
-      href: '?kind=Transcription#list',
+      // The KPI is a corpus-wide aggregate; clicking it should open the
+      // Browse panel filtered to just that kind so editors can jump from
+      // "X transcriptions" to the actual rows in one move.
+      href: '?kind=Transcription&view=browse',
     },
     {
       icon: BookOpenText,
@@ -206,7 +353,7 @@ const KpiStrip = memo(function KpiStrip({
       value: matrix.totals.Translation,
       sub: `${matrix.empty_by_kind.Translation} empty`,
       tone: 'translation' as const,
-      href: '?kind=Translation#list',
+      href: '?kind=Translation&view=browse',
     },
     {
       icon: Sparkles,
@@ -266,7 +413,7 @@ const KpiStrip = memo(function KpiStrip({
           </div>
         );
         return k.href ? (
-          <Link key={k.label} href={k.href} scroll>
+          <Link key={k.label} href={k.href} scroll={false}>
             {card}
           </Link>
         ) : (
@@ -341,8 +488,8 @@ const StatusMatrix = memo(function StatusMatrix({
                 return (
                   <Link
                     key={s}
-                    href={`?kind=${kind}&status=${s}#list`}
-                    scroll
+                    href={`?kind=${kind}&status=${s}&view=browse`}
+                    scroll={false}
                     className={cn(
                       'flex flex-col gap-1 rounded-md px-1 py-0.5',
                       n > 0 && 'hover:bg-accent/30'
@@ -491,8 +638,8 @@ const CoverageDonut = memo(function CoverageDonut({
               return s.coverage && s.value > 0 ? (
                 <li key={s.label}>
                   <Link
-                    href={`?coverage=${s.coverage}#uncovered`}
-                    scroll
+                    href={`?coverage=${s.coverage}&view=uncovered`}
+                    scroll={false}
                     className="flex items-center justify-between gap-3 rounded-md px-1 py-0.5 hover:bg-accent/30"
                   >
                     {display}
@@ -553,7 +700,7 @@ const ActivitySpark = memo(function ActivitySpark({
               return (
                 <div
                   key={a.date}
-                  className="group relative flex flex-1 flex-col-reverse"
+                  className="group relative flex h-full flex-1 flex-col-reverse"
                   title={`${a.date}: ${a.transcription} transcription, ${a.translation} translation`}
                 >
                   <span
@@ -619,7 +766,7 @@ const AnnotationActivity = memo(function AnnotationActivity({
               return (
                 <div
                   key={s.date}
-                  className="group relative flex flex-1 flex-col-reverse"
+                  className="group relative flex h-full flex-1 flex-col-reverse"
                   title={`${s.date}: ${s.count} region${s.count === 1 ? '' : 's'}`}
                 >
                   <span
@@ -666,8 +813,8 @@ const LanguageBreakdown = memo(function LanguageBreakdown({
               return (
                 <li key={l.language}>
                   <Link
-                    href={`?language=${encodeURIComponent(filterValue)}#list`}
-                    scroll
+                    href={`?language=${encodeURIComponent(filterValue)}&view=browse`}
+                    scroll={false}
                     className="grid grid-cols-[80px_1fr_64px] items-center gap-3 rounded-md py-0.5 hover:bg-accent/30"
                   >
                     <span
