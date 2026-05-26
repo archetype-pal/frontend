@@ -1,7 +1,11 @@
 import type { Manuscript } from '@/types/manuscript';
 import type { ManuscriptImage } from '@/types/manuscript-image';
 import type { HandsResponse } from '@/types/hands';
-import type { AllographsResponse, Position as SymbolPosition } from '@/types/allographs';
+import type {
+  AllographSummary,
+  AllographsResponse,
+  Position as SymbolPosition,
+} from '@/types/allographs';
 import { notFound } from 'next/navigation';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -84,6 +88,18 @@ export async function fetchHands(
 
 export async function fetchAllographs(): Promise<AllographsResponse> {
   const response = await apiFetch(`/api/v1/symbols_structure/allographs/`);
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch allographs');
+  }
+
+  return response.json();
+}
+
+// Labels-only allograph list (`?light=1`) — skips the nested component/feature/
+// position graph. Use when only id + display label are needed.
+export async function fetchAllographSummaries(): Promise<AllographSummary[]> {
+  const response = await apiFetch(`/api/v1/symbols_structure/allographs/?light=1`);
 
   if (!response.ok) {
     throw new Error('Failed to fetch allographs');

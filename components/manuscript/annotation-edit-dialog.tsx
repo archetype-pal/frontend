@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/contexts/auth-context';
+import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import {
   updateViewerAnnotation,
   type BackendGraph,
@@ -61,18 +62,16 @@ function graphHasPosition(graph: BackendGraph, positionId: number) {
   return (graph.positions ?? []).includes(positionId);
 }
 
-// Multi-mode shows only components present on every selected graph; single
-// mode shows all allograph-defined components. Feature definitions always
-// come from the allograph schema (graph rows just store ids).
-function visibleComponents(
-  graphs: BackendGraph[],
-  allograph: Allograph,
-  isMulti: boolean
-): Component[] {
-  if (!isMulti) return allograph.components;
-  return allograph.components.filter((c) =>
-    graphs.every((g) => Boolean(findComponent(g, c.component_id)))
-  );
+// All components the allograph defines are editable (G3.3) — including ones
+// not yet present on every selected graph, so an editor can bulk-*add* a
+// component. `sharedComponentIds` flags which are already on every graph so the
+// UI can mark the rest as "not on all selected".
+function sharedComponentIds(graphs: BackendGraph[], allograph: Allograph): Set<number> {
+  const shared = new Set<number>();
+  for (const c of allograph.components) {
+    if (graphs.every((g) => Boolean(findComponent(g, c.component_id)))) shared.add(c.component_id);
+  }
+  return shared;
 }
 
 // Single hook used by both the features and positions sections: a pending
@@ -150,6 +149,9 @@ export interface AnnotationEditDialogProps {
   graphs: BackendGraph[];
   allographs: Allograph[];
   hands: HandType[];
+  /** IIIF info URL for the parent image, used to render a crop preview of the
+   *  graph(s) under edit. */
+  iiifImage?: string;
   /** Called for every successful per-graph PATCH so the parent can apply an
    *  optimistic override immediately. */
   onGraphSaved?: (graph: BackendGraph) => void;
@@ -171,6 +173,7 @@ function DialogBody({
   graphs,
   allographs,
   hands,
+  iiifImage,
   onGraphSaved,
   onComplete,
 }: AnnotationEditDialogProps) {
@@ -202,6 +205,9 @@ function DialogBody({
   const [hand, setHand] = React.useState<Consensus<number | null>>(initialHand);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  // Ids that failed in the last save attempt, so the user can retry only those
+  // instead of re-PATCHing the whole batch (G3.2).
+  const [failedIds, setFailedIds] = React.useState<number[]>([]);
 
   // Reset draft state whenever the selection (and therefore the initial
   // values) changes — otherwise switching selection mid-dialog leaves stale
@@ -224,8 +230,12 @@ function DialogBody({
     isMulti && initialAllograph === MIXED ? null : selectedAllograph;
 
   const components = React.useMemo<Component[]>(
-    () => (schemaAllograph ? visibleComponents(graphs, schemaAllograph, isMulti) : []),
-    [graphs, schemaAllograph, isMulti]
+    () => schemaAllograph?.components ?? [],
+    [schemaAllograph]
+  );
+  const sharedIds = React.useMemo(
+    () => (schemaAllograph ? sharedComponentIds(graphs, schemaAllograph) : new Set<number>()),
+    [graphs, schemaAllograph]
   );
 
   // ---- Tri-state maps for features and positions --------------------------
@@ -256,9 +266,24 @@ function DialogBody({
   React.useEffect(() => {
     featureMap.reset();
     positionMap.reset();
+    setFailedIds([]);
     // Intentionally only on selection change — not on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphs]);
+
+  // Guard every close path (Cancel, Escape, overlay click) against discarding
+  // unsaved edits. The Sheet's `open` is controlled by the parent, so simply
+  // not calling `onOpenChange(false)` keeps it open when the user backs out.
+  const requestClose = React.useCallback(() => {
+    if (
+      hasPendingChanges &&
+      typeof window !== 'undefined' &&
+      !window.confirm('Discard unsaved changes?')
+    ) {
+      return;
+    }
+    onOpenChange(false);
+  }, [hasPendingChanges, onOpenChange]);
 
   // ---- Save ---------------------------------------------------------------
 
@@ -288,7 +313,7 @@ function DialogBody({
     return patch;
   }
 
-  const handleSave = async () => {
+  const runSave = async (targets: BackendGraph[]) => {
     if (!token) {
       setError('Not authenticated.');
       return;
@@ -297,10 +322,10 @@ function DialogBody({
     setError(null);
 
     let savedCount = 0;
-    let failedCount = 0;
+    const failed: number[] = [];
 
     await Promise.all(
-      graphs.map(async (graph) => {
+      targets.map(async (graph) => {
         const patch = buildPatchForGraph(graph);
         if (Object.keys(patch).length === 0) {
           // Nothing to do for this graph (e.g. multi-mode where only 'mixed'
@@ -313,23 +338,30 @@ function DialogBody({
           onGraphSaved?.(updated);
           savedCount += 1;
         } catch {
-          failedCount += 1;
+          failed.push(graph.id);
         }
       })
     );
 
     setSaving(false);
-    onComplete?.({ savedCount, failedCount });
+    setFailedIds(failed);
+    onComplete?.({ savedCount, failedCount: failed.length });
 
-    if (failedCount > 0) {
+    if (failed.length > 0) {
       // Keep the dialog open and surface the inline notice; also toast so the
       // user sees the failure if the dialog is scrolled past it.
-      setError(`${failedCount} of ${graphs.length} failed to save.`);
-      toast.error(`${failedCount} of ${graphs.length} graphs failed to save`);
+      setError(`${failed.length} of ${targets.length} failed to save.`);
+      toast.error(`${failed.length} of ${targets.length} graphs failed to save`);
     } else {
       toast.success(savedCount > 1 ? `Saved ${savedCount} graphs` : 'Saved');
       onOpenChange(false);
     }
+  };
+
+  const handleSave = () => runSave(graphs);
+  const handleRetryFailed = () => {
+    const failedSet = new Set(failedIds);
+    runSave(graphs.filter((g) => failedSet.has(g.id)));
   };
 
   // ⌘/Ctrl+Enter to save without reaching for the mouse. Skips when there's
@@ -352,7 +384,13 @@ function DialogBody({
   // ---- Render -------------------------------------------------------------
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (next) onOpenChange(true);
+        else requestClose();
+      }}
+    >
       <SheetContent
         side="right"
         className="w-full sm:max-w-xl"
@@ -367,6 +405,7 @@ function DialogBody({
         </SheetHeader>
 
         <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
+          {iiifImage && <GraphPreviewStrip graphs={graphs} iiifImage={iiifImage} />}
           {isMulti && initialAllograph === MIXED && (
             <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
               Selected graphs use different allographs. Choose one to set on all of them, or close
@@ -420,15 +459,13 @@ function DialogBody({
                   Components &amp; features
                   {isMulti && (
                     <span className="ml-2 font-normal text-muted-foreground/80">
-                      (only components shared by all selected)
+                      (set All to add a component to every selected graph)
                     </span>
                   )}
                 </h3>
                 {components.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    {isMulti
-                      ? 'No components are shared across the selected graphs.'
-                      : 'This allograph has no defined components.'}
+                    This allograph has no defined components.
                   </p>
                 ) : (
                   <div className="space-y-3">
@@ -437,6 +474,7 @@ function DialogBody({
                         key={c.component_id}
                         component={c}
                         isMulti={isMulti}
+                        notOnAll={isMulti && !sharedIds.has(c.component_id)}
                         getFeatureState={(fId) => featureMap.get(featureKey(c.component_id, fId))}
                         onSetFeatureState={(fId, s) =>
                           featureMap.set(featureKey(c.component_id, fId), s)
@@ -478,9 +516,21 @@ function DialogBody({
         </div>
 
         <SheetFooter className="gap-2">
-          <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={saving}>
+          <Button variant="ghost" size="sm" onClick={requestClose} disabled={saving}>
             Cancel
           </Button>
+          {failedIds.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleRetryFailed}
+              disabled={saving}
+              className="gap-2 text-destructive"
+            >
+              {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Retry failed ({failedIds.length})
+            </Button>
+          )}
           <Button
             size="sm"
             onClick={handleSave}
@@ -504,9 +554,51 @@ function DialogBody({
 // Subcomponents
 // ---------------------------------------------------------------------------
 
+// A small crop preview of the graph(s) under edit, so the editor can see what
+// they're changing instead of trusting that they clicked the right thumb.
+const PREVIEW_LIMIT = 8;
+
+function GraphPreviewStrip({ graphs, iiifImage }: { graphs: BackendGraph[]; iiifImage: string }) {
+  const shown = graphs.slice(0, PREVIEW_LIMIT);
+  const overflow = graphs.length - shown.length;
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 p-3">
+      {shown.map((g) => (
+        <GraphPreviewThumb key={g.id} graph={g} iiifImage={iiifImage} />
+      ))}
+      {overflow > 0 && (
+        <span className="flex h-16 w-16 items-center justify-center rounded border bg-background text-xs font-medium text-muted-foreground">
+          +{overflow}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function GraphPreviewThumb({ graph, iiifImage }: { graph: BackendGraph; iiifImage: string }) {
+  const annotationJson = React.useMemo(() => JSON.stringify(graph.annotation), [graph.annotation]);
+  const thumb = useIiifThumbnailUrl(iiifImage, annotationJson, 200);
+  return (
+    <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded border bg-background">
+      {thumb ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={thumb}
+          alt={`Graph ${graph.id}`}
+          className="max-h-full max-w-full object-contain"
+          loading="lazy"
+        />
+      ) : (
+        <span className="text-xs text-muted-foreground">…</span>
+      )}
+    </span>
+  );
+}
+
 interface ComponentBlockProps {
   component: Component;
   isMulti: boolean;
+  notOnAll?: boolean;
   getFeatureState: (featureId: number) => TriState;
   onSetFeatureState: (featureId: number, state: TriState) => void;
 }
@@ -514,12 +606,20 @@ interface ComponentBlockProps {
 function ComponentBlock({
   component,
   isMulti,
+  notOnAll,
   getFeatureState,
   onSetFeatureState,
 }: ComponentBlockProps) {
   return (
     <div className="rounded-md border bg-card p-3.5 shadow-sm">
-      <div className="mb-2.5 text-sm font-semibold text-foreground">{component.component_name}</div>
+      <div className="mb-2.5 flex items-center gap-2 text-sm font-semibold text-foreground">
+        {component.component_name}
+        {notOnAll && (
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
+            not on all selected
+          </span>
+        )}
+      </div>
       {component.features.length === 0 ? (
         <p className="text-sm italic text-muted-foreground">No features.</p>
       ) : (

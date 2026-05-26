@@ -24,3 +24,11 @@ export interface Allograph {
 }
 
 export type AllographsResponse = Allograph[];
+
+// Labels-only allograph (the `?light=1` list response) — used where only the
+// id and display label are needed (e.g. gallery grouping/filter).
+export interface AllographSummary {
+  id: number;
+  name: string;
+  character_name?: string | null;
+}
