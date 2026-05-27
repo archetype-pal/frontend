@@ -12,8 +12,6 @@ export interface PaginatedResponse<T> {
 export interface BackofficeDate {
   id: number;
   date: string;
-  probable_text: string;
-  dating_notes: string;
   min_weight: number;
   max_weight: number;
 }
@@ -191,6 +189,8 @@ export interface HistoricalItemDetail {
   hair_type: string | null;
   date: number | null;
   date_display: string | null;
+  probable_text_date: string;
+  dating_notes: string;
   catalogue_numbers: CatalogueNumber[];
   descriptions: HistoricalItemDescription[];
   item_parts: ItemPartNested[];

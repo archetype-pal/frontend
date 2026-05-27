@@ -26,7 +26,7 @@ export interface HistoricalItem {
   format: string;
   date: number | null;
   date_display: string | null;
-  probable_text?: string | null;
+  probable_text_date?: string | null;
   dating_notes?: string | null;
   catalogue_numbers: CatalogueNumber[];
   descriptions: Description[];

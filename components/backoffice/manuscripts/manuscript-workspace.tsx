@@ -100,6 +100,8 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
         language: item.language,
         hair_type: item.hair_type,
         date: item.date,
+        probable_text_date: item.probable_text_date,
+        dating_notes: item.dating_notes,
       });
       setDirty(false);
     }
@@ -356,6 +358,15 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             </div>
 
             <div className="space-y-1.5">
+              <FieldLabel helpField="manuscript.date">Probable text date</FieldLabel>
+              <Input
+                value={draft.probable_text_date ?? ''}
+                onChange={(e) => updateField('probable_text_date', e.target.value)}
+                placeholder="e.g. Probably early 13th century"
+              />
+            </div>
+
+            <div className="space-y-1.5">
               <FieldLabel helpField="manuscript.language">Language</FieldLabel>
               <Input
                 value={draft.language ?? ''}
@@ -370,6 +381,16 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
                 value={draft.hair_type ?? ''}
                 onChange={(e) => updateField('hair_type', e.target.value)}
                 placeholder="e.g. HFHF"
+              />
+            </div>
+
+            <div className="space-y-1.5 lg:col-span-3">
+              <FieldLabel helpField="manuscript.date">Dating notes</FieldLabel>
+              <textarea
+                value={draft.dating_notes ?? ''}
+                onChange={(e) => updateField('dating_notes', e.target.value)}
+                placeholder="Evidence and reasoning for this historical item's date"
+                className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
           </div>
