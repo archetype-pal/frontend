@@ -80,8 +80,8 @@ export function NewImageTextDialog({
   // it twice in a row would carry over the previous attempt's input.
   useEffect(() => {
     if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm({
-      // eslint-disable-line react-hooks/set-state-in-effect
       itemImage: defaultItemImage ? String(defaultItemImage) : '',
       type: defaultType,
       language: '',
