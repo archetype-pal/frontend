@@ -18,6 +18,9 @@ vi.mock('./annotation-popup-card', () => ({
       data-active={String(props.isActive)}
       data-z-index={String(props.zIndex)}
       data-in-collection={String(props.isAnnotationInCollection)}
+      data-can-use-collection={String(
+        (props.popupCapabilities as { canUseCollection?: boolean }).canUseCollection
+      )}
     >
       {/* Buttons exposing the wiring we want to test. */}
       <button
@@ -247,6 +250,35 @@ describe('AnnotationPopupLayer', () => {
     expect(props.onToggleAnnotationCollection).toHaveBeenCalledTimes(1);
     // The card sees the in-collection flag derived from isInCollection.
     expect(screen.getByTestId('popup-card').dataset.inCollection).toBe('true');
+  });
+
+  it('wires saved editorial annotations to collection controls', () => {
+    const editorialItem = {
+      id: 99,
+      type: 'graph',
+      annotation_type: 'editorial',
+    } as CollectionItem;
+    const props = {
+      ...defaults(),
+      visiblePopupRecords: [
+        makePopup('db:99', {
+          annotation: {
+            id: 'db:99',
+            type: 'Annotation',
+            target: {},
+            _meta: { annotationType: 'editorial' },
+          },
+        }),
+      ],
+      activePopupId: 'db:99',
+      getCollectionItemFor: vi.fn(() => editorialItem),
+      isInCollection: vi.fn(() => false),
+    };
+    render(<AnnotationPopupLayer {...props} />);
+
+    expect(screen.getByTestId('popup-card').dataset.canUseCollection).toBe('true');
+    fireEvent.click(screen.getByTestId('toggle-collection'));
+    expect(props.onToggleAnnotationCollection).toHaveBeenCalledTimes(1);
   });
 
   it('toggle-collection is a no-op when the annotation has no collection item', () => {

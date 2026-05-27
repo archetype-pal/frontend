@@ -35,10 +35,15 @@ function getImageDetailUrl(item: CollectionItem): string {
   return buildImageDetailUrl(item) ?? '#';
 }
 
+function isEditorialAnnotation(item: CollectionItem): boolean {
+  return item.type === 'graph' && item.annotation_type === 'editorial';
+}
+
 /** Card for a graph item: thumbnail URL with bounds (no upscaling). */
 function CollectionGraphCard({ item, title }: { item: CollectionItem; title: string }) {
   const infoUrl = (item.image_iiif || '').trim();
   const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined);
+  const isEditorial = isEditorialAnnotation(item);
 
   return (
     <div className="relative bg-card border border-border rounded-lg shadow-sm hover:shadow-lg hover:border-border/80 transition-all duration-300 overflow-hidden group cursor-pointer">
@@ -64,6 +69,11 @@ function CollectionGraphCard({ item, title }: { item: CollectionItem; title: str
           >
             {infoUrl ? '…' : 'No Image'}
           </GraphDetailLink>
+        )}
+        {isEditorial && (
+          <div className="absolute left-2 top-2 z-10 rounded border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-800 shadow-sm">
+            Editorial
+          </div>
         )}
         <div className="absolute top-2 right-2 z-10 flex gap-1">
           <OpenLightboxButton
@@ -95,9 +105,15 @@ function CollectionPageContent() {
     useCollectionViewState(items, clearCollection);
 
   const images = filteredItems.filter((item) => item.type === 'image');
-  const graphs = filteredItems.filter((item) => item.type === 'graph');
+  const annotations = filteredItems.filter(
+    (item) => item.type === 'graph' && !isEditorialAnnotation(item)
+  );
+  const editorialAnnotations = filteredItems.filter(isEditorialAnnotation);
   const allImages = items.filter((item) => item.type === 'image');
-  const allGraphs = items.filter((item) => item.type === 'graph');
+  const allAnnotations = items.filter(
+    (item) => item.type === 'graph' && !isEditorialAnnotation(item)
+  );
+  const allEditorialAnnotations = items.filter(isEditorialAnnotation);
 
   const getUrl = (item: CollectionItem) => (item.type === 'image' ? getImageDetailUrl(item) : '#');
 
@@ -110,8 +126,8 @@ function CollectionPageContent() {
           </div>
           <h1 className="text-4xl font-bold mb-4 text-foreground">My Collection</h1>
           <p className="text-muted-foreground text-lg mb-10 leading-relaxed max-w-md mx-auto">
-            Your collection is empty. Start adding items by hovering over thumbnails in the search
-            pages and clicking the star icon.
+            Your collection is empty. Start adding images or annotations from search results and
+            manuscript viewers by clicking the star icon.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/search/images">
@@ -121,7 +137,7 @@ function CollectionPageContent() {
             </Link>
             <Link href="/search/graphs">
               <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                Browse Graphs
+                Browse Annotations
               </Button>
             </Link>
           </div>
@@ -256,7 +272,7 @@ function CollectionPageContent() {
                 onClick={() => setFilter(f)}
                 className={f === 'all' ? 'min-w-[60px]' : 'min-w-[70px]'}
               >
-                {f === 'all' ? 'All' : f === 'image' ? 'Images' : 'Graphs'}
+                {f === 'all' ? 'All' : f === 'image' ? 'Images' : 'Annotations'}
               </Button>
             ))}
           </div>
@@ -278,7 +294,13 @@ function CollectionPageContent() {
       </div>
       <div className="space-y-12">
         {renderSection('Images', images, allImages, 'image')}
-        {renderSection('Graphs', graphs, allGraphs, 'graph')}
+        {renderSection('Annotations', annotations, allAnnotations, 'graph')}
+        {renderSection(
+          'Editorial Annotations',
+          editorialAnnotations,
+          allEditorialAnnotations,
+          'graph'
+        )}
       </div>
     </div>
   );

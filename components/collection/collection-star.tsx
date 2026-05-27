@@ -46,7 +46,6 @@ export function CollectionStar({
     if (isCollected) {
       removeItem(itemId, itemType);
     } else {
-      if (itemType === 'graph' && item.annotation_type === 'editorial') return;
       addItem({
         ...item,
         id: itemId,

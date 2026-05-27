@@ -30,16 +30,12 @@ const CollectionContext = React.createContext<CollectionContextType | undefined>
 
 const STORAGE_KEY = 'archetype_collection';
 
-function isPublicCollectionItem(item: CollectionItem): boolean {
-  return item.type !== 'graph' || item.annotation_type !== 'editorial';
-}
-
 function loadFromStorage(): CollectionItem[] {
   if (typeof window === 'undefined') return [];
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     const parsed = stored ? JSON.parse(stored) : [];
-    return Array.isArray(parsed) ? parsed.filter(isPublicCollectionItem) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -74,8 +70,6 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   }, [items, isHydrated]);
 
   const addItem = React.useCallback((item: CollectionItem) => {
-    if (!isPublicCollectionItem(item)) return;
-
     setItems((prev) => {
       // Check if item already exists
       const exists = prev.some((i) => i.id === item.id && i.type === item.type);
