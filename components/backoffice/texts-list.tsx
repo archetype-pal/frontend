@@ -10,6 +10,7 @@ import {
   Plus,
   Search,
   Trash2,
+  Upload,
   X,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -39,6 +40,7 @@ import {
 } from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { NewImageTextDialog } from '@/components/backoffice/new-image-text-dialog';
+import { ImportTeiDialog } from '@/components/backoffice/import-tei-dialog';
 import { ServerPagination } from '@/components/backoffice/common/server-pagination';
 import {
   Table,
@@ -137,6 +139,7 @@ export function TextsList() {
   const [searchInput, setSearchInput] = useState(filters.search);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [newDialogOpen, setNewDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
   // Mirror the URL value into the local input when the URL is the source of
@@ -325,6 +328,14 @@ export function TextsList() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => setImportDialogOpen(true)}
+              >
+                <Upload className="mr-1 h-3 w-3" /> Import TEI
+              </Button>
               <Button size="sm" className="h-7 text-xs" onClick={() => setNewDialogOpen(true)}>
                 <Plus className="mr-1 h-3 w-3" /> New
               </Button>
@@ -455,6 +466,8 @@ export function TextsList() {
       </Card>
 
       <NewImageTextDialog open={newDialogOpen} onOpenChange={setNewDialogOpen} />
+
+      <ImportTeiDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
 
       <ConfirmDialog
         open={confirmBulkDelete}
