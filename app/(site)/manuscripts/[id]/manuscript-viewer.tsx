@@ -26,6 +26,10 @@ function toIiifProxyUrl(url: string): string {
   }
 }
 
+function displayMetadataValue(value?: string | null): string {
+  return value?.trim() || '-';
+}
+
 export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -128,8 +132,12 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
               </dd>
               <dt className="text-muted-foreground">Format</dt>
               <dd>{manuscript.historical_item.format}</dd>
-              <dt className="text-muted-foreground">Text Date</dt>
-              <dd>{manuscript.historical_item.date_display ?? '-'}</dd>
+              <dt className="text-muted-foreground">Text date</dt>
+              <dd>{displayMetadataValue(manuscript.historical_item.date_display)}</dd>
+              <dt className="text-muted-foreground">Probable text</dt>
+              <dd>{displayMetadataValue(manuscript.historical_item.probable_text)}</dd>
+              <dt className="text-muted-foreground">Dating notes</dt>
+              <dd>{displayMetadataValue(manuscript.historical_item.dating_notes)}</dd>
             </dl>
           </section>
         </TabsContent>

@@ -12,6 +12,8 @@ export interface PaginatedResponse<T> {
 export interface BackofficeDate {
   id: number;
   date: string;
+  probable_text: string;
+  dating_notes: string;
   min_weight: number;
   max_weight: number;
 }

@@ -27,6 +27,7 @@ type CrudFieldConfig<T> = {
   label: string;
   placeholder?: string;
   inputType?: 'text' | 'number';
+  required?: boolean;
   tableSize?: number;
   parse?: (value: string) => unknown;
 };
@@ -277,7 +278,8 @@ export function SimpleCrudPage<T extends { id: number }>({
             <Button
               onClick={() => createMut.mutate()}
               disabled={
-                fields.some((f) => !(draft[String(f.key)] ?? '').trim()) || createMut.isPending
+                fields.some((f) => f.required !== false && !(draft[String(f.key)] ?? '').trim()) ||
+                createMut.isPending
               }
             >
               Create

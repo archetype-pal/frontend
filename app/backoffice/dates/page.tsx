@@ -23,6 +23,8 @@ export default function DatesPage() {
       createFn={(token, payload) =>
         createDate(token, {
           date: String(payload.date ?? ''),
+          probable_text: String(payload.probable_text ?? ''),
+          dating_notes: String(payload.dating_notes ?? ''),
           min_weight: Number(payload.min_weight) || 0,
           max_weight: Number(payload.max_weight) || 0,
         })
@@ -37,6 +39,20 @@ export default function DatesPage() {
       searchColumn="date"
       fields={[
         { key: 'date', label: `${dateLabel} string`, placeholder: 'e.g. s.xii' },
+        {
+          key: 'probable_text',
+          label: 'Probable text',
+          placeholder: 'Optional probable date text',
+          required: false,
+          tableSize: 180,
+        },
+        {
+          key: 'dating_notes',
+          label: 'Dating notes',
+          placeholder: 'Optional dating notes',
+          required: false,
+          tableSize: 240,
+        },
         {
           key: 'min_weight',
           label: dateMinWeightLabel,

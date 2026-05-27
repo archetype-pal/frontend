@@ -24,8 +24,10 @@ export interface Description {
 export interface HistoricalItem {
   type: string;
   format: string;
-  date: string;
+  date: number | null;
   date_display: string | null;
+  probable_text?: string | null;
+  dating_notes?: string | null;
   catalogue_numbers: CatalogueNumber[];
   descriptions: Description[];
 }

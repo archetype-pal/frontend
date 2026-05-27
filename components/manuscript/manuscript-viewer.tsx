@@ -317,7 +317,7 @@ export default function ManuscriptViewer({
       shelfmark: manuscript?.current_item?.shelfmark || manuscript?.display_label || '',
       repositoryName: manuscript?.current_item?.repository?.name || '',
       repositoryCity: manuscript?.current_item?.repository?.place || '',
-      date: manuscript?.historical_item?.date || '',
+      date: manuscript?.historical_item?.date_display || '',
     };
   }, [manuscript, manuscriptImage]);
 
@@ -2124,7 +2124,7 @@ export default function ManuscriptViewer({
                 locus: manuscriptImage.locus,
                 repository_name: manuscript.current_item?.repository?.name || '',
                 repository_city: manuscript.current_item?.repository?.place || '',
-                date: manuscript.historical_item?.date || '',
+                date: manuscript.historical_item?.date_display || '',
               }}
               variant="outline"
               size="icon"
