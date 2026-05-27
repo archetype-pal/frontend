@@ -26,7 +26,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { RichTextEditor } from '@/components/backoffice/common/rich-text-editor';
+import { TeiTextEditor } from '@/components/backoffice/tei-text-editor';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
@@ -308,13 +308,13 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
 
       <div className="space-y-1.5">
         <Label>Content</Label>
-        <RichTextEditor
-          content={content}
-          onChange={(html) => {
-            setContent(html);
+        <TeiTextEditor
+          value={content}
+          onChange={(next) => {
+            setContent(next);
             setDirty(true);
           }}
-          placeholder="Enter transcription or translation..."
+          placeholder="Enter TEI markup for the transcription or translation..."
         />
       </div>
 
