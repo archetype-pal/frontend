@@ -89,6 +89,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
   const [type, setType] = useState<string>('Transcription');
   const [language, setLanguage] = useState('');
   const [dirty, setDirty] = useState(false);
+  const [teiValid, setTeiValid] = useState(true);
 
   useEffect(() => {
     if (text) {
@@ -149,7 +150,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
   useKeyboardShortcut(
     'mod+s',
     () => {
-      if (dirty && !saveMut.isPending) saveMut.mutate();
+      if (dirty && teiValid && !saveMut.isPending) saveMut.mutate();
     },
     dirty
   );
@@ -239,7 +240,12 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
             pending={transitionMut.isPending}
             onTransition={(payload) => transitionMut.mutate(payload)}
           />
-          <Button size="sm" onClick={() => saveMut.mutate()} disabled={!dirty || saveMut.isPending}>
+          <Button
+            size="sm"
+            onClick={() => saveMut.mutate()}
+            disabled={!dirty || !teiValid || saveMut.isPending}
+            title={!teiValid ? 'Fix invalid TEI before saving' : undefined}
+          >
             {saveMut.isPending ? (
               <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
             ) : (
@@ -310,6 +316,8 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
         <Label>Content</Label>
         <TeiTextEditor
           value={content}
+          token={token}
+          onValidityChange={setTeiValid}
           onChange={(next) => {
             setContent(next);
             setDirty(true);

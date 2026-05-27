@@ -1,14 +1,19 @@
 'use client';
 
 import * as React from 'react';
-import { Code2, Eye } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Code2, Eye } from 'lucide-react';
 
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { cn } from '@/lib/utils';
+import { validateTei, type TeiValidationError } from '@/services/image-texts';
 
 interface TeiTextEditorProps {
   value: string;
   onChange: (value: string) => void;
+  /** Auth token for the validation endpoint. */
+  token: string | null;
+  /** Reports TEI well-formedness so the parent can gate saving. */
+  onValidityChange?: (valid: boolean) => void;
   placeholder?: string;
 }
 
@@ -23,8 +28,36 @@ type Mode = 'source' | 'preview';
  * through the same TEI→HTML translator the public viewer uses). CodeMirror
  * syntax highlighting + schema validation is the later H.8/H.10 polish.
  */
-export function TeiTextEditor({ value, onChange, placeholder }: TeiTextEditorProps) {
+export function TeiTextEditor({
+  value,
+  onChange,
+  token,
+  onValidityChange,
+  placeholder,
+}: TeiTextEditorProps) {
   const [mode, setMode] = React.useState<Mode>('source');
+  const [errors, setErrors] = React.useState<TeiValidationError[]>([]);
+  const [checked, setChecked] = React.useState(false);
+
+  // Debounced well-formedness check against the server validator. The parent
+  // uses `onValidityChange` to disable Save while the TEI is malformed.
+  React.useEffect(() => {
+    if (!token) return;
+    const handle = setTimeout(async () => {
+      try {
+        const result = await validateTei(value, token);
+        setErrors(result.errors);
+        setChecked(true);
+        onValidityChange?.(result.valid);
+      } catch {
+        // Network/endpoint failure shouldn't block editing; treat as unknown.
+        setChecked(false);
+      }
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [value, token, onValidityChange]);
+
+  const valid = errors.length === 0;
 
   return (
     <div className="rounded-md border">
@@ -35,9 +68,25 @@ export function TeiTextEditor({ value, onChange, placeholder }: TeiTextEditorPro
         <ModeButton active={mode === 'preview'} onClick={() => setMode('preview')} icon={Eye}>
           Preview
         </ModeButton>
-        <span className="ml-auto pr-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-          TEI
-        </span>
+        {checked &&
+          (valid ? (
+            <span className="ml-auto flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Valid TEI
+            </span>
+          ) : (
+            <span
+              className="ml-auto flex items-center gap-1 text-[11px] font-medium text-destructive"
+              title={errors[0] ? `Line ${errors[0].line}: ${errors[0].message}` : undefined}
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {errors[0] ? `Line ${errors[0].line}: ${errors[0].message}` : 'Invalid TEI'}
+            </span>
+          ))}
+        {!checked && (
+          <span className="ml-auto pr-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+            TEI
+          </span>
+        )}
       </div>
 
       {mode === 'source' ? (

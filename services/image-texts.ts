@@ -63,6 +63,29 @@ export async function updateImageText(
   return response.json();
 }
 
+export interface TeiValidationError {
+  line: number;
+  col: number;
+  message: string;
+}
+
+export interface TeiValidationResult {
+  valid: boolean;
+  errors: TeiValidationError[];
+}
+
+export async function validateTei(content: string, token: string): Promise<TeiValidationResult> {
+  const response = await authFetch('/api/v1/manuscripts/image-texts/validate-tei/', token, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  });
+  if (!response.ok) {
+    throw new Error(`Validation request failed: ${response.status}`);
+  }
+  return response.json();
+}
+
 export interface CreateImageTextPayload {
   item_image: number;
   type: 'Transcription' | 'Translation';
