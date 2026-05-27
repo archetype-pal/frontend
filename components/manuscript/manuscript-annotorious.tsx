@@ -196,7 +196,8 @@ export default function ManuscriptAnnotorious({
         'a9s-current-selected',
         'a9s-multi-selected',
         'a9s-editorial',
-        'a9s-draft'
+        'a9s-draft',
+        'a9s-text'
       );
     });
 
@@ -217,6 +218,11 @@ export default function ManuscriptAnnotorious({
 
       if (isEditorialAnnotation(a)) {
         el.classList.add('a9s-editorial');
+        return;
+      }
+
+      if (a._meta?.annotationType === 'text') {
+        el.classList.add('a9s-text');
         return;
       }
 

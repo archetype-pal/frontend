@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import {
+  BookOpenText,
   LaptopMinimal,
   ZoomIn,
   ZoomOut,
@@ -35,6 +36,8 @@ import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupLayer } from '@/components/annotation/annotation-popup-layer';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { fetchHands } from '@/services/manuscripts';
+import { fetchImageTextsForImage, type ImageTextDetail } from '@/services/image-texts';
+import { ViewerTextPanel } from './viewer-text-panel';
 import { a9sToBackendFeature, dbIdFromA9s } from '@/lib/anno-mapping';
 
 import {
@@ -289,6 +292,14 @@ export default function ManuscriptViewer({
   const [selectedAnnotationIds, setSelectedAnnotationIds] = React.useState<string[]>([]);
 
   const [imageHeight, setImageHeight] = React.useState<number>(0);
+
+  // Text↔region linking: the image-texts for this image, whether the side
+  // panel is shown, and the Graph id of the region currently selected on the
+  // image (drives the span highlight in the panel).
+  const [imageTexts, setImageTexts] = React.useState<ImageTextDetail[]>([]);
+  const [isTextPanelOpen, setIsTextPanelOpen] = React.useState(false);
+  const [linkedGraphId, setLinkedGraphId] = React.useState<number | null>(null);
+
   const imageTools = useViewerImageAdjustments();
   const { adjustments: imageAdjustments, hasChanges: hasImageToolChanges } = imageTools;
 
@@ -561,6 +572,12 @@ export default function ManuscriptViewer({
       const canonical = getCanonicalAnnotation(annotation);
       const isDraft = !isDbId(canonical.id);
       const meta = canonical._meta;
+
+      // Text-region annotations exist only to back the transcription↔image
+      // link; show them only while the text panel is open so the standard
+      // annotation view stays uncluttered.
+      if (meta?.annotationType === 'text') return isTextPanelOpen;
+
       const isExplicitEditorial = meta?.annotationType === 'editorial';
 
       const kindPass = isExplicitEditorial
@@ -590,6 +607,7 @@ export default function ManuscriptViewer({
       availableAllographFilterIds.length,
       availableHandFilterIds.length,
       getCanonicalAnnotation,
+      isTextPanelOpen,
     ]
   );
 
@@ -1327,6 +1345,7 @@ export default function ManuscriptViewer({
         allographNameById,
         isPublicDemoMode,
         includeEditorial: canViewEditorialControls,
+        includeText: true,
         token,
         currentViewerAnnotations: [],
         currentUrl: '',
@@ -1521,6 +1540,9 @@ export default function ManuscriptViewer({
       cancelPendingPopupClear();
 
       const selected = annotation ? getCanonicalAnnotation(annotation) : null;
+
+      // region → text: highlight the matching span(s) in the side panel.
+      setLinkedGraphId(selected ? (dbIdFromA9s(selected) ?? null) : null);
 
       if (selected) {
         if (activeTool === 'modify') {
@@ -1756,6 +1778,23 @@ export default function ManuscriptViewer({
     };
   }, [imageId]);
 
+  // load image-texts for the side panel; auto-open it when the image has text
+  React.useEffect(() => {
+    let active = true;
+    fetchImageTextsForImage(imageId, token)
+      .then((texts) => {
+        if (!active) return;
+        setImageTexts(texts);
+        setIsTextPanelOpen(texts.length > 0);
+      })
+      .catch(() => {
+        if (active) setImageTexts([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [imageId, token]);
+
   // load allograph ids present on this image
   React.useEffect(() => {
     if (!manuscriptImage) return;
@@ -1795,6 +1834,7 @@ export default function ManuscriptViewer({
           allographNameById,
           isPublicDemoMode,
           includeEditorial: canViewEditorialControls,
+          includeText: true,
           token,
           currentViewerAnnotations: viewerApiRef.current?.getAnnotations?.() ?? [],
         });
@@ -2199,14 +2239,16 @@ export default function ManuscriptViewer({
       <div className={`relative flex flex-1 ${isFullScreen ? 'mt-20' : ''}`}>
         <div
           className={
-            isFullScreen ? 'flex flex-1 overflow-hidden p-0' : 'flex flex-1 overflow-hidden p-4'
+            isFullScreen
+              ? 'flex flex-1 gap-3 overflow-hidden p-0'
+              : 'flex flex-1 gap-4 overflow-hidden p-4'
           }
         >
           <div
             className={
               isFullScreen
-                ? 'relative h-full w-full overflow-hidden rounded-lg border bg-accent/50'
-                : 'relative h-[calc(100%-3rem)] w-full overflow-hidden rounded-lg border bg-accent/50'
+                ? 'relative h-full min-w-0 flex-1 overflow-hidden rounded-lg border bg-accent/50'
+                : 'relative h-[calc(100%-3rem)] min-w-0 flex-1 overflow-hidden rounded-lg border bg-accent/50'
             }
           >
             <Toolbar orientation={viewerSettings.toolbarPosition}>
@@ -2287,6 +2329,22 @@ export default function ManuscriptViewer({
                   </TooltipTrigger>
                   <TooltipContent>Refresh</TooltipContent>
                 </Tooltip>
+
+                {imageTexts.length > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={isTextPanelOpen ? 'default' : 'ghost'}
+                        size="icon"
+                        aria-label={isTextPanelOpen ? 'Hide text' : 'Show text'}
+                        onClick={() => setIsTextPanelOpen((open) => !open)}
+                      >
+                        <BookOpenText className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{isTextPanelOpen ? 'Hide text' : 'Show text'}</TooltipContent>
+                  </Tooltip>
+                )}
 
                 {canCreateEditorialAnnotations && (
                   <Tooltip>
@@ -2432,6 +2490,32 @@ export default function ManuscriptViewer({
               onConfirmDraftAnnotation={handleConfirmDraftAnnotation}
             />
           </div>
+
+          {isTextPanelOpen && imageTexts.length > 0 && (
+            <div
+              className={
+                isFullScreen
+                  ? 'h-full w-[34rem] max-w-[45%] shrink-0'
+                  : 'h-[calc(100%-3rem)] w-[34rem] max-w-[45%] shrink-0'
+              }
+            >
+              <ViewerTextPanel
+                texts={imageTexts}
+                linkedGraphId={linkedGraphId}
+                onSpanHover={(graphId) =>
+                  setHoveredAnnotationId(graphId != null ? `db:${graphId}` : null)
+                }
+                onSpanActivate={(graphId) => {
+                  viewerApiRef.current?.selectAnnotationById?.(`db:${graphId}`);
+                  viewerApiRef.current?.centerOnAnnotation?.(`db:${graphId}`);
+                  // Programmatic selection doesn't fire onSelect, so mark the
+                  // span linked here to keep the click path symmetric.
+                  setLinkedGraphId(graphId);
+                }}
+                onClose={() => setIsTextPanelOpen(false)}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

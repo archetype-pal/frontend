@@ -773,3 +773,46 @@ g.a9s-selection.a9s-draft:hover path {
   stroke-width: 4px !important;
   fill: hsl(var(--c-annot-draft-h) var(--c-annot-draft-s) var(--c-annot-draft-l) / 0.22) !important;
 }
+
+/* Text↔region linking. data-dpt spans carrying a data-graph-id become
+   interactive inside the viewer text panel: hovering previews the phrase,
+   and the span linked to the currently selected image region gets a stronger
+   marker so the eye can find it after clicking a region. */
+.viewer-text-panel [data-graph-id] {
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background-color 0.15s ease;
+}
+
+.viewer-text-panel [data-graph-id]:hover {
+  background-color: hsl(var(--c-transcription-h) 70% 55% / 0.22);
+}
+
+.viewer-text-panel [data-graph-linked='true'],
+.viewer-text-panel [data-graph-linked='true']:hover {
+  background-color: hsl(var(--c-transcription-h) 70% 55% / 0.38);
+  box-shadow: 0 0 0 1px hsl(var(--c-transcription-h) 60% 45% / 0.55);
+}
+
+/* Text-region annotations on the image (shown only while the text panel is
+   open). Tinted with the transcription hue and kept faint so they read as
+   "transcribed area" without competing with glyph annotations. */
+g.a9s-annotation.a9s-text .a9s-inner,
+g.a9s-annotation.a9s-text rect,
+g.a9s-annotation.a9s-text polygon,
+g.a9s-annotation.a9s-text path {
+  stroke: hsl(var(--c-transcription-h) 55% 50%) !important;
+  fill: hsl(var(--c-transcription-h) 60% 55% / 0.1) !important;
+}
+
+g.a9s-annotation.a9s-text .a9s-outer {
+  stroke: transparent !important;
+  fill: transparent !important;
+}
+
+g.a9s-annotation.a9s-text:hover .a9s-inner,
+g.a9s-annotation.a9s-text:hover rect,
+g.a9s-annotation.a9s-text:hover polygon,
+g.a9s-annotation.a9s-text:hover path {
+  fill: hsl(var(--c-transcription-h) 60% 55% / 0.25) !important;
+}

@@ -12,6 +12,7 @@ export async function buildInitialViewerAnnotations(params: {
   allographNameById: Map<number, string>;
   isPublicDemoMode: boolean;
   includeEditorial?: boolean;
+  includeText?: boolean;
   token?: string | null;
   currentViewerAnnotations: A9sAnnotation[];
   currentUrl?: string;
@@ -21,6 +22,7 @@ export async function buildInitialViewerAnnotations(params: {
     imageHeight,
     allographNameById,
     includeEditorial = false,
+    includeText = false,
     token,
     currentViewerAnnotations,
     currentUrl,
@@ -30,7 +32,13 @@ export async function buildInitialViewerAnnotations(params: {
   const editorialAnnotations = includeEditorial
     ? await fetchAnnotationsForImage(itemImageId, undefined, 'editorial', token)
     : [];
-  const list = [...imageAnnotations, ...editorialAnnotations];
+  // Text-region annotations back the transcription↔image link. They render as
+  // boxes but are gated behind the text panel's visibility filter in the
+  // viewer, so the default annotation view is unaffected.
+  const textAnnotations = includeText
+    ? await fetchAnnotationsForImage(itemImageId, undefined, 'text', token)
+    : [];
+  const list = [...imageAnnotations, ...editorialAnnotations, ...textAnnotations];
 
   const dbMapped: A9sAnnotation[] = list.map((annotation) =>
     backendToA9sAnnotation(
