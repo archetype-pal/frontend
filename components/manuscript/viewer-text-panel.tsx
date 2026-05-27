@@ -1,10 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { X } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { Button } from '@/components/ui/button';
+import { API_BASE_URL } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import type { ImageTextDetail } from '@/services/image-texts';
 
@@ -107,15 +108,26 @@ export function ViewerTextPanel({
             </button>
           ))}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          aria-label="Hide text panel"
-          onClick={onClose}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {active ? (
+            <a
+              href={`${API_BASE_URL}/api/v1/manuscripts/image-texts/${active.id}/tei/`}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              title={`Download ${active.type} as TEI`}
+            >
+              <Download className="h-4 w-4" />
+            </a>
+          ) : null}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            aria-label="Hide text panel"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </header>
 
       <div
