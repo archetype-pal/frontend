@@ -35,13 +35,17 @@ export const TeiMark = Mark.create({
     let spec: unknown = 0;
     for (let i = stack.length - 1; i >= 0; i--) {
       const entry = stack[i];
-      const type = entry.attrs?.type ? `:${entry.attrs.type}` : '';
+      // The human label prefers the @type (e.g. "address", "name") and falls
+      // back to the element name; surfaced as a hover pill via data-tei-label.
+      const label = entry.attrs?.type || entry.el;
+      const full = entry.attrs?.type ? `${entry.el}:${entry.attrs.type}` : entry.el;
       spec = [
         'span',
         {
           class: `tei-el tei-el-${entry.el}`,
           'data-tei-el': entry.el,
-          title: `${entry.el}${type}`,
+          'data-tei-label': label,
+          title: full,
         },
         spec,
       ];

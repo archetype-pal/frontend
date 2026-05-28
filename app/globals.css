@@ -858,3 +858,39 @@ g.a9s-annotation.a9s-text:hover path {
   font-size: 0.85em;
   color: hsl(var(--c-transcription-h) 40% 40%);
 }
+
+/* Track B (old C.1) — hovering a marked element shows a small pill naming it
+   (its @type, else the element), so editors can read the markup structure
+   inline without opening source view. */
+.tei-rich .tei-el {
+  position: relative;
+}
+
+.tei-rich .tei-el:hover {
+  background: hsl(var(--c-transcription-h) 60% 55% / 0.1);
+}
+
+.tei-rich .tei-el:hover::after {
+  content: attr(data-tei-label);
+  position: absolute;
+  left: 0;
+  top: -1.4em;
+  z-index: 5;
+  white-space: nowrap;
+  border-radius: 4px;
+  background: hsl(var(--c-transcription-h) 45% 30%);
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: white;
+  pointer-events: none;
+}
+
+.tei-rich .tei-el-persName:hover::after {
+  background: hsl(var(--c-translation-h) 45% 35%);
+}
+
+.tei-rich .tei-el-placeName:hover::after {
+  background: hsl(160 45% 32%);
+}
