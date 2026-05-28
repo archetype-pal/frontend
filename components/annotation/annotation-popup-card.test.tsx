@@ -46,7 +46,7 @@ function renderCard(overrides: Partial<AnnotationPopupCardProps> = {}) {
     onDraftInternalNoteTextChange: vi.fn(),
     onCancelDraftAnnotation: vi.fn(),
     onConfirmDraftAnnotation: vi.fn(),
-    popupTab: 'components',
+    popupTab: 'details',
     onPopupTabChange: vi.fn(),
     hasPositionsTab: false,
     selectedComponentGroups: [],
@@ -69,6 +69,12 @@ describe('AnnotationPopupCard', () => {
     const props = renderCard();
 
     expect(screen.getByRole('tab', { name: 'Details' }).getAttribute('data-state')).toBe('active');
+    expect(screen.getByRole('tab', { name: 'Components' }).getAttribute('data-state')).toBe(
+      'inactive'
+    );
+    expect(screen.getByRole('tab', { name: 'Positions' }).getAttribute('data-state')).toBe(
+      'inactive'
+    );
     expect(screen.getByRole('tab', { name: 'Notes' }).getAttribute('data-state')).toBe('inactive');
     expect(screen.queryByPlaceholderText('Type note')).toBeNull();
 
@@ -77,6 +83,28 @@ describe('AnnotationPopupCard', () => {
       ctrlKey: false,
     });
     expect(props.onPopupTabChange).toHaveBeenCalledWith('notes');
+  });
+
+  it('renders standard components in their own tab', () => {
+    renderCard({ popupTab: 'components' });
+
+    expect(screen.getByRole('tab', { name: 'Components' }).getAttribute('data-state')).toBe(
+      'active'
+    );
+    expect(screen.getAllByText('Components').length).toBeGreaterThan(1);
+    expect(
+      screen.getByText('Choose an allograph to load the related components and features.')
+    ).not.toBeNull();
+  });
+
+  it('renders standard positions in their own tab', () => {
+    renderCard({ popupTab: 'positions' });
+
+    expect(screen.getByRole('tab', { name: 'Positions' }).getAttribute('data-state')).toBe(
+      'active'
+    );
+    expect(screen.getAllByText('Positions').length).toBeGreaterThan(1);
+    expect(screen.getByText('None selected')).not.toBeNull();
   });
 
   it('renders the standard note editor when the notes tab is selected', () => {

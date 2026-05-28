@@ -1,16 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import {
-  CheckCheck,
-  ChevronDown,
-  ChevronRight,
-  RotateCcw,
-  Share2,
-  Sparkles,
-  Star,
-  X,
-} from 'lucide-react';
+import { CheckCheck, RotateCcw, Share2, Sparkles, Star, X } from 'lucide-react';
 
 import type { Allograph } from '@/types/allographs';
 
@@ -40,7 +31,7 @@ import { useModelLabels } from '@/contexts/model-labels-context';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { cn } from '@/lib/utils';
 
-type PopupTab = 'components' | 'positions' | 'notes';
+type PopupTab = 'details' | 'components' | 'positions' | 'notes';
 
 type SelectedComponentGroup = {
   componentId: number;
@@ -190,7 +181,15 @@ export function AnnotationPopupCard({
   const isEditorialDraft = popupEditorMode === 'editorial_draft';
   const isEditorialExisting = popupEditorMode === 'editorial_existing';
   const canUseAllographShortcut = isActive && (isStandardDraft || isStandardExisting);
-  const standardPopupTab = popupTab === 'notes' ? 'notes' : 'components';
+  const standardPopupTab = ['details', 'components', 'positions', 'notes'].includes(popupTab)
+    ? popupTab
+    : 'details';
+  const publicPopupTab =
+    popupTab === 'notes'
+      ? 'notes'
+      : popupTab === 'positions' && hasPositionsTab
+        ? 'positions'
+        : 'components';
   const annotationKindLabel =
     isStandardDraft || isStandardExisting
       ? 'Standard'
@@ -266,21 +265,7 @@ export function AnnotationPopupCard({
       ? (allographOptions.find((allograph) => allograph.id === draftAllographId) ?? null)
       : null;
 
-  const [isPositionsOpen, setIsPositionsOpen] = React.useState(false);
-
   const selectedPositionsCount = draftPositionIds.length;
-
-  React.useEffect(() => {
-    if (draftPositionIds.length > 0) {
-      setIsPositionsOpen(true);
-    }
-  }, [draftPositionIds]);
-
-  React.useEffect(() => {
-    if (draftPositionIds.length === 0) {
-      setIsPositionsOpen(false);
-    }
-  }, [draftAllographId, draftPositionIds.length]);
 
   const isComponentSelected = (componentId: number) =>
     draftGraphcomponentSet.some((component) => component.component === componentId);
@@ -414,64 +399,43 @@ export function AnnotationPopupCard({
   };
 
   const standardPositionsSection = (
-    <div className="space-y-2">
-      <div className="rounded-md border">
-        <button
-          type="button"
-          className="flex w-full items-center justify-between px-3 py-2 text-left"
-          onClick={() => setIsPositionsOpen((prev) => !prev)}
-        >
-          <div className="flex min-w-0 items-center gap-2">
-            {isPositionsOpen ? (
-              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-            )}
-
-            <span className="text-sm font-medium text-foreground">
-              {getPluralLabel('position')}
-            </span>
-          </div>
-
-          <span className="text-xs text-muted-foreground">
-            {selectedPositionsCount > 0 ? `${selectedPositionsCount} selected` : 'None selected'}
-          </span>
-        </button>
-
-        {isPositionsOpen && (
-          <div className="border-t px-3 py-3">
-            {draftAllographId == null ? (
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                Choose an allograph to load the related {getPluralLabel('position').toLowerCase()}.
-              </div>
-            ) : !selectedAllograph ? (
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                No allograph data available.
-              </div>
-            ) : selectedAllograph.positions.length === 0 ? (
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                No {getPluralLabel('position').toLowerCase()} are defined for this allograph.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {selectedAllograph.positions.map((position) => (
-                  <label
-                    key={position.id}
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={draftPositionIds.includes(position.id)}
-                      onChange={(e) => togglePositionId(position.id, e.target.checked)}
-                    />
-                    <span>{position.name}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <label className="text-sm font-medium text-foreground">{getPluralLabel('position')}</label>
+        <span className="text-xs text-muted-foreground">
+          {selectedPositionsCount > 0 ? `${selectedPositionsCount} selected` : 'None selected'}
+        </span>
       </div>
+
+      {draftAllographId == null ? (
+        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+          Choose an allograph to load the related {getPluralLabel('position').toLowerCase()}.
+        </div>
+      ) : !selectedAllograph ? (
+        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+          No allograph data available.
+        </div>
+      ) : selectedAllograph.positions.length === 0 ? (
+        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+          No {getPluralLabel('position').toLowerCase()} are defined for this allograph.
+        </div>
+      ) : (
+        <div className="space-y-2 rounded-md border p-3">
+          {selectedAllograph.positions.map((position) => (
+            <label
+              key={position.id}
+              className="flex items-center gap-2 text-sm text-muted-foreground"
+            >
+              <input
+                type="checkbox"
+                checked={draftPositionIds.includes(position.id)}
+                onChange={(e) => togglePositionId(position.id, e.target.checked)}
+              />
+              <span>{position.name}</span>
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -501,7 +465,7 @@ export function AnnotationPopupCard({
 
   const editableComponentFeatureSection = (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">Components / Features</label>
+      <label className="text-sm font-medium text-foreground">Components</label>
 
       {draftAllographId == null ? (
         <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
@@ -850,12 +814,30 @@ export function AnnotationPopupCard({
           <div className="border-b px-4 py-2">
             <TabsList className="h-auto gap-2 bg-transparent p-0">
               <TabsTrigger
-                value="components"
+                value="details"
                 className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
                 data-[state=active]:border data-[state=active]:bg-background
                 data-[state=active]:shadow-sm"
               >
                 Details
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="components"
+                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+                data-[state=active]:border data-[state=active]:bg-background
+                data-[state=active]:shadow-sm"
+              >
+                Components
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="positions"
+                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+                data-[state=active]:border data-[state=active]:bg-background
+                data-[state=active]:shadow-sm"
+              >
+                {getPluralLabel('position')}
               </TabsTrigger>
 
               <TabsTrigger
@@ -870,14 +852,16 @@ export function AnnotationPopupCard({
           </div>
 
           <div className="max-h-[420px] overflow-auto px-4 py-4">
+            <TabsContent value="details" className="mt-0">
+              {standardIdentityFields}
+            </TabsContent>
+
             <TabsContent value="components" className="mt-0">
-              <div className="space-y-4">
-                {standardIdentityFields}
+              {editableComponentFeatureSection}
+            </TabsContent>
 
-                {editableComponentFeatureSection}
-
-                {standardPositionsSection}
-              </div>
+            <TabsContent value="positions" className="mt-0">
+              {standardPositionsSection}
             </TabsContent>
 
             <TabsContent value="notes" className="mt-0">
@@ -896,12 +880,30 @@ export function AnnotationPopupCard({
           <div className="border-b px-4 py-2">
             <TabsList className="h-auto gap-2 bg-transparent p-0">
               <TabsTrigger
-                value="components"
+                value="details"
                 className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
                 data-[state=active]:border data-[state=active]:bg-background
                 data-[state=active]:shadow-sm"
               >
                 Details
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="components"
+                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+                data-[state=active]:border data-[state=active]:bg-background
+                data-[state=active]:shadow-sm"
+              >
+                Components
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="positions"
+                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+                data-[state=active]:border data-[state=active]:bg-background
+                data-[state=active]:shadow-sm"
+              >
+                {getPluralLabel('position')}
               </TabsTrigger>
 
               <TabsTrigger
@@ -916,7 +918,7 @@ export function AnnotationPopupCard({
           </div>
 
           <div className="max-h-[420px] overflow-auto px-4 py-4">
-            <TabsContent value="components" className="mt-0">
+            <TabsContent value="details" className="mt-0">
               <div className="space-y-4">
                 {standardIdentityFields}
 
@@ -927,11 +929,15 @@ export function AnnotationPopupCard({
                 <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                   Changes remain local until you press the main Save button in the toolbar.
                 </div>
-
-                {editableComponentFeatureSection}
-
-                {standardPositionsSection}
               </div>
+            </TabsContent>
+
+            <TabsContent value="components" className="mt-0">
+              {editableComponentFeatureSection}
+            </TabsContent>
+
+            <TabsContent value="positions" className="mt-0">
+              {standardPositionsSection}
             </TabsContent>
 
             <TabsContent value="notes" className="mt-0">
@@ -971,7 +977,7 @@ export function AnnotationPopupCard({
         </div>
       ) : isPublicExisting ? (
         <Tabs
-          value={popupTab}
+          value={publicPopupTab}
           onValueChange={(value) => onPopupTabChange(value as PopupTab)}
           className="w-full"
         >

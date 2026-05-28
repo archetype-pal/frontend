@@ -784,7 +784,7 @@ export default function ManuscriptViewer({
   }, []);
 
   const handlePopupTabChange = React.useCallback(
-    (popupId: string, value: 'components' | 'positions' | 'notes') => {
+    (popupId: string, value: PopupRecord['popupTab']) => {
       updatePopupById(popupId, { popupTab: value });
     },
     [updatePopupById]
@@ -851,8 +851,13 @@ export default function ManuscriptViewer({
             } as A9sWithMeta)
           : annotation;
 
+      const defaultPopupTab: PopupRecord['popupTab'] =
+        annotationForPopup._meta?.annotationType !== 'editorial' && canViewEditorialControls
+          ? 'details'
+          : 'components';
+
       const commonOverrides = {
-        popupTab: 'components' as const,
+        popupTab: defaultPopupTab,
         shareUrl: '',
         isShareUrlVisible: false,
         draftAllographText: getAllographBodyText(annotationForPopup),
@@ -871,6 +876,7 @@ export default function ManuscriptViewer({
     },
     [
       activeTool,
+      canViewEditorialControls,
       clearSinglePopupState,
       currentCreationKind,
       filteredAllograph?.id,
@@ -1717,10 +1723,18 @@ export default function ManuscriptViewer({
 
     const popupCard = getPopupCardViewData(activePopupRecord, allographNameById);
 
-    if (!popupCard.hasPositionsTab && activePopupRecord.popupTab === 'positions') {
+    const isStandardPopup =
+      activePopupRecord.annotation._meta?.annotationType !== 'editorial' &&
+      canViewEditorialControls;
+
+    if (
+      !isStandardPopup &&
+      !popupCard.hasPositionsTab &&
+      activePopupRecord.popupTab === 'positions'
+    ) {
       handlePopupTabChange(activePopupRecord.id, 'components');
     }
-  }, [activePopupRecord, allographNameById, handlePopupTabChange]);
+  }, [activePopupRecord, allographNameById, canViewEditorialControls, handlePopupTabChange]);
 
   // sync viewer highlight state
   React.useEffect(() => {

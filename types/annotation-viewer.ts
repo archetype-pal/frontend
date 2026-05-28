@@ -66,7 +66,7 @@ export type AnnotationViewerSettings = {
 export type PopupRecord = {
   id: string;
   annotation: A9sWithMeta;
-  popupTab: 'components' | 'positions' | 'notes';
+  popupTab: 'details' | 'components' | 'positions' | 'notes';
   shareUrl: string;
   isShareUrlVisible: boolean;
   draftAllographText: string;
