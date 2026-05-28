@@ -1,11 +1,23 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { AlertTriangle, CheckCircle2, Code2, Eye } from 'lucide-react';
 
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { cn } from '@/lib/utils';
 import { validateTei, type TeiValidationError } from '@/services/image-texts';
+
+// CodeMirror is client-only (touches window/document), so load it lazily and
+// skip SSR; a plain box stands in until it hydrates.
+const TeiCodeMirror = dynamic(() => import('./tei-codemirror'), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-[320px] px-4 py-3 font-mono text-xs text-muted-foreground">
+      Loading editor…
+    </div>
+  ),
+});
 
 interface TeiTextEditorProps {
   value: string;
@@ -90,13 +102,7 @@ export function TeiTextEditor({
       </div>
 
       {mode === 'source' ? (
-        <textarea
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={placeholder}
-          spellCheck={false}
-          className="block min-h-[320px] w-full resize-y bg-transparent px-4 py-3 font-mono text-xs leading-relaxed focus:outline-none"
-        />
+        <TeiCodeMirror value={value} onChange={onChange} placeholder={placeholder} />
       ) : (
         <div className="min-h-[320px] px-4 py-3">
           <ImageTextViewer html={value} />
