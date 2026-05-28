@@ -251,7 +251,7 @@ export function docToTei(doc: PMDoc): string {
       .join('');
     out.push(`<p${pAttrs}>`);
     let open: StackEntry[] = [];
-    for (const node of para.content) {
+    for (const node of para.content ?? []) {
       const next = stackOf(node);
       const common = commonPrefix(open, next);
       for (let i = open.length - 1; i >= common; i--) out.push(`</${open[i].el}>`);

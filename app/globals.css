@@ -816,3 +816,28 @@ g.a9s-annotation.a9s-text:hover polygon,
 g.a9s-annotation.a9s-text:hover path {
   fill: hsl(var(--c-transcription-h) 60% 55% / 0.25) !important;
 }
+
+/* Rendered TEI editor (Phase H.7): nested element spans get a faint tinted
+   underline so the markup structure is visible while editing the text. */
+.tei-rich .tei-el {
+  border-bottom: 2px solid hsl(var(--c-transcription-h) 55% 55% / 0.35);
+  border-radius: 2px;
+  padding-bottom: 1px;
+}
+
+.tei-rich .tei-el-persName {
+  border-bottom-color: hsl(var(--c-translation-h) 55% 55% / 0.5);
+}
+
+.tei-rich .tei-el-placeName {
+  border-bottom-color: hsl(160 55% 45% / 0.5);
+}
+
+.tei-rich .tei-empty {
+  margin: 0 1px;
+  border-radius: 3px;
+  background: hsl(var(--c-transcription-h) 50% 55% / 0.18);
+  padding: 0 2px;
+  font-size: 0.85em;
+  color: hsl(var(--c-transcription-h) 40% 40%);
+}

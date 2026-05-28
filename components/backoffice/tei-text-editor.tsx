@@ -2,21 +2,25 @@
 
 import * as React from 'react';
 import dynamic from 'next/dynamic';
-import { AlertTriangle, CheckCircle2, Code2, Eye } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Code2, Eye, Pencil } from 'lucide-react';
 
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { cn } from '@/lib/utils';
+import { docToTei, teiToDoc } from '@/lib/tei-prosemirror';
 import { validateTei, type TeiValidationError } from '@/services/image-texts';
 
-// CodeMirror is client-only (touches window/document), so load it lazily and
-// skip SSR; a plain box stands in until it hydrates.
+const loadingBox = (
+  <div className="min-h-[320px] px-4 py-3 font-mono text-xs text-muted-foreground">Loading…</div>
+);
+
+// Both editors are client-only (touch window/document), so load them lazily.
 const TeiCodeMirror = dynamic(() => import('./tei-codemirror'), {
   ssr: false,
-  loading: () => (
-    <div className="min-h-[320px] px-4 py-3 font-mono text-xs text-muted-foreground">
-      Loading editor…
-    </div>
-  ),
+  loading: () => loadingBox,
+});
+const TeiRichEditor = dynamic(() => import('./tei-rich-editor'), {
+  ssr: false,
+  loading: () => loadingBox,
 });
 
 interface TeiTextEditorProps {
@@ -29,7 +33,7 @@ interface TeiTextEditorProps {
   placeholder?: string;
 }
 
-type Mode = 'source' | 'preview';
+type Mode = 'source' | 'rich' | 'preview';
 
 /**
  * Source/preview editor for TEI-stored ImageText content (Phase H interim).
@@ -50,6 +54,20 @@ export function TeiTextEditor({
   const [mode, setMode] = React.useState<Mode>('source');
   const [errors, setErrors] = React.useState<TeiValidationError[]>([]);
   const [checked, setChecked] = React.useState(false);
+
+  // Rich mode only activates when the content round-trips byte-exactly through
+  // the serializer, so editing it can never lose markup the model can't hold.
+  const richAvailable = React.useMemo(() => {
+    try {
+      return docToTei(teiToDoc(value)) === value;
+    } catch {
+      return false;
+    }
+  }, [value]);
+
+  React.useEffect(() => {
+    if (mode === 'rich' && !richAvailable) setMode('source');
+  }, [mode, richAvailable]);
 
   // Debounced well-formedness check against the server validator. The parent
   // uses `onValidityChange` to disable Save while the TEI is malformed.
@@ -77,6 +95,17 @@ export function TeiTextEditor({
         <ModeButton active={mode === 'source'} onClick={() => setMode('source')} icon={Code2}>
           Source
         </ModeButton>
+        <ModeButton
+          active={mode === 'rich'}
+          onClick={() => setMode('rich')}
+          icon={Pencil}
+          disabled={!richAvailable}
+          title={
+            richAvailable ? undefined : 'Rich editing unavailable for this document — use Source'
+          }
+        >
+          Rich
+        </ModeButton>
         <ModeButton active={mode === 'preview'} onClick={() => setMode('preview')} icon={Eye}>
           Preview
         </ModeButton>
@@ -101,9 +130,11 @@ export function TeiTextEditor({
         )}
       </div>
 
-      {mode === 'source' ? (
+      {mode === 'source' && (
         <TeiCodeMirror value={value} onChange={onChange} placeholder={placeholder} />
-      ) : (
+      )}
+      {mode === 'rich' && <TeiRichEditor value={value} onChange={onChange} />}
+      {mode === 'preview' && (
         <div className="min-h-[320px] px-4 py-3">
           <ImageTextViewer html={value} />
         </div>
@@ -117,18 +148,24 @@ function ModeButton({
   onClick,
   icon: Icon,
   children,
+  disabled = false,
+  title,
 }: {
   active: boolean;
   onClick: () => void;
   icon: typeof Code2;
   children: React.ReactNode;
+  disabled?: boolean;
+  title?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
+      title={title}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+        'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40',
         active
           ? 'bg-primary/10 text-primary'
           : 'text-muted-foreground hover:bg-accent hover:text-foreground'
