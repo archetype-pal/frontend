@@ -4,7 +4,7 @@ import * as React from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 
-import { teiEditorExtensions } from '@/lib/tei-tiptap';
+import { SEG_TYPES, teiEditorExtensions, unwrapTei, wrapTei } from '@/lib/tei-tiptap';
 import { docToTei, teiToDoc, type PMDoc } from '@/lib/tei-prosemirror';
 
 interface TeiRichEditorProps {
@@ -49,5 +49,57 @@ export default function TeiRichEditor({ value, onChange }: TeiRichEditorProps) {
   }, [editor, value]);
 
   if (!editor) return null;
-  return <EditorContent editor={editor} />;
+
+  const btn =
+    'rounded border px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40';
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1.5">
+        <span className="mr-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+          Wrap selection
+        </span>
+        <button
+          type="button"
+          className={btn}
+          onClick={() => wrapTei(editor, 'persName', { type: 'name' })}
+        >
+          Person
+        </button>
+        <button
+          type="button"
+          className={btn}
+          onClick={() => wrapTei(editor, 'placeName', { type: 'name' })}
+        >
+          Place
+        </button>
+        <button type="button" className={btn} onClick={() => wrapTei(editor, 'ex', {})}>
+          Expansion
+        </button>
+        <button type="button" className={btn} onClick={() => wrapTei(editor, 'supplied', {})}>
+          Supplied
+        </button>
+        <select
+          aria-label="Wrap selection in clause"
+          className="rounded border bg-transparent px-1 py-0.5 text-[11px] text-muted-foreground"
+          value=""
+          onChange={(event) => {
+            if (event.target.value) wrapTei(editor, 'seg', { type: event.target.value });
+            event.currentTarget.value = '';
+          }}
+        >
+          <option value="">Clause…</option>
+          {SEG_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+        <button type="button" className={`${btn} ml-auto`} onClick={() => unwrapTei(editor)}>
+          Unwrap
+        </button>
+      </div>
+      <EditorContent editor={editor} />
+    </div>
+  );
 }
