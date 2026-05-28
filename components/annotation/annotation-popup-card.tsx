@@ -190,6 +190,7 @@ export function AnnotationPopupCard({
   const isEditorialDraft = popupEditorMode === 'editorial_draft';
   const isEditorialExisting = popupEditorMode === 'editorial_existing';
   const canUseAllographShortcut = isActive && (isStandardDraft || isStandardExisting);
+  const standardPopupTab = popupTab === 'notes' ? 'notes' : 'components';
   const annotationKindLabel =
     isStandardDraft || isStandardExisting
       ? 'Standard'
@@ -411,6 +412,92 @@ export function AnnotationPopupCard({
         : draftPositionIds.filter((id) => id !== positionId)
     );
   };
+
+  const standardPositionsSection = (
+    <div className="space-y-2">
+      <div className="rounded-md border">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between px-3 py-2 text-left"
+          onClick={() => setIsPositionsOpen((prev) => !prev)}
+        >
+          <div className="flex min-w-0 items-center gap-2">
+            {isPositionsOpen ? (
+              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
+
+            <span className="text-sm font-medium text-foreground">
+              {getPluralLabel('position')}
+            </span>
+          </div>
+
+          <span className="text-xs text-muted-foreground">
+            {selectedPositionsCount > 0 ? `${selectedPositionsCount} selected` : 'None selected'}
+          </span>
+        </button>
+
+        {isPositionsOpen && (
+          <div className="border-t px-3 py-3">
+            {draftAllographId == null ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                Choose an allograph to load the related {getPluralLabel('position').toLowerCase()}.
+              </div>
+            ) : !selectedAllograph ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No allograph data available.
+              </div>
+            ) : selectedAllograph.positions.length === 0 ? (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No {getPluralLabel('position').toLowerCase()} are defined for this allograph.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {selectedAllograph.positions.map((position) => (
+                  <label
+                    key={position.id}
+                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={draftPositionIds.includes(position.id)}
+                      onChange={(e) => togglePositionId(position.id, e.target.checked)}
+                    />
+                    <span>{position.name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const standardNotesEditor = (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-foreground">Notes</label>
+      <textarea
+        value={draftNoteText}
+        onChange={(e) => onDraftNoteTextChange(e.target.value)}
+        placeholder="Type note"
+        rows={5}
+        className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+      />
+    </div>
+  );
+
+  const standardFooter = (
+    <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
+      <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
+        Cancel
+      </Button>
+      <Button onClick={onConfirmDraftAnnotation} type="button">
+        OK
+      </Button>
+    </div>
+  );
 
   const editableComponentFeatureSection = (
     <div className="space-y-2">
@@ -755,191 +842,105 @@ export function AnnotationPopupCard({
           </div>
         </div>
       ) : isStandardDraft ? (
-        <div className="max-h-[420px] overflow-auto px-4 py-4 space-y-4">
-          {standardIdentityFields}
-
-          {editableComponentFeatureSection}
-
-          <div className="space-y-2">
-            <div className="rounded-md border">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between px-3 py-2 text-left"
-                onClick={() => setIsPositionsOpen((prev) => !prev)}
+        <Tabs
+          value={standardPopupTab}
+          onValueChange={(value) => onPopupTabChange(value as PopupTab)}
+          className="w-full"
+        >
+          <div className="border-b px-4 py-2">
+            <TabsList className="h-auto gap-2 bg-transparent p-0">
+              <TabsTrigger
+                value="components"
+                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+                data-[state=active]:border data-[state=active]:bg-background
+                data-[state=active]:shadow-sm"
               >
-                <div className="flex min-w-0 items-center gap-2">
-                  {isPositionsOpen ? (
-                    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  )}
+                Details
+              </TabsTrigger>
 
-                  <span className="text-sm font-medium text-foreground">
-                    {getPluralLabel('position')}
-                  </span>
-                </div>
-
-                <span className="text-xs text-muted-foreground">
-                  {selectedPositionsCount > 0
-                    ? `${selectedPositionsCount} selected`
-                    : 'None selected'}
-                </span>
-              </button>
-
-              {isPositionsOpen && (
-                <div className="border-t px-3 py-3">
-                  {draftAllographId == null ? (
-                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                      Choose an allograph to load the related{' '}
-                      {getPluralLabel('position').toLowerCase()}.
-                    </div>
-                  ) : !selectedAllograph ? (
-                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                      No allograph data available.
-                    </div>
-                  ) : selectedAllograph.positions.length === 0 ? (
-                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                      No {getPluralLabel('position').toLowerCase()} are defined for this allograph.
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {selectedAllograph.positions.map((position) => (
-                        <label
-                          key={position.id}
-                          className="flex items-center gap-2 text-sm text-muted-foreground"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={draftPositionIds.includes(position.id)}
-                            onChange={(e) => togglePositionId(position.id, e.target.checked)}
-                          />
-                          <span>{position.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+              <TabsTrigger
+                value="notes"
+                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+                data-[state=active]:border data-[state=active]:bg-background
+                data-[state=active]:shadow-sm"
+              >
+                Notes
+              </TabsTrigger>
+            </TabsList>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Notes</label>
-            <textarea
-              value={draftNoteText}
-              onChange={(e) => onDraftNoteTextChange(e.target.value)}
-              placeholder="Type note"
-              rows={5}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
+          <div className="max-h-[420px] overflow-auto px-4 py-4">
+            <TabsContent value="components" className="mt-0">
+              <div className="space-y-4">
+                {standardIdentityFields}
+
+                {editableComponentFeatureSection}
+
+                {standardPositionsSection}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="notes" className="mt-0">
+              {standardNotesEditor}
+            </TabsContent>
           </div>
 
-          <div className="mt-2 flex items-center justify-end gap-2 border-t pt-3">
-            <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
-              Cancel
-            </Button>
-            <Button onClick={onConfirmDraftAnnotation} type="button">
-              OK
-            </Button>
-          </div>
-        </div>
+          {standardFooter}
+        </Tabs>
       ) : isStandardExisting ? (
-        <div className="max-h-[420px] overflow-auto px-4 py-4 space-y-4">
-          {standardIdentityFields}
-
-          {popupCapabilities.canViewEditorMeta && (
-            <AnnotationMetaSummaryBlock metaSummary={metaSummary} />
-          )}
-
-          <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-            Changes remain local until you press the main Save button in the toolbar.
-          </div>
-
-          {editableComponentFeatureSection}
-
-          <div className="space-y-2">
-            <div className="rounded-md border">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between px-3 py-2 text-left"
-                onClick={() => setIsPositionsOpen((prev) => !prev)}
+        <Tabs
+          value={standardPopupTab}
+          onValueChange={(value) => onPopupTabChange(value as PopupTab)}
+          className="w-full"
+        >
+          <div className="border-b px-4 py-2">
+            <TabsList className="h-auto gap-2 bg-transparent p-0">
+              <TabsTrigger
+                value="components"
+                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+                data-[state=active]:border data-[state=active]:bg-background
+                data-[state=active]:shadow-sm"
               >
-                <div className="flex min-w-0 items-center gap-2">
-                  {isPositionsOpen ? (
-                    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  )}
+                Details
+              </TabsTrigger>
 
-                  <span className="text-sm font-medium text-foreground">
-                    {getPluralLabel('position')}
-                  </span>
+              <TabsTrigger
+                value="notes"
+                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+                data-[state=active]:border data-[state=active]:bg-background
+                data-[state=active]:shadow-sm"
+              >
+                Notes
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <div className="max-h-[420px] overflow-auto px-4 py-4">
+            <TabsContent value="components" className="mt-0">
+              <div className="space-y-4">
+                {standardIdentityFields}
+
+                {popupCapabilities.canViewEditorMeta && (
+                  <AnnotationMetaSummaryBlock metaSummary={metaSummary} />
+                )}
+
+                <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                  Changes remain local until you press the main Save button in the toolbar.
                 </div>
 
-                <span className="text-xs text-muted-foreground">
-                  {selectedPositionsCount > 0
-                    ? `${selectedPositionsCount} selected`
-                    : 'None selected'}
-                </span>
-              </button>
+                {editableComponentFeatureSection}
 
-              {isPositionsOpen && (
-                <div className="border-t px-3 py-3">
-                  {draftAllographId == null ? (
-                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                      Choose an allograph to load the related{' '}
-                      {getPluralLabel('position').toLowerCase()}.
-                    </div>
-                  ) : !selectedAllograph ? (
-                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                      No allograph data available.
-                    </div>
-                  ) : selectedAllograph.positions.length === 0 ? (
-                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                      No {getPluralLabel('position').toLowerCase()} are defined for this allograph.
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {selectedAllograph.positions.map((position) => (
-                        <label
-                          key={position.id}
-                          className="flex items-center gap-2 text-sm text-muted-foreground"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={draftPositionIds.includes(position.id)}
-                            onChange={(e) => togglePositionId(position.id, e.target.checked)}
-                          />
-                          <span>{position.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                {standardPositionsSection}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="notes" className="mt-0">
+              {standardNotesEditor}
+            </TabsContent>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Notes</label>
-            <textarea
-              value={draftNoteText}
-              onChange={(e) => onDraftNoteTextChange(e.target.value)}
-              placeholder="Type note"
-              rows={5}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          <div className="mt-2 flex items-center justify-end gap-2 border-t pt-3">
-            <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
-              Cancel
-            </Button>
-            <Button onClick={onConfirmDraftAnnotation} type="button">
-              OK
-            </Button>
-          </div>
-        </div>
+          {standardFooter}
+        </Tabs>
       ) : isEditorialDraft || isEditorialExisting ? (
         <div className="max-h-[360px] overflow-auto px-4 py-4 space-y-4">
           {isEditorialExisting ? (
