@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { CheckCheck, RotateCcw, Share2, Sparkles, Star, X } from 'lucide-react';
+import { CheckCheck, RotateCcw, Save, Share2, Sparkles, Star, Trash2, X } from 'lucide-react';
 
 import type { Allograph } from '@/types/allographs';
 
@@ -54,6 +54,11 @@ interface AnnotationPopupCardProps {
 
   isShareUrlVisible: boolean;
   shareUrl: string;
+  canSaveAnnotationShortcut?: boolean;
+  isSaveAnnotationShortcutDisabled?: boolean;
+  canDeleteAnnotationShortcut?: boolean;
+  onSaveAnnotationShortcut?: () => void | Promise<void>;
+  onDeleteAnnotationShortcut?: () => void | Promise<void>;
   onCopyShareUrl: () => void | Promise<void>;
   onHideShareUrl: () => void;
   onShareSelectedAnnotation: () => void;
@@ -139,6 +144,11 @@ export function AnnotationPopupCard({
   isActive = true,
   isShareUrlVisible,
   shareUrl,
+  canSaveAnnotationShortcut = false,
+  isSaveAnnotationShortcutDisabled = false,
+  canDeleteAnnotationShortcut = false,
+  onSaveAnnotationShortcut,
+  onDeleteAnnotationShortcut,
   onCopyShareUrl,
   onHideShareUrl,
   onShareSelectedAnnotation,
@@ -674,6 +684,44 @@ export function AnnotationPopupCard({
           onClick={(e) => e.stopPropagation()}
         >
           <TooltipProvider>
+            {canSaveAnnotationShortcut && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => void onSaveAnnotationShortcut?.()}
+                    disabled={isSaveAnnotationShortcutDisabled || !onSaveAnnotationShortcut}
+                    aria-label="Save Annotation"
+                    type="button"
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Save Annotation</TooltipContent>
+              </Tooltip>
+            )}
+
+            {canDeleteAnnotationShortcut && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={() => void onDeleteAnnotationShortcut?.()}
+                    disabled={!onDeleteAnnotationShortcut}
+                    aria-label="Delete Annotation"
+                    type="button"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Delete Annotation</TooltipContent>
+              </Tooltip>
+            )}
+
             {isDraftAnnotation ? (
               <Tooltip>
                 <TooltipTrigger asChild>

@@ -62,6 +62,11 @@ interface AnnotationPopupLayerProps {
 
   // Per-popup actions that need viewer-side state
   onPopupTabChange: (popupId: string, tab: PopupRecord['popupTab']) => void;
+  canSaveAnnotationShortcuts: boolean;
+  isSaveAnnotationShortcutDisabled: boolean;
+  canDeleteAnnotationShortcuts: boolean;
+  onSaveAnnotationShortcut: (popupId: string) => Promise<void> | void;
+  onDeleteAnnotationShortcut: (popupId: string) => Promise<void> | void;
   onCopyShareUrl: (popupId: string) => void;
   onHideShareUrl: (popupId: string) => void;
   onShareSelectedAnnotation: (popupId: string) => void;
@@ -96,6 +101,11 @@ export function AnnotationPopupLayer({
   onDraftAllographIdChange,
   onDraftHandIdChange,
   onPopupTabChange,
+  canSaveAnnotationShortcuts,
+  isSaveAnnotationShortcutDisabled,
+  canDeleteAnnotationShortcuts,
+  onSaveAnnotationShortcut,
+  onDeleteAnnotationShortcut,
   onCopyShareUrl,
   onHideShareUrl,
   onShareSelectedAnnotation,
@@ -113,6 +123,8 @@ export function AnnotationPopupLayer({
         const popupCapabilities = getPopupCapabilities(popupRecord, viewerCapabilities);
         const popupEditorMode = getPopupEditorMode(popupRecord, popupCapabilities);
         const annotationKind = getAnnotationKindFromPopupRecord(popupRecord);
+        const canUseLoggedInPopupShortcuts =
+          popupEditorMode !== 'public_demo_draft' && popupEditorMode !== 'public_existing';
         const metaSummary = getPopupMetaSummary(popupRecord, allographLabelById, handNameById);
         const isActive = popupRecord.id === activePopupId;
         const { x: initialX, y: initialY } = getPopupInitialPosition(
@@ -156,6 +168,15 @@ export function AnnotationPopupLayer({
                 isActive={isActive}
                 isShareUrlVisible={popupRecord.isShareUrlVisible}
                 shareUrl={popupRecord.shareUrl}
+                canSaveAnnotationShortcut={
+                  canUseLoggedInPopupShortcuts && canSaveAnnotationShortcuts
+                }
+                isSaveAnnotationShortcutDisabled={isSaveAnnotationShortcutDisabled}
+                canDeleteAnnotationShortcut={
+                  canUseLoggedInPopupShortcuts && canDeleteAnnotationShortcuts
+                }
+                onSaveAnnotationShortcut={() => onSaveAnnotationShortcut(popupRecord.id)}
+                onDeleteAnnotationShortcut={() => onDeleteAnnotationShortcut(popupRecord.id)}
                 onCopyShareUrl={() => onCopyShareUrl(popupRecord.id)}
                 onHideShareUrl={() => onHideShareUrl(popupRecord.id)}
                 onShareSelectedAnnotation={() => onShareSelectedAnnotation(popupRecord.id)}

@@ -1243,6 +1243,34 @@ export default function ManuscriptViewer({
     [notifyDeletedAnnotations, removePopupById, editorState]
   );
 
+  const handleDeletePopupAnnotation = React.useCallback(
+    (popupId: string) => {
+      if (!canDeleteAnnotations) return;
+
+      const popup = getPopupById(popupId);
+      if (!popup) return;
+
+      const annotation = getCanonicalAnnotation(popup.annotation);
+      const confirmed = handleConfirmDelete(annotation);
+      if (!confirmed) return;
+
+      viewerApiRef.current?.removeAnnotationById?.(annotation.id);
+      handleViewerDelete(annotation);
+      viewerApiRef.current?.clearSelection?.();
+      viewerApiRef.current?.clearSelectedAnnotationIds?.();
+      viewerApiRef.current?.enablePan();
+      setActiveTool('move');
+    },
+    [
+      canDeleteAnnotations,
+      getCanonicalAnnotation,
+      getPopupById,
+      handleConfirmDelete,
+      handleViewerDelete,
+      setActiveTool,
+    ]
+  );
+
   const handleViewerDeleteMany = React.useCallback(
     (annotations: A9sAnnotation[]) => {
       notifyDeletedAnnotations(annotations);
@@ -1885,6 +1913,28 @@ export default function ManuscriptViewer({
   // Single useHotkeys subscription; each entry knows whether it should fire
   // inside text inputs (only Cmd/Ctrl+S — the rest skip when typing).
   const canSaveNow = canPersistAnyAnnotations && !isPublicDemoMode && unsavedChanges > 0;
+  const [pendingPopupSaveRequest, setPendingPopupSaveRequest] = React.useState(0);
+  const handledPendingPopupSaveRef = React.useRef(0);
+  const handleSavePopupAnnotation = React.useCallback(
+    async (popupId: string) => {
+      if (!canPersistAnyAnnotations || isPublicDemoMode) return;
+      if (!getPopupById(popupId)) return;
+
+      await handleConfirmDraftAnnotation(popupId);
+      setPendingPopupSaveRequest((prev) => prev + 1);
+    },
+    [canPersistAnyAnnotations, getPopupById, handleConfirmDraftAnnotation, isPublicDemoMode]
+  );
+
+  React.useEffect(() => {
+    if (pendingPopupSaveRequest === 0) return;
+    if (handledPendingPopupSaveRef.current === pendingPopupSaveRequest) return;
+    if (!canSaveNow) return;
+
+    handledPendingPopupSaveRef.current = pendingPopupSaveRequest;
+    void handleSave();
+  }, [canSaveNow, handleSave, pendingPopupSaveRequest]);
+
   const zoomIn = React.useCallback(() => viewerApiRef.current?.zoomIn(), []);
   const zoomOut = React.useCallback(() => viewerApiRef.current?.zoomOut(), []);
   const panBy = React.useCallback((dx: number, dy: number) => {
@@ -2496,6 +2546,11 @@ export default function ManuscriptViewer({
               onDraftAllographIdChange={handleDraftAllographIdChange}
               onDraftHandIdChange={handleDraftHandIdChange}
               onPopupTabChange={handlePopupTabChange}
+              canSaveAnnotationShortcuts={canPersistAnyAnnotations && !isPublicDemoMode}
+              isSaveAnnotationShortcutDisabled={false}
+              canDeleteAnnotationShortcuts={canDeleteAnnotations}
+              onSaveAnnotationShortcut={handleSavePopupAnnotation}
+              onDeleteAnnotationShortcut={handleDeletePopupAnnotation}
               onCopyShareUrl={(id) => void handleCopyShareUrl(id)}
               onHideShareUrl={handleHideShareUrl}
               onShareSelectedAnnotation={handleShareSelectedAnnotation}
