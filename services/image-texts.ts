@@ -86,6 +86,38 @@ export async function validateTei(content: string, token: string): Promise<TeiVa
   return response.json();
 }
 
+export interface LinkRegionResult {
+  graph_id: number;
+  content: string;
+}
+
+/**
+ * Track A — create a TEXT-typed Graph for a drawn region and link it to the
+ * `element_index`-th linkable element of the given image-text. Returns the new
+ * graph id and the updated (TEI) content. Superuser-gated server-side.
+ */
+export async function linkRegionToElement(
+  token: string,
+  textId: number,
+  elementIndex: number,
+  geometry: unknown
+): Promise<LinkRegionResult> {
+  const response = await authFetch(
+    `/api/v1/manuscripts/management/image-texts/${textId}/link-region/`,
+    token,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ element_index: elementIndex, geometry }),
+    }
+  );
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Failed to link region: ${response.status}`);
+  }
+  return response.json();
+}
+
 export interface CreateImageTextPayload {
   item_image: number;
   type: 'Transcription' | 'Translation';

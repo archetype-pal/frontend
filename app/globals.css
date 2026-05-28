@@ -794,6 +794,23 @@ g.a9s-selection.a9s-draft:hover path {
   box-shadow: 0 0 0 1px hsl(var(--c-transcription-h) 60% 45% / 0.55);
 }
 
+/* Track A — the phrase armed for draw-to-link, pulsing until a region is drawn. */
+.viewer-text-panel [data-graph-arming='true'] {
+  background-color: hsl(45 90% 55% / 0.35);
+  box-shadow: 0 0 0 2px hsl(45 90% 50% / 0.7);
+  animation: viewer-arming-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes viewer-arming-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px hsl(45 90% 50% / 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 2px hsl(45 90% 50% / 0.25);
+  }
+}
+
 /* Text-region annotations on the image (shown only while the text panel is
    open). Tinted with the transcription hue and kept faint so they read as
    "transcribed area" without competing with glyph annotations. */

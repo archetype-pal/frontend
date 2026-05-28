@@ -36,7 +36,11 @@ import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupLayer } from '@/components/annotation/annotation-popup-layer';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { fetchHands } from '@/services/manuscripts';
-import { fetchImageTextsForImage, type ImageTextDetail } from '@/services/image-texts';
+import {
+  fetchImageTextsForImage,
+  linkRegionToElement,
+  type ImageTextDetail,
+} from '@/services/image-texts';
 import { ViewerTextPanel } from './viewer-text-panel';
 import { a9sToBackendFeature, dbIdFromA9s } from '@/lib/anno-mapping';
 
@@ -300,6 +304,18 @@ export default function ManuscriptViewer({
   const [imageTexts, setImageTexts] = React.useState<ImageTextDetail[]>([]);
   const [isTextPanelOpen, setIsTextPanelOpen] = React.useState(false);
   const [linkedGraphId, setLinkedGraphId] = React.useState<number | null>(null);
+  // Track A — draw-to-link: when an editor arms an unlinked phrase, the next
+  // drawn region is sent to the link-region endpoint instead of becoming a
+  // normal draft.
+  const [linkArm, setLinkArm] = React.useState<{
+    textId: number;
+    elementIndex: number;
+    label: string;
+  } | null>(null);
+  const linkArmRef = React.useRef<typeof linkArm>(null);
+  React.useEffect(() => {
+    linkArmRef.current = linkArm;
+  }, [linkArm]);
 
   const imageTools = useViewerImageAdjustments();
   const { adjustments: imageAdjustments, hasChanges: hasImageToolChanges } = imageTools;
@@ -738,8 +754,73 @@ export default function ManuscriptViewer({
     [filteredAllograph?.id, activeAssignmentHand?.id, currentCreationKind]
   );
 
+  // Reload image-texts + re-seed annotations after a server-side change
+  // (used by the link-region flow so the new region + corresp appear).
+  const reloadTextsAndAnnotations = React.useCallback(async () => {
+    if (!manuscriptImage || !imageHeight) return;
+    const [texts, refreshed] = await Promise.all([
+      fetchImageTextsForImage(imageId, token).catch(() => null),
+      buildInitialViewerAnnotations({
+        itemImageId: String(manuscriptImage.id),
+        iiifImage: manuscriptImage.iiif_image,
+        imageHeight,
+        allographNameById,
+        isPublicDemoMode,
+        includeEditorial: canViewEditorialControls,
+        includeText: true,
+        token,
+        currentViewerAnnotations: [],
+        currentUrl: '',
+      }).catch(() => null),
+    ]);
+    if (texts) setImageTexts(texts);
+    if (refreshed) {
+      setInitialA9sAnnots(refreshed);
+      editorState.resetFrom(refreshed);
+    }
+  }, [
+    manuscriptImage,
+    imageHeight,
+    imageId,
+    token,
+    allographNameById,
+    isPublicDemoMode,
+    canViewEditorialControls,
+    editorState,
+  ]);
+
   const handleViewerCreate = React.useCallback(
     (annotation: A9sAnnotation) => {
+      // Track A — if a phrase is armed for linking, the drawn polygon becomes a
+      // server-side TEXT graph linked to that element rather than a local draft.
+      const arm = linkArmRef.current;
+      if (arm && token && imageHeight) {
+        const geometry = a9sToBackendFeature(annotation, imageHeight);
+        void (async () => {
+          try {
+            await linkRegionToElement(token, arm.textId, arm.elementIndex, geometry);
+            viewerApiRef.current?.removeAnnotationById?.(annotation.id);
+            setLinkArm(null);
+            await reloadTextsAndAnnotations();
+            showActionNotification({
+              kind: 'created',
+              title: 'Region linked',
+              description: `Linked a region to “${arm.label}”.`,
+              duration: 2200,
+            });
+          } catch (error) {
+            viewerApiRef.current?.removeAnnotationById?.(annotation.id);
+            showActionNotification({
+              kind: 'error',
+              title: 'Link failed',
+              description:
+                error instanceof Error ? error.message.slice(0, 160) : 'Could not link region.',
+            });
+          }
+        })();
+        return;
+      }
+
       const enriched = decorateCreatedAnnotation(annotation);
 
       const syncCreatedAnnotation = async () => {
@@ -751,7 +832,14 @@ export default function ManuscriptViewer({
 
       void syncCreatedAnnotation();
     },
-    [decorateCreatedAnnotation, updatePopupById, editorState]
+    [
+      decorateCreatedAnnotation,
+      updatePopupById,
+      editorState,
+      token,
+      imageHeight,
+      reloadTextsAndAnnotations,
+    ]
   );
 
   // The per-frame Annotorious update coalescing buffer + flush-on-unmount
@@ -2581,6 +2669,17 @@ export default function ManuscriptViewer({
                   // Programmatic selection doesn't fire onSelect, so mark the
                   // span linked here to keep the click path symmetric.
                   setLinkedGraphId(graphId);
+                }}
+                canLink={canPersistAnyAnnotations && !isPublicDemoMode}
+                armedElementIndex={linkArm?.elementIndex ?? null}
+                onArmLink={(textId, elementIndex, label) => {
+                  setLinkArm({ textId, elementIndex, label });
+                  // Arm the draw tool so the editor can immediately draw.
+                  handleCreateAnnotation();
+                }}
+                onCancelLink={() => {
+                  setLinkArm(null);
+                  handleMoveTool();
                 }}
                 onClose={() => setIsTextPanelOpen(false)}
               />

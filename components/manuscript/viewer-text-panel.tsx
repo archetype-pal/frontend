@@ -17,6 +17,14 @@ interface ViewerTextPanelProps {
   onSpanHover: (graphId: number | null) => void;
   /** Clicking a linked span selects + centres its region on the image. */
   onSpanActivate: (graphId: number) => void;
+  /** Track A — whether the current user may author text↔region links. */
+  canLink?: boolean;
+  /** Element index currently armed for linking (drives the highlight). */
+  armedElementIndex?: number | null;
+  /** Arm linking: clicking an unlinked phrase asks the user to draw its region. */
+  onArmLink?: (textId: number, elementIndex: number, label: string) => void;
+  /** Cancel an armed link. */
+  onCancelLink?: () => void;
   onClose: () => void;
 }
 
@@ -39,6 +47,10 @@ export function ViewerTextPanel({
   linkedGraphId,
   onSpanHover,
   onSpanActivate,
+  canLink = false,
+  armedElementIndex = null,
+  onArmLink,
+  onCancelLink,
   onClose,
 }: ViewerTextPanelProps) {
   const ordered = React.useMemo(
@@ -74,9 +86,42 @@ export function ViewerTextPanel({
     matches[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
   }, [linkedGraphId, active?.id, active?.content]);
 
+  // Mark the armed element so the editor sees which phrase they're linking.
+  React.useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+    root
+      .querySelectorAll('[data-graph-arming="true"]')
+      .forEach((el) => el.removeAttribute('data-graph-arming'));
+    if (armedElementIndex == null) return;
+    const el = root.querySelectorAll<HTMLElement>('[data-dpt]')[armedElementIndex];
+    if (el) {
+      el.setAttribute('data-graph-arming', 'true');
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }, [armedElementIndex, active?.id, active?.content]);
+
   const handleClick = (event: React.MouseEvent) => {
-    const ids = graphIdsOf((event.target as Element).closest('[data-graph-id]'));
-    if (ids.length > 0) onSpanActivate(ids[0]);
+    const target = event.target as Element;
+    // Decide based on the *innermost* linkable element the user clicked.
+    const innermost = target.closest<HTMLElement>('[data-dpt]');
+    const ownIds = graphIdsOf(innermost);
+    if (ownIds.length > 0) {
+      onSpanActivate(ownIds[0]); // this element is itself linked → show its region
+      return;
+    }
+    // Innermost element is unlinked + author capability → arm linking for it.
+    if (canLink && onArmLink && active && innermost && containerRef.current) {
+      const all = Array.from(containerRef.current.querySelectorAll<HTMLElement>('[data-dpt]'));
+      const index = all.indexOf(innermost);
+      if (index >= 0) {
+        onArmLink(active.id, index, (innermost.textContent ?? '').trim().slice(0, 40));
+        return;
+      }
+    }
+    // Otherwise fall back to the nearest linked ancestor (read-only navigation).
+    const ancestorIds = graphIdsOf(target.closest('[data-graph-id]'));
+    if (ancestorIds.length > 0) onSpanActivate(ancestorIds[0]);
   };
   const handleMouseOver = (event: React.MouseEvent) => {
     const ids = graphIdsOf((event.target as Element).closest('[data-graph-id]'));
@@ -144,9 +189,26 @@ export function ViewerTextPanel({
         )}
       </div>
 
-      <p className="border-t px-3 py-1.5 text-[11px] text-muted-foreground">
-        Click a highlighted phrase to find its region on the image.
-      </p>
+      {armedElementIndex != null ? (
+        <div className="flex items-center justify-between gap-2 border-t bg-primary/5 px-3 py-1.5 text-[11px]">
+          <span className="text-primary">
+            Draw the region for this phrase on the image to link it.
+          </span>
+          <button
+            type="button"
+            onClick={() => onCancelLink?.()}
+            className="rounded px-1.5 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <p className="border-t px-3 py-1.5 text-[11px] text-muted-foreground">
+          {canLink
+            ? 'Click a highlighted phrase to find its region; click an un-highlighted phrase to draw and link a new region.'
+            : 'Click a highlighted phrase to find its region on the image.'}
+        </p>
+      )}
     </aside>
   );
 }
