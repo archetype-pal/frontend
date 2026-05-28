@@ -179,6 +179,37 @@ export function unwrapTei(editor: Editor): void {
   editor.commands.focus();
 }
 
+/** The innermost element covering the current selection, or null. */
+export function currentElement(editor: Editor): StackEntry | null {
+  const segments = collectSegments(editor);
+  const depth = commonDepth(segments);
+  if (depth === 0) return null;
+  return segments[0].stack[depth - 1];
+}
+
+/** Change the @type of the innermost element covering the selection. */
+export function retypeTei(editor: Editor, newType: string): void {
+  const target = currentElement(editor);
+  if (!target) return;
+  const teiType = editor.state.schema.marks.tei;
+  const tr = editor.state.tr;
+  editor.state.doc.descendants((node, pos) => {
+    if (!node.isText && node.type.name !== 'teiEmpty') return;
+    const mark = node.marks.find((m) => m.type.name === 'tei');
+    if (!mark) return;
+    const stack = mark.attrs.stack as StackEntry[];
+    const idx = stack.findIndex((e) => e.id === target.id);
+    if (idx === -1) return;
+    const newStack = stack.map((e, i) =>
+      i === idx ? { ...e, attrs: { ...e.attrs, type: newType } } : e
+    );
+    tr.removeMark(pos, pos + node.nodeSize, teiType);
+    tr.addMark(pos, pos + node.nodeSize, teiType.create({ stack: newStack }));
+  });
+  editor.view.dispatch(tr);
+  editor.commands.focus();
+}
+
 export const SEG_TYPES = [
   'address',
   'intitulatio',

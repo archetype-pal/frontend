@@ -4,8 +4,15 @@ import * as React from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 
-import { SEG_TYPES, teiEditorExtensions, unwrapTei, wrapTei } from '@/lib/tei-tiptap';
-import { docToTei, teiToDoc, type PMDoc } from '@/lib/tei-prosemirror';
+import {
+  SEG_TYPES,
+  currentElement,
+  retypeTei,
+  teiEditorExtensions,
+  unwrapTei,
+  wrapTei,
+} from '@/lib/tei-tiptap';
+import { docToTei, teiToDoc, type PMDoc, type StackEntry } from '@/lib/tei-prosemirror';
 
 interface TeiRichEditorProps {
   value: string;
@@ -48,7 +55,23 @@ export default function TeiRichEditor({ value, onChange }: TeiRichEditorProps) {
     lastEmitted.current = value;
   }, [editor, value]);
 
+  // Track the innermost element under the selection so the retype control can
+  // show its current type and act on it.
+  const [selectedEl, setSelectedEl] = React.useState<StackEntry | null>(null);
+  React.useEffect(() => {
+    if (!editor) return;
+    const update = () => setSelectedEl(currentElement(editor));
+    editor.on('selectionUpdate', update);
+    editor.on('transaction', update);
+    return () => {
+      editor.off('selectionUpdate', update);
+      editor.off('transaction', update);
+    };
+  }, [editor]);
+
   if (!editor) return null;
+
+  const retypeableSeg = selectedEl?.el === 'seg';
 
   const btn =
     'rounded border px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40';
@@ -95,7 +118,28 @@ export default function TeiRichEditor({ value, onChange }: TeiRichEditorProps) {
             </option>
           ))}
         </select>
-        <button type="button" className={`${btn} ml-auto`} onClick={() => unwrapTei(editor)}>
+        <select
+          aria-label="Change clause type"
+          title={
+            retypeableSeg
+              ? 'Change the selected clause type'
+              : 'Select text inside a clause to retype it'
+          }
+          className="ml-auto rounded border bg-transparent px-1 py-0.5 text-[11px] text-muted-foreground disabled:opacity-40"
+          disabled={!retypeableSeg}
+          value={retypeableSeg ? (selectedEl?.attrs?.type ?? '') : ''}
+          onChange={(event) => {
+            if (event.target.value) retypeTei(editor, event.target.value);
+          }}
+        >
+          <option value="">Retype…</option>
+          {SEG_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+        <button type="button" className={btn} onClick={() => unwrapTei(editor)}>
           Unwrap
         </button>
       </div>
