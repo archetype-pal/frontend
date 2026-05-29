@@ -117,7 +117,7 @@ export function LightboxToolbar({
   const hasSelection = selectedImages.length > 0;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {/* Zoom Controls */}
       <div className="flex items-center gap-1 border-r pr-2">
         <Button

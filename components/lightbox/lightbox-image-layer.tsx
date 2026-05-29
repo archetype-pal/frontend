@@ -175,8 +175,19 @@ const LightboxImageItem = React.memo(function LightboxImageItem({
 });
 
 export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
-  const { selectedImageIds, updateImage } = useLightboxStore();
+  // Field-level selectors so this component (and the memoized items below) don't
+  // re-render on unrelated store mutations (zoom ticks, history, etc.).
+  const selectedImageIds = useLightboxStore((s) => s.selectedImageIds);
+  const updateImage = useLightboxStore((s) => s.updateImage);
   const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Read the latest images from a ref inside drag callbacks so those callbacks
+  // keep a stable identity across image mutations — otherwise React.memo on
+  // every item is invalidated on each slider/drag tick.
+  const imagesRef = React.useRef(images);
+  React.useEffect(() => {
+    imagesRef.current = images;
+  });
 
   // Ref-based drag state — no React state updates during drag, only DOM mutations
   const dragRef = React.useRef<{
@@ -200,24 +211,21 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
     []
   );
 
-  const moveDrag = React.useCallback(
-    (clientX: number, clientY: number) => {
-      const { imageId, el, offset } = dragRef.current;
-      if (!imageId || !el || !containerRef.current) return;
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const image = images.find((img) => img.id === imageId);
-      if (!image) return;
+  const moveDrag = React.useCallback((clientX: number, clientY: number) => {
+    const { imageId, el, offset } = dragRef.current;
+    if (!imageId || !el || !containerRef.current) return;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const image = imagesRef.current.find((img) => img.id === imageId);
+    if (!image) return;
 
-      const rawX = clientX - containerRect.left - offset.x;
-      const rawY = clientY - containerRect.top - offset.y;
-      const pos = clampPosition(rawX, rawY, containerRect, image.size);
-      dragRef.current.lastPosition = pos;
-      // Direct DOM mutation — no React re-render
-      el.style.left = `${pos.x}px`;
-      el.style.top = `${pos.y}px`;
-    },
-    [images]
-  );
+    const rawX = clientX - containerRect.left - offset.x;
+    const rawY = clientY - containerRect.top - offset.y;
+    const pos = clampPosition(rawX, rawY, containerRect, image.size);
+    dragRef.current.lastPosition = pos;
+    // Direct DOM mutation — no React re-render
+    el.style.left = `${pos.x}px`;
+    el.style.top = `${pos.y}px`;
+  }, []);
 
   const endDrag = React.useCallback(() => {
     const { imageId, el, lastPosition } = dragRef.current;
@@ -225,7 +233,7 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
     if (el) el.style.cursor = 'grab';
 
     if (imageId && lastPosition) {
-      const image = images.find((img) => img.id === imageId);
+      const image = imagesRef.current.find((img) => img.id === imageId);
       if (image) {
         useLightboxStore.getState().saveHistory();
         updateImage(imageId, {
@@ -233,7 +241,7 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
         });
       }
     }
-  }, [images, updateImage]);
+  }, [updateImage]);
 
   // Mouse drag handlers
   const handleDragStart = React.useCallback(

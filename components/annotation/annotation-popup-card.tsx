@@ -866,7 +866,7 @@ export function AnnotationPopupCard({
           className="w-full"
         >
           <div className="border-b px-4 py-2">
-            <TabsList className="h-auto gap-2 bg-transparent p-0">
+            <TabsList className="h-auto flex-wrap gap-2 bg-transparent p-0">
               <TabsTrigger
                 value="details"
                 className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
@@ -932,7 +932,7 @@ export function AnnotationPopupCard({
           className="w-full"
         >
           <div className="border-b px-4 py-2">
-            <TabsList className="h-auto gap-2 bg-transparent p-0">
+            <TabsList className="h-auto flex-wrap gap-2 bg-transparent p-0">
               <TabsTrigger
                 value="details"
                 className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
@@ -1036,7 +1036,7 @@ export function AnnotationPopupCard({
           className="w-full"
         >
           <div className="border-b px-4 py-2">
-            <TabsList className="h-auto gap-2 bg-transparent p-0">
+            <TabsList className="h-auto flex-wrap gap-2 bg-transparent p-0">
               <TabsTrigger
                 value="components"
                 className="h-8 rounded-md border border-transparent px-3 text-sm font-medium

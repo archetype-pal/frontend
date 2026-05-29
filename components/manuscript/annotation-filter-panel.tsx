@@ -60,7 +60,7 @@ export function AnnotationFilterPanel({
     <div
       role="dialog"
       aria-label="Filter Annotations"
-      className="fixed top-24 right-4 z-40 w-[380px] max-w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-lg"
+      className="fixed top-24 right-4 z-40 max-h-[calc(100dvh-7rem)] w-[380px] max-w-[calc(100vw-2rem)] overflow-auto rounded-lg border bg-background shadow-lg"
       style={{ transform }}
     >
       <div

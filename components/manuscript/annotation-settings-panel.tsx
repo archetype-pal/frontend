@@ -39,7 +39,7 @@ export function AnnotationSettingsPanel({
     <div
       role="dialog"
       aria-label="Annotation settings"
-      className="fixed top-24 right-4 z-40 w-[360px] max-w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-lg"
+      className="fixed top-24 right-4 z-40 max-h-[calc(100dvh-7rem)] w-[360px] max-w-[calc(100vw-2rem)] overflow-auto rounded-lg border bg-background shadow-lg"
       style={{ transform }}
     >
       <div

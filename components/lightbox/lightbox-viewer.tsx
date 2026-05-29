@@ -24,8 +24,15 @@ function EmptyState({ title, subtitle }: { title: string; subtitle: string }) {
 }
 
 export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}) {
-  const { currentWorkspaceId, showAnnotations, showGrid, selectedImageIds, zoom, setZoom } =
-    useLightboxStore();
+  // Field-level selectors so unrelated store mutations don't re-render the whole
+  // canvas. (zoom/setZoom are read here but the live transform is applied
+  // directly to the DOM, so a re-render on zoom is harmless.)
+  const currentWorkspaceId = useLightboxStore((s) => s.currentWorkspaceId);
+  const showAnnotations = useLightboxStore((s) => s.showAnnotations);
+  const showGrid = useLightboxStore((s) => s.showGrid);
+  const selectedImageIds = useLightboxStore((s) => s.selectedImageIds);
+  const zoom = useLightboxStore((s) => s.zoom);
+  const setZoom = useLightboxStore((s) => s.setZoom);
   const workspaceImages = useWorkspaceImages();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLDivElement>(null);

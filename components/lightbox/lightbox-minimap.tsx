@@ -32,33 +32,39 @@ export function LightboxMinimap({ containerRef, className }: LightboxMinimapProp
     };
   }, [containerRef]);
 
-  if (workspaceImages.length === 0 || !viewportRect) {
-    return null;
-  }
-
-  // Calculate bounds of all images
-  const bounds = workspaceImages.reduce(
-    (acc, img) => {
-      return {
+  // Memoize the O(N) bounds reduce + scale so it only recomputes when the images
+  // or viewport actually change, not on every parent re-render. (Computed before
+  // the early return to satisfy the Rules of Hooks.)
+  const layout = React.useMemo(() => {
+    if (workspaceImages.length === 0 || !viewportRect) return null;
+    const bounds = workspaceImages.reduce(
+      (acc, img) => ({
         minX: Math.min(acc.minX, img.position.x),
         minY: Math.min(acc.minY, img.position.y),
         maxX: Math.max(acc.maxX, img.position.x + img.size.width),
         maxY: Math.max(acc.maxY, img.position.y + img.size.height),
-      };
-    },
-    {
-      minX: Infinity,
-      minY: Infinity,
-      maxX: -Infinity,
-      maxY: -Infinity,
-    }
-  );
+      }),
+      { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
+    );
+    const contentWidth = bounds.maxX - bounds.minX;
+    const contentHeight = bounds.maxY - bounds.minY;
+    const scaleX = 200 / Math.max(contentWidth, viewportRect.width);
+    const scaleY = 150 / Math.max(contentHeight, viewportRect.height);
+    return {
+      bounds,
+      contentWidth,
+      contentHeight,
+      scale: Math.min(scaleX, scaleY),
+      viewportWidth: viewportRect.width,
+      viewportHeight: viewportRect.height,
+    };
+  }, [workspaceImages, viewportRect]);
 
-  const contentWidth = bounds.maxX - bounds.minX;
-  const contentHeight = bounds.maxY - bounds.minY;
-  const scaleX = 200 / Math.max(contentWidth, viewportRect.width);
-  const scaleY = 150 / Math.max(contentHeight, viewportRect.height);
-  const scale = Math.min(scaleX, scaleY);
+  if (!layout) {
+    return null;
+  }
+
+  const { bounds, contentWidth, contentHeight, scale, viewportWidth, viewportHeight } = layout;
 
   return (
     <div
@@ -99,8 +105,8 @@ export function LightboxMinimap({ containerRef, className }: LightboxMinimapProp
           <rect
             x={(0 - bounds.minX) * scale}
             y={(0 - bounds.minY) * scale}
-            width={viewportRect.width * scale}
-            height={viewportRect.height * scale}
+            width={viewportWidth * scale}
+            height={viewportHeight * scale}
             fill="none"
             stroke="rgba(239, 68, 68, 0.8)"
             strokeWidth="2"

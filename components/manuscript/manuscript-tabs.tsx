@@ -36,7 +36,10 @@ export function ManuscriptTabs({ manuscriptId, imageId, counts }: ManuscriptTabs
   const base = `/manuscripts/${manuscriptId}/images/${imageId}`;
 
   return (
-    <nav className="flex items-center gap-1 border-b px-4" aria-label="Image tabs">
+    <nav
+      className="flex items-center gap-1 overflow-x-auto whitespace-nowrap border-b px-4"
+      aria-label="Image tabs"
+    >
       {TABS.map((tab) => {
         const href = tab.segment ? `${base}/${tab.segment}` : base;
         const isActive = tab.segment
@@ -50,7 +53,7 @@ export function ManuscriptTabs({ manuscriptId, imageId, counts }: ManuscriptTabs
             key={tab.segment || 'root'}
             href={href}
             className={cn(
-              'inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
+              'inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
               isActive
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground'

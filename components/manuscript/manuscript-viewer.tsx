@@ -2169,12 +2169,12 @@ export default function ManuscriptViewer({
 
   // ---- Early returns ----
   if (loading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    return <div className="flex h-[100dvh] items-center justify-center">Loading...</div>;
   }
 
   if (error || !manuscriptImage) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-[100dvh] items-center justify-center">
         <div className="text-center">
           <p className="text-red-500 mb-4">{error || 'Failed to load manuscript image'}</p>
           <Button onClick={() => window.location.reload()}>Try Again</Button>
@@ -2337,7 +2337,7 @@ export default function ManuscriptViewer({
     <div
       data-open-popups-count={openPopups.length}
       className={
-        isFullScreen ? 'fixed inset-0 z-50 flex flex-col bg-black' : 'flex h-screen flex-col'
+        isFullScreen ? 'fixed inset-0 z-50 flex flex-col bg-black' : 'flex h-[100dvh] flex-col'
       }
     >
       {isFullScreen ? (

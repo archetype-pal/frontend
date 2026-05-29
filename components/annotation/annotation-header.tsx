@@ -127,7 +127,7 @@ export function AnnotationHeader({
 
   return (
     <TooltipProvider>
-      <div className="flex items-center justify-between px-4 py-2 bg-white border-b">
+      <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-2 bg-white border-b">
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium text-gray-700">Annotations</span>
@@ -249,7 +249,7 @@ export function AnnotationHeader({
             value={selectedHandId != null ? selectedHandId.toString() : '__unset__'}
             onValueChange={handleHandChange}
           >
-            <SelectTrigger className="w-[220px]" disabled={!hands.length}>
+            <SelectTrigger className="w-full sm:w-[220px]" disabled={!hands.length}>
               <SelectValue placeholder="Choose a hand" />
             </SelectTrigger>
             <SelectContent>
@@ -262,7 +262,7 @@ export function AnnotationHeader({
             </SelectContent>
           </Select>
 
-          <div className="w-[200px]">
+          <div className="w-full sm:w-[200px]">
             <SearchableSelect
               options={allographs.map((allograph) => ({
                 value: allograph.id.toString(),
