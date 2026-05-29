@@ -1,31 +1,15 @@
 'use client';
 
 import * as React from 'react';
-import {
-  BookOpenText,
-  LaptopMinimal,
-  ZoomIn,
-  ZoomOut,
-  Hand,
-  Pencil,
-  Save,
-  Trash2,
-  Expand,
-  SquarePen,
-  RefreshCcw,
-} from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 import { useAuth } from '@/contexts/auth-context';
 
 import { getIiifBaseUrl } from '@/utils/iiif';
-import { Toolbar } from './toolbar';
 import { AnnotationFilterPanel } from './annotation-filter-panel';
 import { AnnotationSettingsPanel } from './annotation-settings-panel';
 import { AllographGalleryDialog } from './allograph-gallery-dialog';
-import { Button } from '@/components/ui/button';
 import { dismissActionNotification, showActionNotification } from '@/components/ui/action-toast';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupLayer } from '@/components/annotation/annotation-popup-layer';
 import { fetchHands } from '@/services/manuscripts';
@@ -38,6 +22,7 @@ import { ViewerTextPanel } from './viewer-text-panel';
 import { ImageToolsControl } from './image-tools-control';
 import { LightboxControl } from './lightbox-control';
 import { ViewerErrorState, ViewerLoadingState } from './viewer-status-screen';
+import { ViewerToolbar } from './viewer-toolbar';
 import { a9sToBackendFeature, dbIdFromA9s } from '@/lib/anno-mapping';
 
 import {
@@ -1960,194 +1945,29 @@ export default function ManuscriptViewer({
                 : 'relative h-[calc(100%-3rem)] min-w-0 flex-1 overflow-hidden rounded-lg border bg-accent/50'
             }
           >
-            <Toolbar orientation={viewerSettings.toolbarPosition}>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={isFullScreen ? 'default' : 'ghost'}
-                      size="icon"
-                      aria-label={isFullScreen ? 'Exit full screen' : 'Full screen'}
-                      aria-keyshortcuts="F Shift+F"
-                      onClick={handleToggleFullScreen}
-                    >
-                      <LaptopMinimal className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {isFullScreen ? 'Exit Full Screen' : 'Full Screen'}
-                  </TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeTool === 'move' ? 'default' : 'ghost'}
-                      size="icon"
-                      aria-label="Select/Drag (g)"
-                      aria-keyshortcuts="G Shift+G"
-                      onClick={handleMoveTool}
-                    >
-                      <Hand className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Select/Drag (g)</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Zoom in"
-                      aria-keyshortcuts="Z Shift+Z ="
-                      onClick={() => viewerApiRef.current?.zoomIn()}
-                    >
-                      <ZoomIn className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Zoom In</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Zoom out"
-                      aria-keyshortcuts="-"
-                      onClick={() => viewerApiRef.current?.zoomOut()}
-                    >
-                      <ZoomOut className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Zoom Out</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Refresh"
-                      aria-keyshortcuts="Home"
-                      onClick={() => void handleDefaultZoom()}
-                    >
-                      <RefreshCcw className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Refresh</TooltipContent>
-                </Tooltip>
-
-                {imageTexts.length > 0 && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={isTextPanelOpen ? 'default' : 'ghost'}
-                        size="icon"
-                        aria-label={isTextPanelOpen ? 'Hide text' : 'Show text'}
-                        onClick={() => setIsTextPanelOpen((open) => !open)}
-                      >
-                        <BookOpenText className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{isTextPanelOpen ? 'Hide text' : 'Show text'}</TooltipContent>
-                  </Tooltip>
-                )}
-
-                {canCreateEditorialAnnotations && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={
-                          activeTool === 'draw' && currentCreationKind === 'editorial'
-                            ? 'default'
-                            : 'ghost'
-                        }
-                        size="icon"
-                        aria-label="Create editorial annotation"
-                        aria-keyshortcuts="E Shift+E"
-                        onClick={() => handleCreateAnnotation('editorial')}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Create Editorial Annotation</TooltipContent>
-                  </Tooltip>
-                )}
-
-                {canPersistAnyAnnotations && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Save (s)"
-                        aria-keyshortcuts="S Shift+S Control+S Meta+S"
-                        onClick={() => void handleSave()}
-                        disabled={unsavedChanges === 0}
-                      >
-                        <Save className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Save (s)</TooltipContent>
-                  </Tooltip>
-                )}
-
-                {canDeleteAnnotations && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={activeTool === 'delete' ? 'default' : 'ghost'}
-                        size="icon"
-                        aria-label="Delete (x)"
-                        aria-keyshortcuts="X Delete Shift+Backspace"
-                        onClick={handleDeleteTool}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Delete (x)</TooltipContent>
-                  </Tooltip>
-                )}
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeTool === 'modify' ? 'default' : 'ghost'}
-                      size="icon"
-                      aria-label="Modify (m)"
-                      aria-keyshortcuts="M Shift+M"
-                      onClick={handleModifyTool}
-                    >
-                      <Expand className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Modify (m)</TooltipContent>
-                </Tooltip>
-
-                {canCreatePublicAnnotations && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={
-                          activeTool === 'draw' && currentCreationKind === 'public'
-                            ? 'default'
-                            : 'ghost'
-                        }
-                        size="icon"
-                        aria-label="Draw (d)"
-                        aria-keyshortcuts="D Shift+D R Shift+R"
-                        onClick={() => handleCreateAnnotation('public')}
-                      >
-                        <SquarePen className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Draw (d)</TooltipContent>
-                  </Tooltip>
-                )}
-              </TooltipProvider>
-            </Toolbar>
+            <ViewerToolbar
+              toolbarPosition={viewerSettings.toolbarPosition}
+              isFullScreen={isFullScreen}
+              activeTool={activeTool}
+              currentCreationKind={currentCreationKind}
+              hasTexts={imageTexts.length > 0}
+              isTextPanelOpen={isTextPanelOpen}
+              canCreateEditorialAnnotations={canCreateEditorialAnnotations}
+              canPersistAnyAnnotations={canPersistAnyAnnotations}
+              unsavedChanges={unsavedChanges}
+              canDeleteAnnotations={canDeleteAnnotations}
+              canCreatePublicAnnotations={canCreatePublicAnnotations}
+              onToggleFullScreen={handleToggleFullScreen}
+              onMoveTool={handleMoveTool}
+              onZoomIn={() => viewerApiRef.current?.zoomIn()}
+              onZoomOut={() => viewerApiRef.current?.zoomOut()}
+              onRefresh={() => void handleDefaultZoom()}
+              onToggleTextPanel={() => setIsTextPanelOpen((open) => !open)}
+              onCreateAnnotation={handleCreateAnnotation}
+              onSave={() => void handleSave()}
+              onDeleteTool={handleDeleteTool}
+              onModifyTool={handleModifyTool}
+            />
 
             <ManuscriptAnnotorious
               iiifImageUrl={browserSafeIiifUrl(getIiifBaseUrl(manuscriptImage.iiif_image))}
