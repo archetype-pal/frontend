@@ -123,7 +123,10 @@ const LightboxImageItem = React.memo(function LightboxImageItem({
     filter: `
       brightness(${image.transform.brightness}%)
       contrast(${image.transform.contrast}%)
+      saturate(${image.transform.saturate ?? 100}%)
+      ${image.transform.sepia ? `sepia(${image.transform.sepia}%)` : ''}
       ${image.transform.grayscale ? 'grayscale(100%)' : ''}
+      ${image.transform.invert ? 'invert(100%)' : ''}
     `,
     cursor: 'grab',
     userSelect: 'none',

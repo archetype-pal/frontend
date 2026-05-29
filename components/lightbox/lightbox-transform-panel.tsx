@@ -53,10 +53,24 @@ export function LightboxTransformPanel() {
     }));
   };
 
+  const handleSaturateChange = (value: number[]) => {
+    const saturate = value[0];
+    batchTransformUpdate(selectedImages, (img) => ({
+      transform: { ...img.transform, saturate },
+    }));
+  };
+
   const handleGrayscaleToggle = () => {
     saveHistory();
     batchTransformUpdate(selectedImages, (img) => ({
       transform: { ...img.transform, grayscale: !img.transform.grayscale },
+    }));
+  };
+
+  const handleInvertToggle = () => {
+    saveHistory();
+    batchTransformUpdate(selectedImages, (img) => ({
+      transform: { ...img.transform, invert: !img.transform.invert },
     }));
   };
 
@@ -71,6 +85,9 @@ export function LightboxTransformPanel() {
         flipX: false,
         flipY: false,
         grayscale: false,
+        invert: false,
+        saturate: 100,
+        sepia: 0,
       },
     }));
   };
@@ -142,11 +159,36 @@ export function LightboxTransformPanel() {
             />
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="saturate">Saturation</Label>
+              <span className="text-sm text-muted-foreground">
+                {firstImage?.transform.saturate ?? 100}%
+              </span>
+            </div>
+            <Slider
+              id="saturate"
+              value={[firstImage?.transform.saturate ?? 100]}
+              onValueChange={handleSaturateChange}
+              onPointerDown={handleSliderPointerDown}
+              min={0}
+              max={200}
+              step={1}
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
             <Button variant="outline" size="sm" onClick={handleGrayscaleToggle}>
               {firstImage?.transform.grayscale ? 'Color' : 'Grayscale'}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleReset}>
+            <Button
+              variant={firstImage?.transform.invert ? 'default' : 'outline'}
+              size="sm"
+              onClick={handleInvertToggle}
+            >
+              Invert
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleReset} className="ml-auto">
               <RotateCcw className="h-4 w-4 mr-2" />
               Reset
             </Button>

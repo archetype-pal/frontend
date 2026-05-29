@@ -32,6 +32,11 @@ export interface LightboxImage {
     flipX: boolean;
     flipY: boolean;
     grayscale: boolean;
+    // Advanced filters — optional so existing records (and the create path)
+    // need no migration; readers default them (invert off, saturate 100%).
+    invert?: boolean;
+    saturate?: number;
+    sepia?: number;
   };
   createdAt: number;
   updatedAt: number;

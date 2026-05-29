@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Download, FileText, Image as ImageIcon, X, FileJson } from 'lucide-react';
+import { Download, FileText, Image as ImageIcon, Printer, X, FileJson } from 'lucide-react';
 import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store';
 import type { LightboxImage } from '@/lib/lightbox-db';
 
@@ -19,7 +19,9 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
     selectedImageIds.size > 0
       ? workspaceImages.filter((img) => selectedImageIds.has(img.id))
       : workspaceImages;
-  const [exportFormat, setExportFormat] = useState<'pdf' | 'image' | 'json' | 'tei'>('pdf');
+  const [exportFormat, setExportFormat] = useState<'pdf' | 'image' | 'json' | 'tei' | 'print'>(
+    'pdf'
+  );
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
@@ -42,6 +44,9 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
           break;
         case 'tei':
           await exportAsTEI(targetImages);
+          break;
+        case 'print':
+          printWorkspace(targetImages);
           break;
       }
     } catch (error) {
@@ -140,6 +145,53 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
       console.error('PDF export failed:', error);
       toast.error('Failed to export PDF. Please try again.');
     }
+  };
+
+  // Open a self-contained, print-friendly window (no app chrome / CSP to fight)
+  // laying the images out in a captioned grid, then trigger the browser print
+  // dialog once the images have loaded.
+  const printWorkspace = (workspaceImages: LightboxImage[]) => {
+    if (workspaceImages.length === 0) {
+      toast.error('No images to print');
+      return;
+    }
+    if (typeof window === 'undefined') return;
+    const win = window.open('', '_blank');
+    if (!win) {
+      toast.error('Pop-up blocked — allow pop-ups for this site to print.');
+      return;
+    }
+    const esc = (value: string) =>
+      value.replace(
+        /[&<>"]/g,
+        (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string
+      );
+    const figures = workspaceImages
+      .map((img) => {
+        const caption = [img.metadata.shelfmark, img.metadata.locus, img.metadata.repository_name]
+          .filter(Boolean)
+          .join(' · ');
+        return `<figure><img src="${esc(img.imageUrl)}" alt="${esc(caption)}" /><figcaption>${esc(caption)}</figcaption></figure>`;
+      })
+      .join('');
+    const count = workspaceImages.length;
+    win.document.write(
+      `<!doctype html><html><head><meta charset="utf-8"><title>Lightbox — print</title>` +
+        `<style>` +
+        `@page { margin: 12mm; }` +
+        `body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 16px; color: #111; }` +
+        `h1 { font-size: 16px; margin: 0 0 12px; }` +
+        `.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }` +
+        `figure { margin: 0; break-inside: avoid; page-break-inside: avoid; border: 1px solid #ddd; padding: 8px; }` +
+        `img { width: 100%; height: auto; object-fit: contain; }` +
+        `figcaption { font-size: 11px; color: #333; margin-top: 6px; }` +
+        `</style></head>` +
+        `<body onload="window.focus();window.print();">` +
+        `<h1>Models of Authority — Lightbox (${count} image${count === 1 ? '' : 's'})</h1>` +
+        `<div class="grid">${figures}</div>` +
+        `</body></html>`
+    );
+    win.document.close();
   };
 
   const exportAsImage = async (imagesToExport: LightboxImage[]) => {
@@ -339,6 +391,17 @@ ${annotationElements ? annotationElements + '\n' : ''}    </surface>`;
                 <FileText className="h-5 w-5 mb-1" />
                 <div className="text-sm font-medium">TEI XML</div>
                 <div className="text-xs text-muted-foreground">TEI format</div>
+              </button>
+              <button
+                onClick={() => setExportFormat('print')}
+                className={`
+                  p-3 border rounded-md text-left transition-colors
+                  ${exportFormat === 'print' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}
+                `}
+              >
+                <Printer className="h-5 w-5 mb-1" />
+                <div className="text-sm font-medium">Print</div>
+                <div className="text-xs text-muted-foreground">Print-friendly layout</div>
               </button>
             </div>
           </div>
