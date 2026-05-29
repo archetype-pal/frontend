@@ -85,6 +85,26 @@ vi.mock('@/services/image-texts', () => ({
 
 import ManuscriptViewer from './manuscript-viewer';
 
+// Full editing capabilities so the create/save/delete paths are active in tests.
+const EDITING_CAPS = {
+  canCreatePublicAnnotations: true,
+  canPersistPublicAnnotations: true,
+  canCreateEditorialAnnotations: true,
+  canPersistEditorialAnnotations: true,
+  canDeleteAnnotations: true,
+  canModifyAnnotations: true,
+  canViewEditorialControls: true,
+  canUseSettings: true,
+  canUseEditorSettings: true,
+} as const;
+
+const draftAnnotation = (id: string) => ({
+  id,
+  target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:0,0,10,10' } },
+  body: [],
+  _meta: { annotationType: 'public' },
+});
+
 describe('ManuscriptViewer smoke test', () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -134,5 +154,27 @@ describe('ManuscriptViewer smoke test', () => {
     });
 
     expect(await screen.findByRole('dialog')).toBeTruthy();
+  });
+
+  it('marks the editor dirty when the viewer fires onCreate (create→save wiring)', async () => {
+    render(<ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />);
+    await screen.findByRole('button', { name: 'Image tools' });
+
+    const props = annotoriousPropsRef.current;
+    act(() => {
+      props!.exposeApi?.(mockViewerApi);
+    });
+
+    // With editing capabilities the Save button renders but is disabled (clean).
+    const saveBefore = await screen.findByRole('button', { name: 'Save (s)' });
+    expect(saveBefore).toHaveProperty('disabled', true);
+
+    // onCreate a new draft → handleViewerCreate → editorState.markCreated → dirty.
+    await act(async () => {
+      props!.onCreate?.(draftAnnotation('draft-created-1'));
+    });
+
+    const saveAfter = await screen.findByRole('button', { name: 'Save (s)' });
+    expect(saveAfter).toHaveProperty('disabled', false);
   });
 });
