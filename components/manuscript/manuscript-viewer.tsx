@@ -76,6 +76,7 @@ import { useCollectionActions } from '@/hooks/manuscript/use-collection-actions'
 import { useViewerBaseData } from '@/hooks/manuscript/use-viewer-base-data';
 import { useAnnotationVisibilityFilters } from '@/hooks/manuscript/use-annotation-visibility-filters';
 import { describeSaveOutcome } from '@/lib/manuscript-viewer-save';
+import { usePendingPopupClear } from '@/hooks/manuscript/use-pending-popup-clear';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
 import { useViewerImageToolsControls } from '@/hooks/manuscript/use-viewer-image-tools-controls';
@@ -174,8 +175,6 @@ export default function ManuscriptViewer({
   });
 
   const initialGraphHandledRef = React.useRef(false);
-  const pendingPopupClearRef = React.useRef<number | null>(null);
-
   const {
     viewerSettings,
     handleToggleAllowMultipleBoxes,
@@ -594,12 +593,9 @@ export default function ManuscriptViewer({
     [clearPopupCollection, setHoveredAnnotationId]
   );
 
-  const cancelPendingPopupClear = React.useCallback(() => {
-    if (pendingPopupClearRef.current !== null) {
-      window.clearTimeout(pendingPopupClearRef.current);
-      pendingPopupClearRef.current = null;
-    }
-  }, []);
+  const { schedulePopupClear, cancelPendingPopupClear } = usePendingPopupClear(() =>
+    clearSinglePopupState({ clearHover: true })
+  );
 
   const handlePopupTabChange = React.useCallback(
     (popupId: string, value: PopupRecord['popupTab']) => {
@@ -1233,14 +1229,11 @@ export default function ManuscriptViewer({
 
       dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
 
-      pendingPopupClearRef.current = window.setTimeout(() => {
-        pendingPopupClearRef.current = null;
-        clearSinglePopupState({ clearHover: true });
-      }, 50);
+      schedulePopupClear();
     },
     [
       cancelPendingPopupClear,
-      clearSinglePopupState,
+      schedulePopupClear,
       activeTool,
       getCanonicalAnnotation,
       openSinglePopupFromAnnotation,
@@ -1277,14 +1270,6 @@ export default function ManuscriptViewer({
   // (selectedHand reset invariant moved into useViewerEditorUiState — Phase A.2)
 
   // (allograph-modal auto-close invariant moved into useViewerEditorUiState — Phase A.2)
-
-  React.useEffect(() => {
-    return () => {
-      if (pendingPopupClearRef.current !== null) {
-        window.clearTimeout(pendingPopupClearRef.current);
-      }
-    };
-  }, []);
 
   // keep popup on valid tab
   React.useEffect(() => {
