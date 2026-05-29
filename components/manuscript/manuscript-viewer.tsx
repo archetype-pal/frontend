@@ -105,6 +105,8 @@ import { useViewerEditorUiState } from '@/hooks/use-viewer-editor-ui-state';
 
 import { useManuscriptPopups } from '@/hooks/use-manuscript-popups';
 import { useDraftPopupBuilders } from '@/hooks/manuscript/use-draft-popup-builders';
+import { useAnnotationVisibilityToggle } from '@/hooks/manuscript/use-annotation-visibility-toggle';
+import { useViewerOsdSync } from '@/hooks/manuscript/use-viewer-osd-sync';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
 import { useViewerImageToolsControls } from '@/hooks/manuscript/use-viewer-image-tools-controls';
@@ -149,8 +151,6 @@ export default function ManuscriptViewer({
   const canPersistAnyAnnotations = canPersistPublicAnnotations || canPersistEditorialAnnotations;
 
   // ---- State / refs ----
-  const [annotationsEnabled, setAnnotationsEnabled] = React.useState<boolean>(true);
-
   const [manuscriptImage, setManuscriptImage] = React.useState<ManuscriptImageType | null>(null);
   const [manuscript, setManuscript] = React.useState<Manuscript | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
@@ -207,6 +207,12 @@ export default function ManuscriptViewer({
     handleResetImageTools,
     resetImageAdjustments,
   } = useViewerImageToolsControls({ viewerApiRef, osdReady });
+
+  const { annotationsEnabled, toggleAnnotations } = useAnnotationVisibilityToggle({
+    imageId,
+    osdReady,
+    viewerApiRef,
+  });
 
   const initialGraphHandledRef = React.useRef(false);
   const pendingPopupClearRef = React.useRef<number | null>(null);
@@ -431,6 +437,14 @@ export default function ManuscriptViewer({
 
     return [];
   }, [a9sSnapshot, highlightAllographId, popupAnnotation?.id, selectedHand?.id]);
+
+  useViewerOsdSync({
+    osdReady,
+    viewerApiRef,
+    hoveredAnnotationId,
+    highlightAllographId,
+    highlightedIds,
+  });
 
   const allographsForThisImage = React.useMemo(() => {
     if (!allographs.length) return [];
@@ -1383,23 +1397,6 @@ export default function ManuscriptViewer({
     }
   }, [editorRecords, getStandardSaveValidationError, editorState, clearPopupCollection]);
 
-  const handleToggleAnnotations = () => {
-    setAnnotationsEnabled((prev) => {
-      const next = !prev;
-
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(`annotationsVisible:${imageId}`, String(next));
-        } catch {
-          // ignore
-        }
-      }
-
-      viewerApiRef.current?.toggleAnnotations(next);
-      return next;
-    });
-  };
-
   const handleAllographDialogOpenChange = React.useCallback(
     (open: boolean) => {
       setIsAllographModalOpen(open);
@@ -1602,15 +1599,6 @@ export default function ManuscriptViewer({
     };
   }, []);
 
-  // hydrate annotation visibility from localStorage
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const saved = localStorage.getItem(`annotationsVisible:${imageId}`);
-    if (saved !== null) {
-      setAnnotationsEnabled(saved === 'true');
-    }
-  }, [imageId]);
-
   // keep popup on valid tab
   React.useEffect(() => {
     if (!activePopupRecord) return;
@@ -1629,29 +1617,6 @@ export default function ManuscriptViewer({
       handlePopupTabChange(activePopupRecord.id, 'components');
     }
   }, [activePopupRecord, allographNameById, canViewEditorialControls, handlePopupTabChange]);
-
-  // sync viewer highlight state
-  React.useEffect(() => {
-    if (!osdReady) return;
-
-    if (hoveredAnnotationId) {
-      viewerApiRef.current?.highlightAnnotations?.([hoveredAnnotationId]);
-      return;
-    }
-
-    if (highlightAllographId == null) {
-      viewerApiRef.current?.clearHighlights?.();
-      return;
-    }
-
-    viewerApiRef.current?.highlightAnnotations?.(highlightedIds);
-  }, [osdReady, hoveredAnnotationId, highlightAllographId, highlightedIds]);
-
-  // sync annotation visibility into viewer
-  React.useEffect(() => {
-    if (!osdReady) return;
-    viewerApiRef.current?.toggleAnnotations(annotationsEnabled);
-  }, [annotationsEnabled, osdReady]);
 
   // load image + manuscript + allographs + IIIF height
   React.useEffect(() => {
@@ -1966,7 +1931,7 @@ export default function ManuscriptViewer({
   const annotationHeader = (
     <AnnotationHeader
       annotationsEnabled={annotationsEnabled}
-      onToggleAnnotations={handleToggleAnnotations}
+      onToggleAnnotations={toggleAnnotations}
       unsavedCount={unsavedChanges}
       selectedAnnotationsCount={selectedAnnotationIds.length}
       showUnsavedCount={canPersistAnyAnnotations}
