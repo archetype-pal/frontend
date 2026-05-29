@@ -29,21 +29,14 @@ import {
 import type { ViewerApi, Annotation as A9sAnnotation } from './manuscript-annotorious';
 import type {
   A9sWithMeta,
-  DraftSharePayload,
   ViewerCapabilities,
   ViewerMode,
   AnnotationCreationKind,
   PopupRecord,
 } from '@/types/annotation-viewer';
 
+import { browserSafeIiifUrl, isDbId } from '@/lib/annotation-popup-utils';
 import {
-  browserSafeIiifUrl,
-  decodeDraftSharePayload,
-  encodeDraftSharePayload,
-  isDbId,
-} from '@/lib/annotation-popup-utils';
-import {
-  buildStandardAnnotationBody,
   getAllographBodyText,
   getEditorialInternalNote,
   getStandardAnnotationNote,
@@ -74,6 +67,7 @@ import { describeSaveOutcome } from '@/lib/manuscript-viewer-save';
 import { usePendingPopupClear } from '@/hooks/manuscript/use-pending-popup-clear';
 import { useAnnotationDeletion } from '@/hooks/manuscript/use-annotation-deletion';
 import { useImageTextLinking } from '@/hooks/manuscript/use-image-text-linking';
+import { useShareTarget } from '@/hooks/manuscript/use-share-target';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
 import { useViewerImageToolsControls } from '@/hooks/manuscript/use-viewer-image-tools-controls';
@@ -152,7 +146,6 @@ export default function ManuscriptViewer({
     viewerApiRef,
   });
 
-  const initialGraphHandledRef = React.useRef(false);
   const {
     viewerSettings,
     handleToggleAllowMultipleBoxes,
@@ -535,13 +528,6 @@ export default function ManuscriptViewer({
     [updatePopupById]
   );
 
-  const handleHideShareUrl = React.useCallback(
-    (popupId: string) => {
-      updatePopupById(popupId, { isShareUrlVisible: false });
-    },
-    [updatePopupById]
-  );
-
   const handleDraftAllographIdChange = React.useCallback(
     (popupId: string, value: number | null) => {
       updatePopupById(popupId, {
@@ -633,57 +619,6 @@ export default function ManuscriptViewer({
     ]
   );
 
-  const handleShareSelectedAnnotation = React.useCallback(
-    (popupId: string) => {
-      const popup = getPopupById(popupId);
-      if (!popup || typeof window === 'undefined') return;
-
-      const annotation = popup.annotation;
-      const isDraft = !isDbId(annotation.id);
-      const url = new URL(window.location.href);
-
-      if (isDraft) {
-        const draftBody: A9sAnnotation['body'] =
-          getAnnotationKind(popup.annotation) === 'editorial'
-            ? []
-            : buildStandardAnnotationBody(popup.draftAllographText, popup.draftNoteText);
-
-        const payload: DraftSharePayload = {
-          id: annotation.id,
-          target: annotation.target,
-          body: draftBody,
-          _meta: annotation._meta,
-        };
-
-        url.searchParams.delete('graph');
-        url.searchParams.set('draft', encodeDraftSharePayload(payload));
-      } else {
-        const graphId = annotation.id.replace(/^db:/, '');
-        if (!graphId) return;
-
-        url.searchParams.delete('draft');
-        url.searchParams.set('graph', graphId);
-      }
-
-      updatePopupById(popupId, {
-        shareUrl: url.toString(),
-        isShareUrlVisible: true,
-      });
-    },
-    [getAnnotationKind, getPopupById, updatePopupById]
-  );
-
-  const handleCopyShareUrl = async (popupId: string) => {
-    const value = getPopupById(popupId)?.shareUrl ?? '';
-    if (!value) return;
-
-    try {
-      await navigator.clipboard.writeText(value);
-    } catch {
-      // ignore
-    }
-  };
-
   const rearmCreateTool = React.useCallback(() => {
     setActiveTool('draw');
     window.setTimeout(() => {
@@ -732,6 +667,18 @@ export default function ManuscriptViewer({
     },
     [closeDraftPopup]
   );
+
+  const { handleHideShareUrl, handleShareSelectedAnnotation, handleCopyShareUrl } = useShareTarget({
+    imageId,
+    osdReady,
+    manuscriptImage,
+    a9sSnapshot,
+    viewerApiRef,
+    openSinglePopupFromAnnotation,
+    getPopupById,
+    updatePopupById,
+    getAnnotationKind,
+  });
 
   const {
     buildStandardAnnotationFromPopup,
@@ -1100,12 +1047,9 @@ export default function ManuscriptViewer({
     setSelectedHand(undefined);
     editorState.resetFrom([]);
     setSelectedAnnotationIds([]);
-    // (linkArm reset on imageId change now lives in useImageTextLinking.)
+    // (linkArm reset → useImageTextLinking; share-URL re-arm → useShareTarget;
+    // both keyed on imageId.)
     resetImageAdjustments();
-    // Re-arm the share-URL effect so ?graph=… / ?draft=… is honoured on the
-    // new image. Without this, navigating between images via next/link keeps
-    // the same viewer instance — the effect ran once and never fires again.
-    initialGraphHandledRef.current = false;
 
     // Visibility-filter reset now lives in useAnnotationVisibilityFilters
     // (keyed on imageId); we only close the panel here.
@@ -1300,54 +1244,6 @@ export default function ManuscriptViewer({
     zoomOut,
   ]);
   useHotkeys(viewerHotkeys);
-
-  // open shared ?graph=... annotation on first valid load
-  React.useEffect(() => {
-    if (initialGraphHandledRef.current) return;
-    if (!osdReady || typeof window === 'undefined') return;
-    // Guard against running against a stale snapshot mid-navigation: only
-    // proceed once the loaded image actually matches the URL.
-    if (!manuscriptImage || String(manuscriptImage.id) !== imageId) return;
-
-    const url = new URL(window.location.href);
-
-    const draftParam = url.searchParams.get('draft');
-    if (draftParam) {
-      if (!a9sSnapshot.length) return;
-
-      const decoded = decodeDraftSharePayload(draftParam);
-      const draftId = decoded?.id || 'draft:shared';
-      const found = a9sSnapshot.find((a) => a.id === draftId) as A9sWithMeta | undefined;
-
-      if (!found) return;
-
-      initialGraphHandledRef.current = true;
-      openSinglePopupFromAnnotation(found);
-
-      viewerApiRef.current?.selectAnnotationById?.(draftId);
-      viewerApiRef.current?.centerOnAnnotation?.(draftId);
-      return;
-    }
-
-    if (!a9sSnapshot.length) return;
-
-    const graphParam = url.searchParams.get('graph');
-    if (!graphParam) {
-      initialGraphHandledRef.current = true;
-      return;
-    }
-
-    const targetId = `db:${graphParam}`;
-    const found = a9sSnapshot.find((a) => a.id === targetId) as A9sWithMeta | undefined;
-
-    initialGraphHandledRef.current = true;
-    if (!found) return;
-
-    openSinglePopupFromAnnotation(found);
-
-    viewerApiRef.current?.selectAnnotationById?.(targetId);
-    viewerApiRef.current?.centerOnAnnotation?.(targetId);
-  }, [osdReady, a9sSnapshot, openSinglePopupFromAnnotation, manuscriptImage, imageId]);
 
   // ---- Early returns ----
   if (loading) {
