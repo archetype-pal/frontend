@@ -7,6 +7,7 @@ import type { AnnotationViewerSettings } from '@/types/annotation-viewer';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useOnEscape } from '@/hooks/use-on-escape';
 
 interface AnnotationSettingsPanelProps {
   isOpen: boolean;
@@ -31,10 +32,13 @@ export function AnnotationSettingsPanel({
   onToggleSelectMultipleAnnotations,
   onSetToolbarPosition,
 }: AnnotationSettingsPanelProps) {
+  useOnEscape(isOpen, onClose);
   if (!isOpen) return null;
 
   return (
     <div
+      role="dialog"
+      aria-label="Annotation settings"
       className="fixed top-24 right-4 z-40 w-[360px] max-w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-lg"
       style={{ transform }}
     >
@@ -45,7 +49,14 @@ export function AnnotationSettingsPanel({
         <h3 className="text-base font-semibold">Settings</h3>
 
         <div onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose} type="button">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={onClose}
+            type="button"
+            aria-label="Close settings panel"
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>

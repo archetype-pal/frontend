@@ -183,6 +183,8 @@ export function AnnotationPopupCard({
 }: AnnotationPopupCardProps) {
   const { getPluralLabel } = useModelLabels();
   const allographSelectRef = React.useRef<SearchableSelectHandle>(null);
+  // Unique per instance — several popups can be open at once (multi-select).
+  const titleId = React.useId();
 
   const isPublicDemoDraft = popupEditorMode === 'public_demo_draft';
   const isPublicExisting = popupEditorMode === 'public_existing';
@@ -649,6 +651,8 @@ export function AnnotationPopupCard({
 
   return (
     <div
+      role="dialog"
+      aria-labelledby={titleId}
       className="fixed top-4 right-4 rounded-lg border bg-background shadow-lg"
       style={{
         transform: popupTransform,
@@ -663,7 +667,9 @@ export function AnnotationPopupCard({
         {...dragHandleProps}
       >
         <div className="min-w-0">
-          <h3 className="truncate text-base font-semibold">{title}</h3>
+          <h3 id={titleId} className="truncate text-base font-semibold">
+            {title}
+          </h3>
 
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {isDraftAnnotation ? (

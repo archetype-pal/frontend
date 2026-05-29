@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useOnEscape } from '@/hooks/use-on-escape';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import type { Allograph } from '@/types/allographs';
 
@@ -52,10 +53,13 @@ export function AnnotationFilterPanel({
   onToggleEditorial,
   onTogglePublicAnnotations,
 }: AnnotationFilterPanelProps) {
+  useOnEscape(isOpen, onClose);
   if (!isOpen) return null;
 
   return (
     <div
+      role="dialog"
+      aria-label="Filter Annotations"
       className="fixed top-24 right-4 z-40 w-[380px] max-w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-lg"
       style={{ transform }}
     >
@@ -65,7 +69,14 @@ export function AnnotationFilterPanel({
       >
         <h3 className="text-base font-semibold">Filter Annotations</h3>
         <div onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose} type="button">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={onClose}
+            type="button"
+            aria-label="Close filter panel"
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>
