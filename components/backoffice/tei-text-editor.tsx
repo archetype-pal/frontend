@@ -73,18 +73,28 @@ export function TeiTextEditor({
   // uses `onValidityChange` to disable Save while the TEI is malformed.
   React.useEffect(() => {
     if (!token) return;
+    // Pessimistically mark invalid until this content is confirmed valid, so a
+    // Save fired inside the debounce window (or while a check is pending) can't
+    // persist not-yet-validated content on a stale `true`.
+    onValidityChange?.(false);
+    let cancelled = false;
     const handle = setTimeout(async () => {
       try {
         const result = await validateTei(value, token);
+        if (cancelled) return;
         setErrors(result.errors);
         setChecked(true);
         onValidityChange?.(result.valid);
       } catch {
-        // Network/endpoint failure shouldn't block editing; treat as unknown.
-        setChecked(false);
+        // Network/endpoint failure: leave Save disabled (validity unknown)
+        // rather than trusting a stale prior result.
+        if (!cancelled) setChecked(false);
       }
     }, 400);
-    return () => clearTimeout(handle);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
   }, [value, token, onValidityChange]);
 
   const valid = errors.length === 0;

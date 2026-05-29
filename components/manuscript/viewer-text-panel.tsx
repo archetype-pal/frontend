@@ -136,7 +136,12 @@ export function ViewerTextPanel({
             <button
               key={text.id}
               type="button"
-              onClick={() => setActiveId(text.id)}
+              onClick={() => {
+                // An armed link's index belongs to the current text; switching
+                // tabs would point it at an unrelated phrase, so cancel it.
+                if (armedElementIndex != null && text.id !== active?.id) onCancelLink?.();
+                setActiveId(text.id);
+              }}
               className={cn(
                 'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
                 text.id === active?.id

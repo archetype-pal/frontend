@@ -31,7 +31,27 @@ export default function TeiRichEditor({ value, onChange }: TeiRichEditorProps) {
 
   const editor = useEditor({
     immediatelyRender: false,
-    extensions: [StarterKit, ...teiEditorExtensions],
+    // The TEI doc model (tei-prosemirror) can only represent paragraphs + text
+    // carrying the `tei` stack-mark + `teiEmpty` atoms. Disable every StarterKit
+    // mark/node it can't serialise, so editors can't silently introduce
+    // bold/headings/lists/hardBreaks that docToTei would drop or choke on.
+    extensions: [
+      StarterKit.configure({
+        bold: false,
+        italic: false,
+        strike: false,
+        code: false,
+        codeBlock: false,
+        heading: false,
+        bulletList: false,
+        orderedList: false,
+        listItem: false,
+        blockquote: false,
+        horizontalRule: false,
+        hardBreak: false,
+      }),
+      ...teiEditorExtensions,
+    ],
     content: teiToDoc(value) as unknown as Record<string, unknown>,
     editorProps: {
       attributes: {

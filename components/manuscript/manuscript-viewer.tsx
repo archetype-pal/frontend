@@ -769,7 +769,9 @@ export default function ManuscriptViewer({
         includeEditorial: canViewEditorialControls,
         includeText: true,
         token,
-        currentViewerAnnotations: [],
+        // Preserve any in-progress local drafts across the post-link reseed
+        // (the merge keeps non-db drafts; passing [] would silently drop them).
+        currentViewerAnnotations: viewerApiRef.current?.getAnnotations?.() ?? [],
         currentUrl: '',
       }).catch(() => null),
     ]);
@@ -1730,6 +1732,9 @@ export default function ManuscriptViewer({
     setSelectedHand(undefined);
     editorState.resetFrom([]);
     setSelectedAnnotationIds([]);
+    // Drop any armed text→region link so a stale arm from the previous image
+    // can't hijack the first region drawn on the next one.
+    setLinkArm(null);
     imageTools.reset();
     // Re-arm the share-URL effect so ?graph=… / ?draft=… is honoured on the
     // new image. Without this, navigating between images via next/link keeps

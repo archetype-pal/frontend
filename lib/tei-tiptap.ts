@@ -145,11 +145,41 @@ function commonDepth(segments: Segment[]): number {
   return depth;
 }
 
-/** Wrap the selection in a new TEI element, nested at the shared depth. */
-export function wrapTei(editor: Editor, el: string, attrs: Record<string, string> = {}): void {
+/** Full document extent {from,to} of every element instance, keyed by id. */
+function elementExtents(editor: Editor): Map<number, { from: number; to: number }> {
+  const extents = new Map<number, { from: number; to: number }>();
+  editor.state.doc.descendants((node, pos) => {
+    if (!node.isText && node.type.name !== 'teiEmpty') return;
+    const mark = node.marks.find((m) => m.type.name === 'tei');
+    if (!mark) return;
+    const end = pos + node.nodeSize;
+    for (const e of mark.attrs.stack as StackEntry[]) {
+      const cur = extents.get(e.id);
+      if (!cur) extents.set(e.id, { from: pos, to: end });
+      else extents.set(e.id, { from: Math.min(cur.from, pos), to: Math.max(cur.to, end) });
+    }
+  });
+  return extents;
+}
+
+/**
+ * Wrap the selection in a new TEI element, nested at the shared depth.
+ * Refuses (returns false, no-op) when the selection straddles an element
+ * boundary — only partially covering an element at/below the insertion depth —
+ * since that would split the element into overlapping fragments.
+ */
+export function wrapTei(editor: Editor, el: string, attrs: Record<string, string> = {}): boolean {
   const segments = collectSegments(editor);
-  if (segments.length === 0) return;
+  if (segments.length === 0) return false;
   const depth = commonDepth(segments);
+  const { from, to } = editor.state.selection;
+  const extents = elementExtents(editor);
+  for (const seg of segments) {
+    for (let i = depth; i < seg.stack.length; i++) {
+      const ext = extents.get(seg.stack[i].id);
+      if (ext && (ext.from < from || ext.to > to)) return false; // straddles → refuse
+    }
+  }
   const entry: StackEntry = { el, attrs, id: nextId() };
   const teiType = editor.state.schema.marks.tei;
   const tr = editor.state.tr;
@@ -160,21 +190,30 @@ export function wrapTei(editor: Editor, el: string, attrs: Record<string, string
   }
   editor.view.dispatch(tr);
   editor.commands.focus();
+  return true;
 }
 
-/** Remove the innermost element shared by the whole selection. */
+/**
+ * Remove the innermost element covering the selection — entirely, across every
+ * run it spans (not just the selected ones), so a partial selection unwraps the
+ * whole element instead of splitting it into fragments.
+ */
 export function unwrapTei(editor: Editor): void {
-  const segments = collectSegments(editor);
-  const depth = commonDepth(segments);
-  if (depth === 0) return;
-  const removeId = segments[0].stack[depth - 1].id;
+  const target = currentElement(editor);
+  if (!target) return;
   const teiType = editor.state.schema.marks.tei;
   const tr = editor.state.tr;
-  for (const seg of segments) {
-    const newStack = seg.stack.filter((e) => e.id !== removeId);
-    tr.removeMark(seg.from, seg.to, teiType);
-    if (newStack.length > 0) tr.addMark(seg.from, seg.to, teiType.create({ stack: newStack }));
-  }
+  editor.state.doc.descendants((node, pos) => {
+    if (!node.isText && node.type.name !== 'teiEmpty') return;
+    const mark = node.marks.find((m) => m.type.name === 'tei');
+    if (!mark) return;
+    const stack = mark.attrs.stack as StackEntry[];
+    if (!stack.some((e) => e.id === target.id)) return;
+    const newStack = stack.filter((e) => e.id !== target.id);
+    tr.removeMark(pos, pos + node.nodeSize, teiType);
+    if (newStack.length > 0)
+      tr.addMark(pos, pos + node.nodeSize, teiType.create({ stack: newStack }));
+  });
   editor.view.dispatch(tr);
   editor.commands.focus();
 }

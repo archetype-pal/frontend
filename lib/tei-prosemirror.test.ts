@@ -42,6 +42,25 @@ describe('teiToDoc / docToTei round-trip', () => {
     expect(runs[1].marks?.[0].attrs.stack.map((e) => e.el)).toEqual(['seg', 'persName']);
   });
 
+  it('skips unknown node types instead of crashing (no elAttrs)', () => {
+    // A stray hardBreak-style node (no elAttrs) must not throw in docToTei.
+    const doc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          attrs: { pAttrs: {} },
+          content: [
+            { type: 'text', text: 'a' },
+            { type: 'hardBreak' },
+            { type: 'text', text: 'b' },
+          ],
+        },
+      ],
+    } as unknown as Parameters<typeof docToTei>[0];
+    expect(docToTei(doc)).toBe('<p>ab</p>');
+  });
+
   it('preserves entities canonically', () => {
     expect(roundTrip('<p>a &amp; b &lt;c&gt;</p>')).toBe('<p>a &amp; b &lt;c&gt;</p>');
   });

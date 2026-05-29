@@ -258,7 +258,7 @@ export function docToTei(doc: PMDoc): string {
       for (let i = common; i < next.length; i++) out.push(renderOpenTag(next[i]));
       if (node.type === 'text') {
         out.push(escapeText(node.text));
-      } else {
+      } else if (node.type === 'teiEmpty' && node.attrs?.elAttrs) {
         const attrs = Object.entries(node.attrs.elAttrs)
           .map(([k, v]) => ` ${k}="${escapeAttr(v)}"`)
           .join('');
@@ -268,6 +268,8 @@ export function docToTei(doc: PMDoc): string {
             : `<${node.attrs.el}${attrs}></${node.attrs.el}>`
         );
       }
+      // Any other node type (defensively — the editor schema forbids them) is
+      // skipped rather than crashing on a missing `elAttrs`.
       open = next;
     }
     for (let i = open.length - 1; i >= 0; i--) out.push(`</${open[i].el}>`);
