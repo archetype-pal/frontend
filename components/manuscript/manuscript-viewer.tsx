@@ -35,7 +35,6 @@ import type { ViewerApi, Annotation as A9sAnnotation } from './manuscript-annoto
 import type {
   A9sWithMeta,
   DraftSharePayload,
-  AnnotationVisibilityFilters,
   ViewerCapabilities,
   ViewerMode,
   AnnotationCreationKind,
@@ -46,9 +45,7 @@ import {
   browserSafeIiifUrl,
   decodeDraftSharePayload,
   encodeDraftSharePayload,
-  includesAllIds,
   isDbId,
-  toggleNumericId,
 } from '@/lib/annotation-popup-utils';
 import {
   buildStandardAnnotationBody,
@@ -80,6 +77,7 @@ import { useAnnotationVisibilityToggle } from '@/hooks/manuscript/use-annotation
 import { useViewerOsdSync } from '@/hooks/manuscript/use-viewer-osd-sync';
 import { useCollectionActions } from '@/hooks/manuscript/use-collection-actions';
 import { useViewerBaseData } from '@/hooks/manuscript/use-viewer-base-data';
+import { useAnnotationVisibilityFilters } from '@/hooks/manuscript/use-annotation-visibility-filters';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
 import { useViewerImageToolsControls } from '@/hooks/manuscript/use-viewer-image-tools-controls';
@@ -136,16 +134,6 @@ export default function ManuscriptViewer({
     setHands,
     setHandsLoaded,
   } = useViewerBaseData(imageId);
-
-  const [visibilityFilters, setVisibilityFilters] = React.useState<AnnotationVisibilityFilters>({
-    allographIds: [],
-    handIds: [],
-    showEditorial: true,
-    showPublicAnnotations: true,
-  });
-
-  const [allographFiltersInitialized, setAllographFiltersInitialized] = React.useState(false);
-  const [handFiltersInitialized, setHandFiltersInitialized] = React.useState(false);
 
   const viewerApiRef = React.useRef<ViewerApi | null>(null);
   const [osdReady, setOsdReady] = React.useState(false);
@@ -402,70 +390,27 @@ export default function ManuscriptViewer({
     [handsForThisImage]
   );
 
-  const allAllographFiltersSelected = React.useMemo(
-    () => includesAllIds(availableAllographFilterIds, visibilityFilters.allographIds),
-    [availableAllographFilterIds, visibilityFilters.allographIds]
-  );
-
-  const allHandFiltersSelected = React.useMemo(
-    () => includesAllIds(availableHandFilterIds, visibilityFilters.handIds),
-    [availableHandFilterIds, visibilityFilters.handIds]
-  );
-
-  const visibilityFiltersReady = allographFiltersInitialized && handFiltersInitialized;
-
-  const isVisibilityFilterActive =
-    visibilityFiltersReady &&
-    (!allAllographFiltersSelected ||
-      !allHandFiltersSelected ||
-      (canViewEditorialControls && !visibilityFilters.showEditorial) ||
-      !visibilityFilters.showPublicAnnotations);
-
-  const annotationVisibilityFilter = React.useCallback(
-    (annotation: A9sAnnotation) => {
-      if (!visibilityFiltersReady) return true;
-
-      const canonical = getCanonicalAnnotation(annotation);
-      const isDraft = !isDbId(canonical.id);
-      const meta = canonical._meta;
-
-      // Text-region annotations exist only to back the transcription↔image
-      // link; show them only while the text panel is open so the standard
-      // annotation view stays uncluttered.
-      if (meta?.annotationType === 'text') return isTextPanelOpen;
-
-      const isExplicitEditorial = meta?.annotationType === 'editorial';
-
-      const kindPass = isExplicitEditorial
-        ? visibilityFilters.showEditorial
-        : isDraft
-          ? visibilityFilters.showPublicAnnotations
-          : true;
-
-      const allographId = meta?.allographId;
-      const handId = meta?.handId;
-
-      const allographPass =
-        !availableAllographFilterIds.length ||
-        allographId == null ||
-        visibilityFilters.allographIds.includes(allographId);
-
-      const handPass =
-        !availableHandFilterIds.length ||
-        handId == null ||
-        visibilityFilters.handIds.includes(handId);
-
-      return kindPass && allographPass && handPass;
-    },
-    [
-      visibilityFiltersReady,
-      visibilityFilters,
-      availableAllographFilterIds.length,
-      availableHandFilterIds.length,
-      getCanonicalAnnotation,
-      isTextPanelOpen,
-    ]
-  );
+  const {
+    visibilityFilters,
+    isVisibilityFilterActive,
+    annotationVisibilityFilter,
+    handleToggleAllographFilter,
+    handleToggleHandFilter,
+    handleToggleAllAllographFilters,
+    handleToggleAllHandFilters,
+    handleToggleEditorialVisibility,
+    handleTogglePublicAnnotationsVisibility,
+  } = useAnnotationVisibilityFilters({
+    imageId,
+    availableAllographFilterIds,
+    availableHandFilterIds,
+    a9sSnapshotLength: a9sSnapshot.length,
+    baseDataReady: Boolean(manuscriptImage && imageHeight),
+    handsLoaded,
+    isTextPanelOpen,
+    canViewEditorialControls,
+    getCanonicalAnnotation,
+  });
 
   // ---- Helpers / handlers ----
   const getAnnotationKind = React.useCallback(
@@ -1301,34 +1246,6 @@ export default function ManuscriptViewer({
     [allographDialogDrag, setIsAllographModalOpen]
   );
 
-  const handleToggleAllographFilter = React.useCallback((allographId: number) => {
-    setVisibilityFilters((prev) => ({
-      ...prev,
-      allographIds: toggleNumericId(prev.allographIds, allographId),
-    }));
-  }, []);
-
-  const handleToggleHandFilter = React.useCallback((handId: number) => {
-    setVisibilityFilters((prev) => ({
-      ...prev,
-      handIds: toggleNumericId(prev.handIds, handId),
-    }));
-  }, []);
-
-  const handleToggleAllAllographFilters = React.useCallback(() => {
-    setVisibilityFilters((prev) => ({
-      ...prev,
-      allographIds: allAllographFiltersSelected ? [] : [...availableAllographFilterIds],
-    }));
-  }, [allAllographFiltersSelected, availableAllographFilterIds]);
-
-  const handleToggleAllHandFilters = React.useCallback(() => {
-    setVisibilityFilters((prev) => ({
-      ...prev,
-      handIds: allHandFiltersSelected ? [] : [...availableHandFilterIds],
-    }));
-  }, [allHandFiltersSelected, availableHandFilterIds]);
-
   const handleSelectAnnotationFromViewer = React.useCallback(
     (annotation: A9sAnnotation | null) => {
       cancelPendingPopupClear();
@@ -1377,20 +1294,6 @@ export default function ManuscriptViewer({
     ]
   );
 
-  const handleToggleEditorialVisibility = React.useCallback(() => {
-    setVisibilityFilters((prev) => ({
-      ...prev,
-      showEditorial: !prev.showEditorial,
-    }));
-  }, []);
-
-  const handleTogglePublicAnnotationsVisibility = React.useCallback(() => {
-    setVisibilityFilters((prev) => ({
-      ...prev,
-      showPublicAnnotations: !prev.showPublicAnnotations,
-    }));
-  }, []);
-
   // ---- Effects ----
 
   // (currentCreationKind fallback invariant moved into useViewerEditorUiState — Phase A.2)
@@ -1410,15 +1313,8 @@ export default function ManuscriptViewer({
     // the same viewer instance — the effect ran once and never fires again.
     initialGraphHandledRef.current = false;
 
-    setVisibilityFilters({
-      allographIds: [],
-      handIds: [],
-      showEditorial: true,
-      showPublicAnnotations: true,
-    });
-
-    setAllographFiltersInitialized(false);
-    setHandFiltersInitialized(false);
+    // Visibility-filter reset now lives in useAnnotationVisibilityFilters
+    // (keyed on imageId); we only close the panel here.
     closeFilterPanel();
     // resetImageAdjustments and closeFilterPanel are stable; depend on imageId only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1426,37 +1322,7 @@ export default function ManuscriptViewer({
 
   // (selectedHand reset invariant moved into useViewerEditorUiState — Phase A.2)
 
-  React.useEffect(() => {
-    if (allographFiltersInitialized) return;
-    if (!manuscriptImage || !imageHeight) return;
-
-    if (a9sSnapshot.length === 0 || availableAllographFilterIds.length > 0) {
-      setVisibilityFilters((prev) => ({
-        ...prev,
-        allographIds: [...availableAllographFilterIds],
-      }));
-      setAllographFiltersInitialized(true);
-    }
-  }, [
-    allographFiltersInitialized,
-    manuscriptImage,
-    imageHeight,
-    a9sSnapshot.length,
-    availableAllographFilterIds,
-  ]);
-
   // (allograph-modal auto-close invariant moved into useViewerEditorUiState — Phase A.2)
-
-  React.useEffect(() => {
-    if (handFiltersInitialized) return;
-    if (!handsLoaded) return;
-
-    setVisibilityFilters((prev) => ({
-      ...prev,
-      handIds: [...availableHandFilterIds],
-    }));
-    setHandFiltersInitialized(true);
-  }, [handFiltersInitialized, handsLoaded, availableHandFilterIds]);
 
   React.useEffect(() => {
     return () => {
