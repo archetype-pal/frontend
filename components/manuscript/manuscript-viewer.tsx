@@ -104,12 +104,10 @@ import { useAnnotationNotifications } from '@/hooks/manuscript/use-annotation-no
 import { useViewerEditorUiState } from '@/hooks/use-viewer-editor-ui-state';
 
 import { useManuscriptPopups } from '@/hooks/use-manuscript-popups';
+import { useDraftPopupBuilders } from '@/hooks/manuscript/use-draft-popup-builders';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
-import {
-  useViewerImageAdjustments,
-  type ImageAdjustmentKey,
-} from '@/hooks/use-viewer-image-adjustments';
+import { useViewerImageToolsControls } from '@/hooks/manuscript/use-viewer-image-tools-controls';
 import { useViewerChromeState } from '@/hooks/use-viewer-chrome-state';
 import { useHotkeys, type HotkeyDefinition } from '@/hooks/use-hotkeys';
 
@@ -201,8 +199,14 @@ export default function ManuscriptViewer({
     linkArmRef.current = linkArm;
   }, [linkArm]);
 
-  const imageTools = useViewerImageAdjustments();
-  const { adjustments: imageAdjustments, hasChanges: hasImageToolChanges } = imageTools;
+  const {
+    imageAdjustments,
+    hasImageToolChanges,
+    handleRotateViewer,
+    handleImageAdjustmentChange,
+    handleResetImageTools,
+    resetImageAdjustments,
+  } = useViewerImageToolsControls({ viewerApiRef, osdReady });
 
   const initialGraphHandledRef = React.useRef(false);
   const pendingPopupClearRef = React.useRef<number | null>(null);
@@ -908,53 +912,17 @@ export default function ManuscriptViewer({
     [closeDraftPopup]
   );
 
-  const buildStandardAnnotationFromPopup = React.useCallback(
-    (popupId: string): A9sAnnotation | null => {
-      const popup = getPopupById(popupId);
-      if (!popup) return null;
-      return buildPopupAnnotationPayload({ popup, isEditorial: false, positionNameById });
-    },
-    [getPopupById, positionNameById]
-  );
-
-  const buildEditorialAnnotationFromPopup = React.useCallback(
-    (popupId: string): A9sAnnotation | null => {
-      const popup = getPopupById(popupId);
-      if (!popup) return null;
-      return buildPopupAnnotationPayload({ popup, isEditorial: true, positionNameById });
-    },
-    [getPopupById, positionNameById]
-  );
-
-  const getSelectedDraftIdsForPopup = React.useCallback(
-    (popupId: string): string[] => {
-      const popup = getPopupById(popupId);
-      if (!popup || isDbId(popup.annotation.id)) return [];
-
-      const selectedIds = viewerSettings.selectMultipleAnnotations
-        ? (viewerApiRef.current?.getSelectedAnnotationIds?.() ?? [])
-        : [];
-
-      const draftIds = selectedIds.filter((id) => !isDbId(id));
-
-      return draftIds.includes(popup.annotation.id) ? draftIds : [popup.annotation.id];
-    },
-    [getPopupById, viewerSettings.selectMultipleAnnotations]
-  );
-
-  // Takes a popup record directly so callers can capture it once before
-  // awaiting `handleSaveDraftAnnotation` and not race the createAnnotation
-  // event that may evict the popup at that id.
-  const applyPopupValuesToDraftAnnotationFromRecord = React.useCallback(
-    (annotation: A9sAnnotation, popup: PopupRecord): A9sAnnotation =>
-      buildPopupAnnotationPayload({
-        popup,
-        isEditorial: false,
-        positionNameById,
-        base: annotation,
-      }),
-    [positionNameById]
-  );
+  const {
+    buildStandardAnnotationFromPopup,
+    buildEditorialAnnotationFromPopup,
+    getSelectedDraftIdsForPopup,
+    applyPopupValuesToDraftAnnotationFromRecord,
+  } = useDraftPopupBuilders({
+    getPopupById,
+    positionNameById,
+    selectMultipleAnnotations: viewerSettings.selectMultipleAnnotations,
+    viewerApiRef,
+  });
 
   const handleSaveDraftAnnotation = React.useCallback(
     async (popupId: string) => {
@@ -1218,26 +1186,6 @@ export default function ManuscriptViewer({
     },
     [setActiveTool]
   );
-
-  const handleRotateViewer = React.useCallback(
-    (degrees: number) => {
-      viewerApiRef.current?.rotateBy(degrees);
-      imageTools.rotate(degrees);
-    },
-    [imageTools]
-  );
-
-  const handleImageAdjustmentChange = React.useCallback(
-    (key: ImageAdjustmentKey, value: number) => {
-      imageTools.setAdjustment(key, value);
-    },
-    [imageTools]
-  );
-
-  const handleResetImageTools = React.useCallback(() => {
-    viewerApiRef.current?.resetRotation();
-    imageTools.reset();
-  }, [imageTools]);
 
   const handleTogglePageCollection = React.useCallback(() => {
     if (!pageCollectionItem) return;
@@ -1565,7 +1513,7 @@ export default function ManuscriptViewer({
     // Drop any armed text→region link so a stale arm from the previous image
     // can't hijack the first region drawn on the next one.
     setLinkArm(null);
-    imageTools.reset();
+    resetImageAdjustments();
     // Re-arm the share-URL effect so ?graph=… / ?draft=… is honoured on the
     // new image. Without this, navigating between images via next/link keeps
     // the same viewer instance — the effect ran once and never fires again.
@@ -1581,7 +1529,7 @@ export default function ManuscriptViewer({
     setAllographFiltersInitialized(false);
     setHandFiltersInitialized(false);
     closeFilterPanel();
-    // imageTools.reset and closeFilterPanel are stable; depend on imageId only.
+    // resetImageAdjustments and closeFilterPanel are stable; depend on imageId only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageId]);
 
@@ -1653,11 +1601,6 @@ export default function ManuscriptViewer({
       }
     };
   }, []);
-
-  React.useEffect(() => {
-    if (!osdReady) return;
-    viewerApiRef.current?.setImageAdjustments(imageAdjustments);
-  }, [imageAdjustments, osdReady]);
 
   // hydrate annotation visibility from localStorage
   React.useEffect(() => {
