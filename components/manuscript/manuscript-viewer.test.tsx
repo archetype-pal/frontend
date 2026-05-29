@@ -1,18 +1,38 @@
 /** @vitest-environment jsdom */
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // The OpenSeadragon viewer is loaded via next/dynamic(ssr:false); stub it so the
-// smoke test doesn't pull in the real (canvas-heavy) annotorious module.
+// test doesn't pull in the real (canvas-heavy) annotorious module — but capture
+// the props the viewer hands it, so tests can drive its events (exposeApi /
+// onSelect / onCreate …) and exercise the viewer's wiring.
+const { annotoriousPropsRef } = vi.hoisted(() => ({
+  annotoriousPropsRef: { current: null as Record<string, (...args: unknown[]) => unknown> | null },
+}));
+
 vi.mock('next/dynamic', () => ({
   default: () =>
-    function DynamicStub() {
+    function DynamicStub(props: Record<string, (...args: unknown[]) => unknown>) {
+      annotoriousPropsRef.current = props;
       return null;
     },
 }));
 
+// A ViewerApi whose every method is a no-op (the select→popup path only reads
+// popup state, not the viewer api).
+const mockViewerApi = new Proxy({}, { get: () => () => undefined });
+
 vi.mock('@/contexts/auth-context', () => ({
   useAuth: () => ({ token: null, user: null, isReady: true, setToken: vi.fn(), logout: vi.fn() }),
+}));
+
+vi.mock('@/contexts/model-labels-context', () => ({
+  useModelLabels: () => ({
+    config: {},
+    loading: false,
+    getLabel: (key: string) => key,
+    getPluralLabel: (key: string) => key,
+  }),
 }));
 
 vi.mock('@/contexts/collection-context', () => ({
@@ -84,5 +104,35 @@ describe('ManuscriptViewer smoke test', () => {
     render(<ManuscriptViewer imageId="4432" mode="public" />);
     expect(await screen.findByText('boom')).toBeTruthy();
     expect(await screen.findByRole('button', { name: 'Try Again' })).toBeTruthy();
+  });
+
+  it('opens an annotation popup when the viewer fires onSelect (event→popup wiring)', async () => {
+    render(<ManuscriptViewer imageId="4432" mode="public" />);
+    await screen.findByRole('button', { name: 'Image tools' });
+
+    // Drive the Annotorious events the viewer wired up.
+    const props = annotoriousPropsRef.current;
+    expect(props).toBeTruthy();
+
+    // exposeApi → osdReady true + viewerApiRef set.
+    act(() => {
+      props!.exposeApi?.(mockViewerApi);
+    });
+
+    // No popup yet.
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    // onSelect a (draft) annotation → openSinglePopupFromAnnotation → a popup
+    // card (role="dialog") renders.
+    act(() => {
+      props!.onSelect?.({
+        id: 'draft-test-1',
+        target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:0,0,10,10' } },
+        body: [],
+        _meta: { annotationType: 'public' },
+      });
+    });
+
+    expect(await screen.findByRole('dialog')).toBeTruthy();
   });
 });
