@@ -12,7 +12,6 @@ import { AllographGalleryDialog } from './allograph-gallery-dialog';
 import { dismissActionNotification, showActionNotification } from '@/components/ui/action-toast';
 import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupLayer } from '@/components/annotation/annotation-popup-layer';
-import { fetchHands } from '@/services/manuscripts';
 import {
   fetchImageTextsForImage,
   linkRegionToElement,
@@ -33,10 +32,6 @@ import {
 } from '@/lib/viewer-capabilities';
 
 import type { ViewerApi, Annotation as A9sAnnotation } from './manuscript-annotorious';
-import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
-import type { Allograph } from '@/types/allographs';
-import type { HandType } from '@/types/hands';
-import type { Manuscript } from '@/types/manuscript';
 import type {
   A9sWithMeta,
   DraftSharePayload,
@@ -67,11 +62,6 @@ import {
   getPopupCardViewData,
 } from '@/lib/manuscript-viewer-popup-utils';
 
-import {
-  fetchImageAllographIds,
-  fetchManuscriptViewerBaseData,
-} from '@/lib/manuscript-viewer-data';
-
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
 import {
   annotationCountLabel,
@@ -89,6 +79,7 @@ import { useDraftPopupBuilders } from '@/hooks/manuscript/use-draft-popup-builde
 import { useAnnotationVisibilityToggle } from '@/hooks/manuscript/use-annotation-visibility-toggle';
 import { useViewerOsdSync } from '@/hooks/manuscript/use-viewer-osd-sync';
 import { useCollectionActions } from '@/hooks/manuscript/use-collection-actions';
+import { useViewerBaseData } from '@/hooks/manuscript/use-viewer-base-data';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
 import { useViewerImageToolsControls } from '@/hooks/manuscript/use-viewer-image-tools-controls';
@@ -132,16 +123,19 @@ export default function ManuscriptViewer({
   const canPersistAnyAnnotations = canPersistPublicAnnotations || canPersistEditorialAnnotations;
 
   // ---- State / refs ----
-  const [manuscriptImage, setManuscriptImage] = React.useState<ManuscriptImageType | null>(null);
-  const [manuscript, setManuscript] = React.useState<Manuscript | null>(null);
-  const [loading, setLoading] = React.useState<boolean>(true);
-  const [error, setError] = React.useState<string | null>(null);
-
-  const [allographs, setAllographs] = React.useState<Allograph[]>([]);
-  const [imageAllographIds, setImageAllographIds] = React.useState<number[]>([]);
-
-  const [hands, setHands] = React.useState<HandType[]>([]);
-  const [handsLoaded, setHandsLoaded] = React.useState(false);
+  const {
+    manuscriptImage,
+    manuscript,
+    allographs,
+    imageAllographIds,
+    hands,
+    handsLoaded,
+    imageHeight,
+    loading,
+    error,
+    setHands,
+    setHandsLoaded,
+  } = useViewerBaseData(imageId);
 
   const [visibilityFilters, setVisibilityFilters] = React.useState<AnnotationVisibilityFilters>({
     allographIds: [],
@@ -158,8 +152,6 @@ export default function ManuscriptViewer({
 
   const [initialA9sAnnots, setInitialA9sAnnots] = React.useState<A9sAnnotation[]>([]);
   const [selectedAnnotationIds, setSelectedAnnotationIds] = React.useState<string[]>([]);
-
-  const [imageHeight, setImageHeight] = React.useState<number>(0);
 
   // Text↔region linking: the image-texts for this image, whether the side
   // panel is shown, and the Graph id of the region currently selected on the
@@ -1432,33 +1424,6 @@ export default function ManuscriptViewer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageId]);
 
-  React.useEffect(() => {
-    if (!manuscriptImage?.item_part) {
-      setHands([]);
-      setHandsLoaded(false);
-      return;
-    }
-
-    let isMounted = true;
-
-    const loadHands = async () => {
-      try {
-        const handsData = await fetchHands(manuscriptImage.item_part, manuscriptImage.id);
-        if (isMounted) setHands(handsData.results);
-      } catch {
-        if (isMounted) setHands([]);
-      } finally {
-        if (isMounted) setHandsLoaded(true);
-      }
-    };
-
-    void loadHands();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [manuscriptImage?.id, manuscriptImage?.item_part]);
-
   // (selectedHand reset invariant moved into useViewerEditorUiState — Phase A.2)
 
   React.useEffect(() => {
@@ -1520,40 +1485,6 @@ export default function ManuscriptViewer({
     }
   }, [activePopupRecord, allographNameById, canViewEditorialControls, handlePopupTabChange]);
 
-  // load image + manuscript + allographs + IIIF height
-  React.useEffect(() => {
-    let isMounted = true;
-
-    const loadData = async () => {
-      try {
-        setLoading(true);
-
-        const { image, manuscript, allographs, imageHeight } =
-          await fetchManuscriptViewerBaseData(imageId);
-
-        if (!isMounted) return;
-
-        setManuscriptImage(image);
-        setManuscript(manuscript);
-        setAllographs(allographs);
-        setImageHeight(imageHeight);
-        setError(null);
-      } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : 'Failed to load manuscript data');
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    void loadData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [imageId]);
-
   // load image-texts for the side panel; auto-open it when the image has text
   React.useEffect(() => {
     let active = true;
@@ -1570,30 +1501,6 @@ export default function ManuscriptViewer({
       active = false;
     };
   }, [imageId, token]);
-
-  // load allograph ids present on this image
-  React.useEffect(() => {
-    if (!manuscriptImage) return;
-
-    let isMounted = true;
-
-    const loadAllographIds = async () => {
-      try {
-        const ids = await fetchImageAllographIds(String(manuscriptImage.id));
-        if (!isMounted) return;
-
-        setImageAllographIds(ids);
-      } catch {
-        if (isMounted) setImageAllographIds([]);
-      }
-    };
-
-    void loadAllographIds();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [manuscriptImage]);
 
   // load annotations for current image / allograph filter
   React.useEffect(() => {
