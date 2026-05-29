@@ -77,6 +77,7 @@ import { useViewerBaseData } from '@/hooks/manuscript/use-viewer-base-data';
 import { useAnnotationVisibilityFilters } from '@/hooks/manuscript/use-annotation-visibility-filters';
 import { describeSaveOutcome } from '@/lib/manuscript-viewer-save';
 import { usePendingPopupClear } from '@/hooks/manuscript/use-pending-popup-clear';
+import { useAnnotationDeletion } from '@/hooks/manuscript/use-annotation-deletion';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
 import { useViewerImageToolsControls } from '@/hooks/manuscript/use-viewer-image-tools-controls';
@@ -955,106 +956,23 @@ export default function ManuscriptViewer({
     ]
   );
 
-  const handleConfirmDelete = React.useCallback(
-    (annotation: A9sAnnotation) => {
-      const canonical = getCanonicalAnnotation(annotation);
-      const kind = getAnnotationKind(canonical);
-      const isDraft = !isDbId(canonical.id);
-
-      return window.confirm(
-        isDraft
-          ? `Delete this ${kind} draft annotation?\n\nThis will discard it locally.`
-          : `Delete this saved ${kind} annotation?\n\nThis will mark it for deletion. Press Save to persist the deletion.`
-      );
-    },
-    [getCanonicalAnnotation, getAnnotationKind]
-  );
-
-  const handleConfirmDeleteMany = React.useCallback(
-    (annotations: A9sAnnotation[]) => {
-      const canonical = annotations.map((annotation) => getCanonicalAnnotation(annotation));
-      const draftCount = canonical.filter((annotation) => !isDbId(annotation.id)).length;
-      const savedCount = canonical.length - draftCount;
-
-      const parts: string[] = [`Delete ${canonical.length} selected annotations?`];
-
-      if (draftCount > 0 && savedCount > 0) {
-        parts.push(
-          '',
-          `This will discard ${draftCount} draft annotation${draftCount === 1 ? '' : 's'} locally and mark ${savedCount} saved annotation${savedCount === 1 ? '' : 's'} for deletion.`,
-          'Press Save to persist saved deletions.'
-        );
-      } else if (draftCount > 0) {
-        parts.push(
-          '',
-          `This will discard ${draftCount} draft annotation${draftCount === 1 ? '' : 's'} locally.`
-        );
-      } else {
-        parts.push(
-          '',
-          `This will mark ${savedCount} saved annotation${savedCount === 1 ? '' : 's'} for deletion.`,
-          'Press Save to persist the deletion.'
-        );
-      }
-
-      return window.confirm(parts.join('\n'));
-    },
-    [getCanonicalAnnotation]
-  );
-
-  const handleViewerDelete = React.useCallback(
-    (annotation: A9sAnnotation, context?: { bulk: boolean }) => {
-      // markDeleted handles both draft (removed outright) and persisted
-      // (marked isDeleted=true) cases. The derived a9sSnapshot filters
-      // out isDeleted records, matching what Annotorious already did
-      // locally when it fired the delete event. We deliberately do NOT
-      // touch initialA9sAnnots — bumping that prop re-seeds the OSD
-      // layer and drops in-flight selection / mid-draw polygons.
-      editorState.markDeleted(annotation.id);
-
-      removePopupById(annotation.id);
-
-      if (!context?.bulk) {
-        notifyDeletedAnnotations([annotation]);
-      }
-    },
-    [notifyDeletedAnnotations, removePopupById, editorState]
-  );
-
-  const handleDeletePopupAnnotation = React.useCallback(
-    (popupId: string) => {
-      if (!canDeleteAnnotations) return;
-
-      const popup = getPopupById(popupId);
-      if (!popup) return;
-
-      const annotation = getCanonicalAnnotation(popup.annotation);
-      const confirmed = handleConfirmDelete(annotation);
-      if (!confirmed) return;
-
-      viewerApiRef.current?.removeAnnotationById?.(annotation.id);
-      handleViewerDelete(annotation);
-      viewerApiRef.current?.clearSelection?.();
-      viewerApiRef.current?.clearSelectedAnnotationIds?.();
-      viewerApiRef.current?.enablePan();
-      setActiveTool('move');
-    },
-    [
-      canDeleteAnnotations,
-      getCanonicalAnnotation,
-      getPopupById,
-      handleConfirmDelete,
-      handleViewerDelete,
-      setActiveTool,
-    ]
-  );
-
-  const handleViewerDeleteMany = React.useCallback(
-    (annotations: A9sAnnotation[]) => {
-      notifyDeletedAnnotations(annotations);
-    },
-    [notifyDeletedAnnotations]
-  );
+  const {
+    handleConfirmDelete,
+    handleConfirmDeleteMany,
+    handleViewerDelete,
+    handleViewerDeleteMany,
+    handleDeletePopupAnnotation,
+  } = useAnnotationDeletion({
+    canDeleteAnnotations,
+    getCanonicalAnnotation,
+    getAnnotationKind,
+    getPopupById,
+    removePopupById,
+    notifyDeletedAnnotations,
+    markDeleted: editorState.markDeleted,
+    viewerApiRef,
+    setActiveTool,
+  });
 
   const handleToggleFullScreen = React.useCallback(() => {
     toggleFullScreen();
