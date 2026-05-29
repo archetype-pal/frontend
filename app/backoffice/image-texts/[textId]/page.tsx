@@ -28,6 +28,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { TeiTextEditor } from '@/components/backoffice/tei-text-editor';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { PreviewAsPublicDialog } from '@/components/backoffice/preview-as-public-dialog';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
@@ -235,6 +236,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
             <Trash2 className="mr-1 h-3.5 w-3.5" />
             Delete
           </Button>
+          <PreviewAsPublicDialog textId={textId} currentStatus={status} />
           <TransitionAction
             currentStatus={status}
             pending={transitionMut.isPending}
