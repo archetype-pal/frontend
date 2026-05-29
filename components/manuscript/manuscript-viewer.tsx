@@ -60,10 +60,7 @@ import {
 } from '@/lib/manuscript-viewer-popup-utils';
 
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
-import {
-  annotationCountLabel,
-  formatSavedAnnotationDescription,
-} from '@/lib/manuscript-viewer-collection';
+import { annotationCountLabel } from '@/lib/manuscript-viewer-collection';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { getDefaultHand, sortHandsByPriority } from '@/lib/hand-ordering';
 
@@ -78,6 +75,7 @@ import { useViewerOsdSync } from '@/hooks/manuscript/use-viewer-osd-sync';
 import { useCollectionActions } from '@/hooks/manuscript/use-collection-actions';
 import { useViewerBaseData } from '@/hooks/manuscript/use-viewer-base-data';
 import { useAnnotationVisibilityFilters } from '@/hooks/manuscript/use-annotation-visibility-filters';
+import { describeSaveOutcome } from '@/lib/manuscript-viewer-save';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
 import { useViewerImageToolsControls } from '@/hooks/manuscript/use-viewer-image-tools-controls';
@@ -1179,61 +1177,17 @@ export default function ManuscriptViewer({
     }
 
     const outcome = await editorState.saveAll();
+    const { notice, committed } = describeSaveOutcome(outcome);
 
-    switch (outcome.kind) {
-      case 'no-token':
-        showActionNotification({
-          kind: 'error',
-          title: 'Sign in required',
-          description: 'Please log in again before saving annotations.',
-        });
-        return;
-      case 'no-image':
-      case 'no-capability':
-      case 'no-changes':
-        // Silent — the toolbar's Save button is already gated on isDirty,
-        // so reaching these branches means there was nothing meaningful
-        // to commit.
-        return;
-      case 'all-failed':
-        showActionNotification({
-          kind: 'error',
-          title: 'Failed to save annotations',
-          description: outcome.firstError ?? `${outcome.failedCount} could not be saved.`,
-        });
-        return;
-      case 'saved-but-refresh-failed':
-        showActionNotification({
-          kind: 'error',
-          title: 'Saved but could not refresh',
-          description: `${outcome.succeededCount} saved on the server, but reloading failed: ${outcome.message}. Reload the page to see the latest state.`,
-        });
-        return;
-      case 'all-succeeded':
-        viewerApiRef.current?.clearSelection?.();
-        clearPopupCollection();
-        setInitialA9sAnnots(outcome.seed);
-        showActionNotification({
-          kind: 'saved',
-          title: 'Annotations saved',
-          description: formatSavedAnnotationDescription({
-            createdCount: outcome.counts.created,
-            updatedCount: outcome.counts.updated,
-            deletedCount: outcome.counts.deleted,
-          }),
-        });
-        return;
-      case 'partial':
-        viewerApiRef.current?.clearSelection?.();
-        clearPopupCollection();
-        setInitialA9sAnnots(outcome.seed);
-        showActionNotification({
-          kind: 'error',
-          title: 'Some annotations could not be saved',
-          description: `${outcome.succeededCount} saved, ${outcome.failedCount} still unsaved. Try again to retry the failed entries.`,
-        });
-        return;
+    // 'all-succeeded' and 'partial' both committed to the server → clear the
+    // selection/popups and re-seed the viewer from the saved state.
+    if (committed && 'seed' in outcome) {
+      viewerApiRef.current?.clearSelection?.();
+      clearPopupCollection();
+      setInitialA9sAnnots(outcome.seed);
     }
+
+    if (notice) showActionNotification(notice);
   }, [editorRecords, getStandardSaveValidationError, editorState, clearPopupCollection]);
 
   const handleAllographDialogOpenChange = React.useCallback(
