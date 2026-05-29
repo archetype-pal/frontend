@@ -110,6 +110,7 @@ function LightboxPageContent() {
   const {
     currentWorkspaceId,
     createWorkspace,
+    setCurrentWorkspace,
     loadImages,
     setLoading,
     setError,
@@ -149,6 +150,15 @@ function LightboxPageContent() {
 
   React.useEffect(() => {
     if (!isInitialized) return;
+
+    // Handoff from a server workset: it was already persisted to Dexie (and so
+    // reloaded by initialize() above), we just need to select its workspace —
+    // initialize() defaults currentWorkspaceId to the oldest local workspace.
+    const workspaceParam = searchParams.get('workspace');
+    if (workspaceParam) {
+      setCurrentWorkspace(workspaceParam);
+      return;
+    }
 
     const imageId = searchParams.get('image');
     const graphId = searchParams.get('graph');

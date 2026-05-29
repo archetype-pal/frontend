@@ -9,6 +9,7 @@ import {
 import type { LightboxImage, LightboxWorkspace } from '@/lib/lightbox-db';
 import type { GraphListItem, ImageListItem } from '@/types/search';
 import type { CollectionItem } from '@/contexts/collection-context';
+import type { WorksetPayload } from '@/types/workset';
 
 export interface LightboxState {
   // Current workspace
@@ -52,6 +53,14 @@ export interface LightboxState {
   setError: (error: string | null) => void;
   clearError: () => void;
   loadSession: (sessionId: string) => Promise<void>;
+  /**
+   * Hydrate the store from a server workset payload. `persist` writes the
+   * workspaces/images into Dexie (used when the OWNER loads a workset to keep
+   * editing); the public read-only citable view passes `persist: false` so the
+   * viewed workset stays ephemeral and never clobbers the visitor's own
+   * local lightbox.
+   */
+  loadWorksetPayload: (payload: WorksetPayload, options?: { persist?: boolean }) => Promise<void>;
   setShowAnnotations: (show: boolean) => void;
   setShowGrid: (show: boolean) => void;
   bringToFront: (imageId: string) => void;
@@ -520,6 +529,37 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to load session',
+        isLoading: false,
+      });
+    }
+  },
+
+  loadWorksetPayload: async (payload, options) => {
+    const persist = options?.persist ?? false;
+    set({ isLoading: true });
+    try {
+      const workspaces = payload?.workspaces ?? [];
+      const images = payload?.images ?? [];
+
+      if (persist) {
+        const { saveWorkspace, saveImage } = await import('@/lib/lightbox-db');
+        for (const workspace of workspaces) await saveWorkspace(workspace);
+        for (const image of images) await saveImage(image);
+      }
+
+      const imagesMap = new Map<string, LightboxImage>();
+      for (const image of images) imagesMap.set(image.id, image);
+
+      set({
+        workspaces,
+        images: imagesMap,
+        currentWorkspaceId: workspaces[0]?.id ?? null,
+        selectedImageIds: new Set(),
+        isLoading: false,
+      });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to load workset',
         isLoading: false,
       });
     }
