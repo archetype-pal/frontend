@@ -17,7 +17,6 @@ import {
 import dynamic from 'next/dynamic';
 
 import { useAuth } from '@/contexts/auth-context';
-import { useCollection, type CollectionItem } from '@/contexts/collection-context';
 
 import { getIiifBaseUrl } from '@/utils/iiif';
 import { Toolbar } from './toolbar';
@@ -91,10 +90,7 @@ import {
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
 import {
   annotationCountLabel,
-  buildAnnotationCollectionItem,
-  buildImageCollectionItem,
   formatSavedAnnotationDescription,
-  type ViewerCollectionContext,
 } from '@/lib/manuscript-viewer-collection';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { getDefaultHand, sortHandsByPriority } from '@/lib/hand-ordering';
@@ -107,6 +103,7 @@ import { useManuscriptPopups } from '@/hooks/use-manuscript-popups';
 import { useDraftPopupBuilders } from '@/hooks/manuscript/use-draft-popup-builders';
 import { useAnnotationVisibilityToggle } from '@/hooks/manuscript/use-annotation-visibility-toggle';
 import { useViewerOsdSync } from '@/hooks/manuscript/use-viewer-osd-sync';
+import { useCollectionActions } from '@/hooks/manuscript/use-collection-actions';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
 import { useViewerImageToolsControls } from '@/hooks/manuscript/use-viewer-image-tools-controls';
@@ -134,7 +131,6 @@ export default function ManuscriptViewer({
   );
 
   const { token } = useAuth();
-  const { addItem, removeItem, isInCollection, clearCollection } = useCollection();
 
   const isPublicDemoMode = mode === 'public';
 
@@ -217,30 +213,6 @@ export default function ManuscriptViewer({
   const initialGraphHandledRef = React.useRef(false);
   const pendingPopupClearRef = React.useRef<number | null>(null);
 
-  const collectionContext = React.useMemo<ViewerCollectionContext | null>(() => {
-    if (!manuscriptImage) return null;
-
-    return {
-      itemPartId: manuscriptImage.item_part,
-      itemImageId: manuscriptImage.id,
-      iiifImage: manuscriptImage.iiif_image,
-      locus: manuscriptImage.locus ?? '',
-      shelfmark: manuscript?.current_item?.shelfmark || manuscript?.display_label || '',
-      repositoryName: manuscript?.current_item?.repository?.name || '',
-      repositoryCity: manuscript?.current_item?.repository?.place || '',
-      date: manuscript?.historical_item?.date_display || '',
-    };
-  }, [manuscript, manuscriptImage]);
-
-  const pageCollectionItem = React.useMemo(
-    () => (collectionContext ? buildImageCollectionItem(collectionContext) : null),
-    [collectionContext]
-  );
-
-  const isPageInCollection = pageCollectionItem
-    ? isInCollection(pageCollectionItem.id, 'image')
-    : false;
-
   const {
     viewerSettings,
     handleToggleAllowMultipleBoxes,
@@ -317,28 +289,16 @@ export default function ManuscriptViewer({
 
   const unsavedChanges = editorState.dirtyCount;
 
-  const pageAnnotationCollectionItems = React.useMemo(() => {
-    if (!collectionContext || !imageHeight) return [];
-
-    return Object.values(editorRecords)
-      .filter((record) => record.source === 'persisted' && !record.isDeleted)
-      .map((record) =>
-        buildAnnotationCollectionItem(record.annotation, imageHeight, collectionContext)
-      )
-      .filter((item): item is CollectionItem => item !== null);
-  }, [collectionContext, editorRecords, imageHeight]);
-
-  // Closes over collectionContext + imageHeight so AnnotationPopupLayer
-  // doesn't need to know either type. Returns null when collection items
-  // can't be constructed (no context, no image height, or the annotation
-  // has no db id).
-  const getCollectionItemFor = React.useCallback(
-    (annotation: A9sAnnotation): CollectionItem | null => {
-      if (!collectionContext || !imageHeight) return null;
-      return buildAnnotationCollectionItem(annotation, imageHeight, collectionContext);
-    },
-    [collectionContext, imageHeight]
-  );
+  const {
+    isInCollection,
+    pageCollectionItem,
+    isPageInCollection,
+    pageAnnotationCollectionItems,
+    getCollectionItemFor,
+    handleTogglePageCollection,
+    handleCreateAnnotationCollection,
+    handleToggleAnnotationCollection,
+  } = useCollectionActions({ manuscript, manuscriptImage, imageHeight, editorRecords });
 
   const allographLabelById = React.useMemo(
     () => new Map(allographs.map((a) => [a.id, formatAllographLabel(a)])),
@@ -1199,49 +1159,6 @@ export default function ManuscriptViewer({
       setActiveTool('move');
     },
     [setActiveTool]
-  );
-
-  const handleTogglePageCollection = React.useCallback(() => {
-    if (!pageCollectionItem) return;
-
-    if (isInCollection(pageCollectionItem.id, 'image')) {
-      removeItem(pageCollectionItem.id, 'image');
-      return;
-    }
-
-    addItem(pageCollectionItem);
-  }, [addItem, isInCollection, pageCollectionItem, removeItem]);
-
-  const handleCreateAnnotationCollection = React.useCallback(() => {
-    if (pageAnnotationCollectionItems.length === 0) return;
-
-    clearCollection();
-    pageAnnotationCollectionItems.forEach((item) => addItem(item));
-
-    showActionNotification({
-      kind: 'saved',
-      title: 'Collection updated',
-      description: `Created a collection with ${annotationCountLabel(
-        pageAnnotationCollectionItems.length
-      )} from this page.`,
-    });
-  }, [addItem, clearCollection, pageAnnotationCollectionItems]);
-
-  const handleToggleAnnotationCollection = React.useCallback(
-    (annotation: A9sAnnotation) => {
-      if (!collectionContext || !imageHeight) return;
-
-      const item = buildAnnotationCollectionItem(annotation, imageHeight, collectionContext);
-      if (!item) return;
-
-      if (isInCollection(item.id, 'graph')) {
-        removeItem(item.id, 'graph');
-        return;
-      }
-
-      addItem(item);
-    },
-    [addItem, collectionContext, imageHeight, isInCollection, removeItem]
   );
 
   const handleDefaultZoom = React.useCallback(async () => {
