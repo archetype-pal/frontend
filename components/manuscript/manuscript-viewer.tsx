@@ -13,9 +13,6 @@ import {
   Expand,
   SquarePen,
   RefreshCcw,
-  RotateCcw,
-  RotateCw,
-  SlidersHorizontal,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -29,12 +26,9 @@ import { AnnotationSettingsPanel } from './annotation-settings-panel';
 import { AllographGalleryDialog } from './allograph-gallery-dialog';
 import { Button } from '@/components/ui/button';
 import { dismissActionNotification, showActionNotification } from '@/components/ui/action-toast';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupLayer } from '@/components/annotation/annotation-popup-layer';
-import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { fetchHands } from '@/services/manuscripts';
 import {
   fetchImageTextsForImage,
@@ -42,6 +36,9 @@ import {
   type ImageTextDetail,
 } from '@/services/image-texts';
 import { ViewerTextPanel } from './viewer-text-panel';
+import { ImageToolsControl } from './image-tools-control';
+import { LightboxControl } from './lightbox-control';
+import { ViewerErrorState, ViewerLoadingState } from './viewer-status-screen';
 import { a9sToBackendFeature, dbIdFromA9s } from '@/lib/anno-mapping';
 
 import {
@@ -92,6 +89,13 @@ import {
 } from '@/lib/manuscript-viewer-data';
 
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
+import {
+  annotationCountLabel,
+  buildAnnotationCollectionItem,
+  buildImageCollectionItem,
+  formatSavedAnnotationDescription,
+  type ViewerCollectionContext,
+} from '@/lib/manuscript-viewer-collection';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { getDefaultHand, sortHandsByPriority } from '@/lib/hand-ordering';
 
@@ -111,127 +115,6 @@ import { useHotkeys, type HotkeyDefinition } from '@/hooks/use-hotkeys';
 const ManuscriptAnnotorious = dynamic(() => import('./manuscript-annotorious'), { ssr: false });
 const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
 const LEGACY_SHORTCUT_PAN_STEP = 60;
-
-function annotationCountLabel(count: number): string {
-  return `${count} annotation${count === 1 ? '' : 's'}`;
-}
-
-function countPhrase(count: number, singular: string, plural: string): string {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
-
-function joinCountPhrases(parts: string[]): string {
-  if (parts.length <= 1) return parts[0] ?? '';
-  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
-
-  return `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`;
-}
-
-type ViewerCollectionContext = {
-  itemPartId: number;
-  itemImageId: number;
-  iiifImage: string;
-  locus: string;
-  shelfmark: string;
-  repositoryName: string;
-  repositoryCity: string;
-  date: string;
-};
-
-function buildImageCollectionItem(ctx: ViewerCollectionContext): CollectionItem {
-  return {
-    id: ctx.itemImageId,
-    type: 'image',
-    item_part: ctx.itemPartId,
-    item_image: ctx.itemImageId,
-    image_iiif: ctx.iiifImage,
-    shelfmark: ctx.shelfmark,
-    locus: ctx.locus,
-    repository_name: ctx.repositoryName,
-    repository_city: ctx.repositoryCity,
-    date: ctx.date,
-  };
-}
-
-function buildAnnotationCollectionItem(
-  annotation: A9sAnnotation,
-  imageHeight: number,
-  ctx: ViewerCollectionContext
-): CollectionItem | null {
-  const graphId = dbIdFromA9s(annotation);
-  if (graphId == null) return null;
-
-  try {
-    const annotationType =
-      (annotation as A9sWithMeta)._meta?.annotationType === 'editorial' ? 'editorial' : 'image';
-
-    return {
-      id: graphId,
-      type: 'graph',
-      item_part: ctx.itemPartId,
-      item_image: ctx.itemImageId,
-      image_iiif: ctx.iiifImage,
-      annotation_type: annotationType,
-      coordinates: JSON.stringify(a9sToBackendFeature(annotation, imageHeight)),
-      shelfmark: ctx.shelfmark,
-      locus: ctx.locus,
-      repository_name: ctx.repositoryName,
-      repository_city: ctx.repositoryCity,
-      date: ctx.date,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function formatSavedAnnotationDescription({
-  createdCount,
-  updatedCount,
-  deletedCount,
-}: {
-  createdCount: number;
-  updatedCount: number;
-  deletedCount: number;
-}): string {
-  const parts = [
-    createdCount > 0 ? countPhrase(createdCount, 'created annotation', 'created annotations') : '',
-    updatedCount > 0 ? countPhrase(updatedCount, 'updated annotation', 'updated annotations') : '',
-    deletedCount > 0 ? countPhrase(deletedCount, 'deleted annotation', 'deleted annotations') : '',
-  ].filter(Boolean);
-
-  return parts.length > 0 ? `Saved ${joinCountPhrases(parts)}.` : 'No annotation changes to save.';
-}
-
-function ImageAdjustmentSlider({
-  label,
-  value,
-  min,
-  max,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-3 text-xs">
-        <span className="font-medium text-foreground">{label}</span>
-        <span className="tabular-nums text-muted-foreground">{value}%</span>
-      </div>
-      <Slider
-        aria-label={label}
-        min={min}
-        max={max}
-        step={5}
-        value={[value]}
-        onValueChange={(nextValue) => onChange(nextValue[0] ?? value)}
-      />
-    </div>
-  );
-}
 
 interface ManuscriptViewerProps {
   imageId: string;
@@ -2169,130 +2052,26 @@ export default function ManuscriptViewer({
 
   // ---- Early returns ----
   if (loading) {
-    return <div className="flex h-[100dvh] items-center justify-center">Loading...</div>;
+    return <ViewerLoadingState />;
   }
 
   if (error || !manuscriptImage) {
-    return (
-      <div className="flex h-[100dvh] items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">{error || 'Failed to load manuscript image'}</p>
-          <Button onClick={() => window.location.reload()}>Try Again</Button>
-        </div>
-      </div>
-    );
+    return <ViewerErrorState message={error || 'Failed to load manuscript image'} />;
   }
 
   const imageToolsControl = (
-    <Popover>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            <Button
-              variant={hasImageToolChanges ? 'default' : 'outline'}
-              size="icon"
-              className="h-8 w-8"
-              aria-label="Image tools"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-        </TooltipTrigger>
-        <TooltipContent>Image Tools</TooltipContent>
-      </Tooltip>
-      <PopoverContent align="end" side="bottom" className="w-72 space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="text-sm font-semibold leading-none">Image tools</div>
-            <div className="mt-1 text-xs text-muted-foreground">Rotation and tile adjustments</div>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-8 gap-1"
-            onClick={handleResetImageTools}
-          >
-            <RefreshCcw className="h-3.5 w-3.5" />
-            Reset
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="gap-1"
-            onClick={() => handleRotateViewer(-90)}
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Left
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="gap-1"
-            onClick={() => handleRotateViewer(90)}
-          >
-            <RotateCw className="h-3.5 w-3.5" />
-            Right
-          </Button>
-        </div>
-
-        <div className="space-y-4 border-t pt-4">
-          <ImageAdjustmentSlider
-            label="Brightness"
-            min={50}
-            max={150}
-            value={imageAdjustments.brightness}
-            onChange={(value) => handleImageAdjustmentChange('brightness', value)}
-          />
-          <ImageAdjustmentSlider
-            label="Contrast"
-            min={50}
-            max={150}
-            value={imageAdjustments.contrast}
-            onChange={(value) => handleImageAdjustmentChange('contrast', value)}
-          />
-          <ImageAdjustmentSlider
-            label="Saturation"
-            min={0}
-            max={200}
-            value={imageAdjustments.saturation}
-            onChange={(value) => handleImageAdjustmentChange('saturation', value)}
-          />
-        </div>
-      </PopoverContent>
-    </Popover>
+    <ImageToolsControl
+      adjustments={imageAdjustments}
+      hasChanges={hasImageToolChanges}
+      onRotate={handleRotateViewer}
+      onAdjustmentChange={handleImageAdjustmentChange}
+      onReset={handleResetImageTools}
+    />
   );
 
-  const lightboxControl =
-    manuscriptImage && manuscript ? (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div>
-            <OpenLightboxButton
-              item={{
-                id: Number(imageId),
-                type: 'image',
-                image_iiif: manuscriptImage.iiif_image,
-                shelfmark: manuscript.current_item?.shelfmark || '',
-                locus: manuscriptImage.locus,
-                repository_name: manuscript.current_item?.repository?.name || '',
-                repository_city: manuscript.current_item?.repository?.place || '',
-                date: manuscript.historical_item?.date_display || '',
-              }}
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-            />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>Open in Lightbox</TooltipContent>
-      </Tooltip>
-    ) : null;
+  const lightboxControl = (
+    <LightboxControl image={manuscriptImage} manuscript={manuscript} imageId={imageId} />
+  );
 
   const annotationHeader = (
     <AnnotationHeader
