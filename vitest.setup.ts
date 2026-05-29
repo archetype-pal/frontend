@@ -15,3 +15,81 @@ if (!process.env.NEXT_PUBLIC_IIIF_UPSTREAM) {
 if (!process.env.NEXT_PUBLIC_SITE_URL) {
   process.env.NEXT_PUBLIC_SITE_URL = 'http://localhost:3000';
 }
+
+// jsdom lacks these browser APIs that Radix primitives + the viewer rely on.
+// Provide minimal no-op polyfills so component render tests don't crash.
+if (typeof globalThis.matchMedia !== 'function') {
+  globalThis.matchMedia = ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  })) as typeof globalThis.matchMedia;
+}
+
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+class IntersectionObserverStub {
+  readonly root = null;
+  readonly rootMargin = '';
+  readonly thresholds = [];
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords() {
+    return [];
+  }
+}
+
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = ResizeObserverStub as unknown as typeof globalThis.ResizeObserver;
+}
+
+if (typeof globalThis.IntersectionObserver === 'undefined') {
+  globalThis.IntersectionObserver =
+    IntersectionObserverStub as unknown as typeof globalThis.IntersectionObserver;
+}
+
+// jsdom's localStorage is not reliably available under this vitest config; provide
+// a minimal in-memory Storage so components that persist UI prefs don't crash.
+function createMemoryStorage(): Storage {
+  const map = new Map<string, string>();
+  return {
+    get length() {
+      return map.size;
+    },
+    clear: () => map.clear(),
+    getItem: (key: string) => (map.has(key) ? map.get(key)! : null),
+    key: (index: number) => Array.from(map.keys())[index] ?? null,
+    removeItem: (key: string) => map.delete(key),
+    setItem: (key: string, value: string) => map.set(key, String(value)),
+  } as Storage;
+}
+
+if (
+  typeof globalThis.localStorage === 'undefined' ||
+  typeof globalThis.localStorage.getItem !== 'function'
+) {
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: createMemoryStorage(),
+    configurable: true,
+  });
+}
+
+if (
+  typeof globalThis.sessionStorage === 'undefined' ||
+  typeof globalThis.sessionStorage.getItem !== 'function'
+) {
+  Object.defineProperty(globalThis, 'sessionStorage', {
+    value: createMemoryStorage(),
+    configurable: true,
+  });
+}
