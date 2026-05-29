@@ -12,17 +12,12 @@ import { AllographGalleryDialog } from './allograph-gallery-dialog';
 import { dismissActionNotification, showActionNotification } from '@/components/ui/action-toast';
 import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupLayer } from '@/components/annotation/annotation-popup-layer';
-import {
-  fetchImageTextsForImage,
-  linkRegionToElement,
-  type ImageTextDetail,
-} from '@/services/image-texts';
 import { ViewerTextPanel } from './viewer-text-panel';
 import { ImageToolsControl } from './image-tools-control';
 import { LightboxControl } from './lightbox-control';
 import { ViewerErrorState, ViewerLoadingState } from './viewer-status-screen';
 import { ViewerToolbar } from './viewer-toolbar';
-import { a9sToBackendFeature, dbIdFromA9s } from '@/lib/anno-mapping';
+import { dbIdFromA9s } from '@/lib/anno-mapping';
 
 import {
   canCreateAnnotationKind,
@@ -78,6 +73,7 @@ import { useAnnotationVisibilityFilters } from '@/hooks/manuscript/use-annotatio
 import { describeSaveOutcome } from '@/lib/manuscript-viewer-save';
 import { usePendingPopupClear } from '@/hooks/manuscript/use-pending-popup-clear';
 import { useAnnotationDeletion } from '@/hooks/manuscript/use-annotation-deletion';
+import { useImageTextLinking } from '@/hooks/manuscript/use-image-text-linking';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
 import { useViewerImageToolsControls } from '@/hooks/manuscript/use-viewer-image-tools-controls';
@@ -140,25 +136,6 @@ export default function ManuscriptViewer({
 
   const [initialA9sAnnots, setInitialA9sAnnots] = React.useState<A9sAnnotation[]>([]);
   const [selectedAnnotationIds, setSelectedAnnotationIds] = React.useState<string[]>([]);
-
-  // Text↔region linking: the image-texts for this image, whether the side
-  // panel is shown, and the Graph id of the region currently selected on the
-  // image (drives the span highlight in the panel).
-  const [imageTexts, setImageTexts] = React.useState<ImageTextDetail[]>([]);
-  const [isTextPanelOpen, setIsTextPanelOpen] = React.useState(false);
-  const [linkedGraphId, setLinkedGraphId] = React.useState<number | null>(null);
-  // Track A — draw-to-link: when an editor arms an unlinked phrase, the next
-  // drawn region is sent to the link-region endpoint instead of becoming a
-  // normal draft.
-  const [linkArm, setLinkArm] = React.useState<{
-    textId: number;
-    elementIndex: number;
-    label: string;
-  } | null>(null);
-  const linkArmRef = React.useRef<typeof linkArm>(null);
-  React.useEffect(() => {
-    linkArmRef.current = linkArm;
-  }, [linkArm]);
 
   const {
     imageAdjustments,
@@ -262,6 +239,28 @@ export default function ManuscriptViewer({
     handleCreateAnnotationCollection,
     handleToggleAnnotationCollection,
   } = useCollectionActions({ manuscript, manuscriptImage, imageHeight, editorRecords });
+
+  const {
+    imageTexts,
+    isTextPanelOpen,
+    setIsTextPanelOpen,
+    linkedGraphId,
+    setLinkedGraphId,
+    linkArm,
+    setLinkArm,
+    tryLinkRegion,
+  } = useImageTextLinking({
+    imageId,
+    token,
+    manuscriptImage,
+    imageHeight,
+    allographNameById,
+    isPublicDemoMode,
+    canViewEditorialControls,
+    viewerApiRef,
+    resetEditorFrom,
+    setInitialA9sAnnots,
+  });
 
   const allographLabelById = React.useMemo(
     () => new Map(allographs.map((a) => [a.id, formatAllographLabel(a)])),
@@ -482,74 +481,12 @@ export default function ManuscriptViewer({
     [filteredAllograph?.id, activeAssignmentHand?.id, currentCreationKind]
   );
 
-  // Reload image-texts + re-seed annotations after a server-side change
-  // (used by the link-region flow so the new region + corresp appear).
-  const reloadTextsAndAnnotations = React.useCallback(async () => {
-    if (!manuscriptImage || !imageHeight) return;
-    const [texts, refreshed] = await Promise.all([
-      fetchImageTextsForImage(imageId, token).catch(() => null),
-      buildInitialViewerAnnotations({
-        itemImageId: String(manuscriptImage.id),
-        iiifImage: manuscriptImage.iiif_image,
-        imageHeight,
-        allographNameById,
-        isPublicDemoMode,
-        includeEditorial: canViewEditorialControls,
-        includeText: true,
-        token,
-        // Preserve any in-progress local drafts across the post-link reseed
-        // (the merge keeps non-db drafts; passing [] would silently drop them).
-        currentViewerAnnotations: viewerApiRef.current?.getAnnotations?.() ?? [],
-        currentUrl: '',
-      }).catch(() => null),
-    ]);
-    if (texts) setImageTexts(texts);
-    if (refreshed) {
-      setInitialA9sAnnots(refreshed);
-      editorState.resetFrom(refreshed);
-    }
-  }, [
-    manuscriptImage,
-    imageHeight,
-    imageId,
-    token,
-    allographNameById,
-    isPublicDemoMode,
-    canViewEditorialControls,
-    editorState,
-  ]);
-
   const handleViewerCreate = React.useCallback(
     (annotation: A9sAnnotation) => {
-      // Track A — if a phrase is armed for linking, the drawn polygon becomes a
-      // server-side TEXT graph linked to that element rather than a local draft.
-      const arm = linkArmRef.current;
-      if (arm && token && imageHeight) {
-        const geometry = a9sToBackendFeature(annotation, imageHeight);
-        void (async () => {
-          try {
-            await linkRegionToElement(token, arm.textId, arm.elementIndex, geometry);
-            viewerApiRef.current?.removeAnnotationById?.(annotation.id);
-            setLinkArm(null);
-            await reloadTextsAndAnnotations();
-            showActionNotification({
-              kind: 'created',
-              title: 'Region linked',
-              description: `Linked a region to “${arm.label}”.`,
-              duration: 2200,
-            });
-          } catch (error) {
-            viewerApiRef.current?.removeAnnotationById?.(annotation.id);
-            showActionNotification({
-              kind: 'error',
-              title: 'Link failed',
-              description:
-                error instanceof Error ? error.message.slice(0, 160) : 'Could not link region.',
-            });
-          }
-        })();
-        return;
-      }
+      // Track A — if a phrase is armed for linking, the drawn region becomes a
+      // server-side TEXT graph (handled in useImageTextLinking) rather than a
+      // local draft.
+      if (tryLinkRegion(annotation)) return;
 
       const enriched = decorateCreatedAnnotation(annotation);
 
@@ -562,14 +499,7 @@ export default function ManuscriptViewer({
 
       void syncCreatedAnnotation();
     },
-    [
-      decorateCreatedAnnotation,
-      updatePopupById,
-      editorState,
-      token,
-      imageHeight,
-      reloadTextsAndAnnotations,
-    ]
+    [tryLinkRegion, decorateCreatedAnnotation, updatePopupById, editorState]
   );
 
   // The per-frame Annotorious update coalescing buffer + flush-on-unmount
@@ -1155,6 +1085,7 @@ export default function ManuscriptViewer({
       activeTool,
       getCanonicalAnnotation,
       openSinglePopupFromAnnotation,
+      setLinkedGraphId,
       viewerSettings.selectMultipleAnnotations,
     ]
   );
@@ -1169,9 +1100,7 @@ export default function ManuscriptViewer({
     setSelectedHand(undefined);
     editorState.resetFrom([]);
     setSelectedAnnotationIds([]);
-    // Drop any armed text→region link so a stale arm from the previous image
-    // can't hijack the first region drawn on the next one.
-    setLinkArm(null);
+    // (linkArm reset on imageId change now lives in useImageTextLinking.)
     resetImageAdjustments();
     // Re-arm the share-URL effect so ?graph=… / ?draft=… is honoured on the
     // new image. Without this, navigating between images via next/link keeps
@@ -1207,23 +1136,6 @@ export default function ManuscriptViewer({
       handlePopupTabChange(activePopupRecord.id, 'components');
     }
   }, [activePopupRecord, allographNameById, canViewEditorialControls, handlePopupTabChange]);
-
-  // load image-texts for the side panel; auto-open it when the image has text
-  React.useEffect(() => {
-    let active = true;
-    fetchImageTextsForImage(imageId, token)
-      .then((texts) => {
-        if (!active) return;
-        setImageTexts(texts);
-        setIsTextPanelOpen(texts.length > 0);
-      })
-      .catch(() => {
-        if (active) setImageTexts([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, [imageId, token]);
 
   // load annotations for current image / allograph filter
   React.useEffect(() => {

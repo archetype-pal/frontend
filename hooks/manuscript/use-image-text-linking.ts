@@ -1,0 +1,175 @@
+'use client';
+
+import * as React from 'react';
+
+import { showActionNotification } from '@/components/ui/action-toast';
+import { a9sToBackendFeature } from '@/lib/anno-mapping';
+import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
+import {
+  fetchImageTextsForImage,
+  linkRegionToElement,
+  type ImageTextDetail,
+} from '@/services/image-texts';
+import type {
+  Annotation as A9sAnnotation,
+  ViewerApi,
+} from '@/components/manuscript/manuscript-annotorious';
+import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
+
+interface LinkArm {
+  textId: number;
+  elementIndex: number;
+  label: string;
+}
+
+interface UseImageTextLinkingArgs {
+  imageId: string;
+  token: string | null | undefined;
+  manuscriptImage: ManuscriptImageType | null;
+  imageHeight: number;
+  allographNameById: Map<number, string>;
+  isPublicDemoMode: boolean;
+  canViewEditorialControls: boolean;
+  viewerApiRef: React.RefObject<ViewerApi | null>;
+  resetEditorFrom: (annotations: A9sAnnotation[]) => void;
+  setInitialA9sAnnots: (annotations: A9sAnnotation[]) => void;
+}
+
+/**
+ * Track A/B — the transcription side panel + text↔region linking, extracted from
+ * manuscript-viewer.tsx (Track D1). Owns the image-texts list, the panel
+ * open/linked-span state, the "armed for linking" state (incl. its own
+ * imageId-keyed reset), and the link-region create path (tryLinkRegion) that the
+ * viewer's create handler defers to.
+ */
+export function useImageTextLinking({
+  imageId,
+  token,
+  manuscriptImage,
+  imageHeight,
+  allographNameById,
+  isPublicDemoMode,
+  canViewEditorialControls,
+  viewerApiRef,
+  resetEditorFrom,
+  setInitialA9sAnnots,
+}: UseImageTextLinkingArgs) {
+  const [imageTexts, setImageTexts] = React.useState<ImageTextDetail[]>([]);
+  const [isTextPanelOpen, setIsTextPanelOpen] = React.useState(false);
+  const [linkedGraphId, setLinkedGraphId] = React.useState<number | null>(null);
+  const [linkArm, setLinkArm] = React.useState<LinkArm | null>(null);
+
+  const linkArmRef = React.useRef<LinkArm | null>(null);
+  React.useEffect(() => {
+    linkArmRef.current = linkArm;
+  }, [linkArm]);
+
+  // Drop any armed link when the image changes so a stale arm from the previous
+  // image can't hijack the first region drawn on the next one.
+  React.useEffect(() => {
+    setLinkArm(null);
+  }, [imageId]);
+
+  // Load image-texts for the side panel; auto-open it when the image has text.
+  React.useEffect(() => {
+    let active = true;
+    fetchImageTextsForImage(imageId, token)
+      .then((texts) => {
+        if (!active) return;
+        setImageTexts(texts);
+        setIsTextPanelOpen(texts.length > 0);
+      })
+      .catch(() => {
+        if (active) setImageTexts([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [imageId, token]);
+
+  // Reload image-texts + re-seed annotations after a server-side change (used by
+  // the link-region flow so the new region + corresp appear).
+  const reloadTextsAndAnnotations = React.useCallback(async () => {
+    if (!manuscriptImage || !imageHeight) return;
+    const [texts, refreshed] = await Promise.all([
+      fetchImageTextsForImage(imageId, token).catch(() => null),
+      buildInitialViewerAnnotations({
+        itemImageId: String(manuscriptImage.id),
+        iiifImage: manuscriptImage.iiif_image,
+        imageHeight,
+        allographNameById,
+        isPublicDemoMode,
+        includeEditorial: canViewEditorialControls,
+        includeText: true,
+        token,
+        // Preserve any in-progress local drafts across the post-link reseed
+        // (the merge keeps non-db drafts; passing [] would silently drop them).
+        currentViewerAnnotations: viewerApiRef.current?.getAnnotations?.() ?? [],
+        currentUrl: '',
+      }).catch(() => null),
+    ]);
+    if (texts) setImageTexts(texts);
+    if (refreshed) {
+      setInitialA9sAnnots(refreshed);
+      resetEditorFrom(refreshed);
+    }
+  }, [
+    manuscriptImage,
+    imageHeight,
+    imageId,
+    token,
+    allographNameById,
+    isPublicDemoMode,
+    canViewEditorialControls,
+    viewerApiRef,
+    resetEditorFrom,
+    setInitialA9sAnnots,
+  ]);
+
+  // If a phrase is armed for linking, a drawn region becomes a server-side TEXT
+  // graph linked to that element rather than a local draft. Returns true when it
+  // handled the create (so the caller skips its normal draft path).
+  const tryLinkRegion = React.useCallback(
+    (annotation: A9sAnnotation): boolean => {
+      const arm = linkArmRef.current;
+      if (!(arm && token && imageHeight)) return false;
+
+      const geometry = a9sToBackendFeature(annotation, imageHeight);
+      void (async () => {
+        try {
+          await linkRegionToElement(token, arm.textId, arm.elementIndex, geometry);
+          viewerApiRef.current?.removeAnnotationById?.(annotation.id);
+          setLinkArm(null);
+          await reloadTextsAndAnnotations();
+          showActionNotification({
+            kind: 'created',
+            title: 'Region linked',
+            description: `Linked a region to “${arm.label}”.`,
+            duration: 2200,
+          });
+        } catch (error) {
+          viewerApiRef.current?.removeAnnotationById?.(annotation.id);
+          showActionNotification({
+            kind: 'error',
+            title: 'Link failed',
+            description:
+              error instanceof Error ? error.message.slice(0, 160) : 'Could not link region.',
+          });
+        }
+      })();
+      return true;
+    },
+    [token, imageHeight, viewerApiRef, reloadTextsAndAnnotations]
+  );
+
+  return {
+    imageTexts,
+    isTextPanelOpen,
+    setIsTextPanelOpen,
+    linkedGraphId,
+    setLinkedGraphId,
+    linkArm,
+    setLinkArm,
+    tryLinkRegion,
+  };
+}
