@@ -6,7 +6,7 @@
  * list query that the `/backoffice/texts` workbench consumes.
  */
 
-import { authFetch } from '@/lib/api-fetch';
+import { backofficeGet } from './api-client';
 import type { ImageTextStatus } from './review-queue';
 
 export type ImageTextKind = 'Transcription' | 'Translation';
@@ -59,7 +59,7 @@ export interface ImageTextListParams {
 
 const PAGE_SIZE = 25;
 
-export async function fetchImageTextList(
+export function fetchImageTextList(
   token: string,
   params: ImageTextListParams = {}
 ): Promise<PaginatedImageTextList> {
@@ -75,13 +75,11 @@ export async function fetchImageTextList(
   if (params.reviewAssignee) qs.set('review_assignee', String(params.reviewAssignee));
   if (params.search) qs.set('search', params.search);
 
-  const r = await authFetch(`/api/v1/manuscripts/management/image-texts/?${qs.toString()}`, token, {
-    cache: 'no-store',
-  });
-  if (!r.ok) {
-    throw new Error(`Failed to fetch image-text list: ${r.status}`);
-  }
-  return r.json();
+  return backofficeGet<PaginatedImageTextList>(
+    `/api/v1/manuscripts/management/image-texts/?${qs.toString()}`,
+    token,
+    { cache: 'no-store' }
+  );
 }
 
 export const IMAGE_TEXT_PAGE_SIZE = PAGE_SIZE;

@@ -4,7 +4,7 @@
  * dashboard's coverage donut against actual rows.
  */
 
-import { authFetch } from '@/lib/api-fetch';
+import { backofficeGet } from './api-client';
 
 export interface UncoveredImage {
   id: number;
@@ -27,7 +27,7 @@ export interface PaginatedUncovered {
 
 export type UncoveredMode = 'either' | 'transcription' | 'translation';
 
-export async function fetchUncoveredImages(
+export function fetchUncoveredImages(
   token: string,
   mode: UncoveredMode = 'either',
   page = 0,
@@ -37,9 +37,9 @@ export async function fetchUncoveredImages(
   if (mode === 'either') qs.set('has_text', 'false');
   if (mode === 'transcription') qs.set('has_transcription', 'false');
   if (mode === 'translation') qs.set('has_translation', 'false');
-  const r = await authFetch(`/api/v1/manuscripts/management/item-images/?${qs.toString()}`, token, {
-    cache: 'no-store',
-  });
-  if (!r.ok) throw new Error(`Failed to fetch uncovered images: ${r.status}`);
-  return r.json();
+  return backofficeGet<PaginatedUncovered>(
+    `/api/v1/manuscripts/management/item-images/?${qs.toString()}`,
+    token,
+    { cache: 'no-store' }
+  );
 }

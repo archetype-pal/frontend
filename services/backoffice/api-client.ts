@@ -58,9 +58,9 @@ async function apiRequest<T>(path: string, token: string, init?: RequestInit): P
   return res.json() as Promise<T>;
 }
 
-/** GET with auth */
-export function backofficeGet<T>(path: string, token: string): Promise<T> {
-  return apiRequest<T>(path, token);
+/** GET with auth. Pass `init` (e.g. `{ cache: 'no-store' }`) for fresh reads. */
+export function backofficeGet<T>(path: string, token: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, token, init);
 }
 
 /** POST with auth + JSON body */

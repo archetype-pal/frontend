@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { authFetch } from '@/lib/api-fetch';
+import { backofficeGet } from './api-client';
 
 const QualityCardSchema = z.object({
   id: z.string(),
@@ -18,11 +18,8 @@ export type QualityCard = z.infer<typeof QualityCardSchema>;
 export type QualityResponse = z.infer<typeof QualityResponseSchema>;
 
 export async function fetchQualityDashboard(token: string): Promise<QualityResponse> {
-  const response = await authFetch('/api/v1/search/management/quality/', token, {
+  const data = await backofficeGet<unknown>('/api/v1/search/management/quality/', token, {
     cache: 'no-store',
   });
-  if (!response.ok) {
-    throw new Error(`Server returned ${response.status}`);
-  }
-  return QualityResponseSchema.parse(await response.json());
+  return QualityResponseSchema.parse(data);
 }

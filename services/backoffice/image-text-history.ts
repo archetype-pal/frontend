@@ -1,4 +1,4 @@
-import { authFetch } from '@/lib/api-fetch';
+import { backofficeGet } from './api-client';
 import type { ImageTextStatus } from './review-queue';
 
 export interface StatusTransitionRow {
@@ -11,17 +11,13 @@ export interface StatusTransitionRow {
   created: string;
 }
 
-export async function fetchImageTextHistory(
+export function fetchImageTextHistory(
   token: string,
   textId: number
 ): Promise<StatusTransitionRow[]> {
-  const r = await authFetch(
+  return backofficeGet<StatusTransitionRow[]>(
     `/api/v1/manuscripts/management/image-texts/${textId}/history/`,
     token,
     { cache: 'no-store' }
   );
-  if (!r.ok) {
-    throw new Error(`Failed to fetch transition history: ${r.status}`);
-  }
-  return r.json();
 }
