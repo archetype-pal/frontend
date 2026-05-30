@@ -42,10 +42,7 @@ import {
   getStandardAnnotationNote,
 } from '@/lib/annotation-notes';
 
-import {
-  buildPopupAnnotationPayload,
-  getPopupCardViewData,
-} from '@/lib/manuscript-viewer-popup-utils';
+import { getPopupCardViewData } from '@/lib/manuscript-viewer-popup-utils';
 
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
 import { annotationCountLabel } from '@/lib/manuscript-viewer-collection';
@@ -68,6 +65,7 @@ import { usePendingPopupClear } from '@/hooks/manuscript/use-pending-popup-clear
 import { useAnnotationDeletion } from '@/hooks/manuscript/use-annotation-deletion';
 import { useImageTextLinking } from '@/hooks/manuscript/use-image-text-linking';
 import { useShareTarget } from '@/hooks/manuscript/use-share-target';
+import { useDraftSaveFlow } from '@/hooks/manuscript/use-draft-save-flow';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
 import { useViewerImageToolsControls } from '@/hooks/manuscript/use-viewer-image-tools-controls';
@@ -459,53 +457,6 @@ export default function ManuscriptViewer({
     [viewerSettings.selectMultipleAnnotations]
   );
 
-  const decorateCreatedAnnotation = React.useCallback(
-    (annotation: A9sAnnotation): A9sWithMeta => {
-      return {
-        ...annotation,
-        _meta: {
-          ...annotation._meta,
-          allographId: filteredAllograph?.id ?? annotation._meta?.allographId,
-          handId: annotation._meta?.handId ?? activeAssignmentHand?.id,
-          annotationType: currentCreationKind,
-        },
-      } as A9sWithMeta;
-    },
-    [filteredAllograph?.id, activeAssignmentHand?.id, currentCreationKind]
-  );
-
-  const handleViewerCreate = React.useCallback(
-    (annotation: A9sAnnotation) => {
-      // Track A — if a phrase is armed for linking, the drawn region becomes a
-      // server-side TEXT graph (handled in useImageTextLinking) rather than a
-      // local draft.
-      if (tryLinkRegion(annotation)) return;
-
-      const enriched = decorateCreatedAnnotation(annotation);
-
-      const syncCreatedAnnotation = async () => {
-        await viewerApiRef.current?.updateSelectedDraft?.(enriched);
-
-        updatePopupById(enriched.id, { annotation: enriched });
-        editorState.markCreated(enriched);
-      };
-
-      void syncCreatedAnnotation();
-    },
-    [tryLinkRegion, decorateCreatedAnnotation, updatePopupById, editorState]
-  );
-
-  // The per-frame Annotorious update coalescing buffer + flush-on-unmount
-  // live in useAnnotationEditorState. Forward the OSD modify-drag event
-  // to the hook with debounced=true so 60 fps pointermove fires collapse
-  // into one state commit on the trailing edge.
-  const handleViewerUpdate = React.useCallback(
-    (annotation: A9sAnnotation) => {
-      editorState.markUpdated(annotation, { debounced: true });
-    },
-    [editorState]
-  );
-
   const clearSinglePopupState = React.useCallback(
     (options?: { clearHover?: boolean }) => {
       clearPopupCollection();
@@ -692,145 +643,29 @@ export default function ManuscriptViewer({
     viewerApiRef,
   });
 
-  const handleSaveDraftAnnotation = React.useCallback(
-    async (popupId: string) => {
-      const popup = getPopupById(popupId);
-      if (!popup) return;
-
-      const previousId = popup.annotation.id;
-      const isEditorial = getAnnotationKind(popup.annotation) === 'editorial';
-
-      const next = buildPopupAnnotationPayload({
-        popup,
-        isEditorial,
-        positionNameById,
-      });
-
-      await viewerApiRef.current?.updateSelectedDraft?.(next);
-
-      // Capture ids just before save so we can identify the saved annotation
-      // if Annotorious replaces the draft id with a persisted one. Going by
-      // "last item in the post-save array" — the previous behaviour — picked
-      // whatever was drawn last in bulk-draw mode, not the one being saved.
-      const idsBeforeSave = new Set(
-        (viewerApiRef.current?.getAnnotations?.() ?? []).map((a) => a.id)
-      );
-
-      await viewerApiRef.current?.saveSelectedDraft?.();
-
-      const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
-      const latest =
-        currentAnnotations.find((annotation) => annotation.id === next.id) ??
-        currentAnnotations.find((annotation) => !idsBeforeSave.has(annotation.id)) ??
-        next;
-
-      const latestWithMeta: A9sAnnotation = {
-        ...latest,
-        _meta: {
-          ...latest._meta,
-          ...next._meta,
-        },
-      };
-
-      editorState.replaceLocalAnnotation(previousId, latestWithMeta);
-    },
-    [getAnnotationKind, getPopupById, positionNameById, editorState]
-  );
-
-  const handleConfirmDraftAnnotation = React.useCallback(
-    async (popupId: string) => {
-      const popup = getPopupById(popupId);
-      if (!popup) return;
-
-      const shouldResumeDraw =
-        activeTool === 'draw' && Boolean(popup && !isDbId(popup.annotation.id));
-
-      const isExistingStandard =
-        isDbId(popup.annotation.id) && getAnnotationKind(popup.annotation) === 'public';
-      const isExistingEditorial =
-        isDbId(popup.annotation.id) && getAnnotationKind(popup.annotation) === 'editorial';
-
-      if (isExistingStandard || isExistingEditorial) {
-        const next = isExistingEditorial
-          ? buildEditorialAnnotationFromPopup(popupId)
-          : buildStandardAnnotationFromPopup(popupId);
-        if (!next) return;
-
-        updatePopupById(popupId, { annotation: next as A9sWithMeta });
-
-        editorState.markUpdated(next);
-        // Annotorious keeps the polygon shape locally; only _meta changed.
-        // The next select event recovers canonical metadata via
-        // editorState.getCanonicalAnnotation, so no OSD re-seed needed.
-
-        removePopupById(popupId);
-
-        viewerApiRef.current?.clearSelection?.();
-        viewerApiRef.current?.enablePan();
-        setActiveTool('move');
-        notifyLocalAnnotationUpdate(1);
-        return;
-      }
-
-      const selectedDraftIds = getSelectedDraftIdsForPopup(popupId);
-      const activeDraftId = popup.annotation.id;
-
-      await handleSaveDraftAnnotation(popupId);
-
-      if (selectedDraftIds.length > 1) {
-        const otherSelectedIds = selectedDraftIds.filter((id) => id !== activeDraftId);
-
-        if (otherSelectedIds.length > 0) {
-          const otherSelectedIdSet = new Set(otherSelectedIds);
-          const currentAnnotations = viewerApiRef.current?.getAnnotations?.() ?? [];
-
-          // Use the popup captured at the top of this callback — by now
-          // handleSaveDraftAnnotation has fired createAnnotation events and
-          // the popup at popupId may already have been evicted, so looking
-          // it up again by id would silently drop the bulk-apply values.
-          const nextAnnotations = currentAnnotations.map((annotation) => {
-            if (!otherSelectedIdSet.has(annotation.id) || isDbId(annotation.id)) {
-              return annotation;
-            }
-
-            return applyPopupValuesToDraftAnnotationFromRecord(annotation, popup);
-          });
-
-          // Snapshot derives from editorRecords; only the records map
-          // needs updating. We don't re-seed Annotorious — its internal
-          // state for these polygons is unchanged (only _meta differs).
-          editorState.markManyUpdated(nextAnnotations.filter((a) => otherSelectedIdSet.has(a.id)));
-        }
-      }
-
-      removePopupById(popupId);
-      viewerApiRef.current?.clearSelectedAnnotationIds?.();
-      notifyLocalAnnotationCreate(selectedDraftIds.length);
-
-      if (shouldResumeDraw) {
-        rearmCreateTool();
-      } else {
-        viewerApiRef.current?.enablePan();
-        setActiveTool('move');
-      }
-    },
-    [
-      activeTool,
-      buildEditorialAnnotationFromPopup,
-      applyPopupValuesToDraftAnnotationFromRecord,
-      buildStandardAnnotationFromPopup,
-      getAnnotationKind,
+  const { handleViewerCreate, handleViewerUpdate, handleConfirmDraftAnnotation } = useDraftSaveFlow(
+    {
+      editorState,
+      viewerApiRef,
       getPopupById,
+      updatePopupById,
+      removePopupById,
+      getAnnotationKind,
+      positionNameById,
+      buildStandardAnnotationFromPopup,
+      buildEditorialAnnotationFromPopup,
       getSelectedDraftIdsForPopup,
-      handleSaveDraftAnnotation,
+      applyPopupValuesToDraftAnnotationFromRecord,
       notifyLocalAnnotationCreate,
       notifyLocalAnnotationUpdate,
-      rearmCreateTool,
-      removePopupById,
-      updatePopupById,
-      editorState,
+      activeTool,
       setActiveTool,
-    ]
+      rearmCreateTool,
+      tryLinkRegion,
+      filteredAllographId: filteredAllograph?.id,
+      activeAssignmentHandId: activeAssignmentHand?.id,
+      currentCreationKind,
+    }
   );
 
   const {
