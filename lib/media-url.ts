@@ -64,13 +64,3 @@ export async function resolveGraphDetailUrl(input: GraphRouteInput): Promise<str
     return null;
   }
 }
-
-export async function resolveAndPushGraphDetail(
-  input: GraphRouteInput,
-  push: (url: string) => void
-): Promise<void> {
-  const resolvedUrl = await resolveGraphDetailUrl(input);
-  if (resolvedUrl) {
-    push(resolvedUrl);
-  }
-}

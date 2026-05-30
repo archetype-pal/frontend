@@ -9,12 +9,7 @@ export function Toolbar({ children, orientation = 'vertical' }: ToolbarProps) {
   const isHorizontal = orientation === 'horizontal';
 
   return (
-    <div
-      className={[
-        'absolute z-20 pointer-events-none',
-        isHorizontal ? 'top-3 left-3' : 'top-3 left-3',
-      ].join(' ')}
-    >
+    <div className="absolute z-20 pointer-events-none top-3 left-3">
       <div
         className={[
           'pointer-events-auto rounded-lg border bg-white/95 p-2 shadow-sm backdrop-blur',
