@@ -85,7 +85,7 @@ export default function PhysicalVolumesPage() {
     offset: page * 50,
   };
 
-  const { data } = useQuery({
+  const { data, isError, refetch } = useQuery({
     queryKey: backofficeKeys.currentItems.list(filterParams),
     queryFn: () => getCurrentItems(token!, filterParams),
     enabled: !!token,
@@ -127,6 +127,8 @@ export default function PhysicalVolumesPage() {
       </div>
 
       <DataTable
+        isError={isError}
+        onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}
         searchValue={searchInput}

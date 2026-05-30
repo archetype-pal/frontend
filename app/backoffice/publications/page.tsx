@@ -158,7 +158,7 @@ export default function PublicationsPage() {
   // The earlier `getPublications(token, { limit: 200 })` was silently
   // capped to 100 by DRF's BoundedLimitOffsetPagination, hiding row 101+
   // from this page (admins doing bulk publish/unpublish couldn't reach them).
-  const { data } = useQuery({
+  const { data, isError, refetch } = useQuery({
     queryKey: backofficeKeys.publications.all(),
     queryFn: () =>
       walkPaginated<PublicationListItem>(
@@ -258,6 +258,8 @@ export default function PublicationsPage() {
       </div>
 
       <DataTable
+        isError={isError}
+        onRetry={() => refetch()}
         columns={columns}
         data={filtered}
         searchColumn="title"

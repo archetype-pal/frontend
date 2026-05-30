@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import { approveComment, rejectComment, deleteComment } from '@/services/backoffice/publications';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
@@ -30,7 +31,7 @@ export default function CommentsPage() {
   // The earlier `getComments(token, ...)` returned only the first DRF page
   // (20), and the page has no pagination control — pending comments past
   // the 20th would be invisible to moderators until earlier ones cleared.
-  const { data } = useQuery({
+  const { data, isError, refetch } = useQuery({
     queryKey: backofficeKeys.comments.list(filter),
     queryFn: () => {
       const params = new URLSearchParams({ limit: '100' });
@@ -222,7 +223,9 @@ export default function CommentsPage() {
             <span className="text-xs text-muted-foreground">Select all ({comments.length})</span>
           </div>
         )}
-        {comments.length === 0 ? (
+        {isError ? (
+          <BackofficeErrorState message="Failed to load comments." onRetry={() => refetch()} />
+        ) : comments.length === 0 ? (
           <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
             <p className="text-sm">No comments to show.</p>
           </div>

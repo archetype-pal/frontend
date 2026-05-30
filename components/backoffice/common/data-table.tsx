@@ -34,6 +34,7 @@ import {
 import { ChevronLeft, ChevronRight, Search, Columns, Download, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { escapeCsvField } from '@/lib/backoffice/csv-escape';
+import { BackofficeErrorState } from './query-state';
 
 export interface BulkAction {
   label: string;
@@ -86,6 +87,10 @@ interface DataTableProps<TData, TValue> {
   filterBar?: React.ReactNode;
   /** Preset filter views displayed as tabs above the table. */
   presetFilters?: PresetFilter<TData>[];
+  /** Render an error row (instead of "No results") when the data query failed. */
+  isError?: boolean;
+  /** Retry handler shown with the error row (typically the query's `refetch`). */
+  onRetry?: () => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -106,6 +111,8 @@ export function DataTable<TData, TValue>({
   exportFilename = 'export',
   filterBar,
   presetFilters,
+  isError = false,
+  onRetry,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -384,7 +391,16 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length ? (
+            {isError ? (
+              <TableRow>
+                <TableCell colSpan={finalColumns.length} className="h-24 p-0">
+                  <BackofficeErrorState
+                    message="Failed to load. Please try again."
+                    onRetry={() => onRetry?.()}
+                  />
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
                   {row.getVisibleCells().map((cell) => (

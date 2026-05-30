@@ -112,7 +112,7 @@ export default function ManuscriptsPage() {
     ...(search ? { search } : {}),
   };
 
-  const { data } = useQuery({
+  const { data, isError, refetch } = useQuery({
     queryKey: backofficeKeys.manuscripts.list(queryParams),
     queryFn: () => getHistoricalItems(token!, queryParams),
     enabled: !!token,
@@ -137,6 +137,8 @@ export default function ManuscriptsPage() {
       </div>
 
       <DataTable
+        isError={isError}
+        onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}
         searchValue={searchInput}
