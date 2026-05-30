@@ -46,9 +46,7 @@ import { useAnnotationNotifications } from '@/hooks/manuscript/use-annotation-no
 import { useViewerEditorUiState } from '@/hooks/use-viewer-editor-ui-state';
 
 import { useManuscriptPopups } from '@/hooks/use-manuscript-popups';
-import { useDraftPopupBuilders } from '@/hooks/manuscript/use-draft-popup-builders';
 import { useAnnotationVisibilityToggle } from '@/hooks/manuscript/use-annotation-visibility-toggle';
-import { useViewerOsdSync } from '@/hooks/manuscript/use-viewer-osd-sync';
 import { useCollectionActions } from '@/hooks/manuscript/use-collection-actions';
 import { useViewerBaseData } from '@/hooks/manuscript/use-viewer-base-data';
 import { useAnnotationVisibilityFilters } from '@/hooks/manuscript/use-annotation-visibility-filters';
@@ -343,13 +341,24 @@ export default function ManuscriptViewer({
     return [];
   }, [a9sSnapshot, highlightAllographId, popupAnnotation?.id, selectedHand?.id]);
 
-  useViewerOsdSync({
-    osdReady,
-    viewerApiRef,
-    hoveredAnnotationId,
-    highlightAllographId,
-    highlightedIds,
-  });
+  // Push the derived highlight state into the OSD viewer. (Kept inline rather
+  // than a one-effect/zero-state hook — it reads the derived values computed
+  // directly above.)
+  React.useEffect(() => {
+    if (!osdReady) return;
+
+    if (hoveredAnnotationId) {
+      viewerApiRef.current?.highlightAnnotations?.([hoveredAnnotationId]);
+      return;
+    }
+
+    if (highlightAllographId == null) {
+      viewerApiRef.current?.clearHighlights?.();
+      return;
+    }
+
+    viewerApiRef.current?.highlightAnnotations?.(highlightedIds);
+  }, [osdReady, hoveredAnnotationId, highlightAllographId, highlightedIds, viewerApiRef]);
 
   const allographsForThisImage = React.useMemo(() => {
     if (!allographs.length) return [];
@@ -481,18 +490,6 @@ export default function ManuscriptViewer({
     getAnnotationKind,
   });
 
-  const {
-    buildStandardAnnotationFromPopup,
-    buildEditorialAnnotationFromPopup,
-    getSelectedDraftIdsForPopup,
-    applyPopupValuesToDraftAnnotationFromRecord,
-  } = useDraftPopupBuilders({
-    getPopupById,
-    positionNameById,
-    selectMultipleAnnotations: viewerSettings.selectMultipleAnnotations,
-    viewerApiRef,
-  });
-
   const { handleViewerCreate, handleViewerUpdate, handleConfirmDraftAnnotation } = useDraftSaveFlow(
     {
       editorState,
@@ -502,10 +499,7 @@ export default function ManuscriptViewer({
       removePopupById,
       getAnnotationKind,
       positionNameById,
-      buildStandardAnnotationFromPopup,
-      buildEditorialAnnotationFromPopup,
-      getSelectedDraftIdsForPopup,
-      applyPopupValuesToDraftAnnotationFromRecord,
+      selectMultipleAnnotations: viewerSettings.selectMultipleAnnotations,
       notifyLocalAnnotationCreate,
       notifyLocalAnnotationUpdate,
       activeTool,
