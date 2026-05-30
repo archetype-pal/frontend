@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { render, renderHook, waitFor } from '@testing-library/react';
+import { render, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -47,7 +47,6 @@ describe('ModelLabelsProvider with initialConfig', () => {
     const cfg = getDefaultModelLabelsConfig();
     cfg.labels.appManuscripts = 'Charters';
     const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider(cfg) });
-    expect(result.current.loading).toBe(false);
     expect(result.current.config).toBe(cfg);
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
@@ -84,47 +83,11 @@ describe('ModelLabelsProvider with initialConfig', () => {
   });
 });
 
-describe('ModelLabelsProvider without initialConfig (fetch path)', () => {
-  it('starts loading=true, then fetches and resolves to the response', async () => {
-    const fetched = getDefaultModelLabelsConfig();
-    fetched.labels.appManuscripts = 'Charters';
-    globalThis.fetch = vi.fn(
-      async () =>
-        new Response(JSON.stringify(fetched), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        })
-    ) as typeof fetch;
-
+describe('ModelLabelsProvider without initialConfig', () => {
+  it('uses defaults synchronously and never fetches (config is SSR-provided)', () => {
     const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider() });
-    expect(result.current.loading).toBe(true);
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-    expect(result.current.getLabel('appManuscripts')).toBe('Charters');
-    expect(globalThis.fetch).toHaveBeenCalledWith('/api/model-labels');
-  });
-
-  it('falls back to defaults when fetch errors', async () => {
-    globalThis.fetch = vi.fn(async () => {
-      throw new Error('network down');
-    }) as typeof fetch;
-
-    const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider() });
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
     expect(result.current.config).toEqual(getDefaultModelLabelsConfig());
-  });
-
-  it('falls back to defaults on a non-OK response', async () => {
-    globalThis.fetch = vi.fn(async () => new Response('boom', { status: 500 })) as typeof fetch;
-
-    const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider() });
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-    expect(result.current.config).toEqual(getDefaultModelLabelsConfig());
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 });
 

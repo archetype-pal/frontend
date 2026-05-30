@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import {
   getDefaultModelLabelsConfig,
   pluralizeLabel,
@@ -18,7 +10,6 @@ import {
 
 type ModelLabelsContextValue = {
   config: ModelLabelsConfig;
-  loading: boolean;
   getLabel: (key: ModelLabelKey) => string;
   getPluralLabel: (key: ModelLabelKey) => string;
 };
@@ -33,8 +24,9 @@ export function ModelLabelsProvider({
   initialConfig?: ModelLabelsConfig;
 }) {
   const defaults = useMemo(() => getDefaultModelLabelsConfig(), []);
+  // Config is provided by the server (SSR) in production; the bare-provider
+  // fallback to defaults keeps the provider usable standalone (e.g. in tests).
   const [config, setConfig] = useState<ModelLabelsConfig>(initialConfig ?? defaults);
-  const [loading, setLoading] = useState(!initialConfig);
 
   // Sync with server-provided config (e.g. after router.refresh())
   const [prevInitialConfig, setPrevInitialConfig] = useState(initialConfig);
@@ -42,15 +34,6 @@ export function ModelLabelsProvider({
     setPrevInitialConfig(initialConfig);
     setConfig(initialConfig);
   }
-
-  useEffect(() => {
-    if (initialConfig) return;
-    fetch('/api/model-labels')
-      .then((r) => (r.ok ? r.json() : defaults))
-      .then((c) => setConfig(c))
-      .catch(() => setConfig(defaults))
-      .finally(() => setLoading(false));
-  }, [defaults, initialConfig]);
 
   const getLabel = useCallback(
     (key: ModelLabelKey) => config.labels[key] ?? defaults.labels[key],
@@ -64,11 +47,10 @@ export function ModelLabelsProvider({
   const value = useMemo<ModelLabelsContextValue>(
     () => ({
       config,
-      loading,
       getLabel,
       getPluralLabel,
     }),
-    [config, loading, getLabel, getPluralLabel]
+    [config, getLabel, getPluralLabel]
   );
 
   return <ModelLabelsContext.Provider value={value}>{children}</ModelLabelsContext.Provider>;

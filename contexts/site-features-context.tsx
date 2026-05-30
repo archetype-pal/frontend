@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import {
   getDefaultConfig,
   type SiteFeaturesConfig,
@@ -19,7 +11,6 @@ import type { ResultType } from '@/lib/search-types';
 
 type SiteFeaturesContextValue = {
   config: SiteFeaturesConfig;
-  loading: boolean;
   isSectionEnabled: (key: SectionKey) => boolean;
   getCategoryConfig: (type: ResultType) => SearchCategoryConfig;
   enabledCategories: ResultType[];
@@ -35,8 +26,9 @@ export function SiteFeaturesProvider({
   initialConfig?: SiteFeaturesConfig;
 }) {
   const defaults = useMemo(() => getDefaultConfig(), []);
+  // Config is provided by the server (SSR) in production; the bare-provider
+  // fallback to defaults keeps the provider usable standalone (e.g. in tests).
   const [config, setConfig] = useState<SiteFeaturesConfig>(initialConfig ?? defaults);
-  const [loading, setLoading] = useState(!initialConfig);
 
   // Sync with server-provided config (e.g. after router.refresh())
   const [prevInitialConfig, setPrevInitialConfig] = useState(initialConfig);
@@ -44,15 +36,6 @@ export function SiteFeaturesProvider({
     setPrevInitialConfig(initialConfig);
     setConfig(initialConfig);
   }
-
-  useEffect(() => {
-    if (initialConfig) return;
-    fetch('/api/site-features')
-      .then((r) => (r.ok ? r.json() : defaults))
-      .then((c) => setConfig(c))
-      .catch(() => setConfig(defaults))
-      .finally(() => setLoading(false));
-  }, [defaults, initialConfig]);
 
   const isSectionEnabled = useCallback(
     (key: SectionKey) => config.sections[key] !== false,
@@ -78,8 +61,8 @@ export function SiteFeaturesProvider({
   );
 
   const value = useMemo<SiteFeaturesContextValue>(
-    () => ({ config, loading, isSectionEnabled, getCategoryConfig, enabledCategories }),
-    [config, loading, isSectionEnabled, getCategoryConfig, enabledCategories]
+    () => ({ config, isSectionEnabled, getCategoryConfig, enabledCategories }),
+    [config, isSectionEnabled, getCategoryConfig, enabledCategories]
   );
 
   return <SiteFeaturesContext.Provider value={value}>{children}</SiteFeaturesContext.Provider>;
