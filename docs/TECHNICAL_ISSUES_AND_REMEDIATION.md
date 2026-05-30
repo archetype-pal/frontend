@@ -222,12 +222,15 @@ Reuse existing loading patterns from e.g. `app/blogs/[slug]/loading.tsx` or `app
 
 ### 9.1 Test coverage (Medium priority)
 
-**Current:** Only `lib/sanitize-html.test.ts` is present; one test file, five tests.
+**Original (Feb 2026):** Only `lib/sanitize-html.test.ts` was present; one test file, five tests.
 
-**Remediation:**
+**Status (updated 2026-05-31): substantially expanded — now ~55 Vitest files / ~499 tests.** Coverage now includes:
 
-- Add unit tests for critical libs: `lib/api-fetch.ts`, `lib/env.ts`, `lib/sanitize-html.ts` (expand), and key utils (e.g. `lib/lightbox-params.ts`, `lib/filter-config.ts`).
-- Add a few integration tests for important UI flows (e.g. search, collection, backoffice login/save) using Vitest + React Testing Library or Playwright for E2E.
+- Pure-logic libs (search types/visibility, manuscript-viewer collection/filters/save, allograph/hand ordering, walk-paginated, format-api-error, bulk-action, etc.).
+- A **behavioural harness for the manuscript viewer** (`components/manuscript/manuscript-viewer.test.tsx`) that stubs the OSD/Annotorious layer and drives `onSelect`/`onCreate` to guard select→popup and create→dirty, plus the annotation-popup-layer tests.
+- Backoffice primitives: `DataTable` (incl. its error state), `useEntityEditor` (the detail-editor flow: load→form, dirty, save, delete→navigate, fetch-error), the model-labels/site-features contexts.
+
+Remaining: broader integration/E2E coverage for whole flows (search, collection, backoffice login/save) — useful but not yet present. Playwright is wired for manual/MCP verification, not a committed E2E suite.
 
 ### 9.2 Instrumentation logging (Low priority)
 
@@ -259,24 +262,24 @@ Reuse existing loading patterns from e.g. `app/blogs/[slug]/loading.tsx` or `app
 
 ## 11. Remediation plan (prioritized)
 
-| Priority | Item                       | Action                                                                                                    | Status     |
-| -------- | -------------------------- | --------------------------------------------------------------------------------------------------------- | ---------- |
-| P0       | jspdf vulnerabilities      | Upgrade `jspdf` to `^4.2.0` (or latest 4.x) and run `pnpm audit`.                                         | Done       |
-| P0       | Transitive vulnerabilities | Add pnpm overrides for minimatch, ajv, qs to patched versions; run audit and tests.                       | Done       |
-| P1       | Node engine                | Relax to `>=20.0.0` or `>=22.0.0` (or document Node 25 requirement and fix CI).                           | Done       |
-| P1       | CSP                        | Plan to remove or reduce `unsafe-inline` / `unsafe-eval`; implement nonces/hashes if needed.              | TODO       |
-| P1       | Loading UX                 | Add `loading.tsx` for manuscripts/images and backoffice (and optionally about/events).                    | Done       |
-| P2       | Env consistency            | Use `env.apiUrl` in `app/api/site-features/route.ts`.                                                     | Done       |
-| P2       | ESLint disables            | Refactor or document set-state-in-effect and exhaustive-deps; restrict no-img-element to necessary cases. | Partial    |
-| P2       | Tests                      | Add unit tests for lib and a few integration/E2E tests for main flows.                                    | Pending    |
-| P2       | Images                     | Scope `unoptimized` to IIIF/external only if feasible; document if global flag must stay.                 | Documented |
-| P3       | API 400 differentiation    | Return distinct status/messages for invalid JSON vs invalid config in site-features PUT.                  | Done       |
-| P3       | Segment error boundaries   | Add `error.tsx` for manuscripts/[id], hands/[id] if desired.                                              | Done       |
-| P3       | Instrumentation            | Gate or remove startup logs in production.                                                                | Done       |
-| P1       | Accessibility 404          | Create accessibility page; standardize links to one URL (e.g. `/about/accessibility`).                    | Done       |
-| P2       | Prettier                   | Run `pnpm run format:fix` so CI passes.                                                                   | Done       |
-| P3       | global-error.tsx           | Add `app/global-error.tsx` for root layout failures.                                                      | Done       |
-| P3       | Alt text                   | Use descriptive alt in ManuscriptViewer thumbnails; improve events images where needed.                   | Done       |
+| Priority | Item                       | Action                                                                                                    | Status                                                                             |
+| -------- | -------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| P0       | jspdf vulnerabilities      | Upgrade `jspdf` to `^4.2.0` (or latest 4.x) and run `pnpm audit`.                                         | Done                                                                               |
+| P0       | Transitive vulnerabilities | Add pnpm overrides for minimatch, ajv, qs to patched versions; run audit and tests.                       | Done                                                                               |
+| P1       | Node engine                | Relax to `>=20.0.0` or `>=22.0.0` (or document Node 25 requirement and fix CI).                           | Done                                                                               |
+| P1       | CSP                        | Plan to remove or reduce `unsafe-inline` / `unsafe-eval`; implement nonces/hashes if needed.              | TODO                                                                               |
+| P1       | Loading UX                 | Add `loading.tsx` for manuscripts/images and backoffice (and optionally about/events).                    | Done                                                                               |
+| P2       | Env consistency            | Use `env.apiUrl` in `app/api/site-features/route.ts`.                                                     | Done                                                                               |
+| P2       | ESLint disables            | Refactor or document set-state-in-effect and exhaustive-deps; restrict no-img-element to necessary cases. | Partial                                                                            |
+| P2       | Tests                      | Add unit tests for lib and a few integration/E2E tests for main flows.                                    | Unit: done (~55 files/499 tests + viewer/editor harnesses); committed E2E: pending |
+| P2       | Images                     | Scope `unoptimized` to IIIF/external only if feasible; document if global flag must stay.                 | Documented                                                                         |
+| P3       | API 400 differentiation    | Return distinct status/messages for invalid JSON vs invalid config in site-features PUT.                  | Done                                                                               |
+| P3       | Segment error boundaries   | Add `error.tsx` for manuscripts/[id], hands/[id] if desired.                                              | Done                                                                               |
+| P3       | Instrumentation            | Gate or remove startup logs in production.                                                                | Done                                                                               |
+| P1       | Accessibility 404          | Create accessibility page; standardize links to one URL (e.g. `/about/accessibility`).                    | Done                                                                               |
+| P2       | Prettier                   | Run `pnpm run format:fix` so CI passes.                                                                   | Done                                                                               |
+| P3       | global-error.tsx           | Add `app/global-error.tsx` for root layout failures.                                                      | Done                                                                               |
+| P3       | Alt text                   | Use descriptive alt in ManuscriptViewer thumbnails; improve events images where needed.                   | Done                                                                               |
 
 ---
 
