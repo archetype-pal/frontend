@@ -6,7 +6,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ToggleLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
-import { useStaffGuard } from '@/hooks/backoffice/use-staff-guard';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { UnsavedChangesBar } from '@/components/backoffice/common/unsaved-changes-bar';
@@ -48,7 +47,6 @@ async function saveSiteFeatures(
 
 export default function SiteFeaturesPage() {
   const { token } = useAuth();
-  useStaffGuard();
   const router = useRouter();
   const queryClient = useQueryClient();
   const defaults = getDefaultConfig();

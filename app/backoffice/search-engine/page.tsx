@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
-import { useStaffGuard } from '@/hooks/backoffice/use-staff-guard';
 import { toast } from 'sonner';
 import {
   Search,
@@ -66,7 +65,6 @@ interface TrackedTask {
 
 export default function SearchEnginePage() {
   const { token } = useAuth();
-  useStaffGuard();
   const queryClient = useQueryClient();
 
   // Active tasks being tracked

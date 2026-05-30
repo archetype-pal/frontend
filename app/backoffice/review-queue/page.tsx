@@ -19,7 +19,6 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/contexts/auth-context';
-import { useStaffGuard } from '@/hooks/backoffice/use-staff-guard';
 import {
   fetchReviewQueue,
   transitionImageText,
@@ -29,7 +28,6 @@ import { Button } from '@/components/ui/button';
 
 export default function ReviewQueuePage() {
   const { token } = useAuth();
-  useStaffGuard();
   const queryClient = useQueryClient();
 
   const { data: queue = [], isLoading } = useQuery<QueueEntry[]>({

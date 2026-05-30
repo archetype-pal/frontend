@@ -11,7 +11,7 @@ import { SearchCommand } from '@/components/backoffice/common/search-command';
 import { KeyboardShortcutsDialog } from '@/components/backoffice/common/keyboard-shortcuts-dialog';
 
 export function BackofficeShell({ children }: { children: React.ReactNode }) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -24,7 +24,16 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
     }
   }, [token, router]);
 
-  if (!token) {
+  // Staff guard — the whole backoffice is staff-only. Once the profile loads,
+  // bounce a non-staff (but authenticated) user back to the public site. This
+  // gates every backoffice page centrally, so individual pages need no guard.
+  useEffect(() => {
+    if (user && !user.is_staff) {
+      router.replace('/');
+    }
+  }, [user, router]);
+
+  if (!token || (user && !user.is_staff)) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">

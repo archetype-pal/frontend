@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
-import { useStaffGuard } from '@/hooks/backoffice/use-staff-guard';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   UserCog,
@@ -136,7 +135,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export default function UsersPage() {
   const { token } = useAuth();
-  useStaffGuard();
   const queryClient = useQueryClient();
 
   const [createOpen, setCreateOpen] = useState(false);
