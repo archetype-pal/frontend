@@ -7,6 +7,7 @@ import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ScanLine, ExternalLink, Trash2, Image as ImageIcon, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ServerPagination } from '@/components/backoffice/common/server-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -186,7 +187,6 @@ export default function AnnotationsPage() {
 
   const graphs = data?.results ?? [];
   const totalCount = data?.count ?? 0;
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const bulkActions: BulkAction[] = [
     {
@@ -302,38 +302,13 @@ export default function AnnotationsPage() {
         exportFilename="annotations"
       />
 
-      {/* Server-side Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} of{' '}
-            {totalCount.toLocaleString()}
-          </span>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={page === 0}
-            >
-              Previous
-            </Button>
-            <span className="px-2 tabular-nums">
-              {page + 1} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={page >= totalPages - 1}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+      <ServerPagination
+        total={totalCount}
+        pageSize={PAGE_SIZE}
+        page={page}
+        hasNext={Boolean(data?.next)}
+        onPageChange={setPage}
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}
