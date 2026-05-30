@@ -1,37 +1,27 @@
-import { mkdir, readFile, writeFile } from 'fs/promises';
-import path from 'path';
+import { readJsonConfig, writeJsonConfig } from './json-config-file';
 import {
   getDefaultModelLabelsConfig,
   normalizeModelLabels,
   type ModelLabelsConfig,
 } from './model-labels';
 
-const CONFIG_PATH = path.join(process.cwd(), 'config', 'model-labels.json');
+const CONFIG_FILE = 'model-labels.json';
 
 export async function readModelLabels(): Promise<ModelLabelsConfig> {
   const defaults = getDefaultModelLabelsConfig();
-  try {
-    const raw = await readFile(CONFIG_PATH, 'utf-8');
-    const rawParsed: unknown = JSON.parse(raw);
-    // If the file was hand-edited to `null`, an array, or a primitive, we
-    // would have crashed on `parsed.labels` reading below. Bail out to
-    // defaults so SSR doesn't 500 over a broken config file. Mirrors the
-    // same defense in lib/site-features-server.ts (cycle 131).
-    if (!rawParsed || typeof rawParsed !== 'object' || Array.isArray(rawParsed)) return defaults;
-    const parsed = rawParsed as Partial<ModelLabelsConfig>;
-    return {
-      labels: normalizeModelLabels(parsed.labels),
-    };
-  } catch {
-    return defaults;
-  }
+  return readJsonConfig(
+    CONFIG_FILE,
+    (raw) => {
+      // If the file was hand-edited to `null`, an array, or a primitive,
+      // reading `parsed.labels` below would crash; bail to defaults.
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return defaults;
+      const parsed = raw as Partial<ModelLabelsConfig>;
+      return { labels: normalizeModelLabels(parsed.labels) };
+    },
+    defaults
+  );
 }
 
 export async function writeModelLabels(config: ModelLabelsConfig): Promise<void> {
-  const dir = path.dirname(CONFIG_PATH);
-  await mkdir(dir, { recursive: true });
-  const normalized: ModelLabelsConfig = {
-    labels: normalizeModelLabels(config.labels),
-  };
-  await writeFile(CONFIG_PATH, JSON.stringify(normalized, null, 2), 'utf-8');
+  await writeJsonConfig(CONFIG_FILE, { labels: normalizeModelLabels(config.labels) });
 }
