@@ -1,23 +1,23 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { use, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, PenTool, ExternalLink, Calendar, MapPin } from 'lucide-react';
+import { ArrowLeft, PenTool, ExternalLink, Calendar, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { EntityEditorActions } from '@/components/backoffice/common/entity-editor-actions';
+import {
+  BackofficeErrorState,
+  BackofficeLoadingState,
+} from '@/components/backoffice/common/query-state';
 import { getScribe, updateScribe, deleteScribe } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
-import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
-import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
+import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import { authFetch } from '@/lib/api-fetch';
 import type { AdminHandListItem } from '@/types/backoffice';
@@ -26,19 +26,23 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
   const { id: rawId } = use(params);
   const id = Number(rawId);
   const { token } = useAuth();
-  const router = useRouter();
-  const queryClient = useQueryClient();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const { data: scribe, isLoading } = useQuery({
+  const editor = useEntityEditor({
+    id,
     queryKey: backofficeKeys.scribes.detail(id),
-    queryFn: () => getScribe(token!, id),
-    enabled: !!token,
+    invalidateKeys: [backofficeKeys.scribes.detail(id), backofficeKeys.scribes.all()],
+    fetchFn: getScribe,
+    toForm: (s) => ({ name: s.name, scriptorium: s.scriptorium }),
+    saveFn: (t, sid, form) => updateScribe(t, sid, form),
+    deleteFn: deleteScribe,
+    listRoute: '/backoffice/scribes',
+    label: 'Scribe',
   });
 
-  // Walk all pages — `getHands(token, { scribe })` returned only the
-  // first DRF page (default 20). A productive scribe can have many hands
-  // across many manuscripts; the per-scribe listing in the editor would
-  // hide entries 21+ and the count would lie about the actual breadth.
+  // Walk all pages — `getHands(token, { scribe })` returned only the first DRF
+  // page (default 20). A productive scribe can have many hands across many
+  // manuscripts; the per-scribe listing would hide entries 21+.
   const { data: hands } = useQuery({
     queryKey: backofficeKeys.hands.list({ scribe: id }),
     queryFn: () =>
@@ -49,67 +53,17 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
     enabled: !!token,
   });
 
-  const [name, setName] = useState('');
-  const [scriptorium, setScriptorium] = useState('');
-  const [dirty, setDirty] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-
-  useEffect(() => {
-    if (scribe) {
-      setName(scribe.name); // eslint-disable-line react-hooks/set-state-in-effect
-      setScriptorium(scribe.scriptorium);
-      setDirty(false);
-    }
-  }, [scribe]);
-
-  // Warn before leaving with unsaved changes
-  useUnsavedGuard(dirty);
-
-  const saveMut = useMutation({
-    mutationFn: () => updateScribe(token!, id, { name, scriptorium }),
-    onSuccess: () => {
-      toast.success('Scribe saved');
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.scribes.detail(id) });
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.scribes.all() });
-      setDirty(false);
-    },
-    onError: (err) => {
-      toast.error('Failed to save scribe', {
-        description: formatApiError(err),
-      });
-    },
-  });
-
-  // Cmd+S to save
-  useKeyboardShortcut(
-    'mod+s',
-    () => {
-      if (dirty && !saveMut.isPending) saveMut.mutate();
-    },
-    dirty
-  );
-
-  const deleteMut = useMutation({
-    mutationFn: () => deleteScribe(token!, id),
-    onSuccess: () => {
-      toast.success('Scribe deleted');
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.scribes.all() });
-      router.push('/backoffice/scribes');
-    },
-    onError: (err) => {
-      toast.error('Failed to delete scribe', {
-        description: formatApiError(err),
-      });
-    },
-  });
-
-  if (isLoading || !scribe) {
+  if (editor.isError) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
+      <BackofficeErrorState message="Failed to load scribe." onRetry={() => editor.refetch()} />
     );
   }
+  if (editor.isLoading || !editor.entity || !editor.form) {
+    return <BackofficeLoadingState />;
+  }
+
+  const scribe = editor.entity;
+  const { form, setForm } = editor;
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -123,9 +77,9 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
         </div>
         <div className="flex items-center gap-2">
           <EntityEditorActions
-            dirty={dirty}
-            isSaving={saveMut.isPending}
-            onSave={() => saveMut.mutate()}
+            dirty={editor.dirty}
+            isSaving={editor.isSaving}
+            onSave={editor.save}
             onDelete={() => setDeleteOpen(true)}
           />
         </div>
@@ -134,22 +88,13 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label>Name</Label>
-          <Input
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              setDirty(true);
-            }}
-          />
+          <Input value={form.name} onChange={(e) => setForm({ name: e.target.value })} />
         </div>
         <div className="space-y-1.5">
           <Label>Scriptorium</Label>
           <Input
-            value={scriptorium}
-            onChange={(e) => {
-              setScriptorium(e.target.value);
-              setDirty(true);
-            }}
+            value={form.scriptorium}
+            onChange={(e) => setForm({ scriptorium: e.target.value })}
           />
         </div>
       </div>
@@ -224,8 +169,8 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
         title={`Delete "${scribe.name}"?`}
         description="This may fail if the scribe has hands associated."
         confirmLabel="Delete"
-        loading={deleteMut.isPending}
-        onConfirm={() => deleteMut.mutate()}
+        loading={editor.isDeleting}
+        onConfirm={editor.remove}
       />
     </div>
   );
