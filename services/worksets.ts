@@ -1,4 +1,5 @@
 import { apiFetch, authFetch } from '@/lib/api-fetch';
+import type { PaginatedResponse } from '@/types/backoffice';
 import type {
   WorksetDetail,
   WorksetPayload,
@@ -7,13 +8,6 @@ import type {
 } from '@/types/workset';
 
 const BASE = '/api/v1/worksets/';
-
-interface Paginated<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
 
 /**
  * Fetch a single workset by its citable public id, anonymously (no token).
@@ -36,7 +30,7 @@ export async function getWorkset(publicId: string): Promise<WorksetDetail | null
 export async function listMyWorksets(token: string): Promise<WorksetSummary[]> {
   const response = await authFetch(BASE, token, { cache: 'no-store' });
   if (!response.ok) return [];
-  const data: Paginated<WorksetSummary> | WorksetSummary[] = await response.json();
+  const data: PaginatedResponse<WorksetSummary> | WorksetSummary[] = await response.json();
   return Array.isArray(data) ? data : data.results;
 }
 

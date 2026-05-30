@@ -1,3 +1,5 @@
+import type { PaginatedResponse } from './backoffice';
+
 export interface HandType {
   id: number;
   name: string;
@@ -21,9 +23,5 @@ export interface HandType {
   scriptorium?: string | null;
 }
 
-export interface HandsResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: HandType[];
-}
+/** Paginated hands list (alias over the canonical PaginatedResponse). */
+export type HandsResponse = PaginatedResponse<HandType>;
