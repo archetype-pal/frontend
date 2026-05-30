@@ -1,9 +1,8 @@
 'use client';
 
-import { use, useState, useEffect, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { use, useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Image as ImageIcon, Check, ExternalLink } from 'lucide-react';
 import { IiifThumbnail } from '@/components/backoffice/common/iiif-thumbnail';
@@ -21,133 +20,75 @@ const RichTextEditor = dynamic(
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { EntityEditorActions } from '@/components/backoffice/common/entity-editor-actions';
+import {
+  BackofficeErrorState,
+  BackofficeLoadingState,
+} from '@/components/backoffice/common/query-state';
 import { getHand, updateHand, deleteHand } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import { authFetch } from '@/lib/api-fetch';
 import type { AdminItemImage } from '@/services/backoffice/manuscripts';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
-import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
-import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
-import { toast } from 'sonner';
 
 export default function HandDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: rawId } = use(params);
   const id = Number(rawId);
   const { token } = useAuth();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
-  const { data: hand, isLoading } = useQuery({
-    queryKey: backofficeKeys.hands.detail(id),
-    queryFn: () => getHand(token!, id),
-    enabled: !!token,
-  });
-
-  const [name, setName] = useState('');
-  const [place, setPlace] = useState('');
-  const [description, setDescription] = useState('');
-  const [selectedImages, setSelectedImages] = useState<number[]>([]);
-  const [dirty, setDirty] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  // Fetch images for the hand's item part. Walk all pages — `limit: 200`
-  // was silently capped at DRF's max_limit=100, so editors associating a
-  // hand with images on a multi-folio cartulary couldn't reach folios
-  // past the 100th.
+  const editor = useEntityEditor({
+    id,
+    queryKey: backofficeKeys.hands.detail(id),
+    invalidateKeys: [backofficeKeys.hands.detail(id), backofficeKeys.hands.all()],
+    fetchFn: getHand,
+    toForm: (h) => ({
+      name: h.name,
+      place: h.place,
+      description: h.description,
+      item_part_images: h.item_part_images ?? [],
+    }),
+    saveFn: (t, hid, form) => updateHand(t, hid, form),
+    deleteFn: deleteHand,
+    listRoute: '/backoffice/hands',
+    label: 'Hand',
+  });
+
+  // Fetch images for the hand's item part. Walk all pages — `limit: 200` was
+  // silently capped at DRF's max_limit=100, so editors associating a hand with
+  // images on a multi-folio cartulary couldn't reach folios past the 100th.
+  const itemPart = editor.entity?.item_part;
   const { data: imagesData, isLoading: imagesLoading } = useQuery({
-    queryKey: ['backoffice', 'item-images', hand?.item_part],
+    queryKey: ['backoffice', 'item-images', itemPart],
     queryFn: () =>
       walkPaginated<AdminItemImage>(
-        `/api/v1/manuscripts/management/item-images/?item_part=${hand!.item_part}&limit=100`,
+        `/api/v1/manuscripts/management/item-images/?item_part=${itemPart}&limit=100`,
         (path) => authFetch(path, token!)
       ),
-    enabled: !!token && !!hand?.item_part,
+    enabled: !!token && !!itemPart,
   });
 
   const availableImages = useMemo(() => imagesData ?? [], [imagesData]);
 
-  useEffect(() => {
-    if (hand) {
-      setName(hand.name); // eslint-disable-line react-hooks/set-state-in-effect
-      setPlace(hand.place);
-      setDescription(hand.description);
-      setSelectedImages(hand.item_part_images ?? []);
-      setDirty(false);
-    }
-  }, [hand]);
-
-  useUnsavedGuard(dirty);
-
-  const saveMut = useMutation({
-    mutationFn: () =>
-      updateHand(token!, id, {
-        name,
-        place,
-        description,
-        item_part_images: selectedImages,
-      }),
-    onSuccess: () => {
-      toast.success('Hand saved');
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.hands.detail(id) });
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.hands.all() });
-      setDirty(false);
-    },
-    onError: (err) => {
-      toast.error('Failed to save hand', {
-        description: formatApiError(err),
-      });
-    },
-  });
-
-  useKeyboardShortcut(
-    'mod+s',
-    () => {
-      if (dirty && !saveMut.isPending) saveMut.mutate();
-    },
-    dirty
-  );
-
-  const deleteMut = useMutation({
-    mutationFn: () => deleteHand(token!, id),
-    onSuccess: () => {
-      toast.success('Hand deleted');
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.hands.all() });
-      router.push('/backoffice/hands');
-    },
-    onError: (err) => {
-      toast.error('Failed to delete hand', {
-        description: formatApiError(err),
-      });
-    },
-  });
-
-  if (isLoading || !hand) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
-    );
+  if (editor.isError) {
+    return <BackofficeErrorState message="Failed to load hand." onRetry={() => editor.refetch()} />;
+  }
+  if (editor.isLoading || !editor.entity || !editor.form) {
+    return <BackofficeLoadingState />;
   }
 
-  const markDirty = () => setDirty(true);
+  const hand = editor.entity;
+  const { form, setForm } = editor;
 
   const toggleImage = (imageId: number) => {
-    setSelectedImages((prev) =>
-      prev.includes(imageId) ? prev.filter((id) => id !== imageId) : [...prev, imageId]
-    );
-    markDirty();
+    setForm({
+      item_part_images: form.item_part_images.includes(imageId)
+        ? form.item_part_images.filter((i) => i !== imageId)
+        : [...form.item_part_images, imageId],
+    });
   };
-
-  const selectAllImages = () => {
-    setSelectedImages(availableImages.map((img) => img.id));
-    markDirty();
-  };
-
-  const deselectAllImages = () => {
-    setSelectedImages([]);
-    markDirty();
-  };
+  const selectAllImages = () => setForm({ item_part_images: availableImages.map((img) => img.id) });
+  const deselectAllImages = () => setForm({ item_part_images: [] });
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -161,9 +102,9 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
         </div>
         <div className="flex items-center gap-2">
           <EntityEditorActions
-            dirty={dirty}
-            isSaving={saveMut.isPending}
-            onSave={() => saveMut.mutate()}
+            dirty={editor.dirty}
+            isSaving={editor.isSaving}
+            onSave={editor.save}
             onDelete={() => setDeleteOpen(true)}
           />
         </div>
@@ -215,34 +156,19 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label>Name</Label>
-          <Input
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              markDirty();
-            }}
-          />
+          <Input value={form.name} onChange={(e) => setForm({ name: e.target.value })} />
         </div>
         <div className="space-y-1.5">
           <Label>Place</Label>
-          <Input
-            value={place}
-            onChange={(e) => {
-              setPlace(e.target.value);
-              markDirty();
-            }}
-          />
+          <Input value={form.place} onChange={(e) => setForm({ place: e.target.value })} />
         </div>
       </div>
 
       <div className="space-y-1.5">
         <Label>Description</Label>
         <RichTextEditor
-          content={description}
-          onChange={(html) => {
-            setDescription(html);
-            markDirty();
-          }}
+          content={form.description}
+          onChange={(html) => setForm({ description: html })}
           placeholder="Enter hand description..."
           minimal
         />
@@ -257,14 +183,14 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">
-              {selectedImages.length} of {availableImages.length} selected
+              {form.item_part_images.length} of {availableImages.length} selected
             </span>
             <Button
               variant="outline"
               size="sm"
               className="h-7 text-xs"
               onClick={selectAllImages}
-              disabled={selectedImages.length === availableImages.length}
+              disabled={form.item_part_images.length === availableImages.length}
             >
               Select All
             </Button>
@@ -273,7 +199,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
               size="sm"
               className="h-7 text-xs"
               onClick={deselectAllImages}
-              disabled={selectedImages.length === 0}
+              disabled={form.item_part_images.length === 0}
             >
               Deselect All
             </Button>
@@ -291,7 +217,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {availableImages.map((img) => {
-              const isSelected = selectedImages.includes(img.id);
+              const isSelected = form.item_part_images.includes(img.id);
               return (
                 <button
                   key={img.id}
@@ -341,8 +267,8 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
         title={`Delete "${hand.name}"?`}
         description="This cannot be undone."
         confirmLabel="Delete"
-        loading={deleteMut.isPending}
-        onConfirm={() => deleteMut.mutate()}
+        loading={editor.isDeleting}
+        onConfirm={editor.remove}
       />
     </div>
   );
