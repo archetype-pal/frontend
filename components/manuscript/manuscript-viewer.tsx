@@ -17,7 +17,6 @@ import { ImageToolsControl } from './image-tools-control';
 import { LightboxControl } from './lightbox-control';
 import { ViewerErrorState, ViewerLoadingState } from './viewer-status-screen';
 import { ViewerToolbar } from './viewer-toolbar';
-import { dbIdFromA9s } from '@/lib/anno-mapping';
 
 import {
   canCreateAnnotationKind,
@@ -32,20 +31,13 @@ import type {
   ViewerCapabilities,
   ViewerMode,
   AnnotationCreationKind,
-  PopupRecord,
 } from '@/types/annotation-viewer';
 
-import { browserSafeIiifUrl, isDbId } from '@/lib/annotation-popup-utils';
-import {
-  getAllographBodyText,
-  getEditorialInternalNote,
-  getStandardAnnotationNote,
-} from '@/lib/annotation-notes';
+import { browserSafeIiifUrl } from '@/lib/annotation-popup-utils';
 
 import { getPopupCardViewData } from '@/lib/manuscript-viewer-popup-utils';
 
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
-import { annotationCountLabel } from '@/lib/manuscript-viewer-collection';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { getDefaultHand, sortHandsByPriority } from '@/lib/hand-ordering';
 
@@ -61,7 +53,7 @@ import { useCollectionActions } from '@/hooks/manuscript/use-collection-actions'
 import { useViewerBaseData } from '@/hooks/manuscript/use-viewer-base-data';
 import { useAnnotationVisibilityFilters } from '@/hooks/manuscript/use-annotation-visibility-filters';
 import { describeSaveOutcome } from '@/lib/manuscript-viewer-save';
-import { usePendingPopupClear } from '@/hooks/manuscript/use-pending-popup-clear';
+import { usePopupSelection } from '@/hooks/manuscript/use-popup-selection';
 import { useAnnotationDeletion } from '@/hooks/manuscript/use-annotation-deletion';
 import { useImageTextLinking } from '@/hooks/manuscript/use-image-text-linking';
 import { useShareTarget } from '@/hooks/manuscript/use-share-target';
@@ -436,140 +428,6 @@ export default function ManuscriptViewer({
   const { notifyLocalAnnotationUpdate, notifyLocalAnnotationCreate, notifyDeletedAnnotations } =
     useAnnotationNotifications({ canPersistAnyAnnotations, getCanonicalAnnotation });
 
-  const handleSelectionIdsChange = React.useCallback(
-    (ids: string[]) => {
-      setSelectedAnnotationIds(ids);
-
-      if (!viewerSettings.selectMultipleAnnotations) return;
-
-      if (ids.length === 0) {
-        dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
-        return;
-      }
-
-      showActionNotification({
-        kind: 'selected',
-        title: `${annotationCountLabel(ids.length)} selected`,
-        description: 'Selection updated.',
-        duration: 1800,
-      });
-    },
-    [viewerSettings.selectMultipleAnnotations]
-  );
-
-  const clearSinglePopupState = React.useCallback(
-    (options?: { clearHover?: boolean }) => {
-      clearPopupCollection();
-
-      if (options?.clearHover) {
-        setHoveredAnnotationId(null);
-      }
-    },
-    [clearPopupCollection, setHoveredAnnotationId]
-  );
-
-  const { schedulePopupClear, cancelPendingPopupClear } = usePendingPopupClear(() =>
-    clearSinglePopupState({ clearHover: true })
-  );
-
-  const handlePopupTabChange = React.useCallback(
-    (popupId: string, value: PopupRecord['popupTab']) => {
-      updatePopupById(popupId, { popupTab: value });
-    },
-    [updatePopupById]
-  );
-
-  const handleDraftAllographIdChange = React.useCallback(
-    (popupId: string, value: number | null) => {
-      updatePopupById(popupId, {
-        draftAllographId: value,
-        draftAllographText: value != null ? (allographNameById.get(value) ?? '') : '',
-        draftGraphcomponentSet: [],
-        draftPositionIds: [],
-      });
-    },
-    [allographNameById, updatePopupById]
-  );
-
-  const handleDraftHandIdChange = React.useCallback(
-    (popupId: string, value: number | null) => {
-      updatePopupById(popupId, {
-        draftHandId: value,
-      });
-    },
-    [updatePopupById]
-  );
-
-  // Trivial draft-field handlers (text, note, internal note, positions,
-  // graphcomponentSet) moved into AnnotationPopupLayer where they're
-  // inlined via updatePopupById. Only the non-trivial cascade — change
-  // allograph clears related fields — stays here.
-
-  const openSinglePopupFromAnnotation = React.useCallback(
-    (annotation: A9sWithMeta | null, options?: { clearHover?: boolean }) => {
-      if (!annotation) {
-        clearSinglePopupState({ clearHover: options?.clearHover });
-        return;
-      }
-
-      setFilteredAllograph(undefined);
-
-      if (options?.clearHover) {
-        setHoveredAnnotationId(null);
-      }
-
-      const isDraft = !isDbId(annotation.id);
-
-      const annotationForPopup: A9sWithMeta =
-        isDraft && activeTool === 'draw'
-          ? ({
-              ...annotation,
-              _meta: {
-                ...annotation._meta,
-                allographId: annotation._meta?.allographId ?? filteredAllograph?.id,
-                handId: annotation._meta?.handId ?? activeAssignmentHand?.id,
-                annotationType: annotation._meta?.annotationType ?? currentCreationKind,
-              },
-            } as A9sWithMeta)
-          : annotation;
-
-      const defaultPopupTab: PopupRecord['popupTab'] =
-        annotationForPopup._meta?.annotationType !== 'editorial' && canViewEditorialControls
-          ? 'details'
-          : 'components';
-
-      const commonOverrides = {
-        popupTab: defaultPopupTab,
-        shareUrl: '',
-        isShareUrlVisible: false,
-        draftAllographText: getAllographBodyText(annotationForPopup),
-        draftNoteText: getStandardAnnotationNote(annotationForPopup),
-        draftAllographId: annotationForPopup._meta?.allographId ?? null,
-        draftHandId: annotationForPopup._meta?.handId ?? null,
-        draftInternalNoteText: getEditorialInternalNote(annotationForPopup),
-        draftGraphcomponentSet: annotationForPopup._meta?.graphcomponentSet ?? [],
-        draftPositionIds: annotationForPopup._meta?.positions ?? [],
-      };
-
-      openPopupCollectionFromAnnotation(annotationForPopup, {
-        mode: isDraft ? 'replace' : viewerSettings.allowMultipleBoxes ? 'append' : 'replace',
-        overrides: commonOverrides,
-      });
-    },
-    [
-      activeTool,
-      canViewEditorialControls,
-      clearSinglePopupState,
-      currentCreationKind,
-      filteredAllograph?.id,
-      openPopupCollectionFromAnnotation,
-      activeAssignmentHand?.id,
-      viewerSettings.allowMultipleBoxes,
-      setFilteredAllograph,
-      setHoveredAnnotationId,
-    ]
-  );
-
   const rearmCreateTool = React.useCallback(() => {
     setActiveTool('draw');
     window.setTimeout(() => {
@@ -577,47 +435,39 @@ export default function ManuscriptViewer({
     }, 0);
   }, [setActiveTool]);
 
-  const closeDraftPopup = React.useCallback(
-    (popupId: string) => {
-      const popup = getPopupById(popupId);
-      if (!popup) return;
-
-      const shouldResumeDraw = activeTool === 'draw' && Boolean(!isDbId(popup.annotation.id));
-
-      cancelPendingPopupClear();
-      viewerApiRef.current?.clearSelection?.();
-      removePopupById(popupId);
-
-      if (shouldResumeDraw) {
-        rearmCreateTool();
-      } else {
-        viewerApiRef.current?.enablePan();
-        setActiveTool('move');
-      }
-    },
-    [
-      activeTool,
-      cancelPendingPopupClear,
-      getPopupById,
-      removePopupById,
-      rearmCreateTool,
-      setActiveTool,
-    ]
-  );
-
-  const handleCloseSelectedAnnotation = React.useCallback(
-    (popupId: string) => {
-      closeDraftPopup(popupId);
-    },
-    [closeDraftPopup]
-  );
-
-  const handleCancelDraftAnnotation = React.useCallback(
-    (popupId: string) => {
-      closeDraftPopup(popupId);
-    },
-    [closeDraftPopup]
-  );
+  const {
+    handleSelectionIdsChange,
+    handlePopupTabChange,
+    handleDraftAllographIdChange,
+    handleDraftHandIdChange,
+    openSinglePopupFromAnnotation,
+    handleCloseSelectedAnnotation,
+    handleCancelDraftAnnotation,
+    handleSelectAnnotationFromViewer,
+    cancelPendingPopupClear,
+  } = usePopupSelection({
+    openPopupCollectionFromAnnotation,
+    clearPopupCollection,
+    getPopupById,
+    removePopupById,
+    updatePopupById,
+    viewerApiRef,
+    activeTool,
+    setActiveTool,
+    rearmCreateTool,
+    currentCreationKind,
+    canViewEditorialControls,
+    filteredAllographId: filteredAllograph?.id,
+    setFilteredAllograph,
+    activeAssignmentHandId: activeAssignmentHand?.id,
+    setHoveredAnnotationId,
+    setSelectedAnnotationIds,
+    setLinkedGraphId,
+    allographNameById,
+    getCanonicalAnnotation,
+    allowMultipleBoxes: viewerSettings.allowMultipleBoxes,
+    selectMultipleAnnotations: viewerSettings.selectMultipleAnnotations,
+  });
 
   const { handleHideShareUrl, handleShareSelectedAnnotation, handleCopyShareUrl } = useShareTarget({
     imageId,
@@ -824,52 +674,6 @@ export default function ManuscriptViewer({
       }
     },
     [allographDialogDrag, setIsAllographModalOpen]
-  );
-
-  const handleSelectAnnotationFromViewer = React.useCallback(
-    (annotation: A9sAnnotation | null) => {
-      cancelPendingPopupClear();
-
-      const selected = annotation ? getCanonicalAnnotation(annotation) : null;
-
-      // region → text: highlight the matching span(s) in the side panel.
-      setLinkedGraphId(selected ? (dbIdFromA9s(selected) ?? null) : null);
-
-      if (selected) {
-        if (activeTool === 'modify') {
-          dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
-          return;
-        }
-
-        if (!viewerSettings.selectMultipleAnnotations) {
-          const isDrawnDraft = activeTool === 'draw' && !isDbId(selected.id);
-
-          showActionNotification({
-            id: ANNOTATION_SELECTION_TOAST_ID,
-            kind: isDrawnDraft ? 'created' : 'selected',
-            title: isDrawnDraft ? 'Draft annotation drawn' : 'Annotation selected',
-            description: isDrawnDraft ? 'Draft annotation created.' : 'Selection updated.',
-            duration: 1800,
-          });
-        }
-
-        openSinglePopupFromAnnotation(selected, { clearHover: true });
-        return;
-      }
-
-      dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
-
-      schedulePopupClear();
-    },
-    [
-      cancelPendingPopupClear,
-      schedulePopupClear,
-      activeTool,
-      getCanonicalAnnotation,
-      openSinglePopupFromAnnotation,
-      setLinkedGraphId,
-      viewerSettings.selectMultipleAnnotations,
-    ]
   );
 
   // ---- Effects ----
