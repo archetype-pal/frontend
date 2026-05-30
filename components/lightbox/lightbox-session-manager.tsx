@@ -88,7 +88,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
     setIsLoading(true);
     try {
       const session: LightboxSession = {
-        id: `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `session-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
         name: sessionName,
         workspaces: workspaces.filter((w) => w.id === currentWorkspaceId),
         images: workspaceImages,
@@ -234,7 +234,8 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Save New Session */}
+          {/* Local browser sessions — available to everyone, incl. anonymous
+              users who cannot use the (sign-in-only) server worksets below. */}
           <div className="border rounded-lg p-4">
             <h4 className="font-medium mb-2">Save Current Session</h4>
             <div className="flex gap-2">

@@ -50,6 +50,16 @@ export interface LightboxWorkspace {
   updatedAt: number;
 }
 
+/**
+ * A named, browser-local (IndexedDB) snapshot of the lightbox.
+ *
+ * Do NOT remove this as a "duplicate" of server worksets: worksets are
+ * token-gated ("only for signed-in users") and there is no public sign-up, so
+ * worksets are unreachable for the lightbox's primary audience — anonymous
+ * public researchers. Sessions are their only save mechanism. The two tiers are
+ * intentional (local-anonymous vs authenticated-server-shareable); the payload
+ * shape overlaps but the capability/audience does not.
+ */
 export interface LightboxSession {
   id: string;
   name: string;
