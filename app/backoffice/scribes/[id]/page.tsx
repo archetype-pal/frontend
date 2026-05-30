@@ -20,7 +20,7 @@ import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import { authFetch } from '@/lib/api-fetch';
-import type { HandListItem } from '@/types/backoffice';
+import type { AdminHandListItem } from '@/types/backoffice';
 
 export default function ScribeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: rawId } = use(params);
@@ -42,7 +42,7 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
   const { data: hands } = useQuery({
     queryKey: backofficeKeys.hands.list({ scribe: id }),
     queryFn: () =>
-      walkPaginated<HandListItem>(
+      walkPaginated<AdminHandListItem>(
         `/api/v1/management/scribes/hands/?scribe=${id}&limit=100`,
         (path) => authFetch(path, token!)
       ),

@@ -11,9 +11,9 @@ import { DataTable, sortableHeader } from '@/components/backoffice/common/data-t
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import { authFetch } from '@/lib/api-fetch';
-import type { HandListItem } from '@/types/backoffice';
+import type { AdminHandListItem } from '@/types/backoffice';
 
-const columns: ColumnDef<HandListItem>[] = [
+const columns: ColumnDef<AdminHandListItem>[] = [
   {
     accessorKey: 'name',
     header: sortableHeader('Name'),
@@ -89,7 +89,7 @@ export default function HandsPage() {
   const { data, isError, refetch } = useQuery({
     queryKey: backofficeKeys.hands.all(),
     queryFn: () =>
-      walkPaginated<HandListItem>('/api/v1/management/scribes/hands/?limit=100', (path) =>
+      walkPaginated<AdminHandListItem>('/api/v1/management/scribes/hands/?limit=100', (path) =>
         authFetch(path, token!)
       ),
     enabled: !!token,

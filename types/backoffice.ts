@@ -198,7 +198,7 @@ export interface HistoricalItemDetail {
 
 // ── Scribes ─────────────────────────────────────────────────────────────
 
-export interface ScribeListItem {
+export interface AdminScribeListItem {
   id: number;
   name: string;
   period: number | null;
@@ -207,7 +207,7 @@ export interface ScribeListItem {
   hand_count: number;
 }
 
-export interface HandListItem {
+export interface AdminHandListItem {
   id: number;
   name: string;
   scribe: number;

@@ -1,10 +1,15 @@
 import { backofficeGet } from './api-client';
 import { createCrudService } from './crud-factory';
-import type { PaginatedResponse, ScribeListItem, HandListItem, Script } from '@/types/backoffice';
+import type {
+  PaginatedResponse,
+  AdminScribeListItem,
+  AdminHandListItem,
+  Script,
+} from '@/types/backoffice';
 
 // ── Scribes ─────────────────────────────────────────────────────────────
 
-const scribesCrud = createCrudService<PaginatedResponse<ScribeListItem>, ScribeListItem>(
+const scribesCrud = createCrudService<PaginatedResponse<AdminScribeListItem>, AdminScribeListItem>(
   '/api/v1/management/scribes/scribes/'
 );
 
@@ -16,7 +21,7 @@ export const deleteScribe = scribesCrud.remove;
 
 // ── Hands ───────────────────────────────────────────────────────────────
 
-const handsCrud = createCrudService<PaginatedResponse<HandListItem>, HandListItem>(
+const handsCrud = createCrudService<PaginatedResponse<AdminHandListItem>, AdminHandListItem>(
   '/api/v1/management/scribes/hands/'
 );
 

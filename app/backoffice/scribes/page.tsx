@@ -24,9 +24,9 @@ import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import { authFetch } from '@/lib/api-fetch';
 import { toast } from 'sonner';
-import type { ScribeListItem } from '@/types/backoffice';
+import type { AdminScribeListItem } from '@/types/backoffice';
 
-const columns: ColumnDef<ScribeListItem>[] = [
+const columns: ColumnDef<AdminScribeListItem>[] = [
   {
     accessorKey: 'name',
     header: sortableHeader('Name'),
@@ -91,7 +91,7 @@ export default function ScribesPage() {
   const { data, isError, refetch } = useQuery({
     queryKey: backofficeKeys.scribes.all(),
     queryFn: () =>
-      walkPaginated<ScribeListItem>('/api/v1/management/scribes/scribes/?limit=100', (path) =>
+      walkPaginated<AdminScribeListItem>('/api/v1/management/scribes/scribes/?limit=100', (path) =>
         authFetch(path, token!)
       ),
     enabled: !!token,
