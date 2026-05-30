@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { CheckCheck, RotateCcw, Save, Share2, Sparkles, Star, Trash2, X } from 'lucide-react';
 
 import type { Allograph } from '@/types/allographs';
 
@@ -13,31 +12,14 @@ import type {
   AnnotationPopupMetaSummary,
 } from '@/types/annotation-viewer';
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Separator } from '@/components/ui/separator';
-import { isEditableTarget } from '@/hooks/use-hotkeys';
-import { Input } from '@/components/ui/input';
-import { SearchableSelect, type SearchableSelectHandle } from '@/components/ui/searchable-select';
-import { useModelLabels } from '@/contexts/model-labels-context';
-import { formatAllographLabel } from '@/lib/allograph-labels';
-import { cn } from '@/lib/utils';
+import { PopupShell } from './popup/popup-shell';
+import { PublicDemoDraftEditor } from './popup/public-demo-draft-editor';
+import { StandardAnnotationEditor } from './popup/standard-annotation-editor';
+import { EditorialAnnotationEditor } from './popup/editorial-annotation-editor';
+import { PublicAnnotationView } from './popup/public-annotation-view';
+import type { PopupTab, SelectedComponentGroup } from './popup/types';
 
-type PopupTab = 'details' | 'components' | 'positions' | 'notes';
-
-type SelectedComponentGroup = {
-  componentId: number;
-  componentName: string;
-  featureNames: string[];
-};
+export type { PopupTab, SelectedComponentGroup };
 
 interface AnnotationPopupCardProps {
   title: string;
@@ -102,35 +84,6 @@ interface AnnotationPopupCardProps {
   selectedNotes: string[];
 }
 
-function AnnotationMetaSummaryBlock({ metaSummary }: { metaSummary?: AnnotationPopupMetaSummary }) {
-  if (!metaSummary) return null;
-
-  return (
-    <div className="rounded-md border bg-muted/20 px-3 py-3">
-      <div className="mb-2 text-xs font-semibold text-foreground">Annotation details</div>
-
-      <div className="grid grid-cols-[88px_1fr] gap-x-2 gap-y-1 text-xs">
-        <div className="text-muted-foreground">Type</div>
-        <div>{metaSummary.kindLabel}</div>
-
-        {metaSummary.allographLabel ? (
-          <>
-            <div className="text-muted-foreground">Allograph</div>
-            <div>{metaSummary.allographLabel}</div>
-          </>
-        ) : null}
-
-        {metaSummary.handLabel ? (
-          <>
-            <div className="text-muted-foreground">Hand</div>
-            <div>{metaSummary.handLabel}</div>
-          </>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
 export function AnnotationPopupCard({
   title,
   isDraftAnnotation,
@@ -181,8 +134,6 @@ export function AnnotationPopupCard({
   selectedPositionLabels,
   selectedNotes,
 }: AnnotationPopupCardProps) {
-  const { getPluralLabel } = useModelLabels();
-  const allographSelectRef = React.useRef<SearchableSelectHandle>(null);
   // Unique per instance — several popups can be open at once (multi-select).
   const titleId = React.useId();
 
@@ -192,16 +143,7 @@ export function AnnotationPopupCard({
   const isStandardExisting = popupEditorMode === 'standard_existing';
   const isEditorialDraft = popupEditorMode === 'editorial_draft';
   const isEditorialExisting = popupEditorMode === 'editorial_existing';
-  const canUseAllographShortcut = isActive && (isStandardDraft || isStandardExisting);
-  const standardPopupTab = ['details', 'components', 'positions', 'notes'].includes(popupTab)
-    ? popupTab
-    : 'details';
-  const publicPopupTab =
-    popupTab === 'notes'
-      ? 'notes'
-      : popupTab === 'positions' && hasPositionsTab
-        ? 'positions'
-        : 'components';
+
   const annotationKindLabel =
     isStandardDraft || isStandardExisting
       ? 'Standard'
@@ -210,930 +152,85 @@ export function AnnotationPopupCard({
         : 'Public';
   const collectionLabel = isAnnotationInCollection ? 'Remove from Collection' : 'Add to Collection';
 
-  React.useEffect(() => {
-    if (!canUseAllographShortcut) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.defaultPrevented) return;
-      if (event.repeat) return;
-      if (event.altKey || event.ctrlKey || event.metaKey) return;
-      if (event.key.toLowerCase() !== 'a') return;
-      if (isEditableTarget(event.target)) return;
-
-      event.preventDefault();
-      allographSelectRef.current?.open();
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [canUseAllographShortcut]);
-
-  const standardIdentityFields = (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Allograph</label>
-        <SearchableSelect
-          ref={allographSelectRef}
-          options={allographOptions.map((allograph) => ({
-            value: String(allograph.id),
-            label: formatAllographLabel(allograph),
-          }))}
-          value={draftAllographId != null ? String(draftAllographId) : null}
-          onValueChange={(value) => onDraftAllographIdChange(value ? Number(value) : null)}
-          placeholder="Choose an allograph"
-          searchPlaceholder="Search allographs..."
-          emptyText="No allographs found."
-          clearLabel="Choose an allograph"
-          contentClassName="z-[250]"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Hand</label>
-        <Select
-          value={draftHandId != null ? String(draftHandId) : '__unset__'}
-          onValueChange={(value) =>
-            onDraftHandIdChange(value === '__unset__' ? null : Number(value))
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Choose a hand" />
-          </SelectTrigger>
-          <SelectContent className="z-[200]">
-            <SelectItem value="__unset__">Choose a hand</SelectItem>
-            {handOptions.map((hand) => (
-              <SelectItem key={hand.id} value={String(hand.id)}>
-                {hand.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
-  );
-
-  const selectedAllograph =
-    draftAllographId != null
-      ? (allographOptions.find((allograph) => allograph.id === draftAllographId) ?? null)
-      : null;
-
-  const selectedPositionsCount = draftPositionIds.length;
-
-  const isComponentSelected = (componentId: number) =>
-    draftGraphcomponentSet.some((component) => component.component === componentId);
-
-  const toggleComponentSelection = (
-    componentId: number,
-    componentName: string,
-    checked: boolean,
-    availableFeatures: Array<{ id: number; name: string; set_by_default: boolean }>
-  ) => {
-    if (checked) {
-      if (isComponentSelected(componentId)) return;
-
-      const defaultFeatures = availableFeatures.filter((feature) => feature.set_by_default);
-
-      onDraftGraphcomponentSetChange([
-        ...draftGraphcomponentSet,
-        {
-          component: componentId,
-          componentName,
-          features: defaultFeatures.map((feature) => feature.id),
-          featureDetails: defaultFeatures.map((feature) => ({
-            id: feature.id,
-            name: feature.name,
-          })),
-        },
-      ]);
-      return;
-    }
-
-    onDraftGraphcomponentSetChange(
-      draftGraphcomponentSet.filter((component) => component.component !== componentId)
-    );
-  };
-
-  const setComponentFeatures = (
-    componentId: number,
-    componentName: string,
-    availableFeatures: Array<{ id: number; name: string; set_by_default: boolean }>,
-    nextFeatureIds: number[]
-  ) => {
-    const existingComponent = draftGraphcomponentSet.find(
-      (component) => component.component === componentId
-    );
-
-    if (!existingComponent) return;
-
-    const nextFeatureIdSet = new Set(nextFeatureIds);
-
-    const nextFeatureDetails = availableFeatures
-      .filter((feature) => nextFeatureIdSet.has(feature.id))
-      .map((feature) => ({
-        id: feature.id,
-        name: feature.name,
-      }));
-
-    const nextGraphcomponentSet = draftGraphcomponentSet.map((component) => {
-      if (component.component !== componentId) return component;
-
-      return {
-        ...component,
-        componentName,
-        features: nextFeatureIds,
-        featureDetails: nextFeatureDetails,
-      };
-    });
-
-    onDraftGraphcomponentSetChange(nextGraphcomponentSet);
-  };
-
-  const toggleFeatureSelection = (
-    componentId: number,
-    componentName: string,
-    availableFeatures: Array<{ id: number; name: string; set_by_default: boolean }>,
-    featureId: number,
-    checked: boolean
-  ) => {
-    const existingComponent = draftGraphcomponentSet.find(
-      (component) => component.component === componentId
-    );
-
-    if (!existingComponent) return;
-
-    const nextFeatureIds = checked
-      ? Array.from(new Set([...(existingComponent.features ?? []), featureId]))
-      : (existingComponent.features ?? []).filter((id) => id !== featureId);
-
-    setComponentFeatures(componentId, componentName, availableFeatures, nextFeatureIds);
-  };
-
-  const checkAllFeatures = (
-    componentId: number,
-    componentName: string,
-    availableFeatures: Array<{ id: number; name: string; set_by_default: boolean }>
-  ) => {
-    setComponentFeatures(
-      componentId,
-      componentName,
-      availableFeatures,
-      availableFeatures.map((feature) => feature.id)
-    );
-  };
-
-  const uncheckAllFeatures = (
-    componentId: number,
-    componentName: string,
-    availableFeatures: Array<{ id: number; name: string; set_by_default: boolean }>
-  ) => {
-    setComponentFeatures(componentId, componentName, availableFeatures, []);
-  };
-
-  const checkDefaultFeatures = (
-    componentId: number,
-    componentName: string,
-    availableFeatures: Array<{ id: number; name: string; set_by_default: boolean }>
-  ) => {
-    setComponentFeatures(
-      componentId,
-      componentName,
-      availableFeatures,
-      availableFeatures.filter((feature) => feature.set_by_default).map((feature) => feature.id)
-    );
-  };
-
-  const togglePositionId = (positionId: number, checked: boolean) => {
-    onDraftPositionIdsChange(
-      checked
-        ? Array.from(new Set([...draftPositionIds, positionId]))
-        : draftPositionIds.filter((id) => id !== positionId)
-    );
-  };
-
-  const standardPositionsSection = (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <label className="text-sm font-medium text-foreground">{getPluralLabel('position')}</label>
-        <span className="text-xs text-muted-foreground">
-          {selectedPositionsCount > 0 ? `${selectedPositionsCount} selected` : 'None selected'}
-        </span>
-      </div>
-
-      {draftAllographId == null ? (
-        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          Choose an allograph to load the related {getPluralLabel('position').toLowerCase()}.
-        </div>
-      ) : !selectedAllograph ? (
-        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          No allograph data available.
-        </div>
-      ) : selectedAllograph.positions.length === 0 ? (
-        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          No {getPluralLabel('position').toLowerCase()} are defined for this allograph.
-        </div>
-      ) : (
-        <div className="space-y-2 rounded-md border p-3">
-          {selectedAllograph.positions.map((position) => (
-            <label
-              key={position.id}
-              className="flex items-center gap-2 text-sm text-muted-foreground"
-            >
-              <input
-                type="checkbox"
-                checked={draftPositionIds.includes(position.id)}
-                onChange={(e) => togglePositionId(position.id, e.target.checked)}
-              />
-              <span>{position.name}</span>
-            </label>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const standardNotesEditor = (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">Notes</label>
-      <textarea
-        value={draftNoteText}
-        onChange={(e) => onDraftNoteTextChange(e.target.value)}
-        placeholder="Type note"
-        rows={5}
-        className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-      />
-    </div>
-  );
-
-  const standardFooter = (
-    <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
-      <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
-        Cancel
-      </Button>
-      <Button onClick={onConfirmDraftAnnotation} type="button">
-        OK
-      </Button>
-    </div>
-  );
-
-  const editableComponentFeatureSection = (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">Components</label>
-
-      {draftAllographId == null ? (
-        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          Choose an allograph to load the related components and features.
-        </div>
-      ) : !selectedAllograph ? (
-        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          No allograph data available.
-        </div>
-      ) : selectedAllograph.components.length === 0 ? (
-        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          No components are defined for this allograph.
-        </div>
-      ) : (
-        <div className="space-y-3 rounded-md border p-3">
-          {selectedAllograph.components.map((component) => {
-            const selectedComponent = draftGraphcomponentSet.find(
-              (item) => item.component === component.component_id
-            );
-
-            const defaultFeatureCount = component.features.filter(
-              (feature) => feature.set_by_default
-            ).length;
-            const selectedFeatureCount = selectedComponent?.features?.length ?? 0;
-            const totalFeatureCount = component.features.length;
-
-            return (
-              <div key={component.component_id} className="space-y-2 rounded-md border p-3">
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(selectedComponent)}
-                    onChange={(e) =>
-                      toggleComponentSelection(
-                        component.component_id,
-                        component.component_name,
-                        e.target.checked,
-                        component.features
-                      )
-                    }
-                  />
-                  <span>{component.component_name}</span>
-                </label>
-
-                {selectedComponent ? (
-                  component.features.length > 0 ? (
-                    <div className="ml-6 space-y-2">
-                      <div className="rounded-md border bg-muted/20 px-3 py-2">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="text-xs text-muted-foreground">
-                            {totalFeatureCount > 0 ? (
-                              <>
-                                <span className="font-medium text-foreground">
-                                  {selectedFeatureCount}
-                                </span>
-                                {` / ${totalFeatureCount} selected`}
-                                {defaultFeatureCount > 0 ? ` · ${defaultFeatureCount} default` : ''}
-                              </>
-                            ) : (
-                              'No features available'
-                            )}
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="h-8"
-                              onClick={() =>
-                                checkAllFeatures(
-                                  component.component_id,
-                                  component.component_name,
-                                  component.features
-                                )
-                              }
-                            >
-                              <CheckCheck className="mr-1 h-3.5 w-3.5" />
-                              Check all
-                            </Button>
-
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="h-8"
-                              onClick={() =>
-                                uncheckAllFeatures(
-                                  component.component_id,
-                                  component.component_name,
-                                  component.features
-                                )
-                              }
-                            >
-                              <RotateCcw className="mr-1 h-3.5 w-3.5" />
-                              Uncheck all
-                            </Button>
-
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="h-8"
-                              disabled={defaultFeatureCount === 0}
-                              title={
-                                defaultFeatureCount === 0
-                                  ? 'No default features are defined for this component'
-                                  : 'Select only the default features for this component'
-                              }
-                              onClick={() =>
-                                checkDefaultFeatures(
-                                  component.component_id,
-                                  component.component_name,
-                                  component.features
-                                )
-                              }
-                            >
-                              <Sparkles className="mr-1 h-3.5 w-3.5" />
-                              Check defaults
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        {component.features.map((feature) => {
-                          const checked = (selectedComponent.features ?? []).includes(feature.id);
-
-                          return (
-                            <label
-                              key={feature.id}
-                              className="flex items-center gap-2 text-sm text-muted-foreground"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={(e) =>
-                                  toggleFeatureSelection(
-                                    component.component_id,
-                                    component.component_name,
-                                    component.features,
-                                    feature.id,
-                                    e.target.checked
-                                  )
-                                }
-                              />
-                              <span>{feature.name}</span>
-                              {feature.set_by_default ? (
-                                <span className="rounded border px-1.5 py-0.5 text-[10px]">
-                                  default
-                                </span>
-                              ) : null}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="ml-6 text-sm text-muted-foreground">
-                      This component has no selectable features.
-                    </div>
-                  )
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-
   return (
-    <div
-      role="dialog"
-      aria-labelledby={titleId}
-      className="fixed top-4 right-4 rounded-lg border bg-background shadow-lg"
-      style={{
-        transform: popupTransform,
-        zIndex,
-        width: '420px',
-        maxWidth: '90vw',
-      }}
+    <PopupShell
+      title={title}
+      titleId={titleId}
+      isDraftAnnotation={isDraftAnnotation}
+      popupCapabilities={popupCapabilities}
+      annotationKindLabel={annotationKindLabel}
+      collectionLabel={collectionLabel}
+      popupTransform={popupTransform}
+      dragHandleProps={dragHandleProps}
+      zIndex={zIndex}
       onPointerDownCapture={onPointerDownCapture}
+      isShareUrlVisible={isShareUrlVisible}
+      shareUrl={shareUrl}
+      canSaveAnnotationShortcut={canSaveAnnotationShortcut}
+      isSaveAnnotationShortcutDisabled={isSaveAnnotationShortcutDisabled}
+      canDeleteAnnotationShortcut={canDeleteAnnotationShortcut}
+      onSaveAnnotationShortcut={onSaveAnnotationShortcut}
+      onDeleteAnnotationShortcut={onDeleteAnnotationShortcut}
+      onCopyShareUrl={onCopyShareUrl}
+      onHideShareUrl={onHideShareUrl}
+      onShareSelectedAnnotation={onShareSelectedAnnotation}
+      onCloseSelectedAnnotation={onCloseSelectedAnnotation}
+      isAnnotationInCollection={isAnnotationInCollection}
+      onToggleAnnotationCollection={onToggleAnnotationCollection}
     >
-      <div
-        className="flex cursor-move select-none items-center justify-between border-b px-4 py-3"
-        {...dragHandleProps}
-      >
-        <div className="min-w-0">
-          <h3 id={titleId} className="truncate text-base font-semibold">
-            {title}
-          </h3>
-
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            {isDraftAnnotation ? (
-              <span>
-                {popupCapabilities.canPersistDraft ? 'Unsaved draft' : 'Temporary annotation'}
-              </span>
-            ) : (
-              <span>Saved annotation</span>
-            )}
-
-            <span className="rounded border px-1.5 py-0.5">{annotationKindLabel}</span>
-          </div>
-        </div>
-
-        <div
-          className="ml-4 flex items-center gap-1"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <TooltipProvider>
-            {canSaveAnnotationShortcut && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => void onSaveAnnotationShortcut?.()}
-                    disabled={isSaveAnnotationShortcutDisabled || !onSaveAnnotationShortcut}
-                    aria-label="Save Annotation"
-                    type="button"
-                  >
-                    <Save className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Save Annotation</TooltipContent>
-              </Tooltip>
-            )}
-
-            {canDeleteAnnotationShortcut && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => void onDeleteAnnotationShortcut?.()}
-                    disabled={!onDeleteAnnotationShortcut}
-                    aria-label="Delete Annotation"
-                    type="button"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Delete Annotation</TooltipContent>
-              </Tooltip>
-            )}
-
-            {isDraftAnnotation ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={onShareSelectedAnnotation}
-                    aria-label="Share URL"
-                    type="button"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Share URL</TooltipContent>
-              </Tooltip>
-            ) : (
-              <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={onShareSelectedAnnotation}
-                      aria-label="Share URL"
-                      type="button"
-                    >
-                      <Share2 className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Share URL</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={onToggleAnnotationCollection}
-                      disabled={
-                        !popupCapabilities.canUseCollection || !onToggleAnnotationCollection
-                      }
-                      aria-label={collectionLabel}
-                      aria-pressed={isAnnotationInCollection}
-                      type="button"
-                    >
-                      <Star
-                        className={cn(
-                          'h-4 w-4',
-                          isAnnotationInCollection && 'fill-amber-400 text-amber-400'
-                        )}
-                      />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{collectionLabel}</TooltipContent>
-                </Tooltip>
-              </>
-            )}
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={onCloseSelectedAnnotation}
-                  aria-label="Close annotation popup"
-                  type="button"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Close</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </div>
-
-      {isShareUrlVisible && (
-        <div className="border-b px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Input readOnly value={shareUrl} className="flex-1 text-sm" />
-            <Button variant="ghost" size="sm" onClick={onCopyShareUrl} type="button">
-              Copy
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onHideShareUrl}
-              title="Hide URL"
-              type="button"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
       {isPublicDemoDraft ? (
-        <div className="max-h-[320px] overflow-auto px-4 py-4 space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Allograph</label>
-            <Input
-              value={draftAllographText}
-              onChange={(e) => onDraftAllographTextChange(e.target.value)}
-              placeholder="Type allograph"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Note</label>
-            <textarea
-              value={draftNoteText}
-              onChange={(e) => onDraftNoteTextChange(e.target.value)}
-              placeholder="Type note"
-              rows={5}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          <div className="mt-2 flex items-center justify-end gap-2 border-t pt-3">
-            <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
-              Cancel
-            </Button>
-            <Button onClick={onConfirmDraftAnnotation} type="button">
-              OK
-            </Button>
-          </div>
-        </div>
-      ) : isStandardDraft ? (
-        <Tabs
-          value={standardPopupTab}
-          onValueChange={(value) => onPopupTabChange(value as PopupTab)}
-          className="w-full"
-        >
-          <div className="border-b px-4 py-2">
-            <TabsList className="h-auto flex-wrap gap-2 bg-transparent p-0">
-              <TabsTrigger
-                value="details"
-                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                data-[state=active]:border data-[state=active]:bg-background
-                data-[state=active]:shadow-sm"
-              >
-                Details
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="components"
-                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                data-[state=active]:border data-[state=active]:bg-background
-                data-[state=active]:shadow-sm"
-              >
-                Components
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="positions"
-                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                data-[state=active]:border data-[state=active]:bg-background
-                data-[state=active]:shadow-sm"
-              >
-                {getPluralLabel('position')}
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="notes"
-                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                data-[state=active]:border data-[state=active]:bg-background
-                data-[state=active]:shadow-sm"
-              >
-                Notes
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <div className="max-h-[420px] overflow-auto px-4 py-4">
-            <TabsContent value="details" className="mt-0">
-              {standardIdentityFields}
-            </TabsContent>
-
-            <TabsContent value="components" className="mt-0">
-              {editableComponentFeatureSection}
-            </TabsContent>
-
-            <TabsContent value="positions" className="mt-0">
-              {standardPositionsSection}
-            </TabsContent>
-
-            <TabsContent value="notes" className="mt-0">
-              {standardNotesEditor}
-            </TabsContent>
-          </div>
-
-          {standardFooter}
-        </Tabs>
-      ) : isStandardExisting ? (
-        <Tabs
-          value={standardPopupTab}
-          onValueChange={(value) => onPopupTabChange(value as PopupTab)}
-          className="w-full"
-        >
-          <div className="border-b px-4 py-2">
-            <TabsList className="h-auto flex-wrap gap-2 bg-transparent p-0">
-              <TabsTrigger
-                value="details"
-                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                data-[state=active]:border data-[state=active]:bg-background
-                data-[state=active]:shadow-sm"
-              >
-                Details
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="components"
-                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                data-[state=active]:border data-[state=active]:bg-background
-                data-[state=active]:shadow-sm"
-              >
-                Components
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="positions"
-                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                data-[state=active]:border data-[state=active]:bg-background
-                data-[state=active]:shadow-sm"
-              >
-                {getPluralLabel('position')}
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="notes"
-                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                data-[state=active]:border data-[state=active]:bg-background
-                data-[state=active]:shadow-sm"
-              >
-                Notes
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <div className="max-h-[420px] overflow-auto px-4 py-4">
-            <TabsContent value="details" className="mt-0">
-              <div className="space-y-4">
-                {standardIdentityFields}
-
-                {popupCapabilities.canViewEditorMeta && (
-                  <AnnotationMetaSummaryBlock metaSummary={metaSummary} />
-                )}
-
-                <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                  Changes remain local until you press the main Save button in the toolbar.
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="components" className="mt-0">
-              {editableComponentFeatureSection}
-            </TabsContent>
-
-            <TabsContent value="positions" className="mt-0">
-              {standardPositionsSection}
-            </TabsContent>
-
-            <TabsContent value="notes" className="mt-0">
-              {standardNotesEditor}
-            </TabsContent>
-          </div>
-
-          {standardFooter}
-        </Tabs>
+        <PublicDemoDraftEditor
+          draftAllographText={draftAllographText}
+          onDraftAllographTextChange={onDraftAllographTextChange}
+          draftNoteText={draftNoteText}
+          onDraftNoteTextChange={onDraftNoteTextChange}
+          onCancelDraftAnnotation={onCancelDraftAnnotation}
+          onConfirmDraftAnnotation={onConfirmDraftAnnotation}
+        />
+      ) : isStandardDraft || isStandardExisting ? (
+        <StandardAnnotationEditor
+          isExisting={isStandardExisting}
+          showLocalHint={isStandardExisting}
+          isActive={isActive}
+          popupCapabilities={popupCapabilities}
+          metaSummary={metaSummary}
+          allographOptions={allographOptions}
+          handOptions={handOptions}
+          draftAllographId={draftAllographId}
+          draftHandId={draftHandId}
+          onDraftAllographIdChange={onDraftAllographIdChange}
+          onDraftHandIdChange={onDraftHandIdChange}
+          draftGraphcomponentSet={draftGraphcomponentSet}
+          onDraftGraphcomponentSetChange={onDraftGraphcomponentSetChange}
+          draftPositionIds={draftPositionIds}
+          onDraftPositionIdsChange={onDraftPositionIdsChange}
+          draftNoteText={draftNoteText}
+          onDraftNoteTextChange={onDraftNoteTextChange}
+          onCancelDraftAnnotation={onCancelDraftAnnotation}
+          onConfirmDraftAnnotation={onConfirmDraftAnnotation}
+          popupTab={popupTab}
+          onPopupTabChange={onPopupTabChange}
+        />
       ) : isEditorialDraft || isEditorialExisting ? (
-        <div className="max-h-[360px] overflow-auto px-4 py-4 space-y-4">
-          {isEditorialExisting ? (
-            <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-              Changes remain local until you press the main Save button in the toolbar.
-            </div>
-          ) : null}
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Internal note</label>
-            <textarea
-              value={draftInternalNoteText}
-              onChange={(e) => onDraftInternalNoteTextChange(e.target.value)}
-              placeholder="Type internal note"
-              rows={4}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          <div className="mt-2 flex items-center justify-end gap-2 border-t pt-3">
-            <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
-              Cancel
-            </Button>
-            <Button onClick={onConfirmDraftAnnotation} type="button">
-              OK
-            </Button>
-          </div>
-        </div>
+        <EditorialAnnotationEditor
+          isExisting={isEditorialExisting}
+          draftInternalNoteText={draftInternalNoteText}
+          onDraftInternalNoteTextChange={onDraftInternalNoteTextChange}
+          onCancelDraftAnnotation={onCancelDraftAnnotation}
+          onConfirmDraftAnnotation={onConfirmDraftAnnotation}
+        />
       ) : isPublicExisting ? (
-        <Tabs
-          value={publicPopupTab}
-          onValueChange={(value) => onPopupTabChange(value as PopupTab)}
-          className="w-full"
-        >
-          <div className="border-b px-4 py-2">
-            <TabsList className="h-auto flex-wrap gap-2 bg-transparent p-0">
-              <TabsTrigger
-                value="components"
-                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                data-[state=active]:border data-[state=active]:bg-background
-                data-[state=active]:shadow-sm"
-              >
-                Components
-              </TabsTrigger>
-
-              {hasPositionsTab && (
-                <TabsTrigger
-                  value="positions"
-                  className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                  data-[state=active]:border data-[state=active]:bg-background
-                  data-[state=active]:shadow-sm"
-                >
-                  {getPluralLabel('position')}
-                </TabsTrigger>
-              )}
-
-              <TabsTrigger
-                value="notes"
-                className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
-                data-[state=active]:border data-[state=active]:bg-background
-                data-[state=active]:shadow-sm"
-              >
-                Notes
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          {popupCapabilities.canViewEditorMeta && (
-            <div className="border-b px-4 py-3">
-              <AnnotationMetaSummaryBlock metaSummary={metaSummary} />
-            </div>
-          )}
-
-          <div className="max-h-[320px] overflow-auto px-4 py-4">
-            <TabsContent value="components" className="mt-0">
-              <div className="space-y-4">
-                {selectedComponentGroups.length > 0 ? (
-                  selectedComponentGroups.map((group) => (
-                    <div key={group.componentId}>
-                      <div className="text-sm font-semibold text-foreground">
-                        {group.componentName}
-                      </div>
-                      <Separator className="my-2" />
-                      {group.featureNames.length > 0 ? (
-                        <div className="space-y-1">
-                          {group.featureNames.map((featureName) => (
-                            <div
-                              key={`${group.componentId}-${featureName}`}
-                              className="text-sm text-muted-foreground"
-                            >
-                              {featureName}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-sm text-muted-foreground">No features selected.</div>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-muted-foreground">No components defined.</div>
-                )}
-              </div>
-            </TabsContent>
-
-            {hasPositionsTab && (
-              <TabsContent value="positions" className="mt-0">
-                <div className="space-y-2">
-                  {selectedPositionLabels.map((label) => (
-                    <div key={label} className="text-sm text-muted-foreground">
-                      {label}
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
-            )}
-
-            <TabsContent value="notes" className="mt-0">
-              <div className="space-y-2">
-                {selectedNotes.length > 0 ? (
-                  selectedNotes.map((note, index) => (
-                    <div key={`${index}-${note}`} className="text-sm text-muted-foreground">
-                      {note}
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-muted-foreground">No notes available.</div>
-                )}
-              </div>
-            </TabsContent>
-          </div>
-        </Tabs>
+        <PublicAnnotationView
+          popupCapabilities={popupCapabilities}
+          metaSummary={metaSummary}
+          popupTab={popupTab}
+          onPopupTabChange={onPopupTabChange}
+          hasPositionsTab={hasPositionsTab}
+          selectedComponentGroups={selectedComponentGroups}
+          selectedPositionLabels={selectedPositionLabels}
+          selectedNotes={selectedNotes}
+        />
       ) : null}
-    </div>
+    </PopupShell>
   );
 }
