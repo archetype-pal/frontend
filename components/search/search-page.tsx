@@ -269,157 +269,160 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               />
             </div>
           )}
-          <div className="p-2 sm:p-3">
-            <div className="flex flex-col rounded-xl border border-border/80 bg-card shadow-sm">
-              {s.isFetching && !s.isLoading && (
-                <div className="h-0.5 w-full shrink-0 overflow-hidden rounded-t-xl">
-                  <div className="h-full w-1/3 animate-[search-sweep_1.1s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-accent to-transparent" />
-                </div>
-              )}
-              <div className="flex min-w-0 flex-col gap-3 p-3">
+          <div className="flex flex-col">
+            {s.isFetching && !s.isLoading && (
+              <div className="h-0.5 w-full overflow-hidden">
+                <div className="h-full w-1/3 animate-[search-sweep_1.1s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-accent to-transparent" />
+              </div>
+            )}
+            {s.advancedSearch.enabled && (
+              <div className="border-b border-border/70 px-3 py-3">
                 <AdvancedSearchPanel
                   resultType={s.resultType}
                   value={s.advancedSearch}
                   onChange={s.setAdvancedSearch}
                   facetDistribution={s.data.facetDistribution}
                 />
-                {s.filtered.length > 0 ? (
-                  s.viewMode === 'table' ? (
-                    <ResultsTable
-                      resultType={s.resultType}
-                      results={s.filtered as ResultListItem[]}
-                      ordering={s.data.ordering}
-                      onSort={s.handleSort}
-                      highlightKeyword={s.submittedKeyword}
-                      visibleColumns={s.categoryConfig.visibleColumns}
-                      isFetching={s.isFetching}
-                    />
-                  ) : s.viewMode === 'timeline' ? (
-                    <React.Suspense
-                      fallback={
-                        <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
-                          Loading timeline…
-                        </div>
-                      }
-                    >
-                      <SearchTimelineView
-                        dateDistribution={s.timelineDistribution}
-                        onApplyRange={(min, max) =>
-                          s.setQueryState((prev) => ({
-                            ...prev,
-                            dateParams: {
-                              ...prev.dateParams,
-                              min_date: String(min),
-                              max_date: String(max),
-                            },
-                            offset: 0,
-                          }))
-                        }
-                      />
-                    </React.Suspense>
-                  ) : s.viewMode === 'map' ? (
-                    <React.Suspense
-                      fallback={
-                        <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
-                          Loading map…
-                        </div>
-                      }
-                    >
-                      <SearchMapView
-                        cityDistribution={s.cityDistribution}
-                        onSelectCity={(city) =>
-                          s.handleFacetClick('', {
-                            type: 'selectFacet',
-                            facetKey: 'repository_city',
-                            value: city,
-                          })
-                        }
-                      />
-                    </React.Suspense>
-                  ) : s.viewMode === 'distribution' ? (
-                    <React.Suspense
-                      fallback={
-                        <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
-                          Loading charts…
-                        </div>
-                      }
-                    >
-                      <SearchDistributionPanel
-                        byDate={s.graphDistributionQuery.data?.facetDistribution?.date_min}
-                        byRepository={
-                          s.graphDistributionQuery.data?.facetDistribution?.repository_name
-                        }
-                        byHand={s.graphDistributionQuery.data?.facetDistribution?.hand_name}
-                        byComponentFeature={
-                          s.graphDistributionQuery.data?.facetDistribution?.component_features
-                        }
-                        isLoading={s.graphDistributionQuery.isFetching}
-                        errorMessage={
-                          s.graphDistributionQuery.isError
-                            ? 'Could not load distribution stats. Please retry by toggling the Charts view.'
-                            : null
-                        }
-                      />
-                    </React.Suspense>
-                  ) : (
-                    <SearchGrid
-                      results={s.filtered as Parameters<typeof SearchGrid>[0]['results']}
-                      resultType={s.resultType}
-                      highlightKeyword={s.submittedKeyword}
-                      isFetching={s.isFetching}
-                    />
-                  )
-                ) : (
-                  <section className="flex animate-[search-rise_0.4s_ease-out] flex-col items-center px-6 py-16 text-center">
-                    <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-border bg-muted/50 text-muted-foreground/70">
-                      <SearchX className="h-6 w-6" />
-                    </div>
-                    <h3 className="font-display text-2xl font-semibold tracking-tight text-foreground">
-                      Nothing in the archive matches
-                    </h3>
-                    <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                      {s.submittedKeyword
-                        ? `No ${typeLabel.toLowerCase()} matched “${s.submittedKeyword}”. Try a broader term or loosen the filters.`
-                        : `No ${typeLabel.toLowerCase()} matched the current filters.`}
-                    </p>
-                    <div className="ornament-divider mt-6 w-44 text-border" aria-hidden />
-                    <div className="mt-5 flex flex-wrap justify-center gap-2">
-                      {s.activeFilterCount > 0 && (
-                        <Button variant="outline" size="sm" onClick={s.handleClearAllFilters}>
-                          Clear all filters
-                        </Button>
-                      )}
-                      {s.submittedKeyword && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            s.setDraftKeyword('');
-                            s.setSubmittedKeyword('');
-                          }}
-                        >
-                          Clear keyword
-                        </Button>
-                      )}
-                    </div>
-                  </section>
-                )}
               </div>
-              {/* Pagination is a list-view concern only. The timeline, map and
-                  charts views are aggregate visualisations of the whole result
-                  set, so paging through them is meaningless. */}
-              {s.data.count > 0 && (s.viewMode === 'table' || s.viewMode === 'grid') && (
-                <div className="flex shrink-0 justify-center rounded-b-xl border-t border-border/80 bg-card px-3 py-1.5">
-                  <Pagination
-                    count={s.data.count}
-                    limit={s.queryState.limit}
-                    offset={s.queryState.offset}
-                    onPageChange={s.handlePage}
-                    onLimitChange={s.handleLimitChange}
+            )}
+            {/* Table view renders flush (its sticky header carries the divider);
+                the other views get their own padding. */}
+            <div className={cn('flex min-w-0 flex-col', s.viewMode !== 'table' && 'p-3')}>
+              {s.filtered.length > 0 ? (
+                s.viewMode === 'table' ? (
+                  <ResultsTable
+                    resultType={s.resultType}
+                    results={s.filtered as ResultListItem[]}
+                    ordering={s.data.ordering}
+                    onSort={s.handleSort}
+                    highlightKeyword={s.submittedKeyword}
+                    visibleColumns={s.categoryConfig.visibleColumns}
+                    isFetching={s.isFetching}
                   />
-                </div>
+                ) : s.viewMode === 'timeline' ? (
+                  <React.Suspense
+                    fallback={
+                      <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
+                        Loading timeline…
+                      </div>
+                    }
+                  >
+                    <SearchTimelineView
+                      dateDistribution={s.timelineDistribution}
+                      onApplyRange={(min, max) =>
+                        s.setQueryState((prev) => ({
+                          ...prev,
+                          dateParams: {
+                            ...prev.dateParams,
+                            min_date: String(min),
+                            max_date: String(max),
+                          },
+                          offset: 0,
+                        }))
+                      }
+                    />
+                  </React.Suspense>
+                ) : s.viewMode === 'map' ? (
+                  <React.Suspense
+                    fallback={
+                      <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
+                        Loading map…
+                      </div>
+                    }
+                  >
+                    <SearchMapView
+                      cityDistribution={s.cityDistribution}
+                      onSelectCity={(city) =>
+                        s.handleFacetClick('', {
+                          type: 'selectFacet',
+                          facetKey: 'repository_city',
+                          value: city,
+                        })
+                      }
+                    />
+                  </React.Suspense>
+                ) : s.viewMode === 'distribution' ? (
+                  <React.Suspense
+                    fallback={
+                      <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
+                        Loading charts…
+                      </div>
+                    }
+                  >
+                    <SearchDistributionPanel
+                      byDate={s.graphDistributionQuery.data?.facetDistribution?.date_min}
+                      byRepository={
+                        s.graphDistributionQuery.data?.facetDistribution?.repository_name
+                      }
+                      byHand={s.graphDistributionQuery.data?.facetDistribution?.hand_name}
+                      byComponentFeature={
+                        s.graphDistributionQuery.data?.facetDistribution?.component_features
+                      }
+                      isLoading={s.graphDistributionQuery.isFetching}
+                      errorMessage={
+                        s.graphDistributionQuery.isError
+                          ? 'Could not load distribution stats. Please retry by toggling the Charts view.'
+                          : null
+                      }
+                    />
+                  </React.Suspense>
+                ) : (
+                  <SearchGrid
+                    results={s.filtered as Parameters<typeof SearchGrid>[0]['results']}
+                    resultType={s.resultType}
+                    highlightKeyword={s.submittedKeyword}
+                    isFetching={s.isFetching}
+                  />
+                )
+              ) : (
+                <section className="flex animate-[search-rise_0.4s_ease-out] flex-col items-center px-6 py-16 text-center">
+                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-border bg-muted/50 text-muted-foreground/70">
+                    <SearchX className="h-6 w-6" />
+                  </div>
+                  <h3 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+                    Nothing in the archive matches
+                  </h3>
+                  <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+                    {s.submittedKeyword
+                      ? `No ${typeLabel.toLowerCase()} matched “${s.submittedKeyword}”. Try a broader term or loosen the filters.`
+                      : `No ${typeLabel.toLowerCase()} matched the current filters.`}
+                  </p>
+                  <div className="ornament-divider mt-6 w-44 text-border" aria-hidden />
+                  <div className="mt-5 flex flex-wrap justify-center gap-2">
+                    {s.activeFilterCount > 0 && (
+                      <Button variant="outline" size="sm" onClick={s.handleClearAllFilters}>
+                        Clear all filters
+                      </Button>
+                    )}
+                    {s.submittedKeyword && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          s.setDraftKeyword('');
+                          s.setSubmittedKeyword('');
+                        }}
+                      >
+                        Clear keyword
+                      </Button>
+                    )}
+                  </div>
+                </section>
               )}
             </div>
+            {/* Pagination follows directly after the results list (table/grid
+                only — the aggregate views have nothing to page through). */}
+            {s.data.count > 0 && (s.viewMode === 'table' || s.viewMode === 'grid') && (
+              <div className="flex justify-center border-t border-border/70 bg-card px-3 py-2">
+                <Pagination
+                  count={s.data.count}
+                  limit={s.queryState.limit}
+                  offset={s.queryState.offset}
+                  onPageChange={s.handlePage}
+                  onLimitChange={s.handleLimitChange}
+                />
+              </div>
+            )}
           </div>
         </main>
       </div>

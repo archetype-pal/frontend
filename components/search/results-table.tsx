@@ -636,7 +636,9 @@ function ResultsTableComponent<K extends ResultType>({
     // header anchor to the window; it sticks just below the site header.
     <div className="relative overflow-visible [&>div]:overflow-visible">
       <Table>
-        <TableHeader className="[&_th]:sticky [&_th]:top-[var(--site-header-h,0px)] [&_th]:z-10 [&_th]:bg-secondary [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-muted-foreground [&_th]:shadow-[inset_0_-1px_0_var(--border)]">
+        {/* `[&_tr]:border-b-0` cancels the primitive's row border so the only
+            divider is the th's sticky inset border (single line under the head). */}
+        <TableHeader className="[&_tr]:border-b-0 [&_th]:sticky [&_th]:top-[var(--site-header-h,0px)] [&_th]:z-10 [&_th]:bg-secondary [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-muted-foreground [&_th]:shadow-[inset_0_-1px_0_var(--border)]">
           <TableRow>
             {hasSubRow && <TableHead className="w-16" />}
             {cols.map((col) => (
