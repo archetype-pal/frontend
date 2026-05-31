@@ -3,23 +3,23 @@
 _Status: proposal / input for the next revamp. Written 2026‑05‑31 after the
 scriptorial reskin + clutter‑removal passes._
 
-> **Implementation status (2026‑05‑31): all three phases below have shipped.**
+> **Implementation status (2026‑05‑31).**
 >
-> - **Phase 1** — visible view‑switcher (`view-switcher.tsx`), sticky
+> - **Phase 1 (shipped)** — visible view‑switcher (`view-switcher.tsx`), sticky
 >   active‑filters bar, progressive‑disclosure rail. (A separate cross‑view sort
 >   menu was added then removed on feedback — clicking a column header already
 >   sorts, and a second control was redundant clutter.)
-> - **Phase 2** — unified keyword search in the header (`search-keyword-bar.tsx`),
->   rail keyword removed, desktop nav search collapsed on `/search`, Date pinned.
-> - **Phase 3** — zero‑query browse landing (`search-landing.tsx`), collapsible
->   and persisted (collapsed by default in the table view so researchers get a
->   clean interface). The table list view is the dense spreadsheet
->   (`results-table.tsx`) with a sticky column header.
+> - **Phase 2 (shipped)** — unified keyword search in the header
+>   (`search-keyword-bar.tsx`), rail keyword removed, desktop nav search
+>   collapsed on `/search`, Date pinned.
+> - **Phase 3 (built, then removed on feedback)** — the zero‑query browse landing
+>   and the identity‑first media‑row list with its density toggle were both
+>   built and then removed. Researchers want maximum space for results and a
+>   clean, single-purpose interface, so the table list view is simply the dense
+>   spreadsheet (`results-table.tsx`) with a sticky column header, and there is
+>   no browse panel above the results.
 >
-> The identity‑first media‑row list (P3 of the rationale below) was built and
-> then **removed on review feedback** — researchers preferred the clean
-> spreadsheet, so the media‑row form and its density toggle were dropped. The
-> mobile keyword flow (the filter sheet's own keyword box) was intentionally
+> The mobile keyword flow (the filter sheet's own keyword box) was intentionally
 > left as‑is and is the one remaining unification opportunity. The sections below
 > are kept as the original design rationale.
 
