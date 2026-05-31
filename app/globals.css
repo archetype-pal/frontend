@@ -375,6 +375,31 @@
   }
 }
 
+/* Indeterminate loading sweep — a gold band travelling across a thin rail,
+   used by the search results header while a query is in flight. */
+@keyframes search-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(420%);
+  }
+}
+
+/* Staggered reveal for search result rows/cards on first paint. */
+@keyframes search-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-fade-up {
   animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

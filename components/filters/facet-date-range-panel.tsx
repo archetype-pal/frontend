@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { ChevronDown, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
@@ -141,25 +142,29 @@ export function FacetDateRangePanel({
   }, [sliderValue, precision, year, handleSearchSubmit]);
 
   return (
-    <div id={id} className="border bg-white rounded shadow-sm">
-      <div className="border-b px-4 py-2 flex items-center justify-between">
-        <h4 className="text-sm font-semibold">{title}</h4>
-        <button
-          aria-label={expanded ? 'Collapse panel' : 'Expand panel'}
-          onClick={() => setExpanded((prev) => !prev)}
-        >
-          {expanded ? (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+    <div id={id} className="overflow-hidden rounded-lg border border-border/60 bg-card/50">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-label={expanded ? 'Collapse panel' : 'Expand panel'}
+        onClick={() => setExpanded((prev) => !prev)}
+        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
+      >
+        <h4 className="font-serif text-[13px] font-semibold tracking-tight text-foreground">
+          {title}
+        </h4>
+        <ChevronDown
+          className={cn(
+            'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+            expanded ? 'rotate-0' : '-rotate-90'
           )}
-        </button>
-      </div>
+        />
+      </button>
 
       {expanded && (
-        <div className="p-4 space-y-4 max-h-48 overflow-y-auto">
+        <div className="max-h-56 space-y-4 overflow-y-auto border-t border-border/50 p-3">
           <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               value={searchInput}
               onChange={handleSearchChange}

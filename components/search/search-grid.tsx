@@ -115,75 +115,69 @@ const MediaGridCard = React.memo(function MediaGridCard({
   item,
   itemType,
 }: MediaGridCardProps) {
+  const renderLink = (children: React.ReactNode, className: string) =>
+    graphItem ? (
+      <GraphDetailLink graph={graphItem} className={className}>
+        {children}
+      </GraphDetailLink>
+    ) : (
+      <Link href={detailUrl ?? '#'} className={className}>
+        {children}
+      </Link>
+    );
+
+  const image = (
+    <IiifImage
+      src={imageUrl ?? ''}
+      alt={displayText}
+      fill
+      className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
+      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+    />
+  );
+
   return (
-    <div className="relative overflow-hidden group">
-      <div className="relative aspect-4/3 bg-white overflow-hidden">
+    <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
+      <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
         {imageUrl ? (
           <>
-            {graphItem ? (
-              <GraphDetailLink
-                graph={graphItem}
-                className="block w-full h-full relative z-0 pointer-events-auto"
-              >
-                <IiifImage
-                  src={imageUrl}
-                  alt={displayText}
-                  fill
-                  className="object-contain transition-transform duration-300 group-hover:scale-105"
-                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
-                />
-              </GraphDetailLink>
-            ) : (
-              <Link
-                href={detailUrl ?? '#'}
-                className="block w-full h-full relative z-0 pointer-events-auto"
-              >
-                <IiifImage
-                  src={imageUrl}
-                  alt={displayText}
-                  fill
-                  className="object-contain transition-transform duration-300 group-hover:scale-105"
-                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
-                />
-              </Link>
-            )}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
-            <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
-              <div className="font-medium truncate text-xs">
-                <Highlight
-                  text={displayText}
-                  keyword={highlightKeyword}
-                  formattedText={formattedDisplayText}
-                />
-              </div>
-              {annotationCount != null && (
-                <div className="text-xs text-white/80 mt-0.5">
-                  <Highlight text={`${annotationCount} Annotations`} keyword={highlightKeyword} />
-                </div>
-              )}
-            </div>
+            {renderLink(image, 'block h-full w-full')}
+            <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
           </>
-        ) : graphItem ? (
-          <GraphDetailLink
-            graph={graphItem}
-            className="bg-gray-100 w-full h-full flex items-center justify-center text-sm text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            {loadingFallback}
-          </GraphDetailLink>
         ) : (
-          <div className="bg-gray-100 w-full h-full flex items-center justify-center text-sm text-gray-400">
-            {loadingFallback}
-          </div>
+          renderLink(
+            <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+              {loadingFallback}
+            </span>,
+            'block h-full w-full'
+          )
         )}
-        <div className="absolute top-2 right-2 z-30 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute right-2 top-2 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           <OpenLightboxButton
             item={item}
             variant="ghost"
             size="icon"
-            className="bg-white/90 hover:bg-white h-7 w-7"
+            className="h-7 w-7 bg-card/90 shadow-sm hover:bg-card"
           />
           <CollectionStar itemId={item.id} itemType={itemType} item={item} />
         </div>
+      </div>
+      <div className="border-t border-border/70 px-2.5 py-1.5">
+        {renderLink(
+          <span className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
+            <Highlight
+              text={displayText}
+              keyword={highlightKeyword}
+              formattedText={formattedDisplayText}
+            />
+          </span>,
+          'block'
+        )}
+        {annotationCount != null && (
+          <span className="mt-0.5 block text-[11px] tabular-nums text-muted-foreground">
+            {annotationCount.toLocaleString()} annotation{annotationCount === 1 ? '' : 's'}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -232,42 +226,45 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   formattedDisplayText?: string;
   highlightKeyword: string;
 }) {
+  const meta = [item.type, item.date].filter(Boolean).join(' · ');
   return (
-    <div className="relative overflow-hidden group">
-      <div className="relative aspect-4/3 bg-white overflow-hidden">
-        <Link href={detailUrl} className="block w-full h-full relative z-0">
+    <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
+      <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
+        <Link href={detailUrl} className="block h-full w-full">
           {imageUrl ? (
             <IiifImage
               src={imageUrl}
               alt={displayText}
               fill
-              className="object-contain transition-transform duration-300 group-hover:scale-105"
+              className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
               sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
             />
           ) : (
-            <div className="bg-gray-100 w-full h-full flex items-center justify-center text-sm text-gray-400">
+            <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
               No Image
-            </div>
+            </span>
           )}
         </Link>
         {imageUrl && (
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
+          <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
         )}
-        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
-          <div className="font-medium truncate text-xs">
+      </div>
+      <div className="border-t border-border/70 px-2.5 py-1.5">
+        <Link href={detailUrl} className="block">
+          <span className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
             <Highlight
               text={displayText}
               keyword={highlightKeyword}
               formattedText={formattedDisplayText}
             />
-          </div>
-          <div className="text-xs text-white/80 mt-0.5 truncate">
-            {[item.type, item.date].filter(Boolean).join(' · ') || '—'}
-          </div>
+          </span>
+        </Link>
+        <div className="mt-0.5 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+          <span className="truncate">{meta || '—'}</span>
           {item.number_of_images > 0 && (
-            <div className="text-xs text-white/60 mt-0.5">
-              {item.number_of_images} image{item.number_of_images !== 1 ? 's' : ''}
-            </div>
+            <span className="shrink-0 tabular-nums">
+              {item.number_of_images} img{item.number_of_images !== 1 ? 's' : ''}
+            </span>
           )}
         </div>
       </div>
@@ -330,7 +327,7 @@ function SearchGridComponent({
     (card: GridCard) => {
       const canCompare = resultType === 'manuscripts' || resultType === 'graphs';
       const compareControl = canCompare ? (
-        <label className="absolute top-2 left-2 z-30 inline-flex items-center gap-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px]">
+        <label className="absolute left-2 top-2 z-30 inline-flex items-center gap-1 rounded bg-card/90 px-1.5 py-0.5 text-[10px] shadow-sm">
           <input
             type="checkbox"
             checked={compareSelection.map(String).includes(String(card.item.id))}
@@ -390,7 +387,7 @@ function SearchGridComponent({
   );
 
   if (!results.length) {
-    return <div className="text-center text-gray-500 py-10">No results to display.</div>;
+    return <div className="py-10 text-center text-muted-foreground">No results to display.</div>;
   }
 
   const flatCards = cards.map(({ card }) => card).filter((card): card is GridCard => card != null);

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import type { FacetListItem } from '@/types/facets';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -81,31 +81,38 @@ export function FacetTreePanel({
   const showSparklines = filteredTree.length >= 1 && maxCount > 0;
 
   return (
-    <div className="border bg-white rounded-lg shadow-sm" id={`panel-${id}`}>
-      <div className="border-b px-4 py-2 flex items-center justify-between">
-        <h4 className="text-sm font-semibold leading-tight">
+    <div
+      className="overflow-hidden rounded-lg border border-border/60 bg-card/50"
+      id={`panel-${id}`}
+    >
+      <button
+        type="button"
+        onClick={() => setIsExpanded((prev) => !prev)}
+        aria-expanded={isExpanded}
+        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
+      >
+        <h4 className="flex items-baseline gap-1.5 font-serif text-[13px] font-semibold leading-tight tracking-tight text-foreground">
           {title}
-          {total !== undefined && <span className="ml-1 text-muted-foreground">({total})</span>}
+          {total !== undefined && (
+            <span className="text-[11px] font-normal tabular-nums text-muted-foreground/70">
+              {total}
+            </span>
+          )}
           {selectedCount > 0 && (
-            <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+            <span className="rounded-full border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
               {selectedCount} selected
             </span>
           )}
         </h4>
-        <button
-          type="button"
-          onClick={() => setIsExpanded((prev) => !prev)}
-          aria-label={isExpanded ? 'Collapse' : 'Expand'}
-        >
-          {isExpanded ? (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        <ChevronDown
+          className={cn(
+            'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+            isExpanded ? 'rotate-0' : '-rotate-90'
           )}
-        </button>
-      </div>
+        />
+      </button>
       {isExpanded && (
-        <div className="max-h-72 overflow-y-auto px-2 py-2 space-y-2">
+        <div className="max-h-72 space-y-2 overflow-y-auto border-t border-border/50 px-2 py-2">
           <p className="px-1 text-[11px] text-muted-foreground">
             Select one or more feature combinations. Matching records must include all selected
             features.
@@ -113,8 +120,8 @@ export function FacetTreePanel({
           <Input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.currentTarget.value)}
-            placeholder="Filter components or features..."
-            className="h-8"
+            placeholder="Filter components or features…"
+            className="h-8 bg-background/60 text-[13px]"
             aria-label={`Search ${title} tree`}
           />
           {filteredTree.length === 0 && (
@@ -125,17 +132,28 @@ export function FacetTreePanel({
           {filteredTree.map((node) => {
             const nodeExpanded = expandedNodes[node.component] ?? true;
             return (
-              <div key={node.component} className="rounded border border-muted">
+              <div
+                key={node.component}
+                className="overflow-hidden rounded-md border border-border/50 bg-background/40"
+              >
                 <button
                   type="button"
                   aria-expanded={nodeExpanded}
-                  className="w-full px-2 py-1 text-left text-xs font-semibold flex items-center justify-between"
+                  className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-xs font-semibold transition-colors hover:bg-muted/50"
                   onClick={() =>
                     setExpandedNodes((prev) => ({ ...prev, [node.component]: !nodeExpanded }))
                   }
                 >
-                  <span className="truncate">{node.component}</span>
-                  <span className="text-muted-foreground">{node.total}</span>
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <ChevronDown
+                      className={cn(
+                        'h-3 w-3 shrink-0 text-muted-foreground transition-transform duration-200',
+                        nodeExpanded ? 'rotate-0' : '-rotate-90'
+                      )}
+                    />
+                    <span className="truncate">{node.component}</span>
+                  </span>
+                  <span className="tabular-nums text-muted-foreground">{node.total}</span>
                 </button>
                 {nodeExpanded && (
                   <ul className="pb-1">
@@ -147,18 +165,25 @@ export function FacetTreePanel({
                             type="button"
                             aria-pressed={isSelected}
                             className={cn(
-                              'w-full px-3 py-1 text-left text-xs flex items-center justify-between hover:bg-muted',
-                              isSelected && 'bg-muted font-semibold'
+                              'relative flex w-full items-center justify-between gap-2 px-3 py-1 text-left text-xs transition-colors',
+                              isSelected
+                                ? 'bg-accent/10 font-semibold text-foreground before:absolute before:inset-y-0.5 before:left-0 before:w-0.5 before:rounded-full before:bg-accent'
+                                : 'hover:bg-muted/60'
                             )}
                             onClick={() => onSelect(child.value, isSelected)}
                           >
                             <span className="truncate">{child.label}</span>
-                            <span className="inline-flex items-center gap-2">
-                              <span className="text-muted-foreground">{child.count}</span>
+                            <span className="inline-flex shrink-0 items-center gap-2">
+                              <span className="tabular-nums text-muted-foreground">
+                                {child.count}
+                              </span>
                               {showSparklines && (
-                                <span className="h-1.5 w-12 rounded-full bg-muted overflow-hidden">
+                                <span className="h-1 w-12 overflow-hidden rounded-full bg-foreground/10">
                                   <span
-                                    className="block h-full bg-primary/60"
+                                    className={cn(
+                                      'block h-full rounded-full',
+                                      isSelected ? 'bg-accent' : 'bg-primary/40'
+                                    )}
                                     style={{
                                       width: `${Math.max(5, Math.round((child.count / maxCount) * 100))}%`,
                                     }}

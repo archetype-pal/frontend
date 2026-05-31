@@ -68,7 +68,7 @@ export function SearchDistributionPanel({
 }: SearchDistributionPanelProps) {
   if (isLoading) {
     return (
-      <section className="rounded-lg border bg-white p-4">
+      <section className="rounded-lg border bg-card p-4">
         <h3 className="text-sm font-semibold mb-3">Allograph Distribution</h3>
         <p className="text-xs text-muted-foreground mb-3">Loading chart summaries...</p>
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 animate-pulse">
@@ -87,7 +87,7 @@ export function SearchDistributionPanel({
 
   if (errorMessage) {
     return (
-      <section className="rounded-lg border bg-white p-6 text-center">
+      <section className="rounded-lg border bg-card p-6 text-center">
         <h3 className="text-sm font-semibold">Distribution unavailable</h3>
         <p className="mt-1 text-xs text-muted-foreground">{errorMessage}</p>
       </section>
@@ -95,7 +95,7 @@ export function SearchDistributionPanel({
   }
 
   return (
-    <section className="rounded-lg border bg-white p-4">
+    <section className="rounded-lg border bg-card p-4">
       <h3 className="text-sm font-semibold mb-1">Allograph Distribution</h3>
       <p className="text-xs text-muted-foreground mb-3">
         Summary charts for the active graph filters and keyword query.

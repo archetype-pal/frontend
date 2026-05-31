@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Ban, ChevronDown, ChevronRight } from 'lucide-react';
+import { Ban, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import type { FacetListItem } from '@/types/facets';
@@ -82,28 +82,39 @@ export function FacetPanel({
   };
 
   return (
-    <div className="border bg-white rounded shadow-sm" id={`panel-${id}`}>
-      <div className="border-b px-4 py-2 flex items-center justify-between">
-        <h4 className="text-sm font-semibold">
+    <div
+      className="overflow-hidden rounded-lg border border-border/60 bg-card/50 transition-colors"
+      id={`panel-${id}`}
+    >
+      <button
+        type="button"
+        onClick={() => setIsExpanded((prev) => !prev)}
+        aria-expanded={isExpanded}
+        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
+      >
+        <h4 className="flex items-baseline gap-1.5 font-serif text-[13px] font-semibold tracking-tight text-foreground">
           {title}
-          {total !== undefined && <span className="ml-1 text-muted-foreground">({total})</span>}
-        </h4>
-        <button
-          onClick={() => setIsExpanded((prev) => !prev)}
-          aria-label={isExpanded ? 'Collapse' : 'Expand'}
-        >
-          {isExpanded ? (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          {total !== undefined && (
+            <span className="text-[11px] font-normal tabular-nums text-muted-foreground/70">
+              {total}
+            </span>
           )}
-        </button>
-      </div>
-      {showSort && (
-        <div className="text-xs text-gray-500 px-4 py-2 flex justify-between border-b">
+        </h4>
+        <ChevronDown
+          className={cn(
+            'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+            isExpanded ? 'rotate-0' : '-rotate-90'
+          )}
+        />
+      </button>
+      {isExpanded && showSort && (
+        <div className="flex justify-between border-t border-border/50 px-3 py-1.5 text-[11px] text-muted-foreground">
           <button
             onClick={() => setSortBy((prev) => (prev === 'name-asc' ? 'name-desc' : 'name-asc'))}
-            className={cn((sortBy === 'name-asc' || sortBy === 'name-desc') && 'font-semibold')}
+            className={cn(
+              'rounded px-1 transition-colors hover:text-foreground',
+              (sortBy === 'name-asc' || sortBy === 'name-desc') && 'font-semibold text-foreground'
+            )}
           >
             {sortBy === 'name-desc' ? 'Z–A' : 'A–Z'}
           </button>
@@ -111,67 +122,79 @@ export function FacetPanel({
             onClick={() =>
               setSortBy((prev) => (prev === 'count-desc' ? 'count-asc' : 'count-desc'))
             }
-            className={cn((sortBy === 'count-desc' || sortBy === 'count-asc') && 'font-semibold')}
+            className={cn(
+              'rounded px-1 transition-colors hover:text-foreground',
+              (sortBy === 'count-desc' || sortBy === 'count-asc') && 'font-semibold text-foreground'
+            )}
           >
             {sortBy === 'count-asc' ? 'Count ↑' : 'Count ↓'}
           </button>
         </div>
       )}
       {isExpanded && (
-        <div className="max-h-48 overflow-y-auto">
+        <div className="max-h-56 overflow-y-auto border-t border-border/50">
           <div className="p-2 pb-0">
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={`Search ${title.toLowerCase()}...`}
-              className="h-8"
+              placeholder={`Search ${title.toLowerCase()}…`}
+              className="h-8 bg-background/60 text-[13px]"
               aria-label={`Search ${title} facets`}
             />
           </div>
-          <ul className="p-2 space-y-2 text-sm">
-            {visibleItems.map((item) => (
-              <li key={item.value} className="flex items-stretch gap-0.5">
-                <button
-                  type="button"
-                  onClick={() => handleSelect(item)}
-                  aria-label={`${item.label}, ${item.count}`}
-                  className={cn(
-                    'min-w-0 flex-1 text-left flex justify-between items-center px-2 py-1 rounded hover:bg-muted transition-colors gap-2',
-                    selectedValue === item.value && 'bg-muted font-semibold'
-                  )}
-                >
-                  <span className="truncate min-w-0 flex-1">{item.label}</span>
-                  <span className="inline-flex items-center gap-2 shrink-0">
-                    <span className="text-muted-foreground">{item.count}</span>
-                    {showSparklines && (
-                      <span className="h-1.5 w-14 rounded-full bg-muted overflow-hidden">
-                        <span
-                          className="block h-full bg-primary/60"
-                          style={{
-                            width: `${Math.max(5, Math.round((item.count / maxCount) * 100))}%`,
-                          }}
-                        />
-                      </span>
-                    )}
-                  </span>
-                </button>
-                {onExclude && (
+          <ul className="space-y-0.5 p-2 text-[13px]">
+            {visibleItems.map((item) => {
+              const isSelected = selectedValue === item.value;
+              return (
+                <li key={item.value} className="flex items-stretch gap-0.5">
                   <button
                     type="button"
-                    title="Exclude this value"
-                    aria-label={`Exclude ${item.label}`}
-                    className="shrink-0 self-center rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onExclude(item.value);
-                    }}
+                    onClick={() => handleSelect(item)}
+                    aria-label={`${item.label}, ${item.count}`}
+                    aria-pressed={isSelected}
+                    className={cn(
+                      'group relative flex min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-2 py-1 text-left transition-colors',
+                      isSelected
+                        ? 'bg-accent/10 font-semibold text-foreground before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:rounded-full before:bg-accent'
+                        : 'hover:bg-muted/60'
+                    )}
                   >
-                    <Ban className="h-3.5 w-3.5" />
+                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    <span className="inline-flex shrink-0 items-center gap-2">
+                      <span className="tabular-nums text-muted-foreground">{item.count}</span>
+                      {showSparklines && (
+                        <span className="h-1 w-12 overflow-hidden rounded-full bg-foreground/10">
+                          <span
+                            className={cn(
+                              'block h-full rounded-full',
+                              isSelected ? 'bg-accent' : 'bg-primary/40'
+                            )}
+                            style={{
+                              width: `${Math.max(5, Math.round((item.count / maxCount) * 100))}%`,
+                            }}
+                          />
+                        </span>
+                      )}
+                    </span>
                   </button>
-                )}
-              </li>
-            ))}
+                  {onExclude && (
+                    <button
+                      type="button"
+                      title="Exclude this value"
+                      aria-label={`Exclude ${item.label}`}
+                      className="shrink-0 self-center rounded p-1 text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onExclude(item.value);
+                      }}
+                    >
+                      <Ban className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </li>
+              );
+            })}
             {visibleItems.length === 0 && (
               <li className="px-2 py-1 text-xs text-muted-foreground">No matching facet values.</li>
             )}
@@ -180,7 +203,7 @@ export function FacetPanel({
             <div className="px-2 pb-2">
               <button
                 type="button"
-                className="w-full rounded border border-dashed px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+                className="w-full rounded-md border border-dashed border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-border hover:text-foreground"
                 onClick={() => setExpandedList((prev) => !prev)}
               >
                 {expandedList

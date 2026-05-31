@@ -47,7 +47,7 @@ export function SearchMapView({ cityDistribution = {}, onSelectCity }: SearchMap
 
   if (entries.length === 0) {
     return (
-      <section className="rounded-lg border bg-white p-6">
+      <section className="rounded-lg border bg-card p-6">
         <h3 className="text-sm font-semibold">Repository Map</h3>
         <p className="mt-2 text-sm text-muted-foreground">
           No repository city data for this selection.
@@ -57,7 +57,7 @@ export function SearchMapView({ cityDistribution = {}, onSelectCity }: SearchMap
   }
 
   return (
-    <section className="rounded-lg border bg-white p-3 md:p-4">
+    <section className="rounded-lg border bg-card p-3 md:p-4">
       <h3 className="text-sm font-semibold mb-3">Repository Map</h3>
       <div className="h-[340px] w-full overflow-hidden rounded-md border">
         <MapContainer center={[54.8, -2.0]} zoom={6} scrollWheelZoom className="h-full w-full">

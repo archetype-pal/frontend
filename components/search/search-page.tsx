@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, SearchX } from 'lucide-react';
 import { ResultsTable } from '@/components/search/results-table';
 import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';
@@ -49,7 +49,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      <header className="relative z-10 flex shrink-0 items-center gap-2 border-b border-primary-foreground/15 bg-primary text-primary-foreground px-3 py-2 shadow-sm sm:gap-3 sm:px-4">
+      <header className="relative z-10 flex shrink-0 items-center gap-3 border-b border-border bg-card px-3 py-2.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-transparent after:via-accent/50 after:to-transparent sm:gap-4 sm:px-5">
         <h1 className="sr-only">
           {`Search ${typeLabel}: ${s.resultCount.toLocaleString()} results`}
         </h1>
@@ -57,12 +57,17 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           className="shrink-0"
           title={`${typeLabel} — ${s.resultCount.toLocaleString()} results`}
         >
-          <div className="flex items-baseline gap-1.5 whitespace-nowrap sm:gap-2">
-            <span className="text-lg font-bold tabular-nums tracking-tight sm:text-2xl text-white">
+          <div className="flex items-baseline gap-2 whitespace-nowrap">
+            <span className="font-display text-[1.65rem] font-semibold leading-none tracking-tight tabular-nums text-primary sm:text-[2.4rem]">
               {s.resultCount.toLocaleString()}
             </span>
-            <span className="max-w-[min(28vw,9rem)] truncate text-xs text-primary-foreground/70 sm:max-w-none sm:text-sm">
-              results in {typeLabel}
+            <span className="flex max-w-[min(30vw,10rem)] flex-col leading-tight sm:max-w-none">
+              <span className="truncate font-serif text-xs font-medium tracking-tight text-foreground/80 sm:text-sm">
+                {typeLabel}
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+                results
+              </span>
             </span>
           </div>
         </div>
@@ -79,7 +84,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             type="button"
             variant="ghost"
             size="icon"
-            className="hidden h-9 w-9 shrink-0 md:inline-flex text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
+            className="hidden h-9 w-9 shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground md:inline-flex"
             aria-label={s.filtersSidebarCollapsed ? 'Show filters panel' : 'Hide filters panel'}
             title={s.filtersSidebarCollapsed ? 'Show filters (Alt+F)' : 'Hide filters (Alt+F)'}
             onClick={s.toggleFiltersSidebar}
@@ -203,17 +208,19 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           id="search-filters-aside"
           aria-hidden={s.filtersSidebarCollapsed}
           className={cn(
-            'hidden border-r bg-card transition-[width,opacity,border-color] duration-200 ease-out md:flex md:flex-col',
+            'hidden border-r border-border bg-background transition-[width,opacity,border-color] duration-200 ease-out md:flex md:flex-col',
             s.filtersSidebarCollapsed
               ? 'md:pointer-events-none md:w-0 md:min-w-0 md:overflow-hidden md:border-transparent md:p-0 md:opacity-0'
               : 'md:w-64 md:shrink-0 md:overflow-y-auto md:px-3 md:py-3'
           )}
         >
-          <div className="sticky top-0 z-[1] -mx-3 mb-2 flex items-center justify-between gap-2 border-b border-border/60 bg-card px-3 pb-2 pt-0">
-            <h2 className="text-sm font-semibold">
-              Filters
+          <div className="sticky top-0 z-[1] -mx-3 mb-2 flex items-center justify-between gap-2 border-b border-border/70 bg-background px-3 pb-2 pt-0">
+            <h2 className="flex items-center font-serif text-sm font-semibold tracking-tight text-foreground">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Filters
+              </span>
               {s.activeFilterCount > 0 && (
-                <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                <span className="ml-2 rounded-full border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-foreground">
                   {s.activeFilterCount}
                 </span>
               )}
@@ -259,8 +266,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           >
             <div className="flex min-h-0 flex-col rounded-xl border border-border/80 bg-card shadow-sm">
               {s.isFetching && !s.isLoading && (
-                <div className="h-1 w-full shrink-0 overflow-hidden rounded-t-xl bg-muted">
-                  <div className="h-full w-1/3 animate-pulse bg-primary/60" />
+                <div className="h-0.5 w-full shrink-0 overflow-hidden rounded-t-xl">
+                  <div className="h-full w-1/3 animate-[search-sweep_1.1s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-accent to-transparent" />
                 </div>
               )}
               <div className="flex min-w-0 flex-col gap-3 p-3">
@@ -363,14 +370,20 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     />
                   )
                 ) : (
-                  <section className="py-10 text-center">
-                    <h3 className="text-base font-semibold">No results found</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
+                  <section className="flex animate-[search-rise_0.4s_ease-out] flex-col items-center px-6 py-16 text-center">
+                    <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-border bg-muted/50 text-muted-foreground/70">
+                      <SearchX className="h-6 w-6" />
+                    </div>
+                    <h3 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+                      Nothing in the archive matches
+                    </h3>
+                    <p className="mt-2 max-w-sm text-sm text-muted-foreground">
                       {s.submittedKeyword
-                        ? `No ${typeLabel.toLowerCase()} matched "${s.submittedKeyword}".`
+                        ? `No ${typeLabel.toLowerCase()} matched “${s.submittedKeyword}”. Try a broader term or loosen the filters.`
                         : `No ${typeLabel.toLowerCase()} matched the current filters.`}
                     </p>
-                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    <div className="ornament-divider mt-6 w-44 text-border" aria-hidden />
+                    <div className="mt-5 flex flex-wrap justify-center gap-2">
                       {s.activeFilterCount > 0 && (
                         <Button variant="outline" size="sm" onClick={s.handleClearAllFilters}>
                           Clear all filters

@@ -130,7 +130,7 @@ function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
         height={80}
         className="w-full h-full object-contain"
       />
-      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
+      <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/[0.05] transition-colors duration-200 pointer-events-none z-10" />
       <CollectionStar itemId={graph.id} itemType="graph" item={graph} size={16} />
     </div>
   );
@@ -213,7 +213,7 @@ export const COLUMNS = {
               height={64}
               className="h-full w-auto object-contain"
             />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 pointer-events-none z-10" />
+            <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/[0.05] transition-colors duration-200 pointer-events-none z-10" />
             <CollectionStar itemId={i.id} itemType="image" item={i} size={16} />
           </div>
         );
@@ -742,7 +742,7 @@ function ResultsTableComponent<K extends ResultType>({
       className={`relative rounded-lg border border-border bg-card ${scrollContainerRef ? 'overflow-visible' : 'overflow-auto'}`}
     >
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-muted/40 [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-muted-foreground">
           <TableRow>
             {canCompare && <TableHead className="w-10">Cmp</TableHead>}
             {hasSubRow && <TableHead className="w-16" />}

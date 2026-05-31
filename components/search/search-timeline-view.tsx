@@ -32,7 +32,7 @@ export function SearchTimelineView({ dateDistribution, onApplyRange }: SearchTim
 
   if (buckets.length === 0) {
     return (
-      <section className="rounded-lg border bg-white p-6 text-center">
+      <section className="rounded-lg border bg-card p-6 text-center">
         <h3 className="text-sm font-semibold">Timeline unavailable</h3>
         <p className="mt-1 text-xs text-muted-foreground">
           No date distribution is available for the current result set. Try broadening filters.
@@ -42,7 +42,7 @@ export function SearchTimelineView({ dateDistribution, onApplyRange }: SearchTim
   }
 
   return (
-    <section className="rounded-lg border bg-white p-4">
+    <section className="rounded-lg border bg-card p-4">
       <h3 className="text-sm font-semibold mb-1">Timeline (by decade)</h3>
       <p className="text-xs text-muted-foreground mb-3">
         Click a decade bar to apply a date range filter for that decade.

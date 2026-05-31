@@ -169,7 +169,7 @@ export function KeywordSearchInput({
 
   return (
     <div className={className ? `relative ${className}` : 'relative'}>
-      <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
       {onExactPhraseChange && (
         <button
           type="button"
@@ -213,7 +213,7 @@ export function KeywordSearchInput({
       {showDropdown && (
         <ul
           id="keyword-suggestions"
-          className="absolute z-10 bg-white border border-gray-200 text-gray-900 mt-1 w-full max-h-40 overflow-auto rounded-md shadow-md"
+          className="absolute z-10 mt-1 max-h-40 w-full overflow-auto rounded-md border border-border bg-popover text-popover-foreground shadow-md"
           role="listbox"
           aria-live="polite"
         >
@@ -227,7 +227,7 @@ export function KeywordSearchInput({
                   key={item.id}
                   role="option"
                   aria-selected={false}
-                  className="px-2 py-1 cursor-pointer text-gray-900 hover:bg-gray-100"
+                  className="cursor-pointer px-2 py-1 text-popover-foreground hover:bg-muted"
                   onClick={() => handleSuggestionClick(item)}
                 >
                   <span className="inline-flex items-center justify-between w-full gap-2">
@@ -269,8 +269,8 @@ export function KeywordSearchInput({
               role="option"
               aria-selected={i === selectedIndex}
               className={
-                'px-2 py-1 cursor-pointer text-gray-900 ' +
-                (i === selectedIndex ? 'bg-gray-200' : 'hover:bg-gray-100')
+                'cursor-pointer px-2 py-1 text-popover-foreground ' +
+                (i === selectedIndex ? 'bg-muted' : 'hover:bg-muted/60')
               }
               onMouseEnter={() => setSelectedIndex(i)}
               onMouseLeave={() => setSelectedIndex(-1)}
