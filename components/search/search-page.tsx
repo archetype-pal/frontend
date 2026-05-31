@@ -12,6 +12,7 @@ import { SearchActionsMenu } from '@/components/search/search-actions-menu';
 import { ViewSwitcher } from '@/components/search/view-switcher';
 import { SortMenu } from '@/components/search/sort-menu';
 import { SearchKeywordBar } from '@/components/search/search-keyword-bar';
+import { SearchLanding } from '@/components/search/search-landing';
 import { type ResultType } from '@/lib/search-types';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -281,6 +282,36 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 />
               </div>
             )}
+            {/* Zero-query browse landing — a guided way in (corpus summary +
+                browse-by chips) when nothing is searched or filtered yet. */}
+            {!s.submittedKeyword &&
+              s.activeFilterCount === 0 &&
+              s.queryState.offset === 0 &&
+              Object.keys(s.data.facets).length > 0 && (
+                <SearchLanding
+                  className="mb-3"
+                  totalCount={s.resultCount}
+                  typeLabel={typeLabel}
+                  enabledTypes={s.enabledCategories}
+                  countsByType={s.countsByType}
+                  facets={s.data.facets}
+                  dateDistribution={s.timelineDistribution}
+                  onSelectFacet={(facetKey, value) =>
+                    s.handleFacetClick('', { type: 'selectFacet', facetKey, value })
+                  }
+                  onApplyDateRange={(min, max) =>
+                    s.setQueryState((prev) => ({
+                      ...prev,
+                      dateParams: {
+                        ...prev.dateParams,
+                        min_date: String(min),
+                        max_date: String(max),
+                      },
+                      offset: 0,
+                    }))
+                  }
+                />
+              )}
             <div className="flex min-h-0 flex-col rounded-xl border border-border/80 bg-card shadow-sm">
               {s.isFetching && !s.isLoading && (
                 <div className="h-0.5 w-full shrink-0 overflow-hidden rounded-t-xl">
