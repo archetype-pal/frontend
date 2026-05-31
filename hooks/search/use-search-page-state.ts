@@ -67,14 +67,8 @@ export function useSearchPageState(initialType?: ResultType) {
 
   // --- Sub-hooks ---
 
-  const {
-    viewMode,
-    setViewMode,
-    density,
-    setDensity,
-    filtersSidebarCollapsed,
-    toggleFiltersSidebar,
-  } = useSearchViewMode(resultType);
+  const { viewMode, setViewMode, filtersSidebarCollapsed, toggleFiltersSidebar } =
+    useSearchViewMode(resultType);
 
   const {
     draftKeyword,
@@ -226,8 +220,6 @@ export function useSearchPageState(initialType?: ResultType) {
     // State
     viewMode,
     setViewMode,
-    density,
-    setDensity,
     resultType,
     queryState: queryHook.queryState,
     setQueryState: queryHook.setQueryState,

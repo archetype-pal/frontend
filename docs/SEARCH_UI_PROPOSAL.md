@@ -5,16 +5,21 @@ scriptorial reskin + clutter‑removal passes._
 
 > **Implementation status (2026‑05‑31): all three phases below have shipped.**
 >
-> - **Phase 1** — visible view‑switcher (`view-switcher.tsx`), cross‑view sort
->   (`sort-menu.tsx`), sticky active‑filters bar, progressive‑disclosure rail.
+> - **Phase 1** — visible view‑switcher (`view-switcher.tsx`), sticky
+>   active‑filters bar, progressive‑disclosure rail. (A separate cross‑view sort
+>   menu was added then removed on feedback — clicking a column header already
+>   sorts, and a second control was redundant clutter.)
 > - **Phase 2** — unified keyword search in the header (`search-keyword-bar.tsx`),
 >   rail keyword removed, desktop nav search collapsed on `/search`, Date pinned.
-> - **Phase 3** — zero‑query browse landing (`search-landing.tsx`) and
->   identity‑first media rows (`results-media-list.tsx`) behind a Comfortable /
->   Compact density toggle (`density-toggle.tsx`); the spreadsheet remains as
->   Compact.
+> - **Phase 3** — zero‑query browse landing (`search-landing.tsx`), collapsible
+>   and persisted (collapsed by default in the table view so researchers get a
+>   clean interface). The table list view is the dense spreadsheet
+>   (`results-table.tsx`) with a sticky column header.
 >
-> The mobile keyword flow (the filter sheet's own keyword box) was intentionally
+> The identity‑first media‑row list (P3 of the rationale below) was built and
+> then **removed on review feedback** — researchers preferred the clean
+> spreadsheet, so the media‑row form and its density toggle were dropped. The
+> mobile keyword flow (the filter sheet's own keyword box) was intentionally
 > left as‑is and is the one remaining unification opportunity. The sections below
 > are kept as the original design rationale.
 
