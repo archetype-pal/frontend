@@ -56,6 +56,14 @@ type DynamicFacetsProps = {
    * instead; the mobile sheet keeps its own tags.
    */
   hideActiveTags?: boolean;
+  /**
+   * Suppress the main keyword box. The desktop rail sets this because the page
+   * promotes a single keyword search into the header; the mobile sheet keeps
+   * its own keyword box.
+   */
+  hideKeyword?: boolean;
+  /** Id for the keyword input — distinct per instance to avoid id collisions. */
+  keywordInputId?: string;
 };
 
 export function DynamicFacets({
@@ -76,6 +84,8 @@ export function DynamicFacets({
   activeFilterCount = 0,
   density = 'default',
   hideActiveTags = false,
+  hideKeyword = false,
+  keywordInputId = 'search-keyword-input',
 }: DynamicFacetsProps) {
   const { suggestionsPool, getServerSuggestions } = useSearchContext();
   const { getLabel } = useModelLabels();
@@ -140,23 +150,26 @@ export function DynamicFacets({
     ) as Record<string, string[]>;
   }, [ordered, selectedFacets]);
 
-  const renderableFacets = React.useMemo(
-    () =>
-      ordered.flatMap((facetKey) => {
-        const facetValue = facets[facetKey];
-        const type = renderConfig[facetKey];
-        if (!facetValue || !type) return [];
-        if (
-          facetValue.kind === 'list' &&
-          facetValue.items.length === 0 &&
-          (selectedValuesByFacet[facetKey]?.length ?? 0) === 0
-        ) {
-          return [];
-        }
-        return [{ facetKey, facetValue, type, title: formatFacetTitle(facetKey, searchType) }];
-      }),
-    [ordered, facets, renderConfig, searchType, selectedValuesByFacet]
-  );
+  const renderableFacets = React.useMemo(() => {
+    const list = ordered.flatMap((facetKey) => {
+      const facetValue = facets[facetKey];
+      const type = renderConfig[facetKey];
+      if (!facetValue || !type) return [];
+      if (
+        facetValue.kind === 'list' &&
+        facetValue.items.length === 0 &&
+        (selectedValuesByFacet[facetKey]?.length ?? 0) === 0
+      ) {
+        return [];
+      }
+      return [{ facetKey, facetValue, type, title: formatFacetTitle(facetKey, searchType) }];
+    });
+    // Pin the date (range) facet to the top — nearly every query in this corpus
+    // is time-scoped. Array.sort is stable, so the rest keep their config order.
+    return list.sort(
+      (a, b) => (a.facetValue.kind === 'range' ? 0 : 1) - (b.facetValue.kind === 'range' ? 0 : 1)
+    );
+  }, [ordered, facets, renderConfig, searchType, selectedValuesByFacet]);
 
   if (!facets || Object.keys(facets).length === 0) {
     return null;
@@ -183,34 +196,36 @@ export function DynamicFacets({
           onClearAll={() => onClearAllFilters?.()}
         />
       )}
-      <div className={cn('pt-0 pb-0', density === 'default' && 'px-4')}>
-        <h3 className="font-medium text-sm mb-1">Keyword</h3>
-        <KeywordSearchInput
-          inputId="search-keyword-input"
-          value={draftKeyword}
-          onChange={(value) => {
-            setDraftKeyword(value);
-            onKeywordChange(value);
-          }}
-          onTriggerSearch={triggerSearch}
-          exactPhrase={exactPhrase}
-          onExactPhraseChange={onExactPhraseChange}
-          suggestions={effectiveSuggestions}
-          placeholder="Type and press Enter…"
-          suggestionsLoading={serverSuggestionsQuery.isFetching}
-          noSuggestionsText="No keyword suggestions yet. Press Enter to search."
-          recentSearches={historyItems.map((entry, idx) => ({
-            id: `facet-recent-${idx}-${entry.timestamp}`,
-            label: entry.keyword,
-            value: entry.keyword,
-            meta: resolveResultTypeLabel(entry.resultType, getLabel),
-          }))}
-          onClearRecentSearches={() => {
-            clearSearchHistory();
-            setHistoryItems([]);
-          }}
-        />
-      </div>
+      {!hideKeyword && (
+        <div className={cn('pt-0 pb-0', density === 'default' && 'px-4')}>
+          <h3 className="font-medium text-sm mb-1">Keyword</h3>
+          <KeywordSearchInput
+            inputId={keywordInputId}
+            value={draftKeyword}
+            onChange={(value) => {
+              setDraftKeyword(value);
+              onKeywordChange(value);
+            }}
+            onTriggerSearch={triggerSearch}
+            exactPhrase={exactPhrase}
+            onExactPhraseChange={onExactPhraseChange}
+            suggestions={effectiveSuggestions}
+            placeholder="Type and press Enter…"
+            suggestionsLoading={serverSuggestionsQuery.isFetching}
+            noSuggestionsText="No keyword suggestions yet. Press Enter to search."
+            recentSearches={historyItems.map((entry, idx) => ({
+              id: `facet-recent-${idx}-${entry.timestamp}`,
+              label: entry.keyword,
+              value: entry.keyword,
+              meta: resolveResultTypeLabel(entry.resultType, getLabel),
+            }))}
+            onClearRecentSearches={() => {
+              clearSearchHistory();
+              setHistoryItems([]);
+            }}
+          />
+        </div>
+      )}
 
       <div className="space-y-4">
         {renderableFacets.map(({ facetKey, facetValue, type, title }, index) => {

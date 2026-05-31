@@ -290,7 +290,15 @@ export default function Header() {
             </ul>
             <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto md:max-w-xs">
               {isSectionEnabled('search') && (
-                <div className="relative flex-1 w-full md:w-auto">
+                <div
+                  className={cn(
+                    'relative flex-1 w-full md:w-auto',
+                    // On the search page the page itself owns a prominent search
+                    // field, so the desktop nav search would be a confusing
+                    // second box. Keep it on mobile, where the page header has none.
+                    isOnSearchPage && 'md:hidden'
+                  )}
+                >
                   <KeywordSearchInput
                     value={headerSearchValue}
                     onChange={handleHeaderSearchChange}

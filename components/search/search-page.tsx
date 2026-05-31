@@ -11,6 +11,7 @@ import { ResultTypeToggle } from '@/components/search/result-type-toggle';
 import { SearchActionsMenu } from '@/components/search/search-actions-menu';
 import { ViewSwitcher } from '@/components/search/view-switcher';
 import { SortMenu } from '@/components/search/sort-menu';
+import { SearchKeywordBar } from '@/components/search/search-keyword-bar';
 import { type ResultType } from '@/lib/search-types';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -49,160 +50,177 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      <header className="relative z-10 flex shrink-0 items-center gap-3 border-b border-border bg-card px-3 py-2.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-transparent after:via-accent/50 after:to-transparent sm:gap-4 sm:px-5">
+      <header className="relative z-10 flex shrink-0 flex-col gap-2.5 border-b border-border bg-card px-3 py-2.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-transparent after:via-accent/50 after:to-transparent sm:px-5">
         <h1 className="sr-only">
           {`Search ${typeLabel}: ${s.resultCount.toLocaleString()} results`}
         </h1>
-        <div
-          className="shrink-0"
-          title={`${typeLabel} — ${s.resultCount.toLocaleString()} results`}
-        >
-          <div className="flex items-baseline gap-2 whitespace-nowrap">
-            <span className="font-display text-[1.65rem] font-semibold leading-none tracking-tight tabular-nums text-primary sm:text-[2.4rem]">
-              {s.resultCount.toLocaleString()}
-            </span>
-            <span className="font-serif text-xs tracking-tight text-muted-foreground sm:text-sm">
-              results
-            </span>
+        {/* Row 1: result count · the single keyword search · view / sort / actions */}
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div
+            className="shrink-0"
+            title={`${typeLabel} — ${s.resultCount.toLocaleString()} results`}
+          >
+            <div className="flex items-baseline gap-2 whitespace-nowrap">
+              <span className="font-display text-[1.65rem] font-semibold leading-none tracking-tight tabular-nums text-primary sm:text-[2.4rem]">
+                {s.resultCount.toLocaleString()}
+              </span>
+              <span className="font-serif text-xs tracking-tight text-muted-foreground sm:text-sm">
+                results
+              </span>
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <SearchKeywordBar
+              searchType={s.resultType}
+              value={s.draftKeyword}
+              onChange={s.setDraftKeyword}
+              onSubmit={s.setSubmittedKeyword}
+              exactPhrase={s.exactPhraseKeyword}
+              onExactPhraseChange={s.setExactPhraseKeyword}
+              className="hidden md:block md:max-w-2xl"
+              inputClassName="h-9 bg-background"
+            />
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <ViewSwitcher
+              viewMode={s.viewMode}
+              setViewMode={s.setViewMode}
+              showGridToggle={s.showGridToggle}
+              showTimelineToggle={s.showTimelineToggle}
+              showDistributionToggle={s.showDistributionToggle}
+              showMapToggle={s.showMapToggle}
+              hasTimelineData={s.hasTimelineData}
+              distributionEnabled={s.distributionEnabled}
+              className="hidden sm:inline-flex"
+            />
+            {(s.viewMode === 'table' || s.viewMode === 'grid') && (
+              <SortMenu
+                ordering={s.data.ordering}
+                baseFacetURL={s.baseFacetURL}
+                setQueryState={s.setQueryState}
+              />
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="hidden h-9 w-9 shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground md:inline-flex"
+              aria-label={s.filtersSidebarCollapsed ? 'Show filters panel' : 'Hide filters panel'}
+              title={s.filtersSidebarCollapsed ? 'Show filters (Alt+F)' : 'Hide filters (Alt+F)'}
+              onClick={s.toggleFiltersSidebar}
+            >
+              {s.filtersSidebarCollapsed ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </Button>
+            <div className="md:hidden">
+              <MobileFilterSheet
+                activeFilterCount={s.activeFilterCount}
+                onClearAll={() => {
+                  s.setMobileQueryDraft((prev) => clearAllFacetFilters(prev));
+                  s.setMobileKeywordDraft('');
+                }}
+                onApply={() => {
+                  let kw = s.mobileKeywordDraft.trim();
+                  if (
+                    s.exactPhraseKeyword &&
+                    kw &&
+                    !(kw.startsWith('"') && kw.endsWith('"')) &&
+                    !(kw.startsWith("'") && kw.endsWith("'"))
+                  ) {
+                    kw = `"${kw.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+                  }
+                  s.setQueryState(s.mobileQueryDraft);
+                  s.setDraftKeyword(s.mobileKeywordDraft);
+                  s.setSubmittedKeyword(kw);
+                }}
+              >
+                <DynamicFacets
+                  facets={s.data.facets}
+                  searchType={s.resultType}
+                  keyword={s.mobileKeywordDraft}
+                  activeTags={s.mobileActiveTags}
+                  onKeywordChange={s.setMobileKeywordDraft}
+                  onKeywordSubmit={s.setMobileKeywordDraft}
+                  exactPhrase={s.exactPhraseKeyword}
+                  onExactPhraseChange={s.setExactPhraseKeyword}
+                  onRemoveTag={(item) => {
+                    if (item.facetKey === '__keyword__') {
+                      s.setMobileKeywordDraft('');
+                      return;
+                    }
+                    if (item.facetKey === '__date__') {
+                      s.setMobileQueryDraft((prev) => clearDateFilters(prev));
+                      return;
+                    }
+                    if (item.exclude) {
+                      s.setMobileQueryDraft((prev) =>
+                        removeExclusionFromExtraParams(prev, item.facetKey, item.value)
+                      );
+                      return;
+                    }
+                    s.handleMobileFacetClick('', {
+                      type: 'deselectFacet',
+                      facetKey: item.facetKey,
+                      value: item.value,
+                    });
+                  }}
+                  selectedFacets={s.mobileQueryDraft.selected_facets}
+                  onClearAllFilters={() =>
+                    s.setMobileQueryDraft((prev) => clearAllFacetFilters(prev))
+                  }
+                  onFacetClick={s.handleMobileFacetClick}
+                  baseFacetURL={s.baseFacetURL}
+                  visibleFacets={s.categoryConfig.visibleFacets}
+                  activeFilterCount={s.mobileActiveTags.length}
+                  keywordInputId="search-keyword-input-mobile"
+                />
+              </MobileFilterSheet>
+            </div>
+            {s.visibility.isResearcher && (
+              <FieldVisibilityMenu
+                resultType={s.resultType}
+                visibleColumns={s.visibility.visibleColumns}
+                visibleFacets={s.visibility.visibleFacets}
+                onColumnsChange={s.visibility.setVisibleColumns}
+                onFacetsChange={s.visibility.setVisibleFacets}
+                onReset={s.visibility.resetToDefault}
+              />
+            )}
+            <SearchActionsMenu
+              triggerId="search-actions-trigger"
+              keyword={s.submittedKeyword}
+              filterCount={s.activeFilterCount}
+              resultCount={s.resultCount}
+              viewMode={s.viewMode}
+              setViewMode={s.setViewMode}
+              showGridToggle={s.showGridToggle}
+              showTimelineToggle={s.showTimelineToggle}
+              showDistributionToggle={s.showDistributionToggle}
+              showMapToggle={s.showMapToggle}
+              hasTimelineData={s.hasTimelineData}
+              distributionEnabled={s.distributionEnabled}
+              advancedEnabled={s.advancedSearch.enabled}
+              onToggleAdvanced={() =>
+                s.setAdvancedSearch((prev) => ({ ...prev, enabled: !prev.enabled }))
+              }
+              handleExport={s.handleExport}
+              handleFormattedExport={s.handleFormattedExport}
+              exportBusy={s.exportBusy}
+              resultType={s.resultType}
+              isResearcher={s.visibility.isResearcher}
+            />
           </div>
         </div>
-        <div className="flex min-h-0 min-w-0 flex-1 items-center">
+        {/* Row 2: the result-type tabs */}
+        <div className="min-w-0">
           <ResultTypeToggle
             selectedType={s.resultType}
             onChange={s.handleResultTypeChange}
             enabledTypes={s.enabledCategories}
             counts={s.countsByType}
-          />
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          <ViewSwitcher
-            viewMode={s.viewMode}
-            setViewMode={s.setViewMode}
-            showGridToggle={s.showGridToggle}
-            showTimelineToggle={s.showTimelineToggle}
-            showDistributionToggle={s.showDistributionToggle}
-            showMapToggle={s.showMapToggle}
-            hasTimelineData={s.hasTimelineData}
-            distributionEnabled={s.distributionEnabled}
-            className="hidden sm:inline-flex"
-          />
-          {(s.viewMode === 'table' || s.viewMode === 'grid') && (
-            <SortMenu
-              ordering={s.data.ordering}
-              baseFacetURL={s.baseFacetURL}
-              setQueryState={s.setQueryState}
-            />
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="hidden h-9 w-9 shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground md:inline-flex"
-            aria-label={s.filtersSidebarCollapsed ? 'Show filters panel' : 'Hide filters panel'}
-            title={s.filtersSidebarCollapsed ? 'Show filters (Alt+F)' : 'Hide filters (Alt+F)'}
-            onClick={s.toggleFiltersSidebar}
-          >
-            {s.filtersSidebarCollapsed ? (
-              <PanelLeftOpen className="h-4 w-4" />
-            ) : (
-              <PanelLeftClose className="h-4 w-4" />
-            )}
-          </Button>
-          <div className="md:hidden">
-            <MobileFilterSheet
-              activeFilterCount={s.activeFilterCount}
-              onClearAll={() => {
-                s.setMobileQueryDraft((prev) => clearAllFacetFilters(prev));
-                s.setMobileKeywordDraft('');
-              }}
-              onApply={() => {
-                let kw = s.mobileKeywordDraft.trim();
-                if (
-                  s.exactPhraseKeyword &&
-                  kw &&
-                  !(kw.startsWith('"') && kw.endsWith('"')) &&
-                  !(kw.startsWith("'") && kw.endsWith("'"))
-                ) {
-                  kw = `"${kw.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-                }
-                s.setQueryState(s.mobileQueryDraft);
-                s.setDraftKeyword(s.mobileKeywordDraft);
-                s.setSubmittedKeyword(kw);
-              }}
-            >
-              <DynamicFacets
-                facets={s.data.facets}
-                searchType={s.resultType}
-                keyword={s.mobileKeywordDraft}
-                activeTags={s.mobileActiveTags}
-                onKeywordChange={s.setMobileKeywordDraft}
-                onKeywordSubmit={s.setMobileKeywordDraft}
-                exactPhrase={s.exactPhraseKeyword}
-                onExactPhraseChange={s.setExactPhraseKeyword}
-                onRemoveTag={(item) => {
-                  if (item.facetKey === '__keyword__') {
-                    s.setMobileKeywordDraft('');
-                    return;
-                  }
-                  if (item.facetKey === '__date__') {
-                    s.setMobileQueryDraft((prev) => clearDateFilters(prev));
-                    return;
-                  }
-                  if (item.exclude) {
-                    s.setMobileQueryDraft((prev) =>
-                      removeExclusionFromExtraParams(prev, item.facetKey, item.value)
-                    );
-                    return;
-                  }
-                  s.handleMobileFacetClick('', {
-                    type: 'deselectFacet',
-                    facetKey: item.facetKey,
-                    value: item.value,
-                  });
-                }}
-                selectedFacets={s.mobileQueryDraft.selected_facets}
-                onClearAllFilters={() =>
-                  s.setMobileQueryDraft((prev) => clearAllFacetFilters(prev))
-                }
-                onFacetClick={s.handleMobileFacetClick}
-                baseFacetURL={s.baseFacetURL}
-                visibleFacets={s.categoryConfig.visibleFacets}
-                activeFilterCount={s.mobileActiveTags.length}
-              />
-            </MobileFilterSheet>
-          </div>
-          {s.visibility.isResearcher && (
-            <FieldVisibilityMenu
-              resultType={s.resultType}
-              visibleColumns={s.visibility.visibleColumns}
-              visibleFacets={s.visibility.visibleFacets}
-              onColumnsChange={s.visibility.setVisibleColumns}
-              onFacetsChange={s.visibility.setVisibleFacets}
-              onReset={s.visibility.resetToDefault}
-            />
-          )}
-          <SearchActionsMenu
-            triggerId="search-actions-trigger"
-            keyword={s.submittedKeyword}
-            filterCount={s.activeFilterCount}
-            resultCount={s.resultCount}
-            viewMode={s.viewMode}
-            setViewMode={s.setViewMode}
-            showGridToggle={s.showGridToggle}
-            showTimelineToggle={s.showTimelineToggle}
-            showDistributionToggle={s.showDistributionToggle}
-            showMapToggle={s.showMapToggle}
-            hasTimelineData={s.hasTimelineData}
-            distributionEnabled={s.distributionEnabled}
-            advancedEnabled={s.advancedSearch.enabled}
-            onToggleAdvanced={() =>
-              s.setAdvancedSearch((prev) => ({ ...prev, enabled: !prev.enabled }))
-            }
-            handleExport={s.handleExport}
-            handleFormattedExport={s.handleFormattedExport}
-            exportBusy={s.exportBusy}
-            resultType={s.resultType}
-            isResearcher={s.visibility.isResearcher}
           />
         </div>
       </header>
@@ -237,6 +255,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               activeFilterCount={s.activeFilterCount}
               density="sidebar"
               hideActiveTags
+              hideKeyword
             />
           ) : (
             <div className="text-sm text-muted-foreground">No filters for this type</div>
