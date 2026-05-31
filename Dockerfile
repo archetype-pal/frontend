@@ -1,6 +1,6 @@
 # syntax=docker.io/docker/dockerfile:1
 
-FROM node:25-alpine AS base
+FROM node:24-alpine AS base
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_IIIF_UPSTREAM
 ARG NEXT_PUBLIC_SITE_URL
@@ -13,7 +13,7 @@ ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 ENV CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
 
 # Install pnpm in base so all stages have it (corepack unreliable on Alpine)
-RUN npm install -g pnpm@10.28.2
+RUN npm install -g pnpm@10.30.1
 
 # Install dependencies only when needed
 FROM base AS deps

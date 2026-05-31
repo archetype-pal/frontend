@@ -106,7 +106,7 @@ function useHandGraphs(handId: number, images: HandImage[], enabled: boolean): G
     fetchedRef.current = true;
 
     const controller = new AbortController();
-    setState({ status: 'loading' }); // eslint-disable-line react-hooks/set-state-in-effect
+    setState({ status: 'loading' });
 
     Promise.all([
       apiFetch(`/api/v1/manuscripts/graphs/?hand=${handId}`, {

@@ -58,6 +58,18 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
     IntersectionObserverStub as unknown as typeof globalThis.IntersectionObserver;
 }
 
+// jsdom doesn't implement layout, so elementFromPoint is missing. TipTap 3.24's
+// placeholder viewport tracking calls document.elementFromPoint; provide no-ops
+// (returning nothing hittable) so editor render tests don't crash.
+if (typeof Document !== 'undefined') {
+  if (typeof Document.prototype.elementFromPoint !== 'function') {
+    Document.prototype.elementFromPoint = () => null;
+  }
+  if (typeof Document.prototype.elementsFromPoint !== 'function') {
+    Document.prototype.elementsFromPoint = () => [];
+  }
+}
+
 // jsdom's localStorage is not reliably available under this vitest config; provide
 // a minimal in-memory Storage so components that persist UI prefs don't crash.
 function createMemoryStorage(): Storage {
