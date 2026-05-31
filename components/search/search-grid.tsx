@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { IiifImage } from '@/components/ui/iiif-image';
 import Link from 'next/link';
 import type { GraphListItem, ImageListItem, ManuscriptListItem } from '@/types/search';
@@ -20,7 +19,6 @@ export interface SearchGridProps {
   results?: GridItem[];
   resultType: ResultType;
   highlightKeyword?: string;
-  scrollContainerRef?: React.RefObject<HTMLElement | null>;
   isFetching?: boolean;
 }
 
@@ -270,54 +268,16 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   );
 });
 
-function columnsForWidth(width: number): number {
-  if (width < 640) return 2;
-  if (width < 768) return 3;
-  if (width < 1024) return 4;
-  if (width < 1280) return 5;
-  return 6;
-}
-
 function SearchGridComponent({
   results = [],
   resultType,
   highlightKeyword = '',
-  scrollContainerRef,
   isFetching = false,
 }: SearchGridProps) {
-  const layoutRef = React.useRef<HTMLDivElement | null>(null);
-  const [layoutWidth, setLayoutWidth] = React.useState(1280);
   const cards = React.useMemo(
     () => results.map((item) => ({ card: toGridCard(resultType, item) })),
     [results, resultType]
   );
-  const columnCount = React.useMemo(() => columnsForWidth(layoutWidth), [layoutWidth]);
-  const rowCount = React.useMemo(
-    () => Math.ceil(cards.filter(({ card }) => card != null).length / columnCount),
-    [cards, columnCount]
-  );
-  const shouldVirtualize = !!scrollContainerRef && cards.length > 80;
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const rowVirtualizer = useVirtualizer({
-    count: rowCount,
-    getScrollElement: () => scrollContainerRef?.current ?? null,
-    estimateSize: () => 260,
-    overscan: 3,
-  });
-
-  React.useEffect(() => {
-    const el = layoutRef.current;
-    if (!el) return;
-    setLayoutWidth(el.getBoundingClientRect().width || 1280);
-    const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width;
-      if (typeof width === 'number' && width > 0) {
-        setLayoutWidth(width);
-      }
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   const renderCard = React.useCallback(
     (card: GridCard) => {
@@ -371,40 +331,13 @@ function SearchGridComponent({
 
   const flatCards = cards.map(({ card }) => card).filter((card): card is GridCard => card != null);
 
-  if (!shouldVirtualize) {
-    return (
-      <section
-        ref={layoutRef}
-        className={`relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 ${
-          isFetching ? 'opacity-60' : ''
-        }`}
-      >
-        {flatCards.map((card) => renderCard(card))}
-      </section>
-    );
-  }
-
   return (
-    <section ref={layoutRef} className={`relative ${isFetching ? 'opacity-60' : ''}`}>
-      <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
-        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-          const start = virtualRow.index * columnCount;
-          const rowCards = flatCards.slice(start, start + columnCount);
-          if (rowCards.length === 0) return null;
-          return (
-            <div
-              key={virtualRow.key}
-              className="absolute left-0 w-full grid gap-3"
-              style={{
-                transform: `translateY(${virtualRow.start}px)`,
-                gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
-              }}
-            >
-              {rowCards.map((card) => renderCard(card))}
-            </div>
-          );
-        })}
-      </div>
+    <section
+      className={`relative grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 ${
+        isFetching ? 'opacity-60' : ''
+      }`}
+    >
+      {flatCards.map((card) => renderCard(card))}
     </section>
   );
 }

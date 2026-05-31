@@ -33,7 +33,6 @@ import { useSearchData } from '@/hooks/search/use-search-data';
 export function useSearchPageState(initialType?: ResultType) {
   const searchParams = useSearchParams();
   const { getLabel } = useModelLabels();
-  const resultsScrollRef = React.useRef<HTMLDivElement | null>(null);
   const [resultType, setResultType] = React.useState<ResultType>(initialType ?? 'manuscripts');
   const [advancedSearch, setAdvancedSearch] = React.useState<AdvancedSearchState>(
     DEFAULT_ADVANCED_SEARCH_STATE
@@ -169,10 +168,11 @@ export function useSearchPageState(initialType?: ResultType) {
   });
 
   // --- Scroll to top on navigation ---
+  // The page now flows in the document (no internal scroll container), so a
+  // page change / type switch scrolls the window back to the top.
 
   React.useEffect(() => {
-    const el = resultsScrollRef.current;
-    if (el) el.scrollTo({ top: 0 });
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
   }, [resultType, queryHook.queryState.offset, viewMode]);
 
   // --- handleResultTypeChange (resets state across multiple hooks) ---
@@ -215,8 +215,6 @@ export function useSearchPageState(initialType?: ResultType) {
   });
 
   return {
-    // Refs
-    resultsScrollRef,
     // State
     viewMode,
     setViewMode,

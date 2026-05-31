@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { Table, TableHeader, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { IiifImage } from '@/components/ui/iiif-image';
 import Link from 'next/link';
 import { ArrowUp, ArrowDown } from 'lucide-react';
@@ -419,7 +418,6 @@ function ResultsTableComponent<K extends ResultType>({
   onSort,
   highlightKeyword = '',
   visibleColumns,
-  scrollContainerRef,
   isFetching = false,
 }: {
   resultType: K;
@@ -431,7 +429,6 @@ function ResultsTableComponent<K extends ResultType>({
   onSort?: (opts: { sortKey?: string; sortUrl?: string }) => void;
   highlightKeyword?: string;
   visibleColumns?: string[];
-  scrollContainerRef?: React.RefObject<HTMLElement | null>;
   isFetching?: boolean;
 }) {
   const { getLabel } = useModelLabels();
@@ -474,26 +471,6 @@ function ResultsTableComponent<K extends ResultType>({
   const { subRowAccessor, previewAccessor } = descriptor;
   const hasSubRow = !!subRowAccessor;
   const totalColSpan = cols.length + (hasSubRow ? 1 : 0);
-  const localScrollRef = React.useRef<HTMLDivElement | null>(null);
-  const shouldVirtualize = results.length > 80;
-  const rowEstimate = React.useMemo(() => {
-    if (hasSubRow || previewAccessor) return 120;
-    return 56;
-  }, [hasSubRow, previewAccessor]);
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const rowVirtualizer = useVirtualizer({
-    count: results.length,
-    getScrollElement: () => scrollContainerRef?.current ?? localScrollRef.current,
-    estimateSize: () => rowEstimate,
-    overscan: 8,
-    measureElement: (el) => el?.getBoundingClientRect().height ?? rowEstimate,
-  });
-  const virtualRows = shouldVirtualize ? rowVirtualizer.getVirtualItems() : [];
-  const topSpacerHeight = shouldVirtualize && virtualRows.length > 0 ? virtualRows[0]!.start : 0;
-  const bottomSpacerHeight =
-    shouldVirtualize && virtualRows.length > 0
-      ? rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1]!.end
-      : 0;
   const rowKeyOf = React.useCallback((row: ResultMap[K], index: number): React.Key => {
     const withId = row as { id?: string | number };
     if (typeof withId.id === 'string' || typeof withId.id === 'number') return withId.id;
@@ -503,22 +480,13 @@ function ResultsTableComponent<K extends ResultType>({
   }, []);
 
   const renderRow = React.useCallback(
-    (
-      row: ResultMap[K],
-      ri: number,
-      virtualKey?: React.Key,
-      measure?: (el: Element | null) => void
-    ) => {
+    (row: ResultMap[K], ri: number) => {
       const rowUrl = descriptor.detailUrl(row);
       const rowHref = rowUrl ?? '#';
       const preview = previewAccessor ? previewAccessor(row) : null;
-      const rowKey = virtualKey ?? rowKeyOf(row, ri);
+      const rowKey = rowKeyOf(row, ri);
       return (
-        <tbody
-          key={rowKey}
-          className="group border-b"
-          ref={measure ? (el) => measure(el) : undefined}
-        >
+        <tbody key={rowKey} className="group border-b">
           <TableRow
             className={`relative cursor-pointer transition-colors group-hover:bg-secondary/80 ${ri % 2 === 0 ? 'bg-secondary/30' : ''}${hasSubRow ? ' border-b-0' : ''}`}
           >
@@ -663,20 +631,12 @@ function ResultsTableComponent<K extends ResultType>({
   );
 
   return (
-    <div
-      ref={scrollContainerRef ? undefined : localScrollRef}
-      className={`relative ${
-        scrollContainerRef
-          ? // Inside the page results card already, so no own border/background —
-            // the redundant frame just wasted space. Also neutralise the shared
-            // <Table> wrapper's `overflow-auto` so the sticky header anchors to
-            // the page scroll container, not the wrapper.
-            'overflow-visible [&>div]:overflow-visible'
-          : 'overflow-auto rounded-lg border border-border bg-card'
-      }`}
-    >
+    // The table flows in the document (no internal scroll). `overflow-visible`
+    // on both this wrapper and the shared <Table>'s own wrapper lets the sticky
+    // header anchor to the window; it sticks just below the site header.
+    <div className="relative overflow-visible [&>div]:overflow-visible">
       <Table>
-        <TableHeader className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-secondary [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-muted-foreground [&_th]:shadow-[inset_0_-1px_0_var(--border)]">
+        <TableHeader className="[&_th]:sticky [&_th]:top-[var(--site-header-h,0px)] [&_th]:z-10 [&_th]:bg-secondary [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-muted-foreground [&_th]:shadow-[inset_0_-1px_0_var(--border)]">
           <TableRow>
             {hasSubRow && <TableHead className="w-16" />}
             {cols.map((col) => (
@@ -704,25 +664,7 @@ function ResultsTableComponent<K extends ResultType>({
             ))}
           </TableRow>
         </TableHeader>
-        {shouldVirtualize && topSpacerHeight > 0 && (
-          <tbody>
-            <TableRow>
-              <TableCell colSpan={totalColSpan} style={{ height: `${topSpacerHeight}px` }} />
-            </TableRow>
-          </tbody>
-        )}
-        {shouldVirtualize
-          ? virtualRows.map((vr) =>
-              renderRow(results[vr.index]!, vr.index, vr.key, rowVirtualizer.measureElement)
-            )
-          : results.map((row, ri) => renderRow(row, ri))}
-        {shouldVirtualize && bottomSpacerHeight > 0 && (
-          <tbody>
-            <TableRow>
-              <TableCell colSpan={totalColSpan} style={{ height: `${bottomSpacerHeight}px` }} />
-            </TableRow>
-          </tbody>
-        )}
+        {results.map((row, ri) => renderRow(row, ri))}
       </Table>
       {isFetching && (
         <div className="pointer-events-none absolute inset-0 rounded-lg bg-card/35 animate-pulse" />

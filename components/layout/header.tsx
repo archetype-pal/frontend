@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useDeferredValue } from 'react';
+import { useState, useEffect, useDeferredValue, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -41,6 +41,21 @@ const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Publish the sticky header's height as a CSS variable so other sticky chrome
+  // (e.g. the search filter rail and table header) can offset below it. The
+  // height is dynamic because the title banner can be collapsed.
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const setVar = () =>
+      document.documentElement.style.setProperty('--site-header-h', `${el.offsetHeight}px`);
+    setVar();
+    const observer = new ResizeObserver(setVar);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   const { items } = useCollection();
   const { getLabel } = useModelLabels();
   const { token, user, logout } = useAuth();
@@ -240,7 +255,10 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-primary text-primary-foreground shadow-md">
+    <header
+      ref={headerRef}
+      className="sticky top-0 z-50 bg-primary text-primary-foreground shadow-md"
+    >
       {isBannerVisible && (
         <div className="container mx-auto px-4 py-4 md:py-5">
           <div className="flex items-end gap-6">

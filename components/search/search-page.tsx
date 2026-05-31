@@ -43,12 +43,12 @@ import { useSearchPageState } from '@/hooks/search/use-search-page-state';
 type ResultListItem = ResultMap[ResultType];
 
 export function SearchPage({ resultType: initialType }: { resultType?: ResultType } = {}) {
-  const { resultsScrollRef, ...s } = useSearchPageState(initialType);
+  const s = useSearchPageState(initialType);
   const { getLabel } = useModelLabels();
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex min-h-[calc(100dvh-var(--site-header-h,0px))] flex-col bg-background">
       <header className="relative z-10 flex shrink-0 flex-col gap-2.5 border-b border-border bg-card px-3 py-2.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-transparent after:via-accent/50 after:to-transparent sm:px-5">
         <h1 className="sr-only">
           {`Search ${typeLabel}: ${s.resultCount.toLocaleString()} results`}
@@ -217,12 +217,14 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex flex-1 items-start">
         <aside
           id="search-filters-aside"
           aria-hidden={s.filtersSidebarCollapsed}
           className={cn(
-            'hidden border-r border-border bg-background transition-[width,opacity,border-color] duration-200 ease-out md:flex md:flex-col',
+            // Sticky sidebar: stays beside the results below the site header,
+            // scrolling internally when the facet list is tall.
+            'hidden border-r border-border bg-background transition-[width,opacity,border-color] duration-200 ease-out md:flex md:flex-col md:self-start md:sticky md:top-[var(--site-header-h,0px)] md:h-[calc(100dvh-var(--site-header-h,0px))]',
             s.filtersSidebarCollapsed
               ? 'md:pointer-events-none md:w-0 md:min-w-0 md:overflow-hidden md:border-transparent md:p-0 md:opacity-0'
               : 'md:w-64 md:shrink-0 md:overflow-y-auto md:px-3 md:py-3'
@@ -255,10 +257,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col">
-          {/* Active-filters bar — kept above the scroll area (not inside it) so
-              it stays visible without competing with the sticky table header. */}
+          {/* Active-filters bar — full-width strip above the results. */}
           {s.activeFilterCount > 0 && (
-            <div className="shrink-0 border-b border-border/70 bg-background px-3 py-2 sm:px-4">
+            <div className="border-b border-border/70 bg-background px-3 py-2 sm:px-4">
               <ActiveFacetTags
                 items={s.activeTags}
                 title={`Active filters (${s.activeFilterCount})`}
@@ -268,11 +269,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               />
             </div>
           )}
-          <div
-            ref={resultsScrollRef}
-            className="relative flex flex-1 flex-col overflow-auto p-2 sm:p-3"
-          >
-            <div className="flex min-h-0 flex-col rounded-xl border border-border/80 bg-card shadow-sm">
+          <div className="p-2 sm:p-3">
+            <div className="flex flex-col rounded-xl border border-border/80 bg-card shadow-sm">
               {s.isFetching && !s.isLoading && (
                 <div className="h-0.5 w-full shrink-0 overflow-hidden rounded-t-xl">
                   <div className="h-full w-1/3 animate-[search-sweep_1.1s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-accent to-transparent" />
@@ -294,7 +292,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                       onSort={s.handleSort}
                       highlightKeyword={s.submittedKeyword}
                       visibleColumns={s.categoryConfig.visibleColumns}
-                      scrollContainerRef={resultsScrollRef}
                       isFetching={s.isFetching}
                     />
                   ) : s.viewMode === 'timeline' ? (
@@ -369,7 +366,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                       results={s.filtered as Parameters<typeof SearchGrid>[0]['results']}
                       resultType={s.resultType}
                       highlightKeyword={s.submittedKeyword}
-                      scrollContainerRef={resultsScrollRef}
                       isFetching={s.isFetching}
                     />
                   )
