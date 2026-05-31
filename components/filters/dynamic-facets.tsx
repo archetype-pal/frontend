@@ -25,6 +25,13 @@ import { cn } from '@/lib/utils';
 
 export type DynamicFacetsDensity = 'default' | 'sidebar';
 
+/**
+ * Progressive disclosure: how many leading facets stay open by default. The
+ * rest collapse so the rail isn't one long scroll (a facet with an active
+ * selection always stays open regardless of position).
+ */
+const PRIMARY_FACET_COUNT = 3;
+
 type DynamicFacetsProps = {
   facets: FacetData;
   searchType: ResultType;
@@ -43,6 +50,12 @@ type DynamicFacetsProps = {
   activeFilterCount?: number;
   /** Sidebar omits extra horizontal padding so content aligns with aside padding. */
   density?: DynamicFacetsDensity;
+  /**
+   * Suppress the inline "Active filters" tag list. The desktop rail sets this
+   * because the page renders a sticky active-filters bar above the results
+   * instead; the mobile sheet keeps its own tags.
+   */
+  hideActiveTags?: boolean;
 };
 
 export function DynamicFacets({
@@ -62,6 +75,7 @@ export function DynamicFacets({
   visibleFacets,
   activeFilterCount = 0,
   density = 'default',
+  hideActiveTags = false,
 }: DynamicFacetsProps) {
   const { suggestionsPool, getServerSuggestions } = useSearchContext();
   const { getLabel } = useModelLabels();
@@ -150,23 +164,25 @@ export function DynamicFacets({
 
   return (
     <div className="space-y-4">
-      <ActiveFacetTags
-        items={activeTags}
-        title={activeFilterCount > 0 ? `Active filters (${activeFilterCount})` : 'Active filters'}
-        className={density === 'sidebar' ? 'px-0' : undefined}
-        onRemove={(item) => {
-          if (onRemoveTag) {
-            onRemoveTag(item);
-            return;
-          }
-          onFacetClick?.('', {
-            type: 'deselectFacet',
-            facetKey: item.facetKey,
-            value: item.value,
-          });
-        }}
-        onClearAll={() => onClearAllFilters?.()}
-      />
+      {!hideActiveTags && (
+        <ActiveFacetTags
+          items={activeTags}
+          title={activeFilterCount > 0 ? `Active filters (${activeFilterCount})` : 'Active filters'}
+          className={density === 'sidebar' ? 'px-0' : undefined}
+          onRemove={(item) => {
+            if (onRemoveTag) {
+              onRemoveTag(item);
+              return;
+            }
+            onFacetClick?.('', {
+              type: 'deselectFacet',
+              facetKey: item.facetKey,
+              value: item.value,
+            });
+          }}
+          onClearAll={() => onClearAllFilters?.()}
+        />
+      )}
       <div className={cn('pt-0 pb-0', density === 'default' && 'px-4')}>
         <h3 className="font-medium text-sm mb-1">Keyword</h3>
         <KeywordSearchInput
@@ -197,7 +213,10 @@ export function DynamicFacets({
       </div>
 
       <div className="space-y-4">
-        {renderableFacets.map(({ facetKey, facetValue, type, title }) => {
+        {renderableFacets.map(({ facetKey, facetValue, type, title }, index) => {
+          const hasSelection =
+            selectedByFacet[facetKey] != null || (selectedValuesByFacet[facetKey]?.length ?? 0) > 0;
+          const defaultExpanded = index < PRIMARY_FACET_COUNT || hasSelection;
           if (facetValue.kind === 'range') {
             return (
               <FacetDateRangePanel
@@ -206,6 +225,7 @@ export function DynamicFacets({
                 title={title}
                 range={facetValue.range}
                 defaultValue={facetValue.defaultValue}
+                defaultExpanded={defaultExpanded}
                 onSearch={({ min, max, precision, diff }) => {
                   let url = `${baseFacetURL}?min_date=${min}&max_date=${max}`;
                   if (precision && diff > 0) {
@@ -225,6 +245,7 @@ export function DynamicFacets({
                 total={facetValue.items.length}
                 items={facetValue.items}
                 selectedValues={selectedValuesByFacet[facetKey] ?? []}
+                defaultExpanded={defaultExpanded}
                 onSelect={(value, isDeselect) => {
                   onFacetClick?.(
                     baseFacetURL,
@@ -247,6 +268,7 @@ export function DynamicFacets({
               baseFacetURL={baseFacetURL}
               selectedValue={selectedByFacet[facetKey] ?? null}
               showSort={type !== 'toggle'}
+              expanded={defaultExpanded}
               onSelect={(url, val, isDeselect) => {
                 onFacetClick?.(
                   url,

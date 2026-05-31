@@ -20,6 +20,7 @@ type FacetDateRangePanelProps = {
   range?: [number, number];
   defaultValue?: [number, number];
   precisionOptions?: { label: string; value: string }[];
+  defaultExpanded?: boolean;
 
   onSearch?: (params: { min: number; max: number; precision: string; diff: number }) => void;
 };
@@ -34,10 +35,11 @@ export function FacetDateRangePanel({
     { label: 'at most', value: 'at most' },
     { label: 'at least', value: 'at least' },
   ],
+  defaultExpanded = true,
   onSearch,
 }: FacetDateRangePanelProps) {
   const normalizedDefaultValue = range ?? defaultValue;
-  const [expanded, setExpanded] = React.useState<boolean>(true);
+  const [expanded, setExpanded] = React.useState<boolean>(defaultExpanded);
   const [sliderValue, setSliderValue] = React.useState<[number, number]>(normalizedDefaultValue);
   const [precision, setPrecision] = React.useState<string>(precisionOptions[0].value);
   const [year, setYear] = React.useState<number | ''>('');

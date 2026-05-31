@@ -13,6 +13,7 @@ type FacetTreePanelProps = {
   items: FacetListItem[];
   selectedValues: string[];
   onSelect: (value: string, isDeselect: boolean) => void;
+  defaultExpanded?: boolean;
 };
 
 type FacetTreeNode = {
@@ -46,8 +47,9 @@ export function FacetTreePanel({
   items,
   selectedValues,
   onSelect,
+  defaultExpanded = true,
 }: FacetTreePanelProps) {
-  const [isExpanded, setIsExpanded] = React.useState(true);
+  const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
   const [expandedNodes, setExpandedNodes] = React.useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = React.useState('');
   const tree = React.useMemo(() => buildTree(items), [items]);

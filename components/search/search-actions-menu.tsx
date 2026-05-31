@@ -109,13 +109,17 @@ export function SearchActionsMenu({
             />
           </DropdownMenuSubContent>
         </DropdownMenuSub>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>View</DropdownMenuLabel>
-        {viewItem('table', 'Table')}
-        {showGridToggle && viewItem('grid', 'Grid')}
-        {showTimelineToggle && viewItem('timeline', 'Timeline', !hasTimelineData)}
-        {showDistributionToggle && viewItem('distribution', 'Charts', !distributionEnabled)}
-        {showMapToggle && viewItem('map', 'Map')}
+        {/* View lives in the visible header view-switcher on sm+; this menu
+            section is the small-screen fallback only. */}
+        <div className="sm:hidden">
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>View</DropdownMenuLabel>
+          {viewItem('table', 'Table')}
+          {showGridToggle && viewItem('grid', 'Grid')}
+          {showTimelineToggle && viewItem('timeline', 'Timeline', !hasTimelineData)}
+          {showDistributionToggle && viewItem('distribution', 'Charts', !distributionEnabled)}
+          {showMapToggle && viewItem('map', 'Map')}
+        </div>
         <DropdownMenuSeparator />
         <DropdownMenuCheckboxItem
           checked={advancedEnabled}

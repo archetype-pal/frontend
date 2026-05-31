@@ -6,8 +6,11 @@ import { PanelLeftClose, PanelLeftOpen, SearchX } from 'lucide-react';
 import { ResultsTable } from '@/components/search/results-table';
 import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';
+import { ActiveFacetTags } from '@/components/filters/active-facet-tags';
 import { ResultTypeToggle } from '@/components/search/result-type-toggle';
 import { SearchActionsMenu } from '@/components/search/search-actions-menu';
+import { ViewSwitcher } from '@/components/search/view-switcher';
+import { SortMenu } from '@/components/search/sort-menu';
 import { type ResultType } from '@/lib/search-types';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -72,6 +75,24 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           />
         </div>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <ViewSwitcher
+            viewMode={s.viewMode}
+            setViewMode={s.setViewMode}
+            showGridToggle={s.showGridToggle}
+            showTimelineToggle={s.showTimelineToggle}
+            showDistributionToggle={s.showDistributionToggle}
+            showMapToggle={s.showMapToggle}
+            hasTimelineData={s.hasTimelineData}
+            distributionEnabled={s.distributionEnabled}
+            className="hidden sm:inline-flex"
+          />
+          {(s.viewMode === 'table' || s.viewMode === 'grid') && (
+            <SortMenu
+              ordering={s.data.ordering}
+              baseFacetURL={s.baseFacetURL}
+              setQueryState={s.setQueryState}
+            />
+          )}
           <Button
             type="button"
             variant="ghost"
@@ -215,6 +236,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               visibleFacets={s.categoryConfig.visibleFacets}
               activeFilterCount={s.activeFilterCount}
               density="sidebar"
+              hideActiveTags
             />
           ) : (
             <div className="text-sm text-muted-foreground">No filters for this type</div>
@@ -226,6 +248,20 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             ref={resultsScrollRef}
             className="relative flex flex-1 flex-col overflow-auto p-2 sm:p-3"
           >
+            {/* Sticky active-filters bar — applied filters stay visible (and
+                removable) while scrolling results, instead of being buried in
+                the filter rail. */}
+            {s.activeFilterCount > 0 && (
+              <div className="sticky top-0 z-20 -mx-2 -mt-2 mb-2 border-b border-border/70 bg-background/90 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:-mx-3 sm:-mt-3 sm:px-3">
+                <ActiveFacetTags
+                  items={s.activeTags}
+                  title={`Active filters (${s.activeFilterCount})`}
+                  className="px-0"
+                  onRemove={s.handleRemoveTag}
+                  onClearAll={s.handleClearAllFilters}
+                />
+              </div>
+            )}
             <div className="flex min-h-0 flex-col rounded-xl border border-border/80 bg-card shadow-sm">
               {s.isFetching && !s.isLoading && (
                 <div className="h-0.5 w-full shrink-0 overflow-hidden rounded-t-xl">
