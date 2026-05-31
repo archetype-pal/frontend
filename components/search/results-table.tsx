@@ -665,12 +665,14 @@ function ResultsTableComponent<K extends ResultType>({
   return (
     <div
       ref={scrollContainerRef ? undefined : localScrollRef}
-      className={`relative rounded-lg border border-border bg-card ${
+      className={`relative ${
         scrollContainerRef
-          ? // Neutralise the shared <Table> wrapper's `overflow-auto` so the
-            // sticky header anchors to the page scroll container, not the wrapper.
+          ? // Inside the page results card already, so no own border/background —
+            // the redundant frame just wasted space. Also neutralise the shared
+            // <Table> wrapper's `overflow-auto` so the sticky header anchors to
+            // the page scroll container, not the wrapper.
             'overflow-visible [&>div]:overflow-visible'
-          : 'overflow-auto'
+          : 'overflow-auto rounded-lg border border-border bg-card'
       }`}
     >
       <Table>
