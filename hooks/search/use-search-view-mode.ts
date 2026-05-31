@@ -8,6 +8,15 @@ export const TABLE_ONLY_TYPES: readonly ResultType[] = ['texts', 'people', 'plac
 export const TABLE_ONLY_TYPE_SET = new Set<ResultType>(TABLE_ONLY_TYPES);
 export const VIEW_PREFS_KEY = 'search-view-prefs';
 export const FILTERS_SIDEBAR_COLLAPSED_KEY = 'search-filters-sidebar-collapsed';
+export const DENSITY_KEY = 'search-density';
+
+/**
+ * Row density for the list (table) view: `comfortable` renders identity-first
+ * media rows (thumbnail + shelfmark + meta); `compact` is the dense spreadsheet.
+ * Comfortable is the default — the image is the subject of this corpus — with
+ * compact one click away for power users.
+ */
+export type ResultDensity = 'comfortable' | 'compact';
 
 export function isTableOnlyType(type: ResultType): boolean {
   return TABLE_ONLY_TYPE_SET.has(type);
@@ -26,6 +35,26 @@ export function parseViewModeParam(raw: string | null, resultType: ResultType): 
 export function useSearchViewMode(resultType: ResultType) {
   const [viewMode, setViewMode] = React.useState<ViewMode>('table');
   const [filtersSidebarCollapsed, setFiltersSidebarCollapsed] = React.useState(false);
+  const [density, setDensityState] = React.useState<ResultDensity>('comfortable');
+
+  // Load density preference from localStorage.
+  React.useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(DENSITY_KEY);
+      if (raw === 'compact' || raw === 'comfortable') setDensityState(raw);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const setDensity = React.useCallback((next: ResultDensity) => {
+    setDensityState(next);
+    try {
+      window.localStorage.setItem(DENSITY_KEY, next);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Load sidebar collapsed preference from localStorage
   React.useEffect(() => {
@@ -88,6 +117,8 @@ export function useSearchViewMode(resultType: ResultType) {
   return {
     viewMode,
     setViewMode,
+    density,
+    setDensity,
     filtersSidebarCollapsed,
     toggleFiltersSidebar,
   };

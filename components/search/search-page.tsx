@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { PanelLeftClose, PanelLeftOpen, SearchX } from 'lucide-react';
 import { ResultsTable } from '@/components/search/results-table';
+import { ResultsMediaList } from '@/components/search/results-media-list';
 import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';
 import { ActiveFacetTags } from '@/components/filters/active-facet-tags';
@@ -11,6 +12,7 @@ import { ResultTypeToggle } from '@/components/search/result-type-toggle';
 import { SearchActionsMenu } from '@/components/search/search-actions-menu';
 import { ViewSwitcher } from '@/components/search/view-switcher';
 import { SortMenu } from '@/components/search/sort-menu';
+import { DensityToggle } from '@/components/search/density-toggle';
 import { SearchKeywordBar } from '@/components/search/search-keyword-bar';
 import { SearchLanding } from '@/components/search/search-landing';
 import { type ResultType } from '@/lib/search-types';
@@ -94,6 +96,13 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               distributionEnabled={s.distributionEnabled}
               className="hidden sm:inline-flex"
             />
+            {s.viewMode === 'table' && (
+              <DensityToggle
+                density={s.density}
+                setDensity={s.setDensity}
+                className="hidden sm:inline-flex"
+              />
+            )}
             {(s.viewMode === 'table' || s.viewMode === 'grid') && (
               <SortMenu
                 ordering={s.data.ordering}
@@ -327,16 +336,25 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 />
                 {s.filtered.length > 0 ? (
                   s.viewMode === 'table' ? (
-                    <ResultsTable
-                      resultType={s.resultType}
-                      results={s.filtered as ResultListItem[]}
-                      ordering={s.data.ordering}
-                      onSort={s.handleSort}
-                      highlightKeyword={s.submittedKeyword}
-                      visibleColumns={s.categoryConfig.visibleColumns}
-                      scrollContainerRef={resultsScrollRef}
-                      isFetching={s.isFetching}
-                    />
+                    s.density === 'comfortable' ? (
+                      <ResultsMediaList
+                        resultType={s.resultType}
+                        results={s.filtered as ResultListItem[]}
+                        highlightKeyword={s.submittedKeyword}
+                        isFetching={s.isFetching}
+                      />
+                    ) : (
+                      <ResultsTable
+                        resultType={s.resultType}
+                        results={s.filtered as ResultListItem[]}
+                        ordering={s.data.ordering}
+                        onSort={s.handleSort}
+                        highlightKeyword={s.submittedKeyword}
+                        visibleColumns={s.categoryConfig.visibleColumns}
+                        scrollContainerRef={resultsScrollRef}
+                        isFetching={s.isFetching}
+                      />
+                    )
                   ) : s.viewMode === 'timeline' ? (
                     <React.Suspense
                       fallback={
