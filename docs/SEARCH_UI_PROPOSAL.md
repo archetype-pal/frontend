@@ -40,6 +40,7 @@ _structure_, not the skin. This document is the brief for that.
 ## The problems, ranked
 
 ### P1 — Two competing search boxes
+
 The global header has "Enter search"; the filter rail has a "Keyword" input.
 A first‑time user can't tell which is "the" search, and the relationship between
 them (the header one navigates to `/search`, the rail one filters in place) is
@@ -52,6 +53,7 @@ invisible.
 > "search within this facet" boxes only.
 
 ### P2 — View switching is hidden in a menu
+
 Grid/Timeline/Map/Charts live inside the "Actions" dropdown. Most users never
 discover the grid — the most attractive view for this corpus.
 
@@ -62,6 +64,7 @@ discover the grid — the most attractive view for this corpus.
 > Advanced search, and Export.
 
 ### P3 — The table buries identity and imagery
+
 For manuscripts the columns lead **Repository City → Repository → Shelfmark →
 …**, and there is _no thumbnail at all_. The shelfmark (the thing scholars cite)
 is third, and the picture — the most recognisable signal — is absent.
@@ -74,10 +77,12 @@ is third, and the picture — the most recognisable signal — is absent.
 > already gates researcher features).
 
 ### P4 — The filter rail is one long, undifferentiated scroll
+
 Images expose 9 facets, all expanded. Finding the one you want means scrolling
 past the rest. There's no notion of "primary" vs "secondary" filters.
 
 > **Proposal:**
+>
 > - Show the **2–3 highest‑value facets expanded** (e.g. Repository, Date,
 >   Document type), the rest **collapsed by default**.
 > - Add a small **"filter finder"** input at the top of the rail that filters
@@ -86,6 +91,7 @@ past the rest. There's no notion of "primary" vs "secondary" filters.
 >   the top), since nearly every query in this corpus is time‑scoped.
 
 ### P5 — There is no guided entry / landing
+
 Arriving at `/search` drops you straight into "all 714 in a table". There's no
 on‑ramp: no featured collections, no "browse by repository / century / hand",
 no sense of the corpus's shape.
@@ -97,6 +103,7 @@ no sense of the corpus's shape.
 > great "browse the shape of the corpus" entry points here.
 
 ### P6 — Sorting is table‑only and invisible elsewhere
+
 With the Sort action removed, sorting now happens by clicking column headers —
 which only exist in the table. Grid and timeline have no sort.
 
@@ -105,6 +112,7 @@ which only exist in the table. Grid and timeline have no sort.
 > onto the same `ordering.options` the server already returns.
 
 ### P7 — Active‑filter feedback is weak
+
 After clicking a facet, the only confirmation is a chip inside the rail (which
 may be scrolled off). The result set changes with little fanfare.
 
@@ -115,12 +123,14 @@ may be scrolled off). The result set changes with little fanfare.
 > scrolling results.
 
 ### P8 — Mobile is an afterthought
+
 Tabs scroll horizontally; filters are a sheet; the count + tabs + actions
 compete for one cramped row.
 
-> **Proposal:** on small screens, collapse to **[Search field] + [Filters
-> button w/ count] + [View/Sort]**, move the type tabs into a select or a
-> scrollable segmented control, and let results go full‑width.
+> **Proposal:** on small screens, collapse the controls to a search field, a
+> Filters button (with an active count), and a compact View/Sort control; move
+> the type tabs into a select or a scrollable segmented control, and let results
+> go full‑width.
 
 ## Proposed layout (wireframe)
 
@@ -146,18 +156,18 @@ compete for one cramped row.
 
 ## Component‑by‑component notes
 
-| Area | Now | Proposed |
-|---|---|---|
-| **Search field** | rail "Keyword" + global nav | one prominent field in the sub‑header; global search collapses on `/search` |
-| **Type tabs** | gold‑underline serif tabs ✓ | keep; make them a `<select>` on mobile |
-| **View switch** | hidden in Actions | visible segmented control (list/grid/timeline/map/chart) |
-| **Sort** | column headers only | visible cross‑view "Sort ▾" |
-| **Active filters** | chips in rail | sticky chips bar above results + Clear all |
-| **Filter rail** | all facets expanded | top 2–3 expanded, rest collapsed; facet‑finder; Date pinned |
-| **Table** | spreadsheet, no image | identity‑first media rows; spreadsheet as opt‑in density |
-| **Grid** | framed cards ✓ | keep; add the same media‑row data (date/type) under title |
-| **Landing** | none (table of all) | zero‑query state: search + corpus summary + browse chips |
-| **Empty state** | scriptorial ✓ | keep |
+| Area               | Now                         | Proposed                                                                    |
+| ------------------ | --------------------------- | --------------------------------------------------------------------------- |
+| **Search field**   | rail "Keyword" + global nav | one prominent field in the sub‑header; global search collapses on `/search` |
+| **Type tabs**      | gold‑underline serif tabs ✓ | keep; make them a `<select>` on mobile                                      |
+| **View switch**    | hidden in Actions           | visible segmented control (list/grid/timeline/map/chart)                    |
+| **Sort**           | column headers only         | visible cross‑view "Sort ▾"                                                 |
+| **Active filters** | chips in rail               | sticky chips bar above results + Clear all                                  |
+| **Filter rail**    | all facets expanded         | top 2–3 expanded, rest collapsed; facet‑finder; Date pinned                 |
+| **Table**          | spreadsheet, no image       | identity‑first media rows; spreadsheet as opt‑in density                    |
+| **Grid**           | framed cards ✓              | keep; add the same media‑row data (date/type) under title                   |
+| **Landing**        | none (table of all)         | zero‑query state: search + corpus summary + browse chips                    |
+| **Empty state**    | scriptorial ✓               | keep                                                                        |
 
 ## Suggested phasing
 
