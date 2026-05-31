@@ -1,6 +1,6 @@
 # syntax=docker.io/docker/dockerfile:1
 
-FROM node:24-alpine AS base
+FROM node:26-alpine AS base
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_IIIF_UPSTREAM
 ARG NEXT_PUBLIC_SITE_URL
