@@ -3,6 +3,21 @@
 _Status: proposal / input for the next revamp. Written 2026‑05‑31 after the
 scriptorial reskin + clutter‑removal passes._
 
+> **Implementation status (2026‑05‑31): all three phases below have shipped.**
+>
+> - **Phase 1** — visible view‑switcher (`view-switcher.tsx`), cross‑view sort
+>   (`sort-menu.tsx`), sticky active‑filters bar, progressive‑disclosure rail.
+> - **Phase 2** — unified keyword search in the header (`search-keyword-bar.tsx`),
+>   rail keyword removed, desktop nav search collapsed on `/search`, Date pinned.
+> - **Phase 3** — zero‑query browse landing (`search-landing.tsx`) and
+>   identity‑first media rows (`results-media-list.tsx`) behind a Comfortable /
+>   Compact density toggle (`density-toggle.tsx`); the spreadsheet remains as
+>   Compact.
+>
+> The mobile keyword flow (the filter sheet's own keyword box) was intentionally
+> left as‑is and is the one remaining unification opportunity. The sections below
+> are kept as the original design rationale.
+
 ## Where we are now
 
 Two passes have already landed:
