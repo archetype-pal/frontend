@@ -34,6 +34,20 @@ const cormorant = Cormorant_Garamond({
   weight: ['300', '400', '500', '600', '700'],
   display: 'swap',
 });
+// Junicode (psb1558/Junicode-font) — a MUFI font with the medieval Latin
+// abbreviations and palaeographic glyphs the charter transcriptions need.
+// Variable weight axis is 300–700; not preloaded since it's only pulled in
+// where transcription/translation text is rendered.
+const junicode = localFont({
+  src: [
+    { path: './fonts/JunicodeVF-Roman.woff2', style: 'normal' },
+    { path: './fonts/JunicodeVF-Italic.woff2', style: 'italic' },
+  ],
+  variable: '--font-junicode',
+  weight: '300 700',
+  display: 'swap',
+  preload: false,
+});
 
 export const metadata: Metadata = {
   title: {
@@ -63,7 +77,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${cormorant.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${cormorant.variable} ${junicode.variable} antialiased`}
       >
         <AuthProvider>
           <SiteFeaturesProvider initialConfig={siteFeaturesConfig}>

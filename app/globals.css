@@ -41,6 +41,12 @@
 
   --font-serif: var(--font-lora), Georgia, Cambria, serif;
   --font-display: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  /*
+   * Manuscript transcriptions & translations. Junicode carries the MUFI
+   * medieval Latin abbreviations and palaeographic glyphs the charter corpus
+   * relies on; consumed as the `font-transcription` utility on rendered text.
+   */
+  --font-transcription: var(--font-junicode), 'Junicode', 'Times New Roman', serif;
 
   /*
    * Editorial colour pair used by the texts dashboard (Transcription vs

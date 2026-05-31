@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { sanitizeHtml } from '@/lib/sanitize-html';
 import { toDptHtml } from '@/lib/tei-to-dpt-html';
+import { cn } from '@/lib/utils';
 
 interface ImageTextViewerProps {
   html: string;
@@ -14,9 +15,16 @@ export function ImageTextViewer({ html, className }: ImageTextViewerProps) {
     () => sanitizeHtml(toDptHtml(html), { allowDataAttr: true }),
     [html]
   );
+  // Junicode (font-transcription) renders the Latin transcription — and the
+  // translation, for visual consistency — with full medieval-Latin glyph
+  // coverage. Applied here so every consumer (viewer panel, text pages,
+  // backoffice preview/editor) gets it.
   return (
     <div
-      className={className ?? 'prose prose-sm dark:prose-invert max-w-none'}
+      className={cn(
+        'font-transcription',
+        className ?? 'prose prose-sm dark:prose-invert max-w-none'
+      )}
       dangerouslySetInnerHTML={{ __html: safeHtml }}
     />
   );
