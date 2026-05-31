@@ -273,24 +273,23 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col">
+          {/* Active-filters bar — kept above the scroll area (not inside it) so
+              it stays visible without competing with the sticky table header. */}
+          {s.activeFilterCount > 0 && (
+            <div className="shrink-0 border-b border-border/70 bg-background px-3 py-2 sm:px-4">
+              <ActiveFacetTags
+                items={s.activeTags}
+                title={`Active filters (${s.activeFilterCount})`}
+                className="px-0"
+                onRemove={s.handleRemoveTag}
+                onClearAll={s.handleClearAllFilters}
+              />
+            </div>
+          )}
           <div
             ref={resultsScrollRef}
             className="relative flex flex-1 flex-col overflow-auto p-2 sm:p-3"
           >
-            {/* Sticky active-filters bar — applied filters stay visible (and
-                removable) while scrolling results, instead of being buried in
-                the filter rail. */}
-            {s.activeFilterCount > 0 && (
-              <div className="sticky top-0 z-20 -mx-2 -mt-2 mb-2 border-b border-border/70 bg-background/90 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:-mx-3 sm:-mt-3 sm:px-3">
-                <ActiveFacetTags
-                  items={s.activeTags}
-                  title={`Active filters (${s.activeFilterCount})`}
-                  className="px-0"
-                  onRemove={s.handleRemoveTag}
-                  onClearAll={s.handleClearAllFilters}
-                />
-              </div>
-            )}
             {/* Zero-query browse landing — a guided way in (corpus summary +
                 browse-by chips) when nothing is searched or filtered yet. */}
             {!s.submittedKeyword &&
@@ -305,6 +304,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   countsByType={s.countsByType}
                   facets={s.data.facets}
                   dateDistribution={s.timelineDistribution}
+                  autoCollapsed={s.viewMode === 'table'}
                   onSelectFacet={(facetKey, value) =>
                     s.handleFacetClick('', { type: 'selectFacet', facetKey, value })
                   }

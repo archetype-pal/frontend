@@ -665,10 +665,16 @@ function ResultsTableComponent<K extends ResultType>({
   return (
     <div
       ref={scrollContainerRef ? undefined : localScrollRef}
-      className={`relative rounded-lg border border-border bg-card ${scrollContainerRef ? 'overflow-visible' : 'overflow-auto'}`}
+      className={`relative rounded-lg border border-border bg-card ${
+        scrollContainerRef
+          ? // Neutralise the shared <Table> wrapper's `overflow-auto` so the
+            // sticky header anchors to the page scroll container, not the wrapper.
+            'overflow-visible [&>div]:overflow-visible'
+          : 'overflow-auto'
+      }`}
     >
       <Table>
-        <TableHeader className="bg-muted/40 [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-muted-foreground">
+        <TableHeader className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-secondary [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-muted-foreground [&_th]:shadow-[inset_0_-1px_0_var(--border)]">
           <TableRow>
             {hasSubRow && <TableHead className="w-16" />}
             {cols.map((col) => (
