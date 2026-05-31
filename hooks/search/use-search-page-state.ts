@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
-import { getCrossTypeLinks, SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
+import { SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useSearchVisibility } from '@/lib/search-visibility';
@@ -25,7 +25,6 @@ import { useSearchViewMode } from '@/hooks/search/use-search-view-mode';
 import { useSearchKeyword } from '@/hooks/search/use-search-keyword';
 import { useSearchQuery } from '@/hooks/search/use-search-query';
 import { useSearchMobileFilters } from '@/hooks/search/use-search-mobile-filters';
-import { useSearchCompare } from '@/hooks/search/use-search-compare';
 import { useSearchExport } from '@/hooks/search/use-search-export';
 import { useSearchUrlSync } from '@/hooks/search/use-search-url-sync';
 import { useSearchHotkeys } from '@/hooks/search/use-search-hotkeys';
@@ -105,8 +104,6 @@ export function useSearchPageState(initialType?: ResultType) {
   const timelineDistribution = data.facetDistribution?.date_min ?? {};
   const cityDistribution = data.facetDistribution?.repository_city ?? {};
 
-  const compareHook = useSearchCompare({ resultType, filtered });
-
   const exportHook = useSearchExport({
     queryState: queryHook.queryState,
     resultType,
@@ -163,12 +160,10 @@ export function useSearchPageState(initialType?: ResultType) {
     queryState: queryHook.queryState,
     submittedKeyword,
     advancedSearchEnabled: advancedSearch.enabled,
-    compareIds: compareHook.compareIds,
     viewMode,
     setQueryState: queryHook.setQueryState,
     setDraftKeyword,
     setSubmittedKeyword,
-    setCompareIds: compareHook.setCompareIds,
     setAdvancedSearch,
     setViewMode,
   });
@@ -192,11 +187,10 @@ export function useSearchPageState(initialType?: ResultType) {
         extraParams: {},
         offset: 0,
       }));
-      compareHook.clearCompareIds();
       setAdvancedSearch(DEFAULT_ADVANCED_SEARCH_STATE);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stable refs from sub-hooks
-    [queryHook.setQueryState, compareHook.clearCompareIds]
+    [queryHook.setQueryState]
   );
 
   // --- Computed values ---
@@ -208,7 +202,6 @@ export function useSearchPageState(initialType?: ResultType) {
   const distributionEnabled = resultType === 'graphs';
   const showMapToggle = !isTableOnlyType(resultType);
   const resultCount = data.count;
-  const crossTypeLinks = React.useMemo(() => getCrossTypeLinks(resultType), [resultType]);
 
   // --- Hotkeys ---
 
@@ -234,15 +227,11 @@ export function useSearchPageState(initialType?: ResultType) {
     setDraftKeyword,
     submittedKeyword,
     setSubmittedKeyword,
-    shareFeedback: exportHook.shareFeedback,
     exportBusy: exportHook.exportBusy,
     advancedSearch,
     setAdvancedSearch,
     exactPhraseKeyword,
     setExactPhraseKeyword,
-    compareIds: compareHook.compareIds,
-    compareOpen: compareHook.compareOpen,
-    setCompareOpen: compareHook.setCompareOpen,
     filtersSidebarCollapsed,
     toggleFiltersSidebar,
     // Data
@@ -265,9 +254,6 @@ export function useSearchPageState(initialType?: ResultType) {
     distributionEnabled,
     showMapToggle,
     resultCount,
-    crossTypeLinks,
-    compareEnabled: compareHook.compareEnabled,
-    selectedCompareItems: compareHook.selectedCompareItems,
     // Mobile
     mobileQueryDraft: mobileHook.mobileQueryDraft,
     setMobileQueryDraft: mobileHook.setMobileQueryDraft,
@@ -285,10 +271,8 @@ export function useSearchPageState(initialType?: ResultType) {
     handleClearDateFilters: queryHook.handleClearDateFilters,
     handleRemoveTag: queryHook.handleRemoveTag,
     handleSort: queryHook.handleSort,
-    handleShareSearch: exportHook.handleShareSearch,
     handleExport: exportHook.handleExport,
     handleFormattedExport: exportHook.handleFormattedExport,
-    toggleCompare: compareHook.toggleCompare,
     // Config
     enabledCategories,
     categoryConfig,

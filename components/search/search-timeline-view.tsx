@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { Button } from '@/components/ui/button';
 
 type SearchTimelineViewProps = {
   dateDistribution?: Record<string, number>;
@@ -67,9 +66,11 @@ export function SearchTimelineView({ dateDistribution, onApplyRange }: SearchTim
                   {bucket.count}
                 </span>
               </div>
-              <Button size="sm" variant="ghost" className="h-6 px-2 text-xs">
+              {/* Purely visual — the whole row is the clickable button, so this
+                  must not be a nested <button> (invalid HTML / hydration error). */}
+              <span className="inline-flex h-6 shrink-0 items-center rounded px-2 text-xs text-muted-foreground transition-colors group-hover:bg-muted group-hover:text-foreground">
                 Filter
-              </Button>
+              </span>
             </div>
           </button>
         ))}

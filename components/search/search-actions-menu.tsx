@@ -1,7 +1,6 @@
 import * as React from 'react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Bookmark, Check, MoreVertical, Share2 } from 'lucide-react';
+import { Bookmark, Check, MoreVertical } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -16,9 +15,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SavedSearchesPanel } from '@/components/search/saved-searches';
 import { type ResultType } from '@/lib/search-types';
-import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
-import { useModelLabels } from '@/contexts/model-labels-context';
-import { stateFromUrl, type QueryState } from '@/lib/search-query';
 
 export type ViewMode = 'table' | 'grid' | 'timeline' | 'distribution' | 'map';
 
@@ -35,21 +31,12 @@ export type SearchActionsMenuProps = {
   showMapToggle: boolean;
   hasTimelineData: boolean;
   distributionEnabled: boolean;
-  handleShareSearch: () => Promise<void>;
-  shareFeedback: 'idle' | 'copied' | 'error';
   advancedEnabled: boolean;
   onToggleAdvanced: () => void;
-  orderingOptions: Array<{ name: string; text: string; url: string }> | undefined;
-  setQueryState: React.Dispatch<React.SetStateAction<QueryState>>;
-  baseFacetURL: string;
-  compareEnabled: boolean;
-  compareCount: number;
-  onOpenCompare: () => void;
   handleExport: (format: 'csv' | 'json' | 'bibtex', scope: 'page' | 'all') => Promise<void>;
   handleFormattedExport: (format: 'csv' | 'json', scope: 'page' | 'all') => Promise<void>;
   exportBusy: boolean;
   resultType: ResultType;
-  crossTypeLinks: readonly ResultType[];
   isResearcher: boolean;
 };
 
@@ -66,25 +53,15 @@ export function SearchActionsMenu({
   showMapToggle,
   hasTimelineData,
   distributionEnabled,
-  handleShareSearch,
-  shareFeedback,
   advancedEnabled,
   onToggleAdvanced,
-  orderingOptions,
-  setQueryState,
-  baseFacetURL,
-  compareEnabled,
-  compareCount,
-  onOpenCompare,
   handleExport,
   handleFormattedExport,
   exportBusy,
   resultType,
-  crossTypeLinks,
   isResearcher,
 }: SearchActionsMenuProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const { getLabel } = useModelLabels();
 
   const viewItem = (mode: ViewMode, label: string, disabled?: boolean) => (
     <DropdownMenuItem
@@ -109,7 +86,7 @@ export function SearchActionsMenu({
           variant="outline"
           size="sm"
           className="h-11 min-h-11 min-w-11 shrink-0 gap-1.5 px-2.5 sm:h-9 sm:min-h-9 sm:min-w-0 sm:px-3"
-          title="Search actions — saved searches, view, share, export, and more"
+          title="Search actions — saved searches, view, and export"
           aria-label="Search actions"
         >
           <MoreVertical className="h-4 w-4 shrink-0" />
@@ -139,35 +116,7 @@ export function SearchActionsMenu({
         {showTimelineToggle && viewItem('timeline', 'Timeline', !hasTimelineData)}
         {showDistributionToggle && viewItem('distribution', 'Charts', !distributionEnabled)}
         {showMapToggle && viewItem('map', 'Map')}
-        {crossTypeLinks.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Search in</DropdownMenuLabel>
-            {crossTypeLinks.map((type) => (
-              <DropdownMenuItem key={type} asChild>
-                <Link
-                  href={`/search/${type}${keyword ? '?keyword=' + encodeURIComponent(keyword) : ''}`}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {resolveResultTypeLabel(type, getLabel)}
-                </Link>
-              </DropdownMenuItem>
-            ))}
-          </>
-        )}
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => {
-            void handleShareSearch();
-          }}
-        >
-          <Share2 className="mr-2 h-4 w-4" />
-          {shareFeedback === 'copied'
-            ? 'Link copied'
-            : shareFeedback === 'error'
-              ? 'Copy failed'
-              : 'Share link'}
-        </DropdownMenuItem>
         <DropdownMenuCheckboxItem
           checked={advancedEnabled}
           onCheckedChange={() => onToggleAdvanced()}
@@ -175,32 +124,6 @@ export function SearchActionsMenu({
         >
           Advanced search
         </DropdownMenuCheckboxItem>
-        {orderingOptions && orderingOptions.length > 0 && (
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>Sort</DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              {orderingOptions.map((option) => (
-                <DropdownMenuItem
-                  key={option.name}
-                  onClick={() => setQueryState(stateFromUrl(option.url, baseFacetURL))}
-                >
-                  {option.text}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-        )}
-        {compareEnabled && (
-          <DropdownMenuItem
-            disabled={compareCount < 2}
-            onClick={() => {
-              setMenuOpen(false);
-              onOpenCompare();
-            }}
-          >
-            Compare ({compareCount})
-          </DropdownMenuItem>
-        )}
         <DropdownMenuSeparator />
         <DropdownMenuSub>
           <DropdownMenuSubTrigger disabled={exportBusy}>Export</DropdownMenuSubTrigger>

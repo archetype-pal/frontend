@@ -18,12 +18,10 @@ export function useSearchUrlSync(opts: {
   queryState: QueryState;
   submittedKeyword: string;
   advancedSearchEnabled: boolean;
-  compareIds: string[];
   viewMode: ViewMode;
   setQueryState: React.Dispatch<React.SetStateAction<QueryState>>;
   setDraftKeyword: (value: string) => void;
   setSubmittedKeyword: (value: string) => void;
-  setCompareIds: React.Dispatch<React.SetStateAction<string[]>>;
   setAdvancedSearch: React.Dispatch<React.SetStateAction<AdvancedSearchState>>;
   setViewMode: React.Dispatch<React.SetStateAction<ViewMode>>;
 }) {
@@ -32,12 +30,10 @@ export function useSearchUrlSync(opts: {
     queryState,
     submittedKeyword,
     advancedSearchEnabled,
-    compareIds,
     viewMode,
     setQueryState,
     setDraftKeyword,
     setSubmittedKeyword,
-    setCompareIds,
     setAdvancedSearch,
     setViewMode,
   } = opts;
@@ -56,13 +52,6 @@ export function useSearchUrlSync(opts: {
     setDraftKeyword(value);
     setSubmittedKeyword(value);
     setQueryState(stateFromSearchParams(searchParams));
-    const compareRaw = searchParams.get('compare') ?? '';
-    setCompareIds(
-      compareRaw
-        .split(',')
-        .map((id) => id.trim())
-        .filter(Boolean)
-    );
     const notFacetEntry =
       Array.from(searchParams.entries()).find(([key]) => key.endsWith('__not')) ?? null;
     const rangeMinEntry =
@@ -96,7 +85,6 @@ export function useSearchUrlSync(opts: {
     setQueryState,
     setDraftKeyword,
     setSubmittedKeyword,
-    setCompareIds,
     setAdvancedSearch,
     setViewMode,
   ]);
@@ -107,9 +95,6 @@ export function useSearchUrlSync(opts: {
     const params = new URLSearchParams(qs);
     if (submittedKeyword) params.set('keyword', submittedKeyword);
     if (advancedSearchEnabled) params.set('advanced', 'true');
-    if (compareIds.length > 0) {
-      params.set('compare', compareIds.join(','));
-    }
     if (viewMode !== 'table') {
       params.set('view', viewMode);
     }
@@ -119,5 +104,5 @@ export function useSearchUrlSync(opts: {
       isInternalUrlUpdate.current = true;
       window.history.replaceState(null, '', path);
     }
-  }, [advancedSearchEnabled, compareIds, queryState, resultType, submittedKeyword, viewMode]);
+  }, [advancedSearchEnabled, queryState, resultType, submittedKeyword, viewMode]);
 }

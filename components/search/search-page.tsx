@@ -34,9 +34,6 @@ import { FieldVisibilityMenu } from '@/components/search/field-visibility-menu';
 const SearchMapView = React.lazy(() =>
   import('@/components/search/search-map-view').then((m) => ({ default: m.SearchMapView }))
 );
-const ComparisonView = React.lazy(() =>
-  import('@/components/search/comparison-view').then((m) => ({ default: m.ComparisonView }))
-);
 import { cn } from '@/lib/utils';
 import { useSearchPageState } from '@/hooks/search/use-search-page-state';
 
@@ -61,13 +58,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             <span className="font-display text-[1.65rem] font-semibold leading-none tracking-tight tabular-nums text-primary sm:text-[2.4rem]">
               {s.resultCount.toLocaleString()}
             </span>
-            <span className="flex max-w-[min(30vw,10rem)] flex-col leading-tight sm:max-w-none">
-              <span className="truncate font-serif text-xs font-medium tracking-tight text-foreground/80 sm:text-sm">
-                {typeLabel}
-              </span>
-              <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
-                results
-              </span>
+            <span className="font-serif text-xs tracking-tight text-muted-foreground sm:text-sm">
+              results
             </span>
           </div>
         </div>
@@ -181,23 +173,14 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             showMapToggle={s.showMapToggle}
             hasTimelineData={s.hasTimelineData}
             distributionEnabled={s.distributionEnabled}
-            handleShareSearch={s.handleShareSearch}
-            shareFeedback={s.shareFeedback}
             advancedEnabled={s.advancedSearch.enabled}
             onToggleAdvanced={() =>
               s.setAdvancedSearch((prev) => ({ ...prev, enabled: !prev.enabled }))
             }
-            orderingOptions={s.data.ordering?.options}
-            setQueryState={s.setQueryState}
-            baseFacetURL={s.baseFacetURL}
-            compareEnabled={s.compareEnabled}
-            compareCount={s.selectedCompareItems.length}
-            onOpenCompare={() => s.setCompareOpen(true)}
             handleExport={s.handleExport}
             handleFormattedExport={s.handleFormattedExport}
             exportBusy={s.exportBusy}
             resultType={s.resultType}
-            crossTypeLinks={s.crossTypeLinks}
             isResearcher={s.visibility.isResearcher}
           />
         </div>
@@ -214,27 +197,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               : 'md:w-64 md:shrink-0 md:overflow-y-auto md:px-3 md:py-3'
           )}
         >
-          <div className="sticky top-0 z-[1] -mx-3 mb-2 flex items-center justify-between gap-2 border-b border-border/70 bg-background px-3 pb-2 pt-0">
-            <h2 className="flex items-center font-serif text-sm font-semibold tracking-tight text-foreground">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Filters
-              </span>
-              {s.activeFilterCount > 0 && (
-                <span className="ml-2 rounded-full border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-foreground">
-                  {s.activeFilterCount}
-                </span>
-              )}
-            </h2>
-            {s.activeFilterCount > 0 && (
-              <button
-                type="button"
-                className="text-xs text-primary hover:underline"
-                onClick={s.handleClearAllFilters}
-              >
-                Clear all ({s.activeFilterCount})
-              </button>
-            )}
-          </div>
           {Object.keys(s.data.facets).length > 0 ? (
             <DynamicFacets
               facets={s.data.facets}
@@ -288,8 +250,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                       visibleColumns={s.categoryConfig.visibleColumns}
                       scrollContainerRef={resultsScrollRef}
                       isFetching={s.isFetching}
-                      compareSelection={s.compareIds}
-                      onToggleCompare={s.toggleCompare}
                     />
                   ) : s.viewMode === 'timeline' ? (
                     <React.Suspense
@@ -365,8 +325,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                       highlightKeyword={s.submittedKeyword}
                       scrollContainerRef={resultsScrollRef}
                       isFetching={s.isFetching}
-                      compareSelection={s.compareIds}
-                      onToggleCompare={s.toggleCompare}
                     />
                   )
                 ) : (
@@ -405,7 +363,10 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   </section>
                 )}
               </div>
-              {s.data.count > 0 && (
+              {/* Pagination is a list-view concern only. The timeline, map and
+                  charts views are aggregate visualisations of the whole result
+                  set, so paging through them is meaningless. */}
+              {s.data.count > 0 && (s.viewMode === 'table' || s.viewMode === 'grid') && (
                 <div className="flex shrink-0 justify-center rounded-b-xl border-t border-border/80 bg-card px-3 py-1.5">
                   <Pagination
                     count={s.data.count}
@@ -420,16 +381,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           </div>
         </main>
       </div>
-      {s.compareOpen && (
-        <React.Suspense fallback={null}>
-          <ComparisonView
-            open={s.compareOpen}
-            onOpenChange={s.setCompareOpen}
-            items={s.selectedCompareItems as Parameters<typeof ComparisonView>[0]['items']}
-            resultType={s.resultType}
-          />
-        </React.Suspense>
-      )}
     </div>
   );
 }
