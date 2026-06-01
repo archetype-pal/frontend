@@ -4,6 +4,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { AnnotationHeader } from './annotation-header';
 
 describe('AnnotationHeader allograph gallery control', () => {
+  const allograph = {
+    id: 1,
+    character_name: 'a',
+    name: 'Caroline',
+  } as never;
+
   it('disables the eye button until an allograph is selected', () => {
     render(<AnnotationHeader unsavedCount={0} onOpenAllographModal={vi.fn()} />);
 
@@ -32,5 +38,35 @@ describe('AnnotationHeader allograph gallery control', () => {
 
     fireEvent.click(eyeButton);
     expect(onOpenAllographModal).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides the dropdown and eye button in text view', () => {
+    render(
+      <AnnotationHeader
+        unsavedCount={0}
+        viewMode="text"
+        allographs={[allograph]}
+        onAllographSelect={vi.fn()}
+        onOpenAllographModal={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Select an allograph first' })).toBeNull();
+  });
+
+  it('shows the dropdown and eye button in both view', () => {
+    render(
+      <AnnotationHeader
+        unsavedCount={0}
+        viewMode="both"
+        allographs={[allograph]}
+        onAllographSelect={vi.fn()}
+        onOpenAllographModal={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('combobox')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Select an allograph first' })).toBeTruthy();
   });
 });

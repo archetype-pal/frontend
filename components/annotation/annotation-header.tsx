@@ -76,6 +76,7 @@ export function AnnotationHeader({
   onOpenAllographModal,
 }: AnnotationHeaderProps) {
   const singleHand = hands.length === 1 ? hands[0] : null;
+  const showAllographControls = viewMode !== 'text';
 
   return (
     <TooltipProvider>
@@ -180,7 +181,7 @@ export function AnnotationHeader({
             </div>
           )}
 
-          {allographs.length > 0 && onAllographSelect && (
+          {showAllographControls && allographs.length > 0 && onAllographSelect && (
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Allograph
@@ -211,7 +212,7 @@ export function AnnotationHeader({
             </div>
           )}
 
-          {onOpenAllographModal && (
+          {showAllographControls && onOpenAllographModal && (
             <Button
               variant="outline"
               className="flex h-8 items-center gap-2 px-2"
