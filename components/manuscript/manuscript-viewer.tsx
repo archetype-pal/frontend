@@ -513,7 +513,6 @@ export default function ManuscriptViewer({
     currentCreationKind,
     canViewEditorialControls,
     filteredAllographId: filteredAllograph?.id,
-    setFilteredAllograph,
     activeAssignmentHandId: activeAssignmentHand?.id,
     setHoveredAnnotationId,
     setSelectedAnnotationIds,
@@ -962,6 +961,10 @@ export default function ManuscriptViewer({
         selectedHand === undefined ? (defaultHand?.id ?? null) : (selectedHand?.id ?? null)
       }
       onHandSelect={setSelectedHand}
+      allographs={allographs}
+      selectedAllographId={filteredAllograph?.id ?? null}
+      onAllographSelect={setFilteredAllograph}
+      onAllographHover={setHoveredAllograph}
     />
   );
 

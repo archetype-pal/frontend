@@ -16,7 +16,6 @@ import type {
   Annotation as A9sAnnotation,
   ViewerApi,
 } from '@/components/manuscript/manuscript-annotorious';
-import type { Allograph } from '@/types/allographs';
 import type { A9sWithMeta, AnnotationCreationKind, PopupRecord } from '@/types/annotation-viewer';
 
 const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
@@ -42,8 +41,8 @@ interface UsePopupSelectionArgs {
   // editor ui state
   currentCreationKind: AnnotationCreationKind;
   canViewEditorialControls: boolean;
+  /** The working allograph copied into a newly-drawn graph (set at the top bar). */
   filteredAllographId: number | undefined;
-  setFilteredAllograph: React.Dispatch<React.SetStateAction<Allograph | undefined>>;
   activeAssignmentHandId: number | undefined;
   setHoveredAnnotationId: (id: string | null) => void;
   setSelectedAnnotationIds: React.Dispatch<React.SetStateAction<string[]>>;
@@ -82,7 +81,6 @@ export function usePopupSelection({
   currentCreationKind,
   canViewEditorialControls,
   filteredAllographId,
-  setFilteredAllograph,
   activeAssignmentHandId,
   setHoveredAnnotationId,
   setSelectedAnnotationIds,
@@ -168,8 +166,6 @@ export function usePopupSelection({
         return;
       }
 
-      setFilteredAllograph(undefined);
-
       if (options?.clearHover) {
         setHoveredAnnotationId(null);
       }
@@ -221,7 +217,6 @@ export function usePopupSelection({
       openPopupCollectionFromAnnotation,
       activeAssignmentHandId,
       allowMultipleBoxes,
-      setFilteredAllograph,
       setHoveredAnnotationId,
     ]
   );

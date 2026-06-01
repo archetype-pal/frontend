@@ -11,8 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 // imageToolsControl renders Radix Tooltips that need a provider ancestor.
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { formatAllographLabel } from '@/lib/allograph-labels';
+import type { Allograph } from '@/types/allographs';
 import type { ViewerAnnotationMode } from '@/types/annotation-viewer';
 import type { HandType } from '@/types/hands';
 
@@ -36,6 +39,11 @@ interface AnnotationHeaderProps {
   hands?: HandType[];
   selectedHandId?: number | null;
   onHandSelect?: (hand: HandType | null) => void;
+  // Working allograph for new annotations — copied into each new graph.
+  allographs?: Allograph[];
+  selectedAllographId?: number | null;
+  onAllographSelect?: (allograph: Allograph | undefined) => void;
+  onAllographHover?: (allograph: Allograph | undefined) => void;
 }
 
 const UNSET_HAND = '__unset__';
@@ -56,6 +64,10 @@ export function AnnotationHeader({
   hands = [],
   selectedHandId,
   onHandSelect,
+  allographs = [],
+  selectedAllographId,
+  onAllographSelect,
+  onAllographHover,
 }: AnnotationHeaderProps) {
   const singleHand = hands.length === 1 ? hands[0] : null;
 
@@ -159,6 +171,37 @@ export function AnnotationHeader({
                   </SelectContent>
                 </Select>
               )}
+            </div>
+          )}
+
+          {allographs.length > 0 && onAllographSelect && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Allograph
+              </span>
+              <SearchableSelect
+                options={allographs.map((a) => ({
+                  value: a.id.toString(),
+                  label: formatAllographLabel(a),
+                }))}
+                value={selectedAllographId != null ? selectedAllographId.toString() : null}
+                onValueChange={(value) =>
+                  onAllographSelect(
+                    value ? allographs.find((a) => a.id.toString() === value) : undefined
+                  )
+                }
+                onOptionHover={(value) =>
+                  onAllographHover?.(
+                    value ? allographs.find((a) => a.id.toString() === value) : undefined
+                  )
+                }
+                placeholder="Any allograph"
+                searchPlaceholder="Search allographs…"
+                emptyText="No allographs found."
+                clearLabel="Any allograph"
+                triggerClassName="h-8 w-[200px]"
+                contentClassName="z-[250]"
+              />
             </div>
           )}
 
