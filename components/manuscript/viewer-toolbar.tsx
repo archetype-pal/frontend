@@ -84,14 +84,14 @@ export function ViewerToolbar({
             <Button
               variant={activeTool === 'move' ? 'default' : 'ghost'}
               size="icon"
-              aria-label="Select/Drag (g)"
-              aria-keyshortcuts="G Shift+G"
+              aria-label="Select/Drag (g / space)"
+              aria-keyshortcuts="G Shift+G Space"
               onClick={onMoveTool}
             >
               <Hand className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Select/Drag (g)</TooltipContent>
+          <TooltipContent>Select/Drag (g / space)</TooltipContent>
         </Tooltip>
 
         <Tooltip>
@@ -216,14 +216,14 @@ export function ViewerToolbar({
                   activeTool === 'draw' && currentCreationKind === 'public' ? 'default' : 'ghost'
                 }
                 size="icon"
-                aria-label="Draw (d)"
-                aria-keyshortcuts="D Shift+D R Shift+R"
+                aria-label="Draw (d / space)"
+                aria-keyshortcuts="D Shift+D R Shift+R Space"
                 onClick={() => onCreateAnnotation('public')}
               >
                 <SquarePen className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Draw (d)</TooltipContent>
+            <TooltipContent>Draw (d / space)</TooltipContent>
           </Tooltip>
         )}
       </TooltipProvider>

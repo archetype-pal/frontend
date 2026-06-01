@@ -135,6 +135,7 @@ describe('AnnotationPopupCard', () => {
     expect(
       screen.getByText(/Press OK to keep changes local for the main toolbar Save/)
     ).toBeTruthy();
+    expect(screen.getByText(/Save Annotation \(s\) in this popup header/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'OK' }).hasAttribute('disabled')).toBe(true);
   });
 
@@ -156,8 +157,8 @@ describe('AnnotationPopupCard', () => {
       onSaveAnnotationShortcut: vi.fn(),
     });
 
-    expect(screen.getByRole('button', { name: 'Save Annotation' }).hasAttribute('disabled')).toBe(
-      true
-    );
+    const saveAnnotation = screen.getByRole('button', { name: 'Save Annotation' });
+    expect(saveAnnotation.hasAttribute('disabled')).toBe(true);
+    expect(saveAnnotation.getAttribute('aria-keyshortcuts')).toBe('S');
   });
 });

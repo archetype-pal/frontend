@@ -591,7 +591,7 @@ export function StandardAnnotationEditor({
               {showLocalHint ? (
                 <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                   Press OK to keep changes local for the main toolbar Save, or use Save Annotation
-                  in this popup header to save immediately.
+                  (s) in this popup header to save immediately.
                 </div>
               ) : null}
             </div>

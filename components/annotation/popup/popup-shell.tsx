@@ -128,12 +128,13 @@ export function PopupShell({
                     onClick={() => void onSaveAnnotationShortcut?.()}
                     disabled={isSaveAnnotationShortcutDisabled || !onSaveAnnotationShortcut}
                     aria-label="Save Annotation"
+                    aria-keyshortcuts="S"
                     type="button"
                   >
                     <Save className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Save Annotation</TooltipContent>
+                <TooltipContent>Save Annotation (s)</TooltipContent>
               </Tooltip>
             )}
 

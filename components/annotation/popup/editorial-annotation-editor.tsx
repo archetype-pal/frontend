@@ -23,8 +23,8 @@ export function EditorialAnnotationEditor({
     <div className="max-h-[360px] overflow-auto px-4 py-4 space-y-4">
       {isExisting ? (
         <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          Press OK to keep changes local for the main toolbar Save, or use Save Annotation in this
-          popup header to save immediately.
+          Press OK to keep changes local for the main toolbar Save, or use Save Annotation (s) in
+          this popup header to save immediately.
         </div>
       ) : null}
 

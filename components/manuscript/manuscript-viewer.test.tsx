@@ -217,6 +217,57 @@ describe('ManuscriptViewer smoke test', () => {
     expect(saveAfter).toHaveProperty('disabled', false);
   });
 
+  it('toggles between select/drag and public draw tools when Space is pressed', async () => {
+    render(<ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />);
+    await screen.findByRole('button', { name: 'Image tools' });
+
+    const props = annotoriousPropsRef.current;
+    const enablePan = vi.fn();
+    const enableDraw = vi.fn();
+    act(() => {
+      props!.exposeApi?.({ enablePan, enableDraw });
+    });
+    expect(enablePan).toHaveBeenCalledTimes(1);
+
+    fireEvent.keyDown(window, { key: ' ' });
+    await waitFor(() => expect(enableDraw).toHaveBeenCalledTimes(1));
+
+    fireEvent.keyDown(window, { key: ' ' });
+    await waitFor(() => expect(enablePan).toHaveBeenCalledTimes(2));
+  });
+
+  it('uses plain s to immediately save an edited active popup', async () => {
+    render(<ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />);
+    await screen.findByRole('button', { name: 'Image tools' });
+
+    const props = annotoriousPropsRef.current;
+    act(() => {
+      props!.exposeApi?.(mockViewerApi);
+      props!.onSelect?.({
+        id: 'db:12',
+        target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:0,0,10,10' } },
+        body: [],
+        _meta: { annotationType: 'image', note: 'before' },
+      });
+    });
+
+    expect(await screen.findByRole('dialog')).toBeTruthy();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Notes' }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    fireEvent.change(await screen.findByPlaceholderText('Type note'), {
+      target: { value: 'after' },
+    });
+    expect(screen.getByRole('button', { name: 'Save Annotation' })).toHaveProperty(
+      'disabled',
+      false
+    );
+
+    fireEvent.keyDown(window, { key: 's' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
   it('opens the allograph thumbnail gallery from an image-scoped header selection', async () => {
     fetchBaseData.mockResolvedValueOnce({
       image: fakeImage,

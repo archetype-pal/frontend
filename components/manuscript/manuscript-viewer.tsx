@@ -694,6 +694,15 @@ export default function ManuscriptViewer({
     [viewerCapabilities, setActiveTool, setCurrentCreationKind]
   );
 
+  const handleToggleMoveDrawTool = React.useCallback(() => {
+    if (activeTool === 'draw') {
+      handleMoveTool();
+      return;
+    }
+
+    handleCreateAnnotation('public');
+  }, [activeTool, handleCreateAnnotation, handleMoveTool]);
+
   const handleDeleteTool = React.useCallback(() => {
     if (!canDeleteAnnotations) return;
 
@@ -877,12 +886,27 @@ export default function ManuscriptViewer({
       event.preventDefault();
       if (canSaveNow) void handleSave();
     };
+    const saveActivePopupOrToolbar = (event: KeyboardEvent) => {
+      if (!canPersistAnyAnnotations || isPublicDemoMode) return;
+      event.preventDefault();
+
+      const hasSavableActivePopup =
+        activePopupRecord &&
+        (!isDbId(activePopupRecord.annotation.id) || hasPopupAnnotationChanges(activePopupRecord));
+
+      if (hasSavableActivePopup) {
+        void handleSavePopupAnnotation(activePopupRecord.id);
+        return;
+      }
+
+      if (canSaveNow) void handleSave();
+    };
     const defs: HotkeyDefinition[] = [
       // Cmd/Ctrl+S — only shortcut that's allowed inside text inputs.
       { key: 's', metaKey: true, allowInEditable: true, handler: saveIfDirty },
       { key: 's', ctrlKey: true, allowInEditable: true, handler: saveIfDirty },
-      // Plain S also saves (no modifier). Outside text inputs only.
-      { key: 's', handler: saveIfDirty },
+      // Plain S saves the active popup first; without a popup it saves the toolbar state.
+      { key: 's', handler: saveActivePopupOrToolbar },
 
       { key: 'Home', handler: accept(() => void handleDefaultZoom()) },
       { key: 'f', handler: accept(handleToggleFullScreen) },
@@ -890,6 +914,7 @@ export default function ManuscriptViewer({
       { key: 'm', handler: accept(handleModifyTool) },
       { key: 'd', handler: accept(() => handleCreateAnnotation()) },
       { key: 'r', handler: accept(() => handleCreateAnnotation()) },
+      { key: ' ', handler: accept(handleToggleMoveDrawTool) },
 
       // Zoom in: Z, +, =
       { key: 'z', handler: accept(zoomIn) },
@@ -939,13 +964,16 @@ export default function ManuscriptViewer({
     canDeleteAnnotations,
     canPersistAnyAnnotations,
     canSaveNow,
+    activePopupRecord,
     handleCreateAnnotation,
     handleDefaultZoom,
     handleDeleteTool,
     handleModifyTool,
     handleMoveTool,
     handleSave,
+    handleSavePopupAnnotation,
     handleToggleFullScreen,
+    handleToggleMoveDrawTool,
     isPublicDemoMode,
     panBy,
     zoomIn,
