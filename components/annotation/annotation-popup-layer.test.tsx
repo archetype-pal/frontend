@@ -20,6 +20,10 @@ vi.mock('./annotation-popup-card', () => ({
       data-in-collection={String(props.isAnnotationInCollection)}
       data-has-local-changes={String(props.hasLocalChanges)}
       data-save-disabled={String(props.isSaveAnnotationShortcutDisabled)}
+      data-allograph-label={String(
+        (props.metaSummary as { allographLabel?: string | null })?.allographLabel
+      )}
+      data-hand-label={String((props.metaSummary as { handLabel?: string | null })?.handLabel)}
       data-can-use-collection={String(
         (props.popupCapabilities as { canUseCollection?: boolean }).canUseCollection
       )}
@@ -226,6 +230,37 @@ describe('AnnotationPopupLayer', () => {
     expect(cards[0].dataset.saveDisabled).toBe('true');
     expect(cards[1].dataset.hasLocalChanges).toBe('true');
     expect(cards[1].dataset.saveDisabled).toBe('false');
+  });
+
+  it('renders existing popup title and details from live dropdown selections', () => {
+    render(
+      <AnnotationPopupLayer
+        {...defaults()}
+        visiblePopupRecords={[
+          makePopup('db:1', {
+            annotation: {
+              id: 'db:1',
+              type: 'Annotation',
+              target: {},
+              body: [{ type: 'TextualBody', purpose: 'commenting', value: 'Old allograph' }],
+              _meta: { allographId: 5, handId: 7 },
+            },
+            draftAllographText: 'New allograph',
+            draftAllographId: 8,
+            draftHandId: 9,
+          }),
+        ]}
+        activePopupId="db:1"
+        allographNameById={new Map([[8, 'New allograph']])}
+        allographLabelById={new Map([[8, 'b, New allograph']])}
+        handNameById={new Map([[9, 'New hand']])}
+      />
+    );
+
+    const card = screen.getByTestId('popup-card');
+    expect(card.dataset.popupTitle).toBe('New allograph');
+    expect(card.dataset.allographLabel).toBe('b, New allograph');
+    expect(card.dataset.handLabel).toBe('New hand');
   });
 
   it('updatePopupById receives correct field updates for the trivial draft handlers', () => {

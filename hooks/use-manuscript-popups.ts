@@ -3,7 +3,6 @@
 import * as React from 'react';
 
 import type { A9sWithMeta, PopupRecord } from '@/types/annotation-viewer';
-import { isDbId } from '@/lib/annotation-popup-utils';
 import {
   getAllographBodyText,
   getEditorialInternalNote,
@@ -51,9 +50,7 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
       annotation: A9sWithMeta,
       overrides?: Partial<Omit<PopupRecord, 'id' | 'annotation'>>
     ): PopupRecord => {
-      const isDraft = !isDbId(annotation.id);
-
-      const defaultDraftAllographText = isDraft ? getAllographBodyText(annotation) : '';
+      const defaultDraftAllographText = getAllographBodyText(annotation);
 
       const defaultDraftNoteText = getStandardAnnotationNote(annotation);
 

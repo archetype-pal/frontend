@@ -87,6 +87,17 @@ describe('useManuscriptPopups', () => {
       expect(popup.draftGraphcomponentSet).toEqual([{ component: 3, features: [10] }]);
     });
 
+    it('seeds allograph text from an existing annotation body', () => {
+      const { result } = renderHook(() => useManuscriptPopups({ allowMultipleBoxes: false }));
+      act(() => {
+        result.current.openPopupCollectionFromAnnotation({
+          ...makeAnnotation('db:1', { allographId: 5 }),
+          body: [{ type: 'TextualBody', purpose: 'commenting', value: 'Alpha' }],
+        });
+      });
+      expect(result.current.openPopups[0].draftAllographText).toBe('Alpha');
+    });
+
     it('overrides take precedence over seeded defaults', () => {
       const { result } = renderHook(() => useManuscriptPopups({ allowMultipleBoxes: false }));
       act(() => {

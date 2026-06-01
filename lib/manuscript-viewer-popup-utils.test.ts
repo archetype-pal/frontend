@@ -242,16 +242,35 @@ describe('getPopupCardViewData', () => {
     expect(getPopupCardViewData(makePopup(), new Map()).title).toBe('New Annotation');
   });
 
-  it('uses allographNameById for a persisted annotation when body text is absent', () => {
+  it('uses the live allograph id for a persisted annotation when draft text is absent', () => {
     const popup = makePopup({
       annotation: {
         ...makePopup().annotation,
         id: 'db:1',
         _meta: { allographId: 5 },
       },
+      draftAllographId: 5,
     });
     const lookup = new Map<number, string>([[5, 'Alpha allograph']]);
     expect(getPopupCardViewData(popup, lookup).title).toBe('Alpha allograph');
+  });
+
+  it('uses the live allograph text for a persisted annotation after the dropdown changes', () => {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        id: 'db:1',
+        body: [{ type: 'TextualBody', purpose: 'commenting', value: 'Old allograph' }],
+        _meta: { allographId: 5 },
+      },
+      draftAllographId: 7,
+      draftAllographText: 'New allograph',
+    });
+    const lookup = new Map<number, string>([
+      [5, 'Old allograph'],
+      [7, 'New allograph'],
+    ]);
+    expect(getPopupCardViewData(popup, lookup).title).toBe('New allograph');
   });
 
   it('falls back to "Annotation" for persisted with neither body text nor allograph name', () => {
@@ -372,14 +391,46 @@ describe('getPopupMetaSummary', () => {
         ...makePopup().annotation,
         _meta: { allographId: 5, handId: 7, annotationType: 'image' },
       },
+      draftAllographId: 5,
+      draftHandId: 7,
     });
     const summary = getPopupMetaSummary(popup, new Map([[5, 'Alpha']]), new Map([[7, 'Hand A']]));
     expect(summary).toEqual({ kindLabel: 'Public', allographLabel: 'Alpha', handLabel: 'Hand A' });
   });
 
+  it('uses live dropdown selections instead of saved annotation metadata', () => {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        id: 'db:1',
+        _meta: { allographId: 5, handId: 7, annotationType: 'image' },
+      },
+      draftAllographId: 8,
+      draftHandId: 9,
+    });
+    const summary = getPopupMetaSummary(
+      popup,
+      new Map([
+        [5, 'Old alpha'],
+        [8, 'New beta'],
+      ]),
+      new Map([
+        [7, 'Old hand'],
+        [9, 'New hand'],
+      ])
+    );
+    expect(summary).toEqual({
+      kindLabel: 'Public',
+      allographLabel: 'New beta',
+      handLabel: 'New hand',
+    });
+  });
+
   it('returns nulls when ids are missing from the lookup maps', () => {
     const popup = makePopup({
       annotation: { ...makePopup().annotation, _meta: { allographId: 99, handId: 99 } },
+      draftAllographId: 99,
+      draftHandId: 99,
     });
     const summary = getPopupMetaSummary(popup, new Map(), new Map());
     expect(summary.allographLabel).toBeNull();

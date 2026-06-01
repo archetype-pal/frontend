@@ -11,7 +11,6 @@ import { isDbId } from '@/lib/annotation-popup-utils';
 import {
   buildEditorialAnnotationBody,
   buildStandardAnnotationBody,
-  getAllographBodyText,
   getEditorialInternalNote,
   getStandardAnnotationNote,
 } from '@/lib/annotation-notes';
@@ -165,15 +164,15 @@ export function getPopupCardViewData(
   const annotationKind = annotation._meta?.annotationType === 'editorial' ? 'editorial' : 'public';
   const isDraft = !isDbId(annotation.id);
 
-  const title = isDraft
-    ? annotationKind === 'editorial'
+  const liveAllographTitle =
+    popupRecord.draftAllographText.trim() ||
+    allographNameById.get(popupRecord.draftAllographId ?? -1) ||
+    '';
+
+  const title =
+    annotationKind === 'editorial'
       ? 'Editorial Annotation'
-      : popupRecord.draftAllographText.trim() || 'New Annotation'
-    : annotationKind === 'editorial'
-      ? 'Editorial Annotation'
-      : getAllographBodyText(annotation) ||
-        allographNameById.get(annotation._meta?.allographId ?? -1) ||
-        'Annotation';
+      : liveAllographTitle || (isDraft ? 'New Annotation' : 'Annotation');
 
   const positions = annotation._meta?.positionDetails ?? [];
   const hasPositionsTab = positions.length > 0;
@@ -236,14 +235,14 @@ export function getPopupMetaSummary(
   const meta = popupRecord.annotation._meta;
   const annotationKind: AnnotationCreationKind =
     meta?.annotationType === 'editorial' ? 'editorial' : 'public';
+  const allographId = popupRecord.draftAllographId;
+  const handId = popupRecord.draftHandId;
 
   return {
     kindLabel: annotationKind === 'editorial' ? 'Editorial' : 'Public',
     allographLabel:
-      typeof meta?.allographId === 'number'
-        ? (allographLabelById.get(meta.allographId) ?? null)
-        : null,
-    handLabel: typeof meta?.handId === 'number' ? (handNameById.get(meta.handId) ?? null) : null,
+      typeof allographId === 'number' ? (allographLabelById.get(allographId) ?? null) : null,
+    handLabel: typeof handId === 'number' ? (handNameById.get(handId) ?? null) : null,
   };
 }
 
