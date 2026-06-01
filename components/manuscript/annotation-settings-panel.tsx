@@ -3,11 +3,7 @@
 import * as React from 'react';
 import { X } from 'lucide-react';
 
-import type {
-  AnnotationViewerSettings,
-  TextDisplayMode,
-  TextPanelPosition,
-} from '@/types/annotation-viewer';
+import type { AnnotationViewerSettings, TextPanelPosition } from '@/types/annotation-viewer';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -24,19 +20,12 @@ interface AnnotationSettingsPanelProps {
   onToggleSelectMultipleAnnotations: () => void;
   onSetToolbarPosition: (position: 'vertical' | 'horizontal') => void;
   onSetTextPanelPosition: (position: TextPanelPosition) => void;
-  onSetTextDisplayMode: (mode: TextDisplayMode) => void;
 }
 
 const TEXT_POSITIONS: Array<{ value: TextPanelPosition; label: string }> = [
   { value: 'right', label: 'Right' },
   { value: 'left', label: 'Left' },
   { value: 'bottom', label: 'Bottom' },
-];
-
-const TEXT_DISPLAYS: Array<{ value: TextDisplayMode; label: string }> = [
-  { value: 'transcription', label: 'Transcription' },
-  { value: 'translation', label: 'Translation' },
-  { value: 'both', label: 'Both' },
 ];
 
 export function AnnotationSettingsPanel({
@@ -50,7 +39,6 @@ export function AnnotationSettingsPanel({
   onToggleSelectMultipleAnnotations,
   onSetToolbarPosition,
   onSetTextPanelPosition,
-  onSetTextDisplayMode,
 }: AnnotationSettingsPanelProps) {
   useOnEscape(isOpen, onClose);
   if (!isOpen) return null;
@@ -134,25 +122,6 @@ export function AnnotationSettingsPanel({
                 size="sm"
                 type="button"
                 onClick={() => onSetTextPanelPosition(option.value)}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <h4 className="text-sm font-semibold text-foreground">Text display</h4>
-          <Separator className="my-3" />
-
-          <div className="flex flex-wrap gap-2">
-            {TEXT_DISPLAYS.map((option) => (
-              <Button
-                key={option.value}
-                variant={viewerSettings.textDisplayMode === option.value ? 'default' : 'outline'}
-                size="sm"
-                type="button"
-                onClick={() => onSetTextDisplayMode(option.value)}
               >
                 {option.label}
               </Button>

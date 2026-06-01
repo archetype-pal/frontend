@@ -251,8 +251,6 @@ export default function ManuscriptViewer({
   // annotation layer are both derived from it. An image with no texts can never
   // enter a text view, so we clamp to 'allograph' to avoid a blank canvas.
   const hasTexts = imageTexts.length > 0;
-  const hasTranscription = imageTexts.some((t) => t.type.toLowerCase() === 'transcription');
-  const hasTranslation = imageTexts.some((t) => t.type.toLowerCase() === 'translation');
   const effectiveViewMode = hasTexts ? viewerSettings.viewMode : 'allograph';
   const isTextPanelOpen = effectiveViewMode !== 'allograph';
   const showTextPanel = isTextPanelOpen && hasTexts;
@@ -311,8 +309,6 @@ export default function ManuscriptViewer({
   const activeAssignmentHand =
     selectedHand === undefined ? defaultHand : (selectedHand ?? undefined);
   const activeHandLabel = activeAssignmentHand?.name ?? 'Any';
-
-  const dropdownAllograph = filteredAllograph ?? popupSelectedAllograph ?? undefined;
 
   const displayAllograph =
     hoveredAllograph ?? filteredAllograph ?? popupSelectedAllograph ?? undefined;
@@ -921,32 +917,11 @@ export default function ManuscriptViewer({
       viewMode={effectiveViewMode}
       onSetViewMode={handleSetViewMode}
       hasTexts={hasTexts}
-      hasTranscription={hasTranscription}
-      hasTranslation={hasTranslation}
-      textDisplayMode={viewerSettings.textDisplayMode}
-      onSetTextDisplayMode={handleSetTextDisplayMode}
-      annotationsEnabled={annotationsEnabled}
-      onToggleAnnotations={toggleAnnotations}
       unsavedCount={unsavedChanges}
       selectedAnnotationsCount={selectedAnnotationIds.length}
       showUnsavedCount={canPersistAnyAnnotations}
-      onAllographSelect={setFilteredAllograph}
-      onHandSelect={setSelectedHand}
-      allographs={allographsForThisImage}
-      hands={handsForThisImage}
-      onAllographHover={setHoveredAllograph}
-      activeAllographCount={filteredA9s.length}
-      activeAllographLabel={activeAllographLabel}
-      selectedAllographId={dropdownAllograph?.id ?? null}
-      selectedHandId={
-        selectedHand === undefined ? (defaultHand?.id ?? null) : (selectedHand?.id ?? null)
-      }
-      onOpenAllographModal={() => {
-        setHoveredAnnotationId(null);
-        setIsAllographModalOpen(true);
-      }}
       onOpenFilterPanel={toggleFilterPanel}
-      isVisibilityFilterActive={isVisibilityFilterActive}
+      isVisibilityFilterActive={isVisibilityFilterActive || !annotationsEnabled}
       onOpenSettingsPanel={canUseSettings ? toggleSettingsPanel : undefined}
       isSettingsActive={canUseSettings ? isSettingsPanelOpen : false}
       showSettingsButton={canUseSettings}
@@ -980,6 +955,8 @@ export default function ManuscriptViewer({
         isOpen={isFilterPanelOpen}
         transform={`translate(${filterPanelDrag.pos.x}px, ${filterPanelDrag.pos.y}px)`}
         dragHandleProps={filterPanelDrag.bindDrag}
+        annotationsEnabled={annotationsEnabled}
+        onToggleAnnotations={toggleAnnotations}
         allographs={allographsForThisImage}
         hands={handsForThisImage}
         selectedAllographIds={visibilityFilters.allographIds}
@@ -987,6 +964,7 @@ export default function ManuscriptViewer({
         showEditorialToggle={canViewEditorialControls}
         showEditorial={visibilityFilters.showEditorial}
         showPublicAnnotations={visibilityFilters.showPublicAnnotations}
+        activeAllographId={filteredAllograph?.id ?? null}
         onClose={closeFilterPanel}
         onToggleAllAllographs={handleToggleAllAllographFilters}
         onToggleAllHands={handleToggleAllHandFilters}
@@ -994,6 +972,15 @@ export default function ManuscriptViewer({
         onToggleHand={handleToggleHandFilter}
         onToggleEditorial={handleToggleEditorialVisibility}
         onTogglePublicAnnotations={handleTogglePublicAnnotationsVisibility}
+        onFocusAllograph={(allograph) => {
+          setFilteredAllograph(allograph);
+          setHoveredAnnotationId(null);
+          setIsAllographModalOpen(true);
+        }}
+        onFocusHand={(hand) =>
+          setSelectedHand(handsForThisImage.find((h) => h.id === hand.id) ?? null)
+        }
+        onAllographHover={setHoveredAllograph}
       />
 
       <AnnotationSettingsPanel
@@ -1007,7 +994,6 @@ export default function ManuscriptViewer({
         onToggleSelectMultipleAnnotations={handleToggleSelectMultipleAnnotations}
         onSetToolbarPosition={handleSetToolbarPosition}
         onSetTextPanelPosition={handleSetTextPanelPosition}
-        onSetTextDisplayMode={handleSetTextDisplayMode}
       />
 
       <AllographGalleryDialog
@@ -1054,8 +1040,6 @@ export default function ManuscriptViewer({
               isFullScreen={isFullScreen}
               activeTool={activeTool}
               currentCreationKind={currentCreationKind}
-              hasTexts={imageTexts.length > 0}
-              isTextPanelOpen={isTextPanelOpen}
               canCreateEditorialAnnotations={canCreateEditorialAnnotations}
               canPersistAnyAnnotations={canPersistAnyAnnotations}
               unsavedChanges={unsavedChanges}
@@ -1066,7 +1050,6 @@ export default function ManuscriptViewer({
               onZoomIn={() => viewerApiRef.current?.zoomIn()}
               onZoomOut={() => viewerApiRef.current?.zoomOut()}
               onRefresh={() => void handleDefaultZoom()}
-              onToggleTextPanel={() => handleSetViewMode(isTextPanelOpen ? 'allograph' : 'both')}
               onCreateAnnotation={handleCreateAnnotation}
               onSave={() => void handleSave()}
               onDeleteTool={handleDeleteTool}
@@ -1141,16 +1124,7 @@ export default function ManuscriptViewer({
               <ViewerTextPanel
                 texts={imageTexts}
                 displayMode={viewerSettings.textDisplayMode}
-                panelPosition={textPanelPosition}
-                onCyclePosition={() =>
-                  handleSetTextPanelPosition(
-                    textPanelPosition === 'right'
-                      ? 'bottom'
-                      : textPanelPosition === 'bottom'
-                        ? 'left'
-                        : 'right'
-                  )
-                }
+                onSetDisplayMode={handleSetTextDisplayMode}
                 token={token}
                 canEdit={canPersistAnyAnnotations && !isPublicDemoMode}
                 onTextSaved={() => void reloadTextsAndAnnotations()}

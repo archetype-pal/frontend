@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useOnEscape } from '@/hooks/use-on-escape';
 import { formatAllographLabel } from '@/lib/allograph-labels';
+import { cn } from '@/lib/utils';
 import type { Allograph } from '@/types/allographs';
 
 type FilterOption = {
@@ -18,6 +19,9 @@ interface AnnotationFilterPanelProps {
   isOpen: boolean;
   transform: string;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
+  /** Master show/hide for the whole annotation overlay. */
+  annotationsEnabled: boolean;
+  onToggleAnnotations: () => void;
   allographs: Allograph[];
   hands: FilterOption[];
   selectedAllographIds: number[];
@@ -25,6 +29,8 @@ interface AnnotationFilterPanelProps {
   showEditorialToggle: boolean;
   showEditorial: boolean;
   showPublicAnnotations: boolean;
+  /** Allograph currently focused (highlighted on the image / shown in the gallery). */
+  activeAllographId?: number | null;
   onClose: () => void;
   onToggleAllAllographs: () => void;
   onToggleAllHands: () => void;
@@ -32,12 +38,21 @@ interface AnnotationFilterPanelProps {
   onToggleHand: (handId: number) => void;
   onToggleEditorial: () => void;
   onTogglePublicAnnotations: () => void;
+  /** Click a letter → highlight its instances on the image + open the gallery. */
+  onFocusAllograph?: (allograph: Allograph) => void;
+  /** Click a hand → highlight its instances on the image. */
+  onFocusHand?: (hand: FilterOption) => void;
+  onAllographHover?: (allograph: Allograph | undefined) => void;
 }
+
+const CHECKBOX = 'h-4 w-4 rounded border-input';
 
 export function AnnotationFilterPanel({
   isOpen,
   transform,
   dragHandleProps,
+  annotationsEnabled,
+  onToggleAnnotations,
   allographs,
   hands,
   selectedAllographIds,
@@ -45,6 +60,7 @@ export function AnnotationFilterPanel({
   showEditorialToggle,
   showEditorial,
   showPublicAnnotations,
+  activeAllographId,
   onClose,
   onToggleAllAllographs,
   onToggleAllHands,
@@ -52,6 +68,9 @@ export function AnnotationFilterPanel({
   onToggleHand,
   onToggleEditorial,
   onTogglePublicAnnotations,
+  onFocusAllograph,
+  onFocusHand,
+  onAllographHover,
 }: AnnotationFilterPanelProps) {
   useOnEscape(isOpen, onClose);
   if (!isOpen) return null;
@@ -59,15 +78,15 @@ export function AnnotationFilterPanel({
   return (
     <div
       role="dialog"
-      aria-label="Filter Annotations"
-      className="fixed top-24 right-4 z-40 max-h-[calc(100dvh-7rem)] w-[380px] max-w-[calc(100vw-2rem)] overflow-auto rounded-lg border bg-background shadow-lg"
+      aria-label="Annotations"
+      className="fixed right-4 top-24 z-40 max-h-[calc(100dvh-7rem)] w-[380px] max-w-[calc(100vw-2rem)] overflow-auto rounded-lg border bg-background shadow-lg"
       style={{ transform }}
     >
       <div
-        className="flex items-center justify-between border-b px-4 py-3 cursor-move select-none"
+        className="flex cursor-move select-none items-center justify-between border-b px-4 py-3"
         {...dragHandleProps}
       >
-        <h3 className="text-base font-semibold">Filter Annotations</h3>
+        <h3 className="text-base font-semibold">Annotations</h3>
         <div onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
           <Button
             variant="ghost"
@@ -75,7 +94,7 @@ export function AnnotationFilterPanel({
             className="h-8 w-8"
             onClick={onClose}
             type="button"
-            aria-label="Close filter panel"
+            aria-label="Close annotations panel"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -83,97 +102,122 @@ export function AnnotationFilterPanel({
       </div>
 
       <div className="max-h-[70vh] overflow-auto px-4 py-4">
-        <div className="grid gap-6">
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-foreground">Allographs</h4>
-              <Button variant="outline" size="sm" type="button" onClick={onToggleAllAllographs}>
-                Toggle All
-              </Button>
-            </div>
+        {/* Master visibility + type filters */}
+        <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
+          <input
+            type="checkbox"
+            checked={annotationsEnabled}
+            onChange={onToggleAnnotations}
+            className={CHECKBOX}
+          />
+          <span className="text-sm font-medium text-foreground">Show annotations</span>
+        </label>
 
-            <Separator className="mb-3" />
+        <div className={cn('mt-1', !annotationsEnabled && 'pointer-events-none opacity-50')}>
+          <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
+            <input
+              type="checkbox"
+              checked={showPublicAnnotations}
+              onChange={onTogglePublicAnnotations}
+              className={CHECKBOX}
+            />
+            <span className="text-sm text-foreground">Public</span>
+          </label>
+          {showEditorialToggle && (
+            <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
+              <input
+                type="checkbox"
+                checked={showEditorial}
+                onChange={onToggleEditorial}
+                className={CHECKBOX}
+              />
+              <span className="text-sm text-foreground">Editorial</span>
+            </label>
+          )}
+        </div>
 
-            <div className="max-h-[220px] space-y-2 overflow-auto pr-2">
-              {allographs.length ? (
-                allographs.map((allograph) => (
-                  <label
-                    key={allograph.id}
-                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedAllographIds.includes(allograph.id)}
-                      onChange={() => onToggleAllograph(allograph.id)}
-                      className="h-4 w-4 rounded border-input"
-                    />
-                    <span className="text-sm text-foreground">
-                      {formatAllographLabel(allograph)}
-                    </span>
-                  </label>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">No allographs available.</p>
-              )}
-            </div>
+        {/* Allographs — checkbox toggles visibility; the name highlights + opens examples */}
+        <div className={cn('mt-5', !annotationsEnabled && 'pointer-events-none opacity-50')}>
+          <div className="mb-3 flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-foreground">Allographs</h4>
+            <Button variant="outline" size="sm" type="button" onClick={onToggleAllAllographs}>
+              Toggle All
+            </Button>
           </div>
-
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-foreground">Hands</h4>
-              <Button variant="outline" size="sm" type="button" onClick={onToggleAllHands}>
-                Toggle All
-              </Button>
-            </div>
-
-            <Separator className="mb-3" />
-
-            <div className="max-h-[220px] space-y-2 overflow-auto pr-2">
-              {hands.length ? (
-                hands.map((hand) => (
-                  <label
-                    key={hand.id}
-                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedHandIds.includes(hand.id)}
-                      onChange={() => onToggleHand(hand.id)}
-                      className="h-4 w-4 rounded border-input"
-                    />
-                    <span className="text-sm text-foreground">{hand.name}</span>
-                  </label>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">No hands available.</p>
-              )}
-            </div>
-
-            <div className="pt-4">
-              <Separator className="mb-3" />
-
-              {showEditorialToggle && (
-                <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
+          <Separator className="mb-2" />
+          <div className="max-h-[220px] space-y-0.5 overflow-auto pr-1">
+            {allographs.length ? (
+              allographs.map((allograph) => (
+                <div
+                  key={allograph.id}
+                  className="flex items-center gap-2 rounded px-2 py-1 hover:bg-muted/50"
+                >
                   <input
                     type="checkbox"
-                    checked={showEditorial}
-                    onChange={onToggleEditorial}
-                    className="h-4 w-4 rounded border-input"
+                    checked={selectedAllographIds.includes(allograph.id)}
+                    onChange={() => onToggleAllograph(allograph.id)}
+                    className={CHECKBOX}
+                    aria-label={`Show ${formatAllographLabel(allograph)}`}
                   />
-                  <span className="text-sm text-foreground">Editorial Annotations</span>
-                </label>
-              )}
+                  <button
+                    type="button"
+                    onClick={() => onFocusAllograph?.(allograph)}
+                    onMouseEnter={() => onAllographHover?.(allograph)}
+                    onMouseLeave={() => onAllographHover?.(undefined)}
+                    title="Highlight on image and show examples"
+                    className={cn(
+                      'flex-1 text-left text-sm transition-colors',
+                      activeAllographId === allograph.id
+                        ? 'font-semibold text-primary'
+                        : 'text-foreground hover:text-primary'
+                    )}
+                  >
+                    {formatAllographLabel(allograph)}
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p className="px-2 text-sm text-muted-foreground">No allographs available.</p>
+            )}
+          </div>
+        </div>
 
-              <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
-                <input
-                  type="checkbox"
-                  checked={showPublicAnnotations}
-                  onChange={onTogglePublicAnnotations}
-                  className="h-4 w-4 rounded border-input"
-                />
-                <span className="text-sm text-foreground">Public Annotations</span>
-              </label>
-            </div>
+        {/* Hands — checkbox toggles visibility; the name highlights that hand */}
+        <div className={cn('mt-5', !annotationsEnabled && 'pointer-events-none opacity-50')}>
+          <div className="mb-3 flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-foreground">Hands</h4>
+            <Button variant="outline" size="sm" type="button" onClick={onToggleAllHands}>
+              Toggle All
+            </Button>
+          </div>
+          <Separator className="mb-2" />
+          <div className="max-h-[220px] space-y-0.5 overflow-auto pr-1">
+            {hands.length ? (
+              hands.map((hand) => (
+                <div
+                  key={hand.id}
+                  className="flex items-center gap-2 rounded px-2 py-1 hover:bg-muted/50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedHandIds.includes(hand.id)}
+                    onChange={() => onToggleHand(hand.id)}
+                    className={CHECKBOX}
+                    aria-label={`Show ${hand.name}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => onFocusHand?.(hand)}
+                    title="Highlight this hand on the image"
+                    className="flex-1 text-left text-sm text-foreground transition-colors hover:text-primary"
+                  >
+                    {hand.name}
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p className="px-2 text-sm text-muted-foreground">No hands available.</p>
+            )}
           </div>
         </div>
       </div>

@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  BookOpenText,
   Expand,
   Hand,
   LaptopMinimal,
@@ -25,8 +24,6 @@ interface ViewerToolbarProps {
   isFullScreen: boolean;
   activeTool: ActiveViewerTool;
   currentCreationKind: AnnotationCreationKind;
-  hasTexts: boolean;
-  isTextPanelOpen: boolean;
   canCreateEditorialAnnotations: boolean;
   canPersistAnyAnnotations: boolean;
   unsavedChanges: number;
@@ -37,7 +34,6 @@ interface ViewerToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onRefresh: () => void;
-  onToggleTextPanel: () => void;
   onCreateAnnotation: (kind: AnnotationCreationKind) => void;
   onSave: () => void;
   onDeleteTool: () => void;
@@ -50,8 +46,6 @@ export function ViewerToolbar({
   isFullScreen,
   activeTool,
   currentCreationKind,
-  hasTexts,
-  isTextPanelOpen,
   canCreateEditorialAnnotations,
   canPersistAnyAnnotations,
   unsavedChanges,
@@ -62,7 +56,6 @@ export function ViewerToolbar({
   onZoomIn,
   onZoomOut,
   onRefresh,
-  onToggleTextPanel,
   onCreateAnnotation,
   onSave,
   onDeleteTool,
@@ -145,22 +138,6 @@ export function ViewerToolbar({
           </TooltipTrigger>
           <TooltipContent>Refresh</TooltipContent>
         </Tooltip>
-
-        {hasTexts && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={isTextPanelOpen ? 'default' : 'ghost'}
-                size="icon"
-                aria-label={isTextPanelOpen ? 'Hide text' : 'Show text'}
-                onClick={onToggleTextPanel}
-              >
-                <BookOpenText className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{isTextPanelOpen ? 'Hide text' : 'Show text'}</TooltipContent>
-          </Tooltip>
-        )}
 
         {canCreateEditorialAnnotations && (
           <Tooltip>

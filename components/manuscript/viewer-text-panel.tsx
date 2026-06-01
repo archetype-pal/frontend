@@ -3,23 +3,16 @@
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import {
-  Download,
-  ExternalLink,
-  PanelBottom,
-  PanelLeft,
-  PanelRight,
-  Pencil,
-  X,
-} from 'lucide-react';
+import { Download, ExternalLink, Pencil, X } from 'lucide-react';
 
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { showActionNotification } from '@/components/ui/action-toast';
 import { Button } from '@/components/ui/button';
+import { Segmented } from '@/components/ui/segmented';
 import { API_BASE_URL } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { updateImageText, type ImageTextDetail } from '@/services/image-texts';
-import type { TextDisplayMode, TextPanelPosition } from '@/types/annotation-viewer';
+import type { TextDisplayMode } from '@/types/annotation-viewer';
 
 // The full TEI editor (TipTap + CodeMirror) is heavy and editor-only, so it is
 // lazy-loaded — it never enters the public viewer's first-load chunk.
@@ -37,10 +30,8 @@ interface ViewerTextPanelProps {
   texts: ImageTextDetail[];
   /** Which text(s) to show: transcription, translation, or both in parallel. */
   displayMode: TextDisplayMode;
-  /** Current panel side — drives the cycle button's icon. */
-  panelPosition?: TextPanelPosition;
-  /** Cycle the panel position (right → bottom → left → …). */
-  onCyclePosition?: () => void;
+  /** Change which text(s) are shown (the panel's own "Show" control). */
+  onSetDisplayMode: (mode: TextDisplayMode) => void;
   /** Graph id of the region currently selected on the image (region → text). */
   linkedGraphId: number | null;
   /** Hovering a linked span highlights its region on the image. */
@@ -78,12 +69,6 @@ function graphIdsOf(el: Element | null): number[] {
 
 const TYPE_ORDER = (type: string): number =>
   type === 'Transcription' ? 0 : type === 'Translation' ? 1 : 2;
-
-const POSITION_ICON = {
-  right: PanelRight,
-  left: PanelLeft,
-  bottom: PanelBottom,
-} as const;
 
 /** Editor-only authoring surface for a single text — lazy TEI editor + save. */
 function TextEditPanel({
@@ -227,8 +212,7 @@ function TextColumn({
 export function ViewerTextPanel({
   texts,
   displayMode,
-  panelPosition = 'right',
-  onCyclePosition,
+  onSetDisplayMode,
   linkedGraphId,
   onSpanHover,
   onSpanActivate,
@@ -269,6 +253,8 @@ export function ViewerTextPanel({
 
   const isBoth = displayMode === 'both' && shown.length > 1;
   const shownKey = shown.map((t) => `${t.id}:${t.content.length}`).join('|');
+  const hasTranscription = Boolean(transcription);
+  const hasTranslation = Boolean(translation);
 
   const [editingId, setEditingId] = React.useState<number | null>(null);
   // Leaving a text view or losing edit rights closes any open editor.
@@ -347,37 +333,28 @@ export function ViewerTextPanel({
     onSpanHover(ids.length > 0 ? ids[0] : null);
   };
 
-  const PositionIcon = POSITION_ICON[panelPosition];
-
   return (
     <aside className="flex h-full w-full flex-col overflow-hidden rounded-lg border bg-card">
       <header className="flex items-center justify-between gap-2 border-b px-3 py-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {isBoth ? 'Text' : (shown[0]?.type ?? 'Text')}
-        </span>
-        <div className="flex items-center gap-1">
-          {onCyclePosition ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              aria-label="Move text panel"
-              title="Move text panel"
-              onClick={onCyclePosition}
-            >
-              <PositionIcon className="h-4 w-4" />
-            </Button>
-          ) : null}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            aria-label="Hide text panel"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+        <Segmented
+          ariaLabel="Show transcription or translation"
+          value={displayMode}
+          onChange={onSetDisplayMode}
+          options={[
+            { value: 'transcription', label: 'Transcription', disabled: !hasTranscription },
+            { value: 'translation', label: 'Translation', disabled: !hasTranslation },
+            { value: 'both', label: 'Both', disabled: !hasTranscription || !hasTranslation },
+          ]}
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          aria-label="Hide text panel"
+          onClick={onClose}
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </header>
 
       <div
