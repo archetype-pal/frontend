@@ -4,7 +4,10 @@ import * as React from 'react';
 
 import { isDbId } from '@/lib/annotation-popup-utils';
 import { isTextRegionAnnotation } from '@/lib/manuscript-viewer-annotation-types';
-import { buildPopupAnnotationPayload } from '@/lib/manuscript-viewer-popup-utils';
+import {
+  buildPopupAnnotationPayload,
+  hasPopupAnnotationChanges,
+} from '@/lib/manuscript-viewer-popup-utils';
 import type {
   Annotation as A9sAnnotation,
   ViewerApi,
@@ -213,6 +216,8 @@ export function useDraftSaveFlow({
         isDbId(popup.annotation.id) && getAnnotationKind(popup.annotation) === 'editorial';
 
       if (isExistingStandard || isExistingEditorial) {
+        if (!hasPopupAnnotationChanges(popup)) return;
+
         const next = isExistingEditorial
           ? buildEditorialAnnotationFromPopup(popupId)
           : buildStandardAnnotationFromPopup(popupId);

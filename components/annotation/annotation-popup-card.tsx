@@ -33,6 +33,7 @@ interface AnnotationPopupCardProps {
   zIndex?: number;
   onPointerDownCapture?: React.PointerEventHandler<HTMLDivElement>;
   isActive?: boolean;
+  hasLocalChanges: boolean;
   width?: number;
   height?: number;
   resizeHandleProps?: React.HTMLAttributes<HTMLSpanElement>;
@@ -98,6 +99,7 @@ export function AnnotationPopupCard({
   zIndex,
   onPointerDownCapture,
   isActive = true,
+  hasLocalChanges,
   width,
   height,
   resizeHandleProps,
@@ -201,6 +203,7 @@ export function AnnotationPopupCard({
           isExisting={isStandardExisting}
           showLocalHint={isStandardExisting}
           isActive={isActive}
+          hasLocalChanges={hasLocalChanges}
           popupCapabilities={popupCapabilities}
           metaSummary={metaSummary}
           allographOptions={allographOptions}
@@ -223,6 +226,7 @@ export function AnnotationPopupCard({
       ) : isEditorialDraft || isEditorialExisting ? (
         <EditorialAnnotationEditor
           isExisting={isEditorialExisting}
+          hasLocalChanges={hasLocalChanges}
           draftInternalNoteText={draftInternalNoteText}
           onDraftInternalNoteTextChange={onDraftInternalNoteTextChange}
           onCancelDraftAnnotation={onCancelDraftAnnotation}

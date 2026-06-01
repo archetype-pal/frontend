@@ -31,6 +31,7 @@ interface StandardAnnotationEditorProps {
   isExisting: boolean;
   showLocalHint: boolean;
   isActive: boolean;
+  hasLocalChanges: boolean;
   popupCapabilities: AnnotationPopupCapabilities;
   metaSummary?: AnnotationPopupMetaSummary;
 
@@ -61,6 +62,7 @@ export function StandardAnnotationEditor({
   isExisting,
   showLocalHint,
   isActive,
+  hasLocalChanges,
   popupCapabilities,
   metaSummary,
   allographOptions,
@@ -346,7 +348,11 @@ export function StandardAnnotationEditor({
       <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
         Cancel
       </Button>
-      <Button onClick={onConfirmDraftAnnotation} type="button">
+      <Button
+        onClick={onConfirmDraftAnnotation}
+        disabled={isExisting && !hasLocalChanges}
+        type="button"
+      >
         OK
       </Button>
     </div>
@@ -584,7 +590,8 @@ export function StandardAnnotationEditor({
 
               {showLocalHint ? (
                 <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                  Changes remain local until you press the main Save button in the toolbar.
+                  Press OK to keep changes local for the main toolbar Save, or use Save Annotation
+                  in this popup header to save immediately.
                 </div>
               ) : null}
             </div>

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 
 interface EditorialAnnotationEditorProps {
   isExisting: boolean;
+  hasLocalChanges: boolean;
   draftInternalNoteText: string;
   onDraftInternalNoteTextChange: (value: string) => void;
   onCancelDraftAnnotation: () => void;
@@ -12,6 +13,7 @@ interface EditorialAnnotationEditorProps {
 
 export function EditorialAnnotationEditor({
   isExisting,
+  hasLocalChanges,
   draftInternalNoteText,
   onDraftInternalNoteTextChange,
   onCancelDraftAnnotation,
@@ -21,7 +23,8 @@ export function EditorialAnnotationEditor({
     <div className="max-h-[360px] overflow-auto px-4 py-4 space-y-4">
       {isExisting ? (
         <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          Changes remain local until you press the main Save button in the toolbar.
+          Press OK to keep changes local for the main toolbar Save, or use Save Annotation in this
+          popup header to save immediately.
         </div>
       ) : null}
 
@@ -40,7 +43,11 @@ export function EditorialAnnotationEditor({
         <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
           Cancel
         </Button>
-        <Button onClick={onConfirmDraftAnnotation} type="button">
+        <Button
+          onClick={onConfirmDraftAnnotation}
+          disabled={isExisting && !hasLocalChanges}
+          type="button"
+        >
           OK
         </Button>
       </div>

@@ -14,6 +14,7 @@ import {
   getPopupInitialPosition,
   getPopupMetaSummary,
   getPopupZIndex,
+  hasPopupAnnotationChanges,
   type PopupPosition,
 } from '@/lib/manuscript-viewer-popup-utils';
 
@@ -130,6 +131,7 @@ export function AnnotationPopupLayer({
     <>
       {visiblePopupRecords.map((popupRecord, index) => {
         const popupCard = getPopupCardViewData(popupRecord, allographNameById);
+        const hasLocalChanges = hasPopupAnnotationChanges(popupRecord);
         const popupCapabilities = getPopupCapabilities(popupRecord, viewerCapabilities);
         const popupEditorMode = getPopupEditorMode(popupRecord, popupCapabilities);
         const annotationKind = getAnnotationKindFromPopupRecord(popupRecord);
@@ -179,12 +181,15 @@ export function AnnotationPopupLayer({
                 zIndex={cardZIndex}
                 onPointerDownCapture={onPointerDownCapture}
                 isActive={isActive}
+                hasLocalChanges={hasLocalChanges}
                 isShareUrlVisible={popupRecord.isShareUrlVisible}
                 shareUrl={popupRecord.shareUrl}
                 canSaveAnnotationShortcut={
                   canUseLoggedInPopupShortcuts && canSaveAnnotationShortcuts
                 }
-                isSaveAnnotationShortcutDisabled={isSaveAnnotationShortcutDisabled}
+                isSaveAnnotationShortcutDisabled={
+                  isSaveAnnotationShortcutDisabled || (!popupCard.isDraft && !hasLocalChanges)
+                }
                 canDeleteAnnotationShortcut={
                   canUseLoggedInPopupShortcuts && canDeleteAnnotationShortcuts
                 }

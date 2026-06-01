@@ -12,6 +12,7 @@ import {
   buildEditorialAnnotationBody,
   buildStandardAnnotationBody,
   getAllographBodyText,
+  getEditorialInternalNote,
   getStandardAnnotationNote,
 } from '@/lib/annotation-notes';
 
@@ -25,6 +26,48 @@ export const MULTI_POPUP_OFFSET_STEP = 24;
 export const MULTI_POPUP_BASE_Y = 300;
 export const ACTIVE_POPUP_Z_INDEX = 80;
 export const INACTIVE_POPUP_BASE_Z_INDEX = 60;
+
+function sortedNumberValues(values: number[] | undefined): number[] {
+  return [...(values ?? [])].sort((a, b) => a - b);
+}
+
+function normalizedGraphcomponentSet(popupRecord: PopupRecord) {
+  return popupRecord.draftGraphcomponentSet
+    .map((component) => ({
+      component: component.component,
+      features: sortedNumberValues(component.features),
+    }))
+    .sort((a, b) => a.component - b.component);
+}
+
+function normalizedAnnotationGraphcomponentSet(annotation: A9sAnnotation) {
+  return (
+    annotation._meta?.graphcomponentSet
+      ?.map((component) => ({
+        component: component.component,
+        features: sortedNumberValues(component.features),
+      }))
+      .sort((a, b) => a.component - b.component) ?? []
+  );
+}
+
+export function hasPopupAnnotationChanges(popupRecord: PopupRecord): boolean {
+  const annotation = popupRecord.annotation;
+
+  if (annotation._meta?.annotationType === 'editorial') {
+    return popupRecord.draftInternalNoteText.trim() !== getEditorialInternalNote(annotation);
+  }
+
+  return (
+    popupRecord.draftAllographId !== (annotation._meta?.allographId ?? null) ||
+    popupRecord.draftHandId !== (annotation._meta?.handId ?? null) ||
+    popupRecord.draftNoteText.trim() !== getStandardAnnotationNote(annotation) ||
+    JSON.stringify(sortedNumberValues(popupRecord.draftPositionIds)) !==
+      JSON.stringify(sortedNumberValues(annotation._meta?.positions)) ||
+    JSON.stringify(normalizedGraphcomponentSet(popupRecord)) !==
+      JSON.stringify(normalizedAnnotationGraphcomponentSet(annotation))
+  );
+}
 
 export function getAnnotationKindFromPopupRecord(popupRecord: PopupRecord): AnnotationCreationKind {
   return popupRecord.annotation._meta?.annotationType === 'editorial' ? 'editorial' : 'public';

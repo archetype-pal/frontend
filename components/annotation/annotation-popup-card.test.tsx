@@ -21,6 +21,7 @@ function renderCard(overrides: Partial<AnnotationPopupCardProps> = {}) {
       canViewEditorMeta: true,
     },
     popupTransform: 'translate3d(0, 0, 0)',
+    hasLocalChanges: false,
     isShareUrlVisible: false,
     shareUrl: '',
     onCopyShareUrl: vi.fn(),
@@ -123,5 +124,40 @@ describe('AnnotationPopupCard', () => {
     expect(screen.queryByRole('tab', { name: 'Details' })).toBeNull();
     expect(screen.queryByRole('tab', { name: 'Notes' })).toBeNull();
     expect(screen.getByPlaceholderText('Type internal note')).not.toBeNull();
+  });
+
+  it('explains both save paths and disables OK for an unchanged existing annotation', () => {
+    renderCard({
+      isDraftAnnotation: false,
+      popupEditorMode: 'standard_existing',
+    });
+
+    expect(
+      screen.getByText(/Press OK to keep changes local for the main toolbar Save/)
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'OK' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('enables OK when an existing annotation has local popup changes', () => {
+    renderCard({
+      isDraftAnnotation: false,
+      popupEditorMode: 'editorial_existing',
+      annotationKind: 'editorial',
+      hasLocalChanges: true,
+    });
+
+    expect(screen.getByRole('button', { name: 'OK' }).hasAttribute('disabled')).toBe(false);
+  });
+
+  it('passes the popup save disabled state through to the header action', () => {
+    renderCard({
+      canSaveAnnotationShortcut: true,
+      isSaveAnnotationShortcutDisabled: true,
+      onSaveAnnotationShortcut: vi.fn(),
+    });
+
+    expect(screen.getByRole('button', { name: 'Save Annotation' }).hasAttribute('disabled')).toBe(
+      true
+    );
   });
 });

@@ -18,6 +18,8 @@ vi.mock('./annotation-popup-card', () => ({
       data-active={String(props.isActive)}
       data-z-index={String(props.zIndex)}
       data-in-collection={String(props.isAnnotationInCollection)}
+      data-has-local-changes={String(props.hasLocalChanges)}
+      data-save-disabled={String(props.isSaveAnnotationShortcutDisabled)}
       data-can-use-collection={String(
         (props.popupCapabilities as { canUseCollection?: boolean }).canUseCollection
       )}
@@ -189,6 +191,41 @@ describe('AnnotationPopupLayer', () => {
     expect(cards[1].dataset.active).toBe('true');
     // Active z-index (80) is larger than the inactive base (60).
     expect(Number(cards[1].dataset.zIndex)).toBeGreaterThan(Number(cards[0].dataset.zIndex));
+  });
+
+  it('enables popup save only when an existing annotation has local field changes', () => {
+    const baseAnnotation = {
+      id: 'db:1',
+      type: 'Annotation' as const,
+      target: {},
+      _meta: { allographId: 5, handId: 7, note: 'original' },
+    };
+
+    render(
+      <AnnotationPopupLayer
+        {...defaults()}
+        visiblePopupRecords={[
+          makePopup('db:1', {
+            annotation: baseAnnotation,
+            draftAllographId: 5,
+            draftHandId: 7,
+            draftNoteText: 'original',
+          }),
+          makePopup('db:2', {
+            annotation: { ...baseAnnotation, id: 'db:2' },
+            draftAllographId: 5,
+            draftHandId: 7,
+            draftNoteText: 'changed',
+          }),
+        ]}
+      />
+    );
+
+    const cards = screen.getAllByTestId('popup-card');
+    expect(cards[0].dataset.hasLocalChanges).toBe('false');
+    expect(cards[0].dataset.saveDisabled).toBe('true');
+    expect(cards[1].dataset.hasLocalChanges).toBe('true');
+    expect(cards[1].dataset.saveDisabled).toBe('false');
   });
 
   it('updatePopupById receives correct field updates for the trivial draft handlers', () => {

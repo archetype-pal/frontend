@@ -12,6 +12,7 @@ import {
   getPopupInitialPosition,
   getPopupMetaSummary,
   getPopupZIndex,
+  hasPopupAnnotationChanges,
   INACTIVE_POPUP_BASE_Z_INDEX,
   MULTI_POPUP_BASE_Y,
   MULTI_POPUP_OFFSET_STEP,
@@ -116,6 +117,65 @@ describe('getAnnotationKindFromPopupRecord', () => {
 
   it('returns public when _meta is missing', () => {
     expect(getAnnotationKindFromPopupRecord(makePopup())).toBe('public');
+  });
+});
+
+describe('hasPopupAnnotationChanges', () => {
+  it('returns false when standard popup fields match the annotation', () => {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        id: 'db:1',
+        _meta: {
+          allographId: 5,
+          handId: 7,
+          note: 'note',
+          graphcomponentSet: [{ component: 11, features: [22, 21] }],
+          positions: [2, 1],
+        },
+      },
+      draftAllographId: 5,
+      draftHandId: 7,
+      draftNoteText: ' note ',
+      draftGraphcomponentSet: [{ component: 11, features: [21, 22] }],
+      draftPositionIds: [1, 2],
+    });
+
+    expect(hasPopupAnnotationChanges(popup)).toBe(false);
+  });
+
+  it('returns true when a standard popup field changes', () => {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        id: 'db:1',
+        _meta: { allographId: 5, handId: 7, note: 'before' },
+      },
+      draftAllographId: 5,
+      draftHandId: 7,
+      draftNoteText: 'after',
+    });
+
+    expect(hasPopupAnnotationChanges(popup)).toBe(true);
+  });
+
+  it('compares editorial popups by internal note', () => {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        id: 'db:1',
+        _meta: { annotationType: 'editorial', internalNote: 'before' },
+      },
+      draftInternalNoteText: 'after',
+    });
+
+    expect(hasPopupAnnotationChanges(popup)).toBe(true);
+    expect(
+      hasPopupAnnotationChanges({
+        ...popup,
+        draftInternalNoteText: ' before ',
+      })
+    ).toBe(false);
   });
 });
 

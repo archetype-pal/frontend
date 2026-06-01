@@ -36,9 +36,12 @@ import type {
   AnnotationCreationKind,
 } from '@/types/annotation-viewer';
 
-import { browserSafeIiifUrl } from '@/lib/annotation-popup-utils';
+import { browserSafeIiifUrl, isDbId } from '@/lib/annotation-popup-utils';
 
-import { getPopupCardViewData } from '@/lib/manuscript-viewer-popup-utils';
+import {
+  getPopupCardViewData,
+  hasPopupAnnotationChanges,
+} from '@/lib/manuscript-viewer-popup-utils';
 
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
 import {
@@ -840,7 +843,9 @@ export default function ManuscriptViewer({
   const handleSavePopupAnnotation = React.useCallback(
     async (popupId: string) => {
       if (!canPersistAnyAnnotations || isPublicDemoMode) return;
-      if (!getPopupById(popupId)) return;
+      const popup = getPopupById(popupId);
+      if (!popup) return;
+      if (isDbId(popup.annotation.id) && !hasPopupAnnotationChanges(popup)) return;
 
       await handleConfirmDraftAnnotation(popupId);
       setPendingPopupSaveRequest((prev) => prev + 1);
