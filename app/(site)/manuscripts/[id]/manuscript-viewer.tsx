@@ -482,12 +482,12 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
                 {catalogueNumbers.map((cat, index) => {
                   const body = (
                     <>
-                      <span className="font-serif text-foreground">{cat.number}</span>
                       {nonEmpty(cat.catalogue?.name) ? (
                         <span className="mt-0.5 block text-xs uppercase tracking-[0.12em] text-muted-foreground">
                           {cat.catalogue.name}
                         </span>
                       ) : null}
+                      <span className="font-serif text-foreground">{cat.number}</span>
                     </>
                   );
                   return (
