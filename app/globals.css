@@ -848,18 +848,23 @@ g.a9s-selection.a9s-draft:hover path {
 }
 
 /* Text-region annotations on the image (shown only while the text panel is
-   open). Tinted with the transcription hue and kept faint so they read as
-   "transcribed area" without competing with glyph annotations. */
+   open). Tinted with the transcription hue with a clearly visible border so the
+   transcribed areas are easy to see; the distinct hue (vs. the gold/green glyph
+   palette) keeps the two layers separable rather than relying on faintness. */
 g.a9s-annotation.a9s-text .a9s-inner,
 g.a9s-annotation.a9s-text rect,
 g.a9s-annotation.a9s-text polygon,
 g.a9s-annotation.a9s-text path {
-  stroke: hsl(var(--c-transcription-h) 55% 50%) !important;
+  stroke: hsl(var(--c-transcription-h) 60% 48%) !important;
   fill: hsl(var(--c-transcription-h) 60% 55% / 0.1) !important;
 }
 
+/* The .a9s-outer is the prominent 3px border (the .a9s-inner is only 1px), so it
+   carries the visible outline — matching the glyph boxes' weight in a different
+   hue rather than being hidden. */
 g.a9s-annotation.a9s-text .a9s-outer {
-  stroke: transparent !important;
+  stroke: hsl(var(--c-transcription-h) 60% 45%) !important;
+  stroke-width: 3px !important;
   fill: transparent !important;
 }
 
@@ -868,6 +873,10 @@ g.a9s-annotation.a9s-text:hover rect,
 g.a9s-annotation.a9s-text:hover polygon,
 g.a9s-annotation.a9s-text:hover path {
   fill: hsl(var(--c-transcription-h) 60% 55% / 0.25) !important;
+}
+
+g.a9s-annotation.a9s-text:hover .a9s-outer {
+  stroke-width: 4px !important;
 }
 
 /*
