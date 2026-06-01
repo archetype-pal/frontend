@@ -85,9 +85,6 @@ export function AnnotationHeader({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           {onSetViewMode ? (
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                View
-              </span>
               <Segmented
                 ariaLabel="Annotation view"
                 value={viewMode}
@@ -147,9 +144,6 @@ export function AnnotationHeader({
         <div className="flex items-center gap-x-3 gap-y-2">
           {hands.length > 0 && (
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Hand
-              </span>
               {singleHand ? (
                 <span
                   className="inline-flex h-8 items-center rounded-md border border-border bg-muted/40 px-3 text-sm text-foreground"
@@ -183,9 +177,6 @@ export function AnnotationHeader({
 
           {showAllographControls && allographs.length > 0 && onAllographSelect && (
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Allograph
-              </span>
               <SearchableSelect
                 options={allographs.map((a) => ({
                   value: a.id.toString(),
