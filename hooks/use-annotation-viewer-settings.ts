@@ -59,7 +59,11 @@ export function useAnnotationViewerSettings() {
             prev.toolbarPosition
           ),
           viewMode: oneOf(VIEW_MODES, parsed.viewMode, prev.viewMode),
-          textPanelPosition: oneOf(TEXT_POSITIONS, parsed.textPanelPosition, prev.textPanelPosition),
+          textPanelPosition: oneOf(
+            TEXT_POSITIONS,
+            parsed.textPanelPosition,
+            prev.textPanelPosition
+          ),
           textDisplayMode: oneOf(TEXT_DISPLAY_MODES, parsed.textDisplayMode, prev.textDisplayMode),
         }));
       }
