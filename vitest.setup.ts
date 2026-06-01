@@ -70,6 +70,10 @@ if (typeof Document !== 'undefined') {
   }
 }
 
+if (typeof Element !== 'undefined' && typeof Element.prototype.scrollIntoView !== 'function') {
+  Element.prototype.scrollIntoView = () => {};
+}
+
 // jsdom's localStorage is not reliably available under this vitest config; provide
 // a minimal in-memory Storage so components that persist UI prefs don't crash.
 function createMemoryStorage(): Storage {

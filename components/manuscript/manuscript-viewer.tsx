@@ -337,6 +337,8 @@ export default function ManuscriptViewer({
     selectedHand === undefined ? defaultHand : (selectedHand ?? undefined);
   const activeHandLabel = activeAssignmentHand?.name ?? 'Any';
 
+  const dropdownAllograph = filteredAllograph ?? popupSelectedAllograph ?? undefined;
+
   // When the image has exactly one hand, always select it (the header shows it
   // read-only) so new annotations are attributed without the user picking.
   React.useEffect(() => {
@@ -414,6 +416,14 @@ export default function ManuscriptViewer({
     const idSet = new Set(imageAllographIds);
     return allographs.filter((a) => idSet.has(a.id));
   }, [allographs, imageAllographIds]);
+
+  React.useEffect(() => {
+    if (!filteredAllograph) return;
+    if (allographsForThisImage.some((allograph) => allograph.id === filteredAllograph.id)) return;
+
+    setFilteredAllograph(undefined);
+    setHoveredAllograph(undefined);
+  }, [allographsForThisImage, filteredAllograph, setFilteredAllograph, setHoveredAllograph]);
 
   const availableAllographFilterIds = React.useMemo(
     () => allographsForThisImage.map((allograph) => allograph.id),
@@ -961,10 +971,16 @@ export default function ManuscriptViewer({
         selectedHand === undefined ? (defaultHand?.id ?? null) : (selectedHand?.id ?? null)
       }
       onHandSelect={setSelectedHand}
-      allographs={allographs}
-      selectedAllographId={filteredAllograph?.id ?? null}
+      allographs={allographsForThisImage}
+      selectedAllographId={dropdownAllograph?.id ?? null}
       onAllographSelect={setFilteredAllograph}
       onAllographHover={setHoveredAllograph}
+      activeAllographCount={filteredA9s.length}
+      activeAllographLabel={activeAllographLabel}
+      onOpenAllographModal={() => {
+        setHoveredAnnotationId(null);
+        setIsAllographModalOpen(true);
+      }}
     />
   );
 

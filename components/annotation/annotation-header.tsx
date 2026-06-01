@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Wrench, SlidersHorizontal } from 'lucide-react';
+import { Eye, Wrench, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/ui/segmented';
 import {
@@ -39,11 +39,14 @@ interface AnnotationHeaderProps {
   hands?: HandType[];
   selectedHandId?: number | null;
   onHandSelect?: (hand: HandType | null) => void;
-  // Working allograph for new annotations — copied into each new graph.
+  // Active allograph for gallery/highlighting and new annotation defaults.
   allographs?: Allograph[];
   selectedAllographId?: number | null;
   onAllographSelect?: (allograph: Allograph | undefined) => void;
   onAllographHover?: (allograph: Allograph | undefined) => void;
+  activeAllographCount?: number;
+  activeAllographLabel?: string;
+  onOpenAllographModal?: () => void;
 }
 
 const UNSET_HAND = '__unset__';
@@ -68,6 +71,9 @@ export function AnnotationHeader({
   selectedAllographId,
   onAllographSelect,
   onAllographHover,
+  activeAllographCount,
+  activeAllographLabel,
+  onOpenAllographModal,
 }: AnnotationHeaderProps) {
   const singleHand = hands.length === 1 ? hands[0] : null;
 
@@ -203,6 +209,29 @@ export function AnnotationHeader({
                 contentClassName="z-[250]"
               />
             </div>
+          )}
+
+          {onOpenAllographModal && (
+            <Button
+              variant="outline"
+              className="flex h-8 items-center gap-2 px-2"
+              onClick={onOpenAllographModal}
+              disabled={!activeAllographLabel}
+              aria-label={
+                activeAllographLabel
+                  ? `View ${activeAllographLabel} annotation thumbnails`
+                  : 'Select an allograph first'
+              }
+              title={
+                activeAllographLabel
+                  ? `${activeAllographLabel}: ${activeAllographCount ?? 0}`
+                  : 'Select an allograph first'
+              }
+              type="button"
+            >
+              <Eye className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">{activeAllographCount ?? 0}</span>
+            </Button>
           )}
 
           {imageToolsControl}

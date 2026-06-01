@@ -1,6 +1,8 @@
 /** @vitest-environment jsdom */
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import type { Allograph } from '@/types/allographs';
 
 // The OpenSeadragon viewer is loaded via next/dynamic(ssr:false); stub it so the
 // test doesn't pull in the real (canvas-heavy) annotorious module — but capture
@@ -60,13 +62,14 @@ const fakeManuscript = {
 const fetchBaseData = vi.fn(async () => ({
   image: fakeImage,
   manuscript: fakeManuscript,
-  allographs: [],
+  allographs: [] as Allograph[],
   imageHeight: 2000,
 }));
+const fetchImageAllographIds = vi.fn(async () => [] as number[]);
 
 vi.mock('@/lib/manuscript-viewer-data', () => ({
   fetchManuscriptViewerBaseData: (...args: unknown[]) => fetchBaseData(...(args as [])),
-  fetchImageAllographIds: vi.fn(async () => []),
+  fetchImageAllographIds: (...args: unknown[]) => fetchImageAllographIds(...(args as [])),
 }));
 
 vi.mock('@/lib/manuscript-viewer-annotations', () => ({
@@ -104,6 +107,22 @@ const draftAnnotation = (id: string) => ({
   body: [],
   _meta: { annotationType: 'public' },
 });
+
+const allographA = {
+  id: 1,
+  character_name: 'a',
+  name: 'Caroline',
+  components: [],
+  positions: [],
+};
+
+const allographB = {
+  id: 2,
+  character_name: 'b',
+  name: 'Anglicana',
+  components: [],
+  positions: [],
+};
 
 describe('ManuscriptViewer smoke test', () => {
   afterEach(() => {
@@ -176,5 +195,32 @@ describe('ManuscriptViewer smoke test', () => {
 
     const saveAfter = await screen.findByRole('button', { name: 'Save (s)' });
     expect(saveAfter).toHaveProperty('disabled', false);
+  });
+
+  it('opens the allograph thumbnail gallery from an image-scoped header selection', async () => {
+    fetchBaseData.mockResolvedValueOnce({
+      image: fakeImage,
+      manuscript: fakeManuscript,
+      allographs: [allographA, allographB],
+      imageHeight: 2000,
+    });
+    fetchImageAllographIds.mockResolvedValueOnce([allographA.id]);
+
+    render(<ManuscriptViewer imageId="4432" mode="public" />);
+    await screen.findByRole('button', { name: 'Image tools' });
+    await waitFor(() => expect(fetchImageAllographIds).toHaveBeenCalledWith('4432'));
+
+    fireEvent.click(screen.getByRole('combobox'));
+    expect(await screen.findByText('a, Caroline')).toBeTruthy();
+    await waitFor(() => expect(screen.queryByText('b, Anglicana')).toBeNull());
+
+    fireEvent.click(screen.getByText('a, Caroline'));
+    const eyeButton = await screen.findByRole('button', {
+      name: 'View a, Caroline annotation thumbnails',
+    });
+    fireEvent.click(eyeButton);
+
+    expect(await screen.findByRole('dialog')).toBeTruthy();
+    expect(screen.getByText('Allograph: a, Caroline')).toBeTruthy();
   });
 });
