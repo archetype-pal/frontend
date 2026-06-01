@@ -63,7 +63,7 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
       return {
         id: annotation.id,
         annotation,
-        popupTab: overrides?.popupTab ?? 'components',
+        popupTab: overrides?.popupTab ?? 'details',
         shareUrl: overrides?.shareUrl ?? '',
         isShareUrlVisible: overrides?.isShareUrlVisible ?? false,
         draftAllographText: overrides?.draftAllographText ?? defaultDraftAllographText,

@@ -6,7 +6,6 @@ import { Save, Share2, Star, Trash2, X } from 'lucide-react';
 import type { AnnotationPopupCapabilities } from '@/types/annotation-viewer';
 
 import { Button } from '@/components/ui/button';
-import { ResizeHandle } from '@/components/ui/resize-handle';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -23,9 +22,7 @@ interface PopupShellProps {
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
   zIndex?: number;
   onPointerDownCapture?: React.PointerEventHandler<HTMLDivElement>;
-  width?: number;
-  height?: number;
-  resizeHandleProps?: React.HTMLAttributes<HTMLSpanElement>;
+  height: number;
 
   isShareUrlVisible: boolean;
   shareUrl: string;
@@ -55,9 +52,7 @@ export function PopupShell({
   dragHandleProps,
   zIndex,
   onPointerDownCapture,
-  width,
   height,
-  resizeHandleProps,
   isShareUrlVisible,
   shareUrl,
   canSaveAnnotationShortcut = false,
@@ -78,15 +73,12 @@ export function PopupShell({
       role="dialog"
       aria-modal={false}
       aria-labelledby={titleId}
-      data-resizable-panel
       className="fixed right-4 top-4 flex flex-col overflow-hidden rounded-lg border bg-background shadow-lg"
       style={{
         transform: popupTransform,
         zIndex,
-        width: width ?? 420,
-        height,
-        maxWidth: '90vw',
-        maxHeight: height ? undefined : '85vh',
+        width: 'min(420px, calc(100vw - 2rem))',
+        height: `min(${height}px, calc(100vh - 2rem))`,
       }}
       onPointerDownCapture={onPointerDownCapture}
     >
@@ -258,8 +250,6 @@ export function PopupShell({
       )}
 
       <div className="min-h-0 flex-1 overflow-auto">{children}</div>
-
-      <ResizeHandle {...resizeHandleProps} />
     </div>
   );
 }

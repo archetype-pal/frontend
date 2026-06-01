@@ -41,7 +41,6 @@ interface UsePopupSelectionArgs {
   rearmCreateTool: () => void;
   // editor ui state
   currentCreationKind: AnnotationCreationKind;
-  canViewEditorialControls: boolean;
   /** The working allograph copied into a newly-drawn graph (set at the top bar). */
   filteredAllographId: number | undefined;
   activeAssignmentHandId: number | undefined;
@@ -80,7 +79,6 @@ export function usePopupSelection({
   setActiveTool,
   rearmCreateTool,
   currentCreationKind,
-  canViewEditorialControls,
   filteredAllographId,
   activeAssignmentHandId,
   setHoveredAnnotationId,
@@ -177,6 +175,8 @@ export function usePopupSelection({
       }
 
       const isDraft = !isDbId(annotation.id);
+      const draftAnnotationType = annotation._meta?.annotationType ?? currentCreationKind;
+      const shouldAssignStandardDefaults = draftAnnotationType !== 'editorial';
 
       const annotationForPopup: A9sWithMeta =
         isDraft && activeTool === 'draw'
@@ -184,17 +184,19 @@ export function usePopupSelection({
               ...annotation,
               _meta: {
                 ...annotation._meta,
-                allographId: annotation._meta?.allographId ?? filteredAllographId,
-                handId: annotation._meta?.handId ?? activeAssignmentHandId,
-                annotationType: annotation._meta?.annotationType ?? currentCreationKind,
+                allographId:
+                  annotation._meta?.allographId ??
+                  (shouldAssignStandardDefaults ? filteredAllographId : undefined),
+                handId:
+                  annotation._meta?.handId ??
+                  (shouldAssignStandardDefaults ? activeAssignmentHandId : undefined),
+                annotationType: draftAnnotationType,
               },
             } as A9sWithMeta)
           : annotation;
 
       const defaultPopupTab: PopupRecord['popupTab'] =
-        annotationForPopup._meta?.annotationType !== 'editorial' && canViewEditorialControls
-          ? 'details'
-          : 'components';
+        annotationForPopup._meta?.annotationType === 'editorial' && isDraft ? 'notes' : 'details';
 
       const commonOverrides = {
         popupTab: defaultPopupTab,
@@ -216,7 +218,6 @@ export function usePopupSelection({
     },
     [
       activeTool,
-      canViewEditorialControls,
       clearSinglePopupState,
       currentCreationKind,
       filteredAllographId,

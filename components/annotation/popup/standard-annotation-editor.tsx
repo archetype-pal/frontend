@@ -24,8 +24,8 @@ import { SearchableSelect, type SearchableSelectHandle } from '@/components/ui/s
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 
-import { AnnotationMetaSummaryBlock } from './meta-summary-block';
-import type { PopupTab } from './types';
+import { AnnotationDetailOverview } from './read-only-detail-sections';
+import type { PopupTab, SelectedComponentGroup } from './types';
 
 interface StandardAnnotationEditorProps {
   isExisting: boolean;
@@ -157,6 +157,23 @@ export function StandardAnnotationEditor({
       : null;
 
   const selectedPositionsCount = draftPositionIds.length;
+  const selectedPositionNameById = new Map(
+    (selectedAllograph?.positions ?? []).map((position) => [position.id, position.name])
+  );
+  const detailSelectedPositionLabels = draftPositionIds.map(
+    (positionId) => selectedPositionNameById.get(positionId) ?? `Position ${positionId}`
+  );
+  const detailSelectedComponentGroups: SelectedComponentGroup[] = draftGraphcomponentSet.map(
+    (component) => ({
+      componentId: component.component,
+      componentName: component.componentName ?? `Component ${component.component}`,
+      featureNames: component.features.map(
+        (featureId) =>
+          component.featureDetails?.find((feature) => feature.id === featureId)?.name ??
+          `Feature ${featureId}`
+      ),
+    })
+  );
 
   const isComponentSelected = (componentId: number) =>
     draftGraphcomponentSet.some((component) => component.component === componentId);
@@ -536,7 +553,7 @@ export function StandardAnnotationEditor({
     <Tabs
       value={standardPopupTab}
       onValueChange={(value) => onPopupTabChange(value as PopupTab)}
-      className="w-full"
+      className="flex h-full min-h-0 w-full flex-col"
     >
       <div className="border-b px-4 py-2">
         <TabsList className="h-auto flex-wrap gap-2 bg-transparent p-0">
@@ -578,14 +595,18 @@ export function StandardAnnotationEditor({
         </TabsList>
       </div>
 
-      <div className="max-h-[420px] overflow-auto px-4 py-4">
+      <div className="min-h-0 flex-1 overflow-auto px-4 py-4">
         <TabsContent value="details" className="mt-0">
           {isExisting ? (
             <div className="space-y-4">
               {standardIdentityFields}
 
               {popupCapabilities.canViewEditorMeta && (
-                <AnnotationMetaSummaryBlock metaSummary={metaSummary} />
+                <AnnotationDetailOverview
+                  metaSummary={metaSummary}
+                  selectedComponentGroups={detailSelectedComponentGroups}
+                  selectedPositionLabels={detailSelectedPositionLabels}
+                />
               )}
 
               {showLocalHint ? (
@@ -613,7 +634,7 @@ export function StandardAnnotationEditor({
         </TabsContent>
       </div>
 
-      {standardFooter}
+      <div className="shrink-0">{standardFooter}</div>
     </Tabs>
   );
 }

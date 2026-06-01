@@ -20,9 +20,9 @@ export type PopupPosition = {
   y: number;
 };
 
-export const DEFAULT_SINGLE_POPUP_POSITION: PopupPosition = { x: 0, y: 300 };
+export const DEFAULT_SINGLE_POPUP_POSITION: PopupPosition = { x: 0, y: 0 };
 export const MULTI_POPUP_OFFSET_STEP = 24;
-export const MULTI_POPUP_BASE_Y = 300;
+export const MULTI_POPUP_BASE_Y = 0;
 export const ACTIVE_POPUP_Z_INDEX = 80;
 export const INACTIVE_POPUP_BASE_Z_INDEX = 60;
 
@@ -105,6 +105,9 @@ export function buildPopupAnnotationPayload({
   base?: A9sAnnotation;
 }): A9sAnnotation {
   const source = base ?? popup.annotation;
+  // New editorial drafts intentionally carry only an internal note. Existing
+  // editorial records may have legacy details that an internal-note edit must preserve.
+  const preserveEditorialDetails = isEditorial && isDbId(source.id);
   return {
     ...source,
     type: 'Annotation',
@@ -112,11 +115,11 @@ export function buildPopupAnnotationPayload({
       ? {
           ...source._meta,
           annotationType: 'editorial',
-          allographId: undefined,
-          handId: undefined,
-          graphcomponentSet: [],
-          positions: [],
-          positionDetails: [],
+          allographId: preserveEditorialDetails ? source._meta?.allographId : undefined,
+          handId: preserveEditorialDetails ? source._meta?.handId : undefined,
+          graphcomponentSet: preserveEditorialDetails ? source._meta?.graphcomponentSet : [],
+          positions: preserveEditorialDetails ? source._meta?.positions : [],
+          positionDetails: preserveEditorialDetails ? source._meta?.positionDetails : [],
           internalNote: popup.draftInternalNoteText.trim(),
         }
       : {
@@ -174,7 +177,14 @@ export function getPopupCardViewData(
       ? 'Editorial Annotation'
       : liveAllographTitle || (isDraft ? 'New Annotation' : 'Annotation');
 
-  const positions = annotation._meta?.positionDetails ?? [];
+  const positionDetails = annotation._meta?.positionDetails ?? [];
+  const positionNameById = new Map(positionDetails.map((position) => [position.id, position.name]));
+  const positions = annotation._meta?.positions?.length
+    ? annotation._meta.positions.map((id) => ({
+        id,
+        name: positionNameById.get(id) ?? `Position ${id}`,
+      }))
+    : positionDetails;
   const hasPositionsTab = positions.length > 0;
 
   const selectedPositionLabels = positions.map(
@@ -187,9 +197,11 @@ export function getPopupCardViewData(
       ? graphComponents.map((gc) => ({
           componentId: gc.component,
           componentName: gc.componentName ?? `Component ${gc.component}`,
-          featureNames:
-            gc.featureDetails?.map((feature) => feature.name) ??
-            gc.features.map((featureId) => `Feature ${featureId}`),
+          featureNames: gc.features.map(
+            (featureId) =>
+              gc.featureDetails?.find((feature) => feature.id === featureId)?.name ??
+              `Feature ${featureId}`
+          ),
         }))
       : [];
 
@@ -218,7 +230,7 @@ export function getPopupInitialPosition(
   }
 
   return {
-    x: index * MULTI_POPUP_OFFSET_STEP,
+    x: -index * MULTI_POPUP_OFFSET_STEP,
     y: MULTI_POPUP_BASE_Y + index * MULTI_POPUP_OFFSET_STEP,
   };
 }

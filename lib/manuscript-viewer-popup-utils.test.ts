@@ -323,6 +323,21 @@ describe('getPopupCardViewData', () => {
     expect(getPopupCardViewData(popup, new Map()).selectedPositionLabels).toEqual(['Position 7']);
   });
 
+  it('falls back to position ids when positionDetails are absent', () => {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        _meta: {
+          positions: [7, 8],
+        },
+      },
+    });
+    expect(getPopupCardViewData(popup, new Map()).selectedPositionLabels).toEqual([
+      'Position 7',
+      'Position 8',
+    ]);
+  });
+
   it('builds component group labels with feature fallbacks', () => {
     const popup = makePopup({
       annotation: {
@@ -367,7 +382,7 @@ describe('getPopupInitialPosition', () => {
       y: MULTI_POPUP_BASE_Y,
     });
     expect(getPopupInitialPosition(2, true, DEFAULT_SINGLE_POPUP_POSITION)).toEqual({
-      x: 2 * MULTI_POPUP_OFFSET_STEP,
+      x: -2 * MULTI_POPUP_OFFSET_STEP,
       y: MULTI_POPUP_BASE_Y + 2 * MULTI_POPUP_OFFSET_STEP,
     });
   });
@@ -560,6 +575,32 @@ describe('buildPopupAnnotationPayload', () => {
     expect(out._meta?.positions).toEqual([]);
     expect(out._meta?.positionDetails).toEqual([]);
     expect(out._meta?.internalNote).toBe('editorial commentary');
+  });
+
+  it('editorial payload preserves details already stored on an existing annotation', () => {
+    const popup = makePopup({
+      annotation: {
+        ...makePopup().annotation,
+        id: 'db:1',
+        _meta: {
+          annotationType: 'editorial',
+          allographId: 5,
+          handId: 7,
+          graphcomponentSet: [{ component: 11, features: [21] }],
+          positions: [1],
+          positionDetails: [{ id: 1, name: 'Initial' }],
+          internalNote: 'before',
+        },
+      },
+      draftInternalNoteText: 'after',
+    });
+    const out = buildPopupAnnotationPayload({ popup, isEditorial: true, positionNameById });
+    expect(out._meta?.allographId).toBe(5);
+    expect(out._meta?.handId).toBe(7);
+    expect(out._meta?.graphcomponentSet).toEqual([{ component: 11, features: [21] }]);
+    expect(out._meta?.positions).toEqual([1]);
+    expect(out._meta?.positionDetails).toEqual([{ id: 1, name: 'Initial' }]);
+    expect(out._meta?.internalNote).toBe('after');
   });
 
   it('editorial body is internal-note only', () => {

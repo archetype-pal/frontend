@@ -115,15 +115,145 @@ describe('AnnotationPopupCard', () => {
     expect(screen.getByPlaceholderText('Type note')).not.toBeNull();
   });
 
-  it('keeps editorial popups out of the standard tab layout', () => {
+  it('renders editorial annotation notes in the shared tab layout', () => {
     renderCard({
       annotationKind: 'editorial',
       popupEditorMode: 'editorial_draft',
+      popupTab: 'notes',
     });
 
-    expect(screen.queryByRole('tab', { name: 'Details' })).toBeNull();
-    expect(screen.queryByRole('tab', { name: 'Notes' })).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Details' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Notes' }).getAttribute('data-state')).toBe('active');
     expect(screen.getByPlaceholderText('Type internal note')).not.toBeNull();
+  });
+
+  it('shows saved editorial components, features and positions when present', () => {
+    renderCard({
+      annotationKind: 'editorial',
+      popupEditorMode: 'editorial_existing',
+      isDraftAnnotation: false,
+      popupTab: 'components',
+      hasPositionsTab: true,
+      selectedComponentGroups: [
+        { componentId: 1, componentName: 'Stem', featureNames: ['Curved', 'Long'] },
+      ],
+      selectedPositionLabels: ['Initial'],
+    });
+
+    expect(screen.getByRole('tab', { name: 'Components' }).getAttribute('data-state')).toBe(
+      'active'
+    );
+    expect(screen.getByRole('tab', { name: 'Positions' })).toBeTruthy();
+    expect(screen.getByText('Stem')).toBeTruthy();
+    expect(screen.getByText('Curved')).toBeTruthy();
+    expect(screen.getByText('Long')).toBeTruthy();
+  });
+
+  it('includes saved editorial components and positions in the details overview', () => {
+    renderCard({
+      annotationKind: 'editorial',
+      popupEditorMode: 'editorial_existing',
+      isDraftAnnotation: false,
+      hasPositionsTab: true,
+      selectedComponentGroups: [
+        { componentId: 1, componentName: 'Stem', featureNames: ['Curved'] },
+      ],
+      selectedPositionLabels: ['Initial'],
+    });
+
+    expect(screen.getByText('Components & features')).toBeTruthy();
+    expect(screen.getByText('Stem')).toBeTruthy();
+    expect(screen.getByText('Curved')).toBeTruthy();
+    expect(screen.getAllByText('Positions').length).toBeGreaterThan(1);
+    expect(screen.getByText('Initial')).toBeTruthy();
+  });
+
+  it('shows component and position details to public readers without separate tabs', () => {
+    renderCard({
+      popupEditorMode: 'public_existing',
+      isDraftAnnotation: false,
+      metaSummary: {
+        kindLabel: 'Public',
+        allographLabel: 'a, Caroline',
+        handLabel: 'Hand A',
+      },
+      hasPositionsTab: true,
+      selectedComponentGroups: [
+        { componentId: 1, componentName: 'Stem', featureNames: ['Curved'] },
+      ],
+      selectedPositionLabels: ['Initial'],
+    });
+
+    expect(screen.getByRole('tab', { name: 'Details' }).getAttribute('data-state')).toBe('active');
+    expect(screen.queryByRole('tab', { name: 'Components' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Positions' })).toBeNull();
+    expect(screen.getByText('Annotation details')).toBeTruthy();
+    expect(screen.getByText('a, Caroline')).toBeTruthy();
+    expect(screen.getByText('Hand A')).toBeTruthy();
+    expect(screen.getByText('Components & features')).toBeTruthy();
+    expect(screen.getByText('Stem')).toBeTruthy();
+    expect(screen.getByText('Curved')).toBeTruthy();
+    expect(screen.getAllByText('Positions').length).toBeGreaterThan(1);
+    expect(screen.getByText('Initial')).toBeTruthy();
+  });
+
+  it('shows live component and position details in the saved standard editor overview', () => {
+    renderCard({
+      popupEditorMode: 'standard_existing',
+      isDraftAnnotation: false,
+      allographOptions: [
+        {
+          id: 5,
+          name: 'Caroline',
+          character_name: 'a',
+          components: [],
+          positions: [{ id: 7, name: 'Initial' }],
+        },
+      ],
+      draftAllographId: 5,
+      draftGraphcomponentSet: [
+        {
+          component: 1,
+          componentName: 'Stem',
+          features: [2],
+          featureDetails: [{ id: 2, name: 'Curved' }],
+        },
+      ],
+      draftPositionIds: [7],
+    });
+
+    expect(screen.getByText('Components & features')).toBeTruthy();
+    expect(screen.getByText('Stem')).toBeTruthy();
+    expect(screen.getByText('Curved')).toBeTruthy();
+    expect(screen.getAllByText('Positions').length).toBeGreaterThan(1);
+    expect(screen.getByText('Initial')).toBeTruthy();
+  });
+
+  it('uses compact fixed sizing for lighter popup modes without a resize grip', () => {
+    renderCard();
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.style.width).toBe('min(420px, calc(100vw - 2rem))');
+    expect(dialog.style.height).toBe('min(440px, calc(100vh - 2rem))');
+    expect(screen.queryByRole('slider', { name: /resize panel/i })).toBeNull();
+  });
+
+  it('uses a slightly taller fixed height for public annotation details', () => {
+    renderCard({
+      popupEditorMode: 'public_existing',
+      isDraftAnnotation: false,
+    });
+
+    expect(screen.getByRole('dialog').style.height).toBe('min(480px, calc(100vh - 2rem))');
+  });
+
+  it('keeps the expanded fixed height for saved standard editors', () => {
+    renderCard({
+      popupEditorMode: 'standard_existing',
+      isDraftAnnotation: false,
+    });
+
+    expect(screen.getByRole('dialog').style.height).toBe('min(560px, calc(100vh - 2rem))');
   });
 
   it('explains both save paths and disables OK for an unchanged existing annotation', () => {

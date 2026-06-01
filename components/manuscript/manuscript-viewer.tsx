@@ -539,7 +539,6 @@ export default function ManuscriptViewer({
     setActiveTool,
     rearmCreateTool,
     currentCreationKind,
-    canViewEditorialControls,
     filteredAllographId: filteredAllograph?.id,
     activeAssignmentHandId: activeAssignmentHand?.id,
     setHoveredAnnotationId,
@@ -792,7 +791,7 @@ export default function ManuscriptViewer({
       !popupCard.hasPositionsTab &&
       activePopupRecord.popupTab === 'positions'
     ) {
-      handlePopupTabChange(activePopupRecord.id, 'components');
+      handlePopupTabChange(activePopupRecord.id, 'details');
     }
   }, [activePopupRecord, allographNameById, canViewEditorialControls, handlePopupTabChange]);
 

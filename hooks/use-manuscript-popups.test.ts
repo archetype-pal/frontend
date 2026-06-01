@@ -22,6 +22,14 @@ describe('useManuscriptPopups', () => {
       expect(result.current.activePopupRecord).toBeNull();
     });
 
+    it('opens annotation popups on the details tab by default', () => {
+      const { result } = renderHook(() => useManuscriptPopups({ allowMultipleBoxes: false }));
+      act(() => {
+        result.current.openPopupCollectionFromAnnotation(makeAnnotation('a'));
+      });
+      expect(result.current.openPopups[0].popupTab).toBe('details');
+    });
+
     it('replaces single-popup state when allowMultipleBoxes is false', () => {
       const { result } = renderHook(() => useManuscriptPopups({ allowMultipleBoxes: false }));
       act(() => {
@@ -240,7 +248,7 @@ describe('useManuscriptPopups', () => {
       });
       const beforePopups = result.current.openPopups;
       act(() => {
-        result.current.updatePopupById('a', { popupTab: 'components' });
+        result.current.updatePopupById('a', { popupTab: 'details' });
       });
       expect(result.current.openPopups).toBe(beforePopups);
     });
@@ -256,7 +264,7 @@ describe('useManuscriptPopups', () => {
       act(() => {
         result.current.updatePopupById('a', { popupTab: 'notes' });
       });
-      expect(result.current.getPopupById('b')?.popupTab).toBe('components');
+      expect(result.current.getPopupById('b')?.popupTab).toBe('details');
     });
 
     it('does nothing for an unknown id', () => {

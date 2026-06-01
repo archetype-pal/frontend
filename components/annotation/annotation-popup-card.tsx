@@ -34,9 +34,6 @@ interface AnnotationPopupCardProps {
   onPointerDownCapture?: React.PointerEventHandler<HTMLDivElement>;
   isActive?: boolean;
   hasLocalChanges: boolean;
-  width?: number;
-  height?: number;
-  resizeHandleProps?: React.HTMLAttributes<HTMLSpanElement>;
 
   isShareUrlVisible: boolean;
   shareUrl: string;
@@ -100,9 +97,6 @@ export function AnnotationPopupCard({
   onPointerDownCapture,
   isActive = true,
   hasLocalChanges,
-  width,
-  height,
-  resizeHandleProps,
   isShareUrlVisible,
   shareUrl,
   canSaveAnnotationShortcut = false,
@@ -158,6 +152,7 @@ export function AnnotationPopupCard({
       : annotationKind === 'editorial'
         ? 'Editorial'
         : 'Public';
+  const popupHeight = isStandardExisting ? 560 : isPublicExisting ? 480 : 440;
   const collectionLabel = isAnnotationInCollection ? 'Remove from Collection' : 'Add to Collection';
 
   return (
@@ -172,9 +167,7 @@ export function AnnotationPopupCard({
       dragHandleProps={dragHandleProps}
       zIndex={zIndex}
       onPointerDownCapture={onPointerDownCapture}
-      width={width}
-      height={height}
-      resizeHandleProps={resizeHandleProps}
+      height={popupHeight}
       isShareUrlVisible={isShareUrlVisible}
       shareUrl={shareUrl}
       canSaveAnnotationShortcut={canSaveAnnotationShortcut}
@@ -227,6 +220,12 @@ export function AnnotationPopupCard({
         <EditorialAnnotationEditor
           isExisting={isEditorialExisting}
           hasLocalChanges={hasLocalChanges}
+          metaSummary={metaSummary}
+          popupTab={popupTab}
+          onPopupTabChange={onPopupTabChange}
+          hasPositionsTab={hasPositionsTab}
+          selectedComponentGroups={selectedComponentGroups}
+          selectedPositionLabels={selectedPositionLabels}
           draftInternalNoteText={draftInternalNoteText}
           onDraftInternalNoteTextChange={onDraftInternalNoteTextChange}
           onCancelDraftAnnotation={onCancelDraftAnnotation}
@@ -234,11 +233,9 @@ export function AnnotationPopupCard({
         />
       ) : isPublicExisting ? (
         <PublicAnnotationView
-          popupCapabilities={popupCapabilities}
           metaSummary={metaSummary}
           popupTab={popupTab}
           onPopupTabChange={onPopupTabChange}
-          hasPositionsTab={hasPositionsTab}
           selectedComponentGroups={selectedComponentGroups}
           selectedPositionLabels={selectedPositionLabels}
           selectedNotes={selectedNotes}
