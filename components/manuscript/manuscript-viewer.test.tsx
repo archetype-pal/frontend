@@ -224,8 +224,17 @@ describe('ManuscriptViewer smoke test', () => {
     const props = annotoriousPropsRef.current;
     const enablePan = vi.fn();
     const enableDraw = vi.fn();
+    // Track pan/draw, but no-op every other method the viewer's mount effects
+    // call (setImageAdjustments, toggleAnnotations, …) so they don't throw.
+    const api = new Proxy(
+      { enablePan, enableDraw },
+      {
+        get: (target, prop) =>
+          prop in target ? target[prop as keyof typeof target] : () => undefined,
+      }
+    );
     act(() => {
-      props!.exposeApi?.({ enablePan, enableDraw });
+      props!.exposeApi?.(api);
     });
     expect(enablePan).toHaveBeenCalledTimes(1);
 

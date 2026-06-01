@@ -230,7 +230,9 @@ export function getPopupInitialPosition(
   }
 
   return {
-    x: -index * MULTI_POPUP_OFFSET_STEP,
+    // index === 0 guards against -0 (the negation of 0), which equals 0 but
+    // trips strict deep-equality checks.
+    x: index === 0 ? 0 : -index * MULTI_POPUP_OFFSET_STEP,
     y: MULTI_POPUP_BASE_Y + index * MULTI_POPUP_OFFSET_STEP,
   };
 }
