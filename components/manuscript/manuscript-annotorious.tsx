@@ -1225,7 +1225,7 @@ export default function ManuscriptAnnotorious({
         style={{
           width: '100%',
           height: '100%',
-          background: '#000',
+          background: 'var(--viewer-canvas)',
           position: 'relative',
           display: 'flex',
           alignItems: 'center',
@@ -1245,8 +1245,8 @@ export default function ManuscriptAnnotorious({
             }}
             style={{
               padding: '0.5rem 1rem',
-              backgroundColor: '#3b82f6',
-              color: '#fff',
+              backgroundColor: 'var(--primary)',
+              color: 'var(--primary-foreground)',
               border: 'none',
               borderRadius: '0.25rem',
               cursor: 'pointer',
@@ -1278,7 +1278,12 @@ export default function ManuscriptAnnotorious({
       <div
         ref={viewerRef}
         className="manuscript-osd-viewer"
-        style={{ width: '100%', height: '100%', background: '#000', position: 'relative' }}
+        style={{
+          width: '100%',
+          height: '100%',
+          background: 'var(--viewer-canvas)',
+          position: 'relative',
+        }}
       />
     </div>
   );

@@ -10,7 +10,7 @@ export function ViewerErrorState({ message }: { message: string }) {
   return (
     <div className="flex h-[100dvh] items-center justify-center">
       <div className="text-center">
-        <p className="text-red-500 mb-4">{message}</p>
+        <p className="text-destructive mb-4">{message}</p>
         <Button onClick={() => window.location.reload()}>Try Again</Button>
       </div>
     </div>

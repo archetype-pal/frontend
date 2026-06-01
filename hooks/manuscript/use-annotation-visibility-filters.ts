@@ -8,7 +8,11 @@ import {
   passesVisibilityFilter,
 } from '@/lib/manuscript-viewer-filters';
 import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
-import type { A9sWithMeta, AnnotationVisibilityFilters } from '@/types/annotation-viewer';
+import type {
+  A9sWithMeta,
+  AnnotationVisibilityFilters,
+  ViewerAnnotationMode,
+} from '@/types/annotation-viewer';
 
 interface UseAnnotationVisibilityFiltersArgs {
   imageId: string;
@@ -17,7 +21,8 @@ interface UseAnnotationVisibilityFiltersArgs {
   a9sSnapshotLength: number;
   baseDataReady: boolean;
   handsLoaded: boolean;
-  isTextPanelOpen: boolean;
+  /** Effective view mode (allograph/text/both) for this image; drives the layer gate. */
+  viewMode: ViewerAnnotationMode;
   canViewEditorialControls: boolean;
   getCanonicalAnnotation: (annotation: A9sAnnotation) => A9sWithMeta;
 }
@@ -43,7 +48,7 @@ export function useAnnotationVisibilityFilters({
   a9sSnapshotLength,
   baseDataReady,
   handsLoaded,
-  isTextPanelOpen,
+  viewMode,
   canViewEditorialControls,
   getCanonicalAnnotation,
 }: UseAnnotationVisibilityFiltersArgs) {
@@ -109,7 +114,7 @@ export function useAnnotationVisibilityFilters({
         filters: visibilityFilters,
         hasAllographFilters: availableAllographFilterIds.length > 0,
         hasHandFilters: availableHandFilterIds.length > 0,
-        isTextPanelOpen,
+        viewMode,
       });
     },
     [
@@ -118,7 +123,7 @@ export function useAnnotationVisibilityFilters({
       availableAllographFilterIds.length,
       availableHandFilterIds.length,
       getCanonicalAnnotation,
-      isTextPanelOpen,
+      viewMode,
     ]
   );
 

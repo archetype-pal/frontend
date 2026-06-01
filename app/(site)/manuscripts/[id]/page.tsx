@@ -64,16 +64,20 @@ export default async function ManuscriptPage({ params }: { params: Promise<{ id:
 
   if (!manuscript) {
     return (
-      <main className="container mx-auto p-4 max-w-6xl">
-        <div className="rounded-lg border bg-background p-6 text-center">
-          <h1 className="text-2xl font-semibold mb-2">Unable to load manuscript</h1>
-          <p className="text-muted-foreground mb-4">
-            The manuscript service is currently unavailable. Please try again shortly.
-          </p>
-          <Link href="/search/manuscripts" className="text-primary hover:underline">
-            Back to manuscripts
-          </Link>
-        </div>
+      <main className="mx-auto flex max-w-6xl flex-col items-center px-4 py-24 text-center sm:px-6">
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
+          Unable to load manuscript
+        </h1>
+        <p className="mt-3 max-w-md text-muted-foreground">
+          The manuscript service is currently unavailable. Please try again shortly.
+        </p>
+        <div className="ornament-divider mt-6 w-44 text-border" aria-hidden />
+        <Link
+          href="/search/manuscripts"
+          className="mt-5 text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          Back to manuscripts
+        </Link>
       </main>
     );
   }

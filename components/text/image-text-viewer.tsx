@@ -6,9 +6,15 @@ import { cn } from '@/lib/utils';
 interface ImageTextViewerProps {
   html: string;
   className?: string;
+  /**
+   * Opt into the `.tei-rich` element styling — coloured underlines + hover
+   * labels for persons/places/expansions (the markup the text annotator
+   * surfaces). Off by default so standalone text pages render plain prose.
+   */
+  richMarkup?: boolean;
 }
 
-export function ImageTextViewer({ html, className }: ImageTextViewerProps) {
+export function ImageTextViewer({ html, className, richMarkup = false }: ImageTextViewerProps) {
   // Content may be legacy data-dpt HTML or (post-Phase-H) TEI XML; render both
   // as data-dpt HTML so the prose CSS and text↔region linking are unchanged.
   const safeHtml = React.useMemo(
@@ -23,6 +29,7 @@ export function ImageTextViewer({ html, className }: ImageTextViewerProps) {
     <div
       className={cn(
         'font-transcription',
+        richMarkup && 'tei-rich',
         className ?? 'prose prose-sm dark:prose-invert max-w-none'
       )}
       dangerouslySetInnerHTML={{ __html: safeHtml }}

@@ -57,10 +57,21 @@ export type AnnotationVisibilityFilters = {
 
 export type ToolbarPosition = 'vertical' | 'horizontal';
 
+/** Which annotation layer(s) the viewer surfaces. */
+export type ViewerAnnotationMode = 'allograph' | 'text' | 'both';
+/** Where the transcription/translation panel sits relative to the image. */
+export type TextPanelPosition = 'right' | 'left' | 'bottom';
+/** Which text(s) the panel shows. */
+export type TextDisplayMode = 'transcription' | 'translation' | 'both';
+
 export type AnnotationViewerSettings = {
   allowMultipleBoxes: boolean;
   selectMultipleAnnotations: boolean;
   toolbarPosition: ToolbarPosition;
+  /** Allograph (glyph) layer, text-region layer, or both at once. */
+  viewMode: ViewerAnnotationMode;
+  textPanelPosition: TextPanelPosition;
+  textDisplayMode: TextDisplayMode;
 };
 
 export type PopupRecord = {

@@ -17,7 +17,7 @@ function ctx(overrides: Partial<VisibilityFilterContext> = {}): VisibilityFilter
     },
     hasAllographFilters: true,
     hasHandFilters: true,
-    isTextPanelOpen: false,
+    viewMode: 'allograph',
     ...overrides,
   };
 }
@@ -29,12 +29,28 @@ describe('passesVisibilityFilter', () => {
     ).toBe(true);
   });
 
-  it('shows text-region annotations only when the text panel is open', () => {
+  it('shows text-region annotations in text/both modes, hides them in allograph', () => {
     expect(
-      passesVisibilityFilter({ annotationType: 'text' }, false, ctx({ isTextPanelOpen: false }))
+      passesVisibilityFilter({ annotationType: 'text' }, false, ctx({ viewMode: 'allograph' }))
     ).toBe(false);
     expect(
-      passesVisibilityFilter({ annotationType: 'text' }, false, ctx({ isTextPanelOpen: true }))
+      passesVisibilityFilter({ annotationType: 'text' }, false, ctx({ viewMode: 'text' }))
+    ).toBe(true);
+    expect(
+      passesVisibilityFilter({ annotationType: 'text' }, false, ctx({ viewMode: 'both' }))
+    ).toBe(true);
+  });
+
+  it('hides the glyph (allograph) layer in pure text mode', () => {
+    expect(
+      passesVisibilityFilter({ allographId: 1, handId: 10 }, false, ctx({ viewMode: 'text' }))
+    ).toBe(false);
+    // ...but shows it in allograph and both
+    expect(
+      passesVisibilityFilter({ allographId: 1, handId: 10 }, false, ctx({ viewMode: 'allograph' }))
+    ).toBe(true);
+    expect(
+      passesVisibilityFilter({ allographId: 1, handId: 10 }, false, ctx({ viewMode: 'both' }))
     ).toBe(true);
   });
 

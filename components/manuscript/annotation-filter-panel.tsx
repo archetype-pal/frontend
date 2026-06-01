@@ -105,7 +105,7 @@ export function AnnotationFilterPanel({
                       type="checkbox"
                       checked={selectedAllographIds.includes(allograph.id)}
                       onChange={() => onToggleAllograph(allograph.id)}
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-input"
                     />
                     <span className="text-sm text-foreground">
                       {formatAllographLabel(allograph)}
@@ -139,7 +139,7 @@ export function AnnotationFilterPanel({
                       type="checkbox"
                       checked={selectedHandIds.includes(hand.id)}
                       onChange={() => onToggleHand(hand.id)}
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-input"
                     />
                     <span className="text-sm text-foreground">{hand.name}</span>
                   </label>
@@ -158,7 +158,7 @@ export function AnnotationFilterPanel({
                     type="checkbox"
                     checked={showEditorial}
                     onChange={onToggleEditorial}
-                    className="h-4 w-4 rounded border-gray-300"
+                    className="h-4 w-4 rounded border-input"
                   />
                   <span className="text-sm text-foreground">Editorial Annotations</span>
                 </label>
@@ -169,7 +169,7 @@ export function AnnotationFilterPanel({
                   type="checkbox"
                   checked={showPublicAnnotations}
                   onChange={onTogglePublicAnnotations}
-                  className="h-4 w-4 rounded border-gray-300"
+                  className="h-4 w-4 rounded border-input"
                 />
                 <span className="text-sm text-foreground">Public Annotations</span>
               </label>

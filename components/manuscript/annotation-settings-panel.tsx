@@ -3,7 +3,11 @@
 import * as React from 'react';
 import { X } from 'lucide-react';
 
-import type { AnnotationViewerSettings } from '@/types/annotation-viewer';
+import type {
+  AnnotationViewerSettings,
+  TextDisplayMode,
+  TextPanelPosition,
+} from '@/types/annotation-viewer';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -19,7 +23,21 @@ interface AnnotationSettingsPanelProps {
   onToggleAllowMultipleBoxes: () => void;
   onToggleSelectMultipleAnnotations: () => void;
   onSetToolbarPosition: (position: 'vertical' | 'horizontal') => void;
+  onSetTextPanelPosition: (position: TextPanelPosition) => void;
+  onSetTextDisplayMode: (mode: TextDisplayMode) => void;
 }
+
+const TEXT_POSITIONS: Array<{ value: TextPanelPosition; label: string }> = [
+  { value: 'right', label: 'Right' },
+  { value: 'left', label: 'Left' },
+  { value: 'bottom', label: 'Bottom' },
+];
+
+const TEXT_DISPLAYS: Array<{ value: TextDisplayMode; label: string }> = [
+  { value: 'transcription', label: 'Transcription' },
+  { value: 'translation', label: 'Translation' },
+  { value: 'both', label: 'Both' },
+];
 
 export function AnnotationSettingsPanel({
   isOpen,
@@ -31,6 +49,8 @@ export function AnnotationSettingsPanel({
   onToggleAllowMultipleBoxes,
   onToggleSelectMultipleAnnotations,
   onSetToolbarPosition,
+  onSetTextPanelPosition,
+  onSetTextDisplayMode,
 }: AnnotationSettingsPanelProps) {
   useOnEscape(isOpen, onClose);
   if (!isOpen) return null;
@@ -72,7 +92,7 @@ export function AnnotationSettingsPanel({
               type="checkbox"
               checked={viewerSettings.allowMultipleBoxes}
               onChange={onToggleAllowMultipleBoxes}
-              className="h-4 w-4 rounded border-gray-300"
+              className="h-4 w-4 rounded border-input"
             />
             <span className="text-sm text-foreground">Allow multiple boxes</span>
           </label>
@@ -102,6 +122,44 @@ export function AnnotationSettingsPanel({
             </Button>
           </div>
         </div>
+        <div>
+          <h4 className="text-sm font-semibold text-foreground">Text panel position</h4>
+          <Separator className="my-3" />
+
+          <div className="flex flex-wrap gap-2">
+            {TEXT_POSITIONS.map((option) => (
+              <Button
+                key={option.value}
+                variant={viewerSettings.textPanelPosition === option.value ? 'default' : 'outline'}
+                size="sm"
+                type="button"
+                onClick={() => onSetTextPanelPosition(option.value)}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h4 className="text-sm font-semibold text-foreground">Text display</h4>
+          <Separator className="my-3" />
+
+          <div className="flex flex-wrap gap-2">
+            {TEXT_DISPLAYS.map((option) => (
+              <Button
+                key={option.value}
+                variant={viewerSettings.textDisplayMode === option.value ? 'default' : 'outline'}
+                size="sm"
+                type="button"
+                onClick={() => onSetTextDisplayMode(option.value)}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
         {showEditorSettings && (
           <div>
             <h4 className="text-sm font-semibold text-foreground">Editor settings</h4>
@@ -112,7 +170,7 @@ export function AnnotationSettingsPanel({
                 type="checkbox"
                 checked={viewerSettings.selectMultipleAnnotations}
                 onChange={onToggleSelectMultipleAnnotations}
-                className="h-4 w-4 rounded border-gray-300"
+                className="h-4 w-4 rounded border-input"
               />
               <span className="text-sm text-foreground">Select multiple annotations</span>
             </label>

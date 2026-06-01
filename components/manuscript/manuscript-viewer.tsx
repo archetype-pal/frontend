@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/auth-context';
 
 import { getIiifBaseUrl } from '@/utils/iiif';
+import { cn } from '@/lib/utils';
 import { AnnotationFilterPanel } from './annotation-filter-panel';
 import { AnnotationSettingsPanel } from './annotation-settings-panel';
 import { AllographGalleryDialog } from './allograph-gallery-dialog';
@@ -139,6 +140,9 @@ export default function ManuscriptViewer({
     handleToggleAllowMultipleBoxes,
     handleToggleSelectMultipleAnnotations,
     handleSetToolbarPosition,
+    handleSetViewMode,
+    handleSetTextPanelPosition,
+    handleSetTextDisplayMode,
   } = useAnnotationViewerSettings();
 
   const {
@@ -223,13 +227,12 @@ export default function ManuscriptViewer({
 
   const {
     imageTexts,
-    isTextPanelOpen,
-    setIsTextPanelOpen,
     linkedGraphId,
     setLinkedGraphId,
     linkArm,
     setLinkArm,
     tryLinkRegion,
+    reloadTextsAndAnnotations,
   } = useImageTextLinking({
     imageId,
     token,
@@ -242,6 +245,18 @@ export default function ManuscriptViewer({
     resetEditorFrom,
     setInitialA9sAnnots,
   });
+
+  // ---- View mode (Allograph / Text / Both) ----
+  // viewMode is the single source of truth; the text panel and the text-region
+  // annotation layer are both derived from it. An image with no texts can never
+  // enter a text view, so we clamp to 'allograph' to avoid a blank canvas.
+  const hasTexts = imageTexts.length > 0;
+  const hasTranscription = imageTexts.some((t) => t.type.toLowerCase() === 'transcription');
+  const hasTranslation = imageTexts.some((t) => t.type.toLowerCase() === 'translation');
+  const effectiveViewMode = hasTexts ? viewerSettings.viewMode : 'allograph';
+  const isTextPanelOpen = effectiveViewMode !== 'allograph';
+  const showTextPanel = isTextPanelOpen && hasTexts;
+  const textPanelPosition = viewerSettings.textPanelPosition;
 
   const allographLabelById = React.useMemo(
     () => new Map(allographs.map((a) => [a.id, formatAllographLabel(a)])),
@@ -396,7 +411,7 @@ export default function ManuscriptViewer({
     a9sSnapshotLength: a9sSnapshot.length,
     baseDataReady: Boolean(manuscriptImage && imageHeight),
     handsLoaded,
-    isTextPanelOpen,
+    viewMode: effectiveViewMode,
     canViewEditorialControls,
     getCanonicalAnnotation,
   });
@@ -903,6 +918,13 @@ export default function ManuscriptViewer({
 
   const annotationHeader = (
     <AnnotationHeader
+      viewMode={effectiveViewMode}
+      onSetViewMode={handleSetViewMode}
+      hasTexts={hasTexts}
+      hasTranscription={hasTranscription}
+      hasTranslation={hasTranslation}
+      textDisplayMode={viewerSettings.textDisplayMode}
+      onSetTextDisplayMode={handleSetTextDisplayMode}
       annotationsEnabled={annotationsEnabled}
       onToggleAnnotations={toggleAnnotations}
       unsavedCount={unsavedChanges}
@@ -984,6 +1006,8 @@ export default function ManuscriptViewer({
         onToggleAllowMultipleBoxes={handleToggleAllowMultipleBoxes}
         onToggleSelectMultipleAnnotations={handleToggleSelectMultipleAnnotations}
         onSetToolbarPosition={handleSetToolbarPosition}
+        onSetTextPanelPosition={handleSetTextPanelPosition}
+        onSetTextDisplayMode={handleSetTextDisplayMode}
       />
 
       <AllographGalleryDialog
@@ -1001,20 +1025,29 @@ export default function ManuscriptViewer({
         }}
       />
 
-      <div className={`relative flex flex-1 ${isFullScreen ? 'mt-20' : ''}`}>
+      <div className={cn('relative flex flex-1', isFullScreen && 'mt-20')}>
         <div
-          className={
-            isFullScreen
-              ? 'flex flex-1 gap-3 overflow-hidden p-0'
-              : 'flex flex-1 gap-4 overflow-hidden p-4'
-          }
+          className={cn(
+            'flex min-h-0 flex-1 overflow-hidden',
+            isFullScreen ? 'gap-3 p-0' : 'gap-4 p-4',
+            // Mobile always stacks the panel under the image; ≥md honors the
+            // chosen side (left reverses DOM order so the canvas stays first
+            // for tab order / screen readers).
+            'flex-col',
+            textPanelPosition === 'bottom'
+              ? 'md:flex-col'
+              : textPanelPosition === 'left'
+                ? 'md:flex-row-reverse'
+                : 'md:flex-row'
+          )}
         >
           <div
-            className={
-              isFullScreen
-                ? 'relative h-full min-w-0 flex-1 overflow-hidden rounded-lg border bg-accent/50'
-                : 'relative h-[calc(100%-3rem)] min-w-0 flex-1 overflow-hidden rounded-lg border bg-accent/50'
-            }
+            className={cn(
+              'relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-lg border border-border bg-[var(--viewer-canvas)]',
+              // In "Both", recede the glyph layer so the text layer reads as focus.
+              effectiveViewMode === 'both' && 'viewer-mode-both',
+              effectiveViewMode === 'text' && 'viewer-mode-text'
+            )}
           >
             <ViewerToolbar
               toolbarPosition={viewerSettings.toolbarPosition}
@@ -1033,7 +1066,7 @@ export default function ManuscriptViewer({
               onZoomIn={() => viewerApiRef.current?.zoomIn()}
               onZoomOut={() => viewerApiRef.current?.zoomOut()}
               onRefresh={() => void handleDefaultZoom()}
-              onToggleTextPanel={() => setIsTextPanelOpen((open) => !open)}
+              onToggleTextPanel={() => handleSetViewMode(isTextPanelOpen ? 'allograph' : 'both')}
               onCreateAnnotation={handleCreateAnnotation}
               onSave={() => void handleSave()}
               onDeleteTool={handleDeleteTool}
@@ -1096,16 +1129,31 @@ export default function ManuscriptViewer({
             />
           </div>
 
-          {isTextPanelOpen && imageTexts.length > 0 && (
+          {showTextPanel && (
             <div
-              className={
-                isFullScreen
-                  ? 'h-full w-[34rem] max-w-[45%] shrink-0'
-                  : 'h-[calc(100%-3rem)] w-[34rem] max-w-[45%] shrink-0'
-              }
+              className={cn(
+                'min-h-0',
+                textPanelPosition === 'bottom'
+                  ? 'h-[40%] w-full shrink-0'
+                  : 'h-[45%] w-full shrink-0 md:h-full md:w-[34rem] md:max-w-[45%]'
+              )}
             >
               <ViewerTextPanel
                 texts={imageTexts}
+                displayMode={viewerSettings.textDisplayMode}
+                panelPosition={textPanelPosition}
+                onCyclePosition={() =>
+                  handleSetTextPanelPosition(
+                    textPanelPosition === 'right'
+                      ? 'bottom'
+                      : textPanelPosition === 'bottom'
+                        ? 'left'
+                        : 'right'
+                  )
+                }
+                token={token}
+                canEdit={canPersistAnyAnnotations && !isPublicDemoMode}
+                onTextSaved={() => void reloadTextsAndAnnotations()}
                 linkedGraphId={linkedGraphId}
                 onSpanHover={(graphId) =>
                   setHoveredAnnotationId(graphId != null ? `db:${graphId}` : null)
@@ -1119,6 +1167,7 @@ export default function ManuscriptViewer({
                 }}
                 canLink={canPersistAnyAnnotations && !isPublicDemoMode}
                 armedElementIndex={linkArm?.elementIndex ?? null}
+                armedTextId={linkArm?.textId ?? null}
                 onArmLink={(textId, elementIndex, label) => {
                   setLinkArm({ textId, elementIndex, label });
                   // Arm the draw tool so the editor can immediately draw.
@@ -1128,7 +1177,7 @@ export default function ManuscriptViewer({
                   setLinkArm(null);
                   handleMoveTool();
                 }}
-                onClose={() => setIsTextPanelOpen(false)}
+                onClose={() => handleSetViewMode('allograph')}
               />
             </div>
           )}

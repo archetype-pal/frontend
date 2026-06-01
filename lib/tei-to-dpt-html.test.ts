@@ -25,14 +25,20 @@ describe('teiToDptHtml', () => {
     ],
     [
       '<persName type="name">x</persName>',
-      '<span data-dpt="person" data-dpt-cat="chars" data-dpt-type="name">x</span>',
+      '<span data-dpt="person" data-dpt-cat="chars" data-dpt-type="name" class="tei-el tei-el-persName" data-tei-label="name">x</span>',
     ],
     [
       '<placeName type="name">x</placeName>',
-      '<span data-dpt="place" data-dpt-cat="chars" data-dpt-type="name">x</span>',
+      '<span data-dpt="place" data-dpt-cat="chars" data-dpt-type="name" class="tei-el tei-el-placeName" data-tei-label="name">x</span>',
     ],
-    ['<ex>us</ex>', '<span data-dpt="ex" data-dpt-cat="chars">us</span>'],
-    ['<supplied>x</supplied>', '<span data-dpt="supplied" data-dpt-cat="chars">x</span>'],
+    [
+      '<ex>us</ex>',
+      '<span data-dpt="ex" data-dpt-cat="chars" class="tei-el tei-el-ex" data-tei-label="ex">us</span>',
+    ],
+    [
+      '<supplied>x</supplied>',
+      '<span data-dpt="supplied" data-dpt-cat="chars" class="tei-el tei-el-supplied" data-tei-label="supplied">x</span>',
+    ],
     ['<lb source="ms">|</lb>', '<span data-dpt="lb" data-dpt-src="ms">|</span>'],
     ['<lb type="sep">|</lb>', '<span data-dpt="lb" data-dpt-cat="sep">|</span>'],
   ];
@@ -59,8 +65,12 @@ describe('teiToDptHtml', () => {
     const tei = '<p><seg type="intitulatio">Arnald<ex>us</ex></seg></p>';
     expect(teiToDptHtml(tei)).toBe(
       '<p><span data-dpt="clause" data-dpt-cat="words" data-dpt-type="intitulatio">' +
-        'Arnald<span data-dpt="ex" data-dpt-cat="chars">us</span></span></p>'
+        'Arnald<span data-dpt="ex" data-dpt-cat="chars" class="tei-el tei-el-ex" data-tei-label="ex">us</span></span></p>'
     );
+  });
+
+  it('does not add rich-markup classes to clauses (segs wrap large spans)', () => {
+    expect(teiToDptHtml('<seg type="address">to all worthy men</seg>')).not.toContain('tei-el');
   });
 });
 

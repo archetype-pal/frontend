@@ -121,6 +121,10 @@
     --border: hsl(33 18% 82%);
     --input: hsl(33 18% 82%);
     --ring: hsl(201 90% 27%);
+    /* Manuscript viewer backdrop — a warm ink behind the image plate, softer
+     * than pure black so it sits inside the parchment palette rather than
+     * fighting it. Consumed by the OSD canvas + its framing container. */
+    --viewer-canvas: hsl(30 13% 14%);
     --chart-1: hsl(12 76% 61%);
     --chart-2: hsl(173 58% 39%);
     --chart-3: hsl(197 37% 24%);
@@ -218,6 +222,7 @@
     --border: hsl(240 3.7% 15.9%);
     --input: hsl(240 3.7% 15.9%);
     --ring: hsl(240 4.9% 83.9%);
+    --viewer-canvas: hsl(240 8% 6%);
     --chart-1: hsl(220 70% 50%);
     --chart-2: hsl(160 60% 45%);
     --chart-3: hsl(30 80% 55%);
@@ -863,6 +868,26 @@ g.a9s-annotation.a9s-text:hover rect,
 g.a9s-annotation.a9s-text:hover polygon,
 g.a9s-annotation.a9s-text:hover path {
   fill: hsl(var(--c-transcription-h) 60% 55% / 0.25) !important;
+}
+
+/*
+ * View-mode layer dimming. In the "Both" view the glyph (allograph) layer
+ * recedes so the text-region layer reads as the focus — the IIIF-viewer norm
+ * for showing two annotation layers at once. Scoped to a stable container
+ * class so it survives the per-frame `syncAnnotationClasses` re-class loop;
+ * only opacity changes (palette stays in the `--c-annot-*` tokens).
+ */
+.viewer-mode-both g.a9s-annotation.a9s-described,
+.viewer-mode-both g.a9s-annotation.a9s-undescribed {
+  opacity: 0.45;
+  transition: opacity 0.15s ease;
+}
+
+.viewer-mode-both g.a9s-annotation.a9s-described:hover,
+.viewer-mode-both g.a9s-annotation.a9s-undescribed:hover,
+.viewer-mode-both g.a9s-annotation.a9s-current-selected,
+.viewer-mode-both g.a9s-annotation.a9s-highlight {
+  opacity: 1;
 }
 
 /* Rendered TEI editor (Phase H.7): nested element spans get a faint tinted

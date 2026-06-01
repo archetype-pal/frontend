@@ -19,6 +19,9 @@ export interface AnnotationFilterMeta {
   handId?: number | null;
 }
 
+/** Which annotation layer(s) the viewer is showing (effective for this image). */
+export type FilterViewMode = 'allograph' | 'text' | 'both';
+
 export interface VisibilityFilterContext {
   /** Both allograph + hand filter sets have finished their first-load seeding. */
   ready: boolean;
@@ -26,8 +29,12 @@ export interface VisibilityFilterContext {
   /** Whether any allograph filter ids are available for this image. */
   hasAllographFilters: boolean;
   hasHandFilters: boolean;
-  /** Text-region annotations are only shown while the transcription panel is open. */
-  isTextPanelOpen: boolean;
+  /**
+   * Active annotation view. The glyph (allograph) layer shows in 'allograph' and
+   * 'both'; text-region annotations show in 'text' and 'both'. In 'text' the
+   * glyph layer is hidden entirely so the text annotator reads uncluttered.
+   */
+  viewMode: FilterViewMode;
 }
 
 /**
@@ -43,9 +50,12 @@ export function passesVisibilityFilter(
   // hidden annotations on first load).
   if (!ctx.ready) return true;
 
-  // Text-region annotations back the transcription↔image link; show them only
-  // while the text panel is open so the standard view stays uncluttered.
-  if (meta?.annotationType === 'text') return ctx.isTextPanelOpen;
+  // Text-region annotations back the transcription↔image link; they belong to
+  // the text layer (shown in 'text' / 'both', hidden in 'allograph').
+  if (meta?.annotationType === 'text') return ctx.viewMode !== 'allograph';
+
+  // Glyph/allograph layer is hidden in the pure 'text' view.
+  if (ctx.viewMode === 'text') return false;
 
   const isExplicitEditorial = meta?.annotationType === 'editorial';
 

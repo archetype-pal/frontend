@@ -55,7 +55,6 @@ export function useImageTextLinking({
   setInitialA9sAnnots,
 }: UseImageTextLinkingArgs) {
   const [imageTexts, setImageTexts] = React.useState<ImageTextDetail[]>([]);
-  const [isTextPanelOpen, setIsTextPanelOpen] = React.useState(false);
   const [linkedGraphId, setLinkedGraphId] = React.useState<number | null>(null);
   const [linkArm, setLinkArm] = React.useState<LinkArm | null>(null);
 
@@ -70,14 +69,15 @@ export function useImageTextLinking({
     setLinkArm(null);
   }, [imageId]);
 
-  // Load image-texts for the side panel; auto-open it when the image has text.
+  // Load image-texts for the side panel. Whether the panel is shown is derived
+  // from the viewer's view mode (see manuscript-viewer.tsx), not from text
+  // presence — so the default Allograph view stays uncluttered.
   React.useEffect(() => {
     let active = true;
     fetchImageTextsForImage(imageId, token)
       .then((texts) => {
         if (!active) return;
         setImageTexts(texts);
-        setIsTextPanelOpen(texts.length > 0);
       })
       .catch(() => {
         if (active) setImageTexts([]);
@@ -164,12 +164,11 @@ export function useImageTextLinking({
 
   return {
     imageTexts,
-    isTextPanelOpen,
-    setIsTextPanelOpen,
     linkedGraphId,
     setLinkedGraphId,
     linkArm,
     setLinkArm,
     tryLinkRegion,
+    reloadTextsAndAnnotations,
   };
 }

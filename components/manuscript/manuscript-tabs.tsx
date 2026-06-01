@@ -37,7 +37,7 @@ export function ManuscriptTabs({ manuscriptId, imageId, counts }: ManuscriptTabs
 
   return (
     <nav
-      className="flex items-center gap-1 overflow-x-auto whitespace-nowrap border-b px-4"
+      className="-mb-px flex items-center gap-1 overflow-x-auto whitespace-nowrap"
       aria-label="Image tabs"
     >
       {TABS.map((tab) => {
@@ -53,17 +53,21 @@ export function ManuscriptTabs({ manuscriptId, imageId, counts }: ManuscriptTabs
             key={tab.segment || 'root'}
             href={href}
             className={cn(
-              'inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
+              'inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors',
               isActive
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-accent text-foreground'
+                : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
             )}
             aria-current={isActive ? 'page' : undefined}
           >
-            <Icon className="h-4 w-4" />
+            <Icon
+              className={cn('h-4 w-4', isActive ? 'text-accent' : 'text-muted-foreground/70')}
+            />
             <span>
               {tab.label}
-              {typeof count === 'number' && ` (${count})`}
+              {typeof count === 'number' && (
+                <span className="ml-1 tabular-nums text-muted-foreground">{count}</span>
+              )}
             </span>
           </Link>
         );

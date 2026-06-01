@@ -16,6 +16,51 @@ import { formatAllographLabel } from '@/lib/allograph-labels';
 import { cn } from '@/lib/utils';
 import type { HandType } from '@/types/hands';
 import type { Allograph } from '@/types/allographs';
+import type { TextDisplayMode, ViewerAnnotationMode } from '@/types/annotation-viewer';
+
+/** Compact radiogroup segmented control (scriptorial active = primary). */
+function Segmented<T extends string>({
+  ariaLabel,
+  value,
+  options,
+  onChange,
+}: {
+  ariaLabel: string;
+  value: T;
+  options: Array<{ value: T; label: string; disabled?: boolean; title?: string }>;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label={ariaLabel}
+      className="inline-flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5"
+    >
+      {options.map((opt) => {
+        const active = opt.value === value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            disabled={opt.disabled}
+            title={opt.title}
+            onClick={() => onChange(opt.value)}
+            className={cn(
+              'rounded-[5px] px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+              active
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 interface AnnotationHeaderProps {
   annotationsEnabled: boolean;
@@ -44,6 +89,14 @@ interface AnnotationHeaderProps {
   onTogglePageCollection?: () => void;
   annotationCollectionCount?: number;
   onCreateAnnotationCollection?: () => void;
+  // View mode + text display (dual-annotation views).
+  viewMode?: ViewerAnnotationMode;
+  onSetViewMode?: (mode: ViewerAnnotationMode) => void;
+  hasTexts?: boolean;
+  hasTranscription?: boolean;
+  hasTranslation?: boolean;
+  textDisplayMode?: TextDisplayMode;
+  onSetTextDisplayMode?: (mode: TextDisplayMode) => void;
 }
 
 export function AnnotationHeader({
@@ -73,6 +126,13 @@ export function AnnotationHeader({
   onTogglePageCollection,
   annotationCollectionCount = 0,
   onCreateAnnotationCollection,
+  viewMode = 'allograph',
+  onSetViewMode,
+  hasTexts = false,
+  hasTranscription = false,
+  hasTranslation = false,
+  textDisplayMode = 'transcription',
+  onSetTextDisplayMode,
 }: AnnotationHeaderProps) {
   const [selectedAllograph, setSelectedAllograph] = React.useState<string>('');
 
@@ -127,27 +187,76 @@ export function AnnotationHeader({
 
   return (
     <TooltipProvider>
-      <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-2 bg-white border-b">
-        <div className="flex items-center space-x-2">
+      <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-border bg-card px-4 py-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+          {onSetViewMode ? (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                View
+              </span>
+              <Segmented
+                ariaLabel="Annotation view"
+                value={viewMode}
+                onChange={onSetViewMode}
+                options={[
+                  { value: 'allograph', label: 'Allograph' },
+                  {
+                    value: 'text',
+                    label: 'Text',
+                    disabled: !hasTexts,
+                    title: hasTexts ? undefined : 'No text recorded for this image',
+                  },
+                  {
+                    value: 'both',
+                    label: 'Both',
+                    disabled: !hasTexts,
+                    title: hasTexts ? undefined : 'No text recorded for this image',
+                  },
+                ]}
+              />
+            </div>
+          ) : null}
+
+          {onSetTextDisplayMode && viewMode !== 'allograph' && hasTexts ? (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Show
+              </span>
+              <Segmented
+                ariaLabel="Transcription and translation display"
+                value={textDisplayMode}
+                onChange={onSetTextDisplayMode}
+                options={[
+                  {
+                    value: 'transcription',
+                    label: 'Transcription',
+                    disabled: !hasTranscription,
+                  },
+                  { value: 'translation', label: 'Translation', disabled: !hasTranslation },
+                  {
+                    value: 'both',
+                    label: 'Both',
+                    disabled: !hasTranscription || !hasTranslation,
+                  },
+                ]}
+              />
+            </div>
+          ) : null}
+
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-gray-700">Annotations</span>
+            <span className="text-sm font-medium text-foreground">Annotations</span>
             <div className="flex">
               <button
                 onClick={onToggleAnnotations}
                 type="button"
                 aria-pressed={annotationsEnabled}
                 aria-label={annotationsEnabled ? 'Annotations on' : 'Annotations off'}
-                className={`px-3 py-1 text-sm font-medium transition-colors ${
+                className={cn(
+                  'rounded-md px-3 py-1 text-sm font-semibold transition-colors',
                   annotationsEnabled
-                    ? 'bg-slate-600 text-white'
-                    : 'bg-white text-gray-900 border shadow-sm'
-                }`}
-                style={{
-                  borderTopLeftRadius: '4px',
-                  borderBottomLeftRadius: '4px',
-                  borderTopRightRadius: '4px',
-                  borderBottomRightRadius: '4px',
-                }}
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'border border-border bg-background text-foreground shadow-sm hover:bg-secondary'
+                )}
               >
                 {annotationsEnabled ? 'ON' : 'OFF'}
               </button>
@@ -167,16 +276,16 @@ export function AnnotationHeader({
           )}
           {showUnsavedCount && (
             <div className="flex items-center space-x-1">
-              <span className="text-sm text-gray-600">Unsaved</span>
-              <span className="inline-flex items-center justify-center w-6 h-6 text-sm font-medium text-gray-600 bg-gray-100 rounded">
+              <span className="text-sm text-muted-foreground">Unsaved</span>
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-muted text-sm font-medium text-muted-foreground">
                 {unsavedCount}
               </span>
             </div>
           )}
           {selectedAnnotationsCount > 0 && (
             <div className="flex items-center space-x-1">
-              <span className="text-sm text-gray-600">Selected</span>
-              <span className="inline-flex items-center justify-center min-w-6 h-6 px-1.5 text-sm font-medium text-blue-700 bg-blue-100 rounded">
+              <span className="text-sm text-muted-foreground">Selected</span>
+              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded bg-primary/10 px-1.5 text-sm font-medium text-primary">
                 {selectedAnnotationsCount}
               </span>
             </div>
@@ -297,7 +406,7 @@ export function AnnotationHeader({
                 : 'Select an allograph first'
             }
           >
-            <Eye className="h-4 w-4 text-gray-500" />
+            <Eye className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">{activeAllographCount ?? 0}</span>
           </Button>
         </div>

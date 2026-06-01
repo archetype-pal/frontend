@@ -28,6 +28,23 @@ const DPT_CAT: Record<string, string> = {
   supplied: 'chars',
 };
 
+// Inverse of TEI_TO_DPT — used to label the rendered span with its source TEI
+// element so the `.tei-rich .tei-el*` hover-pill CSS (shared with the editor)
+// can name persons/places/expansions in the read view.
+const DPT_TO_TEI: Record<string, string> = {
+  clause: 'seg',
+  person: 'persName',
+  place: 'placeName',
+  ex: 'ex',
+  supplied: 'supplied',
+  lb: 'lb',
+};
+
+// Inline marks that read well as highlighted structure. Clauses (`seg`) wrap
+// large spans, so leaving them unmarked keeps the read view legible; line
+// breaks (`lb`) are separators, not annotations.
+const RICH_ELEMENTS = new Set(['person', 'place', 'ex', 'supplied']);
+
 const TEI_ELEMENT_RE = /<(seg|persName|placeName|ex|supplied|lb)\b/i;
 // Attr values in this corpus never contain `>`, so a `[^>]` body is safe.
 const TAG_RE = /<(\/)?([a-zA-Z][\w:.-]*)((?:[^>])*?)(\/)?>/g;
@@ -74,6 +91,15 @@ function openSpan(dpt: string, attrs: Record<string, string>): string {
   } else {
     parts.push(`data-dpt-cat="${DPT_CAT[dpt]}"`);
     if (attrs.type) parts.push(`data-dpt-type="${escapeAttr(attrs.type)}"`);
+  }
+  // Inline named entities / editorial marks reuse the editor's `.tei-rich`
+  // styling (coloured underline + hover label naming the element/@type). Only
+  // applied under a `.tei-rich` wrapper (the text annotator), so other
+  // consumers render unchanged.
+  if (RICH_ELEMENTS.has(dpt)) {
+    const teiEl = DPT_TO_TEI[dpt];
+    parts.push(`class="tei-el tei-el-${teiEl}"`);
+    parts.push(`data-tei-label="${escapeAttr(attrs.type || teiEl)}"`);
   }
   if (attrs.source) parts.push(`data-dpt-src="${escapeAttr(attrs.source)}"`);
   if (attrs.corresp) {
