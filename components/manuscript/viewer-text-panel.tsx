@@ -148,6 +148,82 @@ function TextEditPanel({
   );
 }
 
+/** One text column: type/language label + actions (open editor, download,
+ * edit toggle) over the rendered text or, for editors, the in-place TEI editor. */
+function TextColumn({
+  text,
+  canEdit,
+  token,
+  isEditing,
+  onToggleEdit,
+  onSaved,
+}: {
+  text: ImageTextDetail;
+  canEdit: boolean;
+  token: string | null | undefined;
+  isEditing: boolean;
+  onToggleEdit: () => void;
+  onSaved: () => void;
+}) {
+  return (
+    <section data-text-id={text.id} className="flex h-full min-h-0 flex-col overflow-y-auto">
+      <div className="flex items-center justify-between gap-2 px-4 pt-3">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {text.type}
+          {text.language ? (
+            <span className="ml-1.5 font-mono normal-case opacity-70">{text.language}</span>
+          ) : null}
+        </span>
+        <div className="flex items-center gap-0.5">
+          {canEdit ? (
+            <Link
+              href={`/backoffice/image-texts/${text.id}`}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              title="Open in the full editor"
+              aria-label="Open in the full editor"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </Link>
+          ) : null}
+          <a
+            href={`${API_BASE_URL}/api/v1/manuscripts/image-texts/${text.id}/tei/`}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            title={`Download ${text.type} as TEI`}
+            aria-label={`Download ${text.type} as TEI`}
+          >
+            <Download className="h-4 w-4" />
+          </a>
+          {canEdit ? (
+            <Button
+              variant={isEditing ? 'default' : 'ghost'}
+              size="icon"
+              className="h-7 w-7"
+              aria-label={isEditing ? 'Stop editing' : 'Edit text'}
+              aria-pressed={isEditing}
+              title={isEditing ? 'Stop editing' : 'Edit text markup'}
+              onClick={onToggleEdit}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="px-4 py-3">
+        {isEditing ? (
+          <TextEditPanel text={text} token={token} onSaved={onSaved} onCancel={onToggleEdit} />
+        ) : (
+          <ImageTextViewer
+            html={text.content}
+            richMarkup
+            className="prose prose-sm max-w-none dark:prose-invert"
+          />
+        )}
+      </div>
+    </section>
+  );
+}
+
 export function ViewerTextPanel({
   texts,
   displayMode,
@@ -324,80 +400,20 @@ export function ViewerTextPanel({
               No text recorded for this image.
             </p>
           ) : (
-            shown.map((text) => {
-              const isEditing = canEdit && editingId === text.id;
-              return (
-                <section
-                  key={text.id}
-                  data-text-id={text.id}
-                  className="flex h-full min-h-0 flex-col overflow-y-auto"
-                >
-                  <div className="flex items-center justify-between gap-2 px-4 pt-3">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      {text.type}
-                      {text.language ? (
-                        <span className="ml-1.5 font-mono normal-case opacity-70">
-                          {text.language}
-                        </span>
-                      ) : null}
-                    </span>
-                    <div className="flex items-center gap-0.5">
-                      {canEdit ? (
-                        <Link
-                          href={`/backoffice/image-texts/${text.id}`}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                          title="Open in the full editor"
-                          aria-label="Open in the full editor"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Link>
-                      ) : null}
-                      <a
-                        href={`${API_BASE_URL}/api/v1/manuscripts/image-texts/${text.id}/tei/`}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                        title={`Download ${text.type} as TEI`}
-                        aria-label={`Download ${text.type} as TEI`}
-                      >
-                        <Download className="h-4 w-4" />
-                      </a>
-                      {canEdit ? (
-                        <Button
-                          variant={isEditing ? 'default' : 'ghost'}
-                          size="icon"
-                          className="h-7 w-7"
-                          aria-label={isEditing ? 'Stop editing' : 'Edit text'}
-                          aria-pressed={isEditing}
-                          title={isEditing ? 'Stop editing' : 'Edit text markup'}
-                          onClick={() => setEditingId(isEditing ? null : text.id)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div className="px-4 py-3">
-                    {isEditing ? (
-                      <TextEditPanel
-                        text={text}
-                        token={token}
-                        onSaved={() => {
-                          setEditingId(null);
-                          onTextSaved?.();
-                        }}
-                        onCancel={() => setEditingId(null)}
-                      />
-                    ) : (
-                      <ImageTextViewer
-                        html={text.content}
-                        richMarkup
-                        className="prose prose-sm max-w-none dark:prose-invert"
-                      />
-                    )}
-                  </div>
-                </section>
-              );
-            })
+            shown.map((text) => (
+              <TextColumn
+                key={text.id}
+                text={text}
+                canEdit={canEdit}
+                token={token}
+                isEditing={canEdit && editingId === text.id}
+                onToggleEdit={() => setEditingId((cur) => (cur === text.id ? null : text.id))}
+                onSaved={() => {
+                  setEditingId(null);
+                  onTextSaved?.();
+                }}
+              />
+            ))
           )}
         </div>
       </div>
