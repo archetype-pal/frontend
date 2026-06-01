@@ -21,6 +21,8 @@ import {
   createHistoricalItem,
   createItemPart,
   createCurrentItem,
+  deleteHistoricalItem,
+  deleteCurrentItem,
   getRepositories,
   getDates,
 } from '@/services/backoffice/manuscripts';
@@ -75,49 +77,83 @@ export default function NewManuscriptPage() {
     mutationFn: async () => {
       if (!token) throw new Error('Not authenticated');
 
-      // Step 1: Find or create CurrentItem (if repository & shelfmark provided).
-      // Walk all pages — `limit: 500` was silently capped at DRF's max_limit
-      // (100), so for repositories with >100 current items the find could
-      // miss an existing match and create a duplicate `(repository, shelfmark)`
-      // row. The endpoint doesn't expose `?shelfmark=` filtering, so a full
-      // walk is the only correct option.
-      let currentItemId: number | null = null;
-      if (repository && shelfmark.trim()) {
-        const existing = await walkPaginated<CurrentItemOption>(
-          `/api/v1/manuscripts/management/current-items/?repository=${Number(repository)}&limit=100`,
-          (path) => authFetch(path, token)
-        );
-        const match = existing.find(
-          (ci) => ci.shelfmark.toLowerCase() === shelfmark.trim().toLowerCase()
-        );
-        if (match) {
-          currentItemId = match.id;
-        } else {
-          const newCi = await createCurrentItem(token, {
-            repository: Number(repository),
-            shelfmark: shelfmark.trim(),
-          });
-          currentItemId = newCi.id;
+      let createdCurrentItemId: number | null = null;
+      let createdHistoricalItemId: number | null = null;
+
+      try {
+        // Step 1: Find or create CurrentItem (if repository & shelfmark provided).
+        // Walk all pages — `limit: 500` was silently capped at DRF's max_limit
+        // (100), so for repositories with >100 current items the find could
+        // miss an existing match and create a duplicate `(repository, shelfmark)`
+        // row. The endpoint doesn't expose `?shelfmark=` filtering, so a full
+        // walk is the only correct option.
+        let currentItemId: number | null = null;
+        if (repository && shelfmark.trim()) {
+          const existing = await walkPaginated<CurrentItemOption>(
+            `/api/v1/manuscripts/management/current-items/?repository=${Number(repository)}&limit=100`,
+            (path) => authFetch(path, token)
+          );
+          const match = existing.find(
+            (ci) => ci.shelfmark.toLowerCase() === shelfmark.trim().toLowerCase()
+          );
+          if (match) {
+            currentItemId = match.id;
+          } else {
+            const newCi = await createCurrentItem(token, {
+              repository: Number(repository),
+              shelfmark: shelfmark.trim(),
+            });
+            currentItemId = newCi.id;
+            createdCurrentItemId = newCi.id;
+          }
         }
-      }
 
-      // Step 2: Create HistoricalItem
-      const historicalItem = await createHistoricalItem(token, {
-        type,
-        language: language || undefined,
-        date: date ? Number(date) : undefined,
-      });
-
-      // Step 3: Create ItemPart linking them
-      if (currentItemId != null) {
-        await createItemPart(token, {
-          historical_item: historicalItem.id,
-          current_item: currentItemId,
-          current_item_locus: locus.trim() || '',
+        // Step 2: Create HistoricalItem
+        const historicalItem = await createHistoricalItem(token, {
+          type,
+          language: language || undefined,
+          date: date ? Number(date) : undefined,
         });
-      }
+        createdHistoricalItemId = historicalItem.id;
 
-      return historicalItem;
+        // Step 3: Create ItemPart linking them
+        if (currentItemId != null) {
+          await createItemPart(token, {
+            historical_item: historicalItem.id,
+            current_item: currentItemId,
+            current_item_locus: locus.trim() || '',
+          });
+        }
+
+        return historicalItem;
+      } catch (err) {
+        const cleanupFailures: string[] = [];
+
+        if (createdHistoricalItemId != null) {
+          try {
+            await deleteHistoricalItem(token, createdHistoricalItemId);
+          } catch {
+            cleanupFailures.push(historicalItemLabel.toLowerCase());
+          }
+        }
+
+        if (createdCurrentItemId != null) {
+          try {
+            await deleteCurrentItem(token, createdCurrentItemId);
+          } catch {
+            cleanupFailures.push('physical volume');
+          }
+        }
+
+        if (cleanupFailures.length > 0) {
+          throw new Error(
+            `${formatApiError(err)} Automatic cleanup also failed for the ${cleanupFailures.join(
+              ' and '
+            )}.`
+          );
+        }
+        throw err;
+      }
     },
     onSuccess: (data) => {
       toast.success(`${historicalItemLabel} created`);

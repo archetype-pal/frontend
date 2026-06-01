@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Archive } from 'lucide-react';
+import { Archive, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -12,18 +13,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
+import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { ServerPagination } from '@/components/backoffice/common/server-pagination';
-import { getCurrentItems, getRepositories } from '@/services/backoffice/manuscripts';
+import {
+  deleteCurrentItem,
+  getCurrentItems,
+  getRepositories,
+} from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { formatApiError } from '@/lib/backoffice/format-api-error';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 
 export default function PhysicalVolumesPage() {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
   const { getLabel } = useModelLabels();
   const [repoFilter, setRepoFilter] = useState<string>('__all');
+  const [deleteTarget, setDeleteTarget] = useState<CurrentItemOption | null>(null);
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
   const shelfmarkLabel = getLabel('fieldShelfmark');
   const appManuscriptsLabel = getLabel('appManuscripts');
@@ -61,7 +71,20 @@ export default function PhysicalVolumesPage() {
     {
       id: 'actions',
       cell: ({ row }) => {
-        if (row.original.part_count === 0) return null;
+        if (row.original.part_count === 0) {
+          return (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-destructive"
+              aria-label={`Delete physical volume ${row.original.repository_name} ${row.original.shelfmark}`}
+              onClick={() => setDeleteTarget(row.original)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          );
+        }
         return (
           <span className="text-xs text-muted-foreground">{`Linked to ${appManuscriptsLabel.toLowerCase()}`}</span>
         );
@@ -89,6 +112,20 @@ export default function PhysicalVolumesPage() {
     queryKey: backofficeKeys.currentItems.list(filterParams),
     queryFn: () => getCurrentItems(token!, filterParams),
     enabled: !!token,
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: number) => deleteCurrentItem(token!, id),
+    onSuccess: () => {
+      toast.success('Physical volume deleted');
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.currentItems.all() });
+      setDeleteTarget(null);
+    },
+    onError: (err) => {
+      toast.error('Failed to delete physical volume', {
+        description: formatApiError(err),
+      });
+    },
   });
 
   return (
@@ -149,6 +186,24 @@ export default function PhysicalVolumesPage() {
           onPageChange={setPage}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete physical volume?"
+        description={
+          deleteTarget
+            ? `Delete ${deleteTarget.repository_name} ${deleteTarget.shelfmark}? This volume has no linked manuscript parts.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        loading={deleteMut.isPending}
+        onConfirm={() => {
+          if (deleteTarget?.part_count === 0) {
+            deleteMut.mutate(deleteTarget.id);
+          }
+        }}
+      />
     </div>
   );
 }
