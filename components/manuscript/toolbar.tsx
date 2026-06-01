@@ -15,7 +15,7 @@ export function Toolbar({ children, orientation = 'vertical' }: ToolbarProps) {
           'pointer-events-auto rounded-lg border border-border bg-card/95 p-2 shadow-sm backdrop-blur',
           isHorizontal
             ? 'inline-flex max-w-[calc(100vw-6rem)] flex-row flex-wrap items-center gap-1'
-            : 'flex max-h-[calc(100vh-8rem)] w-12 flex-col items-center gap-1 overflow-y-auto',
+            : 'flex max-h-[calc(100vh-8rem)] w-14 flex-col items-center gap-1 overflow-x-hidden overflow-y-auto',
         ].join(' ')}
       >
         {children}
