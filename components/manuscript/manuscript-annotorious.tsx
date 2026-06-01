@@ -1229,6 +1229,26 @@ export default function ManuscriptAnnotorious({
     };
   }, [iiifImageUrl, emitSelectionIdsChange, queueSyncAnnotationClasses, disableEditor, readOnly]);
 
+  // Restrict scroll-to-zoom to the pinch gesture. Browsers fire `wheel` with
+  // ctrlKey=true for a trackpad pinch (and for Ctrl/⌘+wheel); a plain two-finger
+  // scroll or mouse wheel has ctrlKey=false. OpenSeadragon binds its wheel
+  // handler in the bubble phase on an inner canvas, so a capture-phase listener
+  // on the outer element runs first: for a plain scroll we stopPropagation so
+  // OSD never zooms and — since we never preventDefault — the event still drives
+  // the page's normal scroll; a pinch passes through untouched to OSD's zoom.
+  useEffect(() => {
+    const root = viewerRef.current;
+    if (!root) return;
+
+    const onWheelCapture = (event: WheelEvent) => {
+      if (event.ctrlKey) return; // pinch / ctrl+wheel → let OpenSeadragon zoom
+      event.stopPropagation(); // plain scroll → keep it from OSD; page scrolls
+    };
+
+    root.addEventListener('wheel', onWheelCapture, { capture: true, passive: true });
+    return () => root.removeEventListener('wheel', onWheelCapture, { capture: true });
+  }, []);
+
   useEffect(() => {
     const anno = annoRef.current;
     if (!anno || !Array.isArray(initialAnnotations)) return;
