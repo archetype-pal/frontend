@@ -1,12 +1,20 @@
 'use client';
 
 import * as React from 'react';
-import { Wrench, Star, Plus, SlidersHorizontal } from 'lucide-react';
+import { Wrench, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/ui/segmented';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+// imageToolsControl renders Radix Tooltips that need a provider ancestor.
+import { TooltipProvider } from '@/components/ui/tooltip';
 import type { ViewerAnnotationMode } from '@/types/annotation-viewer';
+import type { HandType } from '@/types/hands';
 
 interface AnnotationHeaderProps {
   unsavedCount: number;
@@ -19,17 +27,18 @@ interface AnnotationHeaderProps {
   onOpenSettingsPanel?: () => void;
   isSettingsActive?: boolean;
   showSettingsButton?: boolean;
-  lightboxControl?: React.ReactNode;
   imageToolsControl?: React.ReactNode;
-  isPageInCollection?: boolean;
-  onTogglePageCollection?: () => void;
-  annotationCollectionCount?: number;
-  onCreateAnnotationCollection?: () => void;
   // View mode (Allograph / Text / Both).
   viewMode?: ViewerAnnotationMode;
   onSetViewMode?: (mode: ViewerAnnotationMode) => void;
   hasTexts?: boolean;
+  // Active hand for new annotations. Read-only when the image has a single hand.
+  hands?: HandType[];
+  selectedHandId?: number | null;
+  onHandSelect?: (hand: HandType | null) => void;
 }
+
+const UNSET_HAND = '__unset__';
 
 export function AnnotationHeader({
   unsavedCount = 0,
@@ -40,21 +49,15 @@ export function AnnotationHeader({
   onOpenSettingsPanel,
   isSettingsActive = false,
   showSettingsButton = true,
-  lightboxControl,
   imageToolsControl,
-  isPageInCollection = false,
-  onTogglePageCollection,
-  annotationCollectionCount = 0,
-  onCreateAnnotationCollection,
   viewMode = 'allograph',
   onSetViewMode,
   hasTexts = false,
+  hands = [],
+  selectedHandId,
+  onHandSelect,
 }: AnnotationHeaderProps) {
-  const pageCollectionLabel = isPageInCollection
-    ? 'Remove page from collection'
-    : 'Add page to collection';
-  const canCreateAnnotationCollection =
-    Boolean(onCreateAnnotationCollection) && annotationCollectionCount > 0;
+  const singleHand = hands.length === 1 ? hands[0] : null;
 
   return (
     <TooltipProvider>
@@ -121,53 +124,45 @@ export function AnnotationHeader({
           )}
         </div>
 
-        {/* Page-level tools */}
-        <div className="flex items-center gap-1">
+        {/* Active hand + page-level tools */}
+        <div className="flex items-center gap-x-3 gap-y-2">
+          {hands.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Hand
+              </span>
+              {singleHand ? (
+                <span
+                  className="inline-flex h-8 items-center rounded-md border border-border bg-muted/40 px-3 text-sm text-foreground"
+                  title="The only hand recorded for this image"
+                >
+                  {singleHand.name}
+                </span>
+              ) : (
+                <Select
+                  value={selectedHandId != null ? selectedHandId.toString() : UNSET_HAND}
+                  onValueChange={(value) => {
+                    if (value === UNSET_HAND) onHandSelect?.(null);
+                    else onHandSelect?.(hands.find((h) => h.id.toString() === value) ?? null);
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-[200px]">
+                    <SelectValue placeholder="Any hand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={UNSET_HAND}>Any hand</SelectItem>
+                    {hands.map((hand) => (
+                      <SelectItem key={hand.id} value={hand.id.toString()}>
+                        {hand.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
+
           {imageToolsControl}
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={onTogglePageCollection}
-                disabled={!onTogglePageCollection}
-                aria-label={pageCollectionLabel}
-                aria-pressed={isPageInCollection}
-                title={pageCollectionLabel}
-                type="button"
-              >
-                <Star
-                  className={cn('h-4 w-4', isPageInCollection && 'fill-amber-400 text-amber-400')}
-                />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{pageCollectionLabel}</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="relative h-8 w-8"
-                onClick={onCreateAnnotationCollection}
-                disabled={!canCreateAnnotationCollection}
-                aria-label="Create a new Collection containing all of the annotations on this page"
-                title="Create a new Collection containing all of the annotations on this page"
-                type="button"
-              >
-                <Star className="h-4 w-4" />
-                <Plus className="absolute -right-1 -top-1 h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Create a new Collection containing all of the annotations on this page
-            </TooltipContent>
-          </Tooltip>
-
-          {lightboxControl}
 
           {showSettingsButton && (
             <Button

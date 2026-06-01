@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import { getIiifBaseUrl, getSelectorValue, iiifThumbFromSelector } from '@/utils/iiif';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ResizeHandle } from '@/components/ui/resize-handle';
 import { Separator } from '@/components/ui/separator';
 
 import type { Annotation as A9sAnnotation } from './manuscript-annotorious';
@@ -21,6 +22,9 @@ export interface AllographGalleryDialogProps {
   iiifImage?: string | null;
   onAnnotationHover: (annotationId: string | null) => void;
   onAnnotationClick: (annotationId: string) => void;
+  width?: number;
+  height?: number;
+  resizeHandleProps?: React.HTMLAttributes<HTMLSpanElement>;
 }
 
 export function AllographGalleryDialog({
@@ -34,12 +38,21 @@ export function AllographGalleryDialog({
   iiifImage,
   onAnnotationHover,
   onAnnotationClick,
+  width,
+  height,
+  resizeHandleProps,
 }: AllographGalleryDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent
-        className="w-[520px] max-w-[calc(100vw-2rem)] max-h-[72vh] overflow-auto"
-        style={{ transform }}
+        data-resizable-panel
+        className="max-w-[calc(100vw-2rem)] overflow-auto"
+        style={{
+          transform,
+          width: width ?? 520,
+          height,
+          maxHeight: height ? undefined : '72vh',
+        }}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
@@ -100,6 +113,8 @@ export function AllographGalleryDialog({
             })}
           </div>
         </div>
+
+        <ResizeHandle {...resizeHandleProps} />
       </DialogContent>
     </Dialog>
   );

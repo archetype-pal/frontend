@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 import type { AnnotationViewerSettings, TextPanelPosition } from '@/types/annotation-viewer';
 
 import { Button } from '@/components/ui/button';
+import { ResizeHandle } from '@/components/ui/resize-handle';
 import { Separator } from '@/components/ui/separator';
 import { useOnEscape } from '@/hooks/use-on-escape';
 
@@ -20,6 +21,9 @@ interface AnnotationSettingsPanelProps {
   onToggleSelectMultipleAnnotations: () => void;
   onSetToolbarPosition: (position: 'vertical' | 'horizontal') => void;
   onSetTextPanelPosition: (position: TextPanelPosition) => void;
+  width?: number;
+  height?: number;
+  resizeHandleProps?: React.HTMLAttributes<HTMLSpanElement>;
 }
 
 const TEXT_POSITIONS: Array<{ value: TextPanelPosition; label: string }> = [
@@ -39,6 +43,9 @@ export function AnnotationSettingsPanel({
   onToggleSelectMultipleAnnotations,
   onSetToolbarPosition,
   onSetTextPanelPosition,
+  width,
+  height,
+  resizeHandleProps,
 }: AnnotationSettingsPanelProps) {
   useOnEscape(isOpen, onClose);
   if (!isOpen) return null;
@@ -46,9 +53,16 @@ export function AnnotationSettingsPanel({
   return (
     <div
       role="dialog"
+      aria-modal={false}
       aria-label="Annotation settings"
-      className="fixed top-24 right-4 z-40 max-h-[calc(100dvh-7rem)] w-[360px] max-w-[calc(100vw-2rem)] overflow-auto rounded-lg border bg-background shadow-lg"
-      style={{ transform }}
+      data-resizable-panel
+      className="fixed right-4 top-24 z-40 flex max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border bg-background shadow-lg"
+      style={{
+        transform,
+        width: width ?? 360,
+        height,
+        maxHeight: height ? undefined : 'calc(100dvh - 7rem)',
+      }}
     >
       <div
         className="flex items-center justify-between border-b px-4 py-3 cursor-move select-none"
@@ -70,7 +84,7 @@ export function AnnotationSettingsPanel({
         </div>
       </div>
 
-      <div className="max-h-[70vh] overflow-auto px-4 py-4 space-y-6">
+      <div className="min-h-0 flex-1 space-y-6 overflow-auto px-4 py-4">
         <div>
           <h4 className="text-sm font-semibold text-foreground">Annotation boxes</h4>
           <Separator className="my-3" />
@@ -150,6 +164,8 @@ export function AnnotationSettingsPanel({
           </div>
         )}
       </div>
+
+      <ResizeHandle {...resizeHandleProps} />
     </div>
   );
 }

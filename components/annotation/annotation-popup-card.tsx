@@ -33,6 +33,9 @@ interface AnnotationPopupCardProps {
   zIndex?: number;
   onPointerDownCapture?: React.PointerEventHandler<HTMLDivElement>;
   isActive?: boolean;
+  width?: number;
+  height?: number;
+  resizeHandleProps?: React.HTMLAttributes<HTMLSpanElement>;
 
   isShareUrlVisible: boolean;
   shareUrl: string;
@@ -95,6 +98,9 @@ export function AnnotationPopupCard({
   zIndex,
   onPointerDownCapture,
   isActive = true,
+  width,
+  height,
+  resizeHandleProps,
   isShareUrlVisible,
   shareUrl,
   canSaveAnnotationShortcut = false,
@@ -164,6 +170,9 @@ export function AnnotationPopupCard({
       dragHandleProps={dragHandleProps}
       zIndex={zIndex}
       onPointerDownCapture={onPointerDownCapture}
+      width={width}
+      height={height}
+      resizeHandleProps={resizeHandleProps}
       isShareUrlVisible={isShareUrlVisible}
       shareUrl={shareUrl}
       canSaveAnnotationShortcut={canSaveAnnotationShortcut}

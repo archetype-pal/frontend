@@ -7,6 +7,9 @@ import { useAuth } from '@/contexts/auth-context';
 
 import { getIiifBaseUrl } from '@/utils/iiif';
 import { cn } from '@/lib/utils';
+import { useResizable } from '@/hooks/use-resizable';
+import { useResizableTextPanel } from '@/hooks/use-resizable-text-panel';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { AnnotationFilterPanel } from './annotation-filter-panel';
 import { AnnotationSettingsPanel } from './annotation-settings-panel';
 import { AllographGalleryDialog } from './allograph-gallery-dialog';
@@ -15,7 +18,6 @@ import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupLayer } from '@/components/annotation/annotation-popup-layer';
 import { ViewerTextPanel } from './viewer-text-panel';
 import { ImageToolsControl } from './image-tools-control';
-import { LightboxControl } from './lightbox-control';
 import { ViewerErrorState, ViewerLoadingState } from './viewer-status-screen';
 import { ViewerToolbar } from './viewer-toolbar';
 
@@ -162,10 +164,30 @@ export default function ManuscriptViewer({
     allowMultipleBoxes: viewerSettings.allowMultipleBoxes,
   });
 
-  // ---- Drag hooks ----
+  // ---- Drag hooks (move) ----
   const allographDialogDrag = useDraggablePosition({ x: 300, y: 60 });
   const filterPanelDrag = useDraggablePosition({ x: 0, y: 250 });
   const settingsPanelDrag = useDraggablePosition({ x: 0, y: 250 });
+
+  // ---- Resize hooks (corner grip; persisted per-panel) ----
+  const filterPanelResize = useResizable({
+    storageKey: 'viewerFilterPanelSize',
+    defaultSize: { width: 380 },
+    minWidth: 300,
+    minHeight: 220,
+  });
+  const settingsPanelResize = useResizable({
+    storageKey: 'viewerSettingsPanelSize',
+    defaultSize: { width: 360 },
+    minWidth: 300,
+    minHeight: 200,
+  });
+  const galleryResize = useResizable({
+    storageKey: 'viewerGalleryDialogSize',
+    defaultSize: { width: 520 },
+    minWidth: 360,
+    minHeight: 240,
+  });
 
   // ---- Overlay chrome (fullscreen + drawer panels) ----
   const {
@@ -214,16 +236,8 @@ export default function ManuscriptViewer({
 
   const unsavedChanges = editorState.dirtyCount;
 
-  const {
-    isInCollection,
-    pageCollectionItem,
-    isPageInCollection,
-    pageAnnotationCollectionItems,
-    getCollectionItemFor,
-    handleTogglePageCollection,
-    handleCreateAnnotationCollection,
-    handleToggleAnnotationCollection,
-  } = useCollectionActions({ manuscript, manuscriptImage, imageHeight, editorRecords });
+  const { isInCollection, getCollectionItemFor, handleToggleAnnotationCollection } =
+    useCollectionActions({ manuscript, manuscriptImage, imageHeight });
 
   const {
     imageTexts,
@@ -255,6 +269,19 @@ export default function ManuscriptViewer({
   const isTextPanelOpen = effectiveViewMode !== 'allograph';
   const showTextPanel = isTextPanelOpen && hasTexts;
   const textPanelPosition = viewerSettings.textPanelPosition;
+  const isBottomDock = textPanelPosition === 'bottom';
+  // Splitter sizing only applies on the md+ docked layout; on mobile the panel
+  // stacks at a percentage height and the splitter is hidden.
+  const isMdUp = useMediaQuery('(min-width: 768px)');
+  const textPanelResize = useResizableTextPanel(textPanelPosition, {
+    storageKey: 'viewerTextPanelSize',
+    defaultWidth: 544, // md:w-[34rem]
+    defaultHeight: 320, // ≈ h-[40%]
+    minWidth: 320,
+    maxWidth: 900,
+    minHeight: 160,
+    maxHeight: 900,
+  });
 
   const allographLabelById = React.useMemo(
     () => new Map(allographs.map((a) => [a.id, formatAllographLabel(a)])),
@@ -309,6 +336,14 @@ export default function ManuscriptViewer({
   const activeAssignmentHand =
     selectedHand === undefined ? defaultHand : (selectedHand ?? undefined);
   const activeHandLabel = activeAssignmentHand?.name ?? 'Any';
+
+  // When the image has exactly one hand, always select it (the header shows it
+  // read-only) so new annotations are attributed without the user picking.
+  React.useEffect(() => {
+    if (handsForThisImage.length === 1 && selectedHand === undefined) {
+      setSelectedHand(handsForThisImage[0]);
+    }
+  }, [handsForThisImage, selectedHand, setSelectedHand]);
 
   const displayAllograph =
     hoveredAllograph ?? filteredAllograph ?? popupSelectedAllograph ?? undefined;
@@ -908,10 +943,6 @@ export default function ManuscriptViewer({
     />
   );
 
-  const lightboxControl = (
-    <LightboxControl image={manuscriptImage} manuscript={manuscript} imageId={imageId} />
-  );
-
   const annotationHeader = (
     <AnnotationHeader
       viewMode={effectiveViewMode}
@@ -925,14 +956,12 @@ export default function ManuscriptViewer({
       onOpenSettingsPanel={canUseSettings ? toggleSettingsPanel : undefined}
       isSettingsActive={canUseSettings ? isSettingsPanelOpen : false}
       showSettingsButton={canUseSettings}
-      lightboxControl={lightboxControl}
       imageToolsControl={imageToolsControl}
-      isPageInCollection={isPageInCollection}
-      onTogglePageCollection={pageCollectionItem ? handleTogglePageCollection : undefined}
-      annotationCollectionCount={pageAnnotationCollectionItems.length}
-      onCreateAnnotationCollection={
-        pageAnnotationCollectionItems.length > 0 ? handleCreateAnnotationCollection : undefined
+      hands={handsForThisImage}
+      selectedHandId={
+        selectedHand === undefined ? (defaultHand?.id ?? null) : (selectedHand?.id ?? null)
       }
+      onHandSelect={setSelectedHand}
     />
   );
 
@@ -981,6 +1010,9 @@ export default function ManuscriptViewer({
           setSelectedHand(handsForThisImage.find((h) => h.id === hand.id) ?? null)
         }
         onAllographHover={setHoveredAllograph}
+        width={filterPanelResize.size.width}
+        height={filterPanelResize.size.height}
+        resizeHandleProps={filterPanelResize.bindResize}
       />
 
       <AnnotationSettingsPanel
@@ -994,6 +1026,9 @@ export default function ManuscriptViewer({
         onToggleSelectMultipleAnnotations={handleToggleSelectMultipleAnnotations}
         onSetToolbarPosition={handleSetToolbarPosition}
         onSetTextPanelPosition={handleSetTextPanelPosition}
+        width={settingsPanelResize.size.width}
+        height={settingsPanelResize.size.height}
+        resizeHandleProps={settingsPanelResize.bindResize}
       />
 
       <AllographGalleryDialog
@@ -1009,13 +1044,18 @@ export default function ManuscriptViewer({
         onAnnotationClick={(annotationId) => {
           viewerApiRef.current?.centerOnAnnotation?.(annotationId);
         }}
+        width={galleryResize.size.width}
+        height={galleryResize.size.height}
+        resizeHandleProps={galleryResize.bindResize}
       />
 
       <div className={cn('relative flex flex-1', isFullScreen && 'mt-20')}>
         <div
           className={cn(
-            'flex min-h-0 flex-1 overflow-hidden',
-            isFullScreen ? 'gap-3 p-0' : 'gap-4 p-4',
+            // gap-0: the text-panel splitter provides the divider between canvas
+            // and panel, so a flex gap would just detach it.
+            'flex min-h-0 flex-1 gap-0 overflow-hidden',
+            isFullScreen ? 'p-0' : 'p-4',
             // Mobile always stacks the panel under the image; ≥md honors the
             // chosen side (left reverses DOM order so the canvas stays first
             // for tab order / screen readers).
@@ -1113,47 +1153,64 @@ export default function ManuscriptViewer({
           </div>
 
           {showTextPanel && (
-            <div
-              className={cn(
-                'min-h-0',
-                textPanelPosition === 'bottom'
-                  ? 'h-[40%] w-full shrink-0'
-                  : 'h-[45%] w-full shrink-0 md:h-full md:w-[34rem] md:max-w-[45%]'
-              )}
-            >
-              <ViewerTextPanel
-                texts={imageTexts}
-                displayMode={viewerSettings.textDisplayMode}
-                onSetDisplayMode={handleSetTextDisplayMode}
-                token={token}
-                canEdit={canPersistAnyAnnotations && !isPublicDemoMode}
-                onTextSaved={() => void reloadTextsAndAnnotations()}
-                linkedGraphId={linkedGraphId}
-                onSpanHover={(graphId) =>
-                  setHoveredAnnotationId(graphId != null ? `db:${graphId}` : null)
-                }
-                onSpanActivate={(graphId) => {
-                  viewerApiRef.current?.selectAnnotationById?.(`db:${graphId}`);
-                  viewerApiRef.current?.centerOnAnnotation?.(`db:${graphId}`);
-                  // Programmatic selection doesn't fire onSelect, so mark the
-                  // span linked here to keep the click path symmetric.
-                  setLinkedGraphId(graphId);
-                }}
-                canLink={canPersistAnyAnnotations && !isPublicDemoMode}
-                armedElementIndex={linkArm?.elementIndex ?? null}
-                armedTextId={linkArm?.textId ?? null}
-                onArmLink={(textId, elementIndex, label) => {
-                  setLinkArm({ textId, elementIndex, label });
-                  // Arm the draw tool so the editor can immediately draw.
-                  handleCreateAnnotation();
-                }}
-                onCancelLink={() => {
-                  setLinkArm(null);
-                  handleMoveTool();
-                }}
-                onClose={() => handleSetViewMode('allograph')}
+            <>
+              {/* Draggable splitter (desktop only; mobile stacks at a % height). */}
+              <div
+                {...textPanelResize.bindSplitter}
+                className={cn(
+                  'group relative hidden shrink-0 rounded-full bg-border/60 transition-colors hover:bg-accent/60 focus-visible:bg-accent focus-visible:outline-none md:block',
+                  isBottomDock
+                    ? "my-1 h-1.5 w-full cursor-row-resize before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']"
+                    : "mx-1 h-full w-1.5 cursor-col-resize before:absolute before:inset-y-0 before:-inset-x-2 before:content-['']"
+                )}
               />
-            </div>
+              <div
+                className={cn(
+                  'min-h-0',
+                  isBottomDock ? 'h-[40%] w-full shrink-0' : 'h-[45%] w-full shrink-0 md:h-full'
+                )}
+                style={
+                  isMdUp
+                    ? isBottomDock
+                      ? { height: `${textPanelResize.size}px` }
+                      : { width: `${textPanelResize.size}px` }
+                    : undefined
+                }
+              >
+                <ViewerTextPanel
+                  texts={imageTexts}
+                  displayMode={viewerSettings.textDisplayMode}
+                  onSetDisplayMode={handleSetTextDisplayMode}
+                  token={token}
+                  canEdit={canPersistAnyAnnotations && !isPublicDemoMode}
+                  onTextSaved={() => void reloadTextsAndAnnotations()}
+                  linkedGraphId={linkedGraphId}
+                  onSpanHover={(graphId) =>
+                    setHoveredAnnotationId(graphId != null ? `db:${graphId}` : null)
+                  }
+                  onSpanActivate={(graphId) => {
+                    viewerApiRef.current?.selectAnnotationById?.(`db:${graphId}`);
+                    viewerApiRef.current?.centerOnAnnotation?.(`db:${graphId}`);
+                    // Programmatic selection doesn't fire onSelect, so mark the
+                    // span linked here to keep the click path symmetric.
+                    setLinkedGraphId(graphId);
+                  }}
+                  canLink={canPersistAnyAnnotations && !isPublicDemoMode}
+                  armedElementIndex={linkArm?.elementIndex ?? null}
+                  armedTextId={linkArm?.textId ?? null}
+                  onArmLink={(textId, elementIndex, label) => {
+                    setLinkArm({ textId, elementIndex, label });
+                    // Arm the draw tool so the editor can immediately draw.
+                    handleCreateAnnotation();
+                  }}
+                  onCancelLink={() => {
+                    setLinkArm(null);
+                    handleMoveTool();
+                  }}
+                  onClose={() => handleSetViewMode('allograph')}
+                />
+              </div>
+            </>
           )}
         </div>
       </div>

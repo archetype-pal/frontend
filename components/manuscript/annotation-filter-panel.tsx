@@ -4,6 +4,7 @@ import * as React from 'react';
 import { X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { ResizeHandle } from '@/components/ui/resize-handle';
 import { Separator } from '@/components/ui/separator';
 import { useOnEscape } from '@/hooks/use-on-escape';
 import { formatAllographLabel } from '@/lib/allograph-labels';
@@ -43,6 +44,10 @@ interface AnnotationFilterPanelProps {
   /** Click a hand → highlight its instances on the image. */
   onFocusHand?: (hand: FilterOption) => void;
   onAllographHover?: (allograph: Allograph | undefined) => void;
+  /** Resizable size + corner-grip handlers (from useResizable). */
+  width?: number;
+  height?: number;
+  resizeHandleProps?: React.HTMLAttributes<HTMLSpanElement>;
 }
 
 const CHECKBOX = 'h-4 w-4 rounded border-input';
@@ -71,6 +76,9 @@ export function AnnotationFilterPanel({
   onFocusAllograph,
   onFocusHand,
   onAllographHover,
+  width,
+  height,
+  resizeHandleProps,
 }: AnnotationFilterPanelProps) {
   useOnEscape(isOpen, onClose);
   if (!isOpen) return null;
@@ -78,9 +86,16 @@ export function AnnotationFilterPanel({
   return (
     <div
       role="dialog"
+      aria-modal={false}
       aria-label="Annotations"
-      className="fixed right-4 top-24 z-40 max-h-[calc(100dvh-7rem)] w-[380px] max-w-[calc(100vw-2rem)] overflow-auto rounded-lg border bg-background shadow-lg"
-      style={{ transform }}
+      data-resizable-panel
+      className="fixed right-4 top-24 z-40 flex max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border bg-background shadow-lg"
+      style={{
+        transform,
+        width: width ?? 380,
+        height,
+        maxHeight: height ? undefined : 'calc(100dvh - 7rem)',
+      }}
     >
       <div
         className="flex cursor-move select-none items-center justify-between border-b px-4 py-3"
@@ -101,7 +116,7 @@ export function AnnotationFilterPanel({
         </div>
       </div>
 
-      <div className="max-h-[70vh] overflow-auto px-4 py-4">
+      <div className="min-h-0 flex-1 overflow-auto px-4 py-4">
         {/* Master visibility + type filters */}
         <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
           <input
@@ -221,6 +236,8 @@ export function AnnotationFilterPanel({
           </div>
         </div>
       </div>
+
+      <ResizeHandle {...resizeHandleProps} />
     </div>
   );
 }

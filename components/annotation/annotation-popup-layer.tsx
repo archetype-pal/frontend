@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import { AnnotationPopupCard } from '@/components/annotation/annotation-popup-card';
 import { DraggablePopupLayer } from '@/components/manuscript/draggable-popup-layer';
+import { useResizable } from '@/hooks/use-resizable';
 
 import {
   getAnnotationKindFromPopupRecord,
@@ -114,6 +115,15 @@ export function AnnotationPopupLayer({
   onCancelDraftAnnotation,
   onConfirmDraftAnnotation,
 }: AnnotationPopupLayerProps) {
+  // One shared size for all open annotation cards (resizing one resizes all,
+  // keyed once in localStorage rather than per ephemeral annotation id).
+  const popupResize = useResizable({
+    storageKey: 'viewerAnnotationPopupSize',
+    defaultSize: { width: 420 },
+    minWidth: 320,
+    minHeight: 200,
+  });
+
   if (visiblePopupRecords.length === 0) return null;
 
   return (
@@ -152,6 +162,9 @@ export function AnnotationPopupLayer({
             {({ popupTransform, dragHandleProps, zIndex: cardZIndex, onPointerDownCapture }) => (
               <AnnotationPopupCard
                 title={popupCard.title}
+                width={popupResize.size.width}
+                height={popupResize.size.height}
+                resizeHandleProps={popupResize.bindResize}
                 isDraftAnnotation={popupCard.isDraft}
                 annotationKind={annotationKind}
                 popupCapabilities={popupCapabilities}

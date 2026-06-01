@@ -3,23 +3,18 @@
 import * as React from 'react';
 
 import { useCollection, type CollectionItem } from '@/contexts/collection-context';
-import { showActionNotification } from '@/components/ui/action-toast';
 import {
-  annotationCountLabel,
   buildAnnotationCollectionItem,
-  buildImageCollectionItem,
   type ViewerCollectionContext,
 } from '@/lib/manuscript-viewer-collection';
 import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
 import type { Manuscript } from '@/types/manuscript';
-import type { AnnotationEditorRecordMap } from '@/types/annotation-viewer';
 
 interface UseCollectionActionsArgs {
   manuscript: Manuscript | null;
   manuscriptImage: ManuscriptImageType | null;
   imageHeight: number;
-  editorRecords: AnnotationEditorRecordMap;
 }
 
 /**
@@ -32,9 +27,8 @@ export function useCollectionActions({
   manuscript,
   manuscriptImage,
   imageHeight,
-  editorRecords,
 }: UseCollectionActionsArgs) {
-  const { addItem, removeItem, isInCollection, clearCollection } = useCollection();
+  const { addItem, removeItem, isInCollection } = useCollection();
 
   const collectionContext = React.useMemo<ViewerCollectionContext | null>(() => {
     if (!manuscriptImage) return null;
@@ -51,26 +45,6 @@ export function useCollectionActions({
     };
   }, [manuscript, manuscriptImage]);
 
-  const pageCollectionItem = React.useMemo(
-    () => (collectionContext ? buildImageCollectionItem(collectionContext) : null),
-    [collectionContext]
-  );
-
-  const isPageInCollection = pageCollectionItem
-    ? isInCollection(pageCollectionItem.id, 'image')
-    : false;
-
-  const pageAnnotationCollectionItems = React.useMemo(() => {
-    if (!collectionContext || !imageHeight) return [];
-
-    return Object.values(editorRecords)
-      .filter((record) => record.source === 'persisted' && !record.isDeleted)
-      .map((record) =>
-        buildAnnotationCollectionItem(record.annotation, imageHeight, collectionContext)
-      )
-      .filter((item): item is CollectionItem => item !== null);
-  }, [collectionContext, editorRecords, imageHeight]);
-
   // Closes over collectionContext + imageHeight so AnnotationPopupLayer
   // doesn't need to know either type. Returns null when collection items
   // can't be constructed (no context, no image height, or the annotation
@@ -82,32 +56,6 @@ export function useCollectionActions({
     },
     [collectionContext, imageHeight]
   );
-
-  const handleTogglePageCollection = React.useCallback(() => {
-    if (!pageCollectionItem) return;
-
-    if (isInCollection(pageCollectionItem.id, 'image')) {
-      removeItem(pageCollectionItem.id, 'image');
-      return;
-    }
-
-    addItem(pageCollectionItem);
-  }, [addItem, isInCollection, pageCollectionItem, removeItem]);
-
-  const handleCreateAnnotationCollection = React.useCallback(() => {
-    if (pageAnnotationCollectionItems.length === 0) return;
-
-    clearCollection();
-    pageAnnotationCollectionItems.forEach((item) => addItem(item));
-
-    showActionNotification({
-      kind: 'saved',
-      title: 'Collection updated',
-      description: `Created a collection with ${annotationCountLabel(
-        pageAnnotationCollectionItems.length
-      )} from this page.`,
-    });
-  }, [addItem, clearCollection, pageAnnotationCollectionItems]);
 
   const handleToggleAnnotationCollection = React.useCallback(
     (annotation: A9sAnnotation) => {
@@ -128,13 +76,7 @@ export function useCollectionActions({
 
   return {
     isInCollection,
-    collectionContext,
-    pageCollectionItem,
-    isPageInCollection,
-    pageAnnotationCollectionItems,
     getCollectionItemFor,
-    handleTogglePageCollection,
-    handleCreateAnnotationCollection,
     handleToggleAnnotationCollection,
   };
 }
