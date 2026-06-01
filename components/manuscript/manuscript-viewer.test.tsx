@@ -87,6 +87,7 @@ vi.mock('@/services/image-texts', () => ({
 }));
 
 import ManuscriptViewer from './manuscript-viewer';
+import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
 
 // Full editing capabilities so the create/save/delete paths are active in tests.
 const EDITING_CAPS = {
@@ -175,6 +176,25 @@ describe('ManuscriptViewer smoke test', () => {
     expect(await screen.findByRole('dialog')).toBeTruthy();
   });
 
+  it('does not open a glyph popup when the viewer selects a text region', async () => {
+    render(<ManuscriptViewer imageId="4432" mode="public" />);
+    await screen.findByRole('button', { name: 'Image tools' });
+
+    const props = annotoriousPropsRef.current;
+    expect(props).toBeTruthy();
+
+    act(() => {
+      props!.exposeApi?.(mockViewerApi);
+      props!.onSelect?.({
+        id: 'db:12',
+        target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:0,0,10,10' } },
+        _meta: { annotationType: 'text', allographId: allographA.id },
+      });
+    });
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('marks the editor dirty when the viewer fires onCreate (create→save wiring)', async () => {
     render(<ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />);
     await screen.findByRole('button', { name: 'Image tools' });
@@ -222,5 +242,44 @@ describe('ManuscriptViewer smoke test', () => {
 
     expect(await screen.findByRole('dialog')).toBeTruthy();
     expect(screen.getByText('Allograph: a, Caroline')).toBeTruthy();
+  });
+
+  it('excludes text regions from the allograph eye count and thumbnail gallery', async () => {
+    fetchBaseData.mockResolvedValueOnce({
+      image: fakeImage,
+      manuscript: fakeManuscript,
+      allographs: [allographA],
+      imageHeight: 2000,
+    });
+    fetchImageAllographIds.mockResolvedValueOnce([allographA.id]);
+    vi.mocked(buildInitialViewerAnnotations).mockResolvedValueOnce([
+      {
+        id: 'db:image-1',
+        target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:0,0,10,10' } },
+        _meta: { annotationType: 'image', allographId: allographA.id },
+      },
+      {
+        id: 'db:text-1',
+        target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:10,10,10,10' } },
+        _meta: { annotationType: 'text', allographId: allographA.id },
+      },
+    ] as never);
+
+    render(<ManuscriptViewer imageId="4432" mode="public" />);
+    await screen.findByRole('button', { name: 'Image tools' });
+
+    fireEvent.click(screen.getByRole('combobox'));
+    fireEvent.click(await screen.findByText('a, Caroline'));
+
+    const eyeButton = await screen.findByRole('button', {
+      name: 'View a, Caroline annotation thumbnails',
+    });
+    expect(eyeButton.textContent).toBe('1');
+
+    fireEvent.click(eyeButton);
+    expect(
+      await screen.findByRole('img', { name: 'Annotation thumbnail: db:image-1' })
+    ).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Annotation thumbnail: db:text-1' })).toBeNull();
   });
 });

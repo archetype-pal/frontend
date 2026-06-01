@@ -75,4 +75,13 @@ describe('buildAnnotationCollectionItem', () => {
     );
     expect(result).toBeNull();
   });
+
+  it('returns null for a text-region annotation', () => {
+    const result = buildAnnotationCollectionItem(
+      { id: 'db:12', target: {}, _meta: { annotationType: 'text' } } as never,
+      1000,
+      ctx
+    );
+    expect(result).toBeNull();
+  });
 });

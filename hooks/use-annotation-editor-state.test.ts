@@ -29,6 +29,35 @@ function makeAnnotation(id: string, meta: A9sWithMeta['_meta'] = {}): A9sWithMet
   } as A9sWithMeta;
 }
 
+function makeBackendGraph(id: number, annotationType: 'image' | 'text' = 'image') {
+  return {
+    id,
+    item_image: 42,
+    annotation_type: annotationType,
+    annotation: {
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [0, 90],
+            [0, 100],
+            [10, 100],
+            [10, 90],
+            [0, 90],
+          ],
+        ],
+      },
+      properties: {},
+    },
+    allograph: null,
+    hand: null,
+    positions: [],
+    position_details: [],
+    graphcomponent_set: [],
+  } as never;
+}
+
 function makeCaps(overrides: Partial<ViewerCapabilities> = {}): ViewerCapabilities {
   return {
     canCreatePublicAnnotations: true,
@@ -214,42 +243,44 @@ describe('saveAll — early-return outcomes', () => {
     });
     await expect(result.current.saveAll()).resolves.toEqual({ kind: 'no-changes' });
   });
+
+  it('keeps text-region records clean when generic mutation methods are called', async () => {
+    const { result } = renderHook(() => useAnnotationEditorState(makeArgs()));
+    act(() => {
+      result.current.resetFrom([
+        makeAnnotation('db:1', { annotationType: 'text' }),
+        makeAnnotation('db:2', { annotationType: 'text' }),
+        makeAnnotation('db:3', { annotationType: 'text' }),
+        makeAnnotation('db:4', { annotationType: 'text' }),
+        makeAnnotation('db:5', { annotationType: 'text' }),
+        makeAnnotation('db:6', { annotationType: 'text' }),
+      ]);
+      result.current.markUpdated(makeAnnotation('db:1'), { debounced: true });
+      result.current.markDeleted('db:2');
+      result.current.markUpdated(makeAnnotation('db:3'));
+      result.current.replaceLocalAnnotation('db:4', makeAnnotation('db:4'));
+      result.current.markManyUpdated([makeAnnotation('db:5')]);
+      result.current.markCreated(makeAnnotation('db:6'));
+      vi.advanceTimersByTime(60);
+    });
+
+    expect(result.current.isDirty).toBe(false);
+    await expect(result.current.saveAll()).resolves.toEqual({ kind: 'no-changes' });
+    expect(createViewerAnnotation).not.toHaveBeenCalled();
+    expect(deleteViewerAnnotation).not.toHaveBeenCalled();
+    expect(fetchAnnotationsForImage).not.toHaveBeenCalled();
+  });
 });
 
 describe('saveAll — network outcomes', () => {
   it('all-succeeded: returns counts + seed, replaces records from refetch', async () => {
     vi.mocked(createViewerAnnotation).mockResolvedValue({ id: 100 } as never);
     vi.mocked(fetchAnnotationsForImage).mockImplementation(async (_id, _allo, type) =>
-      type === 'editorial'
-        ? []
-        : [
-            {
-              id: 100,
-              item_image: 42,
-              annotation_type: 'image',
-              annotation: {
-                type: 'Feature',
-                geometry: {
-                  type: 'Polygon',
-                  coordinates: [
-                    [
-                      [0, 90],
-                      [0, 100],
-                      [10, 100],
-                      [10, 90],
-                      [0, 90],
-                    ],
-                  ],
-                },
-                properties: {},
-              },
-              allograph: null,
-              hand: null,
-              positions: [],
-              position_details: [],
-              graphcomponent_set: [],
-            } as never,
-          ]
+      type === 'image'
+        ? [makeBackendGraph(100)]
+        : type === 'text'
+          ? [makeBackendGraph(200, 'text')]
+          : []
     );
 
     const { result } = renderHook(() => useAnnotationEditorState(makeArgs()));
@@ -265,11 +296,13 @@ describe('saveAll — network outcomes', () => {
     expect(outcome!.kind).toBe('all-succeeded');
     if (outcome!.kind !== 'all-succeeded') throw new Error('narrowing');
     expect(outcome!.counts).toEqual({ created: 1, updated: 0, deleted: 0 });
-    expect(outcome!.seed.map((a) => a.id)).toEqual(['db:100']);
+    expect(outcome!.seed.map((a) => a.id)).toEqual(['db:100', 'db:200']);
     // Records were replaced — original draft is gone, refetched record present.
     expect(result.current.editorRecords['local-1']).toBeUndefined();
     expect(result.current.editorRecords['db:100']).toBeDefined();
     expect(result.current.editorRecords['db:100'].dirtyState).toBe('clean');
+    expect(result.current.editorRecords['db:200'].annotation._meta?.annotationType).toBe('text');
+    expect(fetchAnnotationsForImage).toHaveBeenCalledWith('42', undefined, 'text', 'tok');
   });
 
   it('all-failed: returns failed count + firstError; records stay dirty', async () => {
@@ -301,36 +334,7 @@ describe('saveAll — network outcomes', () => {
       .mockResolvedValueOnce({ id: 100 } as never)
       .mockRejectedValueOnce(new Error('boom'));
     vi.mocked(fetchAnnotationsForImage).mockImplementation(async (_id, _allo, type) =>
-      type === 'editorial'
-        ? []
-        : [
-            {
-              id: 100,
-              item_image: 42,
-              annotation_type: 'image',
-              annotation: {
-                type: 'Feature',
-                geometry: {
-                  type: 'Polygon',
-                  coordinates: [
-                    [
-                      [0, 90],
-                      [0, 100],
-                      [10, 100],
-                      [10, 90],
-                      [0, 90],
-                    ],
-                  ],
-                },
-                properties: {},
-              },
-              allograph: null,
-              hand: null,
-              positions: [],
-              position_details: [],
-              graphcomponent_set: [],
-            } as never,
-          ]
+      type === 'image' ? [makeBackendGraph(100)] : []
     );
 
     const { result } = renderHook(() => useAnnotationEditorState(makeArgs()));

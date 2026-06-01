@@ -92,13 +92,12 @@ function enrichGraphs(
 }
 
 type GraphsState =
-  | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'loaded'; graphs: HandGraph[] }
   | { status: 'error' };
 
 function useHandGraphs(handId: number, images: HandImage[], enabled: boolean): GraphsState {
-  const [state, setState] = useState<GraphsState>({ status: 'idle' });
+  const [state, setState] = useState<GraphsState>({ status: 'loading' });
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -106,7 +105,6 @@ function useHandGraphs(handId: number, images: HandImage[], enabled: boolean): G
     fetchedRef.current = true;
 
     const controller = new AbortController();
-    setState({ status: 'loading' });
 
     Promise.all([
       apiFetch(`/api/v1/manuscripts/graphs/?hand=${handId}`, {
@@ -368,7 +366,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
 
         {/* Graphs Tab */}
         <TabsContent value="graphs" className="space-y-6">
-          {graphsState.status === 'loading' || graphsState.status === 'idle' ? (
+          {graphsState.status === 'loading' ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               <span className="ml-2 text-sm text-muted-foreground">Loading graphs...</span>

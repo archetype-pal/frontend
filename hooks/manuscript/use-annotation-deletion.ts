@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import { isDbId } from '@/lib/annotation-popup-utils';
+import { isTextRegionAnnotation } from '@/lib/manuscript-viewer-annotation-types';
 import type {
   Annotation as A9sAnnotation,
   ViewerApi,
@@ -43,6 +44,8 @@ export function useAnnotationDeletion({
   const handleConfirmDelete = React.useCallback(
     (annotation: A9sAnnotation) => {
       const canonical = getCanonicalAnnotation(annotation);
+      if (isTextRegionAnnotation(canonical)) return false;
+
       const kind = getAnnotationKind(canonical);
       const isDraft = !isDbId(canonical.id);
 
@@ -58,6 +61,8 @@ export function useAnnotationDeletion({
   const handleConfirmDeleteMany = React.useCallback(
     (annotations: A9sAnnotation[]) => {
       const canonical = annotations.map((annotation) => getCanonicalAnnotation(annotation));
+      if (canonical.some(isTextRegionAnnotation)) return false;
+
       const draftCount = canonical.filter((annotation) => !isDbId(annotation.id)).length;
       const savedCount = canonical.length - draftCount;
 

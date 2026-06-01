@@ -41,6 +41,10 @@ import { browserSafeIiifUrl } from '@/lib/annotation-popup-utils';
 import { getPopupCardViewData } from '@/lib/manuscript-viewer-popup-utils';
 
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
+import {
+  isGlyphAnnotation,
+  isTextRegionAnnotation,
+} from '@/lib/manuscript-viewer-annotation-types';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { getDefaultHand, sortHandsByPriority } from '@/lib/hand-ordering';
 
@@ -205,6 +209,8 @@ export default function ManuscriptViewer({
   const popupAnnotation = activePopupRecord?.annotation ?? null;
 
   const popupSelectedAllograph = React.useMemo(() => {
+    if (!isGlyphAnnotation(popupAnnotation)) return undefined;
+
     const allographId = popupAnnotation?._meta?.allographId;
     if (allographId == null) return undefined;
     return allographs.find((a) => a.id === allographId);
@@ -363,7 +369,9 @@ export default function ManuscriptViewer({
 
   const filteredA9s = React.useMemo(() => {
     if (countAllographId == null) return [];
-    return a9sSnapshot.filter((a) => (a as A9sWithMeta)._meta?.allographId === countAllographId);
+    return a9sSnapshot.filter(
+      (a) => isGlyphAnnotation(a) && (a as A9sWithMeta)._meta?.allographId === countAllographId
+    );
   }, [a9sSnapshot, countAllographId]);
 
   const highlightedIds = React.useMemo(() => {
@@ -371,6 +379,7 @@ export default function ManuscriptViewer({
       return a9sSnapshot
         .filter(
           (a) =>
+            isGlyphAnnotation(a) &&
             (a as A9sWithMeta)._meta?.allographId === highlightAllographId &&
             a.id !== popupAnnotation?.id
         )
@@ -381,7 +390,9 @@ export default function ManuscriptViewer({
       return a9sSnapshot
         .filter(
           (a) =>
-            (a as A9sWithMeta)._meta?.handId === selectedHand.id && a.id !== popupAnnotation?.id
+            isGlyphAnnotation(a) &&
+            (a as A9sWithMeta)._meta?.handId === selectedHand.id &&
+            a.id !== popupAnnotation?.id
         )
         .map((a) => a.id);
     }
@@ -468,6 +479,10 @@ export default function ManuscriptViewer({
 
   const getStandardSaveValidationError = React.useCallback(
     (annotation: A9sAnnotation): string | null => {
+      if (isTextRegionAnnotation(annotation)) {
+        return null;
+      }
+
       const kind = getAnnotationKind(annotation);
 
       if (kind === 'editorial') {

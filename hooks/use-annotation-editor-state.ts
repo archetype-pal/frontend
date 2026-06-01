@@ -18,6 +18,7 @@ import {
   mergeFailedRecordsIntoRefresh,
   partitionSaveResults,
 } from '@/lib/manuscript-viewer-editor-state';
+import { isTextRegionAnnotation } from '@/lib/manuscript-viewer-annotation-types';
 import {
   createViewerAnnotation,
   deleteViewerAnnotation,
@@ -162,6 +163,8 @@ export function useAnnotationEditorState(
       let next = prev;
       for (const annotation of batch.values()) {
         const existing = next[annotation.id]?.annotation;
+        if (isTextRegionAnnotation(annotation) || isTextRegionAnnotation(existing)) continue;
+
         const merged: A9sAnnotation = existing
           ? ({
               ...existing,
@@ -180,11 +183,19 @@ export function useAnnotationEditorState(
   }, []);
 
   const markCreated = React.useCallback((annotation: A9sAnnotation) => {
-    setEditorRecords((prev) => markAnnotationCreated(prev, annotation));
+    if (isTextRegionAnnotation(annotation)) return;
+
+    setEditorRecords((prev) => {
+      if (isTextRegionAnnotation(prev[annotation.id]?.annotation)) return prev;
+
+      return markAnnotationCreated(prev, annotation);
+    });
   }, []);
 
   const markUpdated = React.useCallback(
     (annotation: A9sAnnotation, options?: { debounced?: boolean }) => {
+      if (isTextRegionAnnotation(annotation)) return;
+
       if (options?.debounced) {
         pendingUpdatesRef.current.set(annotation.id, annotation);
         if (flushTimerRef.current === null) {
@@ -192,20 +203,34 @@ export function useAnnotationEditorState(
         }
         return;
       }
-      setEditorRecords((prev) => markAnnotationUpdated(prev, annotation));
+      setEditorRecords((prev) => {
+        if (isTextRegionAnnotation(prev[annotation.id]?.annotation)) return prev;
+
+        return markAnnotationUpdated(prev, annotation);
+      });
     },
     [flushPendingUpdates]
   );
 
   const markDeleted = React.useCallback((annotationId: string) => {
-    setEditorRecords((prev) => markAnnotationDeleted(prev, annotationId));
+    setEditorRecords((prev) => {
+      if (isTextRegionAnnotation(prev[annotationId]?.annotation)) return prev;
+
+      return markAnnotationDeleted(prev, annotationId);
+    });
   }, []);
 
   const markManyUpdated = React.useCallback((annotations: A9sAnnotation[]) => {
-    if (annotations.length === 0) return;
+    const editableAnnotations = annotations.filter(
+      (annotation) => !isTextRegionAnnotation(annotation)
+    );
+    if (editableAnnotations.length === 0) return;
+
     setEditorRecords((prev) => {
       let next = prev;
-      for (const annotation of annotations) {
+      for (const annotation of editableAnnotations) {
+        if (isTextRegionAnnotation(next[annotation.id]?.annotation)) continue;
+
         next = markAnnotationUpdated(next, annotation);
       }
       return next;
@@ -214,7 +239,16 @@ export function useAnnotationEditorState(
 
   const replaceLocalAnnotation = React.useCallback(
     (oldId: string, newAnnotation: A9sAnnotation) => {
+      if (isTextRegionAnnotation(newAnnotation)) return;
+
       setEditorRecords((prev) => {
+        if (
+          isTextRegionAnnotation(prev[oldId]?.annotation) ||
+          isTextRegionAnnotation(prev[newAnnotation.id]?.annotation)
+        ) {
+          return prev;
+        }
+
         const reconciled = { ...prev };
         if (newAnnotation.id !== oldId) {
           delete reconciled[oldId];
@@ -254,12 +288,19 @@ export function useAnnotationEditorState(
       if (record.dirtyState !== 'created' && record.dirtyState !== 'updated') {
         return false;
       }
+      if (isTextRegionAnnotation(record.annotation)) {
+        return false;
+      }
       return canPersistAnnotationKind(viewerCapabilities, getKindFromAnnotation(record.annotation));
     });
 
-    const deleteCandidates = Object.values(editorRecords).filter(
-      (record) => record.dirtyState === 'deleted' && record.source === 'persisted'
-    );
+    const deleteCandidates = Object.values(editorRecords).filter((record) => {
+      return (
+        record.dirtyState === 'deleted' &&
+        record.source === 'persisted' &&
+        !isTextRegionAnnotation(record.annotation)
+      );
+    });
 
     if (upsertCandidates.length === 0 && deleteCandidates.length === 0) {
       return { kind: 'no-changes' };
@@ -365,7 +406,13 @@ export function useAnnotationEditorState(
       const refreshedEditorial = canViewEditorialControls
         ? await fetchAnnotationsForImage(String(manuscriptImage.id), undefined, 'editorial', token)
         : [];
-      refreshed = [...refreshedImage, ...refreshedEditorial];
+      const refreshedText = await fetchAnnotationsForImage(
+        String(manuscriptImage.id),
+        undefined,
+        'text',
+        token
+      );
+      refreshed = [...refreshedImage, ...refreshedEditorial, ...refreshedText];
     } catch (error) {
       return {
         kind: 'saved-but-refresh-failed',

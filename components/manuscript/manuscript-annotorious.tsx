@@ -179,6 +179,8 @@ export default function ManuscriptAnnotorious({
     Boolean(a && typeof a.id === 'string' && !a.id.startsWith('db:'));
   const isEditorialAnnotation = (a: Annotation | null | undefined) =>
     a?._meta?.annotationType === 'editorial';
+  const isTextRegionAnnotation = (a: Annotation | null | undefined) =>
+    a?._meta?.annotationType === 'text';
 
   const emitSelectionIdsChange = React.useCallback(() => {
     onSelectionIdsChangeRef.current?.(Array.from(multiSelectedIdsRef.current));
@@ -739,7 +741,11 @@ export default function ManuscriptAnnotorious({
               return;
             }
 
-            if (allowMultipleSelectionRef.current && currentMode === 'pan') {
+            if (
+              allowMultipleSelectionRef.current &&
+              currentMode === 'pan' &&
+              !isTextRegionAnnotation(a)
+            ) {
               toggleMultiSelectedIdFromClick(a.id);
               queueSyncAnnotationClasses();
             }
@@ -747,7 +753,7 @@ export default function ManuscriptAnnotorious({
             if (currentMode === 'pan') {
               anno.readOnly = isDraftAnnotation(a) ? false : true;
             } else if (currentMode === 'modify') {
-              anno.readOnly = false;
+              anno.readOnly = isTextRegionAnnotation(a);
             } else if (currentMode === 'draw') {
               anno.readOnly = false;
             }
@@ -777,7 +783,12 @@ export default function ManuscriptAnnotorious({
 
             selectedDisplayIdRef.current = a?.id ?? null;
 
-            if (allowMultipleSelectionRef.current && currentMode === 'pan' && a) {
+            if (
+              allowMultipleSelectionRef.current &&
+              currentMode === 'pan' &&
+              a &&
+              !isTextRegionAnnotation(a)
+            ) {
               if (multiSelectionHandledByClickIdRef.current === a.id) {
                 multiSelectionHandledByClickIdRef.current = null;
               } else {
@@ -797,7 +808,7 @@ export default function ManuscriptAnnotorious({
             if (currentMode === 'draw') {
               anno.readOnly = false;
             } else if (currentMode === 'modify') {
-              anno.readOnly = false;
+              anno.readOnly = isTextRegionAnnotation(a);
             } else if (currentMode === 'pan') {
               anno.readOnly = isDraftAnnotation(a) ? false : true;
             }
@@ -899,7 +910,8 @@ export default function ManuscriptAnnotorious({
               }
 
               currentMode = 'modify';
-              anno.readOnly = false;
+              const selected = (anno.getSelected?.() as Annotation | undefined) ?? null;
+              anno.readOnly = isTextRegionAnnotation(selected);
               anno.setDrawingEnabled(false);
               viewerRef.current?.classList.remove(
                 'osd-mode-pan',
@@ -1113,8 +1125,10 @@ export default function ManuscriptAnnotorious({
               const selected = annoRef.current?.getAnnotationById?.(id) ?? null;
 
               if (annoRef.current) {
-                if (currentMode === 'draw' || currentMode === 'modify') {
+                if (currentMode === 'draw') {
                   annoRef.current.readOnly = false;
+                } else if (currentMode === 'modify') {
+                  annoRef.current.readOnly = isTextRegionAnnotation(selected);
                 } else if (currentMode === 'pan') {
                   annoRef.current.readOnly = isDraftAnnotation(selected) ? false : true;
                 }
@@ -1122,7 +1136,11 @@ export default function ManuscriptAnnotorious({
 
               selectedDisplayIdRef.current = id;
 
-              if (allowMultipleSelectionRef.current && selected) {
+              if (
+                allowMultipleSelectionRef.current &&
+                selected &&
+                !isTextRegionAnnotation(selected)
+              ) {
                 const next = new Set(multiSelectedIdsRef.current);
                 next.add(id);
                 multiSelectedIdsRef.current = next;

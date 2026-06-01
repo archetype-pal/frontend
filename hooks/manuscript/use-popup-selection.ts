@@ -11,6 +11,7 @@ import {
   getStandardAnnotationNote,
 } from '@/lib/annotation-notes';
 import { annotationCountLabel } from '@/lib/manuscript-viewer-collection';
+import { isTextRegionAnnotation } from '@/lib/manuscript-viewer-annotation-types';
 import { usePendingPopupClear } from '@/hooks/manuscript/use-pending-popup-clear';
 import type {
   Annotation as A9sAnnotation,
@@ -166,6 +167,11 @@ export function usePopupSelection({
         return;
       }
 
+      if (isTextRegionAnnotation(annotation)) {
+        clearSinglePopupState({ clearHover: options?.clearHover });
+        return;
+      }
+
       if (options?.clearHover) {
         setHoveredAnnotationId(null);
       }
@@ -274,6 +280,12 @@ export function usePopupSelection({
       setLinkedGraphId(selected ? (dbIdFromA9s(selected) ?? null) : null);
 
       if (selected) {
+        if (isTextRegionAnnotation(selected)) {
+          dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
+          clearSinglePopupState({ clearHover: true });
+          return;
+        }
+
         if (activeTool === 'modify') {
           dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
           return;
@@ -303,6 +315,7 @@ export function usePopupSelection({
       cancelPendingPopupClear,
       schedulePopupClear,
       activeTool,
+      clearSinglePopupState,
       getCanonicalAnnotation,
       openSinglePopupFromAnnotation,
       setLinkedGraphId,

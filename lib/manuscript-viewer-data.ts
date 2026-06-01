@@ -24,7 +24,7 @@ export async function fetchIiifImageHeight(iiifImage: string): Promise<number> {
 }
 
 export async function fetchImageAllographIds(itemImageId: string): Promise<number[]> {
-  const graphs = await fetchAnnotationsForImage(itemImageId);
+  const graphs = await fetchAnnotationsForImage(itemImageId, undefined, 'image');
 
   return Array.from(
     new Set(

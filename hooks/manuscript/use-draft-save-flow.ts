@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import { isDbId } from '@/lib/annotation-popup-utils';
+import { isTextRegionAnnotation } from '@/lib/manuscript-viewer-annotation-types';
 import { buildPopupAnnotationPayload } from '@/lib/manuscript-viewer-popup-utils';
 import type {
   Annotation as A9sAnnotation,
@@ -150,6 +151,8 @@ export function useDraftSaveFlow({
   // coalescing lives in useAnnotationEditorState).
   const handleViewerUpdate = React.useCallback(
     (annotation: A9sAnnotation) => {
+      if (isTextRegionAnnotation(annotation)) return;
+
       editorState.markUpdated(annotation, { debounced: true });
     },
     [editorState]

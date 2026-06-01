@@ -6,6 +6,7 @@
 
 import type { CollectionItem } from '@/contexts/collection-context';
 import { a9sToBackendFeature, dbIdFromA9s } from '@/lib/anno-mapping';
+import { isTextRegionAnnotation } from '@/lib/manuscript-viewer-annotation-types';
 import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
 import type { A9sWithMeta } from '@/types/annotation-viewer';
 
@@ -55,6 +56,8 @@ export function buildAnnotationCollectionItem(
   imageHeight: number,
   ctx: ViewerCollectionContext
 ): CollectionItem | null {
+  if (isTextRegionAnnotation(annotation)) return null;
+
   const graphId = dbIdFromA9s(annotation);
   if (graphId == null) return null;
 
