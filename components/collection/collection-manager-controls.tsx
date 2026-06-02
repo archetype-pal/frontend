@@ -1,7 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { Copy, FolderOpen, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+  Copy,
+  Download,
+  FolderOpen,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+  Upload,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useCollection } from '@/contexts/collection-context';
@@ -30,7 +39,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MAX_COLLECTION_NAME_LENGTH, normalizeCollectionName } from '@/lib/collection-storage';
+import {
+  getAvailableCollectionName,
+  MAX_COLLECTION_NAME_LENGTH,
+  normalizeCollectionName,
+} from '@/lib/collection-storage';
+import {
+  createPortableCollectionFile,
+  getPortableCollectionFilename,
+  MAX_PORTABLE_COLLECTION_BYTES,
+  parsePortableCollectionFile,
+} from '@/lib/collection-transfer';
 
 export function CollectionManagerControls() {
   const {
@@ -50,6 +69,7 @@ export function CollectionManagerControls() {
   const [newCollectionName, setNewCollectionName] = React.useState('');
   const [renameCollectionName, setRenameCollectionName] = React.useState('');
   const [duplicateCollectionName, setDuplicateCollectionName] = React.useState('');
+  const importInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleCreate = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -127,6 +147,51 @@ export function CollectionManagerControls() {
     setIsDuplicateOpen(true);
   };
 
+  const handleExport = () => {
+    try {
+      const content = JSON.stringify(createPortableCollectionFile(activeCollection), null, 2);
+      const blob = new Blob([content], { type: 'application/json' });
+      if (blob.size > MAX_PORTABLE_COLLECTION_BYTES) {
+        throw new Error('Collection is larger than the 5 MB portable file limit.');
+      }
+
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = getPortableCollectionFilename(activeCollection.name);
+      link.click();
+      URL.revokeObjectURL(link.href);
+      toast.success(`Exported ${activeCollection.name}`);
+    } catch (error) {
+      toast.error('Could not export collection', {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+
+    try {
+      if (file.size > MAX_PORTABLE_COLLECTION_BYTES) {
+        throw new Error('Collection file is larger than 5 MB.');
+      }
+
+      const imported = parsePortableCollectionFile(await file.text());
+      const name = getAvailableCollectionName(collections, imported.name);
+      if (!name || !createCollection(name, imported.items)) {
+        throw new Error('Could not create a new local collection.');
+      }
+
+      toast.success(`Imported ${name}`);
+    } catch (error) {
+      toast.error('Could not import collection', {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
+  };
+
   return (
     <>
       <div className="mb-6 rounded-lg border border-border bg-card p-4 shadow-sm">
@@ -187,6 +252,15 @@ export function CollectionManagerControls() {
                   Duplicate
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={handleExport}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => importInputRef.current?.click()}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => setIsDeleteOpen(true)}
                   disabled={collections.length <= 1}
@@ -197,6 +271,14 @@ export function CollectionManagerControls() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Input
+              ref={importInputRef}
+              type="file"
+              accept=".json,application/json"
+              onChange={(event) => void handleImport(event)}
+              className="hidden"
+              aria-label="Import collection file"
+            />
           </div>
         </div>
         <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
