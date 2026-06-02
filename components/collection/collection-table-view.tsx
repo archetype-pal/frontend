@@ -76,6 +76,8 @@ export function CollectionTableView({
             <TableHead className="w-[130px]">Type</TableHead>
             <TableHead>Item</TableHead>
             <TableHead>Manuscript</TableHead>
+            <TableHead className="hidden lg:table-cell">Allograph</TableHead>
+            <TableHead className="hidden xl:table-cell">Hand</TableHead>
             <TableHead className="hidden md:table-cell">Repository</TableHead>
             <TableHead className="hidden lg:table-cell">Date</TableHead>
             <TableHead className="w-14">
@@ -114,6 +116,12 @@ export function CollectionTableView({
                   <CollectionItemLink item={item} />
                 </TableCell>
                 <TableCell>{item.shelfmark || '—'}</TableCell>
+                <TableCell className="hidden lg:table-cell">
+                  {item.type === 'graph' ? item.allograph || '—' : '—'}
+                </TableCell>
+                <TableCell className="hidden xl:table-cell">
+                  {item.type === 'graph' ? item.hand_name || '—' : '—'}
+                </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {item.repository_name || '—'}
                 </TableCell>

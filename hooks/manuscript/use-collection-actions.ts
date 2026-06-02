@@ -21,6 +21,8 @@ interface UseCollectionActionsArgs {
   manuscriptImage: ManuscriptImageType | null;
   imageHeight: number;
   editorRecords: AnnotationEditorRecordMap;
+  allographLabelById: ReadonlyMap<number, string>;
+  handNameById: ReadonlyMap<number, string>;
 }
 
 /**
@@ -34,6 +36,8 @@ export function useCollectionActions({
   manuscriptImage,
   imageHeight,
   editorRecords,
+  allographLabelById,
+  handNameById,
 }: UseCollectionActionsArgs) {
   const {
     addItem,
@@ -74,10 +78,13 @@ export function useCollectionActions({
     return Object.values(editorRecords)
       .filter((record) => record.source === 'persisted' && !record.isDeleted)
       .map((record) =>
-        buildAnnotationCollectionItem(record.annotation, imageHeight, collectionContext)
+        buildAnnotationCollectionItem(record.annotation, imageHeight, collectionContext, {
+          allographLabelById,
+          handNameById,
+        })
       )
       .filter((item): item is CollectionItem => item !== null);
-  }, [collectionContext, editorRecords, imageHeight]);
+  }, [allographLabelById, collectionContext, editorRecords, handNameById, imageHeight]);
   const canCreateAnnotationCollection =
     canManageCollections && pageAnnotationCollectionItems.length > 0;
 
@@ -88,9 +95,12 @@ export function useCollectionActions({
   const getCollectionItemFor = React.useCallback(
     (annotation: A9sAnnotation): CollectionItem | null => {
       if (!collectionContext || !imageHeight) return null;
-      return buildAnnotationCollectionItem(annotation, imageHeight, collectionContext);
+      return buildAnnotationCollectionItem(annotation, imageHeight, collectionContext, {
+        allographLabelById,
+        handNameById,
+      });
     },
-    [collectionContext, imageHeight]
+    [allographLabelById, collectionContext, handNameById, imageHeight]
   );
 
   const handleTogglePageCollection = React.useCallback(() => {
@@ -134,7 +144,10 @@ export function useCollectionActions({
     (annotation: A9sAnnotation) => {
       if (!collectionContext || !imageHeight) return;
 
-      const item = buildAnnotationCollectionItem(annotation, imageHeight, collectionContext);
+      const item = buildAnnotationCollectionItem(annotation, imageHeight, collectionContext, {
+        allographLabelById,
+        handNameById,
+      });
       if (!item) return;
 
       if (isInCollection(item.id, 'graph')) {
@@ -144,7 +157,15 @@ export function useCollectionActions({
 
       addItem(item);
     },
-    [addItem, collectionContext, imageHeight, isInCollection, removeItem]
+    [
+      addItem,
+      allographLabelById,
+      collectionContext,
+      handNameById,
+      imageHeight,
+      isInCollection,
+      removeItem,
+    ]
   );
 
   return {

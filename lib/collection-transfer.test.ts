@@ -30,6 +30,8 @@ const collection: NamedCollection = {
       image_iiif: 'https://example.test/image',
       coordinates: '{"type":"Feature"}',
       annotation_type: 'editorial',
+      allograph: 'b, Caroline minuscule',
+      hand_name: 'Hand A',
     },
   ],
 };
@@ -51,6 +53,8 @@ describe('portable collection files', () => {
       id: 20,
       type: 'graph',
       annotation_type: 'editorial',
+      allograph: 'b, Caroline minuscule',
+      hand_name: 'Hand A',
     });
   });
 

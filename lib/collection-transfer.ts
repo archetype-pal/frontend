@@ -50,6 +50,10 @@ function copyOptionalString(
   field:
     | 'image_iiif'
     | 'coordinates'
+    | 'allograph'
+    | 'character'
+    | 'character_type'
+    | 'hand_name'
     | 'shelfmark'
     | 'locus'
     | 'repository_name'
@@ -96,6 +100,10 @@ function toPortableCollectionItem(value: unknown, index: number): CollectionItem
   copyOptionalString(value, item, 'image_iiif');
   copyOptionalString(value, item, 'coordinates');
   copyOptionalAnnotationType(value, item);
+  copyOptionalString(value, item, 'allograph');
+  copyOptionalString(value, item, 'character');
+  copyOptionalString(value, item, 'character_type');
+  copyOptionalString(value, item, 'hand_name');
   copyOptionalString(value, item, 'shelfmark');
   copyOptionalString(value, item, 'locus');
   copyOptionalString(value, item, 'repository_name');

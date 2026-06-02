@@ -455,6 +455,10 @@ export function AnnotationGallery({
     () => new Map(allographs.map((a) => [a.id, formatAllographLabel(a)])),
     [allographs]
   );
+  const handNameById = React.useMemo(
+    () => new Map(hands.map((hand) => [hand.id, hand.name])),
+    [hands]
+  );
 
   // Open the current selection in the lightbox for side-by-side comparison (G4.1).
   const sendSelectionToLightbox = React.useCallback(() => {
@@ -516,11 +520,19 @@ export function AnnotationGallery({
       for (const g of candidateGraphs) {
         if (!selection.selected.has(g.id)) continue;
         if (isInCollection(g.id, 'graph')) continue;
-        addItem(buildCollectionItem(g, { itemPartId, itemImageId, iiifImage, locus, shelfmark }));
+        addItem(
+          buildCollectionItem(
+            g,
+            { itemPartId, itemImageId, iiifImage, locus, shelfmark },
+            { allographLabelById, handNameById }
+          )
+        );
       }
     },
     [
       addItem,
+      allographLabelById,
+      handNameById,
       iiifImage,
       isInCollection,
       itemImageId,
@@ -1547,7 +1559,16 @@ interface CollectionContext {
   shelfmark: string;
 }
 
-function buildCollectionItem(graph: BackendGraph, ctx: CollectionContext): CollectionItem {
+interface CollectionLabels {
+  allographLabelById: ReadonlyMap<number, string>;
+  handNameById: ReadonlyMap<number, string>;
+}
+
+function buildCollectionItem(
+  graph: BackendGraph,
+  ctx: CollectionContext,
+  labels: CollectionLabels
+): CollectionItem {
   return {
     id: graph.id,
     type: 'graph',
@@ -1555,6 +1576,10 @@ function buildCollectionItem(graph: BackendGraph, ctx: CollectionContext): Colle
     item_image: ctx.itemImageId,
     image_iiif: ctx.iiifImage,
     coordinates: JSON.stringify(graph.annotation),
+    annotation_type: graph.annotation_type,
+    allograph:
+      graph.allograph === null ? undefined : labels.allographLabelById.get(graph.allograph),
+    hand_name: graph.hand === null ? undefined : labels.handNameById.get(graph.hand),
     shelfmark: ctx.shelfmark,
     locus: ctx.locus,
   };

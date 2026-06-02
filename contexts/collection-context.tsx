@@ -29,6 +29,7 @@ type CollectionContextType = {
   activeCollection: NamedCollection;
   canManageCollections: boolean;
   addItem: (item: CollectionItem) => void;
+  mergeCollectionItems: (collectionId: string, items: CollectionItem[]) => void;
   removeItem: (id: number, type: 'image' | 'graph') => void;
   removeItems: (items: Array<Pick<CollectionItem, 'id' | 'type'>>) => void;
   isInCollection: (id: number, type: 'image' | 'graph') => boolean;
@@ -46,6 +47,13 @@ const DEFAULT_PERSISTENCE_OPTIONS: CollectionPersistenceOptions = {
   writeVersionedState: true,
   writeLegacyItems: true,
 };
+
+function mergeDefinedItemFields(current: CollectionItem, update: CollectionItem): CollectionItem {
+  return Object.fromEntries([
+    ...Object.entries(current),
+    ...Object.entries(update).filter(([, value]) => value !== undefined),
+  ]) as CollectionItem;
+}
 
 export function CollectionProvider({ children }: { children: React.ReactNode }) {
   // Always start with an empty collection to avoid hydration mismatch.
@@ -82,15 +90,41 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   const addItem = React.useCallback((item: CollectionItem) => {
     setStorageState((prev) =>
       updateActiveCollectionItems(prev, (items) => {
-        // Check if item already exists
-        const exists = items.some(
+        const existingIndex = items.findIndex(
           (current) => current.id === item.id && current.type === item.type
         );
-        if (exists) return items;
+        if (existingIndex !== -1) {
+          return items.map((current, index) =>
+            index === existingIndex ? mergeDefinedItemFields(current, item) : current
+          );
+        }
         return [...items, item];
       })
     );
   }, []);
+
+  const mergeCollectionItems = React.useCallback(
+    (collectionId: string, updates: CollectionItem[]) => {
+      const updateByKey = new Map(updates.map((item) => [`${item.type}:${item.id}`, item]));
+      if (updateByKey.size === 0) return;
+
+      setStorageState((prev) => ({
+        ...prev,
+        collections: prev.collections.map((collection) =>
+          collection.id === collectionId
+            ? {
+                ...collection,
+                items: collection.items.map((item) => {
+                  const update = updateByKey.get(`${item.type}:${item.id}`);
+                  return update ? mergeDefinedItemFields(item, update) : item;
+                }),
+              }
+            : collection
+        ),
+      }));
+    },
+    []
+  );
 
   const removeItem = React.useCallback((id: number, type: 'image' | 'graph') => {
     setStorageState((prev) =>
@@ -197,6 +231,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       activeCollection,
       canManageCollections: persistenceOptions.writeVersionedState,
       addItem,
+      mergeCollectionItems,
       removeItem,
       removeItems,
       isInCollection,
@@ -213,6 +248,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       activeCollection,
       persistenceOptions.writeVersionedState,
       addItem,
+      mergeCollectionItems,
       removeItem,
       removeItems,
       isInCollection,

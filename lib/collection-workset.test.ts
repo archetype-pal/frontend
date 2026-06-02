@@ -31,6 +31,8 @@ const graphItem: CollectionItem = {
   image_iiif: 'https://example.test/graph',
   coordinates: '{"type":"Feature"}',
   annotation_type: 'image',
+  allograph: 'b, Caroline minuscule',
+  hand_name: 'Hand A',
 };
 
 const editorialItem: CollectionItem = {
@@ -46,6 +48,13 @@ describe('getPubliclyShareableCollectionItems', () => {
       expect.objectContaining({ id: 10, type: 'image', shelfmark: 'NRS GD55/1' }),
     ]);
     expect(getPubliclyShareableCollectionItems([imageItem])[0]).not.toHaveProperty('internal_only');
+  });
+
+  it('retains public graph labels used by collection views', () => {
+    expect(getPubliclyShareableCollectionItems([graphItem])[0]).toMatchObject({
+      allograph: 'b, Caroline minuscule',
+      hand_name: 'Hand A',
+    });
   });
 });
 

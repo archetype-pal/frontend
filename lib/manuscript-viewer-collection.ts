@@ -21,6 +21,11 @@ export type ViewerCollectionContext = {
   date: string;
 };
 
+export type AnnotationCollectionLabels = {
+  allographLabelById: ReadonlyMap<number, string>;
+  handNameById: ReadonlyMap<number, string>;
+};
+
 export function annotationCountLabel(count: number): string {
   return `${count} annotation${count === 1 ? '' : 's'}`;
 }
@@ -54,7 +59,8 @@ export function buildImageCollectionItem(ctx: ViewerCollectionContext): Collecti
 export function buildAnnotationCollectionItem(
   annotation: A9sAnnotation,
   imageHeight: number,
-  ctx: ViewerCollectionContext
+  ctx: ViewerCollectionContext,
+  labels?: AnnotationCollectionLabels
 ): CollectionItem | null {
   if (isTextRegionAnnotation(annotation)) return null;
 
@@ -62,8 +68,8 @@ export function buildAnnotationCollectionItem(
   if (graphId == null) return null;
 
   try {
-    const annotationType =
-      (annotation as A9sWithMeta)._meta?.annotationType === 'editorial' ? 'editorial' : 'image';
+    const meta = (annotation as A9sWithMeta)._meta;
+    const annotationType = meta?.annotationType === 'editorial' ? 'editorial' : 'image';
 
     return {
       id: graphId,
@@ -72,6 +78,11 @@ export function buildAnnotationCollectionItem(
       item_image: ctx.itemImageId,
       image_iiif: ctx.iiifImage,
       annotation_type: annotationType,
+      allograph:
+        meta?.allographId === undefined
+          ? undefined
+          : labels?.allographLabelById.get(meta.allographId),
+      hand_name: meta?.handId === undefined ? undefined : labels?.handNameById.get(meta.handId),
       coordinates: JSON.stringify(a9sToBackendFeature(annotation, imageHeight)),
       shelfmark: ctx.shelfmark,
       locus: ctx.locus,

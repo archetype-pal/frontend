@@ -14,6 +14,7 @@ import {
 import { toast } from 'sonner';
 
 import { useCollection } from '@/contexts/collection-context';
+import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -50,13 +51,16 @@ import {
   MAX_PORTABLE_COLLECTION_BYTES,
   parsePortableCollectionFile,
 } from '@/lib/collection-transfer';
+import { backfillCollectionGraphLabels } from '@/lib/collection-metadata';
 
 export function CollectionManagerControls() {
+  const { token } = useAuth();
   const {
     collections,
     activeCollection,
     canManageCollections,
     createCollection,
+    mergeCollectionItems,
     renameActiveCollection,
     duplicateActiveCollection,
     deleteActiveCollection,
@@ -69,6 +73,7 @@ export function CollectionManagerControls() {
   const [newCollectionName, setNewCollectionName] = React.useState('');
   const [renameCollectionName, setRenameCollectionName] = React.useState('');
   const [duplicateCollectionName, setDuplicateCollectionName] = React.useState('');
+  const [isTransferBusy, setIsTransferBusy] = React.useState(false);
   const importInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleCreate = (event: React.FormEvent<HTMLFormElement>) => {
@@ -147,9 +152,16 @@ export function CollectionManagerControls() {
     setIsDuplicateOpen(true);
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    setIsTransferBusy(true);
     try {
-      const content = JSON.stringify(createPortableCollectionFile(activeCollection), null, 2);
+      const items = await backfillCollectionGraphLabels(activeCollection.items, token);
+      mergeCollectionItems(activeCollection.id, items);
+      const content = JSON.stringify(
+        createPortableCollectionFile({ ...activeCollection, items }),
+        null,
+        2
+      );
       const blob = new Blob([content], { type: 'application/json' });
       if (blob.size > MAX_PORTABLE_COLLECTION_BYTES) {
         throw new Error('Collection is larger than the 5 MB portable file limit.');
@@ -165,6 +177,8 @@ export function CollectionManagerControls() {
       toast.error('Could not export collection', {
         description: error instanceof Error ? error.message : undefined,
       });
+    } finally {
+      setIsTransferBusy(false);
     }
   };
 
@@ -173,14 +187,16 @@ export function CollectionManagerControls() {
     event.currentTarget.value = '';
     if (!file) return;
 
+    setIsTransferBusy(true);
     try {
       if (file.size > MAX_PORTABLE_COLLECTION_BYTES) {
         throw new Error('Collection file is larger than 5 MB.');
       }
 
       const imported = parsePortableCollectionFile(await file.text());
+      const items = await backfillCollectionGraphLabels(imported.items, token);
       const name = getAvailableCollectionName(collections, imported.name);
-      if (!name || !createCollection(name, imported.items)) {
+      if (!name || !createCollection(name, items)) {
         throw new Error('Could not create a new local collection.');
       }
 
@@ -189,6 +205,8 @@ export function CollectionManagerControls() {
       toast.error('Could not import collection', {
         description: error instanceof Error ? error.message : undefined,
       });
+    } finally {
+      setIsTransferBusy(false);
     }
   };
 
@@ -252,11 +270,14 @@ export function CollectionManagerControls() {
                   Duplicate
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={handleExport}>
+                <DropdownMenuItem onSelect={() => void handleExport()} disabled={isTransferBusy}>
                   <Download className="mr-2 h-4 w-4" />
                   Export
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => importInputRef.current?.click()}>
+                <DropdownMenuItem
+                  onSelect={() => importInputRef.current?.click()}
+                  disabled={isTransferBusy}
+                >
                   <Upload className="mr-2 h-4 w-4" />
                   Import
                 </DropdownMenuItem>

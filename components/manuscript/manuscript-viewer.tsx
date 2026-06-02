@@ -223,6 +223,15 @@ export default function ManuscriptViewer({
     () => new Map(allographs.map((a) => [a.id, a.name])),
     [allographs]
   );
+  const allographLabelById = React.useMemo(
+    () => new Map(allographs.map((a) => [a.id, formatAllographLabel(a)])),
+    [allographs]
+  );
+  const handsForThisImage = React.useMemo(() => sortHandsByPriority(hands), [hands]);
+  const handNameById = React.useMemo(
+    () => new Map(handsForThisImage.map((hand) => [hand.id, hand.name])),
+    [handsForThisImage]
+  );
 
   // Phase A.1 — annotation editor state lives in a dedicated hook.
   // Owns: editorRecords, the per-frame update debounce, save flow.
@@ -255,7 +264,14 @@ export default function ManuscriptViewer({
     handleTogglePageCollection,
     handleCreateAnnotationCollection,
     handleToggleAnnotationCollection,
-  } = useCollectionActions({ manuscript, manuscriptImage, imageHeight, editorRecords });
+  } = useCollectionActions({
+    manuscript,
+    manuscriptImage,
+    imageHeight,
+    editorRecords,
+    allographLabelById,
+    handNameById,
+  });
 
   const {
     imageTexts,
@@ -300,17 +316,6 @@ export default function ManuscriptViewer({
     minHeight: 160,
     maxHeight: 900,
   });
-
-  const allographLabelById = React.useMemo(
-    () => new Map(allographs.map((a) => [a.id, formatAllographLabel(a)])),
-    [allographs]
-  );
-  const handsForThisImage = React.useMemo(() => sortHandsByPriority(hands), [hands]);
-
-  const handNameById = React.useMemo(
-    () => new Map(handsForThisImage.map((hand) => [hand.id, hand.name])),
-    [handsForThisImage]
-  );
 
   const positionNameById = React.useMemo(() => {
     const entries = allographs.flatMap((allograph) =>

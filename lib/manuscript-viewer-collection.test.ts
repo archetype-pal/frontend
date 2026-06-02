@@ -84,4 +84,27 @@ describe('buildAnnotationCollectionItem', () => {
     );
     expect(result).toBeNull();
   });
+
+  it('retains available graph labels for collection grouping', () => {
+    const result = buildAnnotationCollectionItem(
+      {
+        id: 'db:12',
+        target: { selector: { value: 'xywh=pixel:10,20,30,40' } },
+        _meta: { allographId: 5, handId: 7 },
+      } as never,
+      1000,
+      ctx,
+      {
+        allographLabelById: new Map([[5, 'b, Caroline minuscule']]),
+        handNameById: new Map([[7, 'Hand A']]),
+      }
+    );
+
+    expect(result).toMatchObject({
+      id: 12,
+      type: 'graph',
+      allograph: 'b, Caroline minuscule',
+      hand_name: 'Hand A',
+    });
+  });
 });

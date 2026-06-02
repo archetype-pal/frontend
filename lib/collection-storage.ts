@@ -6,6 +6,10 @@ export type CollectionItem = {
   image_iiif?: string;
   coordinates?: string;
   annotation_type?: string | null;
+  allograph?: string;
+  character?: string;
+  character_type?: string;
+  hand_name?: string;
   shelfmark?: string;
   locus?: string;
   repository_name?: string;
