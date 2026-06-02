@@ -6,6 +6,7 @@ import type { CollectionItem } from '@/contexts/collection-context';
 
 export type SortOption = 'added' | 'name' | 'repository';
 export type FilterType = 'all' | 'image' | 'graph';
+export type CollectionView = 'grid' | 'table';
 
 function readInitialFilter(searchParams: URLSearchParams): FilterType {
   const value = searchParams.get('filter');
@@ -17,10 +18,15 @@ function readInitialSort(searchParams: URLSearchParams): SortOption {
   return value === 'name' || value === 'repository' ? value : 'added';
 }
 
+function readInitialView(searchParams: URLSearchParams): CollectionView {
+  return searchParams.get('view') === 'table' ? 'table' : 'grid';
+}
+
 export function useCollectionViewState(items: CollectionItem[], clearCollection: () => void) {
   const searchParams = useSearchParams();
   const [filter, setFilter] = React.useState<FilterType>(() => readInitialFilter(searchParams));
   const [sortBy, setSortBy] = React.useState<SortOption>(() => readInitialSort(searchParams));
+  const [view, setView] = React.useState<CollectionView>(() => readInitialView(searchParams));
   const [showClearConfirm, setShowClearConfirm] = React.useState(false);
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -28,25 +34,38 @@ export function useCollectionViewState(items: CollectionItem[], clearCollection:
     const params = new URLSearchParams();
     if (filter !== 'all') params.set('filter', filter);
     if (sortBy !== 'added') params.set('sort', sortBy);
+    if (view !== 'grid') params.set('view', view);
     window.history.replaceState(
       null,
       '',
       params.toString() ? `/collection?${params}` : '/collection'
     );
-  }, [filter, sortBy]);
+  }, [filter, sortBy, view]);
 
   React.useEffect(() => {
-    if (items.length === 0) {
-      setShowClearConfirm(false);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
+    if (items.length !== 0 || !showClearConfirm) return;
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
+
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setShowClearConfirm(false);
+    });
+
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      cancelled = true;
     };
-  }, [items.length]);
+  }, [items.length, showClearConfirm]);
+
+  React.useEffect(
+    () => () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    },
+    []
+  );
 
   const filteredItems = React.useMemo(() => {
     const filtered = filter === 'all' ? items : items.filter((item) => item.type === filter);
@@ -88,6 +107,8 @@ export function useCollectionViewState(items: CollectionItem[], clearCollection:
     setFilter,
     sortBy,
     setSortBy,
+    view,
+    setView,
     showClearConfirm,
     filteredItems,
     handleClear,

@@ -8,10 +8,11 @@ import { useCollection, type CollectionItem } from '@/contexts/collection-contex
 import { CollectionStar } from '@/components/collection/collection-star';
 import { CollectionManagerControls } from '@/components/collection/collection-manager-controls';
 import { CollectionSelectionToolbar } from '@/components/collection/collection-selection-toolbar';
+import { CollectionTableView } from '@/components/collection/collection-table-view';
 import { ShareCollectionButton } from '@/components/collection/share-collection-button';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Trash2, Star, ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, LayoutGrid, Star, Table as TableIcon, Trash2 } from 'lucide-react';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
@@ -129,8 +130,17 @@ function CollectionGraphCard({
 
 function CollectionPageContent() {
   const { items, activeCollection, clearCollection, removeItems } = useCollection();
-  const { filter, setFilter, sortBy, setSortBy, showClearConfirm, filteredItems, handleClear } =
-    useCollectionViewState(items, clearCollection);
+  const {
+    filter,
+    setFilter,
+    sortBy,
+    setSortBy,
+    view,
+    setView,
+    showClearConfirm,
+    filteredItems,
+    handleClear,
+  } = useCollectionViewState(items, clearCollection);
   const {
     selectedItems,
     allVisibleItemsSelected,
@@ -355,6 +365,28 @@ function CollectionPageContent() {
               </Button>
             ))}
           </div>
+          <div className="flex gap-2 bg-secondary p-1 rounded-lg sm:ml-auto">
+            <Button
+              type="button"
+              variant={view === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setView('grid')}
+              aria-pressed={view === 'grid'}
+            >
+              <LayoutGrid className="mr-1.5 h-3.5 w-3.5" />
+              Grid
+            </Button>
+            <Button
+              type="button"
+              variant={view === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setView('table')}
+              aria-pressed={view === 'table'}
+            >
+              <TableIcon className="mr-1.5 h-3.5 w-3.5" />
+              Table
+            </Button>
+          </div>
         </div>
         <div className="mt-4">
           <CollectionSelectionToolbar
@@ -368,16 +400,24 @@ function CollectionPageContent() {
           />
         </div>
       </div>
-      <div className="space-y-12">
-        {renderSection('Images', images, allImages, 'image')}
-        {renderSection('Annotations', annotations, allAnnotations, 'graph')}
-        {renderSection(
-          'Editorial Annotations',
-          editorialAnnotations,
-          allEditorialAnnotations,
-          'graph'
-        )}
-      </div>
+      {view === 'table' ? (
+        <CollectionTableView
+          items={filteredItems}
+          isItemSelected={isItemSelected}
+          onToggleSelection={toggleItem}
+        />
+      ) : (
+        <div className="space-y-12">
+          {renderSection('Images', images, allImages, 'image')}
+          {renderSection('Annotations', annotations, allAnnotations, 'graph')}
+          {renderSection(
+            'Editorial Annotations',
+            editorialAnnotations,
+            allEditorialAnnotations,
+            'graph'
+          )}
+        </div>
+      )}
     </div>
   );
 }
