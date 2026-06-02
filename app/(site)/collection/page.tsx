@@ -7,13 +7,17 @@ import Link from 'next/link';
 import { useCollection, type CollectionItem } from '@/contexts/collection-context';
 import { CollectionStar } from '@/components/collection/collection-star';
 import { CollectionManagerControls } from '@/components/collection/collection-manager-controls';
+import { CollectionSelectionToolbar } from '@/components/collection/collection-selection-toolbar';
 import { ShareCollectionButton } from '@/components/collection/share-collection-button';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Star, ArrowUpDown } from 'lucide-react';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
+import { useCollectionItemSelection } from '@/hooks/collection/use-collection-item-selection';
 import { getImageDetailUrl as buildImageDetailUrl } from '@/lib/media-url';
+import { cn } from '@/lib/utils';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
 import {
   useCollectionViewState,
@@ -42,13 +46,28 @@ function isEditorialAnnotation(item: CollectionItem): boolean {
 }
 
 /** Card for a graph item: thumbnail URL with bounds (no upscaling). */
-function CollectionGraphCard({ item, title }: { item: CollectionItem; title: string }) {
+function CollectionGraphCard({
+  item,
+  title,
+  isSelected,
+  onToggleSelection,
+}: {
+  item: CollectionItem;
+  title: string;
+  isSelected: boolean;
+  onToggleSelection: (item: CollectionItem) => void;
+}) {
   const infoUrl = (item.image_iiif || '').trim();
   const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined);
   const isEditorial = isEditorialAnnotation(item);
 
   return (
-    <div className="relative bg-card border border-border rounded-lg shadow-sm hover:shadow-lg hover:border-border/80 transition-all duration-300 overflow-hidden group cursor-pointer">
+    <div
+      className={cn(
+        'group relative overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all duration-300 hover:border-border/80 hover:shadow-lg',
+        isSelected && 'border-primary ring-2 ring-primary/30'
+      )}
+    >
       <div className="relative aspect-4/3 bg-secondary overflow-hidden">
         {imageUrl ? (
           <>
@@ -77,6 +96,13 @@ function CollectionGraphCard({ item, title }: { item: CollectionItem; title: str
             Editorial
           </div>
         )}
+        <div className="absolute bottom-2 left-2 z-20 rounded bg-white/90 p-1 shadow-sm">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelection(item)}
+            aria-label={`Select annotation ${title}`}
+          />
+        </div>
         <div className="absolute top-2 right-2 z-10 flex gap-1">
           <OpenLightboxButton
             item={item}
@@ -102,9 +128,18 @@ function CollectionGraphCard({ item, title }: { item: CollectionItem; title: str
 }
 
 function CollectionPageContent() {
-  const { items, activeCollection, clearCollection } = useCollection();
+  const { items, activeCollection, clearCollection, removeItems } = useCollection();
   const { filter, setFilter, sortBy, setSortBy, showClearConfirm, filteredItems, handleClear } =
     useCollectionViewState(items, clearCollection);
+  const {
+    selectedItems,
+    allVisibleItemsSelected,
+    someVisibleItemsSelected,
+    isItemSelected,
+    toggleItem,
+    toggleVisibleItems,
+    clearSelection,
+  } = useCollectionItemSelection(activeCollection.id, items, filteredItems);
 
   const images = filteredItems.filter((item) => item.type === 'image');
   const annotations = filteredItems.filter(
@@ -118,6 +153,10 @@ function CollectionPageContent() {
   const allEditorialAnnotations = items.filter(isEditorialAnnotation);
 
   const getUrl = (item: CollectionItem) => (item.type === 'image' ? getImageDetailUrl(item) : '#');
+  const handleRemoveSelectedItems = () => {
+    removeItems(selectedItems);
+    clearSelection();
+  };
 
   if (items.length === 0) {
     return (
@@ -151,16 +190,28 @@ function CollectionPageContent() {
 
   const renderCard = (item: CollectionItem, type: 'image' | 'graph') => {
     const title = getItemTitle(item);
+    const isSelected = isItemSelected(item);
 
     if (type === 'graph') {
-      return <CollectionGraphCard key={`graph-${item.id}`} item={item} title={title} />;
+      return (
+        <CollectionGraphCard
+          key={`graph-${item.id}`}
+          item={item}
+          title={title}
+          isSelected={isSelected}
+          onToggleSelection={toggleItem}
+        />
+      );
     }
 
     const imageUrl = getImageItemThumbnailUrl(item);
     return (
       <div
         key={`image-${item.id}`}
-        className="relative bg-card border border-border rounded-lg shadow-sm hover:shadow-lg hover:border-border/80 transition-all duration-300 overflow-hidden group cursor-pointer"
+        className={cn(
+          'group relative overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all duration-300 hover:border-border/80 hover:shadow-lg',
+          isSelected && 'border-primary ring-2 ring-primary/30'
+        )}
       >
         <div className="relative aspect-4/3 bg-secondary overflow-hidden">
           {imageUrl ? (
@@ -182,6 +233,13 @@ function CollectionPageContent() {
               No Image
             </div>
           )}
+          <div className="absolute bottom-2 left-2 z-20 rounded bg-white/90 p-1 shadow-sm">
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => toggleItem(item)}
+              aria-label={`Select image ${title}`}
+            />
+          </div>
           <div className="absolute top-2 right-2 z-10 flex gap-1">
             <OpenLightboxButton
               item={item}
@@ -297,6 +355,17 @@ function CollectionPageContent() {
               </Button>
             ))}
           </div>
+        </div>
+        <div className="mt-4">
+          <CollectionSelectionToolbar
+            selectedItems={selectedItems}
+            visibleItemCount={filteredItems.length}
+            allVisibleItemsSelected={allVisibleItemsSelected}
+            someVisibleItemsSelected={someVisibleItemsSelected}
+            onToggleVisibleItems={toggleVisibleItems}
+            onClearSelection={clearSelection}
+            onRemoveSelectedItems={handleRemoveSelectedItems}
+          />
         </div>
       </div>
       <div className="space-y-12">

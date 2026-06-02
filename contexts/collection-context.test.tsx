@@ -27,6 +27,7 @@ function Harness() {
     collections,
     activeCollection,
     addItem,
+    removeItems,
     createCollection,
     renameActiveCollection,
     duplicateActiveCollection,
@@ -48,6 +49,9 @@ function Harness() {
       </output>
       <button type="button" onClick={() => addItem(editorialItem)}>
         Add editorial annotation
+      </button>
+      <button type="button" onClick={() => removeItems([editorialItem])}>
+        Remove selected items
       </button>
       <button type="button" onClick={() => createCollection('Research')}>
         Create research collection
@@ -131,6 +135,19 @@ describe('CollectionProvider', () => {
       '"annotation_type":"editorial"'
     );
     expect(localStorage.getItem(COLLECTION_STORAGE_KEY)).toContain('"annotation_type":"editorial"');
+  });
+
+  it('removes multiple selected items in one collection update', async () => {
+    renderHarness();
+
+    await waitFor(() => expect(localStorage.getItem(COLLECTION_STORAGE_KEY)).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Add editorial annotation' }));
+    await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove selected items' }));
+
+    await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('0'));
+    expect(screen.getByTestId('is-editorial-collected').textContent).toBe('false');
   });
 
   it('hydrates the active collection from versioned storage and mirrors its items', async () => {

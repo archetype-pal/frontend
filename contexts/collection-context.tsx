@@ -30,6 +30,7 @@ type CollectionContextType = {
   canManageCollections: boolean;
   addItem: (item: CollectionItem) => void;
   removeItem: (id: number, type: 'image' | 'graph') => void;
+  removeItems: (items: Array<Pick<CollectionItem, 'id' | 'type'>>) => void;
   isInCollection: (id: number, type: 'image' | 'graph') => boolean;
   clearCollection: () => void;
   createCollection: (name: string, items?: CollectionItem[]) => boolean;
@@ -98,6 +99,20 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       )
     );
   }, []);
+
+  const removeItems = React.useCallback(
+    (itemsToRemove: Array<Pick<CollectionItem, 'id' | 'type'>>) => {
+      const keys = new Set(itemsToRemove.map((item) => `${item.type}:${item.id}`));
+      if (keys.size === 0) return;
+
+      setStorageState((prev) =>
+        updateActiveCollectionItems(prev, (items) =>
+          items.filter((item) => !keys.has(`${item.type}:${item.id}`))
+        )
+      );
+    },
+    []
+  );
 
   const collectionSet = React.useMemo(
     () => new Set(items.map((i) => `${i.type}:${i.id}`)),
@@ -183,6 +198,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       canManageCollections: persistenceOptions.writeVersionedState,
       addItem,
       removeItem,
+      removeItems,
       isInCollection,
       clearCollection,
       createCollection,
@@ -198,6 +214,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       persistenceOptions.writeVersionedState,
       addItem,
       removeItem,
+      removeItems,
       isInCollection,
       clearCollection,
       createCollection,

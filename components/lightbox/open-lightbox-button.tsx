@@ -17,6 +17,7 @@ interface OpenLightboxButtonProps {
   variant?: 'default' | 'outline' | 'ghost' | 'secondary';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
+  label?: string;
 }
 
 export function OpenLightboxButton({
@@ -25,6 +26,7 @@ export function OpenLightboxButton({
   variant = 'ghost',
   size = 'sm',
   className,
+  label = 'Open in Lightbox',
 }: OpenLightboxButtonProps) {
   const handleClick = () => {
     if (items && items.length > 0) {
@@ -49,7 +51,7 @@ export function OpenLightboxButton({
     ) : (
       <ExternalLink className="h-4 w-4 mr-2" />
     );
-  const label = size !== 'icon' ? 'Open in Lightbox' : undefined;
+  const visibleLabel = size !== 'icon' ? label : undefined;
 
   return (
     <Button
@@ -57,10 +59,11 @@ export function OpenLightboxButton({
       size={size}
       onClick={handleClick}
       className={className}
-      title="Open in Lightbox"
+      title={label}
+      aria-label={size === 'icon' ? label : undefined}
     >
       {icon}
-      {label}
+      {visibleLabel}
     </Button>
   );
 }
