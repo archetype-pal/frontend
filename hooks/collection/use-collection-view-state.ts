@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { CollectionItem } from '@/contexts/collection-context';
+import type { CollectionAnnotationGroupBy } from '@/lib/collection-grouping';
 
 export type SortOption = 'added' | 'name' | 'repository';
 export type FilterType = 'all' | 'image' | 'graph';
@@ -22,11 +23,19 @@ function readInitialView(searchParams: URLSearchParams): CollectionView {
   return searchParams.get('view') === 'table' ? 'table' : 'grid';
 }
 
+function readInitialAnnotationGroup(searchParams: URLSearchParams): CollectionAnnotationGroupBy {
+  const value = searchParams.get('group');
+  return value === 'allograph' || value === 'hand' || value === 'manuscript' ? value : 'none';
+}
+
 export function useCollectionViewState(items: CollectionItem[], clearCollection: () => void) {
   const searchParams = useSearchParams();
   const [filter, setFilter] = React.useState<FilterType>(() => readInitialFilter(searchParams));
   const [sortBy, setSortBy] = React.useState<SortOption>(() => readInitialSort(searchParams));
   const [view, setView] = React.useState<CollectionView>(() => readInitialView(searchParams));
+  const [annotationGroup, setAnnotationGroup] = React.useState<CollectionAnnotationGroupBy>(() =>
+    readInitialAnnotationGroup(searchParams)
+  );
   const [showClearConfirm, setShowClearConfirm] = React.useState(false);
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -35,12 +44,13 @@ export function useCollectionViewState(items: CollectionItem[], clearCollection:
     if (filter !== 'all') params.set('filter', filter);
     if (sortBy !== 'added') params.set('sort', sortBy);
     if (view !== 'grid') params.set('view', view);
+    if (annotationGroup !== 'none') params.set('group', annotationGroup);
     window.history.replaceState(
       null,
       '',
       params.toString() ? `/collection?${params}` : '/collection'
     );
-  }, [filter, sortBy, view]);
+  }, [annotationGroup, filter, sortBy, view]);
 
   React.useEffect(() => {
     if (items.length !== 0 || !showClearConfirm) return;
@@ -109,6 +119,8 @@ export function useCollectionViewState(items: CollectionItem[], clearCollection:
     setSortBy,
     view,
     setView,
+    annotationGroup,
+    setAnnotationGroup,
     showClearConfirm,
     filteredItems,
     handleClear,

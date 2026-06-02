@@ -13,6 +13,13 @@ import { PrintCollectionButton } from '@/components/collection/print-collection-
 import { ShareCollectionButton } from '@/components/collection/share-collection-button';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ArrowUpDown, LayoutGrid, Star, Table as TableIcon, Trash2 } from 'lucide-react';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { getIiifImageUrl } from '@/utils/iiif';
@@ -21,6 +28,10 @@ import { useCollectionItemSelection } from '@/hooks/collection/use-collection-it
 import { getImageDetailUrl as buildImageDetailUrl } from '@/lib/media-url';
 import { cn } from '@/lib/utils';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
+import {
+  groupCollectionAnnotations,
+  type CollectionAnnotationGroupBy,
+} from '@/lib/collection-grouping';
 import {
   useCollectionViewState,
   type FilterType,
@@ -138,6 +149,8 @@ function CollectionPageContent() {
     setSortBy,
     view,
     setView,
+    annotationGroup,
+    setAnnotationGroup,
     showClearConfirm,
     filteredItems,
     handleClear,
@@ -162,6 +175,7 @@ function CollectionPageContent() {
     (item) => item.type === 'graph' && !isEditorialAnnotation(item)
   );
   const allEditorialAnnotations = items.filter(isEditorialAnnotation);
+  const hasAnnotations = allAnnotations.length + allEditorialAnnotations.length > 0;
 
   const getUrl = (item: CollectionItem) => (item.type === 'image' ? getImageDetailUrl(item) : '#');
   const handleRemoveSelectedItems = () => {
@@ -282,6 +296,8 @@ function CollectionPageContent() {
     type: 'image' | 'graph'
   ) => {
     if (allItems.length === 0 || (filter !== 'all' && filter !== type)) return null;
+    const groups =
+      type === 'graph' ? groupCollectionAnnotations(items, annotationGroup) : undefined;
 
     return (
       <section>
@@ -293,9 +309,27 @@ function CollectionPageContent() {
           </span>
         </div>
         {items.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5">
-            {items.map((item) => renderCard(item, type))}
-          </div>
+          groups && groups.length > 0 ? (
+            <div className="space-y-8">
+              {groups.map((group) => (
+                <div key={group.key}>
+                  <div className="mb-3 flex items-center gap-2">
+                    <h3 className="text-base font-semibold text-foreground">{group.label}</h3>
+                    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      {group.items.length} {group.items.length === 1 ? 'item' : 'items'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                    {group.items.map((item) => renderCard(item, type))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {items.map((item) => renderCard(item, type))}
+            </div>
+          )
         ) : (
           <div className="text-center py-12 bg-secondary rounded-lg border border-border">
             <p className="text-sm text-muted-foreground">
@@ -367,6 +401,25 @@ function CollectionPageContent() {
               </Button>
             ))}
           </div>
+          {view === 'grid' && hasAnnotations && (
+            <div className="flex items-center gap-2 rounded-lg bg-secondary p-1 pl-3">
+              <span className="text-xs font-medium text-muted-foreground">Group annotations</span>
+              <Select
+                value={annotationGroup}
+                onValueChange={(value) => setAnnotationGroup(value as CollectionAnnotationGroupBy)}
+              >
+                <SelectTrigger className="h-8 w-[150px] bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No grouping</SelectItem>
+                  <SelectItem value="allograph">Allograph</SelectItem>
+                  <SelectItem value="hand">Hand</SelectItem>
+                  <SelectItem value="manuscript">Manuscript</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex gap-2 bg-secondary p-1 rounded-lg sm:ml-auto">
             <Button
               type="button"
