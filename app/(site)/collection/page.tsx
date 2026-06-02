@@ -9,6 +9,7 @@ import { CollectionStar } from '@/components/collection/collection-star';
 import { CollectionManagerControls } from '@/components/collection/collection-manager-controls';
 import { CollectionSelectionToolbar } from '@/components/collection/collection-selection-toolbar';
 import { CollectionTableView } from '@/components/collection/collection-table-view';
+import { PrintCollectionButton } from '@/components/collection/print-collection-button';
 import { ShareCollectionButton } from '@/components/collection/share-collection-button';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -321,6 +322,7 @@ function CollectionPageContent() {
           </div>
           <div className="flex gap-2">
             <ShareCollectionButton collection={activeCollection} />
+            <PrintCollectionButton collection={activeCollection} />
             <OpenLightboxButton items={items} variant="outline" size="sm" />
             <Button
               variant={showClearConfirm ? 'destructive' : 'outline'}
