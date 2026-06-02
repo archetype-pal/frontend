@@ -27,6 +27,9 @@ function Harness() {
     activeCollection,
     addItem,
     createCollection,
+    renameActiveCollection,
+    duplicateActiveCollection,
+    deleteActiveCollection,
     switchCollection,
     isInCollection,
   } = useCollection();
@@ -36,6 +39,9 @@ function Harness() {
       <output data-testid="count">{items.length}</output>
       <output data-testid="collection-count">{collections.length}</output>
       <output data-testid="active-collection">{activeCollection.name}</output>
+      <output data-testid="collection-names">
+        {collections.map((collection) => collection.name).join(',')}
+      </output>
       <output data-testid="is-editorial-collected">
         {String(isInCollection(editorialItem.id, 'graph'))}
       </output>
@@ -47,6 +53,15 @@ function Harness() {
       </button>
       <button type="button" onClick={() => switchCollection('default')}>
         Switch to default collection
+      </button>
+      <button type="button" onClick={() => renameActiveCollection('Archive')}>
+        Rename active collection
+      </button>
+      <button type="button" onClick={() => duplicateActiveCollection('Archive copy')}>
+        Duplicate active collection
+      </button>
+      <button type="button" onClick={() => deleteActiveCollection()}>
+        Delete active collection
       </button>
     </div>
   );
@@ -170,5 +185,36 @@ describe('CollectionProvider', () => {
       expect(screen.getByTestId('active-collection').textContent).toBe('Collection')
     );
     expect(screen.getByTestId('count').textContent).toBe('1');
+  });
+
+  it('renames, duplicates, and deletes collections while preserving copied items', async () => {
+    renderHarness();
+
+    await waitFor(() => expect(localStorage.getItem(COLLECTION_STORAGE_KEY)).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Add editorial annotation' }));
+    await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rename active collection' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('active-collection').textContent).toBe('Archive')
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate active collection' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('active-collection').textContent).toBe('Archive copy')
+    );
+    expect(screen.getByTestId('collection-count').textContent).toBe('2');
+    expect(screen.getByTestId('count').textContent).toBe('1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete active collection' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('active-collection').textContent).toBe('Archive')
+    );
+    expect(screen.getByTestId('collection-count').textContent).toBe('1');
+    expect(screen.getByTestId('count').textContent).toBe('1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete active collection' }));
+    expect(screen.getByTestId('collection-count').textContent).toBe('1');
+    expect(screen.getByTestId('collection-names').textContent).toBe('Archive');
   });
 });

@@ -6,10 +6,13 @@ import {
   addCollection,
   createCollectionId,
   createDefaultCollectionStorage,
+  deleteCollection,
+  duplicateCollection,
   getActiveCollection,
   hasCollectionName,
   loadCollectionStorage,
   normalizeCollectionName,
+  renameCollection,
   saveCollectionStorage,
   setActiveCollection,
   updateActiveCollectionItems,
@@ -31,6 +34,9 @@ type CollectionContextType = {
   clearCollection: () => void;
   createCollection: (name: string) => boolean;
   switchCollection: (collectionId: string) => void;
+  renameActiveCollection: (name: string) => boolean;
+  duplicateActiveCollection: (name: string) => boolean;
+  deleteActiveCollection: () => boolean;
 };
 
 const CollectionContext = React.createContext<CollectionContextType | undefined>(undefined);
@@ -129,6 +135,46 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     [persistenceOptions.writeVersionedState]
   );
 
+  const renameActiveCollection = React.useCallback(
+    (requestedName: string) => {
+      if (!persistenceOptions.writeVersionedState) return false;
+
+      const name = normalizeCollectionName(requestedName);
+      if (!name || hasCollectionName(storageState, name, activeCollection.id)) return false;
+
+      setStorageState((prev) => renameCollection(prev, activeCollection.id, name));
+      return true;
+    },
+    [activeCollection.id, persistenceOptions.writeVersionedState, storageState]
+  );
+
+  const duplicateActiveCollection = React.useCallback(
+    (requestedName: string) => {
+      if (!persistenceOptions.writeVersionedState) return false;
+
+      const name = normalizeCollectionName(requestedName);
+      if (!name || hasCollectionName(storageState, name)) return false;
+
+      const id = createCollectionId();
+      setStorageState((prev) => duplicateCollection(prev, activeCollection.id, { id, name }));
+      return true;
+    },
+    [activeCollection.id, persistenceOptions.writeVersionedState, storageState]
+  );
+
+  const deleteActiveCollection = React.useCallback(() => {
+    if (!persistenceOptions.writeVersionedState || storageState.collections.length <= 1) {
+      return false;
+    }
+
+    setStorageState((prev) => deleteCollection(prev, activeCollection.id));
+    return true;
+  }, [
+    activeCollection.id,
+    persistenceOptions.writeVersionedState,
+    storageState.collections.length,
+  ]);
+
   const value = React.useMemo(
     () => ({
       items,
@@ -141,6 +187,9 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       clearCollection,
       createCollection,
       switchCollection,
+      renameActiveCollection,
+      duplicateActiveCollection,
+      deleteActiveCollection,
     }),
     [
       items,
@@ -153,6 +202,9 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       clearCollection,
       createCollection,
       switchCollection,
+      renameActiveCollection,
+      duplicateActiveCollection,
+      deleteActiveCollection,
     ]
   );
 

@@ -232,12 +232,18 @@ export function createCollectionId(randomSource: Crypto = crypto): string {
   return Array.from(values, (value) => value.toString(16).padStart(8, '0')).join('-');
 }
 
-export function hasCollectionName(state: CollectionStorageState, name: string): boolean {
+export function hasCollectionName(
+  state: CollectionStorageState,
+  name: string,
+  ignoredCollectionId?: string
+): boolean {
   const normalizedName = normalizeCollectionName(name).toLocaleLowerCase();
   if (!normalizedName) return false;
 
   return state.collections.some(
-    (collection) => collection.name.toLocaleLowerCase() === normalizedName
+    (collection) =>
+      collection.id !== ignoredCollectionId &&
+      collection.name.toLocaleLowerCase() === normalizedName
   );
 }
 
@@ -258,6 +264,79 @@ export function addCollection(
     ...state,
     activeCollectionId: collection.id,
     collections: [...state.collections, { id: collection.id, name, items: [] }],
+  };
+}
+
+export function renameCollection(
+  state: CollectionStorageState,
+  collectionId: string,
+  requestedName: string
+): CollectionStorageState {
+  const name = normalizeCollectionName(requestedName);
+  if (
+    !name ||
+    hasCollectionName(state, name, collectionId) ||
+    !state.collections.some((collection) => collection.id === collectionId)
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    collections: state.collections.map((collection) =>
+      collection.id === collectionId ? { ...collection, name } : collection
+    ),
+  };
+}
+
+export function duplicateCollection(
+  state: CollectionStorageState,
+  sourceCollectionId: string,
+  collection: Pick<NamedCollection, 'id' | 'name'>
+): CollectionStorageState {
+  const sourceCollection = state.collections.find((current) => current.id === sourceCollectionId);
+  const name = normalizeCollectionName(collection.name);
+  if (
+    !sourceCollection ||
+    !name ||
+    hasCollectionName(state, name) ||
+    state.collections.some((current) => current.id === collection.id)
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    activeCollectionId: collection.id,
+    collections: [
+      ...state.collections,
+      {
+        id: collection.id,
+        name,
+        items: sourceCollection.items.map((item) => ({ ...item })),
+      },
+    ],
+  };
+}
+
+export function deleteCollection(
+  state: CollectionStorageState,
+  collectionId: string
+): CollectionStorageState {
+  if (
+    state.collections.length <= 1 ||
+    !state.collections.some((collection) => collection.id === collectionId)
+  ) {
+    return state;
+  }
+
+  const collections = state.collections.filter((collection) => collection.id !== collectionId);
+
+  return {
+    ...state,
+    activeCollectionId:
+      state.activeCollectionId === collectionId ? collections[0].id : state.activeCollectionId,
+    collections,
   };
 }
 
