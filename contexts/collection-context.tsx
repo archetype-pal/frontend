@@ -3,23 +3,34 @@
 import * as React from 'react';
 
 import {
+  addCollection,
+  createCollectionId,
   createDefaultCollectionStorage,
   getActiveCollection,
+  hasCollectionName,
   loadCollectionStorage,
+  normalizeCollectionName,
   saveCollectionStorage,
+  setActiveCollection,
   updateActiveCollectionItems,
   type CollectionItem,
   type CollectionPersistenceOptions,
+  type NamedCollection,
 } from '@/lib/collection-storage';
 
-export type { CollectionItem } from '@/lib/collection-storage';
+export type { CollectionItem, NamedCollection } from '@/lib/collection-storage';
 
 type CollectionContextType = {
   items: CollectionItem[];
+  collections: NamedCollection[];
+  activeCollection: NamedCollection;
+  canManageCollections: boolean;
   addItem: (item: CollectionItem) => void;
   removeItem: (id: number, type: 'image' | 'graph') => void;
   isInCollection: (id: number, type: 'image' | 'graph') => boolean;
   clearCollection: () => void;
+  createCollection: (name: string) => boolean;
+  switchCollection: (collectionId: string) => void;
 };
 
 const CollectionContext = React.createContext<CollectionContextType | undefined>(undefined);
@@ -34,7 +45,8 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   const [storageState, setStorageState] = React.useState(createDefaultCollectionStorage);
   const [persistenceOptions, setPersistenceOptions] = React.useState(DEFAULT_PERSISTENCE_OPTIONS);
   const [isHydrated, setIsHydrated] = React.useState(false);
-  const items = React.useMemo(() => getActiveCollection(storageState).items, [storageState]);
+  const activeCollection = React.useMemo(() => getActiveCollection(storageState), [storageState]);
+  const items = activeCollection.items;
 
   // Load from localStorage only on client after mount
   React.useEffect(() => {
@@ -95,15 +107,53 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     setStorageState((prev) => updateActiveCollectionItems(prev, () => []));
   }, []);
 
+  const createCollection = React.useCallback(
+    (requestedName: string) => {
+      if (!persistenceOptions.writeVersionedState) return false;
+
+      const name = normalizeCollectionName(requestedName);
+      if (!name || hasCollectionName(storageState, name)) return false;
+
+      const id = createCollectionId();
+      setStorageState((prev) => addCollection(prev, { id, name }));
+      return true;
+    },
+    [persistenceOptions.writeVersionedState, storageState]
+  );
+
+  const switchCollection = React.useCallback(
+    (collectionId: string) => {
+      if (!persistenceOptions.writeVersionedState) return;
+      setStorageState((prev) => setActiveCollection(prev, collectionId));
+    },
+    [persistenceOptions.writeVersionedState]
+  );
+
   const value = React.useMemo(
     () => ({
       items,
+      collections: storageState.collections,
+      activeCollection,
+      canManageCollections: persistenceOptions.writeVersionedState,
       addItem,
       removeItem,
       isInCollection,
       clearCollection,
+      createCollection,
+      switchCollection,
     }),
-    [items, addItem, removeItem, isInCollection, clearCollection]
+    [
+      items,
+      storageState.collections,
+      activeCollection,
+      persistenceOptions.writeVersionedState,
+      addItem,
+      removeItem,
+      isInCollection,
+      clearCollection,
+      createCollection,
+      switchCollection,
+    ]
   );
 
   return <CollectionContext.Provider value={value}>{children}</CollectionContext.Provider>;

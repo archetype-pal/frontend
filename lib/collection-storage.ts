@@ -37,6 +37,7 @@ type StorageWriter = Pick<Storage, 'setItem'>;
 export const COLLECTION_STORAGE_VERSION = 2;
 export const COLLECTION_STORAGE_KEY = 'archetype_collections';
 export const LEGACY_COLLECTION_STORAGE_KEY = 'archetype_collection';
+export const MAX_COLLECTION_NAME_LENGTH = 100;
 
 const DEFAULT_COLLECTION_ID = 'default';
 const DEFAULT_COLLECTION_NAME = 'Collection';
@@ -215,6 +216,65 @@ export function updateActiveCollectionItems(
         ? { ...collection, items: update(collection.items) }
         : collection
     ),
+  };
+}
+
+export function normalizeCollectionName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').slice(0, MAX_COLLECTION_NAME_LENGTH);
+}
+
+export function createCollectionId(randomSource: Crypto = crypto): string {
+  if (typeof randomSource.randomUUID === 'function') {
+    return randomSource.randomUUID();
+  }
+
+  const values = randomSource.getRandomValues(new Uint32Array(4));
+  return Array.from(values, (value) => value.toString(16).padStart(8, '0')).join('-');
+}
+
+export function hasCollectionName(state: CollectionStorageState, name: string): boolean {
+  const normalizedName = normalizeCollectionName(name).toLocaleLowerCase();
+  if (!normalizedName) return false;
+
+  return state.collections.some(
+    (collection) => collection.name.toLocaleLowerCase() === normalizedName
+  );
+}
+
+export function addCollection(
+  state: CollectionStorageState,
+  collection: Pick<NamedCollection, 'id' | 'name'>
+): CollectionStorageState {
+  const name = normalizeCollectionName(collection.name);
+  if (
+    !name ||
+    hasCollectionName(state, name) ||
+    state.collections.some((current) => current.id === collection.id)
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    activeCollectionId: collection.id,
+    collections: [...state.collections, { id: collection.id, name, items: [] }],
+  };
+}
+
+export function setActiveCollection(
+  state: CollectionStorageState,
+  collectionId: string
+): CollectionStorageState {
+  if (
+    state.activeCollectionId === collectionId ||
+    !state.collections.some((collection) => collection.id === collectionId)
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    activeCollectionId: collectionId,
   };
 }
 

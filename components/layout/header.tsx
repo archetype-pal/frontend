@@ -56,7 +56,7 @@ export default function Header() {
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-  const { items } = useCollection();
+  const { items, activeCollection } = useCollection();
   const { getLabel } = useModelLabels();
   const { token, user, logout } = useAuth();
   const { config, isSectionEnabled } = useSiteFeatures();
@@ -177,7 +177,7 @@ export default function Header() {
             >
               <Link href="/collection">
                 <FolderOpen className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
-                My Collection ({items.length})
+                {activeCollection.name} ({items.length})
               </Link>
             </Button>
           </li>

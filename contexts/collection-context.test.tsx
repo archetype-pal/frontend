@@ -21,16 +21,32 @@ const editorialItem: CollectionItem = {
 };
 
 function Harness() {
-  const { items, addItem, isInCollection } = useCollection();
+  const {
+    items,
+    collections,
+    activeCollection,
+    addItem,
+    createCollection,
+    switchCollection,
+    isInCollection,
+  } = useCollection();
 
   return (
     <div>
       <output data-testid="count">{items.length}</output>
+      <output data-testid="collection-count">{collections.length}</output>
+      <output data-testid="active-collection">{activeCollection.name}</output>
       <output data-testid="is-editorial-collected">
         {String(isInCollection(editorialItem.id, 'graph'))}
       </output>
       <button type="button" onClick={() => addItem(editorialItem)}>
         Add editorial annotation
+      </button>
+      <button type="button" onClick={() => createCollection('Research')}>
+        Create research collection
+      </button>
+      <button type="button" onClick={() => switchCollection('default')}>
+        Switch to default collection
       </button>
     </div>
   );
@@ -133,5 +149,26 @@ describe('CollectionProvider', () => {
 
     await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
     expect(localStorage.getItem(COLLECTION_STORAGE_KEY)).toBe(futureState);
+  });
+
+  it('creates, activates, and switches between named collections', async () => {
+    renderHarness();
+
+    await waitFor(() => expect(localStorage.getItem(COLLECTION_STORAGE_KEY)).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Add editorial annotation' }));
+    await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create research collection' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('active-collection').textContent).toBe('Research')
+    );
+    expect(screen.getByTestId('collection-count').textContent).toBe('2');
+    expect(screen.getByTestId('count').textContent).toBe('0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to default collection' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('active-collection').textContent).toBe('Collection')
+    );
+    expect(screen.getByTestId('count').textContent).toBe('1');
   });
 });

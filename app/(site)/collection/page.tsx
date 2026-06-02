@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCollection, type CollectionItem } from '@/contexts/collection-context';
 import { CollectionStar } from '@/components/collection/collection-star';
+import { CollectionManagerControls } from '@/components/collection/collection-manager-controls';
 import { Button } from '@/components/ui/button';
 import { Trash2, Star, ArrowUpDown } from 'lucide-react';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
@@ -100,7 +101,7 @@ function CollectionGraphCard({ item, title }: { item: CollectionItem; title: str
 }
 
 function CollectionPageContent() {
-  const { items, clearCollection } = useCollection();
+  const { items, activeCollection, clearCollection } = useCollection();
   const { filter, setFilter, sortBy, setSortBy, showClearConfirm, filteredItems, handleClear } =
     useCollectionViewState(items, clearCollection);
 
@@ -120,11 +121,12 @@ function CollectionPageContent() {
   if (items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16 sm:py-20">
+        <CollectionManagerControls />
         <div className="max-w-2xl mx-auto text-center">
           <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-linear-to-br from-gray-50 to-gray-100 mb-6 shadow-sm">
             <Star className="h-12 w-12 text-muted-foreground" />
           </div>
-          <h1 className="text-4xl font-bold mb-4 text-foreground">My Collection</h1>
+          <h1 className="text-4xl font-bold mb-4 text-foreground">{activeCollection.name}</h1>
           <p className="text-muted-foreground text-lg mb-10 leading-relaxed max-w-md mx-auto">
             Your collection is empty. Start adding images or annotations from search results and
             manuscript viewers by clicking the star icon.
@@ -237,10 +239,13 @@ function CollectionPageContent() {
 
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8 max-w-7xl">
+      <CollectionManagerControls />
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-foreground">My Collection</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-foreground">
+              {activeCollection.name}
+            </h1>
             <p className="text-muted-foreground text-sm sm:text-base">
               {items.length} {items.length === 1 ? 'item' : 'items'} saved
             </p>
