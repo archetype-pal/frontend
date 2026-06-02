@@ -51,6 +51,9 @@ function Harness() {
       <button type="button" onClick={() => createCollection('Research')}>
         Create research collection
       </button>
+      <button type="button" onClick={() => createCollection('Page annotations', [editorialItem])}>
+        Create populated collection
+      </button>
       <button type="button" onClick={() => switchCollection('default')}>
         Switch to default collection
       </button>
@@ -185,6 +188,19 @@ describe('CollectionProvider', () => {
       expect(screen.getByTestId('active-collection').textContent).toBe('Collection')
     );
     expect(screen.getByTestId('count').textContent).toBe('1');
+  });
+
+  it('creates a named collection populated with initial items', async () => {
+    renderHarness();
+
+    await waitFor(() => expect(localStorage.getItem(COLLECTION_STORAGE_KEY)).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Create populated collection' }));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('active-collection').textContent).toBe('Page annotations')
+    );
+    expect(screen.getByTestId('count').textContent).toBe('1');
+    expect(screen.getByTestId('is-editorial-collected').textContent).toBe('true');
   });
 
   it('renames, duplicates, and deletes collections while preserving copied items', async () => {

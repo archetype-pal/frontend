@@ -245,8 +245,17 @@ export default function ManuscriptViewer({
 
   const unsavedChanges = editorState.dirtyCount;
 
-  const { isInCollection, getCollectionItemFor, handleToggleAnnotationCollection } =
-    useCollectionActions({ manuscript, manuscriptImage, imageHeight });
+  const {
+    isInCollection,
+    pageCollectionItem,
+    isPageInCollection,
+    pageAnnotationCollectionItems,
+    canCreateAnnotationCollection,
+    getCollectionItemFor,
+    handleTogglePageCollection,
+    handleCreateAnnotationCollection,
+    handleToggleAnnotationCollection,
+  } = useCollectionActions({ manuscript, manuscriptImage, imageHeight, editorRecords });
 
   const {
     imageTexts,
@@ -1013,6 +1022,12 @@ export default function ManuscriptViewer({
       isSettingsActive={canUseSettings ? isSettingsPanelOpen : false}
       showSettingsButton={canUseSettings}
       imageToolsControl={imageToolsControl}
+      isPageInCollection={isPageInCollection}
+      onTogglePageCollection={pageCollectionItem ? handleTogglePageCollection : undefined}
+      annotationCollectionCount={pageAnnotationCollectionItems.length}
+      onCreateAnnotationCollection={
+        canCreateAnnotationCollection ? handleCreateAnnotationCollection : undefined
+      }
       hands={handsForThisImage}
       selectedHandId={
         selectedHand === undefined ? (defaultHand?.id ?? null) : (selectedHand?.id ?? null)

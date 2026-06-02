@@ -70,3 +70,29 @@ describe('AnnotationHeader allograph gallery control', () => {
     expect(screen.getByRole('button', { name: 'Select an allograph first' })).toBeTruthy();
   });
 });
+
+describe('AnnotationHeader page collection controls', () => {
+  it('toggles the page collection button and enables bulk collection creation when annotations exist', () => {
+    const onTogglePageCollection = vi.fn();
+    const onCreateAnnotationCollection = vi.fn();
+
+    render(
+      <AnnotationHeader
+        unsavedCount={0}
+        onTogglePageCollection={onTogglePageCollection}
+        annotationCollectionCount={3}
+        onCreateAnnotationCollection={onCreateAnnotationCollection}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add page to collection' }));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Create a new Collection containing all of the annotations on this page',
+      })
+    );
+
+    expect(onTogglePageCollection).toHaveBeenCalledTimes(1);
+    expect(onCreateAnnotationCollection).toHaveBeenCalledTimes(1);
+  });
+});

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Eye, Wrench, SlidersHorizontal } from 'lucide-react';
+import { Eye, Plus, Star, Wrench, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/ui/segmented';
 import {
@@ -12,9 +12,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-// imageToolsControl renders Radix Tooltips that need a provider ancestor.
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatAllographLabel } from '@/lib/allograph-labels';
+import { cn } from '@/lib/utils';
 import type { Allograph } from '@/types/allographs';
 import type { ViewerAnnotationMode } from '@/types/annotation-viewer';
 import type { HandType } from '@/types/hands';
@@ -31,6 +31,10 @@ interface AnnotationHeaderProps {
   isSettingsActive?: boolean;
   showSettingsButton?: boolean;
   imageToolsControl?: React.ReactNode;
+  isPageInCollection?: boolean;
+  onTogglePageCollection?: () => void;
+  annotationCollectionCount?: number;
+  onCreateAnnotationCollection?: () => void;
   // View mode (Allograph / Text / Both).
   viewMode?: ViewerAnnotationMode;
   onSetViewMode?: (mode: ViewerAnnotationMode) => void;
@@ -61,6 +65,10 @@ export function AnnotationHeader({
   isSettingsActive = false,
   showSettingsButton = true,
   imageToolsControl,
+  isPageInCollection = false,
+  onTogglePageCollection,
+  annotationCollectionCount = 0,
+  onCreateAnnotationCollection,
   viewMode = 'allograph',
   onSetViewMode,
   hasTexts = false,
@@ -77,6 +85,11 @@ export function AnnotationHeader({
 }: AnnotationHeaderProps) {
   const singleHand = hands.length === 1 ? hands[0] : null;
   const showAllographControls = viewMode !== 'text';
+  const pageCollectionLabel = isPageInCollection
+    ? 'Remove page from collection'
+    : 'Add page to collection';
+  const canCreateAnnotationCollection =
+    Boolean(onCreateAnnotationCollection) && annotationCollectionCount > 0;
 
   return (
     <TooltipProvider>
@@ -227,6 +240,48 @@ export function AnnotationHeader({
           )}
 
           {imageToolsControl}
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={onTogglePageCollection}
+                disabled={!onTogglePageCollection}
+                aria-label={pageCollectionLabel}
+                aria-pressed={isPageInCollection}
+                title={pageCollectionLabel}
+                type="button"
+              >
+                <Star
+                  className={cn('h-4 w-4', isPageInCollection && 'fill-amber-400 text-amber-400')}
+                />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{pageCollectionLabel}</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="relative h-8 w-8"
+                onClick={onCreateAnnotationCollection}
+                disabled={!canCreateAnnotationCollection}
+                aria-label="Create a new Collection containing all of the annotations on this page"
+                title="Create a new Collection containing all of the annotations on this page"
+                type="button"
+              >
+                <Star className="h-4 w-4" />
+                <Plus className="absolute -right-1 -top-1 h-3 w-3" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Create a new Collection containing all of the annotations on this page
+            </TooltipContent>
+          </Tooltip>
 
           {showSettingsButton && (
             <Button

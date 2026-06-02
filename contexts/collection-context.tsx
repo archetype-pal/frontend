@@ -32,7 +32,7 @@ type CollectionContextType = {
   removeItem: (id: number, type: 'image' | 'graph') => void;
   isInCollection: (id: number, type: 'image' | 'graph') => boolean;
   clearCollection: () => void;
-  createCollection: (name: string) => boolean;
+  createCollection: (name: string, items?: CollectionItem[]) => boolean;
   switchCollection: (collectionId: string) => void;
   renameActiveCollection: (name: string) => boolean;
   duplicateActiveCollection: (name: string) => boolean;
@@ -114,14 +114,14 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const createCollection = React.useCallback(
-    (requestedName: string) => {
+    (requestedName: string, items: CollectionItem[] = []) => {
       if (!persistenceOptions.writeVersionedState) return false;
 
       const name = normalizeCollectionName(requestedName);
       if (!name || hasCollectionName(storageState, name)) return false;
 
       const id = createCollectionId();
-      setStorageState((prev) => addCollection(prev, { id, name }));
+      setStorageState((prev) => addCollection(prev, { id, name }, items));
       return true;
     },
     [persistenceOptions.writeVersionedState, storageState]

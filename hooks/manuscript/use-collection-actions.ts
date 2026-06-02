@@ -3,18 +3,43 @@
 import * as React from 'react';
 
 import { useCollection, type CollectionItem } from '@/contexts/collection-context';
+import { showActionNotification } from '@/components/ui/action-toast';
 import {
+  annotationCountLabel,
   buildAnnotationCollectionItem,
+  buildImageCollectionItem,
   type ViewerCollectionContext,
 } from '@/lib/manuscript-viewer-collection';
+import { MAX_COLLECTION_NAME_LENGTH, normalizeCollectionName } from '@/lib/collection-storage';
 import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
 import type { Manuscript } from '@/types/manuscript';
+import type { AnnotationEditorRecordMap } from '@/types/annotation-viewer';
 
 interface UseCollectionActionsArgs {
   manuscript: Manuscript | null;
   manuscriptImage: ManuscriptImageType | null;
   imageHeight: number;
+  editorRecords: AnnotationEditorRecordMap;
+}
+
+function getAvailableCollectionName(
+  collections: Array<{ name: string }>,
+  requestedName: string
+): string {
+  const baseName = normalizeCollectionName(requestedName);
+  const existingNames = new Set(
+    collections.map((collection) => collection.name.toLocaleLowerCase())
+  );
+  if (!existingNames.has(baseName.toLocaleLowerCase())) return baseName;
+
+  let suffixNumber = 2;
+  while (true) {
+    const suffix = ` (${suffixNumber})`;
+    const candidate = `${baseName.slice(0, MAX_COLLECTION_NAME_LENGTH - suffix.length).trimEnd()}${suffix}`;
+    if (!existingNames.has(candidate.toLocaleLowerCase())) return candidate;
+    suffixNumber += 1;
+  }
 }
 
 /**
@@ -27,8 +52,16 @@ export function useCollectionActions({
   manuscript,
   manuscriptImage,
   imageHeight,
+  editorRecords,
 }: UseCollectionActionsArgs) {
-  const { addItem, removeItem, isInCollection } = useCollection();
+  const {
+    addItem,
+    removeItem,
+    isInCollection,
+    collections,
+    canManageCollections,
+    createCollection,
+  } = useCollection();
 
   const collectionContext = React.useMemo<ViewerCollectionContext | null>(() => {
     if (!manuscriptImage) return null;
@@ -45,6 +78,28 @@ export function useCollectionActions({
     };
   }, [manuscript, manuscriptImage]);
 
+  const pageCollectionItem = React.useMemo(
+    () => (collectionContext ? buildImageCollectionItem(collectionContext) : null),
+    [collectionContext]
+  );
+
+  const isPageInCollection = pageCollectionItem
+    ? isInCollection(pageCollectionItem.id, 'image')
+    : false;
+
+  const pageAnnotationCollectionItems = React.useMemo(() => {
+    if (!collectionContext || !imageHeight) return [];
+
+    return Object.values(editorRecords)
+      .filter((record) => record.source === 'persisted' && !record.isDeleted)
+      .map((record) =>
+        buildAnnotationCollectionItem(record.annotation, imageHeight, collectionContext)
+      )
+      .filter((item): item is CollectionItem => item !== null);
+  }, [collectionContext, editorRecords, imageHeight]);
+  const canCreateAnnotationCollection =
+    canManageCollections && pageAnnotationCollectionItems.length > 0;
+
   // Closes over collectionContext + imageHeight so AnnotationPopupLayer
   // doesn't need to know either type. Returns null when collection items
   // can't be constructed (no context, no image height, or the annotation
@@ -56,6 +111,43 @@ export function useCollectionActions({
     },
     [collectionContext, imageHeight]
   );
+
+  const handleTogglePageCollection = React.useCallback(() => {
+    if (!pageCollectionItem) return;
+
+    if (isInCollection(pageCollectionItem.id, 'image')) {
+      removeItem(pageCollectionItem.id, 'image');
+      return;
+    }
+
+    addItem(pageCollectionItem);
+  }, [addItem, isInCollection, pageCollectionItem, removeItem]);
+
+  const handleCreateAnnotationCollection = React.useCallback(() => {
+    if (!canManageCollections || !collectionContext || pageAnnotationCollectionItems.length === 0) {
+      return;
+    }
+
+    const pageLabel =
+      [collectionContext.shelfmark, collectionContext.locus].filter(Boolean).join(' ') ||
+      `Page ${collectionContext.itemImageId}`;
+    const collectionName = getAvailableCollectionName(collections, `${pageLabel} annotations`);
+    if (!createCollection(collectionName, pageAnnotationCollectionItems)) return;
+
+    showActionNotification({
+      kind: 'saved',
+      title: 'Collection created',
+      description: `Created ${collectionName} with ${annotationCountLabel(
+        pageAnnotationCollectionItems.length
+      )} from this page.`,
+    });
+  }, [
+    canManageCollections,
+    collectionContext,
+    collections,
+    createCollection,
+    pageAnnotationCollectionItems,
+  ]);
 
   const handleToggleAnnotationCollection = React.useCallback(
     (annotation: A9sAnnotation) => {
@@ -76,7 +168,13 @@ export function useCollectionActions({
 
   return {
     isInCollection,
+    pageCollectionItem,
+    isPageInCollection,
+    pageAnnotationCollectionItems,
+    canCreateAnnotationCollection,
     getCollectionItemFor,
+    handleTogglePageCollection,
+    handleCreateAnnotationCollection,
     handleToggleAnnotationCollection,
   };
 }

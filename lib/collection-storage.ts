@@ -249,7 +249,8 @@ export function hasCollectionName(
 
 export function addCollection(
   state: CollectionStorageState,
-  collection: Pick<NamedCollection, 'id' | 'name'>
+  collection: Pick<NamedCollection, 'id' | 'name'>,
+  items: CollectionItem[] = []
 ): CollectionStorageState {
   const name = normalizeCollectionName(collection.name);
   if (
@@ -263,7 +264,7 @@ export function addCollection(
   return {
     ...state,
     activeCollectionId: collection.id,
-    collections: [...state.collections, { id: collection.id, name, items: [] }],
+    collections: [...state.collections, { id: collection.id, name, items: sanitizeItems(items) }],
   };
 }
 
