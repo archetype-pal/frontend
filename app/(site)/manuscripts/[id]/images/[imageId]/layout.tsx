@@ -64,7 +64,7 @@ export default async function ManuscriptImageLayout({ children, params }: Layout
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href={`/manuscripts/${id}`}>{label}</Link>
+                <Link href={`/manuscripts/${id}`}>{label}: Item overview</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             {locus ? (
@@ -78,10 +78,7 @@ export default async function ManuscriptImageLayout({ children, params }: Layout
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-accent">
-            Manuscript image
-          </span>
+        <div className="mt-3">
           <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
             {label}
             {locus ? (
