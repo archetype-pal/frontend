@@ -223,6 +223,27 @@ export function normalizeCollectionName(name: string): string {
   return name.trim().replace(/\s+/g, ' ').slice(0, MAX_COLLECTION_NAME_LENGTH);
 }
 
+export function getAvailableCollectionName(
+  collections: Array<Pick<NamedCollection, 'name'>>,
+  requestedName: string
+): string {
+  const baseName = normalizeCollectionName(requestedName);
+  if (!baseName) return '';
+
+  const existingNames = new Set(
+    collections.map((collection) => collection.name.toLocaleLowerCase())
+  );
+  if (!existingNames.has(baseName.toLocaleLowerCase())) return baseName;
+
+  let suffixNumber = 2;
+  while (true) {
+    const suffix = ` (${suffixNumber})`;
+    const candidate = `${baseName.slice(0, MAX_COLLECTION_NAME_LENGTH - suffix.length).trimEnd()}${suffix}`;
+    if (!existingNames.has(candidate.toLocaleLowerCase())) return candidate;
+    suffixNumber += 1;
+  }
+}
+
 export function createCollectionId(randomSource: Crypto = crypto): string {
   if (typeof randomSource.randomUUID === 'function') {
     return randomSource.randomUUID();

@@ -5,6 +5,7 @@ import { CollectionProvider, useCollection, type CollectionItem } from './collec
 import {
   COLLECTION_STORAGE_KEY,
   COLLECTION_STORAGE_VERSION,
+  getAvailableCollectionName,
   LEGACY_COLLECTION_STORAGE_KEY,
 } from '@/lib/collection-storage';
 
@@ -232,5 +233,16 @@ describe('CollectionProvider', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete active collection' }));
     expect(screen.getByTestId('collection-count').textContent).toBe('1');
     expect(screen.getByTestId('collection-names').textContent).toBe('Archive');
+  });
+});
+
+describe('getAvailableCollectionName', () => {
+  it('adds a numeric suffix without exceeding the collection name limit', () => {
+    const existing = [{ name: 'Research' }, { name: 'Research (2)' }];
+
+    expect(getAvailableCollectionName(existing, 'Research')).toBe('Research (3)');
+    expect(getAvailableCollectionName([{ name: 'Collection' }], ' Collection ')).toBe(
+      'Collection (2)'
+    );
   });
 });

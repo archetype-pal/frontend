@@ -10,7 +10,7 @@ import {
   buildImageCollectionItem,
   type ViewerCollectionContext,
 } from '@/lib/manuscript-viewer-collection';
-import { MAX_COLLECTION_NAME_LENGTH, normalizeCollectionName } from '@/lib/collection-storage';
+import { getAvailableCollectionName } from '@/lib/collection-storage';
 import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
 import type { Manuscript } from '@/types/manuscript';
@@ -21,25 +21,6 @@ interface UseCollectionActionsArgs {
   manuscriptImage: ManuscriptImageType | null;
   imageHeight: number;
   editorRecords: AnnotationEditorRecordMap;
-}
-
-function getAvailableCollectionName(
-  collections: Array<{ name: string }>,
-  requestedName: string
-): string {
-  const baseName = normalizeCollectionName(requestedName);
-  const existingNames = new Set(
-    collections.map((collection) => collection.name.toLocaleLowerCase())
-  );
-  if (!existingNames.has(baseName.toLocaleLowerCase())) return baseName;
-
-  let suffixNumber = 2;
-  while (true) {
-    const suffix = ` (${suffixNumber})`;
-    const candidate = `${baseName.slice(0, MAX_COLLECTION_NAME_LENGTH - suffix.length).trimEnd()}${suffix}`;
-    if (!existingNames.has(candidate.toLocaleLowerCase())) return candidate;
-    suffixNumber += 1;
-  }
 }
 
 /**

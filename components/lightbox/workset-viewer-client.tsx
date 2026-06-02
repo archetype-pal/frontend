@@ -2,10 +2,13 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, FolderPlus } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { LightboxViewer } from '@/components/lightbox/lightbox-viewer';
+import { useCollection } from '@/contexts/collection-context';
+import { getAvailableCollectionName } from '@/lib/collection-storage';
 import { useLightboxStore } from '@/stores/lightbox-store';
 import type { WorksetDetail } from '@/types/workset';
 
@@ -17,7 +20,9 @@ import type { WorksetDetail } from '@/types/workset';
  */
 export function WorksetViewerClient({ workset }: { workset: WorksetDetail }) {
   const router = useRouter();
+  const { collections, canManageCollections, createCollection } = useCollection();
   const [ready, setReady] = React.useState(false);
+  const sharedCollection = workset.payload.collection;
 
   React.useEffect(() => {
     let cancelled = false;
@@ -43,6 +48,19 @@ export function WorksetViewerClient({ workset }: { workset: WorksetDetail }) {
     );
   };
 
+  const saveCollectionCopy = () => {
+    if (!sharedCollection || !canManageCollections) return;
+
+    const name = getAvailableCollectionName(collections, sharedCollection.name);
+    if (!name || !createCollection(name, sharedCollection.items)) {
+      toast.error('Could not save collection copy');
+      return;
+    }
+
+    toast.success(`Saved ${name} to your collections`);
+    router.push('/collection');
+  };
+
   const ownerName =
     [workset.owner.first_name, workset.owner.last_name].filter(Boolean).join(' ') ||
     workset.owner.username;
@@ -57,10 +75,24 @@ export function WorksetViewerClient({ workset }: { workset: WorksetDetail }) {
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{workset.description}</p>
           ) : null}
         </div>
-        <Button size="sm" onClick={openEditable}>
-          <ExternalLink className="mr-2 h-4 w-4" />
-          Open in Lightbox
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {sharedCollection ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={saveCollectionCopy}
+              disabled={!canManageCollections}
+            >
+              <FolderPlus className="mr-2 h-4 w-4" />
+              Save collection copy
+            </Button>
+          ) : null}
+          <Button size="sm" onClick={openEditable}>
+            <ExternalLink className="mr-2 h-4 w-4" />
+            Open in Lightbox
+          </Button>
+        </div>
       </div>
 
       <div className="h-[70vh] min-h-[480px] overflow-hidden rounded-lg border bg-secondary">

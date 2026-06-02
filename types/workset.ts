@@ -1,4 +1,5 @@
 import type { LightboxImage, LightboxWorkspace } from '@/lib/lightbox-db';
+import type { CollectionItem } from '@/lib/collection-storage';
 
 export type WorksetVisibility = 'Private' | 'Public';
 
@@ -11,6 +12,13 @@ export interface WorksetPayload {
   schema_version: number;
   workspaces: LightboxWorkspace[];
   images: LightboxImage[];
+  collection?: SharedCollectionSnapshot;
+}
+
+export interface SharedCollectionSnapshot {
+  schema_version: 1;
+  name: string;
+  items: CollectionItem[];
 }
 
 export interface WorksetOwner {

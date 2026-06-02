@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useCollection, type CollectionItem } from '@/contexts/collection-context';
 import { CollectionStar } from '@/components/collection/collection-star';
 import { CollectionManagerControls } from '@/components/collection/collection-manager-controls';
+import { ShareCollectionButton } from '@/components/collection/share-collection-button';
 import { Button } from '@/components/ui/button';
 import { Trash2, Star, ArrowUpDown } from 'lucide-react';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
@@ -251,6 +252,7 @@ function CollectionPageContent() {
             </p>
           </div>
           <div className="flex gap-2">
+            <ShareCollectionButton collection={activeCollection} />
             <OpenLightboxButton items={items} variant="outline" size="sm" />
             <Button
               variant={showClearConfirm ? 'destructive' : 'outline'}
