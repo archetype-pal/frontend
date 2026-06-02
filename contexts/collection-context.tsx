@@ -2,21 +2,17 @@
 
 import * as React from 'react';
 
-export type CollectionItem = {
-  id: number;
-  type: 'image' | 'graph';
-  item_part?: number | null;
-  item_image?: number | null;
-  image_iiif?: string;
-  coordinates?: string;
-  annotation_type?: string | null;
-  shelfmark?: string;
-  locus?: string;
-  repository_name?: string;
-  repository_city?: string;
-  date?: string;
-  [key: string]: unknown; // Allow additional properties
-};
+import {
+  createDefaultCollectionStorage,
+  getActiveCollection,
+  loadCollectionStorage,
+  saveCollectionStorage,
+  updateActiveCollectionItems,
+  type CollectionItem,
+  type CollectionPersistenceOptions,
+} from '@/lib/collection-storage';
+
+export type { CollectionItem } from '@/lib/collection-storage';
 
 type CollectionContextType = {
   items: CollectionItem[];
@@ -28,58 +24,61 @@ type CollectionContextType = {
 
 const CollectionContext = React.createContext<CollectionContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'archetype_collection';
-
-function loadFromStorage(): CollectionItem[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const parsed = stored ? JSON.parse(stored) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveToStorage(items: CollectionItem[]): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch {
-    // Ignore storage errors
-  }
-}
+const DEFAULT_PERSISTENCE_OPTIONS: CollectionPersistenceOptions = {
+  writeVersionedState: true,
+  writeLegacyItems: true,
+};
 
 export function CollectionProvider({ children }: { children: React.ReactNode }) {
-  // Always start with empty array to avoid hydration mismatch
-  const [items, setItems] = React.useState<CollectionItem[]>([]);
+  // Always start with an empty collection to avoid hydration mismatch.
+  const [storageState, setStorageState] = React.useState(createDefaultCollectionStorage);
+  const [persistenceOptions, setPersistenceOptions] = React.useState(DEFAULT_PERSISTENCE_OPTIONS);
   const [isHydrated, setIsHydrated] = React.useState(false);
+  const items = React.useMemo(() => getActiveCollection(storageState).items, [storageState]);
 
   // Load from localStorage only on client after mount
   React.useEffect(() => {
-    const loaded = loadFromStorage();
-    setItems(loaded);
-    setIsHydrated(true);
+    const loaded = loadCollectionStorage(localStorage);
+    let isCancelled = false;
+
+    queueMicrotask(() => {
+      if (isCancelled) return;
+      setStorageState(loaded.state);
+      setPersistenceOptions(loaded.persistenceOptions);
+      setIsHydrated(true);
+    });
+
+    return () => {
+      isCancelled = true;
+    };
   }, []);
 
-  // Sync with localStorage on mount and when items change (but only after hydration)
+  // Keep the new model and the rollback-compatible active-items mirror in sync.
   React.useEffect(() => {
     if (isHydrated) {
-      saveToStorage(items);
+      saveCollectionStorage(localStorage, storageState, persistenceOptions);
     }
-  }, [items, isHydrated]);
+  }, [storageState, persistenceOptions, isHydrated]);
 
   const addItem = React.useCallback((item: CollectionItem) => {
-    setItems((prev) => {
-      // Check if item already exists
-      const exists = prev.some((i) => i.id === item.id && i.type === item.type);
-      if (exists) return prev;
-      return [...prev, item];
-    });
+    setStorageState((prev) =>
+      updateActiveCollectionItems(prev, (items) => {
+        // Check if item already exists
+        const exists = items.some(
+          (current) => current.id === item.id && current.type === item.type
+        );
+        if (exists) return items;
+        return [...items, item];
+      })
+    );
   }, []);
 
   const removeItem = React.useCallback((id: number, type: 'image' | 'graph') => {
-    setItems((prev) => prev.filter((i) => !(i.id === id && i.type === type)));
+    setStorageState((prev) =>
+      updateActiveCollectionItems(prev, (items) =>
+        items.filter((item) => !(item.id === id && item.type === type))
+      )
+    );
   }, []);
 
   const collectionSet = React.useMemo(
@@ -93,7 +92,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   );
 
   const clearCollection = React.useCallback(() => {
-    setItems([]);
+    setStorageState((prev) => updateActiveCollectionItems(prev, () => []));
   }, []);
 
   const value = React.useMemo(

@@ -2,6 +2,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CollectionProvider, useCollection, type CollectionItem } from './collection-context';
+import {
+  COLLECTION_STORAGE_KEY,
+  COLLECTION_STORAGE_VERSION,
+  LEGACY_COLLECTION_STORAGE_KEY,
+} from '@/lib/collection-storage';
 
 const editorialItem: CollectionItem = {
   id: 42,
@@ -66,22 +71,67 @@ describe('CollectionProvider', () => {
   });
 
   it('hydrates editorial annotation items from storage', async () => {
-    localStorage.setItem('archetype_collection', JSON.stringify([editorialItem]));
+    localStorage.setItem(LEGACY_COLLECTION_STORAGE_KEY, JSON.stringify([editorialItem]));
 
     renderHarness();
 
     await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
     expect(screen.getByTestId('is-editorial-collected').textContent).toBe('true');
+    expect(JSON.parse(localStorage.getItem(COLLECTION_STORAGE_KEY) ?? '{}')).toMatchObject({
+      version: COLLECTION_STORAGE_VERSION,
+      activeCollectionId: 'default',
+      collections: [{ id: 'default', name: 'Collection', items: [editorialItem] }],
+    });
   });
 
   it('allows adding editorial annotation items', async () => {
     renderHarness();
 
-    await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('0'));
+    await waitFor(() => expect(localStorage.getItem(COLLECTION_STORAGE_KEY)).not.toBeNull());
     fireEvent.click(screen.getByRole('button', { name: 'Add editorial annotation' }));
 
     await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
     expect(screen.getByTestId('is-editorial-collected').textContent).toBe('true');
-    expect(localStorage.getItem('archetype_collection')).toContain('"annotation_type":"editorial"');
+    expect(localStorage.getItem(LEGACY_COLLECTION_STORAGE_KEY)).toContain(
+      '"annotation_type":"editorial"'
+    );
+    expect(localStorage.getItem(COLLECTION_STORAGE_KEY)).toContain('"annotation_type":"editorial"');
+  });
+
+  it('hydrates the active collection from versioned storage and mirrors its items', async () => {
+    localStorage.setItem(
+      COLLECTION_STORAGE_KEY,
+      JSON.stringify({
+        version: COLLECTION_STORAGE_VERSION,
+        activeCollectionId: 'research',
+        collections: [
+          { id: 'default', name: 'Collection', items: [] },
+          { id: 'research', name: 'Research', items: [editorialItem] },
+        ],
+      })
+    );
+
+    renderHarness();
+
+    await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
+    expect(screen.getByTestId('is-editorial-collected').textContent).toBe('true');
+    expect(JSON.parse(localStorage.getItem(LEGACY_COLLECTION_STORAGE_KEY) ?? '[]')).toEqual([
+      editorialItem,
+    ]);
+  });
+
+  it('does not overwrite a storage version it does not understand', async () => {
+    const futureState = JSON.stringify({
+      version: COLLECTION_STORAGE_VERSION + 1,
+      activeCollectionId: 'future',
+      collections: [{ id: 'future', name: 'Future', items: [] }],
+    });
+    localStorage.setItem(COLLECTION_STORAGE_KEY, futureState);
+    localStorage.setItem(LEGACY_COLLECTION_STORAGE_KEY, JSON.stringify([editorialItem]));
+
+    renderHarness();
+
+    await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
+    expect(localStorage.getItem(COLLECTION_STORAGE_KEY)).toBe(futureState);
   });
 });
