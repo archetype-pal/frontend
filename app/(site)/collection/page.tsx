@@ -84,7 +84,7 @@ function CollectionGraphCard({
       <div className="relative aspect-4/3 bg-secondary overflow-hidden">
         {imageUrl ? (
           <>
-            <GraphDetailLink graph={item} className="block w-full h-full">
+            <GraphDetailLink graph={item} className="relative block h-full w-full">
               <Image
                 src={imageUrl}
                 alt={title}
@@ -233,7 +233,7 @@ function CollectionPageContent() {
         <div className="relative aspect-4/3 bg-secondary overflow-hidden">
           {imageUrl ? (
             <>
-              <Link href={getUrl(item)} className="block w-full h-full">
+              <Link href={getUrl(item)} className="relative block h-full w-full">
                 <Image
                   src={imageUrl}
                   alt={title}

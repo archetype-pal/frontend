@@ -137,7 +137,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
       <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
         {imageUrl ? (
           <>
-            {renderLink(image, 'block h-full w-full')}
+            {renderLink(image, 'relative block h-full w-full')}
             <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
           </>
         ) : (
@@ -226,7 +226,7 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
       <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
-        <Link href={detailUrl} className="block h-full w-full">
+        <Link href={detailUrl} className="relative block h-full w-full">
           {imageUrl ? (
             <IiifImage
               src={imageUrl}
