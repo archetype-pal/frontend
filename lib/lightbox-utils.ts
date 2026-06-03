@@ -1,31 +1,37 @@
 import type { GraphListItem, ImageListItem } from '@/types/search';
 import type { CollectionItem } from '@/contexts/collection-context';
 
-/**
- * Open lightbox with a single image
- */
-export function openLightboxWithImage(imageId: number) {
-  const url = `/lightbox?image=${imageId}`;
-  window.location.href = url;
+type LightboxSourceItem = ImageListItem | GraphListItem | CollectionItem;
+
+export function getLightboxItemType(item: LightboxSourceItem): 'image' | 'graph' {
+  if ('type' in item && (item.type === 'image' || item.type === 'graph')) return item.type;
+  if ('coordinates' in item) return 'graph';
+  return 'image';
 }
 
 /**
- * Open lightbox with a single graph
+ * Build a lightbox URL for a single image.
  */
-export function openLightboxWithGraph(graphId: number) {
-  const url = `/lightbox?graph=${graphId}`;
-  window.location.href = url;
+export function getLightboxImageUrl(imageId: number) {
+  return `/lightbox?image=${imageId}`;
 }
 
 /**
- * Open lightbox with selected items (images and/or graphs).
+ * Build a lightbox URL for a single graph.
  */
-export function openLightboxWithItems(items: (ImageListItem | GraphListItem | CollectionItem)[]) {
+export function getLightboxGraphUrl(graphId: number) {
+  return `/lightbox?graph=${graphId}`;
+}
+
+/**
+ * Build a lightbox URL for selected items (images and/or graphs).
+ */
+export function getLightboxItemsUrl(items: LightboxSourceItem[]) {
   const images: number[] = [];
   const graphs: number[] = [];
 
   items.forEach((item) => {
-    const type = 'type' in item ? item.type : 'image' in item ? 'image' : 'graph';
+    const type = getLightboxItemType(item);
     if (type === 'image') {
       images.push(item.id);
     } else {
@@ -41,6 +47,26 @@ export function openLightboxWithItems(items: (ImageListItem | GraphListItem | Co
     params.set('graphs', graphs.join(','));
   }
 
-  const url = `/lightbox?${params.toString()}`;
-  window.location.href = url;
+  return `/lightbox?${params.toString()}`;
+}
+
+/**
+ * Open lightbox with a single image.
+ */
+export function openLightboxWithImage(imageId: number) {
+  window.location.href = getLightboxImageUrl(imageId);
+}
+
+/**
+ * Open lightbox with a single graph.
+ */
+export function openLightboxWithGraph(graphId: number) {
+  window.location.href = getLightboxGraphUrl(graphId);
+}
+
+/**
+ * Open lightbox with selected items (images and/or graphs).
+ */
+export function openLightboxWithItems(items: LightboxSourceItem[]) {
+  window.location.href = getLightboxItemsUrl(items);
 }

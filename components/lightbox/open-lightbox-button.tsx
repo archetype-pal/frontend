@@ -1,12 +1,14 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { GalleryHorizontal, ExternalLink } from 'lucide-react';
 import {
-  openLightboxWithImage,
-  openLightboxWithGraph,
-  openLightboxWithItems,
+  getLightboxGraphUrl,
+  getLightboxImageUrl,
+  getLightboxItemType,
+  getLightboxItemsUrl,
 } from '@/lib/lightbox-utils';
 import type { GraphListItem, ImageListItem } from '@/types/search';
 import type { CollectionItem } from '@/contexts/collection-context';
@@ -28,17 +30,19 @@ export function OpenLightboxButton({
   className,
   label = 'Open in Lightbox',
 }: OpenLightboxButtonProps) {
+  const router = useRouter();
+
   const handleClick = () => {
+    let url: string | null = null;
+
     if (items && items.length > 0) {
-      openLightboxWithItems(items);
+      url = getLightboxItemsUrl(items);
     } else if (item) {
-      const type = 'type' in item ? item.type : 'image' in item ? 'image' : 'graph';
-      if (type === 'image') {
-        openLightboxWithImage(item.id);
-      } else {
-        openLightboxWithGraph(item.id);
-      }
+      const type = getLightboxItemType(item);
+      url = type === 'image' ? getLightboxImageUrl(item.id) : getLightboxGraphUrl(item.id);
     }
+
+    if (url) router.push(url);
   };
 
   if (!item && (!items || items.length === 0)) {

@@ -116,15 +116,7 @@ function CollectionGraphCard({
             aria-label={`Select annotation ${title}`}
           />
         </div>
-        <div className="absolute top-2 right-2 z-10 flex gap-1">
-          <OpenLightboxButton
-            item={item}
-            variant="ghost"
-            size="icon"
-            className="bg-white/80 hover:bg-white"
-          />
-          <CollectionStar itemId={item.id} itemType="graph" item={item} />
-        </div>
+        <CollectionStar itemId={item.id} itemType="graph" item={item} />
       </div>
       <div className="p-3 text-center space-y-1 bg-white">
         <div className="font-medium text-foreground truncate text-xs sm:text-sm" title={title}>
@@ -265,15 +257,7 @@ function CollectionPageContent() {
               aria-label={`Select image ${title}`}
             />
           </div>
-          <div className="absolute top-2 right-2 z-10 flex gap-1">
-            <OpenLightboxButton
-              item={item}
-              variant="ghost"
-              size="icon"
-              className="bg-white/80 hover:bg-white"
-            />
-            <CollectionStar itemId={item.id} itemType="image" item={item} />
-          </div>
+          <CollectionStar itemId={item.id} itemType="image" item={item} />
         </div>
         <div className="p-3 text-center space-y-1 bg-white">
           <div className="font-medium text-foreground truncate text-xs sm:text-sm" title={title}>
