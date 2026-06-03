@@ -4,7 +4,12 @@ import * as React from 'react';
 import { Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCollection, type CollectionItem } from '@/contexts/collection-context';
+import { useSearchParams } from 'next/navigation';
+import {
+  useCollection,
+  type CollectionItem,
+  type NamedCollection,
+} from '@/contexts/collection-context';
 import { CollectionStar } from '@/components/collection/collection-star';
 import { CollectionManagerControls } from '@/components/collection/collection-manager-controls';
 import { CollectionSelectionToolbar } from '@/components/collection/collection-selection-toolbar';
@@ -29,6 +34,7 @@ import { getImageDetailUrl as buildImageDetailUrl } from '@/lib/media-url';
 import { cn } from '@/lib/utils';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
 import { getCollectionAllographLabel } from '@/lib/collection-display';
+import { getPubliclyShareableCollectionItems } from '@/lib/collection-workset';
 import {
   groupCollectionAnnotations,
   type CollectionAnnotationGroupBy,
@@ -38,6 +44,13 @@ import {
   type FilterType,
   type SortOption,
 } from '@/hooks/collection/use-collection-view-state';
+import { getWorkset } from '@/services/worksets';
+
+type SharedCollectionState =
+  | { status: 'idle' }
+  | { status: 'ready'; shareId: string; collection: NamedCollection }
+  | { status: 'missing'; shareId: string }
+  | { status: 'error'; shareId: string };
 
 /** Sync thumbnail URL for image items (no coordinates). */
 function getImageItemThumbnailUrl(item: CollectionItem): string | null {
@@ -69,11 +82,13 @@ function CollectionGraphCard({
   title,
   isSelected,
   onToggleSelection,
+  readOnly,
 }: {
   item: CollectionItem;
   title: string;
   isSelected: boolean;
   onToggleSelection: (item: CollectionItem) => void;
+  readOnly: boolean;
 }) {
   const infoUrl = (item.image_iiif || '').trim();
   const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined);
@@ -114,14 +129,18 @@ function CollectionGraphCard({
             Editorial
           </div>
         )}
-        <div className="absolute bottom-2 left-2 z-20 rounded bg-white/90 p-1 shadow-sm">
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={() => onToggleSelection(item)}
-            aria-label={`Select annotation ${title}`}
-          />
-        </div>
-        <CollectionStar itemId={item.id} itemType="graph" item={item} />
+        {!readOnly && (
+          <>
+            <div className="absolute bottom-2 left-2 z-20 rounded bg-white/90 p-1 shadow-sm">
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => onToggleSelection(item)}
+                aria-label={`Select annotation ${title}`}
+              />
+            </div>
+            <CollectionStar itemId={item.id} itemType="graph" item={item} />
+          </>
+        )}
       </div>
       <div className="p-3 text-center space-y-1 bg-white">
         <div className="font-medium text-foreground truncate text-xs sm:text-sm" title={title}>
@@ -133,7 +152,59 @@ function CollectionGraphCard({
 }
 
 function CollectionPageContent() {
-  const { items, activeCollection, clearCollection, removeItems } = useCollection();
+  const searchParams = useSearchParams();
+  const shareId = searchParams.get('share')?.trim() ?? '';
+  const {
+    items: localItems,
+    activeCollection: localActiveCollection,
+    clearCollection,
+    removeItems,
+  } = useCollection();
+  const [sharedState, setSharedState] = React.useState<SharedCollectionState>({ status: 'idle' });
+  const isSharedView = shareId.length > 0;
+  const sharedStateMatches = 'shareId' in sharedState && sharedState.shareId === shareId;
+  const sharedCollection =
+    sharedState.status === 'ready' && sharedStateMatches ? sharedState.collection : null;
+  const activeCollection = sharedCollection ?? localActiveCollection;
+  const items = sharedCollection?.items ?? localItems;
+  const clearDisplayedCollection = React.useCallback(() => {
+    if (!isSharedView) clearCollection();
+  }, [clearCollection, isSharedView]);
+
+  React.useEffect(() => {
+    if (!shareId) return;
+
+    let cancelled = false;
+
+    getWorkset(shareId)
+      .then((workset) => {
+        if (cancelled) return;
+
+        const snapshot = workset?.payload.collection;
+        if (!workset || !snapshot) {
+          setSharedState({ status: 'missing', shareId });
+          return;
+        }
+
+        setSharedState({
+          status: 'ready',
+          shareId,
+          collection: {
+            id: `shared-${workset.public_id}`,
+            name: snapshot.name || workset.title,
+            items: getPubliclyShareableCollectionItems(snapshot.items),
+          },
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setSharedState({ status: 'error', shareId });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shareId]);
+
   const {
     filter,
     setFilter,
@@ -146,7 +217,7 @@ function CollectionPageContent() {
     showClearConfirm,
     filteredItems,
     handleClear,
-  } = useCollectionViewState(items, clearCollection);
+  } = useCollectionViewState(items, clearDisplayedCollection);
   const {
     selectedItems,
     allVisibleItemsSelected,
@@ -171,35 +242,75 @@ function CollectionPageContent() {
 
   const getUrl = (item: CollectionItem) => (item.type === 'image' ? getImageDetailUrl(item) : '#');
   const handleRemoveSelectedItems = () => {
+    if (isSharedView) return;
     removeItems(selectedItems);
     clearSelection();
   };
 
+  if (isSharedView && !sharedStateMatches) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center text-muted-foreground">
+        Loading shared collection...
+      </div>
+    );
+  }
+
+  if (isSharedView && sharedStateMatches && sharedState.status === 'missing') {
+    return (
+      <div className="container mx-auto max-w-2xl px-4 py-16 text-center">
+        <h1 className="mb-3 text-3xl font-bold text-foreground">Shared collection not found</h1>
+        <p className="mb-6 text-muted-foreground">
+          This public link is unavailable or no longer contains a collection snapshot.
+        </p>
+        <Button asChild>
+          <Link href="/collection">Open your collection</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (isSharedView && sharedStateMatches && sharedState.status === 'error') {
+    return (
+      <div className="container mx-auto max-w-2xl px-4 py-16 text-center">
+        <h1 className="mb-3 text-3xl font-bold text-foreground">Could not load collection</h1>
+        <p className="mb-6 text-muted-foreground">
+          The public collection link could not be loaded. Please try again.
+        </p>
+        <Button asChild>
+          <Link href="/collection">Open your collection</Link>
+        </Button>
+      </div>
+    );
+  }
+
   if (items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16 sm:py-20">
-        <CollectionManagerControls />
+        {!isSharedView && <CollectionManagerControls />}
         <div className="max-w-2xl mx-auto text-center">
           <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-linear-to-br from-gray-50 to-gray-100 mb-6 shadow-sm">
             <Star className="h-12 w-12 text-muted-foreground" />
           </div>
           <h1 className="text-4xl font-bold mb-4 text-foreground">{activeCollection.name}</h1>
           <p className="text-muted-foreground text-lg mb-10 leading-relaxed max-w-md mx-auto">
-            Your collection is empty. Start adding images or annotations from search results and
-            manuscript viewers by clicking the star icon.
+            {isSharedView
+              ? 'This shared collection has no public items.'
+              : 'Your collection is empty. Start adding images or annotations from search results and manuscript viewers by clicking the star icon.'}
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/search/images">
-              <Button size="lg" className="w-full sm:w-auto">
-                Browse Images
-              </Button>
-            </Link>
-            <Link href="/search/graphs">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                Browse Annotations
-              </Button>
-            </Link>
-          </div>
+          {!isSharedView && (
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/search/images">
+                <Button size="lg" className="w-full sm:w-auto">
+                  Browse Images
+                </Button>
+              </Link>
+              <Link href="/search/graphs">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                  Browse Annotations
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -218,6 +329,7 @@ function CollectionPageContent() {
           title={title}
           isSelected={isSelected}
           onToggleSelection={toggleItem}
+          readOnly={isSharedView}
         />
       );
     }
@@ -253,14 +365,18 @@ function CollectionPageContent() {
               No Image
             </div>
           )}
-          <div className="absolute bottom-2 left-2 z-20 rounded bg-white/90 p-1 shadow-sm">
-            <Checkbox
-              checked={isSelected}
-              onCheckedChange={() => toggleItem(item)}
-              aria-label={`Select image ${title}`}
-            />
-          </div>
-          <CollectionStar itemId={item.id} itemType="image" item={item} />
+          {!isSharedView && (
+            <>
+              <div className="absolute bottom-2 left-2 z-20 rounded bg-white/90 p-1 shadow-sm">
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => toggleItem(item)}
+                  aria-label={`Select image ${title}`}
+                />
+              </div>
+              <CollectionStar itemId={item.id} itemType="image" item={item} />
+            </>
+          )}
         </div>
         <div className="p-3 text-center space-y-1 bg-white">
           <div className="font-medium text-foreground truncate text-xs sm:text-sm" title={title}>
@@ -330,7 +446,7 @@ function CollectionPageContent() {
 
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8 max-w-7xl">
-      <CollectionManagerControls />
+      {!isSharedView && <CollectionManagerControls />}
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
@@ -338,26 +454,32 @@ function CollectionPageContent() {
               {activeCollection.name}
             </h1>
             <p className="text-muted-foreground text-sm sm:text-base">
-              {items.length} {items.length === 1 ? 'item' : 'items'} saved
+              {isSharedView ? 'Public shared collection · ' : ''}
+              {items.length} {items.length === 1 ? 'item' : 'items'}
+              {!isSharedView ? ' saved' : ''}
             </p>
           </div>
           <div className="flex gap-2">
-            <ShareCollectionButton collection={activeCollection} />
+            {!isSharedView && <ShareCollectionButton collection={activeCollection} />}
             <PrintCollectionButton collection={activeCollection} />
-            <OpenLightboxButton items={items} variant="outline" size="sm" />
-            <Button
-              variant={showClearConfirm ? 'destructive' : 'outline'}
-              size="sm"
-              onClick={handleClear}
-              className={
-                showClearConfirm
-                  ? 'w-full sm:w-auto'
-                  : 'text-destructive hover:text-destructive hover:bg-destructive/10 w-full sm:w-auto'
-              }
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              {showClearConfirm ? 'Click again to confirm' : 'Clear All'}
-            </Button>
+            {!isSharedView && (
+              <>
+                <OpenLightboxButton items={items} variant="outline" size="sm" />
+                <Button
+                  variant={showClearConfirm ? 'destructive' : 'outline'}
+                  size="sm"
+                  onClick={handleClear}
+                  className={
+                    showClearConfirm
+                      ? 'w-full sm:w-auto'
+                      : 'text-destructive hover:text-destructive hover:bg-destructive/10 w-full sm:w-auto'
+                  }
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {showClearConfirm ? 'Click again to confirm' : 'Clear All'}
+                </Button>
+              </>
+            )}
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
@@ -430,23 +552,26 @@ function CollectionPageContent() {
             </Button>
           </div>
         </div>
-        <div className="mt-4">
-          <CollectionSelectionToolbar
-            selectedItems={selectedItems}
-            visibleItemCount={filteredItems.length}
-            allVisibleItemsSelected={allVisibleItemsSelected}
-            someVisibleItemsSelected={someVisibleItemsSelected}
-            onToggleVisibleItems={toggleVisibleItems}
-            onClearSelection={clearSelection}
-            onRemoveSelectedItems={handleRemoveSelectedItems}
-          />
-        </div>
+        {!isSharedView && (
+          <div className="mt-4">
+            <CollectionSelectionToolbar
+              selectedItems={selectedItems}
+              visibleItemCount={filteredItems.length}
+              allVisibleItemsSelected={allVisibleItemsSelected}
+              someVisibleItemsSelected={someVisibleItemsSelected}
+              onToggleVisibleItems={toggleVisibleItems}
+              onClearSelection={clearSelection}
+              onRemoveSelectedItems={handleRemoveSelectedItems}
+            />
+          </div>
+        )}
       </div>
       {view === 'table' ? (
         <CollectionTableView
           items={filteredItems}
           isItemSelected={isItemSelected}
           onToggleSelection={toggleItem}
+          readOnly={isSharedView}
         />
       ) : (
         <div className="space-y-12">

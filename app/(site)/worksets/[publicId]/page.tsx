@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 import { WorksetViewerClient } from '@/components/lightbox/workset-viewer-client';
 import { env } from '@/lib/env';
@@ -34,5 +34,8 @@ export default async function WorksetRoute({ params }: { params: Promise<{ publi
   const workset = await getWorkset(publicId);
   // null = unknown id OR a Private workset viewed by a non-owner — both 404.
   if (!workset) notFound();
+  if (workset.payload.collection) {
+    redirect(`/collection?share=${encodeURIComponent(publicId)}`);
+  }
   return <WorksetViewerClient workset={workset} />;
 }

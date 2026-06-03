@@ -28,8 +28,21 @@ function readInitialAnnotationGroup(searchParams: URLSearchParams): CollectionAn
   return value === 'allograph' || value === 'hand' || value === 'manuscript' ? value : 'none';
 }
 
+function getCollectionStateSearchParams(searchParams: URLSearchParams): URLSearchParams {
+  const params = new URLSearchParams(searchParams.toString());
+  params.delete('filter');
+  params.delete('sort');
+  params.delete('view');
+  params.delete('group');
+  return params;
+}
+
 export function useCollectionViewState(items: CollectionItem[], clearCollection: () => void) {
   const searchParams = useSearchParams();
+  const baseSearchParams = React.useMemo(
+    () => getCollectionStateSearchParams(searchParams).toString(),
+    [searchParams]
+  );
   const [filter, setFilter] = React.useState<FilterType>(() => readInitialFilter(searchParams));
   const [sortBy, setSortBy] = React.useState<SortOption>(() => readInitialSort(searchParams));
   const [view, setView] = React.useState<CollectionView>(() => readInitialView(searchParams));
@@ -40,7 +53,7 @@ export function useCollectionViewState(items: CollectionItem[], clearCollection:
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   React.useEffect(() => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(baseSearchParams);
     if (filter !== 'all') params.set('filter', filter);
     if (sortBy !== 'added') params.set('sort', sortBy);
     if (view !== 'grid') params.set('view', view);
@@ -50,7 +63,7 @@ export function useCollectionViewState(items: CollectionItem[], clearCollection:
       '',
       params.toString() ? `/collection?${params}` : '/collection'
     );
-  }, [annotationGroup, filter, sortBy, view]);
+  }, [annotationGroup, baseSearchParams, filter, sortBy, view]);
 
   React.useEffect(() => {
     if (items.length !== 0 || !showClearConfirm) return;

@@ -64,7 +64,7 @@ export function ShareCollectionButton({ collection }: { collection: NamedCollect
         visibility: 'Public',
         payload,
       });
-      const url = `${env.siteUrl}/worksets/${workset.public_id}`;
+      const url = `${env.siteUrl}/collection?share=${encodeURIComponent(workset.public_id)}`;
       setShareUrl(url);
       await copyShareUrl(url);
     } catch (error) {

@@ -182,10 +182,12 @@ export function CollectionTableView({
   items,
   isItemSelected,
   onToggleSelection,
+  readOnly = false,
 }: {
   items: CollectionItem[];
   isItemSelected: (item: Pick<CollectionItem, 'id' | 'type'>) => boolean;
   onToggleSelection: (item: Pick<CollectionItem, 'id' | 'type'>) => void;
+  readOnly?: boolean;
 }) {
   if (items.length === 0) {
     return (
@@ -217,9 +219,11 @@ export function CollectionTableView({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-10">
-                    <span className="sr-only">Selection</span>
-                  </TableHead>
+                  {!readOnly && (
+                    <TableHead className="w-10">
+                      <span className="sr-only">Selection</span>
+                    </TableHead>
+                  )}
                   <TableHead className="w-[112px]">Image</TableHead>
                   <TableHead>Manuscript</TableHead>
                   {section.showAnnotationDetails && (
@@ -228,9 +232,11 @@ export function CollectionTableView({
                       <TableHead className="hidden lg:table-cell">Hand</TableHead>
                     </>
                   )}
-                  <TableHead className="w-14">
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
+                  {!readOnly && (
+                    <TableHead className="w-14">
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -243,13 +249,15 @@ export function CollectionTableView({
                       key={`${item.type}-${item.id}`}
                       data-state={selected ? 'selected' : undefined}
                     >
-                      <TableCell>
-                        <Checkbox
-                          checked={selected}
-                          onCheckedChange={() => onToggleSelection(item)}
-                          aria-label={`Select ${getSelectionLabel(item)}`}
-                        />
-                      </TableCell>
+                      {!readOnly && (
+                        <TableCell>
+                          <Checkbox
+                            checked={selected}
+                            onCheckedChange={() => onToggleSelection(item)}
+                            aria-label={`Select ${getSelectionLabel(item)}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell>
                         <CollectionThumbnail item={item} label={manuscriptLabel} />
                       </TableCell>
@@ -273,14 +281,16 @@ export function CollectionTableView({
                           </TableCell>
                         </>
                       )}
-                      <TableCell>
-                        <OpenLightboxButton
-                          item={item}
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                        />
-                      </TableCell>
+                      {!readOnly && (
+                        <TableCell>
+                          <OpenLightboxButton
+                            item={item}
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                          />
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
