@@ -50,6 +50,10 @@ function getItemTitle(item: CollectionItem): string {
   return String(locus ?? item.shelfmark ?? 'Untitled');
 }
 
+function getAnnotationCardTitle(item: CollectionItem): string {
+  return item.allograph?.trim() || 'Unspecified allograph';
+}
+
 function getImageDetailUrl(item: CollectionItem): string {
   return buildImageDetailUrl(item) ?? '#';
 }
@@ -122,11 +126,6 @@ function CollectionGraphCard({
         <div className="font-medium text-foreground truncate text-xs sm:text-sm" title={title}>
           {title}
         </div>
-        {item.repository_name && (
-          <div className="text-xs text-muted-foreground truncate" title={item.repository_name}>
-            {item.repository_name}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -206,10 +205,11 @@ function CollectionPageContent() {
   }
 
   const renderCard = (item: CollectionItem, type: 'image' | 'graph') => {
-    const title = getItemTitle(item);
     const isSelected = isItemSelected(item);
 
     if (type === 'graph') {
+      const title = getAnnotationCardTitle(item);
+
       return (
         <CollectionGraphCard
           key={`graph-${item.id}`}
@@ -221,7 +221,9 @@ function CollectionPageContent() {
       );
     }
 
+    const title = getItemTitle(item);
     const imageUrl = getImageItemThumbnailUrl(item);
+
     return (
       <div
         key={`image-${item.id}`}
