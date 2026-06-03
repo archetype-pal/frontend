@@ -9,11 +9,12 @@ vi.mock('@/utils/iiif', () => ({
   }),
 }));
 
+import { getIiifImageUrl, getIiifImageUrlWithBounds } from '@/utils/iiif';
 import { buildCollectionPrintHtml } from './collection-print';
 import type { NamedCollection } from './collection-storage';
 
 describe('buildCollectionPrintHtml', () => {
-  it('builds a captioned print grid for page images and annotation crops', async () => {
+  it('builds a compact print table for page images and annotation crops', async () => {
     const collection: NamedCollection = {
       id: 'research',
       name: 'Research',
@@ -47,12 +48,34 @@ describe('buildCollectionPrintHtml', () => {
     expect(html).toContain('Models of Authority collection · 2 items');
     expect(html).toContain('https://example.test/page/page-print');
     expect(html).toContain('https://example.test/annotation/annotation-print');
+    expect(html).toContain('<table class="print-table">');
+    expect(html).toContain('<td class="thumb-cell">');
+    expect(html).toContain('<div class="item-title">BL Cotton Ch. xviii.2: face</div>');
+    expect(html).toContain(
+      '<div class="item-meta">Annotation <span aria-hidden="true">·</span> b, Caroline minuscule <span aria-hidden="true">·</span> Hand A</div>'
+    );
     expect(html).toContain('Images <span>1 item</span>');
     expect(html).toContain('Annotations <span>1 item</span>');
     expect(html).toContain('Page image · BL Cotton Ch. xviii.2: face');
     expect(html).toContain(
       'Annotation · BL Cotton Ch. xviii.2: face · b, Caroline minuscule · Hand A'
     );
+    expect(html).toContain('Array.from(document.images).map(waitForImage)');
+
+    const annotationCall = vi
+      .mocked(getIiifImageUrlWithBounds)
+      .mock.calls.find(([url]) => url === 'https://example.test/annotation');
+    expect(annotationCall?.[1]).toMatchObject({
+      coordinates: { x: 1, y: 2, w: 30, h: 15 },
+      thumbnail: true,
+      flipY: true,
+    });
+    expect(annotationCall?.[1]).not.toHaveProperty('maxSize');
+
+    const pageImageCall = vi
+      .mocked(getIiifImageUrl)
+      .mock.calls.find(([url]) => url === 'https://example.test/page');
+    expect(pageImageCall?.[1]).toMatchObject({ thumbnail: true });
   });
 
   it('escapes collection metadata and preserves items without an image', async () => {
