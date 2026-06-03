@@ -1,6 +1,8 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
@@ -15,37 +17,192 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import type { CollectionItem } from '@/contexts/collection-context';
+import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { getImageDetailUrl } from '@/lib/media-url';
+import { getIiifImageUrl } from '@/utils/iiif';
+
+type CollectionTableSectionType = 'image' | 'annotation' | 'editorial';
+
+type CollectionTableSection = {
+  key: CollectionTableSectionType;
+  title: string;
+  badge: string;
+  items: CollectionItem[];
+  showAnnotationDetails: boolean;
+};
+
+const REPOSITORY_SHELFMARK_SHORTHANDS: Record<string, string> = {
+  bl: 'BL',
+  'british library': 'BL',
+  'the british library': 'BL',
+  nrs: 'NRS',
+  'national records of scotland': 'NRS',
+  tna: 'TNA',
+  'national archives': 'TNA',
+  'the national archives': 'TNA',
+};
 
 function isEditorialAnnotation(item: CollectionItem): boolean {
   return item.type === 'graph' && item.annotation_type === 'editorial';
 }
 
-function getItemLabel(item: CollectionItem): string {
-  if (item.locus) return item.locus;
-  return item.type === 'image' ? `Image #${item.id}` : `Annotation #${item.id}`;
+function getDisplayShelfmark(item: CollectionItem): string {
+  const shelfmark = item.shelfmark?.trim();
+  if (!shelfmark) return '';
+
+  const repositoryName = item.repository_name?.trim().toLocaleLowerCase();
+  const shorthand = repositoryName ? REPOSITORY_SHELFMARK_SHORTHANDS[repositoryName] : undefined;
+  if (!shorthand) return shelfmark;
+
+  const lowerShelfmark = shelfmark.toLocaleLowerCase();
+  const lowerShorthand = shorthand.toLocaleLowerCase();
+  if (lowerShelfmark === lowerShorthand || lowerShelfmark.startsWith(`${lowerShorthand} `)) {
+    return shelfmark;
+  }
+
+  return `${shorthand} ${shelfmark}`;
 }
 
-function CollectionItemLink({ item }: { item: CollectionItem }) {
-  const label = getItemLabel(item);
-  const className = 'font-medium text-primary hover:underline';
+function getManuscriptLabel(item: CollectionItem): string {
+  const shelfmark = getDisplayShelfmark(item);
+  const locus = item.locus?.trim();
+
+  if (shelfmark && locus) return `${shelfmark}: ${locus}`;
+  if (shelfmark) return shelfmark;
+  if (locus) return locus;
+  return 'Untitled';
+}
+
+function getSelectionLabel(item: CollectionItem): string {
+  return `${item.type === 'image' ? 'image' : 'annotation'} ${getManuscriptLabel(item)}`;
+}
+
+function getImageThumbnailUrl(item: CollectionItem): string | null {
+  const infoUrl = item.image_iiif?.trim();
+  if (!infoUrl) return null;
+  return getIiifImageUrl(infoUrl, { thumbnail: true });
+}
+
+function CollectionItemLink({
+  item,
+  children,
+  className,
+}: {
+  item: CollectionItem;
+  children: ReactNode;
+  className?: string;
+}) {
+  const linkClassName = className ?? 'font-medium text-primary hover:underline';
 
   if (item.type === 'graph') {
     return (
-      <GraphDetailLink graph={item} className={className}>
-        {label}
+      <GraphDetailLink graph={item} className={linkClassName}>
+        {children}
       </GraphDetailLink>
     );
   }
 
   const href = getImageDetailUrl(item);
   return href ? (
-    <Link href={href} className={className}>
-      {label}
+    <Link href={href} className={linkClassName}>
+      {children}
     </Link>
   ) : (
-    <span className="font-medium">{label}</span>
+    <span className={linkClassName}>{children}</span>
   );
+}
+
+function ThumbnailFrame({
+  item,
+  label,
+  imageUrl,
+  fallback,
+}: {
+  item: CollectionItem;
+  label: string;
+  imageUrl: string | null;
+  fallback: string;
+}) {
+  return (
+    <div className="relative h-16 w-20 overflow-hidden rounded-md border border-border bg-secondary sm:h-20 sm:w-24">
+      <CollectionItemLink item={item} className="relative block h-full w-full">
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={label}
+            fill
+            className="object-contain transition-transform duration-300 hover:scale-105"
+            sizes="96px"
+            unoptimized
+          />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center px-2 text-center text-[11px] text-muted-foreground">
+            {fallback}
+          </span>
+        )}
+      </CollectionItemLink>
+    </div>
+  );
+}
+
+function CollectionImageThumbnail({ item, label }: { item: CollectionItem; label: string }) {
+  return (
+    <ThumbnailFrame
+      item={item}
+      label={label}
+      imageUrl={getImageThumbnailUrl(item)}
+      fallback="No image"
+    />
+  );
+}
+
+function CollectionGraphThumbnail({ item, label }: { item: CollectionItem; label: string }) {
+  const infoUrl = (item.image_iiif || '').trim();
+  const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined, 120);
+
+  return (
+    <ThumbnailFrame
+      item={item}
+      label={label}
+      imageUrl={imageUrl}
+      fallback={infoUrl ? '…' : 'No image'}
+    />
+  );
+}
+
+function CollectionThumbnail({ item, label }: { item: CollectionItem; label: string }) {
+  if (item.type === 'graph') return <CollectionGraphThumbnail item={item} label={label} />;
+  return <CollectionImageThumbnail item={item} label={label} />;
+}
+
+function getTableSections(items: CollectionItem[]): CollectionTableSection[] {
+  const images = items.filter((item) => item.type === 'image');
+  const annotations = items.filter((item) => item.type === 'graph' && !isEditorialAnnotation(item));
+  const editorialAnnotations = items.filter(isEditorialAnnotation);
+
+  return [
+    {
+      key: 'image',
+      title: 'Images',
+      badge: 'Image',
+      items: images,
+      showAnnotationDetails: false,
+    },
+    {
+      key: 'annotation',
+      title: 'Annotations',
+      badge: 'Annotation',
+      items: annotations,
+      showAnnotationDetails: true,
+    },
+    {
+      key: 'editorial',
+      title: 'Editorial Annotations',
+      badge: 'Editorial',
+      items: editorialAnnotations,
+      showAnnotationDetails: true,
+    },
+  ].filter((section) => section.items.length > 0);
 }
 
 export function CollectionTableView({
@@ -65,75 +222,96 @@ export function CollectionTableView({
     );
   }
 
+  const sections = getTableSections(items);
+
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-10">
-              <span className="sr-only">Selection</span>
-            </TableHead>
-            <TableHead className="w-[130px]">Type</TableHead>
-            <TableHead>Item</TableHead>
-            <TableHead>Manuscript</TableHead>
-            <TableHead className="hidden lg:table-cell">Allograph</TableHead>
-            <TableHead className="hidden xl:table-cell">Hand</TableHead>
-            <TableHead className="hidden md:table-cell">Repository</TableHead>
-            <TableHead className="hidden lg:table-cell">Date</TableHead>
-            <TableHead className="w-14">
-              <span className="sr-only">Actions</span>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => {
-            const selected = isItemSelected(item);
-            return (
-              <TableRow
-                key={`${item.type}-${item.id}`}
-                data-state={selected ? 'selected' : undefined}
-              >
-                <TableCell>
-                  <Checkbox
-                    checked={selected}
-                    onCheckedChange={() => onToggleSelection(item)}
-                    aria-label={`Select ${getItemLabel(item)}`}
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    <Badge variant="secondary">
-                      {item.type === 'image' ? 'Image' : 'Annotation'}
-                    </Badge>
-                    {isEditorialAnnotation(item) && (
-                      <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-800">
-                        Editorial
-                      </Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <CollectionItemLink item={item} />
-                </TableCell>
-                <TableCell>{item.shelfmark || '—'}</TableCell>
-                <TableCell className="hidden lg:table-cell">
-                  {item.type === 'graph' ? item.allograph || '—' : '—'}
-                </TableCell>
-                <TableCell className="hidden xl:table-cell">
-                  {item.type === 'graph' ? item.hand_name || '—' : '—'}
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {item.repository_name || '—'}
-                </TableCell>
-                <TableCell className="hidden lg:table-cell">{item.date || '—'}</TableCell>
-                <TableCell>
-                  <OpenLightboxButton item={item} variant="ghost" size="icon" className="h-8 w-8" />
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+    <div className="space-y-8">
+      {sections.map((section) => (
+        <section
+          key={section.key}
+          className="overflow-hidden rounded-lg border border-border bg-card shadow-sm"
+        >
+          <div className="flex flex-wrap items-center gap-2 border-b border-border bg-secondary/40 px-4 py-3">
+            <h2 className="text-base font-semibold text-foreground">{section.title}</h2>
+            <Badge variant={section.key === 'editorial' ? 'outline' : 'secondary'}>
+              {section.badge}
+            </Badge>
+            <span className="text-sm text-muted-foreground">
+              {section.items.length} {section.items.length === 1 ? 'item' : 'items'}
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    <span className="sr-only">Selection</span>
+                  </TableHead>
+                  <TableHead className="w-[112px]">Image</TableHead>
+                  <TableHead>Manuscript</TableHead>
+                  {section.showAnnotationDetails && (
+                    <>
+                      <TableHead>Allograph</TableHead>
+                      <TableHead className="hidden lg:table-cell">Hand</TableHead>
+                    </>
+                  )}
+                  <TableHead className="w-14">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {section.items.map((item) => {
+                  const manuscriptLabel = getManuscriptLabel(item);
+                  const selected = isItemSelected(item);
+
+                  return (
+                    <TableRow
+                      key={`${item.type}-${item.id}`}
+                      data-state={selected ? 'selected' : undefined}
+                    >
+                      <TableCell>
+                        <Checkbox
+                          checked={selected}
+                          onCheckedChange={() => onToggleSelection(item)}
+                          aria-label={`Select ${getSelectionLabel(item)}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <CollectionThumbnail item={item} label={manuscriptLabel} />
+                      </TableCell>
+                      <TableCell>
+                        <CollectionItemLink
+                          item={item}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          {manuscriptLabel}
+                        </CollectionItemLink>
+                      </TableCell>
+                      {section.showAnnotationDetails && (
+                        <>
+                          <TableCell>{item.allograph || '—'}</TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            {item.hand_name || '—'}
+                          </TableCell>
+                        </>
+                      )}
+                      <TableCell>
+                        <OpenLightboxButton
+                          item={item}
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
