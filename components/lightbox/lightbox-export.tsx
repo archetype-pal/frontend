@@ -7,9 +7,27 @@ import { Button } from '@/components/ui/button';
 import { Download, FileText, Image as ImageIcon, Printer, X, FileJson } from 'lucide-react';
 import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store';
 import type { LightboxImage } from '@/lib/lightbox-db';
+import { getLightboxImageCaption, getLightboxImageLabel } from '@/lib/lightbox-display';
 
 interface LightboxExportProps {
   onClose: () => void;
+}
+
+function toSafeFilename(value: string): string {
+  return (
+    value
+      .trim()
+      .replace(/[^a-z0-9]+/gi, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLocaleLowerCase() || 'image'
+  );
+}
+
+function escapeXml(value: string): string {
+  return value.replace(
+    /[&<>"]/g,
+    (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[character] as string
+  );
 }
 
 export function LightboxExport({ onClose }: LightboxExportProps) {
@@ -122,11 +140,7 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
 
                 // Add metadata
                 pdf.setFontSize(10);
-                pdf.text(
-                  image.metadata.shelfmark || image.metadata.locus || 'Image',
-                  margin,
-                  pageHeight - 5
-                );
+                pdf.text(getLightboxImageCaption(image), margin, pageHeight - 5);
                 resolve();
               } catch (err) {
                 reject(err);
@@ -168,9 +182,7 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
       );
     const figures = workspaceImages
       .map((img) => {
-        const caption = [img.metadata.shelfmark, img.metadata.locus, img.metadata.repository_name]
-          .filter(Boolean)
-          .join(' · ');
+        const caption = getLightboxImageCaption(img);
         return `<figure><img src="${esc(img.imageUrl)}" alt="${esc(caption)}" /><figcaption>${esc(caption)}</figcaption></figure>`;
       })
       .join('');
@@ -212,7 +224,7 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${image.metadata.shelfmark || 'image'}-${image.id}.jpg`;
+        a.download = `${toSafeFilename(getLightboxImageLabel(image))}-${image.id}.jpg`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -310,7 +322,7 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
 
         return `    <surface>
       <graphic url="${img.imageUrl}"/>
-      <desc>${img.metadata.shelfmark || img.metadata.locus || 'Image'}</desc>
+      <desc>${escapeXml(getLightboxImageCaption(img))}</desc>
 ${annotationElements ? annotationElements + '\n' : ''}    </surface>`;
       })
     );

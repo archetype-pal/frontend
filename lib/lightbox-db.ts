@@ -7,8 +7,13 @@ export interface LightboxImage {
   imageUrl: string; // IIIF URL or direct image URL
   thumbnailUrl?: string;
   metadata: {
+    item_type_label?: string;
+    manuscript_label?: string;
+    annotation_type?: string | null;
     shelfmark?: string;
     locus?: string;
+    allograph?: string;
+    hand_name?: string;
     repository_name?: string;
     repository_city?: string;
     date?: string;

@@ -7,11 +7,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Trash2, Image as ImageIcon, Folder, X } from 'lucide-react';
 import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store';
 import { useCollection } from '@/contexts/collection-context';
+import { getLightboxGraphMetadataLine, getLightboxImageLabel } from '@/lib/lightbox-display';
 import { cn } from '@/lib/utils';
+import type { LightboxImage } from '@/lib/lightbox-db';
 
-function SidebarThumbnail({ image }: { image: import('@/lib/lightbox-db').LightboxImage }) {
+function SidebarThumbnail({ image }: { image: LightboxImage }) {
   const [error, setError] = React.useState(false);
   const src = image.thumbnailUrl || image.imageUrl;
+  const label = getLightboxImageLabel(image);
 
   if (!src || error) {
     return (
@@ -24,7 +27,7 @@ function SidebarThumbnail({ image }: { image: import('@/lib/lightbox-db').Lightb
   return (
     <NextImage
       src={src}
-      alt={image.metadata.shelfmark || 'Image'}
+      alt={label}
       fill
       className="object-cover rounded"
       unoptimized
@@ -174,6 +177,8 @@ export function LightboxSidebar() {
             <div className="p-2 space-y-2">
               {workspaceImages.map((image) => {
                 const isSelected = selectedImageIds.has(image.id);
+                const manuscriptLabel = getLightboxImageLabel(image);
+                const graphLabel = getLightboxGraphMetadataLine(image);
 
                 return (
                   <div
@@ -195,13 +200,9 @@ export function LightboxSidebar() {
                         <SidebarThumbnail image={image} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs font-medium truncate">
-                          {image.metadata.locus || image.metadata.shelfmark || 'Untitled'}
-                        </div>
-                        {image.metadata.repository_name && (
-                          <div className="text-xs text-muted-foreground truncate">
-                            {image.metadata.repository_name}
-                          </div>
+                        <div className="text-xs font-medium truncate">{manuscriptLabel}</div>
+                        {graphLabel && (
+                          <div className="text-xs text-muted-foreground truncate">{graphLabel}</div>
                         )}
                         <Button
                           variant="ghost"

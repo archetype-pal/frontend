@@ -28,6 +28,7 @@ import { useCollectionItemSelection } from '@/hooks/collection/use-collection-it
 import { getImageDetailUrl as buildImageDetailUrl } from '@/lib/media-url';
 import { cn } from '@/lib/utils';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
+import { getCollectionAllographLabel } from '@/lib/collection-display';
 import {
   groupCollectionAnnotations,
   type CollectionAnnotationGroupBy,
@@ -51,7 +52,7 @@ function getItemTitle(item: CollectionItem): string {
 }
 
 function getAnnotationCardTitle(item: CollectionItem): string {
-  return item.allograph?.trim() || 'Unspecified allograph';
+  return getCollectionAllographLabel(item);
 }
 
 function getImageDetailUrl(item: CollectionItem): string {

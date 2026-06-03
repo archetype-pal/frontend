@@ -10,6 +10,7 @@ import type { LightboxImage, LightboxWorkspace } from '@/lib/lightbox-db';
 import type { GraphListItem, ImageListItem } from '@/types/search';
 import type { CollectionItem } from '@/contexts/collection-context';
 import type { WorksetPayload } from '@/types/workset';
+import { getCollectionItemTypeLabel, getCollectionManuscriptLabel } from '@/lib/collection-display';
 
 export interface LightboxState {
   // Current workspace
@@ -314,6 +315,10 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
     const row = Math.floor(existingCount / COLS);
     const posX = GAP + col * (MAX_DEFAULT_DIM + GAP);
     const posY = GAP + row * (MAX_DEFAULT_DIM + GAP);
+    const displayItem = {
+      ...(item as Record<string, unknown>),
+      type,
+    } as CollectionItem;
 
     const lightboxImage: LightboxImage = {
       id: imageId,
@@ -322,8 +327,18 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       imageUrl,
       thumbnailUrl,
       metadata: {
+        item_type_label: getCollectionItemTypeLabel(displayItem),
+        manuscript_label: getCollectionManuscriptLabel(displayItem),
+        annotation_type:
+          'annotation_type' in item && item.annotation_type != null
+            ? String(item.annotation_type)
+            : undefined,
         shelfmark: item.shelfmark != null ? String(item.shelfmark) : undefined,
         locus: 'locus' in item && item.locus != null ? String(item.locus) : undefined,
+        allograph:
+          'allograph' in item && item.allograph != null ? String(item.allograph) : undefined,
+        hand_name:
+          'hand_name' in item && item.hand_name != null ? String(item.hand_name) : undefined,
         repository_name: item.repository_name != null ? String(item.repository_name) : undefined,
         repository_city: item.repository_city != null ? String(item.repository_city) : undefined,
         date: item.date != null ? String(item.date) : undefined,

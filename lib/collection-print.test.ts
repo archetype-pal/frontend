@@ -22,16 +22,21 @@ describe('buildCollectionPrintHtml', () => {
           id: 10,
           type: 'image',
           image_iiif: 'https://example.test/page',
-          shelfmark: 'NRS GD55/1',
+          shelfmark: 'Cotton Ch. xviii.2',
           locus: 'face',
+          repository_name: 'British Library',
         },
         {
           id: 20,
           type: 'graph',
           image_iiif: 'https://example.test/annotation',
           coordinates: '{"type":"Feature"}',
-          annotation_type: 'editorial',
-          repository_name: 'National Records',
+          annotation_type: 'image',
+          allograph: 'b, Caroline minuscule',
+          hand_name: 'Hand A',
+          shelfmark: 'Cotton Ch. xviii.2',
+          locus: 'face',
+          repository_name: 'British Library',
         },
       ],
     };
@@ -42,8 +47,12 @@ describe('buildCollectionPrintHtml', () => {
     expect(html).toContain('Models of Authority collection · 2 items');
     expect(html).toContain('https://example.test/page/page-print');
     expect(html).toContain('https://example.test/annotation/annotation-print');
-    expect(html).toContain('Page image · NRS GD55/1 · face');
-    expect(html).toContain('Editorial annotation · National Records');
+    expect(html).toContain('Images <span>1 item</span>');
+    expect(html).toContain('Annotations <span>1 item</span>');
+    expect(html).toContain('Page image · BL Cotton Ch. xviii.2: face');
+    expect(html).toContain(
+      'Annotation · BL Cotton Ch. xviii.2: face · b, Caroline minuscule · Hand A'
+    );
   });
 
   it('escapes collection metadata and preserves items without an image', async () => {

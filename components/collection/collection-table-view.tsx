@@ -18,63 +18,28 @@ import {
 } from '@/components/ui/table';
 import type { CollectionItem } from '@/contexts/collection-context';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
+import {
+  getCollectionAllographLabel,
+  getCollectionDisplaySectionLabel,
+  getCollectionDisplaySectionType,
+  getCollectionHandLabel,
+  getCollectionManuscriptLabel,
+  isCollectionEditorialAnnotation,
+  type CollectionDisplaySectionType,
+} from '@/lib/collection-display';
 import { getImageDetailUrl } from '@/lib/media-url';
 import { getIiifImageUrl } from '@/utils/iiif';
 
-type CollectionTableSectionType = 'image' | 'annotation' | 'editorial';
-
 type CollectionTableSection = {
-  key: CollectionTableSectionType;
+  key: CollectionDisplaySectionType;
   title: string;
   badge: string;
   items: CollectionItem[];
   showAnnotationDetails: boolean;
 };
 
-const REPOSITORY_SHELFMARK_SHORTHANDS: Record<string, string> = {
-  bl: 'BL',
-  'british library': 'BL',
-  'the british library': 'BL',
-  nrs: 'NRS',
-  'national records of scotland': 'NRS',
-  tna: 'TNA',
-  'national archives': 'TNA',
-  'the national archives': 'TNA',
-};
-
-function isEditorialAnnotation(item: CollectionItem): boolean {
-  return item.type === 'graph' && item.annotation_type === 'editorial';
-}
-
-function getDisplayShelfmark(item: CollectionItem): string {
-  const shelfmark = item.shelfmark?.trim();
-  if (!shelfmark) return '';
-
-  const repositoryName = item.repository_name?.trim().toLocaleLowerCase();
-  const shorthand = repositoryName ? REPOSITORY_SHELFMARK_SHORTHANDS[repositoryName] : undefined;
-  if (!shorthand) return shelfmark;
-
-  const lowerShelfmark = shelfmark.toLocaleLowerCase();
-  const lowerShorthand = shorthand.toLocaleLowerCase();
-  if (lowerShelfmark === lowerShorthand || lowerShelfmark.startsWith(`${lowerShorthand} `)) {
-    return shelfmark;
-  }
-
-  return `${shorthand} ${shelfmark}`;
-}
-
-function getManuscriptLabel(item: CollectionItem): string {
-  const shelfmark = getDisplayShelfmark(item);
-  const locus = item.locus?.trim();
-
-  if (shelfmark && locus) return `${shelfmark}: ${locus}`;
-  if (shelfmark) return shelfmark;
-  if (locus) return locus;
-  return 'Untitled';
-}
-
 function getSelectionLabel(item: CollectionItem): string {
-  return `${item.type === 'image' ? 'image' : 'annotation'} ${getManuscriptLabel(item)}`;
+  return `${item.type === 'image' ? 'image' : 'annotation'} ${getCollectionManuscriptLabel(item)}`;
 }
 
 function getImageThumbnailUrl(item: CollectionItem): string | null {
@@ -176,33 +141,41 @@ function CollectionThumbnail({ item, label }: { item: CollectionItem; label: str
 }
 
 function getTableSections(items: CollectionItem[]): CollectionTableSection[] {
-  const images = items.filter((item) => item.type === 'image');
-  const annotations = items.filter((item) => item.type === 'graph' && !isEditorialAnnotation(item));
-  const editorialAnnotations = items.filter(isEditorialAnnotation);
+  const bySection = new Map<CollectionDisplaySectionType, CollectionItem[]>([
+    ['image', []],
+    ['annotation', []],
+    ['editorial', []],
+  ]);
 
-  return [
+  for (const item of items) {
+    bySection.get(getCollectionDisplaySectionType(item))?.push(item);
+  }
+
+  const sections: CollectionTableSection[] = [
     {
       key: 'image',
-      title: 'Images',
+      title: getCollectionDisplaySectionLabel('image'),
       badge: 'Image',
-      items: images,
+      items: bySection.get('image') ?? [],
       showAnnotationDetails: false,
     },
     {
       key: 'annotation',
-      title: 'Annotations',
+      title: getCollectionDisplaySectionLabel('annotation'),
       badge: 'Annotation',
-      items: annotations,
+      items: bySection.get('annotation') ?? [],
       showAnnotationDetails: true,
     },
     {
       key: 'editorial',
-      title: 'Editorial Annotations',
+      title: getCollectionDisplaySectionLabel('editorial'),
       badge: 'Editorial',
-      items: editorialAnnotations,
+      items: bySection.get('editorial') ?? [],
       showAnnotationDetails: true,
     },
-  ].filter((section) => section.items.length > 0);
+  ];
+
+  return sections.filter((section) => section.items.length > 0);
 }
 
 export function CollectionTableView({
@@ -262,7 +235,7 @@ export function CollectionTableView({
               </TableHeader>
               <TableBody>
                 {section.items.map((item) => {
-                  const manuscriptLabel = getManuscriptLabel(item);
+                  const manuscriptLabel = getCollectionManuscriptLabel(item);
                   const selected = isItemSelected(item);
 
                   return (
@@ -290,9 +263,13 @@ export function CollectionTableView({
                       </TableCell>
                       {section.showAnnotationDetails && (
                         <>
-                          <TableCell>{item.allograph || '—'}</TableCell>
+                          <TableCell>
+                            {isCollectionEditorialAnnotation(item)
+                              ? '—'
+                              : getCollectionAllographLabel(item)}
+                          </TableCell>
                           <TableCell className="hidden lg:table-cell">
-                            {item.hand_name || '—'}
+                            {getCollectionHandLabel(item) || '—'}
                           </TableCell>
                         </>
                       )}

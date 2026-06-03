@@ -10,6 +10,7 @@ import {
   type CollectionItem,
   type NamedCollection,
 } from './collection-storage';
+import { getCollectionItemTypeLabel, getCollectionManuscriptLabel } from './collection-display';
 import { WORKSET_SCHEMA_VERSION, type WorksetPayload } from '@/types/workset';
 
 const MAX_DEFAULT_DIMENSION = 400;
@@ -102,8 +103,13 @@ async function buildLightboxImage(
     imageUrl,
     thumbnailUrl,
     metadata: {
+      item_type_label: getCollectionItemTypeLabel(item),
+      manuscript_label: getCollectionManuscriptLabel(item),
+      annotation_type: item.annotation_type,
       shelfmark: item.shelfmark,
       locus: item.locus,
+      allograph: item.allograph,
+      hand_name: item.hand_name,
       repository_name: item.repository_name,
       repository_city: item.repository_city,
       date: item.date,

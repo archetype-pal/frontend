@@ -1,4 +1,9 @@
 import type { CollectionItem } from './collection-storage';
+import {
+  getCollectionAllographLabel,
+  getCollectionHandLabel,
+  getCollectionManuscriptLabel,
+} from './collection-display';
 
 export type CollectionAnnotationGroupBy = 'none' | 'allograph' | 'hand' | 'manuscript';
 
@@ -12,15 +17,13 @@ function getGroupLabel(
   item: CollectionItem,
   groupBy: Exclude<CollectionAnnotationGroupBy, 'none'>
 ) {
-  if (groupBy === 'allograph') return item.allograph?.trim() || 'Unspecified allograph';
-  if (groupBy === 'hand') return item.hand_name?.trim() || 'Unattributed hand';
+  if (groupBy === 'allograph') return getCollectionAllographLabel(item);
+  if (groupBy === 'hand') return getCollectionHandLabel(item) || 'Unattributed hand';
 
-  return (
-    item.shelfmark?.trim() ||
-    (typeof item.item_part === 'number'
-      ? `Manuscript #${item.item_part}`
-      : 'Unspecified manuscript')
-  );
+  const manuscriptLabel = getCollectionManuscriptLabel(item);
+  return manuscriptLabel === 'Untitled' && typeof item.item_part === 'number'
+    ? `Manuscript #${item.item_part}`
+    : manuscriptLabel;
 }
 
 export function groupCollectionAnnotations(
