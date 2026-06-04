@@ -58,11 +58,9 @@ export function useCollectionViewState(items: CollectionItem[], clearCollection:
     if (sortBy !== 'added') params.set('sort', sortBy);
     if (view !== 'grid') params.set('view', view);
     if (annotationGroup !== 'none') params.set('group', annotationGroup);
-    window.history.replaceState(
-      null,
-      '',
-      params.toString() ? `/collection?${params}` : '/collection'
-    );
+    const hash = window.location.hash;
+    const path = params.toString() ? `/collection?${params}` : '/collection';
+    window.history.replaceState(null, '', `${path}${hash}`);
   }, [annotationGroup, baseSearchParams, filter, sortBy, view]);
 
   React.useEffect(() => {

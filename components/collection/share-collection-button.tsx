@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import { Copy, Link2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -16,13 +15,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/contexts/auth-context';
-import {
-  buildCollectionWorksetPayload,
-  getPubliclyShareableCollectionItems,
-} from '@/lib/collection-workset';
-import { env } from '@/lib/env';
-import { createWorkset } from '@/services/worksets';
+import { getPubliclyShareableCollectionItems } from '@/lib/collection-workset';
+import { createAnonymousCollectionShareUrl } from '@/lib/collection-share-url';
 import type { NamedCollection } from '@/lib/collection-storage';
 
 async function copyShareUrl(url: string) {
@@ -35,7 +29,6 @@ async function copyShareUrl(url: string) {
 }
 
 export function ShareCollectionButton({ collection }: { collection: NamedCollection }) {
-  const { token, isReady } = useAuth();
   const [isOpen, setIsOpen] = React.useState(false);
   const [title, setTitle] = React.useState(collection.name);
   const [isSharing, setIsSharing] = React.useState(false);
@@ -53,18 +46,18 @@ export function ShareCollectionButton({ collection }: { collection: NamedCollect
   };
 
   const handleShare = async () => {
-    if (!token || !title.trim() || shareableItems.length === 0) return;
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle || shareableItems.length === 0) return;
 
     setIsSharing(true);
     try {
-      const payload = await buildCollectionWorksetPayload(collection);
-      const workset = await createWorkset(token, {
-        title: title.trim(),
-        description: `Shared collection snapshot: ${collection.name}`,
-        visibility: 'Public',
-        payload,
-      });
-      const url = `${env.siteUrl}/collection?share=${encodeURIComponent(workset.public_id)}`;
+      const shareableCollection = {
+        ...collection,
+        name: trimmedTitle,
+        items: shareableItems,
+      };
+      const url = createAnonymousCollectionShareUrl(shareableCollection, window.location.origin);
+
       setShareUrl(url);
       await copyShareUrl(url);
     } catch (error) {
@@ -99,19 +92,7 @@ export function ShareCollectionButton({ collection }: { collection: NamedCollect
           </DialogHeader>
 
           <div className="space-y-4 px-5 py-5">
-            {!isReady ? (
-              <p className="text-sm text-muted-foreground">Checking your sign-in status...</p>
-            ) : !token ? (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Collections remain available without an account, but creating a public share link
-                  requires signing in.
-                </p>
-                <Button asChild>
-                  <Link href="/login">Sign in to share</Link>
-                </Button>
-              </div>
-            ) : shareUrl ? (
+            {shareUrl ? (
               <div className="space-y-2">
                 <Label htmlFor="collection-share-url">Shareable link</Label>
                 <div className="flex gap-2">
@@ -162,7 +143,7 @@ export function ShareCollectionButton({ collection }: { collection: NamedCollect
             <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
               Close
             </Button>
-            {token && !shareUrl ? (
+            {!shareUrl ? (
               <Button
                 type="button"
                 onClick={handleShare}

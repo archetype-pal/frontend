@@ -34,6 +34,10 @@ import { getImageDetailUrl as buildImageDetailUrl } from '@/lib/media-url';
 import { cn } from '@/lib/utils';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
 import { getCollectionAllographLabel } from '@/lib/collection-display';
+import {
+  COLLECTION_SHARE_QUERY_PARAM,
+  parseAnonymousCollectionShareParam,
+} from '@/lib/collection-share-url';
 import { getPubliclyShareableCollectionItems } from '@/lib/collection-workset';
 import {
   groupCollectionAnnotations,
@@ -51,6 +55,34 @@ type SharedCollectionState =
   | { status: 'ready'; shareId: string; collection: NamedCollection }
   | { status: 'missing'; shareId: string }
   | { status: 'error'; shareId: string };
+
+type AnonymousSharedCollectionState =
+  | { status: 'idle' }
+  | { status: 'ready'; collection: NamedCollection }
+  | { status: 'error' };
+
+function getAnonymousSharePayloadFromHash(): string {
+  if (typeof window === 'undefined') return '';
+
+  const hash = window.location.hash.replace(/^#/, '');
+  return new URLSearchParams(hash).get(COLLECTION_SHARE_QUERY_PARAM)?.trim() ?? '';
+}
+
+function subscribeToHashChange(callback: () => void) {
+  window.addEventListener('hashchange', callback);
+
+  return () => {
+    window.removeEventListener('hashchange', callback);
+  };
+}
+
+function useAnonymousShareHashPayload(): string {
+  return React.useSyncExternalStore(
+    subscribeToHashChange,
+    getAnonymousSharePayloadFromHash,
+    () => ''
+  );
+}
 
 /** Sync thumbnail URL for image items (no coordinates). */
 function getImageItemThumbnailUrl(item: CollectionItem): string | null {
@@ -154,6 +186,11 @@ function CollectionGraphCard({
 function CollectionPageContent() {
   const searchParams = useSearchParams();
   const shareId = searchParams.get('share')?.trim() ?? '';
+  const anonymousShareHashPayload = useAnonymousShareHashPayload();
+  const anonymousSharePayload =
+    shareId.length === 0
+      ? anonymousShareHashPayload || (searchParams.get(COLLECTION_SHARE_QUERY_PARAM)?.trim() ?? '')
+      : '';
   const {
     items: localItems,
     activeCollection: localActiveCollection,
@@ -161,10 +198,23 @@ function CollectionPageContent() {
     removeItems,
   } = useCollection();
   const [sharedState, setSharedState] = React.useState<SharedCollectionState>({ status: 'idle' });
-  const isSharedView = shareId.length > 0;
+  const anonymousSharedCollection = React.useMemo<AnonymousSharedCollectionState>(() => {
+    if (!anonymousSharePayload) return { status: 'idle' };
+
+    try {
+      return {
+        status: 'ready',
+        collection: parseAnonymousCollectionShareParam(anonymousSharePayload),
+      };
+    } catch {
+      return { status: 'error' };
+    }
+  }, [anonymousSharePayload]);
+  const isSharedView = shareId.length > 0 || anonymousSharePayload.length > 0;
   const sharedStateMatches = 'shareId' in sharedState && sharedState.shareId === shareId;
   const sharedCollection =
-    sharedState.status === 'ready' && sharedStateMatches ? sharedState.collection : null;
+    (anonymousSharedCollection.status === 'ready' ? anonymousSharedCollection.collection : null) ??
+    (sharedState.status === 'ready' && sharedStateMatches ? sharedState.collection : null);
   const activeCollection = sharedCollection ?? localActiveCollection;
   const items = sharedCollection?.items ?? localItems;
   const clearDisplayedCollection = React.useCallback(() => {
@@ -247,7 +297,21 @@ function CollectionPageContent() {
     clearSelection();
   };
 
-  if (isSharedView && !sharedStateMatches) {
+  if (anonymousSharedCollection.status === 'error') {
+    return (
+      <div className="container mx-auto max-w-2xl px-4 py-16 text-center">
+        <h1 className="mb-3 text-3xl font-bold text-foreground">Shared collection not found</h1>
+        <p className="mb-6 text-muted-foreground">
+          This public collection link is invalid or incomplete.
+        </p>
+        <Button asChild>
+          <Link href="/collection">Open your collection</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (shareId && !sharedStateMatches) {
     return (
       <div className="container mx-auto px-4 py-16 text-center text-muted-foreground">
         Loading shared collection...
