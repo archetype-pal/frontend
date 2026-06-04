@@ -402,7 +402,7 @@ export function CollectionManagerControls() {
             <DialogTitle>Delete {activeCollection.name}?</DialogTitle>
             <DialogDescription>
               This removes the collection and its saved items from this browser. It does not delete
-              images or annotations from the site.
+              images or graphs from the site.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="pt-5">

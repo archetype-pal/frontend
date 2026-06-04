@@ -382,7 +382,7 @@ function CollectionPageContent() {
           <p className="text-muted-foreground text-lg mb-10 leading-relaxed max-w-md mx-auto">
             {isSharedView
               ? 'This shared collection has no public items.'
-              : 'Your collection is empty. Start adding images or annotations from search results and manuscript viewers by clicking the star icon.'}
+              : 'Your collection is empty. Start adding images or graphs from search results and manuscript viewers by clicking the star icon.'}
           </p>
           {!isSharedView && (
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -393,7 +393,7 @@ function CollectionPageContent() {
               </Link>
               <Link href="/search/graphs">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  Browse Annotations
+                  Browse Graphs
                 </Button>
               </Link>
             </div>

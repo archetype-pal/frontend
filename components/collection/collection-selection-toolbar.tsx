@@ -95,7 +95,7 @@ export function CollectionSelectionToolbar({
             <DialogTitle>Remove selected items?</DialogTitle>
             <DialogDescription>
               This removes {selectedCount} {selectedCount === 1 ? 'item' : 'items'} from this
-              collection. It does not delete images or annotations from the site.
+              collection. It does not delete images or graphs from the site.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="pt-5">
