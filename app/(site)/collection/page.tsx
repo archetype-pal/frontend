@@ -63,6 +63,29 @@ type AnonymousSharedCollectionState =
   | { status: 'ready'; collection: NamedCollection }
   | { status: 'error' };
 
+type CollectionGridSectionKey = 'image' | 'graph' | 'editorial';
+
+type CollectionRenderWindow = {
+  key: string;
+  table: number;
+  image: number;
+  graph: number;
+  editorial: number;
+};
+
+const COLLECTION_GRID_SECTION_BATCH_SIZE = 60;
+const COLLECTION_TABLE_BATCH_SIZE = 100;
+
+function createRenderWindow(key: string): CollectionRenderWindow {
+  return {
+    key,
+    table: COLLECTION_TABLE_BATCH_SIZE,
+    image: COLLECTION_GRID_SECTION_BATCH_SIZE,
+    graph: COLLECTION_GRID_SECTION_BATCH_SIZE,
+    editorial: COLLECTION_GRID_SECTION_BATCH_SIZE,
+  };
+}
+
 function getAnonymousSharePayloadFromHash(): string {
   if (typeof window === 'undefined') return '';
 
@@ -274,16 +297,6 @@ function CollectionPageContent() {
     filteredItems,
     handleClear,
   } = useCollectionViewState(items, clearDisplayedCollection);
-  const {
-    selectedItems,
-    allVisibleItemsSelected,
-    someVisibleItemsSelected,
-    isItemSelected,
-    toggleItem,
-    toggleVisibleItems,
-    clearSelection,
-  } = useCollectionItemSelection(activeCollection.id, items, filteredItems);
-
   const images = filteredItems.filter((item) => item.type === 'image');
   const annotations = filteredItems.filter(
     (item) => item.type === 'graph' && !isEditorialAnnotation(item)
@@ -295,6 +308,61 @@ function CollectionPageContent() {
   );
   const allEditorialAnnotations = items.filter(isEditorialAnnotation);
   const hasAnnotations = allAnnotations.length + allEditorialAnnotations.length > 0;
+  const renderWindowKey = [
+    activeCollection.id,
+    filter,
+    sortBy,
+    view,
+    annotationGroup,
+    items.length,
+  ].join(':');
+  const [renderWindowState, setRenderWindowState] = React.useState<CollectionRenderWindow>(() =>
+    createRenderWindow('')
+  );
+  const renderWindow =
+    renderWindowState.key === renderWindowKey
+      ? renderWindowState
+      : createRenderWindow(renderWindowKey);
+  const visibleImages = images.slice(0, renderWindow.image);
+  const visibleAnnotations = annotations.slice(0, renderWindow.graph);
+  const visibleEditorialAnnotations = editorialAnnotations.slice(0, renderWindow.editorial);
+  const visibleTableItems = filteredItems.slice(0, renderWindow.table);
+  const visibleGridItems = [...visibleImages, ...visibleAnnotations, ...visibleEditorialAnnotations];
+  const visibleItems = view === 'table' ? visibleTableItems : visibleGridItems;
+  const showMoreGridSection = React.useCallback(
+    (section: CollectionGridSectionKey) => {
+      setRenderWindowState((previous) => {
+        const current =
+          previous.key === renderWindowKey ? previous : createRenderWindow(renderWindowKey);
+
+        return {
+          ...current,
+          [section]: current[section] + COLLECTION_GRID_SECTION_BATCH_SIZE,
+        };
+      });
+    },
+    [renderWindowKey]
+  );
+  const showMoreTableItems = React.useCallback(() => {
+    setRenderWindowState((previous) => {
+      const current =
+        previous.key === renderWindowKey ? previous : createRenderWindow(renderWindowKey);
+
+      return {
+        ...current,
+        table: current.table + COLLECTION_TABLE_BATCH_SIZE,
+      };
+    });
+  }, [renderWindowKey]);
+  const {
+    selectedItems,
+    allVisibleItemsSelected,
+    someVisibleItemsSelected,
+    isItemSelected,
+    toggleItem,
+    toggleVisibleItems,
+    clearSelection,
+  } = useCollectionItemSelection(activeCollection.id, items, visibleItems);
 
   const getUrl = (item: CollectionItem) => (item.type === 'image' ? getImageDetailUrl(item) : '#');
   const handleRemoveSelectedItems = () => {
@@ -481,44 +549,67 @@ function CollectionPageContent() {
 
   const renderSection = (
     title: string,
-    items: CollectionItem[],
+    visibleItems: CollectionItem[],
+    matchedItems: CollectionItem[],
     allItems: CollectionItem[],
-    type: 'image' | 'graph'
+    type: 'image' | 'graph',
+    onShowMore?: () => void
   ) => {
     if (allItems.length === 0 || (filter !== 'all' && filter !== type)) return null;
     const groups =
-      type === 'graph' ? groupCollectionAnnotations(items, annotationGroup) : undefined;
+      type === 'graph' ? groupCollectionAnnotations(visibleItems, annotationGroup) : undefined;
+    const hasMore = visibleItems.length < matchedItems.length;
 
     return (
       <section>
         <div className="flex items-center gap-2 mb-6">
           <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">{title}</h2>
           <span className="text-sm text-muted-foreground bg-secondary px-3 py-1 rounded-full font-medium">
-            {items.length} {items.length === 1 ? 'item' : 'items'}
-            {items.length !== allItems.length && ` of ${allItems.length}`}
+            {hasMore
+              ? `Showing ${visibleItems.length} of ${matchedItems.length}`
+              : `${matchedItems.length} ${matchedItems.length === 1 ? 'item' : 'items'}`}
+            {matchedItems.length !== allItems.length && ` of ${allItems.length}`}
           </span>
         </div>
-        {items.length > 0 ? (
+        {matchedItems.length > 0 ? (
           groups && groups.length > 0 ? (
-            <div className="space-y-8">
-              {groups.map((group) => (
-                <div key={group.key}>
-                  <div className="mb-3 flex items-center gap-2">
-                    <h3 className="text-base font-semibold text-foreground">{group.label}</h3>
-                    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                      {group.items.length} {group.items.length === 1 ? 'item' : 'items'}
-                    </span>
+            <>
+              <div className="space-y-8">
+                {groups.map((group) => (
+                  <div key={group.key}>
+                    <div className="mb-3 flex items-center gap-2">
+                      <h3 className="text-base font-semibold text-foreground">{group.label}</h3>
+                      <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                        {group.items.length} {group.items.length === 1 ? 'item' : 'items'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                      {group.items.map((item) => renderCard(item, type))}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                    {group.items.map((item) => renderCard(item, type))}
-                  </div>
+                ))}
+              </div>
+              {hasMore && onShowMore && (
+                <div className="mt-6 flex justify-center">
+                  <Button type="button" variant="outline" onClick={onShowMore}>
+                    Show more {title.toLowerCase()}
+                  </Button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {items.map((item) => renderCard(item, type))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {visibleItems.map((item) => renderCard(item, type))}
+              </div>
+              {hasMore && onShowMore && (
+                <div className="mt-6 flex justify-center">
+                  <Button type="button" variant="outline" onClick={onShowMore}>
+                    Show more {title.toLowerCase()}
+                  </Button>
+                </div>
+              )}
+            </>
           )
         ) : (
           <div className="text-center py-12 bg-secondary rounded-lg border border-border">
@@ -654,7 +745,7 @@ function CollectionPageContent() {
           <div className="mt-4">
             <CollectionSelectionToolbar
               selectedItems={selectedItems}
-              visibleItemCount={filteredItems.length}
+              visibleItemCount={visibleItems.length}
               allVisibleItemsSelected={allVisibleItemsSelected}
               someVisibleItemsSelected={someVisibleItemsSelected}
               onToggleVisibleItems={toggleVisibleItems}
@@ -665,21 +756,36 @@ function CollectionPageContent() {
         )}
       </div>
       {view === 'table' ? (
-        <CollectionTableView
-          items={filteredItems}
-          isItemSelected={isItemSelected}
-          onToggleSelection={toggleItem}
-          readOnly={isSharedView}
-        />
+        <>
+          <CollectionTableView
+            items={visibleTableItems}
+            isItemSelected={isItemSelected}
+            onToggleSelection={toggleItem}
+            readOnly={isSharedView}
+          />
+          {visibleTableItems.length < filteredItems.length && (
+            <div className="mt-6 flex justify-center">
+              <Button type="button" variant="outline" onClick={showMoreTableItems}>
+                Show more items
+              </Button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="space-y-12">
-          {renderSection('Images', images, allImages, 'image')}
-          {renderSection('Graphs', annotations, allAnnotations, 'graph')}
+          {renderSection('Images', visibleImages, images, allImages, 'image', () =>
+            showMoreGridSection('image')
+          )}
+          {renderSection('Graphs', visibleAnnotations, annotations, allAnnotations, 'graph', () =>
+            showMoreGridSection('graph')
+          )}
           {renderSection(
             'Editorial Annotations',
+            visibleEditorialAnnotations,
             editorialAnnotations,
             allEditorialAnnotations,
-            'graph'
+            'graph',
+            () => showMoreGridSection('editorial')
           )}
         </div>
       )}
