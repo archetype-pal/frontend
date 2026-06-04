@@ -48,6 +48,7 @@ describe('buildCollectionPrintHtml', () => {
     expect(html).toContain('Models of Authority collection · 2 items');
     expect(html).toContain('https://example.test/page/page-print');
     expect(html).toContain('https://example.test/annotation/annotation-print');
+    expect(html).toContain('loading="eager" decoding="sync" fetchpriority="high"');
     expect(html).toContain('<table class="print-table">');
     expect(html).toContain('<td class="thumb-cell">');
     expect(html).toContain('<div class="item-title">BL Cotton Ch. xviii.2: face</div>');
@@ -61,6 +62,8 @@ describe('buildCollectionPrintHtml', () => {
       'Allograph · BL Cotton Ch. xviii.2: face · b, Caroline minuscule · Hand A'
     );
     expect(html).toContain('Array.from(document.images).map(waitForImage)');
+    expect(html).toContain("url.searchParams.set('printRetry'");
+    expect(html).toContain('image.decode()');
 
     const annotationCall = vi
       .mocked(getIiifImageUrlWithBounds)

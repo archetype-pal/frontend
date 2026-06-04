@@ -54,17 +54,57 @@ function buildPrintStartupScript(): string {
   return `
     <script>
       (function () {
+        function retryUrl(src) {
+          try {
+            var url = new URL(src, window.location.href);
+            url.searchParams.set('printRetry', String(Date.now()));
+            return url.href;
+          } catch (error) {
+            return src;
+          }
+        }
+
         function waitForImage(image) {
-          if (image.complete) return Promise.resolve();
           return new Promise(function (resolve) {
-            image.addEventListener('load', resolve, { once: true });
-            image.addEventListener('error', resolve, { once: true });
+            var retried = false;
+
+            function decodeAndResolve() {
+              if (typeof image.decode === 'function') {
+                image.decode().catch(function () {}).then(resolve);
+                return;
+              }
+              resolve();
+            }
+
+            function retryOrResolve() {
+              if (retried || !image.src) {
+                resolve();
+                return;
+              }
+
+              retried = true;
+              image.src = retryUrl(image.src);
+            }
+
+            image.addEventListener('load', decodeAndResolve, { once: true });
+            image.addEventListener('error', retryOrResolve);
+
+            if (image.complete) {
+              if (image.naturalWidth > 0) {
+                decodeAndResolve();
+                return;
+              }
+
+              retryOrResolve();
+            }
           });
         }
 
         Promise.all(Array.from(document.images).map(waitForImage)).then(function () {
-          window.focus();
-          window.print();
+          requestAnimationFrame(function () {
+            window.focus();
+            window.print();
+          });
         });
       })();
     </script>
@@ -108,7 +148,7 @@ async function buildPrintTableRow(item: CollectionItem, index: number): Promise<
     // Preserve the rest of the printout if one IIIF URL cannot be resolved.
   }
   const image = imageUrl
-    ? `<img class="thumb" src="${imageUrl}" alt="${caption}" />`
+    ? `<img class="thumb" src="${imageUrl}" alt="${caption}" loading="eager" decoding="sync" fetchpriority="high" />`
     : `<div class="missing-image">No image available</div>`;
 
   return (
