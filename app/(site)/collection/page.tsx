@@ -328,7 +328,11 @@ function CollectionPageContent() {
   const visibleAnnotations = annotations.slice(0, renderWindow.graph);
   const visibleEditorialAnnotations = editorialAnnotations.slice(0, renderWindow.editorial);
   const visibleTableItems = filteredItems.slice(0, renderWindow.table);
-  const visibleGridItems = [...visibleImages, ...visibleAnnotations, ...visibleEditorialAnnotations];
+  const visibleGridItems = [
+    ...visibleImages,
+    ...visibleAnnotations,
+    ...visibleEditorialAnnotations,
+  ];
   const visibleItems = view === 'table' ? visibleTableItems : visibleGridItems;
   const showMoreGridSection = React.useCallback(
     (section: CollectionGridSectionKey) => {

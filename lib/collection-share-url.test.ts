@@ -61,8 +61,7 @@ function decodePayload(value: string): string {
 
 function getShareParam(url: string): string {
   return (
-    new URLSearchParams(new URL(url).hash.replace(/^#/, '')).get(COLLECTION_SHARE_QUERY_PARAM) ??
-    ''
+    new URLSearchParams(new URL(url).hash.replace(/^#/, '')).get(COLLECTION_SHARE_QUERY_PARAM) ?? ''
   );
 }
 
