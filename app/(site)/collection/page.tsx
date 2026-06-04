@@ -764,7 +764,10 @@ function CollectionPageContent() {
             readOnly={isSharedView}
           />
           {visibleTableItems.length < filteredItems.length && (
-            <div className="mt-6 flex justify-center">
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <p className="text-sm text-muted-foreground">
+                Showing {visibleTableItems.length} of {filteredItems.length} items
+              </p>
               <Button type="button" variant="outline" onClick={showMoreTableItems}>
                 Show more items
               </Button>
