@@ -41,6 +41,7 @@ import {
 } from '@/lib/collection-share-url';
 import { getPubliclyShareableCollectionItems } from '@/lib/collection-workset';
 import {
+  type CollectionAnnotationGroup,
   groupCollectionAnnotations,
   type CollectionAnnotationGroupBy,
 } from '@/lib/collection-grouping';
@@ -558,7 +559,25 @@ function CollectionPageContent() {
     if (allItems.length === 0 || (filter !== 'all' && filter !== type)) return null;
     const groups =
       type === 'graph' ? groupCollectionAnnotations(visibleItems, annotationGroup) : undefined;
+    const totalGroupCountByKey =
+      type === 'graph'
+        ? new Map(
+            groupCollectionAnnotations(matchedItems, annotationGroup).map((group) => [
+              group.key,
+              group.items.length,
+            ])
+          )
+        : undefined;
     const hasMore = visibleItems.length < matchedItems.length;
+    const getGroupCountLabel = (group: CollectionAnnotationGroup) => {
+      const totalCount = totalGroupCountByKey?.get(group.key) ?? group.items.length;
+
+      if (totalCount > group.items.length) {
+        return `Showing ${group.items.length} of ${totalCount}`;
+      }
+
+      return `${group.items.length} ${group.items.length === 1 ? 'item' : 'items'}`;
+    };
 
     return (
       <section>
@@ -580,7 +599,7 @@ function CollectionPageContent() {
                     <div className="mb-3 flex items-center gap-2">
                       <h3 className="text-base font-semibold text-foreground">{group.label}</h3>
                       <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                        {group.items.length} {group.items.length === 1 ? 'item' : 'items'}
+                        {getGroupCountLabel(group)}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
