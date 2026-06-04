@@ -26,6 +26,15 @@ export const helpTexts: Record<string, HelpEntry> = {
       'The approximate date or date range for this item. Select from the reference date list.',
     example: 's.xi (mid)',
   },
+  'manuscript.probableTextDate': {
+    description:
+      'An optional human-readable probable date for records where the firm date needs qualification.',
+    example: 'Probably early 13th century',
+  },
+  'manuscript.datingNotes': {
+    description:
+      'Optional editorial notes explaining dating evidence, uncertainty, or manuscript-specific context.',
+  },
   'manuscript.format': {
     description: 'The physical format of the item, e.g. Codex, Roll, or Single sheet.',
   },

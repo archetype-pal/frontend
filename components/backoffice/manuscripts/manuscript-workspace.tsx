@@ -358,7 +358,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             </div>
 
             <div className="space-y-1.5">
-              <FieldLabel helpField="manuscript.date">Probable text date</FieldLabel>
+              <FieldLabel helpField="manuscript.probableTextDate">Probable date</FieldLabel>
               <Input
                 value={draft.probable_text_date ?? ''}
                 onChange={(e) => updateField('probable_text_date', e.target.value)}
@@ -385,7 +385,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             </div>
 
             <div className="space-y-1.5 lg:col-span-3">
-              <FieldLabel helpField="manuscript.date">Dating notes</FieldLabel>
+              <FieldLabel helpField="manuscript.datingNotes">Dating notes</FieldLabel>
               <textarea
                 value={draft.dating_notes ?? ''}
                 onChange={(e) => updateField('dating_notes', e.target.value)}
@@ -438,6 +438,8 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
               language: item.language,
               hair_type: item.hair_type,
               date: item.date,
+              probable_text_date: item.probable_text_date,
+              dating_notes: item.dating_notes,
             });
             setDirty(false);
           }

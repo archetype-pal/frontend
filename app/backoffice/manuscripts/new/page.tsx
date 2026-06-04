@@ -8,7 +8,6 @@ import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -57,6 +56,8 @@ export default function NewManuscriptPage() {
   const [type, setType] = useState('agreement');
   const [language, setLanguage] = useState('');
   const [date, setDate] = useState('');
+  const [probableTextDate, setProbableTextDate] = useState('');
+  const [datingNotes, setDatingNotes] = useState('');
 
   const { data: repositoriesData } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
@@ -109,10 +110,14 @@ export default function NewManuscriptPage() {
         }
 
         // Step 2: Create HistoricalItem
+        const normalizedProbableTextDate = probableTextDate.trim();
+        const normalizedDatingNotes = datingNotes.trim();
         const historicalItem = await createHistoricalItem(token, {
           type,
           language: language || undefined,
           date: date ? Number(date) : undefined,
+          probable_text_date: normalizedProbableTextDate || undefined,
+          dating_notes: normalizedDatingNotes || undefined,
         });
         createdHistoricalItemId = historicalItem.id;
 
@@ -261,9 +266,9 @@ export default function NewManuscriptPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label>
+            <FieldLabel helpField="manuscript.language">
               Language <span className="text-muted-foreground font-normal">(optional)</span>
-            </Label>
+            </FieldLabel>
             <Input
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
@@ -272,9 +277,9 @@ export default function NewManuscriptPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label>
+            <FieldLabel helpField="manuscript.date">
               {dateLabel} <span className="text-muted-foreground font-normal">(optional)</span>
-            </Label>
+            </FieldLabel>
             <Select value={date} onValueChange={setDate}>
               <SelectTrigger>
                 <SelectValue placeholder="Select date..." />
@@ -287,6 +292,29 @@ export default function NewManuscriptPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <FieldLabel helpField="manuscript.probableTextDate">
+              Probable date <span className="text-muted-foreground font-normal">(optional)</span>
+            </FieldLabel>
+            <Input
+              value={probableTextDate}
+              onChange={(e) => setProbableTextDate(e.target.value)}
+              placeholder="e.g. Probably early 13th century"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <FieldLabel helpField="manuscript.datingNotes">
+              Dating notes <span className="text-muted-foreground font-normal">(optional)</span>
+            </FieldLabel>
+            <textarea
+              value={datingNotes}
+              onChange={(e) => setDatingNotes(e.target.value)}
+              placeholder="Evidence and reasoning for this historical item's date"
+              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            />
           </div>
         </div>
       </div>
