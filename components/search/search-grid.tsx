@@ -58,7 +58,10 @@ type MediaGridCardProps = {
   loadingFallback?: string;
   item: ImageListItem | GraphListItem;
   itemType: 'image' | 'graph';
+  eager?: boolean;
 };
+
+const SEARCH_EAGER_THUMBNAIL_COUNT = 6;
 
 function toGridCard(resultType: ResultType, item: GridItem): GridCard | null {
   const formatted = (item as { _formatted?: Record<string, string | undefined> })._formatted ?? {};
@@ -110,6 +113,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
   loadingFallback = 'No Image',
   item,
   itemType,
+  eager = false,
 }: MediaGridCardProps) {
   const renderLink = (children: React.ReactNode, className: string) =>
     graphItem ? (
@@ -129,6 +133,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
       fill
       className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
       sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+      loading={eager ? 'eager' : 'lazy'}
     />
   );
 
@@ -184,11 +189,13 @@ const GraphGridCard = React.memo(function GraphGridCard({
   displayText,
   formattedDisplayText,
   highlightKeyword,
+  eager,
 }: {
   item: GraphListItem;
   displayText: string;
   formattedDisplayText?: string;
   highlightKeyword: string;
+  eager: boolean;
 }) {
   const infoUrl = (item.image_iiif || '').trim();
   const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates);
@@ -203,6 +210,7 @@ const GraphGridCard = React.memo(function GraphGridCard({
       loadingFallback={infoUrl ? '…' : 'No Image'}
       item={item}
       itemType="graph"
+      eager={eager}
     />
   );
 });
@@ -214,6 +222,7 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   displayText,
   formattedDisplayText,
   highlightKeyword,
+  eager,
 }: {
   item: ManuscriptListItem;
   detailUrl: string;
@@ -221,6 +230,7 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   displayText: string;
   formattedDisplayText?: string;
   highlightKeyword: string;
+  eager: boolean;
 }) {
   const meta = [item.type, item.date].filter(Boolean).join(' · ');
   return (
@@ -234,6 +244,7 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
               fill
               className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
               sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+              loading={eager ? 'eager' : 'lazy'}
             />
           ) : (
             <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
@@ -280,7 +291,9 @@ function SearchGridComponent({
   );
 
   const renderCard = React.useCallback(
-    (card: GridCard) => {
+    (card: GridCard, index: number) => {
+      const eager = index < SEARCH_EAGER_THUMBNAIL_COUNT;
+
       if (card.kind === 'manuscript') {
         return (
           <ManuscriptGridCard
@@ -291,6 +304,7 @@ function SearchGridComponent({
             displayText={card.displayText}
             formattedDisplayText={card.formattedDisplayText}
             highlightKeyword={highlightKeyword}
+            eager={eager}
           />
         );
       }
@@ -303,6 +317,7 @@ function SearchGridComponent({
             displayText={card.displayText}
             formattedDisplayText={card.formattedDisplayText}
             highlightKeyword={highlightKeyword}
+            eager={eager}
           />
         );
       }
@@ -319,6 +334,7 @@ function SearchGridComponent({
           annotationCount={card.kind === 'image' ? card.item.number_of_annotations : null}
           item={card.item}
           itemType={card.kind}
+          eager={eager}
         />
       );
     },
@@ -337,7 +353,7 @@ function SearchGridComponent({
         isFetching ? 'opacity-60' : ''
       }`}
     >
-      {flatCards.map((card) => renderCard(card))}
+      {flatCards.map((card, index) => renderCard(card, index))}
     </section>
   );
 }

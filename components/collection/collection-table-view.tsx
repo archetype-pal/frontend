@@ -36,6 +36,8 @@ type CollectionTableSection = {
   showAnnotationDetails: boolean;
 };
 
+const TABLE_EAGER_THUMBNAIL_COUNT = 6;
+
 function getSelectionLabel(item: CollectionItem): string {
   return `${item.type === 'image' ? 'image' : 'graph'} ${getCollectionManuscriptLabel(item)}`;
 }
@@ -80,11 +82,13 @@ function ThumbnailFrame({
   label,
   imageUrl,
   fallback,
+  eager,
 }: {
   item: CollectionItem;
   label: string;
   imageUrl: string | null;
   fallback: string;
+  eager: boolean;
 }) {
   return (
     <div className="relative h-16 w-20 overflow-hidden rounded-md border border-border bg-secondary sm:h-20 sm:w-24">
@@ -96,6 +100,7 @@ function ThumbnailFrame({
             fill
             className="object-contain transition-transform duration-300 hover:scale-105"
             sizes="96px"
+            loading={eager ? 'eager' : 'lazy'}
             unoptimized
           />
         ) : (
@@ -108,18 +113,35 @@ function ThumbnailFrame({
   );
 }
 
-function CollectionImageThumbnail({ item, label }: { item: CollectionItem; label: string }) {
+function CollectionImageThumbnail({
+  item,
+  label,
+  eager,
+}: {
+  item: CollectionItem;
+  label: string;
+  eager: boolean;
+}) {
   return (
     <ThumbnailFrame
       item={item}
       label={label}
       imageUrl={getImageThumbnailUrl(item)}
       fallback="No image"
+      eager={eager}
     />
   );
 }
 
-function CollectionGraphThumbnail({ item, label }: { item: CollectionItem; label: string }) {
+function CollectionGraphThumbnail({
+  item,
+  label,
+  eager,
+}: {
+  item: CollectionItem;
+  label: string;
+  eager: boolean;
+}) {
   const infoUrl = (item.image_iiif || '').trim();
   const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined, 120);
 
@@ -129,13 +151,24 @@ function CollectionGraphThumbnail({ item, label }: { item: CollectionItem; label
       label={label}
       imageUrl={imageUrl}
       fallback={infoUrl ? '…' : 'No image'}
+      eager={eager}
     />
   );
 }
 
-function CollectionThumbnail({ item, label }: { item: CollectionItem; label: string }) {
-  if (item.type === 'graph') return <CollectionGraphThumbnail item={item} label={label} />;
-  return <CollectionImageThumbnail item={item} label={label} />;
+function CollectionThumbnail({
+  item,
+  label,
+  eager,
+}: {
+  item: CollectionItem;
+  label: string;
+  eager: boolean;
+}) {
+  if (item.type === 'graph') {
+    return <CollectionGraphThumbnail item={item} label={label} eager={eager} />;
+  }
+  return <CollectionImageThumbnail item={item} label={label} eager={eager} />;
 }
 
 function getTableSections(items: CollectionItem[]): CollectionTableSection[] {
@@ -232,9 +265,10 @@ export function CollectionTableView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {section.items.map((item) => {
+                {section.items.map((item, index) => {
                   const manuscriptLabel = getCollectionManuscriptLabel(item);
                   const selected = isItemSelected(item);
+                  const eager = index < TABLE_EAGER_THUMBNAIL_COUNT;
 
                   return (
                     <TableRow
@@ -251,7 +285,7 @@ export function CollectionTableView({
                         </TableCell>
                       )}
                       <TableCell>
-                        <CollectionThumbnail item={item} label={manuscriptLabel} />
+                        <CollectionThumbnail item={item} label={manuscriptLabel} eager={eager} />
                       </TableCell>
                       <TableCell>
                         <CollectionItemLink

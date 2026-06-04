@@ -76,6 +76,7 @@ type CollectionRenderWindow = {
 
 const COLLECTION_GRID_SECTION_BATCH_SIZE = 60;
 const COLLECTION_TABLE_BATCH_SIZE = 100;
+const COLLECTION_EAGER_THUMBNAIL_COUNT = 6;
 
 function createRenderWindow(key: string): CollectionRenderWindow {
   return {
@@ -85,6 +86,10 @@ function createRenderWindow(key: string): CollectionRenderWindow {
     graph: COLLECTION_GRID_SECTION_BATCH_SIZE,
     editorial: COLLECTION_GRID_SECTION_BATCH_SIZE,
   };
+}
+
+function getCollectionItemKey(item: Pick<CollectionItem, 'id' | 'type'>): string {
+  return `${item.type}:${item.id}`;
 }
 
 function getAnonymousSharePayloadFromHash(): string {
@@ -141,12 +146,14 @@ function CollectionGraphCard({
   isSelected,
   onToggleSelection,
   readOnly,
+  eager,
 }: {
   item: CollectionItem;
   title: string;
   isSelected: boolean;
   onToggleSelection: (item: CollectionItem) => void;
   readOnly: boolean;
+  eager: boolean;
 }) {
   const infoUrl = (item.image_iiif || '').trim();
   const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined);
@@ -169,6 +176,7 @@ function CollectionGraphCard({
                 fill
                 className="object-contain transition-transform duration-300 group-hover:scale-110"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw"
+                loading={eager ? 'eager' : 'lazy'}
                 unoptimized
               />
             </GraphDetailLink>
@@ -334,6 +342,9 @@ function CollectionPageContent() {
     ...visibleEditorialAnnotations,
   ];
   const visibleItems = view === 'table' ? visibleTableItems : visibleGridItems;
+  const eagerThumbnailKeys = new Set(
+    visibleItems.slice(0, COLLECTION_EAGER_THUMBNAIL_COUNT).map(getCollectionItemKey)
+  );
   const showMoreGridSection = React.useCallback(
     (section: CollectionGridSectionKey) => {
       setRenderWindowState((previous) => {
@@ -478,6 +489,7 @@ function CollectionPageContent() {
 
   const renderCard = (item: CollectionItem, type: 'image' | 'graph') => {
     const isSelected = isItemSelected(item);
+    const eager = eagerThumbnailKeys.has(getCollectionItemKey(item));
 
     if (type === 'graph') {
       const title = getAnnotationCardTitle(item);
@@ -490,6 +502,7 @@ function CollectionPageContent() {
           isSelected={isSelected}
           onToggleSelection={toggleItem}
           readOnly={isSharedView}
+          eager={eager}
         />
       );
     }
@@ -515,6 +528,7 @@ function CollectionPageContent() {
                   fill
                   className="object-contain transition-transform duration-300 group-hover:scale-110"
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw"
+                  loading={eager ? 'eager' : 'lazy'}
                   unoptimized
                 />
               </Link>
