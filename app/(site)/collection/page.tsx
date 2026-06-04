@@ -4,7 +4,8 @@ import * as React from 'react';
 import { Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   useCollection,
   type CollectionItem,
@@ -25,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowUpDown, LayoutGrid, Star, Table as TableIcon, Trash2 } from 'lucide-react';
+import { ArrowUpDown, Copy, LayoutGrid, Star, Table as TableIcon, Trash2 } from 'lucide-react';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
@@ -49,6 +50,7 @@ import {
   type SortOption,
 } from '@/hooks/collection/use-collection-view-state';
 import { getWorkset } from '@/services/worksets';
+import { getAvailableCollectionName } from '@/lib/collection-storage';
 
 type SharedCollectionState =
   | { status: 'idle' }
@@ -184,6 +186,7 @@ function CollectionGraphCard({
 }
 
 function CollectionPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const shareId = searchParams.get('share')?.trim() ?? '';
   const anonymousShareHashPayload = useAnonymousShareHashPayload();
@@ -194,6 +197,9 @@ function CollectionPageContent() {
   const {
     items: localItems,
     activeCollection: localActiveCollection,
+    collections,
+    canManageCollections,
+    createCollection,
     clearCollection,
     removeItems,
   } = useCollection();
@@ -295,6 +301,23 @@ function CollectionPageContent() {
     if (isSharedView) return;
     removeItems(selectedItems);
     clearSelection();
+  };
+  const handleSaveSharedCollectionCopy = () => {
+    if (!sharedCollection) return;
+
+    if (!canManageCollections) {
+      toast.error('Local collections are not available in this browser session.');
+      return;
+    }
+
+    const name = getAvailableCollectionName(collections, sharedCollection.name);
+    if (!name || !createCollection(name, sharedCollection.items)) {
+      toast.error('Could not save this shared collection.');
+      return;
+    }
+
+    toast.success(`Saved ${name} to your collections`);
+    router.push('/collection');
   };
 
   if (anonymousSharedCollection.status === 'error') {
@@ -526,6 +549,17 @@ function CollectionPageContent() {
           <div className="flex gap-2">
             {!isSharedView && <ShareCollectionButton collection={activeCollection} />}
             <PrintCollectionButton collection={activeCollection} />
+            {isSharedView && sharedCollection && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSaveSharedCollectionCopy}
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Save collection copy
+              </Button>
+            )}
             {!isSharedView && (
               <>
                 <OpenLightboxButton items={items} variant="outline" size="sm" />
