@@ -46,12 +46,12 @@ export function getCollectionDisplaySectionType(
 export function getCollectionDisplaySectionLabel(sectionType: CollectionDisplaySectionType) {
   if (sectionType === 'image') return 'Images';
   if (sectionType === 'editorial') return 'Editorial Annotations';
-  return 'Annotations';
+  return 'Graphs';
 }
 
 export function getCollectionItemTypeLabel(item: CollectionDisplayInput): string {
   if (item.type === 'image') return 'Page image';
-  return isCollectionEditorialAnnotation(item) ? 'Editorial annotation' : 'Annotation';
+  return isCollectionEditorialAnnotation(item) ? 'Editorial annotation' : 'Allograph';
 }
 
 export function getCollectionDisplayShelfmark(item: CollectionDisplayInput): string {

@@ -6,7 +6,6 @@ import type { ReactNode } from 'react';
 
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
@@ -33,13 +32,12 @@ import { getIiifImageUrl } from '@/utils/iiif';
 type CollectionTableSection = {
   key: CollectionDisplaySectionType;
   title: string;
-  badge: string;
   items: CollectionItem[];
   showAnnotationDetails: boolean;
 };
 
 function getSelectionLabel(item: CollectionItem): string {
-  return `${item.type === 'image' ? 'image' : 'annotation'} ${getCollectionManuscriptLabel(item)}`;
+  return `${item.type === 'image' ? 'image' : 'graph'} ${getCollectionManuscriptLabel(item)}`;
 }
 
 function getImageThumbnailUrl(item: CollectionItem): string | null {
@@ -155,21 +153,18 @@ function getTableSections(items: CollectionItem[]): CollectionTableSection[] {
     {
       key: 'image',
       title: getCollectionDisplaySectionLabel('image'),
-      badge: 'Image',
       items: bySection.get('image') ?? [],
       showAnnotationDetails: false,
     },
     {
       key: 'annotation',
       title: getCollectionDisplaySectionLabel('annotation'),
-      badge: 'Annotation',
       items: bySection.get('annotation') ?? [],
       showAnnotationDetails: true,
     },
     {
       key: 'editorial',
       title: getCollectionDisplaySectionLabel('editorial'),
-      badge: 'Editorial',
       items: bySection.get('editorial') ?? [],
       showAnnotationDetails: true,
     },
@@ -208,9 +203,6 @@ export function CollectionTableView({
         >
           <div className="flex flex-wrap items-center gap-2 border-b border-border bg-secondary/40 px-4 py-3">
             <h2 className="text-base font-semibold text-foreground">{section.title}</h2>
-            <Badge variant={section.key === 'editorial' ? 'outline' : 'secondary'}>
-              {section.badge}
-            </Badge>
             <span className="text-sm text-muted-foreground">
               {section.items.length} {section.items.length === 1 ? 'item' : 'items'}
             </span>

@@ -52,13 +52,13 @@ describe('buildCollectionPrintHtml', () => {
     expect(html).toContain('<td class="thumb-cell">');
     expect(html).toContain('<div class="item-title">BL Cotton Ch. xviii.2: face</div>');
     expect(html).toContain(
-      '<div class="item-meta">Annotation <span aria-hidden="true">·</span> b, Caroline minuscule <span aria-hidden="true">·</span> Hand A</div>'
+      '<div class="item-meta">Allograph <span aria-hidden="true">·</span> b, Caroline minuscule <span aria-hidden="true">·</span> Hand A</div>'
     );
     expect(html).toContain('Images <span>1 item</span>');
-    expect(html).toContain('Annotations <span>1 item</span>');
+    expect(html).toContain('Graphs <span>1 item</span>');
     expect(html).toContain('Page image · BL Cotton Ch. xviii.2: face');
     expect(html).toContain(
-      'Annotation · BL Cotton Ch. xviii.2: face · b, Caroline minuscule · Hand A'
+      'Allograph · BL Cotton Ch. xviii.2: face · b, Caroline minuscule · Hand A'
     );
     expect(html).toContain('Array.from(document.images).map(waitForImage)');
 

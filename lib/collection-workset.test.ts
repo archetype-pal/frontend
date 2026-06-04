@@ -98,7 +98,7 @@ describe('buildCollectionWorksetPayload', () => {
       imageUrl: 'https://example.test/graph/graph-image',
       thumbnailUrl: 'https://example.test/graph/graph-thumbnail',
       metadata: {
-        item_type_label: 'Annotation',
+        item_type_label: 'Allograph',
         manuscript_label: 'BL Cotton Ch. xviii.2: face',
         allograph: 'b, Caroline minuscule',
         hand_name: 'Hand A',

@@ -122,7 +122,7 @@ export function useCollectionActions({
     const pageLabel =
       [collectionContext.shelfmark, collectionContext.locus].filter(Boolean).join(' ') ||
       `Page ${collectionContext.itemImageId}`;
-    const collectionName = getAvailableCollectionName(collections, `${pageLabel} annotations`);
+    const collectionName = getAvailableCollectionName(collections, pageLabel);
     if (!createCollection(collectionName, pageAnnotationCollectionItems)) return;
 
     showActionNotification({

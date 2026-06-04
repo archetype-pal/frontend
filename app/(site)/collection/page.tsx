@@ -167,7 +167,7 @@ function CollectionGraphCard({
               <Checkbox
                 checked={isSelected}
                 onCheckedChange={() => onToggleSelection(item)}
-                aria-label={`Select annotation ${title}`}
+                aria-label={`Select graph ${title}`}
               />
             </div>
             <CollectionStar itemId={item.id} itemType="graph" item={item} />
@@ -556,7 +556,7 @@ function CollectionPageContent() {
                 onClick={() => setFilter(f)}
                 className={f === 'all' ? 'min-w-[60px]' : 'min-w-[70px]'}
               >
-                {f === 'all' ? 'All' : f === 'image' ? 'Images' : 'Annotations'}
+                {f === 'all' ? 'All' : f === 'image' ? 'Images' : 'Graphs'}
               </Button>
             ))}
           </div>
@@ -576,7 +576,7 @@ function CollectionPageContent() {
           </div>
           {view === 'grid' && hasAnnotations && (
             <div className="flex items-center gap-2 rounded-lg bg-secondary p-1 pl-3">
-              <span className="text-xs font-medium text-muted-foreground">Group annotations</span>
+              <span className="text-xs font-medium text-muted-foreground">Group graphs</span>
               <Select
                 value={annotationGroup}
                 onValueChange={(value) => setAnnotationGroup(value as CollectionAnnotationGroupBy)}
@@ -640,7 +640,7 @@ function CollectionPageContent() {
       ) : (
         <div className="space-y-12">
           {renderSection('Images', images, allImages, 'image')}
-          {renderSection('Annotations', annotations, allAnnotations, 'graph')}
+          {renderSection('Graphs', annotations, allAnnotations, 'graph')}
           {renderSection(
             'Editorial Annotations',
             editorialAnnotations,
