@@ -1297,8 +1297,12 @@ export default function ManuscriptAnnotorious({
     );
   }
 
+  // Fill the flex-allocated canvas area (100%), NOT the full viewport. Using
+  // 100vw here let OpenSeadragon size its canvas to the whole window, so when a
+  // text panel docks left/right the image stayed centred in that phantom full
+  // width and zoom anchored behind the panel (drifting the image away).
   return (
-    <div style={{ width: '100vw', height: '100%', overflow: 'hidden', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'relative' }}>
       {state.isLoading && (
         <div
           style={{
