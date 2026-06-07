@@ -11,6 +11,7 @@ import {
   Trash2,
   ZoomIn,
   ZoomOut,
+  type LucideIcon,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,47 @@ interface ViewerToolbarProps {
   onModifyTool: () => void;
 }
 
+/**
+ * One tool-rail button: a tooltip-wrapped icon Button. `tooltip` falls back to
+ * `label` but is kept separate because several buttons intentionally differ
+ * (e.g. aria-label "Zoom in" vs tooltip "Zoom In").
+ */
+function ToolbarButton({
+  icon: Icon,
+  label,
+  tooltip,
+  keyshortcuts,
+  active = false,
+  disabled = false,
+  onClick,
+}: {
+  icon: LucideIcon;
+  label: string;
+  tooltip?: string;
+  keyshortcuts: string;
+  active?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant={active ? 'default' : 'ghost'}
+          size="icon"
+          aria-label={label}
+          aria-keyshortcuts={keyshortcuts}
+          disabled={disabled}
+          onClick={onClick}
+        >
+          <Icon className="h-4 w-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{tooltip ?? label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 /** The floating viewer tool rail (full-screen, pan, zoom, draw, save, …). */
 export function ViewerToolbar({
   toolbarPosition,
@@ -64,167 +106,88 @@ export function ViewerToolbar({
   return (
     <Toolbar orientation={toolbarPosition}>
       <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={isFullScreen ? 'default' : 'ghost'}
-              size="icon"
-              aria-label={isFullScreen ? 'Exit full screen' : 'Full screen'}
-              aria-keyshortcuts="F Shift+F"
-              onClick={onToggleFullScreen}
-            >
-              <LaptopMinimal className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{isFullScreen ? 'Exit Full Screen' : 'Full Screen'}</TooltipContent>
-        </Tooltip>
+        <ToolbarButton
+          icon={LaptopMinimal}
+          label={isFullScreen ? 'Exit full screen' : 'Full screen'}
+          tooltip={isFullScreen ? 'Exit Full Screen' : 'Full Screen'}
+          keyshortcuts="F Shift+F"
+          active={isFullScreen}
+          onClick={onToggleFullScreen}
+        />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={activeTool === 'move' ? 'default' : 'ghost'}
-              size="icon"
-              aria-label="Select/Drag (g / space)"
-              aria-keyshortcuts="G Shift+G Space"
-              onClick={onMoveTool}
-            >
-              <Hand className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Select/Drag (g / space)</TooltipContent>
-        </Tooltip>
+        <ToolbarButton
+          icon={Hand}
+          label="Select/Drag (g / space)"
+          keyshortcuts="G Shift+G Space"
+          active={activeTool === 'move'}
+          onClick={onMoveTool}
+        />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Zoom in"
-              aria-keyshortcuts="Z Shift+Z ="
-              onClick={onZoomIn}
-            >
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Zoom In</TooltipContent>
-        </Tooltip>
+        <ToolbarButton
+          icon={ZoomIn}
+          label="Zoom in"
+          tooltip="Zoom In"
+          keyshortcuts="Z Shift+Z ="
+          onClick={onZoomIn}
+        />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Zoom out"
-              aria-keyshortcuts="-"
-              onClick={onZoomOut}
-            >
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Zoom Out</TooltipContent>
-        </Tooltip>
+        <ToolbarButton
+          icon={ZoomOut}
+          label="Zoom out"
+          tooltip="Zoom Out"
+          keyshortcuts="-"
+          onClick={onZoomOut}
+        />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Refresh"
-              aria-keyshortcuts="Home"
-              onClick={onRefresh}
-            >
-              <RefreshCcw className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Refresh</TooltipContent>
-        </Tooltip>
+        <ToolbarButton icon={RefreshCcw} label="Refresh" keyshortcuts="Home" onClick={onRefresh} />
 
         {canCreateEditorialAnnotations && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={
-                  activeTool === 'draw' && currentCreationKind === 'editorial' ? 'default' : 'ghost'
-                }
-                size="icon"
-                aria-label="Create editorial annotation"
-                aria-keyshortcuts="E Shift+E"
-                onClick={() => onCreateAnnotation('editorial')}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Create Editorial Annotation</TooltipContent>
-          </Tooltip>
+          <ToolbarButton
+            icon={Pencil}
+            label="Create editorial annotation"
+            tooltip="Create Editorial Annotation"
+            keyshortcuts="E Shift+E"
+            active={activeTool === 'draw' && currentCreationKind === 'editorial'}
+            onClick={() => onCreateAnnotation('editorial')}
+          />
         )}
 
         {canPersistAnyAnnotations && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Save (s)"
-                aria-keyshortcuts="S Shift+S Control+S Meta+S"
-                onClick={onSave}
-                disabled={unsavedChanges === 0}
-              >
-                <Save className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Save (s)</TooltipContent>
-          </Tooltip>
+          <ToolbarButton
+            icon={Save}
+            label="Save (s)"
+            keyshortcuts="S Shift+S Control+S Meta+S"
+            disabled={unsavedChanges === 0}
+            onClick={onSave}
+          />
         )}
 
         {canDeleteAnnotations && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={activeTool === 'delete' ? 'default' : 'ghost'}
-                size="icon"
-                aria-label="Delete (x)"
-                aria-keyshortcuts="X Delete Shift+Backspace"
-                onClick={onDeleteTool}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Delete (x)</TooltipContent>
-          </Tooltip>
+          <ToolbarButton
+            icon={Trash2}
+            label="Delete (x)"
+            keyshortcuts="X Delete Shift+Backspace"
+            active={activeTool === 'delete'}
+            onClick={onDeleteTool}
+          />
         )}
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={activeTool === 'modify' ? 'default' : 'ghost'}
-              size="icon"
-              aria-label="Modify (m)"
-              aria-keyshortcuts="M Shift+M"
-              onClick={onModifyTool}
-            >
-              <Expand className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Modify (m)</TooltipContent>
-        </Tooltip>
+        <ToolbarButton
+          icon={Expand}
+          label="Modify (m)"
+          keyshortcuts="M Shift+M"
+          active={activeTool === 'modify'}
+          onClick={onModifyTool}
+        />
 
         {canCreatePublicAnnotations && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={
-                  activeTool === 'draw' && currentCreationKind === 'public' ? 'default' : 'ghost'
-                }
-                size="icon"
-                aria-label="Draw (d / space)"
-                aria-keyshortcuts="D Shift+D R Shift+R Space"
-                onClick={() => onCreateAnnotation('public')}
-              >
-                <SquarePen className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Draw (d / space)</TooltipContent>
-          </Tooltip>
+          <ToolbarButton
+            icon={SquarePen}
+            label="Draw (d / space)"
+            keyshortcuts="D Shift+D R Shift+R Space"
+            active={activeTool === 'draw' && currentCreationKind === 'public'}
+            onClick={() => onCreateAnnotation('public')}
+          />
         )}
       </TooltipProvider>
     </Toolbar>
