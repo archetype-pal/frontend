@@ -306,11 +306,11 @@ export default function Header() {
               </li>
               {orderedSections.map((sectionKey) => renderSectionButton(sectionKey))}
             </ul>
-            <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto md:max-w-xs">
+            <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
               {isSectionEnabled('search') && (
                 <div
                   className={cn(
-                    'relative flex-1 w-full md:w-auto',
+                    'relative w-full md:w-72 lg:w-80',
                     // On the search page the page itself owns a prominent search
                     // field, so the desktop nav search would be a confusing
                     // second box. Keep it on mobile, where the page header has none.
@@ -322,9 +322,10 @@ export default function Header() {
                     onChange={handleHeaderSearchChange}
                     onTriggerSearch={handleTriggerSearch}
                     suggestions={effectiveSuggestions}
-                    placeholder="Enter search terms"
+                    placeholder="Search the corpus…"
                     className="w-full"
-                    inputClassName="bg-primary-foreground/15 text-white placeholder:text-primary-foreground/50 w-full rounded-full border-0"
+                    inputClassName="h-10 w-full rounded-full border border-primary-foreground/25 bg-primary-foreground/15 text-[0.95rem] text-white shadow-none placeholder:text-primary-foreground/60 hover:bg-primary-foreground/20 focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/70"
+                    iconClassName="text-primary-foreground/65"
                     clearOnFocus
                     onFocus={handleHeaderSearchFocus}
                     suggestionsLoading={serverSuggestionsQuery.isFetching}
