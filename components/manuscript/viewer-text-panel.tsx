@@ -8,6 +8,7 @@ import { Download, ExternalLink, X } from 'lucide-react';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { showActionNotification } from '@/components/ui/action-toast';
 import { Button } from '@/components/ui/button';
+import { useTextCardSplit } from '@/hooks/use-text-card-split';
 import { API_BASE_URL } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { updateImageText, type ImageTextDetail } from '@/services/image-texts';
@@ -181,6 +182,7 @@ function TextEditorCard({
   onSaved,
   showClose,
   onClose,
+  flexGrow,
 }: {
   text: ImageTextDetail;
   canEdit: boolean;
@@ -191,6 +193,8 @@ function TextEditorCard({
   onSaved: () => void;
   showClose: boolean;
   onClose: () => void;
+  /** Share of the panel's main axis (set when two cards split the space). */
+  flexGrow?: number;
 }) {
   // The editor's Rich/Preview + validity toolbar portals into this header slot.
   const [toolbarHost, setToolbarHost] = React.useState<HTMLDivElement | null>(null);
@@ -200,6 +204,7 @@ function TextEditorCard({
     <section
       data-text-id={text.id}
       className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card shadow-sm"
+      style={flexGrow != null ? { flexGrow } : undefined}
     >
       {/* type accent rail */}
       <div className="h-[3px] shrink-0" style={tone ? { background: tone } : undefined} />
@@ -339,6 +344,10 @@ export function ViewerTextPanel({
     });
   }, []);
 
+  // Adjustable split between the two cards (side-by-side in the bottom dock,
+  // stacked in side docks). ratio = the first card's share of the main axis.
+  const { ratio, bindSplitter } = useTextCardSplit(layout);
+
   const containerRef = React.useRef<HTMLDivElement | null>(null);
 
   // region → text: mark every span linked to the selected region and bring the
@@ -440,20 +449,33 @@ export function ViewerTextPanel({
         )}
       >
         {shown.map((text, index) => (
-          <TextEditorCard
-            key={text.id}
-            text={text}
-            canEdit={canEdit}
-            token={token}
-            draft={drafts[text.id] ?? text.content}
-            onDraftChange={(next) => setDraftFor(text.id, next)}
-            onSaved={() => {
-              clearDraftFor(text.id);
-              onTextSaved?.();
-            }}
-            showClose={index === shown.length - 1}
-            onClose={onClose}
-          />
+          <React.Fragment key={text.id}>
+            {isBoth && index > 0 ? (
+              <div
+                {...bindSplitter}
+                className={cn(
+                  'group relative hidden shrink-0 self-stretch rounded-full bg-border/60 transition-colors hover:bg-accent/60 focus-visible:bg-accent focus-visible:outline-none md:block',
+                  layout === 'row'
+                    ? "w-1.5 cursor-col-resize before:absolute before:inset-y-0 before:-inset-x-2 before:content-['']"
+                    : "h-1.5 cursor-row-resize before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']"
+                )}
+              />
+            ) : null}
+            <TextEditorCard
+              text={text}
+              canEdit={canEdit}
+              token={token}
+              draft={drafts[text.id] ?? text.content}
+              onDraftChange={(next) => setDraftFor(text.id, next)}
+              onSaved={() => {
+                clearDraftFor(text.id);
+                onTextSaved?.();
+              }}
+              showClose={index === shown.length - 1}
+              onClose={onClose}
+              flexGrow={isBoth ? (index === 0 ? ratio : 1 - ratio) : undefined}
+            />
+          </React.Fragment>
         ))}
       </div>
 
