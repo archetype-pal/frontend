@@ -52,6 +52,91 @@ interface AnnotationFilterPanelProps {
 
 const CHECKBOX = 'h-4 w-4 rounded border-input';
 
+/**
+ * One visibility/focus list (Allographs or Hands): a header with "Toggle All",
+ * then per-item rows of a visibility checkbox + a focus button. `onHover` and
+ * `activeId` are optional — only the Allographs list highlights/hovers; the
+ * Hands list renders the same rows without them. Greyed + non-interactive when
+ * `disabled` (the master "Show annotations" switch is off).
+ */
+function FilterSection<T extends { id: number }>({
+  title,
+  items,
+  selectedIds,
+  getLabel,
+  onToggleAll,
+  onToggleOne,
+  onFocus,
+  onHover,
+  activeId,
+  focusTitle,
+  emptyText,
+  disabled,
+}: {
+  title: string;
+  items: T[];
+  selectedIds: number[];
+  getLabel: (item: T) => string;
+  onToggleAll: () => void;
+  onToggleOne: (id: number) => void;
+  onFocus?: (item: T) => void;
+  onHover?: (item: T | undefined) => void;
+  activeId?: number | null;
+  focusTitle: string;
+  emptyText: string;
+  disabled: boolean;
+}) {
+  return (
+    <div className={cn('mt-5', disabled && 'pointer-events-none opacity-50')}>
+      <div className="mb-3 flex items-center justify-between">
+        <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+        <Button variant="outline" size="sm" type="button" onClick={onToggleAll}>
+          Toggle All
+        </Button>
+      </div>
+      <Separator className="mb-2" />
+      <div className="max-h-[220px] space-y-0.5 overflow-auto pr-1">
+        {items.length ? (
+          items.map((item) => {
+            const label = getLabel(item);
+            return (
+              <div
+                key={item.id}
+                className="flex items-center gap-2 rounded px-2 py-1 hover:bg-muted/50"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(item.id)}
+                  onChange={() => onToggleOne(item.id)}
+                  className={CHECKBOX}
+                  aria-label={`Show ${label}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => onFocus?.(item)}
+                  onMouseEnter={onHover ? () => onHover(item) : undefined}
+                  onMouseLeave={onHover ? () => onHover(undefined) : undefined}
+                  title={focusTitle}
+                  className={cn(
+                    'flex-1 text-left text-sm transition-colors',
+                    activeId != null && activeId === item.id
+                      ? 'font-semibold text-primary'
+                      : 'text-foreground hover:text-primary'
+                  )}
+                >
+                  {label}
+                </button>
+              </div>
+            );
+          })
+        ) : (
+          <p className="px-2 text-sm text-muted-foreground">{emptyText}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function AnnotationFilterPanel({
   isOpen,
   transform,
@@ -140,89 +225,34 @@ export function AnnotationFilterPanel({
         </div>
 
         {/* Allographs — checkbox toggles visibility; the name highlights + opens examples */}
-        <div className={cn('mt-5', !annotationsEnabled && 'pointer-events-none opacity-50')}>
-          <div className="mb-3 flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-foreground">Allographs</h4>
-            <Button variant="outline" size="sm" type="button" onClick={onToggleAllAllographs}>
-              Toggle All
-            </Button>
-          </div>
-          <Separator className="mb-2" />
-          <div className="max-h-[220px] space-y-0.5 overflow-auto pr-1">
-            {allographs.length ? (
-              allographs.map((allograph) => (
-                <div
-                  key={allograph.id}
-                  className="flex items-center gap-2 rounded px-2 py-1 hover:bg-muted/50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedAllographIds.includes(allograph.id)}
-                    onChange={() => onToggleAllograph(allograph.id)}
-                    className={CHECKBOX}
-                    aria-label={`Show ${formatAllographLabel(allograph)}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => onFocusAllograph?.(allograph)}
-                    onMouseEnter={() => onAllographHover?.(allograph)}
-                    onMouseLeave={() => onAllographHover?.(undefined)}
-                    title="Highlight on image and show examples"
-                    className={cn(
-                      'flex-1 text-left text-sm transition-colors',
-                      activeAllographId === allograph.id
-                        ? 'font-semibold text-primary'
-                        : 'text-foreground hover:text-primary'
-                    )}
-                  >
-                    {formatAllographLabel(allograph)}
-                  </button>
-                </div>
-              ))
-            ) : (
-              <p className="px-2 text-sm text-muted-foreground">No allographs available.</p>
-            )}
-          </div>
-        </div>
+        <FilterSection
+          title="Allographs"
+          items={allographs}
+          selectedIds={selectedAllographIds}
+          getLabel={formatAllographLabel}
+          onToggleAll={onToggleAllAllographs}
+          onToggleOne={onToggleAllograph}
+          onFocus={onFocusAllograph}
+          onHover={onAllographHover}
+          activeId={activeAllographId}
+          focusTitle="Highlight on image and show examples"
+          emptyText="No allographs available."
+          disabled={!annotationsEnabled}
+        />
 
         {/* Hands — checkbox toggles visibility; the name highlights that hand */}
-        <div className={cn('mt-5', !annotationsEnabled && 'pointer-events-none opacity-50')}>
-          <div className="mb-3 flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-foreground">Hands</h4>
-            <Button variant="outline" size="sm" type="button" onClick={onToggleAllHands}>
-              Toggle All
-            </Button>
-          </div>
-          <Separator className="mb-2" />
-          <div className="max-h-[220px] space-y-0.5 overflow-auto pr-1">
-            {hands.length ? (
-              hands.map((hand) => (
-                <div
-                  key={hand.id}
-                  className="flex items-center gap-2 rounded px-2 py-1 hover:bg-muted/50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedHandIds.includes(hand.id)}
-                    onChange={() => onToggleHand(hand.id)}
-                    className={CHECKBOX}
-                    aria-label={`Show ${hand.name}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => onFocusHand?.(hand)}
-                    title="Highlight this hand on the image"
-                    className="flex-1 text-left text-sm text-foreground transition-colors hover:text-primary"
-                  >
-                    {hand.name}
-                  </button>
-                </div>
-              ))
-            ) : (
-              <p className="px-2 text-sm text-muted-foreground">No hands available.</p>
-            )}
-          </div>
-        </div>
+        <FilterSection
+          title="Hands"
+          items={hands}
+          selectedIds={selectedHandIds}
+          getLabel={(hand) => hand.name}
+          onToggleAll={onToggleAllHands}
+          onToggleOne={onToggleHand}
+          onFocus={onFocusHand}
+          focusTitle="Highlight this hand on the image"
+          emptyText="No hands available."
+          disabled={!annotationsEnabled}
+        />
       </div>
 
       <ResizeHandle {...resizeHandleProps} />
