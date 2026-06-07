@@ -129,17 +129,15 @@ function TextEditor({
 
   return (
     <>
-      <div className="px-4 py-3">
-        <TeiTextEditor
-          value={value}
-          onChange={onChange}
-          token={token ?? null}
-          onValidityChange={setValid}
-          toolbarContainer={toolbarHost}
-          defaultMode="preview"
-          hideSource
-        />
-      </div>
+      <TeiTextEditor
+        value={value}
+        onChange={onChange}
+        token={token ?? null}
+        onValidityChange={setValid}
+        toolbarContainer={toolbarHost}
+        defaultMode="preview"
+        hideSource
+      />
       {dirty ? (
         <div className="sticky bottom-0 z-10 flex items-center justify-end gap-2 border-t bg-card px-3 py-1.5">
           <Button

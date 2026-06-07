@@ -197,7 +197,9 @@ export function TeiTextEditor({
       {mode === 'source' && (
         <TeiCodeMirror value={value} onChange={onChange} placeholder={placeholder} />
       )}
-      {mode === 'rich' && <TeiRichEditor value={value} onChange={onChange} />}
+      {mode === 'rich' && (
+        <TeiRichEditor value={value} onChange={onChange} stickyToolbar={hosted} />
+      )}
       {mode === 'preview' && (
         <div className="min-h-[320px] px-4 py-3">
           <ImageTextViewer html={value} />

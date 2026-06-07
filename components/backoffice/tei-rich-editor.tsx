@@ -36,6 +36,12 @@ import { cn } from '@/lib/utils';
 interface TeiRichEditorProps {
   value: string;
   onChange: (value: string) => void;
+  /**
+   * Pin the markup toolbar to the top of the scroll container so it stays
+   * visible while the text scrolls (the in-viewer card). Off for the standalone
+   * backoffice editor, where the page — not the editor — scrolls.
+   */
+  stickyToolbar?: boolean;
 }
 
 const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
@@ -126,7 +132,11 @@ function ToolButton({
  * colour-coded highlight (see globals.css .tei-rich), and a "you are inside"
  * breadcrumb makes the markup legible while editing.
  */
-export default function TeiRichEditor({ value, onChange }: TeiRichEditorProps) {
+export default function TeiRichEditor({
+  value,
+  onChange,
+  stickyToolbar = false,
+}: TeiRichEditorProps) {
   const lastEmitted = React.useRef<string | null>(null);
 
   const editor = useEditor({
@@ -212,7 +222,14 @@ export default function TeiRichEditor({ value, onChange }: TeiRichEditorProps) {
 
   return (
     <div className="tei-editor">
-      <div className="tei-toolbar flex flex-wrap items-center gap-x-1 gap-y-1.5 border-b bg-muted/40 px-2 py-1.5">
+      <div
+        className={cn(
+          'tei-toolbar flex flex-wrap items-center gap-x-1 gap-y-1.5 border-b px-2 py-1.5',
+          // Pinned + opaque inside the viewer card so the text scrolls under it;
+          // a plain tinted bar in the standalone editor.
+          stickyToolbar ? 'sticky top-0 z-20 bg-muted' : 'bg-muted/40'
+        )}
+      >
         {/* Group 1 — wrap the selection in an inline entity */}
         <div className="flex items-center gap-0.5">
           {ENTITY_TOOLS.map((t) => (
