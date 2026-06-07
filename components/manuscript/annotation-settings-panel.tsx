@@ -3,7 +3,11 @@
 import * as React from 'react';
 import { X } from 'lucide-react';
 
-import type { AnnotationViewerSettings, TextPanelPosition } from '@/types/annotation-viewer';
+import type {
+  AnnotationViewerSettings,
+  TextDisplayMode,
+  TextPanelPosition,
+} from '@/types/annotation-viewer';
 
 import { Button } from '@/components/ui/button';
 import { ResizeHandle } from '@/components/ui/resize-handle';
@@ -16,11 +20,16 @@ interface AnnotationSettingsPanelProps {
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
   viewerSettings: AnnotationViewerSettings;
   showEditorSettings?: boolean;
+  /** Show the Transcription/Translation/Both chooser (image has text + both kinds). */
+  showTextDisplay?: boolean;
+  hasTranscription?: boolean;
+  hasTranslation?: boolean;
   onClose: () => void;
   onToggleAllowMultipleBoxes: () => void;
   onToggleSelectMultipleAnnotations: () => void;
   onSetToolbarPosition: (position: 'vertical' | 'horizontal') => void;
   onSetTextPanelPosition: (position: TextPanelPosition) => void;
+  onSetTextDisplayMode: (mode: TextDisplayMode) => void;
   width?: number;
   height?: number;
   resizeHandleProps?: React.HTMLAttributes<HTMLSpanElement>;
@@ -32,17 +41,27 @@ const TEXT_POSITIONS: Array<{ value: TextPanelPosition; label: string }> = [
   { value: 'bottom', label: 'Bottom' },
 ];
 
+const TEXT_DISPLAY_OPTIONS: Array<{ value: TextDisplayMode; label: string }> = [
+  { value: 'transcription', label: 'Transcription' },
+  { value: 'translation', label: 'Translation' },
+  { value: 'both', label: 'Both' },
+];
+
 export function AnnotationSettingsPanel({
   isOpen,
   transform,
   dragHandleProps,
   viewerSettings,
   showEditorSettings = false,
+  showTextDisplay = false,
+  hasTranscription = false,
+  hasTranslation = false,
   onClose,
   onToggleAllowMultipleBoxes,
   onToggleSelectMultipleAnnotations,
   onSetToolbarPosition,
   onSetTextPanelPosition,
+  onSetTextDisplayMode,
   width,
   height,
   resizeHandleProps,
@@ -124,6 +143,36 @@ export function AnnotationSettingsPanel({
             </Button>
           </div>
         </div>
+        {showTextDisplay && (
+          <div>
+            <h4 className="text-sm font-semibold text-foreground">Text display</h4>
+            <Separator className="my-3" />
+
+            <div className="flex flex-wrap gap-2">
+              {TEXT_DISPLAY_OPTIONS.map((option) => {
+                const disabled =
+                  (option.value === 'transcription' && !hasTranscription) ||
+                  (option.value === 'translation' && !hasTranslation) ||
+                  (option.value === 'both' && (!hasTranscription || !hasTranslation));
+                return (
+                  <Button
+                    key={option.value}
+                    variant={
+                      viewerSettings.textDisplayMode === option.value ? 'default' : 'outline'
+                    }
+                    size="sm"
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => onSetTextDisplayMode(option.value)}
+                  >
+                    {option.label}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div>
           <h4 className="text-sm font-semibold text-foreground">Text panel position</h4>
           <Separator className="my-3" />

@@ -3,12 +3,11 @@
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { Download, ExternalLink, Pencil, X } from 'lucide-react';
+import { Download, ExternalLink, X } from 'lucide-react';
 
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { showActionNotification } from '@/components/ui/action-toast';
 import { Button } from '@/components/ui/button';
-import { Segmented } from '@/components/ui/segmented';
 import { API_BASE_URL } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { updateImageText, type ImageTextDetail } from '@/services/image-texts';
@@ -28,10 +27,11 @@ const TeiTextEditor = dynamic(
 
 interface ViewerTextPanelProps {
   texts: ImageTextDetail[];
-  /** Which text(s) to show: transcription, translation, or both in parallel. */
+  /**
+   * Which text(s) to show: transcription, translation, or both in parallel.
+   * The chooser lives in the Settings (wrench) panel, not in this panel's header.
+   */
   displayMode: TextDisplayMode;
-  /** Change which text(s) are shown (the panel's own "Show" control). */
-  onSetDisplayMode: (mode: TextDisplayMode) => void;
   /** Graph id of the region currently selected on the image (region → text). */
   linkedGraphId: number | null;
   /** Hovering a linked span highlights its region on the image. */
@@ -70,21 +70,29 @@ function graphIdsOf(el: Element | null): number[] {
 const TYPE_ORDER = (type: string): number =>
   type === 'Transcription' ? 0 : type === 'Translation' ? 1 : 2;
 
-/** Editor-only authoring surface for a single text — lazy TEI editor + save. */
-function TextEditPanel({
+/**
+ * Always-on authoring surface for a single text (editors only). The Rich/Preview
+ * toolbar portals into the column header; a Save bar slides in only when there
+ * are unsaved changes. Defaults to Preview so the column reads like the public
+ * view until the editor switches to Rich. Keyed by text id so a different text
+ * re-seeds the draft.
+ */
+function TextEditor({
   text,
   token,
   onSaved,
-  onCancel,
+  toolbarHost,
 }: {
   text: ImageTextDetail;
   token: string | null | undefined;
   onSaved: () => void;
-  onCancel: () => void;
+  /** Header slot the Rich/Preview + validity toolbar portals into (one bar). */
+  toolbarHost: HTMLElement | null;
 }) {
   const [draft, setDraft] = React.useState(text.content);
   const [valid, setValid] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const dirty = draft !== text.content;
 
   const handleSave = async () => {
     if (!token) return;
@@ -110,56 +118,77 @@ function TextEditPanel({
   };
 
   return (
-    <div className="space-y-2">
-      <TeiTextEditor
-        value={draft}
-        onChange={setDraft}
-        token={token ?? null}
-        onValidityChange={setValid}
-      />
-      <div className="flex items-center justify-end gap-2">
-        <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
-          Cancel
-        </Button>
-        <Button
-          size="sm"
-          onClick={() => void handleSave()}
-          disabled={!valid || saving || draft === text.content}
-        >
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
+    <>
+      <div className="px-4 py-3">
+        <TeiTextEditor
+          value={draft}
+          onChange={setDraft}
+          token={token ?? null}
+          onValidityChange={setValid}
+          toolbarContainer={toolbarHost}
+          defaultMode="preview"
+          hideSource
+        />
       </div>
-    </div>
+      {dirty ? (
+        <div className="sticky bottom-0 z-10 flex items-center justify-end gap-2 border-t bg-card px-3 py-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDraft(text.content)}
+            disabled={saving}
+          >
+            Discard
+          </Button>
+          <Button size="sm" onClick={() => void handleSave()} disabled={!valid || saving}>
+            {saving ? 'Saving…' : 'Save'}
+          </Button>
+        </div>
+      ) : null}
+    </>
   );
 }
 
-/** One text column: type/language label + actions (open editor, download,
- * edit toggle) over the rendered text or, for editors, the in-place TEI editor. */
+/**
+ * One text column. Editors get an always-on Rich/Preview editor whose toolbar is
+ * merged into this header (no edit toggle); readers get the rendered text under a
+ * label. The last shown column also carries the panel's close control.
+ */
 function TextColumn({
   text,
   canEdit,
   token,
-  isEditing,
-  onToggleEdit,
   onSaved,
+  showClose,
+  onClose,
 }: {
   text: ImageTextDetail;
   canEdit: boolean;
   token: string | null | undefined;
-  isEditing: boolean;
-  onToggleEdit: () => void;
   onSaved: () => void;
+  /** The last shown column carries the panel's close control (one bar, no extra header). */
+  showClose: boolean;
+  onClose: () => void;
 }) {
+  // The editor's Rich/Preview + validity toolbar portals into this slot, so the
+  // column never stacks a second bar under its header.
+  const [toolbarHost, setToolbarHost] = React.useState<HTMLDivElement | null>(null);
+
   return (
     <section data-text-id={text.id} className="flex h-full min-h-0 flex-col overflow-y-auto">
-      <div className="flex items-center justify-between gap-2 px-4 pt-3">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          {text.type}
-          {text.language ? (
-            <span className="ml-1.5 font-mono normal-case opacity-70">{text.language}</span>
-          ) : null}
-        </span>
-        <div className="flex items-center gap-0.5">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 border-b bg-card px-3 py-1.5">
+        {canEdit ? (
+          // The merged Rich/Preview + validity toolbar lands here.
+          <div ref={setToolbarHost} className="flex min-w-0 flex-1 flex-wrap items-center gap-1" />
+        ) : (
+          <span className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {text.type}
+            {text.language ? (
+              <span className="ml-1.5 font-mono normal-case opacity-70">{text.language}</span>
+            ) : null}
+          </span>
+        )}
+        <div className="ml-auto flex shrink-0 items-center gap-0.5">
           {canEdit ? (
             <Link
               href={`/backoffice/image-texts/${text.id}`}
@@ -178,33 +207,38 @@ function TextColumn({
           >
             <Download className="h-4 w-4" />
           </a>
-          {canEdit ? (
+          {showClose ? (
             <Button
-              variant={isEditing ? 'default' : 'ghost'}
+              variant="ghost"
               size="icon"
-              className="h-7 w-7"
-              aria-label={isEditing ? 'Stop editing' : 'Edit text'}
-              aria-pressed={isEditing}
-              title={isEditing ? 'Stop editing' : 'Edit text markup'}
-              onClick={onToggleEdit}
+              className="ml-0.5 h-7 w-7"
+              aria-label="Hide text panel"
+              title="Hide text panel"
+              onClick={onClose}
             >
-              <Pencil className="h-4 w-4" />
+              <X className="h-4 w-4" />
             </Button>
           ) : null}
         </div>
       </div>
 
-      <div className="px-4 py-3">
-        {isEditing ? (
-          <TextEditPanel text={text} token={token} onSaved={onSaved} onCancel={onToggleEdit} />
-        ) : (
+      {canEdit ? (
+        <TextEditor
+          key={text.id}
+          text={text}
+          token={token}
+          onSaved={onSaved}
+          toolbarHost={toolbarHost}
+        />
+      ) : (
+        <div className="px-4 py-3">
           <ImageTextViewer
             html={text.content}
             richMarkup
             className="prose prose-sm max-w-none dark:prose-invert"
           />
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -212,7 +246,6 @@ function TextColumn({
 export function ViewerTextPanel({
   texts,
   displayMode,
-  onSetDisplayMode,
   linkedGraphId,
   onSpanHover,
   onSpanActivate,
@@ -253,17 +286,6 @@ export function ViewerTextPanel({
 
   const isBoth = displayMode === 'both' && shown.length > 1;
   const shownKey = shown.map((t) => `${t.id}:${t.content.length}`).join('|');
-  const hasTranscription = Boolean(transcription);
-  const hasTranslation = Boolean(translation);
-
-  const [editingId, setEditingId] = React.useState<number | null>(null);
-  // Leaving a text view or losing edit rights closes any open editor.
-  React.useEffect(() => {
-    if (editingId != null && !shown.some((t) => t.id === editingId)) setEditingId(null);
-  }, [shown, editingId]);
-  React.useEffect(() => {
-    if (!canEdit) setEditingId(null);
-  }, [canEdit]);
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -335,28 +357,6 @@ export function ViewerTextPanel({
 
   return (
     <aside className="flex h-full w-full flex-col overflow-hidden rounded-lg border bg-card">
-      <header className="flex items-center justify-between gap-2 border-b px-3 py-2">
-        <Segmented
-          ariaLabel="Show transcription or translation"
-          value={displayMode}
-          onChange={onSetDisplayMode}
-          options={[
-            { value: 'transcription', label: 'Transcription', disabled: !hasTranscription },
-            { value: 'translation', label: 'Translation', disabled: !hasTranslation },
-            { value: 'both', label: 'Both', disabled: !hasTranscription || !hasTranslation },
-          ]}
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 shrink-0"
-          aria-label="Hide text panel"
-          onClick={onClose}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </header>
-
       <div
         ref={containerRef}
         onClick={handleClick}
@@ -373,22 +373,29 @@ export function ViewerTextPanel({
           )}
         >
           {shown.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-muted-foreground">
-              No text recorded for this image.
-            </p>
+            <div className="flex items-center justify-between gap-2 border-b bg-card px-3 py-1.5">
+              <p className="text-sm text-muted-foreground">No text recorded for this image.</p>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                aria-label="Hide text panel"
+                title="Hide text panel"
+                onClick={onClose}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           ) : (
-            shown.map((text) => (
+            shown.map((text, index) => (
               <TextColumn
                 key={text.id}
                 text={text}
                 canEdit={canEdit}
                 token={token}
-                isEditing={canEdit && editingId === text.id}
-                onToggleEdit={() => setEditingId((cur) => (cur === text.id ? null : text.id))}
-                onSaved={() => {
-                  setEditingId(null);
-                  onTextSaved?.();
-                }}
+                onSaved={() => onTextSaved?.()}
+                showClose={index === shown.length - 1}
+                onClose={onClose}
               />
             ))
           )}

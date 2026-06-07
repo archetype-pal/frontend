@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { AlertTriangle, CheckCircle2, Code2, Eye, Pencil } from 'lucide-react';
 
@@ -31,6 +32,21 @@ interface TeiTextEditorProps {
   /** Reports TEI well-formedness so the parent can gate saving. */
   onValidityChange?: (valid: boolean) => void;
   placeholder?: string;
+  /**
+   * When provided, the Source/Rich/Preview + validity toolbar renders into this
+   * element (via portal) instead of inline, and the editor body drops its own
+   * chrome. Lets an embedding panel merge the toolbar into its own header rather
+   * than stacking a second bar. Omit it for the standalone (backoffice) layout.
+   */
+  toolbarContainer?: HTMLElement | null;
+  /** Initial mode (defaults to Source for the standalone backoffice editor). */
+  defaultMode?: Mode;
+  /**
+   * Hide the raw-TEI Source tab (e.g. the in-viewer panel, which prefers Rich +
+   * Preview and points to the full editor for raw editing). Source stays the
+   * default for the standalone backoffice editor.
+   */
+  hideSource?: boolean;
 }
 
 type Mode = 'source' | 'rich' | 'preview';
@@ -50,8 +66,11 @@ export function TeiTextEditor({
   token,
   onValidityChange,
   placeholder,
+  toolbarContainer,
+  defaultMode = 'source',
+  hideSource = false,
 }: TeiTextEditorProps) {
-  const [mode, setMode] = React.useState<Mode>('source');
+  const [mode, setMode] = React.useState<Mode>(defaultMode);
   const [errors, setErrors] = React.useState<TeiValidationError[]>([]);
   const [checked, setChecked] = React.useState(false);
 
@@ -66,8 +85,12 @@ export function TeiTextEditor({
   }, [value]);
 
   React.useEffect(() => {
-    if (mode === 'rich' && !richAvailable) setMode('source');
-  }, [mode, richAvailable]);
+    // Rich needs a byte-exact round-trip; fall back to Source (or Preview when
+    // Source is hidden) when it isn't available.
+    if (mode === 'rich' && !richAvailable) setMode(hideSource ? 'preview' : 'source');
+    // Never sit on a hidden Source tab.
+    if (mode === 'source' && hideSource) setMode(richAvailable ? 'rich' : 'preview');
+  }, [mode, richAvailable, hideSource]);
 
   // Debounced well-formedness check against the server validator. The parent
   // uses `onValidityChange` to disable Save while the TEI is malformed.
@@ -98,47 +121,78 @@ export function TeiTextEditor({
   }, [value, token, onValidityChange]);
 
   const valid = errors.length === 0;
+  const hosted = Boolean(toolbarContainer);
+
+  // Hosted in a panel header: render icon-only tabs + an icon-only validity badge
+  // so the whole bar fits a narrow (split-column) header without a second row.
+  const toolbar = (
+    <div className={cn('flex items-center gap-1', hosted ? 'flex-wrap' : 'border-b px-2 py-1.5')}>
+      {!hideSource && (
+        <ModeButton
+          active={mode === 'source'}
+          onClick={() => setMode('source')}
+          icon={Code2}
+          label="Source"
+          compact={hosted}
+        />
+      )}
+      <ModeButton
+        active={mode === 'rich'}
+        onClick={() => setMode('rich')}
+        icon={Pencil}
+        label="Rich"
+        compact={hosted}
+        disabled={!richAvailable}
+        title={
+          richAvailable
+            ? undefined
+            : hideSource
+              ? 'Rich editing unavailable for this document — use “Open in the full editor”'
+              : 'Rich editing unavailable for this document — use Source'
+        }
+      />
+      <ModeButton
+        active={mode === 'preview'}
+        onClick={() => setMode('preview')}
+        icon={Eye}
+        label="Preview"
+        compact={hosted}
+      />
+      {checked &&
+        (valid ? (
+          <span
+            className={cn(
+              'flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400',
+              hosted ? '' : 'ml-auto'
+            )}
+            title="Valid TEI"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" /> {!hosted && 'Valid TEI'}
+          </span>
+        ) : (
+          <span
+            className={cn(
+              'flex items-center gap-1 text-[11px] font-medium text-destructive',
+              hosted ? '' : 'ml-auto'
+            )}
+            title={errors[0] ? `Line ${errors[0].line}: ${errors[0].message}` : 'Invalid TEI'}
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            {!hosted &&
+              (errors[0] ? `Line ${errors[0].line}: ${errors[0].message}` : 'Invalid TEI')}
+          </span>
+        ))}
+      {!checked && !hosted && (
+        <span className="ml-auto pr-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+          TEI
+        </span>
+      )}
+    </div>
+  );
 
   return (
-    <div className="rounded-md border">
-      <div className="flex items-center gap-1 border-b px-2 py-1.5">
-        <ModeButton active={mode === 'source'} onClick={() => setMode('source')} icon={Code2}>
-          Source
-        </ModeButton>
-        <ModeButton
-          active={mode === 'rich'}
-          onClick={() => setMode('rich')}
-          icon={Pencil}
-          disabled={!richAvailable}
-          title={
-            richAvailable ? undefined : 'Rich editing unavailable for this document — use Source'
-          }
-        >
-          Rich
-        </ModeButton>
-        <ModeButton active={mode === 'preview'} onClick={() => setMode('preview')} icon={Eye}>
-          Preview
-        </ModeButton>
-        {checked &&
-          (valid ? (
-            <span className="ml-auto flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Valid TEI
-            </span>
-          ) : (
-            <span
-              className="ml-auto flex items-center gap-1 text-[11px] font-medium text-destructive"
-              title={errors[0] ? `Line ${errors[0].line}: ${errors[0].message}` : undefined}
-            >
-              <AlertTriangle className="h-3.5 w-3.5" />
-              {errors[0] ? `Line ${errors[0].line}: ${errors[0].message}` : 'Invalid TEI'}
-            </span>
-          ))}
-        {!checked && (
-          <span className="ml-auto pr-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-            TEI
-          </span>
-        )}
-      </div>
+    <div className={cn(hosted ? '' : 'rounded-md border')}>
+      {toolbarContainer ? createPortal(toolbar, toolbarContainer) : toolbar}
 
       {mode === 'source' && (
         <TeiCodeMirror value={value} onChange={onChange} placeholder={placeholder} />
@@ -157,14 +211,17 @@ function ModeButton({
   active,
   onClick,
   icon: Icon,
-  children,
+  label,
+  compact = false,
   disabled = false,
   title,
 }: {
   active: boolean;
   onClick: () => void;
   icon: typeof Code2;
-  children: React.ReactNode;
+  label: string;
+  /** Icon-only (label moves to the tooltip) — for narrow hosted headers. */
+  compact?: boolean;
   disabled?: boolean;
   title?: string;
 }) {
@@ -173,16 +230,18 @@ function ModeButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={title}
+      title={title ?? (compact ? label : undefined)}
+      aria-label={label}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+        'inline-flex items-center gap-1.5 rounded-md text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+        compact ? 'h-7 w-7 justify-center' : 'px-2.5 py-1',
         active
           ? 'bg-primary/10 text-primary'
           : 'text-muted-foreground hover:bg-accent hover:text-foreground'
       )}
     >
       <Icon className="h-3.5 w-3.5" />
-      {children}
+      {!compact && label}
     </button>
   );
 }

@@ -299,6 +299,17 @@ export default function ManuscriptViewer({
   // annotation layer are both derived from it. An image with no texts can never
   // enter a text view, so we clamp to 'allograph' to avoid a blank canvas.
   const hasTexts = imageTexts.length > 0;
+  // The Transcription/Translation/Both chooser lives in the Settings panel; it is
+  // only offered when both kinds exist (otherwise there is nothing to choose).
+  const hasTranscription = React.useMemo(
+    () => imageTexts.some((t) => t.type.toLowerCase() === 'transcription'),
+    [imageTexts]
+  );
+  const hasTranslation = React.useMemo(
+    () => imageTexts.some((t) => t.type.toLowerCase() === 'translation'),
+    [imageTexts]
+  );
+  const showTextDisplay = hasTranscription && hasTranslation;
   const effectiveViewMode = hasTexts ? viewerSettings.viewMode : 'allograph';
   const isTextPanelOpen = effectiveViewMode !== 'allograph';
   const showTextPanel = isTextPanelOpen && hasTexts;
@@ -1107,11 +1118,15 @@ export default function ManuscriptViewer({
         dragHandleProps={settingsPanelDrag.bindDrag}
         viewerSettings={viewerSettings}
         showEditorSettings={canUseEditorSettings}
+        showTextDisplay={showTextDisplay}
+        hasTranscription={hasTranscription}
+        hasTranslation={hasTranslation}
         onClose={closeSettingsPanel}
         onToggleAllowMultipleBoxes={handleToggleAllowMultipleBoxes}
         onToggleSelectMultipleAnnotations={handleToggleSelectMultipleAnnotations}
         onSetToolbarPosition={handleSetToolbarPosition}
         onSetTextPanelPosition={handleSetTextPanelPosition}
+        onSetTextDisplayMode={handleSetTextDisplayMode}
         width={settingsPanelResize.size.width}
         height={settingsPanelResize.size.height}
         resizeHandleProps={settingsPanelResize.bindResize}
@@ -1266,7 +1281,6 @@ export default function ManuscriptViewer({
                 <ViewerTextPanel
                   texts={imageTexts}
                   displayMode={viewerSettings.textDisplayMode}
-                  onSetDisplayMode={handleSetTextDisplayMode}
                   token={token}
                   canEdit={canPersistAnyAnnotations && !isPublicDemoMode}
                   onTextSaved={() => void reloadTextsAndAnnotations()}
