@@ -13,6 +13,29 @@ import { Extension, Mark, Node, type Editor } from '@tiptap/react';
 
 import type { StackEntry } from '@/lib/tei-prosemirror';
 
+/**
+ * Reader-friendly name for a marked element, shown as the always-styled hover
+ * label. Entities read by role ("Person"/"Place"); clauses read by their @type
+ * (e.g. "Salutation"); anything else falls back to the element (with @type).
+ */
+export function teiElementLabel(el: string, type?: string): string {
+  const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+  switch (el) {
+    case 'persName':
+      return 'Person';
+    case 'placeName':
+      return 'Place';
+    case 'ex':
+      return 'Expansion';
+    case 'supplied':
+      return 'Supplied';
+    case 'seg':
+      return type ? cap(type) : 'Clause';
+    default:
+      return type ? `${el}: ${type}` : el;
+  }
+}
+
 export const TeiMark = Mark.create({
   name: 'tei',
 
@@ -35,15 +58,17 @@ export const TeiMark = Mark.create({
     let spec: unknown = 0;
     for (let i = stack.length - 1; i >= 0; i--) {
       const entry = stack[i];
-      // The human label prefers the @type (e.g. "address", "name") and falls
-      // back to the element name; surfaced as a hover pill via data-tei-label.
-      const label = entry.attrs?.type || entry.el;
-      const full = entry.attrs?.type ? `${entry.el}:${entry.attrs.type}` : entry.el;
+      const type = entry.attrs?.type;
+      const label = teiElementLabel(entry.el, type);
+      const full = type ? `${entry.el}: ${type}` : entry.el;
       spec = [
         'span',
         {
+          // tei-el-<element> drives the category colour; data-tei-type lets the
+          // styling (and future theming) distinguish clause types.
           class: `tei-el tei-el-${entry.el}`,
           'data-tei-el': entry.el,
+          ...(type ? { 'data-tei-type': type } : {}),
           'data-tei-label': label,
           title: full,
         },

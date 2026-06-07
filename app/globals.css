@@ -899,22 +899,67 @@ g.a9s-annotation.a9s-text:hover .a9s-outer {
   opacity: 1;
 }
 
-/* Rendered TEI editor (Phase H.7): nested element spans get a faint tinted
-   underline so the markup structure is visible while editing the text. */
+/* Rendered TEI editor (Phase H.7): every marked element gets an always-on,
+   colour-coded highlight so the markup is unmistakable while editing — clicking
+   a "wrap" button visibly tints the selection. Tints are translucent so nesting
+   layers (a Person inside a Salutation reads as both), each with a coloured
+   baseline accent. Category hues:
+     clause/seg → indigo · Person → green · Place → teal
+     Expansion → amber · Supplied → violet · other → slate
+   Hovering names the element (its role, or the clause @type) in a pill. */
 .tei-rich .tei-el {
-  border-bottom: 2px solid hsl(var(--c-transcription-h) 55% 55% / 0.35);
-  border-radius: 2px;
-  padding-bottom: 1px;
+  position: relative;
+  border-radius: 3px;
+  padding: 0.1em 1px;
+  background: hsl(220 12% 50% / 0.16);
+  box-shadow: inset 0 -2px 0 hsl(220 12% 45% / 0.4);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-color 0.12s ease;
 }
 
+.tei-rich .tei-el-seg {
+  background: hsl(245 60% 60% / 0.15);
+  box-shadow: inset 0 -2px 0 hsl(245 55% 55% / 0.45);
+}
 .tei-rich .tei-el-persName {
-  border-bottom-color: hsl(var(--c-translation-h) 55% 55% / 0.5);
+  background: hsl(145 55% 45% / 0.22);
+  box-shadow: inset 0 -2px 0 hsl(145 55% 36% / 0.6);
 }
-
 .tei-rich .tei-el-placeName {
-  border-bottom-color: hsl(160 55% 45% / 0.5);
+  background: hsl(178 60% 40% / 0.22);
+  box-shadow: inset 0 -2px 0 hsl(178 60% 32% / 0.6);
+}
+.tei-rich .tei-el-ex {
+  background: hsl(36 85% 52% / 0.22);
+  box-shadow: inset 0 -2px 0 hsl(36 85% 42% / 0.6);
+}
+.tei-rich .tei-el-supplied {
+  background: hsl(282 50% 58% / 0.22);
+  box-shadow: inset 0 -2px 0 hsl(282 45% 50% / 0.6);
 }
 
+/* Strengthen the hovered element so its extent is obvious. */
+.tei-rich .tei-el:hover {
+  background: hsl(220 12% 50% / 0.28);
+}
+.tei-rich .tei-el-seg:hover {
+  background: hsl(245 60% 60% / 0.27);
+}
+.tei-rich .tei-el-persName:hover {
+  background: hsl(145 55% 45% / 0.36);
+}
+.tei-rich .tei-el-placeName:hover {
+  background: hsl(178 60% 40% / 0.36);
+}
+.tei-rich .tei-el-ex:hover {
+  background: hsl(36 85% 52% / 0.36);
+}
+.tei-rich .tei-el-supplied:hover {
+  background: hsl(282 50% 58% / 0.36);
+}
+
+/* Empty/void elements (e.g. <lb/>) render as a small inline chip. */
 .tei-rich .tei-empty {
   margin: 0 1px;
   border-radius: 3px;
@@ -924,38 +969,43 @@ g.a9s-annotation.a9s-text:hover .a9s-outer {
   color: hsl(var(--c-transcription-h) 40% 40%);
 }
 
-/* Track B (old C.1) — hovering a marked element shows a small pill naming it
-   (its @type, else the element), so editors can read the markup structure
-   inline without opening source view. */
-.tei-rich .tei-el {
-  position: relative;
-}
-
-.tei-rich .tei-el:hover {
-  background: hsl(var(--c-transcription-h) 60% 55% / 0.1);
-}
-
+/* Hovering a marked element shows a pill naming it (its role / clause @type), so
+   editors can read the markup structure inline without opening Source view. */
 .tei-rich .tei-el:hover::after {
   content: attr(data-tei-label);
   position: absolute;
   left: 0;
-  top: -1.4em;
-  z-index: 5;
+  top: -1.5em;
+  z-index: 20;
   white-space: nowrap;
   border-radius: 4px;
-  background: hsl(var(--c-transcription-h) 45% 30%);
-  padding: 0 6px;
+  background: hsl(220 18% 26%);
+  padding: 1px 6px;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: white;
   pointer-events: none;
 }
-
+.tei-rich .tei-el-seg:hover::after {
+  background: hsl(245 35% 32%);
+}
 .tei-rich .tei-el-persName:hover::after {
-  background: hsl(var(--c-translation-h) 45% 35%);
+  background: hsl(145 45% 26%);
+}
+.tei-rich .tei-el-placeName:hover::after {
+  background: hsl(178 50% 22%);
+}
+.tei-rich .tei-el-ex:hover::after {
+  background: hsl(36 70% 30%);
+}
+.tei-rich .tei-el-supplied:hover::after {
+  background: hsl(282 40% 36%);
 }
 
-.tei-rich .tei-el-placeName:hover::after {
-  background: hsl(160 45% 32%);
+/* When the pointer is over a nested element, only the innermost one names itself
+   — suppress the ancestor pills so labels don't pile up at the same spot. */
+.tei-rich .tei-el:hover:has(.tei-el:hover)::after {
+  content: none;
 }

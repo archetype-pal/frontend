@@ -96,6 +96,11 @@ export default function TeiRichEditor({ value, onChange }: TeiRichEditorProps) {
   const btn =
     'rounded border px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40';
 
+  // Keep focus (and therefore the text selection) in the editor when a toolbar
+  // button is pressed — without this, mousedown blurs the editor and a wrap
+  // could act on a collapsed selection.
+  const keepSelection = (event: React.MouseEvent) => event.preventDefault();
+
   return (
     <div>
       <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1.5">
@@ -105,6 +110,7 @@ export default function TeiRichEditor({ value, onChange }: TeiRichEditorProps) {
         <button
           type="button"
           className={btn}
+          onMouseDown={keepSelection}
           onClick={() => wrapTei(editor, 'persName', { type: 'name' })}
         >
           Person
@@ -112,14 +118,25 @@ export default function TeiRichEditor({ value, onChange }: TeiRichEditorProps) {
         <button
           type="button"
           className={btn}
+          onMouseDown={keepSelection}
           onClick={() => wrapTei(editor, 'placeName', { type: 'name' })}
         >
           Place
         </button>
-        <button type="button" className={btn} onClick={() => wrapTei(editor, 'ex', {})}>
+        <button
+          type="button"
+          className={btn}
+          onMouseDown={keepSelection}
+          onClick={() => wrapTei(editor, 'ex', {})}
+        >
           Expansion
         </button>
-        <button type="button" className={btn} onClick={() => wrapTei(editor, 'supplied', {})}>
+        <button
+          type="button"
+          className={btn}
+          onMouseDown={keepSelection}
+          onClick={() => wrapTei(editor, 'supplied', {})}
+        >
           Supplied
         </button>
         <select
@@ -159,7 +176,12 @@ export default function TeiRichEditor({ value, onChange }: TeiRichEditorProps) {
             </option>
           ))}
         </select>
-        <button type="button" className={btn} onClick={() => unwrapTei(editor)}>
+        <button
+          type="button"
+          className={btn}
+          onMouseDown={keepSelection}
+          onClick={() => unwrapTei(editor)}
+        >
           Unwrap
         </button>
       </div>
