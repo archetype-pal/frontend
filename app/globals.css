@@ -1009,3 +1009,80 @@ g.a9s-annotation.a9s-text:hover .a9s-outer {
 .tei-rich .tei-el:hover:has(.tei-el:hover)::after {
   content: none;
 }
+
+/* --- Rich TEI editor toolbar ------------------------------------------------ */
+
+/* Tint each markup tool's icon with its category colour, tying the toolbar to
+   the highlight palette (Person → green, Place → teal, Expansion → amber,
+   Supplied → violet). */
+.tei-tool .tei-tool-icon {
+  color: hsl(220 10% 50%);
+}
+.tei-tool[data-tone='person'] .tei-tool-icon {
+  color: hsl(145 50% 38%);
+}
+.tei-tool[data-tone='place'] .tei-tool-icon {
+  color: hsl(178 55% 32%);
+}
+.tei-tool[data-tone='ex'] .tei-tool-icon {
+  color: hsl(36 75% 42%);
+}
+.tei-tool[data-tone='supplied'] .tei-tool-icon {
+  color: hsl(282 42% 50%);
+}
+.tei-tool:disabled .tei-tool-icon {
+  color: currentColor;
+}
+
+/* On hover the button background becomes the gold accent; reset the icon to the
+   foreground so the tinted icons (esp. amber Expansion) don't wash out on gold. */
+.tei-tool:not(:disabled):hover .tei-tool-icon {
+  color: var(--foreground);
+}
+
+/* Lighter category tints for the near-black dark toolbar (the solid icons can't
+   lean on translucency the way the .tei-el highlights do). */
+.dark .tei-tool .tei-tool-icon {
+  color: hsl(220 12% 62%);
+}
+.dark .tei-tool[data-tone='person'] .tei-tool-icon {
+  color: hsl(145 50% 60%);
+}
+.dark .tei-tool[data-tone='place'] .tei-tool-icon {
+  color: hsl(178 55% 55%);
+}
+.dark .tei-tool[data-tone='ex'] .tei-tool-icon {
+  color: hsl(36 80% 60%);
+}
+.dark .tei-tool[data-tone='supplied'] .tei-tool-icon {
+  color: hsl(282 55% 68%);
+}
+
+/* "Inside" breadcrumb chips — solid colour + white text so they read on both
+   light and dark cards. */
+.tei-crumb {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #fff;
+  background: hsl(245 35% 45%);
+}
+.tei-crumb[data-tone='person'] {
+  background: hsl(145 42% 32%);
+}
+.tei-crumb[data-tone='place'] {
+  background: hsl(178 48% 26%);
+}
+.tei-crumb[data-tone='ex'] {
+  background: hsl(36 60% 36%);
+}
+.tei-crumb[data-tone='supplied'] {
+  background: hsl(282 38% 42%);
+}

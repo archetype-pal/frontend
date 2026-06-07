@@ -54,6 +54,12 @@ interface ViewerTextPanelProps {
   canEdit?: boolean;
   /** Called after a successful in-panel save so the viewer can reload texts. */
   onTextSaved?: () => void;
+  /**
+   * How to arrange the per-text editor cards: side-by-side ('row', for the wide
+   * bottom dock) or stacked ('column', for the narrow left/right docks). Each
+   * text is its own bounded card either way.
+   */
+  layout?: 'row' | 'column';
 }
 
 // A span can carry several ids ("10,11") when one element was annotated by
@@ -74,31 +80,35 @@ const TYPE_ORDER = (type: string): number =>
  * Always-on authoring surface for a single text (editors only). The Rich/Preview
  * toolbar portals into the column header; a Save bar slides in only when there
  * are unsaved changes. Defaults to Preview so the column reads like the public
- * view until the editor switches to Rich. Keyed by text id so a different text
- * re-seeds the draft.
+ * view until the editor switches to Rich. The draft is held by the parent
+ * (keyed by text id) so it survives a display-mode switch that unmounts this card.
  */
 function TextEditor({
   text,
   token,
+  value,
+  onChange,
   onSaved,
   toolbarHost,
 }: {
   text: ImageTextDetail;
   token: string | null | undefined;
+  /** The current draft (parent-held so it survives unmount). */
+  value: string;
+  onChange: (next: string) => void;
   onSaved: () => void;
   /** Header slot the Rich/Preview + validity toolbar portals into (one bar). */
   toolbarHost: HTMLElement | null;
 }) {
-  const [draft, setDraft] = React.useState(text.content);
   const [valid, setValid] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
-  const dirty = draft !== text.content;
+  const dirty = value !== text.content;
 
   const handleSave = async () => {
     if (!token) return;
     setSaving(true);
     try {
-      await updateImageText(token, text.id, { content: draft });
+      await updateImageText(token, text.id, { content: value });
       showActionNotification({
         kind: 'created',
         title: 'Text saved',
@@ -121,8 +131,8 @@ function TextEditor({
     <>
       <div className="px-4 py-3">
         <TeiTextEditor
-          value={draft}
-          onChange={setDraft}
+          value={value}
+          onChange={onChange}
           token={token ?? null}
           onValidityChange={setValid}
           toolbarContainer={toolbarHost}
@@ -135,7 +145,7 @@ function TextEditor({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setDraft(text.content)}
+            onClick={() => onChange(text.content)}
             disabled={saving}
           >
             Discard
@@ -149,15 +159,27 @@ function TextEditor({
   );
 }
 
+/** Accent colour for a text card, drawn from the app's transcription/translation idiom. */
+function textTone(type: string): string | undefined {
+  const k = type.toLowerCase();
+  if (k === 'transcription') return 'var(--color-transcription)';
+  if (k === 'translation') return 'var(--color-translation)';
+  return undefined;
+}
+
 /**
- * One text column. Editors get an always-on Rich/Preview editor whose toolbar is
- * merged into this header (no edit toggle); readers get the rendered text under a
- * label. The last shown column also carries the panel's close control.
+ * A self-contained editor for one text — its own bounded card with a titled
+ * header (colour-keyed to transcription/translation), the editor's
+ * Rich/Preview + validity controls, document actions, and a scrollable body.
+ * Editors get the always-on Rich/Preview editor (no edit toggle); readers get
+ * the rendered text. The last card carries the panel's close control.
  */
-function TextColumn({
+function TextEditorCard({
   text,
   canEdit,
   token,
+  draft,
+  onDraftChange,
   onSaved,
   showClose,
   onClose,
@@ -165,30 +187,41 @@ function TextColumn({
   text: ImageTextDetail;
   canEdit: boolean;
   token: string | null | undefined;
+  /** Parent-held draft for this text (survives display-mode unmount). */
+  draft: string;
+  onDraftChange: (next: string) => void;
   onSaved: () => void;
-  /** The last shown column carries the panel's close control (one bar, no extra header). */
   showClose: boolean;
   onClose: () => void;
 }) {
-  // The editor's Rich/Preview + validity toolbar portals into this slot, so the
-  // column never stacks a second bar under its header.
+  // The editor's Rich/Preview + validity toolbar portals into this header slot.
   const [toolbarHost, setToolbarHost] = React.useState<HTMLDivElement | null>(null);
+  const tone = textTone(text.type);
 
   return (
-    <section data-text-id={text.id} className="flex h-full min-h-0 flex-col overflow-y-auto">
-      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 border-b bg-card px-3 py-1.5">
-        {canEdit ? (
-          // The merged Rich/Preview + validity toolbar lands here.
-          <div ref={setToolbarHost} className="flex min-w-0 flex-1 flex-wrap items-center gap-1" />
-        ) : (
-          <span className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {text.type}
-            {text.language ? (
-              <span className="ml-1.5 font-mono normal-case opacity-70">{text.language}</span>
-            ) : null}
-          </span>
-        )}
-        <div className="ml-auto flex shrink-0 items-center gap-0.5">
+    <section
+      data-text-id={text.id}
+      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card shadow-sm"
+    >
+      {/* type accent rail */}
+      <div className="h-[3px] shrink-0" style={tone ? { background: tone } : undefined} />
+      <header className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b bg-muted/30 px-3 py-1.5">
+        <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-foreground/80">
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ background: tone ?? 'var(--muted-foreground)' }}
+            aria-hidden
+          />
+          {text.type}
+          {text.language ? (
+            <span className="font-mono text-muted-foreground normal-case">{text.language}</span>
+          ) : null}
+        </span>
+        <div className="ml-auto flex items-center gap-1">
+          {/* Rich/Preview + validity (editors) portal in here. */}
+          {canEdit ? (
+            <div ref={setToolbarHost} className="flex flex-wrap items-center gap-1" />
+          ) : null}
           {canEdit ? (
             <Link
               href={`/backoffice/image-texts/${text.id}`}
@@ -220,25 +253,29 @@ function TextColumn({
             </Button>
           ) : null}
         </div>
-      </div>
+      </header>
 
-      {canEdit ? (
-        <TextEditor
-          key={text.id}
-          text={text}
-          token={token}
-          onSaved={onSaved}
-          toolbarHost={toolbarHost}
-        />
-      ) : (
-        <div className="px-4 py-3">
-          <ImageTextViewer
-            html={text.content}
-            richMarkup
-            className="prose prose-sm max-w-none dark:prose-invert"
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {canEdit ? (
+          <TextEditor
+            key={text.id}
+            text={text}
+            token={token}
+            value={draft}
+            onChange={onDraftChange}
+            onSaved={onSaved}
+            toolbarHost={toolbarHost}
           />
-        </div>
-      )}
+        ) : (
+          <div className="px-4 py-3">
+            <ImageTextViewer
+              html={text.content}
+              richMarkup
+              className="prose prose-sm max-w-none dark:prose-invert"
+            />
+          </div>
+        )}
+      </div>
     </section>
   );
 }
@@ -258,6 +295,7 @@ export function ViewerTextPanel({
   token,
   canEdit = false,
   onTextSaved,
+  layout = 'column',
 }: ViewerTextPanelProps) {
   const ordered = React.useMemo(
     () => [...texts].sort((a, b) => TYPE_ORDER(a.type) - TYPE_ORDER(b.type)),
@@ -286,6 +324,22 @@ export function ViewerTextPanel({
 
   const isBoth = displayMode === 'both' && shown.length > 1;
   const shownKey = shown.map((t) => `${t.id}:${t.content.length}`).join('|');
+
+  // Per-text edit drafts live here (not in each card) so an unsaved draft
+  // survives a display-mode switch that unmounts a card. A text with no entry
+  // falls back to its saved content; a successful save clears the entry.
+  const [drafts, setDrafts] = React.useState<Record<number, string>>({});
+  const setDraftFor = React.useCallback((id: number, next: string) => {
+    setDrafts((prev) => ({ ...prev, [id]: next }));
+  }, []);
+  const clearDraftFor = React.useCallback((id: number) => {
+    setDrafts((prev) => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }, []);
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -355,55 +409,58 @@ export function ViewerTextPanel({
     onSpanHover(ids.length > 0 ? ids[0] : null);
   };
 
+  if (shown.length === 0) {
+    return (
+      <aside className="flex h-full w-full items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm">
+        <p className="text-sm text-muted-foreground">No text recorded for this image.</p>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          aria-label="Hide text panel"
+          title="Hide text panel"
+          onClick={onClose}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </aside>
+    );
+  }
+
   return (
-    <aside className="flex h-full w-full flex-col overflow-hidden rounded-lg border bg-card">
+    // Transparent shell: each text is its own bounded card, so this just lays
+    // them out (side-by-side in the wide bottom dock, stacked in side docks).
+    <div className="flex h-full w-full flex-col gap-2">
       <div
         ref={containerRef}
         onClick={handleClick}
         onMouseOver={handleMouseOver}
         onMouseLeave={() => onSpanHover(null)}
-        className="viewer-text-panel min-h-0 flex-1 overflow-hidden"
+        className={cn(
+          'viewer-text-panel flex min-h-0 flex-1 gap-2',
+          isBoth && layout === 'row' ? 'flex-col md:flex-row' : 'flex-col'
+        )}
       >
-        <div
-          className={cn(
-            'h-full',
-            isBoth
-              ? 'grid grid-cols-1 divide-y divide-border md:grid-cols-2 md:divide-x md:divide-y-0'
-              : 'block'
-          )}
-        >
-          {shown.length === 0 ? (
-            <div className="flex items-center justify-between gap-2 border-b bg-card px-3 py-1.5">
-              <p className="text-sm text-muted-foreground">No text recorded for this image.</p>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0"
-                aria-label="Hide text panel"
-                title="Hide text panel"
-                onClick={onClose}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            shown.map((text, index) => (
-              <TextColumn
-                key={text.id}
-                text={text}
-                canEdit={canEdit}
-                token={token}
-                onSaved={() => onTextSaved?.()}
-                showClose={index === shown.length - 1}
-                onClose={onClose}
-              />
-            ))
-          )}
-        </div>
+        {shown.map((text, index) => (
+          <TextEditorCard
+            key={text.id}
+            text={text}
+            canEdit={canEdit}
+            token={token}
+            draft={drafts[text.id] ?? text.content}
+            onDraftChange={(next) => setDraftFor(text.id, next)}
+            onSaved={() => {
+              clearDraftFor(text.id);
+              onTextSaved?.();
+            }}
+            showClose={index === shown.length - 1}
+            onClose={onClose}
+          />
+        ))}
       </div>
 
       {armedElementIndex != null ? (
-        <div className="flex items-center justify-between gap-2 border-t bg-primary/5 px-3 py-1.5 text-[11px]">
+        <div className="flex shrink-0 items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-1.5 text-[11px]">
           <span className="text-primary">
             Draw the region for this phrase on the image to link it.
           </span>
@@ -415,13 +472,12 @@ export function ViewerTextPanel({
             Cancel
           </button>
         </div>
-      ) : (
-        <p className="border-t px-3 py-1.5 text-[11px] text-muted-foreground">
-          {canLink
-            ? 'Click a highlighted phrase to find its region; click an un-highlighted phrase to draw and link a new region.'
-            : 'Click a highlighted phrase to find its region on the image.'}
+      ) : canLink ? (
+        <p className="shrink-0 px-1 text-[11px] text-muted-foreground">
+          Click a highlighted phrase to find its region; click an un-highlighted phrase to draw and
+          link a new region.
         </p>
-      )}
-    </aside>
+      ) : null}
+    </div>
   );
 }

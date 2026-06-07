@@ -1281,6 +1281,7 @@ export default function ManuscriptViewer({
                 <ViewerTextPanel
                   texts={imageTexts}
                   displayMode={viewerSettings.textDisplayMode}
+                  layout={isBottomDock ? 'row' : 'column'}
                   token={token}
                   canEdit={canPersistAnyAnnotations && !isPublicDemoMode}
                   onTextSaved={() => void reloadTextsAndAnnotations()}

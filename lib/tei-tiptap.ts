@@ -188,21 +188,21 @@ function elementExtents(editor: Editor): Map<number, { from: number; to: number 
 }
 
 /**
- * Wrap the selection in a new TEI element, nested at the shared depth.
- * Refuses (returns false, no-op) when the selection straddles an element
- * boundary — only partially covering an element at/below the insertion depth —
- * since that would split the element into overlapping fragments.
+ * Wrap the selection in a new TEI element, nested at the shared depth. No-op
+ * when there is no selection or it straddles an element boundary — only
+ * partially covering an element at/below the insertion depth — since that would
+ * split the element into overlapping fragments.
  */
-export function wrapTei(editor: Editor, el: string, attrs: Record<string, string> = {}): boolean {
+export function wrapTei(editor: Editor, el: string, attrs: Record<string, string> = {}): void {
   const segments = collectSegments(editor);
-  if (segments.length === 0) return false;
+  if (segments.length === 0) return;
   const depth = commonDepth(segments);
   const { from, to } = editor.state.selection;
   const extents = elementExtents(editor);
   for (const seg of segments) {
     for (let i = depth; i < seg.stack.length; i++) {
       const ext = extents.get(seg.stack[i].id);
-      if (ext && (ext.from < from || ext.to > to)) return false; // straddles → refuse
+      if (ext && (ext.from < from || ext.to > to)) return; // straddles → refuse
     }
   }
   const entry: StackEntry = { el, attrs, id: nextId() };
@@ -215,7 +215,6 @@ export function wrapTei(editor: Editor, el: string, attrs: Record<string, string
   }
   editor.view.dispatch(tr);
   editor.commands.focus();
-  return true;
 }
 
 /**
@@ -243,12 +242,25 @@ export function unwrapTei(editor: Editor): void {
   editor.commands.focus();
 }
 
-/** The innermost element covering the current selection, or null. */
-export function currentElement(editor: Editor): StackEntry | null {
+/**
+ * The element stack shared by the whole selection (outermost → innermost). For a
+ * collapsed cursor this reads the marks at the caret, so the breadcrumb and the
+ * retype/unwrap actions work from a click inside an element — not just a drag.
+ */
+export function currentStack(editor: Editor): StackEntry[] {
   const segments = collectSegments(editor);
-  const depth = commonDepth(segments);
-  if (depth === 0) return null;
-  return segments[0].stack[depth - 1];
+  if (segments.length > 0) {
+    const depth = commonDepth(segments);
+    return segments[0].stack.slice(0, depth);
+  }
+  const tei = editor.state.selection.$from.marks().find((m) => m.type.name === 'tei');
+  return tei ? ((tei.attrs.stack as StackEntry[]) ?? []) : [];
+}
+
+/** The innermost element covering the current selection (or caret), or null. */
+export function currentElement(editor: Editor): StackEntry | null {
+  const stack = currentStack(editor);
+  return stack.length > 0 ? stack[stack.length - 1] : null;
 }
 
 /** Change the @type of the innermost element covering the selection. */
