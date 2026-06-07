@@ -101,7 +101,6 @@ export default function ManuscriptViewer({
   const canCreateEditorialAnnotations = viewerCapabilities.canCreateEditorialAnnotations;
   const canPersistEditorialAnnotations = viewerCapabilities.canPersistEditorialAnnotations;
   const canDeleteAnnotations = viewerCapabilities.canDeleteAnnotations;
-  const _canModifyAnnotations = viewerCapabilities.canModifyAnnotations;
   const canViewEditorialControls = viewerCapabilities.canViewEditorialControls;
   const canUseSettings = viewerCapabilities.canUseSettings;
   const canUseEditorSettings = viewerCapabilities.canUseEditorSettings;
