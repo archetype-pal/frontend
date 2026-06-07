@@ -1,11 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { ResizeHandle } from '@/components/ui/resize-handle';
 import { Separator } from '@/components/ui/separator';
+import { PanelHeader } from './panel-header';
 import { useOnEscape } from '@/hooks/use-on-escape';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { cn } from '@/lib/utils';
@@ -97,24 +97,12 @@ export function AnnotationFilterPanel({
         maxHeight: height ? undefined : 'calc(100dvh - 7rem)',
       }}
     >
-      <div
-        className="flex cursor-move select-none items-center justify-between border-b px-4 py-3"
-        {...dragHandleProps}
-      >
-        <h3 className="text-base font-semibold">Annotations</h3>
-        <div onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={onClose}
-            type="button"
-            aria-label="Close annotations panel"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <PanelHeader
+        title="Annotations"
+        closeLabel="Close annotations panel"
+        onClose={onClose}
+        dragHandleProps={dragHandleProps}
+      />
 
       <div className="min-h-0 flex-1 overflow-auto px-4 py-4">
         {/* Master visibility + type filters */}

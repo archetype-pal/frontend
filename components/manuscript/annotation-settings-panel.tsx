@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { X } from 'lucide-react';
 
 import type {
   AnnotationViewerSettings,
@@ -12,6 +11,7 @@ import type {
 import { Button } from '@/components/ui/button';
 import { ResizeHandle } from '@/components/ui/resize-handle';
 import { Separator } from '@/components/ui/separator';
+import { PanelHeader } from './panel-header';
 import { useOnEscape } from '@/hooks/use-on-escape';
 
 interface AnnotationSettingsPanelProps {
@@ -83,25 +83,12 @@ export function AnnotationSettingsPanel({
         maxHeight: height ? undefined : 'calc(100dvh - 7rem)',
       }}
     >
-      <div
-        className="flex items-center justify-between border-b px-4 py-3 cursor-move select-none"
-        {...dragHandleProps}
-      >
-        <h3 className="text-base font-semibold">Settings</h3>
-
-        <div onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={onClose}
-            type="button"
-            aria-label="Close settings panel"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <PanelHeader
+        title="Settings"
+        closeLabel="Close settings panel"
+        onClose={onClose}
+        dragHandleProps={dragHandleProps}
+      />
 
       <div className="min-h-0 flex-1 space-y-6 overflow-auto px-4 py-4">
         <div>

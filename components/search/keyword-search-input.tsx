@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search, Quote } from 'lucide-react';
+import { Search, Quote, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import type { ResultType } from '@/lib/search-types';
 
@@ -41,6 +41,8 @@ type KeywordSearchInputProps = {
   placeholder?: string;
   className?: string;
   inputClassName?: string;
+  /** Classes for the leading magnifier icon (e.g. lighten it on a dark header). */
+  iconClassName?: string;
   /** When true, clears the input on focus (e.g. for header search) */
   clearOnFocus?: boolean;
   /** Called when the input receives focus (e.g. to load suggestions from any page) */
@@ -63,6 +65,7 @@ export function KeywordSearchInput({
   placeholder = 'Type and press Enter…',
   className,
   inputClassName,
+  iconClassName,
   clearOnFocus = false,
   onFocus: onFocusProp,
   suggestionsLoading = false,
@@ -169,7 +172,12 @@ export function KeywordSearchInput({
 
   return (
     <div className={className ? `relative ${className}` : 'relative'}>
-      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+      <Search
+        className={
+          'pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ' +
+          (iconClassName ?? 'text-muted-foreground')
+        }
+      />
       {onExactPhraseChange && (
         <button
           type="button"
@@ -177,7 +185,7 @@ export function KeywordSearchInput({
           aria-pressed={exactPhrase}
           onClick={() => onExactPhraseChange(!exactPhrase)}
           className={
-            'absolute right-2 top-1.5 z-[1] rounded p-1 transition-colors ' +
+            'absolute right-2 top-1/2 z-[1] -translate-y-1/2 rounded p-1 transition-colors ' +
             (exactPhrase
               ? 'bg-primary/15 text-primary'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground')
@@ -190,8 +198,8 @@ export function KeywordSearchInput({
         id={inputId}
         className={
           inputClassName
-            ? `pl-8 ${onExactPhraseChange ? 'pr-10 ' : ''}${inputClassName}`
-            : `pl-8${onExactPhraseChange ? ' pr-10' : ''}`
+            ? `pl-9 ${onExactPhraseChange ? 'pr-10 ' : ''}${inputClassName}`
+            : `pl-9${onExactPhraseChange ? ' pr-10' : ''}`
         }
         placeholder={placeholder}
         value={value}
@@ -213,13 +221,13 @@ export function KeywordSearchInput({
       {showDropdown && (
         <ul
           id="keyword-suggestions"
-          className="absolute z-10 mt-1 max-h-40 w-full overflow-auto rounded-md border border-border bg-popover text-popover-foreground shadow-md"
+          className="absolute z-20 mt-1.5 max-h-[22rem] w-full overflow-auto rounded-lg border border-border bg-popover py-1.5 text-[0.9rem] text-popover-foreground shadow-lg ring-1 ring-black/5"
           role="listbox"
           aria-live="polite"
         >
           {showRecent && (
             <>
-              <li className="px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              <li className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Recent
               </li>
               {recentSearches.map((item) => (
@@ -227,13 +235,14 @@ export function KeywordSearchInput({
                   key={item.id}
                   role="option"
                   aria-selected={false}
-                  className="cursor-pointer px-2 py-1 text-popover-foreground hover:bg-muted"
+                  className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-popover-foreground transition-colors hover:bg-accent/10"
                   onClick={() => handleSuggestionClick(item)}
                 >
-                  <span className="inline-flex items-center justify-between w-full gap-2">
+                  <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                     <span className="truncate">{item.label}</span>
                     {item.meta && (
-                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground">
                         {item.meta}
                       </span>
                     )}
@@ -241,7 +250,7 @@ export function KeywordSearchInput({
                 </li>
               ))}
               {onClearRecentSearches && (
-                <li className="px-2 py-1 border-t">
+                <li className="mt-1 border-t border-border px-3 py-1.5">
                   <button
                     type="button"
                     onClick={(event) => {
@@ -249,7 +258,7 @@ export function KeywordSearchInput({
                       event.stopPropagation();
                       onClearRecentSearches();
                     }}
-                    className="text-xs text-primary hover:underline"
+                    className="text-xs font-medium text-primary hover:underline"
                   >
                     Clear history
                   </button>
@@ -258,8 +267,8 @@ export function KeywordSearchInput({
             </>
           )}
           {suggestionsLoading && (
-            <li className="px-2 py-1 text-xs text-muted-foreground" aria-live="polite">
-              Loading suggestions...
+            <li className="px-3 py-2 text-xs text-muted-foreground" aria-live="polite">
+              Loading suggestions…
             </li>
           )}
           {suggestions.map((item, i) => (
@@ -269,17 +278,18 @@ export function KeywordSearchInput({
               role="option"
               aria-selected={i === selectedIndex}
               className={
-                'cursor-pointer px-2 py-1 text-popover-foreground ' +
-                (i === selectedIndex ? 'bg-muted' : 'hover:bg-muted/60')
+                'flex cursor-pointer items-center gap-2.5 px-3 py-2 text-popover-foreground transition-colors ' +
+                (i === selectedIndex ? 'bg-accent/15' : 'hover:bg-accent/10')
               }
               onMouseEnter={() => setSelectedIndex(i)}
               onMouseLeave={() => setSelectedIndex(-1)}
               onClick={() => handleSuggestionClick(item)}
             >
-              <span className="inline-flex items-center justify-between w-full gap-2">
+              <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                 <span className="truncate">{item.label}</span>
                 {item.type && item.type !== 'all' && (
-                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
                     {item.type}
                   </span>
                 )}
@@ -287,7 +297,7 @@ export function KeywordSearchInput({
             </li>
           ))}
           {!suggestionsLoading && suggestions.length === 0 && (
-            <li className="px-2 py-1 text-xs text-muted-foreground">{noSuggestionsText}</li>
+            <li className="px-3 py-2 text-xs text-muted-foreground">{noSuggestionsText}</li>
           )}
         </ul>
       )}
