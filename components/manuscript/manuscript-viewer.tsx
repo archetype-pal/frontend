@@ -1150,7 +1150,10 @@ export default function ManuscriptViewer({
         resizeHandleProps={galleryResize.bindResize}
       />
 
-      <div className={cn('relative flex flex-1', isFullScreen && 'mt-20')}>
+      {/* min-h-0 is load-bearing: without it this flex child's min-height:auto
+          lets it grow to its content's intrinsic height (the image / the editor
+          min-heights), overflowing the viewport and spilling over the footer. */}
+      <div className={cn('relative flex min-h-0 flex-1', isFullScreen && 'mt-20')}>
         <div
           className={cn(
             // gap-0: the text-panel splitter provides the divider between canvas
