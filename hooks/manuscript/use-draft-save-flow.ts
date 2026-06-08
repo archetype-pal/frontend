@@ -39,6 +39,8 @@ interface UseDraftSaveFlowArgs {
   /** Pure text view: a drawn region links to a phrase instead of becoming a glyph. */
   textLinkingActive: boolean;
   startPendingLink: (annotation: A9sAnnotation) => void;
+  /** Persist a reshaped text-region's geometry (no-op for non-db drafts). */
+  persistRegionGeometry: (annotation: A9sAnnotation) => void;
   filteredAllographId: number | undefined;
   activeAssignmentHandId: number | undefined;
   currentCreationKind: AnnotationCreationKind;
@@ -68,6 +70,7 @@ export function useDraftSaveFlow({
   tryLinkRegion,
   textLinkingActive,
   startPendingLink,
+  persistRegionGeometry,
   filteredAllographId,
   activeAssignmentHandId,
   currentCreationKind,
@@ -175,11 +178,16 @@ export function useDraftSaveFlow({
   // coalescing lives in useAnnotationEditorState).
   const handleViewerUpdate = React.useCallback(
     (annotation: A9sAnnotation) => {
-      if (isTextRegionAnnotation(annotation)) return;
+      // A reshaped text-region persists its new geometry directly (it's a bare
+      // region, not part of the glyph editor's draft/save batch).
+      if (isTextRegionAnnotation(annotation)) {
+        persistRegionGeometry(annotation);
+        return;
+      }
 
       editorState.markUpdated(annotation, { debounced: true });
     },
-    [editorState]
+    [editorState, persistRegionGeometry]
   );
 
   const handleSaveDraftAnnotation = React.useCallback(

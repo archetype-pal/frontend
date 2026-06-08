@@ -46,6 +46,9 @@ interface UsePopupSelectionArgs {
   setHoveredAnnotationId: (id: string | null) => void;
   setSelectedAnnotationIds: React.Dispatch<React.SetStateAction<string[]>>;
   setLinkedGraphId: React.Dispatch<React.SetStateAction<number | null>>;
+  /** Track A — set when a *linked region* is selected on the image (region-click
+   *  only); drives the text panel's Delete affordance. Cleared for glyphs/deselect. */
+  setSelectedRegionGraphId: React.Dispatch<React.SetStateAction<number | null>>;
   // derived
   allographNameById: Map<number, string>;
   getCanonicalAnnotation: (annotation: A9sAnnotation) => A9sWithMeta;
@@ -85,6 +88,7 @@ export function usePopupSelection({
   setHoveredAnnotationId,
   setSelectedAnnotationIds,
   setLinkedGraphId,
+  setSelectedRegionGraphId,
   allographNameById,
   getCanonicalAnnotation,
   allowMultipleBoxes,
@@ -297,8 +301,13 @@ export function usePopupSelection({
       // region → text: highlight the matching span(s) in the side panel.
       setLinkedGraphId(selected ? (dbIdFromA9s(selected) ?? null) : null);
 
+      // Track the selected region (region-click only) so the text panel can
+      // offer Delete; cleared for glyph selections and deselects.
+      const isTextRegion = selected != null && isTextRegionAnnotation(selected);
+      setSelectedRegionGraphId(isTextRegion ? (dbIdFromA9s(selected) ?? null) : null);
+
       if (selected) {
-        if (isTextRegionAnnotation(selected)) {
+        if (isTextRegion) {
           dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
           clearSinglePopupState({ clearHover: true });
           return;
@@ -344,6 +353,7 @@ export function usePopupSelection({
       getCanonicalAnnotation,
       openSinglePopupFromAnnotation,
       setLinkedGraphId,
+      setSelectedRegionGraphId,
       selectMultipleAnnotations,
       textLinkingActive,
     ]

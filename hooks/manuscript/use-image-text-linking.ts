@@ -3,11 +3,13 @@
 import * as React from 'react';
 
 import { showActionNotification } from '@/components/ui/action-toast';
-import { a9sToBackendFeature } from '@/lib/anno-mapping';
+import { a9sToBackendFeature, dbIdFromA9s } from '@/lib/anno-mapping';
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
+import { updateViewerAnnotation } from '@/services/annotations';
 import {
   fetchImageTextsForImage,
   linkRegionToElement,
+  unlinkRegion,
   type ImageTextDetail,
 } from '@/services/image-texts';
 import type {
@@ -56,6 +58,9 @@ export function useImageTextLinking({
 }: UseImageTextLinkingArgs) {
   const [imageTexts, setImageTexts] = React.useState<ImageTextDetail[]>([]);
   const [linkedGraphId, setLinkedGraphId] = React.useState<number | null>(null);
+  // Graph id of a *linked region selected on the image* (region-click only, not
+  // a phrase click) — drives the text panel's "selected region" actions (Delete).
+  const [selectedRegionGraphId, setSelectedRegionGraphId] = React.useState<number | null>(null);
   const [linkArm, setLinkArm] = React.useState<LinkArm | null>(null);
   // Reverse flow: a region drawn first (in text mode) waits here for the user to
   // click the phrase it belongs to. The drawn draft stays on the canvas as a
@@ -77,6 +82,7 @@ export function useImageTextLinking({
   React.useEffect(() => {
     setLinkArm(null);
     setPendingLinkRegion(null);
+    setSelectedRegionGraphId(null);
   }, [imageId]);
 
   // Load image-texts for the side panel. Whether the panel is shown is derived
@@ -225,6 +231,67 @@ export function useImageTextLinking({
     setPendingLinkRegion(null);
   }, [viewerApiRef]);
 
+  // Delete a selected linked region: removes the TEXT graph + strips its
+  // corresp from this image's texts (the endpoint accepts any of the image's
+  // text ids and clears the ref from all of them).
+  const unlinkSelectedRegion = React.useCallback(
+    (graphId: number) => {
+      const anyTextId = imageTexts[0]?.id;
+      if (!(token && anyTextId)) return;
+      void (async () => {
+        try {
+          await unlinkRegion(token, anyTextId, graphId);
+          setSelectedRegionGraphId(null);
+          setLinkedGraphId(null);
+          viewerApiRef.current?.clearSelection?.();
+          await reloadTextsAndAnnotations();
+          showActionNotification({
+            kind: 'deleted',
+            title: 'Region unlinked',
+            description: 'Removed the region and its link.',
+            duration: 2200,
+          });
+        } catch (error) {
+          showActionNotification({
+            kind: 'error',
+            title: 'Unlink failed',
+            description:
+              error instanceof Error ? error.message.slice(0, 160) : 'Could not unlink region.',
+          });
+        }
+      })();
+    },
+    [token, imageTexts, viewerApiRef, reloadTextsAndAnnotations]
+  );
+
+  // Persist a region reshape (Modify): PATCH the TEXT graph's geometry. The
+  // corresp/link is unaffected, so no text reload is needed.
+  const persistRegionGeometry = React.useCallback(
+    (annotation: A9sAnnotation) => {
+      const graphId = dbIdFromA9s(annotation);
+      if (!(graphId && token && imageHeight)) return;
+      const geometry = a9sToBackendFeature(annotation, imageHeight);
+      void updateViewerAnnotation(token, graphId, { annotation: geometry })
+        .then(() =>
+          showActionNotification({
+            kind: 'updated',
+            title: 'Region reshaped',
+            description: 'Saved the region’s new shape.',
+            duration: 1600,
+          })
+        )
+        .catch((error) =>
+          showActionNotification({
+            kind: 'error',
+            title: 'Reshape failed',
+            description:
+              error instanceof Error ? error.message.slice(0, 160) : 'Could not save the region.',
+          })
+        );
+    },
+    [token, imageHeight]
+  );
+
   return {
     imageTexts,
     linkedGraphId,
@@ -237,5 +304,9 @@ export function useImageTextLinking({
     startPendingLink,
     linkPendingToPhrase,
     cancelPendingLink,
+    selectedRegionGraphId,
+    setSelectedRegionGraphId,
+    unlinkSelectedRegion,
+    persistRegionGeometry,
   };
 }

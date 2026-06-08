@@ -55,6 +55,11 @@ interface ViewerTextPanelProps {
   onLinkPhrase?: (textId: number, elementIndex: number, label: string) => void;
   /** Cancel the pending (drawn-but-unlinked) region. */
   onCancelPendingLink?: () => void;
+  /** Graph id of a linked region selected on the image (region-click) — shows
+   *  its phrase + a Delete action. Null when nothing/region isn't selected. */
+  selectedRegionGraphId?: number | null;
+  /** Delete the selected region (removes the region graph + its link). */
+  onDeleteRegion?: (graphId: number) => void;
   onClose: () => void;
   /** Editor-only TEI authoring. */
   token?: string | null;
@@ -328,6 +333,8 @@ export function ViewerTextPanel({
   pendingLink = false,
   onLinkPhrase,
   onCancelPendingLink,
+  selectedRegionGraphId = null,
+  onDeleteRegion,
   onClose,
   token,
   canEdit = false,
@@ -410,6 +417,21 @@ export function ViewerTextPanel({
       scrollSpanIntoView(matches[0]);
     }
   }, [linkedGraphId, shownKey]);
+
+  // The phrase text of the selected region (for the Delete banner). Derived from
+  // the span carrying that graph id; recomputed when the selection or texts change.
+  const [selectedRegionPhrase, setSelectedRegionPhrase] = React.useState('');
+  React.useEffect(() => {
+    const root = containerRef.current;
+    if (!root || selectedRegionGraphId == null) {
+      setSelectedRegionPhrase('');
+      return;
+    }
+    const match = Array.from(root.querySelectorAll<HTMLElement>('[data-graph-id]')).find((el) =>
+      graphIdsOf(el).includes(selectedRegionGraphId)
+    );
+    setSelectedRegionPhrase((match?.textContent ?? '').trim());
+  }, [selectedRegionGraphId, shownKey, linkedGraphId]);
 
   // Mark the armed element so the editor sees which phrase they're linking. The
   // index is scoped to its own text column (data-text-id) so "both" view stays
@@ -566,6 +588,23 @@ export function ViewerTextPanel({
             className="rounded px-1.5 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             Cancel
+          </button>
+        </div>
+      ) : canLink && selectedRegionGraphId != null ? (
+        <div className="flex shrink-0 items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-1.5 text-[11px]">
+          <span className="min-w-0 truncate text-muted-foreground">
+            Region linked to{' '}
+            <span className="font-medium text-foreground">
+              {selectedRegionPhrase ? `“${selectedRegionPhrase.slice(0, 50)}”` : 'this phrase'}
+            </span>
+            . Use Modify to reshape.
+          </span>
+          <button
+            type="button"
+            onClick={() => onDeleteRegion?.(selectedRegionGraphId)}
+            className="shrink-0 rounded px-1.5 py-0.5 font-medium text-destructive hover:bg-destructive/10"
+          >
+            Delete
           </button>
         </div>
       ) : canLink ? (

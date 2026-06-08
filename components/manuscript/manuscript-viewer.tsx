@@ -311,6 +311,10 @@ export default function ManuscriptViewer({
     startPendingLink,
     linkPendingToPhrase,
     cancelPendingLink,
+    selectedRegionGraphId,
+    setSelectedRegionGraphId,
+    unlinkSelectedRegion,
+    persistRegionGeometry,
   } = useImageTextLinking({
     imageId,
     token,
@@ -600,6 +604,7 @@ export default function ManuscriptViewer({
     setHoveredAnnotationId,
     setSelectedAnnotationIds,
     setLinkedGraphId,
+    setSelectedRegionGraphId,
     allographNameById,
     getCanonicalAnnotation,
     allowMultipleBoxes: viewerSettings.allowMultipleBoxes,
@@ -637,6 +642,7 @@ export default function ManuscriptViewer({
       tryLinkRegion,
       textLinkingActive,
       startPendingLink,
+      persistRegionGeometry,
       filteredAllographId: filteredAllograph?.id,
       activeAssignmentHandId: activeAssignmentHand?.id,
       currentCreationKind,
@@ -1332,6 +1338,9 @@ export default function ManuscriptViewer({
                     // Programmatic selection doesn't fire onSelect, so mark the
                     // span linked here to keep the click path symmetric.
                     setLinkedGraphId(graphId);
+                    // A phrase click is navigation, not a region selection — so
+                    // don't surface the region's Delete affordance.
+                    setSelectedRegionGraphId(null);
                   }}
                   canLink={canPersistAnyAnnotations && !isPublicDemoMode}
                   armedElementIndex={linkArm?.elementIndex ?? null}
@@ -1353,6 +1362,8 @@ export default function ManuscriptViewer({
                     cancelPendingLink();
                     handleMoveTool();
                   }}
+                  selectedRegionGraphId={selectedRegionGraphId}
+                  onDeleteRegion={(graphId) => unlinkSelectedRegion(graphId)}
                   onClose={() => handleSetViewMode('allograph')}
                 />
               </div>
