@@ -67,11 +67,19 @@ export function useImageTextLinking({
   // click the phrase it belongs to. The drawn draft stays on the canvas as a
   // preview until linked or cancelled.
   const [pendingLinkRegion, setPendingLinkRegion] = React.useState<A9sAnnotation | null>(null);
+  // "Also link" flow: an existing region selected for linking to a SECOND phrase
+  // (e.g. its translation). The next phrase click adds a corresp for this graph.
+  const [addRefForGraphId, setAddRefForGraphId] = React.useState<number | null>(null);
 
   const linkArmRef = React.useRef<LinkArm | null>(null);
   React.useEffect(() => {
     linkArmRef.current = linkArm;
   }, [linkArm]);
+
+  const addRefForGraphIdRef = React.useRef<number | null>(null);
+  React.useEffect(() => {
+    addRefForGraphIdRef.current = addRefForGraphId;
+  }, [addRefForGraphId]);
 
   const pendingLinkRegionRef = React.useRef<A9sAnnotation | null>(null);
   React.useEffect(() => {
@@ -84,6 +92,7 @@ export function useImageTextLinking({
     setLinkArm(null);
     setPendingLinkRegion(null);
     setSelectedRegionGraphId(null);
+    setAddRefForGraphId(null);
   }, [imageId]);
 
   // Load image-texts for the side panel. Whether the panel is shown is derived
@@ -242,6 +251,43 @@ export function useImageTextLinking({
     setPendingLinkRegion(null);
   }, [viewerApiRef]);
 
+  // "Also link": arm the selected region so the next phrase click links it to a
+  // SECOND element (e.g. its translation) — same graph, a second corresp ref.
+  const startAddRef = React.useCallback((graphId: number) => {
+    setAddRefForGraphId(graphId);
+  }, []);
+
+  const addRefToPhrase = React.useCallback(
+    (textId: number, elementIndex: number, label: string) => {
+      const graphId = addRefForGraphIdRef.current;
+      if (!(graphId != null && token)) return;
+      void (async () => {
+        try {
+          await linkRegionToElement(token, textId, elementIndex, undefined, graphId);
+          setAddRefForGraphId(null);
+          await reloadTextsAndAnnotations();
+          showActionNotification({
+            kind: 'saved',
+            title: 'Also linked & saved',
+            description: `Saved automatically — also linked to “${label}”.`,
+            duration: 3000,
+          });
+        } catch (error) {
+          setAddRefForGraphId(null);
+          showActionNotification({
+            kind: 'error',
+            title: 'Link failed',
+            description:
+              error instanceof Error ? error.message.slice(0, 160) : 'Could not link region.',
+          });
+        }
+      })();
+    },
+    [token, reloadTextsAndAnnotations]
+  );
+
+  const cancelAddRef = React.useCallback(() => setAddRefForGraphId(null), []);
+
   // Delete a selected linked region: removes the TEXT graph + strips its
   // corresp from this image's texts (the endpoint accepts any of the image's
   // text ids and clears the ref from all of them).
@@ -319,5 +365,9 @@ export function useImageTextLinking({
     setSelectedRegionGraphId,
     unlinkSelectedRegion,
     persistRegionGeometry,
+    addRefForGraphId,
+    startAddRef,
+    addRefToPhrase,
+    cancelAddRef,
   };
 }

@@ -56,10 +56,19 @@ interface ViewerTextPanelProps {
   /** Cancel the pending (drawn-but-unlinked) region. */
   onCancelPendingLink?: () => void;
   /** Graph id of a linked region selected on the image (region-click) — shows
-   *  its phrase + a Delete action. Null when nothing/region isn't selected. */
+   *  its phrase + Also-link / Delete actions. Null when no region is selected. */
   selectedRegionGraphId?: number | null;
   /** Delete the selected region (removes the region graph + its link). */
   onDeleteRegion?: (graphId: number) => void;
+  /** Arm "also link": the next phrase click links the selected region to a
+   *  second element (e.g. its translation). */
+  onStartAddRef?: (graphId: number) => void;
+  /** Whether the "also link" arm is active (the next phrase click adds a ref). */
+  addRefArmed?: boolean;
+  /** Link the armed region to another clicked phrase. */
+  onAddRefToPhrase?: (textId: number, elementIndex: number, label: string) => void;
+  /** Cancel the "also link" arm. */
+  onCancelAddRef?: () => void;
   onClose: () => void;
   /** Editor-only TEI authoring. */
   token?: string | null;
@@ -335,6 +344,10 @@ export function ViewerTextPanel({
   onCancelPendingLink,
   selectedRegionGraphId = null,
   onDeleteRegion,
+  onStartAddRef,
+  addRefArmed = false,
+  onAddRefToPhrase,
+  onCancelAddRef,
   onClose,
   token,
   canEdit = false,
@@ -456,6 +469,23 @@ export function ViewerTextPanel({
     const target = event.target as Element;
     // Decide based on the *innermost* linkable element the user clicked.
     const innermost = target.closest<HTMLElement>('[data-dpt]');
+
+    // "Also link" armed: the next phrase click links the selected region to a
+    // second element (e.g. its translation). Highest precedence — any phrase,
+    // linked or not, becomes a second corresp for that region.
+    if (addRefArmed && onAddRefToPhrase && innermost) {
+      const section = target.closest<HTMLElement>('[data-text-id]');
+      if (section) {
+        const textId = Number(section.getAttribute('data-text-id'));
+        const index = Array.from(section.querySelectorAll<HTMLElement>('[data-dpt]')).indexOf(
+          innermost
+        );
+        if (Number.isFinite(textId) && index >= 0) {
+          onAddRefToPhrase(textId, index, (innermost.textContent ?? '').trim().slice(0, 40));
+          return;
+        }
+      }
+    }
 
     // Reverse flow: a region was drawn first; the next phrase click links it.
     if (pendingLink && onLinkPhrase && innermost) {
@@ -590,6 +620,20 @@ export function ViewerTextPanel({
             Cancel
           </button>
         </div>
+      ) : addRefArmed ? (
+        <div className="flex shrink-0 items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-1.5 text-[11px]">
+          <span className="text-primary">
+            Click another phrase to also link it to this region — show the translation (Both view)
+            to link it there.
+          </span>
+          <button
+            type="button"
+            onClick={() => onCancelAddRef?.()}
+            className="shrink-0 rounded px-1.5 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            Cancel
+          </button>
+        </div>
       ) : canLink && selectedRegionGraphId != null ? (
         <div className="flex shrink-0 items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-1.5 text-[11px]">
           <span className="min-w-0 truncate text-muted-foreground">
@@ -597,15 +641,24 @@ export function ViewerTextPanel({
             <span className="font-medium text-foreground">
               {selectedRegionPhrase ? `“${selectedRegionPhrase.slice(0, 50)}”` : 'this phrase'}
             </span>
-            . Use Modify to reshape.
+            .
           </span>
-          <button
-            type="button"
-            onClick={() => onDeleteRegion?.(selectedRegionGraphId)}
-            className="shrink-0 rounded px-1.5 py-0.5 font-medium text-destructive hover:bg-destructive/10"
-          >
-            Delete
-          </button>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onStartAddRef?.(selectedRegionGraphId)}
+              className="rounded px-1.5 py-0.5 font-medium text-primary hover:bg-primary/10"
+            >
+              Also link
+            </button>
+            <button
+              type="button"
+              onClick={() => onDeleteRegion?.(selectedRegionGraphId)}
+              className="rounded px-1.5 py-0.5 font-medium text-destructive hover:bg-destructive/10"
+            >
+              Delete
+            </button>
+          </div>
         </div>
       ) : canLink ? (
         <p className="shrink-0 px-1 text-[11px] text-muted-foreground">

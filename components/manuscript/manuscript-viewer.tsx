@@ -316,6 +316,10 @@ export default function ManuscriptViewer({
     setSelectedRegionGraphId,
     unlinkSelectedRegion,
     persistRegionGeometry,
+    addRefForGraphId,
+    startAddRef,
+    addRefToPhrase,
+    cancelAddRef,
   } = useImageTextLinking({
     imageId,
     token,
@@ -1388,6 +1392,12 @@ export default function ManuscriptViewer({
                   }}
                   selectedRegionGraphId={selectedRegionGraphId}
                   onDeleteRegion={(graphId) => unlinkSelectedRegion(graphId)}
+                  onStartAddRef={(graphId) => startAddRef(graphId)}
+                  addRefArmed={addRefForGraphId != null}
+                  onAddRefToPhrase={(textId, elementIndex, label) =>
+                    addRefToPhrase(textId, elementIndex, label)
+                  }
+                  onCancelAddRef={() => cancelAddRef()}
                   onClose={() => handleSetViewModeAndResetTool('allograph')}
                 />
               </div>

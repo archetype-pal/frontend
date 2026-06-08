@@ -100,15 +100,22 @@ export async function linkRegionToElement(
   token: string,
   textId: number,
   elementIndex: number,
-  geometry: unknown
+  geometry?: unknown,
+  graphId?: number
 ): Promise<LinkRegionResult> {
+  // Pass graphId to attach an EXISTING region to a second element (e.g. the same
+  // region's translation phrase); otherwise pass geometry to create a new region.
+  const body: Record<string, unknown> =
+    graphId != null
+      ? { element_index: elementIndex, graph_id: graphId }
+      : { element_index: elementIndex, geometry };
   const response = await authFetch(
     `/api/v1/manuscripts/management/image-texts/${textId}/link-region/`,
     token,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ element_index: elementIndex, geometry }),
+      body: JSON.stringify(body),
     }
   );
   if (!response.ok) {
