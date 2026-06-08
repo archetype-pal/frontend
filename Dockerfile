@@ -13,7 +13,7 @@ ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 ENV CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
 
 # Install pnpm in base so all stages have it (corepack unreliable on Alpine)
-RUN npm install -g pnpm@10.30.1
+RUN npm install -g pnpm@10.34.1
 
 # Install dependencies only when needed
 FROM base AS deps
