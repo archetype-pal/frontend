@@ -151,7 +151,6 @@ function defaults() {
     onDraftHandIdChange: vi.fn(),
     onPopupTabChange: vi.fn(),
     canSaveAnnotationShortcuts: true,
-    isSaveAnnotationShortcutDisabled: false,
     canDeleteAnnotationShortcuts: true,
     onSaveAnnotationShortcut: vi.fn(),
     onDeleteAnnotationShortcut: vi.fn(),

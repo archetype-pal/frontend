@@ -51,20 +51,6 @@ export function getLightboxItemsUrl(items: LightboxSourceItem[]) {
 }
 
 /**
- * Open lightbox with a single image.
- */
-export function openLightboxWithImage(imageId: number) {
-  window.location.href = getLightboxImageUrl(imageId);
-}
-
-/**
- * Open lightbox with a single graph.
- */
-export function openLightboxWithGraph(graphId: number) {
-  window.location.href = getLightboxGraphUrl(graphId);
-}
-
-/**
  * Open lightbox with selected items (images and/or graphs).
  */
 export function openLightboxWithItems(items: LightboxSourceItem[]) {

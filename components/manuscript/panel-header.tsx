@@ -27,18 +27,22 @@ export function PanelHeader({
       {...dragHandleProps}
     >
       <h3 className="text-base font-semibold">{title}</h3>
-      <div onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={onClose}
-          type="button"
-          aria-label={closeLabel}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* stopPropagation on the button itself so clicking close never starts a
+          drag on the header (which captures the pointer to begin dragging). */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        type="button"
+        aria-label={closeLabel}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+      >
+        <X className="h-4 w-4" />
+      </Button>
     </div>
   );
 }

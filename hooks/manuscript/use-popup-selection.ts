@@ -12,7 +12,6 @@ import {
 } from '@/lib/annotation-notes';
 import { annotationCountLabel } from '@/lib/manuscript-viewer-collection';
 import { isTextRegionAnnotation } from '@/lib/manuscript-viewer-annotation-types';
-import { usePendingPopupClear } from '@/hooks/manuscript/use-pending-popup-clear';
 import type {
   Annotation as A9sAnnotation,
   ViewerApi,
@@ -61,9 +60,8 @@ interface UsePopupSelectionArgs {
  * Annotorious select handler (incl. the region→text highlight and the
  * "selection updated" toast), the multi-select id sync, and the trivial
  * draft-field cascades (tab/allograph/hand). Internally owns the debounced
- * popup-clear timer (usePendingPopupClear) since every consumer of it lives
- * here; cancelPendingPopupClear is returned for the move-tool reset that still
- * lives in the component.
+ * popup-clear timer since every consumer of it lives here; cancelPendingPopupClear
+ * is returned for the move-tool reset that still lives in the component.
  *
  * Provides openSinglePopupFromAnnotation, which useShareTarget consumes — so
  * this hook must be called before useShareTarget in the component.
@@ -121,8 +119,37 @@ export function usePopupSelection({
     [clearPopupCollection, setHoveredAnnotationId]
   );
 
-  const { schedulePopupClear, cancelPendingPopupClear } = usePendingPopupClear(() =>
-    clearSinglePopupState({ clearHover: true })
+  // Debounced single-popup clear: Annotorious can fire a deselect immediately
+  // before a reselect, so we clear on a 50ms timer (cancelled by the next
+  // select) to avoid the popup flickering closed-then-open. The ref keeps the
+  // callbacks stable (empty deps) so consumers' dependency arrays don't churn.
+  const pendingClearTimer = React.useRef<number | null>(null);
+  const onPendingClearRef = React.useRef(() => clearSinglePopupState({ clearHover: true }));
+  React.useEffect(() => {
+    onPendingClearRef.current = () => clearSinglePopupState({ clearHover: true });
+  });
+
+  const cancelPendingPopupClear = React.useCallback(() => {
+    if (pendingClearTimer.current !== null) {
+      window.clearTimeout(pendingClearTimer.current);
+      pendingClearTimer.current = null;
+    }
+  }, []);
+
+  const schedulePopupClear = React.useCallback(() => {
+    pendingClearTimer.current = window.setTimeout(() => {
+      pendingClearTimer.current = null;
+      onPendingClearRef.current();
+    }, 50);
+  }, []);
+
+  React.useEffect(
+    () => () => {
+      if (pendingClearTimer.current !== null) {
+        window.clearTimeout(pendingClearTimer.current);
+      }
+    },
+    []
   );
 
   const handlePopupTabChange = React.useCallback(
@@ -257,20 +284,6 @@ export function usePopupSelection({
     ]
   );
 
-  const handleCloseSelectedAnnotation = React.useCallback(
-    (popupId: string) => {
-      closeDraftPopup(popupId);
-    },
-    [closeDraftPopup]
-  );
-
-  const handleCancelDraftAnnotation = React.useCallback(
-    (popupId: string) => {
-      closeDraftPopup(popupId);
-    },
-    [closeDraftPopup]
-  );
-
   const handleSelectAnnotationFromViewer = React.useCallback(
     (annotation: A9sAnnotation | null) => {
       cancelPendingPopupClear();
@@ -332,8 +345,6 @@ export function usePopupSelection({
     handleDraftHandIdChange,
     openSinglePopupFromAnnotation,
     closeDraftPopup,
-    handleCloseSelectedAnnotation,
-    handleCancelDraftAnnotation,
     handleSelectAnnotationFromViewer,
     cancelPendingPopupClear,
   };

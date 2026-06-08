@@ -64,7 +64,6 @@ interface AnnotationPopupLayerProps {
   // Per-popup actions that need viewer-side state
   onPopupTabChange: (popupId: string, tab: PopupRecord['popupTab']) => void;
   canSaveAnnotationShortcuts: boolean;
-  isSaveAnnotationShortcutDisabled: boolean;
   canDeleteAnnotationShortcuts: boolean;
   onSaveAnnotationShortcut: (popupId: string) => Promise<void> | void;
   onDeleteAnnotationShortcut: (popupId: string) => Promise<void> | void;
@@ -103,7 +102,6 @@ export function AnnotationPopupLayer({
   onDraftHandIdChange,
   onPopupTabChange,
   canSaveAnnotationShortcuts,
-  isSaveAnnotationShortcutDisabled,
   canDeleteAnnotationShortcuts,
   onSaveAnnotationShortcut,
   onDeleteAnnotationShortcut,
@@ -174,9 +172,7 @@ export function AnnotationPopupLayer({
                 canSaveAnnotationShortcut={
                   canUseLoggedInPopupShortcuts && canSaveAnnotationShortcuts
                 }
-                isSaveAnnotationShortcutDisabled={
-                  isSaveAnnotationShortcutDisabled || (!popupCard.isDraft && !hasLocalChanges)
-                }
+                isSaveAnnotationShortcutDisabled={!popupCard.isDraft && !hasLocalChanges}
                 canDeleteAnnotationShortcut={
                   canUseLoggedInPopupShortcuts && canDeleteAnnotationShortcuts
                 }

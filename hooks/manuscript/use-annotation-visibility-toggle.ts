@@ -49,10 +49,11 @@ export function useAnnotationVisibilityToggle({
         }
       }
 
-      viewerApiRef.current?.toggleAnnotations(next);
+      // OSD sync is handled by the effect above (annotationsEnabled is a dep);
+      // calling it here too would double-fire under StrictMode.
       return next;
     });
-  }, [imageId, viewerApiRef]);
+  }, [imageId]);
 
   return { annotationsEnabled, toggleAnnotations };
 }

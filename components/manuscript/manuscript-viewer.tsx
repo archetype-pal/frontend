@@ -68,7 +68,10 @@ import { useShareTarget } from '@/hooks/manuscript/use-share-target';
 import { useDraftSaveFlow } from '@/hooks/manuscript/use-draft-save-flow';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
-import { useViewerImageToolsControls } from '@/hooks/manuscript/use-viewer-image-tools-controls';
+import {
+  useViewerImageAdjustments,
+  type ImageAdjustmentKey,
+} from '@/hooks/use-viewer-image-adjustments';
 import { useViewerChromeState } from '@/hooks/use-viewer-chrome-state';
 import { useHotkeys, type HotkeyDefinition } from '@/hooks/use-hotkeys';
 
@@ -128,14 +131,38 @@ export default function ManuscriptViewer({
   const [initialA9sAnnots, setInitialA9sAnnots] = React.useState<A9sAnnotation[]>([]);
   const [selectedAnnotationIds, setSelectedAnnotationIds] = React.useState<string[]>([]);
 
-  const {
-    imageAdjustments,
-    hasImageToolChanges,
-    handleRotateViewer,
-    handleImageAdjustmentChange,
-    handleResetImageTools,
-    resetImageAdjustments,
-  } = useViewerImageToolsControls({ viewerApiRef, osdReady });
+  // Image tile controls: rotation + brightness/contrast/saturation. The OSD
+  // viewer is the only consumer of viewerApiRef/osdReady here, so this stays
+  // inline rather than behind a one-call wrapper hook.
+  const imageTools = useViewerImageAdjustments();
+  const { adjustments: imageAdjustments, hasChanges: hasImageToolChanges } = imageTools;
+  const resetImageAdjustments = imageTools.reset;
+
+  const handleRotateViewer = React.useCallback(
+    (degrees: number) => {
+      viewerApiRef.current?.rotateBy(degrees);
+      imageTools.rotate(degrees);
+    },
+    [imageTools, viewerApiRef]
+  );
+
+  const handleImageAdjustmentChange = React.useCallback(
+    (key: ImageAdjustmentKey, value: number) => {
+      imageTools.setAdjustment(key, value);
+    },
+    [imageTools]
+  );
+
+  const handleResetImageTools = React.useCallback(() => {
+    viewerApiRef.current?.resetRotation();
+    imageTools.reset();
+  }, [imageTools, viewerApiRef]);
+
+  // Push tile adjustments to the OSD viewer once it's ready.
+  React.useEffect(() => {
+    if (!osdReady) return;
+    viewerApiRef.current?.setImageAdjustments(imageAdjustments);
+  }, [imageAdjustments, osdReady, viewerApiRef]);
 
   const { annotationsEnabled, toggleAnnotations } = useAnnotationVisibilityToggle({
     imageId,
@@ -548,8 +575,7 @@ export default function ManuscriptViewer({
     handleDraftAllographIdChange,
     handleDraftHandIdChange,
     openSinglePopupFromAnnotation,
-    handleCloseSelectedAnnotation,
-    handleCancelDraftAnnotation,
+    closeDraftPopup,
     handleSelectAnnotationFromViewer,
     cancelPendingPopupClear,
   } = usePopupSelection({
@@ -1241,16 +1267,15 @@ export default function ManuscriptViewer({
               onDraftHandIdChange={handleDraftHandIdChange}
               onPopupTabChange={handlePopupTabChange}
               canSaveAnnotationShortcuts={canPersistAnyAnnotations && !isPublicDemoMode}
-              isSaveAnnotationShortcutDisabled={false}
               canDeleteAnnotationShortcuts={canDeleteAnnotations}
               onSaveAnnotationShortcut={handleSavePopupAnnotation}
               onDeleteAnnotationShortcut={handleDeletePopupAnnotation}
               onCopyShareUrl={(id) => void handleCopyShareUrl(id)}
               onHideShareUrl={handleHideShareUrl}
               onShareSelectedAnnotation={handleShareSelectedAnnotation}
-              onCloseSelectedAnnotation={handleCloseSelectedAnnotation}
+              onCloseSelectedAnnotation={closeDraftPopup}
               onToggleAnnotationCollection={handleToggleAnnotationCollection}
-              onCancelDraftAnnotation={handleCancelDraftAnnotation}
+              onCancelDraftAnnotation={closeDraftPopup}
               onConfirmDraftAnnotation={handleConfirmDraftAnnotation}
             />
           </div>

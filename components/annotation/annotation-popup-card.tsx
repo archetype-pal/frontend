@@ -19,8 +19,6 @@ import { EditorialAnnotationEditor } from './popup/editorial-annotation-editor';
 import { PublicAnnotationView } from './popup/public-annotation-view';
 import type { PopupTab, SelectedComponentGroup } from './popup/types';
 
-export type { PopupTab, SelectedComponentGroup };
-
 interface AnnotationPopupCardProps {
   title: string;
   isDraftAnnotation: boolean;
