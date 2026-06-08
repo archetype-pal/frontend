@@ -506,6 +506,22 @@ export default function ManuscriptAnnotorious({
           let deleteHandler: ((a: Annotation | null, element?: unknown) => void) | null = null;
           let rearmHandler: (() => void) | null = null;
 
+          // While drawing, OSD must NOT pan on drag — otherwise rubber-banding a
+          // box pans the image instead (only visible zoomed in, where there's
+          // room to pan). Annotorious's setDrawingEnabled doesn't disable OSD's
+          // own drag-to-pan, so we toggle it per tool: off for draw, on for the
+          // navigation-friendly tools. Scroll-to-zoom is left untouched.
+          const setOsdDragToPan = (enabled: boolean) => {
+            // gestureSettingsMouse is a real OSD viewer property but missing from
+            // the @types; it's the live object the MouseTracker reads per drag.
+            const settings = (
+              osdRef.current as unknown as {
+                gestureSettingsMouse?: { dragToPan?: boolean };
+              } | null
+            )?.gestureSettingsMouse;
+            if (settings) settings.dragToPan = enabled;
+          };
+
           const notifyDelete = (a: Annotation) => {
             if (selectedDisplayIdRef.current === a.id) {
               selectedDisplayIdRef.current = null;
@@ -884,6 +900,7 @@ export default function ManuscriptAnnotorious({
               const selected = (anno.getSelected?.() as Annotation | undefined) ?? null;
               anno.readOnly = isDraftAnnotation(selected) ? false : true;
               anno.setDrawingEnabled(false);
+              setOsdDragToPan(true);
               viewerRef.current?.classList.remove(
                 'osd-mode-modify',
                 'osd-mode-draw',
@@ -913,6 +930,7 @@ export default function ManuscriptAnnotorious({
               const selected = (anno.getSelected?.() as Annotation | undefined) ?? null;
               anno.readOnly = isTextRegionAnnotation(selected);
               anno.setDrawingEnabled(false);
+              setOsdDragToPan(true);
               viewerRef.current?.classList.remove(
                 'osd-mode-pan',
                 'osd-mode-draw',
@@ -934,6 +952,7 @@ export default function ManuscriptAnnotorious({
 
               anno.readOnly = false;
               anno.setDrawingEnabled(true);
+              setOsdDragToPan(false);
               currentMode = 'draw';
               viewerRef.current?.classList.remove(
                 'osd-mode-pan',
@@ -977,6 +996,7 @@ export default function ManuscriptAnnotorious({
 
               anno.readOnly = true;
               anno.setDrawingEnabled(false);
+              setOsdDragToPan(true);
               currentMode = 'delete';
               viewerRef.current?.classList.remove(
                 'osd-mode-pan',
