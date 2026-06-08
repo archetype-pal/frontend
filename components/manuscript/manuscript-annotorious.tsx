@@ -995,8 +995,8 @@ export default function ManuscriptAnnotorious({
               }
 
               currentMode = 'modify';
-              const selected = (anno.getSelected?.() as Annotation | undefined) ?? null;
-              // Modify keeps a text-region editable so its reshape persists.
+              // Modify keeps every annotation (incl. a text-region) editable so a
+              // reshape fires updateAnnotation → persistRegionGeometry.
               anno.readOnly = false;
               anno.setDrawingEnabled(false);
               setOsdDragToPan(true);
