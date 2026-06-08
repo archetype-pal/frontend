@@ -610,6 +610,8 @@ export default function ManuscriptViewer({
     allowMultipleBoxes: viewerSettings.allowMultipleBoxes,
     selectMultipleAnnotations: viewerSettings.selectMultipleAnnotations,
     textLinkingActive,
+    tryLinkRegion,
+    startPendingLink,
   });
 
   const { handleHideShareUrl, handleShareSelectedAnnotation, handleCopyShareUrl } = useShareTarget({
@@ -639,9 +641,7 @@ export default function ManuscriptViewer({
       activeTool,
       setActiveTool,
       rearmCreateTool,
-      tryLinkRegion,
       textLinkingActive,
-      startPendingLink,
       persistRegionGeometry,
       filteredAllographId: filteredAllograph?.id,
       activeAssignmentHandId: activeAssignmentHand?.id,

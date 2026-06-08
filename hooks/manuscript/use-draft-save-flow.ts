@@ -35,10 +35,8 @@ interface UseDraftSaveFlowArgs {
   activeTool: string;
   setActiveTool: (tool: 'move') => void;
   rearmCreateTool: () => void;
-  tryLinkRegion: (annotation: A9sAnnotation) => boolean;
   /** Pure text view: a drawn region links to a phrase instead of becoming a glyph. */
   textLinkingActive: boolean;
-  startPendingLink: (annotation: A9sAnnotation) => void;
   /** Persist a reshaped text-region's geometry (no-op for non-db drafts). */
   persistRegionGeometry: (annotation: A9sAnnotation) => void;
   filteredAllographId: number | undefined;
@@ -67,9 +65,7 @@ export function useDraftSaveFlow({
   activeTool,
   setActiveTool,
   rearmCreateTool,
-  tryLinkRegion,
   textLinkingActive,
-  startPendingLink,
   persistRegionGeometry,
   filteredAllographId,
   activeAssignmentHandId,
@@ -142,16 +138,12 @@ export function useDraftSaveFlow({
 
   const handleViewerCreate = React.useCallback(
     (annotation: A9sAnnotation) => {
-      // Track A — armed text→region links are handled in useImageTextLinking.
-      if (tryLinkRegion(annotation)) return;
-
-      // Reverse text-link: in pure text view a freshly-drawn region isn't a
-      // glyph — it waits for the user to click the phrase it belongs to. Skip the
-      // glyph draft path (no allograph popup); the drawn draft stays as a preview.
-      if (textLinkingActive) {
-        startPendingLink(annotation);
-        return;
-      }
+      // Text↔region links (armed phrase→region and region-first) are created on
+      // Annotorious's createSelection event in usePopupSelection — that's the
+      // event a draw reliably fires. createAnnotation (this handler) only fires
+      // when a glyph draft is *saved* via the allograph popup, which never
+      // happens for a link. So in any text-linking view, never commit a glyph.
+      if (textLinkingActive) return;
 
       const enriched = decorateCreatedAnnotation(annotation);
 
@@ -163,15 +155,7 @@ export function useDraftSaveFlow({
 
       void syncCreatedAnnotation();
     },
-    [
-      tryLinkRegion,
-      textLinkingActive,
-      startPendingLink,
-      decorateCreatedAnnotation,
-      updatePopupById,
-      editorState,
-      viewerApiRef,
-    ]
+    [textLinkingActive, decorateCreatedAnnotation, updatePopupById, editorState, viewerApiRef]
   );
 
   // 60 fps modify-drag fires collapse into one trailing-edge commit (debounced
