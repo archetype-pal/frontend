@@ -8,6 +8,7 @@ import {
   getEditorialInternalNote,
   getStandardAnnotationNote,
 } from '@/lib/annotation-notes';
+import { isTextRegionAnnotation } from '@/lib/manuscript-viewer-annotation-types';
 import {
   DEFAULT_SINGLE_POPUP_POSITION,
   type PopupPosition,
@@ -131,7 +132,11 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
 
   const openPopupCollectionFromAnnotation = React.useCallback(
     (annotation: A9sWithMeta | null, options?: OpenPopupOptions) => {
-      if (!annotation) {
+      // Authoritative type boundary: a text-region annotation NEVER gets a
+      // glyph/editorial popup, regardless of which caller asks. Upstream guards
+      // (use-popup-selection, use-share-target) are fast paths; this is the
+      // single sink that makes the rule impossible to bypass.
+      if (!annotation || isTextRegionAnnotation(annotation)) {
         setOpenPopups([]);
         setActivePopupId(null);
         return;

@@ -170,6 +170,9 @@ export default function ManuscriptAnnotorious({
   });
 
   const selectedDisplayIdRef = useRef<string | null>(null);
+  // Last pointer-down position (viewport coords) — used to recover the VISIBLE
+  // annotation the user clicked when Annotorious hit-tests a hidden one beneath.
+  const lastPointerDownRef = useRef<{ x: number; y: number } | null>(null);
   const multiSelectedIdsRef = useRef<Set<string>>(new Set());
   const allowMultipleSelectionRef = useRef(allowMultipleSelection);
   const autoCommitDrawSelectionsRef = useRef(autoCommitDrawSelections);
@@ -522,6 +525,49 @@ export default function ManuscriptAnnotorious({
             if (settings) settings.dragToPan = enabled;
           };
 
+          // A filtered-out annotation (e.g. a glyph hidden in text view) must not
+          // be interactive. Annotorious hit-tests its OWN store and ignores our
+          // CSS display:none, so without this a click on a region selects the
+          // glyph hidden beneath it and opens the glyph popup — the reported bug.
+          const isAnnotationVisible = (a: Annotation | null | undefined) => {
+            if (!a) return true;
+            const predicate = annotationFilterRef.current;
+            return predicate ? predicate(a) : true;
+          };
+
+          // Record where the user pressed so we can recover the visible annotation
+          // when Annotorious resolves a click to a hidden one nested beneath it.
+          viewerRef.current?.addEventListener(
+            'pointerdown',
+            (e) => {
+              lastPointerDownRef.current = { x: e.clientX, y: e.clientY };
+            },
+            true
+          );
+
+          // The smallest VISIBLE annotation whose rendered box contains the point
+          // — i.e. the region the user actually clicked, skipping hidden glyphs.
+          const visibleAnnotationAtPoint = (x: number, y: number): Annotation | null => {
+            const root = viewerRef.current;
+            if (!root) return null;
+            let bestId: string | null = null;
+            let bestArea = Infinity;
+            root.querySelectorAll<SVGGElement>('g.a9s-annotation').forEach((el) => {
+              if (el.style.display === 'none') return;
+              const r = el.getBoundingClientRect();
+              if (r.width === 0 || x < r.left || x > r.right || y < r.top || y > r.bottom) return;
+              const area = r.width * r.height;
+              if (area < bestArea) {
+                bestArea = area;
+                bestId = el.dataset.id ?? null;
+              }
+            });
+            if (!bestId) return null;
+            return (
+              ((anno.getAnnotations?.() ?? []) as Annotation[]).find((a) => a.id === bestId) ?? null
+            );
+          };
+
           const notifyDelete = (a: Annotation) => {
             if (selectedDisplayIdRef.current === a.id) {
               selectedDisplayIdRef.current = null;
@@ -749,6 +795,10 @@ export default function ManuscriptAnnotorious({
           };
 
           anno.on('clickAnnotation', (a: Annotation) => {
+            // Ignore clicks on annotations hidden by the active filter (e.g. a
+            // glyph beneath a region in text view).
+            if (!isAnnotationVisible(a)) return;
+
             if (deleteFromActiveAnnotation(a)) {
               return;
             }
@@ -769,7 +819,9 @@ export default function ManuscriptAnnotorious({
             if (currentMode === 'pan') {
               anno.readOnly = isDraftAnnotation(a) ? false : true;
             } else if (currentMode === 'modify') {
-              anno.readOnly = isTextRegionAnnotation(a);
+              // Modify reshapes ANY annotation incl. a text-region: keep it
+              // editable so the drag fires updateAnnotation → persistRegionGeometry.
+              anno.readOnly = false;
             } else if (currentMode === 'draw') {
               anno.readOnly = false;
             }
@@ -777,6 +829,21 @@ export default function ManuscriptAnnotorious({
 
           anno.on('selectAnnotation', (a: Annotation | null) => {
             if (currentMode === 'delete') {
+              return;
+            }
+
+            // Annotorious hit-tests its own store and ignores our display:none, so
+            // a click on a region can resolve to a glyph hidden beneath it. Cancel
+            // that selection and instead surface the VISIBLE annotation the user
+            // actually clicked (e.g. the region), so the right thing is selected
+            // and the hidden glyph's popup never opens.
+            if (a && !isAnnotationVisible(a)) {
+              selectedDisplayIdRef.current = null;
+              anno.cancelSelected?.();
+              const pt = lastPointerDownRef.current;
+              const target = pt ? visibleAnnotationAtPoint(pt.x, pt.y) : null;
+              selectedDisplayIdRef.current = target?.id ?? null;
+              onSelectRef.current?.(target ?? null);
               return;
             }
 
@@ -824,7 +891,8 @@ export default function ManuscriptAnnotorious({
             if (currentMode === 'draw') {
               anno.readOnly = false;
             } else if (currentMode === 'modify') {
-              anno.readOnly = isTextRegionAnnotation(a);
+              // Editable in modify so a text-region reshape persists (see above).
+              anno.readOnly = false;
             } else if (currentMode === 'pan') {
               anno.readOnly = isDraftAnnotation(a) ? false : true;
             }
@@ -928,7 +996,8 @@ export default function ManuscriptAnnotorious({
 
               currentMode = 'modify';
               const selected = (anno.getSelected?.() as Annotation | undefined) ?? null;
-              anno.readOnly = isTextRegionAnnotation(selected);
+              // Modify keeps a text-region editable so its reshape persists.
+              anno.readOnly = false;
               anno.setDrawingEnabled(false);
               setOsdDragToPan(true);
               viewerRef.current?.classList.remove(
@@ -1148,7 +1217,8 @@ export default function ManuscriptAnnotorious({
                 if (currentMode === 'draw') {
                   annoRef.current.readOnly = false;
                 } else if (currentMode === 'modify') {
-                  annoRef.current.readOnly = isTextRegionAnnotation(selected);
+                  // Editable in modify so a text-region reshape persists.
+                  annoRef.current.readOnly = false;
                 } else if (currentMode === 'pan') {
                   annoRef.current.readOnly = isDraftAnnotation(selected) ? false : true;
                 }

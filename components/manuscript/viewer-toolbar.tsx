@@ -172,7 +172,8 @@ export function ViewerToolbar({
         {canDeleteAnnotations && (
           <ToolbarButton
             icon={Trash2}
-            label="Delete (x)"
+            label={textOnlyMode ? 'Delete region (x)' : 'Delete (x)'}
+            tooltip={textOnlyMode ? 'Delete linked region' : undefined}
             keyshortcuts="X Delete Shift+Backspace"
             active={activeTool === 'delete'}
             onClick={onDeleteTool}
@@ -181,7 +182,8 @@ export function ViewerToolbar({
 
         <ToolbarButton
           icon={Expand}
-          label="Modify (m)"
+          label={textOnlyMode ? 'Reshape region (m)' : 'Modify (m)'}
+          tooltip={textOnlyMode ? 'Reshape the selected region' : undefined}
           keyshortcuts="M Shift+M"
           active={activeTool === 'modify'}
           onClick={onModifyTool}
@@ -190,7 +192,8 @@ export function ViewerToolbar({
         {canCreatePublicAnnotations && (
           <ToolbarButton
             icon={SquarePen}
-            label="Draw (d / space)"
+            label={textOnlyMode ? 'Draw region to link (d / space)' : 'Draw (d / space)'}
+            tooltip={textOnlyMode ? 'Draw a region, then click its phrase to link' : undefined}
             keyshortcuts="D Shift+D R Shift+R Space"
             active={activeTool === 'draw' && currentCreationKind === 'public'}
             onClick={() => onCreateAnnotation('public')}

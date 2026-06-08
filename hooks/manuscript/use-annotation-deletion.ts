@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import { dbIdFromA9s } from '@/lib/anno-mapping';
 import { isDbId } from '@/lib/annotation-popup-utils';
 import { isTextRegionAnnotation } from '@/lib/manuscript-viewer-annotation-types';
 import type {
@@ -21,6 +22,10 @@ interface UseAnnotationDeletionArgs {
   markDeleted: (id: string) => void;
   viewerApiRef: React.RefObject<ViewerApi | null>;
   setActiveTool: (tool: ActiveViewerTool) => void;
+  /** Delete a text-region: removes the graph AND strips its corresp (the glyph
+   *  delete would orphan the transcription reference). Same op as the panel's
+   *  region Delete (unlinkSelectedRegion). */
+  onDeleteTextRegion: (graphId: number) => void;
 }
 
 /**
@@ -40,11 +45,26 @@ export function useAnnotationDeletion({
   markDeleted,
   viewerApiRef,
   setActiveTool,
+  onDeleteTextRegion,
 }: UseAnnotationDeletionArgs) {
   const handleConfirmDelete = React.useCallback(
     (annotation: A9sAnnotation) => {
       const canonical = getCanonicalAnnotation(annotation);
-      if (isTextRegionAnnotation(canonical)) return false;
+      // A text-region isn't a glyph: deleting it must remove the graph AND strip
+      // its corresp from the transcription. Route to unlink and return false so
+      // Annotorious's glyph-delete path never runs (which would orphan the ref).
+      if (isTextRegionAnnotation(canonical)) {
+        const graphId = dbIdFromA9s(canonical);
+        if (
+          graphId != null &&
+          window.confirm(
+            'Delete this linked region?\n\nIt will be removed from the image and unlinked from the transcription.'
+          )
+        ) {
+          onDeleteTextRegion(graphId);
+        }
+        return false;
+      }
 
       const kind = getAnnotationKind(canonical);
       const isDraft = !isDbId(canonical.id);
@@ -55,7 +75,7 @@ export function useAnnotationDeletion({
           : `Delete this saved ${kind} annotation?\n\nThis will mark it for deletion. Press Save to persist the deletion.`
       );
     },
-    [getCanonicalAnnotation, getAnnotationKind]
+    [getCanonicalAnnotation, getAnnotationKind, onDeleteTextRegion]
   );
 
   const handleConfirmDeleteMany = React.useCallback(

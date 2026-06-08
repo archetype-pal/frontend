@@ -665,6 +665,7 @@ export default function ManuscriptViewer({
     markDeleted: editorState.markDeleted,
     viewerApiRef,
     setActiveTool,
+    onDeleteTextRegion: unlinkSelectedRegion,
   });
 
   const handleToggleFullScreen = React.useCallback(() => {
@@ -736,6 +737,18 @@ export default function ManuscriptViewer({
     viewerApiRef.current?.enablePan();
     setActiveTool('move');
   }, [setActiveTool]);
+
+  // Switching view mode resets to the move/pan tool. Otherwise a draw tool left
+  // armed (e.g. after arming a link, or switching views mid-draw) turns the next
+  // click on an existing box into a brand-new draft instead of a selection —
+  // which is what surfaced the "clicking a region opens the glyph popup" bug.
+  const handleSetViewModeAndResetTool = React.useCallback(
+    (mode: Parameters<typeof handleSetViewMode>[0]) => {
+      handleSetViewMode(mode);
+      handleMoveTool();
+    },
+    [handleSetViewMode, handleMoveTool]
+  );
 
   const handleModifyTool = React.useCallback(() => {
     cancelPendingPopupClear();
@@ -1067,7 +1080,7 @@ export default function ManuscriptViewer({
   const annotationHeader = (
     <AnnotationHeader
       viewMode={effectiveViewMode}
-      onSetViewMode={handleSetViewMode}
+      onSetViewMode={handleSetViewModeAndResetTool}
       hasTexts={hasTexts}
       unsavedCount={unsavedChanges}
       selectedAnnotationsCount={selectedAnnotationIds.length}
@@ -1364,7 +1377,7 @@ export default function ManuscriptViewer({
                   }}
                   selectedRegionGraphId={selectedRegionGraphId}
                   onDeleteRegion={(graphId) => unlinkSelectedRegion(graphId)}
-                  onClose={() => handleSetViewMode('allograph')}
+                  onClose={() => handleSetViewModeAndResetTool('allograph')}
                 />
               </div>
             </>

@@ -17,6 +17,7 @@ import type {
   ViewerApi,
 } from '@/components/manuscript/manuscript-annotorious';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
+import type { A9sWithMeta } from '@/types/annotation-viewer';
 
 interface LinkArm {
   textId: number;
@@ -187,7 +188,17 @@ export function useImageTextLinking({
       if (existing && existing.id !== annotation.id) {
         viewerApiRef.current?.removeAnnotationById?.(existing.id);
       }
-      setPendingLinkRegion(annotation);
+      // Type the preview as a text-region immediately — before it's linked
+      // server-side — so every guard (the popup sink, the select handler) treats
+      // it as one. Otherwise an un-linked drawn box is "untyped" and could open
+      // the glyph popup if re-selected after a view-mode switch. We also push the
+      // type onto the canvas copy so Annotorious re-emits it typed on re-select.
+      const typed = {
+        ...annotation,
+        _meta: { ...(annotation as A9sWithMeta)._meta, annotationType: 'text' as const },
+      } as A9sAnnotation;
+      void viewerApiRef.current?.updateSelectedDraft?.(typed);
+      setPendingLinkRegion(typed);
     },
     [viewerApiRef]
   );
