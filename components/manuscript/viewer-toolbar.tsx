@@ -30,6 +30,12 @@ interface ViewerToolbarProps {
   unsavedChanges: number;
   canDeleteAnnotations: boolean;
   canCreatePublicAnnotations: boolean;
+  /**
+   * Pure Text view: a drawn region links to a phrase, so the glyph-only tools
+   * (editorial create, draft Save) are hidden — Draw/Modify/Delete remain for
+   * region work.
+   */
+  textOnlyMode: boolean;
   onToggleFullScreen: () => void;
   onMoveTool: () => void;
   onZoomIn: () => void;
@@ -93,6 +99,7 @@ export function ViewerToolbar({
   unsavedChanges,
   canDeleteAnnotations,
   canCreatePublicAnnotations,
+  textOnlyMode,
   onToggleFullScreen,
   onMoveTool,
   onZoomIn,
@@ -141,7 +148,7 @@ export function ViewerToolbar({
 
         <ToolbarButton icon={RefreshCcw} label="Refresh" keyshortcuts="Home" onClick={onRefresh} />
 
-        {canCreateEditorialAnnotations && (
+        {!textOnlyMode && canCreateEditorialAnnotations && (
           <ToolbarButton
             icon={Pencil}
             label="Create editorial annotation"
@@ -152,7 +159,7 @@ export function ViewerToolbar({
           />
         )}
 
-        {canPersistAnyAnnotations && (
+        {!textOnlyMode && canPersistAnyAnnotations && (
           <ToolbarButton
             icon={Save}
             label="Save (s)"

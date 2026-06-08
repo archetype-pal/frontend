@@ -1223,6 +1223,7 @@ export default function ManuscriptViewer({
               unsavedChanges={unsavedChanges}
               canDeleteAnnotations={canDeleteAnnotations}
               canCreatePublicAnnotations={canCreatePublicAnnotations}
+              textOnlyMode={textLinkingActive}
               onToggleFullScreen={handleToggleFullScreen}
               onMoveTool={handleMoveTool}
               onZoomIn={() => viewerApiRef.current?.zoomIn()}
