@@ -458,21 +458,13 @@ export default function ManuscriptAnnotorious({
           const res = await fetch(tileSourceUrl);
           if (!res.ok) throw new Error(`IIIF info: ${res.status}`);
           const obj = (await res.json()) as Record<string, unknown>;
-          // OpenSeadragon supports IIIF Image API 2.x; Sipi often returns 3.0. Rewrite id and, if needed, convert to 2-style.
-          const id = baseUrl;
-          if (obj.type === 'ImageService3') {
-            tileSources = {
-              '@context': 'http://iiif.io/api/image/2/context.json',
-              '@id': id,
-              protocol: obj.protocol ?? 'http://iiif.io/api/image',
-              width: obj.width,
-              height: obj.height,
-              profile: Array.isArray(obj.profile) ? obj.profile : [obj.profile],
-              tiles: obj.tiles ?? [{ scaleFactors: [1, 2, 4, 8, 16], width: 256 }],
-            };
-          } else {
-            tileSources = { ...obj, id: baseUrl, '@id': baseUrl };
-          }
+          // Pass SIPI's NATIVE info.json through to OpenSeadragon (v6 supports
+          // both IIIF Image API 2.x and 3.0); only rewrite the identifier so tile
+          // requests route through the proxy. Do NOT downgrade 3.0 → 2.x: SIPI v5
+          // is IIIF-3-strict and rejects the 2.x `full` size with 400 ("IIIF url
+          // not correctly formatted"); the 3.0 descriptor makes OSD request the
+          // valid `max` size instead. (`id` is the 3.0 key, `@id` the 2.x one.)
+          tileSources = { ...obj, id: baseUrl, '@id': baseUrl };
         } catch (err) {
           if (isMounted) {
             setState({
