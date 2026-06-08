@@ -74,6 +74,31 @@ function graphIdsOf(el: Element | null): number[] {
     .filter((value) => Number.isFinite(value));
 }
 
+/**
+ * Bring a span into view by scrolling ONLY its nearest scrollable ancestor (the
+ * card body) — never the window. `el.scrollIntoView()` would also scroll the page
+ * (the viewer is 100dvh), yanking the whole layout. No-op if already visible.
+ */
+function scrollSpanIntoView(el: HTMLElement): void {
+  let scroller: HTMLElement | null = el.parentElement;
+  while (scroller) {
+    const overflowY = getComputedStyle(scroller).overflowY;
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll') &&
+      scroller.scrollHeight > scroller.clientHeight
+    ) {
+      break;
+    }
+    scroller = scroller.parentElement;
+  }
+  if (!scroller) return;
+  const sRect = scroller.getBoundingClientRect();
+  const eRect = el.getBoundingClientRect();
+  if (eRect.top >= sRect.top && eRect.bottom <= sRect.bottom) return; // already visible
+  const delta = eRect.top + eRect.height / 2 - (sRect.top + scroller.clientHeight / 2);
+  scroller.scrollBy({ top: delta, behavior: 'smooth' });
+}
+
 const TYPE_ORDER = (type: string): number =>
   type === 'Transcription' ? 0 : type === 'Translation' ? 1 : 2;
 
@@ -349,6 +374,10 @@ export function ViewerTextPanel({
   const { ratio, bindSplitter } = useTextCardSplit(layout);
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
+  // Set when a *text* click drives the linked-graph change, so the highlight
+  // effect skips its scroll: the clicked span is already in view, and scrolling
+  // would just move the page. Image→text selections leave it false (do scroll).
+  const skipLinkScrollRef = React.useRef(false);
 
   // region → text: mark every span linked to the selected region and bring the
   // first into view. Covers all shown columns (the query spans the whole panel).
@@ -364,7 +393,13 @@ export function ViewerTextPanel({
     );
     if (matches.length === 0) return;
     matches.forEach((el) => el.setAttribute('data-graph-linked', 'true'));
-    matches[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    // A text click already has the span in view (and onSpanActivate focuses the
+    // image); only scroll for image→text selections, and only within the panel.
+    if (skipLinkScrollRef.current) {
+      skipLinkScrollRef.current = false;
+    } else {
+      scrollSpanIntoView(matches[0]);
+    }
   }, [linkedGraphId, shownKey]);
 
   // Mark the armed element so the editor sees which phrase they're linking. The
@@ -382,7 +417,7 @@ export function ViewerTextPanel({
     const el = section.querySelectorAll<HTMLElement>('[data-dpt]')[armedElementIndex];
     if (el) {
       el.setAttribute('data-graph-arming', 'true');
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      scrollSpanIntoView(el);
     }
   }, [armedElementIndex, armedTextId, shownKey]);
 
@@ -392,6 +427,8 @@ export function ViewerTextPanel({
     const innermost = target.closest<HTMLElement>('[data-dpt]');
     const ownIds = graphIdsOf(innermost);
     if (ownIds.length > 0) {
+      // Text click → focus the image only; don't scroll the text panel/page.
+      skipLinkScrollRef.current = true;
       onSpanActivate(ownIds[0]); // this element is itself linked → show its region
       return;
     }
@@ -409,7 +446,10 @@ export function ViewerTextPanel({
     }
     // Otherwise fall back to the nearest linked ancestor (read-only navigation).
     const ancestorIds = graphIdsOf(target.closest('[data-graph-id]'));
-    if (ancestorIds.length > 0) onSpanActivate(ancestorIds[0]);
+    if (ancestorIds.length > 0) {
+      skipLinkScrollRef.current = true;
+      onSpanActivate(ancestorIds[0]);
+    }
   };
   const handleMouseOver = (event: React.MouseEvent) => {
     const ids = graphIdsOf((event.target as Element).closest('[data-graph-id]'));
