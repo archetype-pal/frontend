@@ -10,7 +10,9 @@ import { useSearchContext } from '@/contexts/search-context';
 import {
   KeywordSearchInput,
   useKeywordSuggestions,
+  type KeywordSuggestionItem,
 } from '@/components/search/keyword-search-input';
+import { resolveSuggestionTarget } from '@/lib/search-suggestion-target';
 import {
   Search,
   Home,
@@ -114,6 +116,27 @@ export default function Header() {
       const query = normalized ? `?keyword=${encodeURIComponent(normalized)}` : '';
       router.push(`/search/manuscripts${query}`);
     }
+  };
+
+  // A suggestion that names a specific record opens that record; a typed result
+  // without an id-only detail page routes to its results tab; query rows fall
+  // through (return false) to the keyword search.
+  const navigateToSuggestion = (item: KeywordSuggestionItem): boolean => {
+    const target = resolveSuggestionTarget(item);
+    if (target.kind === 'search') return false;
+    if (target.kind === 'entity') {
+      router.push(target.href);
+      return true;
+    }
+    // Scoped: keep the user's typed query (not the suggestion's label) so the
+    // term they searched stays highlighted in that tab — e.g. "william" stays
+    // marked in the Texts passages rather than being replaced by a shelfmark.
+    const keyword = (headerSearchValue || item.value).trim();
+    addSearchHistory(keyword, target.resultType);
+    setHistoryItems(getSearchHistory());
+    const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
+    router.push(`/search/${target.resultType}${query}`);
+    return true;
   };
 
   const handleHeaderSearchChange = (value: string) => {
@@ -321,6 +344,7 @@ export default function Header() {
                     value={headerSearchValue}
                     onChange={handleHeaderSearchChange}
                     onTriggerSearch={handleTriggerSearch}
+                    onSuggestionNavigate={navigateToSuggestion}
                     suggestions={effectiveSuggestions}
                     placeholder="Search the corpus…"
                     className="w-full"

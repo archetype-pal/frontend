@@ -1,11 +1,14 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   KeywordSearchInput,
   useKeywordSuggestions,
+  type KeywordSuggestionItem,
 } from '@/components/search/keyword-search-input';
+import { resolveSuggestionTarget } from '@/lib/search-suggestion-target';
 import { useSearchContext } from '@/contexts/search-context';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import {
@@ -51,6 +54,7 @@ export function SearchKeywordBar({
 }: SearchKeywordBarProps) {
   const { suggestionsPool, getServerSuggestions } = useSearchContext();
   const { getLabel } = useModelLabels();
+  const router = useRouter();
   const [history, setHistory] = React.useState<SearchHistoryEntry[]>([]);
   const localSuggestions = useKeywordSuggestions(value, suggestionsPool);
   const deferredKeyword = React.useDeferredValue(value);
@@ -79,12 +83,32 @@ export function SearchKeywordBar({
     [onChange, onSubmit]
   );
 
+  // Entity suggestions open the record; a typed result of a different kind
+  // switches to its results tab; query rows fall through to an in-place search.
+  const navigateToSuggestion = React.useCallback(
+    (item: KeywordSuggestionItem): boolean => {
+      const target = resolveSuggestionTarget(item);
+      if (target.kind === 'search') return false;
+      if (target.kind === 'entity') {
+        router.push(target.href);
+        return true;
+      }
+      if (target.resultType === searchType) return false;
+      const keyword = item.value.trim();
+      const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
+      router.push(`/search/${target.resultType}${query}`);
+      return true;
+    },
+    [router, searchType]
+  );
+
   return (
     <KeywordSearchInput
       inputId={inputId}
       value={value}
       onChange={onChange}
       onTriggerSearch={triggerSearch}
+      onSuggestionNavigate={navigateToSuggestion}
       exactPhrase={exactPhrase}
       onExactPhraseChange={onExactPhraseChange}
       suggestions={effectiveSuggestions}

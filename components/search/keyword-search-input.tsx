@@ -37,6 +37,12 @@ type KeywordSearchInputProps = {
   value: string;
   onChange: (value: string) => void;
   onTriggerSearch: (keyword: string) => void;
+  /**
+   * Called when a suggestion is chosen, BEFORE the keyword-search fallback.
+   * Return `true` if the selection was handled by navigating to the entity/tab
+   * (so no keyword search runs); return falsy to fall through to a search.
+   */
+  onSuggestionNavigate?: (item: KeywordSuggestionItem) => boolean;
   suggestions: KeywordSuggestionItem[];
   placeholder?: string;
   className?: string;
@@ -61,6 +67,7 @@ export function KeywordSearchInput({
   value,
   onChange,
   onTriggerSearch,
+  onSuggestionNavigate,
   suggestions,
   placeholder = 'Type and press Enter…',
   className,
@@ -106,7 +113,12 @@ export function KeywordSearchInput({
         case 'Enter':
           e.preventDefault();
           if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-            onTriggerSearch(suggestions[selectedIndex].value);
+            const picked = suggestions[selectedIndex];
+            if (onSuggestionNavigate?.(picked)) {
+              setDismissed(true);
+              break;
+            }
+            onTriggerSearch(picked.value);
           } else {
             const raw = value.trim();
             if (!raw) {
@@ -130,7 +142,7 @@ export function KeywordSearchInput({
           break;
       }
     },
-    [suggestions, selectedIndex, value, onTriggerSearch, exactPhrase]
+    [suggestions, selectedIndex, value, onTriggerSearch, onSuggestionNavigate, exactPhrase]
   );
 
   const handleFocus = React.useCallback(() => {
@@ -149,6 +161,10 @@ export function KeywordSearchInput({
 
   const handleSuggestionClick = React.useCallback(
     (item: KeywordSuggestionItem) => {
+      if (onSuggestionNavigate?.(item)) {
+        setDismissed(true);
+        return;
+      }
       const raw = item.value.trim();
       if (
         exactPhrase &&
@@ -162,7 +178,7 @@ export function KeywordSearchInput({
       }
       setDismissed(true);
     },
-    [exactPhrase, onTriggerSearch]
+    [exactPhrase, onTriggerSearch, onSuggestionNavigate]
   );
 
   const showRecent = value.trim().length === 0 && recentSearches.length > 0;
