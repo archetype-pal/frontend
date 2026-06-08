@@ -52,6 +52,9 @@ interface UsePopupSelectionArgs {
   // settings
   allowMultipleBoxes: boolean;
   selectMultipleAnnotations: boolean;
+  /** Pure text view: a freshly-drawn region is a pending text link, not a glyph,
+   *  so its auto-select must not open the allograph popup. */
+  textLinkingActive: boolean;
 }
 
 /**
@@ -86,6 +89,7 @@ export function usePopupSelection({
   getCanonicalAnnotation,
   allowMultipleBoxes,
   selectMultipleAnnotations,
+  textLinkingActive,
 }: UsePopupSelectionArgs) {
   const handleSelectionIdsChange = React.useCallback(
     (ids: string[]) => {
@@ -300,6 +304,13 @@ export function usePopupSelection({
           return;
         }
 
+        // Pure text view: a freshly-drawn region (non-db draft) is a pending
+        // text link awaiting a phrase — don't open the glyph/allograph popup.
+        if (textLinkingActive && !isDbId(selected.id)) {
+          dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
+          return;
+        }
+
         if (activeTool === 'modify') {
           dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
           return;
@@ -334,6 +345,7 @@ export function usePopupSelection({
       openSinglePopupFromAnnotation,
       setLinkedGraphId,
       selectMultipleAnnotations,
+      textLinkingActive,
     ]
   );
 

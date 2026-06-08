@@ -36,6 +36,9 @@ interface UseDraftSaveFlowArgs {
   setActiveTool: (tool: 'move') => void;
   rearmCreateTool: () => void;
   tryLinkRegion: (annotation: A9sAnnotation) => boolean;
+  /** Pure text view: a drawn region links to a phrase instead of becoming a glyph. */
+  textLinkingActive: boolean;
+  startPendingLink: (annotation: A9sAnnotation) => void;
   filteredAllographId: number | undefined;
   activeAssignmentHandId: number | undefined;
   currentCreationKind: AnnotationCreationKind;
@@ -63,6 +66,8 @@ export function useDraftSaveFlow({
   setActiveTool,
   rearmCreateTool,
   tryLinkRegion,
+  textLinkingActive,
+  startPendingLink,
   filteredAllographId,
   activeAssignmentHandId,
   currentCreationKind,
@@ -137,6 +142,14 @@ export function useDraftSaveFlow({
       // Track A — armed text→region links are handled in useImageTextLinking.
       if (tryLinkRegion(annotation)) return;
 
+      // Reverse text-link: in pure text view a freshly-drawn region isn't a
+      // glyph — it waits for the user to click the phrase it belongs to. Skip the
+      // glyph draft path (no allograph popup); the drawn draft stays as a preview.
+      if (textLinkingActive) {
+        startPendingLink(annotation);
+        return;
+      }
+
       const enriched = decorateCreatedAnnotation(annotation);
 
       const syncCreatedAnnotation = async () => {
@@ -147,7 +160,15 @@ export function useDraftSaveFlow({
 
       void syncCreatedAnnotation();
     },
-    [tryLinkRegion, decorateCreatedAnnotation, updatePopupById, editorState, viewerApiRef]
+    [
+      tryLinkRegion,
+      textLinkingActive,
+      startPendingLink,
+      decorateCreatedAnnotation,
+      updatePopupById,
+      editorState,
+      viewerApiRef,
+    ]
   );
 
   // 60 fps modify-drag fires collapse into one trailing-edge commit (debounced

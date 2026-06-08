@@ -57,16 +57,26 @@ export function useImageTextLinking({
   const [imageTexts, setImageTexts] = React.useState<ImageTextDetail[]>([]);
   const [linkedGraphId, setLinkedGraphId] = React.useState<number | null>(null);
   const [linkArm, setLinkArm] = React.useState<LinkArm | null>(null);
+  // Reverse flow: a region drawn first (in text mode) waits here for the user to
+  // click the phrase it belongs to. The drawn draft stays on the canvas as a
+  // preview until linked or cancelled.
+  const [pendingLinkRegion, setPendingLinkRegion] = React.useState<A9sAnnotation | null>(null);
 
   const linkArmRef = React.useRef<LinkArm | null>(null);
   React.useEffect(() => {
     linkArmRef.current = linkArm;
   }, [linkArm]);
 
-  // Drop any armed link when the image changes so a stale arm from the previous
-  // image can't hijack the first region drawn on the next one.
+  const pendingLinkRegionRef = React.useRef<A9sAnnotation | null>(null);
+  React.useEffect(() => {
+    pendingLinkRegionRef.current = pendingLinkRegion;
+  }, [pendingLinkRegion]);
+
+  // Drop any armed/pending link when the image changes so a stale one from the
+  // previous image can't hijack the first region drawn on the next one.
   React.useEffect(() => {
     setLinkArm(null);
+    setPendingLinkRegion(null);
   }, [imageId]);
 
   // Load image-texts for the side panel. Whether the panel is shown is derived
@@ -162,6 +172,59 @@ export function useImageTextLinking({
     [token, imageHeight, viewerApiRef, reloadTextsAndAnnotations]
   );
 
+  // Reverse flow — a region drawn before a phrase is chosen. The viewer's create
+  // handler calls this (in pure text mode, when nothing is armed) instead of the
+  // glyph draft path; the drawn draft is kept on the canvas as a preview.
+  const startPendingLink = React.useCallback(
+    (annotation: A9sAnnotation) => {
+      const existing = pendingLinkRegionRef.current;
+      if (existing && existing.id !== annotation.id) {
+        viewerApiRef.current?.removeAnnotationById?.(existing.id);
+      }
+      setPendingLinkRegion(annotation);
+    },
+    [viewerApiRef]
+  );
+
+  // Link the pending region to the phrase the user just clicked.
+  const linkPendingToPhrase = React.useCallback(
+    (textId: number, elementIndex: number, label: string) => {
+      const region = pendingLinkRegionRef.current;
+      if (!(region && token && imageHeight)) return;
+      const geometry = a9sToBackendFeature(region, imageHeight);
+      void (async () => {
+        try {
+          await linkRegionToElement(token, textId, elementIndex, geometry);
+          viewerApiRef.current?.removeAnnotationById?.(region.id);
+          setPendingLinkRegion(null);
+          await reloadTextsAndAnnotations();
+          showActionNotification({
+            kind: 'created',
+            title: 'Region linked',
+            description: `Linked a region to “${label}”.`,
+            duration: 2200,
+          });
+        } catch (error) {
+          viewerApiRef.current?.removeAnnotationById?.(region.id);
+          setPendingLinkRegion(null);
+          showActionNotification({
+            kind: 'error',
+            title: 'Link failed',
+            description:
+              error instanceof Error ? error.message.slice(0, 160) : 'Could not link region.',
+          });
+        }
+      })();
+    },
+    [token, imageHeight, viewerApiRef, reloadTextsAndAnnotations]
+  );
+
+  const cancelPendingLink = React.useCallback(() => {
+    const region = pendingLinkRegionRef.current;
+    if (region) viewerApiRef.current?.removeAnnotationById?.(region.id);
+    setPendingLinkRegion(null);
+  }, [viewerApiRef]);
+
   return {
     imageTexts,
     linkedGraphId,
@@ -170,5 +233,9 @@ export function useImageTextLinking({
     setLinkArm,
     tryLinkRegion,
     reloadTextsAndAnnotations,
+    pendingLinkRegion,
+    startPendingLink,
+    linkPendingToPhrase,
+    cancelPendingLink,
   };
 }

@@ -307,6 +307,10 @@ export default function ManuscriptViewer({
     setLinkArm,
     tryLinkRegion,
     reloadTextsAndAnnotations,
+    pendingLinkRegion,
+    startPendingLink,
+    linkPendingToPhrase,
+    cancelPendingLink,
   } = useImageTextLinking({
     imageId,
     token,
@@ -337,6 +341,8 @@ export default function ManuscriptViewer({
   );
   const showTextDisplay = hasTranscription && hasTranslation;
   const effectiveViewMode = hasTexts ? viewerSettings.viewMode : 'allograph';
+  // Pure text view: drawing a region links it to a phrase (no glyph/allograph).
+  const textLinkingActive = effectiveViewMode === 'text';
   const isTextPanelOpen = effectiveViewMode !== 'allograph';
   const showTextPanel = isTextPanelOpen && hasTexts;
   const textPanelPosition = viewerSettings.textPanelPosition;
@@ -598,6 +604,7 @@ export default function ManuscriptViewer({
     getCanonicalAnnotation,
     allowMultipleBoxes: viewerSettings.allowMultipleBoxes,
     selectMultipleAnnotations: viewerSettings.selectMultipleAnnotations,
+    textLinkingActive,
   });
 
   const { handleHideShareUrl, handleShareSelectedAnnotation, handleCopyShareUrl } = useShareTarget({
@@ -628,6 +635,8 @@ export default function ManuscriptViewer({
       setActiveTool,
       rearmCreateTool,
       tryLinkRegion,
+      textLinkingActive,
+      startPendingLink,
       filteredAllographId: filteredAllograph?.id,
       activeAssignmentHandId: activeAssignmentHand?.id,
       currentCreationKind,
@@ -1333,6 +1342,14 @@ export default function ManuscriptViewer({
                   }}
                   onCancelLink={() => {
                     setLinkArm(null);
+                    handleMoveTool();
+                  }}
+                  pendingLink={!!pendingLinkRegion}
+                  onLinkPhrase={(textId, elementIndex, label) =>
+                    linkPendingToPhrase(textId, elementIndex, label)
+                  }
+                  onCancelPendingLink={() => {
+                    cancelPendingLink();
                     handleMoveTool();
                   }}
                   onClose={() => handleSetViewMode('allograph')}

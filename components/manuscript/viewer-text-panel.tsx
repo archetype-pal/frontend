@@ -49,6 +49,12 @@ interface ViewerTextPanelProps {
   onArmLink?: (textId: number, elementIndex: number, label: string) => void;
   /** Cancel an armed link. */
   onCancelLink?: () => void;
+  /** Reverse flow: a region was drawn first and is waiting for a phrase to link. */
+  pendingLink?: boolean;
+  /** Link the pending region to the clicked phrase. */
+  onLinkPhrase?: (textId: number, elementIndex: number, label: string) => void;
+  /** Cancel the pending (drawn-but-unlinked) region. */
+  onCancelPendingLink?: () => void;
   onClose: () => void;
   /** Editor-only TEI authoring. */
   token?: string | null;
@@ -319,6 +325,9 @@ export function ViewerTextPanel({
   armedTextId = null,
   onArmLink,
   onCancelLink,
+  pendingLink = false,
+  onLinkPhrase,
+  onCancelPendingLink,
   onClose,
   token,
   canEdit = false,
@@ -425,6 +434,22 @@ export function ViewerTextPanel({
     const target = event.target as Element;
     // Decide based on the *innermost* linkable element the user clicked.
     const innermost = target.closest<HTMLElement>('[data-dpt]');
+
+    // Reverse flow: a region was drawn first; the next phrase click links it.
+    if (pendingLink && onLinkPhrase && innermost) {
+      const section = target.closest<HTMLElement>('[data-text-id]');
+      if (section) {
+        const textId = Number(section.getAttribute('data-text-id'));
+        const index = Array.from(section.querySelectorAll<HTMLElement>('[data-dpt]')).indexOf(
+          innermost
+        );
+        if (Number.isFinite(textId) && index >= 0) {
+          onLinkPhrase(textId, index, (innermost.textContent ?? '').trim().slice(0, 40));
+          return;
+        }
+      }
+    }
+
     const ownIds = graphIdsOf(innermost);
     if (ownIds.length > 0) {
       // Text click → focus the image only; don't scroll the text panel/page.
@@ -519,7 +544,18 @@ export function ViewerTextPanel({
         ))}
       </div>
 
-      {armedElementIndex != null ? (
+      {pendingLink ? (
+        <div className="flex shrink-0 items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-1.5 text-[11px]">
+          <span className="text-primary">Click the phrase this region belongs to.</span>
+          <button
+            type="button"
+            onClick={() => onCancelPendingLink?.()}
+            className="rounded px-1.5 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : armedElementIndex != null ? (
         <div className="flex shrink-0 items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-1.5 text-[11px]">
           <span className="text-primary">
             Draw the region for this phrase on the image to link it.
@@ -534,8 +570,8 @@ export function ViewerTextPanel({
         </div>
       ) : canLink ? (
         <p className="shrink-0 px-1 text-[11px] text-muted-foreground">
-          Click a highlighted phrase to find its region; click an un-highlighted phrase to draw and
-          link a new region.
+          Click a highlighted phrase to find its region. To link a new region: click an
+          un-highlighted phrase then draw it, or draw a region then click its phrase.
         </p>
       ) : null}
     </div>
