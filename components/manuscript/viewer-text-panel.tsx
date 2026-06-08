@@ -610,7 +610,8 @@ export function ViewerTextPanel({
       ) : canLink ? (
         <p className="shrink-0 px-1 text-[11px] text-muted-foreground">
           Click a highlighted phrase to find its region. To link a new region: click an
-          un-highlighted phrase then draw it, or draw a region then click its phrase.
+          un-highlighted phrase then draw it, or draw a region then click its phrase.{' '}
+          <span className="text-foreground/70">Links save automatically — no Save needed.</span>
         </p>
       ) : null}
     </div>

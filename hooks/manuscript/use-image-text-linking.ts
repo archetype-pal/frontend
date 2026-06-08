@@ -159,10 +159,10 @@ export function useImageTextLinking({
           setLinkArm(null);
           await reloadTextsAndAnnotations();
           showActionNotification({
-            kind: 'created',
-            title: 'Region linked',
-            description: `Linked a region to “${arm.label}”.`,
-            duration: 2200,
+            kind: 'saved',
+            title: 'Region linked & saved',
+            description: `Saved automatically — “${arm.label}”.`,
+            duration: 3000,
           });
         } catch (error) {
           viewerApiRef.current?.removeAnnotationById?.(annotation.id);
@@ -216,10 +216,10 @@ export function useImageTextLinking({
           setPendingLinkRegion(null);
           await reloadTextsAndAnnotations();
           showActionNotification({
-            kind: 'created',
-            title: 'Region linked',
-            description: `Linked a region to “${label}”.`,
-            duration: 2200,
+            kind: 'saved',
+            title: 'Region linked & saved',
+            description: `Saved automatically — “${label}”.`,
+            duration: 3000,
           });
         } catch (error) {
           viewerApiRef.current?.removeAnnotationById?.(region.id);
