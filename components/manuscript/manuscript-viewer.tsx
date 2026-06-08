@@ -43,6 +43,7 @@ import {
   hasPopupAnnotationChanges,
 } from '@/lib/manuscript-viewer-popup-utils';
 
+import { dbIdFromA9s } from '@/lib/anno-mapping';
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
 import {
   isGlyphAnnotation,
@@ -665,7 +666,6 @@ export default function ManuscriptViewer({
     markDeleted: editorState.markDeleted,
     viewerApiRef,
     setActiveTool,
-    onDeleteTextRegion: unlinkSelectedRegion,
   });
 
   const handleToggleFullScreen = React.useCallback(() => {
@@ -1269,6 +1269,17 @@ export default function ManuscriptViewer({
               onUpdate={handleViewerUpdate}
               onDelete={handleViewerDelete}
               onDeleteMany={handleViewerDeleteMany}
+              onDeleteTextRegion={(annotation) => {
+                const graphId = dbIdFromA9s(annotation);
+                if (
+                  graphId != null &&
+                  window.confirm(
+                    'Delete this linked region?\n\nIt will be removed from the image and unlinked from the transcription.'
+                  )
+                ) {
+                  unlinkSelectedRegion(graphId);
+                }
+              }}
               confirmDelete={handleConfirmDelete}
               confirmDeleteMany={handleConfirmDeleteMany}
               onSelect={handleSelectAnnotationFromViewer}

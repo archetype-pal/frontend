@@ -107,6 +107,9 @@ interface Props {
   onUpdate?: (annotation: Annotation) => void;
   onDelete?: (annotation: Annotation, context?: { bulk: boolean }) => void;
   onDeleteMany?: (annotations: Annotation[]) => void;
+  /** Delete a text-region (removes the graph + strips its corresp). The Delete
+   *  tool dispatches this instead of the glyph delete; fired once per click. */
+  onDeleteTextRegion?: (annotation: Annotation) => void;
   onSelect?: (annotation: Annotation | null) => void;
   onSelectionIdsChange?: (ids: string[]) => void;
   exposeApi?: (api: ViewerApi) => void;
@@ -134,6 +137,7 @@ export default function ManuscriptAnnotorious({
   onUpdate,
   onDelete,
   onDeleteMany,
+  onDeleteTextRegion,
   onSelect,
   onSelectionIdsChange,
   exposeApi,
@@ -157,6 +161,7 @@ export default function ManuscriptAnnotorious({
   const onUpdateRef = useRef(onUpdate);
   const onDeleteRef = useRef(onDelete);
   const onDeleteManyRef = useRef(onDeleteMany);
+  const onDeleteTextRegionRef = useRef(onDeleteTextRegion);
   const confirmDeleteRef = useRef(confirmDelete);
   const confirmDeleteManyRef = useRef(confirmDeleteMany);
   const onSelectRef = useRef(onSelect);
@@ -173,6 +178,11 @@ export default function ManuscriptAnnotorious({
   // Last pointer-down position (viewport coords) — used to recover the VISIBLE
   // annotation the user clicked when Annotorious hit-tests a hidden one beneath.
   const lastPointerDownRef = useRef<{ x: number; y: number } | null>(null);
+  // Monotonic pointer-down counter + the seq a region-delete last acted on, so a
+  // region is deleted exactly ONCE per physical click — Annotorious otherwise
+  // re-fires selectAnnotation in a loop while the region stays on the canvas.
+  const pointerDownSeqRef = useRef(0);
+  const lastHandledDeleteSeqRef = useRef(-1);
   const multiSelectedIdsRef = useRef<Set<string>>(new Set());
   const allowMultipleSelectionRef = useRef(allowMultipleSelection);
   const autoCommitDrawSelectionsRef = useRef(autoCommitDrawSelections);
@@ -335,6 +345,9 @@ export default function ManuscriptAnnotorious({
   useEffect(() => {
     onDeleteManyRef.current = onDeleteMany;
   }, [onDeleteMany]);
+  useEffect(() => {
+    onDeleteTextRegionRef.current = onDeleteTextRegion;
+  }, [onDeleteTextRegion]);
   useEffect(() => {
     onSelectRef.current = onSelect;
   }, [onSelect]);
@@ -541,6 +554,7 @@ export default function ManuscriptAnnotorious({
             'pointerdown',
             (e) => {
               lastPointerDownRef.current = { x: e.clientX, y: e.clientY };
+              pointerDownSeqRef.current += 1;
             },
             true
           );
@@ -1078,11 +1092,39 @@ export default function ManuscriptAnnotorious({
               deleteHandler = (a) => {
                 if (!a || currentMode !== 'delete') return;
 
+                // Resolve a hidden hit (a glyph beneath a region) to the VISIBLE
+                // annotation the user actually clicked, so Delete acts on the
+                // region rather than the glyph hidden under it. (The main select
+                // handler's recovery is skipped in delete mode, so do it here.)
+                let target: Annotation | null = a;
+                if (!isAnnotationVisible(target)) {
+                  const pt = lastPointerDownRef.current;
+                  target = pt ? visibleAnnotationAtPoint(pt.x, pt.y) : null;
+                  if (!target) {
+                    anno.cancelSelected?.();
+                    return;
+                  }
+                }
+
+                // Text-region: delete via unlink (removes graph + strips corresp),
+                // NOT the glyph path. Annotorious re-fires selectAnnotation in a
+                // loop while the region stays on canvas, so act exactly once per
+                // physical click (pointer-down seq) — otherwise the confirm stacks
+                // and deletes cascade.
+                if (isTextRegionAnnotation(target)) {
+                  if (lastHandledDeleteSeqRef.current === pointerDownSeqRef.current) return;
+                  lastHandledDeleteSeqRef.current = pointerDownSeqRef.current;
+                  selectedDisplayIdRef.current = null;
+                  anno.cancelSelected?.();
+                  onDeleteTextRegionRef.current?.(target);
+                  return;
+                }
+
                 const selectedIds = Array.from(multiSelectedIdsRef.current);
                 const shouldBatchDelete =
                   allowMultipleSelectionRef.current &&
                   selectedIds.length > 1 &&
-                  selectedIds.includes(a.id);
+                  selectedIds.includes(target.id);
 
                 if (shouldBatchDelete) {
                   const annotationsToDelete = selectedIds
@@ -1113,11 +1155,11 @@ export default function ManuscriptAnnotorious({
                   return;
                 }
 
-                const confirmed = confirmDeleteRef.current?.(a) ?? true;
+                const confirmed = confirmDeleteRef.current?.(target) ?? true;
                 if (!confirmed) return;
 
-                anno.removeAnnotation(a);
-                notifyDelete(a);
+                anno.removeAnnotation(target);
+                notifyDelete(target);
               };
               anno.on('selectAnnotation', deleteHandler);
             },
