@@ -482,7 +482,16 @@ function ResultsTableComponent<K extends ResultType>({
   const renderRow = React.useCallback(
     (row: ResultMap[K], ri: number) => {
       const rowUrl = descriptor.detailUrl(row);
-      const rowHref = rowUrl ?? '#';
+      // Text-derived hits open the image viewer; carry the search term as ?q so
+      // the transcription panel highlights + scrolls to the matched passage.
+      const TEXT_HIT_TYPES = ['texts', 'clauses', 'people', 'places'];
+      let rowHref = rowUrl ?? '#';
+      if (rowUrl && highlightKeyword.trim() && TEXT_HIT_TYPES.includes(resultType)) {
+        const term = highlightKeyword.trim().replace(/^["']|["']$/g, '');
+        if (term) {
+          rowHref = `${rowUrl}${rowUrl.includes('?') ? '&' : '?'}q=${encodeURIComponent(term)}`;
+        }
+      }
       const preview = previewAccessor ? previewAccessor(row) : null;
       const rowKey = rowKeyOf(row, ri);
       return (

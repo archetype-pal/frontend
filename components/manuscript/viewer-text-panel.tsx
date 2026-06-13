@@ -228,6 +228,7 @@ function TextEditorCard({
   showClose,
   onClose,
   flexGrow,
+  highlightQuery,
 }: {
   text: ImageTextDetail;
   canEdit: boolean;
@@ -240,6 +241,8 @@ function TextEditorCard({
   onClose: () => void;
   /** Share of the panel's main axis (set when two cards split the space). */
   flexGrow?: number;
+  /** Search term to highlight in the read-only rendering (deep-link from a hit). */
+  highlightQuery?: string;
 }) {
   // The editor's Rich/Preview + validity toolbar portals into this header slot.
   const [toolbarHost, setToolbarHost] = React.useState<HTMLDivElement | null>(null);
@@ -319,6 +322,7 @@ function TextEditorCard({
             <ImageTextViewer
               html={text.content}
               richMarkup
+              highlightQuery={highlightQuery}
               className="prose prose-sm max-w-none dark:prose-invert"
             />
           </div>
@@ -381,6 +385,16 @@ export function ViewerTextPanel({
 
   const isBoth = displayMode === 'both' && shown.length > 1;
   const shownKey = shown.map((t) => `${t.id}:${t.content.length}`).join('|');
+
+  // Search deep-link: when arriving from a text hit (…/images/{id}?q=william),
+  // highlight + scroll to that term in the read-only transcription. Read from
+  // the URL directly (re-read when the shown texts change on navigation), in
+  // the same window.location idiom the ?graph= share-target uses.
+  const [highlightQuery, setHighlightQuery] = React.useState('');
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setHighlightQuery(new URLSearchParams(window.location.search).get('q') ?? '');
+  }, [shownKey]);
 
   // Per-text edit drafts live here (not in each card) so an unsaved draft
   // survives a display-mode switch that unmounts a card. A text with no entry
@@ -591,6 +605,7 @@ export function ViewerTextPanel({
               showClose={index === shown.length - 1}
               onClose={onClose}
               flexGrow={isBoth ? (index === 0 ? ratio : 1 - ratio) : undefined}
+              highlightQuery={highlightQuery}
             />
           </React.Fragment>
         ))}

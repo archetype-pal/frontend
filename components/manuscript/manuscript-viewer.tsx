@@ -349,7 +349,28 @@ export default function ManuscriptViewer({
     [imageTexts]
   );
   const showTextDisplay = hasTranscription && hasTranslation;
-  const effectiveViewMode = hasTexts ? viewerSettings.viewMode : 'allograph';
+  // Arriving from a text search hit (…/images/{id}?q=william) should reveal the
+  // transcription so the highlighted passage is visible — but transiently, never
+  // persisting a view-mode preference (that lives in localStorage). Re-evaluated
+  // per image; cleared the moment the reader uses the mode toggle themselves.
+  const [searchForcesText, setSearchForcesText] = React.useState(false);
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !hasTexts) {
+      setSearchForcesText(false);
+      return;
+    }
+    setSearchForcesText(Boolean(new URLSearchParams(window.location.search).get('q')));
+  }, [imageId, hasTexts]);
+  const effectiveViewMode = !hasTexts
+    ? 'allograph'
+    : searchForcesText && viewerSettings.viewMode === 'allograph'
+      ? 'text'
+      : viewerSettings.viewMode;
+  // The search term may live in either the Latin transcription or the English
+  // translation, so a deep-link shows both (when both exist) so the match is
+  // visible to highlight. Transient — does not change the saved preference.
+  const effectiveTextDisplayMode =
+    searchForcesText && showTextDisplay ? 'both' : viewerSettings.textDisplayMode;
   // Pure text view: drawing a region links it to a phrase (no glyph/allograph).
   const textLinkingActive = effectiveViewMode === 'text';
   const isTextPanelOpen = effectiveViewMode !== 'allograph';
@@ -748,6 +769,8 @@ export default function ManuscriptViewer({
   // which is what surfaced the "clicking a region opens the glyph popup" bug.
   const handleSetViewModeAndResetTool = React.useCallback(
     (mode: Parameters<typeof handleSetViewMode>[0]) => {
+      // A deliberate mode choice wins over the search deep-link's transient view.
+      setSearchForcesText(false);
       handleSetViewMode(mode);
       handleMoveTool();
     },
@@ -1351,7 +1374,7 @@ export default function ManuscriptViewer({
               >
                 <ViewerTextPanel
                   texts={imageTexts}
-                  displayMode={viewerSettings.textDisplayMode}
+                  displayMode={effectiveTextDisplayMode}
                   layout={isBottomDock ? 'row' : 'column'}
                   token={token}
                   canEdit={canPersistAnyAnnotations && !isPublicDemoMode}
