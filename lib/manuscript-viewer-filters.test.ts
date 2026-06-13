@@ -54,6 +54,19 @@ describe('passesVisibilityFilter', () => {
     ).toBe(true);
   });
 
+  it('keeps an in-progress draft visible in text mode (the region being drawn to link)', () => {
+    // A freshly drawn region is untyped for one render tick before it's tagged
+    // annotationType:'text'; it must stay visible in text mode or it flickers
+    // out on draw. Saved glyphs (not drafts) are still hidden in pure text view.
+    expect(passesVisibilityFilter(undefined, true, ctx({ viewMode: 'text' }))).toBe(true);
+    expect(
+      passesVisibilityFilter({ allographId: 1, handId: 10 }, true, ctx({ viewMode: 'text' }))
+    ).toBe(true);
+    expect(
+      passesVisibilityFilter({ allographId: 1, handId: 10 }, false, ctx({ viewMode: 'text' }))
+    ).toBe(false);
+  });
+
   it('hides editorial annotations when showEditorial is off', () => {
     const c = ctx({ filters: { ...ctx().filters, showEditorial: false } });
     expect(

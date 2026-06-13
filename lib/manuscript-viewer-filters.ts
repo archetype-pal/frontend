@@ -54,8 +54,12 @@ export function passesVisibilityFilter(
   // the text layer (shown in 'text' / 'both', hidden in 'allograph').
   if (meta?.annotationType === 'text') return ctx.viewMode !== 'allograph';
 
-  // Glyph/allograph layer is hidden in the pure 'text' view.
-  if (ctx.viewMode === 'text') return false;
+  // Glyph/allograph layer is hidden in the pure 'text' view — but NEVER hide an
+  // in-progress draft. A region the user is drawing to link a phrase is untyped
+  // for the first render tick (before startPendingLink tags it
+  // annotationType:'text'); without this guard that tick races the visibility
+  // sync and the freshly drawn box flickers out / "disappears immediately".
+  if (ctx.viewMode === 'text') return isDraft;
 
   const isExplicitEditorial = meta?.annotationType === 'editorial';
 
