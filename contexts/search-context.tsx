@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { buildSearchRequestUrl, fetchFacetsAndResults, searchKeys } from '@/utils/fetch-facets';
 import { DEFAULT_QUERY, getSuggestionsPool } from '@/lib/search-query';
 import { API_BASE_URL } from '@/lib/api-fetch';
-import type { ResultType } from '@/lib/search-types';
+import { SEARCH_RESULT_CONFIG, type ResultType } from '@/lib/search-types';
 import type { KeywordSuggestionItem } from '@/components/search/keyword-search-input';
 
 type SearchContextType = {
@@ -57,7 +57,10 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
           limit: '4',
         });
         if (types && types.length > 0) {
-          params.set('types', types.map((type) => type.replace('_', '-')).join(','));
+          // The suggest endpoint keys on the index URL segment (e.g. item-parts),
+          // not the ResultType name (manuscripts) — use apiPath so scoped
+          // suggestions work for manuscripts/images too, not just same-named types.
+          params.set('types', types.map((type) => SEARCH_RESULT_CONFIG[type].apiPath).join(','));
         }
         const path = `/api/v1/search/suggest/?${params.toString()}`;
 
