@@ -44,6 +44,23 @@ const ENTITY_DETAIL_ROUTE: Partial<Record<ResultType, (id: string) => string>> =
   hands: (id) => `/hands/${id}`,
 };
 
+/** Human-readable, singular label for a suggestion's index-segment `type`. */
+const SEGMENT_LABEL: Record<string, string> = {
+  item_parts: 'Manuscript',
+  item_images: 'Image',
+  scribes: 'Scribe',
+  hands: 'Hand',
+  graphs: 'Graph',
+  texts: 'Text',
+  clauses: 'Clause',
+  people: 'Person',
+  places: 'Place',
+};
+
+export function suggestionTypeLabel(type: string): string {
+  return SEGMENT_LABEL[type] ?? type.replace(/_/g, ' ');
+}
+
 /** Strip the `type:` prefix the client adds to the suggestion id (`scribes:42` → `42`). */
 function entityIdOf(item: KeywordSuggestionItem): string {
   const sep = item.id.indexOf(':');

@@ -3,6 +3,8 @@
 import * as React from 'react';
 import { Search, Quote, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { MatchSnippet } from '@/components/search/highlight';
+import { suggestionTypeLabel } from '@/lib/search-suggestion-target';
 import type { ResultType } from '@/lib/search-types';
 
 /** Shared hook for keyword suggestions from a pool (used by Header and DynamicFacets). */
@@ -24,6 +26,8 @@ export type KeywordSuggestionItem = {
   label: string;
   value: string;
   type?: ResultType | 'all';
+  /** KWIC excerpt with `__hl_start__`/`__hl_end__` markers (text/clause hits). */
+  snippet?: string;
 };
 
 export type KeywordHistoryItem = {
@@ -294,22 +298,30 @@ export function KeywordSearchInput({
               role="option"
               aria-selected={i === selectedIndex}
               className={
-                'flex cursor-pointer items-center gap-2.5 px-3 py-2 text-popover-foreground transition-colors ' +
+                'flex cursor-pointer flex-col gap-1 px-3 py-2 text-popover-foreground transition-colors ' +
                 (i === selectedIndex ? 'bg-accent/15' : 'hover:bg-accent/10')
               }
               onMouseEnter={() => setSelectedIndex(i)}
               onMouseLeave={() => setSelectedIndex(-1)}
               onClick={() => handleSuggestionClick(item)}
             >
-              <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                <span className="truncate">{item.label}</span>
-                {item.type && item.type !== 'all' && (
-                  <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-                    {item.type}
-                  </span>
-                )}
+              <span className="flex items-center gap-2.5">
+                <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                  <span className="truncate">{item.label}</span>
+                  {item.type && item.type !== 'all' && (
+                    <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                      {suggestionTypeLabel(item.type)}
+                    </span>
+                  )}
+                </span>
               </span>
+              {item.snippet && (
+                <MatchSnippet
+                  formatted={item.snippet}
+                  className="block pl-6 text-[0.8rem] text-muted-foreground"
+                />
+              )}
             </li>
           ))}
           {!suggestionsLoading && suggestions.length === 0 && (

@@ -67,7 +67,10 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
             const res = await fetch(`${API_BASE_URL}${path}`, { cache: 'no-store' });
             if (!res.ok) return [] as KeywordSuggestionItem[];
             const json = (await res.json()) as {
-              suggestions?: Record<string, Array<{ id: string | number; label: string }>>;
+              suggestions?: Record<
+                string,
+                Array<{ id: string | number; label: string; snippet?: string }>
+              >;
             };
             const grouped = json.suggestions ?? {};
             const flattened: KeywordSuggestionItem[] = [];
@@ -80,6 +83,7 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
                   label,
                   value: label,
                   type: type.replace('-', '_') as ResultType,
+                  ...(item.snippet ? { snippet: item.snippet } : {}),
                 });
               }
             }
