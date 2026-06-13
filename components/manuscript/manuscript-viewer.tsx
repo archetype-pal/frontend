@@ -66,6 +66,7 @@ import { usePopupSelection } from '@/hooks/manuscript/use-popup-selection';
 import { useAnnotationDeletion } from '@/hooks/manuscript/use-annotation-deletion';
 import { useImageTextLinking } from '@/hooks/manuscript/use-image-text-linking';
 import { useShareTarget } from '@/hooks/manuscript/use-share-target';
+import { useSearchRegionTarget } from '@/hooks/manuscript/use-search-region-target';
 import { useDraftSaveFlow } from '@/hooks/manuscript/use-draft-save-flow';
 import { useDraggablePosition } from '@/hooks/use-draggable-position';
 import { useAnnotationViewerSettings } from '@/hooks/use-annotation-viewer-settings';
@@ -651,6 +652,10 @@ export default function ManuscriptViewer({
     updatePopupById,
     getAnnotationKind,
   });
+
+  // Search deep-link (?q=): box + centre the matching linked region on the image,
+  // alongside the text-panel highlight.
+  useSearchRegionTarget({ imageId, osdReady, manuscriptImage, a9sSnapshot, viewerApiRef });
 
   const { handleViewerCreate, handleViewerUpdate, handleConfirmDraftAnnotation } = useDraftSaveFlow(
     {
