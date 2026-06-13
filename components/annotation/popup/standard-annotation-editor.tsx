@@ -129,24 +129,35 @@ export function StandardAnnotationEditor({
 
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">Hand</label>
-        <Select
-          value={draftHandId != null ? String(draftHandId) : '__unset__'}
-          onValueChange={(value) =>
-            onDraftHandIdChange(value === '__unset__' ? null : Number(value))
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Choose a hand" />
-          </SelectTrigger>
-          <SelectContent className="z-[200]">
-            <SelectItem value="__unset__">Choose a hand</SelectItem>
-            {handOptions.map((hand) => (
-              <SelectItem key={hand.id} value={String(hand.id)}>
-                {hand.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {handOptions.length === 1 ? (
+          // One hand on this image → it's auto-assigned and can't be anything
+          // else, so show it read-only rather than a single-option dropdown.
+          <div
+            className="inline-flex h-9 w-full items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-foreground"
+            title="The only hand recorded for this image"
+          >
+            {handOptions[0].name}
+          </div>
+        ) : (
+          <Select
+            value={draftHandId != null ? String(draftHandId) : '__unset__'}
+            onValueChange={(value) =>
+              onDraftHandIdChange(value === '__unset__' ? null : Number(value))
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Choose a hand" />
+            </SelectTrigger>
+            <SelectContent className="z-[200]">
+              <SelectItem value="__unset__">Choose a hand</SelectItem>
+              {handOptions.map((hand) => (
+                <SelectItem key={hand.id} value={String(hand.id)}>
+                  {hand.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
     </div>
   );
@@ -606,6 +617,10 @@ export function StandardAnnotationEditor({
                   metaSummary={metaSummary}
                   selectedComponentGroups={detailSelectedComponentGroups}
                   selectedPositionLabels={detailSelectedPositionLabels}
+                  // Allograph + Hand are already editable selectors above; skip
+                  // the recap block that would just repeat them. The Components
+                  // & Positions summaries below stay (they live on other tabs).
+                  showMetaSummary={false}
                 />
               )}
 

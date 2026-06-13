@@ -65,16 +65,24 @@ export function AnnotationDetailOverview({
   metaSummary,
   selectedComponentGroups,
   selectedPositionLabels,
+  showMetaSummary = true,
 }: {
   metaSummary?: AnnotationPopupMetaSummary;
   selectedComponentGroups: SelectedComponentGroup[];
   selectedPositionLabels: string[];
+  /**
+   * Whether to render the Type/Allograph/Hand recap block. Off in the editable
+   * editor, where Allograph + Hand already appear as editable selectors above —
+   * the recap would just repeat them. Kept on for the read-only public view,
+   * which is the only place those values are shown.
+   */
+  showMetaSummary?: boolean;
 }) {
   const { getPluralLabel } = useModelLabels();
 
   return (
     <div className="space-y-4">
-      <AnnotationMetaSummaryBlock metaSummary={metaSummary} />
+      {showMetaSummary ? <AnnotationMetaSummaryBlock metaSummary={metaSummary} /> : null}
 
       {selectedComponentGroups.length > 0 ? (
         <section className="space-y-2">
