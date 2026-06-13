@@ -334,6 +334,18 @@ export default function ManuscriptViewer({
     setInitialA9sAnnots,
   });
 
+  // The pending text-link region (a box drawn to link a phrase) is canvas-only —
+  // text regions are deliberately excluded from editorRecords/a9sSnapshot — so a
+  // bare `setAnnotations(initialAnnotations)` re-seed would silently evict it
+  // mid-draw. Fold it into the rendered set so it is a first-class annotation
+  // that survives every re-seed and selection change until it is linked or
+  // cancelled (at which point pendingLinkRegion clears and it drops out).
+  const annotationsForViewer = React.useMemo(() => {
+    if (!pendingLinkRegion) return initialA9sAnnots;
+    const withoutPending = initialA9sAnnots.filter((a) => a.id !== pendingLinkRegion.id);
+    return [...withoutPending, pendingLinkRegion];
+  }, [initialA9sAnnots, pendingLinkRegion]);
+
   // ---- View mode (Allograph / Text / Both) ----
   // viewMode is the single source of truth; the text panel and the text-region
   // annotation layer are both derived from it. An image with no texts can never
@@ -1288,7 +1300,7 @@ export default function ManuscriptViewer({
 
             <ManuscriptAnnotorious
               iiifImageUrl={browserSafeIiifUrl(getIiifBaseUrl(manuscriptImage.iiif_image))}
-              initialAnnotations={initialA9sAnnots}
+              initialAnnotations={annotationsForViewer}
               annotationFilter={annotationVisibilityFilter}
               disableEditor={true}
               readOnly={false}
