@@ -119,8 +119,15 @@ function scrollSpanIntoView(el: HTMLElement): void {
   scroller.scrollBy({ top: delta, behavior: 'smooth' });
 }
 
-const TYPE_ORDER = (type: string): number =>
-  type === 'Transcription' ? 0 : type === 'Translation' ? 1 : 2;
+// The ImageText.type taxonomy (compared case-insensitively — older rows vary).
+const TEXT_TYPE = { TRANSCRIPTION: 'transcription', TRANSLATION: 'translation' } as const;
+
+const TYPE_ORDER = (type: string): number => {
+  const kind = type.toLowerCase();
+  if (kind === TEXT_TYPE.TRANSCRIPTION) return 0;
+  if (kind === TEXT_TYPE.TRANSLATION) return 1;
+  return 2;
+};
 
 /**
  * Always-on authoring surface for a single text (editors only). The Rich/Preview
@@ -206,8 +213,8 @@ function TextEditor({
 /** Accent colour for a text card, drawn from the app's transcription/translation idiom. */
 function textTone(type: string): string | undefined {
   const k = type.toLowerCase();
-  if (k === 'transcription') return 'var(--color-transcription)';
-  if (k === 'translation') return 'var(--color-translation)';
+  if (k === TEXT_TYPE.TRANSCRIPTION) return 'var(--color-transcription)';
+  if (k === TEXT_TYPE.TRANSLATION) return 'var(--color-translation)';
   return undefined;
 }
 
@@ -364,11 +371,11 @@ export function ViewerTextPanel({
   );
 
   const transcription = React.useMemo(
-    () => ordered.find((t) => t.type.toLowerCase() === 'transcription'),
+    () => ordered.find((t) => t.type.toLowerCase() === TEXT_TYPE.TRANSCRIPTION),
     [ordered]
   );
   const translation = React.useMemo(
-    () => ordered.find((t) => t.type.toLowerCase() === 'translation'),
+    () => ordered.find((t) => t.type.toLowerCase() === TEXT_TYPE.TRANSLATION),
     [ordered]
   );
 

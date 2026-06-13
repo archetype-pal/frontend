@@ -1394,7 +1394,14 @@ export default function ManuscriptAnnotorious({
           justifyContent: 'center',
         }}
       >
-        <div style={{ color: '#fff', textAlign: 'center', padding: '2rem', maxWidth: '600px' }}>
+        <div
+          style={{
+            color: 'var(--primary-foreground)',
+            textAlign: 'center',
+            padding: '2rem',
+            maxWidth: '600px',
+          }}
+        >
           <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', fontWeight: 'bold' }}>
             Image Load Error
           </h3>
@@ -1410,7 +1417,7 @@ export default function ManuscriptAnnotorious({
               backgroundColor: 'var(--primary)',
               color: 'var(--primary-foreground)',
               border: 'none',
-              borderRadius: '0.25rem',
+              borderRadius: 'var(--radius)',
               cursor: 'pointer',
             }}
           >
@@ -1434,7 +1441,7 @@ export default function ManuscriptAnnotorious({
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            color: '#fff',
+            color: 'var(--primary-foreground)',
             zIndex: 10,
           }}
         >

@@ -136,9 +136,25 @@ export function AnnotationHeader({
           )}
 
           {showUnsavedCount && (
-            <div className="flex items-center space-x-1">
-              <span className="text-sm text-muted-foreground">Unsaved</span>
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-muted text-sm font-medium text-muted-foreground">
+            <div className="flex items-center space-x-1" role="status" aria-live="polite">
+              <span
+                className={cn(
+                  'text-sm',
+                  unsavedCount > 0 ? 'text-foreground' : 'text-muted-foreground'
+                )}
+              >
+                Unsaved
+              </span>
+              <span
+                className={cn(
+                  'inline-flex h-6 min-w-6 items-center justify-center rounded px-1.5 text-sm font-medium',
+                  // Unsaved work reads as caution (amber, matching the draft idiom);
+                  // a zero count stays muted so it recedes.
+                  unsavedCount > 0
+                    ? 'bg-amber-400/20 text-amber-700 dark:text-amber-300'
+                    : 'bg-muted text-muted-foreground'
+                )}
+              >
                 {unsavedCount}
               </span>
             </div>

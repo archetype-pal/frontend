@@ -3,6 +3,7 @@
 import {
   Expand,
   Hand,
+  Keyboard,
   LaptopMinimal,
   Pencil,
   RefreshCcw,
@@ -45,6 +46,8 @@ interface ViewerToolbarProps {
   onSave: () => void;
   onDeleteTool: () => void;
   onModifyTool: () => void;
+  /** Opens the keyboard-shortcuts reference. */
+  onShowShortcuts: () => void;
 }
 
 /**
@@ -109,6 +112,7 @@ export function ViewerToolbar({
   onSave,
   onDeleteTool,
   onModifyTool,
+  onShowShortcuts,
 }: ViewerToolbarProps) {
   return (
     <Toolbar orientation={toolbarPosition}>
@@ -199,6 +203,14 @@ export function ViewerToolbar({
             onClick={() => onCreateAnnotation('public')}
           />
         )}
+
+        <ToolbarButton
+          icon={Keyboard}
+          label="Keyboard shortcuts (?)"
+          tooltip="Keyboard shortcuts"
+          keyshortcuts="?"
+          onClick={onShowShortcuts}
+        />
       </TooltipProvider>
     </Toolbar>
   );

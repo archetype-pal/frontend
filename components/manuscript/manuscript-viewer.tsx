@@ -20,6 +20,7 @@ import { ViewerTextPanel } from './viewer-text-panel';
 import { ImageToolsControl } from './image-tools-control';
 import { ViewerErrorState, ViewerLoadingState } from './viewer-status-screen';
 import { ViewerToolbar } from './viewer-toolbar';
+import { ViewerShortcutsHelp } from './viewer-shortcuts-help';
 
 import {
   canCreateAnnotationKind,
@@ -967,6 +968,7 @@ export default function ManuscriptViewer({
   // Legacy DigiPal toolbar shortcuts, adapted to the current viewer tools.
   // Single useHotkeys subscription; each entry knows whether it should fire
   // inside text inputs (only Cmd/Ctrl+S — the rest skip when typing).
+  const [isShortcutsOpen, setIsShortcutsOpen] = React.useState(false);
   const canSaveNow = canPersistAnyAnnotations && !isPublicDemoMode && unsavedChanges > 0;
   const [pendingPopupSaveRequest, setPendingPopupSaveRequest] = React.useState(0);
   const handledPendingPopupSaveRef = React.useRef(0);
@@ -1036,6 +1038,7 @@ export default function ManuscriptViewer({
       { key: 'd', handler: accept(() => handleCreateAnnotation()) },
       { key: 'r', handler: accept(() => handleCreateAnnotation()) },
       { key: ' ', handler: accept(handleToggleMoveDrawTool) },
+      { key: '?', shiftKey: true, handler: accept(() => setIsShortcutsOpen(true)) },
 
       // Zoom in: Z, +, =
       { key: 'z', handler: accept(zoomIn) },
@@ -1247,6 +1250,14 @@ export default function ManuscriptViewer({
         resizeHandleProps={galleryResize.bindResize}
       />
 
+      <ViewerShortcutsHelp
+        open={isShortcutsOpen}
+        onOpenChange={setIsShortcutsOpen}
+        showEditingShortcuts={
+          canCreatePublicAnnotations || canCreateEditorialAnnotations || canDeleteAnnotations
+        }
+      />
+
       {/* min-h-0 is load-bearing: without it this flex child's min-height:auto
           lets it grow to its content's intrinsic height (the image / the editor
           min-heights), overflowing the viewport and spilling over the footer. */}
@@ -1269,6 +1280,8 @@ export default function ManuscriptViewer({
           )}
         >
           <div
+            role="region"
+            aria-label="Manuscript image"
             className={cn(
               'relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-lg border border-border bg-[var(--viewer-canvas)]',
               // In "Both", recede the glyph layer so the text layer reads as focus.
@@ -1296,6 +1309,7 @@ export default function ManuscriptViewer({
               onSave={() => void handleSave()}
               onDeleteTool={handleDeleteTool}
               onModifyTool={handleModifyTool}
+              onShowShortcuts={() => setIsShortcutsOpen(true)}
             />
 
             <ManuscriptAnnotorious
