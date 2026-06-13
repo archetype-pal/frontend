@@ -1,4 +1,4 @@
-import type { ResultType } from '@/lib/search-types';
+import { SEARCH_RESULT_CONFIG, type ResultType } from '@/lib/search-types';
 import type { KeywordSuggestionItem } from '@/components/search/keyword-search-input';
 
 /**
@@ -59,6 +59,12 @@ const SEGMENT_LABEL: Record<string, string> = {
 
 export function suggestionTypeLabel(type: string): string {
   return SEGMENT_LABEL[type] ?? type.replace(/_/g, ' ');
+}
+
+/** Plural section heading for a suggestion group (e.g. `item_parts` → "Manuscripts"). */
+export function suggestionGroupLabel(type: string): string {
+  const resultType = SEGMENT_TO_RESULT_TYPE[type];
+  return resultType ? SEARCH_RESULT_CONFIG[resultType].label : suggestionTypeLabel(type);
 }
 
 /** Strip the `type:` prefix the client adds to the suggestion id (`scribes:42` → `42`). */

@@ -1,10 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { Search, Quote, Clock } from 'lucide-react';
+import { Search, Quote, Clock, CornerDownLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { MatchSnippet } from '@/components/search/highlight';
-import { suggestionTypeLabel } from '@/lib/search-suggestion-target';
+import { suggestionGroupLabel } from '@/lib/search-suggestion-target';
 import type { ResultType } from '@/lib/search-types';
 
 /** Shared hook for keyword suggestions from a pool (used by Header and DynamicFacets). */
@@ -291,39 +291,57 @@ export function KeywordSearchInput({
               Loading suggestions…
             </li>
           )}
-          {suggestions.map((item, i) => (
-            <li
-              key={item.id}
-              id={`keyword-suggestion-${i}`}
-              role="option"
-              aria-selected={i === selectedIndex}
-              className={
-                'flex cursor-pointer flex-col gap-1 px-3 py-2 text-popover-foreground transition-colors ' +
-                (i === selectedIndex ? 'bg-accent/15' : 'hover:bg-accent/10')
-              }
-              onMouseEnter={() => setSelectedIndex(i)}
-              onMouseLeave={() => setSelectedIndex(-1)}
-              onClick={() => handleSuggestionClick(item)}
-            >
-              <span className="flex items-center gap-2.5">
-                <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                  <span className="truncate">{item.label}</span>
-                  {item.type && item.type !== 'all' && (
-                    <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-                      {suggestionTypeLabel(item.type)}
+          {suggestions.map((item, i) => {
+            const isAll = item.type === 'all';
+            // Group typed entity results under a section heading; show it only
+            // at the first item of each new group (results arrive group-ordered).
+            const group = !isAll && item.type ? suggestionGroupLabel(item.type) : null;
+            const prev = suggestions[i - 1];
+            const prevGroup =
+              prev && prev.type && prev.type !== 'all' ? suggestionGroupLabel(prev.type) : null;
+            const showHeader = group !== null && group !== prevGroup;
+            return (
+              <React.Fragment key={item.id}>
+                {showHeader && (
+                  <li
+                    role="presentation"
+                    className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
+                    {group}
+                  </li>
+                )}
+                <li
+                  id={`keyword-suggestion-${i}`}
+                  role="option"
+                  aria-selected={i === selectedIndex}
+                  className={
+                    (isAll ? 'mt-1 border-t border-border font-medium ' : '') +
+                    'flex cursor-pointer flex-col gap-1 px-3 py-2 text-popover-foreground transition-colors ' +
+                    (i === selectedIndex ? 'bg-accent/15' : 'hover:bg-accent/10')
+                  }
+                  onMouseEnter={() => setSelectedIndex(i)}
+                  onMouseLeave={() => setSelectedIndex(-1)}
+                  onClick={() => handleSuggestionClick(item)}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                      <span className="truncate">{item.label}</span>
+                      {isAll && (
+                        <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      )}
                     </span>
+                  </span>
+                  {item.snippet && (
+                    <MatchSnippet
+                      formatted={item.snippet}
+                      className="block pl-6 text-[0.8rem] text-muted-foreground"
+                    />
                   )}
-                </span>
-              </span>
-              {item.snippet && (
-                <MatchSnippet
-                  formatted={item.snippet}
-                  className="block pl-6 text-[0.8rem] text-muted-foreground"
-                />
-              )}
-            </li>
-          ))}
+                </li>
+              </React.Fragment>
+            );
+          })}
           {!suggestionsLoading && suggestions.length === 0 && (
             <li className="px-3 py-2 text-xs text-muted-foreground">{noSuggestionsText}</li>
           )}
