@@ -1,13 +1,39 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildActiveQueryTags,
+  buildAdvancedExtraParams,
   buildDateFilterTag,
   buildQueryString,
   normalizeQueryState,
+  parseQueryRootFromUrl,
   resolveFacetClick,
   stateFromSearchParams,
 } from './search-query';
-import type { QueryState } from './search-query';
+import type { QueryGroup, QueryState } from './search-query';
+
+describe('query-builder qb round-trip', () => {
+  it('decodes the encoded tree across every base64url padding length', () => {
+    // Vary the JSON length by one char per iteration so the base64url length
+    // cycles through all `% 4` residues — including the 2/3 cases whose padding
+    // a buggy `-len % 4` computed as negative, throwing and dropping the tree.
+    for (let i = 0; i < 8; i++) {
+      const root: QueryGroup = {
+        id: 'g',
+        t: 'group',
+        op: 'AND',
+        items: [{ id: 'c', t: 'cond', field: 'repository_name', op: 'gt', value: 'x'.repeat(i) }],
+      };
+      const { qb } = buildAdvancedExtraParams({
+        enabled: true,
+        matchingStrategy: 'all',
+        searchField: '',
+        queryRoot: root,
+      });
+      const decoded = parseQueryRootFromUrl(new URLSearchParams({ qb: qb as string }));
+      expect(decoded).toEqual(root);
+    }
+  });
+});
 
 describe('buildActiveQueryTags', () => {
   it('builds keyword, date, and facet tags in expected order', () => {

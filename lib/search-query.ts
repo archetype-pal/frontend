@@ -545,7 +545,9 @@ function encodeQueryBuilderRoot(root: QueryGroup): string {
 function decodeQueryBuilderRoot(raw: string): QueryGroup | null {
   try {
     let b64 = raw.trim().replace(/-/g, '+').replace(/_/g, '/');
-    const pad = -b64.length % 4;
+    // Restore the '=' padding stripped by encodeQueryBuilderRoot. Must be a
+    // non-negative count: `-len % 4` is 0 or NEGATIVE and throws in repeat().
+    const pad = (4 - (b64.length % 4)) % 4;
     if (pad) b64 += '='.repeat(pad);
     let json: string;
     if (typeof atob !== 'undefined') {
