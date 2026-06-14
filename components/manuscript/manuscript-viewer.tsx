@@ -713,6 +713,23 @@ export default function ManuscriptViewer({
     setActiveTool,
   });
 
+  // The draft popup's footer button is "Discard" for a never-saved draft (vs
+  // "Cancel" when editing a saved annotation). A brand-new annotation has
+  // nothing to revert to, so discarding it removes it outright — no Save, no
+  // trash tool needed. closeDraftPopup alone only closes the editor and would
+  // leave a staged draft on the canvas.
+  const handleCancelDraftAnnotation = React.useCallback(
+    (popupId: string) => {
+      const popup = getPopupById(popupId);
+      if (popup && !isDbId(popup.annotation.id)) {
+        viewerApiRef.current?.removeAnnotationById?.(popup.annotation.id);
+        editorState.markDeleted(popup.annotation.id);
+      }
+      closeDraftPopup(popupId);
+    },
+    [getPopupById, viewerApiRef, editorState, closeDraftPopup]
+  );
+
   const handleToggleFullScreen = React.useCallback(() => {
     toggleFullScreen();
 
@@ -1375,7 +1392,7 @@ export default function ManuscriptViewer({
               onShareSelectedAnnotation={handleShareSelectedAnnotation}
               onCloseSelectedAnnotation={closeDraftPopup}
               onToggleAnnotationCollection={handleToggleAnnotationCollection}
-              onCancelDraftAnnotation={closeDraftPopup}
+              onCancelDraftAnnotation={handleCancelDraftAnnotation}
               onConfirmDraftAnnotation={handleConfirmDraftAnnotation}
             />
           </div>

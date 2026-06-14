@@ -148,7 +148,7 @@ export function EditorialAnnotationEditor({
 
       <div className="flex shrink-0 items-center justify-end gap-2 border-t px-4 py-3">
         <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
-          Cancel
+          {isExisting ? 'Cancel' : 'Discard'}
         </Button>
         <Button
           onClick={onConfirmDraftAnnotation}
