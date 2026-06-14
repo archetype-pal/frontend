@@ -316,12 +316,18 @@ export function useImageTextLinking({
     (graphId: number) => {
       const anyTextId = imageTexts[0]?.id;
       if (!(token && anyTextId)) return;
+      // Drop the box from the canvas up front. removeAnnotationById → the lib's
+      // removeAnnotation deselects a selected shape synchronously before dropping
+      // it, so a region deleted while it is the live selection (the panel
+      // "Delete", which selects the region first) is removed cleanly instead of
+      // being re-added by an async deselect after the re-seed — the bug where the
+      // graph stayed visible on the image even though it was deleted server-side.
+      setSelectedRegionGraphId(null);
+      setLinkedGraphId(null);
+      viewerApiRef.current?.removeAnnotationById?.(`db:${graphId}`);
       void (async () => {
         try {
           await unlinkRegion(token, anyTextId, graphId);
-          setSelectedRegionGraphId(null);
-          setLinkedGraphId(null);
-          viewerApiRef.current?.clearSelection?.();
           await reloadTextsAndAnnotations();
           showActionNotification({
             kind: 'deleted',
