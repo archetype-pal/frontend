@@ -86,6 +86,16 @@ export function useImageTextLinking({
     pendingLinkRegionRef.current = pendingLinkRegion;
   }, [pendingLinkRegion]);
 
+  // The drawn box is held as a live Annotorious selection whose `_meta` type can
+  // be lost across the async update/re-seed round-trip. Routing the selection
+  // handler by *identity* (is this id the pending region?) instead of by inferred
+  // type makes "draw a region in text mode" reliably a text link and never the
+  // glyph popup. Reads the ref so it stays stable (empty deps).
+  const isPendingLinkRegionId = React.useCallback(
+    (id: string) => pendingLinkRegionRef.current?.id === id,
+    []
+  );
+
   // Drop any armed/pending link when the image changes so a stale one from the
   // previous image can't hijack the first region drawn on the next one.
   React.useEffect(() => {
@@ -207,6 +217,9 @@ export function useImageTextLinking({
         _meta: { ...(annotation as A9sWithMeta)._meta, annotationType: 'text' as const },
       } as A9sAnnotation;
       void viewerApiRef.current?.updateSelectedDraft?.(typed);
+      // Set the ref synchronously (not just via the effect) so a re-select that
+      // fires before the next render still routes this box as the pending link.
+      pendingLinkRegionRef.current = typed;
       setPendingLinkRegion(typed);
     },
     [viewerApiRef]
@@ -222,6 +235,7 @@ export function useImageTextLinking({
         try {
           await linkRegionToElement(token, textId, elementIndex, geometry);
           viewerApiRef.current?.removeAnnotationById?.(region.id);
+          pendingLinkRegionRef.current = null;
           setPendingLinkRegion(null);
           await reloadTextsAndAnnotations();
           showActionNotification({
@@ -232,6 +246,7 @@ export function useImageTextLinking({
           });
         } catch (error) {
           viewerApiRef.current?.removeAnnotationById?.(region.id);
+          pendingLinkRegionRef.current = null;
           setPendingLinkRegion(null);
           showActionNotification({
             kind: 'error',
@@ -246,8 +261,14 @@ export function useImageTextLinking({
   );
 
   const cancelPendingLink = React.useCallback(() => {
-    const region = pendingLinkRegionRef.current;
-    if (region) viewerApiRef.current?.removeAnnotationById?.(region.id);
+    // The drawn box is owned by React state and folded into the rendered set, so
+    // it is BOTH a live Annotorious selection and a committed annotation. Tear
+    // down only the selection (clearSelection → cancelSelected, which also rearms
+    // the draw tool) and let clearing the state re-seed it away. Calling
+    // removeAnnotation on the still-selected box instead left Annotorious's
+    // selection subsystem half-disposed, which silently blocked the next draw.
+    pendingLinkRegionRef.current = null;
+    viewerApiRef.current?.clearSelection?.();
     setPendingLinkRegion(null);
   }, [viewerApiRef]);
 
@@ -358,6 +379,7 @@ export function useImageTextLinking({
     tryLinkRegion,
     reloadTextsAndAnnotations,
     pendingLinkRegion,
+    isPendingLinkRegionId,
     startPendingLink,
     linkPendingToPhrase,
     cancelPendingLink,

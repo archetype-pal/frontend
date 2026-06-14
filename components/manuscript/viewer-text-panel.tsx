@@ -623,7 +623,14 @@ export function ViewerTextPanel({
           <span className="text-primary">Click the phrase this region belongs to.</span>
           <button
             type="button"
-            onClick={() => onCancelPendingLink?.()}
+            // Blur before the click handler clears the banner: this button is
+            // about to unmount, and the browser would otherwise shift focus to
+            // the next focusable element (far down the page) and scroll the
+            // canvas out of view — which broke "cancel, then draw again".
+            onClick={(e) => {
+              e.currentTarget.blur();
+              onCancelPendingLink?.();
+            }}
             className="rounded px-1.5 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             Cancel
@@ -636,7 +643,11 @@ export function ViewerTextPanel({
           </span>
           <button
             type="button"
-            onClick={() => onCancelLink?.()}
+            // See note above — blur before unmount to avoid the focus-jump scroll.
+            onClick={(e) => {
+              e.currentTarget.blur();
+              onCancelLink?.();
+            }}
             className="rounded px-1.5 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             Cancel
@@ -650,7 +661,11 @@ export function ViewerTextPanel({
           </span>
           <button
             type="button"
-            onClick={() => onCancelAddRef?.()}
+            // See note above — blur before unmount to avoid the focus-jump scroll.
+            onClick={(e) => {
+              e.currentTarget.blur();
+              onCancelAddRef?.();
+            }}
             className="shrink-0 rounded px-1.5 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             Cancel

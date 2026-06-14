@@ -63,6 +63,11 @@ interface UsePopupSelectionArgs {
   tryLinkRegion: (annotation: A9sAnnotation) => boolean;
   /** Hold a freshly-drawn region pending until the user clicks its phrase. */
   startPendingLink: (annotation: A9sAnnotation) => void;
+  /** True when the id is the region currently pending a text link. The pending
+   *  box is always a text region — routing by identity (not by its `_meta`
+   *  type, which can be lost across the Annotorious round-trip) is what keeps
+   *  re-selecting it from misfiring the glyph popup. */
+  isPendingLinkRegionId: (id: string) => boolean;
 }
 
 /**
@@ -101,6 +106,7 @@ export function usePopupSelection({
   textLinkingActive,
   tryLinkRegion,
   startPendingLink,
+  isPendingLinkRegionId,
 }: UsePopupSelectionArgs) {
   const handleSelectionIdsChange = React.useCallback(
     (ids: string[]) => {
@@ -309,8 +315,12 @@ export function usePopupSelection({
       setLinkedGraphId(selected ? (dbIdFromA9s(selected) ?? null) : null);
 
       // Track the selected region (region-click only) so the text panel can
-      // offer Delete; cleared for glyph selections and deselects.
-      const isTextRegion = selected != null && isTextRegionAnnotation(selected);
+      // offer Delete; cleared for glyph selections and deselects. A box pending a
+      // text link counts as a text region by identity even before its `_meta`
+      // type has propagated, so re-selecting it never opens the glyph popup.
+      const isTextRegion =
+        selected != null &&
+        (isTextRegionAnnotation(selected) || isPendingLinkRegionId(selected.id));
       setSelectedRegionGraphId(isTextRegion ? (dbIdFromA9s(selected) ?? null) : null);
 
       if (selected) {
@@ -376,6 +386,7 @@ export function usePopupSelection({
       textLinkingActive,
       tryLinkRegion,
       startPendingLink,
+      isPendingLinkRegionId,
     ]
   );
 

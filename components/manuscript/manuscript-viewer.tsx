@@ -311,6 +311,7 @@ export default function ManuscriptViewer({
     tryLinkRegion,
     reloadTextsAndAnnotations,
     pendingLinkRegion,
+    isPendingLinkRegionId,
     startPendingLink,
     linkPendingToPhrase,
     cancelPendingLink,
@@ -652,6 +653,7 @@ export default function ManuscriptViewer({
     textLinkingActive,
     tryLinkRegion,
     startPendingLink,
+    isPendingLinkRegionId,
   });
 
   const { handleHideShareUrl, handleShareSelectedAnnotation, handleCopyShareUrl } = useShareTarget({
@@ -1441,8 +1443,12 @@ export default function ManuscriptViewer({
                     linkPendingToPhrase(textId, elementIndex, label)
                   }
                   onCancelPendingLink={() => {
+                    // Discarding a drawn box mid-link means "I'll draw a better
+                    // one" — keep Draw armed so the next region works immediately
+                    // instead of dropping to pan (which surfaced the "draw, cancel,
+                    // draw again does nothing" bug).
                     cancelPendingLink();
-                    handleMoveTool();
+                    rearmCreateTool();
                   }}
                   selectedRegionGraphId={selectedRegionGraphId}
                   onDeleteRegion={(graphId) => unlinkSelectedRegion(graphId)}

@@ -1282,6 +1282,16 @@ export default function ManuscriptAnnotorious({
               const annotation = anno.getAnnotationById?.(id) ?? null;
               if (!annotation) return;
 
+              // If the box being removed is the live selection, tear that
+              // selection down in Annotorious first. removeAnnotation alone
+              // leaves a phantom selection: Annotorious still believes a (now
+              // gone) box is selected, which blocks the next draw — the "draw,
+              // cancel, draw again does nothing" bug — and can re-fire
+              // selectAnnotation on the stale box. cancelSelected also fires the
+              // draw-mode rearm handler, re-enabling drawing immediately.
+              const selectedId = anno.getSelected?.()?.id ?? selectedDisplayIdRef.current;
+              const wasSelected = selectedId === id;
+
               if (selectedDisplayIdRef.current === id) {
                 selectedDisplayIdRef.current = null;
               }
@@ -1290,6 +1300,8 @@ export default function ManuscriptAnnotorious({
                 multiSelectedIdsRef.current.delete(id);
                 emitSelectionIdsChange();
               }
+
+              if (wasSelected) anno.cancelSelected?.();
 
               anno.removeAnnotation(annotation);
               queueSyncAnnotationClasses();
