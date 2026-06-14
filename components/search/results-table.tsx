@@ -24,6 +24,8 @@ import { useModelLabels } from '@/contexts/model-labels-context';
 import type { ModelLabelKey } from '@/lib/model-labels';
 import { Highlight, MatchSnippet } from './highlight';
 import { CollectionStar } from '@/components/collection/collection-star';
+import { clauseToGraphCollectionItem } from '@/lib/collection-item';
+import type { CollectionItem } from '@/lib/collection-storage';
 import { getImageDetailUrl, getGraphDetailUrl } from '@/lib/media-url';
 import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
@@ -335,6 +337,8 @@ type ResultTypeDescriptor<K extends ResultType> = {
   detailUrl: (item: ResultMap[K]) => string | null;
   subRowAccessor?: SubRowAccessor<ResultMap[K]>;
   previewAccessor?: PreviewAccessor<ResultMap[K]>;
+  /** The connected graph to collect for this row, if any (clauses → its graph). */
+  collectionItemAccessor?: (item: ResultMap[K]) => CollectionItem | null;
 };
 
 const RESULT_TYPE_DESCRIPTORS = {
@@ -380,6 +384,7 @@ const RESULT_TYPE_DESCRIPTORS = {
         alt={item.shelfmark || 'Clause annotation'}
       />
     ),
+    collectionItemAccessor: (item: ClauseListItem) => clauseToGraphCollectionItem(item),
   },
   people: {
     columns: COLUMNS.people,
@@ -468,7 +473,7 @@ function ResultsTableComponent<K extends ResultType>({
   const currKey = ordering?.current?.replace(/^-/, '');
   const isDesc = ordering?.current?.startsWith('-') ?? false;
 
-  const { subRowAccessor, previewAccessor } = descriptor;
+  const { subRowAccessor, previewAccessor, collectionItemAccessor } = descriptor;
   const hasSubRow = !!subRowAccessor;
   const totalColSpan = cols.length + (hasSubRow ? 1 : 0);
   const rowKeyOf = React.useCallback((row: ResultMap[K], index: number): React.Key => {
@@ -493,6 +498,7 @@ function ResultsTableComponent<K extends ResultType>({
         }
       }
       const preview = previewAccessor ? previewAccessor(row) : null;
+      const previewCollectionItem = collectionItemAccessor ? collectionItemAccessor(row) : null;
       const rowKey = rowKeyOf(row, ri);
       return (
         <tbody key={rowKey} className="group border-b">
@@ -583,12 +589,32 @@ function ResultsTableComponent<K extends ResultType>({
                 colSpan={totalColSpan}
                 className={`py-1.5 ${hasSubRow ? 'pl-20' : 'pl-4'} text-sm text-muted-foreground`}
               >
-                <Link
-                  href={rowHref}
-                  className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
-                >
-                  <span className="relative z-[2] inline-block">{preview}</span>
-                </Link>
+                {previewCollectionItem ? (
+                  // The clause's connected graph can be collected. The star is a
+                  // sibling of the link (a button inside an anchor is invalid),
+                  // sharing the image's positioning context so it sits over it.
+                  <span className="relative inline-block">
+                    <Link
+                      href={rowHref}
+                      className="inline-block after:content-[''] after:absolute after:inset-0 after:z-[1]"
+                    >
+                      <span className="relative z-[2] inline-block">{preview}</span>
+                    </Link>
+                    <CollectionStar
+                      itemId={previewCollectionItem.id}
+                      itemType="graph"
+                      item={previewCollectionItem}
+                      size={16}
+                    />
+                  </span>
+                ) : (
+                  <Link
+                    href={rowHref}
+                    className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
+                  >
+                    <span className="relative z-[2] inline-block">{preview}</span>
+                  </Link>
+                )}
               </TableCell>
             </TableRow>
           )}
@@ -628,6 +654,7 @@ function ResultsTableComponent<K extends ResultType>({
     },
     [
       cols,
+      collectionItemAccessor,
       descriptor,
       hasSubRow,
       highlightKeyword,
