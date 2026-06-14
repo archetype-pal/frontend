@@ -175,15 +175,10 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
       toast.error('Pop-up blocked — allow pop-ups for this site to print.');
       return;
     }
-    const esc = (value: string) =>
-      value.replace(
-        /[&<>"]/g,
-        (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string
-      );
     const figures = workspaceImages
       .map((img) => {
         const caption = getLightboxImageCaption(img);
-        return `<figure><img src="${esc(img.imageUrl)}" alt="${esc(caption)}" /><figcaption>${esc(caption)}</figcaption></figure>`;
+        return `<figure><img src="${escapeXml(img.imageUrl)}" alt="${escapeXml(caption)}" /><figcaption>${escapeXml(caption)}</figcaption></figure>`;
       })
       .join('');
     const count = workspaceImages.length;
@@ -257,7 +252,16 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
           position: img.position,
           size: img.size,
           transform: img.transform,
-          annotations: annotations.map((a) => a.annotation),
+          // Emit the live fields the importer reads back (shape/label/color);
+          // the legacy `annotation` field is undefined on current records.
+          annotations: annotations.map(({ id, shape, label, color, createdAt, updatedAt }) => ({
+            id,
+            shape,
+            label,
+            color,
+            createdAt,
+            updatedAt,
+          })),
         };
       })
     );
@@ -309,13 +313,17 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
         const annotations = await getImageAnnotations(img.id);
         const annotationElements = annotations
           .map((ann) => {
-            const a = ann.annotation as {
-              target?: { selector?: { value?: string } };
-              body?: Array<{ value?: string }>;
-            };
-            return `      <zone>
-        <graphic url="${a.target?.selector?.value ?? ''}"/>
-        <note>${a.body?.[0]?.value ?? ''}</note>
+            // Derive the zone from the live shape/label; rect shapes carry
+            // TEI ulx/uly/lrx/lry, freehand falls back to a bare zone.
+            const s = ann.shape;
+            const coords =
+              s?.type === 'rect'
+                ? ` ulx="${Math.round(s.x)}" uly="${Math.round(s.y)}" lrx="${Math.round(
+                    s.x + s.width
+                  )}" lry="${Math.round(s.y + s.height)}"`
+                : '';
+            return `      <zone${coords}>
+        <note>${escapeXml(ann.label ?? '')}</note>
       </zone>`;
           })
           .join('\n');

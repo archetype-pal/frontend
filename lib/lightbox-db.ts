@@ -212,7 +212,9 @@ export async function getSession(id: string): Promise<LightboxSession | undefine
 }
 
 export async function getAllSessions(): Promise<LightboxSession[]> {
-  return await getDb().sessions.orderBy('updatedAt').reverse().toArray();
+  // Order by an indexed key — the `sessions` store indexes `createdAt`, not
+  // `updatedAt`, and Dexie's orderBy throws SchemaError on a non-indexed key.
+  return await getDb().sessions.orderBy('createdAt').reverse().toArray();
 }
 
 export async function deleteSession(id: string): Promise<void> {
