@@ -24,7 +24,7 @@ interface TabDef {
 }
 
 const TABS: TabDef[] = [
-  { segment: '', label: 'Manuscript Image', icon: ImageIcon },
+  { segment: '', label: 'Selected Image', icon: ImageIcon },
   { segment: 'annotations', label: 'Annotations', icon: FileText, countKey: 'annotations' },
   { segment: 'texts', label: 'Texts', icon: Book, countKey: 'texts' },
   { segment: 'other-images', label: 'Other Images', icon: ImageIcon, countKey: 'otherImages' },
