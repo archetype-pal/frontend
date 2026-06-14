@@ -13,6 +13,7 @@ import {
 import type { ResultType } from '@/lib/search-types';
 import { SEARCHABLE_FIELDS_BY_TYPE } from '@/lib/query-builder-fields';
 import { QueryBuilderPanel } from '@/components/search/query-builder-panel';
+import { SearchKeywordBar } from '@/components/search/search-keyword-bar';
 import { createEmptyQueryGroup, type QueryGroup } from '@/lib/search-query';
 
 export type AdvancedSearchState = {
@@ -27,6 +28,12 @@ type AdvancedSearchPanelProps = {
   value: AdvancedSearchState;
   onChange: (next: AdvancedSearchState) => void;
   facetDistribution?: Record<string, Record<string, number>>;
+  /** The page-level free-text keyword, hosted here while advanced search is on. */
+  keyword: string;
+  onKeywordChange: (value: string) => void;
+  onKeywordSubmit: (value: string) => void;
+  exactPhrase: boolean;
+  onExactPhraseChange: (value: boolean) => void;
 };
 
 export const DEFAULT_ADVANCED_SEARCH_STATE: AdvancedSearchState = {
@@ -41,6 +48,11 @@ export function AdvancedSearchPanel({
   value,
   onChange,
   facetDistribution,
+  keyword,
+  onKeywordChange,
+  onKeywordSubmit,
+  exactPhrase,
+  onExactPhraseChange,
 }: AdvancedSearchPanelProps) {
   const update = (patch: Partial<AdvancedSearchState>) => onChange({ ...value, ...patch });
 
@@ -87,6 +99,22 @@ export function AdvancedSearchPanel({
             Turn off
           </Button>
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs">Free-text search</Label>
+        <SearchKeywordBar
+          searchType={resultType}
+          value={keyword}
+          onChange={onKeywordChange}
+          onSubmit={onKeywordSubmit}
+          exactPhrase={exactPhrase}
+          onExactPhraseChange={onExactPhraseChange}
+          inputClassName="h-9 bg-background"
+        />
+        <p className="text-[11px] text-muted-foreground">
+          The main keyword search — refine how it matches with the field and strategy options below.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

@@ -69,16 +69,24 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             </div>
           </div>
           <div className="min-w-0 flex-1">
-            <SearchKeywordBar
-              searchType={s.resultType}
-              value={s.draftKeyword}
-              onChange={s.setDraftKeyword}
-              onSubmit={s.setSubmittedKeyword}
-              exactPhrase={s.exactPhraseKeyword}
-              onExactPhraseChange={s.setExactPhraseKeyword}
-              className="hidden md:block md:max-w-2xl"
-              inputClassName="h-9 bg-background"
-            />
+            {s.advancedSearch.enabled ? (
+              // While advanced search is on the free-text box lives inside the
+              // Advanced search panel; keep the slot so the row layout holds.
+              <p className="hidden text-xs italic text-muted-foreground md:block">
+                Free-text search has moved into the Advanced search panel below.
+              </p>
+            ) : (
+              <SearchKeywordBar
+                searchType={s.resultType}
+                value={s.draftKeyword}
+                onChange={s.setDraftKeyword}
+                onSubmit={s.setSubmittedKeyword}
+                exactPhrase={s.exactPhraseKeyword}
+                onExactPhraseChange={s.setExactPhraseKeyword}
+                className="hidden md:block md:max-w-2xl"
+                inputClassName="h-9 bg-background"
+              />
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <ViewSwitcher
@@ -282,6 +290,11 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   value={s.advancedSearch}
                   onChange={s.setAdvancedSearch}
                   facetDistribution={s.data.facetDistribution}
+                  keyword={s.draftKeyword}
+                  onKeywordChange={s.setDraftKeyword}
+                  onKeywordSubmit={s.setSubmittedKeyword}
+                  exactPhrase={s.exactPhraseKeyword}
+                  onExactPhraseChange={s.setExactPhraseKeyword}
                 />
               </div>
             )}
