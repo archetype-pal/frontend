@@ -1,5 +1,5 @@
 /**
- * IIIF Image API 2.x helpers: resolve info URLs, build image URLs, clamp regions.
+ * IIIF Image API 3.0 helpers: resolve info URLs, build image URLs, clamp regions.
  */
 
 /** Region coordinates: x,y (top-left), w,h (width, height). */
