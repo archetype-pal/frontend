@@ -515,6 +515,15 @@
   cursor: not-allowed !important;
 }
 
+/* Annotorious sets `cursor: pointer` on every annotation shape, which otherwise
+   wins over the layer cursor exactly when hovering a region — i.e. the region
+   you click to delete still shows a hand. Force the delete cursor over the
+   shapes too so the whole canvas reads as "delete mode". */
+.osd-mode-delete .a9s-annotation,
+.osd-mode-delete .a9s-annotation * {
+  cursor: not-allowed !important;
+}
+
 .manuscript-osd-viewer .openseadragon-canvas canvas,
 .manuscript-osd-viewer .openseadragon-canvas img {
   filter: var(--manuscript-image-filter, none);
