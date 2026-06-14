@@ -392,7 +392,6 @@ export function usePopupSelection({
 
   return {
     handleSelectionIdsChange,
-    clearSinglePopupState,
     handlePopupTabChange,
     handleDraftAllographIdChange,
     handleDraftHandIdChange,

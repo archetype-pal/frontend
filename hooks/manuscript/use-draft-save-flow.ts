@@ -317,7 +317,6 @@ export function useDraftSaveFlow({
   return {
     handleViewerCreate,
     handleViewerUpdate,
-    handleSaveDraftAnnotation,
     handleConfirmDraftAnnotation,
   };
 }
