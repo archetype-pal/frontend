@@ -3,8 +3,16 @@ import type { ResultType } from './search-types';
 import { SEARCH_RESULT_CONFIG } from './search-types';
 
 /** Result types whose display name is controlled by a model label. */
-const RESULT_TYPE_LABEL_KEYS: Partial<Record<ResultType, ModelLabelKey>> = {
+const RESULT_TYPE_LABEL_KEYS: Record<ResultType, ModelLabelKey> = {
   manuscripts: 'appManuscripts',
+  images: 'searchCategoryImages',
+  scribes: 'searchCategoryScribes',
+  hands: 'searchCategoryHands',
+  graphs: 'searchCategoryGraphs',
+  texts: 'searchCategoryTexts',
+  clauses: 'searchCategoryClauses',
+  people: 'searchCategoryPeople',
+  places: 'searchCategoryPlaces',
 };
 
 /**

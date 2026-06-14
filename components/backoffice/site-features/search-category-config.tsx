@@ -6,12 +6,8 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import {
-  getFacetOrder,
-  SEARCH_RESULT_CONFIG,
-  SEARCH_RESULT_TYPES,
-  type ResultType,
-} from '@/lib/search-types';
+import { getFacetOrder, SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
+import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { formatFacetTitle } from '@/lib/search-query';
 import { DEFAULT_COLUMNS, type SearchCategoryConfig } from '@/lib/site-features';
 import { SortableCheckboxList, type SortableItem } from './sortable-checkbox-list';
@@ -39,10 +35,7 @@ export function SearchCategoryConfigPanel({ categories, onChange }: Props) {
   const categoryLabels: Record<ResultType, string> = useMemo(
     () =>
       Object.fromEntries(
-        SEARCH_RESULT_TYPES.map((type) => [
-          type,
-          type === 'manuscripts' ? getLabel('appManuscripts') : SEARCH_RESULT_CONFIG[type].label,
-        ])
+        SEARCH_RESULT_TYPES.map((type) => [type, resolveResultTypeLabel(type, getLabel)])
       ) as Record<ResultType, string>,
     [getLabel]
   );

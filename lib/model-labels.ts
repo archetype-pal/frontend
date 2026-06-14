@@ -7,7 +7,18 @@ export type ModelLabelKey =
   | 'fieldHairType'
   | 'fieldShelfmark'
   | 'fieldDateMinWeight'
-  | 'fieldDateMaxWeight';
+  | 'fieldDateMaxWeight'
+  // Search result-category tab labels. The "Manuscripts" category reuses
+  // `appManuscripts` (it is the site-wide manuscripts label); the rest get
+  // their own keys so each search tab can be renamed independently.
+  | 'searchCategoryImages'
+  | 'searchCategoryScribes'
+  | 'searchCategoryHands'
+  | 'searchCategoryGraphs'
+  | 'searchCategoryTexts'
+  | 'searchCategoryClauses'
+  | 'searchCategoryPeople'
+  | 'searchCategoryPlaces';
 
 export type ModelLabelsConfig = {
   labels: Record<ModelLabelKey, string>;
@@ -23,6 +34,14 @@ export const DEFAULT_MODEL_LABELS: Record<ModelLabelKey, string> = {
   fieldShelfmark: 'Shelfmark',
   fieldDateMinWeight: 'Minimum weight',
   fieldDateMaxWeight: 'Maximum weight',
+  searchCategoryImages: 'Images',
+  searchCategoryScribes: 'Scribes',
+  searchCategoryHands: 'Hands',
+  searchCategoryGraphs: 'Graphs',
+  searchCategoryTexts: 'Texts',
+  searchCategoryClauses: 'Clauses',
+  searchCategoryPeople: 'People',
+  searchCategoryPlaces: 'Places',
 };
 
 export function normalizeModelLabels(
