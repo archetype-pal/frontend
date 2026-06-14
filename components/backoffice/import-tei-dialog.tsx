@@ -93,6 +93,21 @@ export function ImportTeiDialog({
       toast.error('Import failed', { description: err.message.slice(0, 240) }),
   });
 
+  // Clear the previous attempt's file/validation state on close so reopening
+  // never shows a stale filename or a "Valid TEI" badge for a different image.
+  function handleOpenChange(next: boolean) {
+    if (!next) {
+      setItemImage('');
+      setType('Transcription');
+      setLanguage('');
+      setFileName(null);
+      setContent(null);
+      setErrors(null);
+      setValidating(false);
+    }
+    onOpenChange(next);
+  }
+
   const itemImageNumber = Number(itemImage);
   const teiValid = errors !== null && errors.length === 0;
   const canSubmit =
@@ -105,7 +120,7 @@ export function ImportTeiDialog({
     !createMut.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Import TEI file</DialogTitle>
