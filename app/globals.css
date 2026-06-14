@@ -511,17 +511,17 @@
   pointer-events: none;
 }
 
-.osd-mode-delete {
-  cursor: not-allowed !important;
-}
-
-/* Annotorious sets `cursor: pointer` on every annotation shape, which otherwise
-   wins over the layer cursor exactly when hovering a region — i.e. the region
-   you click to delete still shows a hand. Force the delete cursor over the
-   shapes too so the whole canvas reads as "delete mode". */
+/* A trash-can cursor reads as "click to delete" (not-allowed wrongly implies the
+   action is blocked). The selector also targets the region shapes because
+   Annotorious sets `cursor: pointer` on every shape, which otherwise wins over
+   the layer cursor exactly when hovering the region you click to delete.
+   Hotspot is the icon centre (12 12); crosshair is the no-SVG-cursor fallback. */
+.osd-mode-delete,
 .osd-mode-delete .a9s-annotation,
 .osd-mode-delete .a9s-annotation * {
-  cursor: not-allowed !important;
+  cursor:
+    url('/cursors/delete.svg') 12 12,
+    crosshair !important;
 }
 
 .manuscript-osd-viewer .openseadragon-canvas canvas,
