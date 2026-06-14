@@ -8,9 +8,6 @@ interface ComparisonMatrixProps {
   allographs: AllographNested[];
   allComponents: Component[];
   allFeatures: Feature[];
-  onUpdateAllograph: (index: number, updated: AllographNested) => void;
-  onRemoveAllograph: (index: number) => void;
-  onAddAllograph: (name: string) => void;
   disabled: boolean;
   /** Called when a cell is clicked – navigates to the allograph's tab. */
   onSelectAllograph?: (index: number) => void;

@@ -322,9 +322,6 @@ export function CharacterDetail({
             allographs={draft.allographs}
             allComponents={allComponents}
             allFeatures={allFeatures}
-            onUpdateAllograph={handleUpdateAllograph}
-            onRemoveAllograph={handleRemoveAllograph}
-            onAddAllograph={handleAddAllograph}
             disabled={saveMutation.isPending}
             onSelectAllograph={(idx) => {
               setActiveAlloTab(String(idx));
