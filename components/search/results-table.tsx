@@ -255,7 +255,7 @@ export const COLUMNS = {
     repositoryColumn<GraphListItem>(),
     shelfmarkColumn<GraphListItem>(),
     makeColumn('Document Date', (g: GraphListItem) => g.date),
-    makeColumn('Allograph', (g: GraphListItem) => (g.is_annotated ? 'Yes' : 'No')),
+    makeColumn('Allograph', (g: GraphListItem) => g.allograph ?? '—'),
     {
       header: 'Thumbnail',
       accessor: (g) => <GraphThumbnailCell graph={g} />,
