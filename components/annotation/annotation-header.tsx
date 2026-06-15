@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Eye, Plus, Star, Wrench, SlidersHorizontal } from 'lucide-react';
+import { Eye, EyeOff, Plus, Star, Wrench, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/ui/segmented';
 import {
@@ -25,8 +25,12 @@ interface AnnotationHeaderProps {
   showUnsavedCount?: boolean;
   /** Opens the Annotations panel (single home for visibility + allograph/hand). */
   onOpenFilterPanel?: () => void;
-  /** Highlights the Annotations button when annotations are hidden or filtered. */
+  /** Highlights the filter icon when an allograph/hand/editorial filter is narrowing the view. */
   isVisibilityFilterActive?: boolean;
+  /** Master "annotations visible" state — drives the eye toggle in the Annotations control. */
+  annotationsEnabled?: boolean;
+  /** Toggles every annotation/graph on the image on or off in one click. */
+  onToggleAnnotations?: () => void;
   onOpenSettingsPanel?: () => void;
   isSettingsActive?: boolean;
   showSettingsButton?: boolean;
@@ -61,6 +65,8 @@ export function AnnotationHeader({
   showUnsavedCount = true,
   onOpenFilterPanel,
   isVisibilityFilterActive = false,
+  annotationsEnabled = true,
+  onToggleAnnotations,
   onOpenSettingsPanel,
   isSettingsActive = false,
   showSettingsButton = true,
@@ -121,18 +127,73 @@ export function AnnotationHeader({
             </div>
           ) : null}
 
-          {onOpenFilterPanel && (
-            <Button
-              variant={isVisibilityFilterActive ? 'default' : 'outline'}
-              className="flex h-8 items-center gap-2 px-3"
-              onClick={() => onOpenFilterPanel()}
-              type="button"
-              aria-pressed={isVisibilityFilterActive}
-              title="Show, hide and filter annotations"
+          {(onOpenFilterPanel || onToggleAnnotations) && (
+            <div
+              className={cn(
+                'inline-flex h-8 items-center overflow-hidden rounded-md border border-border bg-card',
+                !annotationsEnabled && 'border-amber-400/60'
+              )}
             >
-              <SlidersHorizontal className="h-4 w-4" />
-              <span className="text-sm">Annotations</span>
-            </Button>
+              <span className="select-none pl-3 pr-2 text-sm font-medium text-foreground">
+                Annotations
+              </span>
+
+              {onOpenFilterPanel && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => onOpenFilterPanel()}
+                      aria-pressed={isVisibilityFilterActive}
+                      aria-label="Filter annotations"
+                      className={cn(
+                        'flex h-full w-8 items-center justify-center border-l border-border transition-colors',
+                        isVisibilityFilterActive
+                          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      )}
+                    >
+                      <SlidersHorizontal className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Show, hide and filter annotations</TooltipContent>
+                </Tooltip>
+              )}
+
+              {onToggleAnnotations && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => onToggleAnnotations()}
+                      aria-pressed={!annotationsEnabled}
+                      aria-label={
+                        annotationsEnabled
+                          ? 'Hide all annotations on this image'
+                          : 'Show all annotations on this image'
+                      }
+                      className={cn(
+                        'flex h-full w-8 items-center justify-center border-l border-border transition-colors',
+                        annotationsEnabled
+                          ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          : 'bg-amber-400/20 text-amber-700 hover:bg-amber-400/30 dark:text-amber-300'
+                      )}
+                    >
+                      {annotationsEnabled ? (
+                        <Eye className="h-4 w-4" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" />
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {annotationsEnabled
+                      ? 'Hide all annotations on this image'
+                      : 'Show all annotations on this image'}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           )}
 
           {showUnsavedCount && (

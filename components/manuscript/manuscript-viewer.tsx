@@ -1152,7 +1152,9 @@ export default function ManuscriptViewer({
       selectedAnnotationsCount={selectedAnnotationIds.length}
       showUnsavedCount={canPersistAnyAnnotations}
       onOpenFilterPanel={toggleFilterPanel}
-      isVisibilityFilterActive={isVisibilityFilterActive || !annotationsEnabled}
+      isVisibilityFilterActive={isVisibilityFilterActive}
+      annotationsEnabled={annotationsEnabled}
+      onToggleAnnotations={toggleAnnotations}
       onOpenSettingsPanel={canUseSettings ? toggleSettingsPanel : undefined}
       isSettingsActive={canUseSettings ? isSettingsPanelOpen : false}
       showSettingsButton={canUseSettings}

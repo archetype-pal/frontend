@@ -71,6 +71,40 @@ describe('AnnotationHeader allograph gallery control', () => {
   });
 });
 
+describe('AnnotationHeader annotations control', () => {
+  it('opens the filter panel from the filter icon', () => {
+    const onOpenFilterPanel = vi.fn();
+    render(<AnnotationHeader unsavedCount={0} onOpenFilterPanel={onOpenFilterPanel} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter annotations' }));
+    expect(onOpenFilterPanel).toHaveBeenCalledTimes(1);
+  });
+
+  it('toggles all annotations off from the eye icon when enabled', () => {
+    const onToggleAnnotations = vi.fn();
+    render(
+      <AnnotationHeader
+        unsavedCount={0}
+        annotationsEnabled
+        onToggleAnnotations={onToggleAnnotations}
+      />
+    );
+
+    const toggle = screen.getByRole('button', { name: 'Hide all annotations on this image' });
+    fireEvent.click(toggle);
+    expect(onToggleAnnotations).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers to show all annotations when they are hidden', () => {
+    render(
+      <AnnotationHeader unsavedCount={0} annotationsEnabled={false} onToggleAnnotations={vi.fn()} />
+    );
+
+    const toggle = screen.getByRole('button', { name: 'Show all annotations on this image' });
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+  });
+});
+
 describe('AnnotationHeader page collection controls', () => {
   it('toggles the page collection button and enables bulk collection creation when annotations exist', () => {
     const onTogglePageCollection = vi.fn();
