@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
-import type { ColumnDef } from '@tanstack/react-table';
 import {
   UserCog,
   Users,
@@ -16,6 +15,10 @@ import {
   EyeOff,
   CheckCircle,
   XCircle,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +26,16 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -32,7 +44,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import {
   BackofficeErrorState,
@@ -42,6 +53,7 @@ import { getUsers, createUser, updateUser, deleteUser } from '@/services/backoff
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { UserListItem, UserCreatePayload, UserUpdatePayload } from '@/types/backoffice';
 
@@ -51,6 +63,10 @@ function getInitials(user: UserListItem): string {
   if (user.first_name && user.last_name)
     return (user.first_name[0] + user.last_name[0]).toUpperCase();
   return user.username.slice(0, 2).toUpperCase();
+}
+
+function fullName(user: UserListItem): string {
+  return [user.first_name, user.last_name].filter(Boolean).join(' ');
 }
 
 function relativeTime(dateStr: string | null): string {
@@ -94,6 +110,12 @@ const emptyCreate: UserCreatePayload = {
   is_active: true,
 };
 
+const PAGE_SIZE = 20;
+
+type PresetKey = 'all' | 'staff' | 'inactive';
+type SortKey = 'username' | 'name' | 'last_login' | 'date_joined';
+type SortDir = 'asc' | 'desc';
+
 // ── Password Input ───────────────────────────────────────────────────────
 
 function PasswordInput({
@@ -133,21 +155,49 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return <p className="text-[13px] font-medium text-foreground">{children}</p>;
 }
 
+// ── Sortable header ──────────────────────────────────────────────────────
+
+function SortHeader({
+  label,
+  active,
+  dir,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  dir: SortDir;
+  onClick: () => void;
+}) {
+  return (
+    <Button variant="ghost" size="sm" className="-ml-3 h-8" onClick={onClick}>
+      {label}
+      {active && (dir === 'asc' ? ' ↑' : ' ↓')}
+    </Button>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────
 
 export default function UsersPage() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
 
+  // Dialog / mutation targets
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<UserListItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserListItem | null>(null);
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([]);
 
-  const [createForm, setCreateForm] = useState<UserCreatePayload>({
-    ...emptyCreate,
-  });
+  const [createForm, setCreateForm] = useState<UserCreatePayload>({ ...emptyCreate });
   const [editForm, setEditForm] = useState<UserUpdatePayload>({});
+
+  // Table view state
+  const [search, setSearch] = useState('');
+  const [preset, setPreset] = useState<PresetKey>('all');
+  const [sortKey, setSortKey] = useState<SortKey>('username');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [page, setPage] = useState(0);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.users.all(),
@@ -155,15 +205,121 @@ export default function UsersPage() {
     enabled: !!token,
   });
 
-  const users = data?.results ?? [];
+  const users = useMemo(() => data?.results ?? [], [data]);
+
   const totalCount = users.length;
-  const staffCount = users.filter((u) => u.is_staff).length;
-  const activeCount = users.filter((u) => u.is_active).length;
+  const staffCount = useMemo(() => users.filter((u) => u.is_staff).length, [users]);
+  const activeCount = useMemo(() => users.filter((u) => u.is_active).length, [users]);
   const inactiveCount = totalCount - activeCount;
+
+  // ── Derived rows: preset → search → sort → paginate ───────────────────
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return users.filter((u) => {
+      if (preset === 'staff' && !u.is_staff) return false;
+      if (preset === 'inactive' && u.is_active) return false;
+      if (q) {
+        const haystack = `${u.username} ${u.email} ${fullName(u)}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [users, preset, search]);
+
+  const sorted = useMemo(() => {
+    const rows = [...filtered];
+    const factor = sortDir === 'asc' ? 1 : -1;
+    rows.sort((a, b) => {
+      let av: string | number;
+      let bv: string | number;
+      switch (sortKey) {
+        case 'name':
+          av = fullName(a).toLowerCase();
+          bv = fullName(b).toLowerCase();
+          break;
+        case 'last_login':
+          av = a.last_login ? new Date(a.last_login).getTime() : 0;
+          bv = b.last_login ? new Date(b.last_login).getTime() : 0;
+          break;
+        case 'date_joined':
+          av = new Date(a.date_joined).getTime();
+          bv = new Date(b.date_joined).getTime();
+          break;
+        default:
+          av = a.username.toLowerCase();
+          bv = b.username.toLowerCase();
+      }
+      if (av < bv) return -1 * factor;
+      if (av > bv) return 1 * factor;
+      return 0;
+    });
+    return rows;
+  }, [filtered, sortKey, sortDir]);
+
+  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageRows = useMemo(
+    () => sorted.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE),
+    [sorted, currentPage]
+  );
+
+  // ── Selection (over the full filtered set) ────────────────────────────
+
+  const allSelected = filtered.length > 0 && filtered.every((u) => selected.has(String(u.id)));
+  const someSelected = !allSelected && filtered.some((u) => selected.has(String(u.id)));
+  const selectedIds = [...selected];
+
+  function toggleAll() {
+    setSelected((prev) => {
+      if (filtered.every((u) => prev.has(String(u.id)))) {
+        // deselect the filtered rows
+        const next = new Set(prev);
+        filtered.forEach((u) => next.delete(String(u.id)));
+        return next;
+      }
+      const next = new Set(prev);
+      filtered.forEach((u) => next.add(String(u.id)));
+      return next;
+    });
+  }
+
+  function toggleRow(id: number) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      const key = String(id);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function clearSelection() {
+    setSelected(new Set());
+  }
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }
+
+  function changePreset(next: PresetKey) {
+    setPreset(next);
+    setPage(0);
+  }
+
+  function changeSearch(next: string) {
+    setSearch(next);
+    setPage(0);
+  }
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: backofficeKeys.users.all() });
 
-  // ── Mutations ────────────────────────────────────────────────────────
+  // ── Mutations ──────────────────────────────────────────────────────────
 
   const createMut = useMutation({
     mutationFn: () => createUser(token!, createForm),
@@ -174,9 +330,7 @@ export default function UsersPage() {
       setCreateForm({ ...emptyCreate });
     },
     onError: (err) => {
-      toast.error('Failed to create user', {
-        description: formatApiError(err),
-      });
+      toast.error('Failed to create user', { description: formatApiError(err) });
     },
   });
 
@@ -193,9 +347,7 @@ export default function UsersPage() {
       setEditTarget(null);
     },
     onError: (err) => {
-      toast.error('Failed to update user', {
-        description: formatApiError(err),
-      });
+      toast.error('Failed to update user', { description: formatApiError(err) });
     },
   });
 
@@ -207,9 +359,7 @@ export default function UsersPage() {
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error('Failed to delete user', {
-        description: formatApiError(err),
-      });
+      toast.error('Failed to delete user', { description: formatApiError(err) });
     },
   });
 
@@ -227,6 +377,7 @@ export default function UsersPage() {
       }),
     onSuccess: () => {
       setBulkDeleteIds([]);
+      clearSelection();
     },
   });
 
@@ -244,184 +395,41 @@ export default function UsersPage() {
     });
   }
 
-  function handleBulkActivate(ids: string[]) {
-    return runBulkAction({
-      ids,
+  async function handleBulkActivate() {
+    await runBulkAction({
+      ids: selectedIds,
       action: (id) => updateUser(token!, Number(id), { is_active: true }),
       invalidate,
       pastTense: 'activated',
       noun: 'user',
     });
+    clearSelection();
   }
 
-  function handleBulkDeactivate(ids: string[]) {
-    return runBulkAction({
-      ids,
+  async function handleBulkDeactivate() {
+    await runBulkAction({
+      ids: selectedIds,
       action: (id) => updateUser(token!, Number(id), { is_active: false }),
       invalidate,
       pastTense: 'deactivated',
       noun: 'user',
     });
+    clearSelection();
   }
 
-  function handleBulkDelete(ids: string[]) {
-    setBulkDeleteIds(ids);
-  }
+  // ── Loading / error states ─────────────────────────────────────────────
 
-  // ── Columns ──────────────────────────────────────────────────────────
-
-  const columns: ColumnDef<UserListItem>[] = [
-    {
-      accessorKey: 'username',
-      header: sortableHeader('User'),
-      cell: ({ row }) => {
-        const u = row.original;
-        return (
-          <div className="flex items-center gap-3">
-            <div
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${avatarColor(u.username)}`}
-            >
-              {getInitials(u)}
-            </div>
-            <div className="min-w-0">
-              <p className="truncate font-medium text-sm">{u.username}</p>
-              <p className="truncate text-xs text-muted-foreground">{u.email}</p>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      id: 'name',
-      header: sortableHeader('Name'),
-      accessorFn: (row) => [row.first_name, row.last_name].filter(Boolean).join(' ') || '—',
-      cell: ({ row }) => {
-        const name =
-          [row.original.first_name, row.original.last_name].filter(Boolean).join(' ') || '—';
-        return <span className={name === '—' ? 'text-muted-foreground' : ''}>{name}</span>;
-      },
-    },
-    {
-      accessorKey: 'is_staff',
-      header: 'Role',
-      cell: ({ row }) =>
-        row.original.is_superuser ? (
-          <Badge variant="destructive" className="gap-1">
-            <ShieldAlert className="h-3 w-3" />
-            Superuser
-          </Badge>
-        ) : row.original.is_staff ? (
-          <Badge variant="default" className="gap-1">
-            <ShieldCheck className="h-3 w-3" />
-            Staff
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="text-muted-foreground">
-            Regular
-          </Badge>
-        ),
-    },
-    {
-      accessorKey: 'is_active',
-      header: 'Status',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <span
-            className={`h-2 w-2 rounded-full ${
-              row.original.is_active ? 'bg-emerald-500' : 'bg-red-500'
-            }`}
-          />
-          <span
-            className={`text-sm ${
-              row.original.is_active ? 'text-foreground' : 'text-muted-foreground'
-            }`}
-          >
-            {row.original.is_active ? 'Active' : 'Inactive'}
-          </span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'last_login',
-      header: sortableHeader('Last Active'),
-      cell: ({ row }) => {
-        const ll = row.original.last_login;
-        const text = relativeTime(ll);
-        if (!ll) return <span className="text-sm text-muted-foreground">Never</span>;
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="text-sm cursor-default">{text}</span>
-            </TooltipTrigger>
-            <TooltipContent>{new Date(ll).toLocaleString()}</TooltipContent>
-          </Tooltip>
-        );
-      },
-    },
-    {
-      accessorKey: 'date_joined',
-      header: sortableHeader('Joined'),
-      cell: ({ row }) => {
-        const d = row.original.date_joined;
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="text-sm tabular-nums cursor-default">
-                {new Date(d).toLocaleDateString()}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>{new Date(d).toLocaleString()}</TooltipContent>
-          </Tooltip>
-        );
-      },
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                onClick={() => openEdit(row.original)}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Edit user</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                onClick={() => setDeleteTarget(row.original)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Delete user</TooltipContent>
-          </Tooltip>
-        </div>
-      ),
-      size: 80,
-    },
-  ];
-
-  // ── Loading / error states ───────────────────────────────────────────
-
-  if (isLoading) {
-    return <BackofficeLoadingState />;
-  }
-
-  if (isError) {
+  if (isLoading) return <BackofficeLoadingState />;
+  if (isError)
     return <BackofficeErrorState message="Failed to load users" onRetry={() => refetch()} />;
-  }
 
   const canCreate = createForm.username.trim() && createForm.password.trim();
+  const presets: { key: PresetKey; label: string; count: number }[] = [
+    { key: 'all', label: 'All', count: totalCount },
+    { key: 'staff', label: 'Staff', count: staffCount },
+    { key: 'inactive', label: 'Inactive', count: inactiveCount },
+  ];
+  const colSpan = 7;
 
   return (
     <div className="space-y-6">
@@ -485,42 +493,310 @@ export default function UsersPage() {
       </div>
 
       {/* ── Table ───────────────────────────────────────────────────── */}
-      <DataTable
-        columns={columns}
-        data={users}
-        searchColumn="username"
-        searchPlaceholder="Search users..."
-        enableRowSelection
-        presetFilters={[
-          { label: 'All' },
-          { label: 'Staff', filter: (row) => row.is_staff },
-          { label: 'Inactive', filter: (row) => !row.is_active },
-        ]}
-        bulkActions={[
-          {
-            label: 'Activate',
-            action: handleBulkActivate,
-            icon: <CheckCircle className="h-3.5 w-3.5" />,
-          },
-          {
-            label: 'Deactivate',
-            action: handleBulkDeactivate,
-            icon: <XCircle className="h-3.5 w-3.5" />,
-          },
-          {
-            label: 'Delete',
-            action: handleBulkDelete,
-            variant: 'destructive',
-            icon: <Trash2 className="h-3.5 w-3.5" />,
-          },
-        ]}
-        toolbarActions={
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" />
-            New User
-          </Button>
-        }
-      />
+      <div className="space-y-3">
+        {/* Preset filter tabs */}
+        <div className="flex items-center gap-1 border-b">
+          {presets.map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => changePreset(p.key)}
+              className={cn(
+                'px-3 py-1.5 text-xs font-medium transition-colors border-b-2 -mb-px',
+                p.key === preset
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {p.label}
+              <span className="ml-1.5 text-[10px] tabular-nums text-muted-foreground">
+                {p.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Toolbar */}
+        <div className="flex items-center gap-2">
+          <div className="relative max-w-sm flex-1">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search users..."
+              value={search}
+              onChange={(e) => changeSearch(e.target.value)}
+              className="pl-8 pr-8 h-9"
+            />
+          </div>
+          <div className="ml-auto">
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              New User
+            </Button>
+          </div>
+        </div>
+
+        {/* Bulk actions bar */}
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-2">
+            <span className="text-sm font-medium">{selectedIds.length} selected</span>
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1 text-xs"
+                onClick={handleBulkActivate}
+              >
+                <CheckCircle className="h-3.5 w-3.5" />
+                Activate
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1 text-xs"
+                onClick={handleBulkDeactivate}
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                Deactivate
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-7 gap-1 text-xs"
+                onClick={() => setBulkDeleteIds(selectedIds)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 text-xs"
+                onClick={clearSelection}
+              >
+                <X className="h-3 w-3" />
+                Clear
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Table */}
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-8">
+                  <Checkbox
+                    checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                    onCheckedChange={toggleAll}
+                    aria-label="Select all"
+                    className="translate-y-[2px]"
+                  />
+                </TableHead>
+                <TableHead>
+                  <SortHeader
+                    label="User"
+                    active={sortKey === 'username'}
+                    dir={sortDir}
+                    onClick={() => toggleSort('username')}
+                  />
+                </TableHead>
+                <TableHead>
+                  <SortHeader
+                    label="Name"
+                    active={sortKey === 'name'}
+                    dir={sortDir}
+                    onClick={() => toggleSort('name')}
+                  />
+                </TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>
+                  <SortHeader
+                    label="Last Active"
+                    active={sortKey === 'last_login'}
+                    dir={sortDir}
+                    onClick={() => toggleSort('last_login')}
+                  />
+                </TableHead>
+                <TableHead>
+                  <SortHeader
+                    label="Joined"
+                    active={sortKey === 'date_joined'}
+                    dir={sortDir}
+                    onClick={() => toggleSort('date_joined')}
+                  />
+                </TableHead>
+                <TableHead className="w-20" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pageRows.length ? (
+                pageRows.map((u) => {
+                  const isSelected = selected.has(String(u.id));
+                  const name = fullName(u) || '—';
+                  return (
+                    <TableRow key={u.id} data-state={isSelected ? 'selected' : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleRow(u.id)}
+                          aria-label="Select row"
+                          className="translate-y-[2px]"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${avatarColor(u.username)}`}
+                          >
+                            {getInitials(u)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-sm">{u.username}</p>
+                            <p className="truncate text-xs text-muted-foreground">{u.email}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className={name === '—' ? 'text-muted-foreground' : ''}>{name}</span>
+                      </TableCell>
+                      <TableCell>
+                        {u.is_superuser ? (
+                          <Badge variant="destructive" className="gap-1">
+                            <ShieldAlert className="h-3 w-3" />
+                            Superuser
+                          </Badge>
+                        ) : u.is_staff ? (
+                          <Badge variant="default" className="gap-1">
+                            <ShieldCheck className="h-3 w-3" />
+                            Staff
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Regular
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`h-2 w-2 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-red-500'}`}
+                          />
+                          <span
+                            className={`text-sm ${u.is_active ? 'text-foreground' : 'text-muted-foreground'}`}
+                          >
+                            {u.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {u.last_login ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-sm cursor-default">
+                                {relativeTime(u.last_login)}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {new Date(u.last_login).toLocaleString()}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Never</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-sm tabular-nums cursor-default">
+                              {new Date(u.date_joined).toLocaleDateString()}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {new Date(u.date_joined).toLocaleString()}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                onClick={() => openEdit(u)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Edit user</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                onClick={() => setDeleteTarget(u)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Delete user</TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={colSpan + 1}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            {selectedIds.length > 0
+              ? `${selectedIds.length} of ${sorted.length} selected`
+              : `${sorted.length} row(s) total`}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={currentPage === 0}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="px-2 tabular-nums">
+              {currentPage + 1} / {pageCount}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+              disabled={currentPage >= pageCount - 1}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* ── Create dialog ───────────────────────────────────────────── */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -543,12 +819,7 @@ export default function UsersPage() {
                   <Label>Username</Label>
                   <Input
                     value={createForm.username}
-                    onChange={(e) =>
-                      setCreateForm((f) => ({
-                        ...f,
-                        username: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setCreateForm((f) => ({ ...f, username: e.target.value }))}
                     placeholder="jdoe"
                   />
                 </div>
@@ -557,12 +828,7 @@ export default function UsersPage() {
                   <Input
                     type="email"
                     value={createForm.email}
-                    onChange={(e) =>
-                      setCreateForm((f) => ({
-                        ...f,
-                        email: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
                     placeholder="jdoe@example.com"
                   />
                 </div>
@@ -586,24 +852,14 @@ export default function UsersPage() {
                   <Label>First Name</Label>
                   <Input
                     value={createForm.first_name}
-                    onChange={(e) =>
-                      setCreateForm((f) => ({
-                        ...f,
-                        first_name: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setCreateForm((f) => ({ ...f, first_name: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Last Name</Label>
                   <Input
                     value={createForm.last_name}
-                    onChange={(e) =>
-                      setCreateForm((f) => ({
-                        ...f,
-                        last_name: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setCreateForm((f) => ({ ...f, last_name: e.target.value }))}
                   />
                 </div>
               </div>
@@ -705,12 +961,7 @@ export default function UsersPage() {
                   <Label>Username</Label>
                   <Input
                     value={editForm.username ?? ''}
-                    onChange={(e) =>
-                      setEditForm((f) => ({
-                        ...f,
-                        username: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -718,12 +969,7 @@ export default function UsersPage() {
                   <Input
                     type="email"
                     value={editForm.email ?? ''}
-                    onChange={(e) =>
-                      setEditForm((f) => ({
-                        ...f,
-                        email: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
                   />
                 </div>
               </div>
@@ -750,24 +996,14 @@ export default function UsersPage() {
                   <Label>First Name</Label>
                   <Input
                     value={editForm.first_name ?? ''}
-                    onChange={(e) =>
-                      setEditForm((f) => ({
-                        ...f,
-                        first_name: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setEditForm((f) => ({ ...f, first_name: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Last Name</Label>
                   <Input
                     value={editForm.last_name ?? ''}
-                    onChange={(e) =>
-                      setEditForm((f) => ({
-                        ...f,
-                        last_name: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setEditForm((f) => ({ ...f, last_name: e.target.value }))}
                   />
                 </div>
               </div>
