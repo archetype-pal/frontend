@@ -1,3 +1,5 @@
+'use client';
+
 import * as React from 'react';
 import { sanitizeHtml } from '@/lib/sanitize-html';
 import { toDptHtml } from '@/lib/tei-to-dpt-html';
