@@ -8,6 +8,7 @@ import {
   UserCog,
   Users,
   ShieldCheck,
+  ShieldAlert,
   Plus,
   Pencil,
   Trash2,
@@ -89,6 +90,7 @@ const emptyCreate: UserCreatePayload = {
   last_name: '',
   password: '',
   is_staff: false,
+  is_superuser: false,
   is_active: true,
 };
 
@@ -237,6 +239,7 @@ export default function UsersPage() {
       last_name: user.last_name,
       password: '',
       is_staff: user.is_staff,
+      is_superuser: user.is_superuser,
       is_active: user.is_active,
     });
   }
@@ -302,7 +305,12 @@ export default function UsersPage() {
       accessorKey: 'is_staff',
       header: 'Role',
       cell: ({ row }) =>
-        row.original.is_staff ? (
+        row.original.is_superuser ? (
+          <Badge variant="destructive" className="gap-1">
+            <ShieldAlert className="h-3 w-3" />
+            Superuser
+          </Badge>
+        ) : row.original.is_staff ? (
           <Badge variant="default" className="gap-1">
             <ShieldCheck className="h-3 w-3" />
             Staff
@@ -619,6 +627,21 @@ export default function UsersPage() {
                 </div>
                 <div className="flex items-center justify-between px-4 py-3">
                   <div>
+                    <Label htmlFor="create-is-superuser" className="cursor-pointer text-sm">
+                      Superuser
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Full access to everything, including Django admin
+                    </p>
+                  </div>
+                  <Switch
+                    id="create-is-superuser"
+                    checked={createForm.is_superuser}
+                    onCheckedChange={(v) => setCreateForm((f) => ({ ...f, is_superuser: v }))}
+                  />
+                </div>
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div>
                     <Label htmlFor="create-is-active" className="cursor-pointer text-sm">
                       Active
                     </Label>
@@ -764,6 +787,21 @@ export default function UsersPage() {
                     id="edit-is-staff"
                     checked={editForm.is_staff ?? false}
                     onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_staff: v }))}
+                  />
+                </div>
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div>
+                    <Label htmlFor="edit-is-superuser" className="cursor-pointer text-sm">
+                      Superuser
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Full access to everything, including Django admin
+                    </p>
+                  </div>
+                  <Switch
+                    id="edit-is-superuser"
+                    checked={editForm.is_superuser ?? false}
+                    onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_superuser: v }))}
                   />
                 </div>
                 <div className="flex items-center justify-between px-4 py-3">

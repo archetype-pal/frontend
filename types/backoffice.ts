@@ -296,6 +296,7 @@ export interface UserListItem {
   first_name: string;
   last_name: string;
   is_staff: boolean;
+  is_superuser: boolean;
   is_active: boolean;
   date_joined: string;
   last_login: string | null;
@@ -310,6 +311,7 @@ export interface UserCreatePayload {
   last_name: string;
   password: string;
   is_staff: boolean;
+  is_superuser: boolean;
   is_active: boolean;
 }
 
@@ -320,6 +322,7 @@ export interface UserUpdatePayload {
   last_name?: string;
   password?: string;
   is_staff?: boolean;
+  is_superuser?: boolean;
   is_active?: boolean;
 }
 
