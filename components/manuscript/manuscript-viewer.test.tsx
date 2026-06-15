@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Allograph } from '@/types/allographs';
 
@@ -129,8 +129,22 @@ const allographB = {
 };
 
 describe('ManuscriptViewer smoke test', () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ width: 1000, height: 2000 }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+      )
+    );
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('mounts past the loading state and renders the image-tools header control', async () => {
