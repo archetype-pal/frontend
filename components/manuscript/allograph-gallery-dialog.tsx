@@ -2,7 +2,12 @@
 
 import * as React from 'react';
 
-import { getIiifBaseUrl, getSelectorValue, iiifThumbFromSelector } from '@/utils/iiif';
+import {
+  fetchIiifImageInfo,
+  getIiifBaseUrl,
+  getSelectorValue,
+  iiifThumbFromSelector,
+} from '@/utils/iiif';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ResizeHandle } from '@/components/ui/resize-handle';
 import { Separator } from '@/components/ui/separator';
@@ -10,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import type { Annotation as A9sAnnotation } from './manuscript-annotorious';
 
 import { browserSafeIiifUrl } from '@/lib/annotation-popup-utils';
+import type { IIIFImageInfo } from '@/utils/iiif';
 
 export interface AllographGalleryDialogProps {
   open: boolean;
@@ -42,6 +48,31 @@ export function AllographGalleryDialog({
   height,
   resizeHandleProps,
 }: AllographGalleryDialogProps) {
+  const iiifBase = iiifImage ? browserSafeIiifUrl(getIiifBaseUrl(iiifImage)) : null;
+  const iiifInfoKey = open && iiifBase ? iiifBase : '';
+  const [iiifInfoState, setIiifInfoState] = React.useState<{
+    key: string;
+    info: IIIFImageInfo | null;
+  } | null>(null);
+  const iiifInfo = iiifInfoState?.key === iiifInfoKey ? iiifInfoState.info : undefined;
+
+  React.useEffect(() => {
+    if (!iiifInfoKey) return;
+
+    let cancelled = false;
+    fetchIiifImageInfo(iiifInfoKey)
+      .then((info) => {
+        if (!cancelled) setIiifInfoState({ key: iiifInfoKey, info });
+      })
+      .catch(() => {
+        if (!cancelled) setIiifInfoState({ key: iiifInfoKey, info: null });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [iiifInfoKey]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent
@@ -79,10 +110,9 @@ export function AllographGalleryDialog({
           <div className="grid grid-cols-4 gap-3">
             {annotations.map((annotation) => {
               const selector = getSelectorValue(annotation);
-              if (!selector || !iiifImage) return null;
+              if (!selector || !iiifBase || iiifInfo == null) return null;
 
-              const base = browserSafeIiifUrl(getIiifBaseUrl(iiifImage));
-              const src = iiifThumbFromSelector(base, selector, 200);
+              const src = iiifThumbFromSelector(iiifBase, selector, 200, iiifInfo);
               if (!src) return null;
 
               return (
