@@ -576,48 +576,6 @@ export function ViewerTextPanel({
     // Transparent shell: each text is its own bounded card, so this just lays
     // them out (side-by-side in the wide bottom dock, stacked in side docks).
     <div className="flex h-full w-full flex-col gap-2">
-      <div
-        ref={containerRef}
-        onClick={handleClick}
-        onMouseOver={handleMouseOver}
-        onMouseLeave={() => onSpanHover(null)}
-        className={cn(
-          'viewer-text-panel flex min-h-0 flex-1 gap-2',
-          isBoth && layout === 'row' ? 'flex-col md:flex-row' : 'flex-col'
-        )}
-      >
-        {shown.map((text, index) => (
-          <React.Fragment key={text.id}>
-            {isBoth && index > 0 ? (
-              <div
-                {...bindSplitter}
-                className={cn(
-                  'group relative hidden shrink-0 self-stretch rounded-full bg-border/60 transition-colors hover:bg-accent/60 focus-visible:bg-accent focus-visible:outline-none md:block',
-                  layout === 'row'
-                    ? "w-1.5 cursor-col-resize before:absolute before:inset-y-0 before:-inset-x-2 before:content-['']"
-                    : "h-1.5 cursor-row-resize before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']"
-                )}
-              />
-            ) : null}
-            <TextEditorCard
-              text={text}
-              canEdit={canEdit}
-              token={token}
-              draft={drafts[text.id] ?? text.content}
-              onDraftChange={(next) => setDraftFor(text.id, next)}
-              onSaved={() => {
-                clearDraftFor(text.id);
-                onTextSaved?.();
-              }}
-              showClose={index === shown.length - 1}
-              onClose={onClose}
-              flexGrow={isBoth ? (index === 0 ? ratio : 1 - ratio) : undefined}
-              highlightQuery={highlightQuery}
-            />
-          </React.Fragment>
-        ))}
-      </div>
-
       {pendingLink ? (
         <div className="flex shrink-0 items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-1.5 text-[11px]">
           <span className="text-primary">Click the phrase this region belongs to.</span>
@@ -704,6 +662,47 @@ export function ViewerTextPanel({
           <span className="text-foreground/70">Links save automatically — no Save needed.</span>
         </p>
       ) : null}
+      <div
+        ref={containerRef}
+        onClick={handleClick}
+        onMouseOver={handleMouseOver}
+        onMouseLeave={() => onSpanHover(null)}
+        className={cn(
+          'viewer-text-panel flex min-h-0 flex-1 gap-2',
+          isBoth && layout === 'row' ? 'flex-col md:flex-row' : 'flex-col'
+        )}
+      >
+        {shown.map((text, index) => (
+          <React.Fragment key={text.id}>
+            {isBoth && index > 0 ? (
+              <div
+                {...bindSplitter}
+                className={cn(
+                  'group relative hidden shrink-0 self-stretch rounded-full bg-border/60 transition-colors hover:bg-accent/60 focus-visible:bg-accent focus-visible:outline-none md:block',
+                  layout === 'row'
+                    ? "w-1.5 cursor-col-resize before:absolute before:inset-y-0 before:-inset-x-2 before:content-['']"
+                    : "h-1.5 cursor-row-resize before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']"
+                )}
+              />
+            ) : null}
+            <TextEditorCard
+              text={text}
+              canEdit={canEdit}
+              token={token}
+              draft={drafts[text.id] ?? text.content}
+              onDraftChange={(next) => setDraftFor(text.id, next)}
+              onSaved={() => {
+                clearDraftFor(text.id);
+                onTextSaved?.();
+              }}
+              showClose={index === shown.length - 1}
+              onClose={onClose}
+              flexGrow={isBoth ? (index === 0 ? ratio : 1 - ratio) : undefined}
+              highlightQuery={highlightQuery}
+            />
+          </React.Fragment>
+        ))}
+      </div>
     </div>
   );
 }

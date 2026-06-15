@@ -327,7 +327,7 @@ export default function TeiRichEditor({
 
         <ToolButton
           icon={Ungroup}
-          label="Unwrap"
+          label="Remove markup"
           disabled={!innermost}
           title={
             innermost
