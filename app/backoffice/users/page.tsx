@@ -112,7 +112,7 @@ const emptyCreate: UserCreatePayload = {
 
 const PAGE_SIZE = 20;
 
-type PresetKey = 'all' | 'staff' | 'inactive';
+type PresetKey = 'all' | 'superuser' | 'staff' | 'inactive';
 type SortKey = 'username' | 'name' | 'last_login' | 'date_joined';
 type SortDir = 'asc' | 'desc';
 
@@ -208,6 +208,7 @@ export default function UsersPage() {
   const users = useMemo(() => data?.results ?? [], [data]);
 
   const totalCount = users.length;
+  const superuserCount = useMemo(() => users.filter((u) => u.is_superuser).length, [users]);
   const staffCount = useMemo(() => users.filter((u) => u.is_staff).length, [users]);
   const activeCount = useMemo(() => users.filter((u) => u.is_active).length, [users]);
   const inactiveCount = totalCount - activeCount;
@@ -217,6 +218,7 @@ export default function UsersPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return users.filter((u) => {
+      if (preset === 'superuser' && !u.is_superuser) return false;
       if (preset === 'staff' && !u.is_staff) return false;
       if (preset === 'inactive' && u.is_active) return false;
       if (q) {
@@ -426,6 +428,7 @@ export default function UsersPage() {
   const canCreate = createForm.username.trim() && createForm.password.trim();
   const presets: { key: PresetKey; label: string; count: number }[] = [
     { key: 'all', label: 'All', count: totalCount },
+    { key: 'superuser', label: 'Superuser', count: superuserCount },
     { key: 'staff', label: 'Staff', count: staffCount },
     { key: 'inactive', label: 'Inactive', count: inactiveCount },
   ];
