@@ -2,11 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const saveWorkspaceMock = vi.fn();
 const saveImageMock = vi.fn();
+const replaceWorkingSetMock = vi.fn();
 // loadWorksetPayload dynamically imports these only on the persist path; mock so
-// we can assert the read-only path never touches Dexie.
+// we can assert the read-only path never touches Dexie. The persist path
+// replaces the whole working set atomically via replaceWorkingSet (clear +
+// bulkPut) rather than looping saveWorkspace/saveImage.
 vi.mock('@/lib/lightbox-db', () => ({
   saveWorkspace: (...args: unknown[]) => saveWorkspaceMock(...args),
   saveImage: (...args: unknown[]) => saveImageMock(...args),
+  replaceWorkingSet: (...args: unknown[]) => replaceWorkingSetMock(...args),
 }));
 
 import { useLightboxStore } from './lightbox-store';
@@ -53,6 +57,7 @@ function makePayload(): WorksetPayload {
 beforeEach(() => {
   saveWorkspaceMock.mockReset();
   saveImageMock.mockReset();
+  replaceWorkingSetMock.mockReset();
   useLightboxStore.setState({ workspaces: [], images: new Map(), currentWorkspaceId: null });
 });
 
@@ -68,14 +73,19 @@ describe('loadWorksetPayload', () => {
 
   it('does NOT write Dexie on the default (read-only) path', async () => {
     await useLightboxStore.getState().loadWorksetPayload(makePayload());
+    expect(replaceWorkingSetMock).not.toHaveBeenCalled();
     expect(saveWorkspaceMock).not.toHaveBeenCalled();
     expect(saveImageMock).not.toHaveBeenCalled();
   });
 
   it('persists to Dexie when persist: true', async () => {
     await useLightboxStore.getState().loadWorksetPayload(makePayload(), { persist: true });
-    expect(saveWorkspaceMock).toHaveBeenCalledTimes(1);
-    expect(saveImageMock).toHaveBeenCalledTimes(1);
+    // Replaces the working set atomically (clear + bulkPut) so a loaded workset
+    // fully replaces persisted state rather than merging into prior sessions.
+    expect(replaceWorkingSetMock).toHaveBeenCalledTimes(1);
+    const [workspaces, images] = replaceWorkingSetMock.mock.calls[0];
+    expect(workspaces).toHaveLength(1);
+    expect(images).toHaveLength(1);
   });
 
   it('handles an empty payload without throwing', async () => {

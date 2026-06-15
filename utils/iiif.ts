@@ -159,11 +159,17 @@ export function getSelectorValue(a: unknown): string | null {
 export function iiifThumbFromSelector(
   iiifBase: string,
   selectorValue: string,
-  size = 200
+  size = 200,
+  bounds?: { width?: number; height?: number }
 ): string | null {
   const xywh = parseXywh(selectorValue);
   if (!xywh) return null;
-  const { region } = clampXywh(xywh);
+  // Clamp against the real image dimensions when the caller has them (one
+  // info.json fetch serves every thumbnail sharing the same iiifBase), so a
+  // region whose x+w / y+h overflows the page can't produce an out-of-range
+  // IIIF region string that a 3.0-strict server may reject. When bounds are
+  // unknown this still rounds/floors as before.
+  const { region } = clampXywh(xywh, bounds);
   const base = normalizeIiifBase(iiifBase);
   const sizePart = xywh.w < size ? 'max' : `${size},`;
   return `${base}/${region}/${sizePart}/0/default.jpg`;
@@ -217,7 +223,11 @@ export async function fetchIiifImageInfo(infoUrl: string): Promise<IIIFImageInfo
   IIIF_INFO_INFLIGHT.set(url, request);
   const result = await request;
   IIIF_INFO_INFLIGHT.delete(url);
-  IIIF_INFO_CACHE.set(url, result);
+  // Only persist successful results: a null (transient timeout / 5xx / CORS
+  // hiccup) would otherwise poison the cache for the lifetime of the page and
+  // block recovery on a later retry. The inflight map already dedupes concurrent
+  // calls, so a failure simply falls through to a fresh fetch next time.
+  if (result != null) IIIF_INFO_CACHE.set(url, result);
   return result;
 }
 
@@ -229,6 +239,13 @@ export async function getIiifImageUrlWithBounds(
     return getIiifImageUrl(infoUrl, options);
   }
   const bounds = await fetchIiifImageInfo(infoUrl);
+  // flipY needs the image height to map a bottom-left GeoJSON origin to IIIF's
+  // top-left origin. Without bounds we cannot flip, and emitting the un-flipped
+  // y would render the wrong vertical band of the page. Throw instead so the
+  // caller's catch/placeholder path engages rather than silently mis-cropping.
+  if (bounds == null && options.flipY) {
+    throw new Error(`IIIF info unavailable for flipY region: ${infoUrl}`);
+  }
   let coordinates = options.coordinates;
   if (bounds != null) {
     if (options.flipY) {

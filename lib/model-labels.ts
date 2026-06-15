@@ -66,7 +66,16 @@ export function getDefaultModelLabelsConfig(): ModelLabelsConfig {
 }
 
 export function pluralizeLabel(label: string): string {
-  if (/[^aeiou]y$/i.test(label)) return `${label.slice(0, -1)}ies`;
-  if (/(s|x|z|ch|sh)$/i.test(label)) return `${label}es`;
-  return `${label}s`;
+  // Match the suffix's casing to the character it replaces/follows so an all-caps
+  // or stylised label keeps a consistent case (e.g. 'CITY' -> 'CITIES', not 'CITies').
+  if (/[^aeiou]y$/i.test(label)) {
+    const isUpper = label.slice(-1) === label.slice(-1).toUpperCase();
+    return `${label.slice(0, -1)}${isUpper ? 'IES' : 'ies'}`;
+  }
+  if (/(s|x|z|ch|sh)$/i.test(label)) {
+    const isUpper = label.slice(-1) === label.slice(-1).toUpperCase();
+    return `${label}${isUpper ? 'ES' : 'es'}`;
+  }
+  const isUpper = label.length > 0 && label.slice(-1) === label.slice(-1).toUpperCase();
+  return `${label}${isUpper ? 'S' : 's'}`;
 }

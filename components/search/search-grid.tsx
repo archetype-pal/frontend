@@ -137,6 +137,11 @@ const MediaGridCard = React.memo(function MediaGridCard({
     />
   );
 
+  // Only collectable when there is a renderable region image. A graph with no
+  // IIIF source would otherwise be starred into a collection it can never render
+  // (mirrors clauseToGraphCollectionItem's null-on-missing-source guard).
+  const collectable = itemType !== 'graph' || !!item.image_iiif?.trim();
+
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
       <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
@@ -160,7 +165,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
             size="icon"
             className="h-7 w-7 bg-card/90 shadow-sm hover:bg-card"
           />
-          <CollectionStar itemId={item.id} itemType={itemType} item={item} />
+          {collectable && <CollectionStar itemId={item.id} itemType={itemType} item={item} />}
         </div>
       </div>
       <div className="border-t border-border/70 px-2.5 py-1.5">

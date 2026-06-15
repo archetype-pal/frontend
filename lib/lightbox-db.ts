@@ -189,10 +189,6 @@ export async function saveWorkspace(workspace: LightboxWorkspace): Promise<strin
   return await getDb().workspaces.put(workspace);
 }
 
-export async function getWorkspace(id: string): Promise<LightboxWorkspace | undefined> {
-  return await getDb().workspaces.get(id);
-}
-
 export async function getAllWorkspaces(): Promise<LightboxWorkspace[]> {
   return await getDb().workspaces.toArray();
 }
@@ -201,6 +197,31 @@ export async function deleteWorkspace(id: string): Promise<void> {
   const images = await getWorkspaceImages(id);
   await Promise.all(images.map((img) => deleteImage(img.id)));
   await getDb().workspaces.delete(id);
+  // Sticky notes and regions are keyed by workspaceId, not image id, so the
+  // deleteImage cascade above misses them. Clear them explicitly to avoid
+  // orphaned workspace-scoped rows accumulating in IndexedDB.
+  await getDb().stickyNotes.where('workspaceId').equals(id).delete();
+  await getDb().regions.where('workspaceId').equals(id).delete();
+}
+
+/**
+ * Atomically replace the entire persisted working set with the given workspaces
+ * and images. Used when loading a saved session / imported workset so the load
+ * fully REPLACES the previously-persisted state instead of merging into it
+ * (otherwise reloads resurrect a union of every session ever opened). Runs in a
+ * single transaction so initialize() can never observe a half-cleared state.
+ */
+export async function replaceWorkingSet(
+  workspaces: LightboxWorkspace[],
+  images: LightboxImage[]
+): Promise<void> {
+  const database = getDb();
+  await database.transaction('rw', database.workspaces, database.images, async () => {
+    await database.workspaces.clear();
+    await database.images.clear();
+    await database.workspaces.bulkPut(workspaces);
+    await database.images.bulkPut(images);
+  });
 }
 
 export async function saveSession(session: LightboxSession): Promise<string> {

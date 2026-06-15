@@ -86,6 +86,14 @@ export function useResizableTextPanel(
 
   const size = isBottom ? dims.height : dims.width;
 
+  // Mirror the live size into a ref so the splitter handlers can read the
+  // current base size without `size` being a dependency of `bindSplitter`.
+  // That keeps the bound object referentially stable across a drag (size
+  // changes every pointermove frame) instead of re-allocating the handlers and
+  // re-assigning every event-handler prop each frame.
+  const sizeRef = React.useRef(size);
+  sizeRef.current = size;
+
   const applyDelta = React.useCallback(
     (rawDelta: number) => {
       const o = optionsRef.current;
@@ -105,7 +113,7 @@ export function useResizableTextPanel(
       'aria-label': 'Resize text panel — drag, or use the arrow keys',
       tabIndex: 0,
       onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
-        dragRef.current = { start: isBottom ? e.clientY : e.clientX, base: size };
+        dragRef.current = { start: isBottom ? e.clientY : e.clientX, base: sizeRef.current };
         e.currentTarget.setPointerCapture(e.pointerId);
       },
       onPointerMove: (e: React.PointerEvent<HTMLElement>) => {
@@ -145,7 +153,7 @@ export function useResizableTextPanel(
         applyDelta(delta);
       },
     }),
-    [isBottom, position, size, applyDelta]
+    [isBottom, position, applyDelta]
   );
 
   return { size, isBottom, bindSplitter };

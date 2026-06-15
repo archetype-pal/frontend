@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
@@ -57,16 +57,22 @@ export function useEntityEditor<TDetail, TForm extends object>(
   const [form, setFormState] = useState<TForm | null>(null);
   const [dirty, setDirty] = useState(false);
 
-  // Mirror the fetched entity into editable form state. Gate on `entity` only —
-  // the config callbacks aren't referentially stable (same as the hand-rolled
-  // pages this replaces).
+  // Seed editable form state from the fetched entity once per entity id, not on
+  // every `entity` reference change. A background refetch (window focus,
+  // invalidation) hands back a fresh `entity` object for the SAME id; re-mirroring
+  // it would silently overwrite the user's in-progress edits and reset `dirty`.
+  // Tracking the last-seeded id means we re-seed only when navigating to a
+  // different entity. The config callbacks aren't referentially stable, so they
+  // stay out of the dep list (same as the hand-rolled pages this replaces).
+  const seededIdRef = useRef<number | null>(null);
   useEffect(() => {
-    if (entity) {
+    if (entity && seededIdRef.current !== config.id) {
+      seededIdRef.current = config.id;
       setFormState(config.toForm(entity));
       setDirty(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entity]);
+  }, [entity, config.id]);
 
   const setForm = (patch: Partial<TForm>) => {
     setFormState((prev) => (prev ? { ...prev, ...patch } : prev));

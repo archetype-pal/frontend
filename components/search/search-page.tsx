@@ -387,6 +387,27 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     isFetching={s.isFetching}
                   />
                 )
+              ) : s.data.count > 0 && s.queryState.offset >= s.data.count ? (
+                // Results exist on earlier pages but the current offset overshoots
+                // the (narrowed) result count, so this page slice is empty. Offer a
+                // jump back rather than the misleading "nothing matches" empty state.
+                <section className="flex animate-[search-rise_0.4s_ease-out] flex-col items-center px-6 py-16 text-center">
+                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-border bg-muted/50 text-muted-foreground/70">
+                    <SearchX className="h-6 w-6" />
+                  </div>
+                  <h3 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+                    This page is out of range
+                  </h3>
+                  <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+                    {`There are ${s.data.count.toLocaleString()} ${typeLabel.toLowerCase()}, but fewer pages than the one you're on.`}
+                  </p>
+                  <div className="ornament-divider mt-6 w-44 text-border" aria-hidden />
+                  <div className="mt-5 flex flex-wrap justify-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => s.handlePage(1)}>
+                      Go to page 1
+                    </Button>
+                  </div>
+                </section>
               ) : (
                 <section className="flex animate-[search-rise_0.4s_ease-out] flex-col items-center px-6 py-16 text-center">
                   <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-border bg-muted/50 text-muted-foreground/70">

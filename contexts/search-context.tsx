@@ -11,6 +11,8 @@ import type { KeywordSuggestionItem } from '@/components/search/keyword-search-i
 type SearchContextType = {
   suggestionsPool: string[];
   setSuggestionsPool: (pool: string[]) => void;
+  /** Restore the header autocomplete pool to the global (API-loaded) suggestions. */
+  resetSuggestionsPool: () => void;
   /** Load a suggestions pool from the API so header autocomplete works from any page. */
   loadGlobalSuggestions: () => Promise<void>;
   getServerSuggestions: (query: string, types?: ResultType[]) => Promise<KeywordSuggestionItem[]>;
@@ -21,10 +23,15 @@ const SearchContext = React.createContext<SearchContextType | undefined>(undefin
 export function SearchProvider({ children }: { children: React.ReactNode }) {
   const [suggestionsPool, setSuggestionsPool] = React.useState<string[]>([]);
   const globalLoadRequestedRef = React.useRef(false);
+  // The API-loaded global pool, kept separately from the active pool so a
+  // page-derived override can be reverted to it without re-fetching. Also lets
+  // loadGlobalSuggestions read "already loaded?" without depending on the active
+  // pool's length (which page results churn through empty→N→empty).
+  const globalPoolRef = React.useRef<string[]>([]);
   const queryClient = useQueryClient();
 
   const loadGlobalSuggestions = React.useCallback(async () => {
-    if (suggestionsPool.length > 0 || globalLoadRequestedRef.current) return;
+    if (globalPoolRef.current.length > 0 || globalLoadRequestedRef.current) return;
     globalLoadRequestedRef.current = true;
     const url = buildSearchRequestUrl('manuscripts', { ...DEFAULT_QUERY, limit: 100 }, '');
     try {
@@ -37,11 +44,16 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
         },
         staleTime: 5 * 60_000,
       });
-      setSuggestionsPool(pool);
+      globalPoolRef.current = pool;
+      setSuggestionsPool((prev) => (prev.length > 0 ? prev : pool));
     } finally {
       globalLoadRequestedRef.current = false;
     }
-  }, [queryClient, suggestionsPool.length]);
+  }, [queryClient]);
+
+  const resetSuggestionsPool = React.useCallback(() => {
+    setSuggestionsPool(globalPoolRef.current);
+  }, []);
 
   React.useEffect(() => {
     void loadGlobalSuggestions();
@@ -90,15 +102,19 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
                 });
               }
             }
-            if (flattened.length > 0) {
-              flattened.push({
+            // Cap the real suggestions first, then append the catch-all CTA so
+            // it is always retained within the 16-item budget (otherwise a broad
+            // multi-type query with 16+ hits would push it past the slice).
+            const top = flattened.slice(0, 15);
+            if (top.length > 0) {
+              top.push({
                 id: `all:${normalized}`,
                 label: `Search all for "${normalized}"`,
                 value: normalized,
                 type: 'all',
               });
             }
-            return flattened.slice(0, 16);
+            return top;
           },
           staleTime: 30_000,
         });
@@ -111,8 +127,14 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = React.useMemo(
-    () => ({ suggestionsPool, setSuggestionsPool, loadGlobalSuggestions, getServerSuggestions }),
-    [suggestionsPool, loadGlobalSuggestions, getServerSuggestions]
+    () => ({
+      suggestionsPool,
+      setSuggestionsPool,
+      resetSuggestionsPool,
+      loadGlobalSuggestions,
+      getServerSuggestions,
+    }),
+    [suggestionsPool, resetSuggestionsPool, loadGlobalSuggestions, getServerSuggestions]
   );
   return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>;
 }

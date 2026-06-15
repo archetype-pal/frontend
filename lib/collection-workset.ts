@@ -85,10 +85,21 @@ async function buildLightboxImage(
   if (infoUrl && item.type === 'graph') {
     const coordinates = coordinatesFromGeoJson(item.coordinates);
     const options = { coordinates: coordinates ?? undefined, flipY: true, maxSize: 1200 };
-    [imageUrl, thumbnailUrl] = await Promise.all([
-      getIiifImageUrlWithBounds(infoUrl, options),
-      getIiifImageUrlWithBounds(infoUrl, { ...options, thumbnail: true }),
-    ]);
+    try {
+      [imageUrl, thumbnailUrl] = await Promise.all([
+        getIiifImageUrlWithBounds(infoUrl, options),
+        getIiifImageUrlWithBounds(infoUrl, { ...options, thumbnail: true }),
+      ]);
+    } catch {
+      // info.json unavailable, so the region can't be Y-flipped correctly. Fall
+      // back to the uncropped image (right orientation) rather than failing the
+      // whole workset build.
+      const full = { ...options, coordinates: undefined, flipY: false };
+      [imageUrl, thumbnailUrl] = await Promise.all([
+        getIiifImageUrlWithBounds(infoUrl, full),
+        getIiifImageUrlWithBounds(infoUrl, { ...full, thumbnail: true }),
+      ]);
+    }
     naturalWidth = coordinates?.w ?? 0;
     naturalHeight = coordinates?.h ?? 0;
   }

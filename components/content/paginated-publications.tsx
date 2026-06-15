@@ -25,7 +25,11 @@ export default function PaginatedPublications({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const page = Number(searchParams.get('page') || 1);
+  // Clamp the page param: a non-numeric (?page=abc → NaN) or out-of-range
+  // (?page=0 → negative offset) value would otherwise send a malformed offset
+  // to the API. Fall back to page 1 and floor fractional values.
+  const parsedPage = Math.floor(Number(searchParams.get('page')));
+  const page = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1;
   const offset = (page - 1) * POSTS_PER_PAGE;
 
   const [articles, setArticles] = useState<Publication[]>([]);
@@ -81,6 +85,24 @@ export default function PaginatedPublications({
     router.push(`${basePath}?${newParams.toString()}`);
   };
 
+  // Window the page-number buttons (first/last + a sibling window + ellipsis),
+  // matching components/search/paginated-search.tsx, so a large publication
+  // count doesn't render hundreds of buttons.
+  const buildPageWindow = (): (number | 'ellipsis')[] => {
+    const pages: (number | 'ellipsis')[] = [];
+    const siblings = 1;
+    const left = Math.max(page - siblings, 2);
+    const right = Math.min(page + siblings, totalPages - 1);
+
+    pages.push(1);
+    if (left > 2) pages.push('ellipsis');
+    for (let i = left; i <= right; i++) pages.push(i);
+    if (right < totalPages - 1) pages.push('ellipsis');
+    if (totalPages > 1) pages.push(totalPages);
+
+    return pages;
+  };
+
   return (
     <div>
       <PageBanner title={title} />
@@ -119,9 +141,12 @@ export default function PaginatedPublications({
                   ← Prev
                 </Button>
 
-                {[...Array(totalPages)].map((_, i) => {
-                  const pageNum = i + 1;
-                  return (
+                {buildPageWindow().map((pageNum, i) =>
+                  pageNum === 'ellipsis' ? (
+                    <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">
+                      …
+                    </span>
+                  ) : (
                     <Button
                       key={pageNum}
                       variant={pageNum === page ? 'default' : 'outline'}
@@ -130,8 +155,8 @@ export default function PaginatedPublications({
                     >
                       {pageNum}
                     </Button>
-                  );
-                })}
+                  )
+                )}
 
                 <Button
                   variant="outline"

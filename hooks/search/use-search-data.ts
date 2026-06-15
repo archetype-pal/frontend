@@ -24,7 +24,7 @@ export function useSearchData(opts: {
 }) {
   const { resultType, baseFacetURL, queryState, submittedKeyword, viewMode, dataCount, results } =
     opts;
-  const { setSuggestionsPool } = useSearchContext();
+  const { setSuggestionsPool, resetSuggestionsPool } = useSearchContext();
 
   const quickStatsQueries = useQueries({
     queries: resultTypeItems.map((item) => {
@@ -68,11 +68,13 @@ export function useSearchData(opts: {
     staleTime: 10_000,
   });
 
-  // Sync suggestions pool with search results
+  // Sync suggestions pool with search results. On cleanup, restore the global
+  // (API-loaded) pool rather than clearing to empty — clearing momentarily blanks
+  // the header autocomplete and churns the global-load guard on every navigation.
   React.useEffect(() => {
     setSuggestionsPool(getSuggestionsPool(results));
-    return () => setSuggestionsPool([]);
-  }, [results, setSuggestionsPool]);
+    return () => resetSuggestionsPool();
+  }, [results, setSuggestionsPool, resetSuggestionsPool]);
 
   return {
     quickStatsQueries,

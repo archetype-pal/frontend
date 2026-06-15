@@ -52,6 +52,22 @@ export function useCollectionViewState(items: CollectionItem[], clearCollection:
   const [showClearConfirm, setShowClearConfirm] = React.useState(false);
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
+  // Read direction: resync state when the URL's filter/sort/view/group params
+  // change externally (back/forward, a shared link via client nav). The write
+  // effect below uses `history.replaceState`, which does not feed back into
+  // `useSearchParams`, so this can't echo our own writes — only genuine
+  // navigation moves these values.
+  const urlFilter = readInitialFilter(searchParams);
+  const urlSort = readInitialSort(searchParams);
+  const urlView = readInitialView(searchParams);
+  const urlGroup = readInitialAnnotationGroup(searchParams);
+  React.useEffect(() => {
+    setFilter(urlFilter);
+    setSortBy(urlSort);
+    setView(urlView);
+    setAnnotationGroup(urlGroup);
+  }, [urlFilter, urlSort, urlView, urlGroup]);
+
   React.useEffect(() => {
     const params = new URLSearchParams(baseSearchParams);
     if (filter !== 'all') params.set('filter', filter);

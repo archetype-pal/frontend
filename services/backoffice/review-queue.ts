@@ -35,7 +35,13 @@ export async function fetchReviewQueue(token: string): Promise<QueueEntry[]> {
   const r = await authFetch('/api/v1/manuscripts/management/review-queue/', token, {
     cache: 'no-store',
   });
-  if (!r.ok) return [];
+  // Throw on non-OK so TanStack Query surfaces `isError` (retry/error UI)
+  // instead of resolving with `[]` — which would render a 401/403/500 as an
+  // empty queue indistinguishable from a genuinely empty one. The empty-array
+  // fallback is reserved for a genuinely empty 200 response from the backend.
+  if (!r.ok) {
+    throw new Error(`Failed to load review queue: ${r.status} ${await r.text()}`);
+  }
   return r.json();
 }
 

@@ -104,8 +104,8 @@ describe('pluralizeLabel', () => {
     expect(pluralizeLabel('Bush')).toBe('Bushes');
   });
 
-  it('handles uppercase suffixes the same way (case-insensitive match)', () => {
-    expect(pluralizeLabel('CITY')).toBe('CITies');
-    expect(pluralizeLabel('BOX')).toBe('BOXes');
+  it('matches the plural suffix casing to an all-caps label', () => {
+    expect(pluralizeLabel('CITY')).toBe('CITIES');
+    expect(pluralizeLabel('BOX')).toBe('BOXES');
   });
 });

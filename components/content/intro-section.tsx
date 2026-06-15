@@ -156,7 +156,11 @@ export default function IntroSection() {
                       src={getCarouselImageUrl(item.image)}
                       alt={item.title}
                       fill
-                      className="object-cover animate-ken-burns"
+                      // Only animate the visible slide — running the ken-burns
+                      // transform on hidden (opacity-0) slides is wasted
+                      // compositor work, and restarting it on each switch reads
+                      // as intentional.
+                      className={`object-cover ${i === currentImage ? 'animate-ken-burns' : ''}`}
                       sizes="60vw"
                       priority={i === 0}
                       unoptimized

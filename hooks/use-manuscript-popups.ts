@@ -25,10 +25,26 @@ type UseManuscriptPopupsArgs = {
 
 export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsArgs) {
   const [openPopups, setOpenPopups] = React.useState<PopupRecord[]>([]);
-  const [activePopupId, setActivePopupId] = React.useState<string | null>(null);
+  // The explicit user override only. The effective active id is derived during
+  // render (see `activePopupId` below) by reconciling this override against the
+  // live `openPopups`, so we never commit a stale/invalid id and then correct
+  // it in an effect.
+  const [activePopupOverride, setActivePopupOverride] = React.useState<string | null>(null);
   const [singlePopupPosition, setSinglePopupPosition] = React.useState<PopupPosition>(
     DEFAULT_SINGLE_POPUP_POSITION
   );
+
+  // Effective active id: the user's override when it still points at an open
+  // popup, otherwise the first open popup (or null when none are open). Derived
+  // in render so consumers (and `activePopupRecord`/`visiblePopupRecords`) read
+  // a value that is always consistent with `openPopups`.
+  const activePopupId = React.useMemo(() => {
+    if (!openPopups.length) return null;
+    if (activePopupOverride && openPopups.some((popup) => popup.id === activePopupOverride)) {
+      return activePopupOverride;
+    }
+    return openPopups[0]?.id ?? null;
+  }, [openPopups, activePopupOverride]);
 
   const activePopupRecord = React.useMemo(() => {
     if (!openPopups.length) return null;
@@ -98,13 +114,13 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
     ) => {
       if (!annotation) {
         setOpenPopups([]);
-        setActivePopupId(null);
+        setActivePopupOverride(null);
         return;
       }
 
       const nextPopup = buildPopupRecordFromAnnotation(annotation, overrides);
       setOpenPopups([nextPopup]);
-      setActivePopupId(nextPopup.id);
+      setActivePopupOverride(nextPopup.id);
     },
     [buildPopupRecordFromAnnotation]
   );
@@ -116,7 +132,7 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
     ) => {
       if (!annotation) return;
 
-      setActivePopupId(annotation.id);
+      setActivePopupOverride(annotation.id);
 
       setOpenPopups((prev) => {
         if (prev.some((popup) => popup.id === annotation.id)) {
@@ -138,7 +154,7 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
       // single sink that makes the rule impossible to bypass.
       if (!annotation || isTextRegionAnnotation(annotation)) {
         setOpenPopups([]);
-        setActivePopupId(null);
+        setActivePopupOverride(null);
         return;
       }
 
@@ -156,7 +172,7 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
 
   const clearPopupCollection = React.useCallback(() => {
     setOpenPopups([]);
-    setActivePopupId(null);
+    setActivePopupOverride(null);
   }, []);
 
   const getPopupById = React.useCallback(
@@ -202,19 +218,8 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
   }, []);
 
   const handleActivatePopup = React.useCallback((popupId: string) => {
-    setActivePopupId(popupId);
+    setActivePopupOverride(popupId);
   }, []);
-
-  React.useEffect(() => {
-    if (!openPopups.length) {
-      if (activePopupId !== null) setActivePopupId(null);
-      return;
-    }
-
-    if (!activePopupId || !openPopups.some((popup) => popup.id === activePopupId)) {
-      setActivePopupId(openPopups[0].id);
-    }
-  }, [openPopups, activePopupId]);
 
   return {
     openPopups,

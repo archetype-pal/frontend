@@ -173,6 +173,10 @@ export default function ManuscriptAnnotorious({
     errorMessage: null,
     isLoading: true,
   });
+  // Bumped to re-run the OSD init effect after a transient image-load failure,
+  // so recovery remounts just this viewer instead of reloading the whole page
+  // (which would discard unsaved drafts / zoom / view-mode held by the parent).
+  const [reInitKey, setReInitKey] = React.useState(0);
 
   const selectedDisplayIdRef = useRef<string | null>(null);
   // Last pointer-down position (viewport coords) — used to recover the VISIBLE
@@ -539,17 +543,6 @@ export default function ManuscriptAnnotorious({
             const predicate = annotationFilterRef.current;
             return predicate ? predicate(a) : true;
           };
-
-          // Record where the user pressed so we can recover the visible annotation
-          // when Annotorious resolves a click to a hidden one nested beneath it.
-          viewerRef.current?.addEventListener(
-            'pointerdown',
-            (e) => {
-              lastPointerDownRef.current = { x: e.clientX, y: e.clientY };
-              pointerDownSeqRef.current += 1;
-            },
-            true
-          );
 
           // The smallest VISIBLE annotation whose rendered box contains the point
           // — i.e. the region the user actually clicked, skipping hidden glyphs.
@@ -943,9 +936,14 @@ export default function ManuscriptAnnotorious({
 
               const currentRotation = viewer.viewport.getRotation();
               viewer.viewport.setRotation(normalizeRotation(currentRotation + degrees), true);
+              viewer.viewport.applyConstraints();
             },
             resetRotation: () => {
-              osdRef.current?.viewport.setRotation(0, true);
+              const viewer = osdRef.current;
+              if (!viewer) return;
+
+              viewer.viewport.setRotation(0, true);
+              viewer.viewport.applyConstraints();
             },
             setImageAdjustments: (adjustments: ViewerImageAdjustments) => {
               viewerRef.current?.style.setProperty(
@@ -1355,7 +1353,14 @@ export default function ManuscriptAnnotorious({
         // ignore
       }
     };
-  }, [iiifImageUrl, emitSelectionIdsChange, queueSyncAnnotationClasses, disableEditor, readOnly]);
+  }, [
+    iiifImageUrl,
+    emitSelectionIdsChange,
+    queueSyncAnnotationClasses,
+    disableEditor,
+    readOnly,
+    reInitKey,
+  ]);
 
   // Restrict scroll-to-zoom to the pinch gesture. Browsers fire `wheel` with
   // ctrlKey=true for a trackpad pinch (and for Ctrl/⌘+wheel); a plain two-finger
@@ -1377,11 +1382,41 @@ export default function ManuscriptAnnotorious({
     return () => root.removeEventListener('wheel', onWheelCapture, { capture: true });
   }, []);
 
+  // Record where the user pressed so we can recover the visible annotation when
+  // Annotorious resolves a click to a hidden one nested beneath it. Kept in its
+  // own effect (not the OSD 'open' handler) so it binds exactly once to the
+  // persistent viewer div and is removed on unmount — the OSD effect re-runs on
+  // every image switch and would otherwise stack a fresh listener each time.
+  useEffect(() => {
+    const root = viewerRef.current;
+    if (!root) return;
+
+    const onPointerDownCapture = (e: PointerEvent) => {
+      lastPointerDownRef.current = { x: e.clientX, y: e.clientY };
+      pointerDownSeqRef.current += 1;
+    };
+
+    root.addEventListener('pointerdown', onPointerDownCapture, true);
+    return () => root.removeEventListener('pointerdown', onPointerDownCapture, true);
+  }, []);
+
   useEffect(() => {
     const anno = annoRef.current;
     if (!anno || !Array.isArray(initialAnnotations)) return;
 
-    anno.setAnnotations(initialAnnotations);
+    // Carry forward any non-db (draft) annotations currently in the store so a
+    // re-seed from ANY parent caller (load, save, default-zoom reset, link
+    // reload) can't silently drop a freshly-drawn, not-yet-saved polygon. Only
+    // the async load path folds drafts back into initialAnnotations; this guards
+    // the other callers (e.g. handleDefaultZoom passing []). Drafts already
+    // present in the incoming set (by id) are not duplicated.
+    const incomingIds = new Set(initialAnnotations.map((a) => a.id));
+    const drafts = ((anno.getAnnotations?.() ?? []) as Annotation[]).filter(
+      (a) => isDraftAnnotation(a) && !incomingIds.has(a.id)
+    );
+    const next = drafts.length > 0 ? [...initialAnnotations, ...drafts] : initialAnnotations;
+
+    anno.setAnnotations(next);
     queueSyncAnnotationClasses();
   }, [initialAnnotations, iiifImageUrl, queueSyncAnnotationClasses]);
 
@@ -1412,9 +1447,12 @@ export default function ManuscriptAnnotorious({
           <p style={{ marginBottom: '1rem', opacity: 0.9 }}>{state.errorMessage}</p>
           <button
             onClick={() => {
+              // Retry by re-running the OSD init effect (the cleanup disposes any
+              // partially-constructed viewer first), NOT a full page reload —
+              // that would discard unsaved drafts, zoom/pan, and view-mode held
+              // by the surrounding ManuscriptViewer.
               setState({ hasError: false, errorMessage: null, isLoading: true });
-              // Trigger a re-render by updating the key or reloading
-              window.location.reload();
+              setReInitKey((k) => k + 1);
             }}
             style={{
               padding: '0.5rem 1rem',
@@ -1425,7 +1463,7 @@ export default function ManuscriptAnnotorious({
               cursor: 'pointer',
             }}
           >
-            Reload Page
+            Retry
           </button>
         </div>
       </div>

@@ -1,5 +1,5 @@
-import * as React from 'react';
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import {
   getIiifImageUrl,
   getIiifImageUrlWithBounds,
@@ -40,7 +40,10 @@ export interface LightboxState {
   setCurrentWorkspace: (workspaceId: string | null) => void;
   createWorkspace: (name?: string) => Promise<string>;
   deleteWorkspace: (workspaceId: string) => Promise<void>;
-  loadImage: (item: CollectionItem | ImageListItem | GraphListItem) => Promise<string>;
+  loadImage: (
+    item: CollectionItem | ImageListItem | GraphListItem,
+    batchOffset?: number
+  ) => Promise<string>;
   loadImages: (items: (CollectionItem | ImageListItem | GraphListItem)[]) => Promise<string[]>;
   removeImage: (imageId: string) => Promise<void>;
   updateImage: (imageId: string, updates: Partial<LightboxImage>) => Promise<void>;
@@ -73,11 +76,15 @@ export interface LightboxState {
   saveHistory: () => void;
 }
 
-// Debounce timer for batched IndexedDB writes (used by updateImages)
+// Debounce timer for batched IndexedDB writes (used by updateImages). Pending
+// changes accumulate in a module-level Map keyed by image id so that coalescing
+// across rapid calls (e.g. a selection change mid-debounce) never discards an
+// earlier batch — the whole accumulated set is flushed when the timer fires.
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
+const pendingPersist = new Map<string, LightboxImage>();
 
 function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
 function createWorkspaceId(): string {
@@ -104,6 +111,7 @@ async function initializeStore(): Promise<{
     typeof localStorage !== 'undefined' ? (localStorage.getItem(MIGRATION_KEY) ?? '0') : '0'
   );
   const needsMigration = currentVersion < MIGRATION_VERSION;
+  const migrationWrites: Promise<unknown>[] = [];
 
   for (const workspace of workspaces) {
     const workspaceImages = await getWorkspaceImages(workspace.id);
@@ -129,7 +137,7 @@ async function initializeStore(): Promise<{
           x: GAP + col * (MAX_DIM + GAP),
           y: GAP + row * (MAX_DIM + GAP),
         };
-        saveImage(img).catch(() => {});
+        migrationWrites.push(saveImage(img));
       });
     }
 
@@ -138,8 +146,17 @@ async function initializeStore(): Promise<{
     }
   }
 
+  // Only advance the migration version once every persisted write succeeds.
+  // If any write rejects (quota/transaction abort), leave the version untouched
+  // so the migration retries on the next load instead of silently committing a
+  // partial migration. Awaiting also stops the version bump from racing the puts.
   if (needsMigration && typeof localStorage !== 'undefined') {
-    localStorage.setItem(MIGRATION_KEY, String(MIGRATION_VERSION));
+    try {
+      await Promise.all(migrationWrites);
+      localStorage.setItem(MIGRATION_KEY, String(MIGRATION_VERSION));
+    } catch {
+      // Persistence failed — keep the old version so we retry next time.
+    }
   }
 
   return { workspaces, images: imagesMap };
@@ -229,9 +246,8 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
     });
   },
 
-  loadImage: async (item) => {
-    const state = get();
-    let workspaceId = state.currentWorkspaceId;
+  loadImage: async (item, batchOffset = 0) => {
+    let workspaceId = get().currentWorkspaceId;
 
     // Create workspace if none exists
     if (!workspaceId) {
@@ -273,10 +289,21 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
             : undefined;
       if (infoUrl) {
         const opts = { coordinates: coords ?? undefined, flipY: true, maxSize: 1200 };
-        [imageUrl, thumbnailUrl] = await Promise.all([
-          getIiifImageUrlWithBounds(infoUrl, opts),
-          getIiifImageUrlWithBounds(infoUrl, { ...opts, thumbnail: true }),
-        ]);
+        try {
+          [imageUrl, thumbnailUrl] = await Promise.all([
+            getIiifImageUrlWithBounds(infoUrl, opts),
+            getIiifImageUrlWithBounds(infoUrl, { ...opts, thumbnail: true }),
+          ]);
+        } catch {
+          // info.json unavailable, so the region can't be Y-flipped correctly.
+          // Fall back to the uncropped image (right orientation) rather than
+          // letting one image reject the whole batch load.
+          const full = { ...opts, coordinates: undefined, flipY: false };
+          [imageUrl, thumbnailUrl] = await Promise.all([
+            getIiifImageUrlWithBounds(infoUrl, full),
+            getIiifImageUrlWithBounds(infoUrl, { ...full, thumbnail: true }),
+          ]);
+        }
         // Use coordinate dimensions for graphs
         if (coords) {
           naturalWidth = coords.w;
@@ -305,16 +332,23 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       }
     }
 
-    // Tiling layout: place images in a grid instead of random positions
-    const existingCount = Array.from(state.images.values()).filter(
-      (img) => img.workspaceId === workspaceId
-    ).length;
+    // Tiling layout: place images in a grid instead of random positions.
+    // Re-read state AFTER the awaits above (info.json fetch / URL building) so a
+    // concurrent batch via loadImages doesn't all see the same pre-await
+    // snapshot. `batchOffset` further disambiguates images added in the same
+    // batch, which haven't committed their set() yet when this math runs, so
+    // each lands in a distinct cell with a distinct z-index instead of stacking.
+    const postAwaitState = get();
+    const existingCount =
+      Array.from(postAwaitState.images.values()).filter((img) => img.workspaceId === workspaceId)
+        .length + batchOffset;
     const COLS = 2;
     const GAP = 20;
     const col = existingCount % COLS;
     const row = Math.floor(existingCount / COLS);
     const posX = GAP + col * (MAX_DEFAULT_DIM + GAP);
     const posY = GAP + row * (MAX_DEFAULT_DIM + GAP);
+    const zIndex = postAwaitState.images.size + 1 + batchOffset;
     const displayItem = {
       ...(item as Record<string, unknown>),
       type,
@@ -347,7 +381,7 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       position: {
         x: posX,
         y: posY,
-        zIndex: state.images.size + 1,
+        zIndex,
       },
       size: { width, height },
       transform: {
@@ -365,7 +399,7 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
 
     // Persist to IndexedDB and update state in parallel
     const { saveImage, saveWorkspace } = await import('@/lib/lightbox-db');
-    const workspace = state.workspaces.find((w) => w.id === workspaceId);
+    const workspace = postAwaitState.workspaces.find((w) => w.id === workspaceId);
     const updatedWorkspace = workspace
       ? { ...workspace, images: [...workspace.images, imageId], updatedAt: Date.now() }
       : null;
@@ -388,7 +422,10 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
   },
 
   loadImages: async (items) => {
-    return Promise.all(items.map((item) => get().loadImage(item)));
+    // Pass each item's batch index as an offset so concurrent loadImage calls,
+    // which all read the same pre-batch snapshot, still land in distinct grid
+    // cells with distinct z-indices instead of stacking on the same position.
+    return Promise.all(items.map((item, index) => get().loadImage(item, index)));
   },
 
   removeImage: async (imageId) => {
@@ -455,11 +492,20 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
 
     set({ images });
 
-    // Debounced IndexedDB persist
+    // Debounced IndexedDB persist. Merge this call's changes into the shared
+    // pending map so a later call within the 300ms window can't drop an earlier
+    // batch — every accumulated image is flushed when the timer finally fires.
+    for (const img of changed) {
+      pendingPersist.set(img.id, img);
+    }
+
     if (persistTimer) clearTimeout(persistTimer);
     persistTimer = setTimeout(async () => {
+      persistTimer = null;
+      const toPersist = Array.from(pendingPersist.values());
+      pendingPersist.clear();
       const { saveImage } = await import('@/lib/lightbox-db');
-      await Promise.all(changed.map((img) => saveImage(img)));
+      await Promise.all(toPersist.map((img) => saveImage(img)));
     }, 300);
   },
 
@@ -517,18 +563,15 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
         throw new Error('Session not found');
       }
 
-      // Load workspaces and images from session
-      const { saveWorkspace, saveImage } = await import('@/lib/lightbox-db');
+      // Replace the persisted working set with the session's data (atomically),
+      // rather than merging via per-row put — otherwise any workspace/image that
+      // belongs to the previous set but not this session stays orphaned in Dexie
+      // and resurfaces on the next reload (initialize() reads ALL workspaces).
+      const { replaceWorkingSet } = await import('@/lib/lightbox-db');
+      await replaceWorkingSet(session.workspaces, session.images);
 
-      // Save workspaces
-      for (const workspace of session.workspaces) {
-        await saveWorkspace(workspace);
-      }
-
-      // Save images
       const imagesMap = new Map<string, LightboxImage>();
       for (const image of session.images) {
-        await saveImage(image);
         imagesMap.set(image.id, image);
       }
 
@@ -557,9 +600,12 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       const images = payload?.images ?? [];
 
       if (persist) {
-        const { saveWorkspace, saveImage } = await import('@/lib/lightbox-db');
-        for (const workspace of workspaces) await saveWorkspace(workspace);
-        for (const image of images) await saveImage(image);
+        // Replace (not merge) the persisted working set so loading a workset
+        // fully supplants the local lightbox instead of unioning with whatever
+        // workspaces/images were already persisted (which would resurface on
+        // the next reload via initialize()).
+        const { replaceWorkingSet } = await import('@/lib/lightbox-db');
+        await replaceWorkingSet(workspaces, images);
       }
 
       const imagesMap = new Map<string, LightboxImage>();
@@ -712,27 +758,38 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
 
 const EMPTY_IMAGES: LightboxImage[] = [];
 
-/** Images in the current workspace. Stable reference — only recomputes when images or workspace changes. */
+/**
+ * Images in the current workspace. Subscribes via `useShallow` over the computed
+ * array so a consumer only re-renders when ITS slice actually changes — an
+ * unrelated image edit still allocates a new `images` Map, but the derived
+ * filtered array stays shallow-equal and the subscription is skipped.
+ */
 export function useWorkspaceImages(): LightboxImage[] {
-  const workspaceId = useLightboxStore((s) => s.currentWorkspaceId);
-  const images = useLightboxStore((s) => s.images);
-  return React.useMemo(() => {
-    if (!workspaceId) return EMPTY_IMAGES;
-    return Array.from(images.values()).filter((img) => img.workspaceId === workspaceId);
-  }, [workspaceId, images]);
+  return useLightboxStore(
+    useShallow((s) => {
+      if (!s.currentWorkspaceId) return EMPTY_IMAGES;
+      return Array.from(s.images.values()).filter(
+        (img) => img.workspaceId === s.currentWorkspaceId
+      );
+    })
+  );
 }
 
-/** Selected images (resolved from selectedImageIds). Stable reference — only recomputes when selection or images change. */
+/**
+ * Selected images (resolved from selectedImageIds). Subscribes via `useShallow`
+ * over the computed array so consumers only re-render when their resolved
+ * selection actually changes, not on every per-image Map replacement.
+ */
 export function useSelectedImages(): LightboxImage[] {
-  const selectedImageIds = useLightboxStore((s) => s.selectedImageIds);
-  const images = useLightboxStore((s) => s.images);
-  return React.useMemo(() => {
-    if (selectedImageIds.size === 0) return EMPTY_IMAGES;
-    const result: LightboxImage[] = [];
-    for (const id of selectedImageIds) {
-      const img = images.get(id);
-      if (img) result.push(img);
-    }
-    return result;
-  }, [selectedImageIds, images]);
+  return useLightboxStore(
+    useShallow((s) => {
+      if (s.selectedImageIds.size === 0) return EMPTY_IMAGES;
+      const result: LightboxImage[] = [];
+      for (const id of s.selectedImageIds) {
+        const img = s.images.get(id);
+        if (img) result.push(img);
+      }
+      return result;
+    })
+  );
 }

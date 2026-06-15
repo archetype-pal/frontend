@@ -151,11 +151,14 @@ export function AdvancedSearchPanel({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All words must match</SelectItem>
-              <SelectItem value="last">Any word can match</SelectItem>
+              <SelectItem value="last">
+                Lenient (drops trailing words until matches found)
+              </SelectItem>
             </SelectContent>
           </Select>
           <p className="text-[11px] text-muted-foreground">
-            Strict matching (`all`) or broader matching (`any`).
+            Strict matching (`all`) requires every word; lenient (`last`) drops trailing words until
+            results appear.
           </p>
         </div>
       </div>

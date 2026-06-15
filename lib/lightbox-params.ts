@@ -17,7 +17,9 @@ export async function resolveItemById(
   if (item) return item;
 
   const endpoint = type === 'image' ? 'item-images' : 'graphs';
-  const path = `/api/v1/search/${endpoint}/${id}`;
+  // Trailing slash: the DRF route is slash-terminated, so omitting it costs an
+  // APPEND_SLASH 301 redirect round-trip on every call.
+  const path = `/api/v1/search/${endpoint}/${id}/`;
   try {
     const response = await apiFetch(path);
     if (!response.ok) {
@@ -51,7 +53,7 @@ export async function resolveItemsByIds(
 
   const results = await Promise.allSettled(
     missingIds.map(async (id) => {
-      const response = await apiFetch(`/api/v1/search/${endpoint}/${id}`);
+      const response = await apiFetch(`/api/v1/search/${endpoint}/${id}/`);
       if (!response.ok) throw new Error(`${label} ${id} (${response.status})`);
       const data = await response.json();
       return { ...data, type } as ResolvedItem;

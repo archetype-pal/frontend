@@ -42,13 +42,10 @@ import {
 import { fetchManuscriptImage } from '@/services/manuscripts';
 import { transitionImageText, type TransitionPayload } from '@/services/backoffice/review-queue';
 import { fetchImageTextHistory } from '@/services/backoffice/image-text-history';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 const STATUSES: ImageTextStatus[] = ['Draft', 'Review', 'Live', 'Reviewed'];
 const TYPES = ['Transcription', 'Translation'];
-
-const queryKey = (textId: number) => ['backoffice', 'image-texts', 'detail', textId] as const;
-const historyKey = (textId: number) =>
-  ['backoffice', 'image-texts', 'detail', textId, 'history'] as const;
 
 export default function ImageTextEditorPage({ params }: { params: Promise<{ textId: string }> }) {
   const { textId: rawId } = use(params);
@@ -64,7 +61,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
     isError,
     error: fetchError,
   } = useQuery<ImageTextDetail | null>({
-    queryKey: queryKey(textId),
+    queryKey: backofficeKeys.imageTexts.detail(textId),
     queryFn: () => fetchImageText(textId, token!),
     enabled: !!token && Number.isFinite(textId),
   });
@@ -80,7 +77,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
   });
 
   const { data: history } = useQuery({
-    queryKey: historyKey(textId),
+    queryKey: backofficeKeys.imageTexts.history(textId),
     queryFn: () => fetchImageTextHistory(token!, textId),
     enabled: !!token && Number.isFinite(textId),
   });
@@ -112,8 +109,8 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
     mutationFn: () => updateImageText(token!, textId, { content, type, language }),
     onSuccess: (saved) => {
       toast.success('Text saved');
-      queryClient.setQueryData(queryKey(textId), saved);
-      queryClient.invalidateQueries({ queryKey: queryKey(textId) });
+      queryClient.setQueryData(backofficeKeys.imageTexts.detail(textId), saved);
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.detail(textId) });
       setDirty(false);
     },
     onError: (err) => {
@@ -125,10 +122,10 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
     mutationFn: (payload: TransitionPayload) => transitionImageText(token!, textId, payload),
     onSuccess: (saved) => {
       toast.success(`Status → ${saved.status}`);
-      queryClient.invalidateQueries({ queryKey: queryKey(textId) });
-      queryClient.invalidateQueries({ queryKey: historyKey(textId) });
-      queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts', 'list'] });
-      queryClient.invalidateQueries({ queryKey: ['backoffice', 'texts-monitor', 'overview'] });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.detail(textId) });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.history(textId) });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.list() });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.textsMonitor.overview() });
       queryClient.invalidateQueries({ queryKey: ['review-queue'] });
       setStatus(saved.status);
     },
@@ -139,10 +136,10 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
     mutationFn: () => deleteImageText(token!, textId),
     onSuccess: () => {
       toast.success(`Deleted image-text #${textId}`);
-      queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts', 'list'] });
-      queryClient.invalidateQueries({ queryKey: ['backoffice', 'texts-monitor', 'overview'] });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.list() });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.textsMonitor.overview() });
       // The detail query would 404 if we left it cached.
-      queryClient.removeQueries({ queryKey: queryKey(textId) });
+      queryClient.removeQueries({ queryKey: backofficeKeys.imageTexts.detail(textId) });
       router.push('/backoffice/texts');
     },
     onError: (err) => toast.error('Delete failed', { description: formatApiError(err) }),

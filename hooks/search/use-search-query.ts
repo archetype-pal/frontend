@@ -23,8 +23,14 @@ export function getNextOrderingUrl(
     | undefined,
   sortKey: string | undefined
 ): string | undefined {
-  if (!ordering) return undefined;
-  const group = ordering.options.filter((option) => option.name.endsWith(sortKey ?? ''));
+  if (!ordering || !sortKey) return undefined;
+  // Columns declare sortKey in the `_exact` convention used for filters, but the
+  // server emits canonical ordering option names (e.g. `name`/`-name`). Strip the
+  // suffix so the lookup matches — otherwise it never finds an option (dead branch).
+  const canonicalKey = sortKey.replace(/_exact$/, '');
+  const group = ordering.options.filter(
+    (option) => option.name === canonicalKey || option.name === `-${canonicalKey}`
+  );
   return group.find((option) => option.name !== ordering.current)?.url ?? group[0]?.url;
 }
 

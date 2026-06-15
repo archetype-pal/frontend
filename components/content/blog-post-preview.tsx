@@ -3,6 +3,19 @@ import { User, Calendar, Newspaper, MessageSquare, ArrowRight } from 'lucide-rea
 import ShareButtons from './share-buttons';
 import { sanitizeHtml } from '@/lib/sanitize-html';
 
+// Format a date string, returning '' for null/empty/malformed input so the UI
+// never surfaces the literal 'Invalid Date' to readers.
+const formatDate = (value: string) => {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+};
+
 interface BlogPostPreviewProps {
   title: string;
   author: string;
@@ -46,13 +59,7 @@ export default function BlogPostPreview({
         <span className="mx-1">·</span>
         <span className="flex items-center">
           <Calendar className="h-4 w-4 mr-1" />
-          <time dateTime={date}>
-            {new Date(date).toLocaleDateString('en-GB', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
-          </time>
+          <time dateTime={date}>{formatDate(date)}</time>
         </span>
         <span className="mx-1">·</span>
         <Link href={slug} className="flex items-center text-primary hover:underline">

@@ -677,29 +677,50 @@ function ResultsTableComponent<K extends ResultType>({
         <TableHeader className="[&_tr]:border-b-0 [&_th]:sticky [&_th]:top-[var(--site-header-h,0px)] [&_th]:z-10 [&_th]:bg-secondary [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-muted-foreground [&_th]:shadow-[inset_0_-1px_0_var(--border)]">
           <TableRow>
             {hasSubRow && <TableHead className="w-16" />}
-            {cols.map((col) => (
-              <TableHead
-                key={col.header}
-                className={col.className}
-                style={{ cursor: col.sortKey || col.sortUrl ? 'pointer' : undefined }}
-                onClick={() => onSort?.({ sortKey: col.sortKey, sortUrl: col.sortUrl })}
-                title={col.sortKey || col.sortUrl ? 'Click to sort' : undefined}
-              >
-                <div className="inline-flex items-center space-x-1">
-                  <span>{resolveHeader(col)}</span>
-                  {col.sortKey?.replace(/_exact$/, '') === currKey &&
+            {cols.map((col) => {
+              const sortable = !!(col.sortKey || col.sortUrl);
+              const isSortedColumn = col.sortKey?.replace(/_exact$/, '') === currKey;
+              const ariaSort: React.AriaAttributes['aria-sort'] = !sortable
+                ? undefined
+                : isSortedColumn
+                  ? isDesc
+                    ? 'descending'
+                    : 'ascending'
+                  : 'none';
+              const label = resolveHeader(col);
+              const indicator = (
+                <>
+                  {isSortedColumn &&
                     (isDesc ? (
                       <ArrowDown className="w-4 h-4 text-muted-foreground" />
                     ) : (
                       <ArrowUp className="w-4 h-4 text-muted-foreground" />
                     ))}
-                  {(col.sortKey || col.sortUrl) &&
-                    col.sortKey?.replace(/_exact$/, '') !== currKey && (
-                      <ArrowUp className="w-3 h-3 text-muted-foreground/40" />
-                    )}
-                </div>
-              </TableHead>
-            ))}
+                  {sortable && !isSortedColumn && (
+                    <ArrowUp className="w-3 h-3 text-muted-foreground/40" />
+                  )}
+                </>
+              );
+              return (
+                <TableHead key={col.header} className={col.className} aria-sort={ariaSort}>
+                  {sortable ? (
+                    <button
+                      type="button"
+                      onClick={() => onSort?.({ sortKey: col.sortKey, sortUrl: col.sortUrl })}
+                      title="Click to sort"
+                      className="inline-flex items-center space-x-1 text-left uppercase tracking-[inherit] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                    >
+                      <span>{label}</span>
+                      {indicator}
+                    </button>
+                  ) : (
+                    <div className="inline-flex items-center space-x-1">
+                      <span>{label}</span>
+                    </div>
+                  )}
+                </TableHead>
+              );
+            })}
           </TableRow>
         </TableHeader>
         {results.map((row, ri) => renderRow(row, ri))}

@@ -10,7 +10,7 @@ import { notFound } from 'next/navigation';
 import { apiFetch } from '@/lib/api-fetch';
 
 export async function fetchManuscriptImage(id: string): Promise<ManuscriptImage> {
-  const response = await apiFetch(`/api/v1/manuscripts/item-images/${id}`);
+  const response = await apiFetch(`/api/v1/manuscripts/item-images/${id}/`);
 
   if (!response.ok) {
     throw new Error('Failed to fetch manuscript image');
@@ -109,7 +109,7 @@ export async function fetchAllographSummaries(): Promise<AllographSummary[]> {
 }
 
 export async function fetchManuscript(id: number): Promise<Manuscript> {
-  const response = await apiFetch(`/api/v1/manuscripts/item-parts/${id}`);
+  const response = await apiFetch(`/api/v1/manuscripts/item-parts/${id}/`);
 
   if (!response.ok) {
     if (response.status === 404) {

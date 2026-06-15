@@ -26,6 +26,19 @@ interface ArticleListProps {
 const joinPath = (base: string, part: string) =>
   `${base.replace(/\/+$/, '')}/${part.replace(/^\/+/, '')}`;
 
+// Format a date string, returning '' for null/empty/malformed input so the UI
+// never surfaces the literal 'Invalid Date' to readers.
+const formatDate = (value: string) => {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+};
+
 export default function ArticleList({
   title = 'Articles',
   articles = [],
@@ -45,25 +58,25 @@ export default function ArticleList({
 
       {displayed.length > 0 ? (
         <ul className="divide-y divide-border">
-          {displayed.map((article) => (
-            <li key={article.id} className="group py-5 first:pt-0">
-              <Link href={joinPath(moreLink, article.slug)} className="block">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
-                  {new Date(article.published_at).toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                  {article.author &&
-                    (article.author.first_name || article.author.last_name) &&
-                    ` · ${[article.author.first_name, article.author.last_name].filter(Boolean).join(' ')}`}
-                </p>
-                <h3 className="text-base md:text-lg font-serif font-semibold text-foreground group-hover:text-primary transition-colors leading-snug">
-                  {article.title}
-                </h3>
-              </Link>
-            </li>
-          ))}
+          {displayed.map((article) => {
+            const formattedDate = formatDate(article.published_at);
+            const authorName =
+              article.author && (article.author.first_name || article.author.last_name)
+                ? [article.author.first_name, article.author.last_name].filter(Boolean).join(' ')
+                : '';
+            return (
+              <li key={article.id} className="group py-5 first:pt-0">
+                <Link href={joinPath(moreLink, article.slug)} className="block">
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+                    {[formattedDate, authorName].filter(Boolean).join(' · ')}
+                  </p>
+                  <h3 className="text-base md:text-lg font-serif font-semibold text-foreground group-hover:text-primary transition-colors leading-snug">
+                    {article.title}
+                  </h3>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="text-muted-foreground italic">No articles available.</p>

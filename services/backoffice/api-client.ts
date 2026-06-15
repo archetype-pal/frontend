@@ -9,16 +9,22 @@ async function fetchWithRetry(
   retries = 2,
   delay = 500
 ): Promise<Response> {
+  // Only retry idempotent methods. A transient 5xx (or a dropped socket) can
+  // arrive AFTER the backend has already committed a non-idempotent write, so
+  // blindly replaying POST/PATCH/DELETE risks duplicate writes.
+  const method = (init?.method ?? 'GET').toUpperCase();
+  const idempotent = method === 'GET' || method === 'HEAD';
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const res = await authFetch(path, token, init);
-      if (attempt < retries && TRANSIENT_STATUSES.includes(res.status)) {
+      if (idempotent && attempt < retries && TRANSIENT_STATUSES.includes(res.status)) {
         await new Promise((r) => setTimeout(r, delay * (attempt + 1)));
         continue;
       }
       return res;
     } catch (err) {
-      if (attempt === retries) throw err;
+      if (!idempotent || attempt === retries) throw err;
       await new Promise((r) => setTimeout(r, delay * (attempt + 1)));
     }
   }

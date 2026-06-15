@@ -82,6 +82,26 @@ export const backofficeKeys = {
     detail: (id: number) => [...backofficeKeys.hands.all(), 'detail', id] as const,
   },
 
+  // ── Image texts ──────────────────────────────────────────
+  imageTexts: {
+    all: () => [...backofficeKeys.all, 'image-texts'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      filters === undefined
+        ? ([...backofficeKeys.imageTexts.all(), 'list'] as const)
+        : ([...backofficeKeys.imageTexts.all(), 'list', filters] as const),
+    detail: (id: number) => [...backofficeKeys.imageTexts.all(), 'detail', id] as const,
+    history: (id: number) => [...backofficeKeys.imageTexts.all(), 'detail', id, 'history'] as const,
+  },
+  textsMonitor: {
+    all: () => [...backofficeKeys.all, 'texts-monitor'] as const,
+    overview: () => [...backofficeKeys.textsMonitor.all(), 'overview'] as const,
+  },
+  uncoveredImages: {
+    all: () => [...backofficeKeys.all, 'uncovered-images'] as const,
+    list: (mode: string, page: number) =>
+      [...backofficeKeys.uncoveredImages.all(), mode, page] as const,
+  },
+
   // ── Annotations ──────────────────────────────────────────
   graphs: {
     all: () => [...backofficeKeys.all, 'graphs'] as const,

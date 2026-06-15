@@ -1411,7 +1411,7 @@ function GraphThumbImage({
   const ref = React.useRef<HTMLSpanElement>(null);
   const inView = useInView(ref);
   return (
-    <span ref={ref} className="flex h-full w-full items-center justify-center">
+    <span ref={ref} className="flex aspect-square h-full w-full items-center justify-center">
       {inView ? (
         <LoadedThumbImage graph={graph} iiifImage={iiifImage} density={density} />
       ) : (

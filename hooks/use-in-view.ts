@@ -12,17 +12,22 @@ export function useInView<T extends Element>(
   rootMargin = '300px'
 ): boolean {
   const [inView, setInView] = React.useState(false);
+  // Guards "observe once, then stop" without listing `inView` in the deps — so
+  // flipping the state doesn't re-run (and re-subscribe) the effect.
+  const hasFiredRef = React.useRef(false);
 
   React.useEffect(() => {
     const node = ref.current;
-    if (!node || inView) return;
+    if (!node || hasFiredRef.current) return;
     if (typeof IntersectionObserver === 'undefined') {
+      hasFiredRef.current = true;
       setInView(true);
       return;
     }
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
+          hasFiredRef.current = true;
           setInView(true);
           observer.disconnect();
         }
@@ -31,7 +36,7 @@ export function useInView<T extends Element>(
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [ref, inView, rootMargin]);
+  }, [ref, rootMargin]);
 
   return inView;
 }

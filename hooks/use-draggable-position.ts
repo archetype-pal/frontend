@@ -23,6 +23,10 @@ const KEYBOARD_STEP_LARGE = 60;
 export function useDraggablePosition(initial: DraggablePosition = { x: 0, y: 0 }) {
   const [pos, setPos] = React.useState<DraggablePosition>(initial);
   const dragRef = React.useRef<DragState | null>(null);
+  // Capture the initial position once. Callers pass a fresh object literal each
+  // render ({ x: 300, y: 60 }), so depending on `initial` would re-create
+  // `reset` every render and churn any consumer that lists it as a dependency.
+  const initialRef = React.useRef(initial);
 
   const bindDrag = React.useMemo(
     () => ({
@@ -84,13 +88,16 @@ export function useDraggablePosition(initial: DraggablePosition = { x: 0, y: 0 }
   );
 
   const reset = React.useCallback(() => {
-    setPos(initial);
-  }, [initial]);
+    setPos(initialRef.current);
+  }, []);
 
-  return {
-    pos,
-    setPos,
-    bindDrag,
-    reset,
-  };
+  return React.useMemo(
+    () => ({
+      pos,
+      setPos,
+      bindDrag,
+      reset,
+    }),
+    [pos, bindDrag, reset]
+  );
 }
