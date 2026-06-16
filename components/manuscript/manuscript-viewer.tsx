@@ -1438,12 +1438,16 @@ export default function ManuscriptViewer({
                   onSpanActivate={(graphId) => {
                     viewerApiRef.current?.selectAnnotationById?.(`db:${graphId}`);
                     viewerApiRef.current?.centerOnAnnotation?.(`db:${graphId}`);
-                    // Programmatic selection doesn't fire onSelect, so mark the
-                    // span linked here to keep the click path symmetric.
+                    // Set the linked + selected-region state directly here rather
+                    // than relying on the Annotorious selection event, so the
+                    // affordance is shown deterministically regardless of whether
+                    // the programmatic select emits onSelect.
                     setLinkedGraphId(graphId);
-                    // A phrase click is navigation, not a region selection — so
-                    // don't surface the region's Delete affordance.
-                    setSelectedRegionGraphId(null);
+                    // Clicking a linked phrase selects its region so the panel
+                    // offers "Also link" / Delete. This is the overlap-free way
+                    // to reach them: clicking the region on the image is
+                    // unreliable when glyphs overlap it in Both view.
+                    setSelectedRegionGraphId(graphId);
                   }}
                   canLink={canPersistAnyAnnotations && !isPublicDemoMode}
                   armedElementIndex={linkArm?.elementIndex ?? null}

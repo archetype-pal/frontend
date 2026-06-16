@@ -4,6 +4,8 @@ import React, { useEffect, useRef } from 'react';
 import type OpenSeadragon from 'openseadragon';
 import '@recogito/annotorious/dist/annotorious.min.css';
 
+import { smallestBoxContainingPoint, type HitBox } from '@/lib/manuscript-viewer-hit-test';
+
 // ---- Annotation data model ----
 export interface Annotation {
   id: string;
@@ -545,26 +547,55 @@ export default function ManuscriptAnnotorious({
           };
 
           // The smallest VISIBLE annotation whose rendered box contains the point
-          // — i.e. the region the user actually clicked, skipping hidden glyphs.
-          const visibleAnnotationAtPoint = (x: number, y: number): Annotation | null => {
+          // — i.e. the shape the user actually clicked, skipping hidden ones. An
+          // optional `accept` predicate narrows candidates by kind (e.g. only
+          // text regions), so a click on a small glyph inside a larger linked
+          // region can be resolved to the region. (Pure pick lives in lib/.)
+          const visibleAnnotationAtPoint = (
+            x: number,
+            y: number,
+            accept?: (a: Annotation) => boolean
+          ): Annotation | null => {
             const root = viewerRef.current;
             if (!root) return null;
-            let bestId: string | null = null;
-            let bestArea = Infinity;
+            const byId = new Map(
+              ((anno.getAnnotations?.() ?? []) as Annotation[]).map((a) => [a.id, a])
+            );
+            const boxes: HitBox[] = [];
             root.querySelectorAll<SVGGElement>('g.a9s-annotation').forEach((el) => {
               if (el.style.display === 'none') return;
+              const id = el.dataset.id ?? '';
+              const candidate = byId.get(id);
+              if (!candidate) return;
+              if (accept && !accept(candidate)) return;
               const r = el.getBoundingClientRect();
-              if (r.width === 0 || x < r.left || x > r.right || y < r.top || y > r.bottom) return;
-              const area = r.width * r.height;
-              if (area < bestArea) {
-                bestArea = area;
-                bestId = el.dataset.id ?? null;
-              }
+              boxes.push({
+                id,
+                left: r.left,
+                right: r.right,
+                top: r.top,
+                bottom: r.bottom,
+                width: r.width,
+                height: r.height,
+              });
             });
-            if (!bestId) return null;
-            return (
-              ((anno.getAnnotations?.() ?? []) as Annotation[]).find((a) => a.id === bestId) ?? null
-            );
+            const bestId = smallestBoxContainingPoint(boxes, x, y);
+            return bestId ? (byId.get(bestId) ?? null) : null;
+          };
+
+          // "Both" view shows glyphs and text regions together. A linked region
+          // is a large box around a word; the glyphs are small boxes inside it.
+          // Annotorious selects the (visible) glyph under the pointer, so the
+          // region's link affordances ("Also link" / Delete) never appear — the
+          // flaky-missing-button bug. When a click lands inside a visible text
+          // region but resolved to a non-region shape, redirect to the region.
+          // Inert in allograph view (regions are filtered out → display:none).
+          const textRegionAtPoint = (a: Annotation | null): Annotation | null => {
+            if (!a || isTextRegionAnnotation(a)) return null;
+            const pt = lastPointerDownRef.current;
+            if (!pt) return null;
+            const region = visibleAnnotationAtPoint(pt.x, pt.y, isTextRegionAnnotation);
+            return region && region.id !== a.id ? region : null;
           };
 
           const notifyDelete = (a: Annotation) => {
@@ -798,6 +829,11 @@ export default function ManuscriptAnnotorious({
             // glyph beneath a region in text view).
             if (!isAnnotationVisible(a)) return;
 
+            // A click inside a linked text region belongs to the region, not the
+            // glyph on top of it — bail so the glyph isn't multi-selected here;
+            // selectAnnotation redirects the selection to the region.
+            if (currentMode === 'pan' && textRegionAtPoint(a)) return;
+
             if (deleteFromActiveAnnotation(a)) {
               return;
             }
@@ -844,6 +880,36 @@ export default function ManuscriptAnnotorious({
               selectedDisplayIdRef.current = target?.id ?? null;
               onSelectRef.current?.(target ?? null);
               return;
+            }
+
+            // Both view: the click resolved to a (visible) glyph sitting inside a
+            // linked text region. Surface the region instead so its "Also link" /
+            // Delete affordances appear.
+            if (a && currentMode === 'pan') {
+              const region = textRegionAtPoint(a);
+              if (region) {
+                if (multiSelectedIdsRef.current.has(a.id)) {
+                  multiSelectedIdsRef.current.delete(a.id);
+                  emitSelectionIdsChange();
+                }
+                selectedDisplayIdRef.current = null;
+                // Surface the region only AFTER the cancel settles. cancelSelected
+                // can return a Promise and emit 'cancelSelected' (→ onSelect(null))
+                // asynchronously; doing the region select inline would let that
+                // null clobber it. Same defensive pattern as the suppressReselect
+                // block below.
+                const surfaceRegion = () => {
+                  selectedDisplayIdRef.current = region.id;
+                  onSelectRef.current?.(region);
+                };
+                const cancelResult = anno.cancelSelected?.();
+                if (cancelResult && typeof cancelResult === 'object' && 'then' in cancelResult) {
+                  void cancelResult.then(surfaceRegion);
+                } else {
+                  surfaceRegion();
+                }
+                return;
+              }
             }
 
             if (a && currentMode === 'pan' && suppressReselectIdRef.current === a.id) {

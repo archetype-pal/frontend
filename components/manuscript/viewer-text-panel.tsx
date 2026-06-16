@@ -523,15 +523,23 @@ export function ViewerTextPanel({
       }
     }
 
-    const ownIds = graphIdsOf(innermost);
-    if (ownIds.length > 0) {
+    // If the click lands anywhere inside an already-linked element, navigate to
+    // its region (revealing the "Also link" / Delete affordances). This takes
+    // precedence over arming a NEW link so that clicking a linked phrase is
+    // reliable — previously, clicking an inner un-linked sub-span of a linked
+    // phrase fell through to the arm-link branch and (mis)started a new link
+    // instead. Matches the panel hint: link a NEW region by clicking an
+    // un-highlighted (un-linked) phrase. Uses the nearest [data-graph-id]
+    // ancestor-or-self, so it also covers the element-is-itself-linked case.
+    const linkedIds = graphIdsOf(target.closest<HTMLElement>('[data-graph-id]'));
+    if (linkedIds.length > 0) {
       // Text click → focus the image only; don't scroll the text panel/page.
       skipLinkScrollRef.current = true;
-      onSpanActivate(ownIds[0]); // this element is itself linked → show its region
+      onSpanActivate(linkedIds[0]);
       return;
     }
-    // Innermost element is unlinked + author capability → arm linking for it,
-    // indexed within its own text column.
+    // Click is on un-linked text + author capability → arm linking for the
+    // innermost linkable element, indexed within its own text column.
     const section = target.closest<HTMLElement>('[data-text-id]');
     if (canLink && onArmLink && section && innermost) {
       const textId = Number(section.getAttribute('data-text-id'));
@@ -541,12 +549,6 @@ export function ViewerTextPanel({
         onArmLink(textId, index, (innermost.textContent ?? '').trim().slice(0, 40));
         return;
       }
-    }
-    // Otherwise fall back to the nearest linked ancestor (read-only navigation).
-    const ancestorIds = graphIdsOf(target.closest('[data-graph-id]'));
-    if (ancestorIds.length > 0) {
-      skipLinkScrollRef.current = true;
-      onSpanActivate(ancestorIds[0]);
     }
   };
   const handleMouseOver = (event: React.MouseEvent) => {
