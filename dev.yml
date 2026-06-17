@@ -1,4 +1,4 @@
 services:
   frontend:
     ports:
-      - "3000:3000"
+      - "${FRONT_END_PORT}:3000"
