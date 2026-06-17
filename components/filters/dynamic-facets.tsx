@@ -94,14 +94,26 @@ export function DynamicFacets({
   const localSuggestions = useKeywordSuggestions(draftKeyword, suggestionsPool);
   const deferredKeyword = React.useDeferredValue(draftKeyword);
 
-  React.useEffect(() => {
-    setHistoryItems(getSearchHistory());
-  }, []);
-
-  React.useEffect(() => {
+  // Adjust draft + recent-searches when the keyword prop changes (e.g. a parent
+  // submits a search, writing to localStorage via addSearchHistory). React's
+  // "store info from previous renders" pattern: set state during render instead
+  // of in an effect so the refreshed value renders in the same pass. The
+  // localStorage read is also deferred off the very first render below to stay
+  // SSR/hydration-safe, then re-read here on every keyword change.
+  const [prevKeyword, setPrevKeyword] = React.useState(keyword);
+  if (prevKeyword !== keyword) {
+    setPrevKeyword(keyword);
     setDraftKeyword(keyword);
     setHistoryItems(getSearchHistory());
-  }, [keyword]);
+  }
+
+  React.useEffect(() => {
+    // Deferred localStorage read: getSearchHistory() returns [] during SSR, so a
+    // useState initializer would hydrate empty then diverge. Reading after mount
+    // avoids the hydration mismatch while seeding the recent-searches list.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot read of an external store (localStorage) post-hydration to avoid an SSR mismatch
+    setHistoryItems(getSearchHistory());
+  }, []);
 
   const serverSuggestionsQuery = useQuery({
     queryKey: ['facet-suggestions', searchType, deferredKeyword],

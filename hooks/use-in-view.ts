@@ -21,6 +21,7 @@ export function useInView<T extends Element>(
     if (!node || hasFiredRef.current) return;
     if (typeof IntersectionObserver === 'undefined') {
       hasFiredRef.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only fallback for environments lacking IntersectionObserver; must run after mount (not as lazy initial state) to avoid an SSR/hydration mismatch, since the server always lacks the API.
       setInView(true);
       return;
     }

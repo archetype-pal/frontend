@@ -51,12 +51,19 @@ export function FacetDateRangePanel({
   const applySignatureRef = React.useRef<string>('');
   const userInteractedRef = React.useRef(false);
 
-  React.useEffect(() => {
-    // Reset interaction flag when new range data arrives (e.g. result type change)
+  // Reset slider/search state when new range data arrives (e.g. result type
+  // change). Adjusting state during render — guarded by a previous-value
+  // tracker — per the React "You Might Not Need an Effect" docs. We compare by
+  // the [min, max] content (not array reference, which changes every render)
+  // so this runs exactly once per genuine range change.
+  const rangeSignature = `${normalizedDefaultValue[0]}x${normalizedDefaultValue[1]}`;
+  const prevRangeSignatureRef = React.useRef(rangeSignature);
+  if (prevRangeSignatureRef.current !== rangeSignature) {
+    prevRangeSignatureRef.current = rangeSignature;
     userInteractedRef.current = false;
     setSliderValue(normalizedDefaultValue);
-    setSearchInput(`${normalizedDefaultValue[0]}x${normalizedDefaultValue[1]}`);
-  }, [normalizedDefaultValue]);
+    setSearchInput(rangeSignature);
+  }
 
   const buildPayload = React.useCallback(() => {
     const diff = precision === initialPrecision || year === '' ? 0 : year;

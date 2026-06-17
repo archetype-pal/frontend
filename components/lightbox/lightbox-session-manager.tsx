@@ -55,6 +55,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
   }, [token]);
 
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- refreshWorksets fetches server worksets and assigns the awaited result; the setState only runs after the network await, never synchronously, so it cannot cascade renders.
     refreshWorksets();
   }, [refreshWorksets]);
 

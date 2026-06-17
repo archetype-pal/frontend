@@ -27,6 +27,7 @@ export function useAnnotationVisibilityToggle({
     if (typeof window === 'undefined') return;
     const saved = localStorage.getItem(`annotationsVisible:${imageId}`);
     if (saved !== null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydrate client-only state from localStorage after mount. The read must stay in an effect so SSR and the first client render both use the `true` default (avoiding a hydration mismatch); the stored value is applied post-hydration and re-applied when imageId changes.
       setAnnotationsEnabled(saved === 'true');
     }
   }, [imageId]);

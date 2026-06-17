@@ -49,6 +49,7 @@ export function useAnnotationViewerSettings() {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<AnnotationViewerSettings>;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot hydration of state from localStorage, deferred to an effect on purpose: reading localStorage during render (or via useState lazy init) is impossible on the SSR server and would cause a hydration mismatch between server-rendered defaults and client-stored prefs.
         setViewerSettings((prev) => ({
           allowMultipleBoxes: parsed.allowMultipleBoxes ?? prev.allowMultipleBoxes,
           selectMultipleAnnotations:

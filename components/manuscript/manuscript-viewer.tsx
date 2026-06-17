@@ -369,13 +369,23 @@ export default function ManuscriptViewer({
   // persisting a view-mode preference (that lives in localStorage). Re-evaluated
   // per image; cleared the moment the reader uses the mode toggle themselves.
   const [searchForcesText, setSearchForcesText] = React.useState(false);
-  React.useEffect(() => {
-    if (typeof window === 'undefined' || !hasTexts) {
-      setSearchForcesText(false);
-      return;
+  // Re-derive from the URL whenever the image (or its has-texts status) changes,
+  // using the React "store info from previous renders" pattern instead of an
+  // effect. The window guard keeps the first (SSR/hydration) render at `false`,
+  // so there is no hydration mismatch; the re-derive fires only on client-side
+  // image transitions, exactly when the old effect did. Handlers may still set
+  // this to `false` directly (a deliberate mode toggle), which sticks until the
+  // next image change re-arms the previous-key tracker below.
+  const prevSearchForcesKeyRef = React.useRef<string | null>(null);
+  const searchForcesKey = `${imageId}|${hasTexts}`;
+  if (prevSearchForcesKeyRef.current !== searchForcesKey) {
+    prevSearchForcesKeyRef.current = searchForcesKey;
+    if (typeof window !== 'undefined') {
+      setSearchForcesText(
+        hasTexts && Boolean(new URLSearchParams(window.location.search).get('q'))
+      );
     }
-    setSearchForcesText(Boolean(new URLSearchParams(window.location.search).get('q')));
-  }, [imageId, hasTexts]);
+  }
   const effectiveViewMode = !hasTexts
     ? 'allograph'
     : searchForcesText && viewerSettings.viewMode === 'allograph'
@@ -902,6 +912,7 @@ export default function ManuscriptViewer({
     setHandsLoaded(false);
     setSelectedHand(undefined);
     editorState.resetFrom([]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- per-image teardown: clears several independent state atoms alongside an imperative editor reset (editorState.resetFrom) and hook resetters; this is genuine synchronization on image change, and the `key`-reset boundary lives in the parent (out of scope to edit).
     setSelectedAnnotationIds([]);
     // (linkArm reset → useImageTextLinking; share-URL re-arm → useShareTarget;
     // both keyed on imageId.)
@@ -1010,6 +1021,7 @@ export default function ManuscriptViewer({
     if (!canSaveNow) return;
 
     handledPendingPopupSaveRef.current = pendingPopupSaveRequest;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- deferred save: the popup-save handler bumps a counter, then this waits for canSaveNow (derived from unsavedChanges) to recompute after the confirmed draft commits before firing the async handleSave; running it in the handler would save before that state propagates. handleSave only sets state after its awaits.
     void handleSave();
   }, [canSaveNow, handleSave, pendingPopupSaveRequest]);
 

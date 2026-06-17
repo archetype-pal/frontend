@@ -36,10 +36,13 @@ export function InlineEdit({
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync external value changes
-  useEffect(() => {
+  // Sync external value changes: when the prop changes while not editing,
+  // adjust draft during render instead of in an effect (React docs pattern).
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
     if (!editing) setDraft(value);
-  }, [value, editing]);
+  }
 
   // Focus the input when entering edit mode
   useEffect(() => {
@@ -49,6 +52,7 @@ export function InlineEdit({
   const save = useCallback(async () => {
     const trimmed = draft.trim();
     if (trimmed === value) {
+      setDraft(value); // discard a whitespace-only edit so the next edit starts clean
       setEditing(false);
       return;
     }

@@ -144,15 +144,24 @@ export function TextsList() {
 
   // Mirror the URL value into the local input when the URL is the source of
   // truth (e.g. KPI drilldown). Without this the input would lag a navigation.
-  useEffect(() => {
+  // Adjusting state during render (the React-docs pattern for "reset state when
+  // a prop changes") avoids an extra commit + the input flicker an effect would
+  // introduce; user keystrokes still mutate searchInput freely between syncs.
+  const [prevUrlSearch, setPrevUrlSearch] = useState(filters.search);
+  if (prevUrlSearch !== filters.search) {
+    setPrevUrlSearch(filters.search);
     setSearchInput(filters.search);
-  }, [filters.search]);
+  }
 
   // Drop any selected ids that fall out of view when filters/page change —
-  // otherwise a "Delete N selected" would silently target hidden rows.
-  useEffect(() => {
+  // otherwise a "Delete N selected" would silently target hidden rows. Same
+  // store-during-render reset pattern, keyed on the composite filter/page tuple.
+  const filterKey = `${filters.kind}|${filters.status}|${filters.language}|${filters.empty}|${filters.search}|${filters.page}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey);
     setSelected(new Set());
-  }, [filters.kind, filters.status, filters.language, filters.empty, filters.search, filters.page]);
+  }
 
   // Debounced commit of the search input back into the URL — 350ms is the
   // same cadence /backoffice/manuscripts uses, fast enough to feel live but

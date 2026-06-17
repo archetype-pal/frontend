@@ -70,7 +70,7 @@ export function TeiTextEditor({
   defaultMode = 'source',
   hideSource = false,
 }: TeiTextEditorProps) {
-  const [mode, setMode] = React.useState<Mode>(defaultMode);
+  const [storedMode, setMode] = React.useState<Mode>(defaultMode);
   const [errors, setErrors] = React.useState<TeiValidationError[]>([]);
   const [checked, setChecked] = React.useState(false);
 
@@ -84,13 +84,14 @@ export function TeiTextEditor({
     }
   }, [value]);
 
-  React.useEffect(() => {
-    // Rich needs a byte-exact round-trip; fall back to Source (or Preview when
-    // Source is hidden) when it isn't available.
-    if (mode === 'rich' && !richAvailable) setMode(hideSource ? 'preview' : 'source');
-    // Never sit on a hidden Source tab.
-    if (mode === 'source' && hideSource) setMode(richAvailable ? 'rich' : 'preview');
-  }, [mode, richAvailable, hideSource]);
+  // Derive the *effective* mode in render rather than chasing the stored `mode`
+  // with an effect: the stored value can name a tab that isn't currently usable
+  // (Rich needs a byte-exact round-trip; Source can be hidden), so fall back
+  // here instead of letting an invalid mode reach the toolbar/body.
+  let mode = storedMode;
+  if (mode === 'rich' && !richAvailable) mode = hideSource ? 'preview' : 'source';
+  // Never sit on a hidden Source tab.
+  if (mode === 'source' && hideSource) mode = richAvailable ? 'rich' : 'preview';
 
   // Debounced well-formedness check against the server validator. The parent
   // uses `onValidityChange` to disable Save while the TEI is malformed.

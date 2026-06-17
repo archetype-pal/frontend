@@ -400,6 +400,7 @@ export function ViewerTextPanel({
   const [highlightQuery, setHighlightQuery] = React.useState('');
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads the browser URL (window.location) after mount; doing this during render would cause an SSR/hydration mismatch. Re-synced on shownKey (navigation swaps texts), not a browser event, so useSyncExternalStore/useSearchParams don't fit.
     setHighlightQuery(new URLSearchParams(window.location.search).get('q') ?? '');
   }, [shownKey]);
 

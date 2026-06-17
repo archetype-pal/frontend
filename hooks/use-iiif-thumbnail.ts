@@ -20,7 +20,8 @@ export function useIiifThumbnailUrl(
 
   React.useEffect(() => {
     if (!trimmed) {
-      setUrl(null);
+      // No input: the empty-state value is derived during render (see the
+      // return below), so there is nothing to fetch or synchronize here.
       return;
     }
     const coords = coordinatesFromGeoJson(coordsKey || undefined) ?? undefined;
@@ -42,5 +43,7 @@ export function useIiifThumbnailUrl(
     };
   }, [trimmed, coordsKey, maxSize]);
 
-  return url;
+  // When there is no input, the result is null regardless of any stored value
+  // (the effect leaves stored state untouched in that case).
+  return trimmed ? url : null;
 }

@@ -21,11 +21,20 @@ export function useSearchMobileFilters(opts: {
   const [mobileQueryDraft, setMobileQueryDraft] = React.useState<QueryState>(queryState);
   const [mobileKeywordDraft, setMobileKeywordDraft] = React.useState(draftKeyword);
 
-  // Sync mobile drafts when main state changes
-  React.useEffect(() => {
+  // Resync mobile drafts when the main state changes, by adjusting state during
+  // render guarded by previous-value trackers (React's "storing information from
+  // previous renders" pattern). The drafts can also be edited locally via
+  // handleMobileFacetClick, so they cannot simply be derived in render.
+  const [prevQueryState, setPrevQueryState] = React.useState(queryState);
+  const [prevDraftKeyword, setPrevDraftKeyword] = React.useState(draftKeyword);
+  if (queryState !== prevQueryState) {
+    setPrevQueryState(queryState);
     setMobileQueryDraft(queryState);
+  }
+  if (draftKeyword !== prevDraftKeyword) {
+    setPrevDraftKeyword(draftKeyword);
     setMobileKeywordDraft(draftKeyword);
-  }, [draftKeyword, queryState]);
+  }
 
   const mobileActiveTags = React.useMemo<ActiveFacetTag[]>(() => {
     return buildActiveQueryTags({

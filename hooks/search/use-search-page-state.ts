@@ -58,9 +58,15 @@ export function useSearchPageState(initialType?: ResultType) {
     { current: string; options: Array<{ name: string; text: string; url: string }> } | undefined
   >(undefined);
 
-  React.useEffect(() => {
-    if (initialType != null) setResultType(initialType);
-  }, [initialType]);
+  // Adjust resultType when the initialType prop changes (store-during-render
+  // pattern from https://react.dev/learn/you-might-not-need-an-effect). Tracks
+  // the previously-seen prop so a change re-seeds resultType while still letting
+  // local handlers (handleResultTypeChange) override it between prop changes.
+  const prevInitialTypeRef = React.useRef(initialType);
+  if (initialType != null && initialType !== prevInitialTypeRef.current) {
+    prevInitialTypeRef.current = initialType;
+    setResultType(initialType);
+  }
 
   const baseFacetURL = React.useMemo(() => getSearchBaseFacetUrl(resultType), [resultType]);
 

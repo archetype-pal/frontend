@@ -44,17 +44,25 @@ async function resolveGraphHrefCached(graph: GraphRouteInput): Promise<string | 
 
 export function GraphDetailLink({ graph, className, children, title }: GraphDetailLinkProps) {
   const router = useRouter();
-  const [href, setHref] = React.useState<string | null>(() => getGraphDetailUrl(graph));
+  // The direct href is fully derivable from `graph`, so compute it during render.
+  const directHref = getGraphDetailUrl(graph);
+  // The async-resolved href is an override that must reset whenever `graph` changes.
+  const [resolvedHref, setResolvedHref] = React.useState<string | null>(null);
+  const [prevGraph, setPrevGraph] = React.useState(graph);
+  if (prevGraph !== graph) {
+    setPrevGraph(graph);
+    setResolvedHref(null);
+  }
   const [resolving, setResolving] = React.useState(false);
 
+  const href = directHref ?? resolvedHref;
+
   React.useEffect(() => {
-    const directHref = getGraphDetailUrl(graph);
-    setHref(directHref);
-    if (directHref) return;
+    if (getGraphDetailUrl(graph)) return;
 
     let cancelled = false;
     void resolveGraphHrefCached(graph).then((resolved) => {
-      if (!cancelled && resolved) setHref(resolved);
+      if (!cancelled && resolved) setResolvedHref(resolved);
     });
     return () => {
       cancelled = true;
@@ -72,7 +80,7 @@ export function GraphDetailLink({ graph, className, children, title }: GraphDeta
     try {
       const resolved = await resolveGraphHrefCached(graph);
       if (resolved) {
-        setHref(resolved);
+        setResolvedHref(resolved);
         router.push(resolved);
       }
     } finally {

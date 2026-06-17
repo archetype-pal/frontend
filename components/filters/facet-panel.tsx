@@ -61,9 +61,16 @@ export function FacetPanel({
     return sortedItems.filter((item) => item.label.toLowerCase().includes(q));
   }, [searchTerm, sortedItems]);
 
-  React.useEffect(() => {
+  // Reset the "show all" collapse whenever the search query, sort order, or
+  // panel identity changes. Adjusting state during render (per React docs:
+  // "You Might Not Need an Effect") avoids a cascading second render that an
+  // effect would cause, and keeps the visible slice in sync within the same pass.
+  const [resetKey, setResetKey] = React.useState(JSON.stringify([searchTerm, sortBy, id]));
+  const currentResetKey = JSON.stringify([searchTerm, sortBy, id]);
+  if (resetKey !== currentResetKey) {
+    setResetKey(currentResetKey);
     setExpandedList(false);
-  }, [searchTerm, sortBy, id]);
+  }
 
   const INITIAL_VISIBLE_COUNT = 10;
   const hasOverflow = filteredItems.length > INITIAL_VISIBLE_COUNT;

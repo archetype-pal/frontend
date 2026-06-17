@@ -32,6 +32,25 @@ export function useViewerBaseData(imageId: string) {
 
   const [imageHeight, setImageHeight] = React.useState<number>(0);
 
+  // When the current image has no item_part there are no hands to fetch, so the
+  // hands list must reset to its empty/unloaded state. This used to live in the
+  // hands effect as a synchronous setState branch; instead we adjust state
+  // during render (React's "store info from previous renders" pattern) so the
+  // effect below only owns the async fetch. Guarded by a previous-key ref so the
+  // reset fires once per item_part transition, matching the effect's old
+  // run-on-dependency-change semantics and avoiding a render loop.
+  const handsResetKeyRef = React.useRef<string | number | null | undefined>(undefined);
+  if (!manuscriptImage?.item_part) {
+    const resetKey = manuscriptImage?.id ?? null;
+    if (handsResetKeyRef.current !== resetKey) {
+      handsResetKeyRef.current = resetKey;
+      if (hands.length !== 0) setHands([]);
+      if (handsLoaded) setHandsLoaded(false);
+    }
+  } else {
+    handsResetKeyRef.current = undefined;
+  }
+
   // load image + manuscript + allographs + IIIF height
   React.useEffect(() => {
     let isMounted = true;
@@ -68,11 +87,9 @@ export function useViewerBaseData(imageId: string) {
 
   // load hands for the current image
   React.useEffect(() => {
-    if (!manuscriptImage?.item_part) {
-      setHands([]);
-      setHandsLoaded(false);
-      return;
-    }
+    // The no-item_part case is handled by the store-during-render reset above;
+    // this effect only owns the async fetch when there is an item_part to load.
+    if (!manuscriptImage?.item_part) return;
 
     let isMounted = true;
 

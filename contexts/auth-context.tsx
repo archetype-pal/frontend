@@ -58,7 +58,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    setIsReady(true);
+    // No stored token: nothing to fetch, so we're immediately ready. Defer the
+    // flip off the synchronous effect path (mirroring the setAuthToken branch
+    // above) to avoid a cascading-render setState directly inside the effect.
+    queueMicrotask(() => setIsReady(true));
   }, [setAuthToken]);
 
   useEffect(() => {

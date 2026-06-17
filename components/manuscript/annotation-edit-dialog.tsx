@@ -211,12 +211,24 @@ function DialogBody({
 
   // Reset draft state whenever the selection (and therefore the initial
   // values) changes — otherwise switching selection mid-dialog leaves stale
-  // tri-state values.
-  React.useEffect(() => {
+  // tri-state values. This is the React-docs "adjust state when a prop
+  // changes" pattern: set state during render, guarded by a previous-value
+  // tracker, so React re-renders immediately without a wasted commit+effect
+  // pass. Fires on the same value-change trigger the prior effect keyed on
+  // ([initialAllograph, initialHand]).
+  const [prevInitials, setPrevInitials] = React.useState<{
+    allograph: Consensus<number | null>;
+    hand: Consensus<number | null>;
+  }>({ allograph: initialAllograph, hand: initialHand });
+  if (
+    !Object.is(prevInitials.allograph, initialAllograph) ||
+    !Object.is(prevInitials.hand, initialHand)
+  ) {
+    setPrevInitials({ allograph: initialAllograph, hand: initialHand });
     setAllographId(initialAllograph === MIXED ? null : initialAllograph);
     setHand(initialHand);
     setError(null);
-  }, [initialAllograph, initialHand]);
+  }
 
   const selectedAllograph = React.useMemo(
     () => allographs.find((a) => a.id === allographId) ?? null,
@@ -262,14 +274,16 @@ function DialogBody({
     positionMap.hasMeaningfulEdits;
 
   // Reset per-feature/per-position pending edits when the selection changes,
-  // for the same reason `setError(null)` resets above.
-  React.useEffect(() => {
+  // for the same reason the initial-value reset runs above. Same store-during-
+  // render pattern, keyed on `graphs` identity (the prior effect's sole dep),
+  // so a new selection clears pending edits before the next paint.
+  const [prevGraphs, setPrevGraphs] = React.useState(graphs);
+  if (!Object.is(prevGraphs, graphs)) {
+    setPrevGraphs(graphs);
     featureMap.reset();
     positionMap.reset();
     setFailedIds([]);
-    // Intentionally only on selection change — not on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphs]);
+  }
 
   // Guard every close path (Cancel, Escape, overlay click) against discarding
   // unsaved edits. The Sheet's `open` is controlled by the parent, so simply

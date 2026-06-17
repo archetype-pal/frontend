@@ -213,6 +213,7 @@ export function AnnotationGallery({
   const [density, setDensity] = React.useState<ThumbDensity>('comfortable');
   React.useEffect(() => {
     const saved = window.localStorage.getItem('annotation-gallery-density');
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed locally-owned state from localStorage after mount; deferring to an effect (vs. a lazy useState initializer) is required to avoid an SSR/client hydration mismatch, since `window` is unavailable during server render.
     if (saved === 'compact' || saved === 'comfortable' || saved === 'large') setDensity(saved);
   }, []);
   const changeDensity = React.useCallback((next: ThumbDensity) => {
@@ -292,10 +293,15 @@ export function AnnotationGallery({
 
   // Drop optimistic overrides when a fresh server load arrives (a new `graphs`
   // prop identity, e.g. after router.refresh()) so re-fetched data wins
-  // instead of being shadowed indefinitely by stale local edits.
-  React.useEffect(() => {
+  // instead of being shadowed indefinitely by stale local edits. This is the
+  // React "adjust state during render when a prop changes" pattern (tracked via
+  // the previous `graphs` identity) rather than an effect, so the reset is
+  // applied before the children render instead of in a follow-up commit.
+  const [prevGraphs, setPrevGraphs] = React.useState(graphs);
+  if (prevGraphs !== graphs) {
+    setPrevGraphs(graphs);
     setGraphOverrides({});
-  }, [graphs]);
+  }
 
   // Dialog state — `editingGraphIds` is the list of graphs the dialog should
   // target. Resolved through `effectiveGraphs` so the dialog always sees the

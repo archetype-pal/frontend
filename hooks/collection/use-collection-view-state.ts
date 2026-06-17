@@ -56,17 +56,33 @@ export function useCollectionViewState(items: CollectionItem[], clearCollection:
   // change externally (back/forward, a shared link via client nav). The write
   // effect below uses `history.replaceState`, which does not feed back into
   // `useSearchParams`, so this can't echo our own writes — only genuine
-  // navigation moves these values.
+  // navigation moves these values. We adjust state during render (React's
+  // "store information from previous renders" pattern) instead of in an effect,
+  // so the resync happens without an extra commit + cascading re-render. The
+  // previous-URL tracker guards against clobbering user-driven setter changes:
+  // we only overwrite local state when the URL-derived values themselves change.
   const urlFilter = readInitialFilter(searchParams);
   const urlSort = readInitialSort(searchParams);
   const urlView = readInitialView(searchParams);
   const urlGroup = readInitialAnnotationGroup(searchParams);
-  React.useEffect(() => {
+  const [prevUrlValues, setPrevUrlValues] = React.useState({
+    filter: urlFilter,
+    sort: urlSort,
+    view: urlView,
+    group: urlGroup,
+  });
+  if (
+    prevUrlValues.filter !== urlFilter ||
+    prevUrlValues.sort !== urlSort ||
+    prevUrlValues.view !== urlView ||
+    prevUrlValues.group !== urlGroup
+  ) {
+    setPrevUrlValues({ filter: urlFilter, sort: urlSort, view: urlView, group: urlGroup });
     setFilter(urlFilter);
     setSortBy(urlSort);
     setView(urlView);
     setAnnotationGroup(urlGroup);
-  }, [urlFilter, urlSort, urlView, urlGroup]);
+  }
 
   React.useEffect(() => {
     const params = new URLSearchParams(baseSearchParams);

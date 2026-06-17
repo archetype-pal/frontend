@@ -101,21 +101,23 @@ export function ImageTextViewer({
   );
   const ref = React.useRef<HTMLDivElement>(null);
 
-  // The rendered markup, held in state so React (not a post-mount DOM hack) owns
-  // it — search-term <mark>s are baked into the HTML React renders, so they can't
-  // be wiped by a re-commit. Starts unmarked (matching SSR) and is recomputed in
-  // an effect once the term is known, then highlighted client-side.
-  const [renderedHtml, setRenderedHtml] = React.useState(safeHtml);
-  React.useEffect(() => {
+  // The rendered markup, derived during render so React (not a post-mount DOM
+  // hack) owns it — search-term <mark>s are baked into the HTML React renders, so
+  // they can't be wiped by a re-commit. Without a query (and during SSR, where
+  // `document` is absent) this is the unmarked `safeHtml`, matching the server
+  // output; once the parent supplies the term post-mount, the marks are injected
+  // client-side. The parent seeds `highlightQuery` empty on the first client
+  // render (it reads the URL in an effect), so the initial client render also
+  // produces unmarked `safeHtml` and stays hydration-safe.
+  const renderedHtml = React.useMemo(() => {
     const query = highlightQuery?.trim();
     if (!query || typeof document === 'undefined') {
-      setRenderedHtml(safeHtml);
-      return;
+      return safeHtml;
     }
     const scratch = document.createElement('div');
     scratch.innerHTML = safeHtml;
     markSearchHits(scratch, query);
-    setRenderedHtml(scratch.innerHTML);
+    return scratch.innerHTML;
   }, [safeHtml, highlightQuery]);
 
   // Scroll the first match into view once the highlighted markup is committed.

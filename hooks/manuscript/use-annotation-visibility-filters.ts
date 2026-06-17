@@ -57,33 +57,35 @@ export function useAnnotationVisibilityFilters({
   const [allographFiltersInitialized, setAllographFiltersInitialized] = React.useState(false);
   const [handFiltersInitialized, setHandFiltersInitialized] = React.useState(false);
 
-  // Reset to defaults when the image changes; the seeding effects below then
-  // re-initialise from the new image's allograph/hand sets.
-  React.useEffect(() => {
+  // The imageId reset and the one-time allograph/hand seeding are all
+  // "adjust state when an input changes" cases, so they run during render
+  // (React-docs `store-during-render` pattern) instead of in effects, which
+  // avoids the extra cascading-render commit those effects used to cause.
+  const prevImageIdRef = React.useRef(imageId);
+  if (prevImageIdRef.current !== imageId) {
+    // Image changed: reset to defaults; the seeding below then re-initialises
+    // from the new image's allograph/hand sets.
+    prevImageIdRef.current = imageId;
     setVisibilityFilters(DEFAULT_FILTERS);
     setAllographFiltersInitialized(false);
     setHandFiltersInitialized(false);
-  }, [imageId]);
-
-  // Seed allograph filters once the image data + allograph set are available.
-  React.useEffect(() => {
-    if (allographFiltersInitialized) return;
-    if (!baseDataReady) return;
-
-    if (a9sSnapshotLength === 0 || availableAllographFilterIds.length > 0) {
+  } else {
+    // Seed allograph filters once the image data + allograph set are available.
+    if (
+      !allographFiltersInitialized &&
+      baseDataReady &&
+      (a9sSnapshotLength === 0 || availableAllographFilterIds.length > 0)
+    ) {
       setVisibilityFilters((prev) => ({ ...prev, allographIds: [...availableAllographFilterIds] }));
       setAllographFiltersInitialized(true);
     }
-  }, [allographFiltersInitialized, baseDataReady, a9sSnapshotLength, availableAllographFilterIds]);
 
-  // Seed hand filters once the hands list has loaded.
-  React.useEffect(() => {
-    if (handFiltersInitialized) return;
-    if (!handsLoaded) return;
-
-    setVisibilityFilters((prev) => ({ ...prev, handIds: [...availableHandFilterIds] }));
-    setHandFiltersInitialized(true);
-  }, [handFiltersInitialized, handsLoaded, availableHandFilterIds]);
+    // Seed hand filters once the hands list has loaded.
+    if (!handFiltersInitialized && handsLoaded) {
+      setVisibilityFilters((prev) => ({ ...prev, handIds: [...availableHandFilterIds] }));
+      setHandFiltersInitialized(true);
+    }
+  }
 
   const allAllographFiltersSelected = React.useMemo(
     () => includesAllIds(availableAllographFilterIds, visibilityFilters.allographIds),

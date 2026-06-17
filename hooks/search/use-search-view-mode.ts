@@ -23,33 +23,69 @@ export function parseViewModeParam(raw: string | null, resultType: ResultType): 
   return v;
 }
 
+// --- filters-sidebar-collapsed external store (localStorage-backed) ---
+//
+// The sidebar-collapsed flag lives in localStorage, a browser store that is
+// unavailable during SSR. Reading it via useSyncExternalStore keeps the server
+// snapshot (`false`) and the client's first paint consistent (no hydration
+// mismatch) while letting `toggleFiltersSidebar` notify subscribers so React
+// re-renders without an effect.
+const sidebarListeners = new Set<() => void>();
+
+function subscribeSidebarCollapsed(onChange: () => void): () => void {
+  sidebarListeners.add(onChange);
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === FILTERS_SIDEBAR_COLLAPSED_KEY) onChange();
+  };
+  window.addEventListener('storage', onStorage);
+  return () => {
+    sidebarListeners.delete(onChange);
+    window.removeEventListener('storage', onStorage);
+  };
+}
+
+function getSidebarCollapsedSnapshot(): boolean {
+  try {
+    return window.localStorage.getItem(FILTERS_SIDEBAR_COLLAPSED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function getSidebarCollapsedServerSnapshot(): boolean {
+  return false;
+}
+
+function setSidebarCollapsed(next: boolean): void {
+  try {
+    window.localStorage.setItem(FILTERS_SIDEBAR_COLLAPSED_KEY, next ? 'true' : 'false');
+  } catch {
+    // ignore
+  }
+  sidebarListeners.forEach((listener) => listener());
+}
+
 export function useSearchViewMode(resultType: ResultType) {
   const [viewMode, setViewMode] = React.useState<ViewMode>('table');
-  const [filtersSidebarCollapsed, setFiltersSidebarCollapsed] = React.useState(false);
 
-  // Load sidebar collapsed preference from localStorage
-  React.useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(FILTERS_SIDEBAR_COLLAPSED_KEY);
-      if (raw === 'true') setFiltersSidebarCollapsed(true);
-    } catch {
-      // ignore
-    }
-  }, []);
+  const filtersSidebarCollapsed = React.useSyncExternalStore(
+    subscribeSidebarCollapsed,
+    getSidebarCollapsedSnapshot,
+    getSidebarCollapsedServerSnapshot
+  );
 
   const toggleFiltersSidebar = React.useCallback(() => {
-    setFiltersSidebarCollapsed((prev) => {
-      const next = !prev;
-      try {
-        window.localStorage.setItem(FILTERS_SIDEBAR_COLLAPSED_KEY, next ? 'true' : 'false');
-      } catch {
-        // ignore
-      }
-      return next;
-    });
+    setSidebarCollapsed(!getSidebarCollapsedSnapshot());
   }, []);
 
-  // Load view mode preference from localStorage when resultType changes
+  // Load view mode preference from localStorage when resultType changes.
+  //
+  // This reads localStorage (a browser-only store) and must therefore run
+  // after mount to keep the server/client first paint identical (avoiding a
+  // hydration mismatch). It re-keys on `resultType` to restore that type's
+  // saved lens, yet must still yield to later `setViewMode` calls from the URL
+  // sync / user clicks — so it is a genuine post-mount external-store read, not
+  // a value derivable during render or a useSyncExternalStore subscription.
   React.useEffect(() => {
     try {
       const raw = window.localStorage.getItem(VIEW_PREFS_KEY);
@@ -60,18 +96,26 @@ export function useSearchViewMode(resultType: ResultType) {
       if (candidate === 'distribution' && resultType !== 'graphs') return;
       if (candidate === 'map' && isTableOnlyType(resultType)) return;
       if (candidate === 'grid' && isTableOnlyType(resultType)) return;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- seeds viewMode from a browser-only store (localStorage) post-mount to avoid a hydration mismatch; cannot run during render or via useSyncExternalStore because it is keyed on the resultType prop and must yield to later setViewMode calls
       setViewMode(candidate);
     } catch {
       // ignore invalid persisted prefs
     }
   }, [resultType]);
 
-  // Enforce type restrictions on viewMode
-  React.useEffect(() => {
-    if (isTableOnlyType(resultType) && viewMode !== 'table') setViewMode('table');
-    if (resultType !== 'graphs' && viewMode === 'distribution') setViewMode('table');
-    if (isTableOnlyType(resultType) && viewMode === 'map') setViewMode('table');
-  }, [resultType, viewMode]);
+  // Enforce type restrictions on viewMode. This is pure derivation (the valid
+  // viewMode for a given resultType), so it is corrected during render using
+  // the store-during-render pattern
+  // (https://react.dev/learn/you-might-not-need-an-effect) rather than in an
+  // effect. Re-rendering with the corrected value makes the guard fail on the
+  // next pass, so it converges in a single extra render with no loop.
+  if (
+    (isTableOnlyType(resultType) && viewMode !== 'table') ||
+    (resultType !== 'graphs' && viewMode === 'distribution') ||
+    (isTableOnlyType(resultType) && viewMode === 'map')
+  ) {
+    setViewMode('table');
+  }
 
   // Persist view mode preference to localStorage
   React.useEffect(() => {

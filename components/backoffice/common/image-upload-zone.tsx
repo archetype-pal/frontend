@@ -36,16 +36,27 @@ export function ImageUploadZone({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Clear staged preview when the backing image changes (e.g. item switch)
-  useEffect(() => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
+  // Clear staged preview/error when the backing image changes (e.g. item
+  // switch). This is the React-docs "adjust state when a prop changes"
+  // pattern: reset during render, guarded by a previous-value tracker, so
+  // the new value is rendered without an extra synchronous re-render pass.
+  // The stale blob is staged for revocation and released in an effect
+  // (revokeObjectURL must not run during render).
+  const [prevImageUrl, setPrevImageUrl] = useState(currentImageUrl);
+  const blobToRevokeRef = useRef<string | null>(null);
+  if (currentImageUrl !== prevImageUrl) {
+    setPrevImageUrl(currentImageUrl);
+    if (previewUrl) blobToRevokeRef.current = previewUrl;
+    setPreviewUrl(null);
     setError(null);
-    // Only react to external image URL changes, not our own previewUrl
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentImageUrl]);
+  }
+
+  useEffect(() => {
+    if (blobToRevokeRef.current) {
+      URL.revokeObjectURL(blobToRevokeRef.current);
+      blobToRevokeRef.current = null;
+    }
+  });
 
   const displayUrl = previewUrl || currentImageUrl;
 

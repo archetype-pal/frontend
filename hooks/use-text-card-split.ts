@@ -34,6 +34,7 @@ export function useTextCardSplit(orientation: 'row' | 'column') {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<Ratios>;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- SSR-safe hydration: must seed from localStorage AFTER mount (not in a useState initializer) to keep the client's first render matching server-rendered HTML; the `hydrated` flag below gates the write-back effect so it never clobbers storage with the default.
         setRatios((prev) => ({
           row:
             typeof parsed.row === 'number' && Number.isFinite(parsed.row)

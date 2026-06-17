@@ -78,26 +78,30 @@ export function useViewerEditorUiState(args: UseViewerEditorUiStateArgs): Viewer
   const [hoveredAnnotationId, setHoveredAnnotationId] = React.useState<string | null>(null);
 
   // Invariant 1: keep currentCreationKind allowed by the current capabilities.
-  React.useEffect(() => {
-    if (canCreateAnnotationKind(viewerCapabilities, currentCreationKind)) return;
+  // Adjusted during render (React's "store-during-render" pattern) rather than
+  // in an effect: the fallback returned by getDefaultAnnotationCreationKind is
+  // always a kind the capabilities allow, so the guard converges after a single
+  // re-render and never loops.
+  if (!canCreateAnnotationKind(viewerCapabilities, currentCreationKind)) {
     const fallback = getDefaultAnnotationCreationKind(viewerCapabilities);
-    if (fallback) {
+    if (fallback && fallback !== currentCreationKind) {
       setCurrentCreationKind(fallback);
     }
-  }, [viewerCapabilities, currentCreationKind]);
+  }
 
   // Invariant 2: drop selectedHand when it leaves the active image's hand set.
-  React.useEffect(() => {
-    if (!selectedHand) return;
-    if (handsForThisImage.some((hand) => hand.id === selectedHand.id)) return;
+  // Also a store-during-render adjustment: once cleared, the guard's first
+  // condition (`!selectedHand`) short-circuits, so it converges immediately.
+  if (selectedHand && !handsForThisImage.some((hand) => hand.id === selectedHand.id)) {
     setSelectedHand(undefined);
-  }, [handsForThisImage, selectedHand]);
+  }
 
   // Invariant 3: close the allograph modal when there's no context allograph.
   React.useEffect(() => {
     if (!isAllographModalOpen) return;
     const hasContext = Boolean(filteredAllograph || popupSelectedAllograph);
     if (hasContext) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-close is paired with the external onAllographModalAutoClose callback (resets the caller's drag state); that side effect must not run during render, so this stays an effect.
     setIsAllographModalOpen(false);
     onAllographModalAutoClose?.();
   }, [isAllographModalOpen, filteredAllograph, popupSelectedAllograph, onAllographModalAutoClose]);

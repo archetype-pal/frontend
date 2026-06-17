@@ -97,13 +97,20 @@ export function useImageTextLinking({
   );
 
   // Drop any armed/pending link when the image changes so a stale one from the
-  // previous image can't hijack the first region drawn on the next one.
-  React.useEffect(() => {
+  // previous image can't hijack the first region drawn on the next one. This is
+  // the React "adjust state during render when a prop changes" pattern (a `key`
+  // reset isn't available — the imageId boundary lives in the parent), guarded by
+  // a previous-imageId tracker so it runs exactly once per image change. The
+  // ref mirrors below stay in sync via their own effects after this re-render,
+  // identical to the prior effect-based reset.
+  const [prevImageId, setPrevImageId] = React.useState(imageId);
+  if (prevImageId !== imageId) {
+    setPrevImageId(imageId);
     setLinkArm(null);
     setPendingLinkRegion(null);
     setSelectedRegionGraphId(null);
     setAddRefForGraphId(null);
-  }, [imageId]);
+  }
 
   // Load image-texts for the side panel. Whether the panel is shown is derived
   // from the viewer's view mode (see manuscript-viewer.tsx), not from text
