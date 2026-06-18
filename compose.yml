@@ -2,7 +2,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./dev.Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
         NEXT_PUBLIC_IIIF_UPSTREAM: ${NEXT_PUBLIC_IIIF_UPSTREAM}
