@@ -50,9 +50,10 @@ async function getPrintImageUrl(item: CollectionItem): Promise<string> {
   });
 }
 
-function buildPrintStartupScript(): string {
+function buildPrintStartupScript(nonce?: string): string {
+  const nonceAttribute = nonce ? ` nonce="${escapeHtml(nonce)}"` : '';
   return `
-    <script>
+    <script${nonceAttribute}>
       (function () {
         function retryUrl(src) {
           try {
@@ -163,7 +164,10 @@ async function buildPrintTableRow(item: CollectionItem, index: number): Promise<
   );
 }
 
-export async function buildCollectionPrintHtml(collection: NamedCollection): Promise<string> {
+export async function buildCollectionPrintHtml(
+  collection: NamedCollection,
+  options?: { nonce?: string }
+): Promise<string> {
   const sections = await Promise.all(
     groupItemsBySection(collection).map(async ([sectionType, items]) => {
       const rows = await Promise.all(items.map(buildPrintTableRow));
@@ -184,7 +188,7 @@ export async function buildCollectionPrintHtml(collection: NamedCollection): Pro
   const count = collection.items.length;
 
   return (
-    `<!doctype html><html><head><meta charset="utf-8">` +
+    `<!doctype html><html lang="en"><head><meta charset="utf-8">` +
     `<title>${escapeHtml(collection.name)} · Collection print</title>` +
     `<style>` +
     `@page { margin: 12mm; }` +
@@ -209,7 +213,7 @@ export async function buildCollectionPrintHtml(collection: NamedCollection): Pro
     `<h1>${escapeHtml(collection.name)}</h1>` +
     `<p class="summary">Models of Authority collection · ${count} ${count === 1 ? 'item' : 'items'}</p>` +
     `${sections.join('')}` +
-    `${buildPrintStartupScript()}` +
+    `${buildPrintStartupScript(options?.nonce)}` +
     `</body></html>`
   );
 }
