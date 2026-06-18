@@ -5,6 +5,7 @@ import type OpenSeadragon from 'openseadragon';
 import '@recogito/annotorious/dist/annotorious.min.css';
 
 import { smallestBoxContainingPoint, type HitBox } from '@/lib/manuscript-viewer-hit-test';
+import { buildOpenSeadragonTileSource } from '@/lib/osd-iiif-tile-source';
 
 // ---- Annotation data model ----
 export interface Annotation {
@@ -464,13 +465,10 @@ export default function ManuscriptAnnotorious({
           const res = await fetch(tileSourceUrl);
           if (!res.ok) throw new Error(`IIIF info: ${res.status}`);
           const obj = (await res.json()) as Record<string, unknown>;
-          // Pass SIPI's NATIVE info.json through to OpenSeadragon (v6 supports
-          // both IIIF Image API 2.x and 3.0); only rewrite the identifier so tile
-          // requests route through the proxy. Do NOT downgrade 3.0 → 2.x: SIPI v5
-          // is IIIF-3-strict and rejects the 2.x `full` size with 400 ("IIIF url
-          // not correctly formatted"); the 3.0 descriptor makes OSD request the
-          // valid `max` size instead. (`id` is the 3.0 key, `@id` the 2.x one.)
-          tileSources = { ...obj, id: baseUrl, '@id': baseUrl };
+          // Keep SIPI v5's IIIF 3 URL syntax, but when SIPI omits `tiles`, build
+          // OSD a full-image pyramid from its advertised sizes. That avoids OSD's
+          // inferred cropped tile pyramid, which can drift from Annotorious.
+          tileSources = buildOpenSeadragonTileSource(obj, baseUrl);
         } catch (err) {
           if (isMounted) {
             setState({
