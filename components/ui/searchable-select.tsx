@@ -60,6 +60,20 @@ export const SearchableSelect = React.forwardRef<SearchableSelectHandle, Searcha
       [options, search]
     );
 
+    const resetTransientState = React.useCallback(() => {
+      setSearch('');
+      onOptionHover?.(null);
+    }, [onOptionHover]);
+
+    const selectAndClose = React.useCallback(
+      (nextValue: string | null) => {
+        onValueChange(nextValue);
+        resetTransientState();
+        setOpen(false);
+      },
+      [onValueChange, resetTransientState]
+    );
+
     const openAndFocus = React.useCallback(() => {
       if (disabled) return;
 
@@ -83,8 +97,7 @@ export const SearchableSelect = React.forwardRef<SearchableSelectHandle, Searcha
         onOpenChange={(nextOpen) => {
           setOpen(nextOpen);
           if (!nextOpen) {
-            setSearch('');
-            onOptionHover?.(null);
+            resetTransientState();
           }
         }}
       >
@@ -116,9 +129,10 @@ export const SearchableSelect = React.forwardRef<SearchableSelectHandle, Searcha
                   <CommandItem
                     value="__clear__"
                     onSelect={() => {
-                      onValueChange(null);
-                      setOpen(false);
+                      selectAndClose(null);
                     }}
+                    onMouseEnter={() => onOptionHover?.(null)}
+                    onFocus={() => onOptionHover?.(null)}
                   >
                     <Check
                       className={`mr-2 h-4 w-4 ${value == null ? 'opacity-100' : 'opacity-0'}`}
@@ -136,8 +150,7 @@ export const SearchableSelect = React.forwardRef<SearchableSelectHandle, Searcha
                     key={option.value}
                     value={option.value}
                     onSelect={() => {
-                      onValueChange(option.value);
-                      setOpen(false);
+                      selectAndClose(option.value);
                     }}
                     onMouseEnter={() => onOptionHover?.(option.value)}
                     onFocus={() => onOptionHover?.(option.value)}

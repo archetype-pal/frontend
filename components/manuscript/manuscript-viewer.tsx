@@ -240,14 +240,6 @@ export default function ManuscriptViewer({
   // ---- Derived values ----
   const popupAnnotation = activePopupRecord?.annotation ?? null;
 
-  const popupSelectedAllograph = React.useMemo(() => {
-    if (!isGlyphAnnotation(popupAnnotation)) return undefined;
-
-    const allographId = popupAnnotation?._meta?.allographId;
-    if (allographId == null) return undefined;
-    return allographs.find((a) => a.id === allographId);
-  }, [allographs, popupAnnotation]);
-
   const allographNameById = React.useMemo(
     () => new Map(allographs.map((a) => [a.id, a.name])),
     [allographs]
@@ -430,7 +422,6 @@ export default function ManuscriptViewer({
   const editorUi = useViewerEditorUiState({
     viewerCapabilities,
     handsForThisImage,
-    popupSelectedAllograph,
     onAllographModalAutoClose: React.useCallback(
       () => allographDialogDrag.reset(),
       [allographDialogDrag]
@@ -458,7 +449,7 @@ export default function ManuscriptViewer({
     selectedHand === undefined ? defaultHand : (selectedHand ?? undefined);
   const activeHandLabel = activeAssignmentHand?.name ?? 'Any';
 
-  const dropdownAllograph = filteredAllograph ?? popupSelectedAllograph ?? undefined;
+  const dropdownAllograph = filteredAllograph ?? undefined;
 
   // When the image has exactly one hand, always select it (the header shows it
   // read-only) so new annotations are attributed without the user picking.
@@ -468,8 +459,7 @@ export default function ManuscriptViewer({
     }
   }, [handsForThisImage, selectedHand, setSelectedHand]);
 
-  const displayAllograph =
-    hoveredAllograph ?? filteredAllograph ?? popupSelectedAllograph ?? undefined;
+  const displayAllograph = hoveredAllograph ?? filteredAllograph ?? undefined;
 
   const activeAllographLabel = displayAllograph
     ? formatAllographLabel(displayAllograph)
@@ -477,10 +467,7 @@ export default function ManuscriptViewer({
 
   const countAllographId = displayAllograph?.id ?? null;
 
-  const highlightAllographId =
-    hoveredAllograph?.id ??
-    filteredAllograph?.id ??
-    (isAllographModalOpen ? (popupSelectedAllograph?.id ?? null) : null);
+  const highlightAllographId = hoveredAllograph?.id ?? filteredAllograph?.id ?? null;
 
   const filteredA9s = React.useMemo(() => {
     if (countAllographId == null) return [];

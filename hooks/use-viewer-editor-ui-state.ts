@@ -18,9 +18,6 @@ export interface UseViewerEditorUiStateArgs {
   /** Allographs available on the current image — used to keep selectedHand
    * within the valid set. */
   handsForThisImage: HandType[];
-  /** Allograph derived from the active popup selection — if neither this
-   * nor `filteredAllograph` is set, the modal auto-closes. */
-  popupSelectedAllograph: Allograph | undefined;
   /** Called when the allograph modal auto-closes (to reset drag state).
    * Optional; if omitted the auto-close just toggles the open flag. */
   onAllographModalAutoClose?: () => void;
@@ -52,19 +49,14 @@ export interface ViewerEditorUiState {
 //      caller's capabilities flip and the current kind is no longer allowed.
 //   2. selectedHand clears when the active image's hand list no longer
 //      contains it.
-//   3. isAllographModalOpen auto-closes when there's no longer a context
-//      allograph (filteredAllograph or popupSelectedAllograph).
+//   3. isAllographModalOpen auto-closes when there's no longer an explicitly
+//      focused allograph.
 //
 // Phase A.2 of ROADMAP-EDITORS. The next refactor (component split) will
 // let consumers subscribe to subsets of this state without re-rendering
 // the whole viewer — for now, bundling is the LOC + cohesion win.
 export function useViewerEditorUiState(args: UseViewerEditorUiStateArgs): ViewerEditorUiState {
-  const {
-    viewerCapabilities,
-    handsForThisImage,
-    popupSelectedAllograph,
-    onAllographModalAutoClose,
-  } = args;
+  const { viewerCapabilities, handsForThisImage, onAllographModalAutoClose } = args;
 
   const [activeTool, setActiveTool] = React.useState<ActiveViewerTool>('move');
   const [currentCreationKind, setCurrentCreationKind] =
@@ -96,15 +88,14 @@ export function useViewerEditorUiState(args: UseViewerEditorUiStateArgs): Viewer
     setSelectedHand(undefined);
   }
 
-  // Invariant 3: close the allograph modal when there's no context allograph.
+  // Invariant 3: close the allograph modal when there's no focused allograph.
   React.useEffect(() => {
     if (!isAllographModalOpen) return;
-    const hasContext = Boolean(filteredAllograph || popupSelectedAllograph);
-    if (hasContext) return;
+    if (filteredAllograph) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-close is paired with the external onAllographModalAutoClose callback (resets the caller's drag state); that side effect must not run during render, so this stays an effect.
     setIsAllographModalOpen(false);
     onAllographModalAutoClose?.();
-  }, [isAllographModalOpen, filteredAllograph, popupSelectedAllograph, onAllographModalAutoClose]);
+  }, [isAllographModalOpen, filteredAllograph, onAllographModalAutoClose]);
 
   return {
     activeTool,

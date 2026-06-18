@@ -28,7 +28,6 @@ function makeArgs(overrides: Partial<UseViewerEditorUiStateArgs> = {}): UseViewe
   return {
     viewerCapabilities: makeCaps(),
     handsForThisImage: [],
-    popupSelectedAllograph: undefined,
     ...overrides,
   };
 }
@@ -53,12 +52,10 @@ describe('useViewerEditorUiState — initial state', () => {
 
 describe('setters', () => {
   it('round-trip all setters', () => {
-    // Pass hands + a context allograph so invariants 2 and 3 don't reset
+    // Pass hands + set a filtered allograph so invariants 2 and 3 don't reset
     // the values we're trying to set.
     const { result } = renderHook(() =>
-      useViewerEditorUiState(
-        makeArgs({ handsForThisImage: [hand1], popupSelectedAllograph: allographA })
-      )
+      useViewerEditorUiState(makeArgs({ handsForThisImage: [hand1] }))
     );
     act(() => {
       result.current.setActiveTool('draw');
@@ -179,37 +176,19 @@ describe('invariant 3 — allograph modal auto-close', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('stays open when popupSelectedAllograph is set', () => {
+  it('closes mid-session if the focused allograph is cleared', () => {
     const onClose = vi.fn();
     const { result } = renderHook(() =>
-      useViewerEditorUiState(
-        makeArgs({ popupSelectedAllograph: allographA, onAllographModalAutoClose: onClose })
-      )
+      useViewerEditorUiState(makeArgs({ onAllographModalAutoClose: onClose }))
     );
     act(() => {
+      result.current.setFilteredAllograph(allographA);
       result.current.setIsAllographModalOpen(true);
     });
     expect(result.current.isAllographModalOpen).toBe(true);
-    expect(onClose).not.toHaveBeenCalled();
-  });
 
-  it('closes mid-session if the context allograph is cleared', () => {
-    const onClose = vi.fn();
-    const { result, rerender } = renderHook(({ args }) => useViewerEditorUiState(args), {
-      initialProps: {
-        args: makeArgs({
-          popupSelectedAllograph: allographA,
-          onAllographModalAutoClose: onClose,
-        }),
-      },
-    });
     act(() => {
-      result.current.setIsAllographModalOpen(true);
-    });
-    expect(result.current.isAllographModalOpen).toBe(true);
-
-    rerender({
-      args: makeArgs({ popupSelectedAllograph: undefined, onAllographModalAutoClose: onClose }),
+      result.current.setFilteredAllograph(undefined);
     });
     expect(result.current.isAllographModalOpen).toBe(false);
     expect(onClose).toHaveBeenCalledTimes(1);
