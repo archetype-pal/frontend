@@ -39,6 +39,7 @@ pnpm dev
 
 App URL: `http://localhost:3000`
 
+
 ## Quality Checks
 
 ```bash
@@ -47,49 +48,37 @@ pnpm test
 pnpm build
 ```
 
+
+## Local Development (docker compose)
+
+Copy env setting, then start project :
+
+```bash
+```bash
+cp .env.dev-compose .env
+docker compose up
+```
+
+Live reload is enabled. We assume backend services are running on `localhost` and reachable from the container. If not, adjust the `.env`.
+If backend/image services are on your machine, they must also be reachable from the container and from client devices (CORS and host/IP values in env vars may need to be updated).
+
+App URL: `http://localhost:3000`
+
+
 ## Run With Docker (Local)
 
 The `Dockerfile` builds a production image and runs Next.js in standalone mode on port `3000`.
 
-### 1) Build the image
+### Run in production with Traefik
+
+This mode is available if you have Traefik running as application proxy on your machine.
+
+Copy env setting, then start project:
 
 ```bash
-docker build \
-  --build-arg NEXT_PUBLIC_API_URL=https://betaarchetype.gla.ac.uk \
-  --build-arg NEXT_PUBLIC_IIIF_UPSTREAM=https://betaarchetype.gla.ac.uk \
-  --build-arg NEXT_PUBLIC_SITE_URL=https://betaarchetype.gla.ac.uk \
-  --build-arg CORS_ALLOWED_ORIGINS=https://betaarchetype.gla.ac.uk \
-  --build-arg DOCKER_IMAGE_HASH=local-dev \
-  -t archetype-frontend:local .
+cp .env.prod-traefik .env
+docker compose up
 ```
-
-If your API is reachable on another host/IP, set that URL in `NEXT_PUBLIC_API_URL` during build.
-
-### 2) Run the container
-
-```bash
-docker run --rm \
-  --name archetype-frontend \
-  -p 3000:3000 \
-  archetype-frontend:local
-```
-
-The container listens on `0.0.0.0` internally (already configured in the image), and `-p 3000:3000` publishes it on your machine.
-`NEXT_PUBLIC_*` values are set at image build time via `--build-arg`; passing them at `docker run` can override server-side behavior.
-
-## Access Over Your Local Network
-
-To open the app from another device on the same network:
-
-1. Find your machine IP (example on macOS):
-   ```bash
-   ipconfig getifaddr en0
-   ```
-2. Ensure port `3000` is allowed by your firewall.
-3. Open from another device:
-   - `http://<YOUR_MACHINE_IP>:3000`
-
-If backend/image services are on your machine, they must also be reachable from the container and from client devices (CORS and host/IP values in env vars may need to be updated).
 
 ## Useful Commands
 
