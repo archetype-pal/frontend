@@ -145,6 +145,15 @@ function clampXywh(
   return { region: `${clamped.x},${clamped.y},${clamped.w},${clamped.h}` };
 }
 
+function noUpscaleBestFitSizePart(size: number, crop: Pick<IIIFCoordinates, 'w' | 'h'>): string {
+  const pixelSize = Math.max(1, Math.round(size));
+  const width =
+    Number.isFinite(crop.w) && crop.w > 0 ? Math.min(pixelSize, Math.round(crop.w)) : pixelSize;
+  const height =
+    Number.isFinite(crop.h) && crop.h > 0 ? Math.min(pixelSize, Math.round(crop.h)) : pixelSize;
+  return `!${Math.max(1, width)},${Math.max(1, height)}`;
+}
+
 // --- Public API ---
 
 export function getIiifBaseUrl(infoUrl: string): string {
@@ -190,7 +199,10 @@ export function getIiifImageUrl(infoUrl: string, options?: IIIFImageUrlOptions):
       size = `${DEFAULT_THUMBNAIL_SIZE},`;
     }
   } else if (typeof options?.maxSize === 'number' && options.maxSize > 0) {
-    size = `!${options.maxSize},${options.maxSize}`;
+    size =
+      options.coordinates != null
+        ? noUpscaleBestFitSizePart(options.maxSize, options.coordinates)
+        : `!${options.maxSize},${options.maxSize}`;
   } else {
     size = 'max';
   }
