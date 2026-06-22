@@ -154,6 +154,12 @@ function noUpscaleBestFitSizePart(size: number, crop: Pick<IIIFCoordinates, 'w' 
   return `!${Math.max(1, width)},${Math.max(1, height)}`;
 }
 
+function thumbnailPixelSize(options?: IIIFImageUrlOptions): number {
+  return typeof options?.maxSize === 'number' && options.maxSize > 0
+    ? Math.round(options.maxSize)
+    : DEFAULT_THUMBNAIL_SIZE;
+}
+
 // --- Public API ---
 
 export function getIiifBaseUrl(infoUrl: string): string {
@@ -192,11 +198,12 @@ export function getIiifImageUrl(infoUrl: string, options?: IIIFImageUrlOptions):
     : 'full';
   let size: string;
   if (options?.thumbnail) {
+    const thumbnailSize = thumbnailPixelSize(options);
     const regionW = options?.coordinates?.w;
-    if (typeof regionW === 'number' && regionW > 0 && regionW < DEFAULT_THUMBNAIL_SIZE) {
+    if (typeof regionW === 'number' && regionW > 0 && regionW < thumbnailSize) {
       size = 'max';
     } else {
-      size = `${DEFAULT_THUMBNAIL_SIZE},`;
+      size = `${thumbnailSize},`;
     }
   } else if (typeof options?.maxSize === 'number' && options.maxSize > 0) {
     size =

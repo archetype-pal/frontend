@@ -44,6 +44,32 @@ describe('IIIF URL generation', () => {
     ).toBe(`${BASE_URL}/480,608,229,290/max/0/default.jpg`);
   });
 
+  it('honors compact thumbnail size requests for cropped thumbnails', () => {
+    expect(
+      getIiifImageUrl(INFO_URL, {
+        coordinates: { x: 480, y: 608, w: 229, h: 290 },
+        thumbnail: true,
+        maxSize: 120,
+      })
+    ).toBe(`${BASE_URL}/480,608,229,290/120,/0/default.jpg`);
+  });
+
+  it('does not upscale cropped thumbnails smaller than the requested thumbnail size', () => {
+    expect(
+      getIiifImageUrl(INFO_URL, {
+        coordinates: { x: 1855, y: 1037, w: 61, h: 75 },
+        thumbnail: true,
+        maxSize: 120,
+      })
+    ).toBe(`${BASE_URL}/1855,1037,61,75/max/0/default.jpg`);
+  });
+
+  it('honors compact thumbnail size requests for full-image thumbnails', () => {
+    expect(getIiifImageUrl(INFO_URL, { thumbnail: true, maxSize: 120 })).toBe(
+      `${BASE_URL}/full/120,/0/default.jpg`
+    );
+  });
+
   it('does not request upscaled bounded crop URLs after Y flip', async () => {
     vi.stubGlobal(
       'fetch',
@@ -62,6 +88,27 @@ describe('IIIF URL generation', () => {
         maxSize: 1200,
       })
     ).resolves.toBe(`${BASE_URL}/480,608,229,290/!229,290/0/default.jpg`);
+  });
+
+  it('honors compact thumbnail size requests after Y flip', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        return new Response(JSON.stringify(BOUNDS), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      })
+    );
+
+    await expect(
+      getIiifImageUrlWithBounds(INFO_URL, {
+        coordinates: { x: 480, y: 5573, w: 229, h: 290 },
+        thumbnail: true,
+        flipY: true,
+        maxSize: 120,
+      })
+    ).resolves.toBe(`${BASE_URL}/480,608,229,290/120,/0/default.jpg`);
   });
 
   it('keeps selector thumbnails on the reverted pixel-region URL shape', () => {
