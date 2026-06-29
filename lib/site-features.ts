@@ -39,7 +39,7 @@ export const ALL_SECTION_KEYS: SectionKey[] = [
 ];
 
 export const SECTION_LABELS: Record<SectionKey, string> = {
-  search: 'Search',
+  search: 'Explore',
   collection: 'My Collection',
   lightbox: 'Lightbox',
   news: 'News',
