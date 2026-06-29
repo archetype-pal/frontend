@@ -1,4 +1,21 @@
-onlyBuiltDependencies:
-  - core-js
-  - sharp
-  - unrs-resolver
+# Settings that pnpm 11 no longer reads from package.json's "pnpm" field
+# live here. See https://pnpm.io/settings
+
+# Security overrides (CVE pins). pnpm 11 reads `overrides` from this file,
+# not from package.json.
+overrides:
+  qs: ^6.15.2
+  vite: 7.3.5
+  esbuild: ^0.28.1
+  postcss: ^8.5.15
+
+# Build-script approval. pnpm 11 replaced the `onlyBuiltDependencies` list with
+# this map and errors (rather than warns) until every package that ships an
+# install/build script is explicitly allowed (true) or denied (false).
+# All four are trusted native/build deps: esbuild, sharp and unrs-resolver need
+# their compiled binaries; core-js runs a benign postinstall.
+allowBuilds:
+  core-js: true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
