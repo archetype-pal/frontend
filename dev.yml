@@ -1,7 +1,7 @@
 services:
   frontend:
     ports:
-      - "${FRONT_END_PORT}:3000"
+      - '${FRONT_END_PORT}:3000'
     volumes:
       - .:/app
       - /app/node_modules

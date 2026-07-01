@@ -39,7 +39,6 @@ pnpm dev
 
 App URL: `http://localhost:3000`
 
-
 ## Quality Checks
 
 ```bash
@@ -48,12 +47,10 @@ pnpm test
 pnpm build
 ```
 
-
 ## Local Development (docker compose)
 
 Copy env setting, then start project :
 
-```bash
 ```bash
 cp .env.dev-compose .env
 docker compose up
@@ -63,7 +60,6 @@ Live reload is enabled. We assume backend services are running on `localhost` an
 If backend/image services are on your machine, they must also be reachable from the container and from client devices (CORS and host/IP values in env vars may need to be updated).
 
 App URL: `http://localhost:3000`
-
 
 ## Run With Docker (Local)
 
