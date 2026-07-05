@@ -39,6 +39,21 @@ interface UseImageTextLinkingArgs {
 }
 
 /**
+ * Tag a freshly drawn box as a text-region draft so the visibility filter treats
+ * it as the text layer immediately — before the link round-trips server-side.
+ * Shared by both draw flows: the reverse flow (draw first, then click a phrase —
+ * startPendingLink) and the forward flow (phrase armed, then draw — tryLinkRegion).
+ * Typing at draw time is what lets the filter gate visibility purely on layer
+ * instead of on persistence state (see passesVisibilityFilter).
+ */
+export function toTextRegionDraft(annotation: A9sAnnotation): A9sAnnotation {
+  return {
+    ...annotation,
+    _meta: { ...(annotation as A9sWithMeta)._meta, annotationType: 'text' as const },
+  } as A9sAnnotation;
+}
+
+/**
  * Track A/B — the transcription side panel + text↔region linking, extracted from
  * manuscript-viewer.tsx (Track D1). Owns the image-texts list, the panel
  * open/linked-span state, the "armed for linking" state (incl. its own
@@ -177,11 +192,19 @@ export function useImageTextLinking({
       const arm = linkArmRef.current;
       if (!(arm && token && imageHeight)) return false;
 
-      const geometry = a9sToBackendFeature(annotation, imageHeight);
+      // Tag the drawn box as a text-region immediately — before the link round-
+      // trips server-side — so the visibility filter treats it as the text layer
+      // for the whole async window (mirrors the reverse flow in startPendingLink).
+      // Without this the box is untyped on the canvas until the link resolves, and
+      // in pure text view it would vanish the instant it's drawn.
+      const typed = toTextRegionDraft(annotation);
+      void viewerApiRef.current?.updateSelectedDraft?.(typed);
+
+      const geometry = a9sToBackendFeature(typed, imageHeight);
       void (async () => {
         try {
           await linkRegionToElement(token, arm.textId, arm.elementIndex, geometry);
-          viewerApiRef.current?.removeAnnotationById?.(annotation.id);
+          viewerApiRef.current?.removeAnnotationById?.(typed.id);
           setLinkArm(null);
           await reloadTextsAndAnnotations();
           showActionNotification({
@@ -191,7 +214,7 @@ export function useImageTextLinking({
             duration: 3000,
           });
         } catch (error) {
-          viewerApiRef.current?.removeAnnotationById?.(annotation.id);
+          viewerApiRef.current?.removeAnnotationById?.(typed.id);
           showActionNotification({
             kind: 'error',
             title: 'Link failed',
@@ -215,14 +238,12 @@ export function useImageTextLinking({
         viewerApiRef.current?.removeAnnotationById?.(existing.id);
       }
       // Type the preview as a text-region immediately — before it's linked
-      // server-side — so every guard (the popup sink, the select handler) treats
-      // it as one. Otherwise an un-linked drawn box is "untyped" and could open
-      // the glyph popup if re-selected after a view-mode switch. We also push the
-      // type onto the canvas copy so Annotorious re-emits it typed on re-select.
-      const typed = {
-        ...annotation,
-        _meta: { ...(annotation as A9sWithMeta)._meta, annotationType: 'text' as const },
-      } as A9sAnnotation;
+      // server-side — so every guard (the popup sink, the select handler, the
+      // visibility filter) treats it as one. Otherwise an un-linked drawn box is
+      // "untyped" and could open the glyph popup if re-selected after a view-mode
+      // switch. We also push the type onto the canvas copy so Annotorious re-emits
+      // it typed on re-select.
+      const typed = toTextRegionDraft(annotation);
       void viewerApiRef.current?.updateSelectedDraft?.(typed);
       // Set the ref synchronously (not just via the effect) so a re-select that
       // fires before the next render still routes this box as the pending link.
