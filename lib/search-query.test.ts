@@ -167,6 +167,73 @@ describe('resolveFacetClick', () => {
     expect(result.value.offset).toBe(0);
   });
 
+  it('selectFacet clears a matching exclusion (include and exclude are mutually exclusive)', () => {
+    const result = resolveFacetClick({
+      arg: '/unused',
+      action: { type: 'selectFacet', facetKey: 'repository_name', value: 'Durham' },
+      queryState: {
+        limit: 20,
+        offset: 40,
+        ordering: null,
+        selected_facets: [],
+        dateParams: {},
+        extraParams: { repository_name__not: 'Durham', type__not: ['Brieve'] },
+      },
+      baseFacetURL: 'http://localhost:8000/api/v1/search/item-parts/facets',
+    });
+
+    expect(result.type).toBe('query');
+    if (result.type !== 'query') return;
+    expect(result.value.selected_facets).toEqual(['repository_name_exact:Durham']);
+    // Its own exclusion is dropped; an unrelated exclusion survives.
+    expect(result.value.extraParams).toEqual({ type__not: ['Brieve'] });
+    expect(result.value.offset).toBe(0);
+  });
+
+  it('excludeFacet clears a matching inclusion (include and exclude are mutually exclusive)', () => {
+    const result = resolveFacetClick({
+      arg: '',
+      action: { type: 'excludeFacet', facetKey: 'repository_name', value: 'Durham' },
+      queryState: {
+        limit: 20,
+        offset: 40,
+        ordering: null,
+        selected_facets: ['repository_name_exact:Durham', 'type_exact:Charter'],
+        dateParams: {},
+        extraParams: {},
+      },
+      baseFacetURL: 'http://localhost:8000/api/v1/search/item-parts/facets',
+    });
+
+    expect(result.type).toBe('query');
+    if (result.type !== 'query') return;
+    // The Durham inclusion is removed; an unrelated inclusion is kept.
+    expect(result.value.selected_facets).toEqual(['type_exact:Charter']);
+    expect(result.value.extraParams).toEqual({ repository_name__not: 'Durham' });
+    expect(result.value.offset).toBe(0);
+  });
+
+  it('removeExclusion drops the value from the __not list', () => {
+    const result = resolveFacetClick({
+      arg: '',
+      action: { type: 'removeExclusion', facetKey: 'repository_name', value: 'Durham' },
+      queryState: {
+        limit: 20,
+        offset: 40,
+        ordering: null,
+        selected_facets: [],
+        dateParams: {},
+        extraParams: { repository_name__not: ['Durham', 'York'] },
+      },
+      baseFacetURL: 'http://localhost:8000/api/v1/search/item-parts/facets',
+    });
+
+    expect(result.type).toBe('query');
+    if (result.type !== 'query') return;
+    expect(result.value.extraParams).toEqual({ repository_name__not: 'York' });
+    expect(result.value.offset).toBe(0);
+  });
+
   it('adds exclusion tags from extraParams', () => {
     const tags = buildActiveQueryTags({
       submittedKeyword: '',

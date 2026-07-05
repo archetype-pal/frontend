@@ -161,6 +161,16 @@ export function DynamicFacets({
       })
     ) as Record<string, string[]>;
   }, [ordered, selectedFacets]);
+  // Excluded values (`<facetKey>__not`) come in as active tags flagged exclude.
+  // Group them per facet so each panel can surface + revert its own exclusions.
+  const excludedByFacet = React.useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const tag of activeTags) {
+      if (!tag.exclude) continue;
+      (map[tag.facetKey] ??= []).push(tag.value);
+    }
+    return map;
+  }, [activeTags]);
 
   const renderableFacets = React.useMemo(() => {
     const list = ordered.flatMap((facetKey) => {
@@ -170,7 +180,8 @@ export function DynamicFacets({
       if (
         facetValue.kind === 'list' &&
         facetValue.items.length === 0 &&
-        (selectedValuesByFacet[facetKey]?.length ?? 0) === 0
+        (selectedValuesByFacet[facetKey]?.length ?? 0) === 0 &&
+        (excludedByFacet[facetKey]?.length ?? 0) === 0
       ) {
         return [];
       }
@@ -181,7 +192,7 @@ export function DynamicFacets({
     return list.sort(
       (a, b) => (a.facetValue.kind === 'range' ? 0 : 1) - (b.facetValue.kind === 'range' ? 0 : 1)
     );
-  }, [ordered, facets, renderConfig, searchType, selectedValuesByFacet]);
+  }, [ordered, facets, renderConfig, searchType, selectedValuesByFacet, excludedByFacet]);
 
   if (!facets || Object.keys(facets).length === 0) {
     return null;
@@ -242,7 +253,9 @@ export function DynamicFacets({
       <div className="space-y-4">
         {renderableFacets.map(({ facetKey, facetValue, type, title }, index) => {
           const hasSelection =
-            selectedByFacet[facetKey] != null || (selectedValuesByFacet[facetKey]?.length ?? 0) > 0;
+            selectedByFacet[facetKey] != null ||
+            (selectedValuesByFacet[facetKey]?.length ?? 0) > 0 ||
+            (excludedByFacet[facetKey]?.length ?? 0) > 0;
           const defaultExpanded = index < PRIMARY_FACET_COUNT || hasSelection;
           if (facetValue.kind === 'range') {
             return (
@@ -306,6 +319,10 @@ export function DynamicFacets({
               }}
               onExclude={(val) =>
                 onFacetClick?.('', { type: 'excludeFacet', facetKey, value: val })
+              }
+              excludedValues={excludedByFacet[facetKey] ?? []}
+              onRemoveExclude={(val) =>
+                onFacetClick?.('', { type: 'removeExclusion', facetKey, value: val })
               }
             />
           );
