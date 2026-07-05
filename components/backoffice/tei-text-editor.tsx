@@ -203,7 +203,10 @@ export function TeiTextEditor({
       )}
       {mode === 'preview' && (
         <div className="min-h-[320px] px-4 py-3">
-          <ImageTextViewer html={value} />
+          {/* richMarkup so Preview matches Rich mode (and the public reader view):
+              persons/places/expansions get the coloured-underline + hover-label
+              `.tei-rich` highlighting instead of rendering as plain prose. */}
+          <ImageTextViewer html={value} richMarkup />
         </div>
       )}
     </div>
