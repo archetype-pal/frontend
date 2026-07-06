@@ -1206,6 +1206,8 @@
     "translations": {
       "title": "Translations",
       "subtitle": "Manage domain-specific labels used across the site.",
+      "sectionGeneralTitle": "General configuration",
+      "sectionGeneralDesc": "Site-wide branding shown in the header and footer, such as the site title, tagline, and footer text.",
       "sectionLabelsTitle": "App, model, and field labels",
       "sectionLabelsDesc": "These labels now live in the frontend and replace backend app/model/field display settings.",
       "sectionSearchTitle": "Search result categories",

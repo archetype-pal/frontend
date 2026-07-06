@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { readModelLabels } from '@/lib/model-labels-server';
+import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
 // lucide-react dropped brand marks (incl. GitHub) in v1, so the GitHub logo is
 // rendered as an inline SVG. Uses currentColor to match the adjacent icons.
@@ -46,8 +48,14 @@ const partners = [
 ];
 
 export default async function Footer() {
-  const t = await getTranslations('nav.footer');
-  const tNav = await getTranslations('nav');
+  const [t, rawLocale, modelLabels] = await Promise.all([
+    getTranslations('nav.footer'),
+    getLocale(),
+    readModelLabels(),
+  ]);
+  const locale = rawLocale as ModelLabelLocale;
+  const getLabel = (key: 'siteTitle' | 'footerFunded' | 'footerCopyright') =>
+    resolveModelLabel(modelLabels.labels[key], locale);
 
   return (
     <footer className="bg-primary text-primary-foreground mt-16">
@@ -56,12 +64,12 @@ export default async function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
           {/* About column */}
           <div className="space-y-3">
-            <h2 className="font-serif text-lg font-semibold tracking-tight">{tNav('siteTitle')}</h2>
+            <h2 className="font-serif text-lg font-semibold tracking-tight">{getLabel('siteTitle')}</h2>
             <p className="text-sm text-primary-foreground/85 leading-relaxed">
               {t('about')}
             </p>
             <p className="text-sm text-primary-foreground/85">
-              {t('funded')}
+              {getLabel('footerFunded')}
             </p>
           </div>
 
@@ -130,7 +138,7 @@ export default async function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-primary-foreground/20 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-primary-foreground/85 text-center md:text-left max-w-2xl">
-            {t('copyright')}
+            {getLabel('footerCopyright')}
           </p>
           <div className="flex items-center gap-3">
             <Link

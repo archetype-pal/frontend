@@ -15,8 +15,32 @@ import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import {
   getDefaultModelLabelsConfig,
   type ModelLabelKey,
+  type ModelLabelLocale,
   type ModelLabelsConfig,
 } from '@/lib/model-labels';
+
+const generalConfigFieldMeta: Array<{ key: ModelLabelKey; title: string; description: string }> = [
+  {
+    key: 'siteTitle',
+    title: 'Site Title',
+    description: 'The site name shown in the header, footer, and browser tab title.',
+  },
+  {
+    key: 'siteTagline',
+    title: 'Site Tagline',
+    description: 'The short strapline shown next to the site title in the header.',
+  },
+  {
+    key: 'footerFunded',
+    title: 'Footer: Funding Statement',
+    description: 'The funding acknowledgement shown in the footer.',
+  },
+  {
+    key: 'footerCopyright',
+    title: 'Footer: Copyright Notice',
+    description: 'The copyright notice shown at the bottom of the footer.',
+  },
+];
 
 const fieldMeta: Array<{ key: ModelLabelKey; title: string; description: string }> = [
   {
@@ -137,6 +161,11 @@ async function saveModelLabels(
   return res.json();
 }
 
+const LOCALE_FIELD_META: Array<{ locale: ModelLabelLocale; title: string }> = [
+  { locale: 'en', title: 'English' },
+  { locale: 'fr', title: 'French' },
+];
+
 function LabelFieldsGrid({
   fields,
   config,
@@ -146,21 +175,31 @@ function LabelFieldsGrid({
   fields: Array<{ key: ModelLabelKey; title: string; description: string }>;
   config: ModelLabelsConfig;
   defaults: ModelLabelsConfig;
-  onChange: (key: ModelLabelKey, value: string) => void;
+  onChange: (key: ModelLabelKey, locale: ModelLabelLocale, value: string) => void;
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {fields.map((field) => (
-        <div key={field.key} className="space-y-2 rounded-md border p-4">
-          <Label htmlFor={`model-label-${field.key}`} className="font-medium">
-            {field.title}
-          </Label>
-          <Input
-            id={`model-label-${field.key}`}
-            value={config.labels[field.key] ?? ''}
-            onChange={(event) => onChange(field.key, event.target.value)}
-            placeholder={defaults.labels[field.key]}
-          />
+        <div key={field.key} className="space-y-3 rounded-md border p-4">
+          <Label className="font-medium">{field.title}</Label>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {LOCALE_FIELD_META.map(({ locale, title }) => (
+              <div key={locale} className="space-y-1">
+                <Label
+                  htmlFor={`model-label-${field.key}-${locale}`}
+                  className="text-xs font-normal text-muted-foreground"
+                >
+                  {title}
+                </Label>
+                <Input
+                  id={`model-label-${field.key}-${locale}`}
+                  value={config.labels[field.key]?.[locale] ?? ''}
+                  onChange={(event) => onChange(field.key, locale, event.target.value)}
+                  placeholder={defaults.labels[field.key][locale]}
+                />
+              </div>
+            ))}
+          </div>
           <p className="text-xs text-muted-foreground">{field.description}</p>
         </div>
       ))}
@@ -218,11 +257,11 @@ export default function TranslationsPage() {
     }
   }, [serverConfig]);
 
-  const handleLabelChange = (key: ModelLabelKey, value: string) => {
+  const handleLabelChange = (key: ModelLabelKey, locale: ModelLabelLocale, value: string) => {
     setConfig((prev) => ({
       labels: {
         ...prev.labels,
-        [key]: value,
+        [key]: { ...prev.labels[key], [locale]: value },
       },
     }));
     setDirty(true);
@@ -246,6 +285,22 @@ export default function TranslationsPage() {
             {t('translations.subtitle')}
           </p>
         </div>
+      </div>
+
+      <div className="rounded-lg border bg-card p-6 space-y-6">
+        <div>
+          <h2 className="text-base font-medium">{t('translations.sectionGeneralTitle')}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {t('translations.sectionGeneralDesc')}
+          </p>
+        </div>
+
+        <LabelFieldsGrid
+          fields={generalConfigFieldMeta}
+          config={config}
+          defaults={defaults}
+          onChange={handleLabelChange}
+        />
       </div>
 
       <div className="rounded-lg border bg-card p-6 space-y-6">

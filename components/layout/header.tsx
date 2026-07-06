@@ -290,10 +290,10 @@ export default function Header() {
         <div className="container mx-auto px-4 py-4 md:py-5">
           <div className="flex items-end gap-6">
             <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight text-primary-foreground leading-tight">
-              {t('siteTitle')}
+              {getLabel('siteTitle')}
             </h1>
             <p className="hidden md:block text-sm text-primary-foreground/85 max-w-xs pb-0.5">
-              {t('siteTagline')}
+              {getLabel('siteTagline')}
             </p>
           </div>
         </div>

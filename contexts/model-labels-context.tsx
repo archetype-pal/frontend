@@ -4,9 +4,11 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import {
   getDefaultModelLabelsConfig,
   pluralizeLabel,
+  resolveModelLabel,
   type ModelLabelKey,
   type ModelLabelsConfig,
 } from '@/lib/model-labels';
+import { useLocaleStore } from '@/stores/locale-store';
 
 type ModelLabelsContextValue = {
   config: ModelLabelsConfig;
@@ -35,9 +37,11 @@ export function ModelLabelsProvider({
     setConfig(initialConfig);
   }
 
+  const locale = useLocaleStore((state) => state.locale);
+
   const getLabel = useCallback(
-    (key: ModelLabelKey) => config.labels[key] ?? defaults.labels[key],
-    [config, defaults]
+    (key: ModelLabelKey) => resolveModelLabel(config.labels[key] ?? defaults.labels[key], locale),
+    [config, defaults, locale]
   );
   const getPluralLabel = useCallback(
     (key: ModelLabelKey) => pluralizeLabel(getLabel(key)),

@@ -14,6 +14,7 @@ import { AppQueryProvider } from '@/components/providers/query-provider';
 import { env } from '@/lib/env';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import { readModelLabels } from '@/lib/model-labels-server';
+import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -51,20 +52,25 @@ const junicode = localFont({
   preload: false,
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: 'Models of Authority',
-    template: '%s | Models of Authority',
-  },
-  description:
-    'Scottish Charters and the Emergence of Government 1100-1250 – a resource for the study of the contents, script and physical appearance of the corpus of Scottish charters.',
-  metadataBase: new URL(env.siteUrl),
-  openGraph: {
-    type: 'website',
-    locale: 'en_GB',
-    siteName: 'Models of Authority',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, modelLabels] = await Promise.all([getLocale(), readModelLabels()]);
+  const siteTitle = resolveModelLabel(modelLabels.labels.siteTitle, locale as ModelLabelLocale);
+
+  return {
+    title: {
+      default: siteTitle,
+      template: `%s | ${siteTitle}`,
+    },
+    description:
+      'Scottish Charters and the Emergence of Government 1100-1250 – a resource for the study of the contents, script and physical appearance of the corpus of Scottish charters.',
+    metadataBase: new URL(env.siteUrl),
+    openGraph: {
+      type: 'website',
+      locale: 'en_GB',
+      siteName: siteTitle,
+    },
+  };
+}
 
 export default async function RootLayout({
   children,

@@ -1206,6 +1206,8 @@
     "translations": {
       "title": "Traductions",
       "subtitle": "Gérer les libellés spécifiques au domaine utilisés sur le site.",
+      "sectionGeneralTitle": "Configuration générale",
+      "sectionGeneralDesc": "Éléments d'identité du site affichés dans l'en-tête et le pied de page, tels que le titre du site, le slogan et le texte du pied de page.",
       "sectionLabelsTitle": "Libellés d'applications, de modèles et de champs",
       "sectionLabelsDesc": "Ces libellés se trouvent désormais dans le frontend et remplacent les réglages d'affichage des applications/modèles/champs du backend.",
       "sectionSearchTitle": "Catégories de résultats de recherche",
