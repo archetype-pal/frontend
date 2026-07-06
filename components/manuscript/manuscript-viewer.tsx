@@ -652,6 +652,7 @@ export default function ManuscriptViewer({
     allowMultipleBoxes: viewerSettings.allowMultipleBoxes,
     selectMultipleAnnotations: viewerSettings.selectMultipleAnnotations,
     textLinkingActive,
+    isAllographMode: effectiveViewMode === 'allograph',
     tryLinkRegion,
     startPendingLink,
     isPendingLinkRegionId,

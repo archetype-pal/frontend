@@ -58,6 +58,7 @@ interface AnnotationPopupCardProps {
   allographOptions: Allograph[];
   handOptions: Array<{ id: number; name: string }>;
   draftAllographId: number | null;
+  allographLocked: boolean;
   draftHandId: number | null;
   onDraftAllographIdChange: (value: number | null) => void;
   onDraftHandIdChange: (value: number | null) => void;
@@ -116,6 +117,7 @@ export function AnnotationPopupCard({
   allographOptions,
   handOptions,
   draftAllographId,
+  allographLocked,
   draftHandId,
   onDraftAllographIdChange,
   onDraftHandIdChange,
@@ -188,6 +190,11 @@ export function AnnotationPopupCard({
           onDraftNoteTextChange={onDraftNoteTextChange}
           onCancelDraftAnnotation={onCancelDraftAnnotation}
           onConfirmDraftAnnotation={onConfirmDraftAnnotation}
+          allographLocked={allographLocked}
+          draftAllographId={draftAllographId}
+          allographOptions={allographOptions}
+          draftHandId={draftHandId}
+          handOptions={handOptions}
         />
       ) : isStandardDraft || isStandardExisting ? (
         <StandardAnnotationEditor
@@ -200,6 +207,7 @@ export function AnnotationPopupCard({
           allographOptions={allographOptions}
           handOptions={handOptions}
           draftAllographId={draftAllographId}
+          allographLocked={allographLocked}
           draftHandId={draftHandId}
           onDraftAllographIdChange={onDraftAllographIdChange}
           onDraftHandIdChange={onDraftHandIdChange}

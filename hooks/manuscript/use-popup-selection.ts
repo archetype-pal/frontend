@@ -58,6 +58,10 @@ interface UsePopupSelectionArgs {
   /** Pure text view: a freshly-drawn region is a pending text link, not a glyph,
    *  so its auto-select must not open the allograph popup. */
   textLinkingActive: boolean;
+  /** True only in pure allograph view mode. The header allograph "lock"
+   *  (read-only popup field) applies only here — in text/both modes the popup
+   *  keeps the editable allograph selector. */
+  isAllographMode: boolean;
   /** Link an armed phrase to a freshly-drawn region. Returns true if it handled
    *  the draw (a phrase was armed). Fires on createSelection — the draw event. */
   tryLinkRegion: (annotation: A9sAnnotation) => boolean;
@@ -104,6 +108,7 @@ export function usePopupSelection({
   allowMultipleBoxes,
   selectMultipleAnnotations,
   textLinkingActive,
+  isAllographMode,
   tryLinkRegion,
   startPendingLink,
   isPendingLinkRegionId,
@@ -246,6 +251,18 @@ export function usePopupSelection({
       const defaultPopupTab: PopupRecord['popupTab'] =
         annotationForPopup._meta?.annotationType === 'editorial' && isDraft ? 'notes' : 'details';
 
+      // The allograph is locked (shown read-only in the popup) when this draft
+      // inherited its allograph from the header dropdown — i.e. the annotation
+      // itself carried none, but the seeded popup does. Only in pure allograph
+      // view mode (not text/both): elsewhere the popup keeps the editable
+      // selector. When the header had no selection it also stays editable.
+      const allographLocked =
+        isAllographMode &&
+        isDraft &&
+        shouldAssignStandardDefaults &&
+        annotation._meta?.allographId == null &&
+        annotationForPopup._meta?.allographId != null;
+
       const commonOverrides = {
         popupTab: defaultPopupTab,
         shareUrl: '',
@@ -257,6 +274,7 @@ export function usePopupSelection({
         draftInternalNoteText: getEditorialInternalNote(annotationForPopup),
         draftGraphcomponentSet: annotationForPopup._meta?.graphcomponentSet ?? [],
         draftPositionIds: annotationForPopup._meta?.positions ?? [],
+        allographLocked,
       };
 
       openPopupCollectionFromAnnotation(annotationForPopup, {
@@ -269,6 +287,7 @@ export function usePopupSelection({
       clearSinglePopupState,
       currentCreationKind,
       filteredAllographId,
+      isAllographMode,
       openPopupCollectionFromAnnotation,
       activeAssignmentHandId,
       allowMultipleBoxes,

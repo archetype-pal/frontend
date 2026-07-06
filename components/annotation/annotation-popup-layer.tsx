@@ -199,6 +199,7 @@ export function AnnotationPopupLayer({
                 allographOptions={allographs}
                 handOptions={handsForThisImage.map((hand) => ({ id: hand.id, name: hand.name }))}
                 draftAllographId={popupRecord.draftAllographId}
+                allographLocked={popupRecord.allographLocked}
                 draftHandId={popupRecord.draftHandId}
                 draftGraphcomponentSet={popupRecord.draftGraphcomponentSet}
                 draftPositionIds={popupRecord.draftPositionIds}
