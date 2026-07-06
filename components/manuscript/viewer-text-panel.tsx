@@ -48,14 +48,6 @@ interface ViewerTextPanelProps {
   onSpanActivate: (graphId: number) => void;
   /** Track A — whether the current user may author text↔region links. */
   canLink?: boolean;
-  /** Element index currently armed for linking (drives the highlight). */
-  armedElementIndex?: number | null;
-  /** Text id the armed element belongs to (scopes the highlight in "both" view). */
-  armedTextId?: number | null;
-  /** Arm linking: clicking an unlinked phrase asks the user to draw its region. */
-  onArmLink?: (textId: number, elementIndex: number, label: string) => void;
-  /** Cancel an armed link. */
-  onCancelLink?: () => void;
   /** Reverse flow: a region was drawn first and is waiting for a phrase to link. */
   pendingLink?: boolean;
   /** Link the pending region to the clicked phrase. */
@@ -76,15 +68,6 @@ interface ViewerTextPanelProps {
     graphId: number,
     label: string
   ) => void;
-  /** Arm "also link": the next phrase click links the selected region to a
-   *  second element (e.g. its translation). */
-  onStartAddRef?: (graphId: number) => void;
-  /** Whether the "also link" arm is active (the next phrase click adds a ref). */
-  addRefArmed?: boolean;
-  /** Link the armed region to another clicked phrase. */
-  onAddRefToPhrase?: (textId: number, elementIndex: number, label: string) => void;
-  /** Cancel the "also link" arm. */
-  onCancelAddRef?: () => void;
   onClose: () => void;
   /** Editor-only TEI authoring. */
   token?: string | null;

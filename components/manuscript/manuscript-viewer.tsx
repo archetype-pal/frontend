@@ -298,8 +298,6 @@ export default function ManuscriptViewer({
     imageTexts,
     linkedGraphId,
     setLinkedGraphId,
-    linkArm,
-    setLinkArm,
     tryLinkRegion,
     reloadTextsAndAnnotations,
     pendingLinkRegion,
@@ -315,10 +313,6 @@ export default function ManuscriptViewer({
     unlinkElementFromRegion,
     linkExistingRegionToElement,
     persistRegionGeometry,
-    addRefForGraphId,
-    startAddRef,
-    addRefToPhrase,
-    cancelAddRef,
   } = useImageTextLinking({
     imageId,
     token,
@@ -1460,17 +1454,6 @@ export default function ManuscriptViewer({
                     setSelectedRegionGraphId(graphId);
                   }}
                   canLink={canPersistAnyAnnotations && !isPublicDemoMode}
-                  armedElementIndex={linkArm?.elementIndex ?? null}
-                  armedTextId={linkArm?.textId ?? null}
-                  onArmLink={(textId, elementIndex, label) => {
-                    setLinkArm({ textId, elementIndex, label });
-                    // Arm the draw tool so the editor can immediately draw.
-                    handleCreateAnnotation();
-                  }}
-                  onCancelLink={() => {
-                    setLinkArm(null);
-                    handleMoveTool();
-                  }}
                   pendingLink={!!pendingLinkRegion}
                   onLinkPhrase={(textId, elementIndex, label) =>
                     linkPendingToPhrase(textId, elementIndex, label)
@@ -1491,12 +1474,6 @@ export default function ManuscriptViewer({
                   onLinkExistingRegion={(textId, elementIndex, graphId, label) =>
                     linkExistingRegionToElement(textId, elementIndex, graphId, label)
                   }
-                  onStartAddRef={(graphId) => startAddRef(graphId)}
-                  addRefArmed={addRefForGraphId != null}
-                  onAddRefToPhrase={(textId, elementIndex, label) =>
-                    addRefToPhrase(textId, elementIndex, label)
-                  }
-                  onCancelAddRef={() => cancelAddRef()}
                   onClose={() => handleSetViewModeAndResetTool('allograph')}
                 />
               </div>
