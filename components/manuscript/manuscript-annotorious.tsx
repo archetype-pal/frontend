@@ -594,8 +594,8 @@ export default function ManuscriptAnnotorious({
           // "Both" view shows glyphs and text regions together. A linked region
           // is a large box around a word; the glyphs are small boxes inside it.
           // Annotorious selects the (visible) glyph under the pointer, so the
-          // region's link affordances ("Also link" / Delete) never appear — the
-          // flaky-missing-button bug. When a click lands inside a visible text
+          // region's link affordances (the Link Bar's Link / Remove) never appear
+          // — the flaky-missing-button bug. When a click lands inside a visible text
           // region but resolved to a non-region shape, redirect to the region.
           // Inert in allograph view (regions are filtered out → display:none).
           const textRegionAtPoint = (a: Annotation | null): Annotation | null => {
@@ -904,8 +904,8 @@ export default function ManuscriptAnnotorious({
             }
 
             // Both view: the click resolved to a (visible) glyph sitting inside a
-            // linked text region. Surface the region instead so its "Also link" /
-            // Delete affordances appear.
+            // linked text region. Surface the region instead so its Link Bar
+            // affordances (Link / Remove) appear.
             if (a && currentMode === 'pan') {
               const region = textRegionAtPoint(a);
               if (region) {

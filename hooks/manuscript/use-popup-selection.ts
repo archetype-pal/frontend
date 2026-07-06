@@ -62,9 +62,6 @@ interface UsePopupSelectionArgs {
    *  (read-only popup field) applies only here — in text/both modes the popup
    *  keeps the editable allograph selector. */
   isAllographMode: boolean;
-  /** Link an armed phrase to a freshly-drawn region. Returns true if it handled
-   *  the draw (a phrase was armed). Fires on createSelection — the draw event. */
-  tryLinkRegion: (annotation: A9sAnnotation) => boolean;
   /** Hold a freshly-drawn region pending until the user clicks its phrase. */
   startPendingLink: (annotation: A9sAnnotation) => void;
   /** True when the id is the region currently pending a text link. The pending
@@ -109,7 +106,6 @@ export function usePopupSelection({
   selectMultipleAnnotations,
   textLinkingActive,
   isAllographMode,
-  tryLinkRegion,
   startPendingLink,
   isPendingLinkRegionId,
 }: UsePopupSelectionArgs) {
@@ -352,19 +348,12 @@ export function usePopupSelection({
         // A freshly drawn region (non-db draft) becomes a text↔region link, not
         // a glyph. This MUST happen here, on Annotorious's createSelection (the
         // draw event): createAnnotation only fires when a glyph draft is saved
-        // via the allograph popup, which we never open for a link. If a phrase
-        // is armed, link it now (works in text AND both view); otherwise, in
-        // pure text view, hold the region pending until a phrase is clicked.
-        if (!isDbId(selected.id)) {
-          if (tryLinkRegion(selected)) {
-            dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
-            return;
-          }
-          if (textLinkingActive) {
-            dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
-            startPendingLink(selected);
-            return;
-          }
+        // via the allograph popup, which we never open for a link. In pure text
+        // view, hold the region pending until a phrase is clicked to link it.
+        if (!isDbId(selected.id) && textLinkingActive) {
+          dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
+          startPendingLink(selected);
+          return;
         }
 
         if (activeTool === 'modify') {
@@ -403,7 +392,6 @@ export function usePopupSelection({
       setSelectedRegionGraphId,
       selectMultipleAnnotations,
       textLinkingActive,
-      tryLinkRegion,
       startPendingLink,
       isPendingLinkRegionId,
     ]

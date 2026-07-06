@@ -298,7 +298,6 @@ export default function ManuscriptViewer({
     imageTexts,
     linkedGraphId,
     setLinkedGraphId,
-    tryLinkRegion,
     reloadTextsAndAnnotations,
     pendingLinkRegion,
     isPendingLinkRegionId,
@@ -647,7 +646,6 @@ export default function ManuscriptViewer({
     selectMultipleAnnotations: viewerSettings.selectMultipleAnnotations,
     textLinkingActive,
     isAllographMode: effectiveViewMode === 'allograph',
-    tryLinkRegion,
     startPendingLink,
     isPendingLinkRegionId,
   });
@@ -797,9 +795,9 @@ export default function ManuscriptViewer({
   }, [setActiveTool]);
 
   // Switching view mode resets to the move/pan tool. Otherwise a draw tool left
-  // armed (e.g. after arming a link, or switching views mid-draw) turns the next
-  // click on an existing box into a brand-new draft instead of a selection —
-  // which is what surfaced the "clicking a region opens the glyph popup" bug.
+  // armed (e.g. after switching views mid-draw) turns the next click on an
+  // existing box into a brand-new draft instead of a selection — which is what
+  // surfaced the "clicking a region opens the glyph popup" bug.
   const handleSetViewModeAndResetTool = React.useCallback(
     (mode: Parameters<typeof handleSetViewMode>[0]) => {
       // A deliberate mode choice wins over the search deep-link's transient view.
@@ -900,8 +898,8 @@ export default function ManuscriptViewer({
     editorState.resetFrom([]);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- per-image teardown: clears several independent state atoms alongside an imperative editor reset (editorState.resetFrom) and hook resetters; this is genuine synchronization on image change, and the `key`-reset boundary lives in the parent (out of scope to edit).
     setSelectedAnnotationIds([]);
-    // (linkArm reset → useImageTextLinking; share-URL re-arm → useShareTarget;
-    // both keyed on imageId.)
+    // (pending-link/selected-region reset → useImageTextLinking; share-URL
+    // re-arm → useShareTarget; both keyed on imageId.)
     resetImageAdjustments();
 
     // Visibility-filter reset now lives in useAnnotationVisibilityFilters
@@ -1447,8 +1445,8 @@ export default function ManuscriptViewer({
                     // affordance is shown deterministically regardless of whether
                     // the programmatic select emits onSelect.
                     setLinkedGraphId(graphId);
-                    // Clicking a linked phrase selects its region so the panel
-                    // offers "Also link" / Delete. This is the overlap-free way
+                    // Clicking a linked phrase selects its region so the Link Bar
+                    // offers Unlink / Remove. This is the overlap-free way
                     // to reach them: clicking the region on the image is
                     // unreliable when glyphs overlap it in Both view.
                     setSelectedRegionGraphId(graphId);
