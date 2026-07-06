@@ -52,18 +52,14 @@
     "searchNoSuggestions": "Aucune suggestion. Appuyez sur Entrée pour rechercher.",
     "bannerHide": "Masquer la bannière",
     "bannerShow": "Afficher la bannière",
-    "siteTitle": "Models of Authority",
-    "siteTagline": "Les chartes écossaises et l'émergence du gouvernement, 1100–1250",
     "footer": {
       "about": "Les chartes écossaises et l'émergence du gouvernement, 1100–1250. Une ressource pour l'étude du contenu, de l'écriture et de l'aspect physique du corpus des chartes écossaises.",
-      "funded": "Financé par le Arts and Humanities Research Council (AHRC).",
       "quickLinks": "Liens rapides",
       "searchCharters": "Rechercher des chartes",
       "aboutProject": "À propos du projet",
       "accessibility": "Déclaration d'accessibilité",
       "logIn": "Connexion",
       "partners": "Partenaires",
-      "copyright": "©2015–17 Models of Authority. Certaines parties sont disponibles sous licence CC-BY. Toutes les images de manuscrits sont la propriété de leurs dépôts respectifs. Site web par DDH / KDL. Construit avec Archetype.",
       "githubLabel": "GitHub",
       "projectWebsiteLabel": "Site du projet"
     }

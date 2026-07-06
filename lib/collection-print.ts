@@ -163,7 +163,10 @@ async function buildPrintTableRow(item: CollectionItem, index: number): Promise<
   );
 }
 
-export async function buildCollectionPrintHtml(collection: NamedCollection): Promise<string> {
+export async function buildCollectionPrintHtml(
+  collection: NamedCollection,
+  siteTitle: string
+): Promise<string> {
   const sections = await Promise.all(
     groupItemsBySection(collection).map(async ([sectionType, items]) => {
       const rows = await Promise.all(items.map(buildPrintTableRow));
@@ -207,7 +210,7 @@ export async function buildCollectionPrintHtml(collection: NamedCollection): Pro
     `</style></head>` +
     `<body>` +
     `<h1>${escapeHtml(collection.name)}</h1>` +
-    `<p class="summary">Models of Authority collection · ${count} ${count === 1 ? 'item' : 'items'}</p>` +
+    `<p class="summary">${escapeHtml(siteTitle)} collection · ${count} ${count === 1 ? 'item' : 'items'}</p>` +
     `${sections.join('')}` +
     `${buildPrintStartupScript()}` +
     `</body></html>`

@@ -10,7 +10,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { kind, slug } = await params;
   if (!isPublicationKind(kind)) {
-    return { title: 'Publication | Models of Authority' };
+    // The root layout applies a `%s | ${siteTitle}` title template, so
+    // return the bare title here to avoid double-suffixing.
+    return { title: 'Publication' };
   }
   return publicationMetadata({ kind, slug });
 }

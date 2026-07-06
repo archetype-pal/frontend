@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { buildCollectionPrintHtml } from '@/lib/collection-print';
 import type { NamedCollection } from '@/lib/collection-storage';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 function writePrintDocument(win: Window, html: string) {
   win.document.open();
@@ -17,6 +18,7 @@ function writePrintDocument(win: Window, html: string) {
 
 export function PrintCollectionButton({ collection }: { collection: NamedCollection }) {
   const t = useTranslations('collection');
+  const { getLabel } = useModelLabels();
   const [isPrinting, setIsPrinting] = React.useState(false);
 
   const handlePrint = async () => {
@@ -33,7 +35,7 @@ export function PrintCollectionButton({ collection }: { collection: NamedCollect
     );
 
     try {
-      writePrintDocument(win, await buildCollectionPrintHtml(collection));
+      writePrintDocument(win, await buildCollectionPrintHtml(collection, getLabel('siteTitle')));
     } catch {
       win.close();
       toast.error(t('print.failed'));

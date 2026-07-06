@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import PaginatedPublications from '@/components/content/paginated-publications';
 import BlogPostPreview from '@/components/content/blog-post-preview';
@@ -14,6 +14,8 @@ import {
 import { PUBLICATION_KIND_CONFIG, type PublicationKind } from '@/lib/publications';
 import { PageLoadingState } from '@/components/page/page-loading-state';
 import { BackofficeLink } from '@/components/common/backoffice-link';
+import { readModelLabels } from '@/lib/model-labels-server';
+import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,12 +50,16 @@ export async function publicationMetadata({
   slug: string;
 }): Promise<Metadata> {
   const config = PUBLICATION_KIND_CONFIG[kind];
+  const [locale, modelLabels] = await Promise.all([getLocale(), readModelLabels()]);
+  const siteTitle = resolveModelLabel(modelLabels.labels.siteTitle, locale as ModelLabelLocale);
   try {
     const item = await getPublicationBySlug(slug);
     const author = [item.author?.first_name, item.author?.last_name].filter(Boolean).join(' ');
     return {
-      title: `${item.title} | Models of Authority`,
-      description: item.preview || `${item.title} – Models of Authority ${config.summaryLabel}`,
+      // The root layout applies a `%s | ${siteTitle}` title template, so
+      // return the bare title here to avoid double-suffixing.
+      title: item.title,
+      description: item.preview || `${item.title} – ${siteTitle} ${config.summaryLabel}`,
       openGraph: {
         title: item.title,
         description: item.preview || undefined,
@@ -63,7 +69,7 @@ export async function publicationMetadata({
       },
     };
   } catch {
-    return { title: `${config.summaryLabel} | Models of Authority` };
+    return { title: config.summaryLabel };
   }
 }
 

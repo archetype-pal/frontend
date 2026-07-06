@@ -9,6 +9,7 @@ import { Download, FileText, Image as ImageIcon, Printer, X, FileJson } from 'lu
 import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store';
 import type { LightboxImage } from '@/lib/lightbox-db';
 import { getLightboxImageCaption, getLightboxImageLabel } from '@/lib/lightbox-display';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 interface LightboxExportProps {
   onClose: () => void;
@@ -33,6 +34,7 @@ function escapeXml(value: string): string {
 
 export function LightboxExport({ onClose }: LightboxExportProps) {
   const t = useTranslations('lightbox');
+  const { getLabel } = useModelLabels();
   const { currentWorkspaceId, workspaces, selectedImageIds } = useLightboxStore();
   const workspaceImages = useWorkspaceImages();
   const targetImages =
@@ -303,7 +305,7 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
         <p>Exported from Digital Lightbox</p>
       </publicationStmt>
       <sourceDesc>
-        <p>Digital images from Models of Authority</p>
+        <p>Digital images from ${escapeXml(getLabel('siteTitle'))}</p>
       </sourceDesc>
     </fileDesc>
   </teiHeader>

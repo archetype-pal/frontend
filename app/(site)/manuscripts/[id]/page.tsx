@@ -46,15 +46,17 @@ export async function generateMetadata({
   try {
     const manuscript = await getManuscript(id);
     if (!manuscript) {
-      return { title: 'Manuscript | Models of Authority' };
+      return { title: 'Manuscript' };
     }
     const label = manuscript.display_label ?? `Manuscript #${id}`;
     return {
-      title: `${label} | Models of Authority`,
+      // The root layout applies a `%s | ${siteTitle}` title template, so
+      // return the bare title here to avoid double-suffixing.
+      title: label,
       description: `View manuscript ${label} – Scottish Charters and the Emergence of Government 1100-1250`,
     };
   } catch {
-    return { title: 'Manuscript | Models of Authority' };
+    return { title: 'Manuscript' };
   }
 }
 

@@ -52,18 +52,14 @@
     "searchNoSuggestions": "No suggestions yet. Press Enter to search manuscripts.",
     "bannerHide": "Hide banner",
     "bannerShow": "Show banner",
-    "siteTitle": "Models of Authority",
-    "siteTagline": "Scottish Charters and the Emergence of Government, 1100–1250",
     "footer": {
       "about": "Scottish Charters and the Emergence of Government, 1100–1250. A resource for the study of the contents, script and physical appearance of the corpus of Scottish charters.",
-      "funded": "Funded by the Arts and Humanities Research Council (AHRC).",
       "quickLinks": "Quick Links",
       "searchCharters": "Search Charters",
       "aboutProject": "About the Project",
       "accessibility": "Accessibility Statement",
       "logIn": "Log in",
       "partners": "Partners",
-      "copyright": "©2015–17 Models of Authority. Some parts available under CC-BY licence. All manuscript images are copyright of their respective repositories. Website by DDH / KDL. Built with Archetype.",
       "githubLabel": "GitHub",
       "projectWebsiteLabel": "Project website"
     }
