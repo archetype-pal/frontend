@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { getWorkspaceRegions } from '@/lib/lightbox-db';
 import { useLightboxStore } from '@/stores/lightbox-store';
@@ -14,6 +15,7 @@ interface LightboxRegionComparisonProps {
 }
 
 export function LightboxRegionComparison({ onClose }: LightboxRegionComparisonProps) {
+  const t = useTranslations('lightbox');
   const { currentWorkspaceId } = useLightboxStore();
   const [regions, setRegions] = useState<LightboxRegion[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
@@ -43,11 +45,11 @@ export function LightboxRegionComparison({ onClose }: LightboxRegionComparisonPr
     return (
       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-xl p-6 max-w-md">
-          <h3 className="text-lg font-semibold mb-2">Region Comparison</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('regionComparison.title')}</h3>
           <p className="text-muted-foreground mb-4">
-            No regions found. Create regions by cropping images first.
+            {t('regionComparison.noRegionsFound')}
           </p>
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={onClose}>{t('regionComparison.close')}</Button>
         </div>
       </div>
     );
@@ -56,7 +58,7 @@ export function LightboxRegionComparison({ onClose }: LightboxRegionComparisonPr
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       <LightboxComparisonHeader
-        title="Region Comparison"
+        title={t('regionComparison.title')}
         mode={mode}
         onModeChange={setMode}
         overlayOpacity={overlayOpacity}
@@ -134,7 +136,7 @@ export function LightboxRegionComparison({ onClose }: LightboxRegionComparisonPr
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-muted-foreground">Select 2 regions to compare</p>
+          <p className="text-muted-foreground">{t('regionComparison.selectTwoToCompare')}</p>
         </div>
       )}
     </div>

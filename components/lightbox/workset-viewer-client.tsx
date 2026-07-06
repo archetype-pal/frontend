@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ExternalLink, FolderPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -20,6 +21,7 @@ import type { WorksetDetail } from '@/types/workset';
  */
 export function WorksetViewerClient({ workset }: { workset: WorksetDetail }) {
   const router = useRouter();
+  const t = useTranslations('lightbox');
   const { collections, canManageCollections, createCollection } = useCollection();
   const [ready, setReady] = React.useState(false);
   const sharedCollection = workset.payload.collection;
@@ -53,11 +55,11 @@ export function WorksetViewerClient({ workset }: { workset: WorksetDetail }) {
 
     const name = getAvailableCollectionName(collections, sharedCollection.name);
     if (!name || !createCollection(name, sharedCollection.items)) {
-      toast.error('Could not save collection copy');
+      toast.error(t('workset.toastSaveFailed'));
       return;
     }
 
-    toast.success(`Saved ${name} to your collections`);
+    toast.success(t('workset.toastSaved', { name }));
     router.push('/collection');
   };
 
@@ -70,7 +72,7 @@ export function WorksetViewerClient({ workset }: { workset: WorksetDetail }) {
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-semibold">{workset.title}</h1>
-          <p className="text-sm text-muted-foreground">Shared workset · by {ownerName}</p>
+          <p className="text-sm text-muted-foreground">{t('workset.sharedBy', { owner: ownerName })}</p>
           {workset.description ? (
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{workset.description}</p>
           ) : null}
@@ -85,12 +87,12 @@ export function WorksetViewerClient({ workset }: { workset: WorksetDetail }) {
               disabled={!canManageCollections}
             >
               <FolderPlus className="mr-2 h-4 w-4" />
-              Save collection copy
+              {t('workset.saveCollectionCopy')}
             </Button>
           ) : null}
           <Button size="sm" onClick={openEditable}>
             <ExternalLink className="mr-2 h-4 w-4" />
-            Open in Lightbox
+            {t('workset.openInLightbox')}
           </Button>
         </div>
       </div>
@@ -100,7 +102,7 @@ export function WorksetViewerClient({ workset }: { workset: WorksetDetail }) {
           <LightboxViewer />
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">
-            Loading workset…
+            {t('workset.loading')}
           </div>
         )}
       </div>

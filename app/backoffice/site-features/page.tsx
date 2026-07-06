@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ToggleLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
@@ -49,6 +50,7 @@ export default function SiteFeaturesPage() {
   const { token } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const t = useTranslations('backoffice');
   const defaults = getDefaultConfig();
 
   const { data: serverConfig, isLoading } = useQuery({
@@ -71,13 +73,13 @@ export default function SiteFeaturesPage() {
   const saveMut = useMutation({
     mutationFn: () => saveSiteFeatures(token!, config),
     onSuccess: (saved) => {
-      toast.success('Site features saved');
+      toast.success(t('siteFeatures.toastSaved'));
       queryClient.setQueryData(['site-features'], saved);
       setDirty(false);
       router.refresh();
     },
     onError: (err: Error) => {
-      toast.error('Failed to save site features', { description: err.message });
+      toast.error(t('siteFeatures.toastFailedSave'), { description: err.message });
     },
   });
 
@@ -132,10 +134,8 @@ export default function SiteFeaturesPage() {
       <div className="flex items-center gap-3">
         <ToggleLeft className="h-6 w-6 text-primary" />
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Site Features</h1>
-          <p className="text-sm text-muted-foreground">
-            Enable or disable site features and configure search behaviour.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t('siteFeatures.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('siteFeatures.subtitle')}</p>
         </div>
       </div>
 

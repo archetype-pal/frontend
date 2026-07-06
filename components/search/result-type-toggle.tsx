@@ -1,7 +1,10 @@
+'use client';
+
 import { resultTypeItems, type ResultType } from '@/lib/search-types';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 export function ResultTypeToggle({
   selectedType,
@@ -14,6 +17,7 @@ export function ResultTypeToggle({
   enabledTypes?: ResultType[];
   counts?: Partial<Record<ResultType, number>>;
 }) {
+  const t = useTranslations('search');
   const { getLabel } = useModelLabels();
   const items = enabledTypes
     ? resultTypeItems.filter((item) => enabledTypes.includes(item.value))
@@ -24,7 +28,7 @@ export function ResultTypeToggle({
       <div
         className="flex w-full snap-x snap-mandatory items-end gap-1 overflow-x-auto scroll-smooth pr-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         role="tablist"
-        aria-label="Search result type"
+        aria-label={t('resultTypeLabel')}
       >
         {items.map((item) => {
           const isActive = selectedType === item.value;

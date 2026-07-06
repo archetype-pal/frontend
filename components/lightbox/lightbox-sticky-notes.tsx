@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { LightboxStickyNote } from '@/lib/lightbox-db';
 import { saveStickyNote, getWorkspaceStickyNotes, deleteStickyNote } from '@/lib/lightbox-db';
 
@@ -25,6 +26,7 @@ interface LightboxStickyNotesProps {
 }
 
 export function LightboxStickyNotes({ workspaceId }: LightboxStickyNotesProps) {
+  const t = useTranslations('lightbox');
   const [notes, setNotes] = React.useState<LightboxStickyNote[]>([]);
   const noteRefsMap = React.useRef(new Map<string, HTMLDivElement>());
 
@@ -163,7 +165,7 @@ export function LightboxStickyNotes({ workspaceId }: LightboxStickyNotesProps) {
               onMouseDown={(e) => handleMouseDown(e, note.id)}
             >
               <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide select-none">
-                Note
+                {t('stickyNotes.note')}
               </span>
               <button
                 type="button"
@@ -172,7 +174,7 @@ export function LightboxStickyNotes({ workspaceId }: LightboxStickyNotesProps) {
                   e.stopPropagation();
                   removeNote(note.id);
                 }}
-                title="Delete note"
+                title={t('stickyNotes.deleteNote')}
               >
                 <X className="h-3 w-3" />
               </button>
@@ -180,7 +182,7 @@ export function LightboxStickyNotes({ workspaceId }: LightboxStickyNotesProps) {
             <textarea
               className={`flex-1 ${c.bg} text-xs text-gray-800 p-2 resize-none border-none outline-none rounded-b-md`}
               value={note.text}
-              placeholder="Type a note…"
+              placeholder={t('stickyNotes.typeNotePlaceholder')}
               onChange={(e) => updateNoteText(note.id, e.target.value)}
               onMouseDown={(e) => e.stopPropagation()}
             />

@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import NextImage from 'next/image';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { ZoomIn, ZoomOut, Lock, Unlock } from 'lucide-react';
 import { useSelectedImages } from '@/stores/lightbox-store';
@@ -20,6 +21,7 @@ interface ZoomablePanelProps {
 }
 
 function ZoomablePanel({ image, zoom, pan, onZoomChange, onPanChange, label }: ZoomablePanelProps) {
+  const t = useTranslations('lightbox');
   const containerRef = useRef<HTMLDivElement>(null);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
@@ -139,7 +141,7 @@ function ZoomablePanel({ image, zoom, pan, onZoomChange, onPanChange, label }: Z
           {image.imageUrl && (
             <NextImage
               src={image.imageUrl}
-              alt={image.metadata.shelfmark || image.metadata.locus || 'Image'}
+              alt={image.metadata.shelfmark || image.metadata.locus || t('comparison.imageAlt')}
               fill
               className="object-contain"
               unoptimized
@@ -157,6 +159,7 @@ interface LightboxComparisonModeProps {
 }
 
 export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps) {
+  const t = useTranslations('lightbox');
   const selectedImages = useSelectedImages();
   const [mode, setMode] = useState<ComparisonViewMode>('side-by-side');
   const [overlayOpacity, setOverlayOpacity] = useState(0.5);
@@ -209,9 +212,9 @@ export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps)
     return (
       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-xl p-6 max-w-md">
-          <h3 className="text-lg font-semibold mb-2">Comparison Mode</h3>
-          <p className="text-muted-foreground mb-4">Please select at least 2 images to compare</p>
-          <Button onClick={onClose}>Close</Button>
+          <h3 className="text-lg font-semibold mb-2">{t('comparison.title')}</h3>
+          <p className="text-muted-foreground mb-4">{t('comparison.selectAtLeastTwo')}</p>
+          <Button onClick={onClose}>{t('comparison.close')}</Button>
         </div>
       </div>
     );
@@ -223,7 +226,7 @@ export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps)
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       <LightboxComparisonHeader
-        title="Comparison Mode"
+        title={t('comparison.title')}
         mode={mode}
         onModeChange={setMode}
         overlayOpacity={overlayOpacity}
@@ -240,7 +243,7 @@ export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps)
           onClick={() => {
             handleZoom1(Math.min(10, zoom1 + 0.25));
           }}
-          title="Zoom in"
+          title={t('comparison.zoomIn')}
         >
           <ZoomIn className="h-3.5 w-3.5" />
         </Button>
@@ -251,7 +254,7 @@ export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps)
           onClick={() => {
             handleZoom1(Math.max(0.2, zoom1 - 0.25));
           }}
-          title="Zoom out"
+          title={t('comparison.zoomOut')}
         >
           <ZoomOut className="h-3.5 w-3.5" />
         </Button>
@@ -260,9 +263,9 @@ export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps)
           size="sm"
           className="text-gray-300 hover:text-white h-7 px-2"
           onClick={resetView}
-          title="Reset view"
+          title={t('comparison.resetView')}
         >
-          Reset
+          {t('comparison.reset')}
         </Button>
         <div className="h-4 w-px bg-gray-700" />
         <Button
@@ -270,10 +273,10 @@ export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps)
           size="sm"
           className={`h-7 px-2 gap-1.5 ${syncZoom ? 'text-blue-400 hover:text-blue-300' : 'text-gray-400 hover:text-gray-300'}`}
           onClick={() => setSyncZoom((s) => !s)}
-          title={syncZoom ? 'Unsync zoom & pan' : 'Sync zoom & pan'}
+          title={syncZoom ? t('comparison.unsyncZoomPan') : t('comparison.syncZoomPan')}
         >
           {syncZoom ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-          <span className="text-xs">{syncZoom ? 'Synced' : 'Independent'}</span>
+          <span className="text-xs">{syncZoom ? t('comparison.synced') : t('comparison.independent')}</span>
         </Button>
       </div>
 
@@ -287,7 +290,7 @@ export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps)
               pan={pan1}
               onZoomChange={handleZoom1}
               onPanChange={handlePan1}
-              label={image1.metadata.shelfmark || image1.metadata.locus || 'Image 1'}
+              label={image1.metadata.shelfmark || image1.metadata.locus || t('comparison.imageOne')}
             />
             <div className="w-px bg-gray-700" />
             <ZoomablePanel
@@ -296,7 +299,7 @@ export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps)
               pan={pan2}
               onZoomChange={handleZoom2}
               onPanChange={handlePan2}
-              label={image2.metadata.shelfmark || image2.metadata.locus || 'Image 2'}
+              label={image2.metadata.shelfmark || image2.metadata.locus || t('comparison.imageTwo')}
             />
           </>
         ) : (

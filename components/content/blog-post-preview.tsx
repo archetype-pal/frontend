@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import { User, Calendar, Newspaper, MessageSquare, ArrowRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import ShareButtons from './share-buttons';
 import { sanitizeHtml } from '@/lib/sanitize-html';
 
@@ -37,11 +40,12 @@ export default function BlogPostPreview({
   showShareBtns = true,
   showReadMoreBtn = true,
 }: BlogPostPreviewProps) {
+  const t = useTranslations('content');
   const publicationLabel = slug.includes('/publications/feature')
-    ? 'Feature'
+    ? t('blog.typeFeature')
     : slug.includes('/publications/blogs')
-      ? 'Blog'
-      : 'News';
+      ? t('blog.typeBlog')
+      : t('blog.typeNews');
 
   return (
     <article className="mb-0">
@@ -53,7 +57,7 @@ export default function BlogPostPreview({
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-4">
         <span className="flex items-center">
           <User className="h-4 w-4 mr-1" />
-          Posted by:
+          {t('blog.postedBy')}
         </span>
         <span className="text-primary font-medium">{author}</span>
         <span className="mx-1">·</span>
@@ -69,7 +73,7 @@ export default function BlogPostPreview({
         <span className="mx-1">·</span>
         <Link href={`${slug}`} className="flex items-center text-primary hover:underline">
           <MessageSquare className="h-4 w-4 mr-1" />
-          {commentsCount} Comments
+          {t('blog.comments', { count: commentsCount })}
         </Link>
       </div>
       <p className="mb-4" dangerouslySetInnerHTML={{ __html: sanitizeHtml(excerpt) }}></p>
@@ -79,7 +83,7 @@ export default function BlogPostPreview({
           href={`${slug}`}
           className="inline-flex items-center px-4 py-2 text-sm text-primary border border-primary rounded hover:bg-primary hover:text-white transition-colors"
         >
-          Read more
+          {t('blog.readMore')}
           <ArrowRight className="h-4 w-4 ml-2" />
         </Link>
       )}

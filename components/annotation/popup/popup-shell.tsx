@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Save, Share2, Star, Trash2, X } from 'lucide-react';
 
 import type { AnnotationPopupCapabilities } from '@/types/annotation-viewer';
@@ -68,6 +69,8 @@ export function PopupShell({
   onToggleAnnotationCollection,
   children,
 }: PopupShellProps) {
+  const t = useTranslations('annotation');
+
   return (
     <div
       role="dialog"
@@ -95,10 +98,12 @@ export function PopupShell({
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {isDraftAnnotation ? (
               <span>
-                {popupCapabilities.canPersistDraft ? 'Unsaved draft' : 'Temporary annotation'}
+                {popupCapabilities.canPersistDraft
+                  ? t('popup.shell.unsavedDraft')
+                  : t('popup.shell.temporaryAnnotation')}
               </span>
             ) : (
-              <span>Saved annotation</span>
+              <span>{t('popup.shell.savedAnnotation')}</span>
             )}
 
             <span className="rounded border px-1.5 py-0.5">{annotationKindLabel}</span>
@@ -120,14 +125,14 @@ export function PopupShell({
                     className="h-8 w-8"
                     onClick={() => void onSaveAnnotationShortcut?.()}
                     disabled={isSaveAnnotationShortcutDisabled || !onSaveAnnotationShortcut}
-                    aria-label="Save Annotation"
+                    aria-label={t('popup.shell.saveAnnotation')}
                     aria-keyshortcuts="S"
                     type="button"
                   >
                     <Save className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Save Annotation (s)</TooltipContent>
+                <TooltipContent>{t('popup.shell.saveAnnotationShortcut')}</TooltipContent>
               </Tooltip>
             )}
 
@@ -140,13 +145,13 @@ export function PopupShell({
                     className="h-8 w-8 text-destructive hover:text-destructive"
                     onClick={() => void onDeleteAnnotationShortcut?.()}
                     disabled={!onDeleteAnnotationShortcut}
-                    aria-label="Delete Annotation"
+                    aria-label={t('popup.shell.deleteAnnotation')}
                     type="button"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Delete Annotation</TooltipContent>
+                <TooltipContent>{t('popup.shell.deleteAnnotation')}</TooltipContent>
               </Tooltip>
             )}
 
@@ -158,13 +163,13 @@ export function PopupShell({
                     size="icon"
                     className="h-8 w-8"
                     onClick={onShareSelectedAnnotation}
-                    aria-label="Share URL"
+                    aria-label={t('popup.shell.shareUrl')}
                     type="button"
                   >
                     <Share2 className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Share URL</TooltipContent>
+                <TooltipContent>{t('popup.shell.shareUrl')}</TooltipContent>
               </Tooltip>
             ) : (
               <>
@@ -175,13 +180,13 @@ export function PopupShell({
                       size="icon"
                       className="h-8 w-8"
                       onClick={onShareSelectedAnnotation}
-                      aria-label="Share URL"
+                      aria-label={t('popup.shell.shareUrl')}
                       type="button"
                     >
                       <Share2 className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Share URL</TooltipContent>
+                  <TooltipContent>{t('popup.shell.shareUrl')}</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -218,13 +223,13 @@ export function PopupShell({
                   size="icon"
                   className="h-8 w-8"
                   onClick={onCloseSelectedAnnotation}
-                  aria-label="Close annotation popup"
+                  aria-label={t('popup.shell.closePopupAriaLabel')}
                   type="button"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Close</TooltipContent>
+              <TooltipContent>{t('popup.shell.close')}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -235,13 +240,13 @@ export function PopupShell({
           <div className="flex items-center gap-2">
             <Input readOnly value={shareUrl} className="flex-1 text-sm" />
             <Button variant="ghost" size="sm" onClick={onCopyShareUrl} type="button">
-              Copy
+              {t('popup.shell.copy')}
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={onHideShareUrl}
-              title="Hide URL"
+              title={t('popup.shell.hideUrl')}
               type="button"
             >
               <X className="h-4 w-4" />

@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import { Lora, Cormorant_Garamond } from 'next/font/google';
 import { Toaster } from 'sonner';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import { AuthProvider } from '@/contexts/auth-context';
 import { CollectionProvider } from '@/contexts/collection-context';
@@ -69,27 +71,31 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [siteFeaturesConfig, modelLabelsConfig] = await Promise.all([
+  const [siteFeaturesConfig, modelLabelsConfig, locale, messages] = await Promise.all([
     readSiteFeatures(),
     readModelLabels(),
+    getLocale(),
+    getMessages(),
   ]);
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${cormorant.variable} ${junicode.variable} antialiased`}
       >
-        <AuthProvider>
-          <SiteFeaturesProvider initialConfig={siteFeaturesConfig}>
-            <ModelLabelsProvider initialConfig={modelLabelsConfig}>
-              <AppQueryProvider>
-                <CollectionProvider>
-                  <SearchProvider>{children}</SearchProvider>
-                </CollectionProvider>
-              </AppQueryProvider>
-            </ModelLabelsProvider>
-          </SiteFeaturesProvider>
-        </AuthProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <AuthProvider>
+            <SiteFeaturesProvider initialConfig={siteFeaturesConfig}>
+              <ModelLabelsProvider initialConfig={modelLabelsConfig}>
+                <AppQueryProvider>
+                  <CollectionProvider>
+                    <SearchProvider>{children}</SearchProvider>
+                  </CollectionProvider>
+                </AppQueryProvider>
+              </ModelLabelsProvider>
+            </SiteFeaturesProvider>
+          </AuthProvider>
+        </NextIntlClientProvider>
         <Toaster richColors closeButton position="top-center" />
       </body>
     </html>

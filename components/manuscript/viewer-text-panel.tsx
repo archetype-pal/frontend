@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Download, ExternalLink, X } from 'lucide-react';
 
+import { useTranslations } from 'next-intl';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { showActionNotification } from '@/components/ui/action-toast';
 import { Button } from '@/components/ui/button';
@@ -14,15 +15,18 @@ import { cn } from '@/lib/utils';
 import { updateImageText, type ImageTextDetail } from '@/services/image-texts';
 import type { TextDisplayMode } from '@/types/annotation-viewer';
 
+function LoadingEditorFallback() {
+  const t = useTranslations('manuscript');
+  return <div className="px-1 py-3 font-mono text-xs text-muted-foreground">{t('text.loadingEditor')}</div>;
+}
+
 // The full TEI editor (TipTap + CodeMirror) is heavy and editor-only, so it is
 // lazy-loaded — it never enters the public viewer's first-load chunk.
 const TeiTextEditor = dynamic(
   () => import('@/components/backoffice/tei-text-editor').then((m) => m.TeiTextEditor),
   {
     ssr: false,
-    loading: () => (
-      <div className="px-1 py-3 font-mono text-xs text-muted-foreground">Loading editor…</div>
-    ),
+    loading: () => <LoadingEditorFallback />,
   }
 );
 
@@ -153,6 +157,8 @@ function TextEditor({
   /** Header slot the Rich/Preview + validity toolbar portals into (one bar). */
   toolbarHost: HTMLElement | null;
 }) {
+  const t = useTranslations('manuscript');
+  const tCommon = useTranslations('common');
   const [valid, setValid] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const dirty = value !== text.content;
@@ -164,16 +170,16 @@ function TextEditor({
       await updateImageText(token, text.id, { content: value });
       showActionNotification({
         kind: 'created',
-        title: 'Text saved',
-        description: `Saved the ${text.type.toLowerCase()}.`,
+        title: t('text.savedTitle'),
+        description: t('text.savedDescription', { type: text.type.toLowerCase() }),
         duration: 1800,
       });
       onSaved();
     } catch (error) {
       showActionNotification({
         kind: 'error',
-        title: 'Save failed',
-        description: error instanceof Error ? error.message.slice(0, 160) : 'Could not save text.',
+        title: t('text.saveFailedTitle'),
+        description: error instanceof Error ? error.message.slice(0, 160) : t('text.saveFailedDescription'),
       });
     } finally {
       setSaving(false);
@@ -199,10 +205,10 @@ function TextEditor({
             onClick={() => onChange(text.content)}
             disabled={saving}
           >
-            Discard
+            {t('text.discard')}
           </Button>
           <Button size="sm" onClick={() => void handleSave()} disabled={!valid || saving}>
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? t('text.saving') : tCommon('save')}
           </Button>
         </div>
       ) : null}
@@ -252,6 +258,7 @@ function TextEditorCard({
   highlightQuery?: string;
 }) {
   // The editor's Rich/Preview + validity toolbar portals into this header slot.
+  const t = useTranslations('manuscript');
   const [toolbarHost, setToolbarHost] = React.useState<HTMLDivElement | null>(null);
   const tone = textTone(text.type);
 
@@ -284,8 +291,8 @@ function TextEditorCard({
             <Link
               href={`/backoffice/image-texts/${text.id}`}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              title="Open in the full editor"
-              aria-label="Open in the full editor"
+              title={t('text.openInEditor')}
+              aria-label={t('text.openInEditor')}
             >
               <ExternalLink className="h-4 w-4" />
             </Link>
@@ -293,8 +300,8 @@ function TextEditorCard({
           <a
             href={`${API_BASE_URL}/api/v1/manuscripts/image-texts/${text.id}/tei/`}
             className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            title={`Download ${text.type} as TEI`}
-            aria-label={`Download ${text.type} as TEI`}
+            title={t('text.downloadTei', { type: text.type })}
+            aria-label={t('text.downloadTei', { type: text.type })}
           >
             <Download className="h-4 w-4" />
           </a>
@@ -303,8 +310,8 @@ function TextEditorCard({
               variant="ghost"
               size="icon"
               className="ml-0.5 h-7 w-7"
-              aria-label="Hide text panel"
-              title="Hide text panel"
+              aria-label={t('text.hidePanel')}
+              title={t('text.hidePanel')}
               onClick={onClose}
             >
               <X className="h-4 w-4" />

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -31,122 +32,129 @@ import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import type { GraphItem } from '@/types/backoffice';
 import { toast } from 'sonner';
 
-const ANNOTATION_TYPES = [
-  { value: '__all', label: 'All types' },
-  { value: 'image', label: 'Image' },
-  { value: 'text', label: 'Text' },
-  { value: 'editorial', label: 'Editorial' },
-  { value: 'unknown', label: 'Unknown' },
-];
-
 const PAGE_SIZE = 50;
 
-const columns: ColumnDef<GraphItem>[] = [
-  {
-    accessorKey: 'id',
-    header: sortableHeader('ID'),
-    cell: ({ row }) => (
-      <span className="text-xs tabular-nums text-muted-foreground">#{row.original.id}</span>
-    ),
-    size: 70,
-  },
-  {
-    accessorKey: 'allograph_name',
-    header: sortableHeader('Allograph'),
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <Badge variant="outline" className="text-xs font-mono">
-          {row.original.allograph_name}
-        </Badge>
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'hand_name',
-    header: sortableHeader('Hand'),
-    cell: ({ row }) => (
-      <Link
-        href={`/backoffice/hands/${row.original.hand}`}
-        className="text-sm text-primary hover:underline"
-      >
-        {row.original.hand_name}
-      </Link>
-    ),
-  },
-  {
-    accessorKey: 'image_display',
-    header: 'Image',
-    cell: ({ row }) => (
-      <span className="text-xs text-muted-foreground flex items-center gap-1">
-        <ImageIcon className="h-3 w-3" />
-        {row.original.image_display}
-      </span>
-    ),
-  },
-  {
-    accessorKey: 'annotation_type',
-    header: 'Type',
-    cell: ({ row }) => (
-      <Badge variant="secondary" className="text-[10px] capitalize">
-        {row.original.annotation_type ?? 'unknown'}
-      </Badge>
-    ),
-    size: 90,
-  },
-  {
-    id: 'components',
-    header: 'Components',
-    cell: ({ row }) => {
-      const components = row.original.graphcomponent_set;
-      if (!components || components.length === 0) {
-        return <span className="text-xs text-muted-foreground">—</span>;
-      }
-      return (
-        <div className="flex gap-1 flex-wrap">
-          {components.slice(0, 3).map((gc) => (
-            <Badge key={gc.id} variant="outline" className="text-[10px]">
-              {gc.component_name}
-            </Badge>
-          ))}
-          {components.length > 3 && (
-            <Badge variant="outline" className="text-[10px]">
-              +{components.length - 3}
-            </Badge>
-          )}
-        </div>
-      );
-    },
-    size: 180,
-  },
-  {
-    id: 'positions',
-    header: 'Positions',
-    cell: ({ row }) => (
-      <span className="text-xs text-muted-foreground tabular-nums">
-        {row.original.positions?.length ?? 0}
-      </span>
-    ),
-    size: 70,
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => (
-      <Link
-        href={`/manuscripts/${row.original.historical_item}/images/${row.original.item_image}`}
-        target="_blank"
-      >
-        <Button variant="ghost" size="icon" className="h-7 w-7">
-          <ExternalLink className="h-3.5 w-3.5" />
-        </Button>
-      </Link>
-    ),
-    size: 50,
-  },
-];
-
 export default function AnnotationsPage() {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const queryClient = useQueryClient();
+
+  const ANNOTATION_TYPES = useMemo(
+    () => [
+      { value: '__all', label: t('annotations.filterAllTypes') },
+      { value: 'image', label: t('annotations.filterImage') },
+      { value: 'text', label: t('annotations.filterText') },
+      { value: 'editorial', label: t('annotations.filterEditorial') },
+      { value: 'unknown', label: t('annotations.filterUnknown') },
+    ],
+    [t]
+  );
+
+  const columns: ColumnDef<GraphItem>[] = useMemo(
+    () => [
+      {
+        accessorKey: 'id',
+        header: sortableHeader(t('annotations.colId')),
+        cell: ({ row }) => (
+          <span className="text-xs tabular-nums text-muted-foreground">#{row.original.id}</span>
+        ),
+        size: 70,
+      },
+      {
+        accessorKey: 'allograph_name',
+        header: sortableHeader(t('annotations.colAllograph')),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs font-mono">
+              {row.original.allograph_name}
+            </Badge>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'hand_name',
+        header: sortableHeader(t('annotations.colHand')),
+        cell: ({ row }) => (
+          <Link
+            href={`/backoffice/hands/${row.original.hand}`}
+            className="text-sm text-primary hover:underline"
+          >
+            {row.original.hand_name}
+          </Link>
+        ),
+      },
+      {
+        accessorKey: 'image_display',
+        header: t('annotations.colImage'),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <ImageIcon className="h-3 w-3" />
+            {row.original.image_display}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'annotation_type',
+        header: t('annotations.colType'),
+        cell: ({ row }) => (
+          <Badge variant="secondary" className="text-[10px] capitalize">
+            {row.original.annotation_type ?? 'unknown'}
+          </Badge>
+        ),
+        size: 90,
+      },
+      {
+        id: 'components',
+        header: t('annotations.colComponents'),
+        cell: ({ row }) => {
+          const components = row.original.graphcomponent_set;
+          if (!components || components.length === 0) {
+            return <span className="text-xs text-muted-foreground">—</span>;
+          }
+          return (
+            <div className="flex gap-1 flex-wrap">
+              {components.slice(0, 3).map((gc) => (
+                <Badge key={gc.id} variant="outline" className="text-[10px]">
+                  {gc.component_name}
+                </Badge>
+              ))}
+              {components.length > 3 && (
+                <Badge variant="outline" className="text-[10px]">
+                  +{components.length - 3}
+                </Badge>
+              )}
+            </div>
+          );
+        },
+        size: 180,
+      },
+      {
+        id: 'positions',
+        header: t('annotations.colPositions'),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {row.original.positions?.length ?? 0}
+          </span>
+        ),
+        size: 70,
+      },
+      {
+        id: 'actions',
+        cell: ({ row }) => (
+          <Link
+            href={`/manuscripts/${row.original.historical_item}/images/${row.original.item_image}`}
+            target="_blank"
+          >
+            <Button variant="ghost" size="icon" className="h-7 w-7">
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        ),
+        size: 50,
+      },
+    ],
+    [t]
+  );
 
   const [page, setPage] = useState(0);
   const [annotationType, setAnnotationType] = useState('__all');

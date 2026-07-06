@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 import { useAuth } from '@/contexts/auth-context';
 import {
@@ -29,6 +30,7 @@ import { Button } from '@/components/ui/button';
 export default function ReviewQueuePage() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const t = useTranslations('backoffice');
 
   const { data: queue = [], isLoading } = useQuery<QueueEntry[]>({
     queryKey: ['review-queue'],
@@ -38,7 +40,11 @@ export default function ReviewQueuePage() {
   });
 
   if (!token) {
-    return <div className="px-6 py-8 text-sm text-muted-foreground">Sign in to review.</div>;
+    return (
+      <div className="px-6 py-8 text-sm text-muted-foreground">
+        {t('reviewQueue.signInPrompt')}
+      </div>
+    );
   }
   if (isLoading) {
     return (
@@ -49,18 +55,18 @@ export default function ReviewQueuePage() {
   }
   if (queue.length === 0) {
     return (
-      <div className="px-6 py-8 text-sm text-muted-foreground">
-        Nothing waiting for review. Quiet day.
-      </div>
+      <div className="px-6 py-8 text-sm text-muted-foreground">{t('reviewQueue.emptyState')}</div>
     );
   }
 
   return (
     <div className="space-y-4 px-6 py-8">
       <header>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Review queue</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">
+          {t('reviewQueue.pageTitle')}
+        </h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          {queue.length} {queue.length === 1 ? 'text' : 'texts'} awaiting review, oldest first.
+          {t('reviewQueue.subtitle', { count: queue.length })}
         </p>
       </header>
       <ul className="space-y-2">
@@ -87,13 +93,15 @@ function ReviewRow({
   onTransitioned: () => void;
 }) {
   const [note, setNote] = useState('');
+  const t = useTranslations('backoffice');
   const approve = useMutation({
     mutationFn: () => transitionImageText(token, row.id, { to_status: 'Live' }),
     onSuccess: () => {
-      toast.success(`Approved → Live`);
+      toast.success(t('reviewQueue.toastApproved'));
       onTransitioned();
     },
-    onError: (err: Error) => toast.error('Approve failed', { description: err.message }),
+    onError: (err: Error) =>
+      toast.error(t('reviewQueue.toastApproveFailed'), { description: err.message }),
   });
   const sendBack = useMutation({
     mutationFn: () => {
@@ -103,11 +111,12 @@ function ReviewRow({
       return transitionImageText(token, row.id, { to_status: 'Draft', note });
     },
     onSuccess: () => {
-      toast.success('Sent back to Draft');
+      toast.success(t('reviewQueue.toastSentBack'));
       setNote('');
       onTransitioned();
     },
-    onError: (err: Error) => toast.error('Send-back failed', { description: err.message }),
+    onError: (err: Error) =>
+      toast.error(t('reviewQueue.toastSendBackFailed'), { description: err.message }),
   });
 
   return (
@@ -124,7 +133,7 @@ function ReviewRow({
               {row.last_transition.note ? ` — “${row.last_transition.note}”` : ''}
             </p>
           ) : (
-            <p className="text-xs text-muted-foreground">No transition history.</p>
+            <p className="text-xs text-muted-foreground">{t('reviewQueue.noTransitionHistory')}</p>
           )}
           {row.review_assignee_username ? (
             <p className="text-xs">
@@ -139,11 +148,13 @@ function ReviewRow({
             disabled={approve.isPending}
             className="h-7"
           >
-            {approve.isPending ? 'Approving…' : 'Approve → Live'}
+            {approve.isPending
+              ? t('reviewQueue.approvingButton')
+              : t('reviewQueue.approveButton')}
           </Button>
           <input
             type="text"
-            placeholder="Note for editor (required for send-back)"
+            placeholder={t('reviewQueue.notePlaceholder')}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             className="h-7 w-72 rounded-md border bg-background px-2 text-xs"
@@ -155,7 +166,7 @@ function ReviewRow({
             disabled={sendBack.isPending}
             className="h-7"
           >
-            {sendBack.isPending ? 'Sending…' : 'Send back to Draft'}
+            {sendBack.isPending ? t('reviewQueue.sendingButton') : t('reviewQueue.sendBackButton')}
           </Button>
         </div>
       </div>

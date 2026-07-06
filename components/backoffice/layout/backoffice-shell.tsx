@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { getAuthTokenCookie } from '@/lib/auth-token-cookie';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -11,6 +12,7 @@ import { SearchCommand } from '@/components/backoffice/common/search-command';
 import { KeyboardShortcutsDialog } from '@/components/backoffice/common/keyboard-shortcuts-dialog';
 
 export function BackofficeShell({ children }: { children: React.ReactNode }) {
+  const t = useTranslations('backoffice');
   const { token, user } = useAuth();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
@@ -38,7 +40,7 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">{t('shell.loading')}</p>
         </div>
       </div>
     );

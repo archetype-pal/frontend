@@ -1,9 +1,12 @@
 'use client';
 
+'use client';
+
 import * as React from 'react';
 import { Table, LayoutGrid, BarChart3, Map, PieChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ViewMode } from '@/components/search/search-actions-menu';
+import { useTranslations } from 'next-intl';
 
 type ViewSwitcherProps = {
   viewMode: ViewMode;
@@ -35,21 +38,22 @@ export function ViewSwitcher({
   distributionEnabled,
   className,
 }: ViewSwitcherProps) {
+  const t = useTranslations('search');
   const options = (
     [
-      { mode: 'table', label: 'Table', Icon: Table, show: true, disabled: false },
-      { mode: 'grid', label: 'Grid', Icon: LayoutGrid, show: showGridToggle, disabled: false },
+      { mode: 'table', label: t('viewTable'), Icon: Table, show: true, disabled: false },
+      { mode: 'grid', label: t('viewGrid'), Icon: LayoutGrid, show: showGridToggle, disabled: false },
       {
         mode: 'timeline',
-        label: 'Timeline',
+        label: t('viewTimeline'),
         Icon: BarChart3,
         show: showTimelineToggle,
         disabled: !hasTimelineData,
       },
-      { mode: 'map', label: 'Map', Icon: Map, show: showMapToggle, disabled: false },
+      { mode: 'map', label: t('viewMap'), Icon: Map, show: showMapToggle, disabled: false },
       {
         mode: 'distribution',
-        label: 'Charts',
+        label: t('viewCharts'),
         Icon: PieChart,
         show: showDistributionToggle,
         disabled: !distributionEnabled,
@@ -63,7 +67,7 @@ export function ViewSwitcher({
   return (
     <div
       role="tablist"
-      aria-label="Result view"
+      aria-label={t('resultTypeLabel')}
       className={cn(
         'items-center gap-0.5 rounded-md border border-border bg-background/60 p-0.5',
         className
@@ -78,7 +82,7 @@ export function ViewSwitcher({
             role="tab"
             aria-selected={active}
             aria-label={label}
-            title={disabled ? `${label} (no data for this result set)` : label}
+            title={disabled ? t('viewDisabled', { label }) : label}
             disabled={disabled}
             onClick={() => setViewMode(mode)}
             className={cn(

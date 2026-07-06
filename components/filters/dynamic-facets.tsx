@@ -22,6 +22,7 @@ import {
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 export type DynamicFacetsDensity = 'default' | 'sidebar';
 
@@ -87,6 +88,8 @@ export function DynamicFacets({
   hideKeyword = false,
   keywordInputId = 'search-keyword-input',
 }: DynamicFacetsProps) {
+  const t = useTranslations('search');
+  const tFilters = useTranslations('filters');
   const { suggestionsPool, getServerSuggestions } = useSearchContext();
   const { getLabel } = useModelLabels();
   const [draftKeyword, setDraftKeyword] = React.useState(keyword);
@@ -192,7 +195,7 @@ export function DynamicFacets({
       {!hideActiveTags && (
         <ActiveFacetTags
           items={activeTags}
-          title={activeFilterCount > 0 ? `Active filters (${activeFilterCount})` : 'Active filters'}
+          title={activeFilterCount > 0 ? t('activeFiltersCount', { count: activeFilterCount }) : tFilters('activeTitle')}
           className={density === 'sidebar' ? 'px-0' : undefined}
           onRemove={(item) => {
             if (onRemoveTag) {
@@ -210,7 +213,7 @@ export function DynamicFacets({
       )}
       {!hideKeyword && (
         <div className={cn('pt-0 pb-0', density === 'default' && 'px-4')}>
-          <h3 className="font-medium text-sm mb-1">Keyword</h3>
+          <h3 className="font-medium text-sm mb-1">{tFilters('keyword')}</h3>
           <KeywordSearchInput
             inputId={keywordInputId}
             value={draftKeyword}
@@ -222,9 +225,7 @@ export function DynamicFacets({
             exactPhrase={exactPhrase}
             onExactPhraseChange={onExactPhraseChange}
             suggestions={effectiveSuggestions}
-            placeholder="Type and press Enter…"
             suggestionsLoading={serverSuggestionsQuery.isFetching}
-            noSuggestionsText="No keyword suggestions yet. Press Enter to search."
             recentSearches={historyItems.map((entry, idx) => ({
               id: `facet-recent-${idx}-${entry.timestamp}`,
               label: entry.keyword,

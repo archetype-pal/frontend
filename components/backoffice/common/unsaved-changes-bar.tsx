@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -34,6 +35,7 @@ export function UnsavedChangesBar({
   onDiscard,
   saving = false,
 }: UnsavedChangesBarProps) {
+  const t = useTranslations('backoffice');
   if (!visible) return null;
 
   return (
@@ -41,14 +43,14 @@ export function UnsavedChangesBar({
       <div className="flex items-center justify-between gap-4 px-6 py-3 max-w-5xl mx-auto">
         <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span>You have unsaved changes</span>
+          <span>{t('unsavedBar.message')}</span>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={onDiscard} disabled={saving}>
-            Discard
+            {t('unsavedBar.discard')}
           </Button>
           <Button size="sm" onClick={onSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save changes'}
+            {saving ? t('unsavedBar.saving') : t('unsavedBar.saveChanges')}
           </Button>
         </div>
       </div>

@@ -39,10 +39,12 @@ const SearchMapView = React.lazy(() =>
 );
 import { cn } from '@/lib/utils';
 import { useSearchPageState } from '@/hooks/search/use-search-page-state';
+import { useTranslations } from 'next-intl';
 
 type ResultListItem = ResultMap[ResultType];
 
 export function SearchPage({ resultType: initialType }: { resultType?: ResultType } = {}) {
+  const t = useTranslations('search');
   const s = useSearchPageState(initialType);
   const { getLabel } = useModelLabels();
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
@@ -51,20 +53,20 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
     <div className="flex min-h-[calc(100dvh-var(--site-header-h,0px))] flex-col bg-background">
       <header className="relative z-10 flex shrink-0 flex-col gap-2.5 border-b border-border bg-card px-3 py-2.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-transparent after:via-accent/50 after:to-transparent sm:px-5">
         <h1 className="sr-only">
-          {`Search ${typeLabel}: ${s.resultCount.toLocaleString()} results`}
+          {t('srHeading', { typeLabel, count: s.resultCount })}
         </h1>
         {/* Row 1: result count · the single keyword search · view / sort / actions */}
         <div className="flex items-center gap-3 sm:gap-4">
           <div
             className="shrink-0"
-            title={`${typeLabel} — ${s.resultCount.toLocaleString()} results`}
+            title={t('resultCountTitle', { typeLabel, count: s.resultCount })}
           >
             <div className="flex items-baseline gap-2 whitespace-nowrap">
               <span className="font-display text-[1.65rem] font-semibold leading-none tracking-tight tabular-nums text-primary sm:text-[2.4rem]">
                 {s.resultCount.toLocaleString()}
               </span>
               <span className="font-serif text-xs tracking-tight text-muted-foreground sm:text-sm">
-                results
+                {t('results')}
               </span>
             </div>
           </div>
@@ -73,7 +75,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               // While advanced search is on the free-text box lives inside the
               // Advanced search panel; keep the slot so the row layout holds.
               <p className="hidden text-xs italic text-muted-foreground md:block">
-                Free-text search has moved into the Advanced search panel below.
+                {t('freeTextMoved')}
               </p>
             ) : (
               <SearchKeywordBar
@@ -105,8 +107,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               variant="ghost"
               size="icon"
               className="hidden h-9 w-9 shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground md:inline-flex"
-              aria-label={s.filtersSidebarCollapsed ? 'Show filters panel' : 'Hide filters panel'}
-              title={s.filtersSidebarCollapsed ? 'Show filters (Alt+F)' : 'Hide filters (Alt+F)'}
+              aria-label={s.filtersSidebarCollapsed ? t('filtersShow') : t('filtersHide')}
+              title={s.filtersSidebarCollapsed ? t('filtersShowHint') : t('filtersHideHint')}
               onClick={s.toggleFiltersSidebar}
             >
               {s.filtersSidebarCollapsed ? (
@@ -260,7 +262,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               hideKeyword
             />
           ) : (
-            <div className="text-sm text-muted-foreground">No filters for this type</div>
+            <div className="text-sm text-muted-foreground">{t('noFilters')}</div>
           )}
         </aside>
 
@@ -270,7 +272,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             <div className="border-b border-border/70 bg-background px-3 py-2 sm:px-4">
               <ActiveFacetTags
                 items={s.activeTags}
-                title={`Active filters (${s.activeFilterCount})`}
+                title={t('activeFiltersCount', { count: s.activeFilterCount })}
                 className="px-0"
                 onRemove={s.handleRemoveTag}
                 onClearAll={s.handleClearAllFilters}
@@ -316,7 +318,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   <React.Suspense
                     fallback={
                       <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
-                        Loading timeline…
+                        {t('loadingTimeline')}
                       </div>
                     }
                   >
@@ -339,7 +341,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   <React.Suspense
                     fallback={
                       <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
-                        Loading map…
+                        {t('loadingMap')}
                       </div>
                     }
                   >
@@ -358,7 +360,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   <React.Suspense
                     fallback={
                       <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
-                        Loading charts…
+                        {t('loadingCharts')}
                       </div>
                     }
                   >
@@ -373,9 +375,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                       }
                       isLoading={s.graphDistributionQuery.isFetching}
                       errorMessage={
-                        s.graphDistributionQuery.isError
-                          ? 'Could not load distribution stats. Please retry by toggling the Charts view.'
-                          : null
+                        s.graphDistributionQuery.isError ? t('distributionError') : null
                       }
                     />
                   </React.Suspense>
@@ -396,15 +396,15 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     <SearchX className="h-6 w-6" />
                   </div>
                   <h3 className="font-display text-2xl font-semibold tracking-tight text-foreground">
-                    This page is out of range
+                    {t('outOfRange')}
                   </h3>
                   <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                    {`There are ${s.data.count.toLocaleString()} ${typeLabel.toLowerCase()}, but fewer pages than the one you're on.`}
+                    {t('outOfRangeMessage', { count: s.data.count, typeLabel: typeLabel.toLowerCase() })}
                   </p>
                   <div className="ornament-divider mt-6 w-44 text-border" aria-hidden />
                   <div className="mt-5 flex flex-wrap justify-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => s.handlePage(1)}>
-                      Go to page 1
+                      {t('goToPage1')}
                     </Button>
                   </div>
                 </section>
@@ -414,18 +414,18 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     <SearchX className="h-6 w-6" />
                   </div>
                   <h3 className="font-display text-2xl font-semibold tracking-tight text-foreground">
-                    Nothing in the archive matches
+                    {t('noResults')}
                   </h3>
                   <p className="mt-2 max-w-sm text-sm text-muted-foreground">
                     {s.submittedKeyword
-                      ? `No ${typeLabel.toLowerCase()} matched “${s.submittedKeyword}”. Try a broader term or loosen the filters.`
-                      : `No ${typeLabel.toLowerCase()} matched the current filters.`}
+                      ? t('noResultsKeyword', { typeLabel: typeLabel.toLowerCase(), keyword: s.submittedKeyword })
+                      : t('noResultsFilters', { typeLabel: typeLabel.toLowerCase() })}
                   </p>
                   <div className="ornament-divider mt-6 w-44 text-border" aria-hidden />
                   <div className="mt-5 flex flex-wrap justify-center gap-2">
                     {s.activeFilterCount > 0 && (
                       <Button variant="outline" size="sm" onClick={s.handleClearAllFilters}>
-                        Clear all filters
+                        {t('clearAllFilters')}
                       </Button>
                     )}
                     {s.submittedKeyword && (
@@ -437,7 +437,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                           s.setSubmittedKeyword('');
                         }}
                       >
-                        Clear keyword
+                        {t('clearKeyword')}
                       </Button>
                     )}
                   </div>

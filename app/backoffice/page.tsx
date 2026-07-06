@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import {
@@ -34,11 +35,11 @@ import { useModelLabels } from '@/contexts/model-labels-context';
 // Greeting helpers
 // ---------------------------------------------------------------------------
 
-function getGreeting(): string {
+function getGreeting(t: (key: string) => string): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return t('dashboard.greetingMorning');
+  if (hour < 18) return t('dashboard.greetingAfternoon');
+  return t('dashboard.greetingEvening');
 }
 
 function formatDate(): string {
@@ -97,6 +98,7 @@ function QuickAccessCard({
   loading,
   recentLabel,
 }: QuickAccessCardProps) {
+  const t = useTranslations('backoffice');
   return (
     <Link
       href={href}
@@ -121,7 +123,7 @@ function QuickAccessCard({
         {recentLabel && (
           <p className="mt-2 text-xs text-muted-foreground truncate">
             <Clock className="inline h-3 w-3 mr-1 -mt-0.5" />
-            Last visited: {recentLabel}
+            {t('dashboard.lastVisited', { label: recentLabel })}
           </p>
         )}
       </div>
@@ -134,6 +136,7 @@ function QuickAccessCard({
 // ---------------------------------------------------------------------------
 
 export default function BackofficeDashboardPage() {
+  const t = useTranslations('backoffice');
   const { token, user } = useAuth();
   const { getLabel } = useModelLabels();
   const { entities: recentEntities } = useRecentEntities();
@@ -214,7 +217,7 @@ export default function BackofficeDashboardPage() {
           researcher's actual time of day. */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight" suppressHydrationWarning>
-          {getGreeting()}, {firstName}
+          {getGreeting(t)}, {firstName}
         </h1>
         <p className="text-sm text-muted-foreground mt-1" suppressHydrationWarning>
           {formatDate()}
@@ -230,7 +233,7 @@ export default function BackofficeDashboardPage() {
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           )}
           <h2 className="text-sm font-medium">
-            {hasPendingTasks ? 'Pending Tasks' : 'All caught up'}
+            {hasPendingTasks ? t('dashboard.pendingTasks') : t('dashboard.allCaughtUp')}
           </h2>
         </div>
         <div className="divide-y">
@@ -241,7 +244,7 @@ export default function BackofficeDashboardPage() {
             >
               <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="flex-1">
-                {pendingCount} comment{pendingCount !== 1 ? 's' : ''} awaiting moderation
+                {t('dashboard.commentsAwaiting', { count: pendingCount })}
               </span>
               <Badge variant="destructive" className="text-xs">
                 {pendingCount}
@@ -255,7 +258,7 @@ export default function BackofficeDashboardPage() {
             >
               <FileEdit className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="flex-1">
-                {draftCount} draft publication{draftCount !== 1 ? 's' : ''} to review
+                {t('dashboard.draftPublications', { count: draftCount })}
               </span>
               <Badge variant="secondary" className="text-xs">
                 {draftCount}
@@ -269,8 +272,7 @@ export default function BackofficeDashboardPage() {
             >
               <Search className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="flex-1">
-                {outOfSyncIndexes.length} search index{outOfSyncIndexes.length !== 1 ? 'es' : ''}{' '}
-                out of sync
+                {t('dashboard.indexesOutOfSync', { count: outOfSyncIndexes.length })}
               </span>
               <Badge variant="secondary" className="text-xs gap-1">
                 <RefreshCw className="h-3 w-3" />
@@ -280,7 +282,7 @@ export default function BackofficeDashboardPage() {
           )}
           {!hasPendingTasks && (
             <div className="px-5 py-3 text-sm text-muted-foreground">
-              No pending tasks. Everything is up to date.
+              {t('dashboard.noPendingTasks')}
             </div>
           )}
         </div>
@@ -288,11 +290,11 @@ export default function BackofficeDashboardPage() {
 
       {/* Quick Access */}
       <div>
-        <h2 className="text-sm font-medium text-muted-foreground mb-3">Quick Access</h2>
+        <h2 className="text-sm font-medium text-muted-foreground mb-3">{t('dashboard.quickAccess')}</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <QuickAccessCard
             title={appManuscriptsLabel}
-            description="Historical items, parts, and images"
+            description={t('dashboard.descManuscripts')}
             count={manuscripts.data?.count}
             icon={BookOpen}
             href="/backoffice/manuscripts"
@@ -301,7 +303,7 @@ export default function BackofficeDashboardPage() {
           />
           <QuickAccessCard
             title="Palaeography"
-            description="Characters, allographs, and features"
+            description={t('dashboard.descPalaeography')}
             count={characters.data?.length}
             icon={Type}
             href="/backoffice/symbols"
@@ -310,7 +312,7 @@ export default function BackofficeDashboardPage() {
           />
           <QuickAccessCard
             title="Publications"
-            description="Blog posts, news, and features"
+            description={t('dashboard.descPublications')}
             count={publications.data?.count}
             icon={Newspaper}
             href="/backoffice/publications"
@@ -319,7 +321,7 @@ export default function BackofficeDashboardPage() {
           />
           <QuickAccessCard
             title="Scribes"
-            description="Scribes and their hands"
+            description={t('dashboard.descScribes')}
             count={scribes.data?.count}
             icon={PenTool}
             href="/backoffice/scribes"
@@ -334,22 +336,22 @@ export default function BackofficeDashboardPage() {
         <div className="rounded-lg border bg-card">
           <div className="flex items-center gap-2 border-b px-5 py-3">
             <Database className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-medium">Search Engine</h2>
+            <h2 className="text-sm font-medium">{t('dashboard.searchEngine')}</h2>
             <div className="ml-auto flex items-center gap-2">
               {searchStats.data.healthy ? (
                 <Badge variant="default" className="text-[10px] gap-1">
                   <CheckCircle2 className="h-3 w-3" />
-                  Healthy
+                  {t('dashboard.healthy')}
                 </Badge>
               ) : (
                 <Badge variant="destructive" className="text-[10px] gap-1">
                   <AlertTriangle className="h-3 w-3" />
-                  Unhealthy
+                  {t('dashboard.unhealthy')}
                 </Badge>
               )}
               <Link href="/backoffice/search-engine">
                 <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2">
-                  Manage
+                  {t('dashboard.manage')}
                   <ArrowRight className="h-3 w-3 ml-1" />
                 </Button>
               </Link>
@@ -360,13 +362,13 @@ export default function BackofficeDashboardPage() {
               <p className="text-lg font-semibold tabular-nums">
                 {searchStats.data.total_database.toLocaleString()}
               </p>
-              <p className="text-[10px] text-muted-foreground">Database Records</p>
+              <p className="text-[10px] text-muted-foreground">{t('dashboard.databaseRecords')}</p>
             </div>
             <div>
               <p className="text-lg font-semibold tabular-nums">
                 {searchStats.data.total_meilisearch.toLocaleString()}
               </p>
-              <p className="text-[10px] text-muted-foreground">Indexed Documents</p>
+              <p className="text-[10px] text-muted-foreground">{t('dashboard.indexedDocuments')}</p>
             </div>
             <div>
               <p className="text-lg font-semibold tabular-nums">
@@ -375,7 +377,7 @@ export default function BackofficeDashboardPage() {
                   /{searchStats.data.indexes?.length ?? 0}
                 </span>
               </p>
-              <p className="text-[10px] text-muted-foreground">Indexes In Sync</p>
+              <p className="text-[10px] text-muted-foreground">{t('dashboard.indexesInSync')}</p>
             </div>
           </div>
           {outOfSyncIndexes.length > 0 && (
@@ -392,7 +394,7 @@ export default function BackofficeDashboardPage() {
       {/* Quick Create */}
       <div className="flex items-center gap-3">
         <Plus className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium text-muted-foreground">Quick create:</span>
+        <span className="text-sm font-medium text-muted-foreground">{t('dashboard.quickCreate')}</span>
         <Link href="/backoffice/manuscripts/new">
           <Button variant="outline" size="sm" className="gap-1.5">
             <BookOpen className="h-3.5 w-3.5" />
@@ -402,7 +404,7 @@ export default function BackofficeDashboardPage() {
         <Link href="/backoffice/publications/new">
           <Button variant="outline" size="sm" className="gap-1.5">
             <Newspaper className="h-3.5 w-3.5" />
-            New Publication
+            {t('dashboard.newPublication')}
           </Button>
         </Link>
       </div>
@@ -412,13 +414,13 @@ export default function BackofficeDashboardPage() {
         <div className="rounded-lg border bg-card">
           <div className="flex items-center gap-2 border-b px-5 py-3">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-medium">Recently Edited</h2>
+            <h2 className="text-sm font-medium">{t('dashboard.recentlyEdited')}</h2>
           </div>
           <div className="divide-y">
             {todayEntities.length > 0 && (
               <div>
                 <div className="px-5 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground bg-muted/50">
-                  Today
+                  {t('dashboard.today')}
                 </div>
                 {todayEntities.slice(0, 5).map((entity) => (
                   <Link
@@ -440,7 +442,7 @@ export default function BackofficeDashboardPage() {
             {weekEntities.length > 0 && (
               <div>
                 <div className="px-5 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground bg-muted/50">
-                  Earlier this week
+                  {t('dashboard.earlierThisWeek')}
                 </div>
                 {weekEntities.slice(0, 5).map((entity) => (
                   <Link

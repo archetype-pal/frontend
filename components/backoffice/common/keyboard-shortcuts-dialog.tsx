@@ -1,29 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Shortcut {
   keys: string[];
   description: string;
 }
-
-const shortcuts: { group: string; items: Shortcut[] }[] = [
-  {
-    group: 'Navigation',
-    items: [
-      { keys: ['Ctrl', 'K'], description: 'Open command palette' },
-      { keys: ['?'], description: 'Show this help dialog' },
-    ],
-  },
-  {
-    group: 'Editing',
-    items: [
-      { keys: ['Ctrl', 'S'], description: 'Save current form' },
-      { keys: ['Escape'], description: 'Close dialog / discard changes' },
-    ],
-  },
-];
 
 /**
  * A help dialog that lists all keyboard shortcuts.
@@ -34,6 +18,24 @@ const shortcuts: { group: string; items: Shortcut[] }[] = [
  */
 export function KeyboardShortcutsDialog() {
   const [open, setOpen] = useState(false);
+  const t = useTranslations('backoffice');
+
+  const shortcuts: { group: string; items: Shortcut[] }[] = [
+    {
+      group: t('keyboardShortcuts.groupNavigation'),
+      items: [
+        { keys: ['Ctrl', 'K'], description: t('keyboardShortcuts.openCommandPalette') },
+        { keys: ['?'], description: t('keyboardShortcuts.showHelpDialog') },
+      ],
+    },
+    {
+      group: t('keyboardShortcuts.groupEditing'),
+      items: [
+        { keys: ['Ctrl', 'S'], description: t('keyboardShortcuts.saveCurrentForm') },
+        { keys: ['Escape'], description: t('keyboardShortcuts.closeDialog') },
+      ],
+    },
+  ];
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -54,7 +56,7 @@ export function KeyboardShortcutsDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Keyboard Shortcuts</DialogTitle>
+          <DialogTitle>{t('keyboardShortcuts.title')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-5 mt-2">
           {shortcuts.map((group) => (
@@ -86,8 +88,7 @@ export function KeyboardShortcutsDialog() {
           ))}
         </div>
         <p className="text-[10px] text-muted-foreground mt-3">
-          Press <kbd className="rounded border bg-muted px-1 text-[10px]">?</kbd> anytime to show
-          this dialog.
+          {t('keyboardShortcuts.pressToShow', { key: '?' })}
         </p>
       </DialogContent>
     </Dialog>

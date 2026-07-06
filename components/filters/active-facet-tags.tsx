@@ -4,6 +4,7 @@ import * as React from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ActiveFacetTag } from '@/lib/search-query';
+import { useTranslations } from 'next-intl';
 
 type ActiveFacetTagsProps = {
   items: ActiveFacetTag[];
@@ -15,11 +16,13 @@ type ActiveFacetTagsProps = {
 
 export function ActiveFacetTags({
   items,
-  title = 'Active filters',
+  title,
   onRemove,
   onClearAll,
   className,
 }: ActiveFacetTagsProps) {
+  const t = useTranslations('filters');
+  const resolvedTitle = title ?? t('activeTitle');
   const [expanded, setExpanded] = React.useState(false);
   const maxVisible = 4;
   const hasOverflow = items.length > maxVisible;
@@ -28,17 +31,17 @@ export function ActiveFacetTags({
   if (items.length === 0) return null;
 
   return (
-    <section className={cn('px-4 pt-0 pb-0', className)} aria-label={title}>
+    <section className={cn('px-4 pt-0 pb-0', className)} aria-label={resolvedTitle}>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h3 className="text-sm font-medium">{title}</h3>
+        <h3 className="text-sm font-medium">{resolvedTitle}</h3>
         {items.length > 1 && (
           <button
             type="button"
             onClick={onClearAll}
-            aria-label="Clear all active filters"
+            aria-label={t('clearAllLabel')}
             className="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-sm"
           >
-            Clear all
+            {t('clearAll')}
           </button>
         )}
       </div>
@@ -58,7 +61,7 @@ export function ActiveFacetTags({
               type="button"
               onClick={() => onRemove(item)}
               className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-              aria-label={`Remove ${item.label}`}
+              aria-label={t('removeTag', { label: item.label })}
             >
               <X className="h-3 w-3" />
             </button>
@@ -70,10 +73,10 @@ export function ActiveFacetTags({
             onClick={() => setExpanded((prev) => !prev)}
             className="inline-flex items-center rounded-full border border-dashed px-2 py-1 text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             aria-label={
-              expanded ? 'Show fewer active filters' : `Show ${hiddenCount} more active filters`
+              expanded ? t('showFewerLabel') : t('showMoreLabel', { count: hiddenCount })
             }
           >
-            {expanded ? 'Show less' : `Show ${hiddenCount} more`}
+            {expanded ? t('showFewer') : t('showMore', { count: hiddenCount })}
           </button>
         )}
       </div>

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Square, Pencil, Trash2, MousePointer } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { LightboxImage, LightboxAnnotation, AnnotationShape } from '@/lib/lightbox-db';
@@ -27,6 +28,7 @@ interface LightboxAnnotationsProps {
 }
 
 export function LightboxAnnotations({ image }: LightboxAnnotationsProps) {
+  const t = useTranslations('lightbox');
   const [annotations, setAnnotations] = React.useState<LightboxAnnotation[]>([]);
   const [mode, setMode] = React.useState<DrawMode>('select');
   const [color, setColor] = React.useState(ANNOTATION_COLORS[0]);
@@ -283,7 +285,7 @@ export function LightboxAnnotations({ image }: LightboxAnnotationsProps) {
           size="sm"
           className="h-7 w-7 p-0"
           onClick={() => setMode('select')}
-          title="Select"
+          title={t('annotations.select')}
         >
           <MousePointer className="h-3.5 w-3.5" />
         </Button>
@@ -292,7 +294,7 @@ export function LightboxAnnotations({ image }: LightboxAnnotationsProps) {
           size="sm"
           className="h-7 w-7 p-0"
           onClick={() => setMode('rect')}
-          title="Draw rectangle"
+          title={t('annotations.drawRectangle')}
         >
           <Square className="h-3.5 w-3.5" />
         </Button>
@@ -301,7 +303,7 @@ export function LightboxAnnotations({ image }: LightboxAnnotationsProps) {
           size="sm"
           className="h-7 w-7 p-0"
           onClick={() => setMode('freehand')}
-          title="Freehand draw"
+          title={t('annotations.freehandDraw')}
         >
           <Pencil className="h-3.5 w-3.5" />
         </Button>
@@ -338,7 +340,7 @@ export function LightboxAnnotations({ image }: LightboxAnnotationsProps) {
           />
           <Input
             className="h-7 text-xs w-40"
-            placeholder="Add label…"
+            placeholder={t('annotations.addLabelPlaceholder')}
             value={editLabel}
             onChange={(e) => setEditLabel(e.target.value)}
             onBlur={handleLabelSave}
@@ -351,7 +353,7 @@ export function LightboxAnnotations({ image }: LightboxAnnotationsProps) {
             size="sm"
             className="h-7 w-7 p-0 text-destructive hover:text-destructive"
             onClick={handleDelete}
-            title="Delete annotation"
+            title={t('annotations.deleteAnnotation')}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>

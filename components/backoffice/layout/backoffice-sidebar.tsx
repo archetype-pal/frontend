@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { getComments } from '@/services/backoffice/publications';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { useTranslations } from 'next-intl';
 import { useModelLabels } from '@/contexts/model-labels-context';
 
 interface NavItem {
@@ -56,72 +57,6 @@ interface NavGroup {
   subGroups?: NavSubGroup[];
 }
 
-/**
- * Navigation organised by the professor's mental model:
- *
- * - Manuscripts & Palaeography: primary scholarly entities plus a collapsible
- *   "Supporting Data" sub-group for lookup tables (repositories, dates, etc.)
- * - Site & Content: public-facing publications, events, carousel, comments
- * - Administration: system tools (search engine, translations, feature toggles)
- *
- * "View public site" stays in the footer as a standalone escape hatch.
- */
-function getNavigation(
-  datesLabel: string,
-  manuscriptsAppLabel: string,
-  includeAdmin: boolean
-): NavGroup[] {
-  const groups: NavGroup[] = [
-    {
-      label: 'Manuscripts & Palaeography',
-      icon: BookOpen,
-      items: [
-        { label: manuscriptsAppLabel, href: '/backoffice/manuscripts', icon: BookOpen },
-        { label: 'Scribes', href: '/backoffice/scribes', icon: Users },
-        { label: 'Hands', href: '/backoffice/hands', icon: Hand },
-        { label: 'Annotations', href: '/backoffice/annotations', icon: PenTool },
-        { label: 'Texts', href: '/backoffice/texts', icon: ScrollText },
-        { label: 'Characters', href: '/backoffice/symbols', icon: Type },
-      ],
-      subGroups: [
-        {
-          label: 'Supporting Data',
-          defaultOpen: true,
-          items: [
-            { label: 'Physical Volumes', href: '/backoffice/physical-volumes', icon: Archive },
-            { label: 'Repositories', href: '/backoffice/repositories', icon: Landmark },
-            { label: datesLabel, href: '/backoffice/dates', icon: Hash },
-            { label: 'Formats', href: '/backoffice/formats', icon: Library },
-            { label: 'Sources', href: '/backoffice/sources', icon: Database },
-          ],
-        },
-      ],
-    },
-    {
-      label: 'Site & Content',
-      icon: Newspaper,
-      items: [
-        { label: 'Publications', href: '/backoffice/publications', icon: FileText },
-        { label: 'Comments', href: '/backoffice/comments', icon: MessageSquare },
-        { label: 'Carousel', href: '/backoffice/carousel', icon: Image },
-      ],
-    },
-  ];
-  if (includeAdmin) {
-    groups.push({
-      label: 'Administration',
-      icon: Settings,
-      items: [
-        { label: 'User Management', href: '/backoffice/users', icon: UserCog },
-        { label: 'Search Engine', href: '/backoffice/search-engine', icon: Search },
-        { label: 'Data Quality', href: '/backoffice/quality', icon: Settings },
-        { label: 'Translations', href: '/backoffice/translations', icon: Languages },
-        { label: 'Site Features', href: '/backoffice/site-features', icon: ToggleLeft },
-      ],
-    });
-  }
-  return groups;
-}
 
 interface BackofficeSidebarProps {
   collapsed: boolean;
@@ -131,11 +66,60 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
   const pathname = usePathname();
   const { token, user } = useAuth();
   const { getLabel, getPluralLabel } = useModelLabels();
+  const t = useTranslations('backoffice');
   const includeAdmin = Boolean(user?.is_staff);
-  const navigation = useMemo(
-    () => getNavigation(getPluralLabel('date'), getLabel('appManuscripts'), includeAdmin),
-    [getLabel, getPluralLabel, includeAdmin]
-  );
+  const navigation = useMemo<NavGroup[]>(() => {
+    const groups: NavGroup[] = [
+      {
+        label: t('sidebar.groupManuscripts'),
+        icon: BookOpen,
+        items: [
+          { label: getLabel('appManuscripts'), href: '/backoffice/manuscripts', icon: BookOpen },
+          { label: t('sidebar.scribes'), href: '/backoffice/scribes', icon: Users },
+          { label: t('sidebar.hands'), href: '/backoffice/hands', icon: Hand },
+          { label: t('sidebar.annotations'), href: '/backoffice/annotations', icon: PenTool },
+          { label: t('sidebar.texts'), href: '/backoffice/texts', icon: ScrollText },
+          { label: t('sidebar.characters'), href: '/backoffice/symbols', icon: Type },
+        ],
+        subGroups: [
+          {
+            label: t('sidebar.supportingData'),
+            defaultOpen: true,
+            items: [
+              { label: t('sidebar.physicalVolumes'), href: '/backoffice/physical-volumes', icon: Archive },
+              { label: t('sidebar.repositories'), href: '/backoffice/repositories', icon: Landmark },
+              { label: getPluralLabel('date'), href: '/backoffice/dates', icon: Hash },
+              { label: t('sidebar.formats'), href: '/backoffice/formats', icon: Library },
+              { label: t('sidebar.sources'), href: '/backoffice/sources', icon: Database },
+            ],
+          },
+        ],
+      },
+      {
+        label: t('sidebar.groupSiteContent'),
+        icon: Newspaper,
+        items: [
+          { label: t('sidebar.publications'), href: '/backoffice/publications', icon: FileText },
+          { label: t('sidebar.comments'), href: '/backoffice/comments', icon: MessageSquare },
+          { label: t('sidebar.carousel'), href: '/backoffice/carousel', icon: Image },
+        ],
+      },
+    ];
+    if (includeAdmin) {
+      groups.push({
+        label: t('sidebar.groupAdmin'),
+        icon: Settings,
+        items: [
+          { label: t('sidebar.userManagement'), href: '/backoffice/users', icon: UserCog },
+          { label: t('sidebar.searchEngine'), href: '/backoffice/search-engine', icon: Search },
+          { label: t('sidebar.dataQuality'), href: '/backoffice/quality', icon: Settings },
+          { label: t('sidebar.translations'), href: '/backoffice/translations', icon: Languages },
+          { label: t('sidebar.siteFeatures'), href: '/backoffice/site-features', icon: ToggleLeft },
+        ],
+      });
+    }
+    return groups;
+  }, [getLabel, getPluralLabel, includeAdmin, t]);
 
   // Lightweight poll for pending comments (60s)
   const { data: pendingComments } = useQuery({
@@ -162,7 +146,7 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
       <div className="flex h-14 items-center border-b px-4">
         <Link href="/backoffice" className="flex items-center gap-2 font-semibold text-base">
           <LayoutDashboard className="h-5 w-5 shrink-0 text-primary" />
-          {!collapsed && <span>Backoffice</span>}
+          {!collapsed && <span>{t('sidebar.brand')}</span>}
         </Link>
       </div>
 
@@ -193,7 +177,7 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
               </Link>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={8}>
-              View public site
+              {t('sidebar.viewPublicSite')}
             </TooltipContent>
           </Tooltip>
         ) : (
@@ -202,7 +186,7 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
             className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ExternalLink className="h-4 w-4 shrink-0" />
-            <span>View public site</span>
+            <span>{t('sidebar.viewPublicSite')}</span>
           </Link>
         )}
       </div>
@@ -258,6 +242,7 @@ function CollapsibleSubGroup({
   pathname: string;
   badges: Record<string, number>;
 }) {
+  const t = useTranslations('backoffice');
   const { open, toggle } = useSubGroupOpen(subGroup.label, subGroup.defaultOpen ?? true);
 
   return (
@@ -266,7 +251,7 @@ function CollapsibleSubGroup({
         type="button"
         onClick={toggle}
         aria-expanded={open}
-        aria-label={`${open ? 'Collapse' : 'Expand'} ${subGroup.label}`}
+        aria-label={open ? t('sidebar.subGroupCollapse', { label: subGroup.label }) : t('sidebar.subGroupExpand', { label: subGroup.label })}
         className="flex w-full items-center gap-1.5 px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70 hover:text-muted-foreground transition-colors"
       >
         {open ? (

@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Toolbar } from './toolbar';
@@ -114,13 +115,15 @@ export function ViewerToolbar({
   onModifyTool,
   onShowShortcuts,
 }: ViewerToolbarProps) {
+  const t = useTranslations('manuscript');
+
   return (
     <Toolbar orientation={toolbarPosition}>
       <TooltipProvider>
         <ToolbarButton
           icon={LaptopMinimal}
-          label={isFullScreen ? 'Exit full screen' : 'Full screen'}
-          tooltip={isFullScreen ? 'Exit Full Screen' : 'Full Screen'}
+          label={isFullScreen ? t('toolbar.exitFullScreen') : t('toolbar.fullScreen')}
+          tooltip={isFullScreen ? t('toolbar.exitFullScreenTooltip') : t('toolbar.fullScreenTooltip')}
           keyshortcuts="F Shift+F"
           active={isFullScreen}
           onClick={onToggleFullScreen}
@@ -128,7 +131,7 @@ export function ViewerToolbar({
 
         <ToolbarButton
           icon={Hand}
-          label="Select/Drag (g / space)"
+          label={t('toolbar.selectDrag')}
           keyshortcuts="G Shift+G Space"
           active={activeTool === 'move'}
           onClick={onMoveTool}
@@ -136,27 +139,27 @@ export function ViewerToolbar({
 
         <ToolbarButton
           icon={ZoomIn}
-          label="Zoom in"
-          tooltip="Zoom In"
+          label={t('toolbar.zoomIn')}
+          tooltip={t('toolbar.zoomInTooltip')}
           keyshortcuts="Z Shift+Z ="
           onClick={onZoomIn}
         />
 
         <ToolbarButton
           icon={ZoomOut}
-          label="Zoom out"
-          tooltip="Zoom Out"
+          label={t('toolbar.zoomOut')}
+          tooltip={t('toolbar.zoomOutTooltip')}
           keyshortcuts="-"
           onClick={onZoomOut}
         />
 
-        <ToolbarButton icon={RefreshCcw} label="Refresh" keyshortcuts="Home" onClick={onRefresh} />
+        <ToolbarButton icon={RefreshCcw} label={t('toolbar.refresh')} keyshortcuts="Home" onClick={onRefresh} />
 
         {!textOnlyMode && canCreateEditorialAnnotations && (
           <ToolbarButton
             icon={Pencil}
-            label="Create editorial annotation"
-            tooltip="Create Editorial Annotation"
+            label={t('toolbar.editorialAnnotation')}
+            tooltip={t('toolbar.editorialAnnotationTooltip')}
             keyshortcuts="E Shift+E"
             active={activeTool === 'draw' && currentCreationKind === 'editorial'}
             onClick={() => onCreateAnnotation('editorial')}
@@ -166,7 +169,7 @@ export function ViewerToolbar({
         {!textOnlyMode && canPersistAnyAnnotations && (
           <ToolbarButton
             icon={Save}
-            label="Save (s)"
+            label={t('toolbar.save')}
             keyshortcuts="S Shift+S Control+S Meta+S"
             disabled={unsavedChanges === 0}
             onClick={onSave}
@@ -176,8 +179,8 @@ export function ViewerToolbar({
         {canDeleteAnnotations && (
           <ToolbarButton
             icon={Trash2}
-            label={textOnlyMode ? 'Delete region (x)' : 'Delete (x)'}
-            tooltip={textOnlyMode ? 'Delete linked region' : undefined}
+            label={textOnlyMode ? t('toolbar.deleteRegion') : t('toolbar.delete')}
+            tooltip={textOnlyMode ? t('toolbar.deleteRegionTooltip') : undefined}
             keyshortcuts="X Delete Shift+Backspace"
             active={activeTool === 'delete'}
             onClick={onDeleteTool}
@@ -186,8 +189,8 @@ export function ViewerToolbar({
 
         <ToolbarButton
           icon={Expand}
-          label={textOnlyMode ? 'Reshape region (m)' : 'Modify (m)'}
-          tooltip={textOnlyMode ? 'Reshape the selected region' : undefined}
+          label={textOnlyMode ? t('toolbar.modifyRegion') : t('toolbar.modify')}
+          tooltip={textOnlyMode ? t('toolbar.modifyRegionTooltip') : undefined}
           keyshortcuts="M Shift+M"
           active={activeTool === 'modify'}
           onClick={onModifyTool}
@@ -196,8 +199,8 @@ export function ViewerToolbar({
         {canCreatePublicAnnotations && (
           <ToolbarButton
             icon={SquarePen}
-            label={textOnlyMode ? 'Draw region to link (d / space)' : 'Draw (d / space)'}
-            tooltip={textOnlyMode ? 'Draw a region, then click its phrase to link' : undefined}
+            label={textOnlyMode ? t('toolbar.drawRegion') : t('toolbar.draw')}
+            tooltip={textOnlyMode ? t('toolbar.drawRegionTooltip') : undefined}
             keyshortcuts="D Shift+D R Shift+R Space"
             active={activeTool === 'draw' && currentCreationKind === 'public'}
             onClick={() => onCreateAnnotation('public')}
@@ -206,8 +209,8 @@ export function ViewerToolbar({
 
         <ToolbarButton
           icon={Keyboard}
-          label="Keyboard shortcuts (?)"
-          tooltip="Keyboard shortcuts"
+          label={t('toolbar.keyboardShortcuts')}
+          tooltip={t('toolbar.keyboardShortcutsTooltip')}
           keyshortcuts="?"
           onClick={onShowShortcuts}
         />

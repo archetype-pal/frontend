@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
@@ -23,6 +24,7 @@ interface ComponentManagerProps {
 }
 
 export function ComponentManager({ components, allFeatures }: ComponentManagerProps) {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -41,10 +43,10 @@ export function ComponentManager({ components, allFeatures }: ComponentManagerPr
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: backofficeKeys.components.all() });
       queryClient.invalidateQueries({ queryKey: backofficeKeys.characters.all() });
-      toast.success('Component features updated');
+      toast.success(t('symbols.componentFeaturesUpdated'));
     },
     onError: (err) => {
-      toast.error('Failed to update component features', {
+      toast.error(t('symbols.componentFeaturesUpdateFailed'), {
         description: formatApiError(err),
       });
     },
@@ -62,9 +64,9 @@ export function ComponentManager({ components, allFeatures }: ComponentManagerPr
     <NamedEntityManager
       items={components}
       crud={crud}
-      placeholder="New component name..."
-      emptyMessage="No components yet. Create one above."
-      deleteDescription="This will remove the component from all allographs that use it."
+      placeholder={t('symbols.componentNamePlaceholder')}
+      emptyMessage={t('symbols.componentEmptyMessage')}
+      deleteDescription={t('symbols.componentDeleteDescription')}
       renderItem={(comp) => {
         const isExpanded = expandedId === comp.id;
         return (
@@ -87,7 +89,7 @@ export function ComponentManager({ components, allFeatures }: ComponentManagerPr
               <div className="flex items-center gap-0.5">
                 {comp.features.length > 0 && (
                   <Badge variant="secondary" className="text-[10px] px-1.5 h-4 tabular-nums">
-                    {comp.features.length}f
+                    {t('symbols.componentFeatureCountBadge', { count: comp.features.length })}
                   </Badge>
                 )}
                 <Button
@@ -104,10 +106,12 @@ export function ComponentManager({ components, allFeatures }: ComponentManagerPr
             {isExpanded && (
               <div className="border-t px-2 py-2 space-y-1">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  Linked Features
+                  {t('symbols.linkedFeaturesTitle')}
                 </p>
                 {allFeatures.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic">No features exist yet</p>
+                  <p className="text-xs text-muted-foreground italic">
+                    {t('symbols.noFeaturesYet')}
+                  </p>
                 ) : (
                   <div className="space-y-0.5 max-h-40 overflow-y-auto">
                     {allFeatures.map((feat) => {

@@ -1,5 +1,8 @@
+'use client';
+
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from 'next-intl';
 import { Bookmark, Check, MoreVertical } from 'lucide-react';
 import {
   DropdownMenu,
@@ -61,6 +64,8 @@ export function SearchActionsMenu({
   resultType,
   isResearcher,
 }: SearchActionsMenuProps) {
+  const t = useTranslations('search');
+  const tCommon = useTranslations('common');
   const [menuOpen, setMenuOpen] = React.useState(false);
 
   const viewItem = (mode: ViewMode, label: string, disabled?: boolean) => (
@@ -86,18 +91,18 @@ export function SearchActionsMenu({
           variant="outline"
           size="sm"
           className="h-11 min-h-11 min-w-11 shrink-0 gap-1.5 px-2.5 sm:h-9 sm:min-h-9 sm:min-w-0 sm:px-3"
-          title="Search actions — saved searches, view, and export"
-          aria-label="Search actions"
+          title={t('actionsTitle')}
+          aria-label={t('actionsLabel')}
         >
           <MoreVertical className="h-4 w-4 shrink-0" />
-          <span className="hidden text-sm sm:inline">Actions</span>
+          <span className="hidden text-sm sm:inline">{t('actions')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <Bookmark className="mr-2 h-4 w-4" />
-            Saved searches
+            {t('savedSearches')}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-80 p-0" sideOffset={6}>
             <SavedSearchesPanel
@@ -113,12 +118,12 @@ export function SearchActionsMenu({
             section is the small-screen fallback only. */}
         <div className="sm:hidden">
           <DropdownMenuSeparator />
-          <DropdownMenuLabel>View</DropdownMenuLabel>
-          {viewItem('table', 'Table')}
-          {showGridToggle && viewItem('grid', 'Grid')}
-          {showTimelineToggle && viewItem('timeline', 'Timeline', !hasTimelineData)}
-          {showDistributionToggle && viewItem('distribution', 'Charts', !distributionEnabled)}
-          {showMapToggle && viewItem('map', 'Map')}
+          <DropdownMenuLabel>{t('view')}</DropdownMenuLabel>
+          {viewItem('table', t('viewTable'))}
+          {showGridToggle && viewItem('grid', t('viewGrid'))}
+          {showTimelineToggle && viewItem('timeline', t('viewTimeline'), !hasTimelineData)}
+          {showDistributionToggle && viewItem('distribution', t('viewCharts'), !distributionEnabled)}
+          {showMapToggle && viewItem('map', t('viewMap'))}
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuCheckboxItem
@@ -126,32 +131,32 @@ export function SearchActionsMenu({
           onCheckedChange={() => onToggleAdvanced()}
           onSelect={(e) => e.preventDefault()}
         >
-          Advanced search
+          {t('advancedSearch')}
         </DropdownMenuCheckboxItem>
         <DropdownMenuSeparator />
         <DropdownMenuSub>
-          <DropdownMenuSubTrigger disabled={exportBusy}>Export</DropdownMenuSubTrigger>
+          <DropdownMenuSubTrigger disabled={exportBusy}>{tCommon('export')}</DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             <DropdownMenuItem
               disabled={exportBusy}
               onClick={() => void handleExport('csv', 'page')}
             >
-              Export page as CSV
+              {t('exportPageCsv')}
             </DropdownMenuItem>
             <DropdownMenuItem disabled={exportBusy} onClick={() => void handleExport('csv', 'all')}>
-              Export all as CSV
+              {t('exportAllCsv')}
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={exportBusy}
               onClick={() => void handleExport('json', 'page')}
             >
-              Export page as JSON
+              {t('exportPageJson')}
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={exportBusy}
               onClick={() => void handleExport('json', 'all')}
             >
-              Export all as JSON
+              {t('exportAllJson')}
             </DropdownMenuItem>
             {(resultType === 'manuscripts' ||
               resultType === 'scribes' ||
@@ -160,32 +165,32 @@ export function SearchActionsMenu({
                 disabled={exportBusy}
                 onClick={() => void handleExport('bibtex', 'all')}
               >
-                Export all as BibTeX
+                {t('exportAllBibtex')}
               </DropdownMenuItem>
             )}
             {isResearcher && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Visible columns only
+                  {t('visibleColumnsOnly')}
                 </DropdownMenuLabel>
                 <DropdownMenuItem
                   disabled={exportBusy}
                   onClick={() => void handleFormattedExport('csv', 'page')}
                 >
-                  Export page (formatted CSV)
+                  {t('exportPageFormattedCsv')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   disabled={exportBusy}
                   onClick={() => void handleFormattedExport('csv', 'all')}
                 >
-                  Export all (formatted CSV)
+                  {t('exportAllFormattedCsv')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   disabled={exportBusy}
                   onClick={() => void handleFormattedExport('json', 'all')}
                 >
-                  Export all (formatted JSON)
+                  {t('exportAllFormattedJson')}
                 </DropdownMenuItem>
               </>
             )}

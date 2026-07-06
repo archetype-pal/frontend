@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Star } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useCollection } from '@/contexts/collection-context';
 import { cn } from '@/lib/utils';
 
@@ -36,6 +37,7 @@ export function CollectionStar({
   className,
   size = 24,
 }: CollectionStarProps) {
+  const t = useTranslations('collection');
   const { isInCollection, addItem, removeItem } = useCollection();
   // Re-compute isCollected whenever items change
   const isCollected = React.useMemo(
@@ -74,8 +76,8 @@ export function CollectionStar({
           : 'opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100',
         className
       )}
-      aria-label={isCollected ? 'Remove from collection' : 'Add to collection'}
-      title={isCollected ? 'Remove from collection' : 'Add to collection'}
+      aria-label={isCollected ? t('star.remove') : t('star.add')}
+      title={isCollected ? t('star.remove') : t('star.add')}
     >
       <Star
         size={size}

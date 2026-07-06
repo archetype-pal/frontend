@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -18,6 +19,7 @@ import { useModelLabels } from '@/contexts/model-labels-context';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 
 export default function ManuscriptsPage() {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const router = useRouter();
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
@@ -51,7 +53,7 @@ export default function ManuscriptsPage() {
       },
       {
         accessorKey: 'repository_label',
-        header: sortableHeader('Repository'),
+        header: sortableHeader(t('manuscripts.colRepository')),
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">
             {row.original.repository_label ?? '—'}
@@ -61,7 +63,7 @@ export default function ManuscriptsPage() {
       },
       {
         accessorKey: 'type',
-        header: sortableHeader('Type'),
+        header: sortableHeader(t('manuscripts.colType')),
         cell: ({ row }) => (
           <Badge variant="secondary" className="text-xs">
             {row.original.type}
@@ -87,7 +89,7 @@ export default function ManuscriptsPage() {
       },
       {
         accessorKey: 'image_count',
-        header: sortableHeader('Images'),
+        header: sortableHeader(t('manuscripts.colImages')),
         cell: ({ row }) => <span className="tabular-nums text-sm">{row.original.image_count}</span>,
         size: 70,
       },
@@ -103,7 +105,7 @@ export default function ManuscriptsPage() {
         size: 50,
       },
     ],
-    [catalogueLabel, dateLabel, historicalItemLabel, shelfmarkLabel]
+    [catalogueLabel, dateLabel, historicalItemLabel, shelfmarkLabel, t]
   );
 
   const queryParams = {
@@ -126,7 +128,10 @@ export default function ManuscriptsPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">{appManuscriptsLabel}</h1>
             <p className="text-sm text-muted-foreground">
-              {data?.count ?? '...'} {historicalItemPlural.toLowerCase()} in the collection
+              {t('manuscripts.inCollection', {
+                count: data?.count ?? '...',
+                label: historicalItemPlural.toLowerCase(),
+              })}
             </p>
           </div>
         </div>

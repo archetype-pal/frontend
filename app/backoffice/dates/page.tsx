@@ -1,6 +1,7 @@
 'use client';
 
 import { CalendarDays } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { BackofficeDate } from '@/types/backoffice';
 import { createDate, deleteDate, getDates, updateDate } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
@@ -8,6 +9,7 @@ import { SimpleCrudPage } from '@/components/backoffice/common/simple-crud-page'
 import { useModelLabels } from '@/contexts/model-labels-context';
 
 export default function DatesPage() {
+  const t = useTranslations('backoffice');
   const { getLabel, getPluralLabel } = useModelLabels();
   const dateLabel = getLabel('date');
   const dateLabelPlural = getPluralLabel('date');
@@ -31,12 +33,19 @@ export default function DatesPage() {
       deleteFn={(token, id) => deleteDate(token, id)}
       icon={CalendarDays}
       title={dateLabelPlural}
-      description={`Manage ${dateLabel.toLowerCase()} records used across ${historicalItemPlural.toLowerCase()}`}
+      description={t('dates.description', {
+        dateLabel: dateLabel.toLowerCase(),
+        historicalItemPlural: historicalItemPlural.toLowerCase(),
+      })}
       singularLabel={dateLabel}
       pluralLabel={dateLabelPlural}
       searchColumn="date"
       fields={[
-        { key: 'date', label: `${dateLabel} string`, placeholder: 'e.g. s.xii' },
+        {
+          key: 'date',
+          label: t('dates.fieldDateString', { dateLabel }),
+          placeholder: t('dates.fieldDatePlaceholder'),
+        },
         {
           key: 'min_weight',
           label: dateMinWeightLabel,
@@ -54,7 +63,10 @@ export default function DatesPage() {
           tableSize: 100,
         },
       ]}
-      deleteDescription={`This may affect ${historicalItemPlural.toLowerCase()} that reference this ${dateLabel.toLowerCase()}.`}
+      deleteDescription={t('dates.deleteDescription', {
+        historicalItemPlural: historicalItemPlural.toLowerCase(),
+        dateLabel: dateLabel.toLowerCase(),
+      })}
     />
   );
 }

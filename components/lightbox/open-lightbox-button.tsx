@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { GalleryHorizontal, ExternalLink } from 'lucide-react';
 import {
@@ -28,9 +29,11 @@ export function OpenLightboxButton({
   variant = 'ghost',
   size = 'sm',
   className,
-  label = 'Open in Lightbox',
+  label,
 }: OpenLightboxButtonProps) {
   const router = useRouter();
+  const t = useTranslations('lightbox');
+  const resolvedLabel = label ?? t('openButton');
 
   const handleClick = () => {
     let url: string | null = null;
@@ -55,7 +58,7 @@ export function OpenLightboxButton({
     ) : (
       <ExternalLink className="h-4 w-4 mr-2" />
     );
-  const visibleLabel = size !== 'icon' ? label : undefined;
+  const visibleLabel = size !== 'icon' ? resolvedLabel : undefined;
 
   return (
     <Button
@@ -63,8 +66,8 @@ export function OpenLightboxButton({
       size={size}
       onClick={handleClick}
       className={className}
-      title={label}
-      aria-label={size === 'icon' ? label : undefined}
+      title={resolvedLabel}
+      aria-label={size === 'icon' ? resolvedLabel : undefined}
     >
       {icon}
       {visibleLabel}

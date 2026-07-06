@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { FolderOpen, Loader2, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -32,6 +33,7 @@ export function CarouselEditorPanel({
   onDelete,
   onCancel,
 }: CarouselEditorPanelProps) {
+  const t = useTranslations('backoffice');
   const isNew = !item;
 
   const [title, setTitle] = useState(item?.title ?? '');
@@ -91,21 +93,21 @@ export function CarouselEditorPanel({
     <div className="space-y-5" onKeyDown={handleKeyDown}>
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">
-          {isNew ? 'New Carousel Item' : 'Edit Carousel Item'}
+          {isNew ? t('carousel.newItemTitle') : t('carousel.editItemTitle')}
         </h2>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onCancel}>
-            Cancel
+            {t('carousel.cancelButton')}
           </Button>
           <Button size="sm" onClick={handleSave} disabled={!canSave}>
             {saving && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
-            {isNew ? 'Create' : 'Save'}
+            {isNew ? t('carousel.createButton') : t('carousel.saveButton')}
           </Button>
         </div>
       </div>
 
       <div>
-        <Label className="mb-2 block">Image</Label>
+        <Label className="mb-2 block">{t('carousel.imageLabel')}</Label>
         <ImageUploadZone
           key={item?.id ?? 'new'}
           currentImageUrl={currentImageUrl}
@@ -122,7 +124,7 @@ export function CarouselEditorPanel({
             disabled={saving}
           >
             <FolderOpen className="h-3.5 w-3.5 mr-1.5" />
-            Pick from Media Library
+            {t('carousel.pickFromMediaButton')}
           </Button>
           {imagePath && (
             <Button
@@ -133,43 +135,43 @@ export function CarouselEditorPanel({
               disabled={saving}
             >
               <X className="h-3.5 w-3.5 mr-1.5" />
-              Clear image
+              {t('carousel.clearImageButton')}
             </Button>
           )}
         </div>
         <p className="mt-1.5 text-xs text-muted-foreground break-all">
           {imageFile
-            ? 'Upload selected. Saving will use this file.'
+            ? t('carousel.uploadSelectedHint')
             : imagePath
-              ? `Using media image: ${imagePath}`
-              : 'No image selected yet.'}
+              ? t('carousel.usingMediaImageHint', { path: imagePath })
+              : t('carousel.noImageSelectedHint')}
         </p>
         {isNew && !hasImageValue && (
-          <p className="mt-1.5 text-xs text-amber-600">Upload a file or pick one from media.</p>
+          <p className="mt-1.5 text-xs text-amber-600">{t('carousel.uploadHint')}</p>
         )}
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="carousel-title">Title</Label>
+        <Label htmlFor="carousel-title">{t('carousel.titleLabel')}</Label>
         <Input
           id="carousel-title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Carousel item title"
+          placeholder={t('carousel.titlePlaceholder')}
           disabled={saving}
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="carousel-url">URL</Label>
+        <Label htmlFor="carousel-url">{t('carousel.urlLabel')}</Label>
         <Input
           id="carousel-url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="/about or https://..."
+          placeholder={t('carousel.urlPlaceholder')}
           disabled={saving}
         />
-        <p className="text-xs text-muted-foreground">Full URL or a relative path starting with /</p>
+        <p className="text-xs text-muted-foreground">{t('carousel.urlHint')}</p>
       </div>
 
       {!isNew && (
@@ -183,16 +185,16 @@ export function CarouselEditorPanel({
               onClick={() => setConfirmDeleteOpen(true)}
             >
               <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-              Delete item
+              {t('carousel.deleteItemButton')}
             </Button>
           </div>
 
           <ConfirmDialog
             open={confirmDeleteOpen}
             onOpenChange={setConfirmDeleteOpen}
-            title={`Delete "${item.title}"?`}
-            description="This carousel item will be permanently removed."
-            confirmLabel="Delete"
+            title={t('carousel.deleteTitle', { title: item.title })}
+            description={t('carousel.deleteDesc')}
+            confirmLabel={t('carousel.deleteConfirm')}
             loading={deleting}
             onConfirm={onDelete}
           />

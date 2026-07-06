@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, Trash2 } from 'lucide-react';
 
@@ -12,11 +15,12 @@ export function EntityEditorActions({
   onSave: () => void;
   onDelete: () => void;
 }) {
+  const t = useTranslations('backoffice');
   return (
     <div className="flex items-center gap-2">
       <Button variant="outline" size="sm" className="text-destructive" onClick={onDelete}>
         <Trash2 className="h-3.5 w-3.5 mr-1" />
-        Delete
+        {t('entityActions.delete')}
       </Button>
       <Button size="sm" onClick={onSave} disabled={!dirty || isSaving}>
         {isSaving ? (
@@ -24,7 +28,7 @@ export function EntityEditorActions({
         ) : (
           <Save className="h-3.5 w-3.5 mr-1" />
         )}
-        Save
+        {t('entityActions.save')}
       </Button>
     </div>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
@@ -31,121 +32,122 @@ import { authFetch } from '@/lib/api-fetch';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import type { PublicationListItem } from '@/types/backoffice';
 
-const pubFilters: FilterConfig[] = [
-  {
-    key: 'status',
-    label: 'Status',
-    options: [
-      { value: 'Draft', label: 'Draft' },
-      { value: 'Published', label: 'Published' },
-    ],
-  },
-  {
-    key: 'type',
-    label: 'Type',
-    options: [
-      { value: 'blog', label: 'Blog Post' },
-      { value: 'news', label: 'News' },
-      { value: 'featured', label: 'Featured' },
-    ],
-  },
-];
-
-const columns: ColumnDef<PublicationListItem>[] = [
-  {
-    accessorKey: 'title',
-    header: sortableHeader('Title'),
-    cell: ({ row }) => (
-      <Link
-        href={`/backoffice/publications/${row.original.slug}`}
-        className="font-medium text-primary hover:underline line-clamp-1"
-      >
-        {row.original.title}
-      </Link>
-    ),
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => (
-      <Badge
-        variant={row.original.status === 'Published' ? 'default' : 'secondary'}
-        className="text-xs"
-      >
-        {row.original.status}
-      </Badge>
-    ),
-    size: 90,
-  },
-  {
-    id: 'type',
-    header: 'Type',
-    cell: ({ row }) => {
-      const tags: string[] = [];
-      if (row.original.is_blog_post) tags.push('Blog');
-      if (row.original.is_news) tags.push('News');
-      if (row.original.is_featured) tags.push('Featured');
-      return (
-        <div className="flex gap-1 flex-wrap">
-          {tags.map((t) => (
-            <Badge key={t} variant="outline" className="text-[10px]">
-              {t}
-            </Badge>
-          ))}
-        </div>
-      );
-    },
-    size: 140,
-  },
-  {
-    accessorKey: 'author_name',
-    header: 'Author',
-    cell: ({ row }) => (
-      <span className="text-sm text-muted-foreground">{row.original.author_name ?? '—'}</span>
-    ),
-    size: 100,
-  },
-  {
-    accessorKey: 'comment_count',
-    header: sortableHeader('Comments'),
-    cell: ({ row }) =>
-      row.original.comment_count > 0 ? (
-        <Badge variant="secondary" className="text-xs gap-1">
-          <MessageSquare className="h-3 w-3" />
-          {row.original.comment_count}
-        </Badge>
-      ) : (
-        <span className="text-xs text-muted-foreground">0</span>
-      ),
-    size: 90,
-  },
-  {
-    accessorKey: 'created_at',
-    header: sortableHeader('Created'),
-    cell: ({ row }) => (
-      <span className="text-xs text-muted-foreground tabular-nums">
-        {new Date(row.original.created_at).toLocaleDateString()}
-      </span>
-    ),
-    size: 100,
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => (
-      <Link href={`/backoffice/publications/${row.original.slug}`}>
-        <Button variant="ghost" size="icon" className="h-7 w-7">
-          <ExternalLink className="h-3.5 w-3.5" />
-        </Button>
-      </Link>
-    ),
-    size: 50,
-  },
-];
-
 export default function PublicationsPage() {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  const pubFilters: FilterConfig[] = [
+    {
+      key: 'status',
+      label: t('publications.filterStatus'),
+      options: [
+        { value: 'Draft', label: t('publications.filterDraft') },
+        { value: 'Published', label: t('publications.filterPublished') },
+      ],
+    },
+    {
+      key: 'type',
+      label: t('publications.filterType'),
+      options: [
+        { value: 'blog', label: t('publications.filterBlogPost') },
+        { value: 'news', label: t('publications.filterNews') },
+        { value: 'featured', label: t('publications.filterFeatured') },
+      ],
+    },
+  ];
+
+  const columns: ColumnDef<PublicationListItem>[] = [
+    {
+      accessorKey: 'title',
+      header: sortableHeader(t('publications.colTitle')),
+      cell: ({ row }) => (
+        <Link
+          href={`/backoffice/publications/${row.original.slug}`}
+          className="font-medium text-primary hover:underline line-clamp-1"
+        >
+          {row.original.title}
+        </Link>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: t('publications.colStatus'),
+      cell: ({ row }) => (
+        <Badge
+          variant={row.original.status === 'Published' ? 'default' : 'secondary'}
+          className="text-xs"
+        >
+          {row.original.status}
+        </Badge>
+      ),
+      size: 90,
+    },
+    {
+      id: 'type',
+      header: t('publications.colType'),
+      cell: ({ row }) => {
+        const tags: string[] = [];
+        if (row.original.is_blog_post) tags.push(t('publications.badgeBlog'));
+        if (row.original.is_news) tags.push(t('publications.badgeNews'));
+        if (row.original.is_featured) tags.push(t('publications.badgeFeatured'));
+        return (
+          <div className="flex gap-1 flex-wrap">
+            {tags.map((tag) => (
+              <Badge key={tag} variant="outline" className="text-[10px]">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
+      size: 140,
+    },
+    {
+      accessorKey: 'author_name',
+      header: t('publications.colAuthor'),
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">{row.original.author_name ?? '—'}</span>
+      ),
+      size: 100,
+    },
+    {
+      accessorKey: 'comment_count',
+      header: sortableHeader(t('publications.colComments')),
+      cell: ({ row }) =>
+        row.original.comment_count > 0 ? (
+          <Badge variant="secondary" className="text-xs gap-1">
+            <MessageSquare className="h-3 w-3" />
+            {row.original.comment_count}
+          </Badge>
+        ) : (
+          <span className="text-xs text-muted-foreground">0</span>
+        ),
+      size: 90,
+    },
+    {
+      accessorKey: 'created_at',
+      header: sortableHeader(t('publications.colCreated')),
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {new Date(row.original.created_at).toLocaleDateString()}
+        </span>
+      ),
+      size: 100,
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => (
+        <Link href={`/backoffice/publications/${row.original.slug}`}>
+          <Button variant="ghost" size="icon" className="h-7 w-7">
+            <ExternalLink className="h-3.5 w-3.5" />
+          </Button>
+        </Link>
+      ),
+      size: 50,
+    },
+  ];
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState<{
@@ -186,7 +188,7 @@ export default function PublicationsPage() {
 
   const bulkActions: BulkAction[] = [
     {
-      label: 'Publish',
+      label: t('publications.bulkPublish'),
       icon: <CheckCircle className="h-3 w-3" />,
       action: async (slugs) => {
         await runBulkAction({
@@ -199,11 +201,11 @@ export default function PublicationsPage() {
       },
     },
     {
-      label: 'Unpublish',
+      label: t('publications.bulkUnpublish'),
       icon: <XCircle className="h-3 w-3" />,
       action: (slugs) => {
         setPendingBulkAction({
-          label: 'Unpublish',
+          label: t('publications.bulkUnpublish'),
           slugs,
           execute: async (s) => {
             await runBulkAction({
@@ -219,12 +221,12 @@ export default function PublicationsPage() {
       },
     },
     {
-      label: 'Delete',
+      label: t('publications.bulkDelete'),
       variant: 'destructive',
       icon: <Trash2 className="h-3 w-3" />,
       action: (slugs) => {
         setPendingBulkAction({
-          label: 'Delete',
+          label: t('publications.bulkDelete'),
           slugs,
           execute: async (s) => {
             await runBulkAction({
@@ -247,13 +249,15 @@ export default function PublicationsPage() {
         <div className="flex items-center gap-3">
           <Newspaper className="h-6 w-6 text-primary" />
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Publications</h1>
-            <p className="text-sm text-muted-foreground">{data?.length ?? '...'} publications</p>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('publications.title')}</h1>
+            <p className="text-sm text-muted-foreground">
+              {t('publications.subtitle', { count: data?.length ?? 0 })}
+            </p>
           </div>
         </div>
         <Button size="sm" onClick={() => router.push('/backoffice/publications/new')}>
           <Plus className="h-4 w-4 mr-1" />
-          New Publication
+          {t('publications.newButton')}
         </Button>
       </div>
 
@@ -263,7 +267,7 @@ export default function PublicationsPage() {
         columns={columns}
         data={filtered}
         searchColumn="title"
-        searchPlaceholder="Search publications..."
+        searchPlaceholder={t('publications.searchPlaceholder')}
         pageSize={25}
         enableColumnVisibility
         enableExport
@@ -289,13 +293,18 @@ export default function PublicationsPage() {
             setPendingBulkAction(null);
           }
         }}
-        title={`${pendingBulkAction?.label} ${pendingBulkAction?.slugs.length ?? 0} publication(s)?`}
+        title={t('publications.bulkConfirmTitle', {
+          label: pendingBulkAction?.label ?? '',
+          count: pendingBulkAction?.slugs.length ?? 0,
+        })}
         description={
-          pendingBulkAction?.label === 'Delete'
-            ? `${pendingBulkAction.slugs.length} publication(s) will be permanently deleted.`
-            : `${pendingBulkAction?.slugs.length ?? 0} publication(s) will be unpublished.`
+          pendingBulkAction?.label === t('publications.bulkDelete')
+            ? t('publications.bulkConfirmDescDelete', { count: pendingBulkAction.slugs.length })
+            : t('publications.bulkConfirmDescUnpublish', {
+                count: pendingBulkAction?.slugs.length ?? 0,
+              })
         }
-        confirmLabel={`${pendingBulkAction?.label} All`}
+        confirmLabel={t('publications.bulkConfirmLabel', { label: pendingBulkAction?.label ?? '' })}
         onConfirm={async () => {
           if (pendingBulkAction) {
             await pendingBulkAction.execute(pendingBulkAction.slugs);

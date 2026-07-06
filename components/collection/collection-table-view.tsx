@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
@@ -122,12 +123,13 @@ function CollectionImageThumbnail({
   label: string;
   eager: boolean;
 }) {
+  const t = useTranslations('collection');
   return (
     <ThumbnailFrame
       item={item}
       label={label}
       imageUrl={getImageThumbnailUrl(item)}
-      fallback="No image"
+      fallback={t('table.noImage')}
       eager={eager}
     />
   );
@@ -142,6 +144,7 @@ function CollectionGraphThumbnail({
   label: string;
   eager: boolean;
 }) {
+  const t = useTranslations('collection');
   const infoUrl = (item.image_iiif || '').trim();
   const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined, 120);
 
@@ -150,7 +153,7 @@ function CollectionGraphThumbnail({
       item={item}
       label={label}
       imageUrl={imageUrl}
-      fallback={infoUrl ? '…' : 'No image'}
+      fallback={infoUrl ? '…' : t('table.noImage')}
       eager={eager}
     />
   );
@@ -217,10 +220,12 @@ export function CollectionTableView({
   onToggleSelection: (item: Pick<CollectionItem, 'id' | 'type'>) => void;
   readOnly?: boolean;
 }) {
+  const t = useTranslations('collection');
+
   if (items.length === 0) {
     return (
       <div className="rounded-lg border border-border bg-secondary py-12 text-center">
-        <p className="text-sm text-muted-foreground">No items match the current filter.</p>
+        <p className="text-sm text-muted-foreground">{t('table.noItems')}</p>
       </div>
     );
   }
@@ -237,7 +242,7 @@ export function CollectionTableView({
           <div className="flex flex-wrap items-center gap-2 border-b border-border bg-secondary/40 px-4 py-3">
             <h2 className="text-base font-semibold text-foreground">{section.title}</h2>
             <span className="text-sm text-muted-foreground">
-              {section.items.length} {section.items.length === 1 ? 'item' : 'items'}
+              {t('table.itemCount', { count: section.items.length })}
             </span>
           </div>
           <div className="overflow-x-auto">
@@ -246,20 +251,20 @@ export function CollectionTableView({
                 <TableRow>
                   {!readOnly && (
                     <TableHead className="w-10">
-                      <span className="sr-only">Selection</span>
+                      <span className="sr-only">{t('table.selectionHeader')}</span>
                     </TableHead>
                   )}
-                  <TableHead className="w-[112px]">Image</TableHead>
-                  <TableHead>Manuscript</TableHead>
+                  <TableHead className="w-[112px]">{t('table.imageHeader')}</TableHead>
+                  <TableHead>{t('table.manuscriptHeader')}</TableHead>
                   {section.showAnnotationDetails && (
                     <>
-                      <TableHead>Allograph</TableHead>
-                      <TableHead className="hidden lg:table-cell">Hand</TableHead>
+                      <TableHead>{t('table.allographHeader')}</TableHead>
+                      <TableHead className="hidden lg:table-cell">{t('table.handHeader')}</TableHead>
                     </>
                   )}
                   {!readOnly && (
                     <TableHead className="w-14">
-                      <span className="sr-only">Actions</span>
+                      <span className="sr-only">{t('table.actionsHeader')}</span>
                     </TableHead>
                   )}
                 </TableRow>
@@ -280,7 +285,7 @@ export function CollectionTableView({
                           <Checkbox
                             checked={selected}
                             onCheckedChange={() => onToggleSelection(item)}
-                            aria-label={`Select ${getSelectionLabel(item)}`}
+                            aria-label={t('table.selectItem', { label: getSelectionLabel(item) })}
                           />
                         </TableCell>
                       )}

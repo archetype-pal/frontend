@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ExternalLink, Loader2, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -48,6 +49,7 @@ const STATUSES: ImageTextStatus[] = ['Draft', 'Review', 'Live', 'Reviewed'];
 const TYPES = ['Transcription', 'Translation'];
 
 export default function ImageTextEditorPage({ params }: { params: Promise<{ textId: string }> }) {
+  const t = useTranslations('backoffice');
   const { textId: rawId } = use(params);
   const textId = Number(rawId);
   const router = useRouter();
@@ -108,20 +110,20 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
     // `StatusTransition`.
     mutationFn: () => updateImageText(token!, textId, { content, type, language }),
     onSuccess: (saved) => {
-      toast.success('Text saved');
+      toast.success(t('imageTexts.toastSaved'));
       queryClient.setQueryData(backofficeKeys.imageTexts.detail(textId), saved);
       queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.detail(textId) });
       setDirty(false);
     },
     onError: (err) => {
-      toast.error('Failed to save text', { description: formatApiError(err) });
+      toast.error(t('imageTexts.toastFailedSave'), { description: formatApiError(err) });
     },
   });
 
   const transitionMut = useMutation({
     mutationFn: (payload: TransitionPayload) => transitionImageText(token!, textId, payload),
     onSuccess: (saved) => {
-      toast.success(`Status → ${saved.status}`);
+      toast.success(t('imageTexts.toastTransitioned', { status: saved.status }));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.detail(textId) });
       queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.history(textId) });
       queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.list() });
@@ -129,20 +131,21 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
       queryClient.invalidateQueries({ queryKey: ['review-queue'] });
       setStatus(saved.status);
     },
-    onError: (err) => toast.error('Transition failed', { description: formatApiError(err) }),
+    onError: (err) =>
+      toast.error(t('imageTexts.toastTransitionFailed'), { description: formatApiError(err) }),
   });
 
   const deleteMut = useMutation({
     mutationFn: () => deleteImageText(token!, textId),
     onSuccess: () => {
-      toast.success(`Deleted image-text #${textId}`);
+      toast.success(t('imageTexts.toastDeleted', { id: textId }));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.list() });
       queryClient.invalidateQueries({ queryKey: backofficeKeys.textsMonitor.overview() });
       // The detail query would 404 if we left it cached.
       queryClient.removeQueries({ queryKey: backofficeKeys.imageTexts.detail(textId) });
       router.push('/backoffice/texts');
     },
-    onError: (err) => toast.error('Delete failed', { description: formatApiError(err) }),
+    onError: (err) => toast.error(t('imageTexts.toastDeleteFailed'), { description: formatApiError(err) }),
   });
 
   useKeyboardShortcut(
@@ -159,7 +162,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
     // the user knows to retry rather than wait indefinitely.
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-        <p>Could not load image text.</p>
+        <p>{t('imageTexts.failedLoad')}</p>
         <p className="text-xs">
           {fetchError instanceof Error ? fetchError.message : String(fetchError)}
         </p>
@@ -180,7 +183,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/backoffice/texts">Texts</Link>
+              <Link href="/backoffice/texts">{t('imageTexts.breadcrumbTexts')}</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           {image && (
@@ -189,7 +192,9 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
                   <Link href={`/backoffice/manuscripts/${image.item_part}`}>
-                    {image.locus ? `folio ${image.locus}` : `Image #${text.item_image}`}
+                    {image.locus
+                      ? t('imageTexts.breadcrumbFolio', { locus: image.locus })
+                      : `Image #${text.item_image}`}
                   </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
@@ -213,7 +218,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <h1 className="text-xl font-semibold">Edit Image Text #{text.id}</h1>
+          <h1 className="text-xl font-semibold">{t('imageTexts.pageTitle', { id: text.id })}</h1>
           <span
             className="ml-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.14em]"
             title="Current status"
@@ -231,7 +236,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
             title="Delete this image-text"
           >
             <Trash2 className="mr-1 h-3.5 w-3.5" />
-            Delete
+            {t('imageTexts.deleteButton')}
           </Button>
           <PreviewAsPublicDialog textId={textId} currentStatus={status} />
           <TransitionAction
@@ -250,7 +255,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
             ) : (
               <Save className="mr-1 h-3.5 w-3.5" />
             )}
-            Save
+            {t('imageTexts.saveButton')}
           </Button>
         </div>
       </div>
@@ -258,9 +263,9 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
       <ConfirmDialog
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
-        title={`Delete image-text #${textId}?`}
-        description={`This permanently removes the ${text.type.toLowerCase()} and any associated status history. This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('imageTexts.deleteTitle', { id: textId })}
+        description={t('imageTexts.deleteDescription', { type: text.type.toLowerCase() })}
+        confirmLabel={t('imageTexts.deleteConfirm')}
         variant="destructive"
         loading={deleteMut.isPending}
         onConfirm={() => deleteMut.mutate()}
@@ -268,7 +273,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
 
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-1.5">
-          <Label>Type</Label>
+          <Label>{t('imageTexts.fieldType')}</Label>
           <Select
             value={type}
             onValueChange={(value) => {
@@ -290,17 +295,17 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
         </div>
 
         <div className="space-y-1.5">
-          <Label>Status</Label>
+          <Label>{t('imageTexts.fieldStatus')}</Label>
           <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm text-muted-foreground">
             {status}
             <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground/70">
-              audited
+              {t('imageTexts.statusAudited')}
             </span>
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label>Language</Label>
+          <Label>{t('imageTexts.fieldLanguage')}</Label>
           <Input
             value={language}
             onChange={(e) => {
@@ -312,7 +317,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
       </div>
 
       <div className="space-y-1.5">
-        <Label>Content</Label>
+        <Label>{t('imageTexts.fieldContent')}</Label>
         <TeiTextEditor
           value={content}
           token={token}
@@ -321,7 +326,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
             setContent(next);
             setDirty(true);
           }}
-          placeholder="Enter TEI markup for the transcription or translation..."
+          placeholder={t('imageTexts.contentPlaceholder')}
         />
       </div>
 
@@ -333,7 +338,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
               className="inline-flex items-center gap-1 hover:underline"
               target="_blank"
             >
-              <ExternalLink className="h-3 w-3" /> Public viewer
+              <ExternalLink className="h-3 w-3" /> {t('imageTexts.viewPublic')}
             </Link>
             <span>·</span>
           </>
@@ -355,6 +360,7 @@ function TransitionAction({
   pending: boolean;
   onTransition: (payload: TransitionPayload) => void;
 }) {
+  const t = useTranslations('backoffice');
   const NEXT: Record<ImageTextStatus, ImageTextStatus> = {
     Draft: 'Review',
     Review: 'Live',
@@ -378,16 +384,16 @@ function TransitionAction({
     >
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm">
-          Transition…
+          {t('imageTexts.transitionButton')}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 space-y-3">
         <div className="text-xs">
-          <p className="text-muted-foreground">Current</p>
+          <p className="text-muted-foreground">{t('imageTexts.transitionCurrent')}</p>
           <p className="font-medium">{currentStatus}</p>
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Target status</Label>
+          <Label className="text-xs">{t('imageTexts.transitionTargetLabel')}</Label>
           <Select value={target} onValueChange={(v) => setTarget(v as ImageTextStatus)}>
             <SelectTrigger className="h-8 text-xs">
               <SelectValue />
@@ -402,17 +408,17 @@ function TransitionAction({
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Note (optional)</Label>
+          <Label className="text-xs">{t('imageTexts.transitionNoteLabel')}</Label>
           <Input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="What changed?"
+            placeholder={t('imageTexts.transitionNotePlaceholder')}
             className="h-8 text-xs"
           />
         </div>
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setOpen(false)}>
-            Cancel
+            {t('imageTexts.transitionCancel')}
           </Button>
           <Button
             size="sm"
@@ -423,7 +429,7 @@ function TransitionAction({
               setOpen(false);
             }}
           >
-            {pending ? 'Saving…' : `→ ${target}`}
+            {pending ? t('imageTexts.transitionSaving') : t('imageTexts.transitionApply', { target })}
           </Button>
         </div>
       </PopoverContent>
@@ -446,21 +452,20 @@ function HistoryPanel({
       }>
     | undefined;
 }) {
+  const t = useTranslations('backoffice');
   if (!history) return null;
   return (
     <section className="space-y-2 rounded-lg border bg-card p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Status history</h2>
+        <h2 className="text-sm font-semibold">{t('imageTexts.historyTitle')}</h2>
         <span className="text-[11px] text-muted-foreground">
           {history.length === 0
-            ? 'No transitions yet.'
-            : `${history.length} transition${history.length === 1 ? '' : 's'}`}
+            ? t('imageTexts.historyNoTransitions')
+            : t('imageTexts.historyTransitionCount', { count: history.length })}
         </span>
       </div>
       {history.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
-          Changes made via the “Transition…” button will appear here.
-        </p>
+        <p className="text-xs text-muted-foreground">{t('imageTexts.historyEmptyDesc')}</p>
       ) : (
         <ol className="space-y-2">
           {history.map((row) => (
@@ -476,7 +481,9 @@ function HistoryPanel({
                 {' → '}
                 <span className="font-medium">{row.to_status}</span>
               </span>
-              <span className="text-muted-foreground">by {row.actor_username ?? 'system'}</span>
+              <span className="text-muted-foreground">
+                {t('imageTexts.historyBy', { actor: row.actor_username ?? 'system' })}
+              </span>
               {row.note && <span className="ml-2 flex-1 text-muted-foreground">“{row.note}”</span>}
             </li>
           ))}

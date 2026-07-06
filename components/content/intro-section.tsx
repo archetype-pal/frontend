@@ -5,10 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, ChevronLeft, ChevronDown, Search, BookOpen } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { CarouselItem } from '@/types/backoffice';
 import { fetchCarouselItems, getCarouselImageUrl } from '@/utils/api';
 
 export default function IntroSection() {
+  const t = useTranslations('content');
   const [currentImage, setCurrentImage] = useState(0);
   const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);
   const hasLoadedRef = useRef(false);
@@ -119,7 +121,7 @@ export default function IntroSection() {
                   >
                     <Link href="/search/manuscripts">
                       <Search className="h-4 w-4 mr-2" />
-                      Search the Collection
+                      {t('intro.searchCollection')}
                     </Link>
                   </Button>
                   <Button
@@ -129,7 +131,7 @@ export default function IntroSection() {
                   >
                     <Link href="/about/about-models-of-authority">
                       <BookOpen className="h-4 w-4 mr-2" />
-                      About the Project
+                      {t('intro.aboutProject')}
                     </Link>
                   </Button>
                 </div>
@@ -203,14 +205,14 @@ export default function IntroSection() {
                 <button
                   onClick={prevSlide}
                   className="absolute left-3 top-1/2 -translate-y-1/2 z-20 h-9 w-9 rounded-full bg-black/30 backdrop-blur-sm text-white/70 hover:bg-black/50 hover:text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
-                  aria-label="Previous slide"
+                  aria-label={t('intro.prevSlide')}
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
                 <button
                   onClick={nextSlide}
                   className="absolute right-3 top-1/2 -translate-y-1/2 z-20 h-9 w-9 rounded-full bg-black/30 backdrop-blur-sm text-white/70 hover:bg-black/50 hover:text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
-                  aria-label="Next slide"
+                  aria-label={t('intro.nextSlide')}
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
@@ -257,7 +259,7 @@ export default function IntroSection() {
                               ? 'w-6 h-1.5 bg-accent'
                               : 'w-1.5 h-1.5 bg-white/35 hover:bg-white/60'
                           }`}
-                          aria-label={`Go to slide ${index + 1}`}
+                          aria-label={t('intro.goToSlide', { n: index + 1 })}
                         />
                       ))}
                     </div>
@@ -300,9 +302,9 @@ export default function IntroSection() {
               document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth' })
             }
             className="flex flex-col items-center gap-1 text-white/40 hover:text-white/70 transition-colors"
-            aria-label="Scroll to explore"
+            aria-label={t('intro.scrollToExplore')}
           >
-            <span className="text-[10px] uppercase tracking-[0.25em]">Explore</span>
+            <span className="text-[10px] uppercase tracking-[0.25em]">{t('intro.explore')}</span>
             <ChevronDown className="h-4 w-4 animate-bounce" />
           </button>
         </div>
@@ -312,33 +314,33 @@ export default function IntroSection() {
       <section id="explore" className="py-14 md:py-16">
         <div className="container mx-auto px-6 md:px-8">
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-8 text-center">
-            Discover the Collection
+            {t('intro.discoverCollection')}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {(
               [
                 {
-                  title: 'Charter Manuscripts',
-                  desc: 'Browse and search the corpus of surviving Scottish charters from the twelfth and thirteenth centuries.',
+                  title: t('intro.charterManuscripts'),
+                  desc: t('intro.charterManuscriptsDesc'),
                   href: '/search/manuscripts',
                   delay: 'delay-100',
                   accent: 'var(--primary)',
                 },
                 {
-                  title: 'Scribal Hands',
-                  desc: 'Explore the handwriting of the scribes who wrote these charters and trace connections between documents.',
+                  title: t('intro.scribalHands'),
+                  desc: t('intro.scribalHandsDesc'),
                   href: '/search/hands',
                   delay: 'delay-200',
                   accent: 'hsl(38 92% 50%)',
                 },
                 {
-                  title: 'Historical Context',
-                  desc: 'Understand how charters shaped the emergence of government in medieval Scotland.',
+                  title: t('intro.historicalContext'),
+                  desc: t('intro.historicalContextDesc'),
                   href: '/about/historical-context',
                   delay: 'delay-300',
                   accent: 'hsl(25 15% 15%)',
                 },
-              ] as const
+              ]
             ).map((card) => (
               <Link
                 key={card.href}
@@ -355,7 +357,7 @@ export default function IntroSection() {
                   </h3>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-4">{card.desc}</p>
                   <span className="inline-flex items-center text-sm font-medium text-primary group-hover:gap-2 gap-1 transition-all">
-                    Explore <ChevronRight className="h-3.5 w-3.5" />
+                    {t('intro.explore')} <ChevronRight className="h-3.5 w-3.5" />
                   </span>
                 </div>
               </Link>

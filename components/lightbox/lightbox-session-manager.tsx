@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Cloud, FolderOpen, Globe, Link2, Lock, Save, Trash2, X } from 'lucide-react';
@@ -27,6 +28,8 @@ interface LightboxSessionManagerProps {
 }
 
 export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManagerProps) {
+  const t = useTranslations('lightbox');
+  const tCommon = useTranslations('common');
   const { workspaces, currentWorkspaceId } = useLightboxStore();
   const workspaceImages = useWorkspaceImages();
   const { token } = useAuth();
@@ -77,12 +80,12 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
 
   const handleSave = async () => {
     if (!sessionName.trim()) {
-      toast.error('Please enter a session name');
+      toast.error(t('session.toastEnterSessionName'));
       return;
     }
 
     if (!currentWorkspaceId) {
-      toast.error('No workspace to save');
+      toast.error(t('session.toastNoWorkspace'));
       return;
     }
 
@@ -100,10 +103,10 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
       await saveSession(session);
       await loadSessions();
       setSessionName('');
-      toast.success('Session saved successfully');
+      toast.success(t('session.toastSessionSaved'));
     } catch (error) {
       console.error('Failed to save session:', error);
-      toast.error('Failed to save session');
+      toast.error(t('session.toastSessionSaveFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -119,30 +122,30 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
       onClose();
     } catch (error) {
       console.error('Failed to load session:', error);
-      toast.error('Failed to load session');
+      toast.error(t('session.toastSessionLoadFailed'));
     }
   };
 
   const handleDelete = async (sessionId: string) => {
-    if (!confirm('Are you sure you want to delete this session?')) return;
+    if (!confirm(t('session.toastSessionDeleteConfirm'))) return;
 
     try {
       await deleteSession(sessionId);
       await loadSessions();
     } catch (error) {
       console.error('Failed to delete session:', error);
-      toast.error('Failed to delete session');
+      toast.error(t('session.toastSessionDeleteFailed'));
     }
   };
 
   const handleSaveToServer = async () => {
     if (!token) return;
     if (!worksetName.trim()) {
-      toast.error('Please enter a workset name');
+      toast.error(t('session.toastEnterWorksetName'));
       return;
     }
     if (!currentWorkspaceId) {
-      toast.error('No workspace to save');
+      toast.error(t('session.toastNoWorkspace'));
       return;
     }
     setIsSyncing(true);
@@ -150,9 +153,9 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
       await createWorkset(token, { title: worksetName.trim(), payload: buildPayload() });
       setWorksetName('');
       await refreshWorksets();
-      toast.success('Workset saved to your account');
+      toast.success(t('session.toastWorksetSaved'));
     } catch (error) {
-      toast.error('Failed to save workset', {
+      toast.error(t('session.toastWorksetSaveFailed'), {
         description: error instanceof Error ? error.message : undefined,
       });
     } finally {
@@ -165,25 +168,25 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
     try {
       const detail = await getWorkset(publicId);
       if (!detail) {
-        toast.error('Workset not found');
+        toast.error(t('session.toastWorksetNotFound'));
         return;
       }
       // Owner is loading to keep editing → persist into Dexie.
       await useLightboxStore.getState().loadWorksetPayload(detail.payload, { persist: true });
       onClose();
     } catch {
-      toast.error('Failed to load workset');
+      toast.error(t('session.toastWorksetLoadFailed'));
     }
   };
 
   const handleDeleteWorkset = async (publicId: string) => {
     if (!token) return;
-    if (!confirm('Delete this server workset? This cannot be undone.')) return;
+    if (!confirm(t('session.toastWorksetDeleteConfirm'))) return;
     try {
       await deleteWorkset(token, publicId);
       await refreshWorksets();
     } catch {
-      toast.error('Failed to delete workset');
+      toast.error(t('session.toastWorksetDeleteFailed'));
     }
   };
 
@@ -201,7 +204,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
         )
       );
     } catch {
-      toast.error('Failed to update visibility');
+      toast.error(t('session.toastVisibilityFailed'));
     } finally {
       setTogglingIds((prev) => {
         const nextSet = new Set(prev);
@@ -215,9 +218,9 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
     const url = `${env.siteUrl}/worksets/${workset.public_id}`;
     try {
       await navigator.clipboard.writeText(url);
-      toast.success('Shareable link copied to clipboard');
+      toast.success(t('session.toastLinkCopied'));
     } catch {
-      toast.error('Could not copy link', { description: url });
+      toast.error(t('session.toastLinkCopyFailed'), { description: url });
     }
   };
 
@@ -227,7 +230,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
         <div className="p-4 border-b flex items-center justify-between">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <FolderOpen className="h-5 w-5" />
-            Session Manager
+            {t('session.title')}
           </h3>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -238,10 +241,10 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
           {/* Local browser sessions — available to everyone, incl. anonymous
               users who cannot use the (sign-in-only) server worksets below. */}
           <div className="border rounded-lg p-4">
-            <h4 className="font-medium mb-2">Save Current Session</h4>
+            <h4 className="font-medium mb-2">{t('session.saveCurrentTitle')}</h4>
             <div className="flex gap-2">
               <Input
-                placeholder="Session name"
+                placeholder={t('session.sessionNamePlaceholder')}
                 value={sessionName}
                 onChange={(e) => setSessionName(e.target.value)}
                 onKeyDown={(e) => {
@@ -252,19 +255,19 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
               />
               <Button onClick={handleSave} disabled={isLoading || !sessionName.trim()}>
                 <Save className="h-4 w-4 mr-2" />
-                Save
+                {tCommon('save')}
               </Button>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Saved locally in this browser only.
+              {t('session.savedLocally')}
             </p>
           </div>
 
           {/* Load Sessions */}
           <div>
-            <h4 className="font-medium mb-2">Saved Sessions</h4>
+            <h4 className="font-medium mb-2">{t('session.savedSessions')}</h4>
             {sessions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No saved sessions</p>
+              <p className="text-sm text-muted-foreground">{t('session.noSavedSessions')}</p>
             ) : (
               <div className="space-y-2">
                 {sessions.map((session) => (
@@ -299,11 +302,11 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
               <div className="border rounded-lg p-4">
                 <h4 className="font-medium mb-2 flex items-center gap-2">
                   <Cloud className="h-4 w-4" />
-                  Save to your account
+                  {t('session.saveToAccount')}
                 </h4>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Workset name"
+                    placeholder={t('session.worksetNamePlaceholder')}
                     value={worksetName}
                     onChange={(e) => setWorksetName(e.target.value)}
                     onKeyDown={(e) => {
@@ -312,18 +315,18 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
                   />
                   <Button onClick={handleSaveToServer} disabled={isSyncing || !worksetName.trim()}>
                     <Cloud className="h-4 w-4 mr-2" />
-                    Save
+                    {tCommon('save')}
                   </Button>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Synced to your account; make a workset public to share a citable link.
+                  {t('session.saveToAccountDesc')}
                 </p>
               </div>
 
               <div className="mt-3">
-                <h4 className="font-medium mb-2">Your worksets</h4>
+                <h4 className="font-medium mb-2">{t('session.yourWorksets')}</h4>
                 {worksets.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No server worksets yet</p>
+                  <p className="text-sm text-muted-foreground">{t('session.noWorksets')}</p>
                 ) : (
                   <div className="space-y-2">
                     {worksets.map((workset) => {
@@ -336,7 +339,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
                           <div className="min-w-0 flex-1">
                             <div className="truncate font-medium">{workset.title}</div>
                             <div className="text-sm text-muted-foreground">
-                              {isPublic ? 'Public' : 'Private'} •{' '}
+                              {isPublic ? t('session.visibilityPublic') : t('session.visibilityPrivate')} •{' '}
                               {new Date(workset.updated_at).toLocaleDateString()}
                             </div>
                           </div>
@@ -346,7 +349,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
                               size="sm"
                               onClick={() => handleToggleVisibility(workset)}
                               disabled={togglingIds.has(workset.public_id)}
-                              title={isPublic ? 'Make private' : 'Make public'}
+                              title={isPublic ? t('session.makePrivate') : t('session.makePublic')}
                             >
                               {isPublic ? (
                                 <Globe className="h-4 w-4" />
@@ -360,7 +363,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
                               onClick={() => handleShare(workset)}
                               disabled={!isPublic}
                               title={
-                                isPublic ? 'Copy shareable link' : 'Make public to share a link'
+                                isPublic ? t('session.copyShareableLink') : t('session.makePublicToShare')
                               }
                             >
                               <Link2 className="h-4 w-4" />
@@ -369,7 +372,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
                               variant="ghost"
                               size="sm"
                               onClick={() => handleLoadWorkset(workset.public_id)}
-                              title="Load this workset"
+                              title={t('session.loadWorkset')}
                             >
                               <FolderOpen className="h-4 w-4" />
                             </Button>
@@ -377,7 +380,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteWorkset(workset.public_id)}
-                              title="Delete"
+                              title={t('session.deleteWorkset')}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

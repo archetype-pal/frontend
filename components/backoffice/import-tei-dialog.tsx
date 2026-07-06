@@ -10,6 +10,7 @@
  */
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, CheckCircle2, Loader2, Upload } from 'lucide-react';
@@ -45,6 +46,7 @@ export function ImportTeiDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -68,7 +70,7 @@ export function ImportTeiDialog({
       const result = await validateTei(text, token);
       setErrors(result.errors);
     } catch {
-      setErrors([{ line: 0, col: 0, message: 'Could not reach the validator' }]);
+      setErrors([{ line: 0, col: 0, message: t('importTei.validatorUnreachable') }]);
     } finally {
       setValidating(false);
     }
@@ -83,14 +85,14 @@ export function ImportTeiDialog({
         content: content ?? '',
       }),
     onSuccess: (saved) => {
-      toast.success(`Imported ${saved.type.toLowerCase()} #${saved.id}`);
+      toast.success(t('importTei.toastImported', { type: saved.type.toLowerCase(), id: saved.id }));
       queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['backoffice', 'texts-monitor', 'overview'] });
       onOpenChange(false);
       router.push(`/backoffice/image-texts/${saved.id}`);
     },
     onError: (err: Error) =>
-      toast.error('Import failed', { description: err.message.slice(0, 240) }),
+      toast.error(t('importTei.toastImportFailed'), { description: err.message.slice(0, 240) }),
   });
 
   // Clear the previous attempt's file/validation state on close so reopening
@@ -123,47 +125,45 @@ export function ImportTeiDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Import TEI file</DialogTitle>
-          <DialogDescription>
-            Creates a Draft image-text from a valid TEI document. You can edit it next.
-          </DialogDescription>
+          <DialogTitle>{t('importTei.title')}</DialogTitle>
+          <DialogDescription>{t('importTei.description')}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <Label htmlFor="import-tei-image">Item image id</Label>
+            <Label htmlFor="import-tei-image">{t('importTei.itemImageLabel')}</Label>
             <Input
               id="import-tei-image"
               inputMode="numeric"
               value={itemImage}
               onChange={(e) => setItemImage(e.target.value.replace(/[^0-9]/g, ''))}
-              placeholder="e.g. 5504"
+              placeholder={t('importTei.idPlaceholder')}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Type</Label>
+              <Label>{t('importTei.typeLabel')}</Label>
               <Select value={type} onValueChange={(v) => setType(v as Kind)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Transcription">Transcription</SelectItem>
-                  <SelectItem value="Translation">Translation</SelectItem>
+                  <SelectItem value="Transcription">{t('importTei.typeTranscription')}</SelectItem>
+                  <SelectItem value="Translation">{t('importTei.typeTranslation')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="import-tei-lang">Language</Label>
+              <Label htmlFor="import-tei-lang">{t('importTei.languageLabel')}</Label>
               <Input
                 id="import-tei-lang"
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                placeholder="la, en, enm…"
+                placeholder={t('importTei.languagePlaceholder')}
               />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="import-tei-file">TEI file</Label>
+            <Label htmlFor="import-tei-file">{t('importTei.fileLabel')}</Label>
             <Input
               id="import-tei-file"
               type="file"
@@ -177,19 +177,24 @@ export function ImportTeiDialog({
             )}
             {validating && (
               <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" /> Validating…
+                <Loader2 className="h-3 w-3 animate-spin" /> {t('importTei.validatingLabel')}
               </p>
             )}
             {errors !== null &&
               !validating &&
               (teiValid ? (
                 <p className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Valid TEI
+                  <CheckCircle2 className="h-3.5 w-3.5" /> {t('importTei.validLabel')}
                 </p>
               ) : (
                 <p className="flex items-center gap-1.5 text-[11px] font-medium text-destructive">
                   <AlertTriangle className="h-3.5 w-3.5" />
-                  {errors[0] ? `Line ${errors[0].line}: ${errors[0].message}` : 'Invalid TEI'}
+                  {errors[0]
+                    ? t('importTei.lineErrorLabel', {
+                        line: errors[0].line,
+                        message: errors[0].message,
+                      })
+                    : t('importTei.invalidLabel')}
                 </p>
               ))}
           </div>
@@ -201,11 +206,11 @@ export function ImportTeiDialog({
             onClick={() => onOpenChange(false)}
             disabled={createMut.isPending}
           >
-            Cancel
+            {t('importTei.cancelButton')}
           </Button>
           <Button size="sm" disabled={!canSubmit} onClick={() => createMut.mutate()}>
             {createMut.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
-            Import draft
+            {t('importTei.importButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

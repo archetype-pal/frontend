@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { LucideIcon } from 'lucide-react';
@@ -72,6 +73,7 @@ export function SimpleCrudPage<T extends { id: number }>({
   showIdColumn = false,
   deleteDescription,
 }: SimpleCrudPageProps<T>) {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
@@ -107,13 +109,13 @@ export function SimpleCrudPage<T extends { id: number }>({
       return createFn(token!, payload);
     },
     onSuccess: () => {
-      toast.success(`${singularLabel} created`);
+      toast.success(t('simpleCrud.created', { label: singularLabel }));
       invalidate();
       setAddOpen(false);
       resetDraft();
     },
     onError: (err) => {
-      toast.error(`Failed to create ${singularLabel.toLowerCase()}`, {
+      toast.error(t('simpleCrud.failedCreate', { label: singularLabel.toLowerCase() }), {
         description: formatApiError(err),
       });
     },
@@ -124,7 +126,7 @@ export function SimpleCrudPage<T extends { id: number }>({
       updateFn(token!, id, payload),
     onSuccess: invalidate,
     onError: (err) => {
-      toast.error(`Failed to update ${singularLabel.toLowerCase()}`, {
+      toast.error(t('simpleCrud.failedUpdate', { label: singularLabel.toLowerCase() }), {
         description: formatApiError(err),
       });
     },
@@ -133,12 +135,12 @@ export function SimpleCrudPage<T extends { id: number }>({
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteFn(token!, id),
     onSuccess: () => {
-      toast.success(`${singularLabel} deleted`);
+      toast.success(t('simpleCrud.deleted', { label: singularLabel }));
       invalidate();
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error(`Failed to delete ${singularLabel.toLowerCase()}`, {
+      toast.error(t('simpleCrud.failedDelete', { label: singularLabel.toLowerCase() }), {
         description: formatApiError(err),
       });
     },
@@ -150,7 +152,7 @@ export function SimpleCrudPage<T extends { id: number }>({
     if (showIdColumn) {
       generated.push({
         accessorKey: 'id',
-        header: 'ID',
+        header: t('simpleCrud.idColumn'),
         cell: ({ row }) => (
           <span className="tabular-nums text-muted-foreground">#{row.original.id}</span>
         ),
@@ -187,7 +189,7 @@ export function SimpleCrudPage<T extends { id: number }>({
           size="icon"
           className="h-7 w-7 text-muted-foreground hover:text-destructive"
           onClick={() => setDeleteTarget(row.original)}
-          aria-label={`Delete ${singularLabel.toLowerCase()}`}
+          aria-label={t('simpleCrud.deleteLabel', { label: singularLabel.toLowerCase() })}
         >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
@@ -209,9 +211,9 @@ export function SimpleCrudPage<T extends { id: number }>({
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <p className="text-sm text-destructive">Failed to load {pluralLabel.toLowerCase()}</p>
+        <p className="text-sm text-destructive">{t('simpleCrud.failedLoad', { label: pluralLabel.toLowerCase() })}</p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Retry
+          {t('simpleCrud.retry')}
         </Button>
       </div>
     );
@@ -231,7 +233,7 @@ export function SimpleCrudPage<T extends { id: number }>({
         columns={columns}
         data={rows}
         searchColumn={searchColumn as string}
-        searchPlaceholder={`Search ${pluralLabel.toLowerCase()}...`}
+        searchPlaceholder={t('simpleCrud.searchPlaceholder', { label: pluralLabel.toLowerCase() })}
         toolbarActions={
           <Button
             size="sm"
@@ -241,7 +243,7 @@ export function SimpleCrudPage<T extends { id: number }>({
             }}
           >
             <Plus className="h-4 w-4 mr-1" />
-            New {singularLabel}
+            {t('simpleCrud.new', { label: singularLabel })}
           </Button>
         }
         pagination={false}
@@ -250,7 +252,7 @@ export function SimpleCrudPage<T extends { id: number }>({
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>New {singularLabel}</DialogTitle>
+            <DialogTitle>{t('simpleCrud.new', { label: singularLabel })}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-2">
             {fields.map((field) => {
@@ -282,7 +284,7 @@ export function SimpleCrudPage<T extends { id: number }>({
                 createMut.isPending
               }
             >
-              Create
+              {t('simpleCrud.create')}
             </Button>
           </DialogFooter>
         </DialogContent>

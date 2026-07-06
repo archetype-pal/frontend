@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -54,6 +55,7 @@ export function AdvancedSearchPanel({
   exactPhrase,
   onExactPhraseChange,
 }: AdvancedSearchPanelProps) {
+  const t = useTranslations('search');
   const update = (patch: Partial<AdvancedSearchState>) => onChange({ ...value, ...patch });
 
   if (!value.enabled) {
@@ -65,13 +67,13 @@ export function AdvancedSearchPanel({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold">Advanced search</h3>
+            <h3 className="text-sm font-semibold">{t('advancedSearch')}</h3>
             <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-              On
+              {t('advancedSearchPanel.onBadge')}
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Build filters with AND/OR groups, field operators, and keyword matching options.
+            {t('advancedSearchPanel.description')}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -87,7 +89,7 @@ export function AdvancedSearchPanel({
               })
             }
           >
-            Reset
+            {t('advancedSearchPanel.reset')}
           </Button>
           <Button
             type="button"
@@ -96,13 +98,13 @@ export function AdvancedSearchPanel({
             onClick={() => update({ enabled: false })}
             aria-pressed={value.enabled}
           >
-            Turn off
+            {t('advancedSearchPanel.turnOff')}
           </Button>
         </div>
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs">Free-text search</Label>
+        <Label className="text-xs">{t('advancedSearchPanel.freeTextSearch')}</Label>
         <SearchKeywordBar
           searchType={resultType}
           value={keyword}
@@ -113,22 +115,22 @@ export function AdvancedSearchPanel({
           inputClassName="h-9 bg-background"
         />
         <p className="text-[11px] text-muted-foreground">
-          The main keyword search — refine how it matches with the field and strategy options below.
+          {t('advancedSearchPanel.freeTextSearchHint')}
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label className="text-xs">Keyword search fields</Label>
+          <Label className="text-xs">{t('advancedSearchPanel.keywordSearchFields')}</Label>
           <Select
             value={value.searchField || '__all'}
             onValueChange={(v) => update({ searchField: v === '__all' ? '' : v })}
           >
             <SelectTrigger className="h-8">
-              <SelectValue placeholder="All searchable fields" />
+              <SelectValue placeholder={t('advancedSearchPanel.allSearchableFields')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all">All searchable fields</SelectItem>
+              <SelectItem value="__all">{t('advancedSearchPanel.allSearchableFields')}</SelectItem>
               {SEARCHABLE_FIELDS_BY_TYPE[resultType]?.map((field) => (
                 <SelectItem key={field} value={field}>
                   {field}
@@ -137,11 +139,11 @@ export function AdvancedSearchPanel({
             </SelectContent>
           </Select>
           <p className="text-[11px] text-muted-foreground">
-            Restrict the main keyword box to one field, or search all indexed fields.
+            {t('advancedSearchPanel.keywordSearchFieldsHint')}
           </p>
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Matching strategy</Label>
+          <Label className="text-xs">{t('advancedSearchPanel.matchingStrategy')}</Label>
           <Select
             value={value.matchingStrategy}
             onValueChange={(v) => update({ matchingStrategy: v as 'all' | 'last' })}
@@ -150,22 +152,21 @@ export function AdvancedSearchPanel({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All words must match</SelectItem>
+              <SelectItem value="all">{t('advancedSearchPanel.matchAllWords')}</SelectItem>
               <SelectItem value="last">
-                Lenient (drops trailing words until matches found)
+                {t('advancedSearchPanel.matchLenient')}
               </SelectItem>
             </SelectContent>
           </Select>
           <p className="text-[11px] text-muted-foreground">
-            Strict matching (`all`) requires every word; lenient (`last`) drops trailing words until
-            results appear.
+            {t('advancedSearchPanel.matchingStrategyHint')}
           </p>
         </div>
       </div>
 
       <div className="border-t pt-3">
         <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-          Query builder
+          {t('advancedSearchPanel.queryBuilderHeading')}
         </h4>
         <QueryBuilderPanel
           resultType={resultType}
