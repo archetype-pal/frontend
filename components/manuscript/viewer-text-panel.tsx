@@ -69,6 +69,13 @@ interface ViewerTextPanelProps {
   onDeleteRegion?: (graphId: number) => void;
   /** Remove a single element's link to a region (per-link unlink), keeping the region. */
   onUnlinkElement?: (textId: number, elementIndex: number, graphId: number) => void;
+  /** Explicit-bar link of a selected existing region (by graph id) to an element. */
+  onLinkExistingRegion?: (
+    textId: number,
+    elementIndex: number,
+    graphId: number,
+    label: string
+  ) => void;
   /** Arm "also link": the next phrase click links the selected region to a
    *  second element (e.g. its translation). */
   onStartAddRef?: (graphId: number) => void;
@@ -296,7 +303,12 @@ function TextEditorCard({
   selectedRegionGraphId: number | null;
   pendingRegionActive: boolean;
   onLinkDrawnToElement: (textId: number, elementIndex: number, label: string) => void;
-  onLinkRegionToElement: (textId: number, elementIndex: number, label: string) => void;
+  onLinkRegionToElement: (
+    textId: number,
+    elementIndex: number,
+    graphId: number,
+    label: string
+  ) => void;
   onUnlinkElement: (textId: number, elementIndex: number, graphId: number) => void;
   onRemoveRegion: (graphId: number) => void;
   onDiscardDrawnRegion: () => void;
@@ -429,7 +441,7 @@ export function ViewerTextPanel({
   selectedRegionGraphId = null,
   onDeleteRegion,
   onUnlinkElement,
-  onAddRefToPhrase,
+  onLinkExistingRegion,
   onClose,
   token,
   canEdit = false,
@@ -664,8 +676,8 @@ export function ViewerTextPanel({
               onLinkDrawnToElement={(textId, elementIndex, label) =>
                 onLinkPhrase?.(textId, elementIndex, label)
               }
-              onLinkRegionToElement={(textId, elementIndex, label) =>
-                onAddRefToPhrase?.(textId, elementIndex, label)
+              onLinkRegionToElement={(textId, elementIndex, graphId, label) =>
+                onLinkExistingRegion?.(textId, elementIndex, graphId, label)
               }
               onUnlinkElement={(textId, elementIndex, graphId) =>
                 onUnlinkElement?.(textId, elementIndex, graphId)

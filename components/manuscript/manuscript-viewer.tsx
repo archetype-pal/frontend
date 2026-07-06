@@ -313,6 +313,7 @@ export default function ManuscriptViewer({
     setHoveredRegionGraphId,
     unlinkSelectedRegion,
     unlinkElementFromRegion,
+    linkExistingRegionToElement,
     persistRegionGeometry,
     addRefForGraphId,
     startAddRef,
@@ -1485,6 +1486,9 @@ export default function ManuscriptViewer({
                   onDeleteRegion={(graphId) => unlinkSelectedRegion(graphId)}
                   onUnlinkElement={(textId, elementIndex, graphId) =>
                     unlinkElementFromRegion(textId, elementIndex, graphId)
+                  }
+                  onLinkExistingRegion={(textId, elementIndex, graphId, label) =>
+                    linkExistingRegionToElement(textId, elementIndex, graphId, label)
                   }
                   onStartAddRef={(graphId) => startAddRef(graphId)}
                   addRefArmed={addRefForGraphId != null}

@@ -344,6 +344,35 @@ export function useImageTextLinking({
 
   const cancelAddRef = React.useCallback(() => setAddRefForGraphId(null), []);
 
+  // Explicit Link Bar path: link an EXISTING region (by graph id) to an element.
+  // Unlike addRefToPhrase it takes the region id directly (no armed state), so the
+  // bar can link the region the user has selected on the image.
+  const linkExistingRegionToElement = React.useCallback(
+    (textId: number, elementIndex: number, graphId: number, label: string) => {
+      if (!token) return;
+      void (async () => {
+        try {
+          await linkRegionToElement(token, textId, elementIndex, undefined, graphId);
+          await reloadTextsAndAnnotations();
+          showActionNotification({
+            kind: 'saved',
+            title: 'Linked',
+            description: `Linked “${label}” to the region.`,
+            duration: 2500,
+          });
+        } catch (error) {
+          showActionNotification({
+            kind: 'error',
+            title: 'Link failed',
+            description:
+              error instanceof Error ? error.message.slice(0, 160) : 'Could not link region.',
+          });
+        }
+      })();
+    },
+    [token, reloadTextsAndAnnotations]
+  );
+
   // Delete a selected linked region: removes the TEXT graph + strips its
   // corresp from this image's texts (the endpoint accepts any of the image's
   // text ids and clears the ref from all of them).
@@ -459,6 +488,7 @@ export function useImageTextLinking({
     setHoveredRegionGraphId,
     unlinkSelectedRegion,
     unlinkElementFromRegion,
+    linkExistingRegionToElement,
     persistRegionGeometry,
     addRefForGraphId,
     startAddRef,

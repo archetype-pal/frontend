@@ -32,8 +32,13 @@ export interface ViewerLinkBarProps {
   activeRegion: ActiveRegion | null;
   /** Link the drawn region to the element_index-th phrase (geometry mode). */
   onLinkDrawnToElement: (textId: number, elementIndex: number, label: string) => void;
-  /** Link the selected existing region to the element (graph_id mode). */
-  onLinkRegionToElement: (textId: number, elementIndex: number, label: string) => void;
+  /** Link the selected existing region (by graph id) to the element (graph_id mode). */
+  onLinkRegionToElement: (
+    textId: number,
+    elementIndex: number,
+    graphId: number,
+    label: string
+  ) => void;
   /** Remove just this element's link to the region. */
   onUnlinkElement: (textId: number, elementIndex: number, graphId: number) => void;
   /** Remove the whole region (deletes it + all its links). */
@@ -136,7 +141,7 @@ export function ViewerLinkBar(props: ViewerLinkBarProps) {
     const { elementIndex, label } = phrase;
     void withSave(() => {
       if (activeRegion.kind === 'drawn') onLinkDrawnToElement(textId, elementIndex, label);
-      else onLinkRegionToElement(textId, elementIndex, label);
+      else onLinkRegionToElement(textId, elementIndex, activeRegion.graphId, label);
     });
   };
 
