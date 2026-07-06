@@ -309,6 +309,8 @@ export default function ManuscriptViewer({
     cancelPendingLink,
     selectedRegionGraphId,
     setSelectedRegionGraphId,
+    hoveredRegionGraphId,
+    setHoveredRegionGraphId,
     unlinkSelectedRegion,
     persistRegionGeometry,
     addRefForGraphId,
@@ -1361,6 +1363,11 @@ export default function ManuscriptViewer({
               confirmDelete={handleConfirmDelete}
               confirmDeleteMany={handleConfirmDeleteMany}
               onSelect={handleSelectAnnotationFromViewer}
+              onHover={(annotationId) =>
+                setHoveredRegionGraphId(
+                  annotationId && isDbId(annotationId) ? Number(annotationId.slice(3)) : null
+                )
+              }
               exposeApi={handleExposeApi}
             />
 
@@ -1431,6 +1438,7 @@ export default function ManuscriptViewer({
                   canEdit={canPersistAnyAnnotations && !isPublicDemoMode}
                   onTextSaved={() => void reloadTextsAndAnnotations()}
                   linkedGraphId={linkedGraphId}
+                  hoveredGraphId={hoveredRegionGraphId}
                   onSpanHover={(graphId) =>
                     setHoveredAnnotationId(graphId != null ? `db:${graphId}` : null)
                   }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { docToTei, teiToDoc } from '@/lib/tei-prosemirror';
+import { docToTei, indexLinkableElements, teiToDoc } from '@/lib/tei-prosemirror';
 
 function roundTrip(tei: string): string {
   return docToTei(teiToDoc(tei));
@@ -63,5 +63,37 @@ describe('teiToDoc / docToTei round-trip', () => {
 
   it('preserves entities canonically', () => {
     expect(roundTrip('<p>a &amp; b &lt;c&gt;</p>')).toBe('<p>a &amp; b &lt;c&gt;</p>');
+  });
+});
+
+function indexByText(tei: string): Record<number, string> {
+  const map = indexLinkableElements(teiToDoc(tei));
+  const out: Record<number, string> = {};
+  for (const { index, text } of map.values()) out[index] = text.replace(/\s+/g, ' ').trim();
+  return out;
+}
+
+describe('indexLinkableElements', () => {
+  it('numbers linkable elements in document start-tag order', () => {
+    expect(
+      indexByText('<p><seg>A</seg><persName>B</persName><seg>C<placeName>D</placeName></seg></p>')
+    ).toEqual({ 0: 'A', 1: 'B', 2: 'CD', 3: 'D' });
+  });
+
+  it('indexes an inner element after its enclosing element (outer→inner)', () => {
+    expect(indexByText('<p><seg>Wil<persName>son</persName></seg></p>')).toEqual({
+      0: 'Wilson',
+      1: 'son',
+    });
+  });
+
+  it('counts a void <lb/> as an index even though it holds no text and is not a target', () => {
+    // lb consumes index 0 (no id/text in the map); the seg is therefore index 1 —
+    // matching the backend, which counts <lb/> among linkable elements.
+    expect(indexByText('<p>X<lb/><seg>Y</seg></p>')).toEqual({ 1: 'Y' });
+  });
+
+  it('does not count non-linkable wrappers like paragraphs', () => {
+    expect(indexByText('<p>plain</p><p><seg>only</seg></p>')).toEqual({ 0: 'only' });
   });
 });

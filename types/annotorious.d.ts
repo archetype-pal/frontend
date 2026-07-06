@@ -79,6 +79,11 @@ declare module '@recogito/annotorious-openseadragon' {
       event: 'clickAnnotation',
       handler: (annotation: AnnotoriousAnnotation, event?: PointerEvent) => void
     ): void;
+    on(
+      event: 'mouseEnterAnnotation',
+      handler: (annotation: AnnotoriousAnnotation, element?: unknown) => void
+    ): void;
+    on(event: 'mouseLeaveAnnotation', handler: (annotation?: AnnotoriousAnnotation) => void): void;
     on(event: string, handler: (...args: unknown[]) => void): void;
 
     off(event: 'createAnnotation', handler: (annotation: AnnotoriousAnnotation) => void): void;

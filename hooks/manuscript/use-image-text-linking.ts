@@ -85,6 +85,11 @@ export function useImageTextLinking({
   // "Also link" flow: an existing region selected for linking to a SECOND phrase
   // (e.g. its translation). The next phrase click adds a corresp for this graph.
   const [addRefForGraphId, setAddRefForGraphId] = React.useState<number | null>(null);
+  // Graph id of the region the pointer is *hovering* on the image (null when
+  // none). Drives the text panel's "highlight the linked phrase on region hover"
+  // affordance — the image→text mirror of onSpanHover. Transient: cleared on
+  // pointer-leave and on image change; never persisted.
+  const [hoveredRegionGraphId, setHoveredRegionGraphId] = React.useState<number | null>(null);
 
   const linkArmRef = React.useRef<LinkArm | null>(null);
   React.useEffect(() => {
@@ -125,6 +130,7 @@ export function useImageTextLinking({
     setPendingLinkRegion(null);
     setSelectedRegionGraphId(null);
     setAddRefForGraphId(null);
+    setHoveredRegionGraphId(null);
   }
 
   // Load image-texts for the side panel. Whether the panel is shown is derived
@@ -419,6 +425,8 @@ export function useImageTextLinking({
     cancelPendingLink,
     selectedRegionGraphId,
     setSelectedRegionGraphId,
+    hoveredRegionGraphId,
+    setHoveredRegionGraphId,
     unlinkSelectedRegion,
     persistRegionGeometry,
     addRefForGraphId,

@@ -35,6 +35,10 @@ interface ViewerTextPanelProps {
   displayMode: TextDisplayMode;
   /** Graph id of the region currently selected on the image (region → text). */
   linkedGraphId: number | null;
+  /** Graph id of the region the pointer is hovering on the image (region → text).
+   *  Highlights the linked phrase(s) without scrolling — the transient, hover
+   *  counterpart to linkedGraphId. Null when no region is hovered. */
+  hoveredGraphId?: number | null;
   /** Hovering a linked span highlights its region on the image. */
   onSpanHover: (graphId: number | null) => void;
   /** Clicking a linked span selects + centres its region on the image. */
@@ -343,6 +347,7 @@ export function ViewerTextPanel({
   texts,
   displayMode,
   linkedGraphId,
+  hoveredGraphId = null,
   onSpanHover,
   onSpanActivate,
   canLink = false,
@@ -453,6 +458,49 @@ export function ViewerTextPanel({
     }
   }, [linkedGraphId, shownKey]);
 
+  // region hover → text: highlight every phrase linked to the hovered region so
+  // the reader can find it while the pointer is over the region. Implemented as a
+  // dynamically-generated stylesheet keyed on the hovered graph id — NOT a
+  // per-span data attribute — because the Rich TEI editor is a ProseMirror
+  // contentEditable that reverts external DOM mutations on its next sync (so an
+  // attribute would flicker straight back out). A stylesheet never touches the
+  // editor's DOM, so it highlights linked phrases robustly in BOTH the read view
+  // and the editor. The four selectors match the id whether it stands alone or
+  // sits in a comma-list ("10,11"). Transient: cleared on pointer-leave; never
+  // scrolls (that would be jarring on pointer-move). Appended to <head> at
+  // runtime so it wins the cascade over the equal-specificity `.tei-el` rules.
+  const hoverStyleRef = React.useRef<HTMLStyleElement | null>(null);
+  React.useEffect(() => {
+    let styleEl = hoverStyleRef.current;
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.dataset.viewerHoverHighlight = 'true';
+      document.head.appendChild(styleEl);
+      hoverStyleRef.current = styleEl;
+    }
+    if (hoveredGraphId == null) {
+      styleEl.textContent = '';
+      return;
+    }
+    const id = hoveredGraphId;
+    const sel = [
+      `[data-graph-id="${id}"]`,
+      `[data-graph-id^="${id},"]`,
+      `[data-graph-id$=",${id}"]`,
+      `[data-graph-id*=",${id},"]`,
+    ]
+      .map((s) => `.viewer-text-panel ${s}`)
+      .join(',');
+    styleEl.textContent = `${sel}{background-color:hsl(var(--c-transcription-h) 70% 55% / 0.32);box-shadow:0 0 0 1px hsl(var(--c-transcription-h) 60% 45% / 0.45);border-radius:3px;}`;
+  }, [hoveredGraphId]);
+  React.useEffect(
+    () => () => {
+      hoverStyleRef.current?.remove();
+      hoverStyleRef.current = null;
+    },
+    []
+  );
+
   // The phrase text of the selected region (for the Delete banner). Derived from
   // the span carrying that graph id; recomputed when the selection or texts change.
   const [selectedRegionPhrase, setSelectedRegionPhrase] = React.useState('');
@@ -489,6 +537,13 @@ export function ViewerTextPanel({
 
   const handleClick = (event: React.MouseEvent) => {
     const target = event.target as Element;
+    // Inside the Rich TEI editor (a contentEditable surface), a click means
+    // "place the cursor here to edit" — never "activate/link this region". The
+    // editor's spans carry data-graph-id (so region→phrase hover-highlight works
+    // while editing), so without this guard clicking a linked word would hijack
+    // the caret and jump the image. Region→text highlighting doesn't use this
+    // delegation, so gating it out of the editor leaves the feature intact.
+    if (target.closest('[contenteditable="true"]')) return;
     // Decide based on the *innermost* linkable element the user clicked.
     const innermost = target.closest<HTMLElement>('[data-dpt]');
 
@@ -553,6 +608,11 @@ export function ViewerTextPanel({
     }
   };
   const handleMouseOver = (event: React.MouseEvent) => {
+    // Skip while pointing inside the Rich editor — hovering text there shouldn't
+    // flash regions on the image (and could distract while editing). The reverse
+    // direction (region → phrase highlight) is driven by hoveredGraphId, not this
+    // handler, so it still works in the editor.
+    if ((event.target as Element).closest('[contenteditable="true"]')) return;
     const ids = graphIdsOf((event.target as Element).closest('[data-graph-id]'));
     onSpanHover(ids.length > 0 ? ids[0] : null);
   };
