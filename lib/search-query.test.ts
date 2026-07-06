@@ -6,6 +6,7 @@ import {
   buildQueryString,
   normalizeQueryState,
   parseQueryRootFromUrl,
+  resetQueryForTypeChange,
   resolveFacetClick,
   stateFromSearchParams,
 } from './search-query';
@@ -110,6 +111,28 @@ describe('search-query utilities', () => {
       date_diff: '15',
     });
     expect(tag?.label).toBe('Date: 1100 - 1200, at most 15');
+  });
+});
+
+describe('resetQueryForTypeChange', () => {
+  it('wipes all per-type filter/sort/page state and keeps page size', () => {
+    const reset = resetQueryForTypeChange({
+      limit: 50,
+      offset: 700,
+      ordering: 'catalogue_numbers_exact',
+      selected_facets: ['repository_name_exact:Durham', 'type_exact:Charter'],
+      dateParams: { min_date: '1100', max_date: '1200' },
+      extraParams: { repository_name__not: 'York' },
+    });
+
+    expect(reset).toEqual({
+      limit: 50, // page size preserved
+      offset: 0, // page reset (no out-of-range page carried into the next type)
+      ordering: null, // sort reset (a per-type sort field is invalid on another type)
+      selected_facets: [],
+      dateParams: {},
+      extraParams: {},
+    });
   });
 });
 

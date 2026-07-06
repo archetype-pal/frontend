@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useSearchVisibility } from '@/lib/search-visibility';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { useSearchResults } from '@/hooks/search/use-search-results';
-import { stateFromSearchParams } from '@/lib/search-query';
+import { resetQueryForTypeChange, stateFromSearchParams } from '@/lib/search-query';
 import {
   DEFAULT_ADVANCED_SEARCH_STATE,
   type AdvancedSearchState,
@@ -186,13 +186,11 @@ export function useSearchPageState(initialType?: ResultType) {
   const handleResultTypeChange = React.useCallback(
     (next: ResultType) => {
       setResultType(next);
-      queryHook.setQueryState((prev) => ({
-        ...prev,
-        selected_facets: [],
-        dateParams: {},
-        extraParams: {},
-        offset: 0,
-      }));
+      // Full clean slate: facets, date, exclusions, sort ordering, and page offset
+      // are all per-type — carrying them into the next type lands on an
+      // out-of-range page or applies a stale sort. (Keyword is kept: the per-type
+      // tab counts are keyword-scoped.)
+      queryHook.setQueryState((prev) => resetQueryForTypeChange(prev));
       setAdvancedSearch(DEFAULT_ADVANCED_SEARCH_STATE);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stable refs from sub-hooks

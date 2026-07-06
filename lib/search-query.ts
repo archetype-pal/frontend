@@ -500,6 +500,19 @@ export function clearAllFacetFilters(queryState: QueryState): QueryState {
   };
 }
 
+/**
+ * Reset all per-type filter/sort/page state when switching result type
+ * (Manuscripts → Images, etc.). Facets, date, exclusions, sort ordering, and page
+ * offset are all type-specific and must not leak across a switch: a carried-over
+ * `offset` lands on an out-of-range page, and a carried-over `ordering` names a
+ * sort field the new type doesn't have (silently ignored, so the results look
+ * unsorted/stale). `limit` (page size) is preserved; the keyword lives in separate
+ * state and is intentionally kept — the per-type tab counts are keyword-scoped.
+ */
+export function resetQueryForTypeChange(queryState: QueryState): QueryState {
+  return { ...clearAllFacetFilters(queryState), ordering: null };
+}
+
 export function clearDateFilters(queryState: QueryState): QueryState {
   return {
     ...queryState,
