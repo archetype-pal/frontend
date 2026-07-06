@@ -66,7 +66,7 @@ function parseAttrs(attrString: string): Record<string, string> {
   return attrs;
 }
 
-function correspToGraphIds(raw: string): string {
+export function correspToGraphIds(raw: string): string {
   return raw
     .split(/\s+/)
     .map((token) => token.replace(/^#/, ''))

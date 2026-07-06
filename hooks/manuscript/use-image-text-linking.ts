@@ -9,6 +9,7 @@ import { updateViewerAnnotation } from '@/services/annotations';
 import {
   fetchImageTextsForImage,
   linkRegionToElement,
+  unlinkElement,
   unlinkRegion,
   type ImageTextDetail,
 } from '@/services/image-texts';
@@ -36,6 +37,21 @@ interface UseImageTextLinkingArgs {
   viewerApiRef: React.RefObject<ViewerApi | null>;
   resetEditorFrom: (annotations: A9sAnnotation[]) => void;
   setInitialA9sAnnots: (annotations: A9sAnnotation[]) => void;
+}
+
+/**
+ * Tag a freshly drawn box as a text-region draft so the visibility filter treats
+ * it as the text layer immediately — before the link round-trips server-side.
+ * Shared by both draw flows: the reverse flow (draw first, then click a phrase —
+ * startPendingLink) and the forward flow (phrase armed, then draw — tryLinkRegion).
+ * Typing at draw time is what lets the filter gate visibility purely on layer
+ * instead of on persistence state (see passesVisibilityFilter).
+ */
+export function toTextRegionDraft(annotation: A9sAnnotation): A9sAnnotation {
+  return {
+    ...annotation,
+    _meta: { ...(annotation as A9sWithMeta)._meta, annotationType: 'text' as const },
+  } as A9sAnnotation;
 }
 
 /**
@@ -70,6 +86,11 @@ export function useImageTextLinking({
   // "Also link" flow: an existing region selected for linking to a SECOND phrase
   // (e.g. its translation). The next phrase click adds a corresp for this graph.
   const [addRefForGraphId, setAddRefForGraphId] = React.useState<number | null>(null);
+  // Graph id of the region the pointer is *hovering* on the image (null when
+  // none). Drives the text panel's "highlight the linked phrase on region hover"
+  // affordance — the image→text mirror of onSpanHover. Transient: cleared on
+  // pointer-leave and on image change; never persisted.
+  const [hoveredRegionGraphId, setHoveredRegionGraphId] = React.useState<number | null>(null);
 
   const linkArmRef = React.useRef<LinkArm | null>(null);
   React.useEffect(() => {
@@ -110,6 +131,7 @@ export function useImageTextLinking({
     setPendingLinkRegion(null);
     setSelectedRegionGraphId(null);
     setAddRefForGraphId(null);
+    setHoveredRegionGraphId(null);
   }
 
   // Load image-texts for the side panel. Whether the panel is shown is derived
@@ -177,11 +199,19 @@ export function useImageTextLinking({
       const arm = linkArmRef.current;
       if (!(arm && token && imageHeight)) return false;
 
-      const geometry = a9sToBackendFeature(annotation, imageHeight);
+      // Tag the drawn box as a text-region immediately — before the link round-
+      // trips server-side — so the visibility filter treats it as the text layer
+      // for the whole async window (mirrors the reverse flow in startPendingLink).
+      // Without this the box is untyped on the canvas until the link resolves, and
+      // in pure text view it would vanish the instant it's drawn.
+      const typed = toTextRegionDraft(annotation);
+      void viewerApiRef.current?.updateSelectedDraft?.(typed);
+
+      const geometry = a9sToBackendFeature(typed, imageHeight);
       void (async () => {
         try {
           await linkRegionToElement(token, arm.textId, arm.elementIndex, geometry);
-          viewerApiRef.current?.removeAnnotationById?.(annotation.id);
+          viewerApiRef.current?.removeAnnotationById?.(typed.id);
           setLinkArm(null);
           await reloadTextsAndAnnotations();
           showActionNotification({
@@ -191,7 +221,7 @@ export function useImageTextLinking({
             duration: 3000,
           });
         } catch (error) {
-          viewerApiRef.current?.removeAnnotationById?.(annotation.id);
+          viewerApiRef.current?.removeAnnotationById?.(typed.id);
           showActionNotification({
             kind: 'error',
             title: 'Link failed',
@@ -215,14 +245,12 @@ export function useImageTextLinking({
         viewerApiRef.current?.removeAnnotationById?.(existing.id);
       }
       // Type the preview as a text-region immediately — before it's linked
-      // server-side — so every guard (the popup sink, the select handler) treats
-      // it as one. Otherwise an un-linked drawn box is "untyped" and could open
-      // the glyph popup if re-selected after a view-mode switch. We also push the
-      // type onto the canvas copy so Annotorious re-emits it typed on re-select.
-      const typed = {
-        ...annotation,
-        _meta: { ...(annotation as A9sWithMeta)._meta, annotationType: 'text' as const },
-      } as A9sAnnotation;
+      // server-side — so every guard (the popup sink, the select handler, the
+      // visibility filter) treats it as one. Otherwise an un-linked drawn box is
+      // "untyped" and could open the glyph popup if re-selected after a view-mode
+      // switch. We also push the type onto the canvas copy so Annotorious re-emits
+      // it typed on re-select.
+      const typed = toTextRegionDraft(annotation);
       void viewerApiRef.current?.updateSelectedDraft?.(typed);
       // Set the ref synchronously (not just via the effect) so a re-select that
       // fires before the next render still routes this box as the pending link.
@@ -316,6 +344,35 @@ export function useImageTextLinking({
 
   const cancelAddRef = React.useCallback(() => setAddRefForGraphId(null), []);
 
+  // Explicit Link Bar path: link an EXISTING region (by graph id) to an element.
+  // Unlike addRefToPhrase it takes the region id directly (no armed state), so the
+  // bar can link the region the user has selected on the image.
+  const linkExistingRegionToElement = React.useCallback(
+    (textId: number, elementIndex: number, graphId: number, label: string) => {
+      if (!token) return;
+      void (async () => {
+        try {
+          await linkRegionToElement(token, textId, elementIndex, undefined, graphId);
+          await reloadTextsAndAnnotations();
+          showActionNotification({
+            kind: 'saved',
+            title: 'Linked',
+            description: `Linked “${label}” to the region.`,
+            duration: 2500,
+          });
+        } catch (error) {
+          showActionNotification({
+            kind: 'error',
+            title: 'Link failed',
+            description:
+              error instanceof Error ? error.message.slice(0, 160) : 'Could not link region.',
+          });
+        }
+      })();
+    },
+    [token, reloadTextsAndAnnotations]
+  );
+
   // Delete a selected linked region: removes the TEXT graph + strips its
   // corresp from this image's texts (the endpoint accepts any of the image's
   // text ids and clears the ref from all of them).
@@ -353,6 +410,35 @@ export function useImageTextLinking({
       })();
     },
     [token, imageTexts, viewerApiRef, reloadTextsAndAnnotations]
+  );
+
+  // Per-element unlink: strip just this element's ref to a region, keeping the
+  // region graph and its other links (vs unlinkSelectedRegion, which deletes the
+  // whole region). The region stays on the canvas — no removeAnnotationById.
+  const unlinkElementFromRegion = React.useCallback(
+    (textId: number, elementIndex: number, graphId: number) => {
+      if (!token) return;
+      void (async () => {
+        try {
+          await unlinkElement(token, textId, elementIndex, graphId);
+          await reloadTextsAndAnnotations();
+          showActionNotification({
+            kind: 'deleted',
+            title: 'Link removed',
+            description: 'Removed this phrase’s link to the region.',
+            duration: 1800,
+          });
+        } catch (error) {
+          showActionNotification({
+            kind: 'error',
+            title: 'Unlink failed',
+            description:
+              error instanceof Error ? error.message.slice(0, 160) : 'Could not remove the link.',
+          });
+        }
+      })();
+    },
+    [token, reloadTextsAndAnnotations]
   );
 
   // Persist a region reshape (Modify): PATCH the TEXT graph's geometry. The
@@ -398,7 +484,11 @@ export function useImageTextLinking({
     cancelPendingLink,
     selectedRegionGraphId,
     setSelectedRegionGraphId,
+    hoveredRegionGraphId,
+    setHoveredRegionGraphId,
     unlinkSelectedRegion,
+    unlinkElementFromRegion,
+    linkExistingRegionToElement,
     persistRegionGeometry,
     addRefForGraphId,
     startAddRef,

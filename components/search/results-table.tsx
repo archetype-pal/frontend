@@ -217,7 +217,7 @@ export const COLUMNS = {
       className: 'text-center',
     },
     {
-      header: 'Ann.',
+      header: 'Annotations',
       accessor: (i) => i.number_of_annotations,
       className: 'text-center',
       sortKey: 'number_of_annotations_exact',

@@ -11,7 +11,9 @@
 
 import { Extension, Mark, Node, type Editor } from '@tiptap/react';
 
-import type { StackEntry } from '@/lib/tei-prosemirror';
+import { correspToGraphIds } from '@/lib/tei-to-dpt-html';
+import { indexLinkableElements } from '@/lib/tei-prosemirror';
+import type { PMDoc, StackEntry } from '@/lib/tei-prosemirror';
 
 /**
  * Reader-friendly name for a marked element, shown as the always-styled hover
@@ -61,6 +63,12 @@ export const TeiMark = Mark.create({
       const type = entry.attrs?.type;
       const label = teiElementLabel(entry.el, type);
       const full = type ? `${entry.el}: ${type}` : entry.el;
+      // Carry the region link (corresp="#gid-N") through as data-graph-id — the
+      // same hook the read-only viewer emits — so the "hover a region → highlight
+      // its phrase" affordance also lights up while editing in Rich mode. The
+      // panel's click/hover *delegation* is separately gated out of the editor so
+      // this doesn't hijack cursor placement (see viewer-text-panel.tsx).
+      const graphIds = entry.attrs?.corresp ? correspToGraphIds(entry.attrs.corresp) : '';
       spec = [
         'span',
         {
@@ -69,6 +77,7 @@ export const TeiMark = Mark.create({
           class: `tei-el tei-el-${entry.el}`,
           'data-tei-el': entry.el,
           ...(type ? { 'data-tei-type': type } : {}),
+          ...(graphIds ? { 'data-graph-id': graphIds } : {}),
           'data-tei-label': label,
           title: full,
         },
@@ -261,6 +270,64 @@ export function currentStack(editor: Editor): StackEntry[] {
 export function currentElement(editor: Editor): StackEntry | null {
   const stack = currentStack(editor);
   return stack.length > 0 ? stack[stack.length - 1] : null;
+}
+
+const LINKABLE_ELS = new Set(['seg', 'persname', 'placename', 'ex', 'supplied', 'lb']);
+
+/** A linkable element the region-link bar can target. */
+export interface LinkableTarget {
+  /** Positional element_index the backend link API expects. */
+  elementIndex: number;
+  el: string;
+  /** The element's text, for display. */
+  label: string;
+  /** Region graph ids already linked to this element (from its corresp). */
+  linkedGraphIds: number[];
+}
+
+export interface EditorLinkSelection {
+  /** Innermost linkable element under the caret — the default link target. */
+  target: LinkableTarget;
+  /** The linkable ancestor chain (outer→inner, incl. target) for breadcrumb picking. */
+  ancestors: LinkableTarget[];
+}
+
+function correspGids(corresp: string | undefined): number[] {
+  if (!corresp) return [];
+  return corresp
+    .split(/\s+/)
+    .map((token) => token.replace(/^#/, ''))
+    .filter((token) => token.startsWith('gid-'))
+    .map((token) => Number(token.slice('gid-'.length)))
+    .filter((n) => Number.isFinite(n));
+}
+
+/**
+ * The link target under the current editor selection: the innermost linkable TEI
+ * element (the default) plus its linkable ancestors, each with the positional
+ * element_index the backend link API needs and the region ids already linked to
+ * it. Null when the caret isn't inside a linkable element (→ the Link button is
+ * disabled). The index is computed against the *current* editor doc, so callers
+ * must save the draft before linking (the server resolves it against saved
+ * content).
+ */
+export function linkTargetAt(editor: Editor): EditorLinkSelection | null {
+  const stack = currentStack(editor).filter((entry) => LINKABLE_ELS.has(entry.el.toLowerCase()));
+  if (stack.length === 0) return null;
+  const indexed = indexLinkableElements(editor.getJSON() as unknown as PMDoc);
+  const build = (entry: StackEntry): LinkableTarget | null => {
+    const info = indexed.get(entry.id);
+    if (!info) return null;
+    return {
+      elementIndex: info.index,
+      el: entry.el,
+      label: info.text.replace(/\s+/g, ' ').trim(),
+      linkedGraphIds: correspGids(entry.attrs.corresp),
+    };
+  };
+  const ancestors = stack.map(build).filter((t): t is LinkableTarget => t !== null);
+  if (ancestors.length === 0) return null;
+  return { target: ancestors[ancestors.length - 1], ancestors };
 }
 
 /** Change the @type of the innermost element covering the selection. */

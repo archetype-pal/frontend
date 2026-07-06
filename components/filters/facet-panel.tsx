@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Ban, ChevronDown } from 'lucide-react';
+import { Ban, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import type { FacetListItem } from '@/types/facets';
@@ -15,6 +15,10 @@ type FacetPanelProps = {
   onSelect?: (url: string, value: string, isDeselect?: boolean) => void;
   /** Exclude this facet value (NOT filter) */
   onExclude?: (value: string) => void;
+  /** Values currently excluded (`<facetKey>__not`) — surfaced as a removable strip. */
+  excludedValues?: string[];
+  /** Revert an exclusion for this value. */
+  onRemoveExclude?: (value: string) => void;
   baseFacetURL: string;
   selectedValue?: string | null;
   showSort?: boolean;
@@ -28,6 +32,8 @@ export function FacetPanel({
   expanded = true,
   onSelect,
   onExclude,
+  excludedValues = [],
+  onRemoveExclude,
   baseFacetURL,
   selectedValue,
   showSort = true,
@@ -39,9 +45,19 @@ export function FacetPanel({
   const [searchTerm, setSearchTerm] = React.useState('');
   const [expandedList, setExpandedList] = React.useState(false);
 
+  // Excluded values are surfaced in their own strip, so drop them from the
+  // selectable list — otherwise a value could read as both excludable and
+  // excluded. (An excluded value is usually absent from the server distribution
+  // anyway; the strip re-injects it so it stays visible and revertible.)
+  const excludedSet = React.useMemo(() => new Set(excludedValues), [excludedValues]);
+  const selectableItems = React.useMemo(
+    () => (excludedSet.size ? items.filter((item) => !excludedSet.has(item.value)) : items),
+    [items, excludedSet]
+  );
+
   const sortedItems = React.useMemo(() => {
-    if (!showSort) return items;
-    const itemsCopy = [...items];
+    if (!showSort) return selectableItems;
+    const itemsCopy = [...selectableItems];
     switch (sortBy) {
       case 'name-asc':
         return itemsCopy.sort((a, b) => a.label.localeCompare(b.label));
@@ -53,7 +69,7 @@ export function FacetPanel({
       default:
         return itemsCopy.sort((a, b) => b.count - a.count);
     }
-  }, [items, showSort, sortBy]);
+  }, [selectableItems, showSort, sortBy]);
 
   const filteredItems = React.useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
@@ -138,6 +154,32 @@ export function FacetPanel({
           </button>
         </div>
       )}
+      {isExpanded && excludedValues.length > 0 && (
+        <div className="border-t border-destructive/30 bg-destructive/5 px-2 py-2">
+          <p className="px-1 pb-1 text-[10px] font-semibold uppercase tracking-wide text-destructive/80">
+            Excluded
+          </p>
+          <ul className="space-y-0.5">
+            {excludedValues.map((value) => (
+              <li key={value}>
+                <button
+                  type="button"
+                  onClick={() => onRemoveExclude?.(value)}
+                  title="Stop excluding this value"
+                  aria-label={`Stop excluding ${value}`}
+                  className="group flex w-full items-center gap-1.5 rounded-md border border-destructive/40 bg-background/40 px-2 py-1 text-left text-[13px] transition-colors hover:bg-destructive/10"
+                >
+                  <Ban className="h-3 w-3 shrink-0 text-destructive/70" />
+                  <span className="min-w-0 flex-1 truncate text-muted-foreground line-through decoration-destructive/50">
+                    {value}
+                  </span>
+                  <X className="h-3.5 w-3.5 shrink-0 text-destructive/70 transition-colors group-hover:text-destructive" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {isExpanded && (
         <div className="max-h-56 overflow-y-auto border-t border-border/50">
           <div className="p-2 pb-0">
@@ -184,20 +226,41 @@ export function FacetPanel({
                       )}
                     </span>
                   </button>
-                  {onExclude && (
+                  {isSelected ? (
+                    // Once a value is included, the only sensible trailing action
+                    // is to turn it off — offering "exclude" here invites the
+                    // impossible include+exclude combo (which returns zero results)
+                    // because users read the crossed-circle as "remove"
+                    // (archetype-pal/project-discussions#8). Deselect instead.
                     <button
                       type="button"
-                      title="Exclude this value"
-                      aria-label={`Exclude ${item.label}`}
-                      className="shrink-0 self-center rounded p-1 text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      title="Remove filter"
+                      aria-label={`Remove filter ${item.label}`}
+                      className="shrink-0 self-center rounded p-1 text-muted-foreground transition-colors hover:bg-muted-foreground/20 hover:text-foreground"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        onExclude(item.value);
+                        handleSelect(item);
                       }}
                     >
-                      <Ban className="h-3.5 w-3.5" />
+                      <X className="h-3.5 w-3.5" />
                     </button>
+                  ) : (
+                    onExclude && (
+                      <button
+                        type="button"
+                        title="Exclude this value"
+                        aria-label={`Exclude ${item.label}`}
+                        className="shrink-0 self-center rounded p-1 text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onExclude(item.value);
+                        }}
+                      >
+                        <Ban className="h-3.5 w-3.5" />
+                      </button>
+                    )
                   )}
                 </li>
               );

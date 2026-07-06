@@ -54,17 +54,38 @@ describe('passesVisibilityFilter', () => {
     ).toBe(true);
   });
 
-  it('keeps an in-progress draft visible in text mode (the region being drawn to link)', () => {
-    // A freshly drawn region is untyped for one render tick before it's tagged
-    // annotationType:'text'; it must stay visible in text mode or it flickers
-    // out on draw. Saved glyphs (not drafts) are still hidden in pure text view.
-    expect(passesVisibilityFilter(undefined, true, ctx({ viewMode: 'text' }))).toBe(true);
+  it('hides glyph drafts in text mode too — layer-based, not persistence-based', () => {
+    // Regression: a newly-drawn allograph box keeps its client id (draft) until
+    // it's saved, and used to leak into text view while identical SAVED boxes
+    // hid. The glyph layer is hidden in pure text view regardless of saved-vs-
+    // draft, so a just-drawn 'public' graph is hidden like every other glyph.
     expect(
-      passesVisibilityFilter({ allographId: 1, handId: 10 }, true, ctx({ viewMode: 'text' }))
-    ).toBe(true);
+      passesVisibilityFilter(
+        { annotationType: 'public', allographId: 1, handId: 10 },
+        true,
+        ctx({ viewMode: 'text' })
+      )
+    ).toBe(false);
+    // an untyped draft is also hidden — text-link boxes are typed 'text' at draw
+    // time, so nothing legitimately reaches text view untyped.
+    expect(passesVisibilityFilter(undefined, true, ctx({ viewMode: 'text' }))).toBe(false);
+    // saved glyph — unchanged, still hidden.
     expect(
       passesVisibilityFilter({ allographId: 1, handId: 10 }, false, ctx({ viewMode: 'text' }))
     ).toBe(false);
+  });
+
+  it('keeps text-region boxes visible in text mode whether draft or saved', () => {
+    // Text-link boxes are tagged annotationType:'text' at draw time
+    // (toTextRegionDraft, via startPendingLink / tryLinkRegion), so they stay
+    // visible across the whole draw→link async window in pure text view — their
+    // visibility no longer depends on the draft flag.
+    expect(
+      passesVisibilityFilter({ annotationType: 'text' }, true, ctx({ viewMode: 'text' }))
+    ).toBe(true);
+    expect(
+      passesVisibilityFilter({ annotationType: 'text' }, false, ctx({ viewMode: 'text' }))
+    ).toBe(true);
   });
 
   it('hides editorial annotations when showEditorial is off', () => {

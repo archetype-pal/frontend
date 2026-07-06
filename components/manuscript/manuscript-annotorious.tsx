@@ -5,6 +5,7 @@ import type OpenSeadragon from 'openseadragon';
 import '@recogito/annotorious/dist/annotorious.min.css';
 
 import { smallestBoxContainingPoint, type HitBox } from '@/lib/manuscript-viewer-hit-test';
+import { buildOpenSeadragonTileSource } from '@/lib/osd-iiif-tile-source';
 
 // ---- Annotation data model ----
 export interface Annotation {
@@ -114,6 +115,10 @@ interface Props {
   onDeleteTextRegion?: (annotation: Annotation) => void;
   onSelect?: (annotation: Annotation | null) => void;
   onSelectionIdsChange?: (ids: string[]) => void;
+  /** Fired when the pointer enters/leaves an annotation on the image (null on
+   *  leave). The image→text mirror of the panel's span hover: lets the viewer
+   *  highlight the phrase linked to the region the cursor is over. */
+  onHover?: (annotationId: string | null) => void;
   exposeApi?: (api: ViewerApi) => void;
   initialAnnotations?: Annotation[];
   disableEditor?: boolean;
@@ -142,6 +147,7 @@ export default function ManuscriptAnnotorious({
   onDeleteTextRegion,
   onSelect,
   onSelectionIdsChange,
+  onHover,
   exposeApi,
   initialAnnotations = [],
   disableEditor = false,
@@ -168,6 +174,7 @@ export default function ManuscriptAnnotorious({
   const confirmDeleteManyRef = useRef(confirmDeleteMany);
   const onSelectRef = useRef(onSelect);
   const onSelectionIdsChangeRef = useRef(onSelectionIdsChange);
+  const onHoverRef = useRef(onHover);
   const exposeApiRef = useRef(exposeApi);
   const annotationFilterRef = useRef<Props['annotationFilter']>(annotationFilter);
   const [state, setState] = React.useState<ComponentState>({
@@ -370,6 +377,10 @@ export default function ManuscriptAnnotorious({
   }, [onSelectionIdsChange]);
 
   useEffect(() => {
+    onHoverRef.current = onHover;
+  }, [onHover]);
+
+  useEffect(() => {
     allowMultipleSelectionRef.current = allowMultipleSelection;
   }, [allowMultipleSelection]);
 
@@ -464,13 +475,10 @@ export default function ManuscriptAnnotorious({
           const res = await fetch(tileSourceUrl);
           if (!res.ok) throw new Error(`IIIF info: ${res.status}`);
           const obj = (await res.json()) as Record<string, unknown>;
-          // Pass SIPI's NATIVE info.json through to OpenSeadragon (v6 supports
-          // both IIIF Image API 2.x and 3.0); only rewrite the identifier so tile
-          // requests route through the proxy. Do NOT downgrade 3.0 → 2.x: SIPI v5
-          // is IIIF-3-strict and rejects the 2.x `full` size with 400 ("IIIF url
-          // not correctly formatted"); the 3.0 descriptor makes OSD request the
-          // valid `max` size instead. (`id` is the 3.0 key, `@id` the 2.x one.)
-          tileSources = { ...obj, id: baseUrl, '@id': baseUrl };
+          // Keep SIPI v5's IIIF 3 URL syntax, but when SIPI omits `tiles`, build
+          // OSD a full-image pyramid from its advertised sizes. That avoids OSD's
+          // inferred cropped tile pyramid, which can drift from Annotorious.
+          tileSources = buildOpenSeadragonTileSource(obj, baseUrl);
         } catch (err) {
           if (isMounted) {
             setState({
@@ -860,6 +868,19 @@ export default function ManuscriptAnnotorious({
             } else if (currentMode === 'draw') {
               anno.readOnly = false;
             }
+          });
+
+          // Pointer over/out of an annotation → report the hovered id (null on
+          // leave), so the viewer can highlight the linked phrase in the text
+          // panel. Ignore annotations hidden by the active filter (Annotorious
+          // hit-tests its own store, so a glyph beneath a region in text view can
+          // otherwise fire this) — the image→text mirror of the panel span hover.
+          anno.on('mouseEnterAnnotation', (a: Annotation) => {
+            if (!isAnnotationVisible(a)) return;
+            onHoverRef.current?.(a?.id ?? null);
+          });
+          anno.on('mouseLeaveAnnotation', () => {
+            onHoverRef.current?.(null);
           });
 
           anno.on('selectAnnotation', (a: Annotation | null) => {

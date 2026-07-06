@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Allograph } from '@/types/allographs';
 
@@ -129,22 +129,8 @@ const allographB = {
 };
 
 describe('ManuscriptViewer smoke test', () => {
-  beforeEach(() => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(
-        async () =>
-          new Response(JSON.stringify({ width: 1000, height: 2000 }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          })
-      )
-    );
-  });
-
   afterEach(() => {
     vi.clearAllMocks();
-    vi.unstubAllGlobals();
   });
 
   it('mounts past the loading state and renders the image-tools header control', async () => {
@@ -319,6 +305,61 @@ describe('ManuscriptViewer smoke test', () => {
 
     expect(await screen.findByRole('dialog')).toBeTruthy();
     expect(screen.getByText('Allograph: a, Caroline')).toBeTruthy();
+  });
+
+  it('clears the allograph eye context when the dropdown returns to any allograph', async () => {
+    fetchBaseData.mockResolvedValueOnce({
+      image: fakeImage,
+      manuscript: fakeManuscript,
+      allographs: [allographA, allographB],
+      imageHeight: 2000,
+    });
+    fetchImageAllographIds.mockResolvedValueOnce([allographA.id, allographB.id]);
+    vi.mocked(buildInitialViewerAnnotations).mockResolvedValueOnce([
+      {
+        id: 'db:image-a',
+        target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:0,0,10,10' } },
+        _meta: { annotationType: 'image', allographId: allographA.id },
+      },
+      {
+        id: 'db:image-b',
+        target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:10,10,10,10' } },
+        _meta: { annotationType: 'image', allographId: allographB.id },
+      },
+    ] as never);
+
+    render(<ManuscriptViewer imageId="4432" mode="public" />);
+    await screen.findByRole('button', { name: 'Image tools' });
+
+    const props = annotoriousPropsRef.current;
+    act(() => {
+      props!.onSelect?.({
+        id: 'db:image-b',
+        target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:10,10,10,10' } },
+        _meta: { annotationType: 'image', allographId: allographB.id },
+      });
+    });
+    expect(await screen.findByRole('dialog')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('combobox'));
+    const carolineOption = await screen.findByText('a, Caroline');
+    fireEvent.mouseEnter(carolineOption.closest('[cmdk-item]') ?? carolineOption);
+    fireEvent.click(carolineOption);
+    expect(
+      await screen.findByRole('button', { name: 'View a, Caroline annotation thumbnails' })
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('combobox'));
+    const anyOption = await screen.findByText('Any allograph');
+    fireEvent.mouseEnter(anyOption.closest('[cmdk-item]') ?? anyOption);
+    fireEvent.click(anyOption);
+
+    const eyeButton = await screen.findByRole('button', { name: 'Select an allograph first' });
+    expect(eyeButton).toHaveProperty('disabled', true);
+    expect(eyeButton.textContent).toBe('0');
+    expect(
+      screen.queryByRole('button', { name: 'View b, Anglicana annotation thumbnails' })
+    ).toBeNull();
   });
 
   it('excludes text regions from the allograph eye count and thumbnail gallery', async () => {

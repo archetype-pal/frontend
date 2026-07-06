@@ -187,4 +187,63 @@ describe('DynamicFacets', () => {
     });
     container.remove();
   });
+
+  it('surfaces an excluded value as a revertible strip inside its facet panel', () => {
+    const onFacetClick = vi.fn();
+    const facets: FacetData = {
+      repository_name: {
+        kind: 'list',
+        items: [{ label: 'Durham', value: 'Durham', count: 12, href: '' }],
+      },
+    };
+    // British Library is excluded and (realistically) absent from the distribution.
+    const activeTags: ActiveFacetTag[] = [
+      {
+        id: '__not__:repository_name:British Library',
+        facetKey: 'repository_name',
+        value: 'British Library',
+        label: 'NOT Repository: British Library',
+        exclude: true,
+      },
+    ];
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        withProviders(
+          <DynamicFacets
+            facets={facets}
+            searchType="manuscripts"
+            keyword=""
+            activeTags={activeTags}
+            onKeywordChange={() => {}}
+            onKeywordSubmit={() => {}}
+            selectedFacets={[]}
+            onFacetClick={onFacetClick}
+            onClearAllFilters={() => {}}
+            baseFacetURL="http://localhost:8000/api/v1/search/item-parts/facets"
+          />
+        )
+      );
+    });
+
+    const revert = container.querySelector('button[aria-label="Stop excluding British Library"]');
+    expect(revert).not.toBeNull();
+
+    act(() => {
+      revert?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(onFacetClick).toHaveBeenCalledWith('', {
+      type: 'removeExclusion',
+      facetKey: 'repository_name',
+      value: 'British Library',
+    });
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
 });

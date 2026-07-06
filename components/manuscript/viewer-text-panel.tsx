@@ -12,6 +12,9 @@ import { useTextCardSplit } from '@/hooks/use-text-card-split';
 import { API_BASE_URL } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { updateImageText, type ImageTextDetail } from '@/services/image-texts';
+import { ViewerLinkBar, type ActiveRegion } from './viewer-link-bar';
+import type { Mode } from '@/components/backoffice/tei-text-editor';
+import type { EditorLinkSelection } from '@/lib/tei-tiptap';
 import type { TextDisplayMode } from '@/types/annotation-viewer';
 
 // The full TEI editor (TipTap + CodeMirror) is heavy and editor-only, so it is
@@ -35,6 +38,10 @@ interface ViewerTextPanelProps {
   displayMode: TextDisplayMode;
   /** Graph id of the region currently selected on the image (region → text). */
   linkedGraphId: number | null;
+  /** Graph id of the region the pointer is hovering on the image (region → text).
+   *  Highlights the linked phrase(s) without scrolling — the transient, hover
+   *  counterpart to linkedGraphId. Null when no region is hovered. */
+  hoveredGraphId?: number | null;
   /** Hovering a linked span highlights its region on the image. */
   onSpanHover: (graphId: number | null) => void;
   /** Clicking a linked span selects + centres its region on the image. */
@@ -60,6 +67,15 @@ interface ViewerTextPanelProps {
   selectedRegionGraphId?: number | null;
   /** Delete the selected region (removes the region graph + its link). */
   onDeleteRegion?: (graphId: number) => void;
+  /** Remove a single element's link to a region (per-link unlink), keeping the region. */
+  onUnlinkElement?: (textId: number, elementIndex: number, graphId: number) => void;
+  /** Explicit-bar link of a selected existing region (by graph id) to an element. */
+  onLinkExistingRegion?: (
+    textId: number,
+    elementIndex: number,
+    graphId: number,
+    label: string
+  ) => void;
   /** Arm "also link": the next phrase click links the selected region to a
    *  second element (e.g. its translation). */
   onStartAddRef?: (graphId: number) => void;
@@ -136,6 +152,15 @@ const TYPE_ORDER = (type: string): number => {
  * view until the editor switches to Rich. The draft is held by the parent
  * (keyed by text id) so it survives a display-mode switch that unmounts this card.
  */
+/** Editor state a text card lifts out of its editor to drive the link bar. */
+export interface EditorCardState {
+  mode: Mode;
+  richAvailable: boolean;
+  linkTarget: EditorLinkSelection | null;
+  dirty: boolean;
+  save: () => Promise<void>;
+}
+
 function TextEditor({
   text,
   token,
@@ -143,6 +168,7 @@ function TextEditor({
   onChange,
   onSaved,
   toolbarHost,
+  onEditorState,
 }: {
   text: ImageTextDetail;
   token: string | null | undefined;
@@ -152,12 +178,17 @@ function TextEditor({
   onSaved: () => void;
   /** Header slot the Rich/Preview + validity toolbar portals into (one bar). */
   toolbarHost: HTMLElement | null;
+  /** Lifts the editor's mode/link-target/dirty/save up to the card (for the link bar). */
+  onEditorState?: (state: EditorCardState) => void;
 }) {
   const [valid, setValid] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const [mode, setMode] = React.useState<Mode>('preview');
+  const [richAvailable, setRichAvailable] = React.useState(false);
+  const [linkTarget, setLinkTarget] = React.useState<EditorLinkSelection | null>(null);
   const dirty = value !== text.content;
 
-  const handleSave = async () => {
+  const handleSave = React.useCallback(async () => {
     if (!token) return;
     setSaving(true);
     try {
@@ -178,7 +209,11 @@ function TextEditor({
     } finally {
       setSaving(false);
     }
-  };
+  }, [token, text.id, text.type, value, onSaved]);
+
+  React.useEffect(() => {
+    onEditorState?.({ mode, richAvailable, linkTarget, dirty, save: handleSave });
+  }, [mode, richAvailable, linkTarget, dirty, handleSave, onEditorState]);
 
   return (
     <>
@@ -190,6 +225,11 @@ function TextEditor({
         toolbarContainer={toolbarHost}
         defaultMode="preview"
         hideSource
+        onModeChange={(m, ra) => {
+          setMode(m);
+          setRichAvailable(ra);
+        }}
+        onLinkTargetChange={setLinkTarget}
       />
       {dirty ? (
         <div className="sticky bottom-0 z-10 flex items-center justify-end gap-2 border-t bg-card px-3 py-1.5">
@@ -236,6 +276,14 @@ function TextEditorCard({
   onClose,
   flexGrow,
   highlightQuery,
+  canLink,
+  selectedRegionGraphId,
+  pendingRegionActive,
+  onLinkDrawnToElement,
+  onLinkRegionToElement,
+  onUnlinkElement,
+  onRemoveRegion,
+  onDiscardDrawnRegion,
 }: {
   text: ImageTextDetail;
   canEdit: boolean;
@@ -250,10 +298,31 @@ function TextEditorCard({
   flexGrow?: number;
   /** Search term to highlight in the read-only rendering (deep-link from a hit). */
   highlightQuery?: string;
+  /** Link-bar wiring (region side, from the panel). */
+  canLink: boolean;
+  selectedRegionGraphId: number | null;
+  pendingRegionActive: boolean;
+  onLinkDrawnToElement: (textId: number, elementIndex: number, label: string) => void;
+  onLinkRegionToElement: (
+    textId: number,
+    elementIndex: number,
+    graphId: number,
+    label: string
+  ) => void;
+  onUnlinkElement: (textId: number, elementIndex: number, graphId: number) => void;
+  onRemoveRegion: (graphId: number) => void;
+  onDiscardDrawnRegion: () => void;
 }) {
   // The editor's Rich/Preview + validity toolbar portals into this header slot.
   const [toolbarHost, setToolbarHost] = React.useState<HTMLDivElement | null>(null);
+  const [editorState, setEditorState] = React.useState<EditorCardState | null>(null);
   const tone = textTone(text.type);
+
+  const activeRegion: ActiveRegion | null = pendingRegionActive
+    ? { kind: 'drawn' }
+    : selectedRegionGraphId != null
+      ? { kind: 'existing', graphId: selectedRegionGraphId }
+      : null;
 
   return (
     <section
@@ -323,6 +392,7 @@ function TextEditorCard({
             onChange={onDraftChange}
             onSaved={onSaved}
             toolbarHost={toolbarHost}
+            onEditorState={setEditorState}
           />
         ) : (
           <div className="px-4 py-3">
@@ -335,6 +405,24 @@ function TextEditorCard({
           </div>
         )}
       </div>
+
+      {canEdit && editorState ? (
+        <ViewerLinkBar
+          canLink={canLink}
+          textId={text.id}
+          mode={editorState.mode}
+          richAvailable={editorState.richAvailable}
+          linkTarget={editorState.linkTarget}
+          dirty={editorState.dirty}
+          onSave={editorState.save}
+          activeRegion={activeRegion}
+          onLinkDrawnToElement={onLinkDrawnToElement}
+          onLinkRegionToElement={onLinkRegionToElement}
+          onUnlinkElement={onUnlinkElement}
+          onRemoveRegion={onRemoveRegion}
+          onDiscardDrawnRegion={onDiscardDrawnRegion}
+        />
+      ) : null}
     </section>
   );
 }
@@ -343,22 +431,17 @@ export function ViewerTextPanel({
   texts,
   displayMode,
   linkedGraphId,
+  hoveredGraphId = null,
   onSpanHover,
   onSpanActivate,
   canLink = false,
-  armedElementIndex = null,
-  armedTextId = null,
-  onArmLink,
-  onCancelLink,
   pendingLink = false,
   onLinkPhrase,
   onCancelPendingLink,
   selectedRegionGraphId = null,
   onDeleteRegion,
-  onStartAddRef,
-  addRefArmed = false,
-  onAddRefToPhrase,
-  onCancelAddRef,
+  onUnlinkElement,
+  onLinkExistingRegion,
   onClose,
   token,
   canEdit = false,
@@ -453,106 +536,69 @@ export function ViewerTextPanel({
     }
   }, [linkedGraphId, shownKey]);
 
-  // The phrase text of the selected region (for the Delete banner). Derived from
-  // the span carrying that graph id; recomputed when the selection or texts change.
-  const [selectedRegionPhrase, setSelectedRegionPhrase] = React.useState('');
+  // region hover → text: highlight every phrase linked to the hovered region so
+  // the reader can find it while the pointer is over the region. Implemented as a
+  // dynamically-generated stylesheet keyed on the hovered graph id — NOT a
+  // per-span data attribute — because the Rich TEI editor is a ProseMirror
+  // contentEditable that reverts external DOM mutations on its next sync (so an
+  // attribute would flicker straight back out). A stylesheet never touches the
+  // editor's DOM, so it highlights linked phrases robustly in BOTH the read view
+  // and the editor. The four selectors match the id whether it stands alone or
+  // sits in a comma-list ("10,11"). Transient: cleared on pointer-leave; never
+  // scrolls (that would be jarring on pointer-move). Appended to <head> at
+  // runtime so it wins the cascade over the equal-specificity `.tei-el` rules.
+  const hoverStyleRef = React.useRef<HTMLStyleElement | null>(null);
   React.useEffect(() => {
-    const root = containerRef.current;
-    if (!root || selectedRegionGraphId == null) {
-      setSelectedRegionPhrase('');
+    let styleEl = hoverStyleRef.current;
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.dataset.viewerHoverHighlight = 'true';
+      document.head.appendChild(styleEl);
+      hoverStyleRef.current = styleEl;
+    }
+    if (hoveredGraphId == null) {
+      styleEl.textContent = '';
       return;
     }
-    const match = Array.from(root.querySelectorAll<HTMLElement>('[data-graph-id]')).find((el) =>
-      graphIdsOf(el).includes(selectedRegionGraphId)
-    );
-    setSelectedRegionPhrase((match?.textContent ?? '').trim());
-  }, [selectedRegionGraphId, shownKey, linkedGraphId]);
-
-  // Mark the armed element so the editor sees which phrase they're linking. The
-  // index is scoped to its own text column (data-text-id) so "both" view stays
-  // unambiguous.
-  React.useEffect(() => {
-    const root = containerRef.current;
-    if (!root) return;
-    root
-      .querySelectorAll('[data-graph-arming="true"]')
-      .forEach((el) => el.removeAttribute('data-graph-arming'));
-    if (armedElementIndex == null || armedTextId == null) return;
-    const section = root.querySelector<HTMLElement>(`[data-text-id="${armedTextId}"]`);
-    if (!section) return;
-    const el = section.querySelectorAll<HTMLElement>('[data-dpt]')[armedElementIndex];
-    if (el) {
-      el.setAttribute('data-graph-arming', 'true');
-      scrollSpanIntoView(el);
-    }
-  }, [armedElementIndex, armedTextId, shownKey]);
+    const id = hoveredGraphId;
+    const sel = [
+      `[data-graph-id="${id}"]`,
+      `[data-graph-id^="${id},"]`,
+      `[data-graph-id$=",${id}"]`,
+      `[data-graph-id*=",${id},"]`,
+    ]
+      .map((s) => `.viewer-text-panel ${s}`)
+      .join(',');
+    styleEl.textContent = `${sel}{background-color:hsl(var(--c-transcription-h) 70% 55% / 0.32);box-shadow:0 0 0 1px hsl(var(--c-transcription-h) 60% 45% / 0.45);border-radius:3px;}`;
+  }, [hoveredGraphId]);
+  React.useEffect(
+    () => () => {
+      hoverStyleRef.current?.remove();
+      hoverStyleRef.current = null;
+    },
+    []
+  );
 
   const handleClick = (event: React.MouseEvent) => {
     const target = event.target as Element;
-    // Decide based on the *innermost* linkable element the user clicked.
-    const innermost = target.closest<HTMLElement>('[data-dpt]');
-
-    // "Also link" armed: the next phrase click links the selected region to a
-    // second element (e.g. its translation). Highest precedence — any phrase,
-    // linked or not, becomes a second corresp for that region.
-    if (addRefArmed && onAddRefToPhrase && innermost) {
-      const section = target.closest<HTMLElement>('[data-text-id]');
-      if (section) {
-        const textId = Number(section.getAttribute('data-text-id'));
-        const index = Array.from(section.querySelectorAll<HTMLElement>('[data-dpt]')).indexOf(
-          innermost
-        );
-        if (Number.isFinite(textId) && index >= 0) {
-          onAddRefToPhrase(textId, index, (innermost.textContent ?? '').trim().slice(0, 40));
-          return;
-        }
-      }
-    }
-
-    // Reverse flow: a region was drawn first; the next phrase click links it.
-    if (pendingLink && onLinkPhrase && innermost) {
-      const section = target.closest<HTMLElement>('[data-text-id]');
-      if (section) {
-        const textId = Number(section.getAttribute('data-text-id'));
-        const index = Array.from(section.querySelectorAll<HTMLElement>('[data-dpt]')).indexOf(
-          innermost
-        );
-        if (Number.isFinite(textId) && index >= 0) {
-          onLinkPhrase(textId, index, (innermost.textContent ?? '').trim().slice(0, 40));
-          return;
-        }
-      }
-    }
-
-    // If the click lands anywhere inside an already-linked element, navigate to
-    // its region (revealing the "Also link" / Delete affordances). This takes
-    // precedence over arming a NEW link so that clicking a linked phrase is
-    // reliable — previously, clicking an inner un-linked sub-span of a linked
-    // phrase fell through to the arm-link branch and (mis)started a new link
-    // instead. Matches the panel hint: link a NEW region by clicking an
-    // un-highlighted (un-linked) phrase. Uses the nearest [data-graph-id]
-    // ancestor-or-self, so it also covers the element-is-itself-linked case.
+    // In the Rich TEI editor (a contentEditable surface), a click places the
+    // cursor to edit — never activates a region.
+    if (target.closest('[contenteditable="true"]')) return;
+    // Click a linked phrase → jump to its region on the image. Navigation only:
+    // creating and removing links is now an explicit action in the Link Bar,
+    // never a side effect of clicking (or drawing).
     const linkedIds = graphIdsOf(target.closest<HTMLElement>('[data-graph-id]'));
     if (linkedIds.length > 0) {
-      // Text click → focus the image only; don't scroll the text panel/page.
       skipLinkScrollRef.current = true;
       onSpanActivate(linkedIds[0]);
-      return;
-    }
-    // Click is on un-linked text + author capability → arm linking for the
-    // innermost linkable element, indexed within its own text column.
-    const section = target.closest<HTMLElement>('[data-text-id]');
-    if (canLink && onArmLink && section && innermost) {
-      const textId = Number(section.getAttribute('data-text-id'));
-      const all = Array.from(section.querySelectorAll<HTMLElement>('[data-dpt]'));
-      const index = all.indexOf(innermost);
-      if (Number.isFinite(textId) && index >= 0) {
-        onArmLink(textId, index, (innermost.textContent ?? '').trim().slice(0, 40));
-        return;
-      }
     }
   };
   const handleMouseOver = (event: React.MouseEvent) => {
+    // Skip while pointing inside the Rich editor — hovering text there shouldn't
+    // flash regions on the image (and could distract while editing). The reverse
+    // direction (region → phrase highlight) is driven by hoveredGraphId, not this
+    // handler, so it still works in the editor.
+    if ((event.target as Element).closest('[contenteditable="true"]')) return;
     const ids = graphIdsOf((event.target as Element).closest('[data-graph-id]'));
     onSpanHover(ids.length > 0 ? ids[0] : null);
   };
@@ -579,90 +625,12 @@ export function ViewerTextPanel({
     // Transparent shell: each text is its own bounded card, so this just lays
     // them out (side-by-side in the wide bottom dock, stacked in side docks).
     <div className="flex h-full w-full flex-col gap-2">
-      {pendingLink ? (
-        <div className="flex shrink-0 items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-1.5 text-[11px]">
-          <span className="text-primary">Click the phrase this region belongs to.</span>
-          <button
-            type="button"
-            // Blur before the click handler clears the banner: this button is
-            // about to unmount, and the browser would otherwise shift focus to
-            // the next focusable element (far down the page) and scroll the
-            // canvas out of view — which broke "cancel, then draw again".
-            onClick={(e) => {
-              e.currentTarget.blur();
-              onCancelPendingLink?.();
-            }}
-            className="rounded px-1.5 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-          >
-            Cancel
-          </button>
-        </div>
-      ) : armedElementIndex != null ? (
-        <div className="flex shrink-0 items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-1.5 text-[11px]">
-          <span className="text-primary">
-            Draw the region for this phrase on the image to link it.
-          </span>
-          <button
-            type="button"
-            // See note above — blur before unmount to avoid the focus-jump scroll.
-            onClick={(e) => {
-              e.currentTarget.blur();
-              onCancelLink?.();
-            }}
-            className="rounded px-1.5 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-          >
-            Cancel
-          </button>
-        </div>
-      ) : addRefArmed ? (
-        <div className="flex shrink-0 items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-1.5 text-[11px]">
-          <span className="text-primary">
-            Click another phrase to also link it to this region — show the translation (Both view)
-            to link it there.
-          </span>
-          <button
-            type="button"
-            // See note above — blur before unmount to avoid the focus-jump scroll.
-            onClick={(e) => {
-              e.currentTarget.blur();
-              onCancelAddRef?.();
-            }}
-            className="shrink-0 rounded px-1.5 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-          >
-            Cancel
-          </button>
-        </div>
-      ) : canLink && selectedRegionGraphId != null ? (
-        <div className="flex shrink-0 items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-1.5 text-[11px]">
-          <span className="min-w-0 truncate text-muted-foreground">
-            Region linked to{' '}
-            <span className="font-medium text-foreground">
-              {selectedRegionPhrase ? `“${selectedRegionPhrase.slice(0, 50)}”` : 'this phrase'}
-            </span>
-            .
-          </span>
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={() => onStartAddRef?.(selectedRegionGraphId)}
-              className="rounded px-1.5 py-0.5 font-medium text-primary hover:bg-primary/10"
-            >
-              Also link
-            </button>
-            <button
-              type="button"
-              onClick={() => onDeleteRegion?.(selectedRegionGraphId)}
-              className="rounded px-1.5 py-0.5 font-medium text-destructive hover:bg-destructive/10"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      ) : canLink ? (
+      {canLink ? (
         <p className="shrink-0 px-1 text-[11px] text-muted-foreground">
-          Click a highlighted phrase to find its region. To link a new region: click an
-          un-highlighted phrase then draw it, or draw a region then click its phrase.{' '}
-          <span className="text-foreground/70">Links save automatically — no Save needed.</span>
+          Click a highlighted phrase to find its region on the image. To create or
+          remove links, use the{' '}
+          <span className="font-medium text-foreground/80">Link</span> bar at the
+          foot of each text (in the Rich tab).
         </p>
       ) : null}
       <div
@@ -702,6 +670,20 @@ export function ViewerTextPanel({
               onClose={onClose}
               flexGrow={isBoth ? (index === 0 ? ratio : 1 - ratio) : undefined}
               highlightQuery={highlightQuery}
+              canLink={canLink}
+              selectedRegionGraphId={selectedRegionGraphId}
+              pendingRegionActive={pendingLink}
+              onLinkDrawnToElement={(textId, elementIndex, label) =>
+                onLinkPhrase?.(textId, elementIndex, label)
+              }
+              onLinkRegionToElement={(textId, elementIndex, graphId, label) =>
+                onLinkExistingRegion?.(textId, elementIndex, graphId, label)
+              }
+              onUnlinkElement={(textId, elementIndex, graphId) =>
+                onUnlinkElement?.(textId, elementIndex, graphId)
+              }
+              onRemoveRegion={(graphId) => onDeleteRegion?.(graphId)}
+              onDiscardDrawnRegion={() => onCancelPendingLink?.()}
             />
           </React.Fragment>
         ))}

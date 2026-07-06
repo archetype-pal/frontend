@@ -24,11 +24,13 @@ import {
 import {
   SEG_TYPES,
   currentStack,
+  linkTargetAt,
   retypeTei,
   teiEditorExtensions,
   teiElementLabel,
   unwrapTei,
   wrapTei,
+  type EditorLinkSelection,
 } from '@/lib/tei-tiptap';
 import { docToTei, teiToDoc, type PMDoc, type StackEntry } from '@/lib/tei-prosemirror';
 import { cn } from '@/lib/utils';
@@ -42,6 +44,13 @@ interface TeiRichEditorProps {
    * backoffice editor, where the page — not the editor — scrolls.
    */
   stickyToolbar?: boolean;
+  /**
+   * Fired whenever the caret/selection moves, with the linkable element under the
+   * cursor (positional index + text + already-linked regions + ancestor chain) or
+   * null when the caret isn't in a linkable element. Drives the region-link bar's
+   * phrase slot and Link enablement.
+   */
+  onLinkTargetChange?: (target: EditorLinkSelection | null) => void;
 }
 
 const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
@@ -136,6 +145,7 @@ export default function TeiRichEditor({
   value,
   onChange,
   stickyToolbar = false,
+  onLinkTargetChange,
 }: TeiRichEditorProps) {
   const lastEmitted = React.useRef<string | null>(null);
 
@@ -190,6 +200,7 @@ export default function TeiRichEditor({
     const update = () => {
       setStack(currentStack(editor));
       setSelectionEmpty(editor.state.selection.empty);
+      onLinkTargetChange?.(linkTargetAt(editor));
     };
     update();
     editor.on('selectionUpdate', update);
@@ -198,7 +209,7 @@ export default function TeiRichEditor({
       editor.off('selectionUpdate', update);
       editor.off('transaction', update);
     };
-  }, [editor]);
+  }, [editor, onLinkTargetChange]);
 
   if (!editor) return null;
 

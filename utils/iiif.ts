@@ -132,8 +132,7 @@ function clampCoordinatesToBounds(
 }
 
 function parseXywh(value: string): IIIFCoordinates | null {
-  const n = '-?\\d+(?:\\.\\d+)?';
-  const m = value.match(new RegExp(`xywh=pixel:(${n}),(${n}),(${n}),(${n})`));
+  const m = value.match(/xywh=pixel:([\d.]+),([\d.]+),([\d.]+),([\d.]+)/);
   if (!m) return null;
   return { x: Number(m[1]), y: Number(m[2]), w: Number(m[3]), h: Number(m[4]) };
 }
@@ -146,35 +145,19 @@ function clampXywh(
   return { region: `${clamped.x},${clamped.y},${clamped.w},${clamped.h}` };
 }
 
-function formatPct(value: number): string {
-  return value.toFixed(3).replace(/\.?0+$/, '');
-}
-
-function pctRegionFromCoordinates(
-  coords: IIIFCoordinates,
-  bounds: { width: number; height: number }
-): string {
-  const x = (coords.x / bounds.width) * 100;
-  const y = (coords.y / bounds.height) * 100;
-  const w = (coords.w / bounds.width) * 100;
-  const h = (coords.h / bounds.height) * 100;
-  return `pct:${formatPct(x)},${formatPct(y)},${formatPct(w)},${formatPct(h)}`;
+function noUpscaleBestFitSizePart(size: number, crop: Pick<IIIFCoordinates, 'w' | 'h'>): string {
+  const pixelSize = Math.max(1, Math.round(size));
+  const width =
+    Number.isFinite(crop.w) && crop.w > 0 ? Math.min(pixelSize, Math.round(crop.w)) : pixelSize;
+  const height =
+    Number.isFinite(crop.h) && crop.h > 0 ? Math.min(pixelSize, Math.round(crop.h)) : pixelSize;
+  return `!${Math.max(1, width)},${Math.max(1, height)}`;
 }
 
 function thumbnailPixelSize(options?: IIIFImageUrlOptions): number {
   return typeof options?.maxSize === 'number' && options.maxSize > 0
     ? Math.round(options.maxSize)
     : DEFAULT_THUMBNAIL_SIZE;
-}
-
-function thumbnailSizePart(options?: IIIFImageUrlOptions, cropped = false): string {
-  const size = thumbnailPixelSize(options);
-  return cropped ? `!${size},${size}` : `${size},`;
-}
-
-function fixedThumbnailSizePart(size: number): string {
-  const pixelSize = Number.isFinite(size) && size > 0 ? Math.round(size) : DEFAULT_THUMBNAIL_SIZE;
-  return `!${pixelSize},${pixelSize}`;
 }
 
 // --- Public API ---
@@ -192,14 +175,18 @@ export function iiifThumbFromSelector(
   iiifBase: string,
   selectorValue: string,
   size = 200,
-  bounds?: IIIFImageInfo | null
+  bounds?: { width?: number; height?: number }
 ): string | null {
   const xywh = parseXywh(selectorValue);
   if (!xywh) return null;
-  const clamped = clampCoordinatesToBounds(xywh, bounds ?? undefined);
-  const region = bounds ? pctRegionFromCoordinates(clamped, bounds) : clampXywh(clamped).region;
+  // Clamp against the real image dimensions when the caller has them (one
+  // info.json fetch serves every thumbnail sharing the same iiifBase), so a
+  // region whose x+w / y+h overflows the page can't produce an out-of-range
+  // IIIF region string that a 3.0-strict server may reject. When bounds are
+  // unknown this still rounds/floors as before.
+  const { region } = clampXywh(xywh, bounds);
   const base = normalizeIiifBase(iiifBase);
-  const sizePart = fixedThumbnailSizePart(size);
+  const sizePart = xywh.w < size ? 'max' : `${size},`;
   return `${base}/${region}/${sizePart}/0/default.jpg`;
 }
 
@@ -211,9 +198,18 @@ export function getIiifImageUrl(infoUrl: string, options?: IIIFImageUrlOptions):
     : 'full';
   let size: string;
   if (options?.thumbnail) {
-    size = thumbnailSizePart(options, options.coordinates != null);
+    const thumbnailSize = thumbnailPixelSize(options);
+    const regionW = options?.coordinates?.w;
+    if (typeof regionW === 'number' && regionW > 0 && regionW < thumbnailSize) {
+      size = 'max';
+    } else {
+      size = `${thumbnailSize},`;
+    }
   } else if (typeof options?.maxSize === 'number' && options.maxSize > 0) {
-    size = `!${options.maxSize},${options.maxSize}`;
+    size =
+      options.coordinates != null
+        ? noUpscaleBestFitSizePart(options.maxSize, options.coordinates)
+        : `!${options.maxSize},${options.maxSize}`;
   } else {
     size = 'max';
   }
@@ -281,12 +277,6 @@ export async function getIiifImageUrlWithBounds(
       width: bounds.width,
       height: bounds.height,
     });
-    if (options.thumbnail) {
-      const base = normalizeIiifBase(resolveInfoUrl(infoUrl));
-      const region = pctRegionFromCoordinates(coordinates, bounds);
-      const size = thumbnailSizePart(options, true);
-      return `${base}/${region}/${size}/0/default.jpg`;
-    }
   }
   return getIiifImageUrl(infoUrl, { ...options, coordinates });
 }

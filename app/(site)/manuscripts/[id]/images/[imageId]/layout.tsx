@@ -88,9 +88,13 @@ export default async function ManuscriptImageLayout({ children, params }: Layout
         </div>
 
         {description ? (
-          // Descriptions are authored as HTML; sanitize and flow inline so the
-          // 2-line clamp works on a brief teaser rather than printing raw markup.
-          <p
+          // Descriptions are authored as HTML and can contain block elements
+          // (e.g. <p>). Render into a <div>, NOT a <p>: a <p> cannot legally
+          // nest a <p>, so the browser would reparent the injected markup into
+          // siblings and desync from the server HTML → hydration mismatch. The
+          // `[&_p]:inline` + `[&_p]:m-0` rules flow the inner blocks so the
+          // 2-line clamp still reads as a brief teaser.
+          <div
             className="mt-2 line-clamp-2 max-w-3xl text-sm leading-relaxed text-muted-foreground [&_p]:m-0 [&_p]:inline"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(description) }}
           />
