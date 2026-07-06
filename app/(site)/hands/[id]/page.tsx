@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getLocale } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { HandViewer } from './hand-viewer';
 import type { HandDetail, HandImage, HandScribe, HandManuscript } from '@/types/hand-detail';
@@ -49,18 +49,25 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const [locale, modelLabels] = await Promise.all([getLocale(), readModelLabels()]);
+  const [locale, modelLabels, t] = await Promise.all([
+    getLocale(),
+    readModelLabels(),
+    getTranslations('hand.metadata'),
+  ]);
   const siteTitle = resolveModelLabel(modelLabels.labels.siteTitle, locale as ModelLabelLocale);
   try {
     const hand = await getHand(id);
+    const name = hand.name || id;
     return {
       // The root layout applies a `%s | ${siteTitle}` title template, so
       // return the bare title here to avoid double-suffixing.
-      title: hand.name || `Hand #${id}`,
-      description: `View hand ${hand.name || id}${hand.place ? ` – ${hand.place}` : ''} – ${siteTitle}`,
+      title: hand.name || t('fallbackTitle', { id }),
+      description: hand.place
+        ? t('descriptionWithPlace', { name, place: hand.place, siteTitle })
+        : t('description', { name, siteTitle }),
     };
   } catch {
-    return { title: 'Hand' };
+    return { title: t('catchFallbackTitle') };
   }
 }
 

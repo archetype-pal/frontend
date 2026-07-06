@@ -31,13 +31,10 @@ async function getPublicationBySlug(slug: string): Promise<Publication> {
 export async function PublicationListPage({ kind }: { kind: PublicationKind }) {
   const config = PUBLICATION_KIND_CONFIG[kind];
   const t = await getTranslations('content');
+  const title = t(`publicationKinds.${kind}.title`);
   return (
     <Suspense fallback={<PageLoadingState label={t('blog.loadingPublications')} />}>
-      <PaginatedPublications
-        title={config.title}
-        categoryFlag={config.queryFlag}
-        basePath={config.routeBase}
-      />
+      <PaginatedPublications title={title} categoryFlag={config.queryFlag} basePath={config.routeBase} />
     </Suspense>
   );
 }
@@ -49,9 +46,13 @@ export async function publicationMetadata({
   kind: PublicationKind;
   slug: string;
 }): Promise<Metadata> {
-  const config = PUBLICATION_KIND_CONFIG[kind];
-  const [locale, modelLabels] = await Promise.all([getLocale(), readModelLabels()]);
+  const [locale, modelLabels, t] = await Promise.all([
+    getLocale(),
+    readModelLabels(),
+    getTranslations('content'),
+  ]);
   const siteTitle = resolveModelLabel(modelLabels.labels.siteTitle, locale as ModelLabelLocale);
+  const summaryLabel = t(`publicationKinds.${kind}.summaryLabel`);
   try {
     const item = await getPublicationBySlug(slug);
     const author = [item.author?.first_name, item.author?.last_name].filter(Boolean).join(' ');
@@ -59,7 +60,7 @@ export async function publicationMetadata({
       // The root layout applies a `%s | ${siteTitle}` title template, so
       // return the bare title here to avoid double-suffixing.
       title: item.title,
-      description: item.preview || `${item.title} – ${siteTitle} ${config.summaryLabel}`,
+      description: item.preview || `${item.title} – ${siteTitle} ${summaryLabel}`,
       openGraph: {
         title: item.title,
         description: item.preview || undefined,
@@ -69,7 +70,7 @@ export async function publicationMetadata({
       },
     };
   } catch {
-    return { title: config.summaryLabel };
+    return { title: summaryLabel };
   }
 }
 
@@ -84,6 +85,7 @@ export async function PublicationDetailPage({
   const item = await getPublicationBySlug(slug);
   const recent = await getPublications({ [config.queryFlag]: true, limit: 5, offset: 0 });
   const t = await getTranslations('content');
+  const title = t(`publicationKinds.${kind}.title`);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -107,7 +109,7 @@ export async function PublicationDetailPage({
         <aside className="w-full md:w-80">
           <section className="mb-8">
             <h2 className="text-lg font-serif font-semibold text-foreground border-b border-border pb-2 mb-4">
-              {t('blog.recentSection', { title: config.title })}
+              {t('blog.recentSection', { title })}
             </h2>
             <ul className="space-y-2">
               {recent.results
@@ -130,7 +132,7 @@ export async function PublicationDetailPage({
               {t('blog.backToList')}
             </h2>
             <Link href={config.routeBase} className="text-sm text-primary hover:underline">
-              {t('blog.viewAll', { title: config.title.toLowerCase() })}
+              {t('blog.viewAll', { title: title.toLowerCase() })}
             </Link>
           </section>
         </aside>

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getLocale } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { ScribeViewer } from './scribe-viewer';
 import type { ScribeDetail, ScribeHand } from '@/types/scribe-detail';
@@ -29,18 +29,25 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const [locale, modelLabels] = await Promise.all([getLocale(), readModelLabels()]);
+  const [locale, modelLabels, t] = await Promise.all([
+    getLocale(),
+    readModelLabels(),
+    getTranslations('scribe.metadata'),
+  ]);
   const siteTitle = resolveModelLabel(modelLabels.labels.siteTitle, locale as ModelLabelLocale);
   try {
     const scribe = await getScribe(id);
+    const name = scribe.name || id;
     return {
       // The root layout applies a `%s | ${siteTitle}` title template, so
       // return the bare title here to avoid double-suffixing.
-      title: scribe.name || `Scribe #${id}`,
-      description: `View scribe ${scribe.name || id}${scribe.scriptorium ? ` from ${scribe.scriptorium}` : ''} – ${siteTitle}`,
+      title: scribe.name || t('fallbackTitle', { id }),
+      description: scribe.scriptorium
+        ? t('descriptionWithScriptorium', { name, scriptorium: scribe.scriptorium, siteTitle })
+        : t('description', { name, siteTitle }),
     };
   } catch {
-    return { title: 'Scribe' };
+    return { title: t('catchFallbackTitle') };
   }
 }
 

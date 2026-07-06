@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { PublicationDetailPage, publicationMetadata } from '@/components/content/publication-pages';
 import { isPublicationKind } from '@/lib/publications';
@@ -12,7 +13,8 @@ export async function generateMetadata({
   if (!isPublicationKind(kind)) {
     // The root layout applies a `%s | ${siteTitle}` title template, so
     // return the bare title here to avoid double-suffixing.
-    return { title: 'Publication' };
+    const t = await getTranslations('content.blog');
+    return { title: t('publicationFallbackTitle') };
   }
   return publicationMetadata({ kind, slug });
 }

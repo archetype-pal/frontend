@@ -1,10 +1,13 @@
+import { getTranslations } from 'next-intl/server';
 import { PageBanner } from '@/components/layout/page-banner';
 import { AboutSidebar } from '../_components/about-sidebar';
 
-export default function HistoricalContext() {
+export default async function HistoricalContext() {
+  const t = await getTranslations('about');
+
   return (
     <div>
-      <PageBanner title="Historical Context" />
+      <PageBanner title={t('historicalContextTitle')} />
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row gap-12">
           <main className="flex-1">

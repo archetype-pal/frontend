@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getLocale } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
 import { WorksetViewerClient } from '@/components/lightbox/workset-viewer-client';
@@ -19,16 +19,17 @@ export async function generateMetadata({
   const { publicId } = await params;
   // Metadata must never throw — degrade to a default title if the lookup fails
   // (the page render below surfaces a real error via the error boundary).
-  const [workset, locale, modelLabels] = await Promise.all([
+  const [workset, locale, modelLabels, t] = await Promise.all([
     getWorkset(publicId).catch(() => null),
     getLocale(),
     readModelLabels(),
+    getTranslations('workset.metadata'),
   ]);
   // The root layout applies a `%s | ${siteTitle}` title template, so
   // return the bare title here to avoid double-suffixing.
-  if (!workset) return { title: 'Workset' };
+  if (!workset) return { title: t('fallbackTitle') };
   const siteTitle = resolveModelLabel(modelLabels.labels.siteTitle, locale as ModelLabelLocale);
-  const description = workset.description || 'A shared lightbox workset of manuscript images.';
+  const description = workset.description || t('defaultDescription');
   return {
     title: workset.title,
     description,
