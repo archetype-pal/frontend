@@ -10,9 +10,7 @@ import type { EditorLinkSelection } from '@/lib/tei-tiptap';
 
 /** Region currently chosen for linking: a freshly drawn one (geometry held on
  *  the canvas, not yet a graph) or one selected on the image (an existing graph). */
-export type ActiveRegion =
-  | { kind: 'drawn' }
-  | { kind: 'existing'; graphId: number };
+export type ActiveRegion = { kind: 'drawn' } | { kind: 'existing'; graphId: number };
 
 export interface ViewerLinkBarProps {
   /** Whether the current user may author links (superuser). */
@@ -47,8 +45,7 @@ export interface ViewerLinkBarProps {
   onDiscardDrawnRegion: () => void;
 }
 
-const HINT =
-  'text-[11px] leading-relaxed text-muted-foreground';
+const HINT = 'text-[11px] leading-relaxed text-muted-foreground';
 
 /**
  * The region↔text link bar, docked at the foot of a text card. Linking is
@@ -157,7 +154,9 @@ export function ViewerLinkBar(props: ViewerLinkBarProps) {
       <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         Link
       </span>
-      {regionChip ?? <span className={cn(HINT, 'italic')}>select a region on the image, or draw one</span>}
+      {regionChip ?? (
+        <span className={cn(HINT, 'italic')}>select a region on the image, or draw one</span>
+      )}
       <span aria-hidden className="text-muted-foreground">
         ↔
       </span>

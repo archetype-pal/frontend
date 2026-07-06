@@ -627,10 +627,9 @@ export function ViewerTextPanel({
     <div className="flex h-full w-full flex-col gap-2">
       {canLink ? (
         <p className="shrink-0 px-1 text-[11px] text-muted-foreground">
-          Click a highlighted phrase to find its region on the image. To create or
-          remove links, use the{' '}
-          <span className="font-medium text-foreground/80">Link</span> bar at the
-          foot of each text (in the Rich tab).
+          Click a highlighted phrase to find its region on the image. To create or remove links, use
+          the <span className="font-medium text-foreground/80">Link</span> bar at the foot of each
+          text (in the Rich tab).
         </p>
       ) : null}
       <div
