@@ -22,7 +22,7 @@ const COLUMN_FIELD_MAP: Record<ResultType, Record<string, string>> = {
     Shelfmark: 'shelfmark',
     'Category Number': 'locus',
     'Doc. Type': 'type',
-    'Ann.': 'number_of_annotations',
+    Annotations: 'number_of_annotations',
     Date: 'date',
     Locus: 'locus',
     Tags: 'tags',

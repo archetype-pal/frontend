@@ -58,7 +58,7 @@ export const SEARCH_RESULT_CONFIG = {
       'Category Number',
       'Doc. Type',
       'Thumbnail',
-      'Ann.',
+      'Annotations',
     ],
     facets: [
       { key: 'text_date', render: 'range' },
