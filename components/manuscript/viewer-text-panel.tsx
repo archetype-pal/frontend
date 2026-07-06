@@ -12,6 +12,9 @@ import { useTextCardSplit } from '@/hooks/use-text-card-split';
 import { API_BASE_URL } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { updateImageText, type ImageTextDetail } from '@/services/image-texts';
+import { ViewerLinkBar, type ActiveRegion } from './viewer-link-bar';
+import type { Mode } from '@/components/backoffice/tei-text-editor';
+import type { EditorLinkSelection } from '@/lib/tei-tiptap';
 import type { TextDisplayMode } from '@/types/annotation-viewer';
 
 // The full TEI editor (TipTap + CodeMirror) is heavy and editor-only, so it is
@@ -64,6 +67,8 @@ interface ViewerTextPanelProps {
   selectedRegionGraphId?: number | null;
   /** Delete the selected region (removes the region graph + its link). */
   onDeleteRegion?: (graphId: number) => void;
+  /** Remove a single element's link to a region (per-link unlink), keeping the region. */
+  onUnlinkElement?: (textId: number, elementIndex: number, graphId: number) => void;
   /** Arm "also link": the next phrase click links the selected region to a
    *  second element (e.g. its translation). */
   onStartAddRef?: (graphId: number) => void;
@@ -140,6 +145,15 @@ const TYPE_ORDER = (type: string): number => {
  * view until the editor switches to Rich. The draft is held by the parent
  * (keyed by text id) so it survives a display-mode switch that unmounts this card.
  */
+/** Editor state a text card lifts out of its editor to drive the link bar. */
+export interface EditorCardState {
+  mode: Mode;
+  richAvailable: boolean;
+  linkTarget: EditorLinkSelection | null;
+  dirty: boolean;
+  save: () => Promise<void>;
+}
+
 function TextEditor({
   text,
   token,
@@ -147,6 +161,7 @@ function TextEditor({
   onChange,
   onSaved,
   toolbarHost,
+  onEditorState,
 }: {
   text: ImageTextDetail;
   token: string | null | undefined;
@@ -156,12 +171,17 @@ function TextEditor({
   onSaved: () => void;
   /** Header slot the Rich/Preview + validity toolbar portals into (one bar). */
   toolbarHost: HTMLElement | null;
+  /** Lifts the editor's mode/link-target/dirty/save up to the card (for the link bar). */
+  onEditorState?: (state: EditorCardState) => void;
 }) {
   const [valid, setValid] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const [mode, setMode] = React.useState<Mode>('preview');
+  const [richAvailable, setRichAvailable] = React.useState(false);
+  const [linkTarget, setLinkTarget] = React.useState<EditorLinkSelection | null>(null);
   const dirty = value !== text.content;
 
-  const handleSave = async () => {
+  const handleSave = React.useCallback(async () => {
     if (!token) return;
     setSaving(true);
     try {
@@ -182,7 +202,11 @@ function TextEditor({
     } finally {
       setSaving(false);
     }
-  };
+  }, [token, text.id, text.type, value, onSaved]);
+
+  React.useEffect(() => {
+    onEditorState?.({ mode, richAvailable, linkTarget, dirty, save: handleSave });
+  }, [mode, richAvailable, linkTarget, dirty, handleSave, onEditorState]);
 
   return (
     <>
@@ -194,6 +218,11 @@ function TextEditor({
         toolbarContainer={toolbarHost}
         defaultMode="preview"
         hideSource
+        onModeChange={(m, ra) => {
+          setMode(m);
+          setRichAvailable(ra);
+        }}
+        onLinkTargetChange={setLinkTarget}
       />
       {dirty ? (
         <div className="sticky bottom-0 z-10 flex items-center justify-end gap-2 border-t bg-card px-3 py-1.5">
@@ -240,6 +269,14 @@ function TextEditorCard({
   onClose,
   flexGrow,
   highlightQuery,
+  canLink,
+  selectedRegionGraphId,
+  pendingRegionActive,
+  onLinkDrawnToElement,
+  onLinkRegionToElement,
+  onUnlinkElement,
+  onRemoveRegion,
+  onDiscardDrawnRegion,
 }: {
   text: ImageTextDetail;
   canEdit: boolean;
@@ -254,10 +291,26 @@ function TextEditorCard({
   flexGrow?: number;
   /** Search term to highlight in the read-only rendering (deep-link from a hit). */
   highlightQuery?: string;
+  /** Link-bar wiring (region side, from the panel). */
+  canLink: boolean;
+  selectedRegionGraphId: number | null;
+  pendingRegionActive: boolean;
+  onLinkDrawnToElement: (textId: number, elementIndex: number, label: string) => void;
+  onLinkRegionToElement: (textId: number, elementIndex: number, label: string) => void;
+  onUnlinkElement: (textId: number, elementIndex: number, graphId: number) => void;
+  onRemoveRegion: (graphId: number) => void;
+  onDiscardDrawnRegion: () => void;
 }) {
   // The editor's Rich/Preview + validity toolbar portals into this header slot.
   const [toolbarHost, setToolbarHost] = React.useState<HTMLDivElement | null>(null);
+  const [editorState, setEditorState] = React.useState<EditorCardState | null>(null);
   const tone = textTone(text.type);
+
+  const activeRegion: ActiveRegion | null = pendingRegionActive
+    ? { kind: 'drawn' }
+    : selectedRegionGraphId != null
+      ? { kind: 'existing', graphId: selectedRegionGraphId }
+      : null;
 
   return (
     <section
@@ -327,6 +380,7 @@ function TextEditorCard({
             onChange={onDraftChange}
             onSaved={onSaved}
             toolbarHost={toolbarHost}
+            onEditorState={setEditorState}
           />
         ) : (
           <div className="px-4 py-3">
@@ -339,6 +393,24 @@ function TextEditorCard({
           </div>
         )}
       </div>
+
+      {canEdit && editorState ? (
+        <ViewerLinkBar
+          canLink={canLink}
+          textId={text.id}
+          mode={editorState.mode}
+          richAvailable={editorState.richAvailable}
+          linkTarget={editorState.linkTarget}
+          dirty={editorState.dirty}
+          onSave={editorState.save}
+          activeRegion={activeRegion}
+          onLinkDrawnToElement={onLinkDrawnToElement}
+          onLinkRegionToElement={onLinkRegionToElement}
+          onUnlinkElement={onUnlinkElement}
+          onRemoveRegion={onRemoveRegion}
+          onDiscardDrawnRegion={onDiscardDrawnRegion}
+        />
+      ) : null}
     </section>
   );
 }
@@ -360,6 +432,7 @@ export function ViewerTextPanel({
   onCancelPendingLink,
   selectedRegionGraphId = null,
   onDeleteRegion,
+  onUnlinkElement,
   onStartAddRef,
   addRefArmed = false,
   onAddRefToPhrase,
@@ -762,6 +835,20 @@ export function ViewerTextPanel({
               onClose={onClose}
               flexGrow={isBoth ? (index === 0 ? ratio : 1 - ratio) : undefined}
               highlightQuery={highlightQuery}
+              canLink={canLink}
+              selectedRegionGraphId={selectedRegionGraphId}
+              pendingRegionActive={pendingLink}
+              onLinkDrawnToElement={(textId, elementIndex, label) =>
+                onLinkPhrase?.(textId, elementIndex, label)
+              }
+              onLinkRegionToElement={(textId, elementIndex, label) =>
+                onAddRefToPhrase?.(textId, elementIndex, label)
+              }
+              onUnlinkElement={(textId, elementIndex, graphId) =>
+                onUnlinkElement?.(textId, elementIndex, graphId)
+              }
+              onRemoveRegion={(graphId) => onDeleteRegion?.(graphId)}
+              onDiscardDrawnRegion={() => onCancelPendingLink?.()}
             />
           </React.Fragment>
         ))}

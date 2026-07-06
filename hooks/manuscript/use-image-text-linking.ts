@@ -9,6 +9,7 @@ import { updateViewerAnnotation } from '@/services/annotations';
 import {
   fetchImageTextsForImage,
   linkRegionToElement,
+  unlinkElement,
   unlinkRegion,
   type ImageTextDetail,
 } from '@/services/image-texts';
@@ -382,6 +383,35 @@ export function useImageTextLinking({
     [token, imageTexts, viewerApiRef, reloadTextsAndAnnotations]
   );
 
+  // Per-element unlink: strip just this element's ref to a region, keeping the
+  // region graph and its other links (vs unlinkSelectedRegion, which deletes the
+  // whole region). The region stays on the canvas — no removeAnnotationById.
+  const unlinkElementFromRegion = React.useCallback(
+    (textId: number, elementIndex: number, graphId: number) => {
+      if (!token) return;
+      void (async () => {
+        try {
+          await unlinkElement(token, textId, elementIndex, graphId);
+          await reloadTextsAndAnnotations();
+          showActionNotification({
+            kind: 'deleted',
+            title: 'Link removed',
+            description: 'Removed this phrase’s link to the region.',
+            duration: 1800,
+          });
+        } catch (error) {
+          showActionNotification({
+            kind: 'error',
+            title: 'Unlink failed',
+            description:
+              error instanceof Error ? error.message.slice(0, 160) : 'Could not remove the link.',
+          });
+        }
+      })();
+    },
+    [token, reloadTextsAndAnnotations]
+  );
+
   // Persist a region reshape (Modify): PATCH the TEXT graph's geometry. The
   // corresp/link is unaffected, so no text reload is needed.
   const persistRegionGeometry = React.useCallback(
@@ -428,6 +458,7 @@ export function useImageTextLinking({
     hoveredRegionGraphId,
     setHoveredRegionGraphId,
     unlinkSelectedRegion,
+    unlinkElementFromRegion,
     persistRegionGeometry,
     addRefForGraphId,
     startAddRef,

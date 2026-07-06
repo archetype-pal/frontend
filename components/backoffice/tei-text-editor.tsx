@@ -8,6 +8,7 @@ import { AlertTriangle, CheckCircle2, Code2, Eye, Pencil } from 'lucide-react';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { cn } from '@/lib/utils';
 import { docToTei, teiToDoc } from '@/lib/tei-prosemirror';
+import type { EditorLinkSelection } from '@/lib/tei-tiptap';
 import { validateTei, type TeiValidationError } from '@/services/image-texts';
 
 const loadingBox = (
@@ -47,9 +48,20 @@ interface TeiTextEditorProps {
    * default for the standalone backoffice editor.
    */
   hideSource?: boolean;
+  /**
+   * Fired when the effective tab changes (and on mount), plus whether Rich mode
+   * is even available for this content. Lets an embedding panel gate region↔text
+   * linking to the Rich editor and flag documents that can't enter it.
+   */
+  onModeChange?: (mode: Mode, richAvailable: boolean) => void;
+  /**
+   * Fired with the linkable element under the caret while in Rich mode (null in
+   * other modes). Bubbled from the rich editor to drive the region-link bar.
+   */
+  onLinkTargetChange?: (target: EditorLinkSelection | null) => void;
 }
 
-type Mode = 'source' | 'rich' | 'preview';
+export type Mode = 'source' | 'rich' | 'preview';
 
 /**
  * Source/preview editor for TEI-stored ImageText content (Phase H interim).
@@ -69,6 +81,8 @@ export function TeiTextEditor({
   toolbarContainer,
   defaultMode = 'source',
   hideSource = false,
+  onModeChange,
+  onLinkTargetChange,
 }: TeiTextEditorProps) {
   const [storedMode, setMode] = React.useState<Mode>(defaultMode);
   const [errors, setErrors] = React.useState<TeiValidationError[]>([]);
@@ -92,6 +106,16 @@ export function TeiTextEditor({
   if (mode === 'rich' && !richAvailable) mode = hideSource ? 'preview' : 'source';
   // Never sit on a hidden Source tab.
   if (mode === 'source' && hideSource) mode = richAvailable ? 'rich' : 'preview';
+
+  // Surface the effective mode + Rich availability so an embedding panel can
+  // gate linking to Rich (and flag docs that can't enter it). Effect, not
+  // render-time, so the parent's state update never happens during our render.
+  React.useEffect(() => {
+    onModeChange?.(mode, richAvailable);
+    // The link target only exists while the rich editor is mounted; clear it in
+    // Source/Preview so the bar doesn't show a stale phrase.
+    if (mode !== 'rich') onLinkTargetChange?.(null);
+  }, [mode, richAvailable, onModeChange, onLinkTargetChange]);
 
   // Debounced well-formedness check against the server validator. The parent
   // uses `onValidityChange` to disable Save while the TEI is malformed.
@@ -199,7 +223,12 @@ export function TeiTextEditor({
         <TeiCodeMirror value={value} onChange={onChange} placeholder={placeholder} />
       )}
       {mode === 'rich' && (
-        <TeiRichEditor value={value} onChange={onChange} stickyToolbar={hosted} />
+        <TeiRichEditor
+          value={value}
+          onChange={onChange}
+          stickyToolbar={hosted}
+          onLinkTargetChange={onLinkTargetChange}
+        />
       )}
       {mode === 'preview' && (
         <div className="min-h-[320px] px-4 py-3">

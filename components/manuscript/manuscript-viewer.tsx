@@ -312,6 +312,7 @@ export default function ManuscriptViewer({
     hoveredRegionGraphId,
     setHoveredRegionGraphId,
     unlinkSelectedRegion,
+    unlinkElementFromRegion,
     persistRegionGeometry,
     addRefForGraphId,
     startAddRef,
@@ -1482,6 +1483,9 @@ export default function ManuscriptViewer({
                   }}
                   selectedRegionGraphId={selectedRegionGraphId}
                   onDeleteRegion={(graphId) => unlinkSelectedRegion(graphId)}
+                  onUnlinkElement={(textId, elementIndex, graphId) =>
+                    unlinkElementFromRegion(textId, elementIndex, graphId)
+                  }
                   onStartAddRef={(graphId) => startAddRef(graphId)}
                   addRefArmed={addRefForGraphId != null}
                   onAddRefToPhrase={(textId, elementIndex, label) =>
