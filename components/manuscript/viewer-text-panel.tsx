@@ -48,14 +48,6 @@ interface ViewerTextPanelProps {
   onSpanActivate: (graphId: number) => void;
   /** Track A — whether the current user may author text↔region links. */
   canLink?: boolean;
-  /** Element index currently armed for linking (drives the highlight). */
-  armedElementIndex?: number | null;
-  /** Text id the armed element belongs to (scopes the highlight in "both" view). */
-  armedTextId?: number | null;
-  /** Arm linking: clicking an unlinked phrase asks the user to draw its region. */
-  onArmLink?: (textId: number, elementIndex: number, label: string) => void;
-  /** Cancel an armed link. */
-  onCancelLink?: () => void;
   /** Reverse flow: a region was drawn first and is waiting for a phrase to link. */
   pendingLink?: boolean;
   /** Link the pending region to the clicked phrase. */
@@ -76,15 +68,6 @@ interface ViewerTextPanelProps {
     graphId: number,
     label: string
   ) => void;
-  /** Arm "also link": the next phrase click links the selected region to a
-   *  second element (e.g. its translation). */
-  onStartAddRef?: (graphId: number) => void;
-  /** Whether the "also link" arm is active (the next phrase click adds a ref). */
-  addRefArmed?: boolean;
-  /** Link the armed region to another clicked phrase. */
-  onAddRefToPhrase?: (textId: number, elementIndex: number, label: string) => void;
-  /** Cancel the "also link" arm. */
-  onCancelAddRef?: () => void;
   onClose: () => void;
   /** Editor-only TEI authoring. */
   token?: string | null;
@@ -625,13 +608,6 @@ export function ViewerTextPanel({
     // Transparent shell: each text is its own bounded card, so this just lays
     // them out (side-by-side in the wide bottom dock, stacked in side docks).
     <div className="flex h-full w-full flex-col gap-2">
-      {canLink ? (
-        <p className="shrink-0 px-1 text-[11px] text-muted-foreground">
-          Click a highlighted phrase to find its region on the image. To create or remove links, use
-          the <span className="font-medium text-foreground/80">Link</span> bar at the foot of each
-          text (in the Rich tab).
-        </p>
-      ) : null}
       <div
         ref={containerRef}
         onClick={handleClick}

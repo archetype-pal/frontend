@@ -87,6 +87,10 @@ export type PopupRecord = {
   draftInternalNoteText: string;
   draftGraphcomponentSet: A9sGraphComponent[];
   draftPositionIds: number[];
+  // True when this draft's allograph was pre-chosen from the header dropdown
+  // (the "allograph" field above the image editor). In that case the popup
+  // shows the allograph read-only instead of an editable searchable select.
+  allographLocked: boolean;
 };
 
 export type ViewerMode = 'public' | 'editor';

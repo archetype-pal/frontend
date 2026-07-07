@@ -69,30 +69,38 @@ describe('toTextRegionDraft', () => {
   });
 });
 
-describe('useImageTextLinking — tryLinkRegion (forward / phrase-armed flow)', () => {
-  it('tags the drawn box annotationType:"text" on the canvas as it links', async () => {
+describe('useImageTextLinking — live link paths', () => {
+  it('linkExistingRegionToElement links a selected region by graph id (graph_id path)', async () => {
     const viewerApi = makeViewerApi();
-    const updateSpy = viewerApi.updateSelectedDraft as unknown as ReturnType<typeof vi.fn>;
     const { result } = renderHook(() => useImageTextLinking(makeArgs(viewerApi)));
 
-    // Arm a phrase for linking (a phrase click in the text panel).
+    // The Link Bar path: link the region selected on the image to a phrase. It
+    // passes the graph id directly (no armed state), so geometry is undefined and
+    // the graph id is the 5th argument.
     act(() => {
-      result.current.setLinkArm({ textId: 7, elementIndex: 3, label: 'β' });
+      result.current.linkExistingRegionToElement(7, 3, 23041, 'β');
     });
 
-    // Draw a region while the phrase is armed → forward link. tryLinkRegion pushes
-    // the TYPED box onto the canvas synchronously (before any await), which is what
-    // keeps it visible in pure text view during the save round-trip now that the
-    // filter gates the glyph layer purely on layer (`return false`), not on draft.
-    let handled: boolean | undefined;
+    expect(linkRegionToElement).toHaveBeenCalledWith('test-token', 7, 3, undefined, 23041);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+  });
+
+  it('linkPendingToPhrase links a drawn region to the clicked phrase with its geometry', async () => {
+    const viewerApi = makeViewerApi();
+    const { result } = renderHook(() => useImageTextLinking(makeArgs(viewerApi)));
+
+    // Reverse flow: draw a region first (held pending), then click a phrase. The
+    // request carries the converted geometry (new region), not a graph id.
     act(() => {
-      handled = result.current.tryLinkRegion(makeRegion('#draft-1'));
+      result.current.startPendingLink(makeRegion('#draft-1'));
+    });
+    act(() => {
+      result.current.linkPendingToPhrase(7, 3, 'β');
     });
 
-    expect(handled).toBe(true);
-    expect(updateSpy).toHaveBeenCalledTimes(1);
-    expect((updateSpy.mock.calls[0][0] as A9sWithMeta)._meta?.annotationType).toBe('text');
-    // The link request fires with the armed phrase's ids and the converted geometry.
     expect(linkRegionToElement).toHaveBeenCalledWith(
       'test-token',
       7,
@@ -100,26 +108,6 @@ describe('useImageTextLinking — tryLinkRegion (forward / phrase-armed flow)', 
       expect.objectContaining({ type: 'Feature' })
     );
 
-    // Drain the async link continuation (removeAnnotationById + setLinkArm(null)).
-    await act(async () => {
-      await Promise.resolve();
-    });
-  });
-
-  it('is a no-op when no phrase is armed (returns false, draws nothing)', async () => {
-    const viewerApi = makeViewerApi();
-    const { result } = renderHook(() => useImageTextLinking(makeArgs(viewerApi)));
-
-    let handled: boolean | undefined;
-    act(() => {
-      handled = result.current.tryLinkRegion(makeRegion('#draft-2'));
-    });
-
-    expect(handled).toBe(false);
-    expect(viewerApi.updateSelectedDraft).not.toHaveBeenCalled();
-    expect(linkRegionToElement).not.toHaveBeenCalled();
-
-    // Let the mount effect's image-texts fetch settle.
     await act(async () => {
       await Promise.resolve();
     });

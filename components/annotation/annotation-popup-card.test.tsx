@@ -36,6 +36,7 @@ function renderCard(overrides: Partial<AnnotationPopupCardProps> = {}) {
     allographOptions: [],
     handOptions: [],
     draftAllographId: null,
+    allographLocked: false,
     draftHandId: null,
     onDraftAllographIdChange: vi.fn(),
     onDraftHandIdChange: vi.fn(),
@@ -229,6 +230,70 @@ describe('AnnotationPopupCard', () => {
     expect(screen.getByText('Curved')).toBeTruthy();
     expect(screen.getAllByText('Positions').length).toBeGreaterThan(1);
     expect(screen.getByText('Initial')).toBeTruthy();
+  });
+
+  it('shows the allograph read-only and compact when locked from the header (standard draft)', () => {
+    renderCard({
+      popupEditorMode: 'standard_draft',
+      allographLocked: true,
+      draftAllographId: 5,
+      allographOptions: [
+        { id: 5, name: 'Caroline', character_name: 'a', components: [], positions: [] },
+      ],
+      handOptions: [{ id: 1, name: 'Main Hand' }],
+      draftHandId: 1,
+    });
+
+    // Read-only label is present...
+    expect(screen.getByText('a, Caroline')).toBeTruthy();
+    // ...and the editable searchable select is gone.
+    expect(screen.queryByText('Choose an allograph')).toBeNull();
+    // The single hand renders read-only with the same compact layout.
+    expect(screen.getByText('Main Hand')).toBeTruthy();
+  });
+
+  it('keeps the allograph editable when nothing is locked from the header (standard draft)', () => {
+    renderCard({
+      popupEditorMode: 'standard_draft',
+      allographLocked: false,
+      draftAllographId: null,
+      allographOptions: [
+        { id: 5, name: 'Caroline', character_name: 'a', components: [], positions: [] },
+      ],
+      handOptions: [
+        { id: 1, name: 'Main Hand' },
+        { id: 2, name: 'Second Hand' },
+      ],
+    });
+
+    expect(screen.getByText('Choose an allograph')).toBeTruthy();
+  });
+
+  it('shows allograph and hand read-only in the anonymous demo editor when locked', () => {
+    renderCard({
+      popupEditorMode: 'public_demo_draft',
+      allographLocked: true,
+      draftAllographId: 5,
+      allographOptions: [
+        { id: 5, name: 'Caroline', character_name: 'a', components: [], positions: [] },
+      ],
+      draftHandId: 1,
+      handOptions: [{ id: 1, name: 'Main Hand' }],
+    });
+
+    expect(screen.queryByPlaceholderText('Type allograph')).toBeNull();
+    expect(screen.getByText('a, Caroline')).toBeTruthy();
+    expect(screen.getByText('Main Hand')).toBeTruthy();
+  });
+
+  it('keeps the free-text allograph input in the demo editor when nothing is locked', () => {
+    renderCard({
+      popupEditorMode: 'public_demo_draft',
+      allographLocked: false,
+      draftAllographId: null,
+    });
+
+    expect(screen.getByPlaceholderText('Type allograph')).toBeTruthy();
   });
 
   it('uses compact fixed sizing for lighter popup modes without a resize grip', () => {

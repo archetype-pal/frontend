@@ -60,8 +60,8 @@ export function passesVisibilityFilter(
   // on isDraft used to leak freshly-drawn allograph boxes into text view (they
   // keep their client id until saved) while identical *saved* boxes hid. Text-
   // region boxes are tagged annotationType:'text' at draw time (toTextRegionDraft,
-  // via startPendingLink/tryLinkRegion), so they're caught by the branch above and
-  // never reach here untyped.
+  // via startPendingLink), so they're caught by the branch above and never reach
+  // here untyped.
   if (ctx.viewMode === 'text') return false;
 
   const isExplicitEditorial = meta?.annotationType === 'editorial';

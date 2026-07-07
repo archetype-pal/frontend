@@ -8,7 +8,7 @@
  *  - a glyph hidden under a region in text view (resolved via the recovery path),
  *  - a small glyph sitting inside a larger linked text region in "Both" view
  *    (the region is the link target the editor meant to click, but the glyph
- *    wins — this was the flaky "Also link" button).
+ *    wins — this was the flaky Link Bar region-selection bug).
  *
  * The component supplies the visible candidate boxes (already filtered for
  * `display:none` and, optionally, by annotation kind); this picks which one the

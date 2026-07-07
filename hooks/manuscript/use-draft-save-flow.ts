@@ -138,9 +138,9 @@ export function useDraftSaveFlow({
 
   const handleViewerCreate = React.useCallback(
     (annotation: A9sAnnotation) => {
-      // Text↔region links (armed phrase→region and region-first) are created on
-      // Annotorious's createSelection event in usePopupSelection — that's the
-      // event a draw reliably fires. createAnnotation (this handler) only fires
+      // Text↔region links (a region drawn in text mode, held pending until a
+      // phrase is clicked) are created on Annotorious's createSelection event in
+      // usePopupSelection — that's the event a draw reliably fires. createAnnotation (this handler) only fires
       // when a glyph draft is *saved* via the allograph popup, which never
       // happens for a link. So in any text-linking view, never commit a glyph.
       if (textLinkingActive) return;

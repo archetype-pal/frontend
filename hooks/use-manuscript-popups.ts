@@ -90,6 +90,7 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
         draftInternalNoteText: overrides?.draftInternalNoteText ?? defaultDraftInternalNoteText,
         draftGraphcomponentSet: overrides?.draftGraphcomponentSet ?? defaultDraftGraphcomponentSet,
         draftPositionIds: overrides?.draftPositionIds ?? defaultDraftPositionIds,
+        allographLocked: overrides?.allographLocked ?? false,
       };
     },
     []
@@ -205,7 +206,8 @@ export function useManuscriptPopups({ allowMultipleBoxes }: UseManuscriptPopupsA
           candidate.draftHandId === popup.draftHandId &&
           candidate.draftInternalNoteText === popup.draftInternalNoteText &&
           candidate.draftGraphcomponentSet === popup.draftGraphcomponentSet &&
-          candidate.draftPositionIds === popup.draftPositionIds;
+          candidate.draftPositionIds === popup.draftPositionIds &&
+          candidate.allographLocked === popup.allographLocked;
 
         if (unchanged) return popup;
 
