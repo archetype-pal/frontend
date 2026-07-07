@@ -277,3 +277,60 @@ export function docToTei(doc: PMDoc): string {
   }
   return out.join('');
 }
+
+// ---------------------------------------------------------------------------
+// Link-target indexing (text↔region linking)
+// ---------------------------------------------------------------------------
+
+// Elements the link API can address, matching the backend set + document order
+// (api/apps/manuscripts/services/tei/links.py `_TEI_LINKABLE`). Rich-editable
+// content is pure TEI (no legacy `data-dpt` spans), so this set is exhaustive
+// for editor-side linking.
+const LINKABLE_ELEMENTS = new Set(['seg', 'persname', 'placename', 'ex', 'supplied', 'lb']);
+
+export interface LinkableIndexEntry {
+  /** Positional element_index the backend link API expects. */
+  index: number;
+  /** Accumulated text of the element (for display in the link bar). */
+  text: string;
+}
+
+/**
+ * Assign every linkable element a positional `element_index` matching the
+ * backend's — the Nth linkable element in document start-tag order — keyed by
+ * `StackEntry.id`, with its accumulated text. This mirrors `docToTei`'s
+ * open/close walk exactly, so the count agrees with the server, which parses
+ * `docToTei`'s own output. Getting this wrong links the wrong phrase, so it is
+ * deliberately a faithful replica rather than an approximate DOM count.
+ */
+export function indexLinkableElements(doc: PMDoc): Map<number, LinkableIndexEntry> {
+  const byId = new Map<number, LinkableIndexEntry>();
+  let counter = 0;
+  for (const para of doc.content ?? []) {
+    let open: StackEntry[] = [];
+    for (const node of para.content ?? []) {
+      const next = stackOf(node);
+      const common = commonPrefix(open, next);
+      // Newly-opened ancestors (outer→inner) are element start-tags, in the
+      // same order docToTei emits — and the backend counts — them.
+      for (let i = common; i < next.length; i++) {
+        const entry = next[i];
+        if (LINKABLE_ELEMENTS.has(entry.el.toLowerCase()) && !byId.has(entry.id)) {
+          byId.set(entry.id, { index: counter++, text: '' });
+        }
+      }
+      if (node.type === 'text' && node.text) {
+        for (const entry of next) {
+          const indexed = byId.get(entry.id);
+          if (indexed) indexed.text += node.text;
+        }
+      } else if (node.type === 'teiEmpty' && LINKABLE_ELEMENTS.has((node.attrs?.el ?? '').toLowerCase())) {
+        // A void linkable element (e.g. <lb/>) occupies an index but holds no
+        // text and is never a link target — count it so following indices align.
+        counter++;
+      }
+      open = next;
+    }
+  }
+  return byId;
+}

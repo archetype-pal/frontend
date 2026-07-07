@@ -54,12 +54,15 @@ export function passesVisibilityFilter(
   // the text layer (shown in 'text' / 'both', hidden in 'allograph').
   if (meta?.annotationType === 'text') return ctx.viewMode !== 'allograph';
 
-  // Glyph/allograph layer is hidden in the pure 'text' view — but NEVER hide an
-  // in-progress draft. A region the user is drawing to link a phrase is untyped
-  // for the first render tick (before startPendingLink tags it
-  // annotationType:'text'); without this guard that tick races the visibility
-  // sync and the freshly drawn box flickers out / "disappears immediately".
-  if (ctx.viewMode === 'text') return isDraft;
+  // Glyph layer (public / editorial / legacy graphs) is hidden entirely in the
+  // pure 'text' view — regardless of whether the graph is saved or an unsaved
+  // draft. Visibility is a pure function of LAYER, not persistence: keying this
+  // on isDraft used to leak freshly-drawn allograph boxes into text view (they
+  // keep their client id until saved) while identical *saved* boxes hid. Text-
+  // region boxes are tagged annotationType:'text' at draw time (toTextRegionDraft,
+  // via startPendingLink), so they're caught by the branch above and never reach
+  // here untyped.
+  if (ctx.viewMode === 'text') return false;
 
   const isExplicitEditorial = meta?.annotationType === 'editorial';
 

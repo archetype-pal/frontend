@@ -41,6 +41,16 @@ export function useSearchUrlSync(opts: {
   const searchParams = useSearchParams();
   const isInternalUrlUpdate = React.useRef(false);
 
+  // Read the latest resultType inside the URL→state effect WITHOUT depending on
+  // it. A client-side type switch (handleResultTypeChange) changes resultType but
+  // NOT searchParams — and because useSearchParams() doesn't reflect our
+  // history.replaceState, re-running this effect on a resultType change would
+  // re-read the STALE URL and clobber the fresh reset (re-applying the old
+  // page/offset + filters, landing the new type on an out-of-range page). Real
+  // navigations still drive the sync via the searchParams dependency.
+  const resultTypeRef = React.useRef(resultType);
+  resultTypeRef.current = resultType;
+
   // Sync from URL to state (external navigation, popstate)
   React.useEffect(() => {
     if (isInternalUrlUpdate.current) {
@@ -58,7 +68,7 @@ export function useSearchUrlSync(opts: {
       Array.from(searchParams.entries()).find(([key]) => key.endsWith('__min')) ?? null;
     const rangeMaxEntry =
       Array.from(searchParams.entries()).find(([key]) => key.endsWith('__max')) ?? null;
-    const viewFromUrl = parseViewModeParam(searchParams.get('view'), resultType);
+    const viewFromUrl = parseViewModeParam(searchParams.get('view'), resultTypeRef.current);
     if (viewFromUrl) setViewMode(viewFromUrl);
     setAdvancedSearch((prev) => ({
       ...prev,
@@ -79,9 +89,11 @@ export function useSearchUrlSync(opts: {
       searchField: searchParams.get('search_field') ?? '',
       queryRoot: parseQueryRootFromUrl(searchParams),
     }));
+    // resultType is intentionally NOT a dependency — see resultTypeRef above.
+    // Re-running this URL→state sync on an internal type switch would clobber the
+    // just-reset query state from the stale URL.
   }, [
     searchParams,
-    resultType,
     setQueryState,
     setDraftKeyword,
     setSubmittedKeyword,

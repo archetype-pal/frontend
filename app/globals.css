@@ -833,6 +833,10 @@ g.a9s-selection.a9s-draft:hover path {
   background-color: hsl(var(--c-transcription-h) 70% 55% / 0.22);
 }
 
+/* region hover → text highlight is injected at runtime as a stylesheet keyed on
+   the hovered graph id (see viewer-text-panel.tsx) — the ProseMirror editor
+   reverts data-attribute mutations, so CSS is the robust mechanism. */
+
 .viewer-text-panel [data-graph-linked='true'],
 .viewer-text-panel [data-graph-linked='true']:hover {
   background-color: hsl(var(--c-transcription-h) 70% 55% / 0.38);

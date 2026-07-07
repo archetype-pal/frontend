@@ -151,6 +151,34 @@ export async function unlinkRegion(
   return response.json();
 }
 
+/**
+ * Track A — remove a SINGLE element↔region link: strip the region's `corresp`
+ * reference from the element_index-th linkable element of *this* text only,
+ * leaving the region Graph and its other links (e.g. the translation phrase)
+ * intact. Returns the updated content.
+ */
+export async function unlinkElement(
+  token: string,
+  textId: number,
+  elementIndex: number,
+  graphId: number
+): Promise<{ content: string }> {
+  const response = await authFetch(
+    `/api/v1/manuscripts/management/image-texts/${textId}/unlink-element/`,
+    token,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ element_index: elementIndex, graph_id: graphId }),
+    }
+  );
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Failed to unlink element: ${response.status}`);
+  }
+  return response.json();
+}
+
 export interface CreateImageTextPayload {
   item_image: number;
   type: 'Transcription' | 'Translation';

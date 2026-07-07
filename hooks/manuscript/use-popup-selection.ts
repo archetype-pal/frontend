@@ -58,9 +58,10 @@ interface UsePopupSelectionArgs {
   /** Pure text view: a freshly-drawn region is a pending text link, not a glyph,
    *  so its auto-select must not open the allograph popup. */
   textLinkingActive: boolean;
-  /** Link an armed phrase to a freshly-drawn region. Returns true if it handled
-   *  the draw (a phrase was armed). Fires on createSelection — the draw event. */
-  tryLinkRegion: (annotation: A9sAnnotation) => boolean;
+  /** True only in pure allograph view mode. The header allograph "lock"
+   *  (read-only popup field) applies only here — in text/both modes the popup
+   *  keeps the editable allograph selector. */
+  isAllographMode: boolean;
   /** Hold a freshly-drawn region pending until the user clicks its phrase. */
   startPendingLink: (annotation: A9sAnnotation) => void;
   /** True when the id is the region currently pending a text link. The pending
@@ -104,7 +105,7 @@ export function usePopupSelection({
   allowMultipleBoxes,
   selectMultipleAnnotations,
   textLinkingActive,
-  tryLinkRegion,
+  isAllographMode,
   startPendingLink,
   isPendingLinkRegionId,
 }: UsePopupSelectionArgs) {
@@ -246,6 +247,18 @@ export function usePopupSelection({
       const defaultPopupTab: PopupRecord['popupTab'] =
         annotationForPopup._meta?.annotationType === 'editorial' && isDraft ? 'notes' : 'details';
 
+      // The allograph is locked (shown read-only in the popup) when this draft
+      // inherited its allograph from the header dropdown — i.e. the annotation
+      // itself carried none, but the seeded popup does. Only in pure allograph
+      // view mode (not text/both): elsewhere the popup keeps the editable
+      // selector. When the header had no selection it also stays editable.
+      const allographLocked =
+        isAllographMode &&
+        isDraft &&
+        shouldAssignStandardDefaults &&
+        annotation._meta?.allographId == null &&
+        annotationForPopup._meta?.allographId != null;
+
       const commonOverrides = {
         popupTab: defaultPopupTab,
         shareUrl: '',
@@ -257,6 +270,7 @@ export function usePopupSelection({
         draftInternalNoteText: getEditorialInternalNote(annotationForPopup),
         draftGraphcomponentSet: annotationForPopup._meta?.graphcomponentSet ?? [],
         draftPositionIds: annotationForPopup._meta?.positions ?? [],
+        allographLocked,
       };
 
       openPopupCollectionFromAnnotation(annotationForPopup, {
@@ -269,6 +283,7 @@ export function usePopupSelection({
       clearSinglePopupState,
       currentCreationKind,
       filteredAllographId,
+      isAllographMode,
       openPopupCollectionFromAnnotation,
       activeAssignmentHandId,
       allowMultipleBoxes,
@@ -333,19 +348,12 @@ export function usePopupSelection({
         // A freshly drawn region (non-db draft) becomes a text↔region link, not
         // a glyph. This MUST happen here, on Annotorious's createSelection (the
         // draw event): createAnnotation only fires when a glyph draft is saved
-        // via the allograph popup, which we never open for a link. If a phrase
-        // is armed, link it now (works in text AND both view); otherwise, in
-        // pure text view, hold the region pending until a phrase is clicked.
-        if (!isDbId(selected.id)) {
-          if (tryLinkRegion(selected)) {
-            dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
-            return;
-          }
-          if (textLinkingActive) {
-            dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
-            startPendingLink(selected);
-            return;
-          }
+        // via the allograph popup, which we never open for a link. In pure text
+        // view, hold the region pending until a phrase is clicked to link it.
+        if (!isDbId(selected.id) && textLinkingActive) {
+          dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
+          startPendingLink(selected);
+          return;
         }
 
         if (activeTool === 'modify') {
@@ -384,7 +392,6 @@ export function usePopupSelection({
       setSelectedRegionGraphId,
       selectMultipleAnnotations,
       textLinkingActive,
-      tryLinkRegion,
       startPendingLink,
       isPendingLinkRegionId,
     ]

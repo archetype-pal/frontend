@@ -26,6 +26,7 @@ import { useModelLabels } from '@/contexts/model-labels-context';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 
 import { AnnotationDetailOverview } from './read-only-detail-sections';
+import { ReadOnlyIdentityField } from './read-only-identity-field';
 import type { PopupTab, SelectedComponentGroup } from './types';
 
 interface StandardAnnotationEditorProps {
@@ -39,6 +40,7 @@ interface StandardAnnotationEditorProps {
   allographOptions: Allograph[];
   handOptions: Array<{ id: number; name: string }>;
   draftAllographId: number | null;
+  allographLocked: boolean;
   draftHandId: number | null;
   onDraftAllographIdChange: (value: number | null) => void;
   onDraftHandIdChange: (value: number | null) => void;
@@ -69,6 +71,7 @@ export function StandardAnnotationEditor({
   allographOptions,
   handOptions,
   draftAllographId,
+  allographLocked,
   draftHandId,
   onDraftAllographIdChange,
   onDraftHandIdChange,
@@ -91,8 +94,19 @@ export function StandardAnnotationEditor({
     ? popupTab
     : 'details';
 
+  const selectedAllograph =
+    draftAllographId != null
+      ? (allographOptions.find((allograph) => allograph.id === draftAllographId) ?? null)
+      : null;
+
+  // When the allograph was pre-chosen from the header dropdown, show it
+  // read-only and compact so it doesn't crowd the popup. Otherwise (no header
+  // selection) keep the editable searchable dropdown.
+  const allographReadOnly = allographLocked && draftAllographId != null;
+
   React.useEffect(() => {
-    if (!isActive) return;
+    // No editable select to open when the allograph is read-only.
+    if (!isActive || allographReadOnly) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
@@ -107,42 +121,52 @@ export function StandardAnnotationEditor({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isActive]);
+  }, [isActive, allographReadOnly]);
 
   const standardIdentityFields = (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">
-          {t('popup.editor.allograph')}
-        </label>
-        <SearchableSelect
-          ref={allographSelectRef}
-          options={allographOptions.map((allograph) => ({
-            value: String(allograph.id),
-            label: formatAllographLabel(allograph),
-          }))}
-          value={draftAllographId != null ? String(draftAllographId) : null}
-          onValueChange={(value) => onDraftAllographIdChange(value ? Number(value) : null)}
-          placeholder={t('popup.editor.chooseAllograph')}
-          searchPlaceholder={t('popup.editor.searchAllographs')}
-          emptyText={t('popup.editor.noAllographsFound')}
-          clearLabel={t('popup.editor.chooseAllograph')}
-          contentClassName="z-[250]"
+      {allographReadOnly ? (
+        <ReadOnlyIdentityField
+          label="Allograph"
+          value={
+            selectedAllograph
+              ? formatAllographLabel(selectedAllograph)
+              : `Allograph ${draftAllographId}`
+          }
         />
-      </div>
+      ) : (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">
+            {t('popup.editor.allograph')}
+          </label>
+          <SearchableSelect
+            ref={allographSelectRef}
+            options={allographOptions.map((allograph) => ({
+              value: String(allograph.id),
+              label: formatAllographLabel(allograph),
+            }))}
+            value={draftAllographId != null ? String(draftAllographId) : null}
+            onValueChange={(value) => onDraftAllographIdChange(value ? Number(value) : null)}
+            placeholder={t('popup.editor.chooseAllograph')}
+            searchPlaceholder={t('popup.editor.searchAllographs')}
+            emptyText={t('popup.editor.noAllographsFound')}
+            clearLabel={t('popup.editor.chooseAllograph')}
+            contentClassName="z-[250]"
+          />
+        </div>
+      )}
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">{t('popup.editor.hand')}</label>
-        {handOptions.length === 1 ? (
-          // One hand on this image → it's auto-assigned and can't be anything
-          // else, so show it read-only rather than a single-option dropdown.
-          <div
-            className="inline-flex h-9 w-full items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-foreground"
-            title={t('popup.editor.singleHandTitle')}
-          >
-            {handOptions[0].name}
-          </div>
-        ) : (
+      {handOptions.length === 1 ? (
+        // One hand on this image → it's auto-assigned and can't be anything else,
+        // so show it read-only, matching the locked-allograph layout above.
+        <ReadOnlyIdentityField
+          label="Hand"
+          value={handOptions[0].name}
+          title={t('popup.editor.singleHandTitle')}
+        />
+      ) : (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">{t('popup.editor.hand')}</label>
           <Select
             value={draftHandId != null ? String(draftHandId) : '__unset__'}
             onValueChange={(value) =>
@@ -161,15 +185,10 @@ export function StandardAnnotationEditor({
               ))}
             </SelectContent>
           </Select>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
-
-  const selectedAllograph =
-    draftAllographId != null
-      ? (allographOptions.find((allograph) => allograph.id === draftAllographId) ?? null)
-      : null;
 
   const selectedPositionsCount = draftPositionIds.length;
   const selectedPositionNameById = new Map(

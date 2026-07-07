@@ -76,7 +76,10 @@ export default function BlogPostPreview({
           {t('blog.comments', { count: commentsCount })}
         </Link>
       </div>
-      <p className="mb-4" dangerouslySetInnerHTML={{ __html: sanitizeHtml(excerpt) }}></p>
+      {/* <div>, not <p>: excerpts are authored HTML and may contain block
+          elements (e.g. <p>), which a <p> can't legally nest — the browser would
+          reparent them and desync from the server HTML → hydration mismatch. */}
+      <div className="mb-4" dangerouslySetInnerHTML={{ __html: sanitizeHtml(excerpt) }}></div>
 
       {showReadMoreBtn && (
         <Link

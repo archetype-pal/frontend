@@ -298,9 +298,6 @@ export default function ManuscriptViewer({
     imageTexts,
     linkedGraphId,
     setLinkedGraphId,
-    linkArm,
-    setLinkArm,
-    tryLinkRegion,
     reloadTextsAndAnnotations,
     pendingLinkRegion,
     isPendingLinkRegionId,
@@ -309,12 +306,12 @@ export default function ManuscriptViewer({
     cancelPendingLink,
     selectedRegionGraphId,
     setSelectedRegionGraphId,
+    hoveredRegionGraphId,
+    setHoveredRegionGraphId,
     unlinkSelectedRegion,
+    unlinkElementFromRegion,
+    linkExistingRegionToElement,
     persistRegionGeometry,
-    addRefForGraphId,
-    startAddRef,
-    addRefToPhrase,
-    cancelAddRef,
   } = useImageTextLinking({
     imageId,
     token,
@@ -508,18 +505,37 @@ export default function ManuscriptViewer({
   React.useEffect(() => {
     if (!osdReady) return;
 
+    // A region clicked on the image stays highlighted until it's deselected, so
+    // its link (in the Link bar) has a persistent visual anchor. Hover and the
+    // allograph-filter layer their transient highlights on top of it.
+    const selectedRegionId =
+      selectedRegionGraphId != null ? `db:${selectedRegionGraphId}` : null;
+    const withSelectedRegion = (ids: string[]) =>
+      selectedRegionId ? Array.from(new Set([selectedRegionId, ...ids])) : ids;
+
     if (hoveredAnnotationId) {
-      viewerApiRef.current?.highlightAnnotations?.([hoveredAnnotationId]);
+      viewerApiRef.current?.highlightAnnotations?.(withSelectedRegion([hoveredAnnotationId]));
       return;
     }
 
     if (highlightAllographId == null) {
-      viewerApiRef.current?.clearHighlights?.();
+      if (selectedRegionId) {
+        viewerApiRef.current?.highlightAnnotations?.([selectedRegionId]);
+      } else {
+        viewerApiRef.current?.clearHighlights?.();
+      }
       return;
     }
 
-    viewerApiRef.current?.highlightAnnotations?.(highlightedIds);
-  }, [osdReady, hoveredAnnotationId, highlightAllographId, highlightedIds, viewerApiRef]);
+    viewerApiRef.current?.highlightAnnotations?.(withSelectedRegion(highlightedIds));
+  }, [
+    osdReady,
+    hoveredAnnotationId,
+    highlightAllographId,
+    highlightedIds,
+    selectedRegionGraphId,
+    viewerApiRef,
+  ]);
 
   const allographsForThisImage = React.useMemo(() => {
     if (!allographs.length) return [];
@@ -648,7 +664,7 @@ export default function ManuscriptViewer({
     allowMultipleBoxes: viewerSettings.allowMultipleBoxes,
     selectMultipleAnnotations: viewerSettings.selectMultipleAnnotations,
     textLinkingActive,
-    tryLinkRegion,
+    isAllographMode: effectiveViewMode === 'allograph',
     startPendingLink,
     isPendingLinkRegionId,
   });
@@ -798,9 +814,9 @@ export default function ManuscriptViewer({
   }, [setActiveTool]);
 
   // Switching view mode resets to the move/pan tool. Otherwise a draw tool left
-  // armed (e.g. after arming a link, or switching views mid-draw) turns the next
-  // click on an existing box into a brand-new draft instead of a selection —
-  // which is what surfaced the "clicking a region opens the glyph popup" bug.
+  // armed (e.g. after switching views mid-draw) turns the next click on an
+  // existing box into a brand-new draft instead of a selection — which is what
+  // surfaced the "clicking a region opens the glyph popup" bug.
   const handleSetViewModeAndResetTool = React.useCallback(
     (mode: Parameters<typeof handleSetViewMode>[0]) => {
       // A deliberate mode choice wins over the search deep-link's transient view.
@@ -901,8 +917,8 @@ export default function ManuscriptViewer({
     editorState.resetFrom([]);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- per-image teardown: clears several independent state atoms alongside an imperative editor reset (editorState.resetFrom) and hook resetters; this is genuine synchronization on image change, and the `key`-reset boundary lives in the parent (out of scope to edit).
     setSelectedAnnotationIds([]);
-    // (linkArm reset → useImageTextLinking; share-URL re-arm → useShareTarget;
-    // both keyed on imageId.)
+    // (pending-link/selected-region reset → useImageTextLinking; share-URL
+    // re-arm → useShareTarget; both keyed on imageId.)
     resetImageAdjustments();
 
     // Visibility-filter reset now lives in useAnnotationVisibilityFilters
@@ -1361,6 +1377,11 @@ export default function ManuscriptViewer({
               confirmDelete={handleConfirmDelete}
               confirmDeleteMany={handleConfirmDeleteMany}
               onSelect={handleSelectAnnotationFromViewer}
+              onHover={(annotationId) =>
+                setHoveredRegionGraphId(
+                  annotationId && isDbId(annotationId) ? Number(annotationId.slice(3)) : null
+                )
+              }
               exposeApi={handleExposeApi}
             />
 
@@ -1431,6 +1452,7 @@ export default function ManuscriptViewer({
                   canEdit={canPersistAnyAnnotations && !isPublicDemoMode}
                   onTextSaved={() => void reloadTextsAndAnnotations()}
                   linkedGraphId={linkedGraphId}
+                  hoveredGraphId={hoveredRegionGraphId}
                   onSpanHover={(graphId) =>
                     setHoveredAnnotationId(graphId != null ? `db:${graphId}` : null)
                   }
@@ -1442,24 +1464,13 @@ export default function ManuscriptViewer({
                     // affordance is shown deterministically regardless of whether
                     // the programmatic select emits onSelect.
                     setLinkedGraphId(graphId);
-                    // Clicking a linked phrase selects its region so the panel
-                    // offers "Also link" / Delete. This is the overlap-free way
+                    // Clicking a linked phrase selects its region so the Link Bar
+                    // offers Unlink / Remove. This is the overlap-free way
                     // to reach them: clicking the region on the image is
                     // unreliable when glyphs overlap it in Both view.
                     setSelectedRegionGraphId(graphId);
                   }}
                   canLink={canPersistAnyAnnotations && !isPublicDemoMode}
-                  armedElementIndex={linkArm?.elementIndex ?? null}
-                  armedTextId={linkArm?.textId ?? null}
-                  onArmLink={(textId, elementIndex, label) => {
-                    setLinkArm({ textId, elementIndex, label });
-                    // Arm the draw tool so the editor can immediately draw.
-                    handleCreateAnnotation();
-                  }}
-                  onCancelLink={() => {
-                    setLinkArm(null);
-                    handleMoveTool();
-                  }}
                   pendingLink={!!pendingLinkRegion}
                   onLinkPhrase={(textId, elementIndex, label) =>
                     linkPendingToPhrase(textId, elementIndex, label)
@@ -1474,12 +1485,12 @@ export default function ManuscriptViewer({
                   }}
                   selectedRegionGraphId={selectedRegionGraphId}
                   onDeleteRegion={(graphId) => unlinkSelectedRegion(graphId)}
-                  onStartAddRef={(graphId) => startAddRef(graphId)}
-                  addRefArmed={addRefForGraphId != null}
-                  onAddRefToPhrase={(textId, elementIndex, label) =>
-                    addRefToPhrase(textId, elementIndex, label)
+                  onUnlinkElement={(textId, elementIndex, graphId) =>
+                    unlinkElementFromRegion(textId, elementIndex, graphId)
                   }
-                  onCancelAddRef={() => cancelAddRef()}
+                  onLinkExistingRegion={(textId, elementIndex, graphId, label) =>
+                    linkExistingRegionToElement(textId, elementIndex, graphId, label)
+                  }
                   onClose={() => handleSetViewModeAndResetTool('allograph')}
                 />
               </div>

@@ -115,6 +115,10 @@ interface Props {
   onDeleteTextRegion?: (annotation: Annotation) => void;
   onSelect?: (annotation: Annotation | null) => void;
   onSelectionIdsChange?: (ids: string[]) => void;
+  /** Fired when the pointer enters/leaves an annotation on the image (null on
+   *  leave). The image→text mirror of the panel's span hover: lets the viewer
+   *  highlight the phrase linked to the region the cursor is over. */
+  onHover?: (annotationId: string | null) => void;
   exposeApi?: (api: ViewerApi) => void;
   initialAnnotations?: Annotation[];
   disableEditor?: boolean;
@@ -143,6 +147,7 @@ export default function ManuscriptAnnotorious({
   onDeleteTextRegion,
   onSelect,
   onSelectionIdsChange,
+  onHover,
   exposeApi,
   initialAnnotations = [],
   disableEditor = false,
@@ -169,6 +174,7 @@ export default function ManuscriptAnnotorious({
   const confirmDeleteManyRef = useRef(confirmDeleteMany);
   const onSelectRef = useRef(onSelect);
   const onSelectionIdsChangeRef = useRef(onSelectionIdsChange);
+  const onHoverRef = useRef(onHover);
   const exposeApiRef = useRef(exposeApi);
   const annotationFilterRef = useRef<Props['annotationFilter']>(annotationFilter);
   const [state, setState] = React.useState<ComponentState>({
@@ -369,6 +375,10 @@ export default function ManuscriptAnnotorious({
   useEffect(() => {
     onSelectionIdsChangeRef.current = onSelectionIdsChange;
   }, [onSelectionIdsChange]);
+
+  useEffect(() => {
+    onHoverRef.current = onHover;
+  }, [onHover]);
 
   useEffect(() => {
     allowMultipleSelectionRef.current = allowMultipleSelection;
@@ -584,8 +594,8 @@ export default function ManuscriptAnnotorious({
           // "Both" view shows glyphs and text regions together. A linked region
           // is a large box around a word; the glyphs are small boxes inside it.
           // Annotorious selects the (visible) glyph under the pointer, so the
-          // region's link affordances ("Also link" / Delete) never appear — the
-          // flaky-missing-button bug. When a click lands inside a visible text
+          // region's link affordances (the Link Bar's Link / Remove) never appear
+          // — the flaky-missing-button bug. When a click lands inside a visible text
           // region but resolved to a non-region shape, redirect to the region.
           // Inert in allograph view (regions are filtered out → display:none).
           const textRegionAtPoint = (a: Annotation | null): Annotation | null => {
@@ -860,6 +870,19 @@ export default function ManuscriptAnnotorious({
             }
           });
 
+          // Pointer over/out of an annotation → report the hovered id (null on
+          // leave), so the viewer can highlight the linked phrase in the text
+          // panel. Ignore annotations hidden by the active filter (Annotorious
+          // hit-tests its own store, so a glyph beneath a region in text view can
+          // otherwise fire this) — the image→text mirror of the panel span hover.
+          anno.on('mouseEnterAnnotation', (a: Annotation) => {
+            if (!isAnnotationVisible(a)) return;
+            onHoverRef.current?.(a?.id ?? null);
+          });
+          anno.on('mouseLeaveAnnotation', () => {
+            onHoverRef.current?.(null);
+          });
+
           anno.on('selectAnnotation', (a: Annotation | null) => {
             if (currentMode === 'delete') {
               return;
@@ -881,8 +904,8 @@ export default function ManuscriptAnnotorious({
             }
 
             // Both view: the click resolved to a (visible) glyph sitting inside a
-            // linked text region. Surface the region instead so its "Also link" /
-            // Delete affordances appear.
+            // linked text region. Surface the region instead so its Link Bar
+            // affordances (Link / Remove) appear.
             if (a && currentMode === 'pan') {
               const region = textRegionAtPoint(a);
               if (region) {

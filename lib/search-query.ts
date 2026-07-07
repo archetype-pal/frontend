@@ -208,6 +208,34 @@ export type FacetClickResolution =
   | { type: 'query'; value: QueryState }
   | { type: 'noop' };
 
+/**
+ * Return `extraParams` with `value` dropped from the `<facetKey>__not` exclusion
+ * list, collapsing the key when it empties. Returns the original reference
+ * (including `undefined`) untouched when there is nothing to drop, so callers can
+ * cheaply detect "no change".
+ */
+function dropExclusionValue(
+  extraParams: Record<string, string | string[]> | undefined,
+  facetKey: string,
+  value: string
+): Record<string, string | string[]> | undefined {
+  const k = `${facetKey}__not`;
+  const raw = (extraParams ?? {})[k];
+  if (raw === undefined) return extraParams;
+  const next = { ...extraParams };
+  if (Array.isArray(raw)) {
+    const filtered = raw.filter((x) => x.trim() !== value);
+    if (filtered.length === raw.length) return extraParams;
+    if (filtered.length === 0) delete next[k];
+    else next[k] = filtered.length === 1 ? filtered[0]! : filtered;
+  } else if (raw.trim() === value) {
+    delete next[k];
+  } else {
+    return extraParams;
+  }
+  return next;
+}
+
 export function resolveFacetClick({
   arg,
   action,
@@ -253,11 +281,15 @@ export function resolveFacetClick({
         : queryState.selected_facets.filter(
             (s) => !s.startsWith(`${action.facetKey}${FACET_EXACT_SUFFIX}:`)
           );
+      // Mutual exclusivity: including a value clears any exclusion of that same
+      // value. A value can't be both required and forbidden — that combination
+      // always returns zero results (archetype-pal/project-discussions#8).
       return {
         type: 'query',
         value: {
           ...queryState,
           selected_facets: without.includes(entry) ? without : [...without, entry],
+          extraParams: dropExclusionValue(queryState.extraParams, action.facetKey, action.value),
           offset: 0,
         },
       };
@@ -279,11 +311,27 @@ export function resolveFacetClick({
         const e = existing.trim();
         nextExtra[k] = e === val ? e : [e, val].sort();
       }
+      // Mutual exclusivity (inverse of selectFacet above): excluding a value
+      // clears any inclusion of that same value so the two can never contradict.
+      const includeEntry = facetEntry(action.facetKey, action.value);
       return {
         type: 'query',
         value: {
           ...queryState,
+          selected_facets: queryState.selected_facets.filter((s) => s !== includeEntry),
           extraParams: nextExtra,
+          offset: 0,
+        },
+      };
+    }
+    case 'removeExclusion': {
+      // Revert an exclusion straight from the facet panel (not just the active-
+      // filter chip). Drops the value from `<facetKey>__not`.
+      return {
+        type: 'query',
+        value: {
+          ...queryState,
+          extraParams: dropExclusionValue(queryState.extraParams, action.facetKey, action.value),
           offset: 0,
         },
       };
@@ -452,6 +500,19 @@ export function clearAllFacetFilters(queryState: QueryState): QueryState {
   };
 }
 
+/**
+ * Reset all per-type filter/sort/page state when switching result type
+ * (Manuscripts → Images, etc.). Facets, date, exclusions, sort ordering, and page
+ * offset are all type-specific and must not leak across a switch: a carried-over
+ * `offset` lands on an out-of-range page, and a carried-over `ordering` names a
+ * sort field the new type doesn't have (silently ignored, so the results look
+ * unsorted/stale). `limit` (page size) is preserved; the keyword lives in separate
+ * state and is intentionally kept — the per-type tab counts are keyword-scoped.
+ */
+export function resetQueryForTypeChange(queryState: QueryState): QueryState {
+  return { ...clearAllFacetFilters(queryState), ordering: null };
+}
+
 export function clearDateFilters(queryState: QueryState): QueryState {
   return {
     ...queryState,
@@ -465,18 +526,8 @@ export function removeExclusionFromExtraParams(
   facetKey: string,
   value: string
 ): QueryState {
-  const k = `${facetKey}__not`;
-  const prev = queryState.extraParams ?? {};
-  const raw = prev[k];
-  if (raw === undefined) return queryState;
-  const nextExtra = { ...prev };
-  if (Array.isArray(raw)) {
-    const filtered = raw.filter((x) => x.trim() !== value);
-    if (filtered.length === 0) delete nextExtra[k];
-    else nextExtra[k] = filtered.length === 1 ? filtered[0]! : filtered;
-  } else if (raw.trim() === value) {
-    delete nextExtra[k];
-  }
+  const nextExtra = dropExclusionValue(queryState.extraParams, facetKey, value);
+  if (nextExtra === queryState.extraParams) return queryState;
   return { ...queryState, extraParams: nextExtra, offset: 0 };
 }
 
