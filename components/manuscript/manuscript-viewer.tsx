@@ -505,18 +505,37 @@ export default function ManuscriptViewer({
   React.useEffect(() => {
     if (!osdReady) return;
 
+    // A region clicked on the image stays highlighted until it's deselected, so
+    // its link (in the Link bar) has a persistent visual anchor. Hover and the
+    // allograph-filter layer their transient highlights on top of it.
+    const selectedRegionId =
+      selectedRegionGraphId != null ? `db:${selectedRegionGraphId}` : null;
+    const withSelectedRegion = (ids: string[]) =>
+      selectedRegionId ? Array.from(new Set([selectedRegionId, ...ids])) : ids;
+
     if (hoveredAnnotationId) {
-      viewerApiRef.current?.highlightAnnotations?.([hoveredAnnotationId]);
+      viewerApiRef.current?.highlightAnnotations?.(withSelectedRegion([hoveredAnnotationId]));
       return;
     }
 
     if (highlightAllographId == null) {
-      viewerApiRef.current?.clearHighlights?.();
+      if (selectedRegionId) {
+        viewerApiRef.current?.highlightAnnotations?.([selectedRegionId]);
+      } else {
+        viewerApiRef.current?.clearHighlights?.();
+      }
       return;
     }
 
-    viewerApiRef.current?.highlightAnnotations?.(highlightedIds);
-  }, [osdReady, hoveredAnnotationId, highlightAllographId, highlightedIds, viewerApiRef]);
+    viewerApiRef.current?.highlightAnnotations?.(withSelectedRegion(highlightedIds));
+  }, [
+    osdReady,
+    hoveredAnnotationId,
+    highlightAllographId,
+    highlightedIds,
+    selectedRegionGraphId,
+    viewerApiRef,
+  ]);
 
   const allographsForThisImage = React.useMemo(() => {
     if (!allographs.length) return [];
