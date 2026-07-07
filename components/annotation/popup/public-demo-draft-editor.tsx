@@ -44,7 +44,9 @@ export function PublicDemoDraftEditor({
       : null;
 
   const selectedHandName =
-    draftHandId != null ? (handOptions.find((hand) => hand.id === draftHandId)?.name ?? null) : null;
+    draftHandId != null
+      ? (handOptions.find((hand) => hand.id === draftHandId)?.name ?? null)
+      : null;
 
   const allographReadOnly = allographLocked && draftAllographId != null;
 

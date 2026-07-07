@@ -153,9 +153,7 @@ export function AdvancedSearchPanel({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('advancedSearchPanel.matchAllWords')}</SelectItem>
-              <SelectItem value="last">
-                {t('advancedSearchPanel.matchLenient')}
-              </SelectItem>
+              <SelectItem value="last">{t('advancedSearchPanel.matchLenient')}</SelectItem>
             </SelectContent>
           </Select>
           <p className="text-[11px] text-muted-foreground">

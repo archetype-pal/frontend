@@ -248,9 +248,7 @@ export default function CarouselPage() {
   }
 
   if (isError) {
-    return (
-      <BackofficeErrorState message={t('carousel.failedLoad')} onRetry={() => refetch()} />
-    );
+    return <BackofficeErrorState message={t('carousel.failedLoad')} onRetry={() => refetch()} />;
   }
 
   // ── Empty state ────────────────────────────────────────────────────

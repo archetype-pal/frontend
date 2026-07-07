@@ -48,7 +48,12 @@ function getEntries(
   t: (key: string) => string
 ): NavEntry[] {
   return [
-    { label: t('search.dashboard'), href: '/backoffice', icon: Settings, group: t('search.groupGeneral') },
+    {
+      label: t('search.dashboard'),
+      href: '/backoffice',
+      icon: Settings,
+      group: t('search.groupGeneral'),
+    },
     // Manuscripts & Palaeography
     {
       label: manuscriptsAppLabel,
@@ -62,7 +67,12 @@ function getEntries(
       icon: Users,
       group: t('search.groupManuscripts'),
     },
-    { label: t('search.hands'), href: '/backoffice/hands', icon: Hand, group: t('search.groupManuscripts') },
+    {
+      label: t('search.hands'),
+      href: '/backoffice/hands',
+      icon: Hand,
+      group: t('search.groupManuscripts'),
+    },
     {
       label: t('search.annotations'),
       href: '/backoffice/annotations',
@@ -112,7 +122,12 @@ function getEntries(
       icon: MessageSquare,
       group: t('search.groupSiteContent'),
     },
-    { label: t('search.carousel'), href: '/backoffice/carousel', icon: Image, group: t('search.groupSiteContent') },
+    {
+      label: t('search.carousel'),
+      href: '/backoffice/carousel',
+      icon: Image,
+      group: t('search.groupSiteContent'),
+    },
     // Administration
     {
       label: t('search.searchEngine'),

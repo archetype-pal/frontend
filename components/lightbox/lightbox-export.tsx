@@ -361,7 +361,9 @@ ${annotationElements ? annotationElements + '\n' : ''}    </surface>`;
         <div className="p-4 border-b flex items-center justify-between">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Download className="h-5 w-5" />
-            {selectedImageIds.size > 0 ? t('export.title', { count: selectedImageIds.size }) : t('export.titleWorkspace')}
+            {selectedImageIds.size > 0
+              ? t('export.title', { count: selectedImageIds.size })
+              : t('export.titleWorkspace')}
           </h3>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />

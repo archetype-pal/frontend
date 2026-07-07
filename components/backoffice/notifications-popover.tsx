@@ -173,7 +173,13 @@ export function NotificationsPopover({
                 </h4>
                 <ul className="flex flex-col gap-0.5">
                   {items.map((it) => (
-                    <NotificationRow key={it.id} notification={it} onSelect={onSelect} now={now} kindLabel={kindLabel} />
+                    <NotificationRow
+                      key={it.id}
+                      notification={it}
+                      onSelect={onSelect}
+                      now={now}
+                      kindLabel={kindLabel}
+                    />
                   ))}
                 </ul>
               </section>

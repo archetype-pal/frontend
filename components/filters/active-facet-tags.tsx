@@ -72,9 +72,7 @@ export function ActiveFacetTags({
             type="button"
             onClick={() => setExpanded((prev) => !prev)}
             className="inline-flex items-center rounded-full border border-dashed px-2 py-1 text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-            aria-label={
-              expanded ? t('showFewerLabel') : t('showMoreLabel', { count: hiddenCount })
-            }
+            aria-label={expanded ? t('showFewerLabel') : t('showMoreLabel', { count: hiddenCount })}
           >
             {expanded ? t('showFewer') : t('showMore', { count: hiddenCount })}
           </button>

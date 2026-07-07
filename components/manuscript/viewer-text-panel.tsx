@@ -20,7 +20,11 @@ import type { TextDisplayMode } from '@/types/annotation-viewer';
 
 function LoadingEditorFallback() {
   const t = useTranslations('manuscript');
-  return <div className="px-1 py-3 font-mono text-xs text-muted-foreground">{t('text.loadingEditor')}</div>;
+  return (
+    <div className="px-1 py-3 font-mono text-xs text-muted-foreground">
+      {t('text.loadingEditor')}
+    </div>
+  );
 }
 
 // The full TEI editor (TipTap + CodeMirror) is heavy and editor-only, so it is
@@ -193,7 +197,8 @@ function TextEditor({
       showActionNotification({
         kind: 'error',
         title: t('text.saveFailedTitle'),
-        description: error instanceof Error ? error.message.slice(0, 160) : t('text.saveFailedDescription'),
+        description:
+          error instanceof Error ? error.message.slice(0, 160) : t('text.saveFailedDescription'),
       });
     } finally {
       setSaving(false);

@@ -417,9 +417,7 @@ export function StandardAnnotationEditor({
 
   const editableComponentFeatureSection = (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">
-        {t('popup.editor.components')}
-      </label>
+      <label className="text-sm font-medium text-foreground">{t('popup.editor.components')}</label>
 
       {draftAllographId == null ? (
         <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">

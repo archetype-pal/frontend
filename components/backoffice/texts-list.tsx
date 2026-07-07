@@ -434,7 +434,9 @@ export function TextsList() {
                   <TableHead>{t('textsList.columnImage')}</TableHead>
                   <TableHead className="w-[100px]">{t('textsList.columnStatus')}</TableHead>
                   <TableHead className="w-[80px]">{t('textsList.columnLang')}</TableHead>
-                  <TableHead className="w-[90px] text-right">{t('textsList.columnChars')}</TableHead>
+                  <TableHead className="w-[90px] text-right">
+                    {t('textsList.columnChars')}
+                  </TableHead>
                   <TableHead className="w-[200px]">{t('textsList.columnModified')}</TableHead>
                   <TableHead className="w-[180px]" />
                 </TableRow>

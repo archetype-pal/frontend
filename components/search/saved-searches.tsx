@@ -167,7 +167,9 @@ export function SavedSearchesDropdown({
           ) : (
             <Bookmark className="h-4 w-4" />
           )}
-          <span className="ml-1 hidden sm:inline">{justSaved ? t('savedState') : tCommon('save')}</span>
+          <span className="ml-1 hidden sm:inline">
+            {justSaved ? t('savedState') : tCommon('save')}
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">

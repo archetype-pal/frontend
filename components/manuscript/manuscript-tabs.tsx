@@ -24,9 +24,19 @@ export function ManuscriptTabs({ manuscriptId, imageId, counts }: ManuscriptTabs
 
   const tabs = [
     { segment: '', label: t('tabs.selectedImage'), icon: ImageIcon, countKey: undefined },
-    { segment: 'annotations', label: t('tabs.annotations'), icon: FileText, countKey: 'annotations' as const },
+    {
+      segment: 'annotations',
+      label: t('tabs.annotations'),
+      icon: FileText,
+      countKey: 'annotations' as const,
+    },
     { segment: 'texts', label: t('tabs.texts'), icon: Book, countKey: 'texts' as const },
-    { segment: 'other-images', label: t('tabs.otherImages'), icon: ImageIcon, countKey: 'otherImages' as const },
+    {
+      segment: 'other-images',
+      label: t('tabs.otherImages'),
+      icon: ImageIcon,
+      countKey: 'otherImages' as const,
+    },
     { segment: 'copyright', label: t('tabs.imageCopyright'), icon: Info, countKey: undefined },
   ];
 

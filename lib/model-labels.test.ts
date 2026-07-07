@@ -32,7 +32,10 @@ describe('normalizeModelLabels', () => {
 
   it('overrides one locale while keeping the other locale default', () => {
     const result = normalizeModelLabels({ historicalItem: { fr: 'Objet' } });
-    expect(result.historicalItem).toEqual({ en: DEFAULT_MODEL_LABELS.historicalItem.en, fr: 'Objet' });
+    expect(result.historicalItem).toEqual({
+      en: DEFAULT_MODEL_LABELS.historicalItem.en,
+      fr: 'Objet',
+    });
   });
 
   it('migrates a legacy plain-string value to both locales', () => {

@@ -281,9 +281,7 @@ export default function TranslationsPage() {
         <Languages className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t('translations.title')}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t('translations.subtitle')}
-          </p>
+          <p className="text-sm text-muted-foreground">{t('translations.subtitle')}</p>
         </div>
       </div>
 

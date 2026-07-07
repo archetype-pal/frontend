@@ -876,9 +876,7 @@ export default function UsersPage() {
                     <Label htmlFor="create-is-staff" className="cursor-pointer text-sm">
                       {t('users.permStaffLabel')}
                     </Label>
-                    <p className="text-[11px] text-muted-foreground">
-                      {t('users.permStaffDesc')}
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">{t('users.permStaffDesc')}</p>
                   </div>
                   <Switch
                     id="create-is-staff"
@@ -906,9 +904,7 @@ export default function UsersPage() {
                     <Label htmlFor="create-is-active" className="cursor-pointer text-sm">
                       {t('users.permActiveLabel')}
                     </Label>
-                    <p className="text-[11px] text-muted-foreground">
-                      {t('users.permActiveDesc')}
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">{t('users.permActiveDesc')}</p>
                   </div>
                   <Switch
                     id="create-is-active"
@@ -992,9 +988,7 @@ export default function UsersPage() {
                   onChange={(v) => setEditForm((f) => ({ ...f, password: v }))}
                   placeholder={t('users.changePasswordPlaceholder')}
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  {t('users.changePasswordHint')}
-                </p>
+                <p className="text-[11px] text-muted-foreground">{t('users.changePasswordHint')}</p>
               </div>
             </div>
 
@@ -1026,9 +1020,7 @@ export default function UsersPage() {
                     <Label htmlFor="edit-is-staff" className="cursor-pointer text-sm">
                       {t('users.permStaffLabel')}
                     </Label>
-                    <p className="text-[11px] text-muted-foreground">
-                      {t('users.permStaffDesc')}
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">{t('users.permStaffDesc')}</p>
                   </div>
                   <Switch
                     id="edit-is-staff"
@@ -1056,9 +1048,7 @@ export default function UsersPage() {
                     <Label htmlFor="edit-is-active" className="cursor-pointer text-sm">
                       {t('users.permActiveLabel')}
                     </Label>
-                    <p className="text-[11px] text-muted-foreground">
-                      {t('users.permActiveDesc')}
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">{t('users.permActiveDesc')}</p>
                   </div>
                   <Switch
                     id="edit-is-active"

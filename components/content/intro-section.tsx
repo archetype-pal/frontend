@@ -317,31 +317,29 @@ export default function IntroSection() {
             {t('intro.discoverCollection')}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {(
-              [
-                {
-                  title: t('intro.charterManuscripts'),
-                  desc: t('intro.charterManuscriptsDesc'),
-                  href: '/search/manuscripts',
-                  delay: 'delay-100',
-                  accent: 'var(--primary)',
-                },
-                {
-                  title: t('intro.scribalHands'),
-                  desc: t('intro.scribalHandsDesc'),
-                  href: '/search/hands',
-                  delay: 'delay-200',
-                  accent: 'hsl(38 92% 50%)',
-                },
-                {
-                  title: t('intro.historicalContext'),
-                  desc: t('intro.historicalContextDesc'),
-                  href: '/about/historical-context',
-                  delay: 'delay-300',
-                  accent: 'hsl(25 15% 15%)',
-                },
-              ]
-            ).map((card) => (
+            {[
+              {
+                title: t('intro.charterManuscripts'),
+                desc: t('intro.charterManuscriptsDesc'),
+                href: '/search/manuscripts',
+                delay: 'delay-100',
+                accent: 'var(--primary)',
+              },
+              {
+                title: t('intro.scribalHands'),
+                desc: t('intro.scribalHandsDesc'),
+                href: '/search/hands',
+                delay: 'delay-200',
+                accent: 'hsl(38 92% 50%)',
+              },
+              {
+                title: t('intro.historicalContext'),
+                desc: t('intro.historicalContextDesc'),
+                href: '/about/historical-context',
+                delay: 'delay-300',
+                accent: 'hsl(25 15% 15%)',
+              },
+            ].map((card) => (
               <Link
                 key={card.href}
                 href={card.href}

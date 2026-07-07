@@ -276,7 +276,9 @@ export function LightboxComparisonMode({ onClose }: LightboxComparisonModeProps)
           title={syncZoom ? t('comparison.unsyncZoomPan') : t('comparison.syncZoomPan')}
         >
           {syncZoom ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-          <span className="text-xs">{syncZoom ? t('comparison.synced') : t('comparison.independent')}</span>
+          <span className="text-xs">
+            {syncZoom ? t('comparison.synced') : t('comparison.independent')}
+          </span>
         </Button>
       </div>
 

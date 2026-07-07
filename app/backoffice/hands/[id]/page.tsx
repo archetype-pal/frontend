@@ -74,7 +74,10 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
 
   if (editor.isError) {
     return (
-      <BackofficeErrorState message={t('handsDetail.failedLoad')} onRetry={() => editor.refetch()} />
+      <BackofficeErrorState
+        message={t('handsDetail.failedLoad')}
+        onRetry={() => editor.refetch()}
+      />
     );
   }
   if (editor.isLoading || !editor.entity || !editor.form) {

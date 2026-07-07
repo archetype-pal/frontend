@@ -206,7 +206,11 @@ export function DynamicFacets({
       {!hideActiveTags && (
         <ActiveFacetTags
           items={activeTags}
-          title={activeFilterCount > 0 ? t('activeFiltersCount', { count: activeFilterCount }) : tFilters('activeTitle')}
+          title={
+            activeFilterCount > 0
+              ? t('activeFiltersCount', { count: activeFilterCount })
+              : tFilters('activeTitle')
+          }
           className={density === 'sidebar' ? 'px-0' : undefined}
           onRemove={(item) => {
             if (onRemoveTag) {

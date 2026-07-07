@@ -259,7 +259,9 @@ export function CollectionTableView({
                   {section.showAnnotationDetails && (
                     <>
                       <TableHead>{t('table.allographHeader')}</TableHead>
-                      <TableHead className="hidden lg:table-cell">{t('table.handHeader')}</TableHead>
+                      <TableHead className="hidden lg:table-cell">
+                        {t('table.handHeader')}
+                      </TableHead>
                     </>
                   )}
                   {!readOnly && (

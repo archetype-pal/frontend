@@ -272,9 +272,7 @@ export default function SearchEnginePage() {
         <Search className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t('searchEngine.title')}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t('searchEngine.subtitle')}
-          </p>
+          <p className="text-sm text-muted-foreground">{t('searchEngine.subtitle')}</p>
         </div>
       </div>
 
@@ -405,12 +403,16 @@ function HealthBanner({
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {/* Connection status */}
       <div className="rounded-lg border bg-card p-4">
-        <p className="text-xs font-medium text-muted-foreground mb-1">{t('searchEngine.connectionLabel')}</p>
+        <p className="text-xs font-medium text-muted-foreground mb-1">
+          {t('searchEngine.connectionLabel')}
+        </p>
         <div className="flex items-center gap-2">
           {error ? (
             <>
               <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-              <span className="text-sm font-semibold text-destructive">{t('searchEngine.connectionUnreachable')}</span>
+              <span className="text-sm font-semibold text-destructive">
+                {t('searchEngine.connectionUnreachable')}
+              </span>
             </>
           ) : (
             <>
@@ -425,7 +427,9 @@ function HealthBanner({
 
       {/* Total documents */}
       <div className="rounded-lg border bg-card p-4">
-        <p className="text-xs font-medium text-muted-foreground mb-1">{t('searchEngine.totalDocuments')}</p>
+        <p className="text-xs font-medium text-muted-foreground mb-1">
+          {t('searchEngine.totalDocuments')}
+        </p>
         <div className="flex items-center gap-2">
           <Database className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-semibold">
@@ -438,7 +442,9 @@ function HealthBanner({
 
       {/* Sync status */}
       <div className="rounded-lg border bg-card p-4">
-        <p className="text-xs font-medium text-muted-foreground mb-1">{t('searchEngine.syncStatus')}</p>
+        <p className="text-xs font-medium text-muted-foreground mb-1">
+          {t('searchEngine.syncStatus')}
+        </p>
         <div className="flex items-center gap-2">
           {outOfSyncCount === 0 ? (
             <>
@@ -460,7 +466,9 @@ function HealthBanner({
 
       {/* Active tasks */}
       <div className="rounded-lg border bg-card p-4">
-        <p className="text-xs font-medium text-muted-foreground mb-1">{t('searchEngine.activeTasksLabel')}</p>
+        <p className="text-xs font-medium text-muted-foreground mb-1">
+          {t('searchEngine.activeTasksLabel')}
+        </p>
         <div className="flex items-center gap-2">
           {activeTaskCount > 0 ? (
             <>
@@ -472,7 +480,9 @@ function HealthBanner({
           ) : (
             <>
               <Activity className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-semibold text-muted-foreground">{t('searchEngine.noActiveTasks')}</span>
+              <span className="text-sm font-semibold text-muted-foreground">
+                {t('searchEngine.noActiveTasks')}
+              </span>
             </>
           )}
         </div>
@@ -736,7 +746,9 @@ function TaskProgressPanel({
       <div className="flex items-center justify-between border-b px-3 py-2">
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">{t('searchEngine.tasksPanelTitle', { count: tasks.length })}</span>
+          <span className="text-sm font-medium">
+            {t('searchEngine.tasksPanelTitle', { count: tasks.length })}
+          </span>
         </div>
         {completedCount > 0 && (
           <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={onDismissCompleted}>

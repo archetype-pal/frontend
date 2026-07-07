@@ -152,7 +152,12 @@ export function LightboxToolbar({
           <Button variant="ghost" size="sm" onClick={handleRotate} title={t('toolbar.rotate')}>
             <RotateCw className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleFlipX} title={t('toolbar.flipHorizontal')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleFlipX}
+            title={t('toolbar.flipHorizontal')}
+          >
             <FlipHorizontal className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="sm" onClick={handleFlipY} title={t('toolbar.flipVertical')}>
@@ -214,7 +219,13 @@ export function LightboxToolbar({
 
       {/* Undo/Redo */}
       <div className="flex items-center gap-1 border-r pr-2">
-        <Button variant="ghost" size="sm" onClick={undo} disabled={historyIndex <= 0} title={t('toolbar.undo')}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={undo}
+          disabled={historyIndex <= 0}
+          title={t('toolbar.undo')}
+        >
           <Undo2 className="h-4 w-4" />
         </Button>
         <Button
@@ -245,7 +256,12 @@ export function LightboxToolbar({
           <Grid3x3 className="h-4 w-4" />
         </Button>
         {onAddStickyNote && (
-          <Button variant="ghost" size="sm" onClick={onAddStickyNote} title={t('toolbar.addStickyNote')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onAddStickyNote}
+            title={t('toolbar.addStickyNote')}
+          >
             <StickyNote className="h-4 w-4" />
           </Button>
         )}
@@ -262,17 +278,32 @@ export function LightboxToolbar({
           </Button>
         )}
         {onToggleMinimap && (
-          <Button variant="ghost" size="sm" onClick={onToggleMinimap} title={t('toolbar.toggleMinimap')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleMinimap}
+            title={t('toolbar.toggleMinimap')}
+          >
             <Map className="h-4 w-4" />
           </Button>
         )}
         {onToggleMeasurement && (
-          <Button variant="ghost" size="sm" onClick={onToggleMeasurement} title={t('toolbar.measurement')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleMeasurement}
+            title={t('toolbar.measurement')}
+          >
             <Ruler className="h-4 w-4" />
           </Button>
         )}
         {onToggleComparison && hasSelection && selectedImages.length >= 2 && (
-          <Button variant="ghost" size="sm" onClick={onToggleComparison} title={t('toolbar.compareImages')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleComparison}
+            title={t('toolbar.compareImages')}
+          >
             <Split className="h-4 w-4" />
           </Button>
         )}
@@ -306,7 +337,12 @@ export function LightboxToolbar({
         >
           <Maximize2 className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="sm" title={t('toolbar.help')} onClick={() => setHelpOpen(true)}>
+        <Button
+          variant="ghost"
+          size="sm"
+          title={t('toolbar.help')}
+          onClick={() => setHelpOpen(true)}
+        >
           <CircleHelp className="h-4 w-4" />
         </Button>
       </div>

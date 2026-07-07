@@ -140,7 +140,9 @@ export function CarouselImagePickerDialog({
                       {t('carousel.imagesLabel')}
                     </p>
                     {images.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">{t('carousel.noImagesInFolder')}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t('carousel.noImagesInFolder')}
+                      </p>
                     ) : (
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         {images.map((image) => (

@@ -122,7 +122,8 @@ export function SearchActionsMenu({
           {viewItem('table', t('viewTable'))}
           {showGridToggle && viewItem('grid', t('viewGrid'))}
           {showTimelineToggle && viewItem('timeline', t('viewTimeline'), !hasTimelineData)}
-          {showDistributionToggle && viewItem('distribution', t('viewCharts'), !distributionEnabled)}
+          {showDistributionToggle &&
+            viewItem('distribution', t('viewCharts'), !distributionEnabled)}
           {showMapToggle && viewItem('map', t('viewMap'))}
         </div>
         <DropdownMenuSeparator />

@@ -315,9 +315,7 @@ export function CollectionManagerControls() {
           <form onSubmit={handleCreate}>
             <DialogHeader>
               <DialogTitle>{t('manager.createTitle')}</DialogTitle>
-              <DialogDescription>
-                {t('manager.createDesc')}
-              </DialogDescription>
+              <DialogDescription>{t('manager.createDesc')}</DialogDescription>
             </DialogHeader>
             <div className="px-5 py-5">
               <Label htmlFor="new-collection-name">{t('manager.collectionName')}</Label>
@@ -373,9 +371,7 @@ export function CollectionManagerControls() {
           <form onSubmit={handleDuplicate}>
             <DialogHeader>
               <DialogTitle>{t('manager.duplicateTitle')}</DialogTitle>
-              <DialogDescription>
-                {t('manager.duplicateDesc')}
-              </DialogDescription>
+              <DialogDescription>{t('manager.duplicateDesc')}</DialogDescription>
             </DialogHeader>
             <div className="px-5 py-5">
               <Label htmlFor="duplicate-collection-name">{t('manager.newCollectionName')}</Label>
@@ -402,9 +398,7 @@ export function CollectionManagerControls() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{t('manager.deleteTitle', { name: activeCollection.name })}</DialogTitle>
-            <DialogDescription>
-              {t('manager.deleteDesc')}
-            </DialogDescription>
+            <DialogDescription>{t('manager.deleteDesc')}</DialogDescription>
           </DialogHeader>
           <DialogFooter className="pt-5">
             <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)}>

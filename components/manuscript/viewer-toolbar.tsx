@@ -123,7 +123,9 @@ export function ViewerToolbar({
         <ToolbarButton
           icon={LaptopMinimal}
           label={isFullScreen ? t('toolbar.exitFullScreen') : t('toolbar.fullScreen')}
-          tooltip={isFullScreen ? t('toolbar.exitFullScreenTooltip') : t('toolbar.fullScreenTooltip')}
+          tooltip={
+            isFullScreen ? t('toolbar.exitFullScreenTooltip') : t('toolbar.fullScreenTooltip')
+          }
           keyshortcuts="F Shift+F"
           active={isFullScreen}
           onClick={onToggleFullScreen}
@@ -153,7 +155,12 @@ export function ViewerToolbar({
           onClick={onZoomOut}
         />
 
-        <ToolbarButton icon={RefreshCcw} label={t('toolbar.refresh')} keyshortcuts="Home" onClick={onRefresh} />
+        <ToolbarButton
+          icon={RefreshCcw}
+          label={t('toolbar.refresh')}
+          keyshortcuts="Home"
+          onClick={onRefresh}
+        />
 
         {!textOnlyMode && canCreateEditorialAnnotations && (
           <ToolbarButton

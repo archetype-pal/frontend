@@ -87,9 +87,7 @@ export function ShareCollectionButton({ collection }: { collection: NamedCollect
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{t('share.dialogTitle', { name: collection.name })}</DialogTitle>
-            <DialogDescription>
-              {t('share.dialogDesc')}
-            </DialogDescription>
+            <DialogDescription>{t('share.dialogDesc')}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 px-5 py-5">
@@ -129,9 +127,7 @@ export function ShareCollectionButton({ collection }: { collection: NamedCollect
                   </p>
                 ) : null}
                 {shareableItems.length === 0 ? (
-                  <p className="text-xs text-destructive">
-                    {t('share.noShareableItems')}
-                  </p>
+                  <p className="text-xs text-destructive">{t('share.noShareableItems')}</p>
                 ) : null}
               </>
             )}

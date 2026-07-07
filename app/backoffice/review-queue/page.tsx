@@ -41,9 +41,7 @@ export default function ReviewQueuePage() {
 
   if (!token) {
     return (
-      <div className="px-6 py-8 text-sm text-muted-foreground">
-        {t('reviewQueue.signInPrompt')}
-      </div>
+      <div className="px-6 py-8 text-sm text-muted-foreground">{t('reviewQueue.signInPrompt')}</div>
     );
   }
   if (isLoading) {
@@ -148,9 +146,7 @@ function ReviewRow({
             disabled={approve.isPending}
             className="h-7"
           >
-            {approve.isPending
-              ? t('reviewQueue.approvingButton')
-              : t('reviewQueue.approveButton')}
+            {approve.isPending ? t('reviewQueue.approvingButton') : t('reviewQueue.approveButton')}
           </Button>
           <input
             type="text"

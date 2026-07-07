@@ -37,9 +37,21 @@ export default function RepositoriesPage() {
       pluralLabel={t('repositories.pluralLabel')}
       searchColumn="name"
       fields={[
-        { key: 'name', label: t('repositories.fieldName'), placeholder: t('repositories.fieldNamePlaceholder') },
-        { key: 'label', label: t('repositories.fieldLabel'), placeholder: t('repositories.fieldLabelPlaceholder') },
-        { key: 'place', label: t('repositories.fieldPlace'), placeholder: t('repositories.fieldPlacePlaceholder') },
+        {
+          key: 'name',
+          label: t('repositories.fieldName'),
+          placeholder: t('repositories.fieldNamePlaceholder'),
+        },
+        {
+          key: 'label',
+          label: t('repositories.fieldLabel'),
+          placeholder: t('repositories.fieldLabelPlaceholder'),
+        },
+        {
+          key: 'place',
+          label: t('repositories.fieldPlace'),
+          placeholder: t('repositories.fieldPlacePlaceholder'),
+        },
       ]}
       deleteDescription={t('repositories.deleteDescription')}
     />

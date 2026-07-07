@@ -42,7 +42,13 @@ export function ViewSwitcher({
   const options = (
     [
       { mode: 'table', label: t('viewTable'), Icon: Table, show: true, disabled: false },
-      { mode: 'grid', label: t('viewGrid'), Icon: LayoutGrid, show: showGridToggle, disabled: false },
+      {
+        mode: 'grid',
+        label: t('viewGrid'),
+        Icon: LayoutGrid,
+        show: showGridToggle,
+        disabled: false,
+      },
       {
         mode: 'timeline',
         label: t('viewTimeline'),

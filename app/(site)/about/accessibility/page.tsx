@@ -42,9 +42,7 @@ export default async function AccessibilityStatement() {
           </section>
 
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-3">
-              {t('accessibility.feedbackAndContact')}
-            </h2>
+            <h2 className="text-xl font-semibold mb-3">{t('accessibility.feedbackAndContact')}</h2>
             <p className="mb-4">
               If you have difficulty using any part of this site or have suggestions for
               improvement, please contact us. We will do our best to respond and to make the site

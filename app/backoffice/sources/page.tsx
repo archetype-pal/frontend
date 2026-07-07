@@ -31,8 +31,17 @@ export default function SourcesPage() {
       pluralLabel={t('sources.pluralLabel')}
       searchColumn="name"
       fields={[
-        { key: 'name', label: t('sources.fieldName'), placeholder: t('sources.fieldNamePlaceholder') },
-        { key: 'label', label: t('sources.fieldLabel'), placeholder: t('sources.fieldLabelPlaceholder'), tableSize: 150 },
+        {
+          key: 'name',
+          label: t('sources.fieldName'),
+          placeholder: t('sources.fieldNamePlaceholder'),
+        },
+        {
+          key: 'label',
+          label: t('sources.fieldLabel'),
+          placeholder: t('sources.fieldLabelPlaceholder'),
+          tableSize: 150,
+        },
       ]}
       deleteDescription={t('sources.deleteDescription')}
     />

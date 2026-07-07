@@ -145,7 +145,8 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
       queryClient.removeQueries({ queryKey: backofficeKeys.imageTexts.detail(textId) });
       router.push('/backoffice/texts');
     },
-    onError: (err) => toast.error(t('imageTexts.toastDeleteFailed'), { description: formatApiError(err) }),
+    onError: (err) =>
+      toast.error(t('imageTexts.toastDeleteFailed'), { description: formatApiError(err) }),
   });
 
   useKeyboardShortcut(
@@ -429,7 +430,9 @@ function TransitionAction({
               setOpen(false);
             }}
           >
-            {pending ? t('imageTexts.transitionSaving') : t('imageTexts.transitionApply', { target })}
+            {pending
+              ? t('imageTexts.transitionSaving')
+              : t('imageTexts.transitionApply', { target })}
           </Button>
         </div>
       </PopoverContent>

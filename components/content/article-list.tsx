@@ -40,12 +40,7 @@ const formatDate = (value: string) => {
   });
 };
 
-export default function ArticleList({
-  title,
-  articles = [],
-  moreLink,
-  limit,
-}: ArticleListProps) {
+export default function ArticleList({ title, articles = [], moreLink, limit }: ArticleListProps) {
   const t = useTranslations('content');
   const resolvedTitle = title ?? t('blog.defaultTitle');
   const displayed = typeof limit === 'number' ? articles.slice(0, limit) : articles;

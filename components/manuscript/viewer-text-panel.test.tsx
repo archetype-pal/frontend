@@ -40,8 +40,8 @@ const baseProps = {
 // injected stylesheet targets the linked span, since jsdom can't resolve the
 // computed background from the CSS itself.
 const hoverStyle = () =>
-  document.head.querySelector<HTMLStyleElement>('style[data-viewer-hover-highlight]')?.textContent ??
-  '';
+  document.head.querySelector<HTMLStyleElement>('style[data-viewer-hover-highlight]')
+    ?.textContent ?? '';
 
 describe('ViewerTextPanel — region hover → text highlight', () => {
   it('injects a stylesheet targeting the linked phrase while its region is hovered', () => {

@@ -15,13 +15,7 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-function ErrorFallbackUI({
-  error,
-  onReset,
-}: {
-  error: Error | null;
-  onReset: () => void;
-}) {
+function ErrorFallbackUI({ error, onReset }: { error: Error | null; onReset: () => void }) {
   const t = useTranslations('backoffice');
   return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 px-4">
@@ -30,9 +24,7 @@ function ErrorFallbackUI({
       </div>
       <div className="text-center space-y-1.5">
         <h2 className="text-lg font-semibold">{t('errorBoundary.title')}</h2>
-        <p className="text-sm text-muted-foreground max-w-md">
-          {t('errorBoundary.description')}
-        </p>
+        <p className="text-sm text-muted-foreground max-w-md">{t('errorBoundary.description')}</p>
       </div>
       {error && (
         <details className="max-w-lg w-full">

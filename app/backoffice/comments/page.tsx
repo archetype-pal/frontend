@@ -140,7 +140,9 @@ export default function CommentsPage() {
         <MessageSquare className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t('comments.title')}</h1>
-          <p className="text-sm text-muted-foreground">{t('comments.subtitle', { count: data?.length ?? 0 })}</p>
+          <p className="text-sm text-muted-foreground">
+            {t('comments.subtitle', { count: data?.length ?? 0 })}
+          </p>
         </div>
       </div>
 
@@ -172,7 +174,9 @@ export default function CommentsPage() {
       {/* Bulk actions bar */}
       {selected.size > 0 && (
         <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-2">
-          <span className="text-sm font-medium">{t('comments.selectedCount', { count: selected.size })}</span>
+          <span className="text-sm font-medium">
+            {t('comments.selectedCount', { count: selected.size })}
+          </span>
           <div className="ml-auto flex items-center gap-2">
             <Button
               variant="outline"
@@ -228,7 +232,9 @@ export default function CommentsPage() {
               onCheckedChange={toggleSelectAll}
               aria-label="Select all"
             />
-            <span className="text-xs text-muted-foreground">{t('comments.selectAll', { count: comments.length })}</span>
+            <span className="text-xs text-muted-foreground">
+              {t('comments.selectAll', { count: comments.length })}
+            </span>
           </div>
         )}
         {isError ? (
@@ -332,7 +338,8 @@ export default function CommentsPage() {
           }
         }}
         title={t('comments.bulkConfirmTitle', {
-          action: bulkAction === 'delete' ? 'Delete' : bulkAction === 'approve' ? 'Approve' : 'Reject',
+          action:
+            bulkAction === 'delete' ? 'Delete' : bulkAction === 'approve' ? 'Approve' : 'Reject',
           count: selected.size,
         })}
         description={

@@ -55,25 +55,56 @@ export function LightboxHelpDialog({ open, onOpenChange }: LightboxHelpDialogPro
     {
       title: t('help.sectionZoom'),
       entries: [
-        { icon: ZoomOut, label: t('help.zoomOutLabel'), description: t('help.zoomOutDesc'), shortcut: 'Ctrl + -' },
-        { icon: ZoomIn, label: t('help.zoomInLabel'), description: t('help.zoomInDesc'), shortcut: 'Ctrl + +' },
+        {
+          icon: ZoomOut,
+          label: t('help.zoomOutLabel'),
+          description: t('help.zoomOutDesc'),
+          shortcut: 'Ctrl + -',
+        },
+        {
+          icon: ZoomIn,
+          label: t('help.zoomInLabel'),
+          description: t('help.zoomInDesc'),
+          shortcut: 'Ctrl + +',
+        },
       ],
     },
     {
       title: t('help.sectionTransform'),
       entries: [
-        { icon: RotateCw, label: t('help.rotateLabel'), description: t('help.rotateDesc'), shortcut: 'R' },
-        { icon: FlipHorizontal, label: t('help.flipHorizontalLabel'), description: t('help.flipHorizontalDesc') },
-        { icon: FlipVertical, label: t('help.flipVerticalLabel'), description: t('help.flipVerticalDesc') },
+        {
+          icon: RotateCw,
+          label: t('help.rotateLabel'),
+          description: t('help.rotateDesc'),
+          shortcut: 'R',
+        },
+        {
+          icon: FlipHorizontal,
+          label: t('help.flipHorizontalLabel'),
+          description: t('help.flipHorizontalDesc'),
+        },
+        {
+          icon: FlipVertical,
+          label: t('help.flipVerticalLabel'),
+          description: t('help.flipVerticalDesc'),
+        },
       ],
     },
     {
       title: t('help.sectionLayerOrder'),
       entries: [
-        { icon: ArrowUpToLine, label: t('help.bringToFrontLabel'), description: t('help.bringToFrontDesc') },
+        {
+          icon: ArrowUpToLine,
+          label: t('help.bringToFrontLabel'),
+          description: t('help.bringToFrontDesc'),
+        },
         { icon: ChevronUp, label: t('help.moveUpLabel'), description: t('help.moveUpDesc') },
         { icon: ChevronDown, label: t('help.moveDownLabel'), description: t('help.moveDownDesc') },
-        { icon: ArrowDownToLine, label: t('help.sendToBackLabel'), description: t('help.sendToBackDesc') },
+        {
+          icon: ArrowDownToLine,
+          label: t('help.sendToBackLabel'),
+          description: t('help.sendToBackDesc'),
+        },
       ],
     },
     {
@@ -81,30 +112,64 @@ export function LightboxHelpDialog({ open, onOpenChange }: LightboxHelpDialogPro
       entries: [
         { icon: Crop, label: t('help.cropLabel'), description: t('help.cropDesc') },
         { icon: Ruler, label: t('help.measurementLabel'), description: t('help.measurementDesc') },
-        { icon: MessageSquare, label: t('help.annotationsLabel'), description: t('help.annotationsDesc') },
-        { icon: StickyNote, label: t('help.stickyNoteLabel'), description: t('help.stickyNoteDesc') },
+        {
+          icon: MessageSquare,
+          label: t('help.annotationsLabel'),
+          description: t('help.annotationsDesc'),
+        },
+        {
+          icon: StickyNote,
+          label: t('help.stickyNoteLabel'),
+          description: t('help.stickyNoteDesc'),
+        },
       ],
     },
     {
       title: t('help.sectionView'),
       entries: [
-        { icon: Grid3x3, label: t('help.toggleGridHelpLabel'), description: t('help.toggleGridHelpDesc') },
+        {
+          icon: Grid3x3,
+          label: t('help.toggleGridHelpLabel'),
+          description: t('help.toggleGridHelpDesc'),
+        },
         { icon: Map, label: t('help.minimapLabel'), description: t('help.minimapDesc') },
-        { icon: Maximize2, label: t('help.fullscreenLabel'), description: t('help.fullscreenDesc') },
+        {
+          icon: Maximize2,
+          label: t('help.fullscreenLabel'),
+          description: t('help.fullscreenDesc'),
+        },
       ],
     },
     {
       title: t('help.sectionCompare'),
       entries: [
-        { icon: Split, label: t('help.compareImagesLabel'), description: t('help.compareImagesDesc') },
-        { icon: Layers, label: t('help.compareRegionsLabel'), description: t('help.compareRegionsDesc') },
+        {
+          icon: Split,
+          label: t('help.compareImagesLabel'),
+          description: t('help.compareImagesDesc'),
+        },
+        {
+          icon: Layers,
+          label: t('help.compareRegionsLabel'),
+          description: t('help.compareRegionsDesc'),
+        },
       ],
     },
     {
       title: t('help.sectionHistory'),
       entries: [
-        { icon: Undo2, label: t('help.undoLabel'), description: t('help.undoDesc'), shortcut: 'Ctrl + Z' },
-        { icon: Redo2, label: t('help.redoLabel'), description: t('help.redoDesc'), shortcut: 'Ctrl + Y' },
+        {
+          icon: Undo2,
+          label: t('help.undoLabel'),
+          description: t('help.undoDesc'),
+          shortcut: 'Ctrl + Z',
+        },
+        {
+          icon: Redo2,
+          label: t('help.redoLabel'),
+          description: t('help.redoDesc'),
+          shortcut: 'Ctrl + Y',
+        },
       ],
     },
     {
@@ -193,9 +258,7 @@ export function LightboxHelpDialog({ open, onOpenChange }: LightboxHelpDialogPro
                 <li>{t('help.tip1')}</li>
                 <li>{t('help.tip2')}</li>
                 <li>{t('help.tip3')}</li>
-                <li>
-                  {t('help.tip4')}
-                </li>
+                <li>{t('help.tip4')}</li>
                 <li>{t('help.tip5')}</li>
               </ul>
             </div>

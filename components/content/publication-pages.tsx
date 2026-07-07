@@ -34,7 +34,11 @@ export async function PublicationListPage({ kind }: { kind: PublicationKind }) {
   const title = t(`publicationKinds.${kind}.title`);
   return (
     <Suspense fallback={<PageLoadingState label={t('blog.loadingPublications')} />}>
-      <PaginatedPublications title={title} categoryFlag={config.queryFlag} basePath={config.routeBase} />
+      <PaginatedPublications
+        title={title}
+        categoryFlag={config.queryFlag}
+        basePath={config.routeBase}
+      />
     </Suspense>
   );
 }

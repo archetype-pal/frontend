@@ -357,9 +357,7 @@ export function AnnotationHeader({
                 <Plus className="absolute -right-1 -top-1 h-3 w-3" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              {t('header.createAnnotationCollection')}
-            </TooltipContent>
+            <TooltipContent>{t('header.createAnnotationCollection')}</TooltipContent>
           </Tooltip>
 
           {showSettingsButton && (

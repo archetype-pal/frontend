@@ -64,13 +64,11 @@ export default async function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
           {/* About column */}
           <div className="space-y-3">
-            <h2 className="font-serif text-lg font-semibold tracking-tight">{getLabel('siteTitle')}</h2>
-            <p className="text-sm text-primary-foreground/85 leading-relaxed">
-              {t('about')}
-            </p>
-            <p className="text-sm text-primary-foreground/85">
-              {getLabel('footerFunded')}
-            </p>
+            <h2 className="font-serif text-lg font-semibold tracking-tight">
+              {getLabel('siteTitle')}
+            </h2>
+            <p className="text-sm text-primary-foreground/85 leading-relaxed">{t('about')}</p>
+            <p className="text-sm text-primary-foreground/85">{getLabel('footerFunded')}</p>
           </div>
 
           {/* Links column */}

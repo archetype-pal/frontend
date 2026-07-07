@@ -258,9 +258,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
                 {tCommon('save')}
               </Button>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t('session.savedLocally')}
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{t('session.savedLocally')}</p>
           </div>
 
           {/* Load Sessions */}
@@ -339,8 +337,10 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
                           <div className="min-w-0 flex-1">
                             <div className="truncate font-medium">{workset.title}</div>
                             <div className="text-sm text-muted-foreground">
-                              {isPublic ? t('session.visibilityPublic') : t('session.visibilityPrivate')} •{' '}
-                              {new Date(workset.updated_at).toLocaleDateString()}
+                              {isPublic
+                                ? t('session.visibilityPublic')
+                                : t('session.visibilityPrivate')}{' '}
+                              • {new Date(workset.updated_at).toLocaleDateString()}
                             </div>
                           </div>
                           <div className="flex items-center gap-1">
@@ -363,7 +363,9 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
                               onClick={() => handleShare(workset)}
                               disabled={!isPublic}
                               title={
-                                isPublic ? t('session.copyShareableLink') : t('session.makePublicToShare')
+                                isPublic
+                                  ? t('session.copyShareableLink')
+                                  : t('session.makePublicToShare')
                               }
                             >
                               <Link2 className="h-4 w-4" />

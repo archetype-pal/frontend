@@ -72,7 +72,9 @@ export function WorksetViewerClient({ workset }: { workset: WorksetDetail }) {
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-semibold">{workset.title}</h1>
-          <p className="text-sm text-muted-foreground">{t('workset.sharedBy', { owner: ownerName })}</p>
+          <p className="text-sm text-muted-foreground">
+            {t('workset.sharedBy', { owner: ownerName })}
+          </p>
           {workset.description ? (
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{workset.description}</p>
           ) : null}

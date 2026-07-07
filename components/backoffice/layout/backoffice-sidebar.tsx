@@ -57,7 +57,6 @@ interface NavGroup {
   subGroups?: NavSubGroup[];
 }
 
-
 interface BackofficeSidebarProps {
   collapsed: boolean;
 }
@@ -86,8 +85,16 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
             label: t('sidebar.supportingData'),
             defaultOpen: true,
             items: [
-              { label: t('sidebar.physicalVolumes'), href: '/backoffice/physical-volumes', icon: Archive },
-              { label: t('sidebar.repositories'), href: '/backoffice/repositories', icon: Landmark },
+              {
+                label: t('sidebar.physicalVolumes'),
+                href: '/backoffice/physical-volumes',
+                icon: Archive,
+              },
+              {
+                label: t('sidebar.repositories'),
+                href: '/backoffice/repositories',
+                icon: Landmark,
+              },
               { label: getPluralLabel('date'), href: '/backoffice/dates', icon: Hash },
               { label: t('sidebar.formats'), href: '/backoffice/formats', icon: Library },
               { label: t('sidebar.sources'), href: '/backoffice/sources', icon: Database },
@@ -251,7 +258,11 @@ function CollapsibleSubGroup({
         type="button"
         onClick={toggle}
         aria-expanded={open}
-        aria-label={open ? t('sidebar.subGroupCollapse', { label: subGroup.label }) : t('sidebar.subGroupExpand', { label: subGroup.label })}
+        aria-label={
+          open
+            ? t('sidebar.subGroupCollapse', { label: subGroup.label })
+            : t('sidebar.subGroupExpand', { label: subGroup.label })
+        }
         className="flex w-full items-center gap-1.5 px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70 hover:text-muted-foreground transition-colors"
       >
         {open ? (

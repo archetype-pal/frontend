@@ -343,9 +343,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Draft">{t('publicationsDetail.statusDraft')}</SelectItem>
-                <SelectItem value="Published">
-                  {t('publicationsDetail.statusPublished')}
-                </SelectItem>
+                <SelectItem value="Published">{t('publicationsDetail.statusPublished')}</SelectItem>
               </SelectContent>
             </Select>
           </div>

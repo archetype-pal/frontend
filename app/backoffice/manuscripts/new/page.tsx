@@ -167,9 +167,12 @@ export default function NewManuscriptPage() {
       router.push(`/backoffice/manuscripts/${data.id}`);
     },
     onError: (err) => {
-      toast.error(t('manuscriptsNew.toastFailedCreate', { label: historicalItemLabel.toLowerCase() }), {
-        description: formatApiError(err),
-      });
+      toast.error(
+        t('manuscriptsNew.toastFailedCreate', { label: historicalItemLabel.toLowerCase() }),
+        {
+          description: formatApiError(err),
+        }
+      );
     },
   });
 
@@ -184,7 +187,9 @@ export default function NewManuscriptPage() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <h1 className="text-xl font-semibold">{t('manuscriptsNew.pageTitle', { label: historicalItemLabel })}</h1>
+        <h1 className="text-xl font-semibold">
+          {t('manuscriptsNew.pageTitle', { label: historicalItemLabel })}
+        </h1>
       </div>
 
       {/* Section 1: Physical Location */}
@@ -291,7 +296,10 @@ export default function NewManuscriptPage() {
 
           <div className="space-y-1.5">
             <FieldLabel helpField="manuscript.date">
-              {dateLabel} <span className="text-muted-foreground font-normal">{t('manuscriptsNew.fieldDate')}</span>
+              {dateLabel}{' '}
+              <span className="text-muted-foreground font-normal">
+                {t('manuscriptsNew.fieldDate')}
+              </span>
             </FieldLabel>
             <Select value={date} onValueChange={setDate}>
               <SelectTrigger>

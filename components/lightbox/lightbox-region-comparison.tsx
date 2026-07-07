@@ -46,9 +46,7 @@ export function LightboxRegionComparison({ onClose }: LightboxRegionComparisonPr
       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-xl p-6 max-w-md">
           <h3 className="text-lg font-semibold mb-2">{t('regionComparison.title')}</h3>
-          <p className="text-muted-foreground mb-4">
-            {t('regionComparison.noRegionsFound')}
-          </p>
+          <p className="text-muted-foreground mb-4">{t('regionComparison.noRegionsFound')}</p>
           <Button onClick={onClose}>{t('regionComparison.close')}</Button>
         </div>
       </div>

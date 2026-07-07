@@ -290,7 +290,9 @@ export default function BackofficeDashboardPage() {
 
       {/* Quick Access */}
       <div>
-        <h2 className="text-sm font-medium text-muted-foreground mb-3">{t('dashboard.quickAccess')}</h2>
+        <h2 className="text-sm font-medium text-muted-foreground mb-3">
+          {t('dashboard.quickAccess')}
+        </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <QuickAccessCard
             title={appManuscriptsLabel}
@@ -394,7 +396,9 @@ export default function BackofficeDashboardPage() {
       {/* Quick Create */}
       <div className="flex items-center gap-3">
         <Plus className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium text-muted-foreground">{t('dashboard.quickCreate')}</span>
+        <span className="text-sm font-medium text-muted-foreground">
+          {t('dashboard.quickCreate')}
+        </span>
         <Link href="/backoffice/manuscripts/new">
           <Button variant="outline" size="sm" className="gap-1.5">
             <BookOpen className="h-3.5 w-3.5" />

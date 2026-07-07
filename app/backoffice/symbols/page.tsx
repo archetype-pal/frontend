@@ -126,9 +126,7 @@ export default function SymbolsPage() {
                       <span className="font-medium text-foreground">{t('symbols.step1Title')}</span>
                       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {t('symbols.step1Desc')}
-                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">{t('symbols.step1Desc')}</p>
                     <p className="text-xs text-muted-foreground mt-2">
                       {t('symbols.step1Count', { count: (components.data ?? []).length })}
                     </p>
@@ -148,9 +146,7 @@ export default function SymbolsPage() {
                       <span className="font-medium text-foreground">{t('symbols.step2Title')}</span>
                       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {t('symbols.step2Desc')}
-                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">{t('symbols.step2Desc')}</p>
                     <p className="text-xs text-muted-foreground mt-2">
                       {t('symbols.step2Count', { count: (features.data ?? []).length })}
                     </p>
@@ -170,9 +166,7 @@ export default function SymbolsPage() {
                       <span className="font-medium text-foreground">{t('symbols.step3Title')}</span>
                       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {t('symbols.step3Desc')}
-                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">{t('symbols.step3Desc')}</p>
                     <p className="text-xs text-muted-foreground mt-2">
                       {t('symbols.step3Count', { count: (characters.data ?? []).length })}
                     </p>
@@ -186,9 +180,7 @@ export default function SymbolsPage() {
             <div className="text-center space-y-4">
               <Type className="h-12 w-12 mx-auto text-muted-foreground/50" />
               <div className="space-y-2">
-                <p className="text-lg font-medium text-foreground">
-                  {t('symbols.editorTitle')}
-                </p>
+                <p className="text-lg font-medium text-foreground">{t('symbols.editorTitle')}</p>
                 <p className="text-sm text-muted-foreground max-w-sm mx-auto">
                   {t('symbols.editorDesc')}
                 </p>
