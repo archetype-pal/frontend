@@ -146,7 +146,7 @@ describe('ManuscriptViewer smoke test', () => {
     fetchBaseData.mockRejectedValueOnce(new Error('boom'));
     render(<ManuscriptViewer imageId="4432" mode="public" />);
     expect(await screen.findByText('boom')).toBeTruthy();
-    expect(await screen.findByRole('button', { name: 'Try Again' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
   });
 
   it('opens an annotation popup when the viewer fires onSelect (event→popup wiring)', async () => {

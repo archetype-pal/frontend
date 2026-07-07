@@ -228,6 +228,67 @@
       "viewText": "Text",
       "viewBoth": "Both",
       "noTextRecorded": "No text recorded for this image"
+    },
+    "popup": {
+      "shell": {
+        "unsavedDraft": "Unsaved draft",
+        "temporaryAnnotation": "Temporary annotation",
+        "savedAnnotation": "Saved annotation",
+        "saveAnnotation": "Save Annotation",
+        "saveAnnotationShortcut": "Save Annotation (s)",
+        "deleteAnnotation": "Delete Annotation",
+        "shareUrl": "Share URL",
+        "closePopupAriaLabel": "Close annotation popup",
+        "close": "Close",
+        "copy": "Copy",
+        "hideUrl": "Hide URL"
+      },
+      "editor": {
+        "allograph": "Allograph",
+        "chooseAllograph": "Choose an allograph",
+        "searchAllographs": "Search allographs...",
+        "noAllographsFound": "No allographs found.",
+        "hand": "Hand",
+        "singleHandTitle": "The only hand recorded for this image",
+        "chooseHand": "Choose a hand",
+        "selectedCount": "{count} selected",
+        "noneSelected": "None selected",
+        "choosePositionsHint": "Choose an allograph to load the related {positions}.",
+        "noAllographData": "No allograph data available.",
+        "noPositionsDefined": "No {positions} are defined for this allograph.",
+        "notes": "Notes",
+        "typeNote": "Type note",
+        "cancel": "Cancel",
+        "discard": "Discard",
+        "ok": "OK",
+        "components": "Components",
+        "chooseComponentsHint": "Choose an allograph to load the related components and features.",
+        "noComponentsDefined": "No components are defined for this allograph.",
+        "featuresSelectedOf": " / {total} selected",
+        "featuresDefaultCount": " · {count} default",
+        "noFeaturesAvailable": "No features available",
+        "checkAll": "Check all",
+        "uncheckAll": "Uncheck all",
+        "noDefaultFeatures": "No default features are defined for this component",
+        "checkDefaultsHint": "Select only the default features for this component",
+        "checkDefaults": "Check defaults",
+        "default": "default",
+        "noSelectableFeatures": "This component has no selectable features.",
+        "tabDetails": "Details",
+        "localChangesHint": "Press OK to keep changes local for the main toolbar Save, or use Save Annotation (s) in this popup header to save immediately."
+      },
+      "metaSummary": {
+        "title": "Annotation details",
+        "type": "Type",
+        "allograph": "Allograph",
+        "hand": "Hand"
+      },
+      "readOnly": {
+        "noComponentsDefined": "No components defined.",
+        "noFeaturesSelected": "No features selected.",
+        "noPositionsDefined": "No positions defined.",
+        "componentsAndFeatures": "Components & features"
+      }
     }
   },
   "landing": {

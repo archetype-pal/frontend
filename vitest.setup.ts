@@ -15,7 +15,12 @@ vi.mock('next-intl', async (importOriginal) => {
   return {
     ...actual,
     useTranslations: (namespace?: string) =>
-      actual.createTranslator({ locale: 'en', messages, namespace, onError: () => {} }),
+      actual.createTranslator({
+        locale: 'en',
+        messages,
+        namespace: namespace as never,
+        onError: () => {},
+      }),
   };
 });
 

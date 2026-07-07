@@ -228,6 +228,67 @@
       "viewText": "Texte",
       "viewBoth": "Les deux",
       "noTextRecorded": "Aucun texte enregistré pour cette image"
+    },
+    "popup": {
+      "shell": {
+        "unsavedDraft": "Brouillon non enregistré",
+        "temporaryAnnotation": "Annotation temporaire",
+        "savedAnnotation": "Annotation enregistrée",
+        "saveAnnotation": "Enregistrer l'annotation",
+        "saveAnnotationShortcut": "Enregistrer l'annotation (s)",
+        "deleteAnnotation": "Supprimer l'annotation",
+        "shareUrl": "Partager l'URL",
+        "closePopupAriaLabel": "Fermer la fenêtre d'annotation",
+        "close": "Fermer",
+        "copy": "Copier",
+        "hideUrl": "Masquer l'URL"
+      },
+      "editor": {
+        "allograph": "Allographe",
+        "chooseAllograph": "Choisir un allographe",
+        "searchAllographs": "Rechercher des allographes...",
+        "noAllographsFound": "Aucun allographe trouvé.",
+        "hand": "Main",
+        "singleHandTitle": "La seule main enregistrée pour cette image",
+        "chooseHand": "Choisir une main",
+        "selectedCount": "{count} sélectionné(s)",
+        "noneSelected": "Aucune sélection",
+        "choosePositionsHint": "Choisissez un allographe pour charger les {positions} associées.",
+        "noAllographData": "Aucune donnée d'allographe disponible.",
+        "noPositionsDefined": "Aucune {positions} n'est définie pour cet allographe.",
+        "notes": "Notes",
+        "typeNote": "Saisir une note",
+        "cancel": "Annuler",
+        "discard": "Abandonner",
+        "ok": "OK",
+        "components": "Composants",
+        "chooseComponentsHint": "Choisissez un allographe pour charger les composants et caractéristiques associés.",
+        "noComponentsDefined": "Aucun composant n'est défini pour cet allographe.",
+        "featuresSelectedOf": " / {total} sélectionnée(s)",
+        "featuresDefaultCount": " · {count} par défaut",
+        "noFeaturesAvailable": "Aucune caractéristique disponible",
+        "checkAll": "Tout cocher",
+        "uncheckAll": "Tout décocher",
+        "noDefaultFeatures": "Aucune caractéristique par défaut n'est définie pour ce composant",
+        "checkDefaultsHint": "Sélectionner uniquement les caractéristiques par défaut de ce composant",
+        "checkDefaults": "Cocher les valeurs par défaut",
+        "default": "par défaut",
+        "noSelectableFeatures": "Ce composant n'a pas de caractéristique sélectionnable.",
+        "tabDetails": "Détails",
+        "localChangesHint": "Appuyez sur OK pour conserver les modifications localement pour l'enregistrement via la barre d'outils principale, ou utilisez Enregistrer l'annotation (s) dans l'en-tête de cette fenêtre pour enregistrer immédiatement."
+      },
+      "metaSummary": {
+        "title": "Détails de l'annotation",
+        "type": "Type",
+        "allograph": "Allographe",
+        "hand": "Main"
+      },
+      "readOnly": {
+        "noComponentsDefined": "Aucun composant défini.",
+        "noFeaturesSelected": "Aucune caractéristique sélectionnée.",
+        "noPositionsDefined": "Aucune position définie.",
+        "componentsAndFeatures": "Composants et caractéristiques"
+      }
     }
   },
   "landing": {
