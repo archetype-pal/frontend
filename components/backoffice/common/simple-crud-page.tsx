@@ -198,7 +198,7 @@ export function SimpleCrudPage<T extends { id: number }>({
     });
 
     return generated;
-  }, [fields, showIdColumn, updateMut, singularLabel]);
+  }, [fields, showIdColumn, updateMut, singularLabel, t]);
 
   if (isLoading) {
     return (

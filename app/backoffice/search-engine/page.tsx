@@ -180,7 +180,7 @@ export default function SearchEnginePage() {
     prevTaskStatesRef.current = Object.fromEntries(
       trackedTasks.filter((t) => t.status).map((t) => [t.taskId, t.status!.state])
     );
-  }, [trackedTasks, queryClient]);
+  }, [trackedTasks, queryClient, t]);
 
   // ── Action handlers ──────────────────────────────────────────
   const handlePerIndexAction = useCallback(

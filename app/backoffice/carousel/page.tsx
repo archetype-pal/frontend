@@ -195,7 +195,7 @@ export default function CarouselPage() {
         }
       });
     },
-    [items, token, queryClient, invalidate]
+    [items, token, queryClient, invalidate, t]
   );
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────

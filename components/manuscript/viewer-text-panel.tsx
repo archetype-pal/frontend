@@ -203,7 +203,7 @@ function TextEditor({
     } finally {
       setSaving(false);
     }
-  }, [token, text.id, text.type, value, onSaved]);
+  }, [token, text.id, text.type, value, onSaved, t]);
 
   React.useEffect(() => {
     onEditorState?.({ mode, richAvailable, linkTarget, dirty, save: handleSave });
