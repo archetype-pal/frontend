@@ -46,7 +46,14 @@ export async function PUT(request: NextRequest) {
   const config: ModelLabelsConfig = {
     labels: normalizeModelLabels((body as { labels?: unknown }).labels as Record<string, unknown>),
   };
-  await writeModelLabels(config);
+
+  let saved: ModelLabelsConfig;
+  try {
+    saved = await writeModelLabels(config, token);
+  } catch {
+    return NextResponse.json({ error: 'Failed to save labels' }, { status: 502 });
+  }
+
   revalidatePath('/', 'layout');
-  return NextResponse.json(config);
+  return NextResponse.json(saved);
 }
