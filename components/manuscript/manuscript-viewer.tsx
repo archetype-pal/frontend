@@ -508,8 +508,7 @@ export default function ManuscriptViewer({
     // A region clicked on the image stays highlighted until it's deselected, so
     // its link (in the Link bar) has a persistent visual anchor. Hover and the
     // allograph-filter layer their transient highlights on top of it.
-    const selectedRegionId =
-      selectedRegionGraphId != null ? `db:${selectedRegionGraphId}` : null;
+    const selectedRegionId = selectedRegionGraphId != null ? `db:${selectedRegionGraphId}` : null;
     const withSelectedRegion = (ids: string[]) =>
       selectedRegionId ? Array.from(new Set([selectedRegionId, ...ids])) : ids;
 
