@@ -331,6 +331,30 @@
       "recentSection": "Recent {title}",
       "backToList": "Back to list",
       "viewAll": "View all {title}"
+    },
+    "publicationKinds": {
+      "news": {
+        "title": "News",
+        "summaryLabel": "News"
+      },
+      "blogs": {
+        "title": "Blog",
+        "summaryLabel": "Blog Post"
+      },
+      "feature": {
+        "title": "Feature Articles",
+        "summaryLabel": "Feature Article"
+      }
+    },
+    "publicationsList": {
+      "noPostsFound": "No posts found.",
+      "prev": "← Prev",
+      "next": "Next →",
+      "recentPosts": "Recent Posts",
+      "postsByDate": "Posts by Date",
+      "selectMonth": "Select month",
+      "feeds": "Feeds",
+      "rssAtom": "RSS / Atom"
     }
   },
   "collection": {
@@ -423,6 +447,88 @@
       "toastLinkCopied": "Shareable link copied to clipboard",
       "toastCopyFailed": "Could not copy link",
       "toastCreateFailed": "Failed to create shareable link"
+    },
+    "page": {
+      "loading": "Loading...",
+      "loadingSharedCollection": "Loading shared collection...",
+      "sharedCollectionNotFoundTitle": "Shared collection not found",
+      "sharedCollectionNotFoundDesc": "This public collection link is invalid or incomplete.",
+      "sharedCollectionMissingDesc": "This public link is unavailable or no longer contains a collection snapshot.",
+      "sharedCollectionErrorTitle": "Could not load collection",
+      "sharedCollectionErrorDesc": "The public collection link could not be loaded. Please try again.",
+      "openYourCollection": "Open your collection",
+      "toastLocalCollectionsUnavailable": "Local collections are not available in this browser session.",
+      "toastSaveSharedCollectionFailed": "Could not save this shared collection.",
+      "toastSavedSharedCollection": "Saved {name} to your collections",
+      "emptySharedDesc": "This shared collection has no public items.",
+      "emptyLocalDesc": "Your collection is empty. Start adding images or graphs from search results and manuscript viewers by clicking the star icon.",
+      "browseImages": "Browse Images",
+      "browseGraphs": "Browse Graphs",
+      "noImage": "No Image",
+      "editorial": "Editorial",
+      "selectImage": "Select image {title}",
+      "selectGraph": "Select graph {title}",
+      "publicSharedCollection": "Public shared collection",
+      "itemCount": "{count, plural, =1 {1 item} other {{count} items}}",
+      "saved": "saved",
+      "saveCollectionCopy": "Save collection copy",
+      "clickAgainToConfirm": "Click again to confirm",
+      "clearAll": "Clear All",
+      "filterAll": "All",
+      "filterImages": "Images",
+      "filterGraphs": "Graphs",
+      "sortAdded": "Added",
+      "sortName": "Name",
+      "sortRepository": "Repository",
+      "groupGraphs": "Group graphs",
+      "groupNone": "No grouping",
+      "groupAllograph": "Allograph",
+      "groupHand": "Hand",
+      "groupManuscript": "Manuscript",
+      "viewGrid": "Grid",
+      "viewTable": "Table",
+      "showingOfItems": "Showing {shown} of {total} items",
+      "showMoreItems": "Show more items",
+      "showMoreOf": "Show more {title}",
+      "showingOfCount": "Showing {shown} of {total}",
+      "matchedCount": "{count, plural, =1 {1 item} other {{count} items}}",
+      "ofTotal": "of {total}",
+      "showingGroupOf": "Showing {shown} of {total}",
+      "groupItemCount": "{count, plural, =1 {1 item} other {{count} items}}",
+      "noItemsMatchFilter": "No {title} match the current filter.",
+      "sectionImages": "Images",
+      "sectionGraphs": "Graphs",
+      "sectionEditorialAnnotations": "Editorial Annotations",
+      "untitled": "Untitled"
+    }
+  },
+  "about": {
+    "sidebar": {
+      "heading": "About",
+      "historicalContext": "Historical Context",
+      "projectTeam": "Project Team",
+      "citeDatabase": "Cite {siteTitle}",
+      "talksAndPublications": "Talks and Publications",
+      "acknowledgements": "Acknowledgements",
+      "privacyPolicy": "Privacy Policy",
+      "accessibilityStatement": "Accessibility Statement",
+      "search": "Search",
+      "about": "About the Project"
+    },
+    "accessibilityTitle": "Accessibility Statement",
+    "accessibility": {
+      "ourCommitment": "Our Commitment",
+      "ourCommitmentBody": "The Models of Authority project is committed to making this website accessible to as many people as possible. We aim to meet the requirements of the Web Content Accessibility Guidelines (WCAG) 2.1 at Level AA where practicable.",
+      "standardsAndTechnologies": "Standards and Technologies",
+      "standardsAndTechnologiesBody": "This site is built with modern web technologies (HTML5, CSS, JavaScript) and is designed to work with current browsers and assistive technologies. We use semantic markup, descriptive link text, and appropriate heading structure to support navigation and screen readers.",
+      "knownLimitations": "Known Limitations",
+      "knownLimitationsBody": "Some areas of the site (for example, the manuscript image viewer and annotation tools) use third-party components that may have accessibility limitations. We continue to review and improve these where possible. PDF and image content from external repositories may not be fully optimised for accessibility.",
+      "feedbackAndContact": "Feedback and Contact",
+      "feedbackBody": "If you have difficulty using any part of this site or have suggestions for improvement, please contact us. We will do our best to respond and to make the site more accessible where we can.",
+      "contactBodyBefore": "The Models of Authority project is based at the University of Glasgow. You can find contact details on the",
+      "aboutLinkLabel": "About the Project",
+      "contactBodyAfter": " page.",
+      "lastUpdated": "This statement was last updated in February 2026."
     }
   },
   "lightbox": {
@@ -453,6 +559,12 @@
       "export": "Export",
       "fullscreen": "Fullscreen",
       "help": "Help"
+    },
+    "viewer": {
+      "noWorkspaceSelected": "No workspace selected",
+      "noWorkspaceSelectedSubtitle": "Select or create a workspace to start viewing images.",
+      "noImagesInWorkspace": "No images in this workspace",
+      "noImagesInWorkspaceSubtitle": "Add images from your collection to get started."
     },
     "help": {
       "title": "Lightbox Help",

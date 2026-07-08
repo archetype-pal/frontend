@@ -331,6 +331,30 @@
       "recentSection": "{title} récent(e)s",
       "backToList": "Retour à la liste",
       "viewAll": "Voir tous les {title}"
+    },
+    "publicationKinds": {
+      "news": {
+        "title": "Actualités",
+        "summaryLabel": "Actualité"
+      },
+      "blogs": {
+        "title": "Blog",
+        "summaryLabel": "Article de blog"
+      },
+      "feature": {
+        "title": "Articles de fond",
+        "summaryLabel": "Article de fond"
+      }
+    },
+    "publicationsList": {
+      "noPostsFound": "Aucun article trouvé.",
+      "prev": "← Précédent",
+      "next": "Suivant →",
+      "recentPosts": "Articles récents",
+      "postsByDate": "Articles par date",
+      "selectMonth": "Sélectionner un mois",
+      "feeds": "Flux",
+      "rssAtom": "RSS / Atom"
     }
   },
   "collection": {
@@ -423,6 +447,88 @@
       "toastLinkCopied": "Lien partageable copié dans le presse-papiers",
       "toastCopyFailed": "Impossible de copier le lien",
       "toastCreateFailed": "Échec de la création du lien partageable"
+    },
+    "page": {
+      "loading": "Chargement...",
+      "loadingSharedCollection": "Chargement de la collection partagée...",
+      "sharedCollectionNotFoundTitle": "Collection partagée introuvable",
+      "sharedCollectionNotFoundDesc": "Ce lien de collection publique est invalide ou incomplet.",
+      "sharedCollectionMissingDesc": "Ce lien public n'est pas disponible ou ne contient plus d'instantané de collection.",
+      "sharedCollectionErrorTitle": "Impossible de charger la collection",
+      "sharedCollectionErrorDesc": "Le lien de collection publique n'a pas pu être chargé. Veuillez réessayer.",
+      "openYourCollection": "Ouvrir votre collection",
+      "toastLocalCollectionsUnavailable": "Les collections locales ne sont pas disponibles dans cette session de navigateur.",
+      "toastSaveSharedCollectionFailed": "Impossible d'enregistrer cette collection partagée.",
+      "toastSavedSharedCollection": "{name} enregistrée dans vos collections",
+      "emptySharedDesc": "Cette collection partagée ne contient aucun élément public.",
+      "emptyLocalDesc": "Votre collection est vide. Commencez à ajouter des images ou des graphes depuis les résultats de recherche et les visionneuses de manuscrits en cliquant sur l'icône étoile.",
+      "browseImages": "Parcourir les images",
+      "browseGraphs": "Parcourir les graphes",
+      "noImage": "Aucune image",
+      "editorial": "Éditorial",
+      "selectImage": "Sélectionner l'image {title}",
+      "selectGraph": "Sélectionner le graphe {title}",
+      "publicSharedCollection": "Collection partagée publique",
+      "itemCount": "{count, plural, =1 {1 élément} other {{count} éléments}}",
+      "saved": "enregistrés",
+      "saveCollectionCopy": "Enregistrer une copie de la collection",
+      "clickAgainToConfirm": "Cliquez à nouveau pour confirmer",
+      "clearAll": "Tout effacer",
+      "filterAll": "Tous",
+      "filterImages": "Images",
+      "filterGraphs": "Graphes",
+      "sortAdded": "Ajouté",
+      "sortName": "Nom",
+      "sortRepository": "Dépôt",
+      "groupGraphs": "Grouper les graphes",
+      "groupNone": "Aucun groupement",
+      "groupAllograph": "Allographe",
+      "groupHand": "Main",
+      "groupManuscript": "Manuscrit",
+      "viewGrid": "Grille",
+      "viewTable": "Tableau",
+      "showingOfItems": "Affichage de {shown} sur {total} éléments",
+      "showMoreItems": "Afficher plus d'éléments",
+      "showMoreOf": "Afficher plus de {title}",
+      "showingOfCount": "Affichage de {shown} sur {total}",
+      "matchedCount": "{count, plural, =1 {1 élément} other {{count} éléments}}",
+      "ofTotal": "sur {total}",
+      "showingGroupOf": "Affichage de {shown} sur {total}",
+      "groupItemCount": "{count, plural, =1 {1 élément} other {{count} éléments}}",
+      "noItemsMatchFilter": "Aucun {title} ne correspond au filtre actuel.",
+      "sectionImages": "Images",
+      "sectionGraphs": "Graphes",
+      "sectionEditorialAnnotations": "Annotations éditoriales",
+      "untitled": "Sans titre"
+    }
+  },
+  "about": {
+    "sidebar": {
+      "heading": "À propos",
+      "historicalContext": "Contexte historique",
+      "projectTeam": "Équipe du projet",
+      "citeDatabase": "Citer {siteTitle}",
+      "talksAndPublications": "Conférences et publications",
+      "acknowledgements": "Remerciements",
+      "privacyPolicy": "Politique de confidentialité",
+      "accessibilityStatement": "Déclaration d'accessibilité",
+      "search": "Rechercher",
+      "about": "À propos du projet"
+    },
+    "accessibilityTitle": "Déclaration d'accessibilité",
+    "accessibility": {
+      "ourCommitment": "Notre engagement",
+      "ourCommitmentBody": "Le projet Models of Authority s'engage à rendre ce site accessible au plus grand nombre. Nous visons à respecter les exigences des Web Content Accessibility Guidelines (WCAG) 2.1 au niveau AA, dans la mesure du possible.",
+      "standardsAndTechnologies": "Normes et technologies",
+      "standardsAndTechnologiesBody": "Ce site est construit avec des technologies web modernes (HTML5, CSS, JavaScript) et conçu pour fonctionner avec les navigateurs actuels et les technologies d'assistance. Nous utilisons un balisage sémantique, des libellés de liens explicites et une structure de titres appropriée pour faciliter la navigation et l'utilisation des lecteurs d'écran.",
+      "knownLimitations": "Limitations connues",
+      "knownLimitationsBody": "Certaines parties du site (par exemple, la visionneuse d'images de manuscrits et les outils d'annotation) utilisent des composants tiers qui peuvent présenter des limitations d'accessibilité. Nous continuons à les examiner et à les améliorer autant que possible. Les contenus PDF et image provenant de dépôts externes peuvent ne pas être pleinement optimisés pour l'accessibilité.",
+      "feedbackAndContact": "Retours et contact",
+      "feedbackBody": "Si vous rencontrez des difficultés pour utiliser une partie de ce site ou si vous avez des suggestions d'amélioration, veuillez nous contacter. Nous ferons de notre mieux pour vous répondre et rendre le site plus accessible.",
+      "contactBodyBefore": "Le projet Models of Authority est basé à l'Université de Glasgow. Vous trouverez nos coordonnées sur la page",
+      "aboutLinkLabel": "À propos du projet",
+      "contactBodyAfter": ".",
+      "lastUpdated": "Cette déclaration a été mise à jour pour la dernière fois en février 2026."
     }
   },
   "lightbox": {
@@ -453,6 +559,12 @@
       "export": "Exporter",
       "fullscreen": "Plein écran",
       "help": "Aide"
+    },
+    "viewer": {
+      "noWorkspaceSelected": "Aucun espace de travail sélectionné",
+      "noWorkspaceSelectedSubtitle": "Sélectionnez ou créez un espace de travail pour commencer à visualiser des images.",
+      "noImagesInWorkspace": "Aucune image dans cet espace de travail",
+      "noImagesInWorkspaceSubtitle": "Ajoutez des images depuis votre collection pour commencer."
     },
     "help": {
       "title": "Aide Visionneuse",
