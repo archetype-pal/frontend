@@ -641,7 +641,7 @@
         "physicalVolumes": "Physical Volumes",
         "users": "Users",
         "searchEngine": "Search Engine",
-        "translations": "Translations",
+        "translations": "Labels customization",
         "siteFeatures": "Site Features",
         "new": "New"
       }
@@ -668,7 +668,7 @@
       "userManagement": "User Management",
       "searchEngine": "Search Engine",
       "dataQuality": "Data Quality",
-      "translations": "Translations",
+      "translations": "Labels customization",
       "siteFeatures": "Site Features",
       "subGroupExpand": "Expand {label}",
       "subGroupCollapse": "Collapse {label}"
@@ -739,7 +739,7 @@
       "comments": "Comments",
       "carousel": "Carousel",
       "searchEngine": "Search Engine",
-      "translationsNav": "Translations",
+      "translationsNav": "Labels customization",
       "siteFeatures": "Site Features",
       "newPublication": "New Publication",
       "moderateComments": "Moderate Comments"
@@ -1261,7 +1261,7 @@
       "taskFailed": "{label} failed"
     },
     "translations": {
-      "title": "Translations",
+      "title": "Labels customization",
       "subtitle": "Manage domain-specific labels used across the site.",
       "sectionGeneralTitle": "General configuration",
       "sectionGeneralDesc": "Site-wide branding shown in the header and footer, such as the site title, tagline, and footer text.",

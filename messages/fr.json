@@ -641,7 +641,7 @@
         "physicalVolumes": "Volumes physiques",
         "users": "Utilisateurs",
         "searchEngine": "Moteur de recherche",
-        "translations": "Traductions",
+        "translations": "Personnalisation des textes",
         "siteFeatures": "Fonctionnalités du site",
         "new": "Nouveau"
       }
@@ -668,7 +668,7 @@
       "userManagement": "Gestion des utilisateurs",
       "searchEngine": "Moteur de recherche",
       "dataQuality": "Qualité des données",
-      "translations": "Traductions",
+      "translations": "Personnalisation des textes",
       "siteFeatures": "Fonctionnalités du site",
       "subGroupExpand": "Développer {label}",
       "subGroupCollapse": "Réduire {label}"
@@ -739,7 +739,7 @@
       "comments": "Commentaires",
       "carousel": "Carrousel",
       "searchEngine": "Moteur de recherche",
-      "translationsNav": "Traductions",
+      "translationsNav": "Personnalisation des textes",
       "siteFeatures": "Fonctionnalités du site",
       "newPublication": "Nouvelle publication",
       "moderateComments": "Modérer les commentaires"
@@ -1261,7 +1261,7 @@
       "taskFailed": "{label} échouée"
     },
     "translations": {
-      "title": "Traductions",
+      "title": "Personnalisation des textes",
       "subtitle": "Gérer les libellés spécifiques au domaine utilisés sur le site.",
       "sectionGeneralTitle": "Configuration générale",
       "sectionGeneralDesc": "Éléments d'identité du site affichés dans l'en-tête et le pied de page, tels que le titre du site, le slogan et le texte du pied de page.",
