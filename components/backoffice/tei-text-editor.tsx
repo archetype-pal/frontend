@@ -3,13 +3,36 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
-import { AlertTriangle, CheckCircle2, Code2, Eye, Pencil } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Code2, Eye, Highlighter, Pencil } from 'lucide-react';
 
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import {
+  HIGHLIGHT_DEFAULT,
+  HIGHLIGHT_STORAGE_KEY,
+  highlightableOptions,
+  type HighlightOption,
+} from '@/lib/tei-highlight';
 import { docToTei, teiToDoc } from '@/lib/tei-prosemirror';
 import type { EditorLinkSelection } from '@/lib/tei-tiptap';
 import { validateTei, type TeiValidationError } from '@/services/image-texts';
+
+/** Category → menu colour-dot hue (matches the .tei-hl-mode highlight palette). */
+const CATEGORY_DOT: Record<string, string> = {
+  clause: 'hsl(245 60% 60%)',
+  person: 'hsl(145 55% 45%)',
+  place: 'hsl(178 60% 40%)',
+  ex: 'hsl(36 85% 52%)',
+  supplied: 'hsl(282 50% 58%)',
+};
 
 const loadingBox = (
   <div className="min-h-[320px] px-4 py-3 font-mono text-xs text-muted-foreground">Loading…</div>
@@ -87,6 +110,10 @@ export function TeiTextEditor({
   const [storedMode, setMode] = React.useState<Mode>(defaultMode);
   const [errors, setErrors] = React.useState<TeiValidationError[]>([]);
   const [checked, setChecked] = React.useState(false);
+  // Which markup types Preview highlights. Seeded deterministically so SSR and
+  // the first client render agree (hydration-safe); hydrated from / persisted to
+  // localStorage after mount so a researcher's choice sticks across documents.
+  const [highlight, setHighlight] = React.useState<Set<string>>(() => new Set(HIGHLIGHT_DEFAULT));
 
   // Rich mode only activates when the content round-trips byte-exactly through
   // the serializer, so editing it can never lose markup the model can't hold.
@@ -145,6 +172,45 @@ export function TeiTextEditor({
     };
   }, [value, token, onValidityChange]);
 
+  // Hydrate the persisted highlight preference after mount (keeps first render
+  // deterministic), then persist on every change.
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem(HIGHLIGHT_STORAGE_KEY);
+      const parsed: unknown = raw ? JSON.parse(raw) : null;
+      if (Array.isArray(parsed)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrating from a client-only source (localStorage) MUST happen post-mount: reading it during render would desync SSR/first-client render. Deliberate, runs once.
+        setHighlight(new Set(parsed.filter((v): v is string => typeof v === 'string')));
+      }
+    } catch {
+      /* unavailable or corrupt storage → keep the default */
+    }
+  }, []);
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(HIGHLIGHT_STORAGE_KEY, JSON.stringify([...highlight]));
+    } catch {
+      /* storage unavailable → preference is session-only, no-op */
+    }
+  }, [highlight]);
+
+  // The highlightable markup present in this document (Preview only) and the
+  // selection passed to the viewer. Both memoised so the viewer's own memo is stable.
+  const highlightOptions = React.useMemo(
+    () => (mode === 'preview' ? highlightableOptions(value) : []),
+    [mode, value]
+  );
+  const highlightList = React.useMemo(() => Array.from(highlight), [highlight]);
+  const toggleHighlight = React.useCallback((type: string) => {
+    setHighlight((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  }, []);
+  const clearHighlight = React.useCallback(() => setHighlight(new Set()), []);
+
   const valid = errors.length === 0;
   const hosted = Boolean(toolbarContainer);
 
@@ -183,6 +249,15 @@ export function TeiTextEditor({
         label="Preview"
         compact={hosted}
       />
+      {mode === 'preview' && (
+        <HighlightMenu
+          options={highlightOptions}
+          selected={highlight}
+          onToggle={toggleHighlight}
+          onClear={clearHighlight}
+          compact={hosted}
+        />
+      )}
       {checked &&
         (valid ? (
           <span
@@ -232,10 +307,10 @@ export function TeiTextEditor({
       )}
       {mode === 'preview' && (
         <div className="min-h-[320px] px-4 py-3">
-          {/* richMarkup so Preview matches Rich mode (and the public reader view):
-              persons/places/expansions get the coloured-underline + hover-label
-              `.tei-rich` highlighting instead of rendering as plain prose. */}
-          <ImageTextViewer html={value} richMarkup />
+          {/* highlightTypes puts Preview in `.tei-hl-mode`: only the markup types
+              chosen in the Highlight dropdown are highlighted (default: name +
+              salutation), instead of the blanket `.tei-rich` element highlight. */}
+          <ImageTextViewer html={value} highlightTypes={highlightList} />
         </div>
       )}
     </div>
@@ -278,5 +353,84 @@ function ModeButton({
       <Icon className="h-3.5 w-3.5" />
       {!compact && label}
     </button>
+  );
+}
+
+/**
+ * Preview-only control: a checklist of the markup types present in the document,
+ * governing which get highlighted. Multi-select (the menu stays open on toggle);
+ * compact (icon + count) in a narrow hosted header.
+ */
+function HighlightMenu({
+  options,
+  selected,
+  onToggle,
+  onClear,
+  compact,
+}: {
+  options: HighlightOption[];
+  selected: Set<string>;
+  onToggle: (type: string) => void;
+  onClear: () => void;
+  compact: boolean;
+}) {
+  const count = options.reduce((n, o) => (selected.has(o.value) ? n + 1 : n), 0);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          title="Choose which markup types to highlight"
+          aria-label="Highlight markup types"
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
+            compact ? 'h-7 px-1.5' : 'px-2.5 py-1'
+          )}
+        >
+          <Highlighter className="h-3.5 w-3.5" />
+          {!compact && 'Highlight'}
+          {count > 0 && (
+            <span className="rounded bg-primary/15 px-1 text-[10px] font-semibold text-primary">
+              {count}
+            </span>
+          )}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuLabel className="flex items-center justify-between">
+          Highlight
+          {selected.size > 0 && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="text-[11px] font-normal text-muted-foreground hover:text-foreground"
+            >
+              Clear
+            </button>
+          )}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {options.length === 0 ? (
+          <p className="px-2 py-1.5 text-xs text-muted-foreground">No markup in this text.</p>
+        ) : (
+          options.map((option) => (
+            <DropdownMenuCheckboxItem
+              key={option.value}
+              checked={selected.has(option.value)}
+              onCheckedChange={() => onToggle(option.value)}
+              // Keep the menu open so several types can be toggled in one pass.
+              onSelect={(event) => event.preventDefault()}
+            >
+              <span
+                aria-hidden
+                className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full"
+                style={{ background: CATEGORY_DOT[option.category] ?? 'hsl(220 12% 50%)' }}
+              />
+              {option.label}
+            </DropdownMenuCheckboxItem>
+          ))
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
