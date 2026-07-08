@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import BlogPostPreview from './blog-post-preview';
 import { getPublications, type Publication, type PublicationParams } from '@/utils/api';
@@ -22,6 +23,7 @@ export default function PaginatedPublications({
   categoryFlag,
   basePath,
 }: PaginatedPublicationsProps) {
+  const t = useTranslations('content.publicationsList');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -111,7 +113,7 @@ export default function PaginatedPublications({
           {/* Main Content */}
           <main className="flex-1">
             {articles.length === 0 ? (
-              <p className="text-muted-foreground">No posts found.</p>
+              <p className="text-muted-foreground">{t('noPostsFound')}</p>
             ) : (
               <div className="space-y-6">
                 {articles.map((article) => (
@@ -138,7 +140,7 @@ export default function PaginatedPublications({
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-2 mt-12 flex-wrap">
                 <Button variant="outline" onClick={() => goToPage(page - 1)} disabled={page <= 1}>
-                  ← Prev
+                  {t('prev')}
                 </Button>
 
                 {buildPageWindow().map((pageNum, i) =>
@@ -163,7 +165,7 @@ export default function PaginatedPublications({
                   onClick={() => goToPage(page + 1)}
                   disabled={page >= totalPages}
                 >
-                  Next →
+                  {t('next')}
                 </Button>
               </div>
             )}
@@ -174,7 +176,7 @@ export default function PaginatedPublications({
             {/* Recent Posts */}
             <section className="mb-10">
               <h2 className="text-lg font-serif font-semibold text-foreground mb-4">
-                Recent Posts
+                {t('recentPosts')}
                 <span className="block mt-1 w-8 h-0.5 bg-accent rounded-full" />
               </h2>
               <ul className="space-y-2.5">
@@ -194,25 +196,25 @@ export default function PaginatedPublications({
             {/* Placeholder Filters */}
             <section className="mb-10">
               <h2 className="text-lg font-serif font-semibold text-foreground mb-4">
-                Posts by Date
+                {t('postsByDate')}
                 <span className="block mt-1 w-8 h-0.5 bg-accent rounded-full" />
               </h2>
               <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-card">
-                <option>Select month</option>
+                <option>{t('selectMonth')}</option>
                 {/* Filter by month – not yet wired to data */}
               </select>
             </section>
 
             <section>
               <h2 className="text-lg font-serif font-semibold text-foreground mb-4">
-                Feeds
+                {t('feeds')}
                 <span className="block mt-1 w-8 h-0.5 bg-accent rounded-full" />
               </h2>
               <Link
                 href="#"
                 className="text-sm text-primary hover:text-primary/80 transition-colors"
               >
-                RSS / Atom
+                {t('rssAtom')}
               </Link>
             </section>
           </aside>
