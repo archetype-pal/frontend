@@ -18,21 +18,13 @@ import { cn } from '@/lib/utils';
 import {
   HIGHLIGHT_DEFAULT,
   HIGHLIGHT_STORAGE_KEY,
+  highlightHsl,
   highlightableOptions,
   type HighlightOption,
 } from '@/lib/tei-highlight';
 import { docToTei, teiToDoc } from '@/lib/tei-prosemirror';
 import type { EditorLinkSelection } from '@/lib/tei-tiptap';
 import { validateTei, type TeiValidationError } from '@/services/image-texts';
-
-/** Category → menu colour-dot hue (matches the .tei-hl-mode highlight palette). */
-const CATEGORY_DOT: Record<string, string> = {
-  clause: 'hsl(245 60% 60%)',
-  person: 'hsl(145 55% 45%)',
-  place: 'hsl(178 60% 40%)',
-  ex: 'hsl(36 85% 52%)',
-  supplied: 'hsl(282 50% 58%)',
-};
 
 const loadingBox = (
   <div className="min-h-[320px] px-4 py-3 font-mono text-xs text-muted-foreground">Loading…</div>
@@ -424,7 +416,7 @@ function HighlightMenu({
               <span
                 aria-hidden
                 className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full"
-                style={{ background: CATEGORY_DOT[option.category] ?? 'hsl(220 12% 50%)' }}
+                style={{ background: highlightHsl(option.value) }}
               />
               {option.label}
             </DropdownMenuCheckboxItem>

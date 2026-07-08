@@ -1025,45 +1025,26 @@ g.a9s-annotation.a9s-text:hover .a9s-outer {
 
 /* --- Type-filtered highlighting (Preview "Highlight" dropdown) --------------- */
 
-/* Unlike `.tei-rich` (which highlights every named element), `.tei-hl-mode`
-   highlights only the spans the reader has opted into: `applyHighlightClasses`
-   tags those with `.tei-hl`. Each keeps its category hue (shared with the
-   .tei-el-* palette above) via its data-dpt category, and names its @type in a
-   hover pill. Everything else renders as plain prose. */
+/* Unlike `.tei-rich` (which highlights every named element in one palette),
+   `.tei-hl-mode` highlights only the spans the reader opted into:
+   `applyHighlightClasses` tags each with `.tei-hl` and its own colour, carried as
+   inline `--hl-*` custom properties (so one rule paints every type — the colour
+   source lives in lib/tei-highlight.ts, shared with the dropdown's dots). Each
+   names its @type in a hover pill. Everything else renders as plain prose. */
 .tei-hl-mode .tei-hl {
   position: relative;
   border-radius: 3px;
   padding: 0.1em 1px;
-  background: hsl(220 12% 50% / 0.16);
-  box-shadow: inset 0 -2px 0 hsl(220 12% 45% / 0.4);
+  background: hsl(var(--hl-h, 220) var(--hl-s, 12%) var(--hl-l, 50%) / 0.18);
+  box-shadow: inset 0 -2px 0 hsl(var(--hl-h, 220) var(--hl-s, 12%) var(--hl-lu, 42%) / 0.6);
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
   transition: background-color 0.12s ease;
 }
-.tei-hl-mode .tei-hl[data-dpt='clause'] {
-  background: hsl(245 60% 60% / 0.15);
-  box-shadow: inset 0 -2px 0 hsl(245 55% 55% / 0.45);
-}
-.tei-hl-mode .tei-hl[data-dpt='person'] {
-  background: hsl(145 55% 45% / 0.22);
-  box-shadow: inset 0 -2px 0 hsl(145 55% 36% / 0.6);
-}
-.tei-hl-mode .tei-hl[data-dpt='place'] {
-  background: hsl(178 60% 40% / 0.22);
-  box-shadow: inset 0 -2px 0 hsl(178 60% 32% / 0.6);
-}
-.tei-hl-mode .tei-hl[data-dpt='ex'] {
-  background: hsl(36 85% 52% / 0.22);
-  box-shadow: inset 0 -2px 0 hsl(36 85% 42% / 0.6);
-}
-.tei-hl-mode .tei-hl[data-dpt='supplied'] {
-  background: hsl(282 50% 58% / 0.22);
-  box-shadow: inset 0 -2px 0 hsl(282 45% 50% / 0.6);
-}
 
-/* Hover strengthen + a pill naming the @type (reuses data-tei-label). */
+/* Hover strengthen + a pill (tinted with the type's hue) naming the @type. */
 .tei-hl-mode .tei-hl:hover {
-  filter: brightness(0.94);
+  background: hsl(var(--hl-h, 220) var(--hl-s, 12%) var(--hl-l, 50%) / 0.32);
 }
 .tei-hl-mode .tei-hl:hover::after {
   content: attr(data-tei-label);
@@ -1073,7 +1054,7 @@ g.a9s-annotation.a9s-text:hover .a9s-outer {
   z-index: 20;
   white-space: nowrap;
   border-radius: 4px;
-  background: hsl(220 18% 26%);
+  background: hsl(var(--hl-h, 220) 32% 24%);
   padding: 1px 6px;
   font-size: 10px;
   font-weight: 600;

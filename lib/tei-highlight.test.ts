@@ -62,6 +62,19 @@ describe('applyHighlightClasses', () => {
     expect(html).toMatch(/data-dpt-type="salutation"[^>]*data-tei-label="salutation"/);
   });
 
+  it('gives each type a distinct colour via inline --hl-* custom properties', () => {
+    const html = highlightableApplied(new Set(['name', 'salutation']));
+    // both highlighted spans carry a hue variable...
+    const hues = [...html.matchAll(/--hl-h:(\d+)/g)].map((m) => m[1]);
+    expect(hues.length).toBeGreaterThanOrEqual(2);
+    // ...and name's hue differs from salutation's (not one shared category colour)
+    const nameHue = html.match(/data-dpt-type="name"[^>]*--hl-h:(\d+)/)?.[1];
+    const salHue = html.match(/data-dpt-type="salutation"[^>]*--hl-h:(\d+)/)?.[1];
+    expect(nameHue).toBeTruthy();
+    expect(salHue).toBeTruthy();
+    expect(nameHue).not.toBe(salHue);
+  });
+
   it('is a no-op when nothing is selected', () => {
     const base = importToDpt(TEI);
     expect(applyHighlightClasses(base, new Set())).toBe(base);

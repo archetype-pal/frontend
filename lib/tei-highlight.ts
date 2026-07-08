@@ -38,8 +38,59 @@ export interface HighlightOption {
   value: string;
   /** Title-cased display name for the menu. */
   label: string;
-  /** dpt category (person/place/ex/supplied/clause) — drives the menu colour dot. */
+  /** dpt category (person/place/ex/supplied/clause). */
   category: string;
+}
+
+/**
+ * Per-label highlight colour as `[hue, saturation%, lightness%]`. Each markup
+ * type gets a distinct, hand-tuned hue so several enabled types stay visually
+ * separable — the point of a per-type filter (keying on the dpt *category*, as
+ * an earlier version did, made every clause type the same indigo). Stable per
+ * label, so a type is the same colour in every document; element kinds mirror
+ * their family. `name`/`person` keep the persName green shared with Rich mode.
+ */
+const HIGHLIGHT_STYLE: Record<string, readonly [number, number, number]> = {
+  name: [145, 55, 42],
+  // seg @types (the clause vocabulary), spread around the wheel
+  address: [0, 72, 56],
+  intitulatio: [210, 72, 52],
+  salutation: [32, 85, 48],
+  arenga: [280, 48, 56],
+  notification: [172, 60, 38],
+  disposition: [322, 60, 55],
+  holding: [55, 78, 44],
+  warrandice: [240, 55, 60],
+  sealing: [128, 50, 40],
+  dating: [300, 48, 54],
+  witnesses: [192, 70, 44],
+  boundaries: [20, 78, 52],
+  narration: [255, 55, 60],
+  injunction: [100, 52, 38],
+  prohibition: [348, 62, 56],
+  // element kinds (untyped highlightables)
+  person: [145, 55, 42],
+  place: [178, 60, 38],
+  expansion: [36, 85, 48],
+  supplied: [282, 48, 54],
+};
+
+const FALLBACK_STYLE: readonly [number, number, number] = [220, 12, 50];
+
+function styleOf(value: string): readonly [number, number, number] {
+  return HIGHLIGHT_STYLE[value] ?? FALLBACK_STYLE;
+}
+
+/** Opaque `hsl(...)` for a label — used for the dropdown's colour dot. */
+export function highlightHsl(value: string): string {
+  const [h, s, l] = styleOf(value);
+  return `hsl(${h} ${s}% ${l}%)`;
+}
+
+/** The inline CSS custom properties the `.tei-hl` rule reads to colour a span. */
+function highlightCssVars(value: string): string {
+  const [h, s, l] = styleOf(value);
+  return `--hl-h:${h};--hl-s:${s}%;--hl-l:${l}%;--hl-lu:${Math.max(0, l - 8)}%`;
 }
 
 const SPAN_RE = /<span\b([^>]*)>/gi;
@@ -94,10 +145,12 @@ export function highlightableOptions(content: string): HighlightOption[] {
 }
 
 /**
- * Add the `tei-hl` class (and a `data-tei-label` for the hover pill) to every
- * span whose label is in `selected`. Returns the html unchanged when nothing is
- * selected. Operates on already-sanitised dpt-html — the class it adds is a
- * fixed literal, so it introduces no injection surface.
+ * Add the `tei-hl` class, its per-type colour (as inline `--hl-*` custom
+ * properties the `.tei-hl` CSS rule reads), and a `data-tei-label` for the hover
+ * pill, to every span whose label is in `selected`. Returns the html unchanged
+ * when nothing is selected. Operates on already-sanitised dpt-html; everything
+ * it adds is a fixed literal or a number from the palette (never the raw @type),
+ * so it introduces no injection surface.
  */
 export function applyHighlightClasses(html: string, selected: ReadonlySet<string>): string {
   if (selected.size === 0) return html;
@@ -109,6 +162,12 @@ export function applyHighlightClasses(html: string, selected: ReadonlySet<string
       out = out.replace(/\bclass\s*=\s*"([^"]*)"/, (_m, cls: string) => `class="${cls} tei-hl"`);
     } else {
       out = `${out} class="tei-hl"`;
+    }
+    const vars = highlightCssVars(label.value);
+    if (/\bstyle\s*=\s*"/.test(out)) {
+      out = out.replace(/\bstyle\s*=\s*"([^"]*)"/, (_m, css: string) => `style="${css};${vars}"`);
+    } else {
+      out = `${out} style="${vars}"`;
     }
     if (!/\bdata-tei-label\s*=/.test(out)) {
       out = `${out} data-tei-label="${label.value}"`;
