@@ -1269,6 +1269,8 @@
       "sectionLabelsDesc": "Ces libellés se trouvent désormais dans le frontend et remplacent les réglages d'affichage des applications/modèles/champs du backend.",
       "sectionSearchTitle": "Catégories de résultats de recherche",
       "sectionSearchDesc": "Renommer les onglets de catégorie sur la page de recherche publique (ex. « Manuscrits » → « Corpus »). L'onglet Manuscrits suit le libellé « Nom de l'app : Manuscrits » ci-dessus.",
+      "sectionPagesTitle": "Contenu des pages « À propos »",
+      "sectionPagesDesc": "Modifier le texte affiché sur les pages publiques « À propos » (Contexte historique, À propos du projet, Déclaration d'accessibilité).",
       "toastSaved": "Libellés du modèle enregistrés",
       "toastFailedSave": "Échec de l'enregistrement des libellés du modèle"
     },

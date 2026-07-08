@@ -1269,6 +1269,8 @@
       "sectionLabelsDesc": "These labels now live in the frontend and replace backend app/model/field display settings.",
       "sectionSearchTitle": "Search result categories",
       "sectionSearchDesc": "Rename the category tabs on the public search page (e.g. \"Manuscripts\" → \"Corpus\"). The Manuscripts tab follows the \"App Name: Manuscripts\" label above.",
+      "sectionPagesTitle": "About page content",
+      "sectionPagesDesc": "Edit the body text shown on the public About pages (Historical Context, About the Project, Accessibility Statement).",
       "toastSaved": "Model labels saved",
       "toastFailedSave": "Failed to save model labels"
     },
