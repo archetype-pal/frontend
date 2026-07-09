@@ -15,7 +15,7 @@ export default async function HistoricalContext() {
 
   return (
     <div>
-      <PageBanner title={t('historicalContextTitle')} />
+      <PageBanner title={t('historicalContext')} />
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row gap-12">
           <main

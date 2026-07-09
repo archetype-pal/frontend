@@ -54,7 +54,7 @@
     "bannerShow": "Afficher la bannière",
     "footer": {
       "quickLinks": "Liens rapides",
-      "searchCharters": "Rechercher des chartes",
+      "searchCharters": "Rechercher des manuscrits",
       "aboutProject": "À propos du projet",
       "accessibility": "Déclaration d'accessibilité",
       "logIn": "Connexion",
@@ -515,14 +515,14 @@
     "accessibilityTitle": "Déclaration d'accessibilité",
     "accessibility": {
       "ourCommitment": "Notre engagement",
-      "ourCommitmentBody": "Le projet Models of Authority s'engage à rendre ce site accessible au plus grand nombre. Nous visons à respecter les exigences des Web Content Accessibility Guidelines (WCAG) 2.1 au niveau AA, dans la mesure du possible.",
+      "ourCommitmentBody": "Le projet Archetype s'engage à rendre ce site accessible au plus grand nombre. Nous visons à respecter les exigences des Web Content Accessibility Guidelines (WCAG) 2.1 au niveau AA, dans la mesure du possible.",
       "standardsAndTechnologies": "Normes et technologies",
       "standardsAndTechnologiesBody": "Ce site est construit avec des technologies web modernes (HTML5, CSS, JavaScript) et conçu pour fonctionner avec les navigateurs actuels et les technologies d'assistance. Nous utilisons un balisage sémantique, des libellés de liens explicites et une structure de titres appropriée pour faciliter la navigation et l'utilisation des lecteurs d'écran.",
       "knownLimitations": "Limitations connues",
       "knownLimitationsBody": "Certaines parties du site (par exemple, la visionneuse d'images de manuscrits et les outils d'annotation) utilisent des composants tiers qui peuvent présenter des limitations d'accessibilité. Nous continuons à les examiner et à les améliorer autant que possible. Les contenus PDF et image provenant de dépôts externes peuvent ne pas être pleinement optimisés pour l'accessibilité.",
       "feedbackAndContact": "Retours et contact",
       "feedbackBody": "Si vous rencontrez des difficultés pour utiliser une partie de ce site ou si vous avez des suggestions d'amélioration, veuillez nous contacter. Nous ferons de notre mieux pour vous répondre et rendre le site plus accessible.",
-      "contactBodyBefore": "Le projet Models of Authority est basé à l'Université de Glasgow. Vous trouverez nos coordonnées sur la page",
+      "contactBodyBefore": "Le projet Archetype est basé à l'Université de Glasgow. Vous trouverez nos coordonnées sur la page",
       "aboutLinkLabel": "À propos du projet",
       "contactBodyAfter": ".",
       "lastUpdated": "Cette déclaration a été mise à jour pour la dernière fois en février 2026."
@@ -1434,6 +1434,17 @@
       "fieldPlacePlaceholder": "Londres",
       "deleteDescription": "Cela peut affecter les documents historiques qui référencent ce dépôt."
     }
+  },
+  "login": {
+    "title": "Connexion",
+    "description": "Connectez-vous pour accéder à l'administration",
+    "usernamePlaceholder": "Nom d'utilisateur",
+    "usernameLabel": "Nom d'utilisateur",
+    "passwordPlaceholder": "Mot de passe",
+    "passwordLabel": "Mot de passe",
+    "signIn": "Se connecter",
+    "hidePassword": "Masquer le mot de passe",
+    "showPassword": "Afficher le mot de passe"
   },
   "errors": {
     "somethingWentWrong": "Une erreur est survenue. Veuillez réessayer.",
