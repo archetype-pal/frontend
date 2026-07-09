@@ -2,11 +2,7 @@ import * as React from 'react';
 import { render, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  DEFAULT_MODEL_LABELS,
-  getDefaultModelLabelsConfig,
-  type ModelLabelsConfig,
-} from '@/lib/model-labels';
+import { getDefaultModelLabelsConfig, type ModelLabelsConfig } from '@/lib/model-labels';
 import { useLocaleStore } from '@/stores/locale-store';
 import { ModelLabelsProvider, useModelLabels } from './model-labels-context';
 
@@ -73,12 +69,12 @@ describe('ModelLabelsProvider with initialConfig', () => {
     expect(result.current.getLabel('appManuscripts')).toBe('Charters');
   });
 
-  it('getLabel falls back to the default when the key is missing in config.labels', () => {
+  it('getLabel falls back to an empty string when the key is missing in config.labels', () => {
     const cfg = getDefaultModelLabelsConfig();
     // @ts-expect-error — testing runtime fallback when a key disappears
     delete cfg.labels.position;
     const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider(cfg) });
-    expect(result.current.getLabel('position')).toBe(DEFAULT_MODEL_LABELS.position.en);
+    expect(result.current.getLabel('position')).toBe('');
   });
 
   it('getPluralLabel pluralizes the resolved label', () => {

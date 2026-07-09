@@ -1,22 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  DEFAULT_MODEL_LABELS,
+  MODEL_LABEL_KEYS,
   getDefaultModelLabelsConfig,
   normalizeModelLabels,
   pluralizeLabel,
   resolveModelLabel,
-  type ModelLabelKey,
 } from './model-labels';
 
 describe('normalizeModelLabels', () => {
-  it('returns the canonical defaults when input is undefined', () => {
-    expect(normalizeModelLabels(undefined)).toEqual(DEFAULT_MODEL_LABELS);
-  });
-
-  it('returns the canonical defaults when input is empty', () => {
-    expect(normalizeModelLabels({})).toEqual(DEFAULT_MODEL_LABELS);
-  });
 
   it('overrides only the keys explicitly provided', () => {
     const result = normalizeModelLabels({
@@ -25,17 +17,14 @@ describe('normalizeModelLabels', () => {
     });
     expect(result.historicalItem).toEqual({ en: 'Object', fr: 'Objet' });
     expect(result.catalogueNumber).toEqual({ en: 'Cat #', fr: 'N° cat.' });
-    // Untouched keys keep defaults
-    expect(result.position).toEqual(DEFAULT_MODEL_LABELS.position);
-    expect(result.appManuscripts).toEqual(DEFAULT_MODEL_LABELS.appManuscripts);
+    // Untouched keys normalize to blank — there is no hardcoded fallback text
+    expect(result.position).toEqual({ en: '', fr: '' });
+    expect(result.appManuscripts).toEqual({ en: '', fr: '' });
   });
 
-  it('overrides one locale while keeping the other locale default', () => {
+  it('overrides one locale while the other locale normalizes to blank', () => {
     const result = normalizeModelLabels({ historicalItem: { fr: 'Objet' } });
-    expect(result.historicalItem).toEqual({
-      en: DEFAULT_MODEL_LABELS.historicalItem.en,
-      fr: 'Objet',
-    });
+    expect(result.historicalItem).toEqual({ en: '', fr: 'Objet' });
   });
 
   it('migrates a legacy plain-string value to both locales', () => {
@@ -52,45 +41,45 @@ describe('normalizeModelLabels', () => {
     ).toEqual({ en: 'Object', fr: 'Objet' });
   });
 
-  it('falls back to the default for empty / whitespace-only strings', () => {
+  it('normalizes empty / whitespace-only strings to blank', () => {
     const result = normalizeModelLabels({
       historicalItem: { en: '', fr: '   ' },
     });
-    expect(result.historicalItem).toEqual(DEFAULT_MODEL_LABELS.historicalItem);
+    expect(result.historicalItem).toEqual({ en: '', fr: '' });
   });
 
-  it('falls back to the default for non-object / non-string values (numbers, null)', () => {
+  it('normalizes non-object / non-string values (numbers, null) to blank', () => {
     const result = normalizeModelLabels({
       historicalItem: 42 as unknown as Record<string, unknown>,
       catalogueNumber: null as unknown as Record<string, unknown>,
     });
-    expect(result.historicalItem).toEqual(DEFAULT_MODEL_LABELS.historicalItem);
-    expect(result.catalogueNumber).toEqual(DEFAULT_MODEL_LABELS.catalogueNumber);
+    expect(result.historicalItem).toEqual({ en: '', fr: '' });
+    expect(result.catalogueNumber).toEqual({ en: '', fr: '' });
   });
 
-  it('does not include keys not in DEFAULT_MODEL_LABELS even if supplied', () => {
+  it('does not include keys not in MODEL_LABEL_KEYS even if supplied', () => {
     const result = normalizeModelLabels({
       historicalItem: { en: 'Object', fr: 'Objet' },
       // @ts-expect-error — testing runtime behavior
       bogusKey: 'should be ignored',
     });
-    expect(Object.keys(result)).toEqual(Object.keys(DEFAULT_MODEL_LABELS));
+    expect(Object.keys(result)).toEqual(MODEL_LABEL_KEYS);
   });
 });
 
 describe('getDefaultModelLabelsConfig', () => {
-  it('returns a fresh labels object that callers can mutate without affecting defaults', () => {
+  it('returns a fresh labels object that callers can mutate without affecting other calls', () => {
     const a = getDefaultModelLabelsConfig();
     const b = getDefaultModelLabelsConfig();
     expect(a.labels).not.toBe(b.labels);
     a.labels.historicalItem = { en: 'mutated', fr: 'mutated' };
-    expect(b.labels.historicalItem).toEqual(DEFAULT_MODEL_LABELS.historicalItem);
+    expect(b.labels.historicalItem).toEqual({ en: '', fr: '' });
   });
 
-  it('matches DEFAULT_MODEL_LABELS for every key', () => {
+  it('returns blank en/fr strings for every key — there is no hardcoded fallback text', () => {
     const cfg = getDefaultModelLabelsConfig();
-    for (const key of Object.keys(DEFAULT_MODEL_LABELS) as ModelLabelKey[]) {
-      expect(cfg.labels[key]).toEqual(DEFAULT_MODEL_LABELS[key]);
+    for (const key of MODEL_LABEL_KEYS) {
+      expect(cfg.labels[key]).toEqual({ en: '', fr: '' });
     }
   });
 });

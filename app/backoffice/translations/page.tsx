@@ -41,13 +41,18 @@ const generalConfigFieldMeta: Array<{ key: ModelLabelKey; title: string; descrip
     description: 'The short strapline shown next to the site title in the header.',
   },
   {
-    key: 'footerFunded',
-    title: 'Footer: Funding Statement',
+    key: 'footerLine1',
+    title: 'Footer: First section',
+    description: 'The introductory blurb shown in the About column of the footer.',
+  },
+  {
+    key: 'footerLine2',
+    title: 'Footer: Second section',
     description: 'The funding acknowledgement shown in the footer.',
   },
   {
-    key: 'footerCopyright',
-    title: 'Footer: Copyright Notice',
+    key: 'footerBottomLine',
+    title: 'Footer: Bottom section',
     description: 'The copyright notice shown at the bottom of the footer.',
   },
 ];
@@ -250,12 +255,12 @@ function LabelFieldsGrid({
       {fields.map((field) => (
         <div key={field.key} className="space-y-3 rounded-md border p-4">
           <Label className="font-medium">{field.title}</Label>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="space-y-2">
             {LOCALE_FIELD_META.map(({ locale, title }) => (
-              <div key={locale} className="space-y-1">
+              <div key={locale} className="flex items-center gap-2">
                 <Label
                   htmlFor={`model-label-${field.key}-${locale}`}
-                  className="text-xs font-normal text-muted-foreground"
+                  className="w-14 shrink-0 whitespace-nowrap text-xs font-normal text-muted-foreground"
                 >
                   {title}
                 </Label>

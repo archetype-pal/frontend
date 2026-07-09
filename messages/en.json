@@ -53,7 +53,6 @@
     "bannerHide": "Hide banner",
     "bannerShow": "Show banner",
     "footer": {
-      "about": "Scottish Charters and the Emergence of Government, 1100–1250. A resource for the study of the contents, script and physical appearance of the corpus of Scottish charters.",
       "quickLinks": "Quick Links",
       "searchCharters": "Search Charters",
       "aboutProject": "About the Project",
@@ -1435,5 +1434,9 @@
       "fieldPlacePlaceholder": "London",
       "deleteDescription": "This may affect historical items that reference this repository."
     }
+  },
+  "errors": {
+    "somethingWentWrong": "Something went wrong. Please try again.",
+    "backToHome": "Back to home"
   }
 }

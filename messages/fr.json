@@ -53,7 +53,6 @@
     "bannerHide": "Masquer la bannière",
     "bannerShow": "Afficher la bannière",
     "footer": {
-      "about": "Les chartes écossaises et l'émergence du gouvernement, 1100–1250. Une ressource pour l'étude du contenu, de l'écriture et de l'aspect physique du corpus des chartes écossaises.",
       "quickLinks": "Liens rapides",
       "searchCharters": "Rechercher des chartes",
       "aboutProject": "À propos du projet",
@@ -1435,5 +1434,9 @@
       "fieldPlacePlaceholder": "Londres",
       "deleteDescription": "Cela peut affecter les documents historiques qui référencent ce dépôt."
     }
+  },
+  "errors": {
+    "somethingWentWrong": "Une erreur est survenue. Veuillez réessayer.",
+    "backToHome": "Retour à l'accueil"
   }
 }
