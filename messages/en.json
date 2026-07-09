@@ -503,18 +503,16 @@
     }
   },
   "about": {
-    "sidebar": {
-      "heading": "About",
-      "historicalContext": "Historical Context",
-      "projectTeam": "Project Team",
-      "citeDatabase": "Cite {siteTitle}",
-      "talksAndPublications": "Talks and Publications",
-      "acknowledgements": "Acknowledgements",
-      "privacyPolicy": "Privacy Policy",
-      "accessibilityStatement": "Accessibility Statement",
-      "search": "Search",
-      "about": "About the Project"
-    },
+    "heading": "About",
+    "historicalContext": "Historical Context",
+    "projectTeam": "Project Team",
+    "citeDatabase": "Cite {siteTitle}",
+    "talksAndPublications": "Talks and Publications",
+    "acknowledgements": "Acknowledgements",
+    "privacyPolicy": "Privacy Policy",
+    "accessibilityStatement": "Accessibility Statement",
+    "search": "Search",
+    "about": "About the Project",
     "accessibilityTitle": "Accessibility Statement",
     "accessibility": {
       "ourCommitment": "Our Commitment",
