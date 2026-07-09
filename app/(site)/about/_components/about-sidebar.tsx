@@ -5,18 +5,18 @@ import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
 function getLinks(t: Awaited<ReturnType<typeof getTranslations>>, siteTitle: string) {
   return [
-    { href: '/about/historical-context', label: t('sidebar.historicalContext') },
-    { href: '/about/about-models-of-authority', label: t('sidebar.projectTeam') },
+    { href: '/about/historical-context', label: t('historicalContext') },
+    { href: '/about/about-models-of-authority', label: t('projectTeam') },
     {
       href: '/about/about-models-of-authority',
-      label: t('sidebar.citeDatabase', { siteTitle }),
+      label: t('citeDatabase', { siteTitle }),
     },
-    { href: '/about/about-models-of-authority', label: t('sidebar.talksAndPublications') },
-    { href: '/about/about-models-of-authority', label: t('sidebar.acknowledgements') },
-    { href: '/about/about-models-of-authority', label: t('sidebar.privacyPolicy') },
-    { href: '/about/accessibility', label: t('sidebar.accessibilityStatement') },
-    { href: '/search/manuscripts', label: t('sidebar.search') },
-    { href: '/about/about-models-of-authority', label: t('sidebar.about') },
+    { href: '/about/about-models-of-authority', label: t('talksAndPublications') },
+    { href: '/about/about-models-of-authority', label: t('acknowledgements') },
+    { href: '/about/about-models-of-authority', label: t('privacyPolicy') },
+    { href: '/about/accessibility', label: t('accessibilityStatement') },
+    { href: '/search/manuscripts', label: t('search') },
+    { href: '/about/about-models-of-authority', label: t('about') },
   ];
 }
 
@@ -32,7 +32,7 @@ export async function AboutSidebar() {
   return (
     <aside className="w-full md:w-64">
       <nav className="bg-secondary p-5 rounded-lg border border-border">
-        <h2 className="text-xl font-bold mb-4">{t('sidebar.heading')}</h2>
+        <h2 className="text-xl font-bold mb-4">{t('heading')}</h2>
         <ul className="space-y-2">
           {links.map((link) => (
             <li key={link.label}>
