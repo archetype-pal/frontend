@@ -503,18 +503,16 @@
     }
   },
   "about": {
-    "sidebar": {
-      "heading": "À propos",
-      "historicalContext": "Contexte historique",
-      "projectTeam": "Équipe du projet",
-      "citeDatabase": "Citer {siteTitle}",
-      "talksAndPublications": "Conférences et publications",
-      "acknowledgements": "Remerciements",
-      "privacyPolicy": "Politique de confidentialité",
-      "accessibilityStatement": "Déclaration d'accessibilité",
-      "search": "Rechercher",
-      "about": "À propos du projet"
-    },
+    "heading": "À propos",
+    "historicalContext": "Contexte historique",
+    "projectTeam": "Équipe du projet",
+    "citeDatabase": "Citer {siteTitle}",
+    "talksAndPublications": "Conférences et publications",
+    "acknowledgements": "Remerciements",
+    "privacyPolicy": "Politique de confidentialité",
+    "accessibilityStatement": "Déclaration d'accessibilité",
+    "search": "Rechercher",
+    "about": "À propos du projet",
     "accessibilityTitle": "Déclaration d'accessibilité",
     "accessibility": {
       "ourCommitment": "Notre engagement",

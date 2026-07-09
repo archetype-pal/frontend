@@ -7,7 +7,7 @@ export default async function AboutModelsOfAuthority() {
 
   return (
     <div>
-      <PageBanner title={t('aboutProjectTitle')} />
+      <PageBanner title={t('sidebar.about')}  />
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row gap-12">
           <main className="flex-1">
