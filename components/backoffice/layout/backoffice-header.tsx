@@ -80,6 +80,7 @@ export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeade
       events: t('header.breadcrumbs.events'),
       comments: t('header.breadcrumbs.comments'),
       carousel: t('header.breadcrumbs.carousel'),
+      pages: t('header.breadcrumbs.pages'),
       scribes: t('header.breadcrumbs.scribes'),
       hands: t('header.breadcrumbs.hands'),
       dates: getPluralLabel('date'),

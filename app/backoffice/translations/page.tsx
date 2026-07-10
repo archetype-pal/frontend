@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { Languages, Loader2 } from 'lucide-react';
@@ -10,7 +9,6 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnsavedChangesBar } from '@/components/backoffice/common/unsaved-changes-bar';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
@@ -20,14 +18,6 @@ import {
   type ModelLabelLocale,
   type ModelLabelsConfig,
 } from '@/lib/model-labels';
-
-const RichTextEditor = dynamic(
-  () => import('@/components/backoffice/common/rich-text-editor').then((m) => m.RichTextEditor),
-  {
-    ssr: false,
-    loading: () => <div className="h-[200px] rounded-md border animate-pulse bg-muted" />,
-  }
-);
 
 const generalConfigFieldMeta: Array<{ key: ModelLabelKey; title: string; description: string }> = [
   {
@@ -151,24 +141,6 @@ const searchCategoryFieldMeta: Array<{ key: ModelLabelKey; title: string; descri
   },
 ];
 
-const pageContentFieldMeta: Array<{ key: ModelLabelKey; title: string; description: string }> = [
-  {
-    key: 'pageHistoricalContext',
-    title: 'About Page: Historical Context',
-    description: 'Body content for the /about/historical-context page.',
-  },
-  {
-    key: 'pageAboutModelsOfAuthority',
-    title: 'About Page: About the Project',
-    description: 'Body content for the /about/about-models-of-authority page.',
-  },
-  {
-    key: 'pageAccessibility',
-    title: 'About Page: Accessibility Statement',
-    description: 'Body content for the /about/accessibility page.',
-  },
-];
-
 async function fetchModelLabels(): Promise<ModelLabelsConfig> {
   const res = await fetch('/api/model-labels');
   if (!res.ok) throw new Error('Failed to load model labels');
@@ -198,46 +170,6 @@ const LOCALE_FIELD_META: Array<{ locale: ModelLabelLocale; title: string }> = [
   { locale: 'en', title: 'English' },
   { locale: 'fr', title: 'French' },
 ];
-
-function PageContentFieldsGrid({
-  fields,
-  config,
-  onChange,
-}: {
-  fields: Array<{ key: ModelLabelKey; title: string; description: string }>;
-  config: ModelLabelsConfig;
-  onChange: (key: ModelLabelKey, locale: ModelLabelLocale, value: string) => void;
-}) {
-  return (
-    <div className="space-y-6">
-      {fields.map((field) => (
-        <div key={field.key} className="space-y-3 rounded-md border p-4">
-          <div>
-            <Label className="font-medium">{field.title}</Label>
-            <p className="text-xs text-muted-foreground">{field.description}</p>
-          </div>
-          <Tabs defaultValue="en">
-            <TabsList>
-              {LOCALE_FIELD_META.map(({ locale, title }) => (
-                <TabsTrigger key={locale} value={locale}>
-                  {title}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {LOCALE_FIELD_META.map(({ locale }) => (
-              <TabsContent key={locale} value={locale}>
-                <RichTextEditor
-                  content={config.labels[field.key]?.[locale] ?? ''}
-                  onChange={(html) => onChange(field.key, locale, html)}
-                />
-              </TabsContent>
-            ))}
-          </Tabs>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function LabelFieldsGrid({
   fields,
@@ -404,17 +336,6 @@ export default function TranslationsPage() {
           defaults={defaults}
           onChange={handleLabelChange}
         />
-      </div>
-
-      <div className="rounded-lg border bg-card p-6 space-y-6">
-        <div>
-          <h2 className="text-base font-medium">{t('translations.sectionPagesTitle')}</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t('translations.sectionPagesDesc')}
-          </p>
-        </div>
-
-        <PageContentFieldsGrid fields={pageContentFieldMeta} config={config} onChange={handleLabelChange} />
       </div>
 
       <UnsavedChangesBar

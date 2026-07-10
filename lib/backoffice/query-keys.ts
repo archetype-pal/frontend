@@ -68,6 +68,11 @@ export const backofficeKeys = {
     all: () => [...backofficeKeys.all, 'carousel'] as const,
     mediaPicker: (path: string) => [...backofficeKeys.carousel.all(), 'mediaPicker', path] as const,
   },
+  pages: {
+    all: () => [...backofficeKeys.all, 'pages'] as const,
+    list: () => [...backofficeKeys.pages.all(), 'list'] as const,
+    detail: (slug: string) => [...backofficeKeys.pages.all(), 'detail', slug] as const,
+  },
 
   // ── Scribes ────────────────────────────────────────────────
   scribes: {

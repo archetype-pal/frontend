@@ -24,11 +24,7 @@ export type ModelLabelKey =
   | 'siteTagline'
   | 'footerLine1'
   | 'footerLine2'
-  | 'footerBottomLine'
-  // Full HTML bodies for the static "About" pages, edited as rich text.
-  | 'pageHistoricalContext'
-  | 'pageAboutModelsOfAuthority'
-  | 'pageAccessibility';
+  | 'footerBottomLine';
 
 export type ModelLabelLocale = 'en' | 'fr';
 
@@ -69,9 +65,6 @@ export const MODEL_LABEL_KEYS: ModelLabelKey[] = [
   'footerLine1',
   'footerLine2',
   'footerBottomLine',
-  'pageHistoricalContext',
-  'pageAboutModelsOfAuthority',
-  'pageAccessibility',
 ];
 
 function normalizeLocalizedValue(value: unknown): LocalizedLabel {

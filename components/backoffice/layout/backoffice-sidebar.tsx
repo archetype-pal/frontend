@@ -13,6 +13,7 @@ import {
   PenTool,
   Type,
   FileText,
+  Files,
   ScrollText,
   MessageSquare,
   Image,
@@ -109,6 +110,7 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
           { label: t('sidebar.publications'), href: '/backoffice/publications', icon: FileText },
           { label: t('sidebar.comments'), href: '/backoffice/comments', icon: MessageSquare },
           { label: t('sidebar.carousel'), href: '/backoffice/carousel', icon: Image },
+          { label: t('sidebar.pages'), href: '/backoffice/pages', icon: Files },
         ],
       },
     ];
