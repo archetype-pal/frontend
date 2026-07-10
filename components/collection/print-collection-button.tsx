@@ -5,6 +5,7 @@ import { Printer } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { readDocumentNonce } from '@/lib/csp-nonce';
 import { buildCollectionPrintHtml } from '@/lib/collection-print';
 import type { NamedCollection } from '@/lib/collection-storage';
 
@@ -31,7 +32,10 @@ export function PrintCollectionButton({ collection }: { collection: NamedCollect
     );
 
     try {
-      writePrintDocument(win, await buildCollectionPrintHtml(collection));
+      writePrintDocument(
+        win,
+        await buildCollectionPrintHtml(collection, { nonce: readDocumentNonce() })
+      );
     } catch {
       win.close();
       toast.error('Could not prepare collection print view.');

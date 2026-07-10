@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import localFont from 'next/font/local';
 import { Lora, Cormorant_Garamond } from 'next/font/google';
 import { Toaster } from 'sonner';
@@ -69,6 +70,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get('x-nonce') ?? undefined;
   const [siteFeaturesConfig, modelLabelsConfig] = await Promise.all([
     readSiteFeatures(),
     readModelLabels(),
@@ -77,6 +80,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
+        data-csp-nonce={nonce}
         className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${cormorant.variable} ${junicode.variable} antialiased`}
       >
         <AuthProvider>
