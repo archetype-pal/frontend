@@ -167,9 +167,11 @@ describe('CollectionProvider', () => {
 
     await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
     expect(screen.getByTestId('is-editorial-collected').textContent).toBe('true');
-    expect(JSON.parse(localStorage.getItem(LEGACY_COLLECTION_STORAGE_KEY) ?? '[]')).toEqual([
-      editorialItem,
-    ]);
+    await waitFor(() =>
+      expect(JSON.parse(localStorage.getItem(LEGACY_COLLECTION_STORAGE_KEY) ?? '[]')).toEqual([
+        editorialItem,
+      ])
+    );
   });
 
   it('does not overwrite a storage version it does not understand', async () => {

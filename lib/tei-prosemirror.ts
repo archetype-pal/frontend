@@ -324,7 +324,10 @@ export function indexLinkableElements(doc: PMDoc): Map<number, LinkableIndexEntr
           const indexed = byId.get(entry.id);
           if (indexed) indexed.text += node.text;
         }
-      } else if (node.type === 'teiEmpty' && LINKABLE_ELEMENTS.has((node.attrs?.el ?? '').toLowerCase())) {
+      } else if (
+        node.type === 'teiEmpty' &&
+        LINKABLE_ELEMENTS.has((node.attrs?.el ?? '').toLowerCase())
+      ) {
         // A void linkable element (e.g. <lb/>) occupies an index but holds no
         // text and is never a link target — count it so following indices align.
         counter++;
