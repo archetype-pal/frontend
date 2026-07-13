@@ -19,8 +19,7 @@ import type { SearchResult } from '@/utils/fetch-facets';
 
 export function getNextOrderingUrl(
   ordering:
-    | { current: string; options: Array<{ name: string; text: string; url: string }> }
-    | undefined,
+    { current: string; options: Array<{ name: string; text: string; url: string }> } | undefined,
   sortKey: string | undefined
 ): string | undefined {
   if (!ordering || !sortKey) return undefined;

@@ -6,14 +6,7 @@ import {
 } from './search-types';
 
 export type SectionKey =
-  | 'search'
-  | 'collection'
-  | 'lightbox'
-  | 'news'
-  | 'blogs'
-  | 'featureArticles'
-  | 'events'
-  | 'about';
+  'search' | 'collection' | 'lightbox' | 'news' | 'blogs' | 'featureArticles' | 'events' | 'about';
 
 export type SearchCategoryConfig = {
   enabled: boolean;

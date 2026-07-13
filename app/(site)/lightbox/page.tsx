@@ -95,13 +95,7 @@ async function extractCroppedPixels(
 }
 
 type OpenPanel =
-  | 'export'
-  | 'session'
-  | 'measurement'
-  | 'comparison'
-  | 'region-comparison'
-  | 'import'
-  | null;
+  'export' | 'session' | 'measurement' | 'comparison' | 'region-comparison' | 'import' | null;
 
 function LightboxPageContent() {
   const searchParams = useSearchParams();

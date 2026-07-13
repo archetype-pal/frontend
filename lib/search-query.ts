@@ -204,9 +204,7 @@ function readExtraParams(sp: SearchParamReader): Record<string, string | string[
 }
 
 export type FacetClickResolution =
-  | { type: 'keyword'; value: string }
-  | { type: 'query'; value: QueryState }
-  | { type: 'noop' };
+  { type: 'keyword'; value: string } | { type: 'query'; value: QueryState } | { type: 'noop' };
 
 /**
  * Return `extraParams` with `value` dropped from the `<facetKey>__not` exclusion
