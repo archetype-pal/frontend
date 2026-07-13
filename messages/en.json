@@ -35,6 +35,13 @@
     "signIn": "Sign in",
     "signOut": "Sign out"
   },
+  "errors": {
+    "somethingWentWrong": "Something went wrong",
+    "unexpectedErrorTryAgain": "An unexpected error occurred. Please try again.",
+    "backToHome": "Back to home",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "The page you're looking for doesn't exist or has moved."
+  },
   "nav": {
     "home": "Home",
     "search": "Search",
