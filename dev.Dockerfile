@@ -23,6 +23,7 @@ COPY . .
 EXPOSE 3000
 
 # Run next directly (not via `pnpm run dev`): pnpm swallows SIGTERM, turning
-# every `docker stop` into a 10s hang + SIGKILL. `next dev` handles SIGTERM
-# and already binds 0.0.0.0:3000 by default in Next 16.
-CMD ["node", "node_modules/next/dist/bin/next", "dev"]
+# every `docker stop` into a 10s hang + SIGKILL. The explicit --hostname
+# forces an IPv4 wildcard bind (next's default resolves to `::`, which is
+# unreachable over IPv4 loopback under some WSL2 networking modes).
+CMD ["node", "node_modules/next/dist/bin/next", "dev", "--hostname", "0.0.0.0"]

@@ -6,7 +6,21 @@
 
 import { env } from '@/lib/env';
 
+/**
+ * Public backend origin — safe to embed in the browser (download hrefs, URLs
+ * built for client-side fetches). Always the public `NEXT_PUBLIC_API_URL`.
+ */
 export const API_BASE_URL = env.apiUrl;
+
+/**
+ * Origin `apiFetch` itself requests against. On the server (RSC render,
+ * `generateMetadata`, route handlers, `sitemap.ts`) reach the backend via the
+ * container-internal host (`INTERNAL_API_URL`, e.g. host.docker.internal); in
+ * the browser use the public origin. On the host and in production both resolve
+ * to the same value. Evaluated once per runtime — the server and client bundles
+ * are separate module instances, so `typeof window` is stable here.
+ */
+const REQUEST_BASE_URL = typeof window === 'undefined' ? env.internalApiUrl : env.apiUrl;
 
 /** Threshold in ms – requests slower than this are flagged when logging. */
 const SLOW_THRESHOLD = 500;
@@ -14,7 +28,7 @@ const SLOW_THRESHOLD = 500;
 const isDev = process.env.NODE_ENV === 'development';
 
 export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
-  const url = `${API_BASE_URL}${path}`;
+  const url = `${REQUEST_BASE_URL}${path}`;
   const method = init?.method ?? 'GET';
   const start = performance.now();
 

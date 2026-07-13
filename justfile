@@ -12,6 +12,16 @@ up-bg:
 down:
     {{compose}} down
 
+# Build the dev image without starting it.
+build:
+    {{compose}} build
+
+# Rebuild the image and re-seed the node_modules/.next volumes. Needed after
+# dependency changes: plain `up --build` reattaches the OLD anonymous volumes,
+# so newly installed packages would be missing from the running container.
+rebuild:
+    {{compose}} up --build --renew-anon-volumes
+
 # Tail the dev server logs (useful after `just up-bg`).
 logs:
     {{compose}} logs -f
