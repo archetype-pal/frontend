@@ -116,11 +116,15 @@ describe('CollectionProvider', () => {
 
     await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
     expect(screen.getByTestId('is-editorial-collected').textContent).toBe('true');
-    expect(JSON.parse(localStorage.getItem(COLLECTION_STORAGE_KEY) ?? '{}')).toMatchObject({
-      version: COLLECTION_STORAGE_VERSION,
-      activeCollectionId: 'default',
-      collections: [{ id: 'default', name: 'Collection', items: [editorialItem] }],
-    });
+    // The provider persists to the new storage key in a post-hydration effect
+    // that can trail the count update, so wait for the write before asserting.
+    await waitFor(() =>
+      expect(JSON.parse(localStorage.getItem(COLLECTION_STORAGE_KEY) ?? '{}')).toMatchObject({
+        version: COLLECTION_STORAGE_VERSION,
+        activeCollectionId: 'default',
+        collections: [{ id: 'default', name: 'Collection', items: [editorialItem] }],
+      })
+    );
   });
 
   it('allows adding editorial annotation items', async () => {
