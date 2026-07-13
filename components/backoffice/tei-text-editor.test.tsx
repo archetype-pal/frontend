@@ -17,22 +17,40 @@ vi.mock('@/services/image-texts', () => ({
 }));
 
 describe('TeiTextEditor — Preview mode', () => {
-  it('renders TEI entity highlighting (.tei-rich) so Preview matches Rich (edit) mode', () => {
-    const { container } = render(
-      <TeiTextEditor
-        value={'<p>Charter of <persName>William</persName> of Scotland</p>'}
-        onChange={() => {}}
-        token={null}
-        defaultMode="preview"
-        hideSource
-      />
-    );
+  const VALUE =
+    '<p><persName type="name">William</persName> to all, ' +
+    '<seg type="salutation">greetings</seg> ' +
+    '<seg type="disposition">grants</seg></p>';
 
-    // Regression: Preview used to render a bare <ImageTextViewer> (no richMarkup),
-    // so entity highlighting was absent in view mode while present in Rich mode.
-    // The rendered transcription now opts into the `.tei-rich` styling...
-    expect(container.querySelector('.tei-rich')).not.toBeNull();
-    // ...which is what colours/labels the person entity (was plain prose before).
-    expect(container.querySelector('.tei-el-persName')).not.toBeNull();
+  function renderPreview() {
+    return render(
+      <TeiTextEditor value={VALUE} onChange={() => {}} token={null} defaultMode="preview" hideSource />
+    );
+  }
+
+  it('renders in type-filter mode (.tei-hl-mode), not the blanket .tei-rich highlight', () => {
+    const { container } = renderPreview();
+    expect(container.querySelector('.tei-hl-mode')).not.toBeNull();
+    expect(container.querySelector('.tei-rich')).toBeNull();
+  });
+
+  it('highlights only name + salutation by default (the requested defaults)', () => {
+    const { container } = renderPreview();
+    // name (persName@type=name) and salutation (seg@type=salutation) → highlighted
+    expect(container.querySelector('[data-dpt-type="name"]')?.classList.contains('tei-hl')).toBe(
+      true
+    );
+    expect(
+      container.querySelector('[data-dpt-type="salutation"]')?.classList.contains('tei-hl')
+    ).toBe(true);
+    // disposition is present but NOT in the default set → not highlighted
+    expect(
+      container.querySelector('[data-dpt-type="disposition"]')?.classList.contains('tei-hl')
+    ).toBe(false);
+  });
+
+  it('exposes the Highlight dropdown control', () => {
+    const { getByLabelText } = renderPreview();
+    expect(getByLabelText('Highlight markup types')).toBeTruthy();
   });
 });

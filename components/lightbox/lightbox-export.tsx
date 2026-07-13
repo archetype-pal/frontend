@@ -179,6 +179,11 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
       toast.error(t('export.toastPrintPopupBlocked'));
       return;
     }
+    const handleLoad = () => {
+      win.focus();
+      win.print();
+    };
+    win.addEventListener('load', handleLoad, { once: true });
     const figures = workspaceImages
       .map((img) => {
         const caption = getLightboxImageCaption(img);
@@ -197,7 +202,7 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
         `img { width: 100%; height: auto; object-fit: contain; }` +
         `figcaption { font-size: 11px; color: #333; margin-top: 6px; }` +
         `</style></head>` +
-        `<body onload="window.focus();window.print();">` +
+        `<body>` +
         `<h1>${escapeXml(t('export.printHeading', { count }))}</h1>` +
         `<div class="grid">${figures}</div>` +
         `</body></html>`
