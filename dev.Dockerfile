@@ -6,7 +6,8 @@ ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
+# socat backs the dev-entrypoint's localhost->backend port forwards.
+RUN apk add --no-cache libc6-compat socat
 WORKDIR /app
 
 # Keep in sync with "packageManager" in package.json and the production Dockerfile.
@@ -18,11 +19,14 @@ RUN npm install -g pnpm@11.9.0
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm i --frozen-lockfile --store-dir /pnpm/store
+COPY dev-entrypoint.sh /usr/local/bin/dev-entrypoint.sh
 COPY . .
 
 EXPOSE 3000
 
+ENTRYPOINT ["dev-entrypoint.sh"]
 # Run next directly (not via `pnpm run dev`): pnpm swallows SIGTERM, turning
-# every `docker stop` into a 10s hang + SIGKILL. `next dev` handles SIGTERM
-# and already binds 0.0.0.0:3000 by default in Next 16.
-CMD ["node", "node_modules/next/dist/bin/next", "dev"]
+# every `docker stop` into a 10s hang + SIGKILL. The explicit --hostname
+# forces an IPv4 wildcard bind (next's default resolves to `::`, which is
+# unreachable over IPv4 loopback under some WSL2 networking modes).
+CMD ["node", "node_modules/next/dist/bin/next", "dev", "--hostname", "0.0.0.0"]

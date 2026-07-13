@@ -3,21 +3,22 @@ services:
     build:
       context: .
       dockerfile: ./dev.Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-        NEXT_PUBLIC_IIIF_UPSTREAM: ${NEXT_PUBLIC_IIIF_UPSTREAM}
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
-        CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-
+    # Joins the backend stack's network (started via `just up` in api/) and
+    # forwards container-localhost ports to its services (see
+    # dev-entrypoint.sh), so the same .env as host-run `pnpm dev` works
+    # unchanged: API on localhost:8000, IIIF on localhost:1024.
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-      NEXT_PUBLIC_IIIF_UPSTREAM: ${NEXT_PUBLIC_IIIF_UPSTREAM}
-      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-
+      BACKEND_FORWARDS: 8000:api:80,1024:image_server:1024
     ports:
-      - '${FRONT_END_PORT}:3000'
+      - '3000:3000'
+    networks:
+      - backend
     volumes:
       - .:/app
       - /app/node_modules
       - /app/.next
+
+networks:
+  backend:
+    external: true
+    name: archetype_default

@@ -49,15 +49,26 @@ pnpm build
 
 ## Local Development (docker compose)
 
-Copy env setting, then start project :
+Uses the same `.env` as host-run `pnpm dev`: the container joins the backend
+stack's Docker network and forwards its own `localhost:8000`/`localhost:1024`
+to the `api`/`image_server` services (see `dev-entrypoint.sh`), so the
+`localhost` URLs work unchanged.
+
+Requires the backend stack to be running first (`just up` in `api/`), then:
 
 ```bash
-cp .env.dev-compose .env
-docker compose up
+cp .env.example .env
+docker compose up   # or: just up
 ```
 
-Live reload is enabled. We assume backend services are running on `localhost` and reachable from the container. If not, adjust the `.env`.
-If backend/image services are on your machine, they must also be reachable from the container and from client devices (CORS and host/IP values in env vars may need to be updated).
+Live reload is enabled.
+
+After changing dependencies (`pnpm-lock.yaml`), rebuild the image and refresh
+the container's `node_modules` volume:
+
+```bash
+just rebuild   # docker compose up --build --renew-anon-volumes
+```
 
 App URL: `http://localhost:3000`
 
