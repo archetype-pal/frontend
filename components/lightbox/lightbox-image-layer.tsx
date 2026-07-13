@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import NextImage from 'next/image';
+import { useTranslations } from 'next-intl';
 import { AlertTriangle, RotateCw } from 'lucide-react';
 import type { LightboxImage } from '@/lib/lightbox-db';
 import { useLightboxStore } from '@/stores/lightbox-store';
@@ -30,6 +31,7 @@ const ImageWithErrorHandler = React.memo(function ImageWithErrorHandler({
 }: {
   image: LightboxImage;
 }) {
+  const t = useTranslations('lightbox');
   const [loadError, setLoadError] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
   const [retryKey, setRetryKey] = React.useState(0);
@@ -38,7 +40,7 @@ const ImageWithErrorHandler = React.memo(function ImageWithErrorHandler({
     return (
       <div className="w-full h-full bg-gray-200 flex flex-col items-center justify-center text-sm text-gray-500 gap-1">
         <AlertTriangle className="h-5 w-5 text-gray-400" />
-        <span>No image URL</span>
+        <span>{t('imageLayer.noImageUrl')}</span>
       </div>
     );
   }
@@ -47,7 +49,7 @@ const ImageWithErrorHandler = React.memo(function ImageWithErrorHandler({
     return (
       <div className="w-full h-full bg-gray-200 flex flex-col items-center justify-center text-sm text-gray-500 gap-2">
         <AlertTriangle className="h-5 w-5 text-amber-500" />
-        <span>Failed to load</span>
+        <span>{t('imageLayer.failedToLoad')}</span>
         <button
           type="button"
           className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
@@ -59,7 +61,7 @@ const ImageWithErrorHandler = React.memo(function ImageWithErrorHandler({
           }}
         >
           <RotateCw className="h-3 w-3" />
-          Retry
+          {t('imageLayer.retry')}
         </button>
       </div>
     );
@@ -75,7 +77,7 @@ const ImageWithErrorHandler = React.memo(function ImageWithErrorHandler({
       <NextImage
         key={retryKey}
         src={image.imageUrl}
-        alt={image.metadata.shelfmark || image.metadata.locus || 'Image'}
+        alt={image.metadata.shelfmark || image.metadata.locus || t('imageLayer.imageAlt')}
         fill
         className="object-contain"
         unoptimized

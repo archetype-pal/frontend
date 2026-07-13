@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
@@ -40,21 +41,22 @@ import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
 import type { HistoricalItemDetail } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
 
-const ITEM_TYPES = [
-  { value: 'agreement', label: 'Agreement' },
-  { value: 'charter', label: 'Charter' },
-  { value: 'letter', label: 'Letter' },
-];
-
 interface ManuscriptWorkspaceProps {
   itemId: number;
 }
 
 export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { getLabel, getPluralLabel } = useModelLabels();
+
+  const ITEM_TYPES = [
+    { value: 'agreement', label: t('manuscriptWorkspace.typeAgreement') },
+    { value: 'charter', label: t('manuscriptWorkspace.typeCharter') },
+    { value: 'letter', label: t('manuscriptWorkspace.typeLetter') },
+  ];
   const historicalItemLabel = getLabel('historicalItem');
   const catalogueLabelPlural = getPluralLabel('catalogueNumber');
   const dateLabel = getLabel('date');
@@ -118,7 +120,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   const saveMut = useMutation({
     mutationFn: () => updateHistoricalItem(token!, itemId, draft),
     onSuccess: () => {
-      toast.success(`${historicalItemLabel} saved`);
+      toast.success(t('manuscriptWorkspace.toastSaved', { label: historicalItemLabel }));
       queryClient.invalidateQueries({
         queryKey: backofficeKeys.manuscripts.detail(itemId),
       });
@@ -128,9 +130,12 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       setDirty(false);
     },
     onError: (err) => {
-      toast.error(`Failed to save ${historicalItemLabel.toLowerCase()}`, {
-        description: formatApiError(err),
-      });
+      toast.error(
+        t('manuscriptWorkspace.toastFailedSave', { label: historicalItemLabel.toLowerCase() }),
+        {
+          description: formatApiError(err),
+        }
+      );
     },
   });
 
@@ -146,16 +151,19 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   const deleteMut = useMutation({
     mutationFn: () => deleteHistoricalItem(token!, itemId),
     onSuccess: () => {
-      toast.success(`${historicalItemLabel} deleted`);
+      toast.success(t('manuscriptWorkspace.toastDeleted', { label: historicalItemLabel }));
       queryClient.invalidateQueries({
         queryKey: backofficeKeys.manuscripts.all(),
       });
       router.push('/backoffice/manuscripts');
     },
     onError: (err) => {
-      toast.error(`Failed to delete ${historicalItemLabel.toLowerCase()}`, {
-        description: formatApiError(err),
-      });
+      toast.error(
+        t('manuscriptWorkspace.toastFailedDelete', { label: historicalItemLabel.toLowerCase() }),
+        {
+          description: formatApiError(err),
+        }
+      );
     },
   });
 
@@ -207,7 +215,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             onClick={() => setDeleteOpen(true)}
           >
             <Trash2 className="h-3.5 w-3.5 mr-1" />
-            Delete
+            {t('manuscriptWorkspace.deleteButton')}
           </Button>
           <Button size="sm" onClick={() => saveMut.mutate()} disabled={!dirty || saveMut.isPending}>
             {saveMut.isPending ? (
@@ -215,7 +223,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             ) : (
               <Save className="h-3.5 w-3.5 mr-1" />
             )}
-            Save
+            {t('manuscriptWorkspace.saveButton')}
           </Button>
         </div>
       </div>
@@ -227,10 +235,10 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
         const catalogueCount = item.catalogue_numbers.length;
         const descriptionsCount = item.descriptions.length;
         const badges = [
-          ['Parts', partsCount],
-          ['Images', imagesCount],
+          [t('manuscriptWorkspace.badgeParts'), partsCount],
+          [t('manuscriptWorkspace.badgeImages'), imagesCount],
           [catalogueLabelPlural, catalogueCount],
-          ['Descriptions', descriptionsCount],
+          [t('manuscriptWorkspace.badgeDescriptions'), descriptionsCount],
         ] as const;
         return (
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -247,7 +255,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       <CompletenessChecklist
         items={[
           {
-            label: 'Current Location',
+            label: t('manuscriptWorkspace.checklistCurrentLocation'),
             complete: item.item_parts.length > 0 && item.item_parts[0].current_item != null,
             value: item.item_parts[0]?.current_item_display ?? undefined,
           },
@@ -257,12 +265,12 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             value: item.date_display ?? undefined,
           },
           {
-            label: 'Format',
+            label: t('manuscriptWorkspace.checklistFormat'),
             complete: item.format != null,
             value: item.format_display ?? undefined,
           },
           {
-            label: 'Language',
+            label: t('manuscriptWorkspace.checklistLanguage'),
             complete: !!item.language,
           },
           {
@@ -270,20 +278,23 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             complete: item.catalogue_numbers.length > 0,
             value:
               item.catalogue_numbers.length > 0
-                ? `${item.catalogue_numbers.length} entries`
+                ? t('manuscriptWorkspace.entryCount', { count: item.catalogue_numbers.length })
                 : undefined,
           },
           {
-            label: 'Descriptions',
+            label: t('manuscriptWorkspace.checklistDescriptions'),
             complete: item.descriptions.length > 0,
-            value: item.descriptions.length > 0 ? `${item.descriptions.length} entries` : undefined,
+            value:
+              item.descriptions.length > 0
+                ? t('manuscriptWorkspace.entryCount', { count: item.descriptions.length })
+                : undefined,
           },
           {
-            label: 'Parts',
+            label: t('manuscriptWorkspace.checklistParts'),
             complete: item.item_parts.length > 0,
             value:
               item.item_parts.length > 0
-                ? `${item.item_parts.length} part${item.item_parts.length !== 1 ? 's' : ''}`
+                ? t('manuscriptWorkspace.partCount', { count: item.item_parts.length })
                 : undefined,
           },
         ]}
@@ -292,8 +303,10 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="parts">Parts ({item.item_parts.length})</TabsTrigger>
+          <TabsTrigger value="details">{t('manuscriptWorkspace.tabDetails')}</TabsTrigger>
+          <TabsTrigger value="parts">
+            {t('manuscriptWorkspace.tabPartsLabel')} ({item.item_parts.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="details" className="space-y-6 mt-4">

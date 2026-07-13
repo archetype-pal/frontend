@@ -166,6 +166,7 @@ async function buildPrintTableRow(item: CollectionItem, index: number): Promise<
 
 export async function buildCollectionPrintHtml(
   collection: NamedCollection,
+  siteTitle: string,
   options?: { nonce?: string }
 ): Promise<string> {
   const sections = await Promise.all(
@@ -211,7 +212,7 @@ export async function buildCollectionPrintHtml(
     `</style></head>` +
     `<body>` +
     `<h1>${escapeHtml(collection.name)}</h1>` +
-    `<p class="summary">Models of Authority collection · ${count} ${count === 1 ? 'item' : 'items'}</p>` +
+    `<p class="summary">${escapeHtml(siteTitle)} collection · ${count} ${count === 1 ? 'item' : 'items'}</p>` +
     `${sections.join('')}` +
     `${buildPrintStartupScript(options?.nonce)}` +
     `</body></html>`

@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
@@ -32,6 +33,7 @@ import { authFetch } from '@/lib/api-fetch';
 import type { AdminItemImage } from '@/services/backoffice/manuscripts';
 
 export default function HandDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = useTranslations('backoffice');
   const { id: rawId } = use(params);
   const id = Number(rawId);
   const { token } = useAuth();
@@ -71,7 +73,12 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
   const availableImages = useMemo(() => imagesData ?? [], [imagesData]);
 
   if (editor.isError) {
-    return <BackofficeErrorState message="Failed to load hand." onRetry={() => editor.refetch()} />;
+    return (
+      <BackofficeErrorState
+        message={t('handsDetail.failedLoad')}
+        onRetry={() => editor.refetch()}
+      />
+    );
   }
   if (editor.isLoading || !editor.entity || !editor.form) {
     return <BackofficeLoadingState />;
@@ -113,7 +120,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
       {/* Read-only info card */}
       <div className="rounded-md border p-4 text-sm space-y-1">
         <p>
-          <span className="text-muted-foreground">Scribe:</span>{' '}
+          <span className="text-muted-foreground">{t('handsDetail.labelScribe')}</span>{' '}
           <Link
             href={`/backoffice/scribes/${hand.scribe}`}
             className="text-primary hover:underline"
@@ -122,7 +129,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
           </Link>
         </p>
         <p>
-          <span className="text-muted-foreground">Item Part:</span>{' '}
+          <span className="text-muted-foreground">{t('handsDetail.labelItemPart')}</span>{' '}
           <Link
             href={`/backoffice/manuscripts/${hand.item_part}`}
             className="text-primary hover:underline"
@@ -132,7 +139,8 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
         </p>
         {hand.date_display && (
           <p>
-            <span className="text-muted-foreground">Date:</span> {hand.date_display}
+            <span className="text-muted-foreground">{t('handsDetail.labelDate')}</span>{' '}
+            {hand.date_display}
           </p>
         )}
       </div>
@@ -142,12 +150,12 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
         <Link href={`/hands/${id}`} target="_blank">
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
             <ExternalLink className="h-3 w-3" />
-            View Public Page
+            {t('handsDetail.viewPublicPage')}
           </Button>
         </Link>
         <Link href={`/backoffice/scribes/${hand.scribe}`}>
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-            Go to Scribe
+            {t('handsDetail.goToScribe')}
           </Button>
         </Link>
       </div>
@@ -155,21 +163,21 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
       {/* Editable fields */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Name</Label>
+          <Label>{t('handsDetail.labelName')}</Label>
           <Input value={form.name} onChange={(e) => setForm({ name: e.target.value })} />
         </div>
         <div className="space-y-1.5">
-          <Label>Place</Label>
+          <Label>{t('handsDetail.labelPlace')}</Label>
           <Input value={form.place} onChange={(e) => setForm({ place: e.target.value })} />
         </div>
       </div>
 
       <div className="space-y-1.5">
-        <Label>Description</Label>
+        <Label>{t('handsDetail.labelDescription')}</Label>
         <RichTextEditor
           content={form.description}
           onChange={(html) => setForm({ description: html })}
-          placeholder="Enter hand description..."
+          placeholder={t('handsDetail.descriptionPlaceholder')}
           minimal
         />
       </div>
@@ -179,11 +187,14 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ImageIcon className="h-4 w-4 text-muted-foreground" />
-            <Label className="text-base">Images where this hand appears</Label>
+            <Label className="text-base">{t('handsDetail.imagesLabel')}</Label>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">
-              {form.item_part_images.length} of {availableImages.length} selected
+              {t('handsDetail.imagesCount', {
+                selected: form.item_part_images.length,
+                total: availableImages.length,
+              })}
             </span>
             <Button
               variant="outline"
@@ -192,7 +203,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
               onClick={selectAllImages}
               disabled={form.item_part_images.length === availableImages.length}
             >
-              Select All
+              {t('handsDetail.selectAll')}
             </Button>
             <Button
               variant="outline"
@@ -201,7 +212,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
               onClick={deselectAllImages}
               disabled={form.item_part_images.length === 0}
             >
-              Deselect All
+              {t('handsDetail.deselectAll')}
             </Button>
           </div>
         </div>
@@ -212,7 +223,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         ) : availableImages.length === 0 ? (
           <div className="rounded-md border border-dashed p-6 text-center text-muted-foreground text-sm">
-            No images found for this item part.
+            {t('handsDetail.noImages')}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -264,9 +275,9 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title={`Delete "${hand.name}"?`}
-        description="This cannot be undone."
-        confirmLabel="Delete"
+        title={t('handsDetail.deleteTitle', { name: hand.name })}
+        description={t('handsDetail.deleteDescription')}
+        confirmLabel={t('handsDetail.deleteConfirm')}
         loading={editor.isDeleting}
         onConfirm={editor.remove}
       />

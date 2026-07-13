@@ -3,6 +3,8 @@ import { headers } from 'next/headers';
 import localFont from 'next/font/local';
 import { Lora, Cormorant_Garamond } from 'next/font/google';
 import { Toaster } from 'sonner';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import { AuthProvider } from '@/contexts/auth-context';
 import { CollectionProvider } from '@/contexts/collection-context';
@@ -13,6 +15,7 @@ import { AppQueryProvider } from '@/components/providers/query-provider';
 import { env } from '@/lib/env';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import { readModelLabels } from '@/lib/model-labels-server';
+import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -50,20 +53,25 @@ const junicode = localFont({
   preload: false,
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: 'Models of Authority',
-    template: '%s | Models of Authority',
-  },
-  description:
-    'Scottish Charters and the Emergence of Government 1100-1250 – a resource for the study of the contents, script and physical appearance of the corpus of Scottish charters.',
-  metadataBase: new URL(env.siteUrl),
-  openGraph: {
-    type: 'website',
-    locale: 'en_GB',
-    siteName: 'Models of Authority',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, modelLabels] = await Promise.all([getLocale(), readModelLabels()]);
+  const siteTitle = resolveModelLabel(modelLabels.labels.siteTitle, locale as ModelLabelLocale);
+
+  return {
+    title: {
+      default: siteTitle,
+      template: `%s | ${siteTitle}`,
+    },
+    description:
+      'Scottish Charters and the Emergence of Government 1100-1250 – a resource for the study of the contents, script and physical appearance of the corpus of Scottish charters.',
+    metadataBase: new URL(env.siteUrl),
+    openGraph: {
+      type: 'website',
+      locale: 'en_GB',
+      siteName: siteTitle,
+    },
+  };
+}
 
 export default async function RootLayout({
   children,
@@ -72,28 +80,32 @@ export default async function RootLayout({
 }>) {
   const requestHeaders = await headers();
   const nonce = requestHeaders.get('x-nonce') ?? undefined;
-  const [siteFeaturesConfig, modelLabelsConfig] = await Promise.all([
+  const [siteFeaturesConfig, modelLabelsConfig, locale, messages] = await Promise.all([
     readSiteFeatures(),
     readModelLabels(),
+    getLocale(),
+    getMessages(),
   ]);
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body
         data-csp-nonce={nonce}
         className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${cormorant.variable} ${junicode.variable} antialiased`}
       >
-        <AuthProvider>
-          <SiteFeaturesProvider initialConfig={siteFeaturesConfig}>
-            <ModelLabelsProvider initialConfig={modelLabelsConfig}>
-              <AppQueryProvider>
-                <CollectionProvider>
-                  <SearchProvider>{children}</SearchProvider>
-                </CollectionProvider>
-              </AppQueryProvider>
-            </ModelLabelsProvider>
-          </SiteFeaturesProvider>
-        </AuthProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <AuthProvider>
+            <SiteFeaturesProvider initialConfig={siteFeaturesConfig}>
+              <ModelLabelsProvider initialConfig={modelLabelsConfig}>
+                <AppQueryProvider>
+                  <CollectionProvider>
+                    <SearchProvider>{children}</SearchProvider>
+                  </CollectionProvider>
+                </AppQueryProvider>
+              </ModelLabelsProvider>
+            </SiteFeaturesProvider>
+          </AuthProvider>
+        </NextIntlClientProvider>
         <Toaster richColors closeButton position="top-center" />
       </body>
     </html>

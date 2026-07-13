@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import NextImage from 'next/image';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Trash2, Image as ImageIcon, Folder, X } from 'lucide-react';
@@ -37,6 +38,7 @@ function SidebarThumbnail({ image }: { image: LightboxImage }) {
 }
 
 export function LightboxSidebar() {
+  const t = useTranslations('lightbox');
   const {
     currentWorkspaceId,
     workspaces,
@@ -72,7 +74,7 @@ export function LightboxSidebar() {
           size="sm"
           onClick={() => setIsCollapsed(false)}
           className="mb-2"
-          aria-label="Expand workspaces sidebar"
+          aria-label={t('sidebar.expandLabel')}
           aria-expanded={false}
         >
           <Folder className="h-4 w-4" />
@@ -85,12 +87,12 @@ export function LightboxSidebar() {
     <div className="w-64 border-r bg-white flex flex-col">
       {/* Header */}
       <div className="p-4 border-b flex items-center justify-between">
-        <h2 className="font-semibold text-sm">Workspaces</h2>
+        <h2 className="font-semibold text-sm">{t('sidebar.workspacesTitle')}</h2>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setIsCollapsed(true)}
-          aria-label="Collapse workspaces sidebar"
+          aria-label={t('sidebar.collapseLabel')}
           aria-expanded={true}
         >
           <X className="h-4 w-4" />
@@ -120,7 +122,7 @@ export function LightboxSidebar() {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{workspace.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {workspaceImageCount} image{workspaceImageCount !== 1 ? 's' : ''}
+                      {t('sidebar.imagesInWorkspace', { count: workspaceImageCount })}
                     </div>
                   </div>
                 </div>
@@ -148,7 +150,7 @@ export function LightboxSidebar() {
             onClick={handleCreateWorkspace}
           >
             <Plus className="h-4 w-4 mr-2" />
-            New Workspace
+            {t('sidebar.newWorkspace')}
           </Button>
         </div>
       </ScrollArea>
@@ -158,7 +160,7 @@ export function LightboxSidebar() {
         <>
           <div className="p-4 border-t border-b">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold">Images</h3>
+              <h3 className="text-sm font-semibold">{t('sidebar.imagesTitle')}</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -169,7 +171,7 @@ export function LightboxSidebar() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              {`${workspaceImages.length} image${workspaceImages.length !== 1 ? 's' : ''} in workspace`}
+              {t('sidebar.imagesInWorkspace', { count: workspaceImages.length })}
             </p>
           </div>
 
@@ -224,8 +226,8 @@ export function LightboxSidebar() {
               {workspaceImages.length === 0 && (
                 <div className="text-center py-8 text-sm text-muted-foreground">
                   <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No images in workspace</p>
-                  <p className="text-xs mt-1">Add images from your collection</p>
+                  <p>{t('sidebar.noImages')}</p>
+                  <p className="text-xs mt-1">{t('sidebar.addFromCollection')}</p>
                 </div>
               )}
             </div>

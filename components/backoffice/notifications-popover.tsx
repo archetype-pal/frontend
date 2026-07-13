@@ -14,6 +14,7 @@
  */
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { AtSign, Bell, ClipboardCheck, MessageSquare, X } from 'lucide-react';
 
 import {
@@ -40,12 +41,6 @@ function describeSnapshotAge(timestamp: number, now: number = Date.now()): strin
   return `${Math.floor(delta / DAY)}d ago`;
 }
 
-const KIND_LABEL: Record<NotificationKind, string> = {
-  'review-assigned': 'Assigned reviews',
-  'comment-reply': 'Comment replies',
-  mention: 'Mentions',
-};
-
 const KIND_ICON: Record<NotificationKind, React.ComponentType<{ className?: string }>> = {
   'review-assigned': ClipboardCheck,
   'comment-reply': MessageSquare,
@@ -68,9 +63,10 @@ interface RowProps {
   notification: Notification;
   onSelect: (n: Notification) => void;
   now?: number;
+  kindLabel: Record<NotificationKind, string>;
 }
 
-function NotificationRow({ notification, onSelect, now }: RowProps) {
+function NotificationRow({ notification, onSelect, now, kindLabel }: RowProps) {
   const Icon = KIND_ICON[notification.kind];
   const read = notification.readAt !== null;
   return (
@@ -96,7 +92,7 @@ function NotificationRow({ notification, onSelect, now }: RowProps) {
         >
           <Icon className="h-3 w-3" />
         </span>
-        <span className="flex-1 truncate">{KIND_LABEL[notification.kind]}</span>
+        <span className="flex-1 truncate">{kindLabel[notification.kind]}</span>
         <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
           {describeSnapshotAge(notification.createdAt, now)}
         </span>
@@ -113,13 +109,19 @@ export function NotificationsPopover({
   now,
   className,
 }: NotificationsPopoverProps) {
+  const t = useTranslations('backoffice');
+  const kindLabel: Record<NotificationKind, string> = {
+    'review-assigned': t('notifications.kindReviewAssigned'),
+    'comment-reply': t('notifications.kindCommentReply'),
+    mention: t('notifications.kindMention'),
+  };
   const unread = unreadCount(notifications);
   const groups = groupByKind(notifications);
 
   return (
     <div
       role="dialog"
-      aria-label="Notifications"
+      aria-label={t('notifications.ariaLabel')}
       data-testid="notifications-popover"
       className={cn(
         'flex w-80 flex-col gap-2 rounded-md border bg-background p-2 shadow-lg',
@@ -130,7 +132,7 @@ export function NotificationsPopover({
         <div className="flex items-center gap-1.5">
           <Bell className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {unread} unread
+            {t('notifications.unread', { count: unread })}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -141,14 +143,14 @@ export function NotificationsPopover({
             disabled={unread === 0}
             onClick={onMarkAllRead}
           >
-            Mark all as read
+            {t('notifications.markAllRead')}
           </Button>
           <Button
             variant="ghost"
             size="icon"
             className="h-6 w-6"
             onClick={onClose}
-            aria-label="Close notifications"
+            aria-label={t('notifications.closeLabel')}
           >
             <X className="h-3.5 w-3.5" />
           </Button>
@@ -157,7 +159,7 @@ export function NotificationsPopover({
 
       {notifications.length === 0 ? (
         <p className="px-2 py-4 text-center text-xs italic text-muted-foreground">
-          You&rsquo;re all caught up.
+          {t('notifications.allCaughtUp')}
         </p>
       ) : (
         <div className="flex max-h-80 flex-col gap-2 overflow-y-auto">
@@ -167,11 +169,17 @@ export function NotificationsPopover({
             return (
               <section key={kind} data-notification-kind={kind}>
                 <h4 className="px-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {KIND_LABEL[kind]}
+                  {kindLabel[kind]}
                 </h4>
                 <ul className="flex flex-col gap-0.5">
                   {items.map((it) => (
-                    <NotificationRow key={it.id} notification={it} onSelect={onSelect} now={now} />
+                    <NotificationRow
+                      key={it.id}
+                      notification={it}
+                      onSelect={onSelect}
+                      now={now}
+                      kindLabel={kindLabel}
+                    />
                   ))}
                 </ul>
               </section>

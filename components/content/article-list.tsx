@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface Author {
   first_name: string;
@@ -39,12 +40,9 @@ const formatDate = (value: string) => {
   });
 };
 
-export default function ArticleList({
-  title = 'Articles',
-  articles = [],
-  moreLink,
-  limit,
-}: ArticleListProps) {
+export default function ArticleList({ title, articles = [], moreLink, limit }: ArticleListProps) {
+  const t = useTranslations('content');
+  const resolvedTitle = title ?? t('blog.defaultTitle');
   const displayed = typeof limit === 'number' ? articles.slice(0, limit) : articles;
 
   return (
@@ -53,7 +51,7 @@ export default function ArticleList({
         className="text-3xl md:text-4xl font-light tracking-tight text-foreground mb-8"
         style={{ fontFamily: 'var(--font-display)' }}
       >
-        {title}
+        {resolvedTitle}
       </h2>
 
       {displayed.length > 0 ? (
@@ -86,7 +84,7 @@ export default function ArticleList({
         href={moreLink}
         className="inline-flex items-center gap-2 mt-6 text-sm font-medium text-primary hover:gap-3 transition-all group"
       >
-        All {typeof title === 'string' ? title.toLowerCase() : 'articles'}
+        All {resolvedTitle.toLowerCase()}
         <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
       </Link>
     </div>

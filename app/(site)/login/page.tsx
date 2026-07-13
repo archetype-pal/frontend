@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { loginUser, getUserProfile } from '@/utils/api';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Eye, EyeOff, Loader2, User, Lock } from 'lucide-react';
 
 export default function LoginPage() {
+  const t = useTranslations('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -51,9 +53,9 @@ export default function LoginPage() {
           <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
             <Lock className="h-7 w-7 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Welcome back</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">{t('title')}</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
-            Sign in to access Models of Authority
+            {t('description')}
           </CardDescription>
         </CardHeader>
 
@@ -67,7 +69,7 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <Label htmlFor="username" className="text-sm font-medium">
-                Username
+                {t('usernameLabel')}
               </Label>
               <div className="relative">
                 <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -81,14 +83,14 @@ export default function LoginPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="h-11 pl-10"
-                  placeholder="Enter your username"
+                  placeholder={t('usernamePlaceholder')}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">
-                Password
+                {t('passwordLabel')}
               </Label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -101,14 +103,14 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="h-11 pl-10 pr-10"
-                  placeholder="Enter your password"
+                  placeholder={t('passwordPlaceholder')}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   tabIndex={-1}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('hidePassword') : t('showPassword')}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -123,10 +125,10 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in…
+                  {t('signingIn')}
                 </>
               ) : (
-                'Sign in'
+                t('signIn')
               )}
             </Button>
           </form>

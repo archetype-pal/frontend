@@ -4,6 +4,7 @@ import { use, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ArrowLeft, PenTool, ExternalLink, Calendar, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ import { authFetch } from '@/lib/api-fetch';
 import type { AdminHandListItem } from '@/types/backoffice';
 
 export default function ScribeDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = useTranslations('backoffice');
   const { id: rawId } = use(params);
   const id = Number(rawId);
   const { token } = useAuth();
@@ -55,7 +57,10 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
 
   if (editor.isError) {
     return (
-      <BackofficeErrorState message="Failed to load scribe." onRetry={() => editor.refetch()} />
+      <BackofficeErrorState
+        message={t('scribesDetail.failedLoad')}
+        onRetry={() => editor.refetch()}
+      />
     );
   }
   if (editor.isLoading || !editor.entity || !editor.form) {
@@ -87,11 +92,11 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Name</Label>
+          <Label>{t('scribesDetail.labelName')}</Label>
           <Input value={form.name} onChange={(e) => setForm({ name: e.target.value })} />
         </div>
         <div className="space-y-1.5">
-          <Label>Scriptorium</Label>
+          <Label>{t('scribesDetail.labelScriptorium')}</Label>
           <Input
             value={form.scriptorium}
             onChange={(e) => setForm({ scriptorium: e.target.value })}
@@ -104,7 +109,7 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
         <Link href={`/scribes/${id}`} target="_blank">
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
             <ExternalLink className="h-3 w-3" />
-            View Public Profile
+            {t('scribesDetail.viewPublicProfile')}
           </Button>
         </Link>
       </div>
@@ -112,11 +117,13 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
       {/* Hands list */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium">Hands ({hands?.length ?? 0})</h3>
+          <h3 className="text-sm font-medium">
+            {t('scribesDetail.handsSection', { count: hands?.length ?? 0 })}
+          </h3>
         </div>
         {hands?.length === 0 ? (
           <div className="rounded-md border border-dashed p-6 text-center text-muted-foreground text-sm">
-            No hands associated with this scribe.
+            {t('scribesDetail.noHands')}
           </div>
         ) : (
           <div className="rounded-md border divide-y">
@@ -166,9 +173,9 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title={`Delete "${scribe.name}"?`}
-        description="This may fail if the scribe has hands associated."
-        confirmLabel="Delete"
+        title={t('scribesDetail.deleteTitle', { name: scribe.name })}
+        description={t('scribesDetail.deleteDescription')}
+        confirmLabel={t('scribesDetail.deleteConfirm')}
         loading={editor.isDeleting}
         onConfirm={editor.remove}
       />

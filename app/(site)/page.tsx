@@ -3,6 +3,7 @@ import ArticleList from '@/components/content/article-list';
 import { apiFetch } from '@/lib/api-fetch';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 async function getPublications(params: { is_news?: boolean; is_featured?: boolean }) {
   const searchParams = new URLSearchParams();
@@ -22,6 +23,7 @@ async function getPublications(params: { is_news?: boolean; is_featured?: boolea
 }
 
 export default async function Home() {
+  const t = await getTranslations('landing');
   const siteFeatures = await readSiteFeatures();
   const showNews = siteFeatures.sections.news !== false;
   const showFeatureArticles = siteFeatures.sections.featureArticles !== false;
@@ -43,7 +45,7 @@ export default async function Home() {
         <div className="container mx-auto px-6 md:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-6">
-              About the Project
+              {t('aboutEyebrow')}
             </p>
             <blockquote
               className="text-2xl md:text-3xl lg:text-4xl leading-snug tracking-tight text-foreground font-light"
@@ -59,7 +61,7 @@ export default async function Home() {
                 href="/about/historical-context"
                 className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
               >
-                Read more about the historical context
+                {t('historicalContextLink')}
               </Link>
               <span className="block w-12 h-px bg-border" />
             </div>
@@ -72,12 +74,12 @@ export default async function Home() {
         <section className="bg-secondary py-20 md:py-24 relative noise-overlay">
           <div className="container relative z-10 mx-auto px-6 md:px-8">
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-12 text-center">
-              Latest from the Project
+              {t('latestEyebrow')}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-16 max-w-5xl mx-auto">
               {showNews && newsArticles.length > 0 && (
                 <ArticleList
-                  title="News"
+                  title={t('newsTitle')}
                   articles={newsArticles}
                   moreLink="/publications/news"
                   limit={3}
@@ -85,7 +87,7 @@ export default async function Home() {
               )}
               {showFeatureArticles && featureArticles.length > 0 && (
                 <ArticleList
-                  title="Feature Articles"
+                  title={t('featureArticlesTitle')}
                   articles={featureArticles}
                   moreLink="/publications/feature"
                   limit={3}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,7 @@ interface CarouselPreviewProps {
  * Shows image, title overlay, navigation arrows, and dot indicators.
  */
 export function CarouselPreview({ items }: CarouselPreviewProps) {
+  const t = useTranslations('backoffice');
   const [current, setCurrent] = useState(0);
 
   const safeIndex = items.length > 0 ? current % items.length : 0;
@@ -35,8 +37,8 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center text-muted-foreground">
         <ImageIcon className="h-12 w-12 mb-3 opacity-30" />
-        <p className="text-sm font-medium">No items to preview</p>
-        <p className="text-xs mt-1 opacity-70">Add carousel items to see a live preview here.</p>
+        <p className="text-sm font-medium">{t('carousel.previewEmptyTitle')}</p>
+        <p className="text-xs mt-1 opacity-70">{t('carousel.previewEmptyHint')}</p>
       </div>
     );
   }
@@ -47,8 +49,8 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Live Preview</h2>
-        <p className="text-xs text-muted-foreground">Homepage carousel appearance</p>
+        <h2 className="text-lg font-semibold">{t('carousel.livePreviewTitle')}</h2>
+        <p className="text-xs text-muted-foreground">{t('carousel.livePreviewDesc')}</p>
       </div>
 
       <div className="relative overflow-hidden rounded-xl border bg-gradient-to-b from-card to-muted/40 p-2 shadow-sm">
@@ -99,7 +101,7 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
                     'h-2 w-2 rounded-full transition-colors',
                     i === safeIndex ? 'bg-white' : 'bg-white/40'
                   )}
-                  aria-label={`Go to slide ${i + 1}`}
+                  aria-label={t('carousel.goToSlideLabel', { number: i + 1 })}
                 />
               ))}
             </div>
@@ -120,7 +122,7 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
       </div>
 
       <p className="text-xs text-muted-foreground text-center">
-        Showing slide {safeIndex + 1} of {items.length} &mdash; as it will appear on the homepage
+        {t('carousel.previewSlideCounter', { current: safeIndex + 1, total: items.length })}
       </p>
     </div>
   );

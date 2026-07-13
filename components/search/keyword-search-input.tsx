@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { MatchSnippet } from '@/components/search/highlight';
 import { suggestionGroupLabel } from '@/lib/search-suggestion-target';
 import type { ResultType } from '@/lib/search-types';
+import { useTranslations } from 'next-intl';
 
 /** Shared hook for keyword suggestions from a pool (used by Header and DynamicFacets). */
 export function useKeywordSuggestions(keyword: string, pool: string[]) {
@@ -73,20 +74,23 @@ export function KeywordSearchInput({
   onTriggerSearch,
   onSuggestionNavigate,
   suggestions,
-  placeholder = 'Type and press Enter…',
+  placeholder,
   className,
   inputClassName,
   iconClassName,
   clearOnFocus = false,
   onFocus: onFocusProp,
   suggestionsLoading = false,
-  noSuggestionsText = 'No suggestions. Press Enter to search.',
+  noSuggestionsText,
   inputId,
   recentSearches = [],
   onClearRecentSearches,
   exactPhrase = false,
   onExactPhraseChange,
 }: KeywordSearchInputProps) {
+  const t = useTranslations('search');
+  const resolvedPlaceholder = placeholder ?? t('keywordDefaultPlaceholder');
+  const resolvedNoSuggestionsText = noSuggestionsText ?? t('keywordDefaultNoSuggestions');
   const [selectedIndex, setSelectedIndex] = React.useState(-1);
   const [dismissed, setDismissed] = React.useState(true);
 
@@ -201,7 +205,7 @@ export function KeywordSearchInput({
       {onExactPhraseChange && (
         <button
           type="button"
-          title={exactPhrase ? 'Phrase search on' : 'Match exact phrase'}
+          title={exactPhrase ? t('keywordPhraseOn') : t('keywordPhraseOff')}
           aria-pressed={exactPhrase}
           onClick={() => onExactPhraseChange(!exactPhrase)}
           className={
@@ -221,7 +225,7 @@ export function KeywordSearchInput({
             ? `pl-9 ${onExactPhraseChange ? 'pr-10 ' : ''}${inputClassName}`
             : `pl-9${onExactPhraseChange ? ' pr-10' : ''}`
         }
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
@@ -248,7 +252,7 @@ export function KeywordSearchInput({
           {showRecent && (
             <>
               <li className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Recent
+                {t('keywordRecent')}
               </li>
               {recentSearches.map((item) => (
                 <li
@@ -280,7 +284,7 @@ export function KeywordSearchInput({
                     }}
                     className="text-xs font-medium text-primary hover:underline"
                   >
-                    Clear history
+                    {t('keywordClearHistory')}
                   </button>
                 </li>
               )}
@@ -288,7 +292,7 @@ export function KeywordSearchInput({
           )}
           {suggestionsLoading && (
             <li className="px-3 py-2 text-xs text-muted-foreground" aria-live="polite">
-              Loading suggestions…
+              {t('keywordLoading')}
             </li>
           )}
           {suggestions.map((item, i) => {
@@ -343,7 +347,7 @@ export function KeywordSearchInput({
             );
           })}
           {!suggestionsLoading && suggestions.length === 0 && (
-            <li className="px-3 py-2 text-xs text-muted-foreground">{noSuggestionsText}</li>
+            <li className="px-3 py-2 text-xs text-muted-foreground">{resolvedNoSuggestionsText}</li>
           )}
         </ul>
       )}

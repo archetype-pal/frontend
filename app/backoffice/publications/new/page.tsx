@@ -14,10 +14,12 @@ import { Badge } from '@/components/ui/badge';
 import { createPublication } from '@/services/backoffice/publications';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 export default function NewPublicationPage() {
   const { token, user } = useAuth();
   const router = useRouter();
+  const t = useTranslations('backoffice');
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [slugLocked, setSlugLocked] = useState(false);
@@ -50,11 +52,11 @@ export default function NewPublicationPage() {
         author: user?.id,
       }),
     onSuccess: (data) => {
-      toast.success('Publication created');
+      toast.success(t('publicationsNew.toastCreated'));
       router.push(`/backoffice/publications/${data.slug}`);
     },
     onError: (err) => {
-      toast.error('Failed to create publication', {
+      toast.error(t('publicationsNew.toastFailedCreate'), {
         description: formatApiError(err),
       });
     },
@@ -71,23 +73,23 @@ export default function NewPublicationPage() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <h1 className="text-xl font-semibold">New Publication</h1>
+        <h1 className="text-xl font-semibold">{t('publicationsNew.pageTitle')}</h1>
       </div>
 
       <div className="space-y-4 rounded-lg border p-6">
         <div className="space-y-1.5">
-          <Label>Title</Label>
+          <Label>{t('publicationsNew.fieldTitle')}</Label>
           <Input
             value={title}
             onChange={(e) => handleTitleChange(e.target.value)}
-            placeholder="My Publication Title"
+            placeholder={t('publicationsNew.titlePlaceholder')}
             autoFocus
           />
         </div>
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label>Slug</Label>
+            <Label>{t('publicationsNew.fieldSlug')}</Label>
             <Button
               type="button"
               variant="ghost"
@@ -99,7 +101,7 @@ export default function NewPublicationPage() {
                 if (!next) setSlug(generateSlug(title));
               }}
             >
-              {slugLocked ? 'Unlock (auto-generate)' : 'Lock (manual)'}
+              {slugLocked ? t('publicationsNew.slugUnlock') : t('publicationsNew.slugLock')}
             </Button>
           </div>
           <Input
@@ -108,26 +110,26 @@ export default function NewPublicationPage() {
               setSlug(e.target.value);
               setSlugLocked(true);
             }}
-            placeholder="my-publication-title"
+            placeholder={t('publicationsNew.slugPlaceholder')}
             className="font-mono text-sm"
           />
           {slug && (
             <p className="text-xs text-muted-foreground">
-              URL: /publications/{publicationKindPath}/{slug}
+              {t('publicationsNew.slugUrlPreview', { kind: publicationKindPath, slug })}
             </p>
           )}
         </div>
 
         {user && (
           <div className="space-y-1.5">
-            <Label>Author</Label>
+            <Label>{t('publicationsNew.fieldAuthor')}</Label>
             <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm bg-muted/30">
               <User className="h-4 w-4 text-muted-foreground" />
               <span>
                 {user.first_name ? `${user.first_name} ${user.last_name}` : user.username}
               </span>
               <Badge variant="outline" className="text-[10px] ml-auto">
-                Auto-assigned
+                {t('publicationsNew.autoAssigned')}
               </Badge>
             </div>
           </div>
@@ -136,11 +138,11 @@ export default function NewPublicationPage() {
         <div className="flex items-center gap-6">
           <label className="flex items-center gap-2 text-sm">
             <Switch checked={isBlog} onCheckedChange={setIsBlog} />
-            Blog Post
+            {t('publicationsNew.switchBlogPost')}
           </label>
           <label className="flex items-center gap-2 text-sm">
             <Switch checked={isNews} onCheckedChange={setIsNews} />
-            News
+            {t('publicationsNew.switchNews')}
           </label>
         </div>
 
@@ -150,7 +152,7 @@ export default function NewPublicationPage() {
           className="w-full"
         >
           {createMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-          Create & Edit
+          {t('publicationsNew.createButton')}
         </Button>
       </div>
     </div>

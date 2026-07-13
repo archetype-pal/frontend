@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import {
   Activity,
   ArrowUpRight,
@@ -85,6 +86,7 @@ function isView(value: string | null): value is View {
 }
 
 export function TextsMonitor() {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -120,7 +122,7 @@ export function TextsMonitor() {
 
       {error && (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          Could not load monitoring data: {(error as Error).message}
+          {t('texts.loadError', { message: (error as Error).message })}
         </div>
       )}
 
@@ -163,7 +165,7 @@ export function TextsMonitor() {
         </>
       ) : (
         <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
-          {isFetching ? <Loader2 className="h-5 w-5 animate-spin" /> : 'No data yet.'}
+          {isFetching ? <Loader2 className="h-5 w-5 animate-spin" /> : t('texts.noDataYet')}
         </div>
       )}
     </div>
@@ -176,37 +178,14 @@ export function TextsMonitor() {
 // a time — the dashboard charts, or one of the three data tables — instead of
 // stacking everything in a single long scroll. Drill-down links from the KPI
 // strip and charts route here via the `view` URL param.
-const VIEW_META: {
-  key: View;
-  label: string;
-  hint: string;
-  icon: typeof LayoutDashboard;
-}[] = [
-  {
-    key: 'overview',
-    label: 'Overview',
-    hint: 'Lifecycle, coverage, activity and language charts.',
-    icon: LayoutDashboard,
-  },
-  {
-    key: 'browse',
-    label: 'Browse',
-    hint: 'Search, filter, transition and export every image-text.',
-    icon: ListFilter,
-  },
-  {
-    key: 'uncovered',
-    label: 'Uncovered',
-    hint: 'Images still missing a transcription or translation.',
-    icon: ImageOff,
-  },
-  {
-    key: 'recent',
-    label: 'Recent edits',
-    hint: 'The most-recently modified image-texts.',
-    icon: History,
-  },
-];
+const VIEW_ICONS: Record<View, typeof LayoutDashboard> = {
+  overview: LayoutDashboard,
+  browse: ListFilter,
+  uncovered: ImageOff,
+  recent: History,
+};
+
+const VIEW_ORDER: View[] = ['overview', 'browse', 'uncovered', 'recent'];
 
 const ViewSwitcher = memo(function ViewSwitcher({
   view,
@@ -217,16 +196,23 @@ const ViewSwitcher = memo(function ViewSwitcher({
   onChange: (view: View) => void;
   counts: { recent: number; browse: number; uncovered: number };
 }) {
-  const active = VIEW_META.find((v) => v.key === view) ?? VIEW_META[0];
+  const t = useTranslations('backoffice');
+  const viewMeta = VIEW_ORDER.map((key) => ({
+    key,
+    label: t(`texts.view.${key}.label`),
+    hint: t(`texts.view.${key}.hint`),
+    icon: VIEW_ICONS[key],
+  }));
+  const active = viewMeta.find((v) => v.key === view) ?? viewMeta[0];
   return (
     <div className="sticky top-0 z-20 -mx-6 border-b border-border/60 bg-background/85 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/65">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div
           role="tablist"
-          aria-label="Choose a view"
+          aria-label={t('texts.view.ariaLabel')}
           className="inline-flex items-center gap-1 rounded-xl border bg-muted/30 p-1"
         >
-          {VIEW_META.map((v) => {
+          {viewMeta.map((v) => {
             const Icon = v.icon;
             const isActive = v.key === view;
             const count =
@@ -291,24 +277,22 @@ function Header({
   loading: boolean;
   onRefresh: () => void;
 }) {
+  const t = useTranslations('backoffice');
   return (
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p className="font-display text-[11px] uppercase tracking-[0.32em] text-[hsl(var(--c-transcription-h)_55%_38%)] dark:text-[hsl(var(--c-transcription-h)_45%_70%)]">
-          ❦ Editorial monitor
+          {t('texts.eyebrow')}
         </p>
         <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">
-          Transcriptions &amp; Translations
+          {t('texts.title')}
         </h1>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          A live read-out of every image-text in the corpus — where it sits in the Draft → Review →
-          Live → Reviewed lifecycle, what languages dominate, and who edited what most recently.
-        </p>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t('texts.description')}</p>
       </div>
       <div className="flex items-center gap-3">
         {generatedAt && (
           <span className="text-xs text-muted-foreground">
-            Snapshot {new Date(generatedAt).toLocaleString()}
+            {t('texts.snapshot', { datetime: new Date(generatedAt).toLocaleString() })}
           </span>
         )}
         <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading}>
@@ -317,7 +301,7 @@ function Header({
           ) : (
             <RefreshCcw className="mr-2 h-3.5 w-3.5" />
           )}
-          Refresh
+          {t('texts.refresh')}
         </Button>
       </div>
     </header>
@@ -335,12 +319,13 @@ const KpiStrip = memo(function KpiStrip({
   coverage: CoveragePayload;
   health: AnnotationHealth;
 }) {
+  const t = useTranslations('backoffice');
   const kpis = [
     {
       icon: ScrollText,
-      label: 'Transcriptions',
+      label: t('texts.kpi.transcriptions'),
       value: matrix.totals.Transcription,
-      sub: `${matrix.empty_by_kind.Transcription} empty`,
+      sub: t('texts.kpi.empty', { count: matrix.empty_by_kind.Transcription }),
       tone: 'transcription' as const,
       // The KPI is a corpus-wide aggregate; clicking it should open the
       // Browse panel filtered to just that kind so editors can jump from
@@ -349,25 +334,28 @@ const KpiStrip = memo(function KpiStrip({
     },
     {
       icon: BookOpenText,
-      label: 'Translations',
+      label: t('texts.kpi.translations'),
       value: matrix.totals.Translation,
-      sub: `${matrix.empty_by_kind.Translation} empty`,
+      sub: t('texts.kpi.empty', { count: matrix.empty_by_kind.Translation }),
       tone: 'translation' as const,
       href: '?kind=Translation&view=browse',
     },
     {
       icon: Sparkles,
-      label: 'Image coverage',
+      label: t('texts.kpi.imageCoverage'),
       value: pct(coverage.with_either, coverage.images_total),
-      sub: `${coverage.with_either.toLocaleString()} of ${coverage.images_total.toLocaleString()} images`,
+      sub: t('texts.kpi.ofImages', {
+        covered: coverage.with_either.toLocaleString(),
+        total: coverage.images_total.toLocaleString(),
+      }),
       tone: 'neutral' as const,
       href: undefined,
     },
     {
       icon: Activity,
-      label: 'Annotations / text',
+      label: t('texts.kpi.annotationsPerText'),
       value: health.average_annotations_per_text.toFixed(2),
-      sub: `${health.annotations_total.toLocaleString()} regions linked`,
+      sub: t('texts.kpi.regionsLinked', { count: health.annotations_total }),
       tone: 'neutral' as const,
       href: undefined,
     },
@@ -433,6 +421,7 @@ const StatusMatrix = memo(function StatusMatrix({
   matrix: MatrixPayload;
   className?: string;
 }) {
+  const t = useTranslations('backoffice');
   const max = useMemo(() => {
     let m = 0;
     for (const kind of matrix.kinds) {
@@ -446,10 +435,8 @@ const StatusMatrix = memo(function StatusMatrix({
   return (
     <Card className={className}>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-medium">Lifecycle</CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Where every transcription and translation currently sits.
-        </p>
+        <CardTitle className="text-base font-medium">{t('texts.lifecycle.title')}</CardTitle>
+        <p className="text-xs text-muted-foreground">{t('texts.lifecycle.description')}</p>
       </CardHeader>
       <CardContent>
         <div className="grid gap-3">
@@ -478,7 +465,7 @@ const StatusMatrix = memo(function StatusMatrix({
                 <div>
                   <p className="text-sm font-medium leading-tight">{kind}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {matrix.totals[kind].toLocaleString()} total
+                    {t('texts.lifecycle.total', { count: matrix.totals[kind] })}
                   </p>
                 </div>
               </div>
@@ -494,7 +481,11 @@ const StatusMatrix = memo(function StatusMatrix({
                       'flex flex-col gap-1 rounded-md px-1 py-0.5',
                       n > 0 && 'hover:bg-accent/30'
                     )}
-                    title={`Show ${n.toLocaleString()} ${kind.toLowerCase()}${n === 1 ? '' : 's'} in ${s}`}
+                    title={t('texts.lifecycle.cellTitle', {
+                      count: n,
+                      kind: kind.toLowerCase(),
+                      status: s,
+                    })}
                   >
                     <span className="font-display text-lg font-semibold leading-none">
                       {n.toLocaleString()}
@@ -546,6 +537,7 @@ const CoverageDonut = memo(function CoverageDonut({
   coverage: CoveragePayload;
   className?: string;
 }) {
+  const t = useTranslations('backoffice');
   const total = Math.max(1, coverage.images_total);
   // Each segment carries the uncovered-images mode it should drill into
   // when clicked (or null for segments that don't correspond to a
@@ -553,32 +545,32 @@ const CoverageDonut = memo(function CoverageDonut({
   const segs = useMemo(
     () => [
       {
-        label: 'Both',
+        label: t('texts.coverage.both'),
         value: coverage.with_both,
         color: 'hsl(160 55% 38%)',
         coverage: null as string | null,
       },
       {
-        label: 'Transcription only',
+        label: t('texts.coverage.transcriptionOnly'),
         value: Math.max(0, coverage.with_transcription - coverage.with_both),
         // Use design token from globals.css so the palette stays in sync.
         color: 'hsl(var(--c-transcription-h) var(--c-transcription-s) var(--c-transcription-l))',
         coverage: 'translation', // missing translation
       },
       {
-        label: 'Translation only',
+        label: t('texts.coverage.translationOnly'),
         value: Math.max(0, coverage.with_translation - coverage.with_both),
         color: 'hsl(var(--c-translation-h) var(--c-translation-s) var(--c-translation-l))',
         coverage: 'transcription', // missing transcription
       },
       {
-        label: 'Neither',
+        label: t('texts.coverage.neither'),
         value: coverage.with_neither,
         color: 'hsl(25 8% 80%)',
         coverage: 'either', // missing both
       },
     ],
-    [coverage]
+    [coverage, t]
   );
   const conic = useMemo(() => {
     let acc = 0;
@@ -594,10 +586,8 @@ const CoverageDonut = memo(function CoverageDonut({
   return (
     <Card className={className}>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-medium">Image coverage</CardTitle>
-        <p className="text-xs text-muted-foreground">
-          What share of the corpus has at least one text attached.
-        </p>
+        <CardTitle className="text-base font-medium">{t('texts.coverage.title')}</CardTitle>
+        <p className="text-xs text-muted-foreground">{t('texts.coverage.description')}</p>
       </CardHeader>
       <CardContent>
         <div className="flex items-center gap-6">
@@ -611,7 +601,7 @@ const CoverageDonut = memo(function CoverageDonut({
                 {pct(coverage.with_either, coverage.images_total)}
               </span>
               <span className="mt-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                covered
+                {t('texts.coverage.covered')}
               </span>
             </div>
           </div>
@@ -667,25 +657,26 @@ const ActivitySpark = memo(function ActivitySpark({
   activity: ActivityBucket[];
   lastEditAt: string | null;
 }) {
+  const t = useTranslations('backoffice');
   const max = Math.max(1, ...activity.map((a) => a.transcription + a.translation));
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-medium">30-day edits</CardTitle>
-        <p className="text-xs text-muted-foreground">Daily edits to image-texts, by kind.</p>
+        <CardTitle className="text-base font-medium">{t('texts.activity.title')}</CardTitle>
+        <p className="text-xs text-muted-foreground">{t('texts.activity.description')}</p>
       </CardHeader>
       <CardContent>
         {activity.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No edits in the last 30 days.
+            {t('texts.activity.empty')}
             {lastEditAt && (
               <>
                 {' '}
                 <span className="text-muted-foreground/80">
-                  Last edit {daysSince(lastEditAt)} ago
-                  {' ('}
-                  {new Date(lastEditAt).toLocaleDateString()}
-                  {')'}.
+                  {t('texts.activity.lastEdit', {
+                    days: daysSince(t, lastEditAt),
+                    date: new Date(lastEditAt).toLocaleDateString(),
+                  })}
                 </span>
               </>
             )}
@@ -701,7 +692,11 @@ const ActivitySpark = memo(function ActivitySpark({
                 <div
                   key={a.date}
                   className="group relative flex h-full flex-1 flex-col-reverse"
-                  title={`${a.date}: ${a.transcription} transcription, ${a.translation} translation`}
+                  title={t('texts.activity.barTitle', {
+                    date: a.date,
+                    transcription: a.transcription,
+                    translation: a.translation,
+                  })}
                 >
                   <span
                     className="rounded-t-sm bg-transcription/80"
@@ -719,11 +714,11 @@ const ActivitySpark = memo(function ActivitySpark({
         <div className="mt-3 flex items-center gap-4 text-[11px] text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span aria-hidden className="h-2 w-2 rounded-sm bg-transcription" />
-            Transcription
+            {t('texts.legend.transcription')}
           </span>
           <span className="flex items-center gap-1.5">
             <span aria-hidden className="h-2 w-2 rounded-sm bg-translation" />
-            Translation
+            {t('texts.legend.translation')}
           </span>
         </div>
       </CardContent>
@@ -740,14 +735,17 @@ const AnnotationActivity = memo(function AnnotationActivity({
 }: {
   series: AnnotationActivityBucket[];
 }) {
+  const t = useTranslations('backoffice');
   const max = Math.max(1, ...series.map((s) => s.count));
   const total = series.reduce((a, s) => a + s.count, 0);
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-medium">30-day region drawing</CardTitle>
+        <CardTitle className="text-base font-medium">
+          {t('texts.annotationActivity.title')}
+        </CardTitle>
         <p className="text-xs text-muted-foreground">
-          New text-region annotations per day. {total.toLocaleString()} drawn in the last 30 days.
+          {t('texts.annotationActivity.description', { count: total })}
         </p>
       </CardHeader>
       <CardContent>
@@ -755,10 +753,7 @@ const AnnotationActivity = memo(function AnnotationActivity({
           // Historical Graphs predate the `created` timestamp added in
           // migration 0008, so the sparkline starts empty even on a fully
           // populated corpus. Calling that out beats showing nothing.
-          <p className="text-sm text-muted-foreground">
-            No regions drawn in the last 30 days. (Annotations created before this trend was added
-            are dated only from the time they&rsquo;re next edited.)
-          </p>
+          <p className="text-sm text-muted-foreground">{t('texts.annotationActivity.empty')}</p>
         ) : (
           <div className="flex h-32 items-end gap-1">
             {series.map((s) => {
@@ -767,7 +762,7 @@ const AnnotationActivity = memo(function AnnotationActivity({
                 <div
                   key={s.date}
                   className="group relative flex h-full flex-1 flex-col-reverse"
-                  title={`${s.date}: ${s.count} region${s.count === 1 ? '' : 's'}`}
+                  title={t('texts.annotationActivity.barTitle', { date: s.date, count: s.count })}
                 >
                   <span
                     className="rounded-t-sm bg-[hsl(160_55%_45%)]/80"
@@ -793,19 +788,20 @@ const LanguageBreakdown = memo(function LanguageBreakdown({
 }: {
   languages: LanguageRow[];
 }) {
+  const t = useTranslations('backoffice');
   const max = Math.max(1, ...languages.map((l) => l.total));
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base font-medium">
           <LanguagesIcon className="h-4 w-4 text-muted-foreground" />
-          Languages
+          {t('texts.languages.title')}
         </CardTitle>
-        <p className="text-xs text-muted-foreground">Distribution across the corpus, top first.</p>
+        <p className="text-xs text-muted-foreground">{t('texts.languages.description')}</p>
       </CardHeader>
       <CardContent>
         {languages.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No languages recorded.</p>
+          <p className="text-sm text-muted-foreground">{t('texts.languages.empty')}</p>
         ) : (
           <ul className="space-y-2">
             {languages.map((l) => {
@@ -853,28 +849,28 @@ const LanguageBreakdown = memo(function LanguageBreakdown({
 // ──────────────────── Recent edits ────────────────────
 
 const RecentEdits = memo(function RecentEdits({ rows }: { rows: RecentRow[] }) {
+  const t = useTranslations('backoffice');
   const [filter, setFilter] = useState<'all' | Kind>('all');
   const filtered = filter === 'all' ? rows : rows.filter((r) => r.type === filter);
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-3 pb-3">
         <div>
-          <CardTitle className="text-base font-medium">Recent edits</CardTitle>
+          <CardTitle className="text-base font-medium">{t('texts.recent.title')}</CardTitle>
           <p className="text-xs text-muted-foreground">
-            The {rows.length} most-recently modified image-texts. Click the row to edit; ↗ opens the
-            public viewer.
+            {t('texts.recent.description', { count: rows.length })}
           </p>
         </div>
         <Tabs value={filter} onValueChange={(v) => setFilter(v as 'all' | Kind)}>
           <TabsList className="h-8">
             <TabsTrigger value="all" className="text-xs">
-              All
+              {t('texts.recent.filterAll')}
             </TabsTrigger>
             <TabsTrigger value="Transcription" className="text-xs">
-              Transcription
+              {t('texts.legend.transcription')}
             </TabsTrigger>
             <TabsTrigger value="Translation" className="text-xs">
-              Translation
+              {t('texts.legend.translation')}
             </TabsTrigger>
           </TabsList>
           <TabsContent value={filter} />
@@ -882,19 +878,25 @@ const RecentEdits = memo(function RecentEdits({ rows }: { rows: RecentRow[] }) {
       </CardHeader>
       <CardContent className="px-0">
         {filtered.length === 0 ? (
-          <p className="px-6 py-8 text-center text-sm text-muted-foreground">Nothing to show.</p>
+          <p className="px-6 py-8 text-center text-sm text-muted-foreground">
+            {t('texts.recent.empty')}
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[110px]">Kind</TableHead>
-                  <TableHead>Image</TableHead>
-                  <TableHead className="w-[90px]">Status</TableHead>
-                  <TableHead className="w-[80px]">Lang</TableHead>
-                  <TableHead className="w-[90px] text-right">Chars</TableHead>
-                  <TableHead className="w-[90px] text-right">Regions</TableHead>
-                  <TableHead className="w-[180px]">Modified</TableHead>
+                  <TableHead className="w-[110px]">{t('texts.recent.colKind')}</TableHead>
+                  <TableHead>{t('texts.recent.colImage')}</TableHead>
+                  <TableHead className="w-[90px]">{t('texts.recent.colStatus')}</TableHead>
+                  <TableHead className="w-[80px]">{t('texts.recent.colLang')}</TableHead>
+                  <TableHead className="w-[90px] text-right">
+                    {t('texts.recent.colChars')}
+                  </TableHead>
+                  <TableHead className="w-[90px] text-right">
+                    {t('texts.recent.colRegions')}
+                  </TableHead>
+                  <TableHead className="w-[180px]">{t('texts.recent.colModified')}</TableHead>
                   <TableHead className="w-[60px]" />
                 </TableRow>
               </TableHeader>
@@ -921,7 +923,9 @@ const RecentEdits = memo(function RecentEdits({ rows }: { rows: RecentRow[] }) {
                             KIND_TONE[r.type]
                           )}
                         >
-                          {r.type === 'Transcription' ? 'Transcr.' : 'Transl.'}
+                          {r.type === 'Transcription'
+                            ? t('texts.recent.kindTranscriptionAbbr')
+                            : t('texts.recent.kindTranslationAbbr')}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -935,7 +939,7 @@ const RecentEdits = memo(function RecentEdits({ rows }: { rows: RecentRow[] }) {
                           </span>
                           {r.locus && (
                             <span className="text-[11px] text-muted-foreground">
-                              folio {r.locus}
+                              {t('texts.recent.folio', { locus: r.locus })}
                             </span>
                           )}
                         </Link>
@@ -966,7 +970,9 @@ const RecentEdits = memo(function RecentEdits({ rows }: { rows: RecentRow[] }) {
                       </TableCell>
                       <TableCell className="text-right font-mono text-xs">
                         {r.is_empty ? (
-                          <span className="text-amber-600 dark:text-amber-400">empty</span>
+                          <span className="text-amber-600 dark:text-amber-400">
+                            {t('texts.recent.emptyChars')}
+                          </span>
                         ) : (
                           r.char_count.toLocaleString()
                         )}
@@ -985,7 +991,7 @@ const RecentEdits = memo(function RecentEdits({ rows }: { rows: RecentRow[] }) {
                             rel="noopener"
                             onClick={(e) => e.stopPropagation()}
                             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                            title="Open in public viewer"
+                            title={t('texts.recent.openViewer')}
                           >
                             <ArrowUpRight className="h-3.5 w-3.5" />
                           </Link>
@@ -1032,6 +1038,7 @@ function getMinute() {
 }
 
 function RelativeTime({ iso }: { iso: string }) {
+  const t = useTranslations('backoffice');
   const minute = useSyncExternalStore(
     subscribeMinute,
     getMinute,
@@ -1040,12 +1047,13 @@ function RelativeTime({ iso }: { iso: string }) {
   const label = useMemo(() => {
     if (minute === 0) return new Date(iso).toLocaleDateString();
     const diffMin = minute - Math.floor(new Date(iso).getTime() / 60_000);
-    if (diffMin < 1) return 'just now';
-    if (diffMin < 60) return `${diffMin}m ago`;
-    if (diffMin < 60 * 24) return `${Math.round(diffMin / 60)}h ago`;
-    if (diffMin < 60 * 24 * 7) return `${Math.round(diffMin / (60 * 24))}d ago`;
+    if (diffMin < 1) return t('texts.relative.justNow');
+    if (diffMin < 60) return t('texts.relative.minutesAgo', { count: diffMin });
+    if (diffMin < 60 * 24) return t('texts.relative.hoursAgo', { count: Math.round(diffMin / 60) });
+    if (diffMin < 60 * 24 * 7)
+      return t('texts.relative.daysAgo', { count: Math.round(diffMin / (60 * 24)) });
     return new Date(iso).toLocaleDateString();
-  }, [iso, minute]);
+  }, [iso, minute, t]);
   return <span title={new Date(iso).toLocaleString()}>{label}</span>;
 }
 
@@ -1054,10 +1062,9 @@ function pct(part: number, whole: number): string {
   return `${Math.round((part / whole) * 100)}%`;
 }
 
-function daysSince(iso: string): string {
+function daysSince(t: ReturnType<typeof useTranslations>, iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  if (days <= 0) return 'today';
-  if (days === 1) return '1 day';
-  return `${days} days`;
+  if (days <= 0) return t('texts.relative.today');
+  return t('texts.relative.daysCount', { count: days });
 }

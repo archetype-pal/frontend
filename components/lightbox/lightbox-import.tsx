@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Upload, X, FileJson, FileText } from 'lucide-react';
 import { useLightboxStore } from '@/stores/lightbox-store';
@@ -15,6 +16,7 @@ interface LightboxImportProps {
 }
 
 export function LightboxImport({ onClose }: LightboxImportProps) {
+  const t = useTranslations('lightbox');
   const { loadImages, createWorkspace } = useLightboxStore();
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -32,13 +34,13 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
       } else if (file.name.endsWith('.xml')) {
         await importTEI(text);
       } else {
-        toast.error('Unsupported file format. Please use JSON or TEI XML.');
+        toast.error(t('import.toastUnsupported'));
       }
 
       onClose();
     } catch (error) {
       console.error('Import failed:', error);
-      toast.error('Failed to import file. Please check the format.');
+      toast.error(t('import.toastFailed'));
     } finally {
       setIsImporting(false);
     }
@@ -116,7 +118,7 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
     const surfaces = doc.querySelectorAll('surface');
 
     if (surfaces.length === 0) {
-      toast.error('No images found in TEI XML file');
+      toast.error(t('import.toastNoImages'));
       return;
     }
 
@@ -149,7 +151,7 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
         <div className="p-4 border-b flex items-center justify-between">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Upload className="h-5 w-5" />
-            Import Workspace
+            {t('import.title')}
           </h3>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -158,24 +160,20 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
 
         <div className="p-4 space-y-4">
           <div>
-            <label className="text-sm font-medium mb-2 block">Import Format</label>
+            <label className="text-sm font-medium mb-2 block">{t('import.formatLabel')}</label>
             <div className="space-y-2">
               <div className="flex items-center gap-2 p-3 border rounded-md">
                 <FileJson className="h-5 w-5 text-blue-500" />
                 <div className="flex-1">
                   <div className="text-sm font-medium">JSON</div>
-                  <div className="text-xs text-muted-foreground">
-                    Workspace data, images, annotations
-                  </div>
+                  <div className="text-xs text-muted-foreground">{t('import.jsonDesc')}</div>
                 </div>
               </div>
               <div className="flex items-center gap-2 p-3 border rounded-md">
                 <FileText className="h-5 w-5 text-green-500" />
                 <div className="flex-1">
                   <div className="text-sm font-medium">TEI XML</div>
-                  <div className="text-xs text-muted-foreground">
-                    TEI format with facsimile surfaces
-                  </div>
+                  <div className="text-xs text-muted-foreground">{t('import.teiDesc')}</div>
                 </div>
               </div>
             </div>
@@ -195,7 +193,7 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
               className="w-full"
             >
               <Upload className="h-4 w-4 mr-2" />
-              {isImporting ? 'Importing...' : 'Choose File'}
+              {isImporting ? t('import.importing') : t('import.chooseFile')}
             </Button>
           </div>
         </div>

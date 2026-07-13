@@ -37,10 +37,14 @@ import {
 } from '@/lib/search-history';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { LanguageSwitcher } from '@/components/layout/language-switcher';
+import { useTranslations } from 'next-intl';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 
 export default function Header() {
+  const t = useTranslations('nav');
+  const tCommon = useTranslations('common');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
   const headerRef = useRef<HTMLElement>(null);
@@ -200,7 +204,7 @@ export default function Header() {
             >
               <Link href="/collection">
                 <FolderOpen className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
-                {activeCollection.name} ({items.length})
+                {t('collection', { name: activeCollection.name, count: items.length })}
               </Link>
             </Button>
           </li>
@@ -214,7 +218,7 @@ export default function Header() {
               size="sm"
               className={cn('group', navLinkClass(!!isActive('/lightbox', true)))}
             >
-              <Link href="/lightbox">Lightbox</Link>
+              <Link href="/lightbox">{t('lightbox')}</Link>
             </Button>
           </li>
         );
@@ -227,7 +231,7 @@ export default function Header() {
               size="sm"
               className={navLinkClass(!!isActive('/publications/news'))}
             >
-              <Link href="/publications/news">News</Link>
+              <Link href="/publications/news">{t('news')}</Link>
             </Button>
           </li>
         );
@@ -240,7 +244,7 @@ export default function Header() {
               size="sm"
               className={navLinkClass(!!isActive('/publications/blogs'))}
             >
-              <Link href="/publications/blogs">Blogs</Link>
+              <Link href="/publications/blogs">{t('blogs')}</Link>
             </Button>
           </li>
         );
@@ -253,7 +257,7 @@ export default function Header() {
               size="sm"
               className={navLinkClass(!!isActive('/publications/feature'))}
             >
-              <Link href="/publications/feature">Feature Articles</Link>
+              <Link href="/publications/feature">{t('featureArticles')}</Link>
             </Button>
           </li>
         );
@@ -268,7 +272,7 @@ export default function Header() {
               size="sm"
               className={navLinkClass(!!isActive('/about'))}
             >
-              <Link href="/about/about-models-of-authority">About</Link>
+              <Link href="/about/about-models-of-authority">{t('about')}</Link>
             </Button>
           </li>
         );
@@ -286,10 +290,10 @@ export default function Header() {
         <div className="container mx-auto px-4 py-4 md:py-5">
           <div className="flex items-end gap-6">
             <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight text-primary-foreground leading-tight">
-              Models of Authority
+              {getLabel('siteTitle')}
             </h1>
             <p className="hidden md:block text-sm text-primary-foreground/85 max-w-xs pb-0.5">
-              Scottish Charters and the Emergence of Government, 1100–1250
+              {getLabel('siteTagline')}
             </p>
           </div>
         </div>
@@ -297,13 +301,13 @@ export default function Header() {
       <nav className="border-t border-primary-foreground/15 px-2 py-1.5">
         <div className="container mx-auto">
           <div className="flex items-center justify-between md:hidden mb-2">
-            <span className="text-sm font-medium text-primary-foreground">Menu</span>
+            <span className="text-sm font-medium text-primary-foreground">{t('menu')}</span>
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/10"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-label={isMenuOpen ? t('closeMenu') : t('openMenu')}
             >
               {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
@@ -323,7 +327,7 @@ export default function Header() {
                 >
                   <Link href="/">
                     <Home className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
-                    Home
+                    {t('home')}
                   </Link>
                 </Button>
               </li>
@@ -346,14 +350,14 @@ export default function Header() {
                     onTriggerSearch={handleTriggerSearch}
                     onSuggestionNavigate={navigateToSuggestion}
                     suggestions={effectiveSuggestions}
-                    placeholder="Search the corpus…"
+                    placeholder={t('searchPlaceholder')}
                     className="w-full"
                     inputClassName="h-10 w-full rounded-full border border-primary-foreground/25 bg-primary-foreground/15 text-[0.95rem] text-white shadow-none placeholder:text-primary-foreground/60 hover:bg-primary-foreground/20 focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/70"
                     iconClassName="text-primary-foreground/65"
                     clearOnFocus
                     onFocus={handleHeaderSearchFocus}
                     suggestionsLoading={serverSuggestionsQuery.isFetching}
-                    noSuggestionsText="No suggestions yet. Press Enter to search manuscripts."
+                    noSuggestionsText={t('searchNoSuggestions')}
                     recentSearches={historyItems.map((entry, idx) => ({
                       id: `recent-${idx}-${entry.timestamp}`,
                       label: entry.keyword,
@@ -368,6 +372,7 @@ export default function Header() {
                 </div>
               )}
               <div className="flex items-center gap-1 shrink-0">
+                <LanguageSwitcher />
                 {token ? (
                   <>
                     {user?.is_superuser && (
@@ -379,7 +384,7 @@ export default function Header() {
                       >
                         <Link href="/backoffice">
                           <Shield className="h-4 w-4 mr-1" />
-                          Backoffice
+                          {t('backoffice')}
                         </Link>
                       </Button>
                     )}
@@ -388,7 +393,7 @@ export default function Header() {
                       size="icon"
                       className="h-8 w-8 text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
                       onClick={logout}
-                      title="Sign out"
+                      title={tCommon('signOut')}
                     >
                       <LogOut className="h-4 w-4" />
                     </Button>
@@ -402,7 +407,7 @@ export default function Header() {
                   >
                     <Link href="/login">
                       <LogIn className="h-4 w-4 mr-1" />
-                      Sign in
+                      {tCommon('signIn')}
                     </Link>
                   </Button>
                 )}
@@ -411,8 +416,8 @@ export default function Header() {
                   size="icon"
                   className="h-8 w-8 text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
                   onClick={toggleBanner}
-                  aria-label={isBannerVisible ? 'Hide banner' : 'Show banner'}
-                  title={isBannerVisible ? 'Hide banner' : 'Show banner'}
+                  aria-label={isBannerVisible ? t('bannerHide') : t('bannerShow')}
+                  title={isBannerVisible ? t('bannerHide') : t('bannerShow')}
                 >
                   {isBannerVisible ? (
                     <PanelTopClose className="h-4 w-4" />

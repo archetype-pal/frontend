@@ -24,7 +24,13 @@ describe('TeiTextEditor — Preview mode', () => {
 
   function renderPreview() {
     return render(
-      <TeiTextEditor value={VALUE} onChange={() => {}} token={null} defaultMode="preview" hideSource />
+      <TeiTextEditor
+        value={VALUE}
+        onChange={() => {}}
+        token={null}
+        defaultMode="preview"
+        hideSource
+      />
     );
   }
 

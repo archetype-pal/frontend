@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
   useCollection,
@@ -122,9 +123,9 @@ function getImageItemThumbnailUrl(item: CollectionItem): string | null {
   return getIiifImageUrl(infoUrl, { thumbnail: true });
 }
 
-function getItemTitle(item: CollectionItem): string {
+function getItemTitle(item: CollectionItem, untitledLabel: string): string {
   const locus = 'locus' in item ? item.locus : undefined;
-  return String(locus ?? item.shelfmark ?? 'Untitled');
+  return String(locus ?? item.shelfmark ?? untitledLabel);
 }
 
 function getAnnotationCardTitle(item: CollectionItem): string {
@@ -155,6 +156,7 @@ function CollectionGraphCard({
   readOnly: boolean;
   eager: boolean;
 }) {
+  const t = useTranslations('collection');
   const infoUrl = (item.image_iiif || '').trim();
   const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined);
   const isEditorial = isEditorialAnnotation(item);
@@ -187,12 +189,12 @@ function CollectionGraphCard({
             graph={item}
             className="bg-linear-to-br from-secondary to-muted w-full h-full flex items-center justify-center text-xs text-muted-foreground"
           >
-            {infoUrl ? '…' : 'No Image'}
+            {infoUrl ? '…' : t('page.noImage')}
           </GraphDetailLink>
         )}
         {isEditorial && (
           <div className="absolute left-2 top-2 z-10 rounded border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-800 shadow-sm">
-            Editorial
+            {t('page.editorial')}
           </div>
         )}
         {!readOnly && (
@@ -201,7 +203,7 @@ function CollectionGraphCard({
               <Checkbox
                 checked={isSelected}
                 onCheckedChange={() => onToggleSelection(item)}
-                aria-label={`Select graph ${title}`}
+                aria-label={t('page.selectGraph', { title })}
               />
             </div>
             <CollectionStar itemId={item.id} itemType="graph" item={item} />
@@ -218,6 +220,7 @@ function CollectionGraphCard({
 }
 
 function CollectionPageContent() {
+  const t = useTranslations('collection');
   const router = useRouter();
   const searchParams = useSearchParams();
   const shareId = searchParams.get('share')?.trim() ?? '';
@@ -390,29 +393,29 @@ function CollectionPageContent() {
     if (!sharedCollection) return;
 
     if (!canManageCollections) {
-      toast.error('Local collections are not available in this browser session.');
+      toast.error(t('page.toastLocalCollectionsUnavailable'));
       return;
     }
 
     const name = getAvailableCollectionName(collections, sharedCollection.name);
     if (!name || !createCollection(name, sharedCollection.items)) {
-      toast.error('Could not save this shared collection.');
+      toast.error(t('page.toastSaveSharedCollectionFailed'));
       return;
     }
 
-    toast.success(`Saved ${name} to your collections`);
+    toast.success(t('page.toastSavedSharedCollection', { name }));
     router.push('/collection');
   };
 
   if (anonymousSharedCollection.status === 'error') {
     return (
       <div className="container mx-auto max-w-2xl px-4 py-16 text-center">
-        <h1 className="mb-3 text-3xl font-bold text-foreground">Shared collection not found</h1>
-        <p className="mb-6 text-muted-foreground">
-          This public collection link is invalid or incomplete.
-        </p>
+        <h1 className="mb-3 text-3xl font-bold text-foreground">
+          {t('page.sharedCollectionNotFoundTitle')}
+        </h1>
+        <p className="mb-6 text-muted-foreground">{t('page.sharedCollectionNotFoundDesc')}</p>
         <Button asChild>
-          <Link href="/collection">Open your collection</Link>
+          <Link href="/collection">{t('page.openYourCollection')}</Link>
         </Button>
       </div>
     );
@@ -421,7 +424,7 @@ function CollectionPageContent() {
   if (shareId && !sharedStateMatches) {
     return (
       <div className="container mx-auto px-4 py-16 text-center text-muted-foreground">
-        Loading shared collection...
+        {t('page.loadingSharedCollection')}
       </div>
     );
   }
@@ -429,12 +432,12 @@ function CollectionPageContent() {
   if (isSharedView && sharedStateMatches && sharedState.status === 'missing') {
     return (
       <div className="container mx-auto max-w-2xl px-4 py-16 text-center">
-        <h1 className="mb-3 text-3xl font-bold text-foreground">Shared collection not found</h1>
-        <p className="mb-6 text-muted-foreground">
-          This public link is unavailable or no longer contains a collection snapshot.
-        </p>
+        <h1 className="mb-3 text-3xl font-bold text-foreground">
+          {t('page.sharedCollectionNotFoundTitle')}
+        </h1>
+        <p className="mb-6 text-muted-foreground">{t('page.sharedCollectionMissingDesc')}</p>
         <Button asChild>
-          <Link href="/collection">Open your collection</Link>
+          <Link href="/collection">{t('page.openYourCollection')}</Link>
         </Button>
       </div>
     );
@@ -443,12 +446,12 @@ function CollectionPageContent() {
   if (isSharedView && sharedStateMatches && sharedState.status === 'error') {
     return (
       <div className="container mx-auto max-w-2xl px-4 py-16 text-center">
-        <h1 className="mb-3 text-3xl font-bold text-foreground">Could not load collection</h1>
-        <p className="mb-6 text-muted-foreground">
-          The public collection link could not be loaded. Please try again.
-        </p>
+        <h1 className="mb-3 text-3xl font-bold text-foreground">
+          {t('page.sharedCollectionErrorTitle')}
+        </h1>
+        <p className="mb-6 text-muted-foreground">{t('page.sharedCollectionErrorDesc')}</p>
         <Button asChild>
-          <Link href="/collection">Open your collection</Link>
+          <Link href="/collection">{t('page.openYourCollection')}</Link>
         </Button>
       </div>
     );
@@ -464,20 +467,18 @@ function CollectionPageContent() {
           </div>
           <h1 className="text-4xl font-bold mb-4 text-foreground">{activeCollection.name}</h1>
           <p className="text-muted-foreground text-lg mb-10 leading-relaxed max-w-md mx-auto">
-            {isSharedView
-              ? 'This shared collection has no public items.'
-              : 'Your collection is empty. Start adding images or graphs from search results and manuscript viewers by clicking the star icon.'}
+            {isSharedView ? t('page.emptySharedDesc') : t('page.emptyLocalDesc')}
           </p>
           {!isSharedView && (
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/search/images">
                 <Button size="lg" className="w-full sm:w-auto">
-                  Browse Images
+                  {t('page.browseImages')}
                 </Button>
               </Link>
               <Link href="/search/graphs">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  Browse Graphs
+                  {t('page.browseGraphs')}
                 </Button>
               </Link>
             </div>
@@ -507,7 +508,7 @@ function CollectionPageContent() {
       );
     }
 
-    const title = getItemTitle(item);
+    const title = getItemTitle(item, t('page.untitled'));
     const imageUrl = getImageItemThumbnailUrl(item);
 
     return (
@@ -536,7 +537,7 @@ function CollectionPageContent() {
             </>
           ) : (
             <div className="bg-linear-to-br from-secondary to-muted w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-              No Image
+              {t('page.noImage')}
             </div>
           )}
           {!isSharedView && (
@@ -545,7 +546,7 @@ function CollectionPageContent() {
                 <Checkbox
                   checked={isSelected}
                   onCheckedChange={() => toggleItem(item)}
-                  aria-label={`Select image ${title}`}
+                  aria-label={t('page.selectImage', { title })}
                 />
               </div>
               <CollectionStar itemId={item.id} itemType="image" item={item} />
@@ -591,10 +592,10 @@ function CollectionPageContent() {
       const totalCount = totalGroupCountByKey?.get(group.key) ?? group.items.length;
 
       if (totalCount > group.items.length) {
-        return `Showing ${group.items.length} of ${totalCount}`;
+        return t('page.showingGroupOf', { shown: group.items.length, total: totalCount });
       }
 
-      return `${group.items.length} ${group.items.length === 1 ? 'item' : 'items'}`;
+      return t('page.groupItemCount', { count: group.items.length });
     };
 
     return (
@@ -603,9 +604,10 @@ function CollectionPageContent() {
           <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">{title}</h2>
           <span className="text-sm text-muted-foreground bg-secondary px-3 py-1 rounded-full font-medium">
             {hasMore
-              ? `Showing ${visibleItems.length} of ${matchedItems.length}`
-              : `${matchedItems.length} ${matchedItems.length === 1 ? 'item' : 'items'}`}
-            {matchedItems.length !== allItems.length && ` of ${allItems.length}`}
+              ? t('page.showingOfCount', { shown: visibleItems.length, total: matchedItems.length })
+              : t('page.matchedCount', { count: matchedItems.length })}
+            {matchedItems.length !== allItems.length &&
+              ` ${t('page.ofTotal', { total: allItems.length })}`}
           </span>
         </div>
         {matchedItems.length > 0 ? (
@@ -629,7 +631,7 @@ function CollectionPageContent() {
               {hasMore && onShowMore && (
                 <div className="mt-6 flex justify-center">
                   <Button type="button" variant="outline" onClick={onShowMore}>
-                    Show more {title.toLowerCase()}
+                    {t('page.showMoreOf', { title: title.toLowerCase() })}
                   </Button>
                 </div>
               )}
@@ -642,7 +644,7 @@ function CollectionPageContent() {
               {hasMore && onShowMore && (
                 <div className="mt-6 flex justify-center">
                   <Button type="button" variant="outline" onClick={onShowMore}>
-                    Show more {title.toLowerCase()}
+                    {t('page.showMoreOf', { title: title.toLowerCase() })}
                   </Button>
                 </div>
               )}
@@ -651,7 +653,7 @@ function CollectionPageContent() {
         ) : (
           <div className="text-center py-12 bg-secondary rounded-lg border border-border">
             <p className="text-sm text-muted-foreground">
-              No {title.toLowerCase()} match the current filter.
+              {t('page.noItemsMatchFilter', { title: title.toLowerCase() })}
             </p>
           </div>
         )}
@@ -669,9 +671,9 @@ function CollectionPageContent() {
               {activeCollection.name}
             </h1>
             <p className="text-muted-foreground text-sm sm:text-base">
-              {isSharedView ? 'Public shared collection · ' : ''}
-              {items.length} {items.length === 1 ? 'item' : 'items'}
-              {!isSharedView ? ' saved' : ''}
+              {isSharedView ? `${t('page.publicSharedCollection')} · ` : ''}
+              {t('page.itemCount', { count: items.length })}
+              {!isSharedView ? ` ${t('page.saved')}` : ''}
             </p>
           </div>
           <div className="flex gap-2">
@@ -685,7 +687,7 @@ function CollectionPageContent() {
                 onClick={handleSaveSharedCollectionCopy}
               >
                 <Copy className="mr-2 h-4 w-4" />
-                Save collection copy
+                {t('page.saveCollectionCopy')}
               </Button>
             )}
             {!isSharedView && (
@@ -702,7 +704,7 @@ function CollectionPageContent() {
                   }
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  {showClearConfirm ? 'Click again to confirm' : 'Clear All'}
+                  {showClearConfirm ? t('page.clickAgainToConfirm') : t('page.clearAll')}
                 </Button>
               </>
             )}
@@ -718,7 +720,11 @@ function CollectionPageContent() {
                 onClick={() => setFilter(f)}
                 className={f === 'all' ? 'min-w-[60px]' : 'min-w-[70px]'}
               >
-                {f === 'all' ? 'All' : f === 'image' ? 'Images' : 'Graphs'}
+                {f === 'all'
+                  ? t('page.filterAll')
+                  : f === 'image'
+                    ? t('page.filterImages')
+                    : t('page.filterGraphs')}
               </Button>
             ))}
           </div>
@@ -732,13 +738,19 @@ function CollectionPageContent() {
                 className={s === 'repository' ? 'min-w-[100px]' : 'min-w-[80px]'}
               >
                 {s === 'added' && <ArrowUpDown className="h-3.5 w-3.5 mr-1.5" />}
-                {s === 'added' ? 'Added' : s === 'name' ? 'Name' : 'Repository'}
+                {s === 'added'
+                  ? t('page.sortAdded')
+                  : s === 'name'
+                    ? t('page.sortName')
+                    : t('page.sortRepository')}
               </Button>
             ))}
           </div>
           {view === 'grid' && hasAnnotations && (
             <div className="flex items-center gap-2 rounded-lg bg-secondary p-1 pl-3">
-              <span className="text-xs font-medium text-muted-foreground">Group graphs</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                {t('page.groupGraphs')}
+              </span>
               <Select
                 value={annotationGroup}
                 onValueChange={(value) => setAnnotationGroup(value as CollectionAnnotationGroupBy)}
@@ -747,10 +759,10 @@ function CollectionPageContent() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No grouping</SelectItem>
-                  <SelectItem value="allograph">Allograph</SelectItem>
-                  <SelectItem value="hand">Hand</SelectItem>
-                  <SelectItem value="manuscript">Manuscript</SelectItem>
+                  <SelectItem value="none">{t('page.groupNone')}</SelectItem>
+                  <SelectItem value="allograph">{t('page.groupAllograph')}</SelectItem>
+                  <SelectItem value="hand">{t('page.groupHand')}</SelectItem>
+                  <SelectItem value="manuscript">{t('page.groupManuscript')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -764,7 +776,7 @@ function CollectionPageContent() {
               aria-pressed={view === 'grid'}
             >
               <LayoutGrid className="mr-1.5 h-3.5 w-3.5" />
-              Grid
+              {t('page.viewGrid')}
             </Button>
             <Button
               type="button"
@@ -774,7 +786,7 @@ function CollectionPageContent() {
               aria-pressed={view === 'table'}
             >
               <TableIcon className="mr-1.5 h-3.5 w-3.5" />
-              Table
+              {t('page.viewTable')}
             </Button>
           </div>
         </div>
@@ -803,24 +815,32 @@ function CollectionPageContent() {
           {visibleTableItems.length < filteredItems.length && (
             <div className="mt-6 flex flex-col items-center gap-3">
               <p className="text-sm text-muted-foreground">
-                Showing {visibleTableItems.length} of {filteredItems.length} items
+                {t('page.showingOfItems', {
+                  shown: visibleTableItems.length,
+                  total: filteredItems.length,
+                })}
               </p>
               <Button type="button" variant="outline" onClick={showMoreTableItems}>
-                Show more items
+                {t('page.showMoreItems')}
               </Button>
             </div>
           )}
         </>
       ) : (
         <div className="space-y-12">
-          {renderSection('Images', visibleImages, images, allImages, 'image', () =>
+          {renderSection(t('page.sectionImages'), visibleImages, images, allImages, 'image', () =>
             showMoreGridSection('image')
           )}
-          {renderSection('Graphs', visibleAnnotations, annotations, allAnnotations, 'graph', () =>
-            showMoreGridSection('graph')
+          {renderSection(
+            t('page.sectionGraphs'),
+            visibleAnnotations,
+            annotations,
+            allAnnotations,
+            'graph',
+            () => showMoreGridSection('graph')
           )}
           {renderSection(
-            'Editorial Annotations',
+            t('page.sectionEditorialAnnotations'),
             visibleEditorialAnnotations,
             editorialAnnotations,
             allEditorialAnnotations,
@@ -833,9 +853,14 @@ function CollectionPageContent() {
   );
 }
 
+function CollectionPageFallback() {
+  const t = useTranslations('collection');
+  return <div className="container mx-auto px-4 py-16 text-center">{t('page.loading')}</div>;
+}
+
 export default function CollectionPage() {
   return (
-    <Suspense fallback={<div className="container mx-auto px-4 py-16 text-center">Loading...</div>}>
+    <Suspense fallback={<CollectionPageFallback />}>
       <CollectionPageContent />
     </Suspense>
   );

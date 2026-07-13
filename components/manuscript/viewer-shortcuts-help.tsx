@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
 import {
   Dialog,
@@ -9,34 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-
-type Shortcut = { keys: string[]; label: string };
-type ShortcutGroup = { title: string; shortcuts: Shortcut[] };
-
-// Curated to mirror the viewer hotkeys (manuscript-viewer.tsx `viewerHotkeys`)
-// and the tool rail (viewer-toolbar.tsx). Keep in sync when adding a shortcut.
-const NAVIGATE: ShortcutGroup = {
-  title: 'Navigate the image',
-  shortcuts: [
-    { keys: ['G', 'Space'], label: 'Pan / select' },
-    { keys: ['Z', '+'], label: 'Zoom in' },
-    { keys: ['−'], label: 'Zoom out' },
-    { keys: ['Shift', '↑ ↓ ← →'], label: 'Nudge the image' },
-    { keys: ['Home'], label: 'Reset the view' },
-    { keys: ['F'], label: 'Full screen' },
-  ],
-};
-
-const ANNOTATE: ShortcutGroup = {
-  title: 'Annotate',
-  shortcuts: [
-    { keys: ['D', 'Space'], label: 'Draw a region' },
-    { keys: ['M'], label: 'Modify / reshape' },
-    { keys: ['E'], label: 'Editorial annotation' },
-    { keys: ['X', 'Delete'], label: 'Delete selection' },
-    { keys: ['S'], label: 'Save changes' },
-  ],
-};
 
 function Key({ children }: { children: React.ReactNode }) {
   return (
@@ -60,14 +33,41 @@ export function ViewerShortcutsHelp({
   onOpenChange: (open: boolean) => void;
   showEditingShortcuts: boolean;
 }) {
-  const groups = showEditingShortcuts ? [NAVIGATE, ANNOTATE] : [NAVIGATE];
+  const t = useTranslations('manuscript');
+
+  // Curated to mirror the viewer hotkeys (manuscript-viewer.tsx `viewerHotkeys`)
+  // and the tool rail (viewer-toolbar.tsx). Keep in sync when adding a shortcut.
+  const navigate = {
+    title: t('shortcuts.navigateGroup'),
+    shortcuts: [
+      { keys: ['G', 'Space'], label: t('shortcuts.panSelect') },
+      { keys: ['Z', '+'], label: t('shortcuts.zoomIn') },
+      { keys: ['−'], label: t('shortcuts.zoomOut') },
+      { keys: ['Shift', '↑ ↓ ← →'], label: t('shortcuts.nudge') },
+      { keys: ['Home'], label: t('shortcuts.resetView') },
+      { keys: ['F'], label: t('shortcuts.fullScreen') },
+    ],
+  };
+
+  const annotate = {
+    title: t('shortcuts.annotateGroup'),
+    shortcuts: [
+      { keys: ['D', 'Space'], label: t('shortcuts.drawRegion') },
+      { keys: ['M'], label: t('shortcuts.modifyReshape') },
+      { keys: ['E'], label: t('shortcuts.editorial') },
+      { keys: ['X', 'Delete'], label: t('shortcuts.deleteSelection') },
+      { keys: ['S'], label: t('shortcuts.saveChanges') },
+    ],
+  };
+
+  const groups = showEditingShortcuts ? [navigate, annotate] : [navigate];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Keyboard shortcuts</DialogTitle>
-          <DialogDescription>Move around and work the image faster.</DialogDescription>
+          <DialogTitle>{t('shortcuts.title')}</DialogTitle>
+          <DialogDescription>{t('shortcuts.description')}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-x-8 gap-y-6 px-5 pb-5 pt-4 sm:grid-cols-2">

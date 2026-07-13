@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Plus, Trash2, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,29 +35,29 @@ function createDefaultQueryCondition(): QueryCondition {
   return { id: newConditionId(), t: 'cond', field: '', op: 'is', value: '', valueTo: '' };
 }
 
-const STRING_OPS: { value: ConditionOperator; label: string }[] = [
-  { value: 'is', label: 'is' },
-  { value: 'is_not', label: 'is not' },
-  { value: 'contains', label: 'contains (full-text)' },
-  { value: 'starts_with', label: 'starts with (full-text)' },
-  { value: 'is_empty', label: 'is empty' },
-  { value: 'is_not_empty', label: 'is not empty' },
+const STRING_OPS: { value: ConditionOperator; labelKey: string }[] = [
+  { value: 'is', labelKey: 'queryBuilder.opIs' },
+  { value: 'is_not', labelKey: 'queryBuilder.opIsNot' },
+  { value: 'contains', labelKey: 'queryBuilder.opContains' },
+  { value: 'starts_with', labelKey: 'queryBuilder.opStartsWith' },
+  { value: 'is_empty', labelKey: 'queryBuilder.opIsEmpty' },
+  { value: 'is_not_empty', labelKey: 'queryBuilder.opIsNotEmpty' },
 ];
 
-const NUMERIC_OPS: { value: ConditionOperator; label: string }[] = [
-  { value: 'is', label: 'equals' },
-  { value: 'is_not', label: 'not equals' },
-  { value: 'gt', label: '≥ (min)' },
-  { value: 'lt', label: '≤ (max)' },
-  { value: 'between', label: 'between' },
-  { value: 'is_empty', label: 'is empty' },
-  { value: 'is_not_empty', label: 'is not empty' },
+const NUMERIC_OPS: { value: ConditionOperator; labelKey: string }[] = [
+  { value: 'is', labelKey: 'queryBuilder.opEquals' },
+  { value: 'is_not', labelKey: 'queryBuilder.opNotEquals' },
+  { value: 'gt', labelKey: 'queryBuilder.opMin' },
+  { value: 'lt', labelKey: 'queryBuilder.opMax' },
+  { value: 'between', labelKey: 'queryBuilder.opBetween' },
+  { value: 'is_empty', labelKey: 'queryBuilder.opIsEmpty' },
+  { value: 'is_not_empty', labelKey: 'queryBuilder.opIsNotEmpty' },
 ];
 
 function operatorsForField(
   resultType: ResultType,
   field: string
-): { value: ConditionOperator; label: string }[] {
+): { value: ConditionOperator; labelKey: string }[] {
   if (!field) return STRING_OPS;
   const searchable = new Set(SEARCHABLE_FIELDS_BY_TYPE[resultType] ?? []);
   if (isNumericField(resultType, field)) return NUMERIC_OPS;
@@ -89,6 +90,7 @@ const ConditionRow = React.memo(function ConditionRow({
   onRemove,
   facetHints,
 }: ConditionRowProps) {
+  const t = useTranslations('search');
   const fields = React.useMemo(() => mergedFieldOptions(resultType), [resultType]);
   const ops = React.useMemo(
     () => operatorsForField(resultType, condition.field),
@@ -98,14 +100,16 @@ const ConditionRow = React.memo(function ConditionRow({
     () =>
       ops.some((o) => o.value === condition.op)
         ? ops
-        : [...ops, { value: condition.op, label: condition.op }],
+        : [...ops, { value: condition.op, labelKey: '' }],
     [ops, condition.op]
   );
 
   return (
     <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-muted/30 p-2">
       <div className="grid min-w-[140px] flex-1 gap-1">
-        <Label className="text-[10px] uppercase text-muted-foreground">Field</Label>
+        <Label className="text-[10px] uppercase text-muted-foreground">
+          {t('queryBuilder.fieldLabel')}
+        </Label>
         <Select
           value={condition.field || '__none'}
           onValueChange={(v) =>
@@ -119,10 +123,10 @@ const ConditionRow = React.memo(function ConditionRow({
           }
         >
           <SelectTrigger className="h-8 text-xs">
-            <SelectValue placeholder="Field" />
+            <SelectValue placeholder={t('queryBuilder.fieldPlaceholder')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__none">Select field…</SelectItem>
+            <SelectItem value="__none">{t('queryBuilder.selectFieldOption')}</SelectItem>
             {fields.map((f) => (
               <SelectItem key={f} value={f}>
                 {f}
@@ -132,7 +136,9 @@ const ConditionRow = React.memo(function ConditionRow({
         </Select>
       </div>
       <div className="grid min-w-[120px] gap-1">
-        <Label className="text-[10px] uppercase text-muted-foreground">Operator</Label>
+        <Label className="text-[10px] uppercase text-muted-foreground">
+          {t('queryBuilder.operatorLabel')}
+        </Label>
         <Select
           value={condition.op}
           onValueChange={(v) =>
@@ -150,7 +156,7 @@ const ConditionRow = React.memo(function ConditionRow({
           <SelectContent>
             {opList.map((o) => (
               <SelectItem key={o.value} value={o.value}>
-                {o.label}
+                {o.labelKey ? t(o.labelKey) : o.value}
               </SelectItem>
             ))}
           </SelectContent>
@@ -158,17 +164,19 @@ const ConditionRow = React.memo(function ConditionRow({
       </div>
       {needsValue(condition.op) && (
         <div className="grid min-w-[100px] flex-1 gap-1">
-          <Label className="text-[10px] uppercase text-muted-foreground">Value</Label>
+          <Label className="text-[10px] uppercase text-muted-foreground">
+            {t('queryBuilder.valueLabel')}
+          </Label>
           {facetHints && facetHints.length > 0 && condition.op === 'is' ? (
             <Select
               value={condition.value || '__free'}
               onValueChange={(v) => onChange({ ...condition, value: v === '__free' ? '' : v })}
             >
               <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Value" />
+                <SelectValue placeholder={t('queryBuilder.valuePlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__free">Type value…</SelectItem>
+                <SelectItem value="__free">{t('queryBuilder.typeValueOption')}</SelectItem>
                 {facetHints.slice(0, 40).map((h) => (
                   <SelectItem key={h} value={h}>
                     {h}
@@ -181,19 +189,21 @@ const ConditionRow = React.memo(function ConditionRow({
               className="h-8 text-xs"
               value={condition.value}
               onChange={(e) => onChange({ ...condition, value: e.currentTarget.value })}
-              placeholder="Value"
+              placeholder={t('queryBuilder.valuePlaceholder')}
             />
           )}
         </div>
       )}
       {needsSecondValue(condition.op) && (
         <div className="grid min-w-[80px] flex-1 gap-1">
-          <Label className="text-[10px] uppercase text-muted-foreground">To</Label>
+          <Label className="text-[10px] uppercase text-muted-foreground">
+            {t('queryBuilder.toLabel')}
+          </Label>
           <Input
             className="h-8 text-xs"
             value={condition.valueTo ?? ''}
             onChange={(e) => onChange({ ...condition, valueTo: e.currentTarget.value })}
-            placeholder="Max"
+            placeholder={t('queryBuilder.maxPlaceholder')}
           />
         </div>
       )}
@@ -203,7 +213,7 @@ const ConditionRow = React.memo(function ConditionRow({
         size="icon"
         className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
         onClick={onRemove}
-        aria-label="Remove condition"
+        aria-label={t('queryBuilder.removeCondition')}
       >
         <Trash2 className="h-4 w-4" />
       </Button>
@@ -239,6 +249,7 @@ function GroupBlock({
   root,
   facetDistribution,
 }: GroupBlockProps) {
+  const t = useTranslations('search');
   const setThisGroup = (next: QueryGroup) => {
     onChangeRoot(replaceGroupAtPath(root, path, next));
   };
@@ -259,42 +270,46 @@ function GroupBlock({
     >
       {path.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase text-muted-foreground">Group</span>
+          <span className="text-[10px] font-semibold uppercase text-muted-foreground">
+            {t('queryBuilder.groupLabel')}
+          </span>
           <div className="flex rounded-md border p-0.5">
             <button
               type="button"
               className={`rounded px-2 py-0.5 text-xs ${group.op === 'AND' ? 'bg-primary text-primary-foreground' : ''}`}
               onClick={() => setThisGroup({ ...group, op: 'AND' })}
             >
-              AND
+              {t('queryBuilder.opAnd')}
             </button>
             <button
               type="button"
               className={`rounded px-2 py-0.5 text-xs ${group.op === 'OR' ? 'bg-primary text-primary-foreground' : ''}`}
               onClick={() => setThisGroup({ ...group, op: 'OR' })}
             >
-              OR
+              {t('queryBuilder.opOr')}
             </button>
           </div>
         </div>
       )}
       {path.length === 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase text-muted-foreground">Match</span>
+          <span className="text-[10px] font-semibold uppercase text-muted-foreground">
+            {t('queryBuilder.matchLabel')}
+          </span>
           <div className="flex rounded-md border p-0.5">
             <button
               type="button"
               className={`rounded px-2 py-0.5 text-xs ${group.op === 'AND' ? 'bg-primary text-primary-foreground' : ''}`}
               onClick={() => setThisGroup({ ...group, op: 'AND' })}
             >
-              All (AND)
+              {t('queryBuilder.matchAllAnd')}
             </button>
             <button
               type="button"
               className={`rounded px-2 py-0.5 text-xs ${group.op === 'OR' ? 'bg-primary text-primary-foreground' : ''}`}
               onClick={() => setThisGroup({ ...group, op: 'OR' })}
             >
-              Any (OR)
+              {t('queryBuilder.matchAnyOr')}
             </button>
           </div>
         </div>
@@ -324,7 +339,7 @@ function GroupBlock({
                     setThisGroup({ ...group, items: nextItems });
                   }}
                 >
-                  Remove group
+                  {t('queryBuilder.removeGroup')}
                 </Button>
               </div>
             );
@@ -361,7 +376,7 @@ function GroupBlock({
           }}
         >
           <Plus className="h-3.5 w-3.5" />
-          Add condition
+          {t('queryBuilder.addCondition')}
         </Button>
         <Button
           type="button"
@@ -375,7 +390,7 @@ function GroupBlock({
           }}
         >
           <Layers className="h-3.5 w-3.5" />
-          Add group
+          {t('queryBuilder.addGroup')}
         </Button>
       </div>
     </div>

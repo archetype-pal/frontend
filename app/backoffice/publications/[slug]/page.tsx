@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ArrowLeft, Save, Trash2, Loader2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +48,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
   const { token } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const t = useTranslations('backoffice');
 
   const { data: pub, isLoading } = useQuery({
     queryKey: backofficeKeys.publications.detail(slug),
@@ -163,7 +165,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
         keywords,
       }),
     onSuccess: (data) => {
-      toast.success('Publication saved');
+      toast.success(t('publicationsDetail.toastSaved'));
       discardDraft();
       queryClient.invalidateQueries({
         queryKey: backofficeKeys.publications.detail(slug),
@@ -175,7 +177,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
       }
     },
     onError: (err) => {
-      toast.error('Failed to save publication', {
+      toast.error(t('publicationsDetail.toastFailedSave'), {
         description: formatApiError(err),
       });
     },
@@ -193,12 +195,12 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
   const deleteMut = useMutation({
     mutationFn: () => deletePublication(token!, slug),
     onSuccess: () => {
-      toast.success('Publication deleted');
+      toast.success(t('publicationsDetail.toastDeleted'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
       router.push('/backoffice/publications');
     },
     onError: (err) => {
-      toast.error('Failed to delete publication', {
+      toast.error(t('publicationsDetail.toastFailedDelete'), {
         description: formatApiError(err),
       });
     },
@@ -237,7 +239,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
             onClick={() => setDeleteOpen(true)}
           >
             <Trash2 className="h-3.5 w-3.5 mr-1" />
-            Delete
+            {t('publicationsDetail.deleteButton')}
           </Button>
           <Button size="sm" onClick={() => saveMut.mutate()} disabled={!dirty || saveMut.isPending}>
             {saveMut.isPending ? (
@@ -245,7 +247,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
             ) : (
               <Save className="h-3.5 w-3.5 mr-1" />
             )}
-            Save
+            {t('publicationsDetail.saveButton')}
           </Button>
         </div>
       </div>
@@ -254,13 +256,13 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
       {showRecovery && (
         <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 px-4 py-3">
           <span className="text-sm text-amber-800 dark:text-amber-200 flex-1">
-            An autosaved draft was found. Would you like to recover it?
+            {t('publicationsDetail.recoveryBanner')}
           </span>
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={recoverDraft}>
-            Recover Draft
+            {t('publicationsDetail.recoverDraft')}
           </Button>
           <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={dismissRecovery}>
-            Dismiss
+            {t('publicationsDetail.dismissRecovery')}
           </Button>
         </div>
       )}
@@ -271,18 +273,18 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
           {autosaveStatus === 'saving' && (
             <>
               <Loader2 className="h-3 w-3 animate-spin" />
-              <span>Autosaving draft...</span>
+              <span>{t('publicationsDetail.autosaving')}</span>
             </>
           )}
-          {autosaveStatus === 'saved' && <span>Draft autosaved</span>}
-          {autosaveStatus === 'idle' && <span>Unsaved changes</span>}
+          {autosaveStatus === 'saved' && <span>{t('publicationsDetail.draftAutosaved')}</span>}
+          {autosaveStatus === 'idle' && <span>{t('publicationsDetail.unsavedChanges')}</span>}
         </div>
       )}
 
       {/* Form */}
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <Label>Title</Label>
+          <Label>{t('publicationsDetail.fieldTitle')}</Label>
           <Input
             value={title}
             onChange={(e) => {
@@ -295,7 +297,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label>Slug</Label>
+            <Label>{t('publicationsDetail.fieldSlug')}</Label>
             <Button
               type="button"
               variant="ghost"
@@ -307,7 +309,9 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
                 if (!next) setPubSlug(generateSlug(title));
               }}
             >
-              {slugLocked ? 'Auto-generate from title' : 'Lock (manual)'}
+              {slugLocked
+                ? t('publicationsDetail.slugAutoGenerate')
+                : t('publicationsDetail.slugLock')}
             </Button>
           </div>
           <Input
@@ -326,7 +330,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label>Status</Label>
+            <Label>{t('publicationsDetail.fieldStatus')}</Label>
             <Select
               value={status}
               onValueChange={(val) => {
@@ -338,20 +342,20 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Draft">Draft</SelectItem>
-                <SelectItem value="Published">Published</SelectItem>
+                <SelectItem value="Draft">{t('publicationsDetail.statusDraft')}</SelectItem>
+                <SelectItem value="Published">{t('publicationsDetail.statusPublished')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Keywords</Label>
+            <Label>{t('publicationsDetail.fieldKeywords')}</Label>
             <Input
               value={keywords}
               onChange={(e) => {
                 setKeywords(e.target.value);
                 markDirty();
               }}
-              placeholder="comma, separated, tags"
+              placeholder={t('publicationsDetail.keywordsPlaceholder')}
             />
           </div>
         </div>
@@ -365,7 +369,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
                 markDirty();
               }}
             />
-            Blog Post
+            {t('publicationsDetail.switchBlogPost')}
           </label>
           <label className="flex items-center gap-2 text-sm">
             <Switch
@@ -375,7 +379,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
                 markDirty();
               }}
             />
-            News
+            {t('publicationsDetail.switchNews')}
           </label>
           <label className="flex items-center gap-2 text-sm">
             <Switch
@@ -385,7 +389,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
                 markDirty();
               }}
             />
-            Featured
+            {t('publicationsDetail.switchFeatured')}
           </label>
           <label className="flex items-center gap-2 text-sm">
             <Switch
@@ -395,19 +399,19 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
                 markDirty();
               }}
             />
-            Allow Comments
+            {t('publicationsDetail.switchAllowComments')}
           </label>
         </div>
 
         <div className="space-y-1.5">
-          <Label>Content</Label>
+          <Label>{t('publicationsDetail.fieldContent')}</Label>
           <Tabs defaultValue="editor">
             <TabsList className="h-8">
               <TabsTrigger value="editor" className="text-xs">
-                <Save className="h-3 w-3 mr-1" /> Editor
+                <Save className="h-3 w-3 mr-1" /> {t('publicationsDetail.tabEditor')}
               </TabsTrigger>
               <TabsTrigger value="preview" className="text-xs">
-                <Eye className="h-3 w-3 mr-1" /> Preview
+                <Eye className="h-3 w-3 mr-1" /> {t('publicationsDetail.tabPreview')}
               </TabsTrigger>
             </TabsList>
             <TabsContent value="editor" className="mt-2">
@@ -417,7 +421,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
                   setContent(html);
                   markDirty();
                 }}
-                placeholder="Start writing your publication..."
+                placeholder={t('publicationsDetail.contentPlaceholder')}
               />
             </TabsContent>
             <TabsContent value="preview" className="mt-2">
@@ -430,14 +434,14 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
         </div>
 
         <div className="space-y-1.5">
-          <Label>Preview Text</Label>
+          <Label>{t('publicationsDetail.fieldPreviewText')}</Label>
           <RichTextEditor
             content={preview}
             onChange={(html) => {
               setPreview(html);
               markDirty();
             }}
-            placeholder="Short preview text..."
+            placeholder={t('publicationsDetail.previewPlaceholder')}
             minimal
           />
         </div>
@@ -446,9 +450,9 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete this publication?"
-        description="This will permanently delete this publication and all its comments."
-        confirmLabel="Delete"
+        title={t('publicationsDetail.deleteTitle')}
+        description={t('publicationsDetail.deleteDescription')}
+        confirmLabel={t('publicationsDetail.deleteConfirm')}
         loading={deleteMut.isPending}
         onConfirm={() => deleteMut.mutate()}
       />

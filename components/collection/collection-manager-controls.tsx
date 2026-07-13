@@ -11,6 +11,7 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 import { useCollection } from '@/contexts/collection-context';
@@ -74,6 +75,7 @@ export function CollectionManagerControls() {
   const [renameCollectionName, setRenameCollectionName] = React.useState('');
   const [duplicateCollectionName, setDuplicateCollectionName] = React.useState('');
   const [isTransferBusy, setIsTransferBusy] = React.useState(false);
+  const t = useTranslations('collection');
   const importInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleCreate = (event: React.FormEvent<HTMLFormElement>) => {
@@ -81,18 +83,18 @@ export function CollectionManagerControls() {
 
     const name = normalizeCollectionName(newCollectionName);
     if (!name) {
-      toast.error('Enter a collection name');
+      toast.error(t('manager.toastEnterName'));
       return;
     }
 
     if (!createCollection(name)) {
-      toast.error('A collection with that name already exists');
+      toast.error(t('manager.toastNameExists'));
       return;
     }
 
     setNewCollectionName('');
     setIsCreateOpen(false);
-    toast.success(`Created ${name}`);
+    toast.success(t('manager.toastCreated', { name }));
   };
 
   const handleRename = (event: React.FormEvent<HTMLFormElement>) => {
@@ -100,17 +102,17 @@ export function CollectionManagerControls() {
 
     const name = normalizeCollectionName(renameCollectionName);
     if (!name) {
-      toast.error('Enter a collection name');
+      toast.error(t('manager.toastEnterName'));
       return;
     }
 
     if (!renameActiveCollection(name)) {
-      toast.error('A collection with that name already exists');
+      toast.error(t('manager.toastNameExists'));
       return;
     }
 
     setIsRenameOpen(false);
-    toast.success(`Renamed collection to ${name}`);
+    toast.success(t('manager.toastRenamed', { name }));
   };
 
   const handleDuplicate = (event: React.FormEvent<HTMLFormElement>) => {
@@ -118,28 +120,28 @@ export function CollectionManagerControls() {
 
     const name = normalizeCollectionName(duplicateCollectionName);
     if (!name) {
-      toast.error('Enter a collection name');
+      toast.error(t('manager.toastEnterName'));
       return;
     }
 
     if (!duplicateActiveCollection(name)) {
-      toast.error('A collection with that name already exists');
+      toast.error(t('manager.toastNameExists'));
       return;
     }
 
     setDuplicateCollectionName('');
     setIsDuplicateOpen(false);
-    toast.success(`Duplicated collection as ${name}`);
+    toast.success(t('manager.toastDuplicated', { name }));
   };
 
   const handleDelete = () => {
     if (!deleteActiveCollection()) {
-      toast.error('Keep at least one collection');
+      toast.error(t('manager.toastKeepOne'));
       return;
     }
 
     setIsDeleteOpen(false);
-    toast.success(`Deleted ${activeCollection.name}`);
+    toast.success(t('manager.toastDeleted', { name: activeCollection.name }));
   };
 
   const openRenameDialog = () => {
@@ -172,9 +174,9 @@ export function CollectionManagerControls() {
       link.download = getPortableCollectionFilename(activeCollection.name);
       link.click();
       URL.revokeObjectURL(link.href);
-      toast.success(`Exported ${activeCollection.name}`);
+      toast.success(t('manager.toastExported', { name: activeCollection.name }));
     } catch (error) {
-      toast.error('Could not export collection', {
+      toast.error(t('manager.toastExportFailed'), {
         description: error instanceof Error ? error.message : undefined,
       });
     } finally {
@@ -200,9 +202,9 @@ export function CollectionManagerControls() {
         throw new Error('Could not create a new local collection.');
       }
 
-      toast.success(`Imported ${name}`);
+      toast.success(t('manager.toastImported', { name }));
     } catch (error) {
-      toast.error('Could not import collection', {
+      toast.error(t('manager.toastImportFailed'), {
         description: error instanceof Error ? error.message : undefined,
       });
     } finally {
@@ -219,7 +221,7 @@ export function CollectionManagerControls() {
               htmlFor="active-collection"
               className="mb-1.5 block text-xs text-muted-foreground"
             >
-              Active collection
+              {t('manager.activeCollection')}
             </Label>
             <Select
               value={activeCollection.id}
@@ -246,7 +248,7 @@ export function CollectionManagerControls() {
               disabled={!canManageCollections}
             >
               <Plus className="mr-2 h-4 w-4" />
-              New collection
+              {t('manager.newCollection')}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -255,7 +257,7 @@ export function CollectionManagerControls() {
                   variant="outline"
                   size="icon"
                   disabled={!canManageCollections}
-                  aria-label="Collection actions"
+                  aria-label={t('manager.collectionActions')}
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
@@ -263,23 +265,23 @@ export function CollectionManagerControls() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={openRenameDialog}>
                   <Pencil className="mr-2 h-4 w-4" />
-                  Rename
+                  {t('manager.menuRename')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={openDuplicateDialog}>
                   <Copy className="mr-2 h-4 w-4" />
-                  Duplicate
+                  {t('manager.menuDuplicate')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => void handleExport()} disabled={isTransferBusy}>
                   <Download className="mr-2 h-4 w-4" />
-                  Export
+                  {t('manager.menuExport')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() => importInputRef.current?.click()}
                   disabled={isTransferBusy}
                 >
                   <Upload className="mr-2 h-4 w-4" />
-                  Import
+                  {t('manager.menuImport')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -288,7 +290,7 @@ export function CollectionManagerControls() {
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
+                  {t('manager.menuDelete')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -298,13 +300,13 @@ export function CollectionManagerControls() {
               accept=".json,application/json"
               onChange={(event) => void handleImport(event)}
               className="hidden"
-              aria-label="Import collection file"
+              aria-label={t('manager.importFileLabel')}
             />
           </div>
         </div>
         <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
           <FolderOpen className="h-3.5 w-3.5" />
-          New starred items are saved to {activeCollection.name}.
+          {t('manager.starredSavedTo', { name: activeCollection.name })}
         </p>
       </div>
 
@@ -312,13 +314,11 @@ export function CollectionManagerControls() {
         <DialogContent className="max-w-md">
           <form onSubmit={handleCreate}>
             <DialogHeader>
-              <DialogTitle>Create collection</DialogTitle>
-              <DialogDescription>
-                New starred items will be saved to this collection after it is created.
-              </DialogDescription>
+              <DialogTitle>{t('manager.createTitle')}</DialogTitle>
+              <DialogDescription>{t('manager.createDesc')}</DialogDescription>
             </DialogHeader>
             <div className="px-5 py-5">
-              <Label htmlFor="new-collection-name">Collection name</Label>
+              <Label htmlFor="new-collection-name">{t('manager.collectionName')}</Label>
               <Input
                 id="new-collection-name"
                 value={newCollectionName}
@@ -332,7 +332,7 @@ export function CollectionManagerControls() {
               <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Create</Button>
+              <Button type="submit">{t('manager.createButton')}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -342,11 +342,11 @@ export function CollectionManagerControls() {
         <DialogContent className="max-w-md">
           <form onSubmit={handleRename}>
             <DialogHeader>
-              <DialogTitle>Rename collection</DialogTitle>
-              <DialogDescription>Change the name of the active collection.</DialogDescription>
+              <DialogTitle>{t('manager.renameTitle')}</DialogTitle>
+              <DialogDescription>{t('manager.renameDesc')}</DialogDescription>
             </DialogHeader>
             <div className="px-5 py-5">
-              <Label htmlFor="rename-collection-name">Collection name</Label>
+              <Label htmlFor="rename-collection-name">{t('manager.collectionName')}</Label>
               <Input
                 id="rename-collection-name"
                 value={renameCollectionName}
@@ -360,7 +360,7 @@ export function CollectionManagerControls() {
               <Button type="button" variant="outline" onClick={() => setIsRenameOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Rename</Button>
+              <Button type="submit">{t('manager.renameButton')}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -370,13 +370,11 @@ export function CollectionManagerControls() {
         <DialogContent className="max-w-md">
           <form onSubmit={handleDuplicate}>
             <DialogHeader>
-              <DialogTitle>Duplicate collection</DialogTitle>
-              <DialogDescription>
-                Copy the active collection and its saved items into a new collection.
-              </DialogDescription>
+              <DialogTitle>{t('manager.duplicateTitle')}</DialogTitle>
+              <DialogDescription>{t('manager.duplicateDesc')}</DialogDescription>
             </DialogHeader>
             <div className="px-5 py-5">
-              <Label htmlFor="duplicate-collection-name">New collection name</Label>
+              <Label htmlFor="duplicate-collection-name">{t('manager.newCollectionName')}</Label>
               <Input
                 id="duplicate-collection-name"
                 value={duplicateCollectionName}
@@ -390,7 +388,7 @@ export function CollectionManagerControls() {
               <Button type="button" variant="outline" onClick={() => setIsDuplicateOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Duplicate</Button>
+              <Button type="submit">{t('manager.duplicateButton')}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -399,18 +397,15 @@ export function CollectionManagerControls() {
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete {activeCollection.name}?</DialogTitle>
-            <DialogDescription>
-              This removes the collection and its saved items from this browser. It does not delete
-              images or graphs from the site.
-            </DialogDescription>
+            <DialogTitle>{t('manager.deleteTitle', { name: activeCollection.name })}</DialogTitle>
+            <DialogDescription>{t('manager.deleteDesc')}</DialogDescription>
           </DialogHeader>
           <DialogFooter className="pt-5">
             <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)}>
               Cancel
             </Button>
             <Button type="button" variant="destructive" onClick={handleDelete}>
-              Delete collection
+              {t('manager.deleteButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

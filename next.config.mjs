@@ -1,6 +1,8 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
+import createNextIntlPlugin from 'next-intl/plugin';
 
 const analyze = withBundleAnalyzer({ enabled: process.env.ANALYZE === 'true' });
+const withNextIntl = createNextIntlPlugin('./lib/i18n.ts');
 const requireEnv = (key) => {
   const value = process.env[key]?.trim();
   if (!value) {
@@ -112,4 +114,4 @@ const nextConfig = {
   output: 'standalone',
 };
 
-export default analyze(nextConfig);
+export default analyze(withNextIntl(nextConfig));

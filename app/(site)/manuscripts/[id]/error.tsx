@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { EntitySegmentError } from '@/components/page/entity-segment-error';
 
 export default function ManuscriptError({
@@ -9,13 +10,14 @@ export default function ManuscriptError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('manuscript.loadError');
   return (
     <EntitySegmentError
       scope="manuscripts"
       error={error}
       reset={reset}
-      fallbackMessage="This manuscript could not be loaded. Please try again."
-      backLabel="Back to manuscripts"
+      fallbackMessage={t('message')}
+      backLabel={t('backLink')}
     />
   );
 }

@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import PaginatedPublications from '@/components/content/paginated-publications';
 import BlogPostPreview from '@/components/content/blog-post-preview';
@@ -13,6 +14,8 @@ import {
 import { PUBLICATION_KIND_CONFIG, type PublicationKind } from '@/lib/publications';
 import { PageLoadingState } from '@/components/page/page-loading-state';
 import { BackofficeLink } from '@/components/common/backoffice-link';
+import { readModelLabels } from '@/lib/model-labels-server';
+import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,12 +28,14 @@ async function getPublicationBySlug(slug: string): Promise<Publication> {
   }
 }
 
-export function PublicationListPage({ kind }: { kind: PublicationKind }) {
+export async function PublicationListPage({ kind }: { kind: PublicationKind }) {
   const config = PUBLICATION_KIND_CONFIG[kind];
+  const t = await getTranslations('content');
+  const title = t(`publicationKinds.${kind}.title`);
   return (
-    <Suspense fallback={<PageLoadingState label="Loading publications…" />}>
+    <Suspense fallback={<PageLoadingState label={t('blog.loadingPublications')} />}>
       <PaginatedPublications
-        title={config.title}
+        title={title}
         categoryFlag={config.queryFlag}
         basePath={config.routeBase}
       />
@@ -45,13 +50,21 @@ export async function publicationMetadata({
   kind: PublicationKind;
   slug: string;
 }): Promise<Metadata> {
-  const config = PUBLICATION_KIND_CONFIG[kind];
+  const [locale, modelLabels, t] = await Promise.all([
+    getLocale(),
+    readModelLabels(),
+    getTranslations('content'),
+  ]);
+  const siteTitle = resolveModelLabel(modelLabels.labels.siteTitle, locale as ModelLabelLocale);
+  const summaryLabel = t(`publicationKinds.${kind}.summaryLabel`);
   try {
     const item = await getPublicationBySlug(slug);
     const author = [item.author?.first_name, item.author?.last_name].filter(Boolean).join(' ');
     return {
-      title: `${item.title} | Models of Authority`,
-      description: item.preview || `${item.title} – Models of Authority ${config.summaryLabel}`,
+      // The root layout applies a `%s | ${siteTitle}` title template, so
+      // return the bare title here to avoid double-suffixing.
+      title: item.title,
+      description: item.preview || `${item.title} – ${siteTitle} ${summaryLabel}`,
       openGraph: {
         title: item.title,
         description: item.preview || undefined,
@@ -61,7 +74,7 @@ export async function publicationMetadata({
       },
     };
   } catch {
-    return { title: `${config.summaryLabel} | Models of Authority` };
+    return { title: summaryLabel };
   }
 }
 
@@ -75,6 +88,8 @@ export async function PublicationDetailPage({
   const config = PUBLICATION_KIND_CONFIG[kind];
   const item = await getPublicationBySlug(slug);
   const recent = await getPublications({ [config.queryFlag]: true, limit: 5, offset: 0 });
+  const t = await getTranslations('content');
+  const title = t(`publicationKinds.${kind}.title`);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -98,7 +113,7 @@ export async function PublicationDetailPage({
         <aside className="w-full md:w-80">
           <section className="mb-8">
             <h2 className="text-lg font-serif font-semibold text-foreground border-b border-border pb-2 mb-4">
-              Recent {config.title}
+              {t('blog.recentSection', { title })}
             </h2>
             <ul className="space-y-2">
               {recent.results
@@ -118,10 +133,10 @@ export async function PublicationDetailPage({
           </section>
           <section>
             <h2 className="text-lg font-serif font-semibold text-foreground border-b border-border pb-2 mb-4">
-              Back to list
+              {t('blog.backToList')}
             </h2>
             <Link href={config.routeBase} className="text-sm text-primary hover:underline">
-              View all {config.title.toLowerCase()}
+              {t('blog.viewAll', { title: title.toLowerCase() })}
             </Link>
           </section>
         </aside>

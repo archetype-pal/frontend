@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
@@ -26,6 +27,7 @@ interface ScribeViewerProps {
 
 export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
   const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB);
+  const t = useTranslations('scribe');
 
   const period = scribe.period ?? scribe.date ?? null;
 
@@ -35,12 +37,12 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
       <div className="mb-6">
         <p className="text-sm text-muted-foreground mb-1">
           <Link href="/search/scribes" className="hover:underline">
-            Scribes
+            {t('breadcrumb')}
           </Link>
         </p>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-3xl font-medium text-foreground">
-            <span className="text-muted-foreground font-normal">Scribe: </span>
+            <span className="text-muted-foreground font-normal">{t('titlePrefix')}</span>
             {scribe.name}
           </h1>
           <BackofficeLink kind="scribe" id={scribe.id} />
@@ -49,10 +51,12 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="bg-secondary p-1">
-          <TabsTrigger value="information">Information</TabsTrigger>
-          <TabsTrigger value="hands">Hands ({hands.length})</TabsTrigger>
+          <TabsTrigger value="information">{t('tabs.information')}</TabsTrigger>
+          <TabsTrigger value="hands">
+            {t('tabs.hands')} ({hands.length})
+          </TabsTrigger>
           <TabsTrigger value="idiographs">
-            Idiographs ({scribe.idiographs?.length ?? 0})
+            {t('tabs.idiographs')} ({scribe.idiographs?.length ?? 0})
           </TabsTrigger>
         </TabsList>
 
@@ -60,11 +64,11 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
         <TabsContent value="information" className="space-y-6">
           {/* Date & Place */}
           <div className="rounded-lg border bg-card p-6">
-            <h2 className="text-lg font-semibold mb-4">Date and Place</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('sections.dateAndPlace')}</h2>
             <dl className="grid grid-cols-[180px_1fr] gap-x-4 gap-y-3">
               <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <User className="h-4 w-4" />
-                Name
+                {t('fields.name')}
               </dt>
               <dd className="text-sm">{scribe.name}</dd>
 
@@ -72,7 +76,7 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
                 <>
                   <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    Date
+                    {t('fields.date')}
                   </dt>
                   <dd className="text-sm">{period}</dd>
                 </>
@@ -82,7 +86,7 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
                 <>
                   <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <Building2 className="h-4 w-4" />
-                    Scriptorium
+                    {t('fields.scriptorium')}
                   </dt>
                   <dd className="text-sm">{scribe.scriptorium}</dd>
                 </>
@@ -93,7 +97,7 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
           {/* Description (if any) */}
           {scribe.description && (
             <div className="rounded-lg border bg-card p-6">
-              <h2 className="text-lg font-semibold mb-4">Description</h2>
+              <h2 className="text-lg font-semibold mb-4">{t('fields.description')}</h2>
               <div
                 className="prose max-w-none"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(scribe.description) }}
@@ -109,10 +113,10 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Item Part</TableHead>
-                    <TableHead>Hand</TableHead>
-                    <TableHead className="hidden sm:table-cell">Date</TableHead>
-                    <TableHead className="hidden md:table-cell">Place</TableHead>
+                    <TableHead>{t('fields.itemPart')}</TableHead>
+                    <TableHead>{t('fields.hand')}</TableHead>
+                    <TableHead className="hidden sm:table-cell">{t('fields.date')}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t('fields.place')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -128,7 +132,7 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
                         >
                           {hand.item_part_display_label ??
                             hand.shelfmark ??
-                            `Manuscript #${hand.item_part}`}
+                            t('manuscriptFallback', { id: hand.item_part })}
                         </Link>
                       </TableCell>
                       <TableCell>
@@ -154,7 +158,7 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
             <div className="rounded-lg border bg-card p-6">
               <div className="flex items-center gap-2 text-muted-foreground bg-muted/50 rounded-md p-4">
                 <PenTool className="h-4 w-4" />
-                <span>No hands associated to this scribe.</span>
+                <span>{t('empty.hands')}</span>
               </div>
             </div>
           )}
@@ -179,7 +183,7 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
             <div className="rounded-lg border bg-card p-6">
               <div className="flex items-center gap-2 text-muted-foreground bg-muted/50 rounded-md p-4">
                 <Pen className="h-4 w-4" />
-                <span>No idiographs associated to this scribe.</span>
+                <span>{t('empty.idiographs')}</span>
               </div>
             </div>
           )}

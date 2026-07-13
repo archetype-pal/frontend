@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { useTranslations } from 'next-intl';
 
 interface ShareButtonsProps {
   title: string;
@@ -9,6 +10,7 @@ interface ShareButtonsProps {
 }
 
 export default function ShareButtons({ title, author, slug }: ShareButtonsProps) {
+  const t = useTranslations('content');
   const normalizedSlug = slug.startsWith('/') ? slug : `/${slug}`;
   const currentUrl =
     typeof window === 'undefined' ? '' : `${window.location.origin}${normalizedSlug}`;
@@ -60,7 +62,7 @@ export default function ShareButtons({ title, author, slug }: ShareButtonsProps)
         onClick={() => handleShare('twitter')}
         disabled={!currentUrl}
       >
-        Share on Twitter
+        {t('share.twitter')}
       </Button>
       <Button
         variant="ghost"
@@ -69,7 +71,7 @@ export default function ShareButtons({ title, author, slug }: ShareButtonsProps)
         onClick={() => handleShare('facebook')}
         disabled={!currentUrl}
       >
-        Share on Facebook
+        {t('share.facebook')}
       </Button>
     </div>
   );

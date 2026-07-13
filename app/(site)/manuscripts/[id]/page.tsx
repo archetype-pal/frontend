@@ -4,6 +4,9 @@ import { ManuscriptViewer } from './manuscript-viewer';
 import { notFound } from 'next/navigation';
 import { apiFetch } from '@/lib/api-fetch';
 import Link from 'next/link';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { readModelLabels } from '@/lib/model-labels-server';
+import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
 async function getManuscript(id: string): Promise<Manuscript | null> {
   try {
@@ -43,18 +46,26 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
+  const [t, locale, modelLabels] = await Promise.all([
+    getTranslations('manuscript.metadata'),
+    getLocale(),
+    readModelLabels(),
+  ]);
+  const siteTitle = resolveModelLabel(modelLabels.labels.siteTitle, locale as ModelLabelLocale);
   try {
     const manuscript = await getManuscript(id);
     if (!manuscript) {
-      return { title: 'Manuscript | Models of Authority' };
+      return { title: t('fallbackTitle') };
     }
-    const label = manuscript.display_label ?? `Manuscript #${id}`;
+    const label = manuscript.display_label ?? t('numberedFallbackTitle', { id });
     return {
-      title: `${label} | Models of Authority`,
-      description: `View manuscript ${label} – Scottish Charters and the Emergence of Government 1100-1250`,
+      // The root layout applies a `%s | ${siteTitle}` title template, so
+      // return the bare title here to avoid double-suffixing.
+      title: label,
+      description: t('description', { label, siteTitle }),
     };
   } catch {
-    return { title: 'Manuscript | Models of Authority' };
+    return { title: t('fallbackTitle') };
   }
 }
 
@@ -63,20 +74,19 @@ export default async function ManuscriptPage({ params }: { params: Promise<{ id:
   const [manuscript, images] = await Promise.all([getManuscript(id), getManuscriptImages(id)]);
 
   if (!manuscript) {
+    const t = await getTranslations('manuscript.loadError');
     return (
       <main className="mx-auto flex max-w-6xl flex-col items-center px-4 py-24 text-center sm:px-6">
         <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
-          Unable to load manuscript
+          {t('title')}
         </h1>
-        <p className="mt-3 max-w-md text-muted-foreground">
-          The manuscript service is currently unavailable. Please try again shortly.
-        </p>
+        <p className="mt-3 max-w-md text-muted-foreground">{t('description')}</p>
         <div className="ornament-divider mt-6 w-44 text-border" aria-hidden />
         <Link
           href="/search/manuscripts"
           className="mt-5 text-sm font-medium text-primary underline-offset-4 hover:underline"
         >
-          Back to manuscripts
+          {t('backLink')}
         </Link>
       </main>
     );

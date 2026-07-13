@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
 import { WorksetViewerClient } from '@/components/lightbox/workset-viewer-client';
 import { env } from '@/lib/env';
 import { getWorkset } from '@/services/worksets';
+import { readModelLabels } from '@/lib/model-labels-server';
+import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
 // `dynamic = 'force-dynamic'` is set in the route's layout.tsx (this route
 // is fetched per-request and hydrates the client-only lightbox store).
@@ -16,16 +19,22 @@ export async function generateMetadata({
   const { publicId } = await params;
   // Metadata must never throw — degrade to a default title if the lookup fails
   // (the page render below surfaces a real error via the error boundary).
-  const workset = await getWorkset(publicId).catch(() => null);
-  // The root layout applies a `%s | Models of Authority` title template, so
+  const [workset, locale, modelLabels, t] = await Promise.all([
+    getWorkset(publicId).catch(() => null),
+    getLocale(),
+    readModelLabels(),
+    getTranslations('workset.metadata'),
+  ]);
+  // The root layout applies a `%s | ${siteTitle}` title template, so
   // return the bare title here to avoid double-suffixing.
-  if (!workset) return { title: 'Workset' };
-  const description = workset.description || 'A shared lightbox workset of manuscript images.';
+  if (!workset) return { title: t('fallbackTitle') };
+  const siteTitle = resolveModelLabel(modelLabels.labels.siteTitle, locale as ModelLabelLocale);
+  const description = workset.description || t('defaultDescription');
   return {
     title: workset.title,
     description,
     alternates: { canonical: `${env.siteUrl}/worksets/${publicId}` },
-    openGraph: { title: `${workset.title} | Models of Authority`, description },
+    openGraph: { title: `${workset.title} | ${siteTitle}`, description },
   };
 }
 

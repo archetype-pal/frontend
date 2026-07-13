@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Copy, Link2, Share2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -19,16 +20,8 @@ import { getPubliclyShareableCollectionItems } from '@/lib/collection-workset';
 import { createAnonymousCollectionShareUrl } from '@/lib/collection-share-url';
 import type { NamedCollection } from '@/lib/collection-storage';
 
-async function copyShareUrl(url: string) {
-  try {
-    await navigator.clipboard.writeText(url);
-    toast.success('Shareable link copied to clipboard');
-  } catch {
-    toast.error('Could not copy link', { description: url });
-  }
-}
-
 export function ShareCollectionButton({ collection }: { collection: NamedCollection }) {
+  const t = useTranslations('collection');
   const [isOpen, setIsOpen] = React.useState(false);
   const [title, setTitle] = React.useState(collection.name);
   const [isSharing, setIsSharing] = React.useState(false);
@@ -38,6 +31,15 @@ export function ShareCollectionButton({ collection }: { collection: NamedCollect
     [collection.items]
   );
   const excludedItemsCount = collection.items.length - shareableItems.length;
+
+  const copyShareUrl = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(t('share.toastLinkCopied'));
+    } catch {
+      toast.error(t('share.toastCopyFailed'), { description: url });
+    }
+  };
 
   const openDialog = () => {
     setTitle(collection.name);
@@ -61,7 +63,7 @@ export function ShareCollectionButton({ collection }: { collection: NamedCollect
       setShareUrl(url);
       await copyShareUrl(url);
     } catch (error) {
-      toast.error('Failed to create shareable link', {
+      toast.error(t('share.toastCreateFailed'), {
         description: error instanceof Error ? error.message : undefined,
       });
     } finally {
@@ -78,23 +80,20 @@ export function ShareCollectionButton({ collection }: { collection: NamedCollect
         disabled={collection.items.length === 0}
       >
         <Share2 className="mr-2 h-4 w-4" />
-        Share
+        {t('share.button')}
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Share {collection.name}</DialogTitle>
-            <DialogDescription>
-              Create a public, read-only snapshot. Later changes to your local collection will not
-              change the shared link.
-            </DialogDescription>
+            <DialogTitle>{t('share.dialogTitle', { name: collection.name })}</DialogTitle>
+            <DialogDescription>{t('share.dialogDesc')}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 px-5 py-5">
             {shareUrl ? (
               <div className="space-y-2">
-                <Label htmlFor="collection-share-url">Shareable link</Label>
+                <Label htmlFor="collection-share-url">{t('share.shareableLinkLabel')}</Label>
                 <div className="flex gap-2">
                   <Input id="collection-share-url" value={shareUrl} readOnly />
                   <Button
@@ -104,14 +103,14 @@ export function ShareCollectionButton({ collection }: { collection: NamedCollect
                     onClick={() => copyShareUrl(shareUrl)}
                   >
                     <Copy className="h-4 w-4" />
-                    <span className="sr-only">Copy shareable link</span>
+                    <span className="sr-only">{t('share.copyLinkSr')}</span>
                   </Button>
                 </div>
               </div>
             ) : (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="collection-share-title">Shared collection title</Label>
+                  <Label htmlFor="collection-share-title">{t('share.sharedTitleLabel')}</Label>
                   <Input
                     id="collection-share-title"
                     value={title}
@@ -120,20 +119,15 @@ export function ShareCollectionButton({ collection }: { collection: NamedCollect
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {shareableItems.length} {shareableItems.length === 1 ? 'item' : 'items'} will be
-                  included.
+                  {t('share.itemsIncluded', { count: shareableItems.length })}
                 </p>
                 {excludedItemsCount > 0 ? (
                   <p className="text-xs text-amber-700">
-                    {excludedItemsCount} editorial{' '}
-                    {excludedItemsCount === 1 ? 'annotation is' : 'annotations are'} excluded from
-                    the public link.
+                    {t('share.editorialExcluded', { count: excludedItemsCount })}
                   </p>
                 ) : null}
                 {shareableItems.length === 0 ? (
-                  <p className="text-xs text-destructive">
-                    This collection has no items that can be shared publicly.
-                  </p>
+                  <p className="text-xs text-destructive">{t('share.noShareableItems')}</p>
                 ) : null}
               </>
             )}
@@ -150,7 +144,7 @@ export function ShareCollectionButton({ collection }: { collection: NamedCollect
                 disabled={isSharing || !title.trim() || shareableItems.length === 0}
               >
                 <Link2 className="mr-2 h-4 w-4" />
-                {isSharing ? 'Creating link...' : 'Create public link'}
+                {isSharing ? t('share.creatingLink') : t('share.createPublicLink')}
               </Button>
             ) : null}
           </DialogFooter>

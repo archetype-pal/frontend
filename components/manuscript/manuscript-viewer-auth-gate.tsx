@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import { useTranslations } from 'next-intl';
 import ManuscriptViewer from '@/components/manuscript/manuscript-viewer';
 import { useAuth } from '@/contexts/auth-context';
 import { resolveManuscriptViewerAccess } from '@/lib/manuscript-viewer-access';
@@ -13,10 +14,11 @@ interface ManuscriptViewerAuthGateProps {
 export default function ManuscriptViewerAuthGate({
   imageId,
 }: ManuscriptViewerAuthGateProps): React.JSX.Element {
+  const t = useTranslations('common');
   const { token, user, isReady } = useAuth();
 
   if (!isReady) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    return <div className="flex h-screen items-center justify-center">{t('loading')}</div>;
   }
 
   const viewerAccess = resolveManuscriptViewerAccess({

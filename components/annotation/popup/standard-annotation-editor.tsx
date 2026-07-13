@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { CheckCheck, RotateCcw, Sparkles } from 'lucide-react';
 
 import type { Allograph } from '@/types/allographs';
@@ -85,6 +86,7 @@ export function StandardAnnotationEditor({
   popupTab,
   onPopupTabChange,
 }: StandardAnnotationEditorProps) {
+  const t = useTranslations('annotation');
   const { getPluralLabel } = useModelLabels();
   const allographSelectRef = React.useRef<SearchableSelectHandle>(null);
 
@@ -134,7 +136,9 @@ export function StandardAnnotationEditor({
         />
       ) : (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Allograph</label>
+          <label className="text-sm font-medium text-foreground">
+            {t('popup.editor.allograph')}
+          </label>
           <SearchableSelect
             ref={allographSelectRef}
             options={allographOptions.map((allograph) => ({
@@ -143,10 +147,10 @@ export function StandardAnnotationEditor({
             }))}
             value={draftAllographId != null ? String(draftAllographId) : null}
             onValueChange={(value) => onDraftAllographIdChange(value ? Number(value) : null)}
-            placeholder="Choose an allograph"
-            searchPlaceholder="Search allographs..."
-            emptyText="No allographs found."
-            clearLabel="Choose an allograph"
+            placeholder={t('popup.editor.chooseAllograph')}
+            searchPlaceholder={t('popup.editor.searchAllographs')}
+            emptyText={t('popup.editor.noAllographsFound')}
+            clearLabel={t('popup.editor.chooseAllograph')}
             contentClassName="z-[250]"
           />
         </div>
@@ -158,11 +162,11 @@ export function StandardAnnotationEditor({
         <ReadOnlyIdentityField
           label="Hand"
           value={handOptions[0].name}
-          title="The only hand recorded for this image"
+          title={t('popup.editor.singleHandTitle')}
         />
       ) : (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Hand</label>
+          <label className="text-sm font-medium text-foreground">{t('popup.editor.hand')}</label>
           <Select
             value={draftHandId != null ? String(draftHandId) : '__unset__'}
             onValueChange={(value) =>
@@ -170,10 +174,10 @@ export function StandardAnnotationEditor({
             }
           >
             <SelectTrigger>
-              <SelectValue placeholder="Choose a hand" />
+              <SelectValue placeholder={t('popup.editor.chooseHand')} />
             </SelectTrigger>
             <SelectContent className="z-[200]">
-              <SelectItem value="__unset__">Choose a hand</SelectItem>
+              <SelectItem value="__unset__">{t('popup.editor.chooseHand')}</SelectItem>
               {handOptions.map((hand) => (
                 <SelectItem key={hand.id} value={String(hand.id)}>
                   {hand.name}
@@ -341,21 +345,27 @@ export function StandardAnnotationEditor({
       <div className="flex items-center justify-between gap-3">
         <label className="text-sm font-medium text-foreground">{getPluralLabel('position')}</label>
         <span className="text-xs text-muted-foreground">
-          {selectedPositionsCount > 0 ? `${selectedPositionsCount} selected` : 'None selected'}
+          {selectedPositionsCount > 0
+            ? t('popup.editor.selectedCount', { count: selectedPositionsCount })
+            : t('popup.editor.noneSelected')}
         </span>
       </div>
 
       {draftAllographId == null ? (
         <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          Choose an allograph to load the related {getPluralLabel('position').toLowerCase()}.
+          {t('popup.editor.choosePositionsHint', {
+            positions: getPluralLabel('position').toLowerCase(),
+          })}
         </div>
       ) : !selectedAllograph ? (
         <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          No allograph data available.
+          {t('popup.editor.noAllographData')}
         </div>
       ) : selectedAllograph.positions.length === 0 ? (
         <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          No {getPluralLabel('position').toLowerCase()} are defined for this allograph.
+          {t('popup.editor.noPositionsDefined', {
+            positions: getPluralLabel('position').toLowerCase(),
+          })}
         </div>
       ) : (
         <div className="space-y-2 rounded-md border p-3">
@@ -379,11 +389,11 @@ export function StandardAnnotationEditor({
 
   const standardNotesEditor = (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">Notes</label>
+      <label className="text-sm font-medium text-foreground">{t('popup.editor.notes')}</label>
       <textarea
         value={draftNoteText}
         onChange={(e) => onDraftNoteTextChange(e.target.value)}
-        placeholder="Type note"
+        placeholder={t('popup.editor.typeNote')}
         rows={5}
         className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
       />
@@ -393,33 +403,33 @@ export function StandardAnnotationEditor({
   const standardFooter = (
     <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
       <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
-        {isExisting ? 'Cancel' : 'Discard'}
+        {isExisting ? t('popup.editor.cancel') : t('popup.editor.discard')}
       </Button>
       <Button
         onClick={onConfirmDraftAnnotation}
         disabled={isExisting && !hasLocalChanges}
         type="button"
       >
-        OK
+        {t('popup.editor.ok')}
       </Button>
     </div>
   );
 
   const editableComponentFeatureSection = (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">Components</label>
+      <label className="text-sm font-medium text-foreground">{t('popup.editor.components')}</label>
 
       {draftAllographId == null ? (
         <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          Choose an allograph to load the related components and features.
+          {t('popup.editor.chooseComponentsHint')}
         </div>
       ) : !selectedAllograph ? (
         <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          No allograph data available.
+          {t('popup.editor.noAllographData')}
         </div>
       ) : selectedAllograph.components.length === 0 ? (
         <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-          No components are defined for this allograph.
+          {t('popup.editor.noComponentsDefined')}
         </div>
       ) : (
         <div className="space-y-3 rounded-md border p-3">
@@ -463,11 +473,15 @@ export function StandardAnnotationEditor({
                                 <span className="font-medium text-foreground">
                                   {selectedFeatureCount}
                                 </span>
-                                {` / ${totalFeatureCount} selected`}
-                                {defaultFeatureCount > 0 ? ` · ${defaultFeatureCount} default` : ''}
+                                {t('popup.editor.featuresSelectedOf', { total: totalFeatureCount })}
+                                {defaultFeatureCount > 0
+                                  ? t('popup.editor.featuresDefaultCount', {
+                                      count: defaultFeatureCount,
+                                    })
+                                  : ''}
                               </>
                             ) : (
-                              'No features available'
+                              t('popup.editor.noFeaturesAvailable')
                             )}
                           </div>
 
@@ -486,7 +500,7 @@ export function StandardAnnotationEditor({
                               }
                             >
                               <CheckCheck className="mr-1 h-3.5 w-3.5" />
-                              Check all
+                              {t('popup.editor.checkAll')}
                             </Button>
 
                             <Button
@@ -503,7 +517,7 @@ export function StandardAnnotationEditor({
                               }
                             >
                               <RotateCcw className="mr-1 h-3.5 w-3.5" />
-                              Uncheck all
+                              {t('popup.editor.uncheckAll')}
                             </Button>
 
                             <Button
@@ -514,8 +528,8 @@ export function StandardAnnotationEditor({
                               disabled={defaultFeatureCount === 0}
                               title={
                                 defaultFeatureCount === 0
-                                  ? 'No default features are defined for this component'
-                                  : 'Select only the default features for this component'
+                                  ? t('popup.editor.noDefaultFeatures')
+                                  : t('popup.editor.checkDefaultsHint')
                               }
                               onClick={() =>
                                 checkDefaultFeatures(
@@ -526,7 +540,7 @@ export function StandardAnnotationEditor({
                               }
                             >
                               <Sparkles className="mr-1 h-3.5 w-3.5" />
-                              Check defaults
+                              {t('popup.editor.checkDefaults')}
                             </Button>
                           </div>
                         </div>
@@ -557,7 +571,7 @@ export function StandardAnnotationEditor({
                               <span>{feature.name}</span>
                               {feature.set_by_default ? (
                                 <span className="rounded border px-1.5 py-0.5 text-[10px]">
-                                  default
+                                  {t('popup.editor.default')}
                                 </span>
                               ) : null}
                             </label>
@@ -567,7 +581,7 @@ export function StandardAnnotationEditor({
                     </div>
                   ) : (
                     <div className="ml-6 text-sm text-muted-foreground">
-                      This component has no selectable features.
+                      {t('popup.editor.noSelectableFeatures')}
                     </div>
                   )
                 ) : null}
@@ -593,7 +607,7 @@ export function StandardAnnotationEditor({
                 data-[state=active]:border data-[state=active]:bg-background
                 data-[state=active]:shadow-sm"
           >
-            Details
+            {t('popup.editor.tabDetails')}
           </TabsTrigger>
 
           <TabsTrigger
@@ -602,7 +616,7 @@ export function StandardAnnotationEditor({
                 data-[state=active]:border data-[state=active]:bg-background
                 data-[state=active]:shadow-sm"
           >
-            Components
+            {t('popup.editor.components')}
           </TabsTrigger>
 
           <TabsTrigger
@@ -620,7 +634,7 @@ export function StandardAnnotationEditor({
                 data-[state=active]:border data-[state=active]:bg-background
                 data-[state=active]:shadow-sm"
           >
-            Notes
+            {t('popup.editor.notes')}
           </TabsTrigger>
         </TabsList>
       </div>
@@ -645,8 +659,7 @@ export function StandardAnnotationEditor({
 
               {showLocalHint ? (
                 <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                  Press OK to keep changes local for the main toolbar Save, or use Save Annotation
-                  (s) in this popup header to save immediately.
+                  {t('popup.editor.localChangesHint')}
                 </div>
               ) : null}
             </div>

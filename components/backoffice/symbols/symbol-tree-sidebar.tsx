@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { Search, ChevronRight, Layers, Tag, MapPin, Type } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +53,7 @@ export function SymbolTreeSidebar({
   activeTab: controlledTab,
   onTabChange,
 }: SymbolTreeSidebarProps) {
+  const t = useTranslations('backoffice');
   const [internalTab, setInternalTab] = useState('characters');
   const tab = controlledTab ?? internalTab;
   const setTab = onTabChange ?? setInternalTab;
@@ -113,21 +115,37 @@ export function SymbolTreeSidebar({
   return (
     <Tabs value={tab} onValueChange={setTab} className="flex h-full flex-col">
       <TabsList className="mx-2 mt-2 grid w-auto grid-cols-4 bg-muted/50">
-        <TabsTrigger value="characters" className="text-xs px-1 gap-1" title="Characters">
+        <TabsTrigger
+          value="characters"
+          className="text-xs px-1 gap-1"
+          title={t('symbols.tabCharacters')}
+        >
           <Type className="h-3.5 w-3.5" />
-          <span className="hidden xl:inline">Chars</span>
+          <span className="hidden xl:inline">{t('symbols.tabCharactersShort')}</span>
         </TabsTrigger>
-        <TabsTrigger value="components" className="text-xs px-1 gap-1" title="Components">
+        <TabsTrigger
+          value="components"
+          className="text-xs px-1 gap-1"
+          title={t('symbols.tabComponents')}
+        >
           <Layers className="h-3.5 w-3.5" />
-          <span className="hidden xl:inline">Comps</span>
+          <span className="hidden xl:inline">{t('symbols.tabComponentsShort')}</span>
         </TabsTrigger>
-        <TabsTrigger value="features" className="text-xs px-1 gap-1" title="Features">
+        <TabsTrigger
+          value="features"
+          className="text-xs px-1 gap-1"
+          title={t('symbols.tabFeatures')}
+        >
           <Tag className="h-3.5 w-3.5" />
-          <span className="hidden xl:inline">Feats</span>
+          <span className="hidden xl:inline">{t('symbols.tabFeaturesShort')}</span>
         </TabsTrigger>
-        <TabsTrigger value="positions" className="text-xs px-1 gap-1" title="Positions">
+        <TabsTrigger
+          value="positions"
+          className="text-xs px-1 gap-1"
+          title={t('symbols.tabPositions')}
+        >
           <MapPin className="h-3.5 w-3.5" />
-          <span className="hidden xl:inline">Pos</span>
+          <span className="hidden xl:inline">{t('symbols.tabPositionsShort')}</span>
         </TabsTrigger>
       </TabsList>
 
@@ -136,7 +154,7 @@ export function SymbolTreeSidebar({
         <div className="p-3 space-y-2">
           {/* Inline create */}
           <Input
-            placeholder="New character name... (Enter to create)"
+            placeholder={t('symbols.newCharacterPlaceholder')}
             value={newCharName}
             onChange={(e) => setNewCharName(e.target.value)}
             onKeyDown={(e) => {
@@ -153,7 +171,7 @@ export function SymbolTreeSidebar({
           <div className="relative">
             <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search characters..."
+              placeholder={t('symbols.searchCharactersPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-8 pl-7 text-sm"
@@ -167,8 +185,8 @@ export function SymbolTreeSidebar({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all">All Types</SelectItem>
-                <SelectItem value="__untyped">Untyped</SelectItem>
+                <SelectItem value="__all">{t('symbols.allTypesOption')}</SelectItem>
+                <SelectItem value="__untyped">{t('symbols.untypedOption')}</SelectItem>
                 {CHARACTER_TYPES.map((t) => (
                   <SelectItem key={t} value={t}>
                     {t}
@@ -218,7 +236,9 @@ export function SymbolTreeSidebar({
             ))}
             {filtered.length === 0 && (
               <p className="px-2 py-4 text-center text-xs text-muted-foreground">
-                {search || typeFilter !== '__all' ? 'No matching characters' : 'No characters yet'}
+                {search || typeFilter !== '__all'
+                  ? t('symbols.noMatchingCharacters')
+                  : t('symbols.noCharactersYet')}
               </p>
             )}
           </div>

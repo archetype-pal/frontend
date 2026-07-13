@@ -12,9 +12,13 @@ overrides:
 # Build-script approval. pnpm 11 replaced the `onlyBuiltDependencies` list with
 # this map and errors (rather than warns) until every package that ships an
 # install/build script is explicitly allowed (true) or denied (false).
-# All four are trusted native/build deps: esbuild, sharp and unrs-resolver need
-# their compiled binaries; core-js runs a benign postinstall.
+# All are trusted native/build deps: esbuild, sharp and unrs-resolver need
+# their compiled binaries; core-js runs a benign postinstall; @parcel/watcher
+# and @swc/core are pulled in by next-intl for file watching and SWC-based
+# message extraction.
 allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
   core-js: true
   esbuild: true
   sharp: true

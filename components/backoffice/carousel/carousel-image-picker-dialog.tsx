@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Folder, Image as ImageIcon, Loader2, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
@@ -31,6 +32,7 @@ export function CarouselImagePickerDialog({
   onSelectImage,
   initialPath = '',
 }: CarouselImagePickerDialogProps) {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const [currentPath, setCurrentPath] = useState(initialPath);
 
@@ -48,14 +50,16 @@ export function CarouselImagePickerDialog({
 
   const breadcrumbs = useMemo(() => {
     const parts = currentPath.split('/').filter(Boolean);
-    const crumbs: { label: string; path: string }[] = [{ label: 'media', path: '' }];
+    const crumbs: { label: string; path: string }[] = [
+      { label: t('carousel.mediaRootLabel'), path: '' },
+    ];
     let acc = '';
     for (const part of parts) {
       acc = acc ? `${acc}/${part}` : part;
       crumbs.push({ label: part, path: acc });
     }
     return crumbs;
-  }, [currentPath]);
+  }, [currentPath, t]);
 
   const folders = data?.folders ?? [];
   const images = data?.images ?? [];
@@ -65,8 +69,8 @@ export function CarouselImagePickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl">
         <DialogHeader>
-          <DialogTitle>Choose Existing Image</DialogTitle>
-          <DialogDescription>Browse available images and select one.</DialogDescription>
+          <DialogTitle>{t('carousel.chooseImageTitle')}</DialogTitle>
+          <DialogDescription>{t('carousel.chooseImageDesc')}</DialogDescription>
         </DialogHeader>
 
         <div className="px-5 pb-2">
@@ -92,7 +96,7 @@ export function CarouselImagePickerDialog({
               {isError ? (
                 <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">
                   <p className="text-sm text-destructive font-medium">
-                    Failed to load media folder
+                    {t('carousel.mediaLoadFailed')}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">{formatApiError(error)}</p>
                   <Button
@@ -103,17 +107,17 @@ export function CarouselImagePickerDialog({
                     onClick={() => refetch()}
                   >
                     <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                    Retry
+                    {t('carousel.retryButton')}
                   </Button>
                 </div>
               ) : (
                 <>
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Folders
+                      {t('carousel.foldersLabel')}
                     </p>
                     {folders.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No subfolders</p>
+                      <p className="text-sm text-muted-foreground">{t('carousel.noSubfolders')}</p>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         {folders.map((folder) => (
@@ -133,10 +137,12 @@ export function CarouselImagePickerDialog({
 
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Images
+                      {t('carousel.imagesLabel')}
                     </p>
                     {images.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No images in this folder</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t('carousel.noImagesInFolder')}
+                      </p>
                     ) : (
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         {images.map((image) => (
@@ -178,7 +184,7 @@ export function CarouselImagePickerDialog({
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="rounded-md border bg-background/90 px-3 py-2 flex items-center gap-2 text-sm shadow-sm">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Loading media...
+                {t('carousel.loadingMedia')}
               </div>
             </div>
           )}
@@ -186,11 +192,11 @@ export function CarouselImagePickerDialog({
 
         <DialogFooter className="pt-3">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Close
+            {t('carousel.closeButton')}
           </Button>
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <ImageIcon className="h-3.5 w-3.5" />
-            Select an image to apply it to this item
+            {t('carousel.selectImageHint')}
           </div>
         </DialogFooter>
       </DialogContent>

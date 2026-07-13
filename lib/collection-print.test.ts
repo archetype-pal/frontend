@@ -42,10 +42,10 @@ describe('buildCollectionPrintHtml', () => {
       ],
     };
 
-    const html = await buildCollectionPrintHtml(collection);
+    const html = await buildCollectionPrintHtml(collection, 'Test Site');
 
     expect(html).toContain('<h1>Research</h1>');
-    expect(html).toContain('Models of Authority collection · 2 items');
+    expect(html).toContain('Test Site collection · 2 items');
     expect(html).toContain('https://example.test/page/page-print');
     expect(html).toContain('https://example.test/annotation/annotation-print');
     expect(html).toContain('loading="eager" decoding="sync" fetchpriority="high"');
@@ -94,12 +94,14 @@ describe('buildCollectionPrintHtml', () => {
       ],
     };
 
-    const html = await buildCollectionPrintHtml(collection);
+    const html = await buildCollectionPrintHtml(collection, '<Custom & Site>');
 
     expect(html).toContain('&lt;Research &amp; notes&gt;');
     expect(html).toContain('&quot;Shelfmark&quot;');
     expect(html).toContain('No image available');
     expect(html).not.toContain('<Research & notes>');
+    expect(html).toContain('&lt;Custom &amp; Site&gt; collection · 1 item');
+    expect(html).not.toContain('<Custom & Site>');
   });
 
   it('uses placeholders for unsafe URLs and individual IIIF failures', async () => {
@@ -112,7 +114,7 @@ describe('buildCollectionPrintHtml', () => {
       ],
     };
 
-    const html = await buildCollectionPrintHtml(collection);
+    const html = await buildCollectionPrintHtml(collection, 'Test Site');
 
     expect(html).not.toContain('javascript:');
     expect(html.match(/No image available/g)).toHaveLength(2);
@@ -125,7 +127,7 @@ describe('buildCollectionPrintHtml', () => {
       items: [],
     };
 
-    const html = await buildCollectionPrintHtml(collection, { nonce: 'nonce-value' });
+    const html = await buildCollectionPrintHtml(collection, 'Test Site', { nonce: 'nonce-value' });
 
     expect(html).toContain('<script nonce="nonce-value">');
   });

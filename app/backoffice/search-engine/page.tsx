@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
@@ -64,6 +65,7 @@ interface TrackedTask {
 /* ------------------------------------------------------------------ */
 
 export default function SearchEnginePage() {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const queryClient = useQueryClient();
 
@@ -120,7 +122,7 @@ export default function SearchEnginePage() {
       toast.success(data.message);
     },
     onError: (err) => {
-      toast.error('Failed to start task', {
+      toast.error(t('searchEngine.failedStartTask'), {
         description: err instanceof Error ? err.message : 'Unknown error',
       });
     },
@@ -167,10 +169,10 @@ export default function SearchEnginePage() {
       if (prevState === task.status.state) continue;
 
       if (task.status.state === 'SUCCESS' && prevState !== 'SUCCESS') {
-        toast.success(`${task.label} completed`);
+        toast.success(t('searchEngine.taskCompleted', { label: task.label }));
         queryClient.invalidateQueries({ queryKey: backofficeKeys.searchEngine.stats() });
       } else if (task.status.state === 'FAILURE' && prevState !== 'FAILURE') {
-        toast.error(`${task.label} failed`, {
+        toast.error(t('searchEngine.taskFailed', { label: task.label }), {
           description: task.status.error || 'Unknown error',
         });
       }
@@ -178,26 +180,35 @@ export default function SearchEnginePage() {
     prevTaskStatesRef.current = Object.fromEntries(
       trackedTasks.filter((t) => t.status).map((t) => [t.taskId, t.status!.state])
     );
-  }, [trackedTasks, queryClient]);
+  }, [trackedTasks, queryClient, t]);
 
   // ── Action handlers ──────────────────────────────────────────
   const handlePerIndexAction = useCallback(
     (action: TaskAction, index: IndexStats) => {
       const actionLabels: Record<string, string> = {
-        reindex: 'Reindex',
-        clear: 'Clear',
-        clean_and_reindex: 'Clean & Reindex',
+        reindex: t('searchEngine.actionReindex'),
+        clear: t('searchEngine.actionClear'),
+        clean_and_reindex: t('searchEngine.actionCleanReindex'),
       };
       const label = `${actionLabels[action]} ${index.label}`;
 
       if (action === 'clear' || action === 'clean_and_reindex') {
         setConfirmDialog({
           open: true,
-          title: `${actionLabels[action]} "${index.label}"?`,
+          title:
+            action === 'clear'
+              ? t('searchEngine.confirmClearTitle', { label: index.label })
+              : t('searchEngine.confirmCleanReindexTitle', { label: index.label }),
           description:
             action === 'clear'
-              ? `This will remove all ${index.meilisearch_count.toLocaleString()} documents from the ${index.label} index. Search results for this type will be empty until reindexed.`
-              : `This will clear and then rebuild the ${index.label} index from ${index.db_count.toLocaleString()} database records.`,
+              ? t('searchEngine.confirmClearDesc', {
+                  count: index.meilisearch_count.toLocaleString(),
+                  label: index.label,
+                })
+              : t('searchEngine.confirmCleanReindexDesc', {
+                  label: index.label,
+                  count: index.db_count.toLocaleString(),
+                }),
           variant: action === 'clear' ? 'destructive' : 'default',
           onConfirm: () => {
             actionMutation.mutate({ action, indexType: index.index_type, label });
@@ -208,39 +219,37 @@ export default function SearchEnginePage() {
         actionMutation.mutate({ action, indexType: index.index_type, label });
       }
     },
-    [actionMutation]
+    [actionMutation, t]
   );
 
   const handleReindexAll = useCallback(() => {
     setConfirmDialog({
       open: true,
-      title: 'Reindex all indexes?',
-      description:
-        'This will reindex all 9 search indexes from the database. Existing data will be updated in place.',
+      title: t('searchEngine.confirmReindexAllTitle'),
+      description: t('searchEngine.confirmReindexAllDesc'),
       variant: 'default',
       onConfirm: () => {
-        actionMutation.mutate({ action: 'reindex_all', label: 'Reindex All' });
+        actionMutation.mutate({ action: 'reindex_all', label: t('searchEngine.reindexAllButton') });
         setConfirmDialog((d) => ({ ...d, open: false }));
       },
     });
-  }, [actionMutation]);
+  }, [actionMutation, t]);
 
   const handleClearAndRebuildAll = useCallback(() => {
     setConfirmDialog({
       open: true,
-      title: 'Clear & rebuild all indexes?',
-      description:
-        'This will delete ALL documents from ALL indexes, then rebuild from scratch. Search will be temporarily unavailable. This cannot be undone.',
+      title: t('searchEngine.confirmClearRebuildAllTitle'),
+      description: t('searchEngine.confirmClearRebuildAllDesc'),
       variant: 'destructive',
       onConfirm: () => {
         actionMutation.mutate({
           action: 'clear_and_rebuild_all',
-          label: 'Clear & Rebuild All',
+          label: t('searchEngine.clearRebuildAllButton'),
         });
         setConfirmDialog((d) => ({ ...d, open: false }));
       },
     });
-  }, [actionMutation]);
+  }, [actionMutation, t]);
 
   const dismissTask = useCallback((taskId: string) => {
     setTrackedTasks((prev) => prev.filter((t) => t.taskId !== taskId));
@@ -262,10 +271,8 @@ export default function SearchEnginePage() {
       <div className="flex items-center gap-3">
         <Search className="h-6 w-6 text-primary" />
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Search Engine</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage Meilisearch indexes for the public site
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t('searchEngine.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('searchEngine.subtitle')}</p>
         </div>
       </div>
 
@@ -276,14 +283,15 @@ export default function SearchEnginePage() {
         error={isUnreachable}
         outOfSyncCount={outOfSyncCount}
         activeTaskCount={activeTaskIds.length}
+        t={t}
       />
 
       {/* Section 2: Index Management Table */}
       <div className="rounded-lg border bg-card">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <div>
-            <h2 className="font-medium">Index Management</h2>
-            <p className="text-xs text-muted-foreground">Per-index document counts and actions</p>
+            <h2 className="font-medium">{t('searchEngine.sectionIndexManagement')}</h2>
+            <p className="text-xs text-muted-foreground">{t('searchEngine.sectionIndexDesc')}</p>
           </div>
           <Button
             variant="outline"
@@ -292,7 +300,7 @@ export default function SearchEnginePage() {
             disabled={statsLoading}
           >
             <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${statsLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('searchEngine.refreshButton')}
           </Button>
         </div>
 
@@ -301,8 +309,8 @@ export default function SearchEnginePage() {
         ) : isUnreachable ? (
           <div className="p-6 text-center text-sm text-muted-foreground">
             <XCircle className="mx-auto mb-2 h-8 w-8 text-destructive/60" />
-            <p className="font-medium text-destructive">Cannot connect to Meilisearch</p>
-            <p className="mt-1">Check that the Meilisearch service is running and accessible.</p>
+            <p className="font-medium text-destructive">{t('searchEngine.cannotConnect')}</p>
+            <p className="mt-1">{t('searchEngine.cannotConnectDesc')}</p>
           </div>
         ) : (
           <IndexTable
@@ -310,18 +318,19 @@ export default function SearchEnginePage() {
             onAction={handlePerIndexAction}
             trackedTasks={trackedTasks}
             disabled={actionMutation.isPending}
+            t={t}
           />
         )}
       </div>
 
       {/* Section 3: Global Actions */}
       <div className="rounded-lg border bg-card p-4">
-        <h2 className="font-medium mb-1">Global Actions</h2>
-        <p className="text-xs text-muted-foreground mb-4">Operate on all 9 indexes at once.</p>
+        <h2 className="font-medium mb-1">{t('searchEngine.sectionGlobalActions')}</h2>
+        <p className="text-xs text-muted-foreground mb-4">{t('searchEngine.globalActionsDesc')}</p>
         <div className="flex flex-wrap gap-3">
           <Button onClick={handleReindexAll} disabled={actionMutation.isPending || isUnreachable}>
             <RefreshCw className="h-4 w-4 mr-2" />
-            Reindex All
+            {t('searchEngine.reindexAllButton')}
           </Button>
           <Button
             variant="destructive"
@@ -329,7 +338,7 @@ export default function SearchEnginePage() {
             disabled={actionMutation.isPending || isUnreachable}
           >
             <Trash2 className="h-4 w-4 mr-2" />
-            Clear & Rebuild All
+            {t('searchEngine.clearRebuildAllButton')}
           </Button>
         </div>
       </div>
@@ -340,6 +349,7 @@ export default function SearchEnginePage() {
           tasks={trackedTasks}
           onDismiss={dismissTask}
           onDismissCompleted={dismissCompletedTasks}
+          t={t}
         />
       )}
 
@@ -349,7 +359,7 @@ export default function SearchEnginePage() {
         onOpenChange={(open) => setConfirmDialog((d) => ({ ...d, open }))}
         title={confirmDialog.title}
         description={confirmDialog.description}
-        confirmLabel="Confirm"
+        confirmLabel={t('searchEngine.confirmButton')}
         variant={confirmDialog.variant}
         onConfirm={confirmDialog.onConfirm}
       />
@@ -367,12 +377,14 @@ function HealthBanner({
   error,
   outOfSyncCount,
   activeTaskCount,
+  t,
 }: {
   stats: SearchEngineStats | null;
   loading: boolean;
   error: boolean;
   outOfSyncCount: number;
   activeTaskCount: number;
+  t: ReturnType<typeof useTranslations>;
 }) {
   if (loading) {
     return (
@@ -391,18 +403,22 @@ function HealthBanner({
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {/* Connection status */}
       <div className="rounded-lg border bg-card p-4">
-        <p className="text-xs font-medium text-muted-foreground mb-1">Connection</p>
+        <p className="text-xs font-medium text-muted-foreground mb-1">
+          {t('searchEngine.connectionLabel')}
+        </p>
         <div className="flex items-center gap-2">
           {error ? (
             <>
               <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-              <span className="text-sm font-semibold text-destructive">Unreachable</span>
+              <span className="text-sm font-semibold text-destructive">
+                {t('searchEngine.connectionUnreachable')}
+              </span>
             </>
           ) : (
             <>
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
               <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                Connected
+                {t('searchEngine.connectionConnected')}
               </span>
             </>
           )}
@@ -411,7 +427,9 @@ function HealthBanner({
 
       {/* Total documents */}
       <div className="rounded-lg border bg-card p-4">
-        <p className="text-xs font-medium text-muted-foreground mb-1">Total Documents</p>
+        <p className="text-xs font-medium text-muted-foreground mb-1">
+          {t('searchEngine.totalDocuments')}
+        </p>
         <div className="flex items-center gap-2">
           <Database className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-semibold">
@@ -424,20 +442,22 @@ function HealthBanner({
 
       {/* Sync status */}
       <div className="rounded-lg border bg-card p-4">
-        <p className="text-xs font-medium text-muted-foreground mb-1">Sync Status</p>
+        <p className="text-xs font-medium text-muted-foreground mb-1">
+          {t('searchEngine.syncStatus')}
+        </p>
         <div className="flex items-center gap-2">
           {outOfSyncCount === 0 ? (
             <>
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                All indexes in sync
+                {t('searchEngine.allInSync')}
               </span>
             </>
           ) : (
             <>
               <AlertTriangle className="h-4 w-4 text-amber-500" />
               <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-                {outOfSyncCount} index{outOfSyncCount > 1 ? 'es' : ''} out of sync
+                {t('searchEngine.outOfSync', { count: outOfSyncCount })}
               </span>
             </>
           )}
@@ -446,19 +466,23 @@ function HealthBanner({
 
       {/* Active tasks */}
       <div className="rounded-lg border bg-card p-4">
-        <p className="text-xs font-medium text-muted-foreground mb-1">Active Tasks</p>
+        <p className="text-xs font-medium text-muted-foreground mb-1">
+          {t('searchEngine.activeTasksLabel')}
+        </p>
         <div className="flex items-center gap-2">
           {activeTaskCount > 0 ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
               <span className="text-sm font-semibold">
-                {activeTaskCount} task{activeTaskCount > 1 ? 's' : ''} running
+                {t('searchEngine.tasksRunning', { count: activeTaskCount })}
               </span>
             </>
           ) : (
             <>
               <Activity className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-semibold text-muted-foreground">No active tasks</span>
+              <span className="text-sm font-semibold text-muted-foreground">
+                {t('searchEngine.noActiveTasks')}
+              </span>
             </>
           )}
         </div>
@@ -476,22 +500,24 @@ function IndexTable({
   onAction,
   trackedTasks,
   disabled,
+  t,
 }: {
   indexes: IndexStats[];
   onAction: (action: TaskAction, index: IndexStats) => void;
   trackedTasks: TrackedTask[];
   disabled: boolean;
+  t: ReturnType<typeof useTranslations>;
 }) {
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-[200px]">Index</TableHead>
-          <TableHead className="text-right">In Meilisearch</TableHead>
-          <TableHead className="text-right">In Database</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Progress</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
+          <TableHead className="w-[200px]">{t('searchEngine.colIndex')}</TableHead>
+          <TableHead className="text-right">{t('searchEngine.colInMeilisearch')}</TableHead>
+          <TableHead className="text-right">{t('searchEngine.colInDatabase')}</TableHead>
+          <TableHead>{t('searchEngine.colStatus')}</TableHead>
+          <TableHead>{t('searchEngine.colProgress')}</TableHead>
+          <TableHead className="text-right">{t('searchEngine.colActions')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -536,7 +562,7 @@ function IndexTable({
                     className="border-emerald-200 text-emerald-700 dark:border-emerald-800 dark:text-emerald-400"
                   >
                     <CheckCircle2 className="h-3 w-3 mr-1" />
-                    In sync
+                    {t('searchEngine.badgeInSync')}
                   </Badge>
                 ) : (
                   <Badge
@@ -552,7 +578,7 @@ function IndexTable({
               {/* Progress */}
               <TableCell className="min-w-[180px]">
                 {taskForIndex ? (
-                  <InlineProgress task={taskForIndex} />
+                  <InlineProgress task={taskForIndex} t={t} />
                 ) : (
                   <span className="text-xs text-muted-foreground">--</span>
                 )}
@@ -569,18 +595,18 @@ function IndexTable({
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => onAction('reindex', index)}>
                       <RefreshCw className="h-3.5 w-3.5 mr-2" />
-                      Reindex
+                      {t('searchEngine.actionReindex')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onAction('clean_and_reindex', index)}>
                       <Zap className="h-3.5 w-3.5 mr-2" />
-                      Clean & Reindex
+                      {t('searchEngine.actionCleanReindex')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
                       onClick={() => onAction('clear', index)}
                     >
                       <Trash2 className="h-3.5 w-3.5 mr-2" />
-                      Clear
+                      {t('searchEngine.actionClear')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -606,14 +632,14 @@ function useElapsedSeconds(startedAt: number) {
   return Math.round((now - startedAt) / 1000);
 }
 
-function InlineProgress({ task }: { task: TrackedTask }) {
+function InlineProgress({ task, t }: { task: TrackedTask; t: ReturnType<typeof useTranslations> }) {
   const waitSecs = useElapsedSeconds(task.startedAt);
   const s = task.status;
   if (!s) {
     return (
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Loader2 className="h-3 w-3 animate-spin" />
-        Starting...
+        {t('searchEngine.taskStarting')}
       </div>
     );
   }
@@ -623,11 +649,11 @@ function InlineProgress({ task }: { task: TrackedTask }) {
       <div className="space-y-1">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Loader2 className="h-3 w-3 animate-spin" />
-          Pending...
+          {t('searchEngine.taskPending')}
         </div>
         {waitSecs > 10 && (
           <p className="text-[10px] text-amber-600 dark:text-amber-400">
-            Task is still pending. Is the Celery worker running?
+            {t('searchEngine.taskCeleryHint')}
           </p>
         )}
       </div>
@@ -652,7 +678,7 @@ function InlineProgress({ task }: { task: TrackedTask }) {
       <div className="space-y-1">
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground truncate max-w-[140px]">
-            {progress.message || 'Working...'}
+            {progress.message || t('searchEngine.taskWorking')}
           </span>
           <span className="tabular-nums font-medium ml-2">{pct}%</span>
         </div>
@@ -703,13 +729,15 @@ function TaskProgressPanel({
   tasks,
   onDismiss,
   onDismissCompleted,
+  t,
 }: {
   tasks: TrackedTask[];
   onDismiss: (taskId: string) => void;
   onDismissCompleted: () => void;
+  t: ReturnType<typeof useTranslations>;
 }) {
   const completedCount = tasks.filter(
-    (t) => t.status && ['SUCCESS', 'FAILURE'].includes(t.status.state)
+    (task) => task.status && ['SUCCESS', 'FAILURE'].includes(task.status.state)
   ).length;
 
   return (
@@ -718,11 +746,13 @@ function TaskProgressPanel({
       <div className="flex items-center justify-between border-b px-3 py-2">
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">Tasks ({tasks.length})</span>
+          <span className="text-sm font-medium">
+            {t('searchEngine.tasksPanelTitle', { count: tasks.length })}
+          </span>
         </div>
         {completedCount > 0 && (
           <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={onDismissCompleted}>
-            Clear completed
+            {t('searchEngine.clearCompleted')}
           </Button>
         )}
       </div>
@@ -730,7 +760,7 @@ function TaskProgressPanel({
       {/* Task list */}
       <div className="divide-y">
         {tasks.map((task) => (
-          <TaskProgressItem key={task.taskId} task={task} onDismiss={onDismiss} />
+          <TaskProgressItem key={task.taskId} task={task} onDismiss={onDismiss} t={t} />
         ))}
       </div>
     </div>
@@ -740,9 +770,11 @@ function TaskProgressPanel({
 function TaskProgressItem({
   task,
   onDismiss,
+  t,
 }: {
   task: TrackedTask;
   onDismiss: (taskId: string) => void;
+  t: ReturnType<typeof useTranslations>;
 }) {
   const waitSecs = useElapsedSeconds(task.startedAt);
   const s = task.status;
@@ -767,7 +799,7 @@ function TaskProgressItem({
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium truncate mr-2">{task.label}</span>
         <div className="flex items-center gap-1.5 shrink-0">
-          <TaskStateBadge state={state} />
+          <TaskStateBadge state={state} t={t} />
           {isTerminal && (
             <button
               className="text-muted-foreground hover:text-foreground transition-colors"
@@ -800,14 +832,14 @@ function TaskProgressItem({
       {/* Celery hint */}
       {state === 'PENDING' && waitSecs > 10 && (
         <p className="text-[10px] text-amber-600 dark:text-amber-400">
-          Task is still pending. Make sure the Celery worker is running.
+          {t('searchEngine.taskCeleryHint2')}
         </p>
       )}
     </div>
   );
 }
 
-function TaskStateBadge({ state }: { state: string }) {
+function TaskStateBadge({ state, t }: { state: string; t: ReturnType<typeof useTranslations> }) {
   switch (state) {
     case 'SUCCESS':
       return (
@@ -816,7 +848,7 @@ function TaskStateBadge({ state }: { state: string }) {
           className="text-[10px] py-0 h-5 border-emerald-200 text-emerald-700 dark:border-emerald-800 dark:text-emerald-400"
         >
           <CheckCircle2 className="h-3 w-3 mr-0.5" />
-          Done
+          {t('searchEngine.taskBadgeDone')}
         </Badge>
       );
     case 'FAILURE':
@@ -826,7 +858,7 @@ function TaskStateBadge({ state }: { state: string }) {
           className="text-[10px] py-0 h-5 border-destructive/30 text-destructive"
         >
           <XCircle className="h-3 w-3 mr-0.5" />
-          Failed
+          {t('searchEngine.taskBadgeFailed')}
         </Badge>
       );
     case 'PROGRESS':
@@ -834,14 +866,14 @@ function TaskStateBadge({ state }: { state: string }) {
       return (
         <Badge variant="outline" className="text-[10px] py-0 h-5 border-primary/30 text-primary">
           <Loader2 className="h-3 w-3 mr-0.5 animate-spin" />
-          Running
+          {t('searchEngine.taskBadgeRunning')}
         </Badge>
       );
     default:
       return (
         <Badge variant="outline" className="text-[10px] py-0 h-5">
           <Loader2 className="h-3 w-3 mr-0.5 animate-spin" />
-          Pending
+          {t('searchEngine.taskBadgePending')}
         </Badge>
       );
   }

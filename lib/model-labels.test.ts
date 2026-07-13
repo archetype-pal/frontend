@@ -5,6 +5,7 @@ import {
   getDefaultModelLabelsConfig,
   normalizeModelLabels,
   pluralizeLabel,
+  resolveModelLabel,
   type ModelLabelKey,
 } from './model-labels';
 
@@ -19,43 +20,57 @@ describe('normalizeModelLabels', () => {
 
   it('overrides only the keys explicitly provided', () => {
     const result = normalizeModelLabels({
-      historicalItem: 'Object',
-      catalogueNumber: 'Cat #',
+      historicalItem: { en: 'Object', fr: 'Objet' },
+      catalogueNumber: { en: 'Cat #', fr: 'N° cat.' },
     });
-    expect(result.historicalItem).toBe('Object');
-    expect(result.catalogueNumber).toBe('Cat #');
+    expect(result.historicalItem).toEqual({ en: 'Object', fr: 'Objet' });
+    expect(result.catalogueNumber).toEqual({ en: 'Cat #', fr: 'N° cat.' });
     // Untouched keys keep defaults
-    expect(result.position).toBe(DEFAULT_MODEL_LABELS.position);
-    expect(result.appManuscripts).toBe(DEFAULT_MODEL_LABELS.appManuscripts);
+    expect(result.position).toEqual(DEFAULT_MODEL_LABELS.position);
+    expect(result.appManuscripts).toEqual(DEFAULT_MODEL_LABELS.appManuscripts);
+  });
+
+  it('overrides one locale while keeping the other locale default', () => {
+    const result = normalizeModelLabels({ historicalItem: { fr: 'Objet' } });
+    expect(result.historicalItem).toEqual({
+      en: DEFAULT_MODEL_LABELS.historicalItem.en,
+      fr: 'Objet',
+    });
+  });
+
+  it('migrates a legacy plain-string value to both locales', () => {
+    const result = normalizeModelLabels({
+      historicalItem: 'Object' as unknown as Record<string, unknown>,
+    });
+    expect(result.historicalItem).toEqual({ en: 'Object', fr: 'Object' });
   });
 
   it('trims whitespace around override values', () => {
-    expect(normalizeModelLabels({ historicalItem: '   Object   ' }).historicalItem).toBe('Object');
+    expect(
+      normalizeModelLabels({ historicalItem: { en: '   Object   ', fr: '   Objet   ' } })
+        .historicalItem
+    ).toEqual({ en: 'Object', fr: 'Objet' });
   });
 
   it('falls back to the default for empty / whitespace-only strings', () => {
     const result = normalizeModelLabels({
-      historicalItem: '',
-      catalogueNumber: '   ',
+      historicalItem: { en: '', fr: '   ' },
     });
-    expect(result.historicalItem).toBe(DEFAULT_MODEL_LABELS.historicalItem);
-    expect(result.catalogueNumber).toBe(DEFAULT_MODEL_LABELS.catalogueNumber);
+    expect(result.historicalItem).toEqual(DEFAULT_MODEL_LABELS.historicalItem);
   });
 
-  it('falls back to the default for non-string values (numbers, null, objects)', () => {
+  it('falls back to the default for non-object / non-string values (numbers, null)', () => {
     const result = normalizeModelLabels({
-      historicalItem: 42 as unknown as string,
-      catalogueNumber: null as unknown as string,
-      position: { foo: 'bar' } as unknown as string,
+      historicalItem: 42 as unknown as Record<string, unknown>,
+      catalogueNumber: null as unknown as Record<string, unknown>,
     });
-    expect(result.historicalItem).toBe(DEFAULT_MODEL_LABELS.historicalItem);
-    expect(result.catalogueNumber).toBe(DEFAULT_MODEL_LABELS.catalogueNumber);
-    expect(result.position).toBe(DEFAULT_MODEL_LABELS.position);
+    expect(result.historicalItem).toEqual(DEFAULT_MODEL_LABELS.historicalItem);
+    expect(result.catalogueNumber).toEqual(DEFAULT_MODEL_LABELS.catalogueNumber);
   });
 
   it('does not include keys not in DEFAULT_MODEL_LABELS even if supplied', () => {
     const result = normalizeModelLabels({
-      historicalItem: 'Object',
+      historicalItem: { en: 'Object', fr: 'Objet' },
       // @ts-expect-error — testing runtime behavior
       bogusKey: 'should be ignored',
     });
@@ -68,15 +83,25 @@ describe('getDefaultModelLabelsConfig', () => {
     const a = getDefaultModelLabelsConfig();
     const b = getDefaultModelLabelsConfig();
     expect(a.labels).not.toBe(b.labels);
-    a.labels.historicalItem = 'mutated';
-    expect(b.labels.historicalItem).toBe(DEFAULT_MODEL_LABELS.historicalItem);
+    a.labels.historicalItem = { en: 'mutated', fr: 'mutated' };
+    expect(b.labels.historicalItem).toEqual(DEFAULT_MODEL_LABELS.historicalItem);
   });
 
   it('matches DEFAULT_MODEL_LABELS for every key', () => {
     const cfg = getDefaultModelLabelsConfig();
     for (const key of Object.keys(DEFAULT_MODEL_LABELS) as ModelLabelKey[]) {
-      expect(cfg.labels[key]).toBe(DEFAULT_MODEL_LABELS[key]);
+      expect(cfg.labels[key]).toEqual(DEFAULT_MODEL_LABELS[key]);
     }
+  });
+});
+
+describe('resolveModelLabel', () => {
+  it('returns the value for the requested locale', () => {
+    expect(resolveModelLabel({ en: 'Manuscripts', fr: 'Manuscrits' }, 'fr')).toBe('Manuscrits');
+  });
+
+  it('falls back to English when the requested locale is empty', () => {
+    expect(resolveModelLabel({ en: 'Manuscripts', fr: '' }, 'fr')).toBe('Manuscripts');
   });
 });
 

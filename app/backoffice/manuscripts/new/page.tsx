@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
@@ -33,16 +34,17 @@ import { toast } from 'sonner';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
 
-const ITEM_TYPES = [
-  { value: 'agreement', label: 'Agreement' },
-  { value: 'charter', label: 'Charter' },
-  { value: 'letter', label: 'Letter' },
-];
-
 export default function NewManuscriptPage() {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const router = useRouter();
   const { getLabel } = useModelLabels();
+
+  const ITEM_TYPES = [
+    { value: 'agreement', label: t('manuscriptsNew.typeAgreement') },
+    { value: 'charter', label: t('manuscriptsNew.typeCharter') },
+    { value: 'letter', label: t('manuscriptsNew.typeLetter') },
+  ];
   const historicalItemLabel = getLabel('historicalItem');
   const shelfmarkLabel = getLabel('fieldShelfmark');
   const dateLabel = getLabel('date');
@@ -161,13 +163,16 @@ export default function NewManuscriptPage() {
       }
     },
     onSuccess: (data) => {
-      toast.success(`${historicalItemLabel} created`);
+      toast.success(t('manuscriptsNew.toastCreated', { label: historicalItemLabel }));
       router.push(`/backoffice/manuscripts/${data.id}`);
     },
     onError: (err) => {
-      toast.error(`Failed to create ${historicalItemLabel.toLowerCase()}`, {
-        description: formatApiError(err),
-      });
+      toast.error(
+        t('manuscriptsNew.toastFailedCreate', { label: historicalItemLabel.toLowerCase() }),
+        {
+          description: formatApiError(err),
+        }
+      );
     },
   });
 
@@ -182,24 +187,28 @@ export default function NewManuscriptPage() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <h1 className="text-xl font-semibold">{`New ${historicalItemLabel}`}</h1>
+        <h1 className="text-xl font-semibold">
+          {t('manuscriptsNew.pageTitle', { label: historicalItemLabel })}
+        </h1>
       </div>
 
       {/* Section 1: Physical Location */}
       <div className="space-y-4 rounded-lg border p-6">
         <div>
-          <h2 className="text-sm font-medium">Where is it held?</h2>
+          <h2 className="text-sm font-medium">{t('manuscriptsNew.sectionLocationTitle')}</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            The archive and shelf reference for this document.
+            {t('manuscriptsNew.sectionLocationDesc')}
           </p>
         </div>
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <FieldLabel helpField="currentLocation.repository">Repository</FieldLabel>
+            <FieldLabel helpField="currentLocation.repository">
+              {t('manuscriptsNew.fieldRepository')}
+            </FieldLabel>
             <Select value={repository} onValueChange={setRepository}>
               <SelectTrigger>
-                <SelectValue placeholder="Select repository..." />
+                <SelectValue placeholder={t('manuscriptsNew.repositoryPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {repositories.map((r) => (
@@ -216,24 +225,30 @@ export default function NewManuscriptPage() {
             <Input
               value={shelfmark}
               onChange={(e) => setShelfmark(e.target.value)}
-              placeholder="e.g. GD55/1"
+              placeholder={t('manuscriptsNew.shelfmarkPlaceholder')}
             />
             {showShelfmarkWarning && (
               <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
                 <AlertCircle className="h-3 w-3" />
-                {`A ${shelfmarkLabel.toLowerCase()} is recommended so the ${historicalItemLabel.toLowerCase()} can be identified later.`}
+                {t('manuscriptsNew.shelfmarkWarning', {
+                  shelfmark: shelfmarkLabel.toLowerCase(),
+                  item: historicalItemLabel.toLowerCase(),
+                })}
               </p>
             )}
           </div>
 
           <div className="space-y-1.5">
             <FieldLabel helpField="itemPart.locus">
-              Locus <span className="text-muted-foreground font-normal">(optional)</span>
+              {t('manuscriptsNew.fieldLocus')}{' '}
+              <span className="text-muted-foreground font-normal">
+                {t('manuscriptsNew.locusOptional')}
+              </span>
             </FieldLabel>
             <Input
               value={locus}
               onChange={(e) => setLocus(e.target.value)}
-              placeholder="e.g. f.1r"
+              placeholder={t('manuscriptsNew.locusPlaceholder')}
             />
           </div>
         </div>
@@ -242,23 +257,23 @@ export default function NewManuscriptPage() {
       {/* Section 2: Historical Identity */}
       <div className="space-y-4 rounded-lg border p-6">
         <div>
-          <h2 className="text-sm font-medium">What is it?</h2>
+          <h2 className="text-sm font-medium">{t('manuscriptsNew.sectionIdentityTitle')}</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            The historical identity and classification of this document.
+            {t('manuscriptsNew.sectionIdentityDesc')}
           </p>
         </div>
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <FieldLabel helpField="manuscript.type">Type</FieldLabel>
+            <FieldLabel helpField="manuscript.type">{t('manuscriptsNew.fieldType')}</FieldLabel>
             <Select value={type} onValueChange={setType}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {ITEM_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
+                {ITEM_TYPES.map((it) => (
+                  <SelectItem key={it.value} value={it.value}>
+                    {it.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -267,22 +282,28 @@ export default function NewManuscriptPage() {
 
           <div className="space-y-1.5">
             <FieldLabel helpField="manuscript.language">
-              Language <span className="text-muted-foreground font-normal">(optional)</span>
+              {t('manuscriptsNew.fieldLanguage')}{' '}
+              <span className="text-muted-foreground font-normal">
+                {t('manuscriptsNew.languageOptional')}
+              </span>
             </FieldLabel>
             <Input
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              placeholder="e.g. Latin"
+              placeholder={t('manuscriptsNew.languagePlaceholder')}
             />
           </div>
 
           <div className="space-y-1.5">
             <FieldLabel helpField="manuscript.date">
-              {dateLabel} <span className="text-muted-foreground font-normal">(optional)</span>
+              {dateLabel}{' '}
+              <span className="text-muted-foreground font-normal">
+                {t('manuscriptsNew.fieldDate')}
+              </span>
             </FieldLabel>
             <Select value={date} onValueChange={setDate}>
               <SelectTrigger>
-                <SelectValue placeholder="Select date..." />
+                <SelectValue placeholder={t('manuscriptsNew.datePlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {dates.map((d) => (
@@ -296,23 +317,29 @@ export default function NewManuscriptPage() {
 
           <div className="space-y-1.5">
             <FieldLabel helpField="manuscript.probableTextDate">
-              Probable date <span className="text-muted-foreground font-normal">(optional)</span>
+              {t('manuscriptsNew.fieldProbableDate')}{' '}
+              <span className="text-muted-foreground font-normal">
+                {t('manuscriptsNew.probableDateOptional')}
+              </span>
             </FieldLabel>
             <Input
               value={probableTextDate}
               onChange={(e) => setProbableTextDate(e.target.value)}
-              placeholder="e.g. Probably early 13th century"
+              placeholder={t('manuscriptsNew.probableDatePlaceholder')}
             />
           </div>
 
           <div className="space-y-1.5">
             <FieldLabel helpField="manuscript.datingNotes">
-              Dating notes <span className="text-muted-foreground font-normal">(optional)</span>
+              {t('manuscriptsNew.fieldDatingNotes')}{' '}
+              <span className="text-muted-foreground font-normal">
+                {t('manuscriptsNew.datingNotesOptional')}
+              </span>
             </FieldLabel>
             <textarea
               value={datingNotes}
               onChange={(e) => setDatingNotes(e.target.value)}
-              placeholder="Evidence and reasoning for this historical item's date"
+              placeholder={t('manuscriptsNew.datingNotesPlaceholder')}
               className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
@@ -325,7 +352,7 @@ export default function NewManuscriptPage() {
         className="w-full"
       >
         {createMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-        Create & Edit
+        {t('manuscriptsNew.createButton')}
       </Button>
     </div>
   );

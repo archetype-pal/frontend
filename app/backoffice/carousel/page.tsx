@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
@@ -42,6 +43,7 @@ import type { CarouselItem } from '@/types/backoffice';
 type PanelMode = { kind: 'preview' } | { kind: 'edit'; item: CarouselItem } | { kind: 'create' };
 
 export default function CarouselPage() {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const queryClient = useQueryClient();
 
@@ -90,12 +92,12 @@ export default function CarouselPage() {
         image: data.image ?? null,
       }),
     onSuccess: () => {
-      toast.success('Carousel item created');
+      toast.success(t('carousel.toastCreated'));
       invalidate();
       setPanel({ kind: 'preview' });
     },
     onError: (err) => {
-      toast.error('Failed to create carousel item', {
+      toast.error(t('carousel.toastFailedCreate'), {
         description: formatApiError(err),
       });
     },
@@ -110,12 +112,12 @@ export default function CarouselPage() {
       data: { title: string; url: string; image?: File | string };
     }) => updateCarouselItem(token!, id, data),
     onSuccess: (updated) => {
-      toast.success('Carousel item updated');
+      toast.success(t('carousel.toastUpdated'));
       invalidate();
       setPanel({ kind: 'edit', item: updated });
     },
     onError: (err) => {
-      toast.error('Failed to update carousel item', {
+      toast.error(t('carousel.toastFailedUpdate'), {
         description: formatApiError(err),
       });
     },
@@ -124,13 +126,13 @@ export default function CarouselPage() {
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteCarouselItem(token!, id),
     onSuccess: () => {
-      toast.success('Carousel item deleted');
+      toast.success(t('carousel.toastDeleted'));
       invalidate();
       setPanel({ kind: 'preview' });
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error('Failed to delete carousel item', {
+      toast.error(t('carousel.toastFailedDelete'), {
         description: formatApiError(err),
       });
     },
@@ -187,13 +189,13 @@ export default function CarouselPage() {
         if (failed > 0) {
           toast.error(
             failed === results.length
-              ? 'Failed to reorder items'
-              : `${failed} of ${results.length} updates failed`
+              ? t('carousel.toastFailedReorder')
+              : t('carousel.toastPartialFailure', { failed, total: results.length })
           );
         }
       });
     },
-    [items, token, queryClient, invalidate]
+    [items, token, queryClient, invalidate, t]
   );
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────
@@ -246,9 +248,7 @@ export default function CarouselPage() {
   }
 
   if (isError) {
-    return (
-      <BackofficeErrorState message="Failed to load carousel items" onRetry={() => refetch()} />
-    );
+    return <BackofficeErrorState message={t('carousel.failedLoad')} onRetry={() => refetch()} />;
   }
 
   // ── Empty state ────────────────────────────────────────────────────
@@ -259,19 +259,16 @@ export default function CarouselPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <ImageIcon className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-semibold tracking-tight">Carousel</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('carousel.title')}</h1>
           </div>
         </div>
         <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
           <ImageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground/40" />
-          <p className="text-base font-medium">No carousel items yet</p>
-          <p className="text-sm mt-1 max-w-sm mx-auto">
-            The homepage carousel is empty. Add your first item with an image, title, and optional
-            link.
-          </p>
+          <p className="text-base font-medium">{t('carousel.noItems')}</p>
+          <p className="text-sm mt-1 max-w-sm mx-auto">{t('carousel.emptyDesc')}</p>
           <Button size="sm" className="mt-4" onClick={() => setPanel({ kind: 'create' })}>
             <Plus className="h-4 w-4 mr-1.5" />
-            Add First Item
+            {t('carousel.addFirstButton')}
           </Button>
         </div>
       </div>
@@ -289,16 +286,15 @@ export default function CarouselPage() {
         <div className="flex items-center gap-3">
           <ImageIcon className="h-6 w-6 text-primary" />
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Carousel</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('carousel.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              {sorted.length} item{sorted.length !== 1 ? 's' : ''} &mdash; drag to reorder, click to
-              edit
+              {t('carousel.subtitle', { count: sorted.length })}
             </p>
           </div>
         </div>
         <Button size="sm" onClick={() => setPanel({ kind: 'create' })}>
           <Plus className="h-4 w-4 mr-1.5" />
-          Add Item
+          {t('carousel.addButton')}
         </Button>
       </div>
 
@@ -357,9 +353,9 @@ export default function CarouselPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title={`Delete "${deleteTarget?.title}"?`}
-        description="This carousel item will be permanently removed."
-        confirmLabel="Delete"
+        title={t('carousel.deleteTitle', { title: deleteTarget?.title ?? '' })}
+        description={t('carousel.deleteDesc')}
+        confirmLabel={t('carousel.deleteConfirm')}
         loading={deleteMut.isPending}
         onConfirm={() => deleteTarget && deleteMut.mutate(deleteTarget.id)}
       />

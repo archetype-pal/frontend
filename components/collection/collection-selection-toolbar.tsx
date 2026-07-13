@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Trash2, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ export function CollectionSelectionToolbar({
   onRemoveSelectedItems: () => void;
 }) {
   const [isRemoveOpen, setIsRemoveOpen] = React.useState(false);
+  const t = useTranslations('collection');
   const selectedCount = selectedItems.length;
 
   const handleRemove = () => {
@@ -53,27 +55,27 @@ export function CollectionSelectionToolbar({
             }
             onCheckedChange={(checked) => onToggleVisibleItems(checked === true)}
             disabled={visibleItemCount === 0}
-            aria-label="Select visible collection items"
+            aria-label={t('selection.selectVisibleLabel')}
           />
           <Label htmlFor="select-visible-collection-items" className="text-xs">
-            Select visible
+            {t('selection.selectVisibleText')}
           </Label>
         </div>
         <span className="text-xs text-muted-foreground">
-          {selectedCount} {selectedCount === 1 ? 'item' : 'items'} selected
+          {t('selection.itemsSelected', { count: selectedCount })}
         </span>
         <div className="ml-auto flex flex-wrap gap-2">
           {selectedCount > 0 && (
             <Button type="button" variant="ghost" size="sm" onClick={onClearSelection}>
               <X className="mr-2 h-4 w-4" />
-              Clear selection
+              {t('selection.clearSelection')}
             </Button>
           )}
           <OpenLightboxButton
             items={selectedItems}
             variant="outline"
             size="sm"
-            label="Open selected in Lightbox"
+            label={t('selection.openInLightbox')}
           />
           <Button
             type="button"
@@ -84,7 +86,7 @@ export function CollectionSelectionToolbar({
             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Remove selected
+            {t('selection.removeSelected')}
           </Button>
         </div>
       </div>
@@ -92,10 +94,9 @@ export function CollectionSelectionToolbar({
       <Dialog open={isRemoveOpen} onOpenChange={setIsRemoveOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Remove selected items?</DialogTitle>
+            <DialogTitle>{t('selection.removeDialogTitle')}</DialogTitle>
             <DialogDescription>
-              This removes {selectedCount} {selectedCount === 1 ? 'item' : 'items'} from this
-              collection. It does not delete images or graphs from the site.
+              {t('selection.removeDialogDesc', { count: selectedCount })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="pt-5">
@@ -103,7 +104,7 @@ export function CollectionSelectionToolbar({
               Cancel
             </Button>
             <Button type="button" variant="destructive" onClick={handleRemove}>
-              Remove selected
+              {t('selection.removeDialogButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

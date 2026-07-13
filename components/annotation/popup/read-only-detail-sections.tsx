@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { Separator } from '@/components/ui/separator';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import type { AnnotationPopupMetaSummary } from '@/types/annotation-viewer';
@@ -11,8 +13,12 @@ export function ReadOnlyComponentList({
 }: {
   selectedComponentGroups: SelectedComponentGroup[];
 }) {
+  const t = useTranslations('annotation');
+
   if (selectedComponentGroups.length === 0) {
-    return <div className="text-sm text-muted-foreground">No components defined.</div>;
+    return (
+      <div className="text-sm text-muted-foreground">{t('popup.readOnly.noComponentsDefined')}</div>
+    );
   }
 
   return (
@@ -33,7 +39,9 @@ export function ReadOnlyComponentList({
               ))}
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground">No features selected.</div>
+            <div className="text-sm text-muted-foreground">
+              {t('popup.readOnly.noFeaturesSelected')}
+            </div>
           )}
         </div>
       ))}
@@ -46,8 +54,12 @@ export function ReadOnlyPositionList({
 }: {
   selectedPositionLabels: string[];
 }) {
+  const t = useTranslations('annotation');
+
   if (selectedPositionLabels.length === 0) {
-    return <div className="text-sm text-muted-foreground">No positions defined.</div>;
+    return (
+      <div className="text-sm text-muted-foreground">{t('popup.readOnly.noPositionsDefined')}</div>
+    );
   }
 
   return (
@@ -78,6 +90,7 @@ export function AnnotationDetailOverview({
    */
   showMetaSummary?: boolean;
 }) {
+  const t = useTranslations('annotation');
   const { getPluralLabel } = useModelLabels();
 
   return (
@@ -86,7 +99,9 @@ export function AnnotationDetailOverview({
 
       {selectedComponentGroups.length > 0 ? (
         <section className="space-y-2">
-          <div className="text-xs font-semibold text-foreground">Components &amp; features</div>
+          <div className="text-xs font-semibold text-foreground">
+            {t('popup.readOnly.componentsAndFeatures')}
+          </div>
           <div className="rounded-md border bg-muted/20 px-3 py-3">
             <ReadOnlyComponentList selectedComponentGroups={selectedComponentGroups} />
           </div>

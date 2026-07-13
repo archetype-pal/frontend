@@ -2,12 +2,14 @@
 
 import * as React from 'react';
 import { Printer } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { readDocumentNonce } from '@/lib/csp-nonce';
 import { buildCollectionPrintHtml } from '@/lib/collection-print';
 import type { NamedCollection } from '@/lib/collection-storage';
+import { useModelLabels } from '@/contexts/model-labels-context';
 
 function writePrintDocument(win: Window, html: string) {
   win.document.open();
@@ -16,12 +18,14 @@ function writePrintDocument(win: Window, html: string) {
 }
 
 export function PrintCollectionButton({ collection }: { collection: NamedCollection }) {
+  const t = useTranslations('collection');
+  const { getLabel } = useModelLabels();
   const [isPrinting, setIsPrinting] = React.useState(false);
 
   const handlePrint = async () => {
     const win = window.open('', '_blank');
     if (!win) {
-      toast.error('Pop-up blocked. Allow pop-ups for this site to print.');
+      toast.error(t('print.popupBlocked'));
       return;
     }
 
@@ -34,11 +38,13 @@ export function PrintCollectionButton({ collection }: { collection: NamedCollect
     try {
       writePrintDocument(
         win,
-        await buildCollectionPrintHtml(collection, { nonce: readDocumentNonce() })
+        await buildCollectionPrintHtml(collection, getLabel('siteTitle'), {
+          nonce: readDocumentNonce(),
+        })
       );
     } catch {
       win.close();
-      toast.error('Could not prepare collection print view.');
+      toast.error(t('print.failed'));
     } finally {
       setIsPrinting(false);
     }
@@ -53,7 +59,7 @@ export function PrintCollectionButton({ collection }: { collection: NamedCollect
       disabled={isPrinting}
     >
       <Printer className="mr-2 h-4 w-4" />
-      {isPrinting ? 'Preparing...' : 'Print'}
+      {isPrinting ? t('print.preparing') : t('print.print')}
     </Button>
   );
 }

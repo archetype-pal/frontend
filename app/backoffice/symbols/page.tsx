@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
@@ -18,6 +19,7 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 
 export default function SymbolsPage() {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -50,12 +52,12 @@ export default function SymbolsPage() {
   const createMut = useMutation({
     mutationFn: (data: { name: string; type: string | null }) => createCharacter(token!, data),
     onSuccess: (newChar) => {
-      toast.success('Character created');
+      toast.success(t('symbols.toastCharacterCreated'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.characters.all() });
       setSelectedId(newChar.id);
     },
     onError: (err) => {
-      toast.error('Failed to create character', {
+      toast.error(t('symbols.toastFailedCreate'), {
         description: formatApiError(err),
       });
     },
@@ -69,7 +71,7 @@ export default function SymbolsPage() {
       <div className="flex items-center justify-center h-96">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Loading symbols structure...</p>
+          <p className="text-sm text-muted-foreground">{t('symbols.loadingStructure')}</p>
         </div>
       </div>
     );
@@ -107,7 +109,7 @@ export default function SymbolsPage() {
           <div className="flex h-full items-center justify-center p-6">
             <div className="max-w-lg w-full space-y-6">
               <h2 className="text-xl font-semibold text-foreground text-center">
-                Getting Started with Palaeographic Structure
+                {t('symbols.gettingStartedTitle')}
               </h2>
               <div className="space-y-3">
                 <button
@@ -121,15 +123,12 @@ export default function SymbolsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <Layers className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="font-medium text-foreground">Create Components</span>
+                      <span className="font-medium text-foreground">{t('symbols.step1Title')}</span>
                       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Define the structural parts of a letter (e.g., ascender, body, descender)
-                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">{t('symbols.step1Desc')}</p>
                     <p className="text-xs text-muted-foreground mt-2">
-                      {(components.data ?? []).length} component
-                      {(components.data ?? []).length !== 1 ? 's' : ''} so far
+                      {t('symbols.step1Count', { count: (components.data ?? []).length })}
                     </p>
                   </div>
                 </button>
@@ -144,15 +143,12 @@ export default function SymbolsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="font-medium text-foreground">Create Features</span>
+                      <span className="font-medium text-foreground">{t('symbols.step2Title')}</span>
                       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Define the visual characteristics (e.g., straight, curved, split)
-                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">{t('symbols.step2Desc')}</p>
                     <p className="text-xs text-muted-foreground mt-2">
-                      {(features.data ?? []).length} feature
-                      {(features.data ?? []).length !== 1 ? 's' : ''} so far
+                      {t('symbols.step2Count', { count: (features.data ?? []).length })}
                     </p>
                   </div>
                 </button>
@@ -167,15 +163,12 @@ export default function SymbolsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <Type className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="font-medium text-foreground">Create Characters</span>
+                      <span className="font-medium text-foreground">{t('symbols.step3Title')}</span>
                       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Add characters and assign allographs with their component-feature combinations
-                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">{t('symbols.step3Desc')}</p>
                     <p className="text-xs text-muted-foreground mt-2">
-                      {(characters.data ?? []).length} character
-                      {(characters.data ?? []).length !== 1 ? 's' : ''} so far
+                      {t('symbols.step3Count', { count: (characters.data ?? []).length })}
                     </p>
                   </div>
                 </button>
@@ -187,17 +180,17 @@ export default function SymbolsPage() {
             <div className="text-center space-y-4">
               <Type className="h-12 w-12 mx-auto text-muted-foreground/50" />
               <div className="space-y-2">
-                <p className="text-lg font-medium text-foreground">
-                  Palaeographic Structure Editor
-                </p>
+                <p className="text-lg font-medium text-foreground">{t('symbols.editorTitle')}</p>
                 <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                  Select a character from the left panel to view and edit its allographs,
-                  components, and features.
+                  {t('symbols.editorDesc')}
                 </p>
               </div>
               <p className="text-xs text-muted-foreground">
-                {(characters.data ?? []).length} characters · {(components.data ?? []).length}{' '}
-                components · {(features.data ?? []).length} features
+                {t('symbols.editorStats', {
+                  characters: (characters.data ?? []).length,
+                  components: (components.data ?? []).length,
+                  features: (features.data ?? []).length,
+                })}
               </p>
             </div>
           </div>

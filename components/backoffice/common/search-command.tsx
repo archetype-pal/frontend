@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   Type,
   BookOpen,
@@ -41,100 +42,119 @@ interface NavEntry {
   group: string;
 }
 
-function getEntries(datesLabel: string, manuscriptsAppLabel: string): NavEntry[] {
+function getEntries(
+  datesLabel: string,
+  manuscriptsAppLabel: string,
+  t: (key: string) => string
+): NavEntry[] {
   return [
-    { label: 'Dashboard', href: '/backoffice', icon: Settings, group: 'General' },
+    {
+      label: t('search.dashboard'),
+      href: '/backoffice',
+      icon: Settings,
+      group: t('search.groupGeneral'),
+    },
     // Manuscripts & Palaeography
     {
       label: manuscriptsAppLabel,
       href: '/backoffice/manuscripts',
       icon: BookOpen,
-      group: 'Manuscripts & Palaeography',
+      group: t('search.groupManuscripts'),
     },
     {
-      label: 'Scribes',
+      label: t('search.scribes'),
       href: '/backoffice/scribes',
       icon: Users,
-      group: 'Manuscripts & Palaeography',
+      group: t('search.groupManuscripts'),
     },
-    { label: 'Hands', href: '/backoffice/hands', icon: Hand, group: 'Manuscripts & Palaeography' },
     {
-      label: 'Annotations',
+      label: t('search.hands'),
+      href: '/backoffice/hands',
+      icon: Hand,
+      group: t('search.groupManuscripts'),
+    },
+    {
+      label: t('search.annotations'),
       href: '/backoffice/annotations',
       icon: PenTool,
-      group: 'Manuscripts & Palaeography',
+      group: t('search.groupManuscripts'),
     },
     {
-      label: 'Characters',
+      label: t('search.characters'),
       href: '/backoffice/symbols',
       icon: Type,
-      group: 'Manuscripts & Palaeography',
+      group: t('search.groupManuscripts'),
     },
     {
-      label: 'Repositories',
+      label: t('search.repositories'),
       href: '/backoffice/repositories',
       icon: Landmark,
-      group: 'Manuscripts & Palaeography',
+      group: t('search.groupManuscripts'),
     },
     {
       label: datesLabel,
       href: '/backoffice/dates',
       icon: Hash,
-      group: 'Manuscripts & Palaeography',
+      group: t('search.groupManuscripts'),
     },
     {
-      label: 'Formats',
+      label: t('search.formats'),
       href: '/backoffice/formats',
       icon: Library,
-      group: 'Manuscripts & Palaeography',
+      group: t('search.groupManuscripts'),
     },
     {
-      label: 'Sources',
+      label: t('search.sources'),
       href: '/backoffice/sources',
       icon: Database,
-      group: 'Manuscripts & Palaeography',
+      group: t('search.groupManuscripts'),
     },
     // Site & Content
     {
-      label: 'Publications',
+      label: t('search.publications'),
       href: '/backoffice/publications',
       icon: Newspaper,
-      group: 'Site & Content',
+      group: t('search.groupSiteContent'),
     },
     {
-      label: 'Comments',
+      label: t('search.comments'),
       href: '/backoffice/comments',
       icon: MessageSquare,
-      group: 'Site & Content',
+      group: t('search.groupSiteContent'),
     },
-    { label: 'Carousel', href: '/backoffice/carousel', icon: Image, group: 'Site & Content' },
+    {
+      label: t('search.carousel'),
+      href: '/backoffice/carousel',
+      icon: Image,
+      group: t('search.groupSiteContent'),
+    },
     // Administration
     {
-      label: 'Search Engine',
+      label: t('search.searchEngine'),
       href: '/backoffice/search-engine',
       icon: Search,
-      group: 'Administration',
+      group: t('search.groupAdmin'),
     },
     {
-      label: 'Translations',
+      label: t('search.translationsNav'),
       href: '/backoffice/translations',
       icon: Languages,
-      group: 'Administration',
+      group: t('search.groupAdmin'),
     },
     {
-      label: 'Site Features',
+      label: t('search.siteFeatures'),
       href: '/backoffice/site-features',
       icon: ToggleLeft,
-      group: 'Administration',
+      group: t('search.groupAdmin'),
     },
   ];
 }
 
-function getQuickActions(historicalItemLabel: string) {
+function getQuickActions(historicalItemLabel: string, t: (key: string) => string) {
   return [
     { label: `New ${historicalItemLabel}`, href: '/backoffice/manuscripts/new', icon: Plus },
-    { label: 'New Publication', href: '/backoffice/publications/new', icon: Plus },
-    { label: 'Moderate Comments', href: '/backoffice/comments', icon: MessageSquare },
+    { label: t('search.newPublication'), href: '/backoffice/publications/new', icon: Plus },
+    { label: t('search.moderateComments'), href: '/backoffice/comments', icon: MessageSquare },
   ];
 }
 
@@ -143,11 +163,12 @@ export function SearchCommand() {
   const router = useRouter();
   const { entities: recentEntities } = useRecentEntities();
   const { getLabel, getPluralLabel } = useModelLabels();
+  const t = useTranslations('backoffice');
   const entries = useMemo(
-    () => getEntries(getPluralLabel('date'), getLabel('appManuscripts')),
-    [getLabel, getPluralLabel]
+    () => getEntries(getPluralLabel('date'), getLabel('appManuscripts'), t),
+    [getLabel, getPluralLabel, t]
   );
-  const quickActions = useMemo(() => getQuickActions(getLabel('historicalItem')), [getLabel]);
+  const quickActions = useMemo(() => getQuickActions(getLabel('historicalItem'), t), [getLabel, t]);
 
   // Register Cmd+K / Ctrl+K shortcut
   useEffect(() => {
@@ -181,14 +202,14 @@ export function SearchCommand() {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Search pages, actions, or recent items..." />
+      <CommandInput placeholder={t('search.inputPlaceholder')} />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandEmpty>{t('search.noResults')}</CommandEmpty>
 
         {/* Recent entities */}
         {recentEntities.length > 0 && (
           <>
-            <CommandGroup heading="Recent">
+            <CommandGroup heading={t('search.groupRecent')}>
               {recentEntities.slice(0, 5).map((entity) => (
                 <CommandItem
                   key={entity.href}
@@ -206,7 +227,7 @@ export function SearchCommand() {
         )}
 
         {/* Quick actions */}
-        <CommandGroup heading="Quick Actions">
+        <CommandGroup heading={t('search.groupQuickActions')}>
           {quickActions.map((action) => {
             const Icon = action.icon;
             return (

@@ -4,6 +4,7 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { PanelLeftClose, PanelLeft, LogOut, User, Keyboard } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import {
@@ -66,32 +67,33 @@ function useBreadcrumbs(segmentLabels: Record<string, string>) {
 }
 
 export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeaderProps) {
+  const t = useTranslations('backoffice');
   const { user, logout } = useAuth();
   const { getLabel, getPluralLabel } = useModelLabels();
   const segmentLabels: Record<string, string> = React.useMemo(
     () => ({
-      backoffice: 'Backoffice',
-      symbols: 'Palaeography',
+      backoffice: t('header.breadcrumbs.backoffice'),
+      symbols: t('header.breadcrumbs.symbols'),
       manuscripts: getLabel('appManuscripts'),
-      repositories: 'Repositories',
-      publications: 'Publications',
-      events: 'Events',
-      comments: 'Comments',
-      carousel: 'Carousel',
-      scribes: 'Scribes',
-      hands: 'Hands',
+      repositories: t('header.breadcrumbs.repositories'),
+      publications: t('header.breadcrumbs.publications'),
+      events: t('header.breadcrumbs.events'),
+      comments: t('header.breadcrumbs.comments'),
+      carousel: t('header.breadcrumbs.carousel'),
+      scribes: t('header.breadcrumbs.scribes'),
+      hands: t('header.breadcrumbs.hands'),
       dates: getPluralLabel('date'),
-      formats: 'Formats',
-      sources: 'Sources',
-      annotations: 'Annotations',
-      'physical-volumes': 'Physical Volumes',
-      users: 'Users',
-      'search-engine': 'Search Engine',
-      translations: 'Translations',
-      'site-features': 'Site Features',
-      new: 'New',
+      formats: t('header.breadcrumbs.formats'),
+      sources: t('header.breadcrumbs.sources'),
+      annotations: t('header.breadcrumbs.annotations'),
+      'physical-volumes': t('header.breadcrumbs.physicalVolumes'),
+      users: t('header.breadcrumbs.users'),
+      'search-engine': t('header.breadcrumbs.searchEngine'),
+      translations: t('header.breadcrumbs.translations'),
+      'site-features': t('header.breadcrumbs.siteFeatures'),
+      new: t('header.breadcrumbs.new'),
     }),
-    [getLabel, getPluralLabel]
+    [getLabel, getPluralLabel, t]
   );
   const crumbs = useBreadcrumbs(segmentLabels);
 
@@ -99,7 +101,7 @@ export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeade
     <header className="flex h-14 items-center gap-3 border-b bg-card px-4">
       <Button variant="ghost" size="icon" onClick={onToggleSidebar} className="h-8 w-8 shrink-0">
         {collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-        <span className="sr-only">Toggle sidebar</span>
+        <span className="sr-only">{t('header.toggleSidebar')}</span>
       </Button>
 
       <Breadcrumb className="flex-1">
@@ -137,7 +139,7 @@ export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeade
           <Button variant="ghost" size="sm" className="gap-2 text-xs">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">
-              {user?.first_name || user?.username || 'Backoffice'}
+              {user?.first_name || user?.username || t('header.userFallback')}
             </span>
           </Button>
         </DropdownMenuTrigger>
@@ -148,7 +150,7 @@ export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeade
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={logout} className="text-destructive">
             <LogOut className="mr-2 h-4 w-4" />
-            Sign out
+            {t('header.signOut')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

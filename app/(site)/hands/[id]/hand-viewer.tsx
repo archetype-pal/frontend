@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
@@ -135,6 +136,7 @@ function useHandGraphs(handId: number, images: HandImage[], enabled: boolean): G
 // ── Main component ──────────────────────────────────────────────────
 
 export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps) {
+  const t = useTranslations('hand');
   const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB);
 
   const manuscriptLabel =
@@ -181,7 +183,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
       <div className="mb-6">
         <p className="text-sm text-muted-foreground mb-1">
           <Link href="/search/hands" className="hover:underline">
-            Hands
+            {t('breadcrumb')}
           </Link>
           {manuscriptLabel && (
             <>
@@ -198,7 +200,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
         </p>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-3xl font-medium text-foreground">
-            <span className="text-muted-foreground font-normal">Hand: </span>
+            <span className="text-muted-foreground font-normal">{t('namePrefix')}</span>
             {hand.name}
           </h1>
           <BackofficeLink kind="hand" id={hand.id} />
@@ -207,22 +209,25 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="bg-secondary p-1">
-          <TabsTrigger value="information">Information</TabsTrigger>
-          <TabsTrigger value="description">Description</TabsTrigger>
-          <TabsTrigger value="images">Manuscript Images ({images.length})</TabsTrigger>
+          <TabsTrigger value="information">{t('tabs.information')}</TabsTrigger>
+          <TabsTrigger value="description">{t('tabs.description')}</TabsTrigger>
+          <TabsTrigger value="images">
+            {t('tabs.images')} ({images.length})
+          </TabsTrigger>
           <TabsTrigger value="graphs">
-            Graphs{graphsState.status === 'loaded' ? ` (${graphs.length})` : ''}
+            {t('tabs.graphs')}
+            {graphsState.status === 'loaded' ? ` (${graphs.length})` : ''}
           </TabsTrigger>
         </TabsList>
 
         {/* Information Tab */}
         <TabsContent value="information" className="space-y-6">
           <div className="rounded-lg border bg-card p-6">
-            <h2 className="text-lg font-semibold mb-4">Hand Details</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('details.heading')}</h2>
             <dl className="grid grid-cols-[180px_1fr] gap-x-4 gap-y-3">
               <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <PenTool className="h-4 w-4" />
-                Name
+                {t('fields.name')}
               </dt>
               <dd className="text-sm">{hand.name}</dd>
 
@@ -230,7 +235,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                 <>
                   <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <BookOpen className="h-4 w-4" />
-                    Manuscript
+                    {t('fields.manuscript')}
                   </dt>
                   <dd className="text-sm">
                     {hand.item_part ? (
@@ -251,7 +256,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                 <>
                   <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <FileText className="h-4 w-4" />
-                    Script
+                    {t('fields.script')}
                   </dt>
                   <dd className="text-sm">{hand.script}</dd>
                 </>
@@ -261,7 +266,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                 <>
                   <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    Scribe
+                    {t('fields.scribe')}
                   </dt>
                   <dd className="text-sm">
                     <Link href={`/scribes/${scribe.id}`} className="text-primary hover:underline">
@@ -281,7 +286,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                 <>
                   <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    Date
+                    {t('fields.date')}
                   </dt>
                   <dd className="text-sm">{hand.date}</dd>
                 </>
@@ -291,7 +296,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                 <>
                   <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
-                    Place
+                    {t('fields.place')}
                   </dt>
                   <dd className="text-sm">{hand.place}</dd>
                 </>
@@ -311,7 +316,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
             ) : (
               <div className="flex items-center gap-2 text-muted-foreground bg-muted/50 rounded-md p-4">
                 <FileText className="h-4 w-4" />
-                <span>No description associated to this record.</span>
+                <span>{t('emptyStates.description')}</span>
               </div>
             )}
           </div>
@@ -332,7 +337,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                       {image.iiif_image ? (
                         <Image
                           src={getIiifImageUrl(image.iiif_image, { thumbnail: true })}
-                          alt={image.locus || 'Manuscript image'}
+                          alt={image.locus || t('imageAltFallback')}
                           fill
                           className="object-contain group-hover:scale-105 transition-transform duration-200"
                           unoptimized
@@ -346,8 +351,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                     <div className="mt-3 text-center">
                       <p className="text-sm font-medium">{image.locus}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {image.number_of_annotations} Annotation
-                        {image.number_of_annotations !== 1 ? 's' : ''}
+                        {t('annotationCount', { count: image.number_of_annotations })}
                       </p>
                     </div>
                   </div>

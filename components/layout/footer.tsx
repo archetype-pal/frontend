@@ -1,5 +1,8 @@
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { readModelLabels } from '@/lib/model-labels-server';
+import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
 // lucide-react dropped brand marks (incl. GitHub) in v1, so the GitHub logo is
 // rendered as an inline SVG. Uses currentColor to match the adjacent icons.
@@ -44,7 +47,16 @@ const partners = [
   },
 ];
 
-export default function Footer() {
+export default async function Footer() {
+  const [t, rawLocale, modelLabels] = await Promise.all([
+    getTranslations('nav.footer'),
+    getLocale(),
+    readModelLabels(),
+  ]);
+  const locale = rawLocale as ModelLabelLocale;
+  const getLabel = (key: 'siteTitle' | 'footerFunded' | 'footerCopyright') =>
+    resolveModelLabel(modelLabels.labels[key], locale);
+
   return (
     <footer className="bg-primary text-primary-foreground mt-16">
       <div className="container mx-auto px-6 py-12">
@@ -52,26 +64,23 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
           {/* About column */}
           <div className="space-y-3">
-            <h2 className="font-serif text-lg font-semibold tracking-tight">Models of Authority</h2>
-            <p className="text-sm text-primary-foreground/85 leading-relaxed">
-              Scottish Charters and the Emergence of Government, 1100–1250. A resource for the study
-              of the contents, script and physical appearance of the corpus of Scottish charters.
-            </p>
-            <p className="text-sm text-primary-foreground/85">
-              Funded by the Arts and Humanities Research Council (AHRC).
-            </p>
+            <h2 className="font-serif text-lg font-semibold tracking-tight">
+              {getLabel('siteTitle')}
+            </h2>
+            <p className="text-sm text-primary-foreground/85 leading-relaxed">{t('about')}</p>
+            <p className="text-sm text-primary-foreground/85">{getLabel('footerFunded')}</p>
           </div>
 
           {/* Links column */}
           <div className="space-y-3">
-            <h2 className="font-serif text-lg font-semibold tracking-tight">Quick Links</h2>
+            <h2 className="font-serif text-lg font-semibold tracking-tight">{t('quickLinks')}</h2>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link
                   href="/search/manuscripts"
                   className="text-primary-foreground/85 hover:text-white transition-colors"
                 >
-                  Search Charters
+                  {t('searchCharters')}
                 </Link>
               </li>
               <li>
@@ -79,7 +88,7 @@ export default function Footer() {
                   href="/about/about-models-of-authority"
                   className="text-primary-foreground/85 hover:text-white transition-colors"
                 >
-                  About the Project
+                  {t('aboutProject')}
                 </Link>
               </li>
               <li>
@@ -87,7 +96,7 @@ export default function Footer() {
                   href="/about/accessibility"
                   className="text-primary-foreground/85 hover:text-white transition-colors"
                 >
-                  Accessibility Statement
+                  {t('accessibility')}
                 </Link>
               </li>
               <li>
@@ -95,7 +104,7 @@ export default function Footer() {
                   href="/login"
                   className="text-primary-foreground/85 hover:text-white transition-colors"
                 >
-                  Log in
+                  {t('logIn')}
                 </Link>
               </li>
             </ul>
@@ -103,7 +112,7 @@ export default function Footer() {
 
           {/* Partners column */}
           <div className="space-y-3">
-            <h2 className="font-serif text-lg font-semibold tracking-tight">Partners</h2>
+            <h2 className="font-serif text-lg font-semibold tracking-tight">{t('partners')}</h2>
             <div className="flex flex-wrap gap-4">
               {partners.map((partner) => (
                 <div
@@ -127,22 +136,20 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-primary-foreground/20 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-primary-foreground/85 text-center md:text-left max-w-2xl">
-            ©2015–17 Models of Authority. Some parts available under CC-BY licence. All manuscript
-            images are copyright of their respective repositories. Website by DDH / KDL. Built with
-            Archetype.
+            {getLabel('footerCopyright')}
           </p>
           <div className="flex items-center gap-3">
             <Link
               href="https://github.com/archetype-pal"
               className="text-primary-foreground/85 hover:text-white transition-colors"
-              aria-label="GitHub"
+              aria-label={t('githubLabel')}
             >
               <GithubIcon className="h-5 w-5" />
             </Link>
             <Link
               href="/about/about-models-of-authority"
               className="text-primary-foreground/85 hover:text-white transition-colors"
-              aria-label="Project website"
+              aria-label={t('projectWebsiteLabel')}
             >
               <ExternalLink className="h-5 w-5" />
             </Link>

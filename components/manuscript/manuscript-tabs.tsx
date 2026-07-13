@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Book, FileText, ImageIcon, Info } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 interface ManuscriptTabsProps {
@@ -16,31 +17,35 @@ interface ManuscriptTabsProps {
   };
 }
 
-interface TabDef {
-  segment: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  countKey?: 'annotations' | 'texts' | 'otherImages';
-}
-
-const TABS: TabDef[] = [
-  { segment: '', label: 'Selected Image', icon: ImageIcon },
-  { segment: 'annotations', label: 'Annotations', icon: FileText, countKey: 'annotations' },
-  { segment: 'texts', label: 'Texts', icon: Book, countKey: 'texts' },
-  { segment: 'other-images', label: 'Other Images', icon: ImageIcon, countKey: 'otherImages' },
-  { segment: 'copyright', label: 'Image Copyright', icon: Info },
-];
-
 export function ManuscriptTabs({ manuscriptId, imageId, counts }: ManuscriptTabsProps) {
+  const t = useTranslations('manuscript');
   const pathname = usePathname();
   const base = `/manuscripts/${manuscriptId}/images/${imageId}`;
+
+  const tabs = [
+    { segment: '', label: t('tabs.selectedImage'), icon: ImageIcon, countKey: undefined },
+    {
+      segment: 'annotations',
+      label: t('tabs.annotations'),
+      icon: FileText,
+      countKey: 'annotations' as const,
+    },
+    { segment: 'texts', label: t('tabs.texts'), icon: Book, countKey: 'texts' as const },
+    {
+      segment: 'other-images',
+      label: t('tabs.otherImages'),
+      icon: ImageIcon,
+      countKey: 'otherImages' as const,
+    },
+    { segment: 'copyright', label: t('tabs.imageCopyright'), icon: Info, countKey: undefined },
+  ];
 
   return (
     <nav
       className="-mb-px flex items-center gap-1 overflow-x-auto whitespace-nowrap"
-      aria-label="Image tabs"
+      aria-label={t('tabs.ariaLabel')}
     >
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const href = tab.segment ? `${base}/${tab.segment}` : base;
         const isActive = tab.segment
           ? pathname === href || pathname.startsWith(`${href}/`)

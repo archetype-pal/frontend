@@ -1,6 +1,7 @@
 'use client';
 
 import { BookMarked } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   createSource,
   deleteSource,
@@ -12,6 +13,7 @@ import type { BibliographicSource } from '@/types/backoffice';
 import { SimpleCrudPage } from '@/components/backoffice/common/simple-crud-page';
 
 export default function SourcesPage() {
+  const t = useTranslations('backoffice');
   return (
     <SimpleCrudPage<BibliographicSource>
       queryKey={backofficeKeys.sources.all()}
@@ -23,16 +25,25 @@ export default function SourcesPage() {
       }
       deleteFn={(token, id) => deleteSource(token, id)}
       icon={BookMarked}
-      title="Bibliographic Sources"
-      description="Manage bibliographic source records"
-      singularLabel="Source"
-      pluralLabel="Sources"
+      title={t('sources.title')}
+      description={t('sources.description')}
+      singularLabel={t('sources.singularLabel')}
+      pluralLabel={t('sources.pluralLabel')}
       searchColumn="name"
       fields={[
-        { key: 'name', label: 'Name', placeholder: 'Full source name' },
-        { key: 'label', label: 'Label', placeholder: 'Short label', tableSize: 150 },
+        {
+          key: 'name',
+          label: t('sources.fieldName'),
+          placeholder: t('sources.fieldNamePlaceholder'),
+        },
+        {
+          key: 'label',
+          label: t('sources.fieldLabel'),
+          placeholder: t('sources.fieldLabelPlaceholder'),
+          tableSize: 150,
+        },
       ]}
-      deleteDescription="This may affect items that reference this source."
+      deleteDescription={t('sources.deleteDescription')}
     />
   );
 }

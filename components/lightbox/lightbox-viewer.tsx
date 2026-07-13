@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store';
 import { LightboxImageLayer } from './lightbox-image-layer';
 import { LightboxMinimap } from './lightbox-minimap';
@@ -24,6 +25,7 @@ function EmptyState({ title, subtitle }: { title: string; subtitle: string }) {
 }
 
 export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}) {
+  const t = useTranslations('lightbox');
   // Field-level selectors so unrelated store mutations don't re-render the whole
   // canvas. (zoom/setZoom are read here but the live transform is applied
   // directly to the DOM, so a re-render on zoom is harmless.)
@@ -132,8 +134,8 @@ export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}
   if (!currentWorkspaceId) {
     return (
       <EmptyState
-        title="No workspace selected"
-        subtitle="Create a new workspace or select an existing one from the sidebar"
+        title={t('viewer.noWorkspaceSelected')}
+        subtitle={t('viewer.noWorkspaceSelectedSubtitle')}
       />
     );
   }
@@ -141,8 +143,8 @@ export function LightboxViewer({ showMinimap = false }: LightboxViewerProps = {}
   if (workspaceImages.length === 0) {
     return (
       <EmptyState
-        title="No images in workspace"
-        subtitle="Add images from your collection or search results"
+        title={t('viewer.noImagesInWorkspace')}
+        subtitle={t('viewer.noImagesInWorkspaceSubtitle')}
       />
     );
   }

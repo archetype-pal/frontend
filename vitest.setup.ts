@@ -1,8 +1,28 @@
+import { vi } from 'vitest';
+
 (
   globalThis as typeof globalThis & {
     IS_REACT_ACT_ENVIRONMENT?: boolean;
   }
 ).IS_REACT_ACT_ENVIRONMENT = true;
+
+// Components call `useTranslations` without wrapping tests in a
+// NextIntlClientProvider. Back it with the real English messages via
+// next-intl's non-hook translator so `t(...)` works the same as in the app.
+vi.mock('next-intl', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next-intl')>();
+  const messages = (await import('./messages/en.json')).default;
+  return {
+    ...actual,
+    useTranslations: (namespace?: string) =>
+      actual.createTranslator({
+        locale: 'en',
+        messages,
+        namespace: namespace as never,
+        onError: () => {},
+      }),
+  };
+});
 
 if (!process.env.NEXT_PUBLIC_API_URL) {
   process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8000';

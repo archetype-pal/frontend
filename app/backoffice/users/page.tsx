@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import {
@@ -69,11 +70,11 @@ function fullName(user: UserListItem): string {
   return [user.first_name, user.last_name].filter(Boolean).join(' ');
 }
 
-function relativeTime(dateStr: string | null): string {
-  if (!dateStr) return 'Never';
+function relativeTime(dateStr: string | null, t: (key: string) => string): string {
+  if (!dateStr) return t('users.relativeNever');
   const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'Just now';
+  if (minutes < 1) return t('users.relativeJustNow');
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
@@ -179,6 +180,7 @@ function SortHeader({
 // ── Page ─────────────────────────────────────────────────────────────────
 
 export default function UsersPage() {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const queryClient = useQueryClient();
 
@@ -326,13 +328,13 @@ export default function UsersPage() {
   const createMut = useMutation({
     mutationFn: () => createUser(token!, createForm),
     onSuccess: () => {
-      toast.success('User created');
+      toast.success(t('users.toastUserCreated'));
       invalidate();
       setCreateOpen(false);
       setCreateForm({ ...emptyCreate });
     },
     onError: (err) => {
-      toast.error('Failed to create user', { description: formatApiError(err) });
+      toast.error(t('users.toastFailedCreate'), { description: formatApiError(err) });
     },
   });
 
@@ -344,24 +346,24 @@ export default function UsersPage() {
       return updateUser(token!, editTarget!.id, payload);
     },
     onSuccess: () => {
-      toast.success('User updated');
+      toast.success(t('users.toastUserUpdated'));
       invalidate();
       setEditTarget(null);
     },
     onError: (err) => {
-      toast.error('Failed to update user', { description: formatApiError(err) });
+      toast.error(t('users.toastFailedUpdate'), { description: formatApiError(err) });
     },
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteUser(token!, id),
     onSuccess: () => {
-      toast.success('User deleted');
+      toast.success(t('users.toastUserDeleted'));
       invalidate();
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error('Failed to delete user', { description: formatApiError(err) });
+      toast.error(t('users.toastFailedDelete'), { description: formatApiError(err) });
     },
   });
 
@@ -423,14 +425,14 @@ export default function UsersPage() {
 
   if (isLoading) return <BackofficeLoadingState />;
   if (isError)
-    return <BackofficeErrorState message="Failed to load users" onRetry={() => refetch()} />;
+    return <BackofficeErrorState message={t('users.failedLoad')} onRetry={() => refetch()} />;
 
   const canCreate = createForm.username.trim() && createForm.password.trim();
   const presets: { key: PresetKey; label: string; count: number }[] = [
-    { key: 'all', label: 'All', count: totalCount },
-    { key: 'superuser', label: 'Superuser', count: superuserCount },
-    { key: 'staff', label: 'Staff', count: staffCount },
-    { key: 'inactive', label: 'Inactive', count: inactiveCount },
+    { key: 'all', label: t('users.filterAll'), count: totalCount },
+    { key: 'superuser', label: t('users.filterSuperuser'), count: superuserCount },
+    { key: 'staff', label: t('users.filterStaff'), count: staffCount },
+    { key: 'inactive', label: t('users.filterInactive'), count: inactiveCount },
   ];
   const colSpan = 7;
 
@@ -441,8 +443,8 @@ export default function UsersPage() {
         <div className="flex items-center gap-3">
           <UserCog className="h-6 w-6 text-primary" />
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">User Management</h1>
-            <p className="text-sm text-muted-foreground">Create, edit, and manage user accounts</p>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('users.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('users.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -456,7 +458,7 @@ export default function UsersPage() {
             </div>
             <div>
               <p className="text-2xl font-bold tabular-nums">{totalCount}</p>
-              <p className="text-xs text-muted-foreground">Total Users</p>
+              <p className="text-xs text-muted-foreground">{t('users.statTotalUsers')}</p>
             </div>
           </CardContent>
         </Card>
@@ -467,7 +469,7 @@ export default function UsersPage() {
             </div>
             <div>
               <p className="text-2xl font-bold tabular-nums">{staffCount}</p>
-              <p className="text-xs text-muted-foreground">Staff Members</p>
+              <p className="text-xs text-muted-foreground">{t('users.statStaffMembers')}</p>
             </div>
           </CardContent>
         </Card>
@@ -478,7 +480,7 @@ export default function UsersPage() {
             </div>
             <div>
               <p className="text-2xl font-bold tabular-nums">{activeCount}</p>
-              <p className="text-xs text-muted-foreground">Active</p>
+              <p className="text-xs text-muted-foreground">{t('users.statActive')}</p>
             </div>
           </CardContent>
         </Card>
@@ -489,7 +491,7 @@ export default function UsersPage() {
             </div>
             <div>
               <p className="text-2xl font-bold tabular-nums">{inactiveCount}</p>
-              <p className="text-xs text-muted-foreground">Inactive</p>
+              <p className="text-xs text-muted-foreground">{t('users.statInactive')}</p>
             </div>
           </CardContent>
         </Card>
@@ -524,7 +526,7 @@ export default function UsersPage() {
           <div className="relative max-w-sm flex-1">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search users..."
+              placeholder={t('users.searchPlaceholder')}
               value={search}
               onChange={(e) => changeSearch(e.target.value)}
               className="pl-8 pr-8 h-9"
@@ -533,7 +535,7 @@ export default function UsersPage() {
           <div className="ml-auto">
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4 mr-1" />
-              New User
+              {t('users.newUserButton')}
             </Button>
           </div>
         </div>
@@ -550,7 +552,7 @@ export default function UsersPage() {
                 onClick={handleBulkActivate}
               >
                 <CheckCircle className="h-3.5 w-3.5" />
-                Activate
+                {t('users.bulkActivate')}
               </Button>
               <Button
                 variant="outline"
@@ -559,7 +561,7 @@ export default function UsersPage() {
                 onClick={handleBulkDeactivate}
               >
                 <XCircle className="h-3.5 w-3.5" />
-                Deactivate
+                {t('users.bulkDeactivate')}
               </Button>
               <Button
                 variant="destructive"
@@ -568,7 +570,7 @@ export default function UsersPage() {
                 onClick={() => setBulkDeleteIds(selectedIds)}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                Delete
+                {t('users.bulkDelete')}
               </Button>
               <Button
                 variant="ghost"
@@ -577,7 +579,7 @@ export default function UsersPage() {
                 onClick={clearSelection}
               >
                 <X className="h-3 w-3" />
-                Clear
+                {t('users.bulkClear')}
               </Button>
             </div>
           </div>
@@ -592,13 +594,13 @@ export default function UsersPage() {
                   <Checkbox
                     checked={allSelected ? true : someSelected ? 'indeterminate' : false}
                     onCheckedChange={toggleAll}
-                    aria-label="Select all"
+                    aria-label={t('users.selectAll')}
                     className="translate-y-[2px]"
                   />
                 </TableHead>
                 <TableHead>
                   <SortHeader
-                    label="User"
+                    label={t('users.colUser')}
                     active={sortKey === 'username'}
                     dir={sortDir}
                     onClick={() => toggleSort('username')}
@@ -606,17 +608,17 @@ export default function UsersPage() {
                 </TableHead>
                 <TableHead>
                   <SortHeader
-                    label="Name"
+                    label={t('users.colName')}
                     active={sortKey === 'name'}
                     dir={sortDir}
                     onClick={() => toggleSort('name')}
                   />
                 </TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>{t('users.colRole')}</TableHead>
+                <TableHead>{t('users.colStatus')}</TableHead>
                 <TableHead>
                   <SortHeader
-                    label="Last Active"
+                    label={t('users.colLastActive')}
                     active={sortKey === 'last_login'}
                     dir={sortDir}
                     onClick={() => toggleSort('last_login')}
@@ -624,7 +626,7 @@ export default function UsersPage() {
                 </TableHead>
                 <TableHead>
                   <SortHeader
-                    label="Joined"
+                    label={t('users.colJoined')}
                     active={sortKey === 'date_joined'}
                     dir={sortDir}
                     onClick={() => toggleSort('date_joined')}
@@ -644,7 +646,7 @@ export default function UsersPage() {
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={() => toggleRow(u.id)}
-                          aria-label="Select row"
+                          aria-label={t('users.selectRow')}
                           className="translate-y-[2px]"
                         />
                       </TableCell>
@@ -668,16 +670,16 @@ export default function UsersPage() {
                         {u.is_superuser ? (
                           <Badge variant="destructive" className="gap-1">
                             <ShieldAlert className="h-3 w-3" />
-                            Superuser
+                            {t('users.roleSuperuser')}
                           </Badge>
                         ) : u.is_staff ? (
                           <Badge variant="default" className="gap-1">
                             <ShieldCheck className="h-3 w-3" />
-                            Staff
+                            {t('users.roleStaff')}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-muted-foreground">
-                            Regular
+                            {t('users.roleRegular')}
                           </Badge>
                         )}
                       </TableCell>
@@ -689,7 +691,7 @@ export default function UsersPage() {
                           <span
                             className={`text-sm ${u.is_active ? 'text-foreground' : 'text-muted-foreground'}`}
                           >
-                            {u.is_active ? 'Active' : 'Inactive'}
+                            {u.is_active ? t('users.statusActive') : t('users.statusInactive')}
                           </span>
                         </div>
                       </TableCell>
@@ -698,7 +700,7 @@ export default function UsersPage() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="text-sm cursor-default">
-                                {relativeTime(u.last_login)}
+                                {relativeTime(u.last_login, t)}
                               </span>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -706,7 +708,9 @@ export default function UsersPage() {
                             </TooltipContent>
                           </Tooltip>
                         ) : (
-                          <span className="text-sm text-muted-foreground">Never</span>
+                          <span className="text-sm text-muted-foreground">
+                            {t('users.relativeNever')}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -734,7 +738,7 @@ export default function UsersPage() {
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Edit user</TooltipContent>
+                            <TooltipContent>{t('users.tooltipEditUser')}</TooltipContent>
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -747,7 +751,7 @@ export default function UsersPage() {
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Delete user</TooltipContent>
+                            <TooltipContent>{t('users.tooltipDeleteUser')}</TooltipContent>
                           </Tooltip>
                         </div>
                       </TableCell>
@@ -760,7 +764,7 @@ export default function UsersPage() {
                     colSpan={colSpan + 1}
                     className="h-24 text-center text-muted-foreground"
                   >
-                    No results.
+                    {t('users.noResults')}
                   </TableCell>
                 </TableRow>
               )}
@@ -772,8 +776,8 @@ export default function UsersPage() {
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
             {selectedIds.length > 0
-              ? `${selectedIds.length} of ${sorted.length} selected`
-              : `${sorted.length} row(s) total`}
+              ? t('users.selectedCount', { selected: selectedIds.length, total: sorted.length })
+              : t('users.rowsTotal', { count: sorted.length })}
           </span>
           <div className="flex items-center gap-1">
             <Button
@@ -805,10 +809,8 @@ export default function UsersPage() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>New User</DialogTitle>
-            <DialogDescription>
-              Set up a new account. The password will be securely hashed.
-            </DialogDescription>
+            <DialogTitle>{t('users.createDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('users.createDialogDesc')}</DialogDescription>
           </DialogHeader>
 
           <div
@@ -816,50 +818,48 @@ export default function UsersPage() {
             style={{ maxHeight: 'calc(100vh - 12rem)' }}
           >
             <div className="space-y-3">
-              <SectionLabel>Account</SectionLabel>
+              <SectionLabel>{t('users.sectionAccount')}</SectionLabel>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Username</Label>
+                  <Label>{t('users.fieldUsername')}</Label>
                   <Input
                     value={createForm.username}
                     onChange={(e) => setCreateForm((f) => ({ ...f, username: e.target.value }))}
-                    placeholder="jdoe"
+                    placeholder={t('users.usernamePlaceholder')}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Email</Label>
+                  <Label>{t('users.fieldEmail')}</Label>
                   <Input
                     type="email"
                     value={createForm.email}
                     onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
-                    placeholder="jdoe@example.com"
+                    placeholder={t('users.emailPlaceholder')}
                   />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Password</Label>
+                <Label>{t('users.fieldPassword')}</Label>
                 <PasswordInput
                   value={createForm.password}
                   onChange={(v) => setCreateForm((f) => ({ ...f, password: v }))}
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  Minimum 8 characters recommended
-                </p>
+                <p className="text-[11px] text-muted-foreground">{t('users.passwordHint')}</p>
               </div>
             </div>
 
             <div className="space-y-3">
-              <SectionLabel>Personal Information</SectionLabel>
+              <SectionLabel>{t('users.sectionPersonal')}</SectionLabel>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>First Name</Label>
+                  <Label>{t('users.fieldFirstName')}</Label>
                   <Input
                     value={createForm.first_name}
                     onChange={(e) => setCreateForm((f) => ({ ...f, first_name: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Last Name</Label>
+                  <Label>{t('users.fieldLastName')}</Label>
                   <Input
                     value={createForm.last_name}
                     onChange={(e) => setCreateForm((f) => ({ ...f, last_name: e.target.value }))}
@@ -869,14 +869,14 @@ export default function UsersPage() {
             </div>
 
             <div className="space-y-3">
-              <SectionLabel>Permissions</SectionLabel>
+              <SectionLabel>{t('users.sectionPermissions')}</SectionLabel>
               <div className="rounded-lg border divide-y">
                 <div className="flex items-center justify-between px-4 py-3">
                   <div>
                     <Label htmlFor="create-is-staff" className="cursor-pointer text-sm">
-                      Staff access
+                      {t('users.permStaffLabel')}
                     </Label>
-                    <p className="text-[11px] text-muted-foreground">Can access the backoffice</p>
+                    <p className="text-[11px] text-muted-foreground">{t('users.permStaffDesc')}</p>
                   </div>
                   <Switch
                     id="create-is-staff"
@@ -887,10 +887,10 @@ export default function UsersPage() {
                 <div className="flex items-center justify-between px-4 py-3">
                   <div>
                     <Label htmlFor="create-is-superuser" className="cursor-pointer text-sm">
-                      Superuser
+                      {t('users.permSuperuserLabel')}
                     </Label>
                     <p className="text-[11px] text-muted-foreground">
-                      Full access to everything, including Django admin
+                      {t('users.permSuperuserDesc')}
                     </p>
                   </div>
                   <Switch
@@ -902,9 +902,9 @@ export default function UsersPage() {
                 <div className="flex items-center justify-between px-4 py-3">
                   <div>
                     <Label htmlFor="create-is-active" className="cursor-pointer text-sm">
-                      Active
+                      {t('users.permActiveLabel')}
                     </Label>
-                    <p className="text-[11px] text-muted-foreground">Can sign in to the site</p>
+                    <p className="text-[11px] text-muted-foreground">{t('users.permActiveDesc')}</p>
                   </div>
                   <Switch
                     id="create-is-active"
@@ -922,10 +922,10 @@ export default function UsersPage() {
               onClick={() => setCreateOpen(false)}
               disabled={createMut.isPending}
             >
-              Cancel
+              {t('users.cancelButton')}
             </Button>
             <Button onClick={() => createMut.mutate()} disabled={!canCreate || createMut.isPending}>
-              {createMut.isPending ? 'Creating...' : 'Create User'}
+              {createMut.isPending ? t('users.creatingButton') : t('users.createUserButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -947,7 +947,9 @@ export default function UsersPage() {
                 <DialogTitle>@{editTarget?.username}</DialogTitle>
                 <DialogDescription>
                   {editTarget &&
-                    `Member since ${new Date(editTarget.date_joined).toLocaleDateString()}`}
+                    t('users.editDialogMemberSince', {
+                      date: new Date(editTarget.date_joined).toLocaleDateString(),
+                    })}
                 </DialogDescription>
               </div>
             </div>
@@ -958,17 +960,17 @@ export default function UsersPage() {
             style={{ maxHeight: 'calc(100vh - 12rem)' }}
           >
             <div className="space-y-3">
-              <SectionLabel>Account</SectionLabel>
+              <SectionLabel>{t('users.sectionAccount')}</SectionLabel>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Username</Label>
+                  <Label>{t('users.fieldUsername')}</Label>
                   <Input
                     value={editForm.username ?? ''}
                     onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Email</Label>
+                  <Label>{t('users.fieldEmail')}</Label>
                   <Input
                     type="email"
                     value={editForm.email ?? ''}
@@ -979,31 +981,29 @@ export default function UsersPage() {
             </div>
 
             <div className="space-y-3">
-              <SectionLabel>Change Password</SectionLabel>
+              <SectionLabel>{t('users.changePasswordSection')}</SectionLabel>
               <div className="space-y-1.5">
                 <PasswordInput
                   value={editForm.password ?? ''}
                   onChange={(v) => setEditForm((f) => ({ ...f, password: v }))}
-                  placeholder="Leave blank to keep current password"
+                  placeholder={t('users.changePasswordPlaceholder')}
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  Only fill in if you want to change the password
-                </p>
+                <p className="text-[11px] text-muted-foreground">{t('users.changePasswordHint')}</p>
               </div>
             </div>
 
             <div className="space-y-3">
-              <SectionLabel>Personal Information</SectionLabel>
+              <SectionLabel>{t('users.sectionPersonal')}</SectionLabel>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>First Name</Label>
+                  <Label>{t('users.fieldFirstName')}</Label>
                   <Input
                     value={editForm.first_name ?? ''}
                     onChange={(e) => setEditForm((f) => ({ ...f, first_name: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Last Name</Label>
+                  <Label>{t('users.fieldLastName')}</Label>
                   <Input
                     value={editForm.last_name ?? ''}
                     onChange={(e) => setEditForm((f) => ({ ...f, last_name: e.target.value }))}
@@ -1013,14 +1013,14 @@ export default function UsersPage() {
             </div>
 
             <div className="space-y-3">
-              <SectionLabel>Permissions</SectionLabel>
+              <SectionLabel>{t('users.sectionPermissions')}</SectionLabel>
               <div className="rounded-lg border divide-y">
                 <div className="flex items-center justify-between px-4 py-3">
                   <div>
                     <Label htmlFor="edit-is-staff" className="cursor-pointer text-sm">
-                      Staff access
+                      {t('users.permStaffLabel')}
                     </Label>
-                    <p className="text-[11px] text-muted-foreground">Can access the backoffice</p>
+                    <p className="text-[11px] text-muted-foreground">{t('users.permStaffDesc')}</p>
                   </div>
                   <Switch
                     id="edit-is-staff"
@@ -1031,10 +1031,10 @@ export default function UsersPage() {
                 <div className="flex items-center justify-between px-4 py-3">
                   <div>
                     <Label htmlFor="edit-is-superuser" className="cursor-pointer text-sm">
-                      Superuser
+                      {t('users.permSuperuserLabel')}
                     </Label>
                     <p className="text-[11px] text-muted-foreground">
-                      Full access to everything, including Django admin
+                      {t('users.permSuperuserDesc')}
                     </p>
                   </div>
                   <Switch
@@ -1046,9 +1046,9 @@ export default function UsersPage() {
                 <div className="flex items-center justify-between px-4 py-3">
                   <div>
                     <Label htmlFor="edit-is-active" className="cursor-pointer text-sm">
-                      Active
+                      {t('users.permActiveLabel')}
                     </Label>
-                    <p className="text-[11px] text-muted-foreground">Can sign in to the site</p>
+                    <p className="text-[11px] text-muted-foreground">{t('users.permActiveDesc')}</p>
                   </div>
                   <Switch
                     id="edit-is-active"
@@ -1073,20 +1073,20 @@ export default function UsersPage() {
               }}
             >
               <Trash2 className="h-3.5 w-3.5 mr-1" />
-              Delete user
+              {t('users.deleteUserButton')}
             </Button>
             <Button
               variant="outline"
               onClick={() => setEditTarget(null)}
               disabled={updateMut.isPending}
             >
-              Cancel
+              {t('users.cancelButton')}
             </Button>
             <Button
               onClick={() => updateMut.mutate(undefined)}
               disabled={!editForm.username?.trim() || updateMut.isPending}
             >
-              {updateMut.isPending ? 'Saving...' : 'Save Changes'}
+              {updateMut.isPending ? t('users.savingButton') : t('users.saveChangesButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1096,9 +1096,9 @@ export default function UsersPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title={`Delete "${deleteTarget?.username}"?`}
-        description="This action cannot be undone. The user will be permanently removed."
-        confirmLabel="Delete"
+        title={t('users.singleDeleteTitle', { username: deleteTarget?.username ?? '' })}
+        description={t('users.singleDeleteDesc')}
+        confirmLabel={t('users.singleDeleteConfirm')}
         loading={deleteMut.isPending}
         onConfirm={() => deleteTarget && deleteMut.mutate(deleteTarget.id)}
       />
@@ -1107,9 +1107,9 @@ export default function UsersPage() {
       <ConfirmDialog
         open={bulkDeleteIds.length > 0}
         onOpenChange={(open) => !open && setBulkDeleteIds([])}
-        title={`Delete ${bulkDeleteIds.length} user(s)?`}
-        description="This action cannot be undone. All selected users will be permanently removed."
-        confirmLabel="Delete All"
+        title={t('users.bulkDeleteTitle', { count: bulkDeleteIds.length })}
+        description={t('users.bulkDeleteDesc')}
+        confirmLabel={t('users.bulkDeleteConfirm')}
         loading={bulkDeleteMut.isPending}
         onConfirm={() => bulkDeleteMut.mutate(bulkDeleteIds)}
       />

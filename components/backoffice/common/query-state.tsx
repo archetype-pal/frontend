@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -16,11 +19,12 @@ export function BackofficeErrorState({
   message: string;
   onRetry: () => void;
 }) {
+  const t = useTranslations('backoffice');
   return (
     <div className="flex flex-col items-center justify-center py-20 gap-3">
       <p className="text-sm text-destructive">{message}</p>
       <Button variant="outline" size="sm" onClick={onRetry}>
-        Retry
+        {t('queryState.retry')}
       </Button>
     </div>
   );

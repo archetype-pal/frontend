@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
+import { useTranslations } from 'next-intl';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Archive, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -29,6 +30,7 @@ import { useModelLabels } from '@/contexts/model-labels-context';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 
 export default function PhysicalVolumesPage() {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const { getLabel } = useModelLabels();
@@ -41,7 +43,7 @@ export default function PhysicalVolumesPage() {
   const columns: ColumnDef<CurrentItemOption>[] = [
     {
       accessorKey: 'repository_name',
-      header: sortableHeader('Repository'),
+      header: sortableHeader(t('physicalVolumes.colRepository')),
       cell: ({ row }) => (
         <span className="text-sm font-medium">{row.original.repository_name}</span>
       ),
@@ -54,7 +56,7 @@ export default function PhysicalVolumesPage() {
     },
     {
       accessorKey: 'description',
-      header: 'Description',
+      header: t('physicalVolumes.colDescription'),
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground line-clamp-1">
           {row.original.description || '—'}
@@ -64,7 +66,7 @@ export default function PhysicalVolumesPage() {
     },
     {
       accessorKey: 'part_count',
-      header: sortableHeader('Parts'),
+      header: sortableHeader(t('physicalVolumes.colParts')),
       cell: ({ row }) => <span className="tabular-nums text-sm">{row.original.part_count}</span>,
       size: 70,
     },
@@ -78,7 +80,10 @@ export default function PhysicalVolumesPage() {
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-destructive"
-              aria-label={`Delete physical volume ${row.original.repository_name} ${row.original.shelfmark}`}
+              aria-label={t('physicalVolumes.deleteAriaLabel', {
+                repo: row.original.repository_name,
+                shelfmark: row.original.shelfmark,
+              })}
               onClick={() => setDeleteTarget(row.original)}
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -86,7 +91,9 @@ export default function PhysicalVolumesPage() {
           );
         }
         return (
-          <span className="text-xs text-muted-foreground">{`Linked to ${appManuscriptsLabel.toLowerCase()}`}</span>
+          <span className="text-xs text-muted-foreground">
+            {t('physicalVolumes.linkedToManuscripts', { label: appManuscriptsLabel.toLowerCase() })}
+          </span>
         );
       },
       size: 120,
@@ -117,12 +124,12 @@ export default function PhysicalVolumesPage() {
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteCurrentItem(token!, id),
     onSuccess: () => {
-      toast.success('Physical volume deleted');
+      toast.success(t('physicalVolumes.toastDeleted'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.currentItems.all() });
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error('Failed to delete physical volume', {
+      toast.error(t('physicalVolumes.toastFailedDelete'), {
         description: formatApiError(err),
       });
     },

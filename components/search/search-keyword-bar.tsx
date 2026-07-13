@@ -118,11 +118,9 @@ export function SearchKeywordBar({
       exactPhrase={exactPhrase}
       onExactPhraseChange={onExactPhraseChange}
       suggestions={effectiveSuggestions}
-      placeholder="Search the corpus…"
       className={className}
       inputClassName={inputClassName}
       suggestionsLoading={serverSuggestionsQuery.isFetching}
-      noSuggestionsText="No keyword suggestions yet. Press Enter to search."
       recentSearches={history.map((entry, idx) => ({
         id: `kwbar-${idx}-${entry.timestamp}`,
         label: entry.keyword,

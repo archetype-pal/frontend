@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTranslations } from 'next-intl';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { cn } from '@/lib/utils';
 import type { Allograph } from '@/types/allographs';
@@ -89,11 +90,12 @@ export function AnnotationHeader({
   activeAllographLabel,
   onOpenAllographModal,
 }: AnnotationHeaderProps) {
+  const t = useTranslations('annotation');
   const singleHand = hands.length === 1 ? hands[0] : null;
   const showAllographControls = viewMode !== 'text';
   const pageCollectionLabel = isPageInCollection
-    ? 'Remove page from collection'
-    : 'Add page to collection';
+    ? t('header.pageRemoveFromCollection')
+    : t('header.pageAddToCollection');
   const canCreateAnnotationCollection =
     Boolean(onCreateAnnotationCollection) && annotationCollectionCount > 0;
 
@@ -105,22 +107,22 @@ export function AnnotationHeader({
           {onSetViewMode ? (
             <div className="flex items-center gap-1.5">
               <Segmented
-                ariaLabel="Annotation view"
+                ariaLabel={t('header.viewMode')}
                 value={viewMode}
                 onChange={onSetViewMode}
                 options={[
-                  { value: 'allograph', label: 'Allograph' },
+                  { value: 'allograph', label: t('header.viewAllograph') },
                   {
                     value: 'text',
-                    label: 'Text',
+                    label: t('header.viewText'),
                     disabled: !hasTexts,
-                    title: hasTexts ? undefined : 'No text recorded for this image',
+                    title: hasTexts ? undefined : t('header.noTextRecorded'),
                   },
                   {
                     value: 'both',
-                    label: 'Both',
+                    label: t('header.viewBoth'),
                     disabled: !hasTexts,
-                    title: hasTexts ? undefined : 'No text recorded for this image',
+                    title: hasTexts ? undefined : t('header.noTextRecorded'),
                   },
                 ]}
               />
@@ -135,7 +137,7 @@ export function AnnotationHeader({
               )}
             >
               <span className="select-none pl-3 pr-2 text-sm font-medium text-foreground">
-                Annotations
+                {t('header.annotations')}
               </span>
 
               {onOpenFilterPanel && (
@@ -145,7 +147,7 @@ export function AnnotationHeader({
                       type="button"
                       onClick={() => onOpenFilterPanel()}
                       aria-pressed={isVisibilityFilterActive}
-                      aria-label="Filter annotations"
+                      aria-label={t('header.filterAnnotations')}
                       className={cn(
                         'flex h-full w-8 items-center justify-center border-l border-border transition-colors',
                         isVisibilityFilterActive
@@ -156,7 +158,7 @@ export function AnnotationHeader({
                       <SlidersHorizontal className="h-4 w-4" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>Show, hide and filter annotations</TooltipContent>
+                  <TooltipContent>{t('header.filterAnnotationsTooltip')}</TooltipContent>
                 </Tooltip>
               )}
 
@@ -169,8 +171,8 @@ export function AnnotationHeader({
                       aria-pressed={!annotationsEnabled}
                       aria-label={
                         annotationsEnabled
-                          ? 'Hide all annotations on this image'
-                          : 'Show all annotations on this image'
+                          ? t('header.hideAllAnnotations')
+                          : t('header.showAllAnnotations')
                       }
                       className={cn(
                         'flex h-full w-8 items-center justify-center border-l border-border transition-colors',
@@ -188,8 +190,8 @@ export function AnnotationHeader({
                   </TooltipTrigger>
                   <TooltipContent>
                     {annotationsEnabled
-                      ? 'Hide all annotations on this image'
-                      : 'Show all annotations on this image'}
+                      ? t('header.hideAllAnnotations')
+                      : t('header.showAllAnnotations')}
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -204,7 +206,7 @@ export function AnnotationHeader({
                   unsavedCount > 0 ? 'text-foreground' : 'text-muted-foreground'
                 )}
               >
-                Unsaved
+                {t('header.unsaved')}
               </span>
               <span
                 className={cn(
@@ -222,7 +224,7 @@ export function AnnotationHeader({
           )}
           {selectedAnnotationsCount > 0 && (
             <div className="flex items-center space-x-1">
-              <span className="text-sm text-muted-foreground">Selected</span>
+              <span className="text-sm text-muted-foreground">{t('header.selected')}</span>
               <span className="inline-flex h-6 min-w-6 items-center justify-center rounded bg-primary/10 px-1.5 text-sm font-medium text-primary">
                 {selectedAnnotationsCount}
               </span>
@@ -237,7 +239,7 @@ export function AnnotationHeader({
               {singleHand ? (
                 <span
                   className="inline-flex h-8 items-center rounded-md border border-border bg-muted/40 px-3 text-sm text-foreground"
-                  title="The only hand recorded for this image"
+                  title={t('header.singleHandTitle')}
                 >
                   {singleHand.name}
                 </span>
@@ -250,10 +252,10 @@ export function AnnotationHeader({
                   }}
                 >
                   <SelectTrigger className="h-8 w-[200px]">
-                    <SelectValue placeholder="Any hand" />
+                    <SelectValue placeholder={t('header.anyHand')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={UNSET_HAND}>Any hand</SelectItem>
+                    <SelectItem value={UNSET_HAND}>{t('header.anyHand')}</SelectItem>
                     {hands.map((hand) => (
                       <SelectItem key={hand.id} value={hand.id.toString()}>
                         {hand.name}
@@ -283,10 +285,10 @@ export function AnnotationHeader({
                     value ? allographs.find((a) => a.id.toString() === value) : undefined
                   )
                 }
-                placeholder="Any allograph"
-                searchPlaceholder="Search allographs…"
-                emptyText="No allographs found."
-                clearLabel="Any allograph"
+                placeholder={t('header.anyAllograph')}
+                searchPlaceholder={t('header.searchAllographs')}
+                emptyText={t('header.noAllographsFound')}
+                clearLabel={t('header.anyAllograph')}
                 triggerClassName="h-8 w-[200px]"
                 contentClassName="z-[250]"
               />
@@ -301,13 +303,13 @@ export function AnnotationHeader({
               disabled={!activeAllographLabel}
               aria-label={
                 activeAllographLabel
-                  ? `View ${activeAllographLabel} annotation thumbnails`
-                  : 'Select an allograph first'
+                  ? t('header.viewAllographThumbnails', { label: activeAllographLabel })
+                  : t('header.selectAllographFirst')
               }
               title={
                 activeAllographLabel
                   ? `${activeAllographLabel}: ${activeAllographCount ?? 0}`
-                  : 'Select an allograph first'
+                  : t('header.selectAllographFirst')
               }
               type="button"
             >
@@ -347,17 +349,15 @@ export function AnnotationHeader({
                 className="relative h-8 w-8"
                 onClick={onCreateAnnotationCollection}
                 disabled={!canCreateAnnotationCollection}
-                aria-label="Create a new Collection containing all of the annotations on this page"
-                title="Create a new Collection containing all of the annotations on this page"
+                aria-label={t('header.createAnnotationCollection')}
+                title={t('header.createAnnotationCollection')}
                 type="button"
               >
                 <Star className="h-4 w-4" />
                 <Plus className="absolute -right-1 -top-1 h-3 w-3" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              Create a new Collection containing all of the annotations on this page
-            </TooltipContent>
+            <TooltipContent>{t('header.createAnnotationCollection')}</TooltipContent>
           </Tooltip>
 
           {showSettingsButton && (
@@ -367,8 +367,8 @@ export function AnnotationHeader({
               className="h-8 w-8"
               onClick={() => onOpenSettingsPanel?.()}
               type="button"
-              title="Settings"
-              aria-label="Settings"
+              title={t('header.settings')}
+              aria-label={t('header.settings')}
               aria-pressed={isSettingsActive}
             >
               <Wrench className="h-4 w-4" />
