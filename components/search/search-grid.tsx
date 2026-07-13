@@ -12,6 +12,7 @@ import { CollectionStar } from '@/components/collection/collection-star';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { getImageDetailUrl } from '@/lib/media-url';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
+import type { ThumbnailSize } from '@/components/search/thumbnail-size-control';
 
 type GridItem = ImageListItem | GraphListItem | ManuscriptListItem;
 
@@ -20,7 +21,17 @@ export interface SearchGridProps {
   resultType: ResultType;
   highlightKeyword?: string;
   isFetching?: boolean;
+  thumbnailSize?: ThumbnailSize;
 }
+
+// Column counts per thumbnail size. 'medium' preserves the historical grid;
+// 'small'/'large' add or remove columns to shrink/grow each cell. Full static
+// class strings so Tailwind's JIT can see them.
+const GRID_COLUMNS: Record<ThumbnailSize, string> = {
+  small: 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10',
+  medium: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6',
+  large: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+};
 
 type GridCard =
   | {
@@ -289,6 +300,7 @@ function SearchGridComponent({
   resultType,
   highlightKeyword = '',
   isFetching = false,
+  thumbnailSize = 'medium',
 }: SearchGridProps) {
   const cards = React.useMemo(
     () => results.map((item) => ({ card: toGridCard(resultType, item) })),
@@ -354,7 +366,7 @@ function SearchGridComponent({
 
   return (
     <section
-      className={`relative grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 ${
+      className={`relative grid gap-3 ${GRID_COLUMNS[thumbnailSize]} ${
         isFetching ? 'opacity-60' : ''
       }`}
     >

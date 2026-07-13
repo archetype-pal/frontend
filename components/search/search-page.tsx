@@ -10,6 +10,8 @@ import { ActiveFacetTags } from '@/components/filters/active-facet-tags';
 import { ResultTypeToggle } from '@/components/search/result-type-toggle';
 import { SearchActionsMenu } from '@/components/search/search-actions-menu';
 import { ViewSwitcher } from '@/components/search/view-switcher';
+import { ThumbnailSizeControl } from '@/components/search/thumbnail-size-control';
+import { useThumbnailSize } from '@/hooks/search/use-thumbnail-size';
 import { SearchKeywordBar } from '@/components/search/search-keyword-bar';
 import { type ResultType } from '@/lib/search-types';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
@@ -46,6 +48,7 @@ type ResultListItem = ResultMap[ResultType];
 export function SearchPage({ resultType: initialType }: { resultType?: ResultType } = {}) {
   const t = useTranslations('search');
   const s = useSearchPageState(initialType);
+  const [thumbnailSize, setThumbnailSize] = useThumbnailSize();
   const { getLabel } = useModelLabels();
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
 
@@ -214,14 +217,24 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             />
           </div>
         </div>
-        {/* Row 2: the result-type tabs */}
-        <div className="min-w-0">
-          <ResultTypeToggle
-            selectedType={s.resultType}
-            onChange={s.handleResultTypeChange}
-            enabledTypes={s.enabledCategories}
-            counts={s.countsByType}
-          />
+        {/* Row 2: the result-type tabs, with the grid thumbnail-size control
+            right-aligned on the same line (grid view only). */}
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <ResultTypeToggle
+              selectedType={s.resultType}
+              onChange={s.handleResultTypeChange}
+              enabledTypes={s.enabledCategories}
+              counts={s.countsByType}
+            />
+          </div>
+          {s.viewMode === 'grid' && (
+            <ThumbnailSizeControl
+              size={thumbnailSize}
+              onChange={setThumbnailSize}
+              className="hidden shrink-0 sm:inline-flex"
+            />
+          )}
         </div>
       </header>
 
@@ -383,6 +396,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     resultType={s.resultType}
                     highlightKeyword={s.submittedKeyword}
                     isFetching={s.isFetching}
+                    thumbnailSize={thumbnailSize}
                   />
                 )
               ) : s.data.count > 0 && s.queryState.offset >= s.data.count ? (
