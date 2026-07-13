@@ -35,6 +35,13 @@
     "signIn": "Se connecter",
     "signOut": "Se déconnecter"
   },
+  "errors": {
+    "somethingWentWrong": "Une erreur est survenue",
+    "unexpectedErrorTryAgain": "Une erreur inattendue s'est produite. Veuillez réessayer.",
+    "backToHome": "Retour à l'accueil",
+    "notFoundTitle": "Page introuvable",
+    "notFoundBody": "La page que vous recherchez n'existe pas ou a été déplacée."
+  },
   "nav": {
     "home": "Accueil",
     "search": "Rechercher",
