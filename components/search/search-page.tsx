@@ -10,6 +10,8 @@ import { ActiveFacetTags } from '@/components/filters/active-facet-tags';
 import { ResultTypeToggle } from '@/components/search/result-type-toggle';
 import { SearchActionsMenu } from '@/components/search/search-actions-menu';
 import { ViewSwitcher } from '@/components/search/view-switcher';
+import { ThumbnailSizeControl } from '@/components/search/thumbnail-size-control';
+import { useThumbnailSize } from '@/hooks/search/use-thumbnail-size';
 import { SearchKeywordBar } from '@/components/search/search-keyword-bar';
 import { type ResultType } from '@/lib/search-types';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
@@ -46,6 +48,7 @@ type ResultListItem = ResultMap[ResultType];
 export function SearchPage({ resultType: initialType }: { resultType?: ResultType } = {}) {
   const t = useTranslations('search');
   const s = useSearchPageState(initialType);
+  const [thumbnailSize, setThumbnailSize] = useThumbnailSize();
   const { getLabel } = useModelLabels();
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
 
@@ -100,6 +103,13 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               distributionEnabled={s.distributionEnabled}
               className="hidden sm:inline-flex"
             />
+            {s.viewMode === 'grid' && (
+              <ThumbnailSizeControl
+                size={thumbnailSize}
+                onChange={setThumbnailSize}
+                className="hidden sm:inline-flex"
+              />
+            )}
             <Button
               type="button"
               variant="ghost"
@@ -383,6 +393,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     resultType={s.resultType}
                     highlightKeyword={s.submittedKeyword}
                     isFetching={s.isFetching}
+                    thumbnailSize={thumbnailSize}
                   />
                 )
               ) : s.data.count > 0 && s.queryState.offset >= s.data.count ? (
