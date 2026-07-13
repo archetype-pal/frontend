@@ -103,13 +103,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               distributionEnabled={s.distributionEnabled}
               className="hidden sm:inline-flex"
             />
-            {s.viewMode === 'grid' && (
-              <ThumbnailSizeControl
-                size={thumbnailSize}
-                onChange={setThumbnailSize}
-                className="hidden sm:inline-flex"
-              />
-            )}
             <Button
               type="button"
               variant="ghost"
@@ -224,14 +217,24 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             />
           </div>
         </div>
-        {/* Row 2: the result-type tabs */}
-        <div className="min-w-0">
-          <ResultTypeToggle
-            selectedType={s.resultType}
-            onChange={s.handleResultTypeChange}
-            enabledTypes={s.enabledCategories}
-            counts={s.countsByType}
-          />
+        {/* Row 2: the result-type tabs, with the grid thumbnail-size control
+            right-aligned on the same line (grid view only). */}
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <ResultTypeToggle
+              selectedType={s.resultType}
+              onChange={s.handleResultTypeChange}
+              enabledTypes={s.enabledCategories}
+              counts={s.countsByType}
+            />
+          </div>
+          {s.viewMode === 'grid' && (
+            <ThumbnailSizeControl
+              size={thumbnailSize}
+              onChange={setThumbnailSize}
+              className="hidden shrink-0 sm:inline-flex"
+            />
+          )}
         </div>
       </header>
 
