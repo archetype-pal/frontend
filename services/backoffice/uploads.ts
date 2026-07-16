@@ -174,6 +174,34 @@ export class UploadFailedError extends Error {
   }
 }
 
+/** HTTP status behind an upload error, or null if it wasn't an HTTP error. */
+export function uploadErrorStatus(err: unknown): number | null {
+  if (err instanceof BackofficeApiError) return err.status;
+  if (err instanceof ChunkUploadError) return err.status;
+  return null;
+}
+
+/** True when the error is a destination-collision (duplicate) conflict. */
+export function isConflictError(err: unknown): boolean {
+  return uploadErrorStatus(err) === 409;
+}
+
+/**
+ * Human-readable reason for an upload failure. Prefers the backend's `detail`
+ * string (e.g. "A file already exists at '…'. Uploads never overwrite.") over
+ * the generic "API error 409" that BackofficeApiError.message carries.
+ */
+export function describeUploadError(err: unknown): string {
+  if (err instanceof BackofficeApiError) {
+    const detail = err.body?.detail;
+    return typeof detail === 'string' && detail ? detail : `Request failed (${err.status}).`;
+  }
+  if (err instanceof ChunkUploadError) return err.detail || err.message;
+  if (err instanceof UploadFailedError) return err.message;
+  if (err instanceof Error) return err.message;
+  return 'Upload failed.';
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
