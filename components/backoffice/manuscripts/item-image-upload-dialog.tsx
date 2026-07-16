@@ -3,7 +3,15 @@
 import { useCallback, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { AlertCircle, CheckCircle2, FileImage, Loader2, Upload, X } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  FileImage,
+  FileWarning,
+  Loader2,
+  Upload,
+  X,
+} from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,7 +33,8 @@ import {
   isAcceptedImageFilename,
 } from '@/lib/backoffice/upload-helpers';
 import {
-  UploadFailedError,
+  describeUploadError,
+  isConflictError,
   uploadImageFile,
   type UploadPhase,
 } from '@/services/backoffice/uploads';
@@ -38,7 +47,8 @@ interface ItemImageUploadDialogProps {
   historicalItemId: number;
 }
 
-type RowStatus = 'queued' | 'uploading' | 'processing' | 'done' | 'error' | 'canceled';
+type RowStatus =
+  'queued' | 'uploading' | 'processing' | 'done' | 'error' | 'duplicate' | 'canceled';
 
 interface UploadRow {
   id: string;
@@ -53,7 +63,7 @@ interface UploadRow {
   controller: AbortController | null;
 }
 
-const TERMINAL: RowStatus[] = ['done', 'error', 'canceled'];
+const TERMINAL: RowStatus[] = ['done', 'error', 'duplicate', 'canceled'];
 
 export function ItemImageUploadDialog({
   open,
@@ -126,6 +136,8 @@ export function ItemImageUploadDialog({
     if (pending.length === 0) return;
     setRunning(true);
     let succeeded = 0;
+    let duplicates = 0;
+    let failed = 0;
 
     // Sequential: large scans should not contend for bandwidth, and the
     // server's single Celery worker processes them one at a time anyway.
@@ -162,13 +174,15 @@ export function ItemImageUploadDialog({
           patchRow(row.id, { status: 'canceled', controller: null });
           continue;
         }
-        const message =
-          err instanceof UploadFailedError
-            ? err.message
-            : err instanceof Error
-              ? err.message
-              : 'Upload failed.';
-        patchRow(row.id, { status: 'error', error: message, controller: null });
+        const message = describeUploadError(err);
+        if (isConflictError(err)) {
+          // Destination already taken — an expected outcome, not a failure.
+          duplicates++;
+          patchRow(row.id, { status: 'duplicate', error: message, controller: null });
+        } else {
+          failed++;
+          patchRow(row.id, { status: 'error', error: message, controller: null });
+        }
       }
     }
 
@@ -180,6 +194,16 @@ export function ItemImageUploadDialog({
       });
       toast.success(`Uploaded ${succeeded} image${succeeded === 1 ? '' : 's'}`, {
         description: 'Search reindex was scheduled automatically.',
+      });
+    }
+    if (duplicates > 0) {
+      toast.warning(`Skipped ${duplicates} image${duplicates === 1 ? '' : 's'} already present`, {
+        description: 'An image already exists at that path. Rename the file to upload a copy.',
+      });
+    }
+    if (failed > 0) {
+      toast.error(`${failed} upload${failed === 1 ? '' : 's'} failed`, {
+        description: 'See the per-file messages for details.',
       });
     }
   }, [rows, token, itemPartId, historicalItemId, patchRow, queryClient]);
@@ -386,6 +410,11 @@ function UploadRowItem({
             </p>
           )}
           {row.status === 'error' && <p className="text-[10px] text-destructive">{row.error}</p>}
+          {row.status === 'duplicate' && (
+            <p className="text-[10px] text-amber-600 dark:text-amber-400">
+              Already present — {row.error}
+            </p>
+          )}
           {row.status === 'canceled' && (
             <p className="text-[10px] text-muted-foreground">Canceled.</p>
           )}
@@ -430,5 +459,8 @@ function StatusIcon({ status }: { status: RowStatus }) {
     return <CheckCircle2 className={cn(className, 'text-emerald-600 dark:text-emerald-400')} />;
   }
   if (status === 'error') return <AlertCircle className={cn(className, 'text-destructive')} />;
+  if (status === 'duplicate') {
+    return <FileWarning className={cn(className, 'text-amber-600 dark:text-amber-400')} />;
+  }
   return <FileImage className={cn(className, 'text-muted-foreground')} />;
 }
