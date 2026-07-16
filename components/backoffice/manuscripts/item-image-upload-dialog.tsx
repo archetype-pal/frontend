@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import {
@@ -196,8 +195,8 @@ export function ItemImageUploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Add images</DialogTitle>
           <DialogDescription>
             Upload manuscript scans to <span className="font-medium">{itemPartLabel}</span>. Each
@@ -206,7 +205,7 @@ export function ItemImageUploadDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 px-1">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 px-1">
           {/* Drop zone */}
           <div
             role="button"
@@ -226,7 +225,7 @@ export function ItemImageUploadDialog({
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             className={cn(
-              'flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed p-6 text-center cursor-pointer transition-colors',
+              'flex shrink-0 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed p-6 text-center cursor-pointer transition-colors',
               dragOver
                 ? 'border-primary bg-primary/5'
                 : 'border-muted-foreground/25 hover:border-primary/50'
@@ -249,27 +248,28 @@ export function ItemImageUploadDialog({
             />
           </div>
 
-          {/* File queue */}
+          {/* File queue — the one scrolling region; native overflow so it
+              works against the flex-bounded height (Radix ScrollArea's
+              h-full viewport needs a definite parent height, which max-h
+              alone doesn't provide). */}
           {rows.length > 0 && (
-            <ScrollArea className="max-h-[320px]">
-              <ul className="space-y-2 pr-3">
-                {rows.map((row) => (
-                  <UploadRowItem
-                    key={row.id}
-                    row={row}
-                    disabled={running}
-                    onLocusChange={(v) => patchRow(row.id, { locus: v })}
-                    onTagsChange={(v) => patchRow(row.id, { tags: v })}
-                    onRemove={() => removeRow(row.id)}
-                    onCancel={() => row.controller?.abort()}
-                  />
-                ))}
-              </ul>
-            </ScrollArea>
+            <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+              {rows.map((row) => (
+                <UploadRowItem
+                  key={row.id}
+                  row={row}
+                  disabled={running}
+                  onLocusChange={(v) => patchRow(row.id, { locus: v })}
+                  onTagsChange={(v) => patchRow(row.id, { tags: v })}
+                  onRemove={() => removeRow(row.id)}
+                  onCancel={() => row.controller?.abort()}
+                />
+              ))}
+            </ul>
           )}
         </div>
 
-        <DialogFooter className="border-t pt-3">
+        <DialogFooter className="shrink-0 border-t pt-3">
           <Button
             type="button"
             variant="outline"
