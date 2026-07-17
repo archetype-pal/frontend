@@ -187,18 +187,24 @@ export function ItemImageUploadDialog({
     }
 
     setRunning(false);
-    if (succeeded > 0) {
-      // The new ItemImage rows show up under the part via the normal query.
+    // Refetch the part's images whenever the server state may differ from
+    // what's rendered: a new upload succeeded, OR a duplicate proved an image
+    // is already present that this (possibly reloaded) page hasn't shown yet
+    // — e.g. an upload that finished server-side after a mid-upload refresh.
+    if (succeeded > 0 || duplicates > 0) {
       queryClient.invalidateQueries({
         queryKey: backofficeKeys.manuscripts.detail(historicalItemId),
       });
+    }
+    if (succeeded > 0) {
       toast.success(`Uploaded ${succeeded} image${succeeded === 1 ? '' : 's'}`, {
         description: 'Search reindex was scheduled automatically.',
       });
     }
     if (duplicates > 0) {
-      toast.warning(`Skipped ${duplicates} image${duplicates === 1 ? '' : 's'} already present`, {
-        description: 'An image already exists at that path. Rename the file to upload a copy.',
+      toast.warning(`${duplicates} image${duplicates === 1 ? '' : 's'} already uploaded`, {
+        description:
+          'Already present on the server (its thumbnail is now shown). Rename the file to upload a separate copy.',
       });
     }
     if (failed > 0) {
