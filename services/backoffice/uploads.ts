@@ -181,9 +181,23 @@ export function uploadErrorStatus(err: unknown): number | null {
   return null;
 }
 
-/** True when the error is a destination-collision (duplicate) conflict. */
+/** Machine-readable error code from the backend body ('' when absent). */
+export function uploadErrorCode(err: unknown): string {
+  if (err instanceof BackofficeApiError) {
+    const code = err.body?.code;
+    return typeof code === 'string' ? code : '';
+  }
+  return '';
+}
+
+/**
+ * True only for a REAL duplicate (file on disk / ItemImage row). Other 409s —
+ * e.g. someone else's in-flight session holding the destination — must not be
+ * presented as "already present". (Your own interrupted session never 409s:
+ * the backend hands it back for resumption.)
+ */
 export function isConflictError(err: unknown): boolean {
-  return uploadErrorStatus(err) === 409;
+  return uploadErrorStatus(err) === 409 && uploadErrorCode(err) === 'destination_exists';
 }
 
 /**
