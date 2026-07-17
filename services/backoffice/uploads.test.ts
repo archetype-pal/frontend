@@ -15,8 +15,15 @@ describe('uploadErrorStatus / isConflictError', () => {
     expect(uploadErrorStatus(new Error('network'))).toBeNull();
   });
 
-  it('flags only 409s as conflicts', () => {
-    expect(isConflictError(new BackofficeApiError(409, { detail: 'exists' }))).toBe(true);
+  it('flags only true-duplicate 409s as conflicts', () => {
+    expect(
+      isConflictError(new BackofficeApiError(409, { detail: 'exists', code: 'destination_exists' }))
+    ).toBe(true);
+    // A 409 for someone else's in-flight session is busy, not a duplicate.
+    expect(
+      isConflictError(new BackofficeApiError(409, { detail: 'busy', code: 'session_active' }))
+    ).toBe(false);
+    expect(isConflictError(new BackofficeApiError(409, { detail: 'legacy, no code' }))).toBe(false);
     expect(isConflictError(new BackofficeApiError(400, { detail: 'bad' }))).toBe(false);
     expect(isConflictError(new Error('network'))).toBe(false);
   });
