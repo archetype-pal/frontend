@@ -1143,14 +1143,15 @@
         "unrepresentableTitle": "Formulaire structuré indisponible",
         "unrepresentableBody": "Cette zone contient du TEI au-delà du modèle du formulaire structuré ; elle ne peut être modifiée qu'en mode source. Le balisage stocké est préservé à l'identique.",
         "proseHint": "Prose TEI — éditeur riche à venir en phase 3",
+        "loading": "Chargement…",
         "previewEmpty": "Rien à prévisualiser pour l'instant.",
         "toastSaved": "Zone de description enregistrée",
         "toastSaveFailed": "Échec de l'enregistrement de la zone de description"
       },
       "form": {
         "none": "Aucun",
-        "add": "Ajouter",
-        "remove": "Supprimer",
+        "addItem": "Ajouter {label}",
+        "removeItem": "Supprimer {label}",
         "height": "Hauteur",
         "width": "Largeur",
         "quantity": "Quantité",

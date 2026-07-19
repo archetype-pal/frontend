@@ -1143,14 +1143,15 @@
         "unrepresentableTitle": "Structured form unavailable",
         "unrepresentableBody": "This area contains TEI beyond the structured form's model, so it can only be edited as source. The stored markup is preserved exactly.",
         "proseHint": "TEI prose — rich editor coming in Phase 3",
+        "loading": "Loading…",
         "previewEmpty": "Nothing to preview yet.",
         "toastSaved": "Description area saved",
         "toastSaveFailed": "Failed to save description area"
       },
       "form": {
         "none": "None",
-        "add": "Add",
-        "remove": "Remove",
+        "addItem": "Add {label}",
+        "removeItem": "Remove {label}",
         "height": "Height",
         "width": "Width",
         "quantity": "Quantity",

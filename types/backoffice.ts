@@ -163,6 +163,8 @@ export interface ItemPartNested {
   repository_name: string | null;
   shelfmark: string | null;
   images: ItemPartImage[];
+  /** TEI msDesc areas (0–4 rows; unpublished included — management payload). */
+  msdesc_areas: MsDescArea[];
 }
 
 export interface CurrentItemOption {
