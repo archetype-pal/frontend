@@ -11,6 +11,7 @@ import type {
   ItemFormat,
   CatalogueNumber,
   HistoricalItemDescription,
+  MsDescArea,
   BackofficeDate,
   CurrentItemOption,
   ItemPartNested,
@@ -129,6 +130,17 @@ const descriptionsCrud = createCrudService<HistoricalItemDescription>(
 export const createDescription = descriptionsCrud.create;
 export const updateDescription = descriptionsCrud.update;
 export const deleteDescription = descriptionsCrud.remove;
+
+// ── MsDesc Areas ────────────────────────────────────────────────────────
+
+// Writes only — reads arrive nested per item_part on the HistoricalItem management detail.
+const msdescAreasCrud = createCrudService<MsDescArea>(
+  '/api/v1/manuscripts/management/msdesc-areas/'
+);
+
+export const createMsDescArea = msdescAreasCrud.create;
+export const updateMsDescArea = msdescAreasCrud.update;
+export const deleteMsDescArea = msdescAreasCrud.remove;
 
 // ── Repositories ────────────────────────────────────────────────────────
 

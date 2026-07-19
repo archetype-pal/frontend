@@ -1,3 +1,5 @@
+import type { MsDescAreaId } from '@/lib/msdesc-vocab';
+
 // ── Pagination ──────────────────────────────────────────────────────────
 
 export interface PaginatedResponse<T> {
@@ -131,6 +133,15 @@ export interface HistoricalItemDescription {
   source: number;
   source_label: string;
   content: string;
+}
+
+/** One TEI msDesc area fragment; unique per (item_part, area). */
+export interface MsDescArea {
+  id: number;
+  item_part: number;
+  area: MsDescAreaId;
+  content: string;
+  is_published: boolean;
 }
 
 export interface ItemPartImage {

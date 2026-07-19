@@ -1001,6 +1001,108 @@
       "toastCreated": "{label} created",
       "toastFailedCreate": "Failed to create {label}"
     },
+    "msdesc": {
+      "areas": {
+        "msIdentifier": "Identification",
+        "msContents": "Contents",
+        "physDesc": "Physical description",
+        "history": "History"
+      },
+      "vocab": {
+        "form": {
+          "codex": "Codex (bound book)",
+          "roll": "Roll / scroll",
+          "sheet": "Single sheet",
+          "faltbuch": "Folded book (leporello)",
+          "roll-codex": "Roll-codex",
+          "other": "Other form",
+          "unknown": "Form unknown"
+        },
+        "material": {
+          "perg": "Parchment (vellum)",
+          "chart": "Paper",
+          "papyrus": "Papyrus",
+          "palm": "Palm leaf",
+          "mixed": "Mixed materials",
+          "other": "Other material",
+          "unknown": "Material unknown"
+        },
+        "script": {
+          "capitalsSquare": "Square capitals",
+          "capitalsRustic": "Rustic capitals",
+          "uncial": "Uncial",
+          "halfUncial": "Half-uncial",
+          "minusculeInsular": "Insular minuscule",
+          "minusculeVernacular": "Vernacular minuscule",
+          "minusculeCaroline": "Caroline minuscule",
+          "minuscule": "Minuscule (generic)",
+          "protogothic": "Proto-gothic / late Caroline",
+          "textualisNorthern": "Gothic textualis (Northern)",
+          "textualisSouthern": "Gothic textualis (Southern / Italian)",
+          "semitextualis": "Semi-textualis",
+          "cursivaAntiquior": "Cursiva antiquior",
+          "cursiva": "Gothic cursiva",
+          "hybrida": "Hybrida (Bastarda)",
+          "gothicoAntiqua": "Gothico-antiqua",
+          "humanisticaTextualis": "Humanistic textualis",
+          "humanisticaSemitextualis": "Humanistic semi-textualis",
+          "humanisticaCursiva": "Humanistic cursive"
+        },
+        "execution": {
+          "formata": "Formata (formal book hand)",
+          "libraria": "Libraria (standard book hand)",
+          "currens": "Currens (rapid cursive hand)"
+        },
+        "decoType": {
+          "border": "Border decoration",
+          "diagram": "Diagram",
+          "drawing": "Drawing",
+          "histInit": "Historiated initial",
+          "decInit": "Decorated initial",
+          "flourInit": "Flourished (penwork) initial",
+          "colInit": "Coloured initial",
+          "plainInit": "Plain initial",
+          "illustration": "Illustration",
+          "initial": "Initial (general)",
+          "marginal": "Marginal decoration",
+          "miniature": "Miniature",
+          "rubrication": "Rubrication",
+          "bas-de-page": "Bas-de-page scene",
+          "map": "Map",
+          "headpiece": "Headpiece",
+          "chrysography": "Gold or silver writing",
+          "lineFill": "Line-fill decoration",
+          "cadel": "Cadel (calligraphic flourish)",
+          "instructions": "Instructions to the rubricator",
+          "unfilled": "Unfilled space for an initial",
+          "none": "No decoration",
+          "other": "Other decoration"
+        },
+        "availabilityStatus": {
+          "free": "Freely available to all readers",
+          "restricted": "Access restricted; readers must apply in advance",
+          "exhibition": "Currently on exhibition",
+          "offsite": "Stored offsite; advance notice required",
+          "printcat": "Available via printed catalogue only",
+          "none": "Not available",
+          "unknown": "Availability unknown"
+        },
+        "topLine": {
+          "above": "Written above top line (pre-c. 1100 and post-c. 1230)",
+          "below": "Written below top line (c. 1100–1230)",
+          "mixed": "Inconsistent or mixed practice"
+        },
+        "rulingMedium": {
+          "leadpoint": "Leadpoint",
+          "hardpoint": "Hardpoint",
+          "ink": "Ink",
+          "drypoint": "Drypoint",
+          "crayon": "Crayon",
+          "mixed": "Mixed",
+          "unknown": "Unknown"
+        }
+      }
+    },
     "physicalVolumes": {
       "title": "Physical Volumes",
       "subtitle": "{count} volumes across {repos} repositories",

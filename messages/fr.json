@@ -1001,6 +1001,108 @@
       "toastCreated": "{label} créé(e)",
       "toastFailedCreate": "Échec de la création de {label}"
     },
+    "msdesc": {
+      "areas": {
+        "msIdentifier": "Identification",
+        "msContents": "Contenu",
+        "physDesc": "Description physique",
+        "history": "Histoire"
+      },
+      "vocab": {
+        "form": {
+          "codex": "Codex (livre relié)",
+          "roll": "Rouleau",
+          "sheet": "Feuille simple",
+          "faltbuch": "Livre plié (leporello)",
+          "roll-codex": "Rouleau-codex",
+          "other": "Autre forme",
+          "unknown": "Forme inconnue"
+        },
+        "material": {
+          "perg": "Parchemin (vélin)",
+          "chart": "Papier",
+          "papyrus": "Papyrus",
+          "palm": "Feuille de palmier",
+          "mixed": "Matériaux mixtes",
+          "other": "Autre matériau",
+          "unknown": "Matériau inconnu"
+        },
+        "script": {
+          "capitalsSquare": "Capitales carrées",
+          "capitalsRustic": "Capitales rustiques",
+          "uncial": "Onciale",
+          "halfUncial": "Semi-onciale",
+          "minusculeInsular": "Minuscule insulaire",
+          "minusculeVernacular": "Minuscule vernaculaire",
+          "minusculeCaroline": "Minuscule caroline",
+          "minuscule": "Minuscule (générique)",
+          "protogothic": "Protogothique / caroline tardive",
+          "textualisNorthern": "Textualis gothique (septentrionale)",
+          "textualisSouthern": "Textualis gothique (méridionale / italienne)",
+          "semitextualis": "Semi-textualis",
+          "cursivaAntiquior": "Cursiva antiquior",
+          "cursiva": "Cursiva gothique",
+          "hybrida": "Hybrida (bâtarde)",
+          "gothicoAntiqua": "Gothico-antiqua",
+          "humanisticaTextualis": "Textualis humanistique",
+          "humanisticaSemitextualis": "Semi-textualis humanistique",
+          "humanisticaCursiva": "Cursive humanistique"
+        },
+        "execution": {
+          "formata": "Formata (écriture livresque formelle)",
+          "libraria": "Libraria (écriture livresque standard)",
+          "currens": "Currens (écriture cursive rapide)"
+        },
+        "decoType": {
+          "border": "Décor de bordure",
+          "diagram": "Diagramme",
+          "drawing": "Dessin",
+          "histInit": "Initiale historiée",
+          "decInit": "Initiale ornée",
+          "flourInit": "Initiale filigranée",
+          "colInit": "Initiale colorée",
+          "plainInit": "Initiale simple",
+          "illustration": "Illustration",
+          "initial": "Initiale (générale)",
+          "marginal": "Décor marginal",
+          "miniature": "Miniature",
+          "rubrication": "Rubrication",
+          "bas-de-page": "Scène de bas-de-page",
+          "map": "Carte",
+          "headpiece": "Bandeau",
+          "chrysography": "Chrysographie (écriture à l'or ou à l'argent)",
+          "lineFill": "Bout-de-ligne",
+          "cadel": "Lettre cadelée (fioriture calligraphique)",
+          "instructions": "Instructions au rubricateur",
+          "unfilled": "Espace en attente pour une initiale",
+          "none": "Aucun décor",
+          "other": "Autre décor"
+        },
+        "availabilityStatus": {
+          "free": "Librement accessible à tous les lecteurs",
+          "restricted": "Accès restreint ; demande préalable requise",
+          "exhibition": "Actuellement exposé",
+          "offsite": "Conservé hors site ; préavis requis",
+          "printcat": "Disponible uniquement via le catalogue imprimé",
+          "none": "Non disponible",
+          "unknown": "Disponibilité inconnue"
+        },
+        "topLine": {
+          "above": "Écriture au-dessus de la première ligne réglée (avant c. 1100 et après c. 1230)",
+          "below": "Écriture au-dessous de la première ligne réglée (c. 1100–1230)",
+          "mixed": "Pratique mixte ou irrégulière"
+        },
+        "rulingMedium": {
+          "leadpoint": "Mine de plomb",
+          "hardpoint": "Pointe dure",
+          "ink": "Encre",
+          "drypoint": "Pointe sèche",
+          "crayon": "Crayon",
+          "mixed": "Mixte",
+          "unknown": "Inconnu"
+        }
+      }
+    },
     "physicalVolumes": {
       "title": "Volumes physiques",
       "subtitle": "{count} volumes répartis dans {repos} dépôts",
