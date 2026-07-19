@@ -54,12 +54,12 @@ pnpm build
 
 ## Local Development (docker compose — no host Node needed)
 
-If you only cloned this repo and don't want a Node toolchain on the host,
-run the dev server in a container instead:
+If you don't want a Node toolchain on the host, run the dev server in a
+container — no env setup needed (`compose.yml` carries the container-topology
+env; a `.env` is only required for host-native `pnpm dev`):
 
 ```bash
-cp .env.dev-compose .env
-docker compose up
+docker compose up   # or: just up
 ```
 
 App URL: `http://localhost:3000` — live reload works through the bind mount.

@@ -5,7 +5,8 @@
 # and build cache live in named volumes. Staging/production run from the
 # infrastructure repo — nothing here deploys anywhere.
 #
-# First run: cp .env.dev-compose .env && just up
+# First run: just up — no env setup needed; compose.yml carries the
+# container-topology env (a .env is only needed for host-native `pnpm dev`).
 
 # Default recipe: list everything (run `just` with no arguments).
 default:
@@ -14,13 +15,13 @@ default:
 # --- Dev server ---------------------------------------------------------------
 
 # Start the dev server on http://localhost:3000 (foreground, live reload)
-up: _check-env
+up:
     docker compose up
 
 alias dev := up
 
 # Start the dev server detached. bg stands for background.
-up-bg: _check-env
+up-bg:
     docker compose up -d
 
 down:
@@ -60,25 +61,23 @@ test-watch:
 # --- Build / bundle -----------------------------------------------------------
 
 # Production build (.next stays inside the container, not the host checkout)
-build: _check-env
+build:
     docker compose run --rm frontend pnpm build
 
 # Bundle analysis
-analyze: _check-env
+analyze:
     docker compose run --rm -e ANALYZE=true frontend pnpm build
 
 # CI bundle-size gate against .bundle-budget.json (builds first — the gate
 # reads .next, which is per-container, so both steps share one container)
-bundle-budget: _check-env
+bundle-budget:
     docker compose run --rm frontend sh -c "pnpm build && pnpm bundle-budget"
 
 # Regenerate .bundle-budget.json after intentional growth (builds first)
-bundle-budget-update: _check-env
+bundle-budget-update:
     docker compose run --rm frontend sh -c "pnpm build && pnpm bundle-budget:update"
 
 # Shell inside the dev container
 bash:
     docker compose run --rm frontend sh
 
-_check-env:
-    @test -f .env || { echo "No .env — run: cp .env.dev-compose .env (docker mode) or cp .env.example .env (host pnpm mode)"; exit 1; }

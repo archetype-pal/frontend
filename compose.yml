@@ -1,14 +1,24 @@
-# Containerized local dev — for contributors who clone only this repo and
-# don't want a host Node toolchain. The canonical local mode is `pnpm dev`
-# on the host (see README). Staging/production run from the infrastructure
-# repo using images built from Dockerfile; this file never deploys anything.
-#
-# Setup: cp .env.dev-compose .env && docker compose up
+# Containerized local dev — run the frontend without a host Node toolchain:
+# just `docker compose up` (or `just up`). Staging/production run from the
+# infrastructure repo using images built from Dockerfile; this file never
+# deploys anything.
 services:
   frontend:
     build:
       context: .
       dockerfile: dev.Dockerfile
+    # Container-topology env, set here so `docker compose up` works with any
+    # (or no) .env: process env beats .env files in Next, and inside the
+    # container the backend lives at host.docker.internal, not localhost —
+    # a host-flavored .env would make SSR and the /iiif-proxy rewrite dial
+    # the container's own loopback. Docker Desktop resolves the name in the
+    # host browser too; on bare Linux add "127.0.0.1 host.docker.internal"
+    # to /etc/hosts. Values beyond these four still come from .env if present.
+    environment:
+      NEXT_PUBLIC_API_URL: http://host.docker.internal:8000
+      NEXT_PUBLIC_IIIF_UPSTREAM: http://host.docker.internal:8182
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
     ports:
       - '3000:3000'
     extra_hosts:
