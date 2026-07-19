@@ -322,10 +322,14 @@ export default function AnnotationsPage() {
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title={t('annotations.deleteTitle')}
-        description={t('annotations.deleteDesc', {
-          id: deleteTarget?.id,
-          allograph: deleteTarget?.allograph_name,
-        })}
+        description={
+          deleteTarget
+            ? t('annotations.deleteDesc', {
+                id: deleteTarget.id,
+                allograph: deleteTarget.allograph_name,
+              })
+            : ''
+        }
         confirmLabel={t('annotations.deleteConfirm')}
         loading={deleteMut.isPending}
         onConfirm={() => deleteTarget && deleteMut.mutate(deleteTarget.id)}
