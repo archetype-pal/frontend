@@ -13,7 +13,7 @@ services:
       - '3000:3000'
     extra_hosts:
       # On Linux engines this maps host.docker.internal to the host so the
-      # dev server's SSR fetches reach the backend stack on :8000/:1024.
+      # dev server's SSR fetches reach the backend stack on :8000/:8182.
       # Docker Desktop (macOS/Windows) provides the name natively.
       - 'host.docker.internal:host-gateway'
     volumes:

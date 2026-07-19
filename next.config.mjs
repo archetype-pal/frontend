@@ -11,11 +11,17 @@ const requireEnv = (key) => {
   return value;
 };
 
+// Node ≥17 resolves `localhost` IPv6-first, and on WSL/Windows dev machines an
+// unrelated process can shadow the port on ::1 (observed: a Windows service on
+// [::]:1024 answering 404s in SIPI's place). Rewrite destinations are fetched
+// by the Next server in Node, so pin loopback upstreams to IPv4. Browser-facing
+// URLs (the raw NEXT_PUBLIC_* values) are unaffected.
+const toIPv4Loopback = (url) => url.replace(/^(https?:\/\/)localhost(?=[:/]|$)/, '$1127.0.0.1');
 // Proxy IIIF (Sipi) so same-origin requests avoid CORS when frontend is on different port.
 // Set NEXT_PUBLIC_IIIF_UPSTREAM in Docker to e.g. http://image_server:1024 so the server can reach Sipi.
-const IIIF_UPSTREAM = requireEnv('NEXT_PUBLIC_IIIF_UPSTREAM').replace(/\/$/, '');
+const IIIF_UPSTREAM = toIPv4Loopback(requireEnv('NEXT_PUBLIC_IIIF_UPSTREAM').replace(/\/$/, ''));
 // API base for rewrites.
-const API_BASE = requireEnv('NEXT_PUBLIC_API_URL').replace(/\/$/, '');
+const API_BASE = toIPv4Loopback(requireEnv('NEXT_PUBLIC_API_URL').replace(/\/$/, ''));
 const ALLOWED_ORIGINS = requireEnv('CORS_ALLOWED_ORIGINS');
 
 const nextConfig = {
@@ -42,11 +48,11 @@ const nextConfig = {
   // External hosts used across the app (IIIF thumbnails keep `unoptimized` per-image).
   images: {
     remotePatterns: [
-      // Sipi – IIIF server
+      // Sipi – IIIF server (dev host port; see api/compose.yaml image_server)
       {
         protocol: 'http',
         hostname: 'localhost',
-        port: '1024',
+        port: '8182',
         pathname: '/**',
       },
       // Django media and IIIF scans

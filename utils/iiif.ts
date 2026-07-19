@@ -28,28 +28,38 @@ const IIIF_PREFIX_LEN: Record<string, number> = { sipi: 2, iiif: 2 };
 const IIIF_INFO_CACHE = new Map<string, IIIFImageInfo | null>();
 const IIIF_INFO_INFLIGHT = new Map<string, Promise<IIIFImageInfo | null>>();
 
-function getIiifUpstream(): string {
-  const value =
-    typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_IIIF_UPSTREAM?.trim() : undefined;
-  if (!value) throw new Error('Missing required environment variable: NEXT_PUBLIC_IIIF_UPSTREAM');
-  return value.replace(/\/$/, '');
-}
-
 function resolveInfoUrl(infoUrl: string): string {
   const trimmed = (infoUrl || '').trim();
   if (!trimmed) return trimmed;
 
+  // Already proxy-relative — nothing to resolve.
+  if (trimmed.startsWith('/iiif-proxy/')) return trimmed;
+
   // Django media URLs (absolute or relative) point to file storage, not the IIIF
-  // server. Strip the media prefix and redirect to the IIIF upstream.
+  // server. Strip the media prefix and serve via the same-origin /iiif-proxy
+  // rewrite (SIPI mounts the same storage directory).
   if (trimmed.startsWith('media/')) {
-    return `${getIiifUpstream()}/${trimmed.slice('media/'.length)}`;
+    return `/iiif-proxy/${trimmed.slice('media/'.length)}`;
   }
   const mediaIdx = trimmed.indexOf('/media/');
   if (mediaIdx !== -1 && /^https?:\/\//.test(trimmed)) {
-    return `${getIiifUpstream()}/${trimmed.slice(mediaIdx + '/media/'.length)}`;
+    return `/iiif-proxy/${trimmed.slice(mediaIdx + '/media/'.length)}`;
   }
 
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+  // Absolute IIIF URLs (the backend hands out IIIF_HOST-based ones) also go
+  // through the same-origin /iiif-proxy rewrite: the browser then only ever
+  // talks to the frontend origin. The upstream host may not be reachable from
+  // the browser at all (WSL port forwarding, containerized dev, proxied
+  // deployments) — only the Next server needs to reach it.
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    try {
+      const u = new URL(trimmed);
+      // Keep pathname encoding intact — %2F must stay encoded for SIPI.
+      return `/iiif-proxy${u.pathname}${u.search}`;
+    } catch {
+      return trimmed;
+    }
+  }
 
   const apiBase =
     typeof process !== 'undefined'
@@ -185,7 +195,9 @@ export function iiifThumbFromSelector(
   // IIIF region string that a 3.0-strict server may reject. When bounds are
   // unknown this still rounds/floors as before.
   const { region } = clampXywh(xywh, bounds);
-  const base = normalizeIiifBase(iiifBase);
+  // Resolve first so absolute upstream bases (including ones persisted in the
+  // lightbox before the /iiif-proxy switch) become same-origin proxy paths.
+  const base = normalizeIiifBase(resolveInfoUrl(iiifBase));
   const sizePart = xywh.w < size ? 'max' : `${size},`;
   return `${base}/${region}/${sizePart}/0/default.jpg`;
 }
