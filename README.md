@@ -65,9 +65,20 @@ docker compose up
 App URL: `http://localhost:3000` — live reload works through the bind mount.
 
 The container reaches the backend on the Docker host via
-`host.docker.internal` (see the comments in `.env.dev-compose`; on a
-bare-Linux browser add `127.0.0.1 host.docker.internal` to `/etc/hosts`).
-Start the backend stack from the backend repo first: `just up` in `api/`.
+`host.docker.internal`. Start the backend stack from the backend repo first
+(`just up` in `api/`).
+
+Platform notes:
+
+- **macOS / Windows (Docker Desktop)** — works out of the box: Docker Desktop
+  resolves `host.docker.internal` both inside containers and in the host
+  browser (all images are multi-arch, so Apple Silicon runs natively).
+- **Linux** — the compose file maps `host.docker.internal` for the container;
+  for the browser add one line to `/etc/hosts`: `127.0.0.1 host.docker.internal`
+  (or just use the pnpm mode).
+- **Windows** — run commands from WSL2 (recommended) or Git Bash so `just`
+  and shell recipes work, and keep the checkout in the WSL2 filesystem so
+  live reload picks up file changes through the bind mount.
 
 ## Useful Commands
 
