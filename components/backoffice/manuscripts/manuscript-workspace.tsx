@@ -46,6 +46,16 @@ interface ManuscriptWorkspaceProps {
   itemId: number;
 }
 
+// Mirrors HISTORICAL_ITEM_HAIR_TYPES on the backend: stored values are
+// lowercase choice keys, labels are the canonical display form.
+const HAIR_TYPES = [
+  { value: 'fhfh', label: 'FHFH' },
+  { value: 'fhhf', label: 'FHHF' },
+  { value: 'hffh', label: 'HFFH' },
+  { value: 'hfhf', label: 'HFHF' },
+  { value: 'mixed', label: 'Mixed' },
+];
+
 export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   const t = useTranslations('backoffice');
   const { token } = useAuth();
@@ -399,11 +409,22 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
 
             <div className="space-y-1.5">
               <FieldLabel helpField="manuscript.hair_type">{hairTypeLabel}</FieldLabel>
-              <Input
-                value={draft.hair_type ?? ''}
-                onChange={(e) => updateField('hair_type', e.target.value)}
-                placeholder={t('manuscriptWorkspace.hairTypePlaceholder')}
-              />
+              <Select
+                value={draft.hair_type ?? '__none'}
+                onValueChange={(val) => updateField('hair_type', val === '__none' ? null : val)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">{t('manuscriptWorkspace.selectNone')}</SelectItem>
+                  {HAIR_TYPES.map((h) => (
+                    <SelectItem key={h.value} value={h.value}>
+                      {h.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1.5 lg:col-span-3">
