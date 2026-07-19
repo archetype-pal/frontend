@@ -10,6 +10,7 @@ export type CollectionItem = {
   character?: string;
   character_type?: string;
   hand_name?: string;
+  display_label?: string;
   shelfmark?: string;
   locus?: string;
   repository_name?: string;

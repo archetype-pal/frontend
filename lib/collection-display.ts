@@ -9,6 +9,7 @@ export type CollectionDisplayInput = Partial<
     | 'annotation_type'
     | 'allograph'
     | 'hand_name'
+    | 'display_label'
     | 'shelfmark'
     | 'locus'
     | 'repository_name'
@@ -55,6 +56,11 @@ export function getCollectionItemTypeLabel(item: CollectionDisplayInput): string
 }
 
 export function getCollectionDisplayShelfmark(item: CollectionDisplayInput): string {
+  // Backend-composed "repository abbreviation + shelfmark". The shorthand map
+  // below only covers items stored before display_label reached search hits.
+  const displayLabel = clean(item.display_label);
+  if (displayLabel) return displayLabel;
+
   const shelfmark = clean(item.shelfmark);
   if (!shelfmark) return '';
 

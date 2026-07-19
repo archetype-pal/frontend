@@ -18,6 +18,7 @@ export function getLightboxDisplayItem(image: LightboxImage): CollectionDisplayI
     annotation_type: getMetadataString(image, 'annotation_type'),
     allograph: getMetadataString(image, 'allograph'),
     hand_name: getMetadataString(image, 'hand_name'),
+    display_label: getMetadataString(image, 'display_label'),
     shelfmark: getMetadataString(image, 'shelfmark'),
     locus: getMetadataString(image, 'locus'),
     repository_name: getMetadataString(image, 'repository_name'),
