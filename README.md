@@ -22,13 +22,13 @@ Important variables:
 - `NEXT_PUBLIC_SITE_URL` (required)
 - `CORS_ALLOWED_ORIGINS` (required, used by `/api/*` headers)
 
-## Local Development
+## Local Development (pnpm — canonical)
 
-The frontend runs directly with pnpm — there is no Docker mode in this repo.
-The backend stack it talks to runs via Docker Compose from the backend repo
-(`api/`), and staging/production deployments (including the containerized
-frontend image built from `Dockerfile`) are orchestrated by the
-[infrastructure repo](https://github.com/archetype-pal/infrastructure).
+The backend stack the frontend talks to runs via Docker Compose from the
+backend repo (`api/`). Staging/production deployments (including the
+containerized frontend image built from `Dockerfile`) are orchestrated by the
+[infrastructure repo](https://github.com/archetype-pal/infrastructure) —
+nothing in this repo deploys anywhere.
 
 Install dependencies:
 
@@ -51,6 +51,23 @@ pnpm lint
 pnpm test
 pnpm build
 ```
+
+## Local Development (docker compose — no host Node needed)
+
+If you only cloned this repo and don't want a Node toolchain on the host,
+run the dev server in a container instead:
+
+```bash
+cp .env.dev-compose .env
+docker compose up
+```
+
+App URL: `http://localhost:3000` — live reload works through the bind mount.
+
+The container reaches the backend on the Docker host via
+`host.docker.internal` (see the comments in `.env.dev-compose`; on a
+bare-Linux browser add `127.0.0.1 host.docker.internal` to `/etc/hosts`).
+Start the backend stack from the backend repo first: `just up` in `api/`.
 
 ## Useful Commands
 

@@ -1,0 +1,23 @@
+# Containerized local dev — for contributors who clone only this repo and
+# don't want a host Node toolchain. The canonical local mode is `pnpm dev`
+# on the host (see README). Staging/production run from the infrastructure
+# repo using images built from Dockerfile; this file never deploys anything.
+#
+# Setup: cp .env.dev-compose .env && docker compose up
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    ports:
+      - "3000:3000"
+    extra_hosts:
+      # On Linux engines this maps host.docker.internal to the host so the
+      # dev server's SSR fetches reach the backend stack on :8000/:1024.
+      # Docker Desktop (macOS/Windows) provides the name natively.
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - .:/app
+      # Keep container-installed deps and build cache out of the host checkout.
+      - /app/node_modules
+      - /app/.next
