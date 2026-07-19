@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -62,6 +63,8 @@ export function NewImageTextDialog({
   lockItemImage = false,
   lockType = false,
 }: NewImageTextDialogProps) {
+  const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
   const { token } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -96,7 +99,7 @@ export function NewImageTextDialog({
         language,
       }),
     onSuccess: (saved) => {
-      toast.success(`Created ${saved.type.toLowerCase()} #${saved.id}`);
+      toast.success(t('imageTexts.toastCreated', { type: saved.type.toLowerCase(), id: saved.id }));
       queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['backoffice', 'texts-monitor', 'overview'] });
       queryClient.invalidateQueries({ queryKey: ['backoffice', 'uncovered-images'] });
@@ -107,7 +110,7 @@ export function NewImageTextDialog({
       // Surface the API message (item_image FK error, uniqueness
       // constraint, etc.) so the editor knows what to fix without
       // diving into devtools.
-      toast.error('Create failed', { description: err.message.slice(0, 240) });
+      toast.error(t('imageTexts.toastCreateFailed'), { description: err.message.slice(0, 240) });
     },
   });
 
@@ -123,14 +126,12 @@ export function NewImageTextDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>New image-text</DialogTitle>
-          <DialogDescription>
-            Creates a Draft. You can fill content and edit on the next screen.
-          </DialogDescription>
+          <DialogTitle>{t('imageTexts.newDialogTitle')}</DialogTitle>
+          <DialogDescription>{t('imageTexts.newDialogDescription')}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <Label htmlFor="new-text-image">Item image id</Label>
+            <Label htmlFor="new-text-image">{t('imageTexts.newItemImageLabel')}</Label>
             <Input
               id="new-text-image"
               inputMode="numeric"
@@ -139,15 +140,13 @@ export function NewImageTextDialog({
                 setForm((f) => ({ ...f, itemImage: e.target.value.replace(/[^0-9]/g, '') }))
               }
               disabled={lockItemImage}
-              placeholder="e.g. 5504"
+              placeholder={t('imageTexts.newItemImagePlaceholder')}
             />
-            <p className="text-[11px] text-muted-foreground">
-              Find ids in the manuscript editor or the Uncovered images list.
-            </p>
+            <p className="text-[11px] text-muted-foreground">{t('imageTexts.newItemImageHelp')}</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Type</Label>
+              <Label>{t('imageTexts.fieldType')}</Label>
               <Select
                 value={type}
                 onValueChange={(v) => setForm((f) => ({ ...f, type: v as NewTextKind }))}
@@ -157,18 +156,18 @@ export function NewImageTextDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Transcription">Transcription</SelectItem>
-                  <SelectItem value="Translation">Translation</SelectItem>
+                  <SelectItem value="Transcription">{t('imageTexts.typeTranscription')}</SelectItem>
+                  <SelectItem value="Translation">{t('imageTexts.typeTranslation')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="new-text-lang">Language</Label>
+              <Label htmlFor="new-text-lang">{t('imageTexts.fieldLanguage')}</Label>
               <Input
                 id="new-text-lang"
                 value={language}
                 onChange={(e) => setForm((f) => ({ ...f, language: e.target.value }))}
-                placeholder="la, en, enm…"
+                placeholder={t('imageTexts.newLanguagePlaceholder')}
               />
             </div>
           </div>
@@ -180,11 +179,11 @@ export function NewImageTextDialog({
             onClick={() => onOpenChange(false)}
             disabled={createMut.isPending}
           >
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button size="sm" disabled={!canSubmit} onClick={() => createMut.mutate()}>
             {createMut.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
-            Create draft
+            {t('imageTexts.newCreateButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

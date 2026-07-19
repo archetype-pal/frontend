@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
@@ -47,14 +48,30 @@ interface CharacterDetailProps {
 
 type ViewMode = 'tabs' | 'matrix';
 
+const CHARACTER_TYPE_KEYS: Record<string, string> = {
+  'Majuscule Letter': 'symbols.characterTypeMajusculeLetter',
+  'Minuscule Letter': 'symbols.characterTypeMinusculeLetter',
+  Numeral: 'symbols.characterTypeNumeral',
+  Punctuation: 'symbols.characterTypePunctuation',
+  Symbol: 'symbols.characterTypeSymbol',
+  Accent: 'symbols.characterTypeAccent',
+};
+
 export function CharacterDetail({
   characterId,
   allComponents,
   allFeatures,
   onDeleted,
 }: CharacterDetailProps) {
+  const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
   const { token } = useAuth();
   const queryClient = useQueryClient();
+
+  const characterTypeLabel = (type: string) => {
+    const key = CHARACTER_TYPE_KEYS[type];
+    return key ? t(key) : type;
+  };
 
   const { data: character, isLoading } = useQuery({
     queryKey: backofficeKeys.characters.detail(characterId),
@@ -96,13 +113,13 @@ export function CharacterDetail({
     mutationFn: (payload: CharacterStructurePayload) =>
       updateCharacterStructure(token!, characterId, payload),
     onSuccess: (data) => {
-      toast.success('Character saved');
+      toast.success(t('symbols.toastCharacterSaved'));
       queryClient.setQueryData(backofficeKeys.characters.detail(characterId), data);
       queryClient.invalidateQueries({ queryKey: backofficeKeys.characters.all() });
       setDirty(false);
     },
     onError: (err) => {
-      toast.error('Failed to save character', {
+      toast.error(t('symbols.toastFailedSave'), {
         description: formatApiError(err),
       });
     },
@@ -112,12 +129,12 @@ export function CharacterDetail({
   const deleteMutation = useMutation({
     mutationFn: () => deleteCharacter(token!, characterId),
     onSuccess: () => {
-      toast.success('Character deleted');
+      toast.success(t('symbols.toastCharacterDeleted'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.characters.all() });
       onDeleted();
     },
     onError: (err) => {
-      toast.error('Failed to delete character', {
+      toast.error(t('symbols.toastFailedDelete'), {
         description: formatApiError(err),
       });
     },
@@ -210,15 +227,17 @@ export function CharacterDetail({
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <h2 className="text-xl font-semibold">Character: {draft.name}</h2>
+          <h2 className="text-xl font-semibold">
+            {t('symbols.characterHeading', { name: draft.name })}
+          </h2>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {draft.type && <Badge variant="secondary">{draft.type}</Badge>}
+            {draft.type && <Badge variant="secondary">{characterTypeLabel(draft.type)}</Badge>}
             <span>
-              {stats.allographs} allograph{stats.allographs !== 1 ? 's' : ''}
-              {' \u00b7 '}
-              {stats.components} component{stats.components !== 1 ? 's' : ''}
-              {' \u00b7 '}
-              {stats.features} feature{stats.features !== 1 ? 's' : ''}
+              {t('symbols.characterStats', {
+                allographs: stats.allographs,
+                components: stats.components,
+                features: stats.features,
+              })}
             </span>
           </div>
         </div>
@@ -230,7 +249,7 @@ export function CharacterDetail({
             onClick={() => setDeleteOpen(true)}
           >
             <Trash2 className="h-3.5 w-3.5 mr-1" />
-            Delete
+            {tCommon('delete')}
           </Button>
           <Button size="sm" onClick={handleSave} disabled={!dirty || saveMutation.isPending}>
             {saveMutation.isPending ? (
@@ -238,7 +257,7 @@ export function CharacterDetail({
             ) : (
               <Save className="h-3.5 w-3.5 mr-1" />
             )}
-            Save
+            {tCommon('save')}
           </Button>
         </div>
       </div>
@@ -246,14 +265,14 @@ export function CharacterDetail({
       {/* Basic fields */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Name</Label>
+          <Label>{t('symbols.nameLabel')}</Label>
           <Input
             value={draft.name}
             onChange={(e) => updateDraft((prev) => ({ ...prev, name: e.target.value }))}
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Type</Label>
+          <Label>{t('symbols.typeLabel')}</Label>
           <Select
             value={draft.type || '__none'}
             onValueChange={(val) =>
@@ -267,10 +286,10 @@ export function CharacterDetail({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none">None</SelectItem>
-              {CHARACTER_TYPES.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t}
+              <SelectItem value="__none">{t('symbols.typeNone')}</SelectItem>
+              {CHARACTER_TYPES.map((charType) => (
+                <SelectItem key={charType} value={charType}>
+                  {characterTypeLabel(charType)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -281,14 +300,14 @@ export function CharacterDetail({
       {/* Allographs */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium">Allographs</h3>
+          <h3 className="text-sm font-medium">{t('symbols.allographsHeading')}</h3>
           <div className="flex items-center gap-1">
             <Button
               variant={viewMode === 'tabs' ? 'secondary' : 'ghost'}
               size="icon"
               className="h-7 w-7"
               onClick={() => setViewMode('tabs')}
-              title="Tab view"
+              title={t('symbols.tabView')}
             >
               <LayoutList className="h-3.5 w-3.5" />
             </Button>
@@ -297,7 +316,7 @@ export function CharacterDetail({
               size="icon"
               className="h-7 w-7"
               onClick={() => setViewMode('matrix')}
-              title="Matrix comparison view"
+              title={t('symbols.matrixView')}
               disabled={draft.allographs.length === 0}
             >
               <Grid3X3 className="h-3.5 w-3.5" />
@@ -307,14 +326,14 @@ export function CharacterDetail({
 
         {draft.allographs.length === 0 && !addingAllograph ? (
           <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-            <p className="text-sm">No allographs yet.</p>
+            <p className="text-sm">{t('symbols.noAllographsYet')}</p>
             <Button
               variant="link"
               size="sm"
               className="mt-1"
               onClick={() => setAddingAllograph(true)}
             >
-              Add the first allograph
+              {t('symbols.addFirstAllograph')}
             </Button>
           </div>
         ) : viewMode === 'matrix' ? (
@@ -357,7 +376,7 @@ export function CharacterDetail({
                   <Input
                     value={newAlloName}
                     onChange={(e) => setNewAlloName(e.target.value)}
-                    placeholder="Allograph name..."
+                    placeholder={t('symbols.allographNamePlaceholder')}
                     className="h-8 w-40 text-xs"
                     autoFocus
                     onKeyDown={(e) => {
@@ -385,7 +404,7 @@ export function CharacterDetail({
                   onClick={() => setAddingAllograph(true)}
                 >
                   <Plus className="h-3 w-3" />
-                  Add
+                  {tCommon('add')}
                 </Button>
               )}
             </div>
@@ -410,7 +429,7 @@ export function CharacterDetail({
       {dirty && (
         <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t -mx-6 px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-amber-600 font-medium">Unsaved changes</span>
+            <span className="text-sm text-amber-600 font-medium">{tCommon('unsavedChanges')}</span>
             <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
               Ctrl+S
             </kbd>
@@ -426,10 +445,10 @@ export function CharacterDetail({
                 }
               }}
             >
-              Discard
+              {t('unsavedBar.discard')}
             </Button>
             <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
+              {saveMutation.isPending ? tCommon('saving') : t('symbols.saveChanges')}
             </Button>
           </div>
         </div>
@@ -439,9 +458,9 @@ export function CharacterDetail({
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title={`Delete "${draft.name}"?`}
-        description="This will permanently delete this character and all its allographs, components, and features. This cannot be undone."
-        confirmLabel="Delete"
+        title={t('symbols.deleteCharacterTitle', { name: draft.name })}
+        description={t('symbols.deleteCharacterDescription')}
+        confirmLabel={tCommon('delete')}
         loading={deleteMutation.isPending}
         onConfirm={() => deleteMutation.mutate()}
       />

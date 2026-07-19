@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEntityCrud } from '@/hooks/backoffice/use-entity-crud';
 import { NamedEntityManager } from '@/components/backoffice/common/named-entity-manager';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
@@ -12,6 +13,7 @@ interface PositionManagerProps {
 }
 
 export function PositionManager({ positions }: PositionManagerProps) {
+  const t = useTranslations('backoffice');
   const { getLabel, getPluralLabel } = useModelLabels();
   const positionLabel = getLabel('position');
   const positionLabelPlural = getPluralLabel('position');
@@ -28,9 +30,11 @@ export function PositionManager({ positions }: PositionManagerProps) {
     <NamedEntityManager
       items={positions}
       crud={crud}
-      placeholder={`New ${positionLabel.toLowerCase()} name...`}
-      emptyMessage={`No ${positionLabelPlural.toLowerCase()} yet. Create one above.`}
-      deleteDescription={`This will remove the ${positionLabel.toLowerCase()} from all annotations that reference it.`}
+      placeholder={t('symbols.positionNamePlaceholder', { label: positionLabel.toLowerCase() })}
+      emptyMessage={t('symbols.positionEmptyMessage', { label: positionLabelPlural.toLowerCase() })}
+      deleteDescription={t('symbols.positionDeleteDescription', {
+        label: positionLabel.toLowerCase(),
+      })}
     />
   );
 }

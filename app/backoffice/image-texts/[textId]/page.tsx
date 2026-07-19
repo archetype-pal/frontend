@@ -215,14 +215,14 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
           <Link
             href="/backoffice/texts"
             className="text-muted-foreground hover:text-foreground"
-            title="Back to Texts"
+            title={t('imageTexts.backToTexts')}
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <h1 className="text-xl font-semibold">{t('imageTexts.pageTitle', { id: text.id })}</h1>
           <span
             className="ml-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.14em]"
-            title="Current status"
+            title={t('imageTexts.currentStatus')}
           >
             {status}
           </span>
@@ -234,7 +234,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={() => setConfirmDelete(true)}
             disabled={deleteMut.isPending}
-            title="Delete this image-text"
+            title={t('imageTexts.deleteTooltip')}
           >
             <Trash2 className="mr-1 h-3.5 w-3.5" />
             {t('imageTexts.deleteButton')}

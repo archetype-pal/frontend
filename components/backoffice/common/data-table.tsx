@@ -32,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ChevronLeft, ChevronRight, Search, Columns, Download, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { escapeCsvField } from '@/lib/backoffice/csv-escape';
 import { BackofficeErrorState } from './query-state';
@@ -97,7 +98,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   searchColumn,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder,
   searchValue,
   onSearchChange,
   toolbarActions,
@@ -114,6 +115,8 @@ export function DataTable<TData, TValue>({
   isError = false,
   onRetry,
 }: DataTableProps<TData, TValue>) {
+  const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -162,7 +165,7 @@ export function DataTable<TData, TValue>({
                 (table.getIsSomePageRowsSelected() && 'indeterminate')
               }
               onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-              aria-label="Select all"
+              aria-label={t('dataTable.selectAll')}
               className="translate-y-[2px]"
             />
           ),
@@ -170,7 +173,7 @@ export function DataTable<TData, TValue>({
             <Checkbox
               checked={row.getIsSelected()}
               onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label="Select row"
+              aria-label={t('dataTable.selectRow')}
               className="translate-y-[2px]"
             />
           ),
@@ -289,7 +292,7 @@ export function DataTable<TData, TValue>({
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 ref={searchInputRef}
-                placeholder={searchPlaceholder}
+                placeholder={searchPlaceholder ?? t('dataTable.searchPlaceholder')}
                 value={
                   onSearchChange
                     ? (searchValue ?? '')
@@ -311,7 +314,7 @@ export function DataTable<TData, TValue>({
             {enableExport && (
               <Button variant="outline" size="sm" className="h-9 gap-1" onClick={handleExport}>
                 <Download className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Export</span>
+                <span className="hidden sm:inline">{tCommon('export')}</span>
               </Button>
             )}
             {enableColumnVisibility && (
@@ -319,7 +322,7 @@ export function DataTable<TData, TValue>({
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-9 gap-1">
                     <Columns className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Columns</span>
+                    <span className="hidden sm:inline">{t('dataTable.columns')}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
@@ -347,7 +350,9 @@ export function DataTable<TData, TValue>({
       {/* Bulk actions bar */}
       {selectedCount > 0 && bulkActions && bulkActions.length > 0 && (
         <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-2">
-          <span className="text-sm font-medium">{selectedCount} selected</span>
+          <span className="text-sm font-medium">
+            {t('dataTable.selectedCount', { count: selectedCount })}
+          </span>
           <div className="ml-auto flex items-center gap-2">
             {bulkActions.map((action) => (
               <Button
@@ -368,7 +373,7 @@ export function DataTable<TData, TValue>({
               onClick={() => setRowSelection({})}
             >
               <X className="h-3 w-3" />
-              Clear
+              {tCommon('clear')}
             </Button>
           </div>
         </div>
@@ -395,7 +400,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell colSpan={finalColumns.length} className="h-24 p-0">
                   <BackofficeErrorState
-                    message="Failed to load. Please try again."
+                    message={t('dataTable.loadError')}
                     onRetry={() => onRetry?.()}
                   />
                 </TableCell>
@@ -416,7 +421,7 @@ export function DataTable<TData, TValue>({
                   colSpan={finalColumns.length}
                   className="h-24 text-center text-muted-foreground"
                 >
-                  No results.
+                  {t('dataTable.noResults')}
                 </TableCell>
               </TableRow>
             )}
@@ -429,8 +434,11 @@ export function DataTable<TData, TValue>({
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
             {enableRowSelection && selectedCount > 0
-              ? `${selectedCount} of ${table.getFilteredRowModel().rows.length} selected`
-              : `${table.getFilteredRowModel().rows.length} row(s) total`}
+              ? t('dataTable.selectedOfTotal', {
+                  count: selectedCount,
+                  total: table.getFilteredRowModel().rows.length,
+                })
+              : t('dataTable.rowsTotal', { count: table.getFilteredRowModel().rows.length })}
           </span>
           <div className="flex items-center gap-1">
             <Button

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {
@@ -56,45 +57,46 @@ interface TeiRichEditorProps {
 const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
 // The four inline entities, each tied to its highlight colour via `tone`.
+// `labelKey`/`hintKey` are suffixes under the `backoffice.teiEditor` namespace.
 const ENTITY_TOOLS: Array<{
   el: string;
   attrs: Record<string, string>;
-  label: string;
+  labelKey: string;
   icon: LucideIcon;
   tone: string;
-  hint: string;
+  hintKey: string;
 }> = [
   {
     el: 'persName',
     attrs: { type: 'name' },
-    label: 'Person',
+    labelKey: 'entityPerson',
     icon: User,
     tone: 'person',
-    hint: 'Mark the selection as a person name',
+    hintKey: 'entityPersonHint',
   },
   {
     el: 'placeName',
     attrs: { type: 'name' },
-    label: 'Place',
+    labelKey: 'entityPlace',
     icon: MapPin,
     tone: 'place',
-    hint: 'Mark the selection as a place name',
+    hintKey: 'entityPlaceHint',
   },
   {
     el: 'ex',
     attrs: {},
-    label: 'Expansion',
+    labelKey: 'entityExpansion',
     icon: Parentheses,
     tone: 'ex',
-    hint: 'Mark the selection as an editorial expansion',
+    hintKey: 'entityExpansionHint',
   },
   {
     el: 'supplied',
     attrs: {},
-    label: 'Supplied',
+    labelKey: 'entitySupplied',
     icon: Brackets,
     tone: 'supplied',
-    hint: 'Mark the selection as editorially supplied text',
+    hintKey: 'entitySuppliedHint',
   },
 ];
 
@@ -147,6 +149,7 @@ export default function TeiRichEditor({
   stickyToolbar = false,
   onLinkTargetChange,
 }: TeiRichEditorProps) {
+  const t = useTranslations('backoffice');
   const lastEmitted = React.useRef<string | null>(null);
 
   const editor = useEditor({
@@ -221,11 +224,17 @@ export default function TeiRichEditor({
   // caret's element context and which modify actions just became available.
   const contextLabel =
     stack.length > 0
-      ? `Inside ${stack.map((e) => teiElementLabel(e.el, e.attrs?.type)).join(', then ')}.` +
-        `${innermost ? ' Unwrap available.' : ''}${inClause ? ' Retype available.' : ''}`
+      ? t('teiEditor.srInside', {
+          elements: stack
+            .map((e) => teiElementLabel(e.el, e.attrs?.type))
+            .join(t('teiEditor.srListSeparator')),
+        }) +
+        `${innermost ? ` ${t('teiEditor.srUnwrapAvailable')}` : ''}${
+          inClause ? ` ${t('teiEditor.srRetypeAvailable')}` : ''
+        }`
       : noSelection
-        ? 'No markup at the caret. Select text to mark it up.'
-        : 'Selection ready. Choose a markup.';
+        ? t('teiEditor.srNoMarkup')
+        : t('teiEditor.srSelectionReady');
 
   const wrap = (el: string, attrs: Record<string, string>) => {
     wrapTei(editor, el, attrs);
@@ -243,15 +252,15 @@ export default function TeiRichEditor({
       >
         {/* Group 1 — wrap the selection in an inline entity */}
         <div className="flex items-center gap-0.5">
-          {ENTITY_TOOLS.map((t) => (
+          {ENTITY_TOOLS.map((tool) => (
             <ToolButton
-              key={t.el}
-              icon={t.icon}
-              label={t.label}
-              tone={t.tone}
+              key={tool.el}
+              icon={tool.icon}
+              label={t(`teiEditor.${tool.labelKey}`)}
+              tone={tool.tone}
               disabled={noSelection}
-              title={noSelection ? 'Select text first' : t.hint}
-              onClick={() => wrap(t.el, t.attrs)}
+              title={noSelection ? t('teiEditor.selectTextFirst') : t(`teiEditor.${tool.hintKey}`)}
+              onClick={() => wrap(tool.el, tool.attrs)}
             />
           ))}
         </div>
@@ -264,7 +273,7 @@ export default function TeiRichEditor({
             <button
               type="button"
               disabled={noSelection}
-              title={noSelection ? 'Select text first' : 'Wrap the selection in a clause'}
+              title={noSelection ? t('teiEditor.selectTextFirst') : t('teiEditor.wrapClauseTitle')}
               className={cn(
                 'tei-tool inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium',
                 'text-foreground/80 transition-colors hover:bg-accent hover:text-foreground',
@@ -272,7 +281,7 @@ export default function TeiRichEditor({
               )}
             >
               <Pilcrow className="h-3.5 w-3.5" />
-              Clause
+              {t('teiEditor.clause')}
               <ChevronDown className="h-3 w-3 opacity-60" />
             </button>
           </DropdownMenuTrigger>
@@ -286,9 +295,9 @@ export default function TeiRichEditor({
               editor.commands.focus();
             }}
           >
-            {SEG_TYPES.map((t) => (
-              <DropdownMenuItem key={t} onSelect={() => wrap('seg', { type: t })}>
-                {cap(t)}
+            {SEG_TYPES.map((segType) => (
+              <DropdownMenuItem key={segType} onSelect={() => wrap('seg', { type: segType })}>
+                {cap(segType)}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -302,11 +311,7 @@ export default function TeiRichEditor({
             <button
               type="button"
               disabled={!inClause}
-              title={
-                inClause
-                  ? 'Change the type of this clause'
-                  : 'Put the caret inside a clause to change its type'
-              }
+              title={inClause ? t('teiEditor.retypeTitle') : t('teiEditor.retypeDisabledTitle')}
               className={cn(
                 'tei-tool inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium',
                 'text-foreground/80 transition-colors hover:bg-accent hover:text-foreground',
@@ -314,7 +319,9 @@ export default function TeiRichEditor({
               )}
             >
               <Replace className="h-3.5 w-3.5" />
-              {inClause && innermost?.attrs?.type ? cap(innermost.attrs.type) : 'Retype'}
+              {inClause && innermost?.attrs?.type
+                ? cap(innermost.attrs.type)
+                : t('teiEditor.retype')}
               <ChevronDown className="h-3 w-3 opacity-60" />
             </button>
           </DropdownMenuTrigger>
@@ -328,9 +335,9 @@ export default function TeiRichEditor({
               editor.commands.focus();
             }}
           >
-            {SEG_TYPES.map((t) => (
-              <DropdownMenuItem key={t} onSelect={() => retypeTei(editor, t)}>
-                {cap(t)}
+            {SEG_TYPES.map((segType) => (
+              <DropdownMenuItem key={segType} onSelect={() => retypeTei(editor, segType)}>
+                {cap(segType)}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -338,12 +345,14 @@ export default function TeiRichEditor({
 
         <ToolButton
           icon={Ungroup}
-          label="Remove markup"
+          label={t('teiEditor.removeMarkup')}
           disabled={!innermost}
           title={
             innermost
-              ? `Remove the ${teiElementLabel(innermost.el, innermost.attrs?.type)} markup here`
-              : 'Put the caret inside a marked element to remove it'
+              ? t('teiEditor.removeMarkupTitle', {
+                  element: teiElementLabel(innermost.el, innermost.attrs?.type),
+                })
+              : t('teiEditor.removeMarkupDisabledTitle')
           }
           onClick={() => unwrapTei(editor)}
         />
@@ -354,7 +363,7 @@ export default function TeiRichEditor({
           {stack.length > 0 ? (
             <>
               <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                Inside
+                {t('teiEditor.inside')}
               </span>
               <span className="flex min-w-0 flex-wrap items-center gap-1">
                 {stack.map((e, i) => (
@@ -380,7 +389,7 @@ export default function TeiRichEditor({
             </>
           ) : (
             <span className="text-[11px] text-muted-foreground">
-              {noSelection ? 'Select text, then mark it up' : 'Ready — choose a markup'}
+              {noSelection ? t('teiEditor.selectThenMark') : t('teiEditor.readyChooseMarkup')}
             </span>
           )}
         </div>

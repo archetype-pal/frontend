@@ -28,10 +28,11 @@ import {
   Info,
   Image,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { normalizeSectionOrder, SECTION_LABELS, type SectionKey } from '@/lib/site-features';
+import { normalizeSectionOrder, type SectionKey } from '@/lib/site-features';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -62,10 +63,12 @@ function SortableSectionCard({
   enabled: boolean;
   onChange: (key: SectionKey, enabled: boolean) => void;
 }) {
+  const t = useTranslations('backoffice');
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: sectionKey,
   });
   const Icon = SECTION_ICONS[sectionKey];
+  const sectionLabel = t(`siteFeatures.sections.${sectionKey}`);
 
   return (
     <label
@@ -86,7 +89,7 @@ function SortableSectionCard({
         {...attributes}
         {...listeners}
         className="cursor-grab active:cursor-grabbing touch-none shrink-0 p-0.5 rounded-sm hover:bg-muted"
-        aria-label={`Reorder ${SECTION_LABELS[sectionKey]}`}
+        aria-label={t('siteFeatures.reorderSection', { section: sectionLabel })}
       >
         <GripVertical className="h-4 w-4 text-muted-foreground/70" />
       </button>
@@ -95,7 +98,7 @@ function SortableSectionCard({
         htmlFor={`section-${sectionKey}`}
         className="text-sm font-medium cursor-pointer flex-1 truncate"
       >
-        {SECTION_LABELS[sectionKey]}
+        {sectionLabel}
       </Label>
       <Switch
         id={`section-${sectionKey}`}
@@ -108,6 +111,7 @@ function SortableSectionCard({
 }
 
 export function SectionToggles({ sections, sectionOrder, onChange, onOrderChange }: Props) {
+  const t = useTranslations('backoffice');
   const orderedKeys = normalizeSectionOrder(sectionOrder);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -126,10 +130,8 @@ export function SectionToggles({ sections, sectionOrder, onChange, onOrderChange
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle>Site Sections</CardTitle>
-        <CardDescription>
-          Drag to reorder sections in navigation. Disabled sections are hidden and return 404.
-        </CardDescription>
+        <CardTitle>{t('siteFeatures.sectionsTitle')}</CardTitle>
+        <CardDescription>{t('siteFeatures.sectionsDescription')}</CardDescription>
       </CardHeader>
       <CardContent>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

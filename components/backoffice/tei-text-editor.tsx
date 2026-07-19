@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 import { AlertTriangle, CheckCircle2, Code2, Eye, Highlighter, Pencil } from 'lucide-react';
 
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
@@ -26,18 +27,23 @@ import { docToTei, teiToDoc } from '@/lib/tei-prosemirror';
 import type { EditorLinkSelection } from '@/lib/tei-tiptap';
 import { validateTei, type TeiValidationError } from '@/services/image-texts';
 
-const loadingBox = (
-  <div className="min-h-[320px] px-4 py-3 font-mono text-xs text-muted-foreground">Loading…</div>
-);
+function LoadingBox() {
+  const t = useTranslations('backoffice');
+  return (
+    <div className="min-h-[320px] px-4 py-3 font-mono text-xs text-muted-foreground">
+      {t('teiEditor.loading')}
+    </div>
+  );
+}
 
 // Both editors are client-only (touch window/document), so load them lazily.
 const TeiCodeMirror = dynamic(() => import('./tei-codemirror'), {
   ssr: false,
-  loading: () => loadingBox,
+  loading: () => <LoadingBox />,
 });
 const TeiRichEditor = dynamic(() => import('./tei-rich-editor'), {
   ssr: false,
-  loading: () => loadingBox,
+  loading: () => <LoadingBox />,
 });
 
 interface TeiTextEditorProps {
@@ -99,6 +105,7 @@ export function TeiTextEditor({
   onModeChange,
   onLinkTargetChange,
 }: TeiTextEditorProps) {
+  const t = useTranslations('backoffice');
   const [storedMode, setMode] = React.useState<Mode>(defaultMode);
   const [errors, setErrors] = React.useState<TeiValidationError[]>([]);
   const [checked, setChecked] = React.useState(false);
@@ -215,7 +222,7 @@ export function TeiTextEditor({
           active={mode === 'source'}
           onClick={() => setMode('source')}
           icon={Code2}
-          label="Source"
+          label={t('teiEditor.source')}
           compact={hosted}
         />
       )}
@@ -223,22 +230,22 @@ export function TeiTextEditor({
         active={mode === 'rich'}
         onClick={() => setMode('rich')}
         icon={Pencil}
-        label="Rich"
+        label={t('teiEditor.rich')}
         compact={hosted}
         disabled={!richAvailable}
         title={
           richAvailable
             ? undefined
             : hideSource
-              ? 'Rich editing unavailable for this document — use “Open in the full editor”'
-              : 'Rich editing unavailable for this document — use Source'
+              ? t('teiEditor.richUnavailableFullEditor')
+              : t('teiEditor.richUnavailableSource')
         }
       />
       <ModeButton
         active={mode === 'preview'}
         onClick={() => setMode('preview')}
         icon={Eye}
-        label="Preview"
+        label={t('teiEditor.preview')}
         compact={hosted}
       />
       {mode === 'preview' && (
@@ -257,9 +264,9 @@ export function TeiTextEditor({
               'flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400',
               hosted ? '' : 'ml-auto'
             )}
-            title="Valid TEI"
+            title={t('teiEditor.validTei')}
           >
-            <CheckCircle2 className="h-3.5 w-3.5" /> {!hosted && 'Valid TEI'}
+            <CheckCircle2 className="h-3.5 w-3.5" /> {!hosted && t('teiEditor.validTei')}
           </span>
         ) : (
           <span
@@ -267,11 +274,23 @@ export function TeiTextEditor({
               'flex items-center gap-1 text-[11px] font-medium text-destructive',
               hosted ? '' : 'ml-auto'
             )}
-            title={errors[0] ? `Line ${errors[0].line}: ${errors[0].message}` : 'Invalid TEI'}
+            title={
+              errors[0]
+                ? t('teiEditor.lineError', {
+                    line: String(errors[0].line),
+                    message: errors[0].message,
+                  })
+                : t('teiEditor.invalidTei')
+            }
           >
             <AlertTriangle className="h-3.5 w-3.5" />
             {!hosted &&
-              (errors[0] ? `Line ${errors[0].line}: ${errors[0].message}` : 'Invalid TEI')}
+              (errors[0]
+                ? t('teiEditor.lineError', {
+                    line: String(errors[0].line),
+                    message: errors[0].message,
+                  })
+                : t('teiEditor.invalidTei'))}
           </span>
         ))}
       {!checked && !hosted && (
@@ -366,21 +385,23 @@ function HighlightMenu({
   onClear: () => void;
   compact: boolean;
 }) {
+  const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
   const count = options.reduce((n, o) => (selected.has(o.value) ? n + 1 : n), 0);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          title="Choose which markup types to highlight"
-          aria-label="Highlight markup types"
+          title={t('teiEditor.highlightTitle')}
+          aria-label={t('teiEditor.highlightAria')}
           className={cn(
             'inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
             compact ? 'h-7 px-1.5' : 'px-2.5 py-1'
           )}
         >
           <Highlighter className="h-3.5 w-3.5" />
-          {!compact && 'Highlight'}
+          {!compact && t('teiEditor.highlight')}
           {count > 0 && (
             <span className="rounded bg-primary/15 px-1 text-[10px] font-semibold text-primary">
               {count}
@@ -390,20 +411,22 @@ function HighlightMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuLabel className="flex items-center justify-between">
-          Highlight
+          {t('teiEditor.highlight')}
           {selected.size > 0 && (
             <button
               type="button"
               onClick={onClear}
               className="text-[11px] font-normal text-muted-foreground hover:text-foreground"
             >
-              Clear
+              {tCommon('clear')}
             </button>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {options.length === 0 ? (
-          <p className="px-2 py-1.5 text-xs text-muted-foreground">No markup in this text.</p>
+          <p className="px-2 py-1.5 text-xs text-muted-foreground">
+            {t('teiEditor.noMarkupInText')}
+          </p>
         ) : (
           options.map((option) => (
             <DropdownMenuCheckboxItem

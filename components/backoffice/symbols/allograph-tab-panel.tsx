@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Trash2, Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +32,8 @@ export function AllographTabPanel({
   onRemove,
   disabled = false,
 }: AllographTabPanelProps) {
+  const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState(allograph.name);
 
@@ -160,8 +163,7 @@ export function AllographTabPanel({
         )}
 
         <span className="text-xs text-muted-foreground">
-          {allograph.components.length} component
-          {allograph.components.length !== 1 ? 's' : ''}
+          {t('symbols.componentCount', { count: allograph.components.length })}
         </span>
         <Button
           variant="ghost"
@@ -171,7 +173,7 @@ export function AllographTabPanel({
           disabled={disabled}
         >
           <Trash2 className="h-3.5 w-3.5 mr-1" />
-          Remove
+          {tCommon('remove')}
         </Button>
       </div>
 

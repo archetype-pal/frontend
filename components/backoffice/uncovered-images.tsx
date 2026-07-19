@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +42,7 @@ function parseMode(value: string | null): UncoveredMode {
 }
 
 export function UncoveredImages() {
+  const t = useTranslations('backoffice');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token } = useAuth();
@@ -93,22 +95,29 @@ export function UncoveredImages() {
         <CardHeader className="pb-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <CardTitle className="text-base font-medium">Uncovered images</CardTitle>
+              <CardTitle className="text-base font-medium">
+                {t('quality.uncovered.title')}
+              </CardTitle>
               <p className="text-xs text-muted-foreground">
-                Images with no {modeLabel(mode)}. Click +{' '}
-                {mode === 'translation' ? 'Translation' : 'Transcription'} to start a draft.
+                {t('quality.uncovered.description', {
+                  mode: t(`quality.uncovered.${MODE_LABEL_KEY[mode]}`),
+                  kind:
+                    mode === 'translation'
+                      ? t('quality.uncovered.translation')
+                      : t('quality.uncovered.transcription'),
+                })}
               </p>
             </div>
             <Tabs value={mode} onValueChange={(v) => setMode(v as UncoveredMode)}>
               <TabsList className="h-8">
                 <TabsTrigger value="either" className="text-xs">
-                  No text
+                  {t('quality.uncovered.tabNoText')}
                 </TabsTrigger>
                 <TabsTrigger value="transcription" className="text-xs">
-                  No transcription
+                  {t('quality.uncovered.tabNoTranscription')}
                 </TabsTrigger>
                 <TabsTrigger value="translation" className="text-xs">
-                  No translation
+                  {t('quality.uncovered.tabNoTranslation')}
                 </TabsTrigger>
               </TabsList>
               <TabsContent value={mode} />
@@ -118,18 +127,22 @@ export function UncoveredImages() {
         <CardContent className="space-y-3 px-0 pb-0">
           {error && (
             <div className="mx-6 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
-              Could not load uncovered images: {(error as Error).message}
+              {t('quality.uncovered.loadError', { message: (error as Error).message })}
             </div>
           )}
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[120px]">Image</TableHead>
-                  <TableHead>Locus</TableHead>
-                  <TableHead className="w-[100px] text-right">Annotations</TableHead>
-                  <TableHead className="w-[100px]">Has</TableHead>
-                  <TableHead className="w-[220px] text-right">Create</TableHead>
+                  <TableHead className="w-[120px]">{t('quality.uncovered.colImage')}</TableHead>
+                  <TableHead>{t('quality.uncovered.colLocus')}</TableHead>
+                  <TableHead className="w-[100px] text-right">
+                    {t('quality.uncovered.colAnnotations')}
+                  </TableHead>
+                  <TableHead className="w-[100px]">{t('quality.uncovered.colHas')}</TableHead>
+                  <TableHead className="w-[220px] text-right">
+                    {t('quality.uncovered.colCreate')}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -139,7 +152,9 @@ export function UncoveredImages() {
                       colSpan={5}
                       className="h-24 text-center text-sm text-muted-foreground"
                     >
-                      {isFetching ? 'Loading…' : 'No matching images.'}
+                      {isFetching
+                        ? t('quality.uncovered.loading')
+                        : t('quality.uncovered.noMatches')}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -154,9 +169,13 @@ export function UncoveredImages() {
                           {row.annotation_count}
                         </TableCell>
                         <TableCell className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                          {hasTranscription && <span title="Transcription exists">T</span>}
+                          {hasTranscription && (
+                            <span title={t('quality.uncovered.transcriptionExists')}>T</span>
+                          )}
                           {hasTranscription && hasTranslation && <span> · </span>}
-                          {hasTranslation && <span title="Translation exists">X</span>}
+                          {hasTranslation && (
+                            <span title={t('quality.uncovered.translationExists')}>X</span>
+                          )}
                           {!hasTranscription && !hasTranslation && <span>—</span>}
                         </TableCell>
                         <TableCell>
@@ -169,7 +188,7 @@ export function UncoveredImages() {
                                 onClick={() => openCreate(row.id, 'Transcription')}
                               >
                                 <Plus className="mr-1 h-3 w-3" />
-                                Transcription
+                                {t('quality.uncovered.transcription')}
                               </Button>
                             )}
                             {!hasTranslation && (
@@ -180,7 +199,7 @@ export function UncoveredImages() {
                                 onClick={() => openCreate(row.id, 'Translation')}
                               >
                                 <Plus className="mr-1 h-3 w-3" />
-                                Translation
+                                {t('quality.uncovered.translation')}
                               </Button>
                             )}
                           </div>
@@ -221,8 +240,8 @@ export function UncoveredImages() {
   );
 }
 
-function modeLabel(mode: UncoveredMode): string {
-  if (mode === 'transcription') return 'transcription';
-  if (mode === 'translation') return 'translation';
-  return 'text at all';
-}
+const MODE_LABEL_KEY: Record<UncoveredMode, string> = {
+  transcription: 'modeTranscription',
+  translation: 'modeTranslation',
+  either: 'modeEither',
+};

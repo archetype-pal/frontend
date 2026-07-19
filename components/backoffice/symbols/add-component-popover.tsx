@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -23,6 +24,7 @@ export function AddComponentPopover({
   onAdd,
   disabled = false,
 }: AddComponentPopoverProps) {
+  const t = useTranslations('backoffice');
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [highlightIdx, setHighlightIdx] = useState(0);
@@ -62,14 +64,14 @@ export function AddComponentPopover({
           disabled={disabled}
         >
           <Plus className="h-3 w-3" />
-          Add Component
+          {t('symbols.addComponent')}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-56 p-2" align="start">
         <div className="relative mb-2">
           <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search components..."
+            placeholder={t('symbols.searchComponentsPlaceholder')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -83,7 +85,7 @@ export function AddComponentPopover({
         <div className="max-h-40 overflow-y-auto">
           {available.length === 0 ? (
             <p className="px-2 py-3 text-center text-xs text-muted-foreground">
-              {search ? 'No matching components' : 'All components added'}
+              {search ? t('symbols.noMatchingComponents') : t('symbols.allComponentsAdded')}
             </p>
           ) : (
             available.map((comp, idx) => (

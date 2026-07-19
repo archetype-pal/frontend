@@ -321,9 +321,12 @@ export default function AnnotationsPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Delete this annotation?"
-        description={`Graph #${deleteTarget?.id} (${deleteTarget?.allograph_name}) will be permanently deleted.`}
-        confirmLabel="Delete"
+        title={t('annotations.deleteTitle')}
+        description={t('annotations.deleteDesc', {
+          id: deleteTarget?.id,
+          allograph: deleteTarget?.allograph_name,
+        })}
+        confirmLabel={t('annotations.deleteConfirm')}
         loading={deleteMut.isPending}
         onConfirm={() => deleteTarget && deleteMut.mutate(deleteTarget.id)}
       />

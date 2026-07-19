@@ -156,10 +156,10 @@ export default function PhysicalVolumesPage() {
             }}
           >
             <SelectTrigger className="w-[220px] h-9">
-              <SelectValue placeholder="All repositories" />
+              <SelectValue placeholder={t('physicalVolumes.filterAllRepositories')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all">All repositories</SelectItem>
+              <SelectItem value="__all">{t('physicalVolumes.filterAllRepositories')}</SelectItem>
               {repositories.map((r) => (
                 <SelectItem key={r.id} value={String(r.id)}>
                   {r.label || r.name} ({r.place})
@@ -177,7 +177,9 @@ export default function PhysicalVolumesPage() {
         data={data?.results ?? []}
         searchValue={searchInput}
         onSearchChange={setSearchInput}
-        searchPlaceholder={`Search by ${shelfmarkLabel.toLowerCase()}...`}
+        searchPlaceholder={t('physicalVolumes.searchPlaceholder', {
+          label: shelfmarkLabel.toLowerCase(),
+        })}
         pagination={false}
         enableColumnVisibility
         enableExport
@@ -197,13 +199,16 @@ export default function PhysicalVolumesPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Delete physical volume?"
+        title={t('physicalVolumes.deleteTitle')}
         description={
           deleteTarget
-            ? `Delete ${deleteTarget.repository_name} ${deleteTarget.shelfmark}? This volume has no linked manuscript parts.`
+            ? t('physicalVolumes.deleteDescription', {
+                repo: deleteTarget.repository_name,
+                shelfmark: deleteTarget.shelfmark,
+              })
             : undefined
         }
-        confirmLabel="Delete"
+        confirmLabel={t('physicalVolumes.deleteConfirm')}
         loading={deleteMut.isPending}
         onConfirm={() => {
           if (deleteTarget?.part_count === 0) {

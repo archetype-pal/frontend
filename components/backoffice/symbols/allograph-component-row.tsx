@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FeatureCheckbox } from './feature-checkbox';
@@ -33,6 +34,7 @@ export function AllographComponentRow({
   onToggleDefault,
   disabled = false,
 }: AllographComponentRowProps) {
+  const t = useTranslations('backoffice');
   // Get available features: those linked to this component in the global pool
   const availableFeatureIds = globalComponent?.features ?? [];
   const availableFeatures = allFeatures.filter((f) => availableFeatureIds.includes(f.id));
@@ -50,7 +52,7 @@ export function AllographComponentRow({
           className="h-6 w-6 text-muted-foreground hover:text-destructive"
           onClick={onRemove}
           disabled={disabled}
-          title="Remove component"
+          title={t('symbols.removeComponent')}
         >
           <X className="h-3.5 w-3.5" />
         </Button>
@@ -58,7 +60,7 @@ export function AllographComponentRow({
       <div className="px-1 pb-1">
         {availableFeatures.length === 0 ? (
           <p className="text-xs text-muted-foreground italic px-2 pb-1">
-            No features linked to this component
+            {t('symbols.noFeaturesLinked')}
           </p>
         ) : (
           <div

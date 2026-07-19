@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+
 import { Button } from '@/components/ui/button';
 
 interface ServerPaginationProps {
@@ -19,6 +21,9 @@ export function ServerPagination({
   hasNext,
   onPageChange,
 }: ServerPaginationProps) {
+  const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
+
   if (total <= pageSize) return null;
 
   return (
@@ -29,10 +34,10 @@ export function ServerPagination({
         disabled={page === 0}
         onClick={() => onPageChange(page - 1)}
       >
-        Previous
+        {tCommon('previous')}
       </Button>
       <span className="text-sm text-muted-foreground tabular-nums">
-        Page {page + 1} of {Math.ceil(total / pageSize)}
+        {t('pagination.pageOf', { page: page + 1, total: Math.ceil(total / pageSize) })}
       </span>
       <Button
         variant="outline"
@@ -40,7 +45,7 @@ export function ServerPagination({
         disabled={!hasNext}
         onClick={() => onPageChange(page + 1)}
       >
-        Next
+        {tCommon('next')}
       </Button>
     </div>
   );

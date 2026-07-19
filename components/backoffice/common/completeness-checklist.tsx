@@ -1,6 +1,7 @@
 'use client';
 
 import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 export interface CompletenessItem {
@@ -36,13 +37,14 @@ interface CompletenessChecklistProps {
  * ```
  */
 export function CompletenessChecklist({ items, className }: CompletenessChecklistProps) {
+  const t = useTranslations('backoffice');
   const total = items.length;
   const done = items.filter((i) => i.complete).length;
 
   return (
     <div className={cn('flex flex-wrap items-center gap-x-4 gap-y-1', className)}>
       <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        {done}/{total} fields
+        {t('completeness.fieldsCount', { done, total })}
       </span>
       {items.map((item) => {
         const Wrapper = item.onNavigate && !item.complete ? 'button' : 'span';
@@ -68,7 +70,9 @@ export function CompletenessChecklist({ items, className }: CompletenessChecklis
               {item.complete && item.value && (
                 <span className="text-muted-foreground ml-1">({item.value})</span>
               )}
-              {!item.complete && <span className="text-muted-foreground ml-1">missing</span>}
+              {!item.complete && (
+                <span className="text-muted-foreground ml-1">{t('completeness.missing')}</span>
+              )}
             </span>
           </Wrapper>
         );

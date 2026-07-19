@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { Plus, Trash2, Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import dynamic from 'next/dynamic';
@@ -39,6 +40,8 @@ interface DescriptionsSectionProps {
 
 export function DescriptionsSection({ historicalItemId, descriptions }: DescriptionsSectionProps) {
   const { token } = useAuth();
+  const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
   const [adding, setAdding] = useState(false);
   const [newSource, setNewSource] = useState('');
@@ -67,14 +70,14 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
         content: newContent,
       }),
     onSuccess: () => {
-      toast.success('Description added');
+      toast.success(t('manuscriptsDetail.descriptionAdded'));
       invalidate();
       setAdding(false);
       setNewSource('');
       setNewContent('');
     },
     onError: (err) => {
-      toast.error('Failed to add description', {
+      toast.error(t('manuscriptsDetail.descriptionAddFailed'), {
         description: formatApiError(err),
       });
     },
@@ -84,13 +87,13 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       updateDescription(token!, id, data),
     onSuccess: () => {
-      toast.success('Description updated');
+      toast.success(t('manuscriptsDetail.descriptionUpdated'));
       invalidate();
       setEditingId(null);
       setEditingSourceId(null);
     },
     onError: (err) => {
-      toast.error('Failed to update description', {
+      toast.error(t('manuscriptsDetail.descriptionUpdateFailed'), {
         description: formatApiError(err),
       });
     },
@@ -99,11 +102,11 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteDescription(token!, id),
     onSuccess: () => {
-      toast.success('Description removed');
+      toast.success(t('manuscriptsDetail.descriptionRemoved'));
       invalidate();
     },
     onError: (err) => {
-      toast.error('Failed to remove description', {
+      toast.error(t('manuscriptsDetail.descriptionRemoveFailed'), {
         description: formatApiError(err),
       });
     },
@@ -112,7 +115,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">Descriptions</h3>
+        <h3 className="text-sm font-medium">{t('manuscriptsDetail.descriptions')}</h3>
         <Button
           variant="outline"
           size="sm"
@@ -120,12 +123,14 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
           onClick={() => setAdding(true)}
         >
           <Plus className="h-3 w-3" />
-          Add
+          {tCommon('add')}
         </Button>
       </div>
 
       {descriptions.length === 0 && !adding ? (
-        <p className="text-sm text-muted-foreground py-2">No descriptions</p>
+        <p className="text-sm text-muted-foreground py-2">
+          {t('manuscriptsDetail.noDescriptions')}
+        </p>
       ) : (
         <div className="space-y-2">
           {descriptions.map((desc) => (
@@ -160,7 +165,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                       size="icon"
                       className="h-6 w-6"
                       onClick={() => setEditingSourceId(null)}
-                      aria-label="Cancel source edit"
+                      aria-label={t('manuscriptsDetail.cancelSourceEditAria')}
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -192,7 +197,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                             data: { content: editContent },
                           })
                         }
-                        aria-label="Save description"
+                        aria-label={t('manuscriptsDetail.saveDescriptionAria')}
                       >
                         <Check className="h-3 w-3" />
                       </Button>
@@ -201,7 +206,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                         size="icon"
                         className="h-6 w-6"
                         onClick={() => setEditingId(null)}
-                        aria-label="Cancel description edit"
+                        aria-label={t('manuscriptsDetail.cancelDescriptionEditAria')}
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -216,7 +221,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                           setEditingId(desc.id);
                           setEditContent(desc.content);
                         }}
-                        aria-label="Edit description"
+                        aria-label={t('manuscriptsDetail.editDescriptionAria')}
                       >
                         <Pencil className="h-3 w-3" />
                       </Button>
@@ -225,7 +230,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                         size="icon"
                         className="h-6 w-6 text-muted-foreground hover:text-destructive"
                         onClick={() => deleteMut.mutate(desc.id)}
-                        aria-label="Delete description"
+                        aria-label={t('manuscriptsDetail.deleteDescriptionAria')}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -237,7 +242,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                 <RichTextEditor
                   content={editContent}
                   onChange={(html) => setEditContent(html)}
-                  placeholder="Enter description..."
+                  placeholder={t('manuscriptsDetail.enterDescriptionPlaceholder')}
                   minimal
                 />
               ) : (
@@ -253,7 +258,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
             <div className="rounded-md border p-3 space-y-2">
               <Select value={newSource} onValueChange={setNewSource}>
                 <SelectTrigger className="h-8 text-sm w-48">
-                  <SelectValue placeholder="Select source..." />
+                  <SelectValue placeholder={t('manuscriptsDetail.selectSourcePlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {(sources ?? []).map((s) => (
@@ -266,7 +271,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
               <RichTextEditor
                 content={newContent}
                 onChange={(html) => setNewContent(html)}
-                placeholder="Enter description..."
+                placeholder={t('manuscriptsDetail.enterDescriptionPlaceholder')}
                 minimal
               />
               <div className="flex gap-2">
@@ -275,10 +280,10 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                   onClick={() => createMut.mutate()}
                   disabled={!newSource || !newContent.trim() || createMut.isPending}
                 >
-                  Save
+                  {tCommon('save')}
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setAdding(false)}>
-                  Cancel
+                  {tCommon('cancel')}
                 </Button>
               </div>
             </div>

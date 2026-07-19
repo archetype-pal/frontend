@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
@@ -23,6 +24,7 @@ interface EntityCrudConfig<T extends { id: number; name: string }> {
  */
 export function useEntityCrud<T extends { id: number; name: string }>(config: EntityCrudConfig<T>) {
   const { token } = useAuth();
+  const t = useTranslations('backoffice.simpleCrud');
   const queryClient = useQueryClient();
   const [newName, setNewName] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<T | null>(null);
@@ -38,10 +40,10 @@ export function useEntityCrud<T extends { id: number; name: string }>(config: En
     onSuccess: () => {
       invalidate();
       setNewName('');
-      toast.success(`${config.entityLabel} created`);
+      toast.success(t('created', { label: config.entityLabel }));
     },
     onError: (err) => {
-      toast.error(`Failed to create ${config.entityLabel.toLowerCase()}`, {
+      toast.error(t('failedCreate', { label: config.entityLabel.toLowerCase() }), {
         description: formatApiError(err),
       });
     },
@@ -52,10 +54,10 @@ export function useEntityCrud<T extends { id: number; name: string }>(config: En
       config.updateFn(token!, id, { name }),
     onSuccess: () => {
       invalidate();
-      toast.success(`${config.entityLabel} renamed`);
+      toast.success(t('renamed', { label: config.entityLabel }));
     },
     onError: (err) => {
-      toast.error(`Failed to rename ${config.entityLabel.toLowerCase()}`, {
+      toast.error(t('failedRename', { label: config.entityLabel.toLowerCase() }), {
         description: formatApiError(err),
       });
     },
@@ -66,10 +68,10 @@ export function useEntityCrud<T extends { id: number; name: string }>(config: En
     onSuccess: () => {
       invalidate();
       setDeleteTarget(null);
-      toast.success(`${config.entityLabel} deleted`);
+      toast.success(t('deleted', { label: config.entityLabel }));
     },
     onError: (err) => {
-      toast.error(`Failed to delete ${config.entityLabel.toLowerCase()}`, {
+      toast.error(t('failedDelete', { label: config.entityLabel.toLowerCase() }), {
         description: formatApiError(err),
       });
     },

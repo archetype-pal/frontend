@@ -34,7 +34,7 @@ export function ComponentManager({ components, allFeatures }: ComponentManagerPr
     createFn: createComponent,
     updateFn: updateComponent,
     deleteFn: deleteComponent,
-    entityLabel: 'Component',
+    entityLabel: t('symbols.componentLabel'),
   });
 
   const featureLinkMut = useMutation({

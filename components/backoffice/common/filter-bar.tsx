@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -32,6 +33,7 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ filters, values, onChange, onClear }: FilterBarProps) {
+  const t = useTranslations('backoffice');
   const activeCount = filters.filter(
     (f) => values[f.key] && values[f.key] !== (f.allValue ?? '__all')
   ).length;
@@ -48,7 +50,9 @@ export function FilterBar({ filters, values, onChange, onClear }: FilterBarProps
             <SelectValue placeholder={filter.label} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={filter.allValue ?? '__all'}>All {filter.label}</SelectItem>
+            <SelectItem value={filter.allValue ?? '__all'}>
+              {t('filterBar.allOption', { label: filter.label })}
+            </SelectItem>
             {filter.options.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
@@ -61,7 +65,7 @@ export function FilterBar({ filters, values, onChange, onClear }: FilterBarProps
       {activeCount > 0 && (
         <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs" onClick={onClear}>
           <X className="h-3 w-3" />
-          Clear filters
+          {t('filterBar.clearFilters')}
           <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
             {activeCount}
           </Badge>

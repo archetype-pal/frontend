@@ -3,6 +3,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, ImageIcon, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { getCarouselImageUrl } from '@/utils/api';
@@ -21,6 +22,7 @@ export function SortableCarouselCard({
   onSelect,
   onDelete,
 }: SortableCarouselCardProps) {
+  const t = useTranslations('backoffice');
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
@@ -57,7 +59,7 @@ export function SortableCarouselCard({
         {...attributes}
         {...listeners}
         className="cursor-grab active:cursor-grabbing touch-none shrink-0"
-        aria-label="Drag to reorder"
+        aria-label={t('carousel.dragToReorder')}
         onClick={(e) => e.stopPropagation()}
       >
         <GripVertical className="h-4 w-4 text-muted-foreground" />

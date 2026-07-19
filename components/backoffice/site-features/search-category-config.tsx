@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ function useFacetItems(type: ResultType): SortableItem[] {
 }
 
 export function SearchCategoryConfigPanel({ categories, onChange }: Props) {
+  const t = useTranslations('backoffice');
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const { getLabel } = useModelLabels();
   const categoryLabels: Record<ResultType, string> = useMemo(
@@ -43,10 +45,8 @@ export function SearchCategoryConfigPanel({ categories, onChange }: Props) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle>Search Categories</CardTitle>
-        <CardDescription>
-          Toggle categories and configure visible columns and facets. Drag to reorder.
-        </CardDescription>
+        <CardTitle>{t('siteFeatures.searchCategoriesTitle')}</CardTitle>
+        <CardDescription>{t('siteFeatures.searchCategoriesDescription')}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-1.5">
@@ -74,8 +74,10 @@ export function SearchCategoryConfigPanel({ categories, onChange }: Props) {
                         <span className="text-sm font-medium">{categoryLabels[type]}</span>
                         {!isOpen && (
                           <span className="text-xs text-muted-foreground ml-1">
-                            {config.visibleColumns.length} col · {config.visibleFacets.length}{' '}
-                            facets
+                            {t('siteFeatures.categorySummary', {
+                              columns: config.visibleColumns.length,
+                              facets: config.visibleFacets.length,
+                            })}
                           </span>
                         )}
                       </Button>
@@ -113,11 +115,12 @@ function CategoryColumns({
   config: SearchCategoryConfig;
   onChange: (type: ResultType, config: SearchCategoryConfig) => void;
 }) {
+  const t = useTranslations('backoffice');
   const columnItems = useColumnItems(type);
   return (
     <div>
       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-        Columns
+        {t('siteFeatures.columnsHeading')}
       </h4>
       <SortableCheckboxList
         allItems={columnItems}
@@ -137,11 +140,12 @@ function CategoryFacets({
   config: SearchCategoryConfig;
   onChange: (type: ResultType, config: SearchCategoryConfig) => void;
 }) {
+  const t = useTranslations('backoffice');
   const facetItems = useFacetItems(type);
   return (
     <div>
       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-        Facets
+        {t('siteFeatures.facetsHeading')}
       </h4>
       <SortableCheckboxList
         allItems={facetItems}

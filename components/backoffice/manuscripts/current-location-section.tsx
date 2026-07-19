@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { MapPin, ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,6 +56,7 @@ export function CurrentLocationSection({
 
 function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number }) {
   const { token } = useAuth();
+  const t = useTranslations('backoffice');
   const { getLabel } = useModelLabels();
   const queryClient = useQueryClient();
   const shelfmarkLabel = getLabel('fieldShelfmark');
@@ -103,7 +105,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
         current_item: currentItemId,
         current_item_locus: locus.trim(),
       });
-      toast.success('Location set');
+      toast.success(t('manuscriptsDetail.locationSet'));
       queryClient.invalidateQueries({
         queryKey: backofficeKeys.manuscripts.detail(historicalItemId),
       });
@@ -111,7 +113,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
         queryKey: backofficeKeys.currentItems.all(),
       });
     } catch (err) {
-      toast.error('Failed to set location', {
+      toast.error(t('manuscriptsDetail.locationSetFailed'), {
         description: formatApiError(err),
       });
     } finally {
@@ -123,15 +125,19 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
     <div className="space-y-3">
       <h3 className="text-sm font-medium flex items-center gap-2">
         <MapPin className="h-4 w-4" />
-        {`Where is this ${historicalItemLabel.toLowerCase()} held?`}
+        {t('manuscriptsDetail.whereHeldQuestion', {
+          label: historicalItemLabel.toLowerCase(),
+        })}
       </h3>
       <div className="rounded-lg border border-dashed p-4 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1.5">
-            <FieldLabel helpField="currentLocation.repository">Repository</FieldLabel>
+            <FieldLabel helpField="currentLocation.repository">
+              {t('manuscriptsNew.fieldRepository')}
+            </FieldLabel>
             <Select value={repository} onValueChange={setRepository}>
               <SelectTrigger className="h-9">
-                <SelectValue placeholder="Select repository..." />
+                <SelectValue placeholder={t('manuscriptsNew.repositoryPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {repositories.map((r) => (
@@ -147,16 +153,16 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
             <Input
               value={shelfmark}
               onChange={(e) => setShelfmark(e.target.value)}
-              placeholder="e.g. GD55/1"
+              placeholder={t('manuscriptsNew.shelfmarkPlaceholder')}
               className="h-9"
             />
           </div>
           <div className="space-y-1.5">
-            <FieldLabel helpField="itemPart.locus">Locus</FieldLabel>
+            <FieldLabel helpField="itemPart.locus">{t('manuscriptsNew.fieldLocus')}</FieldLabel>
             <Input
               value={locus}
               onChange={(e) => setLocus(e.target.value)}
-              placeholder="optional"
+              placeholder={t('manuscriptsDetail.optionalPlaceholder')}
               className="h-9"
             />
           </div>
@@ -167,10 +173,12 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
           disabled={!repository || !shelfmark.trim() || saving}
         >
           {saving && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
-          Set Location
+          {t('manuscriptsDetail.setLocation')}
         </Button>
         <p className="text-xs text-muted-foreground">
-          {`Links this ${historicalItemLabel.toLowerCase()} to its physical location in a repository.`}
+          {t('manuscriptsDetail.linksToPhysicalLocation', {
+            label: historicalItemLabel.toLowerCase(),
+          })}
         </p>
       </div>
     </div>
@@ -187,6 +195,7 @@ function SinglePartLocation({
   part: ItemPartNested;
 }) {
   const { token } = useAuth();
+  const t = useTranslations('backoffice');
   const queryClient = useQueryClient();
   const [currentItemId, setCurrentItemId] = useState<number | null>(part.current_item);
   const [locus, setLocus] = useState(part.current_item_locus);
@@ -210,14 +219,14 @@ function SinglePartLocation({
       }
     },
     onSuccess: () => {
-      toast.success('Location updated');
+      toast.success(t('manuscriptsDetail.locationUpdated'));
       queryClient.invalidateQueries({
         queryKey: backofficeKeys.manuscripts.detail(historicalItemId),
       });
       setDirty(false);
     },
     onError: (err) => {
-      toast.error('Failed to update location', {
+      toast.error(t('manuscriptsDetail.locationUpdateFailed'), {
         description: formatApiError(err),
       });
     },
@@ -233,7 +242,7 @@ function SinglePartLocation({
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium flex items-center gap-2">
           <MapPin className="h-4 w-4" />
-          Current Location
+          {t('manuscriptsDetail.currentLocation')}
         </h3>
         {dirty && (
           <Button
@@ -243,14 +252,16 @@ function SinglePartLocation({
             disabled={saveMut.isPending}
           >
             {saveMut.isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-            Save Location
+            {t('manuscriptsDetail.saveLocation')}
           </Button>
         )}
       </div>
       <div className="rounded-md border p-4 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1.5 sm:col-span-2">
-            <FieldLabel helpField="itemPart.currentItem">Physical volume</FieldLabel>
+            <FieldLabel helpField="itemPart.currentItem">
+              {t('manuscriptsDetail.physicalVolume')}
+            </FieldLabel>
             <CurrentItemCombobox
               value={currentItemId}
               onChange={handleCurrentItemChange}
@@ -259,27 +270,29 @@ function SinglePartLocation({
             />
           </div>
           <div className="space-y-1.5">
-            <FieldLabel helpField="itemPart.locus">Locus</FieldLabel>
+            <FieldLabel helpField="itemPart.locus">{t('manuscriptsNew.fieldLocus')}</FieldLabel>
             <Input
               value={locus}
               onChange={(e) => {
                 setLocus(e.target.value);
                 setDirty(true);
               }}
-              placeholder="e.g. f.1r"
+              placeholder={t('manuscriptsNew.locusPlaceholder')}
               className="h-9"
             />
           </div>
         </div>
         <div className="space-y-1.5">
-          <FieldLabel helpField="itemPart.customLabel">Custom label</FieldLabel>
+          <FieldLabel helpField="itemPart.customLabel">
+            {t('manuscriptsDetail.customLabel')}
+          </FieldLabel>
           <Input
             value={customLabel}
             onChange={(e) => {
               setCustomLabel(e.target.value);
               setDirty(true);
             }}
-            placeholder="Optional override for display name"
+            placeholder={t('manuscriptsDetail.customLabelPlaceholder')}
             className="h-9"
           />
         </div>
@@ -297,9 +310,10 @@ function MultiPartSummary({
   itemParts: ItemPartNested[];
   onNavigateToParts?: () => void;
 }) {
+  const t = useTranslations('backoffice');
   const volumeMap = new Map<string, number>();
   for (const part of itemParts) {
-    const label = part.current_item_display ?? 'Unassigned';
+    const label = part.current_item_display ?? t('manuscriptsDetail.unassigned');
     volumeMap.set(label, (volumeMap.get(label) ?? 0) + 1);
   }
 
@@ -309,12 +323,14 @@ function MultiPartSummary({
     <div className="space-y-3">
       <h3 className="text-sm font-medium flex items-center gap-2">
         <MapPin className="h-4 w-4" />
-        Current Location
+        {t('manuscriptsDetail.currentLocation')}
       </h3>
       <div className="rounded-md border p-4 space-y-2">
         <p className="text-sm text-muted-foreground">
-          This manuscript has {itemParts.length} parts across {volumeCount} volume
-          {volumeCount !== 1 ? 's' : ''}:
+          {t('manuscriptsDetail.partsAcrossVolumes', {
+            parts: itemParts.length,
+            volumes: volumeCount,
+          })}
         </p>
         <ul className="text-sm space-y-1">
           {Array.from(volumeMap.entries()).map(([label, count]) => (
@@ -323,7 +339,7 @@ function MultiPartSummary({
               <span>
                 {label}{' '}
                 <span className="text-muted-foreground">
-                  ({count} part{count !== 1 ? 's' : ''})
+                  {t('manuscriptsDetail.partCount', { count })}
                 </span>
               </span>
             </li>
@@ -336,7 +352,7 @@ function MultiPartSummary({
             className="mt-2 h-7 text-xs gap-1"
             onClick={onNavigateToParts}
           >
-            Manage Parts
+            {t('manuscriptsDetail.manageParts')}
             <ArrowRight className="h-3 w-3" />
           </Button>
         )}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +26,7 @@ export function FeatureCheckbox({
   onToggleDefault,
   disabled = false,
 }: FeatureCheckboxProps) {
+  const t = useTranslations('backoffice');
   const checkboxId = `feature-${featureId}`;
 
   return (
@@ -61,12 +63,12 @@ export function FeatureCheckbox({
                   !setByDefault && 'text-muted-foreground'
                 )}
               >
-                {setByDefault ? 'Default' : 'Optional'}
+                {setByDefault ? t('symbols.badgeDefault') : t('symbols.badgeOptional')}
               </Badge>
             </button>
           </TooltipTrigger>
           <TooltipContent side="top">
-            {setByDefault ? 'Click to make optional' : 'Click to set as default'}
+            {setByDefault ? t('symbols.clickToMakeOptional') : t('symbols.clickToSetDefault')}
           </TooltipContent>
         </Tooltip>
       )}

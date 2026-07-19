@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { Check, ChevronsUpDown, Plus, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,8 @@ export function CurrentItemCombobox({
   className,
 }: CurrentItemComboboxProps) {
   const { token } = useAuth();
+  const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
   const { getLabel } = useModelLabels();
   const queryClient = useQueryClient();
   const shelfmarkLabel = getLabel('fieldShelfmark');
@@ -96,7 +99,7 @@ export function CurrentItemCombobox({
         shelfmark: newShelfmark,
       }),
     onSuccess: (data) => {
-      toast.success('Volume created');
+      toast.success(t('manuscriptsDetail.volumeCreated'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.currentItems.all() });
       onChange(data.id, data);
       setCreating(false);
@@ -104,7 +107,7 @@ export function CurrentItemCombobox({
       setOpen(false);
     },
     onError: (err) => {
-      toast.error('Failed to create volume', {
+      toast.error(t('manuscriptsDetail.volumeCreateFailed'), {
         description: formatApiError(err),
       });
     },
@@ -123,18 +126,20 @@ export function CurrentItemCombobox({
             className
           )}
         >
-          <span className="truncate">{displayValue ?? 'Select volume...'}</span>
+          <span className="truncate">
+            {displayValue ?? t('manuscriptsDetail.selectVolumePlaceholder')}
+          </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[340px] p-0" align="start">
         {creating ? (
           <div className="p-3 space-y-3">
-            <p className="text-sm font-medium">New physical volume</p>
+            <p className="text-sm font-medium">{t('manuscriptsDetail.newPhysicalVolume')}</p>
             <div className="space-y-2">
               <Select value={newRepo} onValueChange={setNewRepo}>
                 <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Repository" />
+                  <SelectValue placeholder={t('manuscriptsNew.fieldRepository')} />
                 </SelectTrigger>
                 <SelectContent>
                   {repositories.map((r) => (
@@ -147,7 +152,9 @@ export function CurrentItemCombobox({
               <Input
                 value={newShelfmark}
                 onChange={(e) => setNewShelfmark(e.target.value)}
-                placeholder={`${shelfmarkLabel} (e.g. GD55/1)`}
+                placeholder={t('manuscriptsDetail.shelfmarkWithExamplePlaceholder', {
+                  label: shelfmarkLabel,
+                })}
                 className="h-8 text-sm"
               />
             </div>
@@ -159,7 +166,7 @@ export function CurrentItemCombobox({
                 disabled={!newRepo || !newShelfmark.trim() || createMut.isPending}
               >
                 {createMut.isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-                Create
+                {tCommon('create')}
               </Button>
               <Button
                 variant="outline"
@@ -167,15 +174,19 @@ export function CurrentItemCombobox({
                 className="h-7 text-xs"
                 onClick={() => setCreating(false)}
               >
-                Cancel
+                {tCommon('cancel')}
               </Button>
             </div>
           </div>
         ) : (
           <Command>
-            <CommandInput placeholder={`Search by ${shelfmarkLabel.toLowerCase()}...`} />
+            <CommandInput
+              placeholder={t('manuscriptsDetail.searchByLabelPlaceholder', {
+                label: shelfmarkLabel.toLowerCase(),
+              })}
+            />
             <CommandList>
-              <CommandEmpty>No volumes found.</CommandEmpty>
+              <CommandEmpty>{t('manuscriptsDetail.noVolumesFound')}</CommandEmpty>
               <CommandGroup>
                 {items.map((ci) => {
                   const label = `${ci.repository_name} ${ci.shelfmark}`;
@@ -203,7 +214,7 @@ export function CurrentItemCombobox({
               <CommandGroup>
                 <CommandItem onSelect={() => setCreating(true)} className="text-primary">
                   <Plus className="mr-2 h-4 w-4" />
-                  Create new volume...
+                  {t('manuscriptsDetail.createNewVolume')}
                 </CommandItem>
               </CommandGroup>
             </CommandList>

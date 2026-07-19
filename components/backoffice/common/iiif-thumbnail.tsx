@@ -1,5 +1,6 @@
 import { ImageOff } from 'lucide-react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +21,7 @@ export function IiifThumbnail({
   className,
   children,
 }: IiifThumbnailProps) {
+  const t = useTranslations('backoffice');
   const thumbUrl = image ? getIiifImageUrl(image, { thumbnail: true }) : null;
 
   return (
@@ -32,7 +34,7 @@ export function IiifThumbnail({
       {thumbUrl ? (
         <Image
           src={thumbUrl}
-          alt={alt || locus || 'Image'}
+          alt={alt || locus || t('iiifThumbnail.imageAlt')}
           fill
           className="object-cover"
           sizes={sizes}

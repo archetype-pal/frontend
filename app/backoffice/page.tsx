@@ -304,7 +304,7 @@ export default function BackofficeDashboardPage() {
             recentLabel={findRecentFor('/backoffice/manuscripts')}
           />
           <QuickAccessCard
-            title="Palaeography"
+            title={t('dashboard.titlePalaeography')}
             description={t('dashboard.descPalaeography')}
             count={characters.data?.length}
             icon={Type}
@@ -313,7 +313,7 @@ export default function BackofficeDashboardPage() {
             recentLabel={findRecentFor('/backoffice/symbols')}
           />
           <QuickAccessCard
-            title="Publications"
+            title={t('dashboard.titlePublications')}
             description={t('dashboard.descPublications')}
             count={publications.data?.count}
             icon={Newspaper}
@@ -322,7 +322,7 @@ export default function BackofficeDashboardPage() {
             recentLabel={findRecentFor('/backoffice/publications')}
           />
           <QuickAccessCard
-            title="Scribes"
+            title={t('dashboard.titleScribes')}
             description={t('dashboard.descScribes')}
             count={scribes.data?.count}
             icon={PenTool}

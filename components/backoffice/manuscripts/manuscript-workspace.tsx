@@ -25,6 +25,7 @@ import { CompletenessChecklist } from '@/components/backoffice/common/completene
 import { UnsavedChangesBar } from '@/components/backoffice/common/unsaved-changes-bar';
 import { CatalogueNumbersSection } from './catalogue-numbers-section';
 import { DescriptionsSection } from './descriptions-section';
+import { MsDescSection } from './msdesc-section';
 import { CurrentLocationSection } from './current-location-section';
 import { ItemPartsTab } from './item-parts-tab';
 import {
@@ -313,7 +314,9 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
           {/* Basic fields */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <FieldLabel helpField="manuscript.type">Type</FieldLabel>
+              <FieldLabel helpField="manuscript.type">
+                {t('manuscriptWorkspace.fieldType')}
+              </FieldLabel>
               <Select value={draft.type ?? ''} onValueChange={(val) => updateField('type', val)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -329,7 +332,9 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             </div>
 
             <div className="space-y-1.5">
-              <FieldLabel helpField="manuscript.format">Format</FieldLabel>
+              <FieldLabel helpField="manuscript.format">
+                {t('manuscriptWorkspace.fieldFormat')}
+              </FieldLabel>
               <Select
                 value={String(draft.format ?? '__none')}
                 onValueChange={(val) =>
@@ -340,7 +345,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none">None</SelectItem>
+                  <SelectItem value="__none">{t('manuscriptWorkspace.selectNone')}</SelectItem>
                   {(formats ?? []).map((f) => (
                     <SelectItem key={f.id} value={String(f.id)}>
                       {f.name}
@@ -360,7 +365,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none">None</SelectItem>
+                  <SelectItem value="__none">{t('manuscriptWorkspace.selectNone')}</SelectItem>
                   {(dates ?? []).map((d) => (
                     <SelectItem key={d.id} value={String(d.id)}>
                       {d.date}
@@ -371,20 +376,24 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             </div>
 
             <div className="space-y-1.5">
-              <FieldLabel helpField="manuscript.probableTextDate">Probable date</FieldLabel>
+              <FieldLabel helpField="manuscript.probableTextDate">
+                {t('manuscriptWorkspace.fieldProbableDate')}
+              </FieldLabel>
               <Input
                 value={draft.probable_text_date ?? ''}
                 onChange={(e) => updateField('probable_text_date', e.target.value)}
-                placeholder="e.g. Probably early 13th century"
+                placeholder={t('manuscriptWorkspace.probableDatePlaceholder')}
               />
             </div>
 
             <div className="space-y-1.5">
-              <FieldLabel helpField="manuscript.language">Language</FieldLabel>
+              <FieldLabel helpField="manuscript.language">
+                {t('manuscriptWorkspace.fieldLanguage')}
+              </FieldLabel>
               <Input
                 value={draft.language ?? ''}
                 onChange={(e) => updateField('language', e.target.value)}
-                placeholder="e.g. Latin"
+                placeholder={t('manuscriptWorkspace.languagePlaceholder')}
               />
             </div>
 
@@ -393,16 +402,18 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
               <Input
                 value={draft.hair_type ?? ''}
                 onChange={(e) => updateField('hair_type', e.target.value)}
-                placeholder="e.g. HFHF"
+                placeholder={t('manuscriptWorkspace.hairTypePlaceholder')}
               />
             </div>
 
             <div className="space-y-1.5 lg:col-span-3">
-              <FieldLabel helpField="manuscript.datingNotes">Dating notes</FieldLabel>
+              <FieldLabel helpField="manuscript.datingNotes">
+                {t('manuscriptWorkspace.fieldDatingNotes')}
+              </FieldLabel>
               <textarea
                 value={draft.dating_notes ?? ''}
                 onChange={(e) => updateField('dating_notes', e.target.value)}
-                placeholder="Evidence and reasoning for this historical item's date"
+                placeholder={t('manuscriptWorkspace.datingNotesPlaceholder')}
                 className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
@@ -420,6 +431,9 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             historicalItemId={itemId}
             catalogueNumbers={item.catalogue_numbers}
           />
+
+          {/* Structured TEI description (msDesc) */}
+          <MsDescSection historicalItemId={itemId} itemParts={item.item_parts} />
 
           {/* Descriptions */}
           <DescriptionsSection historicalItemId={itemId} descriptions={item.descriptions} />
