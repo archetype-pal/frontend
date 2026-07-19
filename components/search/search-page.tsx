@@ -63,7 +63,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             title={t('resultCountTitle', { typeLabel, count: s.resultCount })}
           >
             <div className="flex items-baseline gap-2 whitespace-nowrap">
-              <span className="font-display text-[1.65rem] font-semibold leading-none tracking-tight tabular-nums text-primary sm:text-[2.4rem]">
+              {/* min-w reserves the 6-digit worst case ("999,999") so the row
+                  doesn't reflow when switching result types changes the count width. */}
+              <span className="inline-block min-w-[7ch] text-right font-display text-[1.65rem] font-semibold leading-none tracking-tight tabular-nums text-primary sm:text-[2.4rem]">
                 {s.resultCount.toLocaleString()}
               </span>
               <span className="font-serif text-xs tracking-tight text-muted-foreground sm:text-sm">
