@@ -106,7 +106,7 @@ export const searchKeys = {
 
 export function getSearchBaseFacetUrl(resultType: ResultType): string {
   const apiSegment = SEARCH_RESULT_CONFIG[resultType].apiPath;
-  return `${API_BASE_URL}/api/v1/search/${apiSegment}/facets`;
+  return `${API_BASE_URL}/api/v1/search/${apiSegment}/facets/`;
 }
 
 export function buildSearchRequestUrl(

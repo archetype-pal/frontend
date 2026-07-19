@@ -10,7 +10,7 @@ import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
 async function getManuscript(id: string): Promise<Manuscript | null> {
   try {
-    const response = await apiFetch(`/api/v1/manuscripts/item-parts/${id}`);
+    const response = await apiFetch(`/api/v1/manuscripts/item-parts/${id}/`);
 
     if (!response.ok) {
       if (response.status === 404) {
