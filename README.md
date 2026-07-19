@@ -79,3 +79,6 @@ pnpm lint
 pnpm lint:fix
 pnpm test
 ```
+
+A [justfile](justfile) wraps these plus the docker recipes — run `just` with
+no arguments to list everything (`just dev`, `just up`, `just lint`, …).
