@@ -4,9 +4,8 @@ Next.js frontend for the Archetype project.
 
 ## Prerequisites
 
-- Node.js `>=22`
+- Node.js `>=26`
 - pnpm `>=10`
-- Docker (for containerized local runs)
 
 ## Environment Variables
 
@@ -23,7 +22,13 @@ Important variables:
 - `NEXT_PUBLIC_SITE_URL` (required)
 - `CORS_ALLOWED_ORIGINS` (required, used by `/api/*` headers)
 
-## Local Development (pnpm)
+## Local Development
+
+The frontend runs directly with pnpm — there is no Docker mode in this repo.
+The backend stack it talks to runs via Docker Compose from the backend repo
+(`api/`), and staging/production deployments (including the containerized
+frontend image built from `Dockerfile`) are orchestrated by the
+[infrastructure repo](https://github.com/archetype-pal/infrastructure).
 
 Install dependencies:
 
@@ -46,20 +51,6 @@ pnpm lint
 pnpm test
 pnpm build
 ```
-
-## Local Development (docker compose)
-
-Copy env setting, then start project :
-
-```bash
-cp .env.dev-compose .env
-docker compose up
-```
-
-Live reload is enabled. We assume backend services are running on `localhost` and reachable from the container. If not, adjust the `.env`.
-If backend/image services are on your machine, they must also be reachable from the container and from client devices (CORS and host/IP values in env vars may need to be updated).
-
-App URL: `http://localhost:3000`
 
 ## Useful Commands
 
