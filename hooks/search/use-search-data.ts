@@ -7,7 +7,7 @@ import { buildQueryString, getSuggestionsPool, type QueryState } from '@/lib/sea
 import {
   fetchCount,
   fetchFacetsAndResults,
-  getSearchBaseFacetUrl,
+  getSearchBaseListUrl,
   searchKeys,
 } from '@/utils/fetch-facets';
 import { useSearchContext } from '@/contexts/search-context';
@@ -26,13 +26,21 @@ export function useSearchData(opts: {
     opts;
   const { setSuggestionsPool, resetSuggestionsPool } = useSearchContext();
 
+  // The active tab's count comes from the main results query (dataCount), so
+  // only the other tabs need a count request — via the list endpoint, which
+  // skips the (much heavier) facet-distribution computation.
+  const quickStatsItems = React.useMemo(
+    () => resultTypeItems.filter((item) => item.value !== resultType),
+    [resultType]
+  );
+
   const quickStatsQueries = useQueries({
-    queries: resultTypeItems.map((item) => {
+    queries: quickStatsItems.map((item) => {
       const params = new URLSearchParams();
       params.set('limit', '1');
       params.set('offset', '0');
       if (submittedKeyword) params.set('q', submittedKeyword);
-      const url = `${getSearchBaseFacetUrl(item.value)}?${params.toString()}`;
+      const url = `${getSearchBaseListUrl(item.value)}?${params.toString()}`;
       return {
         queryKey: searchKeys.facets(item.value, `${url}|quick-stats`),
         queryFn: async ({ signal }: { signal: AbortSignal }) => fetchCount(item.value, url, signal),
@@ -42,14 +50,14 @@ export function useSearchData(opts: {
   });
 
   const countsByType = React.useMemo(() => {
-    const entries = resultTypeItems.map((item, idx) => [
+    const entries = quickStatsItems.map((item, idx) => [
       item.value,
       quickStatsQueries[idx]?.data ?? 0,
     ]);
     const next = Object.fromEntries(entries) as Record<ResultType, number>;
     next[resultType] = dataCount;
     return next;
-  }, [dataCount, quickStatsQueries, resultType]);
+  }, [dataCount, quickStatsItems, quickStatsQueries, resultType]);
 
   const graphDistributionQuery = useQuery({
     queryKey: searchKeys.facets(

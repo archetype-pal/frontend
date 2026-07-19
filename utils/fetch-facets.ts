@@ -109,6 +109,12 @@ export function getSearchBaseFacetUrl(resultType: ResultType): string {
   return `${API_BASE_URL}/api/v1/search/${apiSegment}/facets/`;
 }
 
+/** List endpoint — same filters as the facets endpoint but skips facet computation. */
+export function getSearchBaseListUrl(resultType: ResultType): string {
+  const apiSegment = SEARCH_RESULT_CONFIG[resultType].apiPath;
+  return `${API_BASE_URL}/api/v1/search/${apiSegment}/`;
+}
+
 export function buildSearchRequestUrl(
   resultType: ResultType,
   queryState: QueryState,
@@ -154,7 +160,7 @@ export async function fetchCount(
   url?: string,
   signal?: AbortSignal
 ): Promise<number> {
-  const endpoint = url || getSearchBaseFacetUrl(resultType);
+  const endpoint = url || getSearchBaseListUrl(resultType);
   try {
     const res = await fetch(endpoint, { cache: 'no-store', signal });
     if (!res.ok) return 0;
