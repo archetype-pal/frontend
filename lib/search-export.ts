@@ -4,7 +4,7 @@ import type { ResultType } from '@/lib/search-types';
  * Maps column display headers → raw Meilisearch field keys per result type.
  * Used to extract values from search hits for formatted CSV export.
  */
-const COLUMN_FIELD_MAP: Record<ResultType, Record<string, string>> = {
+export const COLUMN_FIELD_MAP: Record<ResultType, Record<string, string>> = {
   manuscripts: {
     'Repository City': 'repository_city',
     Repository: 'repository_name',
@@ -20,7 +20,6 @@ const COLUMN_FIELD_MAP: Record<ResultType, Record<string, string>> = {
     'Repository City': 'repository_city',
     Repository: 'repository_name',
     Shelfmark: 'shelfmark',
-    'Category Number': 'locus',
     'Doc. Type': 'type',
     Annotations: 'number_of_annotations',
     Date: 'date',
@@ -52,6 +51,10 @@ const COLUMN_FIELD_MAP: Record<ResultType, Record<string, string>> = {
     Character: 'character',
     'Character Type': 'character_type',
     'Hand Name': 'hand_name',
+    Scribe: 'scribe',
+    Place: 'place',
+    Locus: 'locus',
+    'Doc. Type': 'type',
   },
   texts: {
     'Repository City': 'repository_city',

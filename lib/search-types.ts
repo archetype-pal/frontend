@@ -55,7 +55,6 @@ export const SEARCH_RESULT_CONFIG = {
       'Repository City',
       'Repository',
       'Shelfmark',
-      'Category Number',
       'Doc. Type',
       'Thumbnail',
       'Annotations',
@@ -109,6 +108,8 @@ export const SEARCH_RESULT_CONFIG = {
       'Shelfmark',
       'Document Date',
       'Allograph',
+      'Character',
+      'Hand Name',
       'Thumbnail',
     ],
     facets: [

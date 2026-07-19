@@ -188,7 +188,6 @@ export const COLUMNS = {
     repositoryCityColumn<ImageListItem>(),
     repositoryColumn<ImageListItem>(),
     shelfmarkColumn<ImageListItem>(),
-    makeColumn('Category Number', () => '—'),
     makeColumn('Doc. Type', (i: ImageListItem) => i.type, 'type_exact'),
     {
       header: 'Thumbnail',
@@ -254,20 +253,28 @@ export const COLUMNS = {
     repositoryCityColumn<GraphListItem>(),
     repositoryColumn<GraphListItem>(),
     shelfmarkColumn<GraphListItem>(),
-    makeColumn('Document Date', (g: GraphListItem) => g.date),
-    makeColumn('Allograph', (g: GraphListItem) => g.allograph ?? '—'),
+    // Sorts on the numeric `date_min`; the displayed `date` string
+    // ("1230s × early 1240s") only sorts lexicographically. The explicit
+    // formattedKey keeps highlighting pointed at `_formatted.date`.
+    makeColumn('Document Date', (g: GraphListItem) => g.date ?? '—', 'date_min', undefined, 'date'),
+    makeColumn('Allograph', (g: GraphListItem) => g.allograph ?? '—', 'allograph_exact'),
+    makeColumn('Character', (g: GraphListItem) => g.character ?? '—', 'character_exact'),
+    makeColumn('Hand Name', (g: GraphListItem) => g.hand_name ?? '—', 'hand_name_exact'),
     {
       header: 'Thumbnail',
       accessor: (g) => <GraphThumbnailCell graph={g} />,
       className: 'text-center',
     },
-    makeColumn('Character', (g: GraphListItem) => g.character ?? '—', 'character_exact'),
+    // Opt-in columns (below the default-visible prefix).
     makeColumn(
       'Character Type',
       (g: GraphListItem) => g.character_type ?? '—',
       'character_type_exact'
     ),
-    makeColumn('Hand Name', (g: GraphListItem) => g.hand_name ?? '—', 'hand_name_exact'),
+    makeColumn('Scribe', (g: GraphListItem) => g.scribe ?? '—', 'scribe_exact'),
+    makeColumn('Place', (g: GraphListItem) => g.place ?? '—', 'place_exact'),
+    makeColumn('Locus', (g: GraphListItem) => g.locus ?? '—', 'locus_exact'),
+    makeColumn('Doc. Type', (g: GraphListItem) => g.type ?? '—', 'type_exact'),
   ],
 
   texts: [

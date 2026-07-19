@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
-import { Bookmark, Check, MoreVertical } from 'lucide-react';
+import { ArrowDown, ArrowUp, Bookmark, Check, MoreVertical } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -18,6 +18,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SavedSearchesPanel } from '@/components/search/saved-searches';
 import { type ResultType } from '@/lib/search-types';
+import {
+  buildSortFields,
+  humanizeSortField,
+  parseOrdering,
+  type SearchOrdering,
+} from '@/lib/search-sort';
 
 export type ViewMode = 'table' | 'grid' | 'timeline' | 'distribution' | 'map';
 
@@ -41,6 +47,11 @@ export type SearchActionsMenuProps = {
   exportBusy: boolean;
   resultType: ResultType;
   isResearcher: boolean;
+  /** Sort field list from the facets response; drives the small-screen sort section. */
+  ordering?: SearchOrdering;
+  /** The user's explicit sort choice (`queryState.ordering`), null when unset. */
+  sortValue?: string | null;
+  onSortChange?: (next: { attribute: string | null; descending: boolean }) => void;
 };
 
 export function SearchActionsMenu({
@@ -63,10 +74,28 @@ export function SearchActionsMenu({
   exportBusy,
   resultType,
   isResearcher,
+  ordering,
+  sortValue,
+  onSortChange,
 }: SearchActionsMenuProps) {
   const t = useTranslations('search');
   const tCommon = useTranslations('common');
   const [menuOpen, setMenuOpen] = React.useState(false);
+
+  const labelForSortField = React.useCallback(
+    (attribute: string) => {
+      const key = `sortFields.${attribute}`;
+      const translated = t.has(key) ? t(key) : '';
+      return translated || humanizeSortField(attribute);
+    },
+    [t]
+  );
+  const sortFields = React.useMemo(
+    () => (onSortChange ? buildSortFields(ordering, labelForSortField) : []),
+    [ordering, labelForSortField, onSortChange]
+  );
+  const { attribute: sortAttribute, descending: sortDescending } = parseOrdering(sortValue);
+  const sortDirectionLabel = sortDescending ? t('sortDescending') : t('sortAscending');
 
   const viewItem = (mode: ViewMode, label: string, disabled?: boolean) => (
     <DropdownMenuItem
@@ -75,6 +104,22 @@ export function SearchActionsMenu({
       className="flex items-center gap-2"
     >
       {viewMode === mode ? (
+        <Check className="h-4 w-4 shrink-0" />
+      ) : (
+        <span className="w-4 shrink-0" />
+      )}
+      {label}
+    </DropdownMenuItem>
+  );
+
+  const sortItem = (attribute: string | null, label: string) => (
+    <DropdownMenuItem
+      key={attribute ?? '__relevance__'}
+      // Picking a field keeps the current direction, matching the legacy UI.
+      onClick={() => onSortChange?.({ attribute, descending: sortDescending })}
+      className="flex items-center gap-2"
+    >
+      {sortAttribute === attribute ? (
         <Check className="h-4 w-4 shrink-0" />
       ) : (
         <span className="w-4 shrink-0" />
@@ -125,6 +170,41 @@ export function SearchActionsMenu({
           {showDistributionToggle &&
             viewItem('distribution', t('viewCharts'), !distributionEnabled)}
           {showMapToggle && viewItem('map', t('viewMap'))}
+          {/* Sort lives in the visible header control on sm+; this mirrors it so
+              small screens can still sort from any view (frontend#67). */}
+          {onSortChange && sortFields.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>{t('sortBy')}</DropdownMenuLabel>
+              {sortItem(null, t('sortRelevance'))}
+              {sortFields.map((field) => sortItem(field.attribute, field.label))}
+              <DropdownMenuItem
+                disabled={!sortAttribute}
+                // Same defect as the sm+ SortControl toggle: the direction was
+                // carried only by the arrow glyph, so the accessible name read
+                // identically ascending or descending. Spell it out in the name,
+                // and show it as text so the glyph isn't the sole indicator.
+                // (No aria-pressed here — this is role="menuitem", which does not
+                // support it; the name carries the state instead.)
+                aria-label={`${t('sortReverse')} (${sortDirectionLabel})`}
+                onClick={() =>
+                  sortAttribute &&
+                  onSortChange({ attribute: sortAttribute, descending: !sortDescending })
+                }
+                className="flex items-center gap-2"
+              >
+                {sortDescending ? (
+                  <ArrowDown className="h-4 w-4 shrink-0" />
+                ) : (
+                  <ArrowUp className="h-4 w-4 shrink-0" />
+                )}
+                {t('sortReverse')}
+                <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                  {sortDirectionLabel}
+                </span>
+              </DropdownMenuItem>
+            </>
+          )}
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuCheckboxItem

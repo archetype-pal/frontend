@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ResultType } from '@/lib/search-types';
 import { type QueryState, withOffset } from '@/lib/search-query';
@@ -37,6 +37,16 @@ export function useSearchResults(resultType: ResultType, queryState: QueryState,
 
   // Prefetch next page when current page loads successfully
   const data = query.data;
+
+  // `keepPreviousData` means `data` can still describe the PREVIOUS query key —
+  // and after a result-type switch that is a different *index*, whose per-index
+  // blocks (`ordering.options`, above all) name attributes the new index does not
+  // have. Record which type the currently-rendered payload came from so callers
+  // can ignore those blocks until the matching response lands.
+  const settledResultType = useRef<ResultType | undefined>(undefined);
+  if (!query.isPlaceholderData && data !== undefined) settledResultType.current = resultType;
+  const dataResultType = query.isPlaceholderData ? settledResultType.current : resultType;
+
   const hasNextPage = data ? data.offset + data.limit < data.count : false;
   useEffect(() => {
     if (!hasNextPage || !data) return;
@@ -58,6 +68,7 @@ export function useSearchResults(resultType: ResultType, queryState: QueryState,
     baseFacetURL,
     apiUrl,
     data: data ?? EMPTY_SEARCH_RESULT,
+    dataResultType,
     isFetching: query.isFetching,
     isLoading: query.isLoading,
   };

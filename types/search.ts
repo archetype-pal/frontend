@@ -48,6 +48,12 @@ export interface GraphListItem {
   character?: string;
   character_type?: string;
   hand_name?: string;
+  locus?: string;
+  type?: string;
+  scribe?: string;
+  place?: string;
+  date_min?: number;
+  date_max?: number;
 }
 
 export interface ScribeListItem {

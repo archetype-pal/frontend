@@ -15,6 +15,7 @@ import {
   type ActiveFacetTag,
   type QueryState,
 } from '@/lib/search-query';
+import { canonicalSortAttribute, formatOrdering } from '@/lib/search-sort';
 import type { SearchResult } from '@/utils/fetch-facets';
 
 export function getNextOrderingUrl(
@@ -26,7 +27,7 @@ export function getNextOrderingUrl(
   // Columns declare sortKey in the `_exact` convention used for filters, but the
   // server emits canonical ordering option names (e.g. `name`/`-name`). Strip the
   // suffix so the lookup matches — otherwise it never finds an option (dead branch).
-  const canonicalKey = sortKey.replace(/_exact$/, '');
+  const canonicalKey = canonicalSortAttribute(sortKey);
   const group = ordering.options.filter(
     (option) => option.name === canonicalKey || option.name === `-${canonicalKey}`
   );
@@ -141,17 +142,52 @@ export function useSearchQuery(opts: {
         return;
       }
       if (ck) {
-        const nextAsc = ck === sortKey ? !ascending : true;
-        setSortKey(ck);
+        // Canonicalise before comparing AND before storing: columns hand us the
+        // `_exact` filter form while the dropdown (handleSortChange) writes the
+        // bare attribute. Comparing the two conventions makes every other click
+        // look like a *different* column and resets to ascending instead of
+        // toggling. The backend strips `_exact` anyway, so the canonical form is
+        // also the more honest thing to put in the URL.
+        const canonicalKey = canonicalSortAttribute(ck);
+        const nextAsc = canonicalKey === sortKey ? !ascending : true;
+        setSortKey(canonicalKey);
         setAscending(nextAsc);
         setQueryState((prev) => ({
           ...prev,
-          ordering: `${nextAsc ? '' : '-'}${ck}`,
+          ordering: formatOrdering(canonicalKey, !nextAsc),
           offset: 0,
         }));
       }
     },
     [sortKey, ascending, baseFacetURL]
+  );
+
+  /**
+   * Set the sort outright, as opposed to `handleSort`'s toggle semantics (which
+   * exist for column-header clicks). Used by the Sort-by dropdown, which is
+   * available in every view mode — including grid, where there are no headers to
+   * click. `attribute: null` clears back to relevance.
+   *
+   * Mirrors the choice into the local sortKey/ascending bookkeeping so a
+   * subsequent column-header click toggles from what the user just picked
+   * instead of from stale state — which only holds because both paths store the
+   * canonical attribute (see `handleSort`).
+   */
+  const handleSortChange = React.useCallback(
+    (next: { attribute: string | null; descending: boolean }) => {
+      const { descending } = next;
+      const attribute = next.attribute ? canonicalSortAttribute(next.attribute) : null;
+      setSortKey(attribute);
+      setAscending(!descending);
+      setQueryState((prev) => ({
+        ...prev,
+        ordering: attribute ? formatOrdering(attribute, descending) : null,
+        // Re-sorting while stranded on page 7 shows a slice of the new order
+        // that looks arbitrary; always land back on the first page.
+        offset: 0,
+      }));
+    },
+    []
   );
 
   return {
@@ -168,5 +204,6 @@ export function useSearchQuery(opts: {
     handleClearDateFilters: handleClearDateFiltersLocal,
     handleRemoveTag,
     handleSort,
+    handleSortChange,
   };
 }

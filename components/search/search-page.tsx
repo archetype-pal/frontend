@@ -10,6 +10,7 @@ import { ActiveFacetTags } from '@/components/filters/active-facet-tags';
 import { ResultTypeToggle } from '@/components/search/result-type-toggle';
 import { SearchActionsMenu } from '@/components/search/search-actions-menu';
 import { ViewSwitcher } from '@/components/search/view-switcher';
+import { SortControl } from '@/components/search/sort-control';
 import { ThumbnailSizeControl } from '@/components/search/thumbnail-size-control';
 import { useThumbnailSize } from '@/hooks/search/use-thumbnail-size';
 import { SearchKeywordBar } from '@/components/search/search-keyword-bar';
@@ -94,6 +95,14 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            {/* Sort works in every view, not just by clicking table headers —
+                grid is where the sort was most missed (frontend#67). */}
+            <SortControl
+              ordering={s.sortOrdering}
+              value={s.queryState.ordering}
+              onChange={s.handleSortChange}
+              className="hidden sm:inline-flex"
+            />
             <ViewSwitcher
               viewMode={s.viewMode}
               setViewMode={s.setViewMode}
@@ -216,6 +225,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               exportBusy={s.exportBusy}
               resultType={s.resultType}
               isResearcher={s.visibility.isResearcher}
+              ordering={s.sortOrdering}
+              sortValue={s.queryState.ordering}
+              onSortChange={s.handleSortChange}
             />
           </div>
         </div>
@@ -321,7 +333,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   <ResultsTable
                     resultType={s.resultType}
                     results={s.filtered as ResultListItem[]}
-                    ordering={s.data.ordering}
+                    ordering={s.sortOrdering}
                     onSort={s.handleSort}
                     highlightKeyword={s.submittedKeyword}
                     visibleColumns={s.categoryConfig.visibleColumns}

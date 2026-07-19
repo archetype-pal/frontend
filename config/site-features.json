@@ -46,7 +46,6 @@
         "Repository",
         "Repository City",
         "Shelfmark",
-        "Category Number",
         "Doc. Type",
         "Thumbnail",
         "Ann."
@@ -88,6 +87,8 @@
         "Shelfmark",
         "Document Date",
         "Allograph",
+        "Character",
+        "Hand Name",
         "Thumbnail"
       ],
       "visibleFacets": [
