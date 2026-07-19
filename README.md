@@ -91,5 +91,7 @@ pnpm lint:fix
 pnpm test
 ```
 
-A [justfile](justfile) wraps these plus the docker recipes — run `just` with
-no arguments to list everything (`just dev`, `just up`, `just lint`, …).
+A [justfile](justfile) drives the fully dockerized workflow — every recipe
+runs inside the dev container, no host Node needed. Run `just` with no
+arguments to list everything (`just up`, `just lint`, `just test`, …). The
+pnpm commands above remain available for host-native development.
