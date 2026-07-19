@@ -1143,6 +1143,7 @@
         "unrepresentableTitle": "Formulaire structuré indisponible",
         "unrepresentableBody": "Cette zone contient du TEI au-delà du modèle du formulaire structuré ; elle ne peut être modifiée qu'en mode source. Le balisage stocké est préservé à l'identique.",
         "proseHint": "Prose TEI — éditeur riche à venir en phase 3",
+        "leafNotRepresentable": "Balisage non représentable en texte enrichi — édition en source TEI",
         "loading": "Chargement…",
         "previewEmpty": "Rien à prévisualiser pour l'instant.",
         "toastSaved": "Zone de description enregistrée",

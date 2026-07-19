@@ -3,13 +3,8 @@
 import { useTranslations } from 'next-intl';
 
 import type { HistoryState, MsKeyedText, MsOrigDate, MsOrigPlace } from '@/lib/msdesc-form';
-import {
-  MsAddButton,
-  MsOptionalSection,
-  MsProseTextarea,
-  MsSubsection,
-  MsTextField,
-} from './fields';
+import { MsAddButton, MsOptionalSection, MsSubsection, MsTextField } from './fields';
+import { MsDescLeafEditor } from './msdesc-leaf-editor';
 
 const opt = (value: string): string | undefined => (value === '' ? undefined : value);
 
@@ -155,7 +150,7 @@ export function HistoryForm({
                 }
               />
             </div>
-            <MsProseTextarea
+            <MsDescLeafEditor
               label={f('provenance')}
               value={provenance.innerXml}
               onChange={(v) =>
@@ -189,7 +184,7 @@ export function HistoryForm({
               onChange={(v) => set({ acquisition: { ...acquisition, when: opt(v) } })}
               className="max-w-48"
             />
-            <MsProseTextarea
+            <MsDescLeafEditor
               label={f('acquisition')}
               value={acquisition.innerXml}
               onChange={(v) => set({ acquisition: { ...acquisition, innerXml: v } })}

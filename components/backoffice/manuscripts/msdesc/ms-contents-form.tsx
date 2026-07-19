@@ -3,7 +3,8 @@
 import { useTranslations } from 'next-intl';
 
 import type { MsContentsState, MsItemState, MsKeyedText, MsTextLang } from '@/lib/msdesc-form';
-import { MsAddButton, MsProseTextarea, MsSubsection, MsTextField } from './fields';
+import { MsAddButton, MsSubsection, MsTextField } from './fields';
+import { MsDescLeafEditor } from './msdesc-leaf-editor';
 
 const opt = (value: string): string | undefined => (value === '' ? undefined : value);
 
@@ -33,7 +34,7 @@ export function MsContentsForm({
 
   return (
     <div className="space-y-4">
-      <MsProseTextarea
+      <MsDescLeafEditor
         label={f('summary')}
         value={state.summaryInnerXml ?? ''}
         onChange={(v) => set({ summaryInnerXml: opt(v) })}
@@ -176,7 +177,7 @@ function MsItemForm({
           onChange={(v) => set({ finalRubric: opt(v) })}
         />
       </div>
-      <MsProseTextarea
+      <MsDescLeafEditor
         label={f('note')}
         value={item.noteInnerXml ?? ''}
         onChange={(v) => set({ noteInnerXml: opt(v) })}

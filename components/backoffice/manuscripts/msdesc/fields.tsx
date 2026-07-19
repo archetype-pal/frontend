@@ -120,18 +120,27 @@ export function MsVocabSelect<V extends MsDescVocabId>({
 
 /**
  * Verbatim TEI-prose leaf (`<p>`-sequence inner XML) as a monospace textarea.
- * Phase 3 mounts the rich editor on these same strings.
+ * Since Phase 3.1 this is the **fallback path** of {@link MsDescLeafEditor}: it
+ * edits the raw string byte-for-byte, so a leaf whose markup can't be
+ * represented by the rich model is still editable without loss. `hint` overrides
+ * the caption (the leaf editor passes the "not representable as rich" note).
  */
 export function MsProseTextarea({
   label,
   value,
   onChange,
   className,
+  placeholder,
+  disabled,
+  hint,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  hint?: string;
 }) {
   const t = useTranslations('backoffice');
   const id = useId();
@@ -141,12 +150,16 @@ export function MsProseTextarea({
         <label htmlFor={id} className="text-xs font-medium text-muted-foreground">
           {label}
         </label>
-        <span className="text-[10px] text-muted-foreground/70">{t('msdesc.editor.proseHint')}</span>
+        <span className="text-[10px] text-muted-foreground/70">
+          {hint ?? t('msdesc.editor.proseHint')}
+        </span>
       </div>
       <textarea
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        disabled={disabled}
         spellCheck={false}
         className="min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
       />

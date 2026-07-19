@@ -15,12 +15,12 @@ import type {
 import {
   MsAddButton,
   MsOptionalSection,
-  MsProseTextarea,
   MsRemoveButton,
   MsSubsection,
   MsTextField,
   MsVocabSelect,
 } from './fields';
+import { MsDescLeafEditor } from './msdesc-leaf-editor';
 
 const opt = (value: string): string | undefined => (value === '' ? undefined : value);
 
@@ -82,7 +82,7 @@ export function PhysDescForm({
           onChange={(v) => setSupport({ condition: opt(v) })}
         />
       </div>
-      <MsProseTextarea
+      <MsDescLeafEditor
         label={f('collation')}
         value={supportDesc.collationInnerXml ?? ''}
         onChange={(v) => setSupport({ collationInnerXml: opt(v) })}
@@ -175,7 +175,7 @@ export function PhysDescForm({
                 onChange={(v) => setObject({ layout: { ...layout, topLine: v } })}
               />
             </div>
-            <MsProseTextarea
+            <MsDescLeafEditor
               label={sec('layoutDesc')}
               value={layout.innerXml}
               onChange={(v) => setObject({ layout: { ...layout, innerXml: v } })}
@@ -246,7 +246,7 @@ export function PhysDescForm({
       >
         {state.decoDesc && (
           <div className="space-y-2">
-            <MsProseTextarea
+            <MsDescLeafEditor
               label={f('summary')}
               value={state.decoDesc.summaryInnerXml ?? ''}
               onChange={(v) => set({ decoDesc: { ...state.decoDesc!, summaryInnerXml: opt(v) } })}
@@ -290,7 +290,7 @@ export function PhysDescForm({
       </MsOptionalSection>
 
       {/* additions */}
-      <MsProseTextarea
+      <MsDescLeafEditor
         label={sec('additions')}
         value={state.additionsInnerXml ?? ''}
         onChange={(v) => set({ additionsInnerXml: opt(v) })}
@@ -323,7 +323,7 @@ export function PhysDescForm({
                 placeholder="true"
               />
             </div>
-            <MsProseTextarea
+            <MsDescLeafEditor
               label={sec('bindingDesc')}
               value={state.binding.innerXml}
               onChange={(v) => set({ binding: { ...state.binding!, innerXml: v } })}
@@ -333,7 +333,7 @@ export function PhysDescForm({
       </MsOptionalSection>
 
       {/* accMat */}
-      <MsProseTextarea
+      <MsDescLeafEditor
         label={f('accMat')}
         value={state.accMatInnerXml ?? ''}
         onChange={(v) => set({ accMatInnerXml: opt(v) })}
@@ -462,7 +462,7 @@ function HandNoteRow({
           placeholder="brown-ink"
         />
       </div>
-      <MsProseTextarea
+      <MsDescLeafEditor
         label={f('note')}
         value={handNote.innerXml}
         onChange={(v) => onChange({ ...handNote, innerXml: v })}
@@ -496,7 +496,7 @@ function DecoNoteRow({
         onChange={(v) => onChange({ ...decoNote, type: v })}
         className="max-w-64"
       />
-      <MsProseTextarea
+      <MsDescLeafEditor
         label={f('note')}
         value={decoNote.innerXml}
         onChange={(v) => onChange({ ...decoNote, innerXml: v })}
