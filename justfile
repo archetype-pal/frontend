@@ -1,9 +1,9 @@
 # Archetype frontend — local development recipes, all running in Docker.
 #
 # Nothing here touches a host Node toolchain: every recipe executes inside the
-# dev image (dev.Dockerfile) via docker compose. Source is bind-mounted, deps
-# and build cache live in named volumes. Staging/production run from the
-# infrastructure repo — nothing here deploys anywhere.
+# dev image (dev.Dockerfile) via docker compose. Source is bind-mounted and
+# deps live in a shared volume. Staging/production run from the infrastructure
+# repo — nothing here deploys anywhere.
 #
 # First run: just up — no env setup needed; compose.yml carries the
 # container-topology env (a .env is only needed for host-native `pnpm dev`).

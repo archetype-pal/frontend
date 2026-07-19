@@ -1,20 +1,16 @@
-# Containerized local dev — run the frontend without a host Node toolchain:
-# just `docker compose up` (or `just up`). Staging/production run from the
-# infrastructure repo using images built from Dockerfile; this file never
-# deploys anything.
+# Containerized local dev: `just up` (or `docker compose up`). No host Node
+# toolchain or .env needed — the environment below carries the container
+# topology. Staging/production run from the infrastructure repo; this file
+# never deploys anything.
 services:
   frontend:
     build:
       context: .
       dockerfile: dev.Dockerfile
-    # Container-topology env, set here so `docker compose up` works with any
-    # (or no) .env — process env beats .env files in Next. Browser-facing
-    # URLs stay on localhost (the backend ports are published on the host);
-    # only in-container server-side fetches use host.docker.internal:
-    # INTERNAL_API_URL for SSR/route handlers, and the IIIF upstream, which
-    # is consumed exclusively by the server-side /iiif-proxy rewrite.
-    # Values beyond these still come from .env if present.
     environment:
+      # Browser-facing URLs stay on localhost (the backend publishes its
+      # ports on the host); only in-container server-side fetches use
+      # host.docker.internal (INTERNAL_API_URL and the /iiif-proxy upstream).
       NEXT_PUBLIC_API_URL: http://localhost:8000
       INTERNAL_API_URL: http://host.docker.internal:8000
       NEXT_PUBLIC_IIIF_UPSTREAM: http://host.docker.internal:8182
@@ -23,19 +19,14 @@ services:
     ports:
       - '3000:3000'
     extra_hosts:
-      # On Linux engines this maps host.docker.internal to the host so the
-      # dev server's SSR fetches reach the backend stack on :8000/:8182.
-      # Docker Desktop (macOS/Windows) provides the name natively.
+      # Linux engines; Docker Desktop (macOS/Windows) provides this natively.
       - 'host.docker.internal:host-gateway'
     volumes:
       - .:/app
-      # Named volume so `docker compose run` one-offs — the just recipes for
-      # lint/test/build — reuse the same deps instead of re-seeding a throwaway
-      # copy per run. Seeded from the image on first use; `just install`
-      # refreshes it after lockfile changes.
+      # Shared deps volume, refreshed via `just install`. .next stays
+      # per-container: Next keeps a dev-server lock in .next/dev that
+      # deadlocks when shared.
       - node_modules:/app/node_modules
-      # .next stays per-container (anonymous): Next 16 keeps a dev-server lock
-      # in .next/dev, and sharing it across containers deadlocks on stale locks.
       - /app/.next
 
 volumes:
