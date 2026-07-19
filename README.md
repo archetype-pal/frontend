@@ -49,15 +49,29 @@ pnpm build
 
 ## Local Development (docker compose)
 
-Copy env setting, then start project :
+Runs on its **own** network (not joined to the backend stack's Docker network).
+The **browser** talks to the backend on the public `localhost` URLs from `.env`;
+the **Next server** (SSR/route handlers/`/iiif-proxy`) reaches it through the
+host's published ports via `host.docker.internal`, using the server-only
+`INTERNAL_API_URL` / `INTERNAL_IIIF_UPSTREAM` set in `compose.yml`. (The backend
+already allows the `host.docker.internal` Host — `api/config/.env` `ALLOWED_HOSTS`.)
+
+Requires the backend stack to be running first (`just up` in `api/`, which
+publishes the API on `localhost:8000` and IIIF on `localhost:1024`), then:
 
 ```bash
-cp .env.dev-compose .env
-docker compose up
+cp .env.example .env
+docker compose up   # or: just up
 ```
 
-Live reload is enabled. We assume backend services are running on `localhost` and reachable from the container. If not, adjust the `.env`.
-If backend/image services are on your machine, they must also be reachable from the container and from client devices (CORS and host/IP values in env vars may need to be updated).
+Live reload is enabled.
+
+After changing dependencies (`pnpm-lock.yaml`), rebuild the image and refresh
+the container's `node_modules` volume:
+
+```bash
+just rebuild   # docker compose up --build --renew-anon-volumes
+```
 
 App URL: `http://localhost:3000`
 

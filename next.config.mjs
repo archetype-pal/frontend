@@ -11,11 +11,18 @@ const requireEnv = (key) => {
   return value;
 };
 
-// Proxy IIIF (Sipi) so same-origin requests avoid CORS when frontend is on different port.
-// Set NEXT_PUBLIC_IIIF_UPSTREAM in Docker to e.g. http://image_server:1024 so the server can reach Sipi.
-const IIIF_UPSTREAM = requireEnv('NEXT_PUBLIC_IIIF_UPSTREAM').replace(/\/$/, '');
-// API base for rewrites.
-const API_BASE = requireEnv('NEXT_PUBLIC_API_URL').replace(/\/$/, '');
+// Proxy IIIF (Sipi) so same-origin requests avoid CORS when frontend is on a
+// different port. These rewrites run in the Next SERVER, so when it can't reach
+// the backend on the public host (e.g. inside a container) set the server-only
+// INTERNAL_IIIF_UPSTREAM / INTERNAL_API_URL (e.g. http://host.docker.internal:1024)
+// — the browser keeps using the public NEXT_PUBLIC_* origins.
+const IIIF_UPSTREAM = (
+  process.env.INTERNAL_IIIF_UPSTREAM?.trim() || requireEnv('NEXT_PUBLIC_IIIF_UPSTREAM')
+).replace(/\/$/, '');
+// API base for rewrites (server-side; internal override when containerized).
+const API_BASE = (
+  process.env.INTERNAL_API_URL?.trim() || requireEnv('NEXT_PUBLIC_API_URL')
+).replace(/\/$/, '');
 const ALLOWED_ORIGINS = requireEnv('CORS_ALLOWED_ORIGINS');
 
 const nextConfig = {

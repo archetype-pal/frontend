@@ -1,10 +1,48 @@
-Dockerfile
-.dockerignore
+# Shared by Dockerfile (prod) and dev.Dockerfile.
+# Keep runtime/build inputs in the context: app source, public/, messages/,
+# config/, scripts/, and the pnpm manifests.
+
+# Dependency and package-manager caches
 node_modules
-npm-debug.log
-README.md
+**/node_modules
+.pnpm-store
+
+# Build output, caches, logs
 .next
+out
+coverage
+*.tsbuildinfo
+.pytest_cache
+npm-debug.log*
+pnpm-debug.log*
+
+# Env files — images get env from build ARGs (prod) or compose/.env bind mount (dev)
+.env*
+
+# VCS and repo tooling (changes here shouldn't invalidate image layers)
 .git
-.env
-.env.local
-.env.*.local
+.githooks
+.github
+.vscode
+.dockerignore
+Dockerfile
+dev.Dockerfile
+compose.yml
+justfile
+components.json
+.prettierrc
+.prettierignore
+
+# Tests and CI-only tooling
+vitest.config.ts
+vitest.setup.ts
+**/*.test.*
+mock
+.bundle-budget.json
+lighthouserc.json
+.openapi.json
+
+# Docs
+README.md
+AGENTS.md
+docs
