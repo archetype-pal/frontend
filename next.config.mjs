@@ -20,8 +20,11 @@ const toIPv4Loopback = (url) => url.replace(/^(https?:\/\/)localhost(?=[:/]|$)/,
 // Proxy IIIF (Sipi) so same-origin requests avoid CORS when frontend is on different port.
 // Set NEXT_PUBLIC_IIIF_UPSTREAM in Docker to e.g. http://image_server:1024 so the server can reach Sipi.
 const IIIF_UPSTREAM = toIPv4Loopback(requireEnv('NEXT_PUBLIC_IIIF_UPSTREAM').replace(/\/$/, ''));
-// API base for rewrites.
-const API_BASE = toIPv4Loopback(requireEnv('NEXT_PUBLIC_API_URL').replace(/\/$/, ''));
+// API base for rewrites — these are fetched server-side, so prefer the
+// in-container override (INTERNAL_API_URL) when set.
+const API_BASE = toIPv4Loopback(
+  (process.env.INTERNAL_API_URL?.trim() || requireEnv('NEXT_PUBLIC_API_URL')).replace(/\/$/, '')
+);
 const ALLOWED_ORIGINS = requireEnv('CORS_ALLOWED_ORIGINS');
 
 const nextConfig = {

@@ -6,7 +6,9 @@
 
 import { env } from '@/lib/env';
 
-export const API_BASE_URL = env.apiUrl;
+// SSR and route handlers fetch via the server-side base (which may differ in
+// the containerized dev mode); the browser always uses the public URL.
+export const API_BASE_URL = typeof window === 'undefined' ? env.serverApiUrl : env.apiUrl;
 
 /** Threshold in ms – requests slower than this are flagged when logging. */
 const SLOW_THRESHOLD = 500;
