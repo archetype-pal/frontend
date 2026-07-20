@@ -56,6 +56,10 @@ interface UploadManagerValue {
   activeCount: number;
   enqueue: (files: EnqueueFile[], target: EnqueueTarget) => void;
   cancel: (id: string) => void;
+  /** Re-run a failed/canceled item. Works only while the tab is open (the
+   *  File is still in memory); the server resume then re-sends just the
+   *  chunks it hasn't already received. */
+  retry: (id: string) => void;
   dismiss: (id: string) => void;
   clearFinished: () => void;
 }
@@ -210,6 +214,19 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     [patch]
   );
 
+  const retry = useCallback(
+    (id: string) => {
+      const item = itemsRef.current.get(id);
+      // Only failed/canceled, still-in-memory items can be retried. (After a
+      // full reload the item is gone entirely — the File can't be recovered.)
+      if (!item || (item.status !== 'error' && item.status !== 'canceled')) return;
+      patch(id, { status: 'pending', phase: null, sentBytes: 0, message: '', error: '' });
+      queueRef.current.push(id);
+      void drain();
+    },
+    [patch, drain]
+  );
+
   const dismiss = useCallback((id: string) => {
     itemsRef.current.delete(id);
     setItems((prev) => prev.filter((it) => it.id !== id));
@@ -238,8 +255,8 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
   }, [activeCount]);
 
   const value = useMemo(
-    () => ({ items, activeCount, enqueue, cancel, dismiss, clearFinished }),
-    [items, activeCount, enqueue, cancel, dismiss, clearFinished]
+    () => ({ items, activeCount, enqueue, cancel, retry, dismiss, clearFinished }),
+    [items, activeCount, enqueue, cancel, retry, dismiss, clearFinished]
   );
 
   return <UploadManagerContext.Provider value={value}>{children}</UploadManagerContext.Provider>;

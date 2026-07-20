@@ -1,6 +1,14 @@
 'use client';
 
-import { AlertCircle, CheckCircle2, FileWarning, Loader2, UploadCloud, X } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  FileWarning,
+  Loader2,
+  RotateCcw,
+  UploadCloud,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FloatingPanel } from '@/components/backoffice/common/floating-panel';
 import { cn } from '@/lib/utils';
@@ -18,7 +26,7 @@ import {
  * when there is nothing to show.
  */
 export function UploadTray() {
-  const { items, activeCount, dismiss, cancel, clearFinished } = useUploadManager();
+  const { items, activeCount, dismiss, cancel, retry, clearFinished } = useUploadManager();
   if (items.length === 0) return null;
 
   const finishedCount = items.filter((it) => UPLOAD_TERMINAL_STATUSES.includes(it.status)).length;
@@ -45,6 +53,7 @@ export function UploadTray() {
             key={item.id}
             item={item}
             onCancel={() => cancel(item.id)}
+            onRetry={() => retry(item.id)}
             onDismiss={() => dismiss(item.id)}
           />
         ))}
@@ -56,13 +65,16 @@ export function UploadTray() {
 function UploadTrayItem({
   item,
   onCancel,
+  onRetry,
   onDismiss,
 }: {
   item: UploadItem;
   onCancel: () => void;
+  onRetry: () => void;
   onDismiss: () => void;
 }) {
   const active = item.status === 'uploading' || item.status === 'processing';
+  const retryable = item.status === 'error' || item.status === 'canceled';
   const pct =
     item.totalBytes > 0 ? Math.min(100, Math.round((item.sentBytes / item.totalBytes) * 100)) : 0;
 
@@ -116,17 +128,31 @@ function UploadTrayItem({
           )}
         </div>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 shrink-0"
-          aria-label={active ? `Cancel upload of ${item.file.name}` : `Dismiss ${item.file.name}`}
-          onClick={active ? onCancel : onDismiss}
-          disabled={item.status === 'pending'}
-        >
-          <X className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex shrink-0 items-center gap-0.5">
+          {retryable && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              aria-label={`Retry upload of ${item.file.name}`}
+              onClick={onRetry}
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            aria-label={active ? `Cancel upload of ${item.file.name}` : `Dismiss ${item.file.name}`}
+            onClick={active ? onCancel : onDismiss}
+            disabled={item.status === 'pending'}
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
     </li>
   );
