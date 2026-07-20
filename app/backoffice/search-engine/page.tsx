@@ -37,6 +37,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { FloatingPanel } from '@/components/backoffice/common/floating-panel';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import {
   getSearchEngineStats,
@@ -741,29 +742,23 @@ function TaskProgressPanel({
   ).length;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-[380px] max-h-[50vh] overflow-auto rounded-lg border bg-card shadow-lg">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b px-3 py-2">
-        <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">
-            {t('searchEngine.tasksPanelTitle', { count: tasks.length })}
-          </span>
-        </div>
-        {completedCount > 0 && (
+    <FloatingPanel
+      title={t('searchEngine.tasksPanelTitle', { count: tasks.length })}
+      icon={<Activity className="h-4 w-4 text-primary" />}
+      action={
+        completedCount > 0 ? (
           <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={onDismissCompleted}>
             {t('searchEngine.clearCompleted')}
           </Button>
-        )}
-      </div>
-
-      {/* Task list */}
+        ) : null
+      }
+    >
       <div className="divide-y">
         {tasks.map((task) => (
           <TaskProgressItem key={task.taskId} task={task} onDismiss={onDismiss} t={t} />
         ))}
       </div>
-    </div>
+    </FloatingPanel>
   );
 }
 
