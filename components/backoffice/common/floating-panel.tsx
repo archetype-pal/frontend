@@ -56,7 +56,7 @@ export function FloatingPanel({
               size="icon"
               className="h-6 w-6"
               onClick={onToggleCollapse}
-              aria-label={collapsed ? 'Expand upload panel' : 'Collapse upload panel'}
+              aria-label={collapsed ? 'Expand panel' : 'Collapse panel'}
               aria-expanded={!collapsed}
             >
               {collapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}

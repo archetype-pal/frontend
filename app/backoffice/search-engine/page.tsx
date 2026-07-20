@@ -737,6 +737,7 @@ function TaskProgressPanel({
   onDismissCompleted: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
   const completedCount = tasks.filter(
     (task) => task.status && ['SUCCESS', 'FAILURE'].includes(task.status.state)
   ).length;
@@ -745,8 +746,10 @@ function TaskProgressPanel({
     <FloatingPanel
       title={t('searchEngine.tasksPanelTitle', { count: tasks.length })}
       icon={<Activity className="h-4 w-4 text-primary" />}
+      collapsed={collapsed}
+      onToggleCollapse={() => setCollapsed((c) => !c)}
       action={
-        completedCount > 0 ? (
+        completedCount > 0 && !collapsed ? (
           <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={onDismissCompleted}>
             {t('searchEngine.clearCompleted')}
           </Button>
