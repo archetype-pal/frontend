@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -27,6 +28,7 @@ import {
  */
 export function UploadTray() {
   const { items, activeCount, dismiss, cancel, retry, clearFinished } = useUploadManager();
+  const [collapsed, setCollapsed] = useState(false);
   if (items.length === 0) return null;
 
   const finishedCount = items.filter((it) => UPLOAD_TERMINAL_STATUSES.includes(it.status)).length;
@@ -39,8 +41,10 @@ export function UploadTray() {
     <FloatingPanel
       title={title}
       icon={<UploadCloud className="h-4 w-4 text-primary" />}
+      collapsed={collapsed}
+      onToggleCollapse={() => setCollapsed((c) => !c)}
       action={
-        finishedCount > 0 ? (
+        finishedCount > 0 && !collapsed ? (
           <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={clearFinished}>
             Clear finished
           </Button>
