@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
@@ -89,6 +90,7 @@ const UploadManagerContext = createContext<UploadManagerValue | null>(null);
 export function UploadManagerProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [items, setItems] = useState<UploadItem[]>([]);
 
   // Refs mirror state for the sequential runner, which reads/advances outside
@@ -120,6 +122,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
   const drain = useCallback(async () => {
     if (drainingRef.current) return;
     drainingRef.current = true;
+    let created = 0;
     try {
       while (queueRef.current.length > 0) {
         const id = queueRef.current.shift()!;
@@ -153,6 +156,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
             }
           );
           patch(id, { status: 'done', phase: 'complete', message: '' });
+          created++;
           invalidateManuscript(item.historicalItemId);
         } catch (err) {
           if (err instanceof DOMException && err.name === 'AbortError') {
@@ -173,10 +177,25 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           controllers.current.delete(id);
         }
       }
+      if (created > 0) {
+        // Search is refreshed manually in this system (see the search-engine
+        // page, which flags out-of-sync segments). Nudge once per batch so a
+        // newly uploaded image isn't silently missing from search.
+        toast.info(
+          `${created} image${created === 1 ? '' : 's'} uploaded — not searchable until reindex`,
+          {
+            description: 'Reindex Item Images / Item Parts to include them in search.',
+            action: {
+              label: 'Open Search Engine',
+              onClick: () => router.push('/backoffice/search-engine'),
+            },
+          }
+        );
+      }
     } finally {
       drainingRef.current = false;
     }
-  }, [patch, invalidateManuscript]);
+  }, [patch, invalidateManuscript, router]);
 
   const enqueue = useCallback(
     (files: EnqueueFile[], target: EnqueueTarget) => {
