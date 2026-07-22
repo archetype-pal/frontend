@@ -219,11 +219,54 @@ export function describeUploadError(err: unknown): string {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
+ * Poll an already-finalized session until the server-side conversion reaches
+ * a terminal state. Split out of `uploadImageFile` so a reload survivor can
+ * re-attach to a conversion it no longer holds the `File` for — once finalize
+ * succeeded, every byte lives server-side and only the polling loop was lost.
+ * Throws `UploadFailedError` when the server marks the session failed,
+ * `DOMException('AbortError')` if cancelled.
+ */
+export async function watchUploadSession(
+  token: string,
+  initial: UploadSession,
+  options: UploadImageOptions = {}
+): Promise<UploadSession> {
+  const { onProgress, signal, pollIntervalMs = 2000, processTimeoutMs = 30 * 60 * 1000 } = options;
+  let session = initial;
+  const total = session.declared_size;
+  const report = (progress: Omit<UploadProgress, 'totalBytes'>) =>
+    onProgress?.({ totalBytes: total, ...progress });
+
+  const deadline = Date.now() + processTimeoutMs;
+  while (session.status !== 'complete' && session.status !== 'failed') {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    if (Date.now() > deadline) {
+      throw new UploadFailedError('Timed out waiting for server-side processing.', session);
+    }
+    await sleep(pollIntervalMs);
+    session = await getUploadSession(token, session.id);
+    report({
+      phase: 'processing',
+      sentBytes: total,
+      message: session.task?.progress?.message,
+      session,
+    });
+  }
+
+  if (session.status === 'failed') {
+    throw new UploadFailedError(session.error || 'Upload processing failed.', session);
+  }
+  report({ phase: 'complete', sentBytes: total, session });
+  return session;
+}
+
+/**
  * Drive one file through the whole pipeline: create session → upload the
  * missing chunks (resumable) → finalize → poll until the server-side
  * conversion reaches a terminal state. Reports byte- and phase-level progress
- * via `onProgress`. Throws `UploadFailedError` if the server marks the session
- * failed, `DOMException('AbortError')` if cancelled.
+ * via `onProgress` (with the live session attached once it exists, so callers
+ * can persist its id). Throws `UploadFailedError` if the server marks the
+ * session failed, `DOMException('AbortError')` if cancelled.
  */
 export async function uploadImageFile(
   token: string,
@@ -264,37 +307,22 @@ export async function uploadImageFile(
       session.id,
       chunk.index,
       file.slice(chunk.start, chunk.end),
-      (loadedInChunk) => report({ phase: 'uploading', sentBytes: base + loadedInChunk }),
+      (loadedInChunk) => report({ phase: 'uploading', sentBytes: base + loadedInChunk, session }),
       signal
     );
     sentBytes = base + chunk.size;
-    report({ phase: 'uploading', sentBytes });
+    report({ phase: 'uploading', sentBytes, session });
   }
 
-  report({ phase: 'finalizing', sentBytes: total });
+  report({ phase: 'finalizing', sentBytes: total, session });
   session = await finalizeUploadSession(token, session.id);
 
-  const deadline = Date.now() + processTimeoutMs;
-  while (session.status !== 'complete' && session.status !== 'failed') {
-    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-    if (Date.now() > deadline) {
-      throw new UploadFailedError('Timed out waiting for server-side processing.', session);
-    }
-    await sleep(pollIntervalMs);
-    session = await getUploadSession(token, session.id);
-    report({
-      phase: 'processing',
-      sentBytes: total,
-      message: session.task?.progress?.message,
-      session,
-    });
-  }
-
-  if (session.status === 'failed') {
-    throw new UploadFailedError(session.error || 'Upload processing failed.', session);
-  }
-  report({ phase: 'complete', sentBytes: total, session });
-  return session;
+  return watchUploadSession(token, session, {
+    onProgress,
+    signal,
+    pollIntervalMs,
+    processTimeoutMs,
+  });
 }
 
 export { BackofficeApiError };

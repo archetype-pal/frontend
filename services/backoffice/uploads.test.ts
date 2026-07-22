@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   BackofficeApiError,
   ChunkUploadError,
@@ -6,7 +6,17 @@ import {
   describeUploadError,
   isConflictError,
   uploadErrorStatus,
+  watchUploadSession,
+  type UploadSession,
 } from './uploads';
+import { backofficeGet } from './api-client';
+
+// Mock only the transport; the real BackofficeApiError class must stay intact
+// for the error-helper tests below.
+vi.mock('./api-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./api-client')>();
+  return { ...actual, backofficeGet: vi.fn() };
+});
 
 describe('uploadErrorStatus / isConflictError', () => {
   it('reads the status from HTTP-shaped errors', () => {
@@ -50,5 +60,73 @@ describe('describeUploadError', () => {
     );
     expect(describeUploadError(new Error('boom'))).toBe('boom');
     expect(describeUploadError('weird')).toBe('Upload failed.');
+  });
+});
+
+describe('watchUploadSession', () => {
+  const mockedGet = vi.mocked(backofficeGet);
+
+  const session = (over: Partial<UploadSession> = {}): UploadSession => ({
+    id: 's1',
+    status: 'processing',
+    error: '',
+    item_part: 1,
+    original_filename: 'f12r.tif',
+    declared_size: 100,
+    chunk_size: 10,
+    total_chunks: 10,
+    received_chunks: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    missing_chunks: [],
+    destination_path: 'uploads/item-part-1/f12r.jp2',
+    subfolder: '',
+    locus: 'f.12r',
+    tags: '',
+    item_image: null,
+    task_id: 't1',
+    task: null,
+    ...over,
+  });
+
+  afterEach(() => {
+    mockedGet.mockReset();
+  });
+
+  it('polls until the session completes, reporting each state', async () => {
+    mockedGet
+      .mockResolvedValueOnce(session({ status: 'processing' }))
+      .mockResolvedValueOnce(session({ status: 'complete', item_image: 9 }));
+
+    const phases: string[] = [];
+    const result = await watchUploadSession('tok', session({ status: 'assembled' }), {
+      pollIntervalMs: 0,
+      onProgress: (p) => phases.push(p.phase),
+    });
+
+    expect(result.status).toBe('complete');
+    expect(result.item_image).toBe(9);
+    expect(phases).toEqual(['processing', 'processing', 'complete']);
+    expect(mockedGet).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns without polling when the session is already terminal', async () => {
+    const result = await watchUploadSession('tok', session({ status: 'complete' }));
+    expect(result.status).toBe('complete');
+    expect(mockedGet).not.toHaveBeenCalled();
+  });
+
+  it("throws UploadFailedError carrying the server's reason on failure", async () => {
+    mockedGet.mockResolvedValueOnce(session({ status: 'failed', error: 'tile smoke test failed' }));
+    await expect(watchUploadSession('tok', session(), { pollIntervalMs: 0 })).rejects.toThrow(
+      'tile smoke test failed'
+    );
+  });
+
+  it('stops with AbortError when the signal is already aborted', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      watchUploadSession('tok', session(), { signal: controller.signal })
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    expect(mockedGet).not.toHaveBeenCalled();
   });
 });
