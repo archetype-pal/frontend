@@ -14,6 +14,16 @@ describe('IIIF URL generation', () => {
     vi.unstubAllGlobals();
   });
 
+  it('drops an IIIF_HOST base path (nginx /sipi) instead of fusing it into the identifier', () => {
+    // Production serves SIPI behind nginx at IIIF_HOST=https://domain/sipi;
+    // the "/sipi" prefix is routing, not part of the SIPI identifier.
+    expect(
+      getIiifImageUrl('http://localhost/sipi/uploads%2Fitem-part-1%2Fa.jp2/info.json', {
+        thumbnail: true,
+      })
+    ).toBe('/iiif-proxy/uploads%2Fitem-part-1%2Fa.jp2/full/300,/0/default.jpg');
+  });
+
   it('keeps full-image max-size URLs on the requested best-fit dimensions', () => {
     expect(getIiifImageUrl(INFO_URL, { maxSize: 1200 })).toBe(
       `${PROXY_BASE}/full/!1200,1200/0/default.jpg`

@@ -121,12 +121,21 @@ describe('browserSafeIiifUrl', () => {
     });
   });
 
-  it('preserves percent-encoded segments in the path', () => {
+  it('preserves percent-encoded segments and drops the base path before them', () => {
     withWindow('https://example.test', () => {
-      // Sipi expects a single percent-encoded identifier segment.
+      // Sipi expects a single percent-encoded identifier segment; the "/iiif"
+      // base path is upstream routing, not part of the identifier.
       expect(browserSafeIiifUrl('https://upstream.test/iiif/folder%2Ffile/info.json')).toBe(
-        'https://example.test/iiif-proxy/iiif/folder%2Ffile'
+        'https://example.test/iiif-proxy/folder%2Ffile'
       );
+    });
+  });
+
+  it('drops an IIIF_HOST base path like /sipi behind nginx', () => {
+    withWindow('https://example.test', () => {
+      expect(
+        browserSafeIiifUrl('https://example.org/sipi/uploads%2Fitem-part-1%2Fa.jp2/info.json')
+      ).toBe('https://example.test/iiif-proxy/uploads%2Fitem-part-1%2Fa.jp2');
     });
   });
 

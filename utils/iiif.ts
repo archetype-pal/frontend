@@ -28,6 +28,23 @@ const IIIF_PREFIX_LEN: Record<string, number> = { sipi: 2, iiif: 2 };
 const IIIF_INFO_CACHE = new Map<string, IIIFImageInfo | null>();
 const IIIF_INFO_INFLIGHT = new Map<string, Promise<IIIFImageInfo | null>>();
 
+/**
+ * Drop an IIIF-server base path (e.g. nginx serving SIPI under "/sipi") from
+ * an absolute IIIF URL's pathname, keeping the identifier and everything after
+ * it. SIPI itself never sees the base path, so it must not reach the
+ * /iiif-proxy rewrite either. The identifier is the first segment containing
+ * an encoded slash (%2F): media paths always live in a subfolder, while
+ * base-path and IIIF parameter segments never contain %2F. Pathnames without
+ * such a segment are returned unchanged (e.g. dev, where IIIF_HOST has no
+ * base path).
+ */
+export function stripIiifBasePath(pathname: string): string {
+  const segments = pathname.split('/').filter(Boolean);
+  const idIdx = segments.findIndex((segment) => /%2f/i.test(segment));
+  if (idIdx <= 0) return pathname;
+  return '/' + segments.slice(idIdx).join('/');
+}
+
 function resolveInfoUrl(infoUrl: string): string {
   const trimmed = (infoUrl || '').trim();
   if (!trimmed) return trimmed;
@@ -54,8 +71,10 @@ function resolveInfoUrl(infoUrl: string): string {
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     try {
       const u = new URL(trimmed);
-      // Keep pathname encoding intact — %2F must stay encoded for SIPI.
-      return `/iiif-proxy${u.pathname}${u.search}`;
+      // Keep pathname encoding intact — %2F must stay encoded for SIPI — and
+      // drop any IIIF_HOST base path (e.g. "/sipi"): it's nginx routing, not
+      // part of the identifier.
+      return `/iiif-proxy${stripIiifBasePath(u.pathname)}${u.search}`;
     } catch {
       return trimmed;
     }

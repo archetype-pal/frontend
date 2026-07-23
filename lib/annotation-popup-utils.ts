@@ -1,4 +1,5 @@
 import type { DraftSharePayload } from '@/types/annotation-viewer';
+import { stripIiifBasePath } from '@/utils/iiif';
 
 export const metaKeyFor = (iiif: string) => `annotations:meta:${iiif}`;
 
@@ -54,7 +55,7 @@ export function browserSafeIiifUrl(raw: string): string {
   try {
     const u = new URL(raw);
     if (u.origin !== window.location.origin) {
-      const path = u.pathname.replace(/\/info\.json$/i, '');
+      const path = stripIiifBasePath(u.pathname.replace(/\/info\.json$/i, ''));
       return `${window.location.origin}/iiif-proxy${path}`;
     }
     return base;
