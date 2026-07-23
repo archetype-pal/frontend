@@ -5,9 +5,19 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { ChevronDown, Image as ImageIcon, Pencil, Plus, Trash2, Save, Loader2 } from 'lucide-react';
+import {
+  ChevronDown,
+  Image as ImageIcon,
+  ImagePlus,
+  Pencil,
+  Plus,
+  Trash2,
+  Save,
+  Loader2,
+} from 'lucide-react';
 import { IiifThumbnail } from '@/components/backoffice/common/iiif-thumbnail';
 import { ItemImageEditDialog } from './item-image-edit-dialog';
+import { ItemImageUploadDialog } from './item-image-upload-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -99,6 +109,7 @@ function ItemPartCard({
   const [customLabel, setCustomLabel] = useState(part.custom_label);
   const [dirty, setDirty] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const invalidate = () =>
     queryClient.invalidateQueries({
@@ -211,11 +222,22 @@ function ItemPartCard({
           </div>
 
           {/* Images */}
-          {part.images.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs font-medium text-muted-foreground">
                 {t('manuscriptsDetail.imagesHeading', { count: part.images.length })}
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1 text-xs"
+                onClick={() => setUploadOpen(true)}
+              >
+                <ImagePlus className="h-3 w-3" />
+                {t('manuscriptsDetail.addImages')}
+              </Button>
+            </div>
+            {part.images.length > 0 ? (
               <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                 {part.images.map((img) => (
                   <EditableImageThumbnail
@@ -225,7 +247,21 @@ function ItemPartCard({
                   />
                 ))}
               </div>
-            </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">
+                {t('manuscriptsDetail.noImagesYet')}
+              </p>
+            )}
+          </div>
+
+          {uploadOpen && (
+            <ItemImageUploadDialog
+              open={uploadOpen}
+              onOpenChange={setUploadOpen}
+              itemPartId={part.id}
+              itemPartLabel={part.display_label}
+              historicalItemId={historicalItemId}
+            />
           )}
 
           {/* Actions */}
