@@ -2189,6 +2189,8 @@
       "noPartsYet": "Aucune partie pour l'instant. Ajoutez une partie pour associer ce manuscrit à un volume physique.",
       "unsaved": "non enregistré",
       "imagesHeading": "Images ({count})",
+      "addImages": "Ajouter des images",
+      "noImagesYet": "Aucune image pour l'instant. Importez des scans pour cette partie.",
       "savePart": "Enregistrer la partie",
       "deletePartConfirmTitle": "Supprimer cette partie ?",
       "deletePartConfirmDescription": "Cela supprimera cette partie et la dissociera du manuscrit. Les images rattachées à cette partie seront également supprimées.",

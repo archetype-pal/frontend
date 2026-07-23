@@ -2189,6 +2189,8 @@
       "noPartsYet": "No parts yet. Add a part to link this manuscript to a physical volume.",
       "unsaved": "unsaved",
       "imagesHeading": "Images ({count})",
+      "addImages": "Add images",
+      "noImagesYet": "No images yet. Upload scans to this part.",
       "savePart": "Save Part",
       "deletePartConfirmTitle": "Delete this part?",
       "deletePartConfirmDescription": "This will remove this part and unlink it from the manuscript. Images attached to this part will also be removed.",
