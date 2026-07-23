@@ -186,6 +186,67 @@ export function partitionUploadBreadcrumbs(
   return out;
 }
 
+/** Crumb statuses that mean bytes are (or may be about to be) in flight.
+ *  Error/canceled crumbs exist only so a reload can offer recovery — they
+ *  must never make a file look "busy" to a sibling tab. */
+const IN_FLIGHT_STATUSES: readonly UploadBreadcrumbStatus[] = [
+  'pending',
+  'uploading',
+  'processing',
+];
+
+/**
+ * A live sibling tab already uploading the same (fileName, fileSize, itemPart)
+ * triple. The server's create-or-resume would hand this tab the SAME session,
+ * and two writers on one session used to 500 mid-chunk — so the manager parks
+ * the newcomer as "busy in another tab" instead of competing. Only in-flight
+ * crumbs count: once the other tab stops (canceled/error) or finishes (crumb
+ * removed), a fresh attempt here proceeds immediately.
+ */
+export function findActiveDuplicate(
+  crumbs: UploadBreadcrumb[],
+  item: { id: string; fileName: string; fileSize: number; itemPartId: number },
+  tabId: string,
+  now: number
+): UploadBreadcrumb | null {
+  const { foreignActive } = partitionUploadBreadcrumbs(crumbs, tabId, now);
+  return (
+    foreignActive.find(
+      (c) =>
+        c.id !== item.id &&
+        IN_FLIGHT_STATUSES.includes(c.status) &&
+        c.fileName === item.fileName &&
+        c.fileSize === item.fileSize &&
+        c.itemPartId === item.itemPartId
+    ) ?? null
+  );
+}
+
+/**
+ * A live foreign crumb driving the SAME server session that outranks ours.
+ * Closes the near-simultaneous-start tie the duplicate check can miss: both
+ * tabs got one session from create-or-resume, both recorded its id — the
+ * younger crumb (id as final tie-break) must yield. Ranking is deterministic
+ * and only the loser sees a rival, so at most one side ever yields.
+ */
+export function findSessionRival(
+  ours: UploadBreadcrumb,
+  crumbs: UploadBreadcrumb[],
+  now: number
+): UploadBreadcrumb | null {
+  if (!ours.sessionId) return null;
+  const { foreignActive } = partitionUploadBreadcrumbs(crumbs, ours.tabId, now);
+  return (
+    foreignActive.find(
+      (c) =>
+        c.id !== ours.id &&
+        IN_FLIGHT_STATUSES.includes(c.status) &&
+        c.sessionId === ours.sessionId &&
+        (c.createdAt < ours.createdAt || (c.createdAt === ours.createdAt && c.id < ours.id))
+    ) ?? null
+  );
+}
+
 export interface UploadBreadcrumbFileMatch {
   breadcrumb: UploadBreadcrumb;
   file: File;

@@ -3,6 +3,7 @@ import {
   BackofficeApiError,
   ChunkUploadError,
   UploadFailedError,
+  chunkErrorDetail,
   describeUploadError,
   isConflictError,
   uploadErrorStatus,
@@ -60,6 +61,34 @@ describe('describeUploadError', () => {
     );
     expect(describeUploadError(new Error('boom'))).toBe('boom');
     expect(describeUploadError('weird')).toBe('Upload failed.');
+  });
+});
+
+describe('chunkErrorDetail', () => {
+  it('prefers a JSON detail from the backend', () => {
+    expect(
+      chunkErrorDetail(
+        409,
+        '{"detail":"Session is \'processing\'; chunks are no longer accepted."}'
+      )
+    ).toContain('no longer accepted');
+  });
+
+  it('never surfaces an HTML error page (Django debug traceback)', () => {
+    const page =
+      '<!DOCTYPE html><html><head><title>FileNotFoundError at /api/v1/uploads/…</title></head>…';
+    expect(chunkErrorDetail(500, page)).toBe(
+      'Server error (500) while uploading a chunk — you can retry the upload.'
+    );
+  });
+
+  it('keeps a short plain-text body', () => {
+    expect(chunkErrorDetail(413, 'Request entity too large')).toBe('Request entity too large');
+  });
+
+  it('genericizes empty and over-long bodies', () => {
+    expect(chunkErrorDetail(502, '')).toContain('Server error (502)');
+    expect(chunkErrorDetail(500, 'x'.repeat(400))).toContain('Server error (500)');
   });
 });
 

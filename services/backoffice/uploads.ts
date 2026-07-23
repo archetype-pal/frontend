@@ -89,6 +89,25 @@ export class ChunkUploadError extends Error {
   }
 }
 
+/**
+ * Human-safe failure detail from a chunk-upload response body. A Django debug
+ * 500 returns a full HTML traceback page — that must never reach the tray or
+ * a toast (alarming, and it leaks internals). Prefer a JSON `detail`, tolerate
+ * a short plain-text body, and otherwise fall back to a generic message; the
+ * caller logs the raw body to the console for developers.
+ */
+export function chunkErrorDetail(status: number, responseText: string): string {
+  try {
+    const detail = (JSON.parse(responseText) as { detail?: unknown }).detail;
+    if (typeof detail === 'string' && detail) return detail;
+  } catch {
+    /* not JSON */
+  }
+  const text = responseText.trim();
+  if (text && !text.startsWith('<') && text.length <= 300) return text;
+  return `Server error (${status}) while uploading a chunk — you can retry the upload.`;
+}
+
 function putChunk(
   token: string,
   sessionId: string,
@@ -119,13 +138,9 @@ function putChunk(
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve();
       } else {
-        let detail = xhr.responseText;
-        try {
-          detail = JSON.parse(xhr.responseText).detail ?? detail;
-        } catch {
-          /* keep raw text */
-        }
-        reject(new ChunkUploadError(xhr.status, detail));
+        // Full body to the console for developers; a sanitized detail to the UI.
+        console.error(`Chunk ${index} upload failed (${xhr.status}):`, xhr.responseText);
+        reject(new ChunkUploadError(xhr.status, chunkErrorDetail(xhr.status, xhr.responseText)));
       }
     };
     xhr.onerror = () => {
