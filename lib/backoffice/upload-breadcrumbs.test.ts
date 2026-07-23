@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  findActiveDuplicate,
+  findSessionRival,
   getUploadTabId,
   listUploadBreadcrumbs,
   matchFilesToUploadBreadcrumbs,
@@ -144,6 +146,125 @@ describe('partitionUploadBreadcrumbs', () => {
     const out = partitionUploadBreadcrumbs([ancient], 'me', now);
     expect(out.expired).toEqual([ancient]);
     expect(out.adoptable).toEqual([]);
+  });
+});
+
+describe('findActiveDuplicate', () => {
+  const now = 10_000_000;
+  const item = { id: 'mine', fileName: 'f12r.tif', fileSize: 5, itemPartId: 3 };
+
+  it('finds a live foreign upload of the same file to the same part', () => {
+    const rival = crumb({ id: 'other', tabId: 'other-tab', updatedAt: now, fileSize: 5 });
+    expect(findActiveDuplicate([rival], item, 'me', now)).toEqual(rival);
+  });
+
+  it('ignores stale-foreign, own-tab, and different-target crumbs', () => {
+    const stale = crumb({
+      id: 'a',
+      tabId: 'other-tab',
+      updatedAt: now - UPLOAD_BREADCRUMB_STALE_MS - 1,
+      fileSize: 5,
+    });
+    const ownTab = crumb({ id: 'b', tabId: 'me', updatedAt: now, fileSize: 5 });
+    const otherPart = crumb({
+      id: 'c',
+      tabId: 'other-tab',
+      updatedAt: now,
+      fileSize: 5,
+      itemPartId: 4,
+    });
+    const otherSize = crumb({ id: 'd', tabId: 'other-tab', updatedAt: now, fileSize: 6 });
+    expect(findActiveDuplicate([stale, ownTab, otherPart, otherSize], item, 'me', now)).toBeNull();
+  });
+
+  it('ignores crumbs that are no longer in flight (stopped/failed in the other tab)', () => {
+    const canceled = crumb({
+      id: 'a',
+      tabId: 'other-tab',
+      updatedAt: now,
+      fileSize: 5,
+      status: 'canceled',
+    });
+    const errored = crumb({
+      id: 'b',
+      tabId: 'other-tab',
+      updatedAt: now,
+      fileSize: 5,
+      status: 'error',
+    });
+    expect(findActiveDuplicate([canceled, errored], item, 'me', now)).toBeNull();
+  });
+});
+
+describe('findSessionRival', () => {
+  const now = 10_000_000;
+  const ours = crumb({
+    id: 'b-item',
+    tabId: 'me',
+    sessionId: 's1',
+    createdAt: 2_000,
+    updatedAt: now,
+  });
+
+  it('yields to an older live crumb holding the same session', () => {
+    const older = crumb({
+      id: 'a-item',
+      tabId: 'other-tab',
+      sessionId: 's1',
+      createdAt: 1_000,
+      updatedAt: now,
+    });
+    expect(findSessionRival(ours, [older, ours], now)).toEqual(older);
+  });
+
+  it('does not yield to a younger crumb — that side yields instead', () => {
+    const younger = crumb({
+      id: 'c-item',
+      tabId: 'other-tab',
+      sessionId: 's1',
+      createdAt: 3_000,
+      updatedAt: now,
+    });
+    expect(findSessionRival(ours, [younger, ours], now)).toBeNull();
+  });
+
+  it('breaks created-at ties by id so exactly one side yields', () => {
+    const twin = crumb({
+      id: 'a-item',
+      tabId: 'other-tab',
+      sessionId: 's1',
+      createdAt: 2_000,
+      updatedAt: now,
+    });
+    expect(findSessionRival(ours, [twin, ours], now)).toEqual(twin); // 'a-item' < 'b-item': we yield
+    expect(findSessionRival(twin, [twin, ours], now)).toBeNull(); // the twin does not
+  });
+
+  it('ignores stale rivals, other sessions, and crumbs without a session', () => {
+    const staleRival = crumb({
+      id: 'a-item',
+      tabId: 'other-tab',
+      sessionId: 's1',
+      createdAt: 1_000,
+      updatedAt: now - UPLOAD_BREADCRUMB_STALE_MS - 1,
+    });
+    const otherSession = crumb({
+      id: 'c-item',
+      tabId: 'other-tab',
+      sessionId: 's2',
+      createdAt: 1_000,
+      updatedAt: now,
+    });
+    const stoppedRival = crumb({
+      id: 'd-item',
+      tabId: 'other-tab',
+      sessionId: 's1',
+      createdAt: 1_000,
+      updatedAt: now,
+      status: 'canceled',
+    });
+    expect(findSessionRival(ours, [staleRival, otherSession, stoppedRival, ours], now)).toBeNull();
+    expect(findSessionRival(crumb({ sessionId: '' }), [staleRival], now)).toBeNull();
   });
 });
 

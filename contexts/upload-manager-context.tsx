@@ -15,6 +15,8 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import {
+  findActiveDuplicate,
+  findSessionRival,
   getUploadTabId,
   listUploadBreadcrumbs,
   matchFilesToUploadBreadcrumbs,
@@ -37,7 +39,7 @@ import {
 } from '@/services/backoffice/uploads';
 
 export type UploadItemStatus =
-  'pending' | 'uploading' | 'processing' | 'done' | 'error' | 'duplicate' | 'canceled';
+  'pending' | 'uploading' | 'processing' | 'done' | 'error' | 'duplicate' | 'canceled' | 'busy';
 
 export interface UploadItem {
   id: string;
@@ -104,7 +106,16 @@ export const UPLOAD_TERMINAL_STATUSES: UploadItemStatus[] = [
   'error',
   'duplicate',
   'canceled',
+  'busy',
 ];
+
+export const RETRYABLE_STATUSES: UploadItemStatus[] = ['error', 'canceled'];
+
+/** Shown when a live sibling tab already owns this file's upload. Deliberately
+ *  no take-over affordance ('busy' is not retryable): once the other tab's
+ *  upload finishes or is stopped, a fresh "Add images" simply works — the
+ *  ownership check only counts crumbs that are actively uploading. */
+const BUSY_IN_OTHER_TAB = 'Already uploading in another tab — track it there.';
 
 /** Breadcrumb heartbeat cadence. Must stay well inside
  *  UPLOAD_BREADCRUMB_STALE_MS so live crumbs never look orphaned to other tabs. */
@@ -113,6 +124,25 @@ const HEARTBEAT_MS = 20_000;
 const RESCAN_MS = 30_000;
 
 const UploadManagerContext = createContext<UploadManagerValue | null>(null);
+
+/** Breadcrumb describing a live tray item, for enqueue and retry (upsert). */
+function crumbFromItem(item: UploadItem, tabId: string, now: number): UploadBreadcrumb {
+  return {
+    id: item.id,
+    fileName: item.fileName,
+    fileSize: item.totalBytes,
+    itemPartId: item.itemPartId,
+    itemPartLabel: item.itemPartLabel,
+    historicalItemId: item.historicalItemId,
+    locus: item.locus,
+    tags: item.tags,
+    sessionId: '',
+    status: 'pending',
+    tabId,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
 
 /** Tray item reconstructed from a breadcrumb (recovery paths have no File). */
 function itemFromCrumb(crumb: UploadBreadcrumb, over: Partial<UploadItem>): UploadItem {
@@ -236,6 +266,21 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           continue;
         }
 
+        // Cross-tab ownership: a live sibling tab already uploading the same
+        // file to the same part would be handed the SAME server session —
+        // don't compete with it, park this item as busy (Retry = take over).
+        const duplicate = findActiveDuplicate(
+          listUploadBreadcrumbs(),
+          { id, fileName: item.fileName, fileSize: item.totalBytes, itemPartId: item.itemPartId },
+          getUploadTabId(),
+          Date.now()
+        );
+        if (duplicate) {
+          patch(id, { status: 'busy', error: BUSY_IN_OTHER_TAB });
+          removeUploadBreadcrumbs([id]); // don't shadow the owner's crumb
+          continue;
+        }
+
         const controller = new AbortController();
         controllers.current.set(id, controller);
         patch(id, { status: 'uploading', phase: 'creating', error: '', sentBytes: 0 });
@@ -243,6 +288,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
         // Written once per item: recovery uses the session id to ask the
         // server for the truth instead of guessing from the crumb.
         let crumbSessionId = '';
+        let yieldedToRival = false;
 
         try {
           await uploadImageFile(
@@ -261,6 +307,15 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
                 if (p.session && p.session.id !== crumbSessionId) {
                   crumbSessionId = p.session.id;
                   updateUploadBreadcrumb(id, { sessionId: crumbSessionId });
+                  // Near-simultaneous start in two tabs slips past the
+                  // duplicate check; both then hold the same session. The
+                  // deterministically-younger crumb yields (see findSessionRival).
+                  const all = listUploadBreadcrumbs();
+                  const ours = all.find((c) => c.id === id);
+                  if (ours && findSessionRival(ours, all, Date.now())) {
+                    yieldedToRival = true;
+                    controller.abort();
+                  }
                 }
               },
             }
@@ -271,8 +326,13 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           invalidateManuscript(item.historicalItemId);
         } catch (err) {
           if (err instanceof DOMException && err.name === 'AbortError') {
-            patch(id, { status: 'canceled' });
-            updateUploadBreadcrumb(id, { status: 'canceled' });
+            if (yieldedToRival) {
+              patch(id, { status: 'busy', error: BUSY_IN_OTHER_TAB });
+              removeUploadBreadcrumbs([id]);
+            } else {
+              patch(id, { status: 'canceled' });
+              updateUploadBreadcrumb(id, { status: 'canceled' });
+            }
           } else if (isConflictError(err)) {
             // A duplicate proves the image already exists server-side — refresh
             // the manuscript so its thumbnail shows.
@@ -320,21 +380,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       }));
       for (const it of newItems) {
         itemsRef.current.set(it.id, it);
-        saveUploadBreadcrumb({
-          id: it.id,
-          fileName: it.fileName,
-          fileSize: it.totalBytes,
-          itemPartId: it.itemPartId,
-          itemPartLabel: it.itemPartLabel,
-          historicalItemId: it.historicalItemId,
-          locus: it.locus,
-          tags: it.tags,
-          sessionId: '',
-          status: 'pending',
-          tabId,
-          createdAt: now,
-          updatedAt: now,
-        });
+        saveUploadBreadcrumb(crumbFromItem(it, tabId, now));
       }
       queueRef.current.push(...newItems.map((it) => it.id));
       setItems((prev) => [...prev, ...newItems]);
@@ -361,9 +407,10 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       const item = itemsRef.current.get(id);
       // Only failed/canceled items whose File is still in memory can be
       // retried; a recovered watch item has no File — nothing to resend.
-      if (!item || !item.file || (item.status !== 'error' && item.status !== 'canceled')) return;
+      if (!item || !item.file || !RETRYABLE_STATUSES.includes(item.status)) return;
       patch(id, { status: 'pending', phase: null, sentBytes: 0, message: '', error: '' });
-      updateUploadBreadcrumb(id, { status: 'pending' });
+      // Upsert, not update: the crumb may have been evicted meanwhile.
+      saveUploadBreadcrumb(crumbFromItem(item, getUploadTabId(), Date.now()));
       queueRef.current.push(id);
       void drain();
     },

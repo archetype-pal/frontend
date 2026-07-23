@@ -13,6 +13,7 @@ import {
   listUploadBreadcrumbs,
   saveUploadBreadcrumb,
   UPLOAD_BREADCRUMB_STALE_MS,
+  UPLOAD_BREADCRUMBS_STORAGE_KEY,
   type UploadBreadcrumb,
 } from '@/lib/backoffice/upload-breadcrumbs';
 import {
@@ -98,7 +99,8 @@ function seedCrumb(over: Partial<UploadBreadcrumb> = {}): void {
 const makeFile = (name: string, bytes: number) => new File(['x'.repeat(bytes)], name);
 
 function Harness() {
-  const { items, interrupted, enqueue, resumeInterrupted, dismissInterrupted } = useUploadManager();
+  const { items, interrupted, enqueue, retry, resumeInterrupted, dismissInterrupted } =
+    useUploadManager();
   const [resume, setResume] = useState<ResumeResult | null>(null);
   return (
     <div>
@@ -132,6 +134,9 @@ function Harness() {
       </button>
       <button type="button" onClick={() => interrupted[0] && dismissInterrupted(interrupted[0].id)}>
         dismiss interrupted
+      </button>
+      <button type="button" onClick={() => items[0] && retry(items[0].id)}>
+        retry first
       </button>
     </div>
   );
@@ -277,6 +282,95 @@ describe('resume & dismiss', () => {
     fireEvent.click(screen.getByText('dismiss interrupted'));
     await waitFor(() => expect(screen.getByTestId('interrupted').textContent).toBe(''));
     expect(listUploadBreadcrumbs()).toEqual([]);
+  });
+});
+
+describe('multi-tab ownership', () => {
+  it('parks an upload whose file is live in another tab as busy', async () => {
+    // A live sibling tab is already uploading new.tif (4 bytes) to part 3.
+    seedCrumb({
+      id: 'foreign-1',
+      tabId: 'other-tab',
+      updatedAt: Date.now(),
+      fileName: 'new.tif',
+      fileSize: 4,
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue one'));
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('new.tif:busy'));
+    expect(mockedUpload).not.toHaveBeenCalled();
+    // Our crumb stepped aside; only the owner's remains.
+    expect(listUploadBreadcrumbs().map((c) => c.id)).toEqual(['foreign-1']);
+  });
+
+  it('busy is terminal — no take-over; a fresh enqueue works once the rival stops', async () => {
+    seedCrumb({
+      id: 'foreign-1',
+      tabId: 'other-tab',
+      updatedAt: Date.now(),
+      fileName: 'new.tif',
+      fileSize: 4,
+    });
+    let finishUpload!: (s: UploadSession) => void;
+    mockedUpload.mockImplementation(() => new Promise((resolve) => (finishUpload = resolve)));
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue one'));
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('new.tif:busy'));
+
+    // Retry deliberately does nothing for a busy item (no take-over path).
+    fireEvent.click(screen.getByText('retry first'));
+    await new Promise((r) => setTimeout(r, 30));
+    expect(screen.getByTestId('items').textContent).toContain('new.tif:busy');
+    expect(mockedUpload).not.toHaveBeenCalled();
+
+    // The other tab stops its upload: the crumb persists (reload recovery)
+    // but is no longer in flight — a fresh enqueue now proceeds immediately.
+    const [foreign] = listUploadBreadcrumbs();
+    localStorage.setItem(
+      UPLOAD_BREADCRUMBS_STORAGE_KEY,
+      JSON.stringify([{ ...foreign, status: 'canceled' }])
+    );
+    fireEvent.click(screen.getByText('enqueue one'));
+    await waitFor(() =>
+      expect(screen.getByTestId('items').textContent).toContain('new.tif:uploading')
+    );
+    expect(mockedUpload).toHaveBeenCalledTimes(1);
+
+    finishUpload(session({ status: 'complete' }));
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('new.tif:done'));
+  });
+
+  it('yields to an older live tab that holds the same server session', async () => {
+    // Different filename, so the duplicate check passes — this exercises the
+    // session-rival path that closes the near-simultaneous-start tie.
+    seedCrumb({
+      id: 'a-elder',
+      tabId: 'other-tab',
+      updatedAt: Date.now(),
+      createdAt: Date.now() - 5_000,
+      fileName: 'other-name.tif',
+      sessionId: 's-new',
+    });
+    mockedUpload.mockImplementation((_token, _file, _meta, options) => {
+      options?.onProgress?.({
+        phase: 'uploading',
+        sentBytes: 1,
+        totalBytes: 4,
+        session: session({ id: 's-new' }),
+      });
+      return new Promise((_resolve, reject) => {
+        const abort = () => reject(new DOMException('Aborted', 'AbortError'));
+        if (options?.signal?.aborted) abort();
+        else options?.signal?.addEventListener('abort', abort);
+      });
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue one'));
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('new.tif:busy'));
+    expect(listUploadBreadcrumbs().map((c) => c.id)).toEqual(['a-elder']);
   });
 });
 

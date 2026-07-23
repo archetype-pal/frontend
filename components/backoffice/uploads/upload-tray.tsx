@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { ACCEPTED_UPLOAD_EXTENSIONS, formatBytes } from '@/lib/backoffice/upload-helpers';
 import type { UploadBreadcrumb } from '@/lib/backoffice/upload-breadcrumbs';
 import {
+  RETRYABLE_STATUSES,
   UPLOAD_TERMINAL_STATUSES,
   useUploadManager,
   type ResumeResult,
@@ -198,7 +199,7 @@ function UploadTrayItem({
 }) {
   const active = item.status === 'uploading' || item.status === 'processing';
   // A recovered watch item has no File in memory — nothing to retry with.
-  const retryable = (item.status === 'error' || item.status === 'canceled') && item.file != null;
+  const retryable = RETRYABLE_STATUSES.includes(item.status) && item.file != null;
   const pct =
     item.totalBytes > 0 ? Math.min(100, Math.round((item.sentBytes / item.totalBytes) * 100)) : 0;
 
@@ -250,6 +251,9 @@ function UploadTrayItem({
           {item.status === 'canceled' && (
             <p className="text-[10px] text-muted-foreground">Canceled.</p>
           )}
+          {item.status === 'busy' && (
+            <p className="text-[10px] text-amber-600 dark:text-amber-400">{item.error}</p>
+          )}
         </div>
 
         <div className="flex shrink-0 items-center gap-0.5">
@@ -291,7 +295,7 @@ function StatusIcon({ status }: { status: UploadItemStatus }) {
     return <CheckCircle2 className={cn(className, 'text-emerald-600 dark:text-emerald-400')} />;
   }
   if (status === 'error') return <AlertCircle className={cn(className, 'text-destructive')} />;
-  if (status === 'duplicate') {
+  if (status === 'duplicate' || status === 'busy') {
     return <FileWarning className={cn(className, 'text-amber-600 dark:text-amber-400')} />;
   }
   return <X className={cn(className, 'text-muted-foreground')} />;
