@@ -65,6 +65,32 @@ describe('SiteFeaturesProvider with initialConfig', () => {
     expect(result.current.isSectionEnabled('about')).toBe(true);
   });
 
+  it('isFeatureEnabled returns true unless explicitly disabled', () => {
+    const cfg = getDefaultConfig();
+    expect(cfg.features.manuscriptDescriptions).toBe(true);
+    cfg.features.manuscriptDescriptions = false;
+    const { result } = renderHook(() => useSiteFeatures(), { wrapper: withProvider(cfg) });
+    expect(result.current.isFeatureEnabled('manuscriptDescriptions')).toBe(false);
+  });
+
+  it('isFeatureEnabled treats a missing key as enabled (only `false` disables)', () => {
+    const cfg = getDefaultConfig();
+    // @ts-expect-error — testing runtime behavior with a synthetic missing key
+    delete cfg.features.manuscriptDescriptions;
+    const { result } = renderHook(() => useSiteFeatures(), { wrapper: withProvider(cfg) });
+    expect(result.current.isFeatureEnabled('manuscriptDescriptions')).toBe(true);
+  });
+
+  it('isFeatureEnabled survives a config serialized before flags existed', () => {
+    // An SSR payload from an older build has no `features` object at all; the
+    // shipped feature must stay visible rather than crash the tree.
+    const cfg = getDefaultConfig();
+    // @ts-expect-error — testing runtime behavior with a pre-flags config
+    delete cfg.features;
+    const { result } = renderHook(() => useSiteFeatures(), { wrapper: withProvider(cfg) });
+    expect(result.current.isFeatureEnabled('manuscriptDescriptions')).toBe(true);
+  });
+
   it('getCategoryConfig returns the per-type config when present', () => {
     const cfg = getDefaultConfig();
     const { result } = renderHook(() => useSiteFeatures(), { wrapper: withProvider(cfg) });

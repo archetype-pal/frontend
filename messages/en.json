@@ -1718,6 +1718,14 @@
         "events": "Past Events",
         "about": "About"
       },
+      "featuresTitle": "Features",
+      "featuresDescription": "Turn optional site features on or off. Disabling a feature only hides it — no data is deleted, and switching it back on restores everything.",
+      "features": {
+        "manuscriptDescriptions": "Manuscript descriptions (TEI msDesc)"
+      },
+      "featureDescriptions": {
+        "manuscriptDescriptions": "Structured TEI descriptions: the description section on public manuscript pages and the msDesc editor in the manuscript workspace. Nothing is deleted — turning this back on restores everything. Search facets are configured separately under Search Categories."
+      },
       "searchCategoriesTitle": "Search Categories",
       "searchCategoriesDescription": "Toggle categories and configure visible columns and facets. Drag to reorder.",
       "categorySummary": "{columns} col · {facets} facets",

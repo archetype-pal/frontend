@@ -29,6 +29,12 @@ import { SectionHeading } from './section-heading';
 interface ManuscriptViewerProps {
   manuscript: Manuscript;
   images: ManuscriptImage[];
+  /**
+   * The `manuscriptDescriptions` site-feature flag, resolved server-side by the
+   * page (`readSiteFeatures`). Required rather than defaulted so a new call
+   * site can't forget it and silently publish a disabled section.
+   */
+  msDescEnabled: boolean;
 }
 
 /* ── Helpers ──────────────────────────────────────────────────────────── */
@@ -147,7 +153,7 @@ function PlateCard({ image, manuscriptId }: { image: ManuscriptImage; manuscript
 
 /* ── Main component ───────────────────────────────────────────────────── */
 
-export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) {
+export function ManuscriptViewer({ manuscript, images, msDescEnabled }: ManuscriptViewerProps) {
   const { getLabel, getPluralLabel } = useModelLabels();
   const t = useTranslations('manuscript');
   // The msDesc renderer's label keys (`msdesc.areas.*` / `msdesc.render.*` /
@@ -193,9 +199,15 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
   // Structured TEI description (roadmap 5.2). The API only ever serves
   // published areas; the helper orders them canonically, sanitizes each one and
   // drops anything that renders empty — so an empty list means "no section".
+  //
+  // The admin feature flag collapses to the same empty list, which is why one
+  // check covers both surfaces: the `<MsDescSection>` below renders nothing on
+  // an empty list, and the on-this-page nav only advertises `#msdesc` when the
+  // list is non-empty. No markup, and no anchor to a section that isn't there.
   const msdescAreas = React.useMemo(
-    () => renderPublicMsDescAreas(manuscript.msdesc_areas, (key) => tMsDesc(key)),
-    [manuscript.msdesc_areas, tMsDesc]
+    () =>
+      msDescEnabled ? renderPublicMsDescAreas(manuscript.msdesc_areas, (key) => tMsDesc(key)) : [],
+    [msDescEnabled, manuscript.msdesc_areas, tMsDesc]
   );
 
   // Section anchors — only advertise the ones that actually render.

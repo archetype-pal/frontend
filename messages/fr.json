@@ -1718,6 +1718,14 @@
         "events": "Événements passés",
         "about": "À propos"
       },
+      "featuresTitle": "Fonctionnalités",
+      "featuresDescription": "Activez ou désactivez les fonctionnalités optionnelles du site. Désactiver une fonctionnalité ne fait que la masquer : aucune donnée n'est supprimée et la réactiver restaure tout.",
+      "features": {
+        "manuscriptDescriptions": "Descriptions de manuscrits (TEI msDesc)"
+      },
+      "featureDescriptions": {
+        "manuscriptDescriptions": "Descriptions TEI structurées : la section de description sur les pages publiques de manuscrits et l'éditeur msDesc dans l'espace de travail des manuscrits. Rien n'est supprimé — la réactiver restaure tout. Les facettes de recherche se configurent séparément sous Catégories de recherche."
+      },
       "searchCategoriesTitle": "Catégories de recherche",
       "searchCategoriesDescription": "Activez ou désactivez les catégories et configurez les colonnes et facettes visibles. Glissez pour réorganiser.",
       "categorySummary": "{columns} col. · {facets} facettes",
