@@ -38,6 +38,16 @@ interface DescriptionsSectionProps {
   descriptions: HistoricalItemDescription[];
 }
 
+/**
+ * `HistoricalItemDescription` editor — the SECONDARY, non-TEI description
+ * surface since the structured msDesc editor shipped (TEI descriptions roadmap
+ * 8.2): free HTML prose attributed to a catalogue source, not TEI, and not
+ * gaining TEI power. Its heading is the single relabel point —
+ * `backoffice.manuscriptsDetail.descriptions` ("Catalogue descriptions /
+ * citations"); the wording is still pending PO confirmation (roadmap 0.1), so
+ * keep it a one-key change and do not spell the label out inline. Behaviour and
+ * data model are deliberately untouched.
+ */
 export function DescriptionsSection({ historicalItemId, descriptions }: DescriptionsSectionProps) {
   const { token } = useAuth();
   const t = useTranslations('backoffice');

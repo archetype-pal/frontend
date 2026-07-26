@@ -520,3 +520,41 @@ describe('pathological nesting (depth cap)', () => {
     expect(html).toContain('x');
   });
 });
+
+describe('renderMsDescArea — heading levels', () => {
+  const FRAGMENT =
+    '<physDesc><objectDesc form="codex"/><handDesc><handNote><p>One hand.</p></handNote></handDesc></physDesc>';
+
+  const levels = (html: string): number[] => {
+    const host = document.createElement('div');
+    host.innerHTML = html;
+    return Array.from(host.querySelectorAll('h1,h2,h3,h4,h5,h6')).map((el) =>
+      Number(el.tagName.slice(1))
+    );
+  };
+
+  it('defaults to h4 area titles and h5 groups (the backoffice preview)', () => {
+    expect(levels(renderMsDescArea('physDesc', FRAGMENT, { t: tEn }))).toEqual([4, 5]);
+  });
+
+  it('shifts groups with the area when a consumer sets headingLevel', () => {
+    // The public page heads its section with an <h2>, so it asks for h3/h4.
+    expect(levels(renderMsDescArea('physDesc', FRAGMENT, { t: tEn, headingLevel: 3 }))).toEqual([
+      3, 4,
+    ]);
+    expect(levels(renderMsDescArea('physDesc', FRAGMENT, { t: tEn, headingLevel: 2 }))).toEqual([
+      2, 3,
+    ]);
+  });
+
+  it('restores the default level after a render, so calls cannot bleed into each other', () => {
+    renderMsDescArea('physDesc', FRAGMENT, { t: tEn, headingLevel: 2 });
+    expect(levels(renderMsDescArea('physDesc', FRAGMENT, { t: tEn }))).toEqual([4, 5]);
+  });
+
+  it('never emits past h6', () => {
+    expect(levels(renderMsDescArea('physDesc', FRAGMENT, { t: tEn, headingLevel: 5 }))).toEqual([
+      5, 6,
+    ]);
+  });
+});

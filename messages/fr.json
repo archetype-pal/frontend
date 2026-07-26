@@ -287,6 +287,15 @@
       "hidePanel": "Masquer le panneau de texte",
       "loadingEditor": "Chargement de l'éditeur…"
     },
+    "sections": {
+      "msDesc": "Description du manuscrit",
+      "legacyDescriptions": "Descriptions de catalogue / citations",
+      "sourceAttribution": "D'après {source}",
+      "text": "Texte",
+      "textAside": "Latin et anglais",
+      "images": "Images",
+      "record": "Notice"
+    },
     "metadata": {
       "fallbackTitle": "Manuscrit",
       "numberedFallbackTitle": "Manuscrit n°{id}",
@@ -2187,7 +2196,7 @@
       "partsAcrossVolumes": "Ce manuscrit comporte {parts} parties réparties sur {volumes, plural, one {# volume} other {# volumes}} :",
       "partCount": "({count, plural, one {# partie} other {# parties}})",
       "manageParts": "Gérer les parties",
-      "descriptions": "Descriptions",
+      "descriptions": "Descriptions de catalogue / citations",
       "noDescriptions": "Aucune description",
       "descriptionAdded": "Description ajoutée",
       "descriptionAddFailed": "Échec de l'ajout de la description",
@@ -2373,11 +2382,11 @@
       "viewPublicPage": "Voir la page publique",
       "badgeParts": "Parties",
       "badgeImages": "Images",
-      "badgeDescriptions": "Descriptions",
+      "badgeDescriptions": "Descriptions de catalogue",
       "checklistCurrentLocation": "Localisation actuelle",
       "checklistFormat": "Format",
       "checklistLanguage": "Langue",
-      "checklistDescriptions": "Descriptions",
+      "checklistDescriptions": "Descriptions de catalogue",
       "checklistParts": "Parties",
       "entryCount": "{count, plural, one {# entrée} other {# entrées}}",
       "partCount": "{count, plural, one {# partie} other {# parties}}",

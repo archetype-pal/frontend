@@ -24,7 +24,7 @@
  * Output is NOT sanitized here — consumers MUST pipe it through
  * `sanitizeHtml(html, { allowDataAttr: true })` (`lib/sanitize-html.ts`),
  * mirroring `image-text-viewer.tsx`. Only tags/attributes from that
- * allowlist are emitted: `div span p h4 h5 br a sup sub em strong` with
+ * allowlist are emitted: `div span p h2…h6 br a sup sub em strong` with
  * `class href target rel title` plus `data-tei-label` (which is why
  * `allowDataAttr: true` is required for the hover-pill labels to survive).
  *
@@ -49,6 +49,15 @@ import type { MsDescAreaId, MsDescVocabId, MsDescVocabValue } from '@/lib/msdesc
 /** Translate a `backoffice`-namespace key (e.g. `useTranslations('backoffice')`). */
 export type MsDescTranslate = (key: string) => string;
 
+/** Heading level for an area title; nested groups render one level deeper. */
+export type MsDescHeadingLevel = 2 | 3 | 4 | 5;
+
+/**
+ * The backoffice Preview tab's level, and therefore the default: the panel's
+ * own title is an `<h3>`, so areas sit at `<h4>` and their groups at `<h5>`.
+ */
+const DEFAULT_HEADING_LEVEL: MsDescHeadingLevel = 4;
+
 export interface RenderMsDescAreaOptions {
   /**
    * Label translator for section headings, field labels, vocabulary-value
@@ -56,6 +65,14 @@ export interface RenderMsDescAreaOptions {
    * segment (`msdesc.render.fields.form` → "form").
    */
   t?: MsDescTranslate;
+  /**
+   * Level of the area title (`<h4>` by default), with nested group headings
+   * one level below it. Set it to whatever keeps the *consumer's* outline
+   * gapless — the public manuscript page heads its section with an `<h2>` and
+   * so passes `3`, while the backoffice preview sits under an `<h3>` and keeps
+   * the default. Levels never exceed `<h6>`.
+   */
+  headingLevel?: MsDescHeadingLevel;
 }
 
 /**
@@ -114,12 +131,14 @@ export function renderMsDescArea(
   // A fragment rooted at the area element contributes its children; anything
   // else (headless or foreign-rooted) renders as-is under the area wrapper.
   const single = meaningful.length === 1 ? meaningful[0] : null;
-  const body =
+  const areaLevel = options.headingLevel ?? DEFAULT_HEADING_LEVEL;
+  const body = withHeadingLevel(areaLevel, () =>
     single && single.kind === 'element' && single.name === area
       ? renderBlockNodes(single.children, t)
-      : renderBlockNodes(meaningful, t);
+      : renderBlockNodes(meaningful, t)
+  );
 
-  const heading = `<h4 class="msdesc-heading">${escapeHtml(t(msdescAreaLabelKey(area)))}</h4>`;
+  const heading = `<h${areaLevel} class="msdesc-heading">${escapeHtml(t(msdescAreaLabelKey(area)))}</h${areaLevel}>`;
   return `<div class="msdesc-area msdesc-area-${area}">${heading}${body}</div>`;
 }
 
@@ -136,7 +155,7 @@ function defaultTranslate(key: string): string {
 
 // ── Element classification ──────────────────────────────────────────────
 
-/** Containers that render a heading (nested sections use `<h5>`). */
+/** Containers that render a heading (one level below the area title). */
 const SECTION_ELEMENTS = new Set([
   'layoutDesc',
   'handDesc',
@@ -241,6 +260,25 @@ const ATTR_FIELD_SPECS: Record<string, AttrFieldSpec[]> = {
 const MAX_RENDER_DEPTH = 64;
 let renderDepth = 0;
 
+// Ambient render state, like `renderDepth` above: the level nested group
+// headings render at. Threading it through the six-function block dispatch
+// chain would touch every signature for one leaf's benefit, and rendering is
+// synchronous and non-reentrant (no awaits, and nothing below ever calls
+// `renderMsDescArea`), so a module-level value restored in a `finally` is both
+// safe and the idiom already in use here.
+let sectionHeadingLevel = DEFAULT_HEADING_LEVEL + 1;
+
+/** Run `render` with group headings one level below `areaLevel` (never past `<h6>`). */
+function withHeadingLevel(areaLevel: MsDescHeadingLevel, render: () => string): string {
+  const previous = sectionHeadingLevel;
+  sectionHeadingLevel = Math.min(areaLevel + 1, 6);
+  try {
+    return render();
+  } finally {
+    sectionHeadingLevel = previous;
+  }
+}
+
 function renderBlockNodes(nodes: XmlNode[], t: MsDescTranslate): string {
   return nodes.map((node) => renderBlockNode(node, t)).join('');
 }
@@ -289,7 +327,7 @@ function renderSection(el: XmlElementNode, t: MsDescTranslate): string {
   const body = renderAttrRows(el, t) + renderBlockNodes(el.children, t);
   return (
     `<div class="msdesc-section msdesc-section-${escapeHtml(el.name)}">` +
-    `<h5 class="msdesc-heading">${heading}</h5>${body}</div>`
+    `<h${sectionHeadingLevel} class="msdesc-heading">${heading}</h${sectionHeadingLevel}>${body}</div>`
   );
 }
 

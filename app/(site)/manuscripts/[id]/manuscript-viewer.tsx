@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ArrowUpRight, BookOpen } from 'lucide-react';
 
 import type { Manuscript, ManuscriptImage } from '@/types/manuscript';
@@ -10,6 +11,7 @@ import { getIiifImageUrl, type IIIFImageUrlOptions } from '@/utils/iiif';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
+import { renderPublicMsDescAreas } from '@/lib/msdesc-public';
 import { sanitizeHtml } from '@/lib/sanitize-html';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +23,8 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { cn } from '@/lib/utils';
+import { MsDescSection, MSDESC_SECTION_ID } from './msdesc-section';
+import { SectionHeading } from './section-heading';
 
 interface ManuscriptViewerProps {
   manuscript: Manuscript;
@@ -73,25 +77,6 @@ function nonEmpty(value: string | null | undefined): value is string {
 }
 
 /* ── Small presentational pieces ──────────────────────────────────────── */
-
-function SectionHeading({ title, aside }: { title: string; aside?: React.ReactNode }) {
-  return (
-    <div className="mb-8 flex items-center gap-5">
-      <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-        {title}
-      </h2>
-      <span
-        aria-hidden
-        className="h-px flex-1 bg-gradient-to-r from-border via-border/50 to-transparent"
-      />
-      {aside ? (
-        <span className="hidden whitespace-nowrap text-xs uppercase tracking-[0.18em] text-muted-foreground sm:inline">
-          {aside}
-        </span>
-      ) : null}
-    </div>
-  );
-}
 
 function Stat({ value, label }: { value: number | string; label: string }) {
   return (
@@ -164,6 +149,11 @@ function PlateCard({ image, manuscriptId }: { image: ManuscriptImage; manuscript
 
 export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) {
   const { getLabel, getPluralLabel } = useModelLabels();
+  const t = useTranslations('manuscript');
+  // The msDesc renderer's label keys (`msdesc.areas.*` / `msdesc.render.*` /
+  // `msdesc.vocab.*`) live in the `backoffice` namespace — one vocabulary
+  // shared by the authoring form and every render surface (lib/msdesc-vocab.ts).
+  const tMsDesc = useTranslations('backoffice');
 
   const { historical_item: historical, current_item: current } = manuscript;
   const title = manuscript.display_label?.trim() || `Manuscript #${manuscript.id}`;
@@ -200,12 +190,21 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
   const catalogueNumbers = historical.catalogue_numbers ?? [];
   const totalAnnotations = orderedImages.reduce((sum, img) => sum + annotationCount(img), 0);
 
+  // Structured TEI description (roadmap 5.2). The API only ever serves
+  // published areas; the helper orders them canonically, sanitizes each one and
+  // drops anything that renders empty — so an empty list means "no section".
+  const msdescAreas = React.useMemo(
+    () => renderPublicMsDescAreas(manuscript.msdesc_areas, (key) => tMsDesc(key)),
+    [manuscript.msdesc_areas, tMsDesc]
+  );
+
   // Section anchors — only advertise the ones that actually render.
   const sections = [
-    descriptions.length > 0 && { id: 'description', label: 'Description' },
-    editions.length > 0 && { id: 'text', label: 'Text' },
-    orderedImages.length > 0 && { id: 'images', label: 'Images' },
-    { id: 'record', label: 'Record' },
+    msdescAreas.length > 0 && { id: MSDESC_SECTION_ID, label: t('sections.msDesc') },
+    descriptions.length > 0 && { id: 'description', label: t('sections.legacyDescriptions') },
+    editions.length > 0 && { id: 'text', label: t('sections.text') },
+    orderedImages.length > 0 && { id: 'images', label: t('sections.images') },
+    { id: 'record', label: t('sections.record') },
   ].filter(Boolean) as { id: string; label: string }[];
 
   return (
@@ -338,10 +337,13 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
         ) : null}
       </header>
 
-      {/* ── Description ───────────────────────────────────────────────── */}
+      {/* ── Manuscript description (structured TEI msDesc) ────────────── */}
+      <MsDescSection areas={msdescAreas} />
+
+      {/* ── Catalogue descriptions / citations (legacy, non-TEI) ───────── */}
       {descriptions.length > 0 ? (
         <section id="description" className="mt-20 scroll-mt-24">
-          <SectionHeading title="Description" />
+          <SectionHeading title={t('sections.legacyDescriptions')} />
           <div className="max-w-3xl space-y-10">
             {descriptions.map((desc, index) => (
               <article key={index}>
@@ -358,7 +360,7 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
                 />
                 {nonEmpty(desc.source?.name) ? (
                   <p className="mt-4 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                    From {desc.source.name}
+                    {t('sections.sourceAttribution', { source: desc.source.name })}
                   </p>
                 ) : null}
               </article>
@@ -370,7 +372,7 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
       {/* ── Text: facing-page edition ─────────────────────────────────── */}
       {editions.length > 0 ? (
         <section id="text" className="mt-20 scroll-mt-24">
-          <SectionHeading title="Text" aside="Latin & English" />
+          <SectionHeading title={t('sections.text')} aside={t('sections.textAside')} />
           <div className="space-y-14">
             {editions.map((edition) => {
               const hasBoth = Boolean(edition.transcription && edition.translation);

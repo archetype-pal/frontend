@@ -287,6 +287,15 @@
       "hidePanel": "Hide text panel",
       "loadingEditor": "Loading editor…"
     },
+    "sections": {
+      "msDesc": "Manuscript description",
+      "legacyDescriptions": "Catalogue descriptions / citations",
+      "sourceAttribution": "From {source}",
+      "text": "Text",
+      "textAside": "Latin & English",
+      "images": "Images",
+      "record": "Record"
+    },
     "metadata": {
       "fallbackTitle": "Manuscript",
       "numberedFallbackTitle": "Manuscript #{id}",
@@ -2187,7 +2196,7 @@
       "partsAcrossVolumes": "This manuscript has {parts} parts across {volumes, plural, one {# volume} other {# volumes}}:",
       "partCount": "({count, plural, one {# part} other {# parts}})",
       "manageParts": "Manage Parts",
-      "descriptions": "Descriptions",
+      "descriptions": "Catalogue descriptions / citations",
       "noDescriptions": "No descriptions",
       "descriptionAdded": "Description added",
       "descriptionAddFailed": "Failed to add description",
@@ -2373,11 +2382,11 @@
       "viewPublicPage": "View public page",
       "badgeParts": "Parts",
       "badgeImages": "Images",
-      "badgeDescriptions": "Descriptions",
+      "badgeDescriptions": "Catalogue descriptions",
       "checklistCurrentLocation": "Current Location",
       "checklistFormat": "Format",
       "checklistLanguage": "Language",
-      "checklistDescriptions": "Descriptions",
+      "checklistDescriptions": "Catalogue descriptions",
       "checklistParts": "Parts",
       "entryCount": "{count} entries",
       "partCount": "{count, plural, one {# part} other {# parts}}",
