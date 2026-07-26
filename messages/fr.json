@@ -1477,6 +1477,7 @@
     },
     "publicationsDetail": {
       "deleteButton": "Supprimer",
+      "viewPublicPage": "Voir la page publique",
       "saveButton": "Enregistrer",
       "recoveryBanner": "Un brouillon enregistré automatiquement a été trouvé. Souhaitez-vous le récupérer ?",
       "recoverDraft": "Récupérer le brouillon",

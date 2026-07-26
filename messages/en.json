@@ -1477,6 +1477,7 @@
     },
     "publicationsDetail": {
       "deleteButton": "Delete",
+      "viewPublicPage": "View public page",
       "saveButton": "Save",
       "recoveryBanner": "An autosaved draft was found. Would you like to recover it?",
       "recoverDraft": "Recover Draft",
