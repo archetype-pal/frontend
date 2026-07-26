@@ -1177,7 +1177,42 @@
         "loading": "Chargement…",
         "previewEmpty": "Rien à prévisualiser pour l'instant.",
         "toastSaved": "Zone de description enregistrée",
-        "toastSaveFailed": "Échec de l'enregistrement de la zone de description"
+        "toastSaveFailed": "Échec de l'enregistrement de la zone de description",
+        "insertReference": "Insérer une référence",
+        "linkResource": "Lier à une ressource",
+        "unlinkResource": "Supprimer le lien",
+        "refAlreadyLinked": "Ce texte est déjà dans une référence — supprimez d’abord le lien existant.",
+        "refNotInserted": "Impossible d’insérer la référence ici — sélectionnez l’intégralité de l’élément à lier.",
+        "refSelectionNotWrappable": "La sélection n’est pas un fragment complet — sélectionnez des éléments entiers pour les envelopper dans une référence.",
+        "refBreaksForm": "Une référence n’est pas autorisée ici — l’insérer retirerait cette zone du formulaire structuré. Utilisez plutôt le champ de clé d’autorité de l’élément."
+      },
+      "refPicker": {
+        "title": "Insérer une référence",
+        "description": "Lier une personne, un lieu, un manuscrit, une recherche enregistrée ou une URL externe.",
+        "tabsLabel": "Type de référence",
+        "tab": {
+          "person": "Personne",
+          "place": "Lieu",
+          "manuscript": "Manuscrit",
+          "search": "Recherche",
+          "external": "Externe"
+        },
+        "placeholder": {
+          "person": "Rechercher des scribes…",
+          "place": "Rechercher des lieux…",
+          "manuscript": "Rechercher des manuscrits…",
+          "search": "Filtrer les recherches enregistrées…"
+        },
+        "typeToSearch": "Saisissez pour rechercher",
+        "searching": "Recherche…",
+        "noResults": "Aucun résultat",
+        "noSavedSearches": "Aucune recherche enregistrée",
+        "externalUrl": "URL",
+        "externalText": "Texte du lien",
+        "externalTextPlaceholder": "Texte affiché",
+        "invalidUrl": "Saisissez une URL absolue http(s) ou relative au site (/…)",
+        "preview": "Aperçu",
+        "insert": "Insérer"
       },
       "form": {
         "none": "Aucun",
@@ -1198,7 +1233,9 @@
         "contemporary": "Contemporaine",
         "number": "Numéro",
         "idnoType": "Type d'identifiant",
-        "supportMaterial": "Matériau du support (texte libre)"
+        "supportMaterial": "Matériau du support (texte libre)",
+        "pickKey": "Rechercher une autorité",
+        "pickKeyNoKey": "Cette ressource n’a pas de clé d’autorité — seules les personnes fournissent un @key."
       },
       "areas": {
         "msIdentifier": "Identification",

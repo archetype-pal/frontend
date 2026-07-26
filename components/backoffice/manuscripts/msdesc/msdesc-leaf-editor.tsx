@@ -2,11 +2,22 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { toast } from 'sonner';
+import { Link2, Unlink } from 'lucide-react';
 
 import { docToTei, teiToDoc, type PMDoc } from '@/lib/tei-prosemirror';
-import { teiEditorExtensions } from '@/lib/tei-tiptap';
+import {
+  currentElement,
+  currentStack,
+  teiEditorExtensions,
+  unwrapTei,
+  wrapTei,
+} from '@/lib/tei-tiptap';
+import { refAttrs } from '@/lib/tei-ref-picker';
+import type { ResourceRef } from '@/lib/tei-ref';
+import { TeiRefPicker } from '@/components/backoffice/tei-ref-picker';
 import { cn } from '@/lib/utils';
 import { MsProseTextarea } from './fields';
 
@@ -31,7 +42,13 @@ import { MsProseTextarea } from './fields';
  * validation in `msdesc-area-panel` covers it) nor `tei-rich-editor.tsx` (ships
  * the charter clause/`seg`-type toolbar, wrong for msDesc prose). It builds
  * directly on the shared `teiEditorExtensions` + `teiToDoc`/`docToTei` with
- * compact, toolbar-free chrome. Entity/`<ref>` insertion is Phase 4.
+ * compact, toolbar-free chrome.
+ *
+ * Phase 4 adds two controls: link (open the shared {@link TeiRefPicker} and
+ * wrap the selection in a `<ref>` via the element-generic `wrapTei`) and
+ * unlink (`unwrapTei` on the `<ref>` under the caret). `<ref>` is deliberately
+ * NOT added to `LINKABLE_ELEMENTS` — it carries no geometry, and adding it
+ * would shift the positional `element_index` of every shipped region link.
  */
 
 // The canonical TEI a single empty ProseMirror paragraph serialises to. TipTap's
@@ -62,6 +79,55 @@ export function leafIsRichRepresentable(value: string): boolean {
  */
 export function normalizeLeafEmit(tei: string): string {
   return tei === EMPTY_LEAF_TEI ? '' : tei;
+}
+
+/** True when any element covering the selection/caret is a `<ref>`. */
+export function isInsideRef(editor: Editor): boolean {
+  return currentStack(editor).some((entry) => entry.el.toLowerCase() === 'ref');
+}
+
+/**
+ * True when the INNERMOST element under the caret is a `<ref>` — the only case
+ * in which `unwrapTei` (which removes the innermost element) removes the link.
+ * A caret inside `<ref><persName>x</persName></ref>` reports false, so unlink
+ * can never silently delete an unrelated inner entity.
+ */
+export function refIsInnermost(editor: Editor): boolean {
+  const element = currentElement(editor);
+  return element !== null && element.el.toLowerCase() === 'ref';
+}
+
+/** Outcome of {@link insertRefIntoLeaf} — the caller maps it to a hint. */
+export type RefInsertResult = 'ok' | 'nested' | 'refused';
+
+/**
+ * Wrap the current selection in a `<ref>`, inserting the resource's label first
+ * when the selection is empty. Extracted from the component so the insertion
+ * contract is directly testable against a real editor.
+ *
+ *  - `'nested'` — the selection already sits inside a `<ref>`. Nesting would
+ *    emit `<ref …>J<ref …>oh</ref>n</ref>`, which the byte-exact gate happily
+ *    accepts and the renderer then has to degrade (nested `<a>` is invalid
+ *    HTML). Refuse instead.
+ *  - `'refused'` — nothing to wrap, or `wrapTei` declined a selection that only
+ *    partially covers an element (wrapping it would split that element).
+ */
+export function insertRefIntoLeaf(editor: Editor, ref: ResourceRef): RefInsertResult {
+  if (isInsideRef(editor)) return 'nested';
+  const { from, to } = editor.state.selection;
+  if (from === to) {
+    if (ref.label === '') return 'refused';
+    // Insert the label as a PLAIN TEXT node. `insertContent(string)` HTML-parses
+    // its argument, so a label carrying `<a>`/`<u>`/block markup would insert a
+    // different number of characters than `label.length` — and the follow-up
+    // selection would then overshoot into the surrounding prose and swallow it
+    // into the link. `tr.insertText` inserts exactly `label.length` characters
+    // and inherits the marks at the caret, so a label dropped inside an existing
+    // element stays inside it instead of splitting it.
+    editor.view.dispatch(editor.state.tr.insertText(ref.label, from));
+    editor.commands.setTextSelection({ from, to: from + ref.label.length });
+  }
+  return wrapTei(editor, 'ref', refAttrs(ref)) ? 'ok' : 'refused';
 }
 
 // ProseMirror's `doc` requires `block+` content; an empty leaf parses to zero
@@ -111,6 +177,7 @@ export function MsDescLeafEditor(props: MsDescLeafEditorProps) {
 }
 
 function RichLeaf({ label, value, onChange, disabled, className }: MsDescLeafEditorProps) {
+  const t = useTranslations('backoffice');
   // Guard the controlled-value effect against the editor's own emits so
   // reflecting `value` back never steals the caret (mirrors tei-rich-editor).
   const lastEmitted = React.useRef<string | null>(null);
@@ -139,6 +206,12 @@ function RichLeaf({ label, value, onChange, disabled, className }: MsDescLeafEdi
         blockquote: false,
         horizontalRule: false,
         hardBreak: false,
+        // `docToTei` only reads the `tei` mark, so a `link`/`underline` mark
+        // (e.g. from pasted HTML) renders in the editor and is then silently
+        // dropped on serialize. Keeping them out of the schema makes the
+        // WYSIWYG surface match exactly what is saved; TEI links are `<ref>`.
+        link: false,
+        underline: false,
       }),
       ...teiEditorExtensions,
     ],
@@ -183,9 +256,59 @@ function RichLeaf({ label, value, onChange, disabled, className }: MsDescLeafEdi
     editor?.setEditable(!disabled);
   }, [editor, disabled]);
 
+  const [pickerOpen, setPickerOpen] = React.useState(false);
+  const [seedText, setSeedText] = React.useState('');
+
+  // Re-render when the caret moves so the unlink control tracks the selection.
+  const canUnlink = useEditorState({
+    editor,
+    selector: ({ editor }) => (editor ? refIsInnermost(editor) : false),
+  });
+
+  const openPicker = () => {
+    if (!editor) return;
+    const { from, to } = editor.state.selection;
+    setSeedText(from === to ? '' : editor.state.doc.textBetween(from, to));
+    setPickerOpen(true);
+  };
+
+  // Insert a <ref> over the selection via the shared, element-generic wrapTei —
+  // <ref> is NOT a linkable element, so this never touches the region-link sets.
+  // With an empty selection, insert the ref's label text and wrap that.
+  const handlePick = (ref: ResourceRef) => {
+    if (!editor) return;
+    const result = insertRefIntoLeaf(editor, ref);
+    if (result === 'nested') toast.warning(t('msdesc.editor.refAlreadyLinked'));
+    else if (result === 'refused') toast.warning(t('msdesc.editor.refNotInserted'));
+  };
+
   return (
     <div className={cn('space-y-1', className)}>
-      <label className="block text-xs font-medium text-muted-foreground">{label}</label>
+      <div className="flex items-center justify-between gap-2">
+        <label className="block text-xs font-medium text-muted-foreground">{label}</label>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={openPicker}
+            disabled={disabled}
+            aria-label={t('msdesc.editor.linkResource')}
+            title={t('msdesc.editor.linkResource')}
+            className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Link2 className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => editor && unwrapTei(editor)}
+            disabled={disabled || !canUnlink}
+            aria-label={t('msdesc.editor.unlinkResource')}
+            title={t('msdesc.editor.unlinkResource')}
+            className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Unlink className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
       <div
         className={cn(
           'rounded-md border border-input bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring',
@@ -194,6 +317,12 @@ function RichLeaf({ label, value, onChange, disabled, className }: MsDescLeafEdi
       >
         {editor ? <EditorContent editor={editor} /> : <div className="min-h-16 px-3 py-2" />}
       </div>
+      <TeiRefPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onPick={handlePick}
+        seedText={seedText}
+      />
     </div>
   );
 }

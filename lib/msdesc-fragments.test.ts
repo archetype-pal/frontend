@@ -244,7 +244,26 @@ describe('serializeFragment', () => {
     expect(escapeXmlText('a<b>&c')).toBe('a&lt;b&gt;&amp;c');
     expect(escapeXmlAttr('a"b<c&d')).toBe('a&quot;b&lt;c&amp;d');
   });
+
+  it("escapes attributes exactly like the ProseMirror emitter (incl. > and ')", () => {
+    // The two emitters must agree byte-for-byte or the leaf editor's
+    // rich-representability gate demotes apostrophe-bearing leaves forever.
+    const value = `St Andrew's & <x> "q" >`;
+    expect(escapeXmlAttr(value)).toBe(escapeAttrLikeProseMirror(value));
+    expect(escapeXmlAttr("St Andrew's")).toBe('St Andrew&#x27;s');
+    expect(escapeXmlAttr('a>b')).toBe('a&gt;b');
+  });
 });
+
+/** Local copy of `escapeAttr` from lib/tei-prosemirror.ts (module-private there). */
+function escapeAttrLikeProseMirror(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
 
 describe('canonicalizeFragment', () => {
   it('normalizes indentation and self-closing while preserving attribute order', () => {

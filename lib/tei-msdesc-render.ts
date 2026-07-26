@@ -69,18 +69,35 @@ export function resolveRefKeyHref(key: string): string | null {
 }
 
 /**
+ * A sentinel origin used to prove a site-relative href stays site-relative.
+ * `.invalid` is reserved (RFC 2606) so it can never collide with a real host.
+ */
+const SANITIZER_BASE = 'https://sanitizer.invalid';
+
+/**
  * Return `href` when it is safe to emit (http(s) absolute, or site-relative
  * starting with `/` or `#`), else `null`. Refuses `javascript:`/`data:`/…
- * schemes and protocol-relative `//host` URLs — defense in depth on top of
+ * schemes and every spelling of an authority the URL parser folds together —
+ * `//host`, `/\host`, `/\/host`, `/<tab>/host` — defense in depth on top of
  * the consumer-side sanitize pass.
+ *
+ * A prefix test alone is NOT enough here: the WHATWG URL parser treats `\` as
+ * `/` after a scheme-relative leading slash and strips C0 whitespace before
+ * parsing, so `/\evil.example` resolves to `https://evil.example/` exactly
+ * like `//evil.example` does. Resolving against a sentinel origin and
+ * requiring the result to stay on it catches all of them at once.
  */
 export function sanitizeRefHref(raw: string): string | null {
   const href = raw.trim();
   if (!href) return null;
   if (/^https?:\/\//i.test(href)) return href;
-  if (href.startsWith('//')) return null;
-  if (href.startsWith('/') || href.startsWith('#')) return href;
-  return null;
+  if (!href.startsWith('/') && !href.startsWith('#')) return null;
+  try {
+    if (new URL(href, SANITIZER_BASE).origin !== SANITIZER_BASE) return null;
+  } catch {
+    return null;
+  }
+  return href;
 }
 
 /** Render one stored msDesc area fragment as structured-field HTML. */
@@ -310,11 +327,19 @@ function renderField(el: XmlElementNode, t: MsDescTranslate): string {
     );
   }
 
+  if (isLinkBearing(el)) {
+    // Decide anchor-vs-span BEFORE descending, so a link-bearing descendant
+    // knows this row already opened an `<a>` and renders as a span instead.
+    const asAnchor = refHref(el) !== null;
+    let inner = withAnchorScope(asAnchor, () => renderInlineNodes(el.children, t)).trim();
+    if (!inner) inner = escapeHtml(fieldFallbackText(el));
+    const body = inner || escapeHtml(el.attrs['key'] ?? el.attrs['target'] ?? '');
+    const linked = renderLinkEl(el, body, t, asAnchor);
+    return linked ? fieldRow(label, linked, unknownClass) : '';
+  }
+
   let value = renderInlineNodes(el.children, t).trim();
   if (!value) value = escapeHtml(fieldFallbackText(el));
-  if (isLinkBearing(el)) {
-    value = renderLinkEl(el, value || escapeHtml(el.attrs['key'] ?? el.attrs['target'] ?? ''), t);
-  }
   if (!value) return '';
   return fieldRow(label, value, unknownClass);
 }
@@ -437,12 +462,18 @@ function renderInlineNode(node: XmlNode, t: MsDescTranslate): string {
 }
 
 function renderInlineElement(node: XmlElementNode, t: MsDescTranslate): string {
-  const inner = renderInlineNodes(node.children, t);
   if (node.name === 'hi') {
     const tag = HI_REND_TAGS[node.attrs['rend'] ?? ''];
-    if (tag) return `<${tag}>${inner}</${tag}>`;
+    if (tag) return `<${tag}>${renderInlineNodes(node.children, t)}</${tag}>`;
   }
-  if (isLinkBearing(node)) return renderLinkEl(node, inner, t);
+  if (isLinkBearing(node)) {
+    // Decide anchor-vs-span BEFORE descending so a link-bearing descendant can
+    // see that an ancestor already opened an `<a>` (see {@link withAnchorScope}).
+    const asAnchor = !insideAnchor && refHref(node) !== null;
+    const inner = withAnchorScope(asAnchor, () => renderInlineNodes(node.children, t));
+    return renderLinkEl(node, inner, t, asAnchor);
+  }
+  const inner = renderInlineNodes(node.children, t);
   return (
     `<span class="tei-el tei-el-${escapeHtml(node.name)}"` +
     ` data-tei-label="${escapeHtml(node.attrs['type'] ?? node.name)}">${inner}</span>`
@@ -455,19 +486,53 @@ function isLinkBearing(el: XmlElementNode): boolean {
   return el.name === 'ref' || el.attrs['key'] !== undefined || el.attrs['target'] !== undefined;
 }
 
-function renderLinkEl(el: XmlElementNode, innerHtml: string, t: MsDescTranslate): string {
-  const baseClass = `tei-el tei-el-${escapeHtml(el.name)}`;
-  const labelAttr = `data-tei-label="${escapeHtml(el.attrs['type'] ?? el.name)}"`;
+/** The href a link-bearing element resolves to: `@target`, else the `@key` map. */
+function refHref(el: XmlElementNode): string | null {
   const target = el.attrs['target'];
   const key = el.attrs['key'];
-  const href =
-    (target !== undefined ? sanitizeRefHref(target) : null) ??
-    (key ? resolveRefKeyHref(key) : null);
-  if (href) {
+  return (
+    (target !== undefined ? sanitizeRefHref(target) : null) ?? (key ? resolveRefKeyHref(key) : null)
+  );
+}
+
+/**
+ * True while rendering the descendants of an element that already emitted an
+ * `<a>`. Nested anchors are invalid HTML — the browser closes the outer one at
+ * the inner start tag, so the outer link loses every character after the nest
+ * (verified: `<a>J<a>oh</a>n</a>` parses to `<a>J</a><a>oh</a>n`). Hand-authored
+ * Source-mode TEI can nest `<ref>`/`@key` elements freely, so the renderer
+ * degrades the inner one to a styled `<span>` rather than emitting broken DOM.
+ */
+let insideAnchor = false;
+
+function withAnchorScope<T>(active: boolean, render: () => T): T {
+  const previous = insideAnchor;
+  insideAnchor = previous || active;
+  try {
+    return render();
+  } finally {
+    insideAnchor = previous;
+  }
+}
+
+function renderLinkEl(
+  el: XmlElementNode,
+  innerHtml: string,
+  t: MsDescTranslate,
+  asAnchor?: boolean
+): string {
+  const baseClass = `tei-el tei-el-${escapeHtml(el.name)}`;
+  const labelAttr = `data-tei-label="${escapeHtml(el.attrs['type'] ?? el.name)}"`;
+  const href = refHref(el);
+  const anchor = asAnchor ?? (!insideAnchor && href !== null);
+  if (href && anchor) {
     const external = /^https?:/i.test(href);
     const externalAttrs = external ? ' target="_blank" rel="noopener noreferrer"' : '';
     return `<a href="${escapeHtml(href)}" class="${baseClass}" ${labelAttr}${externalAttrs}>${innerHtml}</a>`;
   }
+  // Resolvable but nested inside an ancestor anchor: keep the entity styling,
+  // drop the (illegal) inner `<a>`. The ancestor's href still covers the text.
+  if (href) return `<span class="${baseClass}" ${labelAttr}>${innerHtml}</span>`;
   const tooltip = escapeHtml(t(UNRESOLVED_REF_KEY));
   return `<span class="${baseClass} msdesc-unresolved" title="${tooltip}" ${labelAttr}>${innerHtml}</span>`;
 }

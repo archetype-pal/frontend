@@ -329,6 +329,72 @@ describe('resolveRefKeyHref / sanitizeRefHref', () => {
     expect(sanitizeRefHref('mailto:a@b.c')).toBeNull();
     expect(sanitizeRefHref('')).toBeNull();
   });
+
+  it('refuses every backslash spelling of a cross-origin authority', () => {
+    // The WHATWG URL parser folds `\` into `/` after a leading slash and strips
+    // C0 whitespace, so these all resolve off-origin exactly like `//host`.
+    // Because they do not match /^https?:/, renderLinkEl would also omit
+    // rel="noopener" — a same-tab navigation from what reads as an internal link.
+    for (const hostile of ['/\\evil.example', '/\\\\evil.example', '/\\/evil.example']) {
+      expect(new URL(hostile, 'https://archetype.example/backoffice/x').origin).toBe(
+        'https://evil.example'
+      );
+      expect(sanitizeRefHref(hostile)).toBeNull();
+    }
+    expect(sanitizeRefHref('\\\\evil.example')).toBeNull();
+    expect(sanitizeRefHref('/\t/evil.example')).toBeNull();
+    // Legitimate site-relative paths are unaffected, including ones that
+    // contain a backslash further in.
+    expect(sanitizeRefHref('/search/manuscripts?keyword=a\\b')).toBe(
+      '/search/manuscripts?keyword=a\\b'
+    );
+    expect(sanitizeRefHref('/scribes/1?a=1&b=2#frag')).toBe('/scribes/1?a=1&b=2#frag');
+  });
+});
+
+describe('renderMsDescArea — nested link-bearing elements (no nested <a>)', () => {
+  it('degrades an inner ref to a span so the outer link keeps all its text', () => {
+    // Reachable from hand-authored Source TEI. Nested <a> is invalid HTML: the
+    // browser closes the outer anchor at the inner start tag, so the outer
+    // link's tail escapes it entirely.
+    const root = render(
+      'history',
+      '<history><provenance><p>' +
+        '<ref type="person" key="person_1" target="/scribes/1">J' +
+        '<ref type="person" key="person_2" target="/scribes/2">oh</ref>n</ref>' +
+        '</p></provenance></history>'
+    );
+    const anchors = root.querySelectorAll('a');
+    expect(anchors.length).toBe(1);
+    expect(anchors[0].getAttribute('href')).toBe('/scribes/1');
+    // Every character stays inside the one anchor.
+    expect(anchors[0].textContent).toBe('John');
+    // The inner ref keeps its entity styling but emits no anchor.
+    const inner = anchors[0].querySelector('span.tei-el-ref');
+    expect(inner?.textContent).toBe('oh');
+    expect(inner?.classList.contains('msdesc-unresolved')).toBe(false);
+  });
+
+  it('degrades a link-bearing entity nested inside a linked field row', () => {
+    const root = render(
+      'history',
+      '<history><origin><origPlace><settlement key="person_42">Kelso ' +
+        '<ref target="/manuscripts/5">MS 5</ref></settlement></origPlace></origin></history>'
+    );
+    const anchors = root.querySelectorAll('a');
+    expect(anchors.length).toBe(1);
+    expect(anchors[0].getAttribute('href')).toBe('/scribes/42');
+    expect(anchors[0].textContent).toContain('MS 5');
+  });
+
+  it('still renders sibling (non-nested) refs as separate anchors', () => {
+    const root = render(
+      'history',
+      '<history><provenance><p><ref target="/scribes/1">A</ref> and ' +
+        '<ref target="/scribes/2">B</ref></p></provenance></history>'
+    );
+    expect(root.querySelectorAll('a').length).toBe(2);
+  });
 });
 
 describe('renderMsDescArea — robustness (never throws, never drops text)', () => {

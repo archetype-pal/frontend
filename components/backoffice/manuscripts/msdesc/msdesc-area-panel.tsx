@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -23,22 +22,9 @@ import { updateMsDescArea } from '@/services/backoffice/manuscripts';
 import type { MsDescArea } from '@/types/backoffice';
 import { HistoryForm } from './history-form';
 import { MsContentsForm } from './ms-contents-form';
+import { MsDescSourceEditor } from './msdesc-source-editor';
 import { MsIdentifierForm } from './ms-identifier-form';
 import { PhysDescForm } from './phys-desc-form';
-
-function TeiCodeMirrorLoading() {
-  const t = useTranslations('backoffice');
-  return (
-    <div className="min-h-[200px] px-4 py-3 font-mono text-xs text-muted-foreground">
-      {t('msdesc.editor.loading')}
-    </div>
-  );
-}
-
-const TeiCodeMirror = dynamic(() => import('@/components/backoffice/tei-codemirror'), {
-  ssr: false,
-  loading: TeiCodeMirrorLoading,
-});
 
 type ViewMode = 'form' | 'source' | 'preview';
 
@@ -190,8 +176,8 @@ export function MsDescAreaPanel({ historicalItemId, area, row }: MsDescAreaPanel
         <AreaForm area={area} state={editor.formState} onChange={editor.applyFormState} />
       )}
       {view === 'source' && (
-        <div className="rounded-md border">
-          <TeiCodeMirror value={editor.content} onChange={editor.applySource} />
+        <div className="overflow-hidden rounded-md border">
+          <MsDescSourceEditor area={area} value={editor.content} onChange={editor.applySource} />
         </div>
       )}
       {view === 'preview' &&

@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 
 import type { MsContentsState, MsItemState, MsKeyedText, MsTextLang } from '@/lib/msdesc-form';
 import { MsAddButton, MsSubsection, MsTextField } from './fields';
+import { MsKeyField } from './ms-key-field';
 import { MsDescLeafEditor } from './msdesc-leaf-editor';
 
 const opt = (value: string): string | undefined => (value === '' ? undefined : value);
@@ -125,7 +126,7 @@ function MsItemForm({
           value={item.author?.text ?? ''}
           onChange={(v) => setKeyed('author', { text: v })}
         />
-        <MsTextField
+        <MsKeyField
           label={`${f('author')} — ${t('msdesc.form.key')}`}
           value={item.author?.key ?? ''}
           onChange={(v) => setKeyed('author', { key: opt(v) })}
@@ -136,6 +137,12 @@ function MsItemForm({
           value={item.title?.text ?? ''}
           onChange={(v) => setKeyed('title', { text: v })}
         />
+        {/*
+          Manual entry only: a title's authority is a Work (`work_…`), and Work
+          refs are deferred to v2 (roadmap 0.1). The picker's only keyed kind is
+          Person, so a lookup button here would stamp `key="person_…"` on a
+          <title> and the renderer would link the work to a scribe page.
+        */}
         <MsTextField
           label={`${f('title')} — ${t('msdesc.form.key')}`}
           value={item.title?.key ?? ''}

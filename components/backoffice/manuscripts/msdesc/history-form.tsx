@@ -106,6 +106,13 @@ export function HistoryForm({
                     value={origPlace?.[field]?.text ?? ''}
                     onChange={(v) => setOrigPlaceField(field, { text: v })}
                   />
+                  {/*
+                    Manual entry only: Place is a `@target`-only kind (no Place
+                    model, §8.3) so the picker yields no `@key` for it, and the
+                    only keyed kind is Person — a lookup here would stamp
+                    `key="person_…"` on a place name and the renderer would link
+                    it to a scribe detail page.
+                  */}
                   <MsTextField
                     label={t('msdesc.form.key')}
                     value={origPlace?.[field]?.key ?? ''}

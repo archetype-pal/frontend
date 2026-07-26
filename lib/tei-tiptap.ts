@@ -201,17 +201,21 @@ function elementExtents(editor: Editor): Map<number, { from: number; to: number 
  * when there is no selection or it straddles an element boundary — only
  * partially covering an element at/below the insertion depth — since that would
  * split the element into overlapping fragments.
+ *
+ * Returns `false` when it refused (nothing selected, or a straddling
+ * selection) so a caller can surface a hint instead of leaving the user with a
+ * silent no-op; `true` when the wrap was applied.
  */
-export function wrapTei(editor: Editor, el: string, attrs: Record<string, string> = {}): void {
+export function wrapTei(editor: Editor, el: string, attrs: Record<string, string> = {}): boolean {
   const segments = collectSegments(editor);
-  if (segments.length === 0) return;
+  if (segments.length === 0) return false;
   const depth = commonDepth(segments);
   const { from, to } = editor.state.selection;
   const extents = elementExtents(editor);
   for (const seg of segments) {
     for (let i = depth; i < seg.stack.length; i++) {
       const ext = extents.get(seg.stack[i].id);
-      if (ext && (ext.from < from || ext.to > to)) return; // straddles → refuse
+      if (ext && (ext.from < from || ext.to > to)) return false; // straddles → refuse
     }
   }
   const entry: StackEntry = { el, attrs, id: nextId() };
@@ -224,6 +228,7 @@ export function wrapTei(editor: Editor, el: string, attrs: Record<string, string
   }
   editor.view.dispatch(tr);
   editor.commands.focus();
+  return true;
 }
 
 /**

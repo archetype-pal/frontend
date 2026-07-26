@@ -1177,7 +1177,42 @@
         "loading": "Loading…",
         "previewEmpty": "Nothing to preview yet.",
         "toastSaved": "Description area saved",
-        "toastSaveFailed": "Failed to save description area"
+        "toastSaveFailed": "Failed to save description area",
+        "insertReference": "Insert reference",
+        "linkResource": "Link to a resource",
+        "unlinkResource": "Remove link",
+        "refAlreadyLinked": "That text is already inside a reference — remove the existing link first.",
+        "refNotInserted": "Could not insert the reference here — select the whole of any element you want to link.",
+        "refSelectionNotWrappable": "The selection is not a complete fragment — select whole elements to wrap them in a reference.",
+        "refBreaksForm": "A reference is not allowed here — inserting it would take this area off the structured form. Use the element’s authority key field instead."
+      },
+      "refPicker": {
+        "title": "Insert reference",
+        "description": "Link to a person, place, manuscript, saved search, or external URL.",
+        "tabsLabel": "Reference type",
+        "tab": {
+          "person": "Person",
+          "place": "Place",
+          "manuscript": "Manuscript",
+          "search": "Search",
+          "external": "External"
+        },
+        "placeholder": {
+          "person": "Search scribes…",
+          "place": "Search places…",
+          "manuscript": "Search manuscripts…",
+          "search": "Filter saved searches…"
+        },
+        "typeToSearch": "Type to search",
+        "searching": "Searching…",
+        "noResults": "No matches",
+        "noSavedSearches": "No saved searches yet",
+        "externalUrl": "URL",
+        "externalText": "Link text",
+        "externalTextPlaceholder": "Displayed text",
+        "invalidUrl": "Enter an absolute http(s) or site-relative (/…) URL",
+        "preview": "Preview",
+        "insert": "Insert"
       },
       "form": {
         "none": "None",
@@ -1198,7 +1233,9 @@
         "contemporary": "Contemporary",
         "number": "Number",
         "idnoType": "Identifier type",
-        "supportMaterial": "Support material (free text)"
+        "supportMaterial": "Support material (free text)",
+        "pickKey": "Look up authority",
+        "pickKeyNoKey": "That resource has no authority key — only people yield a @key."
       },
       "areas": {
         "msIdentifier": "Identification",
