@@ -37,7 +37,11 @@
         "text_date",
         "format",
         "repository_city",
-        "repository_name"
+        "repository_name",
+        "script",
+        "material",
+        "deco_type",
+        "origin_place"
       ]
     },
     "images": {

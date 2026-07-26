@@ -454,6 +454,13 @@ const FACET_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
   places: {
     place_type: 'Place Type',
   },
+  manuscripts: {
+    // msDesc-derived facets: auto-humanising these yields "Material" / "Deco
+    // Type" / "Origin Place", which read poorly next to the catalogue facets.
+    material: 'Support Material',
+    deco_type: 'Decoration',
+    origin_place: 'Place of Origin',
+  },
 };
 
 export function formatFacetTitle(facetKey: string, searchType?: string): string {

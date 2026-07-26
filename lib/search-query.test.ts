@@ -4,6 +4,7 @@ import {
   buildAdvancedExtraParams,
   buildDateFilterTag,
   buildQueryString,
+  formatFacetTitle,
   normalizeQueryState,
   parseQueryRootFromUrl,
   resetQueryForTypeChange,
@@ -267,6 +268,13 @@ describe('resolveFacetClick', () => {
     });
     expect(tags.some((t) => t.exclude && t.value === 'A')).toBe(true);
     expect(tags.some((t) => t.exclude && t.value === 'B')).toBe(true);
+  });
+
+  it('titles the msDesc manuscript facets', () => {
+    expect(formatFacetTitle('script', 'manuscripts')).toBe('Script');
+    expect(formatFacetTitle('material', 'manuscripts')).toBe('Support Material');
+    expect(formatFacetTitle('deco_type', 'manuscripts')).toBe('Decoration');
+    expect(formatFacetTitle('origin_place', 'manuscripts')).toBe('Place of Origin');
   });
 
   it('returns noop for URL arg without facet options', () => {

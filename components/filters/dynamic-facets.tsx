@@ -20,6 +20,7 @@ import {
   type SearchHistoryEntry,
 } from '@/lib/search-history';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
+import { localizeMsDescFacetItems } from '@/lib/msdesc-facet-labels';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -90,6 +91,9 @@ export function DynamicFacets({
 }: DynamicFacetsProps) {
   const t = useTranslations('search');
   const tFilters = useTranslations('filters');
+  // msDesc facet values are indexed as ODD codes ("perg", "textualisNorthern");
+  // their labels live with the authoring dropdowns, under `backoffice`.
+  const tVocab = useTranslations('backoffice');
   const { suggestionsPool, getServerSuggestions } = useSearchContext();
   const { getLabel } = useModelLabels();
   const [draftKeyword, setDraftKeyword] = React.useState(keyword);
@@ -309,7 +313,7 @@ export function DynamicFacets({
               id={facetKey}
               title={title}
               total={facetValue.items.length}
-              items={facetValue.items}
+              items={localizeMsDescFacetItems(facetKey, facetValue.items, tVocab)}
               baseFacetURL={baseFacetURL}
               selectedValue={selectedByFacet[facetKey] ?? null}
               showSort={type !== 'toggle'}
