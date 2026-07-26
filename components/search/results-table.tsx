@@ -230,7 +230,6 @@ export const COLUMNS = {
     makeColumn('Scribe Name', (s: ScribeListItem) => s.name, 'name_exact'),
     makeColumn('Date', (s: ScribeListItem) => s.period),
     makeColumn('Scriptorium', (s: ScribeListItem) => s.scriptorium, 'scriptorium_exact'),
-    makeColumn('Period', (s: ScribeListItem) => s.period ?? '—'),
   ],
 
   hands: [

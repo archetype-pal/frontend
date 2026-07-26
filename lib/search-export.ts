@@ -30,7 +30,6 @@ export const COLUMN_FIELD_MAP: Record<ResultType, Record<string, string>> = {
     'Scribe Name': 'name',
     Date: 'period',
     Scriptorium: 'scriptorium',
-    Period: 'period',
   },
   hands: {
     'Hand Title': 'name',
