@@ -558,3 +558,33 @@ describe('renderMsDescArea — heading levels', () => {
     ]);
   });
 });
+
+describe('multi-element field values', () => {
+  const origin = (inner: string) =>
+    `<history><origin><origPlace>${inner}</origPlace></origin></history>`;
+
+  it('comma-joins sibling elements that have no whitespace between them', () => {
+    const host = render(
+      'history',
+      origin('<country>Scotland</country><settlement>Kelso</settlement>')
+    );
+    expect(host.textContent).toContain('Scotland, Kelso');
+    expect(host.textContent).not.toContain('ScotlandKelso');
+  });
+
+  it('leaves a single-element field untouched', () => {
+    const host = render('history', origin('<country>Scotland</country>'));
+    expect(host.textContent).toContain('Scotland');
+    expect(host.textContent).not.toContain('Scotland,');
+  });
+
+  it('keeps authored spacing when the source is pretty-printed', () => {
+    const host = render(
+      'history',
+      origin('<country>Scotland</country>\n  <settlement>Kelso</settlement>')
+    );
+    expect(host.textContent).toContain('Scotland');
+    expect(host.textContent).toContain('Kelso');
+    expect(host.textContent).not.toContain('ScotlandKelso');
+  });
+});

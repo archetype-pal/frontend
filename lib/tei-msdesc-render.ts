@@ -376,10 +376,31 @@ function renderField(el: XmlElementNode, t: MsDescTranslate): string {
     return linked ? fieldRow(label, linked, unknownClass) : '';
   }
 
-  let value = renderInlineNodes(el.children, t).trim();
+  let value = renderFieldValue(el, t);
   if (!value) value = escapeHtml(fieldFallbackText(el));
   if (!value) return '';
   return fieldRow(label, value, unknownClass);
+}
+
+/**
+ * A field's inline value. Sibling *elements* with no text between them are
+ * joined with a comma rather than run together: `<origPlace>` holding
+ * `<country>Scotland</country><settlement>Kelso</settlement>` must read
+ * "Scotland, Kelso", not "ScotlandKelso". Whitespace-free markup is the norm
+ * here, not the exception — the form serializer emits canonical fragments with
+ * no indentation, so only hand-authored/pretty-printed source has the
+ * separating text nodes that would otherwise space these apart.
+ */
+function renderFieldValue(el: XmlElementNode, t: MsDescTranslate): string {
+  const elements = el.children.filter((child) => child.kind === 'element');
+  const hasText = el.children.some((child) => child.kind === 'text' && child.raw.trim() !== '');
+  if (!hasText && elements.length > 1) {
+    return elements
+      .map((child) => renderInlineNode(child, t).trim())
+      .filter(Boolean)
+      .join(', ');
+  }
+  return renderInlineNodes(el.children, t).trim();
 }
 
 /** Attribute-derived display for fields whose element content is empty. */
