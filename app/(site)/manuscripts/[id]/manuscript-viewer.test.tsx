@@ -3,6 +3,7 @@ import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Manuscript } from '@/types/manuscript';
+import type { HandType } from '@/types/hands';
 import { ManuscriptViewer } from './manuscript-viewer';
 
 // The viewer only needs these for chrome around the section under test.
@@ -45,11 +46,38 @@ const MANUSCRIPT = {
   ],
 } as Manuscript;
 
-function renderViewer(msDescEnabled: boolean) {
+function renderViewer(msDescEnabled: boolean, hands: HandType[] = []) {
   return render(
-    <ManuscriptViewer manuscript={MANUSCRIPT} images={[]} msDescEnabled={msDescEnabled} />
+    <ManuscriptViewer
+      manuscript={MANUSCRIPT}
+      images={[]}
+      hands={hands}
+      msDescEnabled={msDescEnabled}
+    />
   );
 }
+
+describe('ManuscriptViewer — Hands section', () => {
+  const HANDS = [
+    { id: 141, name: 'Main Hand', date: null, place: '' },
+    { id: 142, name: 'Second Hand', date: '1150', place: 'Kelso' },
+  ] as HandType[];
+
+  it('lists each hand with a link to its page and advertises the anchor', () => {
+    const { container } = renderViewer(false, HANDS);
+    const section = container.querySelector('section#hands');
+    expect(section).not.toBeNull();
+    expect(section?.querySelector('a[href="/hands/141"]')?.textContent).toContain('Main Hand');
+    expect(section?.querySelector('a[href="/hands/142"]')?.textContent).toContain('Second Hand');
+    expect(container.querySelector('a[href="#hands"]')).not.toBeNull();
+  });
+
+  it('renders no Hands section when the manuscript has no hands', () => {
+    const { container } = renderViewer(false, []);
+    expect(container.querySelector('section#hands')).toBeNull();
+    expect(container.querySelector('a[href="#hands"]')).toBeNull();
+  });
+});
 
 describe('ManuscriptViewer — manuscriptDescriptions feature gate', () => {
   it('renders the msDesc section and its on-this-page anchor when the flag is on', () => {

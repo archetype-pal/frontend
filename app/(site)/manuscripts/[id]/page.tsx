@@ -3,6 +3,7 @@ import type { Manuscript, ManuscriptImage } from '@/types/manuscript';
 import { ManuscriptViewer } from './manuscript-viewer';
 import { notFound } from 'next/navigation';
 import { apiFetch } from '@/lib/api-fetch';
+import { fetchHands } from '@/services/manuscripts';
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { readModelLabels } from '@/lib/model-labels-server';
@@ -72,10 +73,15 @@ export async function generateMetadata({
 
 export default async function ManuscriptPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [manuscript, images, siteFeatures] = await Promise.all([
+  const [manuscript, images, siteFeatures, hands] = await Promise.all([
     getManuscript(id),
     getManuscriptImages(id),
     readSiteFeatures(),
+    // Hands associated with this item-part; a fetch failure must not break the
+    // page, so fall back to an empty list (the section then renders nothing).
+    fetchHands(id)
+      .then((r) => r.results)
+      .catch(() => []),
   ]);
   // Read the flag here, on the server, rather than from the client context: the
   // msDesc markup then never reaches the browser when the feature is off — no
@@ -111,6 +117,11 @@ export default async function ManuscriptPage({ params }: { params: Promise<{ id:
   const viewerManuscript = msDescEnabled ? manuscript : { ...manuscript, msdesc_areas: [] };
 
   return (
-    <ManuscriptViewer manuscript={viewerManuscript} images={images} msDescEnabled={msDescEnabled} />
+    <ManuscriptViewer
+      manuscript={viewerManuscript}
+      images={images}
+      hands={hands}
+      msDescEnabled={msDescEnabled}
+    />
   );
 }

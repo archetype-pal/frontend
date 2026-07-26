@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowUpRight, BookOpen } from 'lucide-react';
 
 import type { Manuscript, ManuscriptImage } from '@/types/manuscript';
+import type { HandType } from '@/types/hands';
 import { getIiifImageUrl, type IIIFImageUrlOptions } from '@/utils/iiif';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { BackofficeLink } from '@/components/common/backoffice-link';
@@ -29,6 +30,8 @@ import { SectionHeading } from './section-heading';
 interface ManuscriptViewerProps {
   manuscript: Manuscript;
   images: ManuscriptImage[];
+  /** Scribal hands recorded against this item-part; each links to its hand page. */
+  hands: HandType[];
   /**
    * The `manuscriptDescriptions` site-feature flag, resolved server-side by the
    * page (`readSiteFeatures`). Required rather than defaulted so a new call
@@ -153,7 +156,12 @@ function PlateCard({ image, manuscriptId }: { image: ManuscriptImage; manuscript
 
 /* ── Main component ───────────────────────────────────────────────────── */
 
-export function ManuscriptViewer({ manuscript, images, msDescEnabled }: ManuscriptViewerProps) {
+export function ManuscriptViewer({
+  manuscript,
+  images,
+  hands,
+  msDescEnabled,
+}: ManuscriptViewerProps) {
   const { getLabel, getPluralLabel } = useModelLabels();
   const t = useTranslations('manuscript');
   // The msDesc renderer's label keys (`msdesc.areas.*` / `msdesc.render.*` /
@@ -216,6 +224,7 @@ export function ManuscriptViewer({ manuscript, images, msDescEnabled }: Manuscri
     descriptions.length > 0 && { id: 'description', label: t('sections.legacyDescriptions') },
     editions.length > 0 && { id: 'text', label: t('sections.text') },
     orderedImages.length > 0 && { id: 'images', label: t('sections.images') },
+    hands.length > 0 && { id: 'hands', label: t('sections.hands') },
     { id: 'record', label: t('sections.record') },
   ].filter(Boolean) as { id: string; label: string }[];
 
@@ -443,6 +452,41 @@ export function ManuscriptViewer({ manuscript, images, msDescEnabled }: Manuscri
             {orderedImages.map((image) => (
               <PlateCard key={image.id} image={image} manuscriptId={manuscript.id} />
             ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* ── Hands: scribal hands recorded on this manuscript ──────────── */}
+      {hands.length > 0 ? (
+        <section id="hands" className="mt-20 scroll-mt-24">
+          <SectionHeading
+            title={t('sections.hands')}
+            aside={`${hands.length} ${hands.length === 1 ? 'hand' : 'hands'}`}
+          />
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {hands.map((hand) => {
+              const meta = [hand.date, hand.place].filter(nonEmpty).join(' · ');
+              return (
+                <li key={hand.id}>
+                  <Link
+                    href={`/hands/${hand.id}`}
+                    className="group flex items-baseline justify-between gap-3 rounded-md border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-accent/60 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span className="min-w-0">
+                      <span className="font-serif text-foreground transition-colors group-hover:text-primary">
+                        {nonEmpty(hand.name) ? hand.name : `Hand #${hand.id}`}
+                      </span>
+                      {nonEmpty(meta) ? (
+                        <span className="mt-0.5 block truncate text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                          {meta}
+                        </span>
+                      ) : null}
+                    </span>
+                    <ArrowUpRight className="h-4 w-4 shrink-0 translate-y-0.5 text-muted-foreground transition-colors group-hover:text-primary" />
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}
