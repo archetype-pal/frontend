@@ -12,11 +12,11 @@ interface ShareButtonsProps {
 export default function ShareButtons({ title, author, slug }: ShareButtonsProps) {
   const t = useTranslations('content');
   const normalizedSlug = slug.startsWith('/') ? slug : `/${slug}`;
-  const currentUrl =
-    typeof window === 'undefined' ? '' : `${window.location.origin}${normalizedSlug}`;
 
   const handleShare = async (platform?: 'twitter' | 'facebook') => {
-    if (!currentUrl) return;
+    if (typeof window === 'undefined') return;
+
+    const currentUrl = `${window.location.origin}${normalizedSlug}`;
 
     const shareText = `${title}\n\nBy ${author}`;
 
@@ -60,7 +60,6 @@ export default function ShareButtons({ title, author, slug }: ShareButtonsProps)
         size="sm"
         className="text-primary hover:text-primary/80"
         onClick={() => handleShare('twitter')}
-        disabled={!currentUrl}
       >
         {t('share.twitter')}
       </Button>
@@ -69,7 +68,6 @@ export default function ShareButtons({ title, author, slug }: ShareButtonsProps)
         size="sm"
         className="text-primary hover:text-primary/80"
         onClick={() => handleShare('facebook')}
-        disabled={!currentUrl}
       >
         {t('share.facebook')}
       </Button>
