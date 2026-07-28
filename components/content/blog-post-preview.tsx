@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { User, Calendar, Newspaper, MessageSquare, ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import ShareButtons from './share-buttons';
-import { sanitizeHtml } from '@/lib/sanitize-html';
+import { renderPublicationHtml } from '@/lib/publication-html';
 
 // Format a date string, returning '' for null/empty/malformed input so the UI
 // never surfaces the literal 'Invalid Date' to readers.
@@ -80,9 +80,9 @@ export default function BlogPostPreview({
           elements (e.g. <p>), which a <p> can't legally nest — the browser would
           reparent them and desync from the server HTML → hydration mismatch. */}
       <div
-        className="mb-4"
+        className="publication-body mb-4"
         dangerouslySetInnerHTML={{
-          __html: sanitizeHtml(excerpt, { allowLegacyPublicationStyles: true }),
+          __html: renderPublicationHtml(excerpt),
         }}
       ></div>
 

@@ -1144,6 +1144,105 @@ g.a9s-annotation.a9s-text:hover .a9s-outer {
   background: hsl(282 38% 42%);
 }
 
+/* --- Rendered publication body --------------------------------------------- */
+
+.publication-body {
+  color: var(--foreground);
+  line-height: 1.75;
+}
+
+.publication-body p {
+  margin: 0.9rem 0;
+}
+
+.publication-body > :first-child {
+  margin-top: 0;
+}
+
+.publication-body > :last-child {
+  margin-bottom: 0;
+}
+
+.publication-body h2,
+.publication-body h3 {
+  margin: 1.6rem 0 0.75rem;
+  font-family: var(--font-lora), Georgia, Cambria, serif;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--foreground);
+}
+
+.publication-body h2 {
+  font-size: 1.35rem;
+}
+
+.publication-body h3 {
+  font-size: 1.15rem;
+}
+
+.publication-body a {
+  color: var(--primary);
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in srgb, var(--primary) 45%, transparent);
+  text-decoration-skip-ink: auto;
+  text-underline-offset: 3px;
+  transition:
+    color 0.12s ease,
+    text-decoration-color 0.12s ease;
+}
+
+.publication-body a:hover {
+  color: color-mix(in srgb, var(--primary) 82%, black);
+  text-decoration-color: var(--primary);
+}
+
+.publication-body [id^='refnote'],
+.publication-body [id^='footnote'] {
+  scroll-margin-top: 6rem;
+}
+
+.publication-body .publication-footnote-ref,
+.publication-body .publication-footnote-backref {
+  font-size: 0.86em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.publication-body .highlight-box {
+  margin: 0 0 1.25rem;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--card));
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+}
+
+.publication-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1rem 0;
+}
+
+.publication-body blockquote {
+  margin: 1rem 0;
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+
+.publication-body table {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+}
+
+.publication-body th,
+.publication-body td {
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.6rem;
+  vertical-align: top;
+}
+
 /* --- Rendered msDesc description (TEI descriptions 5.1/5.2) ------------------ */
 
 /* Structured-field display for `lib/tei-msdesc-render.ts` output. Shared by the
