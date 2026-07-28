@@ -1,5 +1,11 @@
 import { readJsonConfig, writeJsonConfig } from './json-config-file';
-import { getDefaultConfig, normalizeSectionOrder, type SiteFeaturesConfig } from './site-features';
+import {
+  getDefaultConfig,
+  getDefaultFeatures,
+  mergeFeatureFlags,
+  normalizeSectionOrder,
+  type SiteFeaturesConfig,
+} from './site-features';
 
 const CONFIG_FILE = 'site-features.json';
 
@@ -29,6 +35,13 @@ export async function readSiteFeatures(): Promise<SiteFeaturesConfig> {
       return {
         sections: { ...defaults.sections, ...parsedSections },
         sectionOrder: normalizeSectionOrder(parsed.sectionOrder),
+        // Every config file written before feature flags existed has no
+        // `features` key at all, so this merge is the whole backward-compat
+        // story: unknown/absent flags fall back to the defaults (enabled) and
+        // an already-shipped feature survives the deploy that introduces its
+        // flag. `mergeFeatureFlags` applies the same non-plain-object defence
+        // used for `sections` above, and additionally drops non-boolean values.
+        features: mergeFeatureFlags(defaults.features, parsed.features),
         searchCategories: {
           ...defaults.searchCategories,
           ...Object.fromEntries(
@@ -56,6 +69,13 @@ export async function writeSiteFeatures(config: SiteFeaturesConfig): Promise<Sit
   const normalized: SiteFeaturesConfig = {
     sections: config.sections,
     sectionOrder: normalizeSectionOrder(config.sectionOrder),
+    // `features` MUST be listed here: the whitelist is exhaustive, so omitting
+    // it would silently drop every flag on each admin save — the file would
+    // lose the key, the next read would restore the defaults, and a disabled
+    // feature would reappear. Merging over the defaults (rather than trusting
+    // `config.features` verbatim) also keeps the persisted map complete and
+    // boolean-typed even if a caller hands us a partial object.
+    features: mergeFeatureFlags(getDefaultFeatures(), config.features),
     searchCategories: config.searchCategories,
   };
   await writeJsonConfig(CONFIG_FILE, normalized);

@@ -13,7 +13,7 @@ ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 ENV CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
 
 # Install pnpm in base so all stages have it (corepack unreliable on Alpine)
-RUN npm install -g pnpm@10.34.1
+RUN npm install -g pnpm@11.9.0
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -22,7 +22,7 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm i --frozen-lockfile
 
 

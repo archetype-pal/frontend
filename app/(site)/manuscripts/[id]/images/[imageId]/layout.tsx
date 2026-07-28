@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { ManuscriptTabs } from '@/components/manuscript/manuscript-tabs';
+import { BackofficeLink } from '@/components/common/backoffice-link';
 import { fetchManuscriptImage, fetchManuscript } from '@/services/manuscripts';
 import { fetchAnnotationsForImage } from '@/services/annotations';
 import { fetchImageTextsForImage } from '@/services/image-texts';
@@ -78,13 +79,22 @@ export default async function ManuscriptImageLayout({ children, params }: Layout
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="mt-3">
+        <div className="mt-3 flex items-start justify-between gap-4">
           <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
             {label}
             {locus ? (
               <span className="font-normal capitalize text-muted-foreground"> · {locus}</span>
             ) : null}
           </h1>
+          {/* Reverse of the frontend "View in backoffice" link: editors get a jump
+              straight from the image viewer to this item's backoffice workspace.
+              Renders null for anonymous visitors. archetype-pal/frontend#77 */}
+          <BackofficeLink
+            kind="item-part"
+            id={id}
+            label="Edit in Backoffice"
+            className="mt-1 shrink-0"
+          />
         </div>
 
         {description ? (

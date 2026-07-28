@@ -204,9 +204,7 @@ function readExtraParams(sp: SearchParamReader): Record<string, string | string[
 }
 
 export type FacetClickResolution =
-  | { type: 'keyword'; value: string }
-  | { type: 'query'; value: QueryState }
-  | { type: 'noop' };
+  { type: 'keyword'; value: string } | { type: 'query'; value: QueryState } | { type: 'noop' };
 
 /**
  * Return `extraParams` with `value` dropped from the `<facetKey>__not` exclusion
@@ -455,6 +453,13 @@ const FACET_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
   },
   places: {
     place_type: 'Place Type',
+  },
+  manuscripts: {
+    // msDesc-derived facets: auto-humanising these yields "Material" / "Deco
+    // Type" / "Origin Place", which read poorly next to the catalogue facets.
+    material: 'Support Material',
+    deco_type: 'Decoration',
+    origin_place: 'Place of Origin',
   },
 };
 

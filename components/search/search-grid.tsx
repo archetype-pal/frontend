@@ -12,6 +12,7 @@ import { CollectionStar } from '@/components/collection/collection-star';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { getImageDetailUrl } from '@/lib/media-url';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
+import type { ThumbnailSize } from '@/components/search/thumbnail-size-control';
 
 type GridItem = ImageListItem | GraphListItem | ManuscriptListItem;
 
@@ -20,7 +21,17 @@ export interface SearchGridProps {
   resultType: ResultType;
   highlightKeyword?: string;
   isFetching?: boolean;
+  thumbnailSize?: ThumbnailSize;
 }
+
+// Column counts per thumbnail size. 'medium' preserves the historical grid;
+// 'small'/'large' add or remove columns to shrink/grow each cell. Full static
+// class strings so Tailwind's JIT can see them.
+const GRID_COLUMNS: Record<ThumbnailSize, string> = {
+  small: 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10',
+  medium: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6',
+  large: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+};
 
 type GridCard =
   | {
@@ -63,7 +74,23 @@ type MediaGridCardProps = {
 
 const SEARCH_EAGER_THUMBNAIL_COUNT = 6;
 
-function toGridCard(resultType: ResultType, item: GridItem): GridCard | null {
+type CardLabelPart = { plain?: string | null; formatted?: string };
+
+// Joins label segments, mirroring the join on the Meilisearch `_formatted`
+// variants so keyword <mark>s survive; when no segment has a formatted
+// variant, Highlight falls back to client-side keyword matching instead.
+function composeCardLabel(parts: CardLabelPart[]): { text: string; formattedText?: string } {
+  const present = parts.filter((part) => part.plain);
+  const hasFormatted = present.some((part) => part.formatted !== undefined);
+  return {
+    text: present.map((part) => part.plain).join(', '),
+    formattedText: hasFormatted
+      ? present.map((part) => part.formatted ?? part.plain).join(', ')
+      : undefined,
+  };
+}
+
+export function toGridCard(resultType: ResultType, item: GridItem): GridCard | null {
   const formatted = (item as { _formatted?: Record<string, string | undefined> })._formatted ?? {};
   if (resultType === 'manuscripts') {
     const ms = item as ManuscriptListItem;
@@ -80,23 +107,36 @@ function toGridCard(resultType: ResultType, item: GridItem): GridCard | null {
   }
   if (resultType === 'images') {
     const image = item as ImageListItem;
+    // Repository abbreviation + shelfmark come pre-composed as display_label;
+    // hits indexed before that field existed fall back to the bare shelfmark.
+    const label = composeCardLabel([
+      image.display_label
+        ? { plain: image.display_label, formatted: formatted.display_label }
+        : { plain: image.shelfmark, formatted: formatted.shelfmark },
+      { plain: image.locus, formatted: formatted.locus },
+    ]);
     return {
       kind: 'image',
       item: image,
       detailUrl: getImageDetailUrl(image),
-      displayText: image.locus || 'Untitled',
-      formattedDisplayText: formatted.locus,
+      displayText: label.text || 'Untitled',
+      formattedDisplayText: label.formattedText,
       imageUrl: image.image_iiif ? getIiifImageUrl(image.image_iiif, { thumbnail: true }) : null,
     };
   }
   if (resultType === 'graphs') {
     const graph = item as GraphListItem;
+    const label = composeCardLabel([
+      graph.display_label
+        ? { plain: graph.display_label, formatted: formatted.display_label }
+        : { plain: graph.shelfmark, formatted: formatted.shelfmark },
+    ]);
     return {
       kind: 'graph',
       item: graph,
       detailUrl: null,
-      displayText: graph.shelfmark || 'Untitled',
-      formattedDisplayText: formatted.shelfmark,
+      displayText: label.text || 'Untitled',
+      formattedDisplayText: label.formattedText,
     };
   }
   return null;
@@ -170,7 +210,10 @@ const MediaGridCard = React.memo(function MediaGridCard({
       </div>
       <div className="border-t border-border/70 px-2.5 py-1.5">
         {renderLink(
-          <span className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
+          <span
+            title={displayText}
+            className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary"
+          >
             <Highlight
               text={displayText}
               keyword={highlightKeyword}
@@ -289,6 +332,7 @@ function SearchGridComponent({
   resultType,
   highlightKeyword = '',
   isFetching = false,
+  thumbnailSize = 'medium',
 }: SearchGridProps) {
   const cards = React.useMemo(
     () => results.map((item) => ({ card: toGridCard(resultType, item) })),
@@ -354,7 +398,7 @@ function SearchGridComponent({
 
   return (
     <section
-      className={`relative grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 ${
+      className={`relative grid gap-3 ${GRID_COLUMNS[thumbnailSize]} ${
         isFetching ? 'opacity-60' : ''
       }`}
     >

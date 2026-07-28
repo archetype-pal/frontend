@@ -3,13 +3,16 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ArrowUpRight, BookOpen } from 'lucide-react';
 
 import type { Manuscript, ManuscriptImage } from '@/types/manuscript';
+import type { HandType } from '@/types/hands';
 import { getIiifImageUrl, type IIIFImageUrlOptions } from '@/utils/iiif';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
+import { renderPublicMsDescAreas } from '@/lib/msdesc-public';
 import { sanitizeHtml } from '@/lib/sanitize-html';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,10 +24,20 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { cn } from '@/lib/utils';
+import { MsDescSection, MSDESC_SECTION_ID } from './msdesc-section';
+import { SectionHeading } from './section-heading';
 
 interface ManuscriptViewerProps {
   manuscript: Manuscript;
   images: ManuscriptImage[];
+  /** Scribal hands recorded against this item-part; each links to its hand page. */
+  hands: HandType[];
+  /**
+   * The `manuscriptDescriptions` site-feature flag, resolved server-side by the
+   * page (`readSiteFeatures`). Required rather than defaulted so a new call
+   * site can't forget it and silently publish a disabled section.
+   */
+  msDescEnabled: boolean;
 }
 
 /* ── Helpers ──────────────────────────────────────────────────────────── */
@@ -73,25 +86,6 @@ function nonEmpty(value: string | null | undefined): value is string {
 }
 
 /* ── Small presentational pieces ──────────────────────────────────────── */
-
-function SectionHeading({ title, aside }: { title: string; aside?: React.ReactNode }) {
-  return (
-    <div className="mb-8 flex items-center gap-5">
-      <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-        {title}
-      </h2>
-      <span
-        aria-hidden
-        className="h-px flex-1 bg-gradient-to-r from-border via-border/50 to-transparent"
-      />
-      {aside ? (
-        <span className="hidden whitespace-nowrap text-xs uppercase tracking-[0.18em] text-muted-foreground sm:inline">
-          {aside}
-        </span>
-      ) : null}
-    </div>
-  );
-}
 
 function Stat({ value, label }: { value: number | string; label: string }) {
   return (
@@ -162,8 +156,18 @@ function PlateCard({ image, manuscriptId }: { image: ManuscriptImage; manuscript
 
 /* ── Main component ───────────────────────────────────────────────────── */
 
-export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) {
+export function ManuscriptViewer({
+  manuscript,
+  images,
+  hands,
+  msDescEnabled,
+}: ManuscriptViewerProps) {
   const { getLabel, getPluralLabel } = useModelLabels();
+  const t = useTranslations('manuscript');
+  // The msDesc renderer's label keys (`msdesc.areas.*` / `msdesc.render.*` /
+  // `msdesc.vocab.*`) live in the `backoffice` namespace — one vocabulary
+  // shared by the authoring form and every render surface (lib/msdesc-vocab.ts).
+  const tMsDesc = useTranslations('backoffice');
 
   const { historical_item: historical, current_item: current } = manuscript;
   const title = manuscript.display_label?.trim() || `Manuscript #${manuscript.id}`;
@@ -200,12 +204,28 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
   const catalogueNumbers = historical.catalogue_numbers ?? [];
   const totalAnnotations = orderedImages.reduce((sum, img) => sum + annotationCount(img), 0);
 
+  // Structured TEI description (roadmap 5.2). The API only ever serves
+  // published areas; the helper orders them canonically, sanitizes each one and
+  // drops anything that renders empty — so an empty list means "no section".
+  //
+  // The admin feature flag collapses to the same empty list, which is why one
+  // check covers both surfaces: the `<MsDescSection>` below renders nothing on
+  // an empty list, and the on-this-page nav only advertises `#msdesc` when the
+  // list is non-empty. No markup, and no anchor to a section that isn't there.
+  const msdescAreas = React.useMemo(
+    () =>
+      msDescEnabled ? renderPublicMsDescAreas(manuscript.msdesc_areas, (key) => tMsDesc(key)) : [],
+    [msDescEnabled, manuscript.msdesc_areas, tMsDesc]
+  );
+
   // Section anchors — only advertise the ones that actually render.
   const sections = [
-    descriptions.length > 0 && { id: 'description', label: 'Description' },
-    editions.length > 0 && { id: 'text', label: 'Text' },
-    orderedImages.length > 0 && { id: 'images', label: 'Images' },
-    { id: 'record', label: 'Record' },
+    msdescAreas.length > 0 && { id: MSDESC_SECTION_ID, label: t('sections.msDesc') },
+    descriptions.length > 0 && { id: 'description', label: t('sections.legacyDescriptions') },
+    editions.length > 0 && { id: 'text', label: t('sections.text') },
+    orderedImages.length > 0 && { id: 'images', label: t('sections.images') },
+    hands.length > 0 && { id: 'hands', label: t('sections.hands') },
+    { id: 'record', label: t('sections.record') },
   ].filter(Boolean) as { id: string; label: string }[];
 
   return (
@@ -338,10 +358,13 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
         ) : null}
       </header>
 
-      {/* ── Description ───────────────────────────────────────────────── */}
+      {/* ── Manuscript description (structured TEI msDesc) ────────────── */}
+      <MsDescSection areas={msdescAreas} />
+
+      {/* ── Catalogue descriptions / citations (legacy, non-TEI) ───────── */}
       {descriptions.length > 0 ? (
         <section id="description" className="mt-20 scroll-mt-24">
-          <SectionHeading title="Description" />
+          <SectionHeading title={t('sections.legacyDescriptions')} />
           <div className="max-w-3xl space-y-10">
             {descriptions.map((desc, index) => (
               <article key={index}>
@@ -358,7 +381,7 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
                 />
                 {nonEmpty(desc.source?.name) ? (
                   <p className="mt-4 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                    From {desc.source.name}
+                    {t('sections.sourceAttribution', { source: desc.source.name })}
                   </p>
                 ) : null}
               </article>
@@ -370,7 +393,7 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
       {/* ── Text: facing-page edition ─────────────────────────────────── */}
       {editions.length > 0 ? (
         <section id="text" className="mt-20 scroll-mt-24">
-          <SectionHeading title="Text" aside="Latin & English" />
+          <SectionHeading title={t('sections.text')} aside={t('sections.textAside')} />
           <div className="space-y-14">
             {editions.map((edition) => {
               const hasBoth = Boolean(edition.transcription && edition.translation);
@@ -429,6 +452,41 @@ export function ManuscriptViewer({ manuscript, images }: ManuscriptViewerProps) 
             {orderedImages.map((image) => (
               <PlateCard key={image.id} image={image} manuscriptId={manuscript.id} />
             ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* ── Hands: scribal hands recorded on this manuscript ──────────── */}
+      {hands.length > 0 ? (
+        <section id="hands" className="mt-20 scroll-mt-24">
+          <SectionHeading
+            title={t('sections.hands')}
+            aside={`${hands.length} ${hands.length === 1 ? 'hand' : 'hands'}`}
+          />
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {hands.map((hand) => {
+              const meta = [hand.date, hand.place].filter(nonEmpty).join(' · ');
+              return (
+                <li key={hand.id}>
+                  <Link
+                    href={`/hands/${hand.id}`}
+                    className="group flex items-baseline justify-between gap-3 rounded-md border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-accent/60 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span className="min-w-0">
+                      <span className="font-serif text-foreground transition-colors group-hover:text-primary">
+                        {nonEmpty(hand.name) ? hand.name : `Hand #${hand.id}`}
+                      </span>
+                      {nonEmpty(meta) ? (
+                        <span className="mt-0.5 block truncate text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                          {meta}
+                        </span>
+                      ) : null}
+                    </span>
+                    <ArrowUpRight className="h-4 w-4 shrink-0 translate-y-0.5 text-muted-foreground transition-colors group-hover:text-primary" />
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}

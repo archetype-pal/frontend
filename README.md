@@ -2,102 +2,48 @@
 
 Next.js frontend for the Archetype project.
 
-## Prerequisites
+## Quick Start (Docker — recommended)
 
-- Node.js `>=22`
-- pnpm `>=10`
-- Docker (for containerized local runs)
-
-## Environment Variables
-
-Copy the sample file and adjust values as needed:
+No host Node toolchain or env setup needed. Start the backend stack first
+(`just up` in the backend repo), then:
 
 ```bash
-cp .env.example .env
+just up          # or: docker compose up
 ```
 
-Important variables:
+App URL: `http://localhost:3000` — live reload works through the bind mount.
 
-- `NEXT_PUBLIC_API_URL` (required)
-- `NEXT_PUBLIC_IIIF_UPSTREAM` (required)
-- `NEXT_PUBLIC_SITE_URL` (required)
-- `CORS_ALLOWED_ORIGINS` (required, used by `/api/*` headers)
+The dev container reaches the backend via `host.docker.internal`; browsers
+use plain `localhost` URLs. Works out of the box on Linux, macOS (Apple
+Silicon included — all images are multi-arch), and Windows (run commands
+from WSL2 and keep the checkout in the WSL2 filesystem so live reload sees
+file changes).
 
-## Local Development (pnpm)
-
-Install dependencies:
+Run `just` with no arguments to list every recipe — lint, tests, build, and
+the bundle gate all run inside the container:
 
 ```bash
+just lint
+just test
+just build
+```
+
+After changing `package.json`/`pnpm-lock.yaml`, refresh the shared deps
+volume with `just install`.
+
+## Host-Native Alternative (pnpm)
+
+Requires Node `>=26` and pnpm `>=10`, plus a `.env`:
+
+```bash
+cp .env.example .env   # NEXT_PUBLIC_API_URL, NEXT_PUBLIC_IIIF_UPSTREAM,
+                       # NEXT_PUBLIC_SITE_URL, CORS_ALLOWED_ORIGINS
 pnpm install
+pnpm dev               # also: lint / test / build / format
 ```
 
-Start the dev server:
+## Deployment
 
-```bash
-pnpm dev
-```
-
-App URL: `http://localhost:3000`
-
-## Quality Checks
-
-```bash
-pnpm lint
-pnpm test
-pnpm build
-```
-
-## Run With Docker (Local)
-
-The `Dockerfile` builds a production image and runs Next.js in standalone mode on port `3000`.
-
-### 1) Build the image
-
-```bash
-docker build \
-  --build-arg NEXT_PUBLIC_API_URL=https://betaarchetype.gla.ac.uk \
-  --build-arg NEXT_PUBLIC_IIIF_UPSTREAM=https://betaarchetype.gla.ac.uk \
-  --build-arg NEXT_PUBLIC_SITE_URL=https://betaarchetype.gla.ac.uk \
-  --build-arg CORS_ALLOWED_ORIGINS=https://betaarchetype.gla.ac.uk \
-  --build-arg DOCKER_IMAGE_HASH=local-dev \
-  -t archetype-frontend:local .
-```
-
-If your API is reachable on another host/IP, set that URL in `NEXT_PUBLIC_API_URL` during build.
-
-### 2) Run the container
-
-```bash
-docker run --rm \
-  --name archetype-frontend \
-  -p 3000:3000 \
-  archetype-frontend:local
-```
-
-The container listens on `0.0.0.0` internally (already configured in the image), and `-p 3000:3000` publishes it on your machine.
-`NEXT_PUBLIC_*` values are set at image build time via `--build-arg`; passing them at `docker run` can override server-side behavior.
-
-## Access Over Your Local Network
-
-To open the app from another device on the same network:
-
-1. Find your machine IP (example on macOS):
-   ```bash
-   ipconfig getifaddr en0
-   ```
-2. Ensure port `3000` is allowed by your firewall.
-3. Open from another device:
-   - `http://<YOUR_MACHINE_IP>:3000`
-
-If backend/image services are on your machine, they must also be reachable from the container and from client devices (CORS and host/IP values in env vars may need to be updated).
-
-## Useful Commands
-
-```bash
-pnpm dev
-pnpm build
-pnpm start
-pnpm lint
-pnpm lint:fix
-pnpm test
-```
+Nothing in this repo deploys anywhere: CI builds the production image from
+`Dockerfile`, and staging/production run from the
+[infrastructure repo](https://github.com/archetype-pal/infrastructure).

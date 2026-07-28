@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import {
   Dialog,
@@ -33,6 +34,7 @@ interface PreviewAsPublicDialogProps {
  * surfaces instead of silently passing.
  */
 export function PreviewAsPublicDialog({ textId, currentStatus }: PreviewAsPublicDialogProps) {
+  const t = useTranslations('backoffice');
   const [open, setOpen] = React.useState(false);
 
   const { data, isFetching, isError } = useQuery({
@@ -51,18 +53,15 @@ export function PreviewAsPublicDialog({ textId, currentStatus }: PreviewAsPublic
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" title="See what an anonymous visitor sees">
+        <Button variant="outline" size="sm" title={t('previewAsPublic.triggerTitle')}>
           <Eye className="mr-1 h-3.5 w-3.5" />
-          Preview as public
+          {t('previewAsPublic.triggerLabel')}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Preview as anonymous visitor</DialogTitle>
-          <DialogDescription>
-            Fetched through the public API with no login — only Live and Reviewed texts are shown to
-            anonymous visitors.
-          </DialogDescription>
+          <DialogTitle>{t('previewAsPublic.dialogTitle')}</DialogTitle>
+          <DialogDescription>{t('previewAsPublic.dialogDescription')}</DialogDescription>
         </DialogHeader>
 
         {isFetching ? (
@@ -71,7 +70,7 @@ export function PreviewAsPublicDialog({ textId, currentStatus }: PreviewAsPublic
           </div>
         ) : isError ? (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-            Could not reach the public endpoint. Try again.
+            {t('previewAsPublic.fetchError')}
           </div>
         ) : (
           <div className="space-y-3">
@@ -79,9 +78,11 @@ export function PreviewAsPublicDialog({ textId, currentStatus }: PreviewAsPublic
               <div className="flex items-start gap-2 rounded-md border border-amber-400/50 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-900/20 dark:text-amber-200">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>
-                  Unexpected: status is <strong>{currentStatus}</strong> but the public endpoint{' '}
-                  {actuallyVisible ? 'returned content' : 'returned nothing'}. The visibility rule
-                  may be misconfigured on the server.
+                  {t.rich('previewAsPublic.mismatch', {
+                    status: currentStatus,
+                    result: actuallyVisible ? 'content' : 'nothing',
+                    strong: (chunks) => <strong>{chunks}</strong>,
+                  })}
                 </span>
               </div>
             ) : null}
@@ -90,7 +91,7 @@ export function PreviewAsPublicDialog({ textId, currentStatus }: PreviewAsPublic
               <>
                 <div className="flex items-center gap-2 rounded-md border border-green-500/40 bg-green-50 p-2.5 text-xs font-medium text-green-800 dark:bg-green-900/20 dark:text-green-200">
                   <Eye className="h-4 w-4" />
-                  Visible to the public ({currentStatus})
+                  {t('previewAsPublic.visible', { status: currentStatus })}
                 </div>
                 <ImageTextViewer html={data!.content} />
               </>
@@ -98,8 +99,10 @@ export function PreviewAsPublicDialog({ textId, currentStatus }: PreviewAsPublic
               <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
                 <EyeOff className="h-4 w-4 shrink-0" />
                 <span>
-                  Not shown to anonymous visitors — this text is <strong>{currentStatus}</strong>.
-                  Move it to <strong>Live</strong> or <strong>Reviewed</strong> to publish it.
+                  {t.rich('previewAsPublic.notVisible', {
+                    status: currentStatus,
+                    strong: (chunks) => <strong>{chunks}</strong>,
+                  })}
                 </span>
               </div>
             )}

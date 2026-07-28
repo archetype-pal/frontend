@@ -46,6 +46,10 @@ export const SEARCH_RESULT_CONFIG = {
       { key: 'type', render: 'checkbox' },
       { key: 'repository_city', render: 'checkbox' },
       { key: 'repository_name', render: 'checkbox' },
+      { key: 'script', render: 'checkbox' },
+      { key: 'material', render: 'checkbox' },
+      { key: 'deco_type', render: 'checkbox' },
+      { key: 'origin_place', render: 'checkbox' },
     ],
   },
   images: {
@@ -55,7 +59,6 @@ export const SEARCH_RESULT_CONFIG = {
       'Repository City',
       'Repository',
       'Shelfmark',
-      'Category Number',
       'Doc. Type',
       'Thumbnail',
       'Annotations',
@@ -109,6 +112,8 @@ export const SEARCH_RESULT_CONFIG = {
       'Shelfmark',
       'Document Date',
       'Allograph',
+      'Character',
+      'Hand Name',
       'Thumbnail',
     ],
     facets: [

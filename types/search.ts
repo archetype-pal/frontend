@@ -18,6 +18,7 @@ export interface ImageListItem {
   id: number;
   item_part?: number | null;
   item_image?: number | null;
+  display_label?: string;
   repository_name: string;
   repository_city: string;
   shelfmark: string;
@@ -35,6 +36,7 @@ export interface GraphListItem {
   id: number;
   item_image?: number | null;
   item_part?: number | null;
+  display_label?: string;
   repository_name: string;
   repository_city: string;
   shelfmark: string;
@@ -46,6 +48,12 @@ export interface GraphListItem {
   character?: string;
   character_type?: string;
   hand_name?: string;
+  locus?: string;
+  type?: string;
+  scribe?: string;
+  place?: string;
+  date_min?: number;
+  date_max?: number;
 }
 
 export interface ScribeListItem {

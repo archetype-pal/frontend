@@ -5,6 +5,7 @@ import {
   getDefaultConfig,
   type SiteFeaturesConfig,
   type SectionKey,
+  type FeatureKey,
   type SearchCategoryConfig,
 } from '@/lib/site-features';
 import type { ResultType } from '@/lib/search-types';
@@ -12,6 +13,7 @@ import type { ResultType } from '@/lib/search-types';
 type SiteFeaturesContextValue = {
   config: SiteFeaturesConfig;
   isSectionEnabled: (key: SectionKey) => boolean;
+  isFeatureEnabled: (key: FeatureKey) => boolean;
   getCategoryConfig: (type: ResultType) => SearchCategoryConfig;
   enabledCategories: ResultType[];
 };
@@ -42,6 +44,15 @@ export function SiteFeaturesProvider({
     [config]
   );
 
+  // Mirrors isSectionEnabled: only an explicit `false` disables. The optional
+  // chain matters at runtime — a config serialized before feature flags existed
+  // (or a hand-written test fixture) has no `features` object at all, and a
+  // shipped feature must stay visible rather than crash or vanish.
+  const isFeatureEnabled = useCallback(
+    (key: FeatureKey) => config.features?.[key] !== false,
+    [config]
+  );
+
   const getCategoryConfig = useCallback(
     (type: ResultType) =>
       config.searchCategories[type] ?? {
@@ -61,8 +72,8 @@ export function SiteFeaturesProvider({
   );
 
   const value = useMemo<SiteFeaturesContextValue>(
-    () => ({ config, isSectionEnabled, getCategoryConfig, enabledCategories }),
-    [config, isSectionEnabled, getCategoryConfig, enabledCategories]
+    () => ({ config, isSectionEnabled, isFeatureEnabled, getCategoryConfig, enabledCategories }),
+    [config, isSectionEnabled, isFeatureEnabled, getCategoryConfig, enabledCategories]
   );
 
   return <SiteFeaturesContext.Provider value={value}>{children}</SiteFeaturesContext.Provider>;

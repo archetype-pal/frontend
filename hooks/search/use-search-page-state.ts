@@ -9,6 +9,7 @@ import { useSearchVisibility } from '@/lib/search-visibility';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { useSearchResults } from '@/hooks/search/use-search-results';
 import { resetQueryForTypeChange, stateFromSearchParams } from '@/lib/search-query';
+import { isOrderingUnsupported } from '@/lib/search-sort';
 import {
   DEFAULT_ADVANCED_SEARCH_STATE,
   type AdvancedSearchState,
@@ -96,7 +97,7 @@ export function useSearchPageState(initialType?: ResultType) {
     handleClearKeyword,
   });
 
-  const { data, isFetching, isLoading } = useSearchResults(
+  const { data, dataResultType, isFetching, isLoading } = useSearchResults(
     resultType,
     queryHook.queryState,
     submittedKeyword
@@ -104,6 +105,31 @@ export function useSearchPageState(initialType?: ResultType) {
 
   // Keep the ordering ref up to date for handleSort
   orderingRef.current = data.ordering;
+
+  // --- Sort fields are per-index ---
+
+  // `keepPreviousData` keeps the OUTGOING index's `ordering` on screen while the
+  // new type's response is in flight, so the Sort-by control would offer fields
+  // (Scribe, Allograph…) the incoming index has never heard of — and picking one
+  // writes an attribute the backend silently drops. Withhold the block until the
+  // response for the type actually being displayed arrives.
+  const sortOrdering = dataResultType === resultType ? data.ordering : undefined;
+
+  // Self-heal an `ordering` this index rejects: a bookmarked `?ordering=scribe`
+  // opened on /search/manuscripts, or a field picked during the window above.
+  // Left alone the control shows "Relevance" while the URL keeps re-sending the
+  // dead attribute on every request. Guarded to a settled block for the current
+  // type (`sortOrdering`), and clearing writes null, which fails the first guard
+  // on the next pass — it cannot loop, nor override a choice the user made from
+  // this same option list.
+  const { setQueryState } = queryHook;
+  const currentOrdering = queryHook.queryState.ordering;
+  React.useEffect(() => {
+    if (!isOrderingUnsupported(currentOrdering, sortOrdering)) return;
+    setQueryState((prev) =>
+      prev.ordering === currentOrdering ? { ...prev, ordering: null } : prev
+    );
+  }, [currentOrdering, sortOrdering, setQueryState]);
 
   const filtered = data.results;
   const timelineDistribution = data.facetDistribution?.date_min ?? {};
@@ -239,6 +265,7 @@ export function useSearchPageState(initialType?: ResultType) {
     // Data
     baseFacetURL,
     data,
+    sortOrdering,
     isFetching,
     isLoading,
     filtered,
@@ -273,6 +300,7 @@ export function useSearchPageState(initialType?: ResultType) {
     handleClearDateFilters: queryHook.handleClearDateFilters,
     handleRemoveTag: queryHook.handleRemoveTag,
     handleSort: queryHook.handleSort,
+    handleSortChange: queryHook.handleSortChange,
     handleExport: exportHook.handleExport,
     handleFormattedExport: exportHook.handleFormattedExport,
     // Config

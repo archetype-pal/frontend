@@ -18,12 +18,12 @@ const SECTION_ROUTE_MAP: Partial<Record<SectionKey, string>> = {
 // CSP / security-header concerns previously lived in middleware.ts. Next 16
 // requires middleware to be merged into proxy.ts, so they ride along here.
 // Dev keeps 'unsafe-inline'/'unsafe-eval' so React Fast Refresh works; prod
-// uses a per-request nonce with strict-dynamic.
+// keeps nonce support but allows same-origin script chunks explicitly.
 function buildCsp(nonce: string): string {
   const directives: string[] = [
     "default-src 'self'",
     isProduction
-      ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
+      ? `script-src 'self' 'nonce-${nonce}'`
       : `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
     "style-src 'self' 'unsafe-inline'",
     isProduction ? "img-src 'self' data: blob: https:" : "img-src 'self' data: blob: https: http:",

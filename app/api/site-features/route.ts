@@ -2,7 +2,7 @@ import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
 import { readSiteFeatures, writeSiteFeatures } from '@/lib/site-features-server';
-import type { SiteFeaturesConfig } from '@/lib/site-features';
+import { mergeFeatureFlags, type SiteFeaturesConfig } from '@/lib/site-features';
 
 async function verifyStaff(token: string): Promise<boolean> {
   try {
@@ -41,7 +41,19 @@ export async function PUT(request: NextRequest) {
   if (!body || typeof body !== 'object' || !('sections' in body) || !('searchCategories' in body)) {
     return NextResponse.json({ error: 'Invalid config shape' }, { status: 400 });
   }
-  const normalized = await writeSiteFeatures(body as SiteFeaturesConfig);
+  // `features` is deliberately NOT required by the shape guard, and is merged
+  // over what's already on disk rather than replacing it. A payload from a
+  // client that predates a flag (a stale tab, a cached bundle, a scripted PUT)
+  // simply omits the key — requiring it would 400 those clients, and replacing
+  // with it would silently re-enable a feature an admin had turned off. Merging
+  // means an omitted key keeps the stored value while a newer client that sends
+  // the full map still wins key-by-key.
+  const payload = body as SiteFeaturesConfig;
+  const current = await readSiteFeatures();
+  const normalized = await writeSiteFeatures({
+    ...payload,
+    features: mergeFeatureFlags(current.features, (payload as { features?: unknown }).features),
+  });
   revalidatePath('/', 'layout');
   // Return the normalized config (with sectionOrder canonicalized) so the
   // client's cache reflects what's actually on disk.

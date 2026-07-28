@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Upload, ImageIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ export function ImageUploadZone({
   loading = false,
   className,
 }: ImageUploadZoneProps) {
+  const t = useTranslations('backoffice');
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -60,18 +62,21 @@ export function ImageUploadZone({
 
   const displayUrl = previewUrl || currentImageUrl;
 
-  const validate = useCallback((file: File): boolean => {
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      setError('Please select a JPEG, PNG, WebP, or GIF image.');
-      return false;
-    }
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      setError(`Image must be smaller than ${MAX_SIZE_MB} MB.`);
-      return false;
-    }
-    setError(null);
-    return true;
-  }, []);
+  const validate = useCallback(
+    (file: File): boolean => {
+      if (!ACCEPTED_TYPES.includes(file.type)) {
+        setError(t('imageUpload.invalidType'));
+        return false;
+      }
+      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        setError(t('imageUpload.tooLarge', { size: MAX_SIZE_MB }));
+        return false;
+      }
+      setError(null);
+      return true;
+    },
+    [t]
+  );
 
   const handleFile = useCallback(
     (file: File) => {
@@ -162,22 +167,22 @@ export function ImageUploadZone({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={displayUrl}
-              alt="Carousel item preview"
+              alt={t('imageUpload.previewAlt')}
               className="h-full w-full object-cover absolute inset-0"
             />
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
               <div className="flex flex-col items-center gap-1 text-white">
                 <Upload className="h-6 w-6" />
-                <span className="text-sm font-medium">Replace image</span>
+                <span className="text-sm font-medium">{t('imageUpload.replaceImage')}</span>
               </div>
             </div>
           </>
         ) : (
           <div className="flex flex-col items-center gap-2 p-6 text-muted-foreground">
             <ImageIcon className="h-10 w-10 opacity-40" />
-            <p className="text-sm font-medium">Drop an image here or click to browse</p>
+            <p className="text-sm font-medium">{t('imageUpload.dropHint')}</p>
             <p className="text-xs opacity-60">
-              JPEG, PNG, WebP, or GIF &middot; max {MAX_SIZE_MB} MB
+              {t('imageUpload.formatsHint', { size: MAX_SIZE_MB })}
             </p>
           </div>
         )}
@@ -188,7 +193,7 @@ export function ImageUploadZone({
           accept={ACCEPTED_TYPES.join(',')}
           onChange={handleInputChange}
           className="hidden"
-          aria-label="Upload image"
+          aria-label={t('imageUpload.uploadAria')}
         />
       </div>
 
@@ -196,7 +201,7 @@ export function ImageUploadZone({
 
       {previewUrl && (
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">New image staged</span>
+          <span className="text-xs text-muted-foreground">{t('imageUpload.staged')}</span>
           <Button
             type="button"
             variant="ghost"

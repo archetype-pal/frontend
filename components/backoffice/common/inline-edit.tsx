@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Check, X, Pencil } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -26,11 +27,12 @@ export function InlineEdit({
   value,
   onSave,
   renderValue,
-  placeholder = 'Click to edit',
+  placeholder,
   className,
   inputClassName,
   disabled = false,
 }: InlineEditProps) {
+  const t = useTranslations('backoffice');
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const [saving, setSaving] = useState(false);
@@ -98,7 +100,7 @@ export function InlineEdit({
           onMouseDown={(e) => e.preventDefault()} // prevent blur before click
           onClick={save}
           disabled={saving}
-          aria-label="Save edit"
+          aria-label={t('inlineEdit.saveEdit')}
         >
           <Check className="h-3.5 w-3.5" />
         </Button>
@@ -109,7 +111,7 @@ export function InlineEdit({
           onMouseDown={(e) => e.preventDefault()}
           onClick={cancel}
           disabled={saving}
-          aria-label="Cancel edit"
+          aria-label={t('inlineEdit.cancelEdit')}
         >
           <X className="h-3.5 w-3.5" />
         </Button>
@@ -129,7 +131,8 @@ export function InlineEdit({
         className
       )}
     >
-      {(renderValue ? renderValue(value) : null) ?? (value || placeholder)}
+      {(renderValue ? renderValue(value) : null) ??
+        (value || (placeholder ?? t('inlineEdit.placeholder')))}
       {!disabled && (
         <Pencil className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-60" />
       )}

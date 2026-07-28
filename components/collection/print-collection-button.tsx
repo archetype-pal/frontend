@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { readDocumentNonce } from '@/lib/csp-nonce';
 import { buildCollectionPrintHtml } from '@/lib/collection-print';
 import type { NamedCollection } from '@/lib/collection-storage';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -35,7 +36,12 @@ export function PrintCollectionButton({ collection }: { collection: NamedCollect
     );
 
     try {
-      writePrintDocument(win, await buildCollectionPrintHtml(collection, getLabel('siteTitle')));
+      writePrintDocument(
+        win,
+        await buildCollectionPrintHtml(collection, getLabel('siteTitle'), {
+          nonce: readDocumentNonce(),
+        })
+      );
     } catch {
       win.close();
       toast.error(t('print.failed'));

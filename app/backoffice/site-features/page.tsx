@@ -11,12 +11,14 @@ import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { UnsavedChangesBar } from '@/components/backoffice/common/unsaved-changes-bar';
 import { SectionToggles } from '@/components/backoffice/site-features/section-toggles';
+import { FeatureToggles } from '@/components/backoffice/site-features/feature-toggles';
 import { SearchCategoryConfigPanel } from '@/components/backoffice/site-features/search-category-config';
 import {
   getDefaultConfig,
   normalizeSectionOrder,
   type SiteFeaturesConfig,
   type SectionKey,
+  type FeatureKey,
   type SearchCategoryConfig,
 } from '@/lib/site-features';
 import type { ResultType } from '@/lib/search-types';
@@ -113,6 +115,14 @@ export default function SiteFeaturesPage() {
     setDirty(true);
   };
 
+  const handleFeatureChange = (key: FeatureKey, enabled: boolean) => {
+    setConfig((prev) => ({
+      ...prev,
+      features: { ...prev.features, [key]: enabled },
+    }));
+    setDirty(true);
+  };
+
   const handleCategoryChange = (type: ResultType, catConfig: SearchCategoryConfig) => {
     setConfig((prev) => ({
       ...prev,
@@ -145,6 +155,7 @@ export default function SiteFeaturesPage() {
         onChange={handleSectionChange}
         onOrderChange={handleSectionOrderChange}
       />
+      <FeatureToggles features={config.features} onChange={handleFeatureChange} />
       <SearchCategoryConfigPanel
         categories={config.searchCategories}
         onChange={handleCategoryChange}

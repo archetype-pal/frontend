@@ -119,4 +119,16 @@ describe('buildCollectionPrintHtml', () => {
     expect(html).not.toContain('javascript:');
     expect(html.match(/No image available/g)).toHaveLength(2);
   });
+
+  it('adds a nonce to the startup script when one is provided', async () => {
+    const collection: NamedCollection = {
+      id: 'nonce-test',
+      name: 'Nonce test',
+      items: [],
+    };
+
+    const html = await buildCollectionPrintHtml(collection, 'Test Site', { nonce: 'nonce-value' });
+
+    expect(html).toContain('<script nonce="nonce-value">');
+  });
 });

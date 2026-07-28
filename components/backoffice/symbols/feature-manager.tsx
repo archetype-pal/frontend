@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { InlineEdit } from '@/components/backoffice/common/inline-edit';
 import { Trash2 } from 'lucide-react';
@@ -18,12 +19,13 @@ interface FeatureManagerProps {
 }
 
 export function FeatureManager({ features, components = [] }: FeatureManagerProps) {
+  const t = useTranslations('backoffice');
   const crud = useEntityCrud<Feature>({
     queryKeys: [backofficeKeys.features.all()],
     createFn: createFeature,
     updateFn: updateFeature,
     deleteFn: deleteFeature,
-    entityLabel: 'Feature',
+    entityLabel: t('symbols.featureLabel'),
   });
 
   // Compute how many components link each feature
@@ -41,9 +43,9 @@ export function FeatureManager({ features, components = [] }: FeatureManagerProp
     <NamedEntityManager
       items={features}
       crud={crud}
-      placeholder="New feature name..."
-      emptyMessage="No features yet. Create one above."
-      deleteDescription="This will remove the feature from all components and allographs that reference it."
+      placeholder={t('symbols.newFeaturePlaceholder')}
+      emptyMessage={t('symbols.noFeaturesYet')}
+      deleteDescription={t('symbols.featureDeleteDescription')}
       renderItem={(feat) => {
         const usage = usageMap.get(feat.id) ?? 0;
         return (
@@ -61,9 +63,9 @@ export function FeatureManager({ features, components = [] }: FeatureManagerProp
                 <Badge
                   variant="secondary"
                   className="text-[10px] px-1.5 h-4 tabular-nums"
-                  title={`Used by ${usage} component${usage !== 1 ? 's' : ''}`}
+                  title={t('symbols.usedByComponents', { count: usage })}
                 >
-                  {usage}c
+                  {t('symbols.usageBadge', { count: usage })}
                 </Badge>
               )}
               <Button

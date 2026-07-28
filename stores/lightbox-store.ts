@@ -367,6 +367,8 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
           'annotation_type' in item && item.annotation_type != null
             ? String(item.annotation_type)
             : undefined,
+        display_label:
+          displayItem.display_label != null ? String(displayItem.display_label) : undefined,
         shelfmark: item.shelfmark != null ? String(item.shelfmark) : undefined,
         locus: 'locus' in item && item.locus != null ? String(item.locus) : undefined,
         allograph:

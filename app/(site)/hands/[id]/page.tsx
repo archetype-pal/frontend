@@ -35,7 +35,7 @@ async function getScribe(scribeId: number): Promise<HandScribe | null> {
 
 async function getManuscript(itemPartId: number): Promise<HandManuscript | null> {
   try {
-    const response = await apiFetch(`/api/v1/manuscripts/item-parts/${itemPartId}`);
+    const response = await apiFetch(`/api/v1/manuscripts/item-parts/${itemPartId}/`);
     if (!response.ok) return null;
     return response.json();
   } catch {

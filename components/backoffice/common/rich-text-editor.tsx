@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -44,10 +45,13 @@ interface RichTextEditorProps {
 export function RichTextEditor({
   content,
   onChange,
-  placeholder = 'Start writing...',
+  placeholder,
   className,
   minimal = false,
 }: RichTextEditorProps) {
+  const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
+  const resolvedPlaceholder = placeholder ?? t('richTextEditor.placeholder');
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -61,7 +65,7 @@ export function RichTextEditor({
       Image.configure({
         HTMLAttributes: { class: 'rounded-md max-w-full' },
       }),
-      Placeholder.configure({ placeholder }),
+      Placeholder.configure({ placeholder: resolvedPlaceholder }),
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -126,7 +130,9 @@ export function RichTextEditor({
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 border-b px-2 py-1.5">
         {mode === 'raw' && (
-          <span className="px-1.5 text-xs text-muted-foreground">Editing raw HTML source</span>
+          <span className="px-1.5 text-xs text-muted-foreground">
+            {t('richTextEditor.editingRawSource')}
+          </span>
         )}
         {mode === 'rich' && (
           <>
@@ -134,7 +140,7 @@ export function RichTextEditor({
               size="sm"
               pressed={editor.isActive('bold')}
               onPressedChange={() => editor.chain().focus().toggleBold().run()}
-              aria-label="Bold"
+              aria-label={t('richTextEditor.bold')}
             >
               <Bold className="h-4 w-4" />
             </Toggle>
@@ -142,7 +148,7 @@ export function RichTextEditor({
               size="sm"
               pressed={editor.isActive('italic')}
               onPressedChange={() => editor.chain().focus().toggleItalic().run()}
-              aria-label="Italic"
+              aria-label={t('richTextEditor.italic')}
             >
               <Italic className="h-4 w-4" />
             </Toggle>
@@ -150,7 +156,7 @@ export function RichTextEditor({
               size="sm"
               pressed={editor.isActive('strike')}
               onPressedChange={() => editor.chain().focus().toggleStrike().run()}
-              aria-label="Strikethrough"
+              aria-label={t('richTextEditor.strikethrough')}
             >
               <Strikethrough className="h-4 w-4" />
             </Toggle>
@@ -158,7 +164,7 @@ export function RichTextEditor({
               size="sm"
               pressed={editor.isActive('code')}
               onPressedChange={() => editor.chain().focus().toggleCode().run()}
-              aria-label="Inline code"
+              aria-label={t('richTextEditor.inlineCode')}
             >
               <Code className="h-4 w-4" />
             </Toggle>
@@ -171,7 +177,7 @@ export function RichTextEditor({
                   size="sm"
                   pressed={editor.isActive('heading', { level: 1 })}
                   onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                  aria-label="Heading 1"
+                  aria-label={t('richTextEditor.heading1')}
                 >
                   <Heading1 className="h-4 w-4" />
                 </Toggle>
@@ -179,7 +185,7 @@ export function RichTextEditor({
                   size="sm"
                   pressed={editor.isActive('heading', { level: 2 })}
                   onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                  aria-label="Heading 2"
+                  aria-label={t('richTextEditor.heading2')}
                 >
                   <Heading2 className="h-4 w-4" />
                 </Toggle>
@@ -187,7 +193,7 @@ export function RichTextEditor({
                   size="sm"
                   pressed={editor.isActive('heading', { level: 3 })}
                   onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                  aria-label="Heading 3"
+                  aria-label={t('richTextEditor.heading3')}
                 >
                   <Heading3 className="h-4 w-4" />
                 </Toggle>
@@ -200,7 +206,7 @@ export function RichTextEditor({
               size="sm"
               pressed={editor.isActive('bulletList')}
               onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
-              aria-label="Bullet list"
+              aria-label={t('richTextEditor.bulletList')}
             >
               <List className="h-4 w-4" />
             </Toggle>
@@ -208,7 +214,7 @@ export function RichTextEditor({
               size="sm"
               pressed={editor.isActive('orderedList')}
               onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
-              aria-label="Ordered list"
+              aria-label={t('richTextEditor.orderedList')}
             >
               <ListOrdered className="h-4 w-4" />
             </Toggle>
@@ -219,7 +225,7 @@ export function RichTextEditor({
                   size="sm"
                   pressed={editor.isActive('blockquote')}
                   onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
-                  aria-label="Blockquote"
+                  aria-label={t('richTextEditor.blockquote')}
                 >
                   <Quote className="h-4 w-4" />
                 </Toggle>
@@ -227,7 +233,7 @@ export function RichTextEditor({
                   size="sm"
                   pressed={editor.isActive('codeBlock')}
                   onPressedChange={() => editor.chain().focus().toggleCodeBlock().run()}
-                  aria-label="Code block"
+                  aria-label={t('richTextEditor.codeBlock')}
                 >
                   <CodeSquare className="h-4 w-4" />
                 </Toggle>
@@ -239,7 +245,7 @@ export function RichTextEditor({
                   size="sm"
                   className="h-8 w-8 p-0"
                   onClick={() => editor.chain().focus().setHorizontalRule().run()}
-                  title="Horizontal rule"
+                  title={t('richTextEditor.horizontalRule')}
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
@@ -250,14 +256,19 @@ export function RichTextEditor({
 
             <Popover open={linkOpen} onOpenChange={setLinkOpen}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Add link">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  title={t('richTextEditor.addLink')}
+                >
                   <LinkIcon className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80 p-3" align="start">
                 <div className="space-y-2">
                   <Input
-                    placeholder="https://example.com"
+                    placeholder={t('richTextEditor.linkUrlPlaceholder')}
                     value={linkUrl}
                     onChange={(e) => setLinkUrl(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && insertLink()}
@@ -272,10 +283,10 @@ export function RichTextEditor({
                         setLinkOpen(false);
                       }}
                     >
-                      Cancel
+                      {tCommon('cancel')}
                     </Button>
                     <Button size="sm" onClick={insertLink}>
-                      Insert
+                      {t('richTextEditor.insert')}
                     </Button>
                   </div>
                 </div>
@@ -285,14 +296,19 @@ export function RichTextEditor({
             {!minimal && (
               <Popover open={imageOpen} onOpenChange={setImageOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Add image">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    title={t('richTextEditor.addImage')}
+                  >
                     <ImageIcon className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80 p-3" align="start">
                   <div className="space-y-2">
                     <Input
-                      placeholder="https://example.com/image.png"
+                      placeholder={t('richTextEditor.imageUrlPlaceholder')}
                       value={imageUrl}
                       onChange={(e) => setImageUrl(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && insertImage()}
@@ -307,10 +323,10 @@ export function RichTextEditor({
                           setImageOpen(false);
                         }}
                       >
-                        Cancel
+                        {tCommon('cancel')}
                       </Button>
                       <Button size="sm" onClick={insertImage}>
-                        Insert
+                        {t('richTextEditor.insert')}
                       </Button>
                     </div>
                   </div>
@@ -329,7 +345,7 @@ export function RichTextEditor({
                 className="h-8 w-8 p-0"
                 onClick={() => editor.chain().focus().undo().run()}
                 disabled={!editor.can().undo()}
-                title="Undo"
+                title={t('richTextEditor.undo')}
               >
                 <Undo className="h-4 w-4" />
               </Button>
@@ -339,7 +355,7 @@ export function RichTextEditor({
                 className="h-8 w-8 p-0"
                 onClick={() => editor.chain().focus().redo().run()}
                 disabled={!editor.can().redo()}
-                title="Redo"
+                title={t('richTextEditor.redo')}
               >
                 <Redo className="h-4 w-4" />
               </Button>
@@ -350,8 +366,8 @@ export function RichTextEditor({
             size="sm"
             pressed={mode === 'raw'}
             onPressedChange={(pressed) => setMode(pressed ? 'raw' : 'rich')}
-            aria-label="Edit raw HTML source"
-            title="Toggle raw HTML source"
+            aria-label={t('richTextEditor.editRawSource')}
+            title={t('richTextEditor.toggleRawSource')}
           >
             <FileCode2 className="h-4 w-4" />
           </Toggle>
@@ -365,7 +381,7 @@ export function RichTextEditor({
         <textarea
           value={content}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           spellCheck={false}
           className={cn(
             'block w-full resize-y bg-transparent px-4 py-3 font-mono text-xs leading-relaxed focus:outline-none',

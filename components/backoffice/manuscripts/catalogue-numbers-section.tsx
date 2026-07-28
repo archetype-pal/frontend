@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { Plus, Trash2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,8 @@ export function CatalogueNumbersSection({
   catalogueNumbers,
 }: CatalogueNumbersSectionProps) {
   const { token } = useAuth();
+  const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
   const { getLabel, getPluralLabel } = useModelLabels();
   const queryClient = useQueryClient();
   const catalogueLabel = getLabel('catalogueNumber');
@@ -67,7 +70,7 @@ export function CatalogueNumbersSection({
         url: newUrl || null,
       }),
     onSuccess: () => {
-      toast.success(`${catalogueLabel} added`);
+      toast.success(t('manuscriptsDetail.labelAdded', { label: catalogueLabel }));
       invalidate();
       setAdding(false);
       setNewCatalogue('');
@@ -75,7 +78,7 @@ export function CatalogueNumbersSection({
       setNewUrl('');
     },
     onError: (err) => {
-      toast.error(`Failed to add ${catalogueLabel.toLowerCase()}`, {
+      toast.error(t('manuscriptsDetail.labelAddFailed', { label: catalogueLabel.toLowerCase() }), {
         description: formatApiError(err),
       });
     },
@@ -85,27 +88,33 @@ export function CatalogueNumbersSection({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       updateCatalogueNumber(token!, id, data),
     onSuccess: () => {
-      toast.success(`${catalogueLabel} updated`);
+      toast.success(t('manuscriptsDetail.labelUpdated', { label: catalogueLabel }));
       invalidate();
       setEditingSourceId(null);
     },
     onError: (err) => {
-      toast.error(`Failed to update ${catalogueLabel.toLowerCase()}`, {
-        description: formatApiError(err),
-      });
+      toast.error(
+        t('manuscriptsDetail.labelUpdateFailed', { label: catalogueLabel.toLowerCase() }),
+        {
+          description: formatApiError(err),
+        }
+      );
     },
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteCatalogueNumber(token!, id),
     onSuccess: () => {
-      toast.success(`${catalogueLabel} removed`);
+      toast.success(t('manuscriptsDetail.labelRemoved', { label: catalogueLabel }));
       invalidate();
     },
     onError: (err) => {
-      toast.error(`Failed to remove ${catalogueLabel.toLowerCase()}`, {
-        description: formatApiError(err),
-      });
+      toast.error(
+        t('manuscriptsDetail.labelRemoveFailed', { label: catalogueLabel.toLowerCase() }),
+        {
+          description: formatApiError(err),
+        }
+      );
     },
   });
 
@@ -120,13 +129,13 @@ export function CatalogueNumbersSection({
           onClick={() => setAdding(true)}
         >
           <Plus className="h-3 w-3" />
-          Add
+          {tCommon('add')}
         </Button>
       </div>
 
       {catalogueNumbers.length === 0 && !adding ? (
         <p className="text-sm text-muted-foreground py-2">
-          No {catalogueLabelPlural.toLowerCase()}
+          {t('manuscriptsDetail.noLabel', { label: catalogueLabelPlural.toLowerCase() })}
         </p>
       ) : (
         <div className="rounded-md border divide-y">
@@ -184,7 +193,7 @@ export function CatalogueNumbersSection({
               <div className="min-w-0 max-w-52">
                 <InlineEdit
                   value={cn.url ?? ''}
-                  placeholder="Add URL..."
+                  placeholder={t('manuscriptsDetail.addUrlPlaceholder')}
                   className="max-w-full"
                   onSave={async (url) => {
                     await updateMut.mutateAsync({
@@ -208,7 +217,7 @@ export function CatalogueNumbersSection({
                 size="icon"
                 className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
                 onClick={() => deleteMut.mutate(cn.id)}
-                aria-label="Delete catalogue number"
+                aria-label={t('manuscriptsDetail.deleteCatalogueNumberAria')}
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
@@ -220,7 +229,7 @@ export function CatalogueNumbersSection({
               <div className="w-32">
                 <Select value={newCatalogue} onValueChange={setNewCatalogue}>
                   <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="Source" />
+                    <SelectValue placeholder={t('manuscriptsDetail.sourcePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {(sources ?? []).map((s) => (
@@ -234,13 +243,13 @@ export function CatalogueNumbersSection({
               <Input
                 value={newNumber}
                 onChange={(e) => setNewNumber(e.target.value)}
-                placeholder="Number"
+                placeholder={t('manuscriptsDetail.numberPlaceholder')}
                 className="h-8 text-sm flex-1"
               />
               <Input
                 value={newUrl}
                 onChange={(e) => setNewUrl(e.target.value)}
-                placeholder="URL (optional)"
+                placeholder={t('manuscriptsDetail.urlOptionalPlaceholder')}
                 className="h-8 text-sm flex-1"
               />
               <Button
@@ -249,10 +258,10 @@ export function CatalogueNumbersSection({
                 onClick={() => createMut.mutate()}
                 disabled={!newCatalogue || !newNumber || createMut.isPending}
               >
-                Save
+                {tCommon('save')}
               </Button>
               <Button variant="outline" size="sm" className="h-8" onClick={() => setAdding(false)}>
-                Cancel
+                {tCommon('cancel')}
               </Button>
             </div>
           )}

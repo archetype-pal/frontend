@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, Save, Trash2, Loader2, Eye } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Loader2, Eye, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -232,6 +232,20 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
           <Badge variant={status === 'Published' ? 'default' : 'secondary'}>{status}</Badge>
         </div>
         <div className="flex items-center gap-2">
+          {/* Jump to the live public page (only meaningful once published).
+              archetype-pal/frontend#77 */}
+          {status === 'Published' && pubSlug && (
+            <Link
+              href={`/publications/${publicationKindPath}/${pubSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" size="sm" className="gap-1 text-xs">
+                <ExternalLink className="h-3.5 w-3.5" />
+                {t('publicationsDetail.viewPublicPage')}
+              </Button>
+            </Link>
+          )}
           <Button
             variant="outline"
             size="sm"

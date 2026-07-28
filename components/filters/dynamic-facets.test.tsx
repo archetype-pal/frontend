@@ -246,4 +246,78 @@ describe('DynamicFacets', () => {
     });
     container.remove();
   });
+
+  // The msDesc extractor indexes ODD codes (perg, textualisNorthern, flourInit)
+  // because the code is the filter identity; the rail must gloss them with the
+  // labels the authoring dropdowns already use, without changing what a click
+  // filters on. Values outside the (type="semi") ODD lists stay as authored.
+  it('renders msDesc facet values with their ODD labels but filters on the raw code', () => {
+    const onFacetClick = vi.fn();
+    const facets: FacetData = {
+      material: {
+        kind: 'list',
+        items: [{ label: 'perg', value: 'perg', count: 12, href: '' }],
+      },
+      script: {
+        kind: 'list',
+        items: [
+          { label: 'textualisNorthern', value: 'textualisNorthern', count: 7, href: '' },
+          { label: 'charterHandNotInTheOdd', value: 'charterHandNotInTheOdd', count: 1, href: '' },
+        ],
+      },
+      origin_place: {
+        kind: 'list',
+        items: [{ label: 'Kelso', value: 'Kelso', count: 4, href: '' }],
+      },
+    };
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        withProviders(
+          <DynamicFacets
+            facets={facets}
+            searchType="manuscripts"
+            keyword=""
+            activeTags={[]}
+            onKeywordChange={() => {}}
+            onKeywordSubmit={() => {}}
+            selectedFacets={[]}
+            onFacetClick={onFacetClick}
+            onClearAllFilters={() => {}}
+            baseFacetURL="http://localhost:8000/api/v1/search/item-parts/facets"
+          />
+        )
+      );
+    });
+
+    expect(container.textContent).toContain('Parchment (vellum)');
+    expect(container.textContent).toContain('Gothic textualis (Northern)');
+    expect(container.textContent).not.toContain('perg');
+    // Unlisted (semi-open) values and authored place names are shown verbatim.
+    expect(container.textContent).toContain('charterHandNotInTheOdd');
+    expect(container.textContent).toContain('Kelso');
+
+    const materialOption = container.querySelector('button[aria-label="Parchment (vellum), 12"]');
+    expect(materialOption).not.toBeNull();
+
+    act(() => {
+      materialOption?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(onFacetClick).toHaveBeenCalledWith(
+      'http://localhost:8000/api/v1/search/item-parts/facets',
+      {
+        type: 'selectFacet',
+        facetKey: 'material',
+        value: 'perg',
+      }
+    );
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
 });

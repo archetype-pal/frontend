@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, RefreshCcw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +10,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { fetchQualityDashboard } from '@/services/backoffice/quality-dashboard';
 
 export function QualityDashboard() {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const { data, isFetching, error, refetch } = useQuery({
     queryKey: ['backoffice', 'quality-dashboard'],
@@ -21,10 +23,12 @@ export function QualityDashboard() {
     <div className="space-y-6 p-6">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Data quality</h1>
+          <h1 className="text-2xl font-semibold">{t('quality.title')}</h1>
           {data && (
             <p className="text-xs text-muted-foreground">
-              Generated {new Date(data.generated_at).toLocaleString()}
+              {t('quality.generatedAt', {
+                timestamp: new Date(data.generated_at).toLocaleString(),
+              })}
             </p>
           )}
         </div>
@@ -34,11 +38,15 @@ export function QualityDashboard() {
           ) : (
             <RefreshCcw className="mr-2 h-4 w-4" />
           )}
-          Refresh
+          {t('quality.refresh')}
         </Button>
       </header>
 
-      {error && <p className="text-sm text-destructive">Error: {(error as Error).message}</p>}
+      {error && (
+        <p className="text-sm text-destructive">
+          {t('quality.error', { message: (error as Error).message })}
+        </p>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {data?.cards.map((card) => (
@@ -59,7 +67,7 @@ export function QualityDashboard() {
             </CardHeader>
             <CardContent>
               {card.sample.length === 0 ? (
-                <p className="text-sm text-muted-foreground">All clean.</p>
+                <p className="text-sm text-muted-foreground">{t('quality.allClean')}</p>
               ) : (
                 <ul className="space-y-1 text-sm">
                   {card.sample.map((row, i) => (

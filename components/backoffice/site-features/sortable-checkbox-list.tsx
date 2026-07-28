@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
@@ -42,6 +43,7 @@ function SortableRow({
   checked: boolean;
   onToggle: (id: string, checked: boolean) => void;
 }) {
+  const t = useTranslations('backoffice');
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
@@ -63,7 +65,7 @@ function SortableRow({
         {...attributes}
         {...listeners}
         className="cursor-grab active:cursor-grabbing touch-none shrink-0 p-0.5"
-        aria-label="Drag to reorder"
+        aria-label={t('siteFeatures.dragToReorder')}
       >
         <GripVertical className="h-3 w-3 text-muted-foreground/60" />
       </button>

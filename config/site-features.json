@@ -23,43 +23,47 @@
     "manuscripts": {
       "enabled": true,
       "visibleColumns": [
-        "Doc. Type",
-        "Images",
         "Repository City",
-        "Catalogue Num.",
         "Repository",
         "Shelfmark",
-        "Text Date"
+        "Catalogue Num.",
+        "Text Date",
+        "Doc. Type",
+        "Images"
       ],
       "visibleFacets": [
-        "type",
         "image_availability",
         "text_date",
         "format",
+        "type",
         "repository_city",
-        "repository_name"
+        "repository_name",
+        "script",
+        "material",
+        "deco_type",
+        "origin_place"
       ]
     },
     "images": {
       "enabled": true,
       "visibleColumns": [
-        "Repository",
         "Repository City",
+        "Repository",
         "Shelfmark",
-        "Category Number",
         "Doc. Type",
         "Thumbnail",
-        "Ann."
+        "Annotations"
       ],
       "visibleFacets": [
         "text_date",
-        "type",
         "locus",
-        "repository_name",
+        "type",
         "repository_city",
+        "repository_name",
         "features",
         "components",
-        "component_features"
+        "component_features",
+        "tags"
       ]
     },
     "scribes": {
@@ -88,6 +92,8 @@
         "Shelfmark",
         "Document Date",
         "Allograph",
+        "Character",
+        "Hand Name",
         "Thumbnail"
       ],
       "visibleFacets": [

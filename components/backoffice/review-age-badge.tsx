@@ -14,10 +14,10 @@
 
 import * as React from 'react';
 import { Clock } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import {
   ageInReviewMs,
-  formatReviewAge,
   slaSeverity,
   type ReviewQueueItem,
 } from '@/lib/backoffice/review-queue-sla';
@@ -43,9 +43,11 @@ export interface ReviewAgeBadgeProps {
 }
 
 export function ReviewAgeBadge({ item, now, className }: ReviewAgeBadgeProps) {
+  const t = useTranslations('backoffice');
   const age = ageInReviewMs(item, now);
   if (age === null) return null;
   const severity = slaSeverity(age);
+  const formattedAge = formatAge(t, age);
 
   return (
     <span
@@ -55,10 +57,25 @@ export function ReviewAgeBadge({ item, now, className }: ReviewAgeBadgeProps) {
         SEVERITY_CLASS[severity],
         className
       )}
-      title={`In review for ${formatReviewAge(age)}`}
+      title={t('reviewAge.inReviewFor', { age: formattedAge })}
     >
       <Clock aria-hidden className="h-2.5 w-2.5" />
-      {formatReviewAge(age)}
+      {formattedAge}
     </span>
   );
+}
+
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
+const WEEK = 7 * DAY;
+
+/**
+ * Localized twin of `formatReviewAge` — same thresholds, but the unit
+ * strings resolve through translation keys so they can be localized.
+ */
+function formatAge(t: ReturnType<typeof useTranslations>, ms: number): string {
+  if (ms <= 0) return t('reviewAge.today');
+  if (ms < DAY) return t('reviewAge.hours', { hours: Math.floor(ms / HOUR) });
+  if (ms < WEEK) return t('reviewAge.days', { days: Math.floor(ms / DAY) });
+  return t('reviewAge.weeks', { weeks: Math.floor(ms / WEEK) });
 }

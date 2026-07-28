@@ -3,14 +3,16 @@ import type { Manuscript, ManuscriptImage } from '@/types/manuscript';
 import { ManuscriptViewer } from './manuscript-viewer';
 import { notFound } from 'next/navigation';
 import { apiFetch } from '@/lib/api-fetch';
+import { fetchHands } from '@/services/manuscripts';
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
+import { readSiteFeatures } from '@/lib/site-features-server';
 
 async function getManuscript(id: string): Promise<Manuscript | null> {
   try {
-    const response = await apiFetch(`/api/v1/manuscripts/item-parts/${id}`);
+    const response = await apiFetch(`/api/v1/manuscripts/item-parts/${id}/`);
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -71,7 +73,22 @@ export async function generateMetadata({
 
 export default async function ManuscriptPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [manuscript, images] = await Promise.all([getManuscript(id), getManuscriptImages(id)]);
+  const [manuscript, images, siteFeatures, hands] = await Promise.all([
+    getManuscript(id),
+    getManuscriptImages(id),
+    readSiteFeatures(),
+    // Hands associated with this item-part; a fetch failure must not break the
+    // page, so fall back to an empty list (the section then renders nothing).
+    fetchHands(id)
+      .then((r) => r.results)
+      .catch(() => []),
+  ]);
+  // Read the flag here, on the server, rather than from the client context: the
+  // msDesc markup then never reaches the browser when the feature is off — no
+  // flash of a hidden section and no hydration mismatch. `!== false` matches the
+  // convention used for sections in app/(site)/page.tsx: only an explicit
+  // opt-out disables.
+  const msDescEnabled = siteFeatures.features.manuscriptDescriptions !== false;
 
   if (!manuscript) {
     const t = await getTranslations('manuscript.loadError');
@@ -92,5 +109,19 @@ export default async function ManuscriptPage({ params }: { params: Promise<{ id:
     );
   }
 
-  return <ManuscriptViewer manuscript={manuscript} images={images} />;
+  // Skipping the render is not enough to call the feature "off": ManuscriptViewer
+  // is a client component, so everything left on `manuscript` is serialized into
+  // the RSC payload and readable in the browser even when nothing is drawn. Drop
+  // the areas from the payload too, so disabling the feature actually withholds
+  // the content rather than merely hiding it.
+  const viewerManuscript = msDescEnabled ? manuscript : { ...manuscript, msdesc_areas: [] };
+
+  return (
+    <ManuscriptViewer
+      manuscript={viewerManuscript}
+      images={images}
+      hands={hands}
+      msDescEnabled={msDescEnabled}
+    />
+  );
 }

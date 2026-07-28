@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { ImageIcon, Loader2, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,8 @@ export function ItemImageEditDialog({
   historicalItemId,
 }: ItemImageEditDialogProps) {
   const { token } = useAuth();
+  const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
 
   const [locus, setLocus] = useState(image.locus);
@@ -67,25 +70,25 @@ export function ItemImageEditDialog({
         image: imagePath || null,
       }),
     onSuccess: () => {
-      toast.success('Image updated');
+      toast.success(t('manuscriptsDetail.imageUpdated'));
       invalidate();
       onOpenChange(false);
     },
     onError: (err) => {
-      toast.error('Failed to update image', { description: formatApiError(err) });
+      toast.error(t('manuscriptsDetail.imageUpdateFailed'), { description: formatApiError(err) });
     },
   });
 
   const deleteMut = useMutation({
     mutationFn: () => deleteItemImage(token!, image.id),
     onSuccess: () => {
-      toast.success('Image removed');
+      toast.success(t('manuscriptsDetail.imageRemoved'));
       invalidate();
       setDeleteOpen(false);
       onOpenChange(false);
     },
     onError: (err) => {
-      toast.error('Failed to remove image', { description: formatApiError(err) });
+      toast.error(t('manuscriptsDetail.imageRemoveFailed'), { description: formatApiError(err) });
     },
   });
 
@@ -94,10 +97,8 @@ export function ItemImageEditDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit image</DialogTitle>
-            <DialogDescription>
-              Update the locus or replace the underlying IIIF image.
-            </DialogDescription>
+            <DialogTitle>{t('manuscriptsDetail.editImage')}</DialogTitle>
+            <DialogDescription>{t('manuscriptsDetail.editImageDescription')}</DialogDescription>
           </DialogHeader>
 
           <div className="px-5 py-4 space-y-5">
@@ -106,11 +107,11 @@ export function ItemImageEditDialog({
                 <IiifThumbnail image={imagePath || null} locus={locus} />
               </div>
               <div className="flex-1 space-y-2">
-                <Label className="text-xs">IIIF image path</Label>
+                <Label className="text-xs">{t('manuscriptsDetail.iiifImagePath')}</Label>
                 <Input
                   value={imagePath}
                   onChange={(e) => setImagePath(e.target.value)}
-                  placeholder="historical_items/..."
+                  placeholder={t('manuscriptsDetail.iiifImagePathPlaceholder')}
                   className="h-9 font-mono text-xs"
                 />
                 <Button
@@ -121,33 +122,33 @@ export function ItemImageEditDialog({
                   onClick={() => setPickerOpen(true)}
                 >
                   <ImageIcon className="h-3 w-3" />
-                  Browse media
+                  {t('manuscriptsDetail.browseMedia')}
                 </Button>
               </div>
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor={`locus-${image.id}`} className="text-xs">
-                Locus
+                {t('manuscriptsNew.fieldLocus')}
               </Label>
               <Input
                 id={`locus-${image.id}`}
                 value={locus}
                 onChange={(e) => setLocus(e.target.value)}
-                placeholder="e.g. f.1r"
+                placeholder={t('manuscriptsNew.locusPlaceholder')}
                 className="h-9"
               />
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor={`tags-${image.id}`} className="text-xs">
-                Tags
+                {t('manuscriptsDetail.tags')}
               </Label>
               <Input
                 id={`tags-${image.id}`}
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
-                placeholder="e.g. damaged, illuminated"
+                placeholder={t('manuscriptsDetail.tagsPlaceholder')}
                 className="h-9"
               />
             </div>
@@ -162,7 +163,7 @@ export function ItemImageEditDialog({
               onClick={() => setDeleteOpen(true)}
             >
               <Trash2 className="h-3 w-3" />
-              Delete
+              {tCommon('delete')}
             </Button>
             <div className="flex gap-2">
               <Button
@@ -172,7 +173,7 @@ export function ItemImageEditDialog({
                 className="h-8 text-xs"
                 onClick={() => onOpenChange(false)}
               >
-                Cancel
+                {tCommon('cancel')}
               </Button>
               <Button
                 type="button"
@@ -182,7 +183,7 @@ export function ItemImageEditDialog({
                 disabled={saveMut.isPending}
               >
                 {saveMut.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
-                Save
+                {tCommon('save')}
               </Button>
             </div>
           </DialogFooter>
@@ -198,9 +199,9 @@ export function ItemImageEditDialog({
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete this image?"
-        description="This will remove the image and any associated texts or annotations."
-        confirmLabel="Delete"
+        title={t('manuscriptsDetail.deleteImageConfirmTitle')}
+        description={t('manuscriptsDetail.deleteImageConfirmDescription')}
+        confirmLabel={tCommon('delete')}
         loading={deleteMut.isPending}
         onConfirm={() => deleteMut.mutate()}
       />

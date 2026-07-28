@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { sanitizeHtml } from '@/lib/sanitize-html';
+import { applyHighlightClasses } from '@/lib/tei-highlight';
 import { toDptHtml } from '@/lib/tei-to-dpt-html';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +15,13 @@ interface ImageTextViewerProps {
    * surfaces). Off by default so standalone text pages render plain prose.
    */
   richMarkup?: boolean;
+  /**
+   * Type-filtered highlighting (the Preview "Highlight" dropdown). When provided
+   * (even empty), renders in `.tei-hl-mode`: instead of the blanket `.tei-rich`
+   * element highlight, only spans whose @type/kind is in this list are
+   * highlighted. Takes precedence over `richMarkup`.
+   */
+  highlightTypes?: readonly string[] | null;
   /**
    * A search term to highlight in the rendered transcription. Matches are
    * wrapped in <mark> and the first is scrolled into view — so arriving from a
@@ -91,14 +99,18 @@ export function ImageTextViewer({
   html,
   className,
   richMarkup = false,
+  highlightTypes,
   highlightQuery,
 }: ImageTextViewerProps) {
+  const filterMode = highlightTypes != null;
   // Content may be legacy data-dpt HTML or (post-Phase-H) TEI XML; render both
   // as data-dpt HTML so the prose CSS and text↔region linking are unchanged.
   const safeHtml = React.useMemo(
     () => sanitizeHtml(toDptHtml(html), { allowDataAttr: true }),
     [html]
   );
+  // Stable set of the selected highlight labels (only meaningful in filter mode).
+  const selectedTypes = React.useMemo(() => new Set(highlightTypes ?? []), [highlightTypes]);
   const ref = React.useRef<HTMLDivElement>(null);
 
   // The rendered markup, derived during render so React (not a post-mount DOM
@@ -110,15 +122,19 @@ export function ImageTextViewer({
   // render (it reads the URL in an effect), so the initial client render also
   // produces unmarked `safeHtml` and stays hydration-safe.
   const renderedHtml = React.useMemo(() => {
+    // Type-filter highlight first — pure string op, so it runs on the server too
+    // and the default selection is highlighted on first paint (no flicker, and
+    // hydration-safe as long as the initial selection is seeded deterministically).
+    const base = filterMode ? applyHighlightClasses(safeHtml, selectedTypes) : safeHtml;
     const query = highlightQuery?.trim();
     if (!query || typeof document === 'undefined') {
-      return safeHtml;
+      return base;
     }
     const scratch = document.createElement('div');
-    scratch.innerHTML = safeHtml;
+    scratch.innerHTML = base;
     markSearchHits(scratch, query);
     return scratch.innerHTML;
-  }, [safeHtml, highlightQuery]);
+  }, [safeHtml, filterMode, selectedTypes, highlightQuery]);
 
   // Scroll the first match into view once the highlighted markup is committed.
   React.useEffect(() => {
@@ -137,7 +153,9 @@ export function ImageTextViewer({
       ref={ref}
       className={cn(
         'font-transcription',
-        richMarkup && 'tei-rich',
+        // Filter mode replaces the blanket .tei-rich element highlight with the
+        // type-filtered .tei-hl-mode one; otherwise honour richMarkup.
+        filterMode ? 'tei-hl-mode' : richMarkup && 'tei-rich',
         className ?? 'prose prose-sm dark:prose-invert max-w-none'
       )}
       dangerouslySetInnerHTML={{ __html: renderedHtml }}

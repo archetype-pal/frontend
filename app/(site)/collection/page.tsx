@@ -61,9 +61,7 @@ type SharedCollectionState =
   | { status: 'error'; shareId: string };
 
 type AnonymousSharedCollectionState =
-  | { status: 'idle' }
-  | { status: 'ready'; collection: NamedCollection }
-  | { status: 'error' };
+  { status: 'idle' } | { status: 'ready'; collection: NamedCollection } | { status: 'error' };
 
 type CollectionGridSectionKey = 'image' | 'graph' | 'editorial';
 
@@ -828,13 +826,8 @@ function CollectionPageContent() {
         </>
       ) : (
         <div className="space-y-12">
-          {renderSection(
-            t('page.sectionImages'),
-            visibleImages,
-            images,
-            allImages,
-            'image',
-            () => showMoreGridSection('image')
+          {renderSection(t('page.sectionImages'), visibleImages, images, allImages, 'image', () =>
+            showMoreGridSection('image')
           )}
           {renderSection(
             t('page.sectionGraphs'),

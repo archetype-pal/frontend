@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import type { AllographNested, Component, Feature } from '@/types/backoffice';
@@ -24,10 +25,12 @@ export function ComparisonMatrix({
   disabled,
   onSelectAllograph,
 }: ComparisonMatrixProps) {
+  const t = useTranslations('backoffice');
+
   if (allographs.length === 0) {
     return (
       <div className="py-8 text-center text-sm text-muted-foreground">
-        No allographs to compare. Add allographs first.
+        {t('symbols.noAllographsToCompare')}
       </div>
     );
   }
@@ -39,15 +42,15 @@ export function ComparisonMatrix({
         <div className="flex items-center gap-4 text-[10px] text-muted-foreground px-1">
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-3 w-3 rounded-sm bg-primary/20 border border-primary/30" />
-            Has component with features
+            {t('symbols.legendHasFeatures')}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-3 w-3 rounded-sm bg-severity-warning/15 border border-severity-warning/40 dark:bg-severity-warning/25 dark:border-severity-warning/50" />
-            Has component, no features
+            {t('symbols.legendNoFeatures')}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-3 w-3 rounded-sm bg-muted border border-muted-foreground/10" />
-            Missing component
+            {t('symbols.legendMissing')}
           </span>
         </div>
 
@@ -56,7 +59,7 @@ export function ComparisonMatrix({
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="px-3 py-2 text-left font-medium text-muted-foreground sticky left-0 bg-muted/50 z-10 min-w-[120px]">
-                  Component
+                  {t('symbols.componentColumn')}
                 </th>
                 {allographs.map((allo, idx) => (
                   <th
@@ -112,7 +115,7 @@ export function ComparisonMatrix({
                         )}
                         {defaultFeatures.length > 0 && (
                           <span className="text-[9px] text-muted-foreground">
-                            {defaultFeatures.length} default
+                            {t('symbols.defaultCount', { count: defaultFeatures.length })}
                           </span>
                         )}
                       </div>
@@ -138,12 +141,15 @@ export function ComparisonMatrix({
                             ))}
                           </div>
                         ) : (
-                          <p className="text-muted-foreground">No features assigned</p>
+                          <p className="text-muted-foreground">{t('symbols.noFeaturesAssigned')}</p>
                         )}
                       </div>
                     ) : (
                       <p>
-                        {allo.name} does not have {comp.name}
+                        {t('symbols.doesNotHave', {
+                          allograph: allo.name,
+                          component: comp.name,
+                        })}
                       </p>
                     );
 
@@ -185,7 +191,10 @@ export function ComparisonMatrix({
               <div key={allo.id ?? idx} className="flex items-center gap-1.5">
                 <span className="font-medium text-foreground">{allo.name}:</span>
                 <span>
-                  {totalComponents} components, {totalFeatures} features
+                  {t('symbols.matrixSummary', {
+                    components: totalComponents,
+                    features: totalFeatures,
+                  })}
                 </span>
               </div>
             );

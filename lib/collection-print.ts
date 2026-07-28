@@ -50,9 +50,10 @@ async function getPrintImageUrl(item: CollectionItem): Promise<string> {
   });
 }
 
-function buildPrintStartupScript(): string {
+function buildPrintStartupScript(nonce?: string): string {
+  const nonceAttribute = nonce ? ` nonce="${escapeHtml(nonce)}"` : '';
   return `
-    <script>
+    <script${nonceAttribute}>
       (function () {
         function retryUrl(src) {
           try {
@@ -165,7 +166,8 @@ async function buildPrintTableRow(item: CollectionItem, index: number): Promise<
 
 export async function buildCollectionPrintHtml(
   collection: NamedCollection,
-  siteTitle: string
+  siteTitle: string,
+  options?: { nonce?: string }
 ): Promise<string> {
   const sections = await Promise.all(
     groupItemsBySection(collection).map(async ([sectionType, items]) => {
@@ -187,7 +189,7 @@ export async function buildCollectionPrintHtml(
   const count = collection.items.length;
 
   return (
-    `<!doctype html><html><head><meta charset="utf-8">` +
+    `<!doctype html><html lang="en"><head><meta charset="utf-8">` +
     `<title>${escapeHtml(collection.name)} · Collection print</title>` +
     `<style>` +
     `@page { margin: 12mm; }` +
@@ -212,7 +214,7 @@ export async function buildCollectionPrintHtml(
     `<h1>${escapeHtml(collection.name)}</h1>` +
     `<p class="summary">${escapeHtml(siteTitle)} collection · ${count} ${count === 1 ? 'item' : 'items'}</p>` +
     `${sections.join('')}` +
-    `${buildPrintStartupScript()}` +
+    `${buildPrintStartupScript(options?.nonce)}` +
     `</body></html>`
   );
 }

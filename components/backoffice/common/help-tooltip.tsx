@@ -1,6 +1,7 @@
 'use client';
 
 import { HelpCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { helpTexts, type HelpEntry } from '@/lib/backoffice/help-texts';
 import { cn } from '@/lib/utils';
@@ -22,6 +23,7 @@ interface HelpTooltipProps {
  * ```
  */
 export function HelpTooltip({ field, entry, className }: HelpTooltipProps) {
+  const t = useTranslations('backoffice');
   const help = entry ?? helpTexts[field];
   if (!help) return null;
 
@@ -37,14 +39,14 @@ export function HelpTooltip({ field, entry, className }: HelpTooltipProps) {
           tabIndex={-1}
         >
           <HelpCircle className="h-3.5 w-3.5" />
-          <span className="sr-only">Help</span>
+          <span className="sr-only">{t('helpTooltip.help')}</span>
         </button>
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
         <p>{help.description}</p>
         {help.example && (
           <p className="mt-1 text-muted-foreground">
-            Example: <code className="rounded bg-muted px-1">{help.example}</code>
+            {t('helpTooltip.example')} <code className="rounded bg-muted px-1">{help.example}</code>
           </p>
         )}
       </TooltipContent>
@@ -80,6 +82,7 @@ export function FieldLabel({
   htmlFor,
   className,
 }: FieldLabelProps) {
+  const t = useTranslations('backoffice');
   return (
     <label
       htmlFor={htmlFor}
@@ -98,7 +101,7 @@ export function FieldLabel({
               required — the asterisk alone is aria-hidden, so without this
               announcement assistive tech users had no way to tell a field
               was required from the label. */}
-          <span className="sr-only">(required)</span>
+          <span className="sr-only">{t('helpTooltip.required')}</span>
         </>
       )}
       {helpField && <HelpTooltip field={helpField} entry={helpEntry} />}

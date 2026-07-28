@@ -93,9 +93,7 @@ function enrichGraphs(
 }
 
 type GraphsState =
-  | { status: 'loading' }
-  | { status: 'loaded'; graphs: HandGraph[] }
-  | { status: 'error' };
+  { status: 'loading' } | { status: 'loaded'; graphs: HandGraph[] } | { status: 'error' };
 
 function useHandGraphs(handId: number, images: HandImage[], enabled: boolean): GraphsState {
   const [state, setState] = useState<GraphsState>({ status: 'loading' });

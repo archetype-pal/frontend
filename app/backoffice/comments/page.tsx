@@ -230,7 +230,7 @@ export default function CommentsPage() {
                     : false
               }
               onCheckedChange={toggleSelectAll}
-              aria-label="Select all"
+              aria-label={t('comments.selectAllAria')}
             />
             <span className="text-xs text-muted-foreground">
               {t('comments.selectAll', { count: comments.length })}

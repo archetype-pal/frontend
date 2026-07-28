@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { InlineEdit } from '@/components/backoffice/common/inline-edit';
@@ -41,6 +42,8 @@ export function NamedEntityManager<T extends EntityBase>({
   deleteDescription,
   renderItem,
 }: NamedEntityManagerProps<T>) {
+  const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
   const {
     newName,
     setNewName,
@@ -67,7 +70,7 @@ export function NamedEntityManager<T extends EntityBase>({
         size="icon"
         className="h-5 w-5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
         onClick={() => setDeleteTarget(item)}
-        aria-label={`Delete ${item.name}`}
+        aria-label={t('simpleCrud.deleteLabel', { label: item.name })}
       >
         <Trash2 className="h-3 w-3" />
       </Button>
@@ -117,9 +120,9 @@ export function NamedEntityManager<T extends EntityBase>({
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title={`Delete "${deleteTarget?.name}"?`}
+        title={t('namedEntities.deleteTitle', { name: deleteTarget?.name ?? '' })}
         description={deleteDescription}
-        confirmLabel="Delete"
+        confirmLabel={tCommon('delete')}
         loading={deleteMut.isPending}
         onConfirm={() => deleteTarget && deleteMut.mutate(deleteTarget.id)}
       />
