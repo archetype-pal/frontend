@@ -441,7 +441,9 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
             <TabsContent value="preview" className="mt-2">
               <div
                 className="prose prose-sm dark:prose-invert max-w-none rounded-md border px-4 py-3 min-h-[200px]"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeHtml(content, { allowLegacyPublicationStyles: true }),
+                }}
               />
             </TabsContent>
           </Tabs>
