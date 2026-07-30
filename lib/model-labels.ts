@@ -57,15 +57,15 @@ export const DEFAULT_MODEL_LABELS: Record<ModelLabelKey, LocalizedLabel> = {
   siteTitle: { en: 'Archetype', fr: 'Archetype' },
   siteTagline: {
     en: 'Archetype tagline',
-    fr: "Archetype tagline",
+    fr: 'Archetype tagline',
   },
   footerFunded: {
     en: 'Archetype funding text.',
-    fr: 'Texte de financement d\'Archetype.',
+    fr: "Texte de financement d'Archetype.",
   },
   footerCopyright: {
     en: 'Archetype copyright',
-    fr: 'Droits d\'auteur d\'Archetype',
+    fr: "Droits d'auteur d'Archetype",
   },
 };
 
