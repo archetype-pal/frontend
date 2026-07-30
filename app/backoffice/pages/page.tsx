@@ -10,7 +10,11 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Files, Plus, ExternalLink, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DataTable, sortableHeader, type BulkAction } from '@/components/backoffice/common/data-table';
+import {
+  DataTable,
+  sortableHeader,
+  type BulkAction,
+} from '@/components/backoffice/common/data-table';
 import { FilterBar, type FilterConfig } from '@/components/backoffice/common/filter-bar';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { getPages, updatePage, deletePage } from '@/services/backoffice/pages';
@@ -60,7 +64,10 @@ export default function PagesPage() {
       accessorKey: 'status',
       header: t('pages.colStatus'),
       cell: ({ row }) => (
-        <Badge variant={row.original.status === 'Published' ? 'default' : 'secondary'} className="text-xs">
+        <Badge
+          variant={row.original.status === 'Published' ? 'default' : 'secondary'}
+          className="text-xs"
+        >
           {row.original.status}
         </Badge>
       ),
@@ -110,13 +117,18 @@ export default function PagesPage() {
   });
 
   const filtered = (data ?? []).filter((page) => {
-    if (filterValues.status && filterValues.status !== '__all' && page.status !== filterValues.status) {
+    if (
+      filterValues.status &&
+      filterValues.status !== '__all' &&
+      page.status !== filterValues.status
+    ) {
       return false;
     }
     return true;
   });
 
-  const invalidatePages = () => queryClient.invalidateQueries({ queryKey: backofficeKeys.pages.all() });
+  const invalidatePages = () =>
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.pages.all() });
 
   const bulkActions: BulkAction[] = [
     {
@@ -182,7 +194,9 @@ export default function PagesPage() {
           <Files className="h-6 w-6 text-primary" />
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">{t('pages.title')}</h1>
-            <p className="text-sm text-muted-foreground">{t('pages.subtitle', { count: data?.length ?? 0 })}</p>
+            <p className="text-sm text-muted-foreground">
+              {t('pages.subtitle', { count: data?.length ?? 0 })}
+            </p>
           </div>
         </div>
         <Button size="sm" onClick={() => router.push('/backoffice/pages/new')}>
