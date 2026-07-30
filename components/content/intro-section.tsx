@@ -9,6 +9,13 @@ import { useTranslations } from 'next-intl';
 import type { CarouselItem } from '@/types/backoffice';
 import { fetchCarouselItems, getCarouselImageUrl } from '@/utils/api';
 
+const ABOUT_MODELS_OF_AUTHORITY_PATH = '/about/about-models-of-authority';
+
+function normalizeCarouselLink(url: string | null | undefined): string | null {
+  if (!url) return null;
+  return url === '/about' || url === '/about/' ? ABOUT_MODELS_OF_AUTHORITY_PATH : url;
+}
+
 export default function IntroSection() {
   const t = useTranslations('content');
   const [currentImage, setCurrentImage] = useState(0);
@@ -78,6 +85,7 @@ export default function IntroSection() {
 
   const hasImages = !error && carouselItems.length > 0;
   const currentItem = hasImages ? carouselItems[currentImage] : null;
+  const currentItemUrl = normalizeCarouselLink(currentItem?.url);
 
   return (
     <div>
@@ -153,6 +161,7 @@ export default function IntroSection() {
             {hasImages ? (
               <div className="absolute inset-0">
                 {carouselItems.map((item, i) => {
+                  const itemUrl = normalizeCarouselLink(item.url);
                   const slide = (
                     <Image
                       src={getCarouselImageUrl(item.image)}
@@ -175,8 +184,8 @@ export default function IntroSection() {
                         i === currentImage ? 'opacity-100 z-[1]' : 'opacity-0'
                       }`}
                     >
-                      {item.url ? (
-                        <Link href={item.url} className="block absolute inset-0">
+                      {itemUrl ? (
+                        <Link href={itemUrl} className="block absolute inset-0">
                           {slide}
                         </Link>
                       ) : (
@@ -228,9 +237,9 @@ export default function IntroSection() {
                   className="mb-3"
                   style={{ animation: 'fade-in 0.5s ease both' }}
                 >
-                  {currentItem?.url ? (
+                  {currentItemUrl ? (
                     <Link
-                      href={currentItem.url}
+                      href={currentItemUrl}
                       className="text-white text-lg font-semibold hover:text-accent transition-colors truncate block"
                       style={{ fontFamily: 'var(--font-display)' }}
                     >
