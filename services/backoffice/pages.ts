@@ -26,7 +26,7 @@ export function getPage(token: string, slug: string): Promise<Page> {
 }
 
 export type PageWritePayload = Partial<
-  Pick<Page, 'slug' | 'title' | 'content' | 'status' | 'order'>
+  Pick<Page, 'slug' | 'title' | 'content' | 'status' | 'order' | 'include_in_quick_link'>
 >;
 
 export function createPage(token: string, data: PageWritePayload): Promise<Page> {

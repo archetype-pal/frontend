@@ -14,11 +14,15 @@ export type Page = {
   content: LocalizedText;
   status: PageStatus;
   order: number;
+  include_in_quick_link: boolean;
   created_at: string;
   updated_at: string;
 };
 
-export type PageListItem = Pick<Page, 'id' | 'slug' | 'title' | 'status' | 'order' | 'updated_at'>;
+export type PageListItem = Pick<
+  Page,
+  'id' | 'slug' | 'title' | 'status' | 'order' | 'include_in_quick_link' | 'updated_at'
+>;
 
 // Slugs a DB-backed Page must not shadow (frontend route segments like
 // `/about/_components` and `/backoffice/pages/new`, plus any backend-reserved slugs).
@@ -53,6 +57,7 @@ export function normalizePage(raw: unknown): Page | null {
     content: normalizeLocalizedText(obj.content),
     status: obj.status === 'Published' ? 'Published' : 'Draft',
     order: typeof obj.order === 'number' ? obj.order : 0,
+    include_in_quick_link: obj.include_in_quick_link === true,
     created_at: typeof obj.created_at === 'string' ? obj.created_at : '',
     updated_at: typeof obj.updated_at === 'string' ? obj.updated_at : '',
   };
@@ -69,6 +74,7 @@ export function normalizePageListItem(raw: unknown): PageListItem | null {
     title: normalizeLocalizedText(obj.title),
     status: obj.status === 'Published' ? 'Published' : 'Draft',
     order: typeof obj.order === 'number' ? obj.order : 0,
+    include_in_quick_link: obj.include_in_quick_link === true,
     updated_at: typeof obj.updated_at === 'string' ? obj.updated_at : '',
   };
 }

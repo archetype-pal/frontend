@@ -3,6 +3,8 @@ import { ExternalLink } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
+import { getPublishedPages } from '@/lib/pages-server';
+import { resolvePageText, type PageLocale } from '@/lib/pages';
 
 // lucide-react dropped brand marks (incl. GitHub) in v1, so the GitHub logo is
 // rendered as an inline SVG. Uses currentColor to match the adjacent icons.
@@ -48,14 +50,21 @@ const partners = [
 ];
 
 export default async function Footer() {
-  const [t, rawLocale, modelLabels] = await Promise.all([
+  const [t, rawLocale, modelLabels, pages] = await Promise.all([
     getTranslations('nav.footer'),
     getLocale(),
     readModelLabels(),
+    getPublishedPages(),
   ]);
   const locale = rawLocale as ModelLabelLocale;
   const getLabel = (key: 'siteTitle' | 'footerFunded' | 'footerCopyright') =>
     resolveModelLabel(modelLabels.labels[key], locale);
+  const quickLinkPages = pages
+    .filter((page) => page.include_in_quick_link)
+    .map((page) => ({
+      href: `/about/${page.slug}`,
+      label: resolvePageText(page.title, locale as PageLocale) || page.slug,
+    }));
 
   return (
     <footer className="bg-primary text-primary-foreground mt-16">
@@ -75,30 +84,16 @@ export default async function Footer() {
           <div className="space-y-3">
             <h2 className="font-serif text-lg font-semibold tracking-tight">{t('quickLinks')}</h2>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link
-                  href="/search/manuscripts"
-                  className="text-primary-foreground/85 hover:text-white transition-colors"
-                >
-                  {t('searchCharters')}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/about/about-models-of-authority"
-                  className="text-primary-foreground/85 hover:text-white transition-colors"
-                >
-                  {t('aboutProject')}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/about/accessibility"
-                  className="text-primary-foreground/85 hover:text-white transition-colors"
-                >
-                  {t('accessibility')}
-                </Link>
-              </li>
+              {quickLinkPages.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-primary-foreground/85 hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
               <li>
                 <Link
                   href="/login"

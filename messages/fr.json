@@ -62,9 +62,6 @@
     "footer": {
       "about": "Les chartes écossaises et l'émergence du gouvernement, 1100–1250. Une ressource pour l'étude du contenu, de l'écriture et de l'aspect physique du corpus des chartes écossaises.",
       "quickLinks": "Liens rapides",
-      "searchCharters": "Rechercher des manuscrits",
-      "aboutProject": "À propos du projet",
-      "accessibility": "Déclaration d'accessibilité",
       "logIn": "Connexion",
       "partners": "Partenaires",
       "githubLabel": "GitHub",
@@ -1567,6 +1564,7 @@
       "statusDraft": "Brouillon",
       "statusPublished": "Publiée",
       "fieldOrder": "Ordre dans le menu À propos",
+      "fieldQuickLink": "Afficher dans les liens rapides du pied de page",
       "tabEnglish": "Anglais",
       "tabFrench": "Français",
       "fieldPageTitle": "Titre",
