@@ -73,6 +73,9 @@ export const backofficeKeys = {
     list: () => [...backofficeKeys.pages.all(), 'list'] as const,
     detail: (slug: string) => [...backofficeKeys.pages.all(), 'detail', slug] as const,
   },
+  partners: {
+    all: () => [...backofficeKeys.all, 'partners'] as const,
+  },
 
   // ── Scribes ────────────────────────────────────────────────
   scribes: {

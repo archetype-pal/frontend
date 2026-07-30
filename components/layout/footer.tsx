@@ -5,6 +5,7 @@ import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 import { getPublishedPages } from '@/lib/pages-server';
 import { resolvePageText, type PageLocale } from '@/lib/pages';
+import { fetchPartners, getCarouselImageUrl } from '@/utils/api';
 
 // lucide-react dropped brand marks (incl. GitHub) in v1, so the GitHub logo is
 // rendered as an inline SVG. Uses currentColor to match the adjacent icons.
@@ -22,39 +23,13 @@ function GithubIcon({ className }: { className?: string }) {
   );
 }
 
-const partners = [
-  {
-    name: 'Arts & Humanities Research Council',
-    logo: '/models_of_authority/Logos/ahrc_logo_small.png',
-  },
-  {
-    name: 'University of Glasgow',
-    logo: '/models_of_authority/Logos/uni_glasgow_logo_small.png',
-  },
-  {
-    name: "King's College London",
-    logo: '/models_of_authority/Logos/ddh_no_strapline_small.png',
-  },
-  {
-    name: 'University of Cambridge',
-    logo: '/models_of_authority/Logos/university_of_cambridge_logo_small.png',
-  },
-  {
-    name: 'National Records of Scotland',
-    logo: '/models_of_authority/Logos/nrs-logo_small.png',
-  },
-  {
-    name: 'The National Archives',
-    logo: '/models_of_authority/Logos/the-national-archives_logo_small.png',
-  },
-];
-
 export default async function Footer() {
-  const [t, rawLocale, modelLabels, pages] = await Promise.all([
+  const [t, rawLocale, modelLabels, pages, partners] = await Promise.all([
     getTranslations('nav.footer'),
     getLocale(),
     readModelLabels(),
     getPublishedPages(),
+    fetchPartners().catch(() => []),
   ]);
   const locale = rawLocale as ModelLabelLocale;
   const getLabel = (key: 'siteTitle' | 'footerFunded' | 'footerCopyright') =>
@@ -109,21 +84,32 @@ export default async function Footer() {
           <div className="space-y-3">
             <h2 className="font-serif text-lg font-semibold tracking-tight">{t('partners')}</h2>
             <div className="flex flex-wrap gap-4">
-              {partners.map((partner) => (
-                <div
-                  key={partner.name}
-                  className="bg-white/90 rounded-md p-2 flex items-center justify-center"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={partner.logo}
-                    alt={partner.name}
-                    width={80}
-                    height={40}
-                    loading="lazy"
-                  />
-                </div>
-              ))}
+              {partners.map((partner) => {
+                const logoCard = (
+                  <div className="bg-white/90 rounded-md p-2 flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getCarouselImageUrl(partner.logo)}
+                      alt={partner.name}
+                      width={80}
+                      height={40}
+                      loading="lazy"
+                    />
+                  </div>
+                );
+                return partner.url ? (
+                  <Link
+                    key={partner.id}
+                    href={partner.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {logoCard}
+                  </Link>
+                ) : (
+                  <div key={partner.id}>{logoCard}</div>
+                );
+              })}
             </div>
           </div>
         </div>
