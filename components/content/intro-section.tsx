@@ -229,7 +229,7 @@ export default function IntroSection() {
             )}
 
             {/* Caption + dot indicators at bottom */}
-            {hasImages && (
+            {hasImages && currentItem && (
               <div className="absolute bottom-0 left-0 right-0 z-20 px-5 pb-4 pt-10">
                 {/* Caption */}
                 <div
