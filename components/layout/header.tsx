@@ -29,6 +29,15 @@ import { useCollection } from '@/contexts/collection-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { normalizeSectionOrder, type SectionKey } from '@/lib/site-features';
+import { resolvePageText, type PageListItem, type PageLocale } from '@/lib/pages';
+import { useLocaleStore } from '@/stores/locale-store';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronDown } from 'lucide-react';
 import {
   addSearchHistory,
   clearSearchHistory,
@@ -42,9 +51,10 @@ import { useTranslations } from 'next-intl';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 
-export default function Header() {
+export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[] }) {
   const t = useTranslations('nav');
   const tCommon = useTranslations('common');
+  const locale = useLocaleStore((state) => state.locale);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
   const headerRef = useRef<HTMLElement>(null);
@@ -263,19 +273,37 @@ export default function Header() {
         );
       case 'events':
         return null;
-      case 'about':
+      case 'about': {
+        // All about pages (including the 3 former built-in ones) are now
+        // DB-backed Pages, ordered by their `order` field — see about-sidebar.tsx.
+        const aboutLinks = aboutPages.map((page) => ({
+          href: `/about/${page.slug}`,
+          label: resolvePageText(page.title, locale as PageLocale) || page.slug,
+        }));
         return (
           <li key={sectionKey}>
-            <Button
-              asChild
-              variant="ghost"
-              size="sm"
-              className={navLinkClass(!!isActive('/about'))}
-            >
-              <Link href="/about/about-models-of-authority">{t('about')}</Link>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn('group', navLinkClass(!!isActive('/about')))}
+                >
+                  {t('about')}
+                  <ChevronDown className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {aboutLinks.map((link) => (
+                  <DropdownMenuItem key={link.href} asChild>
+                    <Link href={link.href}>{link.label}</Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </li>
         );
+      }
       default:
         return null;
     }
