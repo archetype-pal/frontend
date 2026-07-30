@@ -173,7 +173,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
           <Badge variant={status === 'Published' ? 'default' : 'secondary'}>{status}</Badge>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/about/${slug}`} target="_blank">
+          <Link href={`/about/${slug}`} target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="sm">
               <ExternalLink className="h-3.5 w-3.5 mr-1" />
               {t('pagesDetail.viewPublicPage')}
@@ -242,7 +242,10 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
               onClick={() => {
                 const next = !slugLocked;
                 setSlugLocked(next);
-                if (!next) setPageSlug(generateSlug(title.en));
+                if (!next) {
+                  setPageSlug(generateSlug(title.en));
+                  markDirty();
+                }
               }}
             >
               {slugLocked ? t('pagesDetail.slugAutoGenerate') : t('pagesDetail.slugLock')}

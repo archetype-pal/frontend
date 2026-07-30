@@ -20,10 +20,9 @@ export type Page = {
 
 export type PageListItem = Pick<Page, 'id' | 'slug' | 'title' | 'status' | 'order' | 'updated_at'>;
 
-// Slugs a DB-backed Page must not shadow. Empty now that the 3 former
-// built-in about pages have themselves been migrated into the Page table
-// (mirrors backend RESERVED_SLUGS in apps/pages/models.py).
-export const RESERVED_PAGE_SLUGS: readonly string[] = [];
+// Slugs a DB-backed Page must not shadow (frontend route segments like
+// `/about/_components` and `/backoffice/pages/new`, plus any backend-reserved slugs).
+export const RESERVED_PAGE_SLUGS = ['_components', 'new'] as const;
 
 export function isReservedPageSlug(slug: string): boolean {
   return (RESERVED_PAGE_SLUGS as readonly string[]).includes(slug);
