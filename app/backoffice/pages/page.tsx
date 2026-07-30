@@ -80,6 +80,17 @@ export default function PagesPage() {
       size: 70,
     },
     {
+      accessorKey: 'include_in_quick_link',
+      header: t('pages.colQuickLink'),
+      cell: ({ row }) =>
+        row.original.include_in_quick_link ? (
+          <Badge variant="outline" className="text-[10px]">
+            {t('pages.yes')}
+          </Badge>
+        ) : null,
+      size: 90,
+    },
+    {
       accessorKey: 'updated_at',
       header: sortableHeader(t('pages.colUpdated')),
       cell: ({ row }) => (

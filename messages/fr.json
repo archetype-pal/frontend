@@ -1524,6 +1524,7 @@
       "colSlug": "Chemin",
       "colStatus": "Statut",
       "colOrder": "Ordre",
+      "colQuickLink": "Lien rapide",
       "colUpdated": "Mise à jour",
       "bulkPublish": "Publier",
       "bulkUnpublish": "Dépublier",
@@ -1531,7 +1532,8 @@
       "bulkConfirmTitle": "{label} {count, plural, =1 {1 page} other {{count} pages}} ?",
       "bulkConfirmDescDelete": "{count, plural, =1 {1 page} other {{count} pages}} seront définitivement supprimées.",
       "bulkConfirmDescUnpublish": "{count, plural, =1 {1 page} other {{count} pages}} seront dépubliées.",
-      "bulkConfirmLabel": "{label} tout"
+      "bulkConfirmLabel": "{label} tout",
+      "yes": "Oui"
     },
     "pagesNew": {
       "pageTitle": "Nouvelle page",
