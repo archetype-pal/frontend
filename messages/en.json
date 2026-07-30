@@ -62,9 +62,6 @@
     "footer": {
       "about": "Scottish Charters and the Emergence of Government, 1100–1250. A resource for the study of the contents, script and physical appearance of the corpus of Scottish charters.",
       "quickLinks": "Quick Links",
-      "searchCharters": "Search Charters",
-      "aboutProject": "About the Project",
-      "accessibility": "Accessibility Statement",
       "logIn": "Log in",
       "partners": "Partners",
       "githubLabel": "GitHub",
@@ -1567,6 +1564,7 @@
       "statusDraft": "Draft",
       "statusPublished": "Published",
       "fieldOrder": "Order in About menu",
+      "fieldQuickLink": "Show in footer quick links",
       "tabEnglish": "English",
       "tabFrench": "Français",
       "fieldPageTitle": "Title",

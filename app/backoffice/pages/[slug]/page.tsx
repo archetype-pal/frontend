@@ -11,6 +11,7 @@ import { ArrowLeft, Save, Trash2, Loader2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import dynamic from 'next/dynamic';
@@ -56,6 +57,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
   const [content, setContent] = useState<LocalizedText>({ en: '', fr: '' });
   const [status, setStatus] = useState<PageStatus>('Draft');
   const [order, setOrder] = useState(0);
+  const [includeInQuickLink, setIncludeInQuickLink] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -72,11 +74,12 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
       setContent(page.content);
       setStatus(page.status);
       setOrder(page.order);
+      setIncludeInQuickLink(page.include_in_quick_link);
       setDirty(false);
     }
   }, [page]);
 
-  const autosaveData = { pageSlug, title, content, status, order };
+  const autosaveData = { pageSlug, title, content, status, order, includeInQuickLink };
   const {
     status: autosaveStatus,
     discard: discardDraft,
@@ -100,6 +103,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
       setContent(draft.content);
       setStatus(draft.status);
       setOrder(draft.order);
+      setIncludeInQuickLink(draft.includeInQuickLink);
       setDirty(true);
     }
     setShowRecovery(false);
@@ -115,7 +119,15 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
   const reserved = pageSlug !== slug && isReservedPageSlug(pageSlug);
 
   const saveMut = useMutation({
-    mutationFn: () => updatePage(token!, slug, { slug: pageSlug, title, content, status, order }),
+    mutationFn: () =>
+      updatePage(token!, slug, {
+        slug: pageSlug,
+        title,
+        content,
+        status,
+        order,
+        include_in_quick_link: includeInQuickLink,
+      }),
     onSuccess: (data) => {
       toast.success(t('pagesDetail.toastSaved'));
       discardDraft();
@@ -296,6 +308,17 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
             />
           </div>
         </div>
+
+        <label className="flex items-center gap-2 text-sm">
+          <Switch
+            checked={includeInQuickLink}
+            onCheckedChange={(checked) => {
+              setIncludeInQuickLink(checked);
+              markDirty();
+            }}
+          />
+          {t('pagesDetail.fieldQuickLink')}
+        </label>
 
         <Tabs defaultValue="en">
           <TabsList className="h-8">
