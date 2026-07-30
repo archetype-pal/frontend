@@ -1524,6 +1524,7 @@
       "colSlug": "Path",
       "colStatus": "Status",
       "colOrder": "Order",
+      "colQuickLink": "Quick Link",
       "colUpdated": "Updated",
       "bulkPublish": "Publish",
       "bulkUnpublish": "Unpublish",

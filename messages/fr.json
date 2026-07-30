@@ -1524,6 +1524,7 @@
       "colSlug": "Chemin",
       "colStatus": "Statut",
       "colOrder": "Ordre",
+      "colQuickLink": "Lien rapide",
       "colUpdated": "Mise à jour",
       "bulkPublish": "Publier",
       "bulkUnpublish": "Dépublier",
