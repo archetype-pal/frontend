@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Save, Trash2, Loader2, ArrowLeft } from 'lucide-react';
+import { Save, Trash2, Loader2, ArrowLeft, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -197,6 +197,10 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
     return `${historicalItemLabel} #${item.id}`;
   })();
 
+  // The public manuscript route is per-part; link the first part (the corpus is
+  // effectively 1:1) and omit the link entirely when the item has no parts yet.
+  const publicPartId = item.item_parts[0]?.id;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -210,6 +214,19 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
               <ArrowLeft className="h-4 w-4" />
             </Link>
             <h1 className="text-xl font-semibold">{heading}</h1>
+            {/* Public site keys manuscripts by ItemPart id, not HistoricalItem id. */}
+            {publicPartId !== undefined && (
+              <Link
+                href={`/manuscripts/${publicPartId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={t('manuscriptWorkspace.viewPublicPage')}
+                aria-label={t('manuscriptWorkspace.viewPublicPage')}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Link>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary">{item.type}</Badge>
