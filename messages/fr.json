@@ -814,7 +814,7 @@
       "toastNoPrintImages": "Aucune image à imprimer",
       "toastPrintPopupBlocked": "Pop-up bloqué — autorisez les pop-ups pour ce site afin d'imprimer.",
       "printTabTitle": "Visionneuse — impression",
-      "printHeading": "Models of Authority — Visionneuse ({count, plural, one {# image} other {# images}})",
+      "printHeading": "Archetype — Visionneuse ({count, plural, one {# image} other {# images}})",
       "toastFailedToExportImages": "Échec de l'exportation de {count, plural, one {# image} other {# images}}",
       "formatPdf": "PDF",
       "formatImage": "Image",

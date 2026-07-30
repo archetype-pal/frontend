@@ -814,7 +814,7 @@
       "toastNoPrintImages": "No images to print",
       "toastPrintPopupBlocked": "Pop-up blocked — allow pop-ups for this site to print.",
       "printTabTitle": "Lightbox — print",
-      "printHeading": "Models of Authority — Lightbox ({count, plural, one {# image} other {# images}})",
+      "printHeading": "Archetype — Lightbox ({count, plural, one {# image} other {# images}})",
       "toastFailedToExportImages": "Failed to export {count, plural, one {# image} other {# images}}",
       "formatPdf": "PDF",
       "formatImage": "Image",
