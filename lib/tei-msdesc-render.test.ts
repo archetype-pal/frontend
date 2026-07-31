@@ -588,3 +588,62 @@ describe('multi-element field values', () => {
     expect(host.textContent).not.toContain('ScotlandKelso');
   });
 });
+
+// The create-new flow seeds each area with an empty skeleton (roadmap 2.5), so
+// an unfilled manuscript is full of `<collation><p/></collation>`-shaped nodes.
+// Rendering those as bare labels leaks authoring scaffolding onto the public page.
+describe('renderMsDescArea — empty skeleton nodes are not rendered', () => {
+  const EMPTY_HISTORY = `<history>
+  <origin>
+    <origDate calendar="#Gregorian"/>
+    <origPlace><country/></origPlace>
+  </origin>
+  <provenance><p/></provenance>
+  <acquisition><p/></acquisition>
+</history>`;
+
+  it('drops block-shaped fields whose content is empty', () => {
+    const root = render('history', EMPTY_HISTORY);
+    const labels = fieldRows(root).map(([label]) => label);
+    expect(labels).not.toContain('Provenance');
+    expect(labels).not.toContain('Acquisition');
+  });
+
+  it('drops a link-bearing field with no text and nothing to click', () => {
+    const root = render('history', EMPTY_HISTORY);
+    expect(fieldRows(root).map(([label]) => label)).not.toContain('Place');
+  });
+
+  it('drops section headings with no content beneath them', () => {
+    const root = render('physDesc', '<physDesc><additions/><bindingDesc/></physDesc>');
+    expect(root.querySelector('.msdesc-section-additions')).toBeNull();
+    expect(root.querySelector('.msdesc-section-bindingDesc')).toBeNull();
+  });
+
+  it('still renders a field once it has real content', () => {
+    const root = render(
+      'history',
+      '<history><provenance><p>Given to the abbey.</p></provenance></history>'
+    );
+    expect(fieldValue(root, 'Provenance')).toBe('Given to the abbey.');
+  });
+
+  it('keeps an empty-text link that still has a resolvable target', () => {
+    const root = render(
+      'history',
+      '<history><origin><origPlace target="https://example.org/kelso"/></origin></history>'
+    );
+    expect(root.querySelector('a[href="https://example.org/kelso"]')).not.toBeNull();
+  });
+});
+
+describe('renderMsDescArea — an all-skeleton area renders nothing', () => {
+  it('returns empty rather than a lone heading', () => {
+    const html = renderMsDescArea(
+      'history',
+      '<history><origin><origPlace><country/></origPlace></origin><provenance><p/></provenance></history>',
+      { t: tEn }
+    );
+    expect(html).toBe('');
+  });
+});

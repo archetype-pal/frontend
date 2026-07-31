@@ -18,3 +18,8 @@ yarn.lock
 # Ignore config that may use different style
 tailwind.config.ts
 postcss.config.mjs
+
+# Written at runtime by the backoffice (JSON.stringify, not Prettier), so any
+# admin toggle would otherwise fail the format gate.
+config/site-features.json
+config/model-labels.json

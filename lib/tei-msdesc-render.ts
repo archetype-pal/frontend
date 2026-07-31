@@ -138,6 +138,10 @@ export function renderMsDescArea(
       : renderBlockNodes(meaningful, t)
   );
 
+  // An area holding only skeleton (every leaf empty) renders nothing at all,
+  // rather than a lone area heading over blank space.
+  if (!hasRenderedText(body)) return '';
+
   const heading = `<h${areaLevel} class="msdesc-heading">${escapeHtml(t(msdescAreaLabelKey(area)))}</h${areaLevel}>`;
   return `<div class="msdesc-area msdesc-area-${area}">${heading}${body}</div>`;
 }
@@ -325,6 +329,9 @@ function renderSection(el: XmlElementNode, t: MsDescTranslate): string {
   const n = el.attrs['n'];
   const heading = escapeHtml(t(key) + (n ? ` ${n}` : ''));
   const body = renderAttrRows(el, t) + renderBlockNodes(el.children, t);
+  // A heading with no content under it is noise, not structure — the skeleton
+  // seeds `<additions/>`/`<bindingDesc/>` whether or not anyone fills them.
+  if (!hasRenderedText(body)) return '';
   return (
     `<div class="msdesc-section msdesc-section-${escapeHtml(el.name)}">` +
     `<h${sectionHeadingLevel} class="msdesc-heading">${heading}</h${sectionHeadingLevel}>${body}</div>`
@@ -333,6 +340,7 @@ function renderSection(el: XmlElementNode, t: MsDescTranslate): string {
 
 function renderContainer(el: XmlElementNode, t: MsDescTranslate): string {
   const body = renderAttrRows(el, t) + renderBlockNodes(el.children, t);
+  if (!hasRenderedText(body)) return '';
   return `<div class="msdesc-entry msdesc-entry-${escapeHtml(el.name)}">${body}</div>`;
 }
 
@@ -351,6 +359,15 @@ function renderAttrRows(el: XmlElementNode, t: MsDescTranslate): string {
   return rows.join('');
 }
 
+/**
+ * Whether rendered HTML carries any visible text. Emptiness has to be judged on
+ * text, not markup: an empty `<country/>` still renders as an entity `<span>`,
+ * so a non-empty HTML string can be entirely invisible on the page.
+ */
+function hasRenderedText(html: string): boolean {
+  return html.replace(/<[^>]*>/g, '').trim() !== '';
+}
+
 function renderField(el: XmlElementNode, t: MsDescTranslate): string {
   const known = FIELD_ELEMENTS.has(el.name);
   const label = known ? escapeHtml(t(fieldLabelKey(el))) : escapeHtml(el.name);
@@ -358,6 +375,10 @@ function renderField(el: XmlElementNode, t: MsDescTranslate): string {
 
   if (hasBlockContent(el)) {
     const body = renderBlockNodes(el.children, t);
+    // `<collation><p/></collation>` and friends: block-shaped but empty. The
+    // seeded skeleton is full of these, and a bare "Collation:" with nothing
+    // after it is scaffolding leaking onto the public page.
+    if (!hasRenderedText(body)) return '';
     return (
       `<div class="msdesc-field msdesc-field-block${unknownClass}">` +
       `<div class="msdesc-field-label">${label}:</div>` +
@@ -372,13 +393,16 @@ function renderField(el: XmlElementNode, t: MsDescTranslate): string {
     let inner = withAnchorScope(asAnchor, () => renderInlineNodes(el.children, t)).trim();
     if (!inner) inner = escapeHtml(fieldFallbackText(el));
     const body = inner || escapeHtml(el.attrs['key'] ?? el.attrs['target'] ?? '');
+    // No text and nothing to click: `<origPlace><country/></origPlace>` would
+    // otherwise render "Place:" followed by an empty span.
+    if (!hasRenderedText(body) && refHref(el) === null) return '';
     const linked = renderLinkEl(el, body, t, asAnchor);
     return linked ? fieldRow(label, linked, unknownClass) : '';
   }
 
   let value = renderFieldValue(el, t);
-  if (!value) value = escapeHtml(fieldFallbackText(el));
-  if (!value) return '';
+  if (!hasRenderedText(value)) value = escapeHtml(fieldFallbackText(el));
+  if (!hasRenderedText(value)) return '';
   return fieldRow(label, value, unknownClass);
 }
 
