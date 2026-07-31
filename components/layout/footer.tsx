@@ -86,7 +86,7 @@ export default async function Footer() {
             <div className="flex flex-wrap gap-4">
               {partners.map((partner) => {
                 const logoCard = (
-                  <div className="bg-white/90 rounded-md p-2 flex items-center justify-center">
+                  <div className="bg-white/90 rounded-md p-2 flex items-center justify-center w-24 h-12">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={getCarouselImageUrl(partner.logo)}
@@ -94,6 +94,7 @@ export default async function Footer() {
                       width={80}
                       height={40}
                       loading="lazy"
+                      className="max-w-full max-h-full w-auto h-auto object-contain"
                     />
                   </div>
                 );
