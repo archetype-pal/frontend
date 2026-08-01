@@ -95,7 +95,7 @@ describe('parseOrdering / formatOrdering', () => {
     expect(parseOrdering('-date_min')).toEqual({ attribute: 'date_min', descending: true });
   });
 
-  it('treats an unset ordering as relevance', () => {
+  it('treats an unset ordering as the default (no sort)', () => {
     expect(parseOrdering(null)).toEqual({ attribute: null, descending: false });
     expect(parseOrdering('')).toEqual({ attribute: null, descending: false });
     expect(parseOrdering('   ')).toEqual({ attribute: null, descending: false });

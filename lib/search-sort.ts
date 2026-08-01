@@ -145,7 +145,7 @@ export function formatOrdering(attribute: string, descending: boolean): string {
  * Used to self-heal an `ordering` that outlived the index it belonged to — a
  * bookmarked `?ordering=scribe` opened on /search/manuscripts, or a field picked
  * while the previous type's list was still on screen. The backend silently drops
- * the unknown attribute, so the UI snaps back to "Relevance" while the URL keeps
+ * the unknown attribute, so the UI snaps back to "Default" while the URL keeps
  * re-sending it forever.
  *
  * An absent or empty `ordering` block means "don't know yet" (no response, or a

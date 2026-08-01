@@ -114,7 +114,7 @@ export function SearchActionsMenu({
 
   const sortItem = (attribute: string | null, label: string) => (
     <DropdownMenuItem
-      key={attribute ?? '__relevance__'}
+      key={attribute ?? '__default__'}
       // Picking a field keeps the current direction, matching the legacy UI.
       onClick={() => onSortChange?.({ attribute, descending: sortDescending })}
       className="flex items-center gap-2"
@@ -176,7 +176,7 @@ export function SearchActionsMenu({
             <>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>{t('sortBy')}</DropdownMenuLabel>
-              {sortItem(null, t('sortRelevance'))}
+              {sortItem(null, t('sortDefault'))}
               {sortFields.map((field) => sortItem(field.attribute, field.label))}
               <DropdownMenuItem
                 disabled={!sortAttribute}

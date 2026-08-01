@@ -19,7 +19,7 @@ import {
 } from '@/lib/search-sort';
 
 /** Sentinel for the "no explicit sort" option — Radix Select forbids an empty value. */
-const RELEVANCE_VALUE = '__relevance__';
+const DEFAULT_VALUE = '__default__';
 
 type SortControlProps = {
   /** The `ordering` block from the facets response; drives the field list. */
@@ -66,10 +66,10 @@ export function SortControl({ ordering, value, onChange, className }: SortContro
   return (
     <div className={cn('items-center gap-1', className)}>
       <Select
-        value={selected ?? RELEVANCE_VALUE}
+        value={selected ?? DEFAULT_VALUE}
         onValueChange={(next) =>
           onChange({
-            attribute: next === RELEVANCE_VALUE ? null : next,
+            attribute: next === DEFAULT_VALUE ? null : next,
             // Changing field keeps the current direction, matching legacy behaviour.
             descending,
           })
@@ -83,8 +83,8 @@ export function SortControl({ ordering, value, onChange, className }: SortContro
           <SelectValue placeholder={t('sortBy')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={RELEVANCE_VALUE} className="text-xs">
-            {t('sortRelevance')}
+          <SelectItem value={DEFAULT_VALUE} className="text-xs">
+            {t('sortDefault')}
           </SelectItem>
           {fields.map((field) => (
             <SelectItem key={field.attribute} value={field.attribute} className="text-xs">

@@ -107,7 +107,7 @@
     "viewDisabled": "{label} (pas de données pour cet ensemble de résultats)",
     "sortBy": "Trier par",
     "sortByLabel": "Trier les résultats par",
-    "sortRelevance": "Pertinence",
+    "sortDefault": "Par défaut",
     "sortAscending": "Ordre croissant",
     "sortDescending": "Ordre décroissant",
     "sortReverse": "Inverser l'ordre de tri",

@@ -107,7 +107,7 @@
     "viewDisabled": "{label} (no data for this result set)",
     "sortBy": "Sort by",
     "sortByLabel": "Sort results by",
-    "sortRelevance": "Relevance",
+    "sortDefault": "Default",
     "sortAscending": "Ascending",
     "sortDescending": "Descending",
     "sortReverse": "Reverse sort order",
