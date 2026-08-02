@@ -129,7 +129,7 @@ export default function IntroSection() {
                     asChild
                     className="border border-white/25 bg-white/5 text-white hover:bg-white/15 backdrop-blur-sm font-medium px-7 h-11"
                   >
-                    <Link href="/about/about">
+                    <Link href="/about/about-models-of-authority">
                       <BookOpen className="h-4 w-4 mr-2" />
                       {t('intro.aboutProject')}
                     </Link>
