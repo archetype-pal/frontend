@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { apiFetch } from '@/lib/api-fetch';
 import { env } from '@/lib/env';
+import { getPublishedPages } from '@/lib/pages-server';
 
 const BASE_URL = env.siteUrl;
 
@@ -12,13 +13,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/publications/blogs`, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE_URL}/publications/feature`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/collection`, changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${BASE_URL}/about/historical-context`, changeFrequency: 'yearly', priority: 0.4 },
-    { url: `${BASE_URL}/about/accessibility`, changeFrequency: 'yearly', priority: 0.4 },
-    {
-      url: `${BASE_URL}/about/about-models-of-authority`,
-      changeFrequency: 'yearly',
-      priority: 0.4,
-    },
+    // The 3 former built-in about pages (historical-context, accessibility,
+    // about-models-of-authority) are now DB-backed Pages and come from the
+    // `getPublishedPages()` loop below, alongside any admin-created ones.
   ];
 
   const dynamicRoutes: MetadataRoute.Sitemap = [];
@@ -43,6 +40,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   } catch {
     // Non-critical: sitemap still works with static routes only
+  }
+
+  const pages = await getPublishedPages();
+  for (const page of pages) {
+    dynamicRoutes.push({
+      url: `${BASE_URL}/about/${page.slug}`,
+      lastModified: page.updated_at ? new Date(page.updated_at) : undefined,
+      changeFrequency: 'yearly',
+      priority: 0.4,
+    });
   }
 
   return [...staticRoutes, ...dynamicRoutes];

@@ -243,7 +243,7 @@ export default function IntroSection() {
                       className="text-white text-lg font-semibold hover:text-accent transition-colors truncate block"
                       style={{ fontFamily: 'var(--font-display)' }}
                     >
-                      {currentItem.title}
+                      {currentItem?.title}
                     </Link>
                   ) : (
                     <p

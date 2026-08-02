@@ -29,6 +29,9 @@ import { useCollection } from '@/contexts/collection-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { normalizeSectionOrder, type SectionKey } from '@/lib/site-features';
+import { resolvePageText, type PageListItem, type PageLocale } from '@/lib/pages';
+import { useLocaleStore } from '@/stores/locale-store';
+import { ChevronDown } from 'lucide-react';
 import {
   addSearchHistory,
   clearSearchHistory,
@@ -42,9 +45,10 @@ import { useTranslations } from 'next-intl';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 
-export default function Header() {
+export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[] }) {
   const t = useTranslations('nav');
   const tCommon = useTranslations('common');
+  const locale = useLocaleStore((state) => state.locale);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
   const headerRef = useRef<HTMLElement>(null);
@@ -263,19 +267,45 @@ export default function Header() {
         );
       case 'events':
         return null;
-      case 'about':
+      case 'about': {
+        // All about pages (including the 3 former built-in ones) are now
+        // DB-backed Pages, ordered by their `order` field — see about-sidebar.tsx.
+        const aboutLinks = aboutPages.map((page) => ({
+          href: `/about/${page.slug}`,
+          label: resolvePageText(page.title, locale as PageLocale) || page.slug,
+        }));
         return (
-          <li key={sectionKey}>
+          <li key={sectionKey} className="relative group/about">
             <Button
-              asChild
               variant="ghost"
               size="sm"
-              className={navLinkClass(!!isActive('/about'))}
+              className={cn('group', navLinkClass(!!isActive('/about')))}
             >
-              <Link href="/about/about-models-of-authority">{t('about')}</Link>
+              {t('about')}
+              <ChevronDown className="h-3.5 w-3.5 ml-1" />
             </Button>
+            {/* Pure CSS hover menu: stays a descendant of the <li>, so hovering
+                the panel never leaves the hoverable area (unlike a portaled
+                Radix dropdown, which caused open/close flicker). */}
+            <div
+              className={cn(
+                'invisible absolute left-0 top-full z-50 min-w-[10rem] rounded-md border bg-popover p-1 text-popover-foreground opacity-0 shadow-md transition-opacity duration-150',
+                'group-hover/about:visible group-hover/about:opacity-100 group-focus-within/about:visible group-focus-within/about:opacity-100'
+              )}
+            >
+              {aboutLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="block rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent focus:bg-accent"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
           </li>
         );
+      }
       default:
         return null;
     }
