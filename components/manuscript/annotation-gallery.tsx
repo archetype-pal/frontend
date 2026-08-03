@@ -342,14 +342,14 @@ export function AnnotationGallery({
       if (!token) return;
       if (
         typeof window !== 'undefined' &&
-        !window.confirm(`Delete graph #${graphId}? This cannot be undone.`)
+        !window.confirm(`Delete graph #${graphId}? It moves to the trash; an admin can restore it.`)
       ) {
         return;
       }
       setDeletedIds((prev) => new Set(prev).add(graphId));
       try {
         await deleteViewerAnnotation(token, graphId);
-        toast.success(`Graph #${graphId} deleted`);
+        toast.success(`Graph #${graphId} moved to trash`);
       } catch {
         setDeletedIds((prev) => {
           const next = new Set(prev);

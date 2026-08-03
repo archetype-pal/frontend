@@ -370,4 +370,7 @@ export interface GraphItem {
   hand_name: string;
   positions: number[];
   graphcomponent_set: GraphComponentNested[];
+  created: string | null;
+  deleted_at: string | null;
+  deleted_by: string | null;
 }

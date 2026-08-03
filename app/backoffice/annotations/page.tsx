@@ -182,7 +182,7 @@ export default function AnnotationsPage() {
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteGraph(token!, id),
     onSuccess: () => {
-      toast.success('Graph annotation deleted');
+      toast.success('Graph annotation moved to trash');
       queryClient.invalidateQueries({ queryKey: backofficeKeys.graphs.all() });
       setDeleteTarget(null);
     },
@@ -207,7 +207,7 @@ export default function AnnotationsPage() {
           action: (id) => deleteGraph(token!, Number(id)),
           invalidate: () =>
             queryClient.invalidateQueries({ queryKey: backofficeKeys.graphs.all() }),
-          pastTense: 'deleted',
+          pastTense: 'moved to trash',
           noun: 'annotation',
         });
       },
