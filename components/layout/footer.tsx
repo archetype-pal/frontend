@@ -6,6 +6,7 @@ import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 import { getPublishedPages } from '@/lib/pages-server';
 import { resolvePageText, type PageLocale } from '@/lib/pages';
 import { fetchPartners, getCarouselImageUrl } from '@/utils/api';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // lucide-react dropped brand marks (incl. GitHub) in v1, so the GitHub logo is
 // rendered as an inline SVG. Uses currentColor to match the adjacent icons.
@@ -83,35 +84,40 @@ export default async function Footer() {
           {/* Partners column */}
           <div className="space-y-3">
             <h2 className="font-serif text-lg font-semibold tracking-tight">{t('partners')}</h2>
-            <div className="flex flex-wrap gap-4">
-              {partners.map((partner) => {
-                const logoCard = (
-                  <div className="bg-white/90 rounded-md p-2 flex items-center justify-center w-24 h-12">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getCarouselImageUrl(partner.logo)}
-                      alt={partner.name}
-                      width={80}
-                      height={40}
-                      loading="lazy"
-                      className="max-w-full max-h-full w-auto h-auto object-contain"
-                    />
-                  </div>
-                );
-                return partner.url ? (
-                  <Link
-                    key={partner.id}
-                    href={partner.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {logoCard}
-                  </Link>
-                ) : (
-                  <div key={partner.id}>{logoCard}</div>
-                );
-              })}
-            </div>
+            <TooltipProvider delayDuration={150}>
+              <div className="flex flex-wrap gap-4">
+                {partners.map((partner) => {
+                  const logoCard = (
+                    <div className="bg-white/90 rounded-md p-2 flex items-center justify-center w-24 h-12">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getCarouselImageUrl(partner.logo)}
+                        alt={partner.name}
+                        width={80}
+                        height={40}
+                        loading="lazy"
+                        className="max-w-full max-h-full w-auto h-auto object-contain"
+                      />
+                    </div>
+                  );
+                  const trigger = partner.url ? (
+                    <Link href={partner.url} target="_blank" rel="noopener noreferrer">
+                      {logoCard}
+                    </Link>
+                  ) : (
+                    <div>{logoCard}</div>
+                  );
+                  return (
+                    <Tooltip key={partner.id}>
+                      <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+                      <TooltipContent className="bg-white text-primary">
+                        {partner.name}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
           </div>
         </div>
 
