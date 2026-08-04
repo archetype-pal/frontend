@@ -326,7 +326,7 @@ export default function AnnotationsPage() {
           deleteTarget
             ? t('annotations.deleteDesc', {
                 id: deleteTarget.id,
-                allograph: deleteTarget.allograph_name,
+                allograph: deleteTarget.allograph_name ?? '—',
               })
             : ''
         }

@@ -1776,6 +1776,8 @@
       "tabAnnotations": "Annotations",
       "trashedCount": "{count} dans la corbeille",
       "colId": "ID",
+      "colAllograph": "Allographe",
+      "colHand": "Main",
       "colType": "Type",
       "colImage": "Image",
       "colCreated": "Créée le",
