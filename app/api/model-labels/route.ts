@@ -48,8 +48,15 @@ export async function PUT(request: NextRequest) {
   };
   try {
     await writeModelLabels(config, token);
-  } catch {
-    return NextResponse.json({ error: 'Failed to update site labels' }, { status: 502 });
+  } catch (err) {
+    const status =
+      err &&
+      typeof err === 'object' &&
+      'status' in err &&
+      typeof (err as { status: unknown }).status === 'number'
+        ? (err as { status: number }).status
+        : 502;
+    return NextResponse.json({ error: 'Failed to update site labels' }, { status });
   }
   revalidatePath('/', 'layout');
   return NextResponse.json(config);

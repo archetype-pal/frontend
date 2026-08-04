@@ -57,7 +57,7 @@ export default async function Footer() {
     getPublishedPages(),
   ]);
   const locale = rawLocale as ModelLabelLocale;
-  const getLabel = (key: 'siteTitle' | 'footerFunded' | 'footerCopyright') =>
+  const getLabel = (key: 'siteTitle' | 'footerLine1' | 'footerLine2' | 'footerBottomLine') =>
     resolveModelLabel(modelLabels.labels[key], locale);
   const quickLinkPages = pages
     .filter((page) => page.include_in_quick_link)

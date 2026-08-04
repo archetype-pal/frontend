@@ -35,6 +35,10 @@ export async function writeModelLabels(config: ModelLabelsConfig, token: string)
     body: JSON.stringify({ labels: normalizeModelLabels(config.labels) }),
   });
   if (!res.ok) {
-    throw new Error(`Failed to write site labels: ${res.status}`);
+    const details = await res.text().catch(() => '');
+    throw Object.assign(
+      new Error(`Failed to write site labels: ${res.status}${details ? ` - ${details}` : ''}`),
+      { status: res.status }
+    );
   }
 }
