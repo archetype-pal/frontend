@@ -364,10 +364,13 @@ export interface GraphItem {
   historical_item: number;
   annotation: Record<string, unknown>;
   annotation_type: string | null;
-  allograph: number;
-  allograph_name: string;
-  hand: number;
-  hand_name: string;
+  // Null for editorial and TEXT-typed graphs: the backend's
+  // graph_editorial_or_required_allograph_hand constraint only requires these
+  // for image graphs.
+  allograph: number | null;
+  allograph_name: string | null;
+  hand: number | null;
+  hand_name: string | null;
   positions: number[];
   graphcomponent_set: GraphComponentNested[];
   created: string | null;

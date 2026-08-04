@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Trash2, ExternalLink, RotateCcw } from 'lucide-react';
+import { Trash2, ExternalLink, RotateCcw, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ServerPagination } from '@/components/backoffice/common/server-pagination';
@@ -91,6 +91,49 @@ export default function TrashPage() {
         size: 70,
       },
       {
+        accessorKey: 'allograph_name',
+        header: sortableHeader(t('trash.colAllograph')),
+        cell: ({ row }) =>
+          row.original.allograph_name ? (
+            <Badge variant="outline" className="text-xs font-mono">
+              {row.original.allograph_name}
+            </Badge>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          ),
+      },
+      {
+        accessorKey: 'hand_name',
+        header: sortableHeader(t('trash.colHand')),
+        cell: ({ row }) => {
+          const { hand, hand_name } = row.original;
+          if (hand === null) {
+            // TODO(human): what should the Hand cell show for a graph with no hand?
+            // Editorial and TEXT-typed graphs have hand === null, so there is no
+            // /backoffice/hands/<id> page to link to.
+            return null;
+          }
+          return (
+            <Link
+              href={`/backoffice/hands/${hand}`}
+              className="text-sm text-primary hover:underline"
+            >
+              {hand_name}
+            </Link>
+          );
+        },
+      },
+      {
+        accessorKey: 'image_display',
+        header: t('trash.colImage'),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <ImageIcon className="h-3 w-3" />
+            {row.original.image_display}
+          </span>
+        ),
+      },
+      {
         accessorKey: 'annotation_type',
         header: t('trash.colType'),
         cell: ({ row }) => (
@@ -99,11 +142,6 @@ export default function TrashPage() {
           </Badge>
         ),
         size: 90,
-      },
-      {
-        accessorKey: 'image_display',
-        header: t('trash.colImage'),
-        cell: ({ row }) => <span className="text-xs">{row.original.image_display}</span>,
       },
       {
         accessorKey: 'created',
@@ -245,6 +283,7 @@ export default function TrashPage() {
         onRetry={refetch}
         pagination={false}
         enableRowSelection
+        enableColumnVisibility
         bulkActions={bulkActions}
       />
       <ServerPagination

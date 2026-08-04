@@ -1817,6 +1817,8 @@
       "tabAnnotations": "Annotations",
       "trashedCount": "{count} trashed",
       "colId": "ID",
+      "colAllograph": "Allograph",
+      "colHand": "Hand",
       "colType": "Type",
       "colImage": "Image",
       "colCreated": "Created",
