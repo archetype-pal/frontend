@@ -6,9 +6,18 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Trash2, ExternalLink, RotateCcw, Image as ImageIcon } from 'lucide-react';
+import { Trash2, ExternalLink, RotateCcw, Image as ImageIcon, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ServerPagination } from '@/components/backoffice/common/server-pagination';
 import {
   DataTable,
@@ -16,11 +25,22 @@ import {
   type BulkAction,
 } from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
-import { getTrashedGraphs, restoreGraph, purgeGraph } from '@/services/backoffice/annotations';
+import {
+  getTrashedGraphs,
+  getTrashActors,
+  restoreGraph,
+  purgeGraph,
+} from '@/services/backoffice/annotations';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { formatReviewAge } from '@/lib/backoffice/review-queue-sla';
+import {
+  ALL,
+  EMPTY_TRASH_FILTERS,
+  buildTrashFilterParams,
+  hasActiveTrashFilters,
+} from '@/lib/backoffice/trash-filters';
 import type { GraphItem } from '@/types/backoffice';
 import { toast } from 'sonner';
 
@@ -31,6 +51,8 @@ const PAGE_SIZE = 50;
 const TRASH_TABS = [{ key: 'annotations', labelKey: 'trash.tabAnnotations' }] as const;
 
 type TrashTabKey = (typeof TRASH_TABS)[number]['key'];
+
+const ANNOTATION_TYPES = ['image', 'text', 'editorial', 'unknown'] as const;
 
 export default function TrashPage() {
   const t = useTranslations('backoffice');
@@ -45,16 +67,53 @@ export default function TrashPage() {
   // doesn't linger over rows that just left the trash.
   const [tableEpoch, setTableEpoch] = useState(0);
 
+  const [filterState, setFilterState] = useState(EMPTY_TRASH_FILTERS);
+
+  // Every filter change resets to page 0 — otherwise a narrower result set can
+  // leave you stranded on a page that no longer exists.
+  const updateFilter = (patch: Partial<typeof filterState>) => {
+    setFilterState((prev) => ({ ...prev, ...patch }));
+    setPage(0);
+  };
+
   const filters = useMemo(
-    () => ({ deleted: 'true', limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
-    [page]
+    () => ({
+      deleted: 'true',
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
+      ...buildTrashFilterParams(filterState),
+    }),
+    [page, filterState]
   );
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list(filters),
-    queryFn: () => getTrashedGraphs(token!, { limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
+    queryFn: () =>
+      getTrashedGraphs(token!, {
+        limit: PAGE_SIZE,
+        offset: page * PAGE_SIZE,
+        ...buildTrashFilterParams(filterState),
+      }),
     enabled: !!token,
   });
+
+  // Only users who actually have something in the trash. Keyed under the graphs
+  // namespace so invalidateGraphs() refreshes it — restoring someone's last
+  // trashed row should drop them from the dropdown.
+  const { data: actors } = useQuery({
+    queryKey: [...backofficeKeys.graphs.all(), 'trash-actors'],
+    queryFn: () => getTrashActors(token!),
+    enabled: !!token,
+  });
+
+  const actorOptions = useMemo(() => {
+    const names = actors ?? [];
+    // Keep an active selection listed even once its last row leaves the trash,
+    // otherwise the trigger renders blank while the filter is still applied.
+    return filterState.deletedBy !== ALL && !names.includes(filterState.deletedBy)
+      ? [...names, filterState.deletedBy]
+      : names;
+  }, [actors, filterState.deletedBy]);
 
   const invalidateGraphs = () =>
     queryClient.invalidateQueries({ queryKey: backofficeKeys.graphs.all() });
@@ -273,6 +332,93 @@ export default function TrashPage() {
             )}
           </button>
         ))}
+      </div>
+
+      {/* Filters */}
+      <div className="rounded-lg border bg-card p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium">{t('trash.filters')}</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">{t('trash.colType')}</Label>
+            <Select
+              value={filterState.annotationType}
+              onValueChange={(value) => updateFilter({ annotationType: value })}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>{t('trash.filterAllTypes')}</SelectItem>
+                {ANNOTATION_TYPES.map((type) => (
+                  <SelectItem key={type} value={type} className="capitalize">
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">{t('trash.colDeletedBy')}</Label>
+            <Select
+              value={filterState.deletedBy}
+              onValueChange={(value) => updateFilter({ deletedBy: value })}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>{t('trash.filterAllUsers')}</SelectItem>
+                {actorOptions.map((username) => (
+                  <SelectItem key={username} value={username}>
+                    {username}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs" htmlFor="trash-deleted-from">
+              {t('trash.filterDeletedFrom')}
+            </Label>
+            <Input
+              id="trash-deleted-from"
+              type="datetime-local"
+              className="h-8 text-xs"
+              value={filterState.deletedFrom}
+              max={filterState.deletedTo || undefined}
+              onChange={(e) => updateFilter({ deletedFrom: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs" htmlFor="trash-deleted-to">
+              {t('trash.filterDeletedTo')}
+            </Label>
+            <Input
+              id="trash-deleted-to"
+              type="datetime-local"
+              className="h-8 text-xs"
+              value={filterState.deletedTo}
+              min={filterState.deletedFrom || undefined}
+              onChange={(e) => updateFilter({ deletedTo: e.target.value })}
+            />
+          </div>
+        </div>
+        {hasActiveTrashFilters(filterState) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2 text-xs"
+            onClick={() => {
+              setFilterState(EMPTY_TRASH_FILTERS);
+              setPage(0);
+            }}
+          >
+            {t('trash.clearFilters')}
+          </Button>
+        )}
       </div>
 
       <DataTable
