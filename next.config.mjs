@@ -21,7 +21,10 @@ const toIPv4Loopback = (url) => url.replace(/^(https?:\/\/)localhost(?=[:/]|$)/,
 // Set NEXT_PUBLIC_IIIF_UPSTREAM in Docker to e.g. http://image_server:1024 so the server can reach Sipi.
 const IIIF_UPSTREAM = toIPv4Loopback(requireEnv('NEXT_PUBLIC_IIIF_UPSTREAM').replace(/\/$/, ''));
 const PUBLIC_API_BASE = requireEnv('NEXT_PUBLIC_API_URL').replace(/\/$/, '');
-const SERVER_API_BASE = (process.env.INTERNAL_API_URL?.trim() || PUBLIC_API_BASE).replace(/\/$/, '');
+const SERVER_API_BASE = (process.env.INTERNAL_API_URL?.trim() || PUBLIC_API_BASE).replace(
+  /\/$/,
+  ''
+);
 // API base for rewrites — these are fetched server-side, so prefer the
 // in-container override (INTERNAL_API_URL) when set.
 const API_BASE = toIPv4Loopback(SERVER_API_BASE);
