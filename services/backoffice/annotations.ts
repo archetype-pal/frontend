@@ -1,4 +1,4 @@
-import { backofficeDelete, backofficePost } from './api-client';
+import { backofficeDelete, backofficeGet, backofficePost } from './api-client';
 import { createCrudService } from './crud-factory';
 import type { PaginatedResponse, GraphItem } from '@/types/backoffice';
 
@@ -29,8 +29,28 @@ export const deleteGraph = graphsCrud.remove;
 // ── Trash (soft-deleted graphs) ──────────────────────────────────────────
 // Delete above is a soft delete server-side; these manage the trash itself.
 
-export function getTrashedGraphs(token: string, params?: { limit?: number; offset?: number }) {
+export function getTrashedGraphs(
+  token: string,
+  params?: {
+    limit?: number;
+    offset?: number;
+    annotation_type?: string;
+    deleted_by__username?: string;
+    /** ISO 8601 instant — use Date.toISOString(), not a naive local string. */
+    deleted_at__gte?: string;
+    deleted_at__lte?: string;
+  }
+) {
   return graphsCrud.list(token, { ...params, deleted: 'true' });
+}
+
+/**
+ * Usernames with at least one trashed annotation — the "deleted by" filter's
+ * options. Deliberately not the full user list: offering a user who has trashed
+ * nothing would only ever yield an empty result.
+ */
+export function getTrashActors(token: string) {
+  return backofficeGet<string[]>(`${GRAPHS_BASE}trash-actors/`, token);
 }
 
 /** Bring a trashed annotation back; its text↔image links come back with it. */
