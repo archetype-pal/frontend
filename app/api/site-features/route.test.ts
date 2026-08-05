@@ -1,56 +1,40 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getDefaultConfig, type SiteFeaturesConfig } from '@/lib/site-features';
-import { readSiteFeatures } from '@/lib/site-features-server';
+import { readSiteFeatures, writeSiteFeatures } from '@/lib/site-features-server';
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
-const { apiFetch, authFetch } = vi.hoisted(() => ({
-  apiFetch: vi.fn(),
-  authFetch: vi.fn(),
+vi.mock('@/lib/api-fetch', () => ({
+  authFetch: vi.fn(
+    async () =>
+      new Response(JSON.stringify({ is_staff: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+  ),
 }));
-
-vi.mock('@/lib/api-fetch', () => ({ apiFetch, authFetch }));
 
 import type { NextRequest } from 'next/server';
 import { PUT } from './route';
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
+let workDir: string;
 
-/**
- * A tiny in-memory stand-in for the backend's `AppSettings` row: `apiFetch`
- * (the GET used by `readSiteFeatures`) reads it, `authFetch`'s PUT branch
- * (the write used by `writeSiteFeatures`) replaces it. `isStaff` gates the
- * PUT handler's own profile check the same way the real backend would.
- */
-let stored: SiteFeaturesConfig;
-let isStaff: boolean;
-
-beforeEach(() => {
-  stored = getDefaultConfig();
-  isStaff = true;
-
-  apiFetch.mockReset();
-  authFetch.mockReset();
-
-  apiFetch.mockImplementation(async () => jsonResponse(stored));
-  authFetch.mockImplementation(async (path: string, _token: string, init?: RequestInit) => {
-    if (path === '/api/v1/auth/profile') {
-      return jsonResponse({ is_staff: isStaff });
-    }
-    // The site-features PUT: persist the body into the fake store.
-    stored = JSON.parse((init?.body as string) ?? '{}') as SiteFeaturesConfig;
-    return jsonResponse(stored);
-  });
+// The route persists through lib/json-config-file, which resolves
+// `config/site-features.json` under process.cwd() — point it at a scratch dir
+// so the repo's runtime config file is never touched.
+beforeEach(async () => {
+  workDir = await mkdtemp(join(tmpdir(), 'site-features-route-'));
+  vi.spyOn(process, 'cwd').mockReturnValue(workDir);
 });
 
-afterEach(() => {
+afterEach(async () => {
   vi.restoreAllMocks();
+  await rm(workDir, { recursive: true, force: true });
 });
 
 /** Minimal duck-typed request: the handler only reads the header and the body. */
@@ -79,7 +63,7 @@ describe('PUT /api/site-features — feature flags', () => {
     // toggles must not silently switch a feature the admin turned off back on.
     const disabled = getDefaultConfig();
     disabled.features.manuscriptDescriptions = false;
-    stored = disabled;
+    await writeSiteFeatures(disabled);
 
     const response = await PUT(putRequest(payloadWithoutFeatures()));
     expect(response.status).toBe(200);
@@ -98,7 +82,7 @@ describe('PUT /api/site-features — feature flags', () => {
   it('lets a current client re-enable a flag (merge is key-by-key, not one-way)', async () => {
     const disabled = getDefaultConfig();
     disabled.features.manuscriptDescriptions = false;
-    stored = disabled;
+    await writeSiteFeatures(disabled);
 
     await PUT(putRequest(getDefaultConfig()));
     expect((await readSiteFeatures()).features.manuscriptDescriptions).toBe(true);
@@ -136,7 +120,13 @@ describe('PUT /api/site-features — the staff gate protecting the flags', () =>
   });
 
   it('rejects a non-staff caller before touching the config', async () => {
-    isStaff = false;
+    const { authFetch } = await import('@/lib/api-fetch');
+    vi.mocked(authFetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ is_staff: false }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    );
     const before = await readSiteFeatures();
     const res = await PUT(
       requestWithAuth(
@@ -146,18 +136,5 @@ describe('PUT /api/site-features — the staff gate protecting the flags', () =>
     );
     expect(res.status).toBe(403);
     expect((await readSiteFeatures()).features).toEqual(before.features);
-  });
-});
-
-describe('PUT /api/site-features — backend write failure', () => {
-  it('returns 502 when the backend PUT fails, without crashing the route', async () => {
-    authFetch.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/auth/profile') return jsonResponse({ is_staff: true });
-      return jsonResponse({ error: 'backend unavailable' }, 500);
-    });
-
-    const response = await PUT(putRequest(getDefaultConfig()));
-    expect(response.status).toBe(502);
-    expect(await response.json()).toEqual({ error: 'Failed to update site features' });
   });
 });
