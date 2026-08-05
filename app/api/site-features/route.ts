@@ -50,10 +50,18 @@ export async function PUT(request: NextRequest) {
   // the full map still wins key-by-key.
   const payload = body as SiteFeaturesConfig;
   const current = await readSiteFeatures();
-  const normalized = await writeSiteFeatures({
-    ...payload,
-    features: mergeFeatureFlags(current.features, (payload as { features?: unknown }).features),
-  });
+  let normalized: SiteFeaturesConfig;
+  try {
+    normalized = await writeSiteFeatures(
+      {
+        ...payload,
+        features: mergeFeatureFlags(current.features, (payload as { features?: unknown }).features),
+      },
+      token
+    );
+  } catch {
+    return NextResponse.json({ error: 'Failed to update site features' }, { status: 502 });
+  }
   revalidatePath('/', 'layout');
   // Return the normalized config (with sectionOrder canonicalized) so the
   // client's cache reflects what's actually on disk.
