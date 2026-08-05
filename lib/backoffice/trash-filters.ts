@@ -1,12 +1,10 @@
 /**
  * Filter state → query params for the backoffice Trash list.
  *
- * Kept pure (and unit-tested) because the datetime handling is easy to get
- * subtly wrong: the backend runs in UTC, while `<input type="datetime-local">`
- * yields a naive local string like "2026-08-04T14:30". Sending that raw would
- * be read as 14:30 UTC. `new Date(...).toISOString()` converts local → UTC and
- * emits the "Z" form, which also avoids the "+" in "+00:00" decoding to a space
- * inside a query string.
+ * `<input type="datetime-local">` yields a naive local string, but the backend
+ * runs in UTC — sent raw, "14:30" would be read as 14:30 UTC. `toISOString()`
+ * converts local → UTC and emits the "Z" form, which also keeps a "+" offset
+ * out of the query string (where it would decode to a space).
  */
 
 export const ALL = '__all';

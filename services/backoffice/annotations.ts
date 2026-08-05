@@ -46,8 +46,8 @@ export function getTrashedGraphs(
 
 /**
  * Usernames with at least one trashed annotation — the "deleted by" filter's
- * options. Deliberately not the full user list: offering a user who has trashed
- * nothing would only ever yield an empty result.
+ * options. Not the full user list: a user who trashed nothing would only ever
+ * filter down to an empty result.
  */
 export function getTrashActors(token: string) {
   return backofficeGet<string[]>(`${GRAPHS_BASE}trash-actors/`, token);

@@ -46,8 +46,7 @@ import { toast } from 'sonner';
 
 const PAGE_SIZE = 50;
 
-// One entry per trashable model. Later models (texts, images, …) are new
-// entries here, not new pages.
+// One entry per trashable model — later models are entries here, not new pages.
 const TRASH_TABS = [{ key: 'annotations', labelKey: 'trash.tabAnnotations' }] as const;
 
 type TrashTabKey = (typeof TRASH_TABS)[number]['key'];
@@ -69,8 +68,7 @@ export default function TrashPage() {
 
   const [filterState, setFilterState] = useState(EMPTY_TRASH_FILTERS);
 
-  // Every filter change resets to page 0 — otherwise a narrower result set can
-  // leave you stranded on a page that no longer exists.
+  // Reset to page 0: a narrower result set can strand you on a page that's gone.
   const updateFilter = (patch: Partial<typeof filterState>) => {
     setFilterState((prev) => ({ ...prev, ...patch }));
     setPage(0);
@@ -97,9 +95,8 @@ export default function TrashPage() {
     enabled: !!token,
   });
 
-  // Only users who actually have something in the trash. Keyed under the graphs
-  // namespace so invalidateGraphs() refreshes it — restoring someone's last
-  // trashed row should drop them from the dropdown.
+  // Keyed under the graphs namespace so invalidateGraphs() refreshes it:
+  // restoring someone's last trashed row drops them from the dropdown.
   const { data: actors } = useQuery({
     queryKey: [...backofficeKeys.graphs.all(), 'trash-actors'],
     queryFn: () => getTrashActors(token!),
@@ -166,11 +163,9 @@ export default function TrashPage() {
         header: sortableHeader(t('trash.colHand')),
         cell: ({ row }) => {
           const { hand, hand_name } = row.original;
+          // Editorial and TEXT-typed graphs have no hand, so nothing to link to.
           if (hand === null) {
-            // TODO(human): what should the Hand cell show for a graph with no hand?
-            // Editorial and TEXT-typed graphs have hand === null, so there is no
-            // /backoffice/hands/<id> page to link to.
-            return null;
+            return <span className="text-xs text-muted-foreground">—</span>;
           }
           return (
             <Link
