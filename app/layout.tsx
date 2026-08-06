@@ -7,6 +7,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import { AuthProvider } from '@/contexts/auth-context';
+import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { CollectionProvider } from '@/contexts/collection-context';
 import { SearchProvider } from '@/contexts/search-context';
 import { SiteFeaturesProvider } from '@/contexts/site-features-context';
@@ -95,6 +96,7 @@ export default async function RootLayout({
       >
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>
+            <ImpersonationBanner />
             <SiteFeaturesProvider initialConfig={siteFeaturesConfig}>
               <ModelLabelsProvider initialConfig={modelLabelsConfig}>
                 <AppQueryProvider>
