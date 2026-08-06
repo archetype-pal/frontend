@@ -31,14 +31,19 @@ const generalConfigFieldMeta: Array<{ key: ModelLabelKey; title: string; descrip
     description: 'The short strapline shown next to the site title in the header.',
   },
   {
-    key: 'footerFunded',
-    title: 'Footer: Funding Statement',
-    description: 'The funding acknowledgement shown in the footer.',
+    key: 'footerLine1',
+    title: 'Footer: Line 1',
+    description: 'The first line of footer text.',
   },
   {
-    key: 'footerCopyright',
-    title: 'Footer: Copyright Notice',
-    description: 'The copyright notice shown at the bottom of the footer.',
+    key: 'footerLine2',
+    title: 'Footer: Line 2',
+    description: 'The second line of footer text.',
+  },
+  {
+    key: 'footerBottomLine',
+    title: 'Footer: Bottom Line',
+    description: 'The copyright/attribution notice shown at the bottom of the footer.',
   },
 ];
 

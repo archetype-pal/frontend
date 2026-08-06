@@ -46,7 +46,18 @@ export async function PUT(request: NextRequest) {
   const config: ModelLabelsConfig = {
     labels: normalizeModelLabels((body as { labels?: unknown }).labels as Record<string, unknown>),
   };
-  await writeModelLabels(config);
+  try {
+    await writeModelLabels(config, token);
+  } catch (err) {
+    const status =
+      err &&
+      typeof err === 'object' &&
+      'status' in err &&
+      typeof (err as { status: unknown }).status === 'number'
+        ? (err as { status: number }).status
+        : 502;
+    return NextResponse.json({ error: 'Failed to update site labels' }, { status });
+  }
   revalidatePath('/', 'layout');
   return NextResponse.json(config);
 }

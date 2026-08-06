@@ -57,7 +57,7 @@ export default async function Footer() {
     getPublishedPages(),
   ]);
   const locale = rawLocale as ModelLabelLocale;
-  const getLabel = (key: 'siteTitle' | 'footerFunded' | 'footerCopyright') =>
+  const getLabel = (key: 'siteTitle' | 'footerLine1' | 'footerLine2' | 'footerBottomLine') =>
     resolveModelLabel(modelLabels.labels[key], locale);
   const quickLinkPages = pages
     .filter((page) => page.include_in_quick_link)
@@ -76,8 +76,8 @@ export default async function Footer() {
             <h2 className="font-serif text-lg font-semibold tracking-tight">
               {getLabel('siteTitle')}
             </h2>
-            <p className="text-sm text-primary-foreground/85 leading-relaxed">{t('about')}</p>
-            <p className="text-sm text-primary-foreground/85">{getLabel('footerFunded')}</p>
+            <p className="text-sm text-primary-foreground/85">{getLabel('footerLine1')}</p>
+            <p className="text-sm text-primary-foreground/85">{getLabel('footerLine2')}</p>
           </div>
 
           {/* Links column */}
@@ -131,7 +131,7 @@ export default async function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-primary-foreground/20 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-primary-foreground/85 text-center md:text-left max-w-2xl">
-            {getLabel('footerCopyright')}
+            {getLabel('footerBottomLine')}
           </p>
           <div className="flex items-center gap-3">
             <Link
