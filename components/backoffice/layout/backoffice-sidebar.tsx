@@ -29,6 +29,7 @@ import {
   Settings,
   Languages,
   ToggleLeft,
+  Trash2,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
@@ -124,6 +125,7 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
           { label: t('sidebar.dataQuality'), href: '/backoffice/quality', icon: Settings },
           { label: t('sidebar.translations'), href: '/backoffice/translations', icon: Languages },
           { label: t('sidebar.siteFeatures'), href: '/backoffice/site-features', icon: ToggleLeft },
+          { label: t('sidebar.trash'), href: '/backoffice/trash', icon: Trash2 },
         ],
       });
     }
