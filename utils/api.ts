@@ -1,5 +1,5 @@
 import { apiFetch, authFetch, API_BASE_URL } from '@/lib/api-fetch';
-import type { CarouselItem } from '@/types/backoffice';
+import type { CarouselItem, PartnerItem } from '@/types/backoffice';
 import type { UserProfile } from '@/types';
 
 export interface PublicationAuthor {
@@ -200,4 +200,13 @@ export async function fetchCarouselItems(): Promise<CarouselItem[]> {
     console.error('Error fetching carousel items:', error);
     throw error;
   }
+}
+
+/** Public read of the backoffice-managed partners list, used by the footer. */
+export async function fetchPartners(): Promise<PartnerItem[]> {
+  const response = await apiFetch(`/api/v1/media/partners/`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch partners');
+  }
+  return response.json() as Promise<PartnerItem[]>;
 }
