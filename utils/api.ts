@@ -1,4 +1,5 @@
-import { apiFetch, authFetch, API_BASE_URL } from '@/lib/api-fetch';
+import { apiFetch, authFetch } from '@/lib/api-fetch';
+import { env } from '@/lib/env';
 import type { CarouselItem, PartnerItem } from '@/types/backoffice';
 import type { UserProfile } from '@/types';
 
@@ -36,11 +37,29 @@ interface PaginatedPublications {
   count: number;
 }
 
-/** Build absolute URL for carousel (or other API-served) images. API returns relative paths like "media/carousel/…". */
+/**
+ * Build an absolute, browser-facing URL for carousel/partner images.
+ *
+ * Resolved against the public origin, not API_BASE_URL: the result lands in an
+ * `<img src>`, and during SSR API_BASE_URL is the container-internal INTERNAL_API_URL
+ * (e.g. `http://api`) that no browser can resolve. DRF serialises ImageFields with
+ * build_absolute_uri, so a server-side fetch returns absolute URLs carrying that
+ * internal host — re-host those, and leave genuinely external images alone.
+ */
 export function getCarouselImageUrl(imagePath: string | null | undefined): string {
   if (!imagePath) return '/placeholder.svg';
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return imagePath;
-  const base = API_BASE_URL.replace(/\/$/, '');
+  const base = env.apiUrl.replace(/\/$/, '');
+
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    try {
+      const { pathname, search } = new URL(imagePath);
+      if (pathname.startsWith('/media/')) return `${base}${pathname}${search}`;
+    } catch {
+      // Unparseable URL — hand it back untouched.
+    }
+    return imagePath;
+  }
+
   return imagePath.startsWith('/') ? `${base}${imagePath}` : `${base}/${imagePath}`;
 }
 
