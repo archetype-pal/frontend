@@ -29,7 +29,7 @@ function buildCsp(nonce: string): string {
     isProduction ? "img-src 'self' data: blob: https:" : "img-src 'self' data: blob: https: http:",
     "font-src 'self' data:",
     isProduction ? "connect-src 'self' https:" : "connect-src 'self' https: http: ws: wss:",
-    "frame-src 'self'",
+    "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

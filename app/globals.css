@@ -1243,6 +1243,16 @@ g.a9s-annotation.a9s-text:hover .a9s-outer {
   vertical-align: top;
 }
 
+.publication-body iframe {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  margin: 1rem 0;
+  border: 0;
+}
+
 /* --- Rendered msDesc description (TEI descriptions 5.1/5.2) ------------------ */
 
 /* Structured-field display for `lib/tei-msdesc-render.ts` output. Shared by the

@@ -46,6 +46,33 @@ describe('sanitizeHtml', () => {
     );
   });
 
+  it('preserves normalized YouTube embeds in legacy publication content', () => {
+    const input =
+      '<p><iframe height="315" src="https://www.youtube.com/embed/zRxcyaOfuBY?start=30&autoplay=1" width="560" onload="alert(1)"></iframe></p>';
+    const sanitized = sanitizeHtml(input, { allowLegacyPublicationStyles: true });
+
+    expect(sanitized).toContain('<iframe');
+    expect(sanitized).toContain('src="https://www.youtube.com/embed/zRxcyaOfuBY?start=30"');
+    expect(sanitized).toContain('width="560"');
+    expect(sanitized).toContain('height="315"');
+    expect(sanitized).toContain('title="YouTube video player"');
+    expect(sanitized).toContain('allowfullscreen=""');
+    expect(sanitized).not.toContain('autoplay=1');
+    expect(sanitized).not.toContain('onload');
+  });
+
+  it('strips non-YouTube iframes from legacy publication content', () => {
+    const input =
+      '<p>Before</p><iframe src="//storify.com/Stewart_Brookes/kzoo-494/embed"></iframe><p>After</p>';
+
+    const sanitized = sanitizeHtml(input, { allowLegacyPublicationStyles: true });
+
+    expect(sanitized).toContain('<p>Before</p>');
+    expect(sanitized).toContain('<p>After</p>');
+    expect(sanitized).not.toContain('<iframe');
+    expect(sanitized).not.toContain('storify.com');
+  });
+
   it('strips unsafe legacy publication style declarations', () => {
     const input =
       '<p style="margin-left: 10px; position: absolute; color: red; ' +
