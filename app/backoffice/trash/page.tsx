@@ -172,7 +172,7 @@ export default function TrashPage() {
               href={`/backoffice/hands/${hand}`}
               className="text-sm text-primary hover:underline"
             >
-              {hand_name}
+              {hand_name || `#${hand}`}
             </Link>
           );
         },
@@ -256,6 +256,7 @@ export default function TrashPage() {
             <Link
               href={`/manuscripts/${row.original.historical_item}/images/${row.original.item_image}`}
               target="_blank"
+              rel="noopener noreferrer"
               aria-label={t('trash.openImage')}
             >
               <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -282,8 +283,11 @@ export default function TrashPage() {
           ids,
           action: (id) => restoreGraph(token!, Number(id)),
           invalidate: invalidateGraphs,
-          pastTense: 'restored',
-          noun: 'annotation',
+          messages: {
+            success: (count) => t('trash.bulkRestored', { count }),
+            allFailed: () => t('trash.bulkRestoreFailed'),
+            partial: (succeeded, failed) => t('trash.bulkPartial', { succeeded, failed }),
+          },
         });
         setTableEpoch((n) => n + 1);
       },
@@ -460,8 +464,11 @@ export default function TrashPage() {
             ids,
             action: (id) => purgeGraph(token!, Number(id)),
             invalidate: invalidateGraphs,
-            pastTense: 'permanently deleted',
-            noun: 'annotation',
+            messages: {
+              success: (count) => t('trash.bulkPurged', { count }),
+              allFailed: () => t('trash.bulkPurgeFailed'),
+              partial: (succeeded, failed) => t('trash.bulkPartial', { succeeded, failed }),
+            },
           });
           setTableEpoch((n) => n + 1);
         }}
