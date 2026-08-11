@@ -179,7 +179,7 @@ export default function TrashPage() {
       },
       {
         accessorKey: 'image_display',
-        header: t('trash.colImage'),
+        header: sortableHeader(t('trash.colImage')),
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground flex items-center gap-1">
             <ImageIcon className="h-3 w-3" />
@@ -189,7 +189,7 @@ export default function TrashPage() {
       },
       {
         accessorKey: 'annotation_type',
-        header: t('trash.colType'),
+        header: sortableHeader(t('trash.colType')),
         cell: ({ row }) => (
           <Badge variant="outline" className="text-xs">
             {row.original.annotation_type ?? t('trash.typeUnknown')}
@@ -199,7 +199,7 @@ export default function TrashPage() {
       },
       {
         accessorKey: 'created',
-        header: t('trash.colCreated'),
+        header: sortableHeader(t('trash.colCreated')),
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground">
             {row.original.created ? new Date(row.original.created).toLocaleDateString() : '—'}
@@ -209,7 +209,7 @@ export default function TrashPage() {
       },
       {
         accessorKey: 'deleted_by',
-        header: t('trash.colDeletedBy'),
+        header: sortableHeader(t('trash.colDeletedBy')),
         cell: ({ row }) => <span className="text-xs">{row.original.deleted_by ?? '—'}</span>,
         size: 110,
       },
