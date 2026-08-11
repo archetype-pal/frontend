@@ -7,6 +7,17 @@ describe('sanitizeHtml', () => {
     expect(sanitizeHtml(input)).toBe('<p>Hello <strong>world</strong></p>');
   });
 
+  it('preserves semantic definition lists used by legacy publication content', () => {
+    const input =
+      '<dl class="sys_events-details">' +
+      '<dt><a href="/event"><img src="/media/uploads/News/2016/example.jpg" alt="Example"></a></dt>' +
+      '<dt>Register here: <a href="https://example.com/">https://example.com/</a></dt>' +
+      '<dd>Event details</dd>' +
+      '</dl>';
+
+    expect(sanitizeHtml(input)).toBe(input);
+  });
+
   it('strips script tags', () => {
     const input = '<p>OK</p><script>alert("xss")</script>';
     expect(sanitizeHtml(input)).toBe('<p>OK</p>');

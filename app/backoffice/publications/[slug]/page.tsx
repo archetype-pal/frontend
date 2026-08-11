@@ -41,7 +41,7 @@ import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
 import { useAutosave } from '@/hooks/backoffice/use-autosave';
-import { sanitizeHtml } from '@/lib/sanitize-html';
+import { renderPublicationHtml } from '@/lib/publication-html';
 
 export default function PublicationEditorPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -440,9 +440,9 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
             </TabsContent>
             <TabsContent value="preview" className="mt-2">
               <div
-                className="prose prose-sm dark:prose-invert max-w-none rounded-md border px-4 py-3 min-h-[200px]"
+                className="publication-body rounded-md border px-4 py-3 min-h-[200px]"
                 dangerouslySetInnerHTML={{
-                  __html: sanitizeHtml(content, { allowLegacyPublicationStyles: true }),
+                  __html: renderPublicationHtml(content),
                 }}
               />
             </TabsContent>
