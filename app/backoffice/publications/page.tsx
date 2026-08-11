@@ -161,7 +161,7 @@ export default function PublicationsPage() {
   // capped to 100 by DRF's BoundedLimitOffsetPagination, hiding row 101+
   // from this page (admins doing bulk publish/unpublish couldn't reach them).
   const { data, isError, refetch } = useQuery({
-    queryKey: backofficeKeys.publications.all(),
+    queryKey: backofficeKeys.publications.list({ scope: 'all-pages', limit: 100 }),
     queryFn: () =>
       walkPaginated<PublicationListItem>(
         '/api/v1/media/management/publications/?limit=100',
