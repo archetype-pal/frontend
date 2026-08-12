@@ -1504,6 +1504,8 @@
       "tabEditor": "Editor",
       "tabPreview": "Preview",
       "contentPlaceholder": "Start writing your publication...",
+      "legacyRichContentTitle": "Legacy-rich content",
+      "legacyRichContentDescription": "This publication contains legacy HTML that the visual editor cannot preserve reliably. Edit it in raw source mode, and use Preview to check the public rendering.",
       "fieldPreviewText": "Preview Text",
       "previewPlaceholder": "Short preview text...",
       "deleteTitle": "Delete this publication?",

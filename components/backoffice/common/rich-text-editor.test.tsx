@@ -55,4 +55,17 @@ describe('<RichTextEditor> hydration', () => {
     // typing).
     expect(() => render(<Host />)).not.toThrow();
   });
+
+  it('can open directly in raw source mode', async () => {
+    render(
+      <RichTextEditor
+        content='<p class="highlight-box">Legacy</p>'
+        onChange={() => {}}
+        defaultMode="raw"
+      />
+    );
+
+    expect(screen.getByDisplayValue('<p class="highlight-box">Legacy</p>')).toBeTruthy();
+    expect(screen.getByText('Editing raw HTML source')).toBeTruthy();
+  });
 });

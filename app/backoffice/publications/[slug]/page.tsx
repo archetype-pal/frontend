@@ -7,13 +7,14 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, Save, Trash2, Loader2, Eye, ExternalLink } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Save, Trash2, Loader2, Eye, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import dynamic from 'next/dynamic';
 const RichTextEditor = dynamic(
   () => import('@/components/backoffice/common/rich-text-editor').then((m) => m.RichTextEditor),
@@ -42,6 +43,7 @@ import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
 import { useAutosave } from '@/hooks/backoffice/use-autosave';
 import { renderPublicationHtml } from '@/lib/publication-html';
+import { hasLegacyRichPublicationHtml } from '@/lib/legacy-publication-html';
 
 export default function PublicationEditorPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -216,6 +218,8 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
 
   const markDirty = () => setDirty(true);
   const publicationKindPath = isNews ? 'news' : isBlog ? 'blogs' : isFeatured ? 'feature' : 'blogs';
+  const hasLegacyRichContent =
+    hasLegacyRichPublicationHtml(pub.content) || hasLegacyRichPublicationHtml(content);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -429,13 +433,24 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
               </TabsTrigger>
             </TabsList>
             <TabsContent value="editor" className="mt-2">
+              {hasLegacyRichContent && (
+                <Alert className="mb-2 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>{t('publicationsDetail.legacyRichContentTitle')}</AlertTitle>
+                  <AlertDescription>
+                    {t('publicationsDetail.legacyRichContentDescription')}
+                  </AlertDescription>
+                </Alert>
+              )}
               <RichTextEditor
+                key={hasLegacyRichContent ? 'legacy-rich-content' : 'standard-rich-content'}
                 content={content}
                 onChange={(html) => {
                   setContent(html);
                   markDirty();
                 }}
                 placeholder={t('publicationsDetail.contentPlaceholder')}
+                defaultMode={hasLegacyRichContent ? 'raw' : 'rich'}
               />
             </TabsContent>
             <TabsContent value="preview" className="mt-2">

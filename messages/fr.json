@@ -1504,6 +1504,8 @@
       "tabEditor": "Éditeur",
       "tabPreview": "Aperçu",
       "contentPlaceholder": "Commencez à rédiger votre publication...",
+      "legacyRichContentTitle": "Contenu enrichi hérité",
+      "legacyRichContentDescription": "Cette publication contient du HTML hérité que l'éditeur visuel ne peut pas conserver de manière fiable. Modifiez-la en mode source HTML et utilisez l'aperçu pour vérifier le rendu public.",
       "fieldPreviewText": "Texte d'aperçu",
       "previewPlaceholder": "Court texte d'aperçu...",
       "deleteTitle": "Supprimer cette publication ?",
