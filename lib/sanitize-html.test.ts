@@ -63,14 +63,14 @@ describe('sanitizeHtml', () => {
 
   it('strips non-YouTube iframes from legacy publication content', () => {
     const input =
-      '<p>Before</p><iframe src="//storify.com/Stewart_Brookes/kzoo-494/embed"></iframe><p>After</p>';
+      '<p>Before</p><iframe src="https://legacy-embed.example.invalid/widget"></iframe><p>After</p>';
 
     const sanitized = sanitizeHtml(input, { allowLegacyPublicationStyles: true });
 
     expect(sanitized).toContain('<p>Before</p>');
     expect(sanitized).toContain('<p>After</p>');
     expect(sanitized).not.toContain('<iframe');
-    expect(sanitized).not.toContain('storify.com');
+    expect(sanitized).not.toContain('legacy-embed.example.invalid');
   });
 
   it('strips unsafe legacy publication style declarations', () => {
