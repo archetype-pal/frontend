@@ -4,12 +4,12 @@ import { authFetch } from '@/lib/api-fetch';
 import { readSiteFeatures, writeSiteFeatures } from '@/lib/site-features-server';
 import { mergeFeatureFlags, type SiteFeaturesConfig } from '@/lib/site-features';
 
-async function verifyStaff(token: string): Promise<boolean> {
+async function verifySuperuser(token: string): Promise<boolean> {
   try {
     const res = await authFetch('/api/v1/auth/profile', token);
     if (!res.ok) return false;
     const user = await res.json();
-    return user.is_staff === true;
+    return user.is_superuser === true;
   } catch {
     return false;
   }
@@ -27,9 +27,9 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
   }
 
-  const isStaff = await verifyStaff(token);
-  if (!isStaff) {
-    return NextResponse.json({ error: 'Staff access required' }, { status: 403 });
+  const isSuperuser = await verifySuperuser(token);
+  if (!isSuperuser) {
+    return NextResponse.json({ error: 'Superuser access required' }, { status: 403 });
   }
 
   let body: unknown;

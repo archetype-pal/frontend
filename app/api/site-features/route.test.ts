@@ -23,17 +23,18 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 /**
- * A tiny in-memory stand-in for the backend's `AppSettings` row: `apiFetch`
- * (the GET used by `readSiteFeatures`) reads it, `authFetch`'s PUT branch
- * (the write used by `writeSiteFeatures`) replaces it. `isStaff` gates the
- * PUT handler's own profile check the same way the real backend would.
+ * A tiny in-memory stand-in for the backend's `AppSettings` rows (one per
+ * site-features key): `apiFetch` (the GET used by `readSiteFeatures`) reads
+ * the assembled config, `authFetch`'s PUT branch (the write used by
+ * `writeSiteFeatures`) replaces it. `isSuperuser` gates the PUT handler's own
+ * profile check the same way the real backend would.
  */
 let stored: SiteFeaturesConfig;
-let isStaff: boolean;
+let isSuperuser: boolean;
 
 beforeEach(() => {
   stored = getDefaultConfig();
-  isStaff = true;
+  isSuperuser = true;
 
   apiFetch.mockReset();
   authFetch.mockReset();
@@ -41,7 +42,7 @@ beforeEach(() => {
   apiFetch.mockImplementation(async () => jsonResponse(stored));
   authFetch.mockImplementation(async (path: string, _token: string, init?: RequestInit) => {
     if (path === '/api/v1/auth/profile') {
-      return jsonResponse({ is_staff: isStaff });
+      return jsonResponse({ is_superuser: isSuperuser });
     }
     // The site-features PUT: persist the body into the fake store.
     stored = JSON.parse((init?.body as string) ?? '{}') as SiteFeaturesConfig;
@@ -117,7 +118,7 @@ describe('PUT /api/site-features — feature flags', () => {
   });
 });
 
-describe('PUT /api/site-features — the staff gate protecting the flags', () => {
+describe('PUT /api/site-features — the superuser gate protecting the flags', () => {
   /** Same duck-typed request, but with caller-controlled auth headers. */
   function requestWithAuth(body: unknown, authorization?: string): NextRequest {
     return {
@@ -135,8 +136,8 @@ describe('PUT /api/site-features — the staff gate protecting the flags', () =>
     expect((await readSiteFeatures()).features).toEqual(before.features);
   });
 
-  it('rejects a non-staff caller before touching the config', async () => {
-    isStaff = false;
+  it('rejects a non-superuser caller before touching the config', async () => {
+    isSuperuser = false;
     const before = await readSiteFeatures();
     const res = await PUT(
       requestWithAuth(
@@ -152,7 +153,7 @@ describe('PUT /api/site-features — the staff gate protecting the flags', () =>
 describe('PUT /api/site-features — backend write failure', () => {
   it('returns 502 when the backend PUT fails, without crashing the route', async () => {
     authFetch.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/auth/profile') return jsonResponse({ is_staff: true });
+      if (path === '/api/v1/auth/profile') return jsonResponse({ is_superuser: true });
       return jsonResponse({ error: 'backend unavailable' }, 500);
     });
 
