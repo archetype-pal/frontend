@@ -1,16 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import {
-  AlertTriangle,
-  CheckCircle2,
-  HeartPulse,
-  Loader2,
-  RefreshCcw,
-  Send,
-  XCircle,
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle2, HeartPulse, Loader2, RefreshCcw, Send, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
@@ -18,8 +9,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/auth-context';
 import { formatBytes } from '@/lib/format-bytes';
 import { BackofficeApiError } from '@/services/backoffice/api-client';
@@ -34,9 +23,6 @@ function extractErrorDetail(err: unknown): string | undefined {
   if (err instanceof BackofficeApiError) {
     const body = err.body;
     if (typeof body.detail === 'string') return body.detail;
-    if (Array.isArray(body.recipient) && typeof body.recipient[0] === 'string') {
-      return body.recipient[0];
-    }
   }
   if (err instanceof Error) return err.message;
   return undefined;
@@ -63,7 +49,6 @@ function StatusRow({ ok, label, detail }: { ok: boolean; label: string; detail: 
 export function SanityChecksDashboard() {
   const t = useTranslations('backoffice');
   const { token } = useAuth();
-  const [recipient, setRecipient] = useState('');
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['backoffice', 'sanity-checks'],
@@ -73,7 +58,7 @@ export function SanityChecksDashboard() {
   });
 
   const testEmailMutation = useMutation({
-    mutationFn: (to: string) => sendTestEmail(token!, to),
+    mutationFn: () => sendTestEmail(token!),
     onSuccess: (result) => {
       toast.success(t('sanityChecks.smtp.toastSuccess'), { description: result.detail });
     },
@@ -82,10 +67,9 @@ export function SanityChecksDashboard() {
     },
   });
 
-  function handleSendTestEmail(e: React.FormEvent) {
-    e.preventDefault();
-    if (!token || !recipient.trim() || testEmailMutation.isPending) return;
-    testEmailMutation.mutate(recipient.trim());
+  function handleSendTestEmail() {
+    if (!token || testEmailMutation.isPending) return;
+    testEmailMutation.mutate();
   }
 
   const services: Array<{ key: string; label: string; check: ServiceCheck }> = data
@@ -235,21 +219,11 @@ export function SanityChecksDashboard() {
             </CardHeader>
             <CardContent>
               {data.email.smtp_configured ? (
-                <form onSubmit={handleSendTestEmail} className="flex items-end gap-3">
-                  <div className="flex-1 space-y-1.5">
-                    <Label htmlFor="sanity-checks-test-email-recipient">
-                      {t('sanityChecks.smtp.recipientLabel')}
-                    </Label>
-                    <Input
-                      id="sanity-checks-test-email-recipient"
-                      type="email"
-                      required
-                      value={recipient}
-                      onChange={(e) => setRecipient(e.target.value)}
-                      placeholder={t('sanityChecks.smtp.recipientPlaceholder')}
-                    />
-                  </div>
-                  <Button type="submit" disabled={!recipient.trim() || testEmailMutation.isPending}>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm text-muted-foreground">
+                    {t('sanityChecks.smtp.description')}
+                  </p>
+                  <Button onClick={handleSendTestEmail} disabled={testEmailMutation.isPending}>
                     {testEmailMutation.isPending ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
@@ -259,7 +233,7 @@ export function SanityChecksDashboard() {
                       ? t('sanityChecks.smtp.sending')
                       : t('sanityChecks.smtp.send')}
                   </Button>
-                </form>
+                </div>
               ) : (
                 <Alert>
                   <AlertTriangle className="h-4 w-4" />

@@ -66,18 +66,14 @@ const TestEmailResultSchema = z.object({
 export type TestEmailResult = z.infer<typeof TestEmailResultSchema>;
 
 /**
- * POST a real test email to `recipient` to verify SMTP delivery end-to-end.
+ * POST a real test email to ADMIN_EMAILS to verify SMTP delivery end-to-end.
  *
  * The backend returns a non-2xx response — surfaced here as a
  * `BackofficeApiError` (see api-client.ts) — in two cases: a 400 when SMTP
- * isn't configured (short-circuits without attempting delivery) or the
- * recipient fails email validation, and a 502 when delivery itself fails.
- * The short-circuit and delivery-failure bodies are `{sent: false, detail}`;
- * the invalid-recipient body is a plain DRF validation error
- * (`{recipient: ["..."]}`) — callers should read `error.body` for a message
- * rather than assuming either shape.
+ * isn't configured (short-circuits without attempting delivery), and a 502
+ * when delivery itself fails. Both bodies are `{sent: false, detail}`.
  */
-export async function sendTestEmail(token: string, recipient: string): Promise<TestEmailResult> {
-  const data = await backofficePost<unknown>(TEST_EMAIL_ENDPOINT, token, { recipient });
+export async function sendTestEmail(token: string): Promise<TestEmailResult> {
+  const data = await backofficePost<unknown>(TEST_EMAIL_ENDPOINT, token, {});
   return TestEmailResultSchema.parse(data);
 }

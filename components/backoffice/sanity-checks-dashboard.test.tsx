@@ -108,16 +108,15 @@ describe('SanityChecksDashboard', () => {
     expect(await screen.findByText('Unavailable (non-PostgreSQL backend)')).toBeTruthy();
   });
 
-  it('shows the send-test-email form when SMTP is configured, and sends on submit', async () => {
+  it('shows the send-test-email button when SMTP is configured, and sends on click', async () => {
     getSanityChecksMock.mockResolvedValueOnce(REPORT);
     sendTestEmailMock.mockResolvedValueOnce({ sent: true, detail: 'Test email sent.' });
     renderDashboard();
 
-    const input = await screen.findByPlaceholderText('someone@example.com');
-    fireEvent.change(input, { target: { value: 'ops@example.com' } });
-    fireEvent.click(screen.getByRole('button', { name: /send test email/i }));
+    const sendButton = await screen.findByRole('button', { name: /send test email/i });
+    fireEvent.click(sendButton);
 
-    await waitFor(() => expect(sendTestEmailMock).toHaveBeenCalledWith('tok', 'ops@example.com'));
+    await waitFor(() => expect(sendTestEmailMock).toHaveBeenCalledWith('tok'));
     await waitFor(() => expect(toastSuccessMock).toHaveBeenCalled());
   });
 
@@ -128,15 +127,14 @@ describe('SanityChecksDashboard', () => {
     );
     renderDashboard();
 
-    const input = await screen.findByPlaceholderText('someone@example.com');
-    fireEvent.change(input, { target: { value: 'ops@example.com' } });
-    fireEvent.click(screen.getByRole('button', { name: /send test email/i }));
+    const sendButton = await screen.findByRole('button', { name: /send test email/i });
+    fireEvent.click(sendButton);
 
     await waitFor(() => expect(toastErrorMock).toHaveBeenCalled());
     expect(toastErrorMock.mock.calls[0]![1]).toMatchObject({ description: 'Connection refused' });
   });
 
-  it('hides the send-test-email form and explains why when SMTP is not configured', async () => {
+  it('hides the send-test-email button and explains why when SMTP is not configured', async () => {
     getSanityChecksMock.mockResolvedValueOnce({
       ...REPORT,
       email: { smtp_configured: false },
@@ -145,7 +143,6 @@ describe('SanityChecksDashboard', () => {
 
     expect(await screen.findByText('SMTP is not configured')).toBeTruthy();
     expect(screen.getByText('Test email unavailable')).toBeTruthy();
-    expect(screen.queryByPlaceholderText('someone@example.com')).toBeNull();
     expect(screen.queryByRole('button', { name: /send test email/i })).toBeNull();
   });
 

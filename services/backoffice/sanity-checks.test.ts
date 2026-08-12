@@ -82,17 +82,16 @@ describe('getSanityChecks', () => {
 });
 
 describe('sendTestEmail', () => {
-  it('POSTs the recipient and returns {sent: true, detail} on success', async () => {
+  it('POSTs and returns {sent: true, detail} on success', async () => {
     authFetchMock.mockResolvedValueOnce(
-      jsonResponse(200, { sent: true, detail: 'Test email sent to someone@example.com.' })
+      jsonResponse(200, { sent: true, detail: 'Test email sent to admin@example.com.' })
     );
-    const result = await sendTestEmail('tok', 'someone@example.com');
-    expect(result).toEqual({ sent: true, detail: 'Test email sent to someone@example.com.' });
+    const result = await sendTestEmail('tok');
+    expect(result).toEqual({ sent: true, detail: 'Test email sent to admin@example.com.' });
     const [path, token, init] = authFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/management/common/sanity-checks/test-email/');
     expect(token).toBe('tok');
     expect((init as RequestInit).method).toBe('POST');
-    expect((init as RequestInit).body).toBe(JSON.stringify({ recipient: 'someone@example.com' }));
   });
 
   it('throws BackofficeApiError with the {sent: false, detail} body on a 400 short-circuit', async () => {
@@ -102,7 +101,7 @@ describe('sendTestEmail', () => {
         detail: 'SMTP is not configured (EMAIL_HOST is unset or still the default).',
       })
     );
-    await expect(sendTestEmail('tok', 'someone@example.com')).rejects.toMatchObject({
+    await expect(sendTestEmail('tok')).rejects.toMatchObject({
       name: 'BackofficeApiError',
       status: 400,
       body: {
@@ -116,21 +115,10 @@ describe('sendTestEmail', () => {
     authFetchMock.mockResolvedValueOnce(
       jsonResponse(502, { sent: false, detail: 'Connection refused' })
     );
-    await expect(sendTestEmail('tok', 'someone@example.com')).rejects.toMatchObject({
+    await expect(sendTestEmail('tok')).rejects.toMatchObject({
       name: 'BackofficeApiError',
       status: 502,
       body: { sent: false, detail: 'Connection refused' },
-    });
-  });
-
-  it('throws BackofficeApiError with a DRF validation body on an invalid recipient', async () => {
-    authFetchMock.mockResolvedValueOnce(
-      jsonResponse(400, { recipient: ['Enter a valid email address.'] })
-    );
-    await expect(sendTestEmail('tok', 'not-an-email')).rejects.toMatchObject({
-      name: 'BackofficeApiError',
-      status: 400,
-      body: { recipient: ['Enter a valid email address.'] },
     });
   });
 });
