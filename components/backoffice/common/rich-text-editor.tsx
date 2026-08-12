@@ -63,11 +63,8 @@ export function RichTextEditor({
       }),
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: { class: 'text-primary underline' },
       }),
-      Image.configure({
-        HTMLAttributes: { class: 'rounded-md max-w-full' },
-      }),
+      Image,
       Placeholder.configure({ placeholder: resolvedPlaceholder }),
     ],
     content,
@@ -77,7 +74,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'prose prose-sm dark:prose-invert max-w-none min-h-[200px] focus:outline-none px-4 py-3',
+          'prose prose-sm dark:prose-invert prose-a:text-primary prose-a:underline prose-img:rounded-md prose-img:max-w-full max-w-none min-h-[200px] focus:outline-none px-4 py-3',
           minimal && 'min-h-[120px]'
         ),
       },
