@@ -42,7 +42,7 @@ describe('readSiteFeatures', () => {
     );
     const config = await readSiteFeatures();
     expect(config.features.manuscriptDescriptions).toBe(false);
-    expect(apiFetch).toHaveBeenCalledWith('/api/v1/site-features/');
+    expect(apiFetch).toHaveBeenCalledWith('/api/v1/app-settings/');
   });
 
   it('defaults every flag to enabled when the backend response has no `features` key', async () => {
@@ -120,7 +120,7 @@ describe('writeSiteFeatures', () => {
     expect(normalized.features.manuscriptDescriptions).toBe(false);
     expect(authFetch).toHaveBeenCalledTimes(1);
     const [path, token, init] = authFetch.mock.calls[0];
-    expect(path).toBe('/api/v1/site-features/');
+    expect(path).toBe('/api/v1/app-settings/');
     expect(token).toBe('staff-token');
     expect(init).toMatchObject({
       method: 'PUT',

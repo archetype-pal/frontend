@@ -24,7 +24,7 @@ import {
 import type { ResultType } from '@/lib/search-types';
 
 async function fetchSiteFeatures(): Promise<SiteFeaturesConfig> {
-  const res = await fetch('/api/site-features');
+  const res = await fetch('/api/app-settings');
   if (!res.ok) throw new Error('Failed to load site features');
   return res.json();
 }
@@ -33,7 +33,7 @@ async function saveSiteFeatures(
   token: string,
   config: SiteFeaturesConfig
 ): Promise<SiteFeaturesConfig> {
-  const res = await fetch('/api/site-features', {
+  const res = await fetch('/api/app-settings', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

@@ -68,7 +68,7 @@ function payloadWithoutFeatures(): Omit<SiteFeaturesConfig, 'features'> {
   return { sections, sectionOrder, searchCategories };
 }
 
-describe('PUT /api/site-features — feature flags', () => {
+describe('PUT /api/app-settings — feature flags', () => {
   it('accepts a payload with no `features` key (the flag map is optional)', async () => {
     const response = await PUT(putRequest(payloadWithoutFeatures()));
     expect(response.status).toBe(200);
@@ -118,7 +118,7 @@ describe('PUT /api/site-features — feature flags', () => {
   });
 });
 
-describe('PUT /api/site-features — the superuser gate protecting the flags', () => {
+describe('PUT /api/app-settings — the superuser gate protecting the flags', () => {
   /** Same duck-typed request, but with caller-controlled auth headers. */
   function requestWithAuth(body: unknown, authorization?: string): NextRequest {
     return {
@@ -150,7 +150,7 @@ describe('PUT /api/site-features — the superuser gate protecting the flags', (
   });
 });
 
-describe('PUT /api/site-features — backend write failure', () => {
+describe('PUT /api/app-settings — backend write failure', () => {
   it('returns 502 when the backend PUT fails, without crashing the route', async () => {
     authFetch.mockImplementation(async (path: string) => {
       if (path === '/api/v1/auth/profile') return jsonResponse({ is_superuser: true });
