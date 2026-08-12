@@ -35,7 +35,7 @@ describe('formatBytes', () => {
     expect(formatBytes(123456789)).toBe('117.7 MB');
   });
 
-  it('formats gigabytes', () => {
+  it('formats hundreds of megabytes', () => {
     expect(formatBytes(987654321)).toBe('941.9 MB');
   });
 
