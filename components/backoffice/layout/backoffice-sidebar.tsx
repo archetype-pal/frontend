@@ -17,6 +17,7 @@ import {
   ScrollText,
   MessageSquare,
   Image,
+  Handshake,
   Users,
   UserCog,
   Hand,
@@ -116,6 +117,7 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
           { label: t('sidebar.comments'), href: '/backoffice/comments', icon: MessageSquare },
           { label: t('sidebar.carousel'), href: '/backoffice/carousel', icon: Image },
           { label: t('sidebar.pages'), href: '/backoffice/pages', icon: Files },
+          { label: t('sidebar.partners'), href: '/backoffice/partners', icon: Handshake },
         ],
       },
     ];

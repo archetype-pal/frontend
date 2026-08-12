@@ -33,6 +33,16 @@ describe('publication HTML rendering', () => {
     expect(renderPublicationHtml(html)).toBe(html);
   });
 
+  it('keeps safe YouTube embeds in rendered publication HTML', () => {
+    const html =
+      '<p><iframe height="315" src="https://www.youtube.com/embed/zRxcyaOfuBY" width="560"></iframe></p>';
+
+    const rendered = renderPublicationHtml(html);
+
+    expect(rendered).toContain('<iframe');
+    expect(rendered).toContain('src="https://www.youtube.com/embed/zRxcyaOfuBY"');
+  });
+
   it('sanitizes legacy publication HTML before adding generated note links', () => {
     const html =
       '<p onclick="alert(1)">Body [1].</p>' +

@@ -57,6 +57,18 @@ describe('backofficeKeys structure', () => {
     ]);
   });
 
+  it('keeps publication list queries distinct from the broad invalidation key', () => {
+    const all = backofficeKeys.publications.all();
+    const countList = backofficeKeys.publications.list({ limit: 1 });
+    const allPagesList = backofficeKeys.publications.list({ scope: 'all-pages', limit: 100 });
+
+    expect(countList).not.toEqual(all);
+    expect(allPagesList).not.toEqual(all);
+    expect(countList).not.toEqual(allPagesList);
+    expect(countList.slice(0, all.length)).toEqual([...all]);
+    expect(allPagesList.slice(0, all.length)).toEqual([...all]);
+  });
+
   it('produces distinct keys for different filter objects (cache isolation)', () => {
     const a = backofficeKeys.manuscripts.list({ offset: 0 });
     const b = backofficeKeys.manuscripts.list({ offset: 20 });

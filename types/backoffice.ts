@@ -300,6 +300,14 @@ export interface CarouselItem {
   ordering: number;
 }
 
+export interface PartnerItem {
+  id: number;
+  name: string;
+  url: string;
+  logo: string;
+  ordering: number;
+}
+
 // ── Users ──────────────────────────────────────────────────────────────
 
 export interface UserListItem {

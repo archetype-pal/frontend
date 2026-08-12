@@ -38,6 +38,7 @@ interface RichTextEditorProps {
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
+  defaultMode?: 'rich' | 'raw';
   /** Minimal mode: fewer toolbar options. */
   minimal?: boolean;
 }
@@ -47,6 +48,7 @@ export function RichTextEditor({
   onChange,
   placeholder,
   className,
+  defaultMode = 'rich',
   minimal = false,
 }: RichTextEditorProps) {
   const t = useTranslations('backoffice');
@@ -57,6 +59,7 @@ export function RichTextEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
+        link: false,
       }),
       Link.configure({
         openOnClick: false,
@@ -94,7 +97,7 @@ export function RichTextEditor({
   // (TipTap would otherwise re-parse — and normalise — the source on every
   // keystroke). Switching back to rich re-runs the effect via the `mode`
   // dep and hydrates the editor once from the raw-edited HTML.
-  const [mode, setMode] = useState<'rich' | 'raw'>('rich');
+  const [mode, setMode] = useState<'rich' | 'raw'>(defaultMode);
   useEffect(() => {
     if (!editor) return;
     if (mode === 'raw') return;
