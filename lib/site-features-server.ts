@@ -7,7 +7,7 @@ import {
   type SiteFeaturesConfig,
 } from './site-features';
 
-const SITE_FEATURES_PATH = '/api/v1/site-features/';
+const SITE_FEATURES_PATH = '/api/v1/app-settings/';
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return value != null && typeof value === 'object' && !Array.isArray(value);

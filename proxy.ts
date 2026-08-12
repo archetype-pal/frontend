@@ -69,7 +69,7 @@ async function loadConfig(origin: string): Promise<MinConfig> {
   }
 
   try {
-    const res = await fetch(`${origin}/api/site-features`, {
+    const res = await fetch(`${origin}/api/app-settings`, {
       cache: 'no-store',
     });
     if (res.ok) {
