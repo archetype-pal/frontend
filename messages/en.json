@@ -304,6 +304,11 @@
       "description": "The manuscript service is currently unavailable. Please try again shortly.",
       "backLink": "Back to manuscripts",
       "message": "This manuscript could not be loaded. Please try again."
+    },
+    "gallery": {
+      "deleteConfirm": "Delete graph #{id}? It moves to the trash; an admin can restore it.",
+      "deleteSuccess": "Graph #{id} moved to trash",
+      "deleteFailed": "Failed to delete graph #{id}"
     }
   },
   "annotation": {
@@ -939,6 +944,7 @@
       "translations": "Translations",
       "siteFeatures": "Site Features",
       "sanityChecks": "Sanity Checks",
+      "trash": "Trash",
       "subGroupExpand": "Expand {label}",
       "subGroupCollapse": "Collapse {label}"
     },
@@ -1744,7 +1750,11 @@
       "deleteDesc": "Graph #{id} ({allograph}) will be permanently deleted.",
       "deleteConfirm": "Delete",
       "toastDeleted": "Graph annotation deleted",
-      "toastFailedDelete": "Failed to delete annotation"
+      "toastFailedDelete": "Failed to delete annotation",
+      "toastMovedToTrash": "Graph annotation moved to trash",
+      "bulkTrashed": "{count, plural, =1 {# annotation moved to trash} other {# annotations moved to trash}}",
+      "bulkTrashFailed": "Failed to move annotations to trash",
+      "bulkPartial": "{succeeded} succeeded, {failed} failed"
     },
     "imageTexts": {
       "failedLoad": "Could not load image text.",
@@ -1812,6 +1822,45 @@
       "toastApproveFailed": "Approve failed",
       "toastSentBack": "Sent back to Draft",
       "toastSendBackFailed": "Send-back failed"
+    },
+    "trash": {
+      "title": "Trash",
+      "subtitle": "Deleted items are kept here until restored or permanently removed. Nothing expires on its own.",
+      "tabAnnotations": "Annotations",
+      "trashedCount": "{count} trashed",
+      "filters": "Filters",
+      "filterAllTypes": "All types",
+      "filterAllUsers": "Anyone",
+      "filterDeletedFrom": "In trash since",
+      "filterDeletedTo": "In trash until",
+      "clearFilters": "Clear all filters",
+      "colId": "ID",
+      "colAllograph": "Allograph",
+      "colHand": "Hand",
+      "colType": "Type",
+      "colImage": "Image",
+      "colCreated": "Created",
+      "colDeletedBy": "Deleted by",
+      "colDeletedAge": "In trash",
+      "typeUnknown": "unknown",
+      "restore": "Restore",
+      "purge": "Purge",
+      "openImage": "Open image in viewer",
+      "toastRestored": "Annotation restored",
+      "toastRestoreFailed": "Failed to restore annotation",
+      "toastPurged": "Annotation permanently deleted",
+      "toastPurgeFailed": "Failed to permanently delete annotation",
+      "purgeTitle": "Permanently delete this annotation?",
+      "purgeDesc": "Annotation #{id} and its description components will be permanently deleted. This cannot be undone.",
+      "bulkPurgeTitle": "Permanently delete {count} annotations?",
+      "bulkPurgeDesc": "The selected annotations and their description components will be permanently deleted. This cannot be undone.",
+      "purgeConfirm": "Delete forever",
+      "reindexHint": "Search results update after the next reindex on the Search Engine page.",
+      "bulkRestored": "{count, plural, =1 {# annotation restored} other {# annotations restored}}",
+      "bulkRestoreFailed": "Failed to restore annotations",
+      "bulkPurged": "{count, plural, =1 {# annotation permanently deleted} other {# annotations permanently deleted}}",
+      "bulkPurgeFailed": "Failed to permanently delete annotations",
+      "bulkPartial": "{succeeded} succeeded, {failed} failed"
     },
     "siteFeatures": {
       "title": "Site Features",

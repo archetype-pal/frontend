@@ -304,6 +304,11 @@
       "description": "Le service des manuscrits est actuellement indisponible. Veuillez réessayer sous peu.",
       "backLink": "Retour aux manuscrits",
       "message": "Ce manuscrit n'a pas pu être chargé. Veuillez réessayer."
+    },
+    "gallery": {
+      "deleteConfirm": "Supprimer le graphe n°{id} ? Il est déplacé dans la corbeille ; un administrateur peut le restaurer.",
+      "deleteSuccess": "Graphe n°{id} déplacé dans la corbeille",
+      "deleteFailed": "Échec de la suppression du graphe n°{id}"
     }
   },
   "annotation": {
@@ -939,6 +944,7 @@
       "translations": "Traductions",
       "siteFeatures": "Fonctionnalités du site",
       "sanityChecks": "Vérifications système",
+      "trash": "Corbeille",
       "subGroupExpand": "Développer {label}",
       "subGroupCollapse": "Réduire {label}"
     },
@@ -1744,7 +1750,11 @@
       "deleteDesc": "Le graphe #{id} ({allograph}) sera définitivement supprimé.",
       "deleteConfirm": "Supprimer",
       "toastDeleted": "Annotation de graphe supprimée",
-      "toastFailedDelete": "Échec de la suppression de l'annotation"
+      "toastFailedDelete": "Échec de la suppression de l'annotation",
+      "toastMovedToTrash": "Annotation déplacée dans la corbeille",
+      "bulkTrashed": "{count, plural, =1 {# annotation déplacée dans la corbeille} other {# annotations déplacées dans la corbeille}}",
+      "bulkTrashFailed": "Échec du déplacement des annotations dans la corbeille",
+      "bulkPartial": "{succeeded} réussie(s), {failed} échouée(s)"
     },
     "imageTexts": {
       "failedLoad": "Impossible de charger le texte-image.",
@@ -1812,6 +1822,45 @@
       "toastApproveFailed": "Échec de l'approbation",
       "toastSentBack": "Renvoyé au brouillon",
       "toastSendBackFailed": "Échec du renvoi"
+    },
+    "trash": {
+      "title": "Corbeille",
+      "subtitle": "Les éléments supprimés sont conservés ici jusqu'à leur restauration ou leur suppression définitive. Rien n'expire automatiquement.",
+      "tabAnnotations": "Annotations",
+      "trashedCount": "{count} dans la corbeille",
+      "filters": "Filtres",
+      "filterAllTypes": "Tous les types",
+      "filterAllUsers": "N'importe qui",
+      "filterDeletedFrom": "Dans la corbeille depuis",
+      "filterDeletedTo": "Dans la corbeille jusqu'au",
+      "clearFilters": "Effacer tous les filtres",
+      "colId": "ID",
+      "colAllograph": "Allographe",
+      "colHand": "Main",
+      "colType": "Type",
+      "colImage": "Image",
+      "colCreated": "Créée le",
+      "colDeletedBy": "Supprimée par",
+      "colDeletedAge": "Dans la corbeille",
+      "typeUnknown": "inconnu",
+      "restore": "Restaurer",
+      "purge": "Purger",
+      "openImage": "Ouvrir l'image dans la visionneuse",
+      "toastRestored": "Annotation restaurée",
+      "toastRestoreFailed": "Échec de la restauration de l'annotation",
+      "toastPurged": "Annotation supprimée définitivement",
+      "toastPurgeFailed": "Échec de la suppression définitive de l'annotation",
+      "purgeTitle": "Supprimer définitivement cette annotation ?",
+      "purgeDesc": "L'annotation n°{id} et ses composants de description seront supprimés définitivement. Cette action est irréversible.",
+      "bulkPurgeTitle": "Supprimer définitivement {count} annotations ?",
+      "bulkPurgeDesc": "Les annotations sélectionnées et leurs composants de description seront supprimés définitivement. Cette action est irréversible.",
+      "purgeConfirm": "Supprimer pour toujours",
+      "reindexHint": "Les résultats de recherche se mettent à jour après la prochaine réindexation sur la page Moteur de recherche.",
+      "bulkRestored": "{count, plural, =1 {# annotation restaurée} other {# annotations restaurées}}",
+      "bulkRestoreFailed": "Échec de la restauration des annotations",
+      "bulkPurged": "{count, plural, =1 {# annotation supprimée définitivement} other {# annotations supprimées définitivement}}",
+      "bulkPurgeFailed": "Échec de la suppression définitive des annotations",
+      "bulkPartial": "{succeeded} réussie(s), {failed} échouée(s)"
     },
     "siteFeatures": {
       "title": "Fonctionnalités du site",
