@@ -1,7 +1,14 @@
 /**
- * Centralized API fetch wrapper with optional performance logging.
+ * Centralized API fetch wrapper with performance + failure logging.
  *
- * In development, logs method, path, status and duration for each request.
+ * In development, logs method, path, status and duration for every request.
+ * In all environments (including production), a non-2xx response or a
+ * thrown error (network failure, DNS, timeout, …) is always logged: callers
+ * like `readModelLabels()`/`getPublishedPages()` treat those as "fall back
+ * to a default value" and otherwise fail completely silently, which is
+ * exactly how a backend rate-limit throttling `/site-labels/` went unnoticed
+ * in production until someone grepped the raw access log by hand. Success
+ * responses stay dev-only to avoid flooding production logs with noise.
  */
 
 import { env } from '@/lib/env';
@@ -22,17 +29,21 @@ export async function apiFetch(path: string, init?: RequestInit): Promise<Respon
 
   try {
     const res = await fetch(url, init);
+    const duration = performance.now() - start;
     if (isDev) {
-      const duration = performance.now() - start;
       const tag = duration > SLOW_THRESHOLD ? 'SLOW' : 'OK';
       console.log(`[API] ${tag} ${method} ${path} → ${res.status} (${duration.toFixed(1)}ms)`);
+    } else if (!res.ok) {
+      console.error(
+        `[API] ${method} ${path} → ${res.status} ${res.statusText} (${duration.toFixed(1)}ms)`
+      );
     }
     return res;
   } catch (err) {
-    if (isDev) {
-      const duration = performance.now() - start;
-      console.error(`[API] ERR  ${method} ${path} FAILED (${duration.toFixed(1)}ms)`, err);
-    }
+    // Unconditional (unlike the success/non-2xx logging above): a thrown
+    // network error is always a failure worth seeing, in every environment.
+    const duration = performance.now() - start;
+    console.error(`[API] ${method} ${path} FAILED (${duration.toFixed(1)}ms)`, err);
     throw err;
   }
 }
