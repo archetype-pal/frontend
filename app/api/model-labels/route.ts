@@ -1,7 +1,7 @@
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
-import { readModelLabels, writeModelLabels } from '@/lib/model-labels-server';
+import { readModelLabels, writeModelLabels, SITE_LABELS_TAG } from '@/lib/model-labels-server';
 import { normalizeModelLabels, type ModelLabelsConfig } from '@/lib/model-labels';
 
 async function verifySuperuser(token: string): Promise<boolean> {
@@ -58,6 +58,13 @@ export async function PUT(request: NextRequest) {
         : 502;
     return NextResponse.json({ error: 'Failed to update site labels' }, { status });
   }
+  // Invalidate the cached `readModelLabels()` fetch entry itself (the actual
+  // fix — see the doc comment on `SITE_LABELS_TAG`) as well as the rendered
+  // layout, so an edit is visible immediately instead of waiting out the
+  // revalidation window. The second argument is a cache-life profile, not
+  // optional as of Next 16 — 'minutes' (revalidate: 60s) matches the
+  // `next.revalidate: 60` used when tagging the fetch in `readModelLabels`.
+  revalidateTag(SITE_LABELS_TAG, 'minutes');
   revalidatePath('/', 'layout');
   return NextResponse.json(config);
 }
