@@ -22,8 +22,9 @@ export type ModelLabelKey =
   // General site branding, shown in the header and footer.
   | 'siteTitle'
   | 'siteTagline'
-  | 'footerFunded'
-  | 'footerCopyright';
+  | 'footerLine1'
+  | 'footerLine2'
+  | 'footerBottomLine';
 
 export type ModelLabelLocale = 'en' | 'fr';
 
@@ -59,13 +60,23 @@ export const DEFAULT_MODEL_LABELS: Record<ModelLabelKey, LocalizedLabel> = {
     en: 'Archetype tagline',
     fr: 'Archetype tagline',
   },
-  footerFunded: {
-    en: 'Archetype funding text.',
-    fr: "Texte de financement d'Archetype.",
+  footerLine1: {
+    en: 'Footer first section',
+    fr: 'Pied de page, première section',
   },
-  footerCopyright: {
-    en: 'Archetype copyright',
-    fr: "Droits d'auteur d'Archetype",
+  footerLine2: {
+    en: 'Footer second section',
+    fr: 'Pied de page, deuxième section',
+  },
+  footerBottomLine: {
+    en:
+      'Archetype is freely-available software for structured annotations of images which allows users to search for, ' +
+      'view, and organise detailed characteristics of handwriting or other material in both verbal and visual form. ' +
+      'Archetype is designed primarily for the palaeographical analysis of handwriting.',
+    fr:
+      'Archetype est un logiciel libre pour les annotations structurées d’images qui permet aux utilisateurs de rechercher' +
+      ' , de visualiser et d’organiser les caractéristiques détaillées de l’écriture ou d’autres matériaux sous forme verbale et visuelle. ' +
+      'Archetype est conçu principalement pour l’analyse paléographique de l’écriture.',
   },
 };
 
