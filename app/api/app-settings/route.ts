@@ -1,7 +1,7 @@
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
-import { readSiteFeatures, writeSiteFeatures } from '@/lib/site-features-server';
+import { readSiteFeatures, writeSiteFeatures, SITE_FEATURES_TAG } from '@/lib/site-features-server';
 import { mergeFeatureFlags, type SiteFeaturesConfig } from '@/lib/site-features';
 
 async function verifySuperuser(token: string): Promise<boolean> {
@@ -62,6 +62,13 @@ export async function PUT(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Failed to update site features' }, { status: 502 });
   }
+  // Invalidate the cached `readSiteFeatures()` fetch entry itself (the actual
+  // fix — see the doc comment on `SITE_FEATURES_TAG`) as well as the rendered
+  // layout, so an edit is visible immediately instead of waiting out the
+  // revalidation window. The second argument is a cache-life profile, not
+  // optional as of Next 16 — 'minutes' (revalidate: 60s) matches the
+  // `next.revalidate: 60` used when tagging the fetch in `readSiteFeatures`.
+  revalidateTag(SITE_FEATURES_TAG, 'minutes');
   revalidatePath('/', 'layout');
   // Return the normalized config (with sectionOrder canonicalized) so the
   // client's cache reflects what's actually on disk.

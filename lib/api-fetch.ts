@@ -3,7 +3,8 @@
  *
  * In development, logs method, path, status and duration for every request.
  * In all environments, a non-2xx response or a thrown error is logged:
- * callers like `readModelLabels()`/`getPublishedPages()` swallow those into a
+ * callers like `readModelLabels()`/`readSiteFeatures()`/`getPublishedPages()`
+ * swallow those into a
  * default value, so nothing else would ever surface them. Successful responses
  * stay dev-only to avoid flooding production logs.
  */
