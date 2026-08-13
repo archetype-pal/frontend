@@ -35,9 +35,15 @@ export async function readModelLabels(): Promise<ModelLabelsConfig> {
     const res = await apiFetch(SITE_LABELS_PATH, {
       next: { revalidate: 60, tags: [SITE_LABELS_TAG] },
     });
-    if (!res.ok) return defaults;
+    if (!res.ok) return defaults; // apiFetch already logged the non-2xx above.
     const raw = await res.json();
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return defaults;
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      // A 200 with a malformed body isn't an HTTP-layer failure, so apiFetch
+      // never sees it — log it here or this degrades to defaults just as
+      // silently as the 429 that prompted this whole logging pass.
+      console.error(`[API] GET ${SITE_LABELS_PATH} → 200 with unexpected body shape`, raw);
+      return defaults;
+    }
     const parsed = raw as Partial<ModelLabelsConfig>;
     return { labels: normalizeModelLabels(parsed.labels) };
   } catch {
