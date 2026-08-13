@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDefaultConfig, type SiteFeaturesConfig } from '@/lib/site-features';
 import { readSiteFeatures } from '@/lib/site-features-server';
 
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
 
 const { apiFetch, authFetch } = vi.hoisted(() => ({
   apiFetch: vi.fn(),
