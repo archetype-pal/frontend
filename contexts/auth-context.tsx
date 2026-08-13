@@ -5,8 +5,11 @@ import { useRouter } from 'next/navigation';
 import { getUserProfile, logoutUser } from '@/utils/api';
 import {
   clearAuthTokenCookie,
+  clearImpersonatorTokenCookie,
   getAuthTokenCookie,
+  getImpersonatorTokenCookie,
   setAuthTokenCookie,
+  setImpersonatorTokenCookie,
 } from '@/lib/auth-token-cookie';
 import type { UserProfile } from '@/types';
 
@@ -14,7 +17,10 @@ interface AuthContextType {
   token: string | null;
   user: UserProfile | null;
   isReady: boolean;
+  isImpersonating: boolean;
   setToken: (token: string | null) => void;
+  startImpersonation: (newToken: string) => void;
+  stopImpersonation: () => void;
   logout: () => void;
 }
 
@@ -24,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [isImpersonating, setIsImpersonating] = useState(false);
   const router = useRouter();
 
   const setAuthToken = useCallback((nextToken: string | null) => {
@@ -37,6 +44,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearAuthTokenCookie();
   }, []);
 
+  const startImpersonation = useCallback(
+    (newToken: string) => {
+      // Only stash the current token if we're not already impersonating —
+      // otherwise a nested impersonation would clobber the real original
+      // admin token with an already-impersonated one, making it unrecoverable.
+      if (!isImpersonating && token) {
+        setImpersonatorTokenCookie(token);
+      }
+      setIsImpersonating(true);
+      setAuthToken(newToken);
+    },
+    [isImpersonating, token, setAuthToken]
+  );
+
+  const stopImpersonation = useCallback(() => {
+    const originalToken = getImpersonatorTokenCookie();
+    if (originalToken) {
+      setAuthToken(originalToken);
+      clearImpersonatorTokenCookie();
+    }
+    setIsImpersonating(false);
+  }, [setAuthToken]);
+
   const logout = useCallback(() => {
     // Revoke the server-side token so a captured token can't be reused after
     // logout. Fire-and-forget: a network/HTTP failure must not block the local
@@ -45,6 +75,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       void logoutUser(token).catch(() => {});
     }
     setAuthToken(null);
+    // Don't leave a stale stashed original token around if the user fully
+    // logs out while impersonating.
+    clearImpersonatorTokenCookie();
+    setIsImpersonating(false);
     setUser(null);
     setIsReady(true);
     router.push('/login');
@@ -52,6 +86,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const storedToken = getAuthTokenCookie();
+    const storedImpersonatorToken = getImpersonatorTokenCookie();
+    queueMicrotask(() => setIsImpersonating(!!storedImpersonatorToken));
 
     if (storedToken) {
       queueMicrotask(() => setAuthToken(storedToken));
@@ -97,8 +133,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token, setAuthToken]);
 
   const value = useMemo<AuthContextType>(
-    () => ({ token, user, isReady, setToken: setAuthToken, logout }),
-    [token, user, isReady, setAuthToken, logout]
+    () => ({
+      token,
+      user,
+      isReady,
+      isImpersonating,
+      setToken: setAuthToken,
+      startImpersonation,
+      stopImpersonation,
+      logout,
+    }),
+    [
+      token,
+      user,
+      isReady,
+      isImpersonating,
+      setAuthToken,
+      startImpersonation,
+      stopImpersonation,
+      logout,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
