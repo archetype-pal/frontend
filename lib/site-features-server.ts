@@ -9,6 +9,12 @@ import {
 
 const SITE_FEATURES_PATH = '/api/v1/app-settings/';
 
+/**
+ * Cache tag shared with the PUT route below: `revalidateTag(SITE_FEATURES_TAG)`
+ * there invalidates the entry this `next: { tags }` writes here.
+ */
+export const SITE_FEATURES_TAG = 'site-features';
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return value != null && typeof value === 'object' && !Array.isArray(value);
 }
@@ -18,17 +24,35 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * backoffice). Any failure - network error, non-200, or an unexpected
  * response shape - falls back to defaults so SSR never 500s over a backend
  * hiccup (matches `readModelLabels`'s fallback behavior).
+ *
+ * This fetch is on the critical path of every page render, so it must not
+ * hit the backend on every request: the config only changes on an admin
+ * PUT, so a short revalidation window (backstop) plus explicit
+ * `revalidateTag` on write (immediate) is the right cache shape — see the
+ * PUT handler in `app/api/app-settings/route.ts`. Without this, every single
+ * page render round-trips to the backend, which is what let a backend
+ * rate-limit hiccup degrade the whole site to hardcoded defaults for
+ * `/site-labels/` (the same endpoint shape as this one) — see
+ * `lib/model-labels-server.ts`.
  */
 export async function readSiteFeatures(): Promise<SiteFeaturesConfig> {
   const defaults = getDefaultConfig();
   try {
-    const res = await apiFetch(SITE_FEATURES_PATH);
-    if (!res.ok) return defaults;
+    const res = await apiFetch(SITE_FEATURES_PATH, {
+      next: { revalidate: 60, tags: [SITE_FEATURES_TAG] },
+    });
+    if (!res.ok) return defaults; // apiFetch already logged the non-2xx above.
     const raw = await res.json();
     // If the response is `null`, an array, or a primitive, we'd crash on
     // `parsed.sections` reading below. Bail out to defaults so the SSR
     // layout doesn't 500 the whole site over a broken/unexpected response.
-    if (!isPlainObject(raw)) return defaults;
+    if (!isPlainObject(raw)) {
+      // A 200 with a malformed body isn't an HTTP-layer failure, so apiFetch
+      // never sees it — log it here or this degrades to defaults just as
+      // silently as the 429 that prompted this whole logging pass.
+      console.error(`[API] GET ${SITE_FEATURES_PATH} → 200 with unexpected body shape`, raw);
+      return defaults;
+    }
     const parsed = raw as Partial<SiteFeaturesConfig>;
     // Defensive: spreading a string or array into an object produces
     // index-keyed entries (e.g. {"0": "l", "1": "o"}) and pollutes the
