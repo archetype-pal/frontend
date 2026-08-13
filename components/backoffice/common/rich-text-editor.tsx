@@ -74,7 +74,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'prose prose-sm dark:prose-invert prose-a:text-primary prose-a:underline prose-img:rounded-md prose-img:max-w-full max-w-none min-h-[200px] focus:outline-none px-4 py-3',
+          'rich-text-editor-content max-w-none min-h-[200px] focus:outline-none px-4 py-3',
           minimal && 'min-h-[120px]'
         ),
       },

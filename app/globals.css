@@ -1144,6 +1144,151 @@ g.a9s-annotation.a9s-text:hover .a9s-outer {
   background: hsl(282 38% 42%);
 }
 
+/* --- Backoffice rich text editor ------------------------------------------- */
+
+.rich-text-editor-content {
+  color: var(--foreground);
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.rich-text-editor-content:focus {
+  outline: none;
+}
+
+.rich-text-editor-content p,
+.rich-text-editor-content ul,
+.rich-text-editor-content ol,
+.rich-text-editor-content blockquote,
+.rich-text-editor-content pre {
+  margin: 0.7rem 0;
+}
+
+.rich-text-editor-content > :first-child {
+  margin-top: 0;
+}
+
+.rich-text-editor-content > :last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-editor-content h1,
+.rich-text-editor-content h2,
+.rich-text-editor-content h3 {
+  margin: 1.1rem 0 0.55rem;
+  font-family: var(--font-lora), Georgia, Cambria, serif;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--foreground);
+}
+
+.rich-text-editor-content h1 {
+  font-size: 1.35rem;
+}
+
+.rich-text-editor-content h2 {
+  font-size: 1.18rem;
+}
+
+.rich-text-editor-content h3 {
+  font-size: 1.04rem;
+}
+
+.rich-text-editor-content strong,
+.rich-text-editor-content b {
+  font-weight: 700;
+}
+
+.rich-text-editor-content em,
+.rich-text-editor-content i {
+  font-style: italic;
+}
+
+.rich-text-editor-content s,
+.rich-text-editor-content del {
+  text-decoration-line: line-through;
+}
+
+.rich-text-editor-content ul,
+.rich-text-editor-content ol {
+  padding-left: 1.5rem;
+}
+
+.rich-text-editor-content ul {
+  list-style: disc;
+}
+
+.rich-text-editor-content ol {
+  list-style: decimal;
+}
+
+.rich-text-editor-content li + li {
+  margin-top: 0.25rem;
+}
+
+.rich-text-editor-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 0.85rem;
+  color: var(--muted-foreground);
+}
+
+.rich-text-editor-content a {
+  color: var(--primary);
+  text-decoration-line: underline;
+  text-underline-offset: 3px;
+}
+
+.rich-text-editor-content hr {
+  margin: 1rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.rich-text-editor-content pre {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--muted);
+  padding: 0.75rem 0.85rem;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.rich-text-editor-content code {
+  border-radius: 4px;
+  background: var(--muted);
+  padding: 0.1rem 0.3rem;
+  font-size: 0.92em;
+}
+
+.rich-text-editor-content pre code {
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+}
+
+.rich-text-editor-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.8rem 0;
+  border-radius: 6px;
+}
+
+.rich-text-editor-content .ProseMirror-selectednode {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.rich-text-editor-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+
 /* --- Rendered publication body --------------------------------------------- */
 
 .publication-body {

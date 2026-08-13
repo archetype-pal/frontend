@@ -21,6 +21,12 @@ beforeAll(() => {
 });
 
 describe('<RichTextEditor> hydration', () => {
+  it('uses the project-owned rich text styling hook', () => {
+    render(<RichTextEditor content="<p>styled editor</p>" onChange={() => {}} />);
+
+    expect(document.querySelector('.rich-text-editor-content')).toBeTruthy();
+  });
+
   it('renders content that arrives after mount', async () => {
     function Host() {
       const [content, setContent] = useState('');
