@@ -30,6 +30,7 @@ import {
   Settings,
   Languages,
   ToggleLeft,
+  HeartPulse,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
@@ -69,6 +70,10 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
   const { getLabel, getPluralLabel } = useModelLabels();
   const t = useTranslations('backoffice');
   const includeAdmin = Boolean(user?.is_staff);
+  // The sanity-checks page hits superuser-only backend endpoints (403s for a
+  // staff-but-not-superuser user), so its link is gated more strictly than
+  // the rest of the admin group.
+  const isSuperuser = Boolean(user?.is_superuser);
   const navigation = useMemo<NavGroup[]>(() => {
     const groups: NavGroup[] = [
       {
@@ -117,20 +122,31 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
       },
     ];
     if (includeAdmin) {
+      const adminItems: NavItem[] = [
+        { label: t('sidebar.userManagement'), href: '/backoffice/users', icon: UserCog },
+        { label: t('sidebar.searchEngine'), href: '/backoffice/search-engine', icon: Search },
+        { label: t('sidebar.dataQuality'), href: '/backoffice/quality', icon: Settings },
+        { label: t('sidebar.translations'), href: '/backoffice/translations', icon: Languages },
+        { label: t('sidebar.siteFeatures'), href: '/backoffice/site-features', icon: ToggleLeft },
+      ];
+      // Superuser-only: the backend endpoints it calls 403 for staff who
+      // aren't also superusers, so the link is hidden for them rather than
+      // dangling to a page that will just error out.
+      if (isSuperuser) {
+        adminItems.push({
+          label: t('sidebar.sanityChecks'),
+          href: '/backoffice/sanity-checks',
+          icon: HeartPulse,
+        });
+      }
       groups.push({
         label: t('sidebar.groupAdmin'),
         icon: Settings,
-        items: [
-          { label: t('sidebar.userManagement'), href: '/backoffice/users', icon: UserCog },
-          { label: t('sidebar.searchEngine'), href: '/backoffice/search-engine', icon: Search },
-          { label: t('sidebar.dataQuality'), href: '/backoffice/quality', icon: Settings },
-          { label: t('sidebar.translations'), href: '/backoffice/translations', icon: Languages },
-          { label: t('sidebar.siteFeatures'), href: '/backoffice/site-features', icon: ToggleLeft },
-        ],
+        items: adminItems,
       });
     }
     return groups;
-  }, [getLabel, getPluralLabel, includeAdmin, t]);
+  }, [getLabel, getPluralLabel, includeAdmin, isSuperuser, t]);
 
   // Lightweight poll for pending comments (60s)
   const { data: pendingComments } = useQuery({
