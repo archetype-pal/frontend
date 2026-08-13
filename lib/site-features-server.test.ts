@@ -1,135 +1,153 @@
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getDefaultConfig } from './site-features';
-import { readSiteFeatures, writeSiteFeatures } from './site-features-server';
 
-// `json-config-file` resolves `config/<name>.json` under `process.cwd()` at
-// call time, so pointing cwd at a scratch dir exercises the real read/write
-// path (real JSON on a real disk) without touching the repo's runtime
-// config/site-features.json.
-let workDir: string;
+const { apiFetch, authFetch } = vi.hoisted(() => ({
+  apiFetch: vi.fn(),
+  authFetch: vi.fn(),
+}));
 
-async function writeRawConfig(contents: unknown): Promise<void> {
-  await mkdir(join(workDir, 'config'), { recursive: true });
-  await writeFile(
-    join(workDir, 'config', 'site-features.json'),
-    JSON.stringify(contents, null, 2),
-    'utf-8'
-  );
+vi.mock('./api-fetch', () => ({ apiFetch, authFetch }));
+
+// Imported after the mock so `readSiteFeatures`/`writeSiteFeatures` pick up
+// the mocked `apiFetch`/`authFetch` rather than issuing real network calls.
+const { readSiteFeatures, writeSiteFeatures } = await import('./site-features-server');
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
 }
 
-async function readRawConfig(): Promise<Record<string, unknown>> {
-  return JSON.parse(
-    await readFile(join(workDir, 'config', 'site-features.json'), 'utf-8')
-  ) as Record<string, unknown>;
-}
-
-/** The on-disk shape as it exists today: no `features` key at all. */
-function legacyFileContents() {
+/** The backend response shape as it exists today: no `features` key at all. */
+function legacyResponseBody() {
   const { sections, sectionOrder, searchCategories } = getDefaultConfig();
   return { sections, sectionOrder, searchCategories };
 }
 
-beforeEach(async () => {
-  workDir = await mkdtemp(join(tmpdir(), 'site-features-'));
-  vi.spyOn(process, 'cwd').mockReturnValue(workDir);
+beforeEach(() => {
+  apiFetch.mockReset();
+  authFetch.mockReset();
 });
 
-afterEach(async () => {
+afterEach(() => {
   vi.restoreAllMocks();
-  await rm(workDir, { recursive: true, force: true });
 });
 
-describe('readSiteFeatures — feature flags', () => {
-  it('defaults every flag to enabled when there is no config file at all', async () => {
+describe('readSiteFeatures', () => {
+  it('returns the backend config merged over defaults on a successful GET', async () => {
+    apiFetch.mockResolvedValueOnce(
+      jsonResponse({ ...legacyResponseBody(), features: { manuscriptDescriptions: false } })
+    );
+    const config = await readSiteFeatures();
+    expect(config.features.manuscriptDescriptions).toBe(false);
+    expect(apiFetch).toHaveBeenCalledWith('/api/v1/app-settings/');
+  });
+
+  it('defaults every flag to enabled when the backend response has no `features` key', async () => {
+    apiFetch.mockResolvedValueOnce(jsonResponse(legacyResponseBody()));
     const config = await readSiteFeatures();
     expect(config.features.manuscriptDescriptions).toBe(true);
   });
 
-  it('keeps a shipped feature enabled for a config file written before flags existed', async () => {
-    // This is the deploy case: the persisted file has sections + sectionOrder +
-    // searchCategories and nothing else. The feature must not vanish.
-    await writeRawConfig(legacyFileContents());
+  it('merges a partial searchCategories override over the defaults', async () => {
+    apiFetch.mockResolvedValueOnce(
+      jsonResponse({
+        ...legacyResponseBody(),
+        searchCategories: { images: { enabled: false } },
+      })
+    );
     const config = await readSiteFeatures();
-    expect(config.features.manuscriptDescriptions).toBe(true);
+    expect(config.searchCategories.images.enabled).toBe(false);
+    // Untouched keys of the same category, and other categories, keep defaults.
+    const defaults = getDefaultConfig();
+    expect(config.searchCategories.images.visibleColumns).toEqual(
+      defaults.searchCategories.images.visibleColumns
+    );
+    expect(config.searchCategories).not.toBe(defaults.searchCategories);
   });
 
-  it('honours a persisted disabled flag', async () => {
-    await writeRawConfig({ ...legacyFileContents(), features: { manuscriptDescriptions: false } });
-    expect((await readSiteFeatures()).features.manuscriptDescriptions).toBe(false);
+  it('falls back to defaults when the response is not ok', async () => {
+    apiFetch.mockResolvedValueOnce(jsonResponse({ error: 'nope' }, 500));
+    const config = await readSiteFeatures();
+    expect(config).toEqual(getDefaultConfig());
   });
 
-  it('falls back to defaults when `features` is not a plain object', async () => {
-    for (const junk of ['manuscriptDescriptions', ['manuscriptDescriptions'], 7, null]) {
-      await writeRawConfig({ ...legacyFileContents(), features: junk });
+  it('falls back to defaults when the fetch throws (network error)', async () => {
+    apiFetch.mockRejectedValueOnce(new Error('network down'));
+    const config = await readSiteFeatures();
+    expect(config).toEqual(getDefaultConfig());
+  });
+
+  it('falls back to defaults when the response body is not a plain object', async () => {
+    for (const junk of [null, [], 'oops', 7]) {
+      apiFetch.mockResolvedValueOnce(jsonResponse(junk));
       const config = await readSiteFeatures();
-      expect(config.features).toEqual(getDefaultConfig().features);
+      expect(config).toEqual(getDefaultConfig());
     }
   });
 
-  it('ignores unknown flag keys and non-boolean values', async () => {
-    await writeRawConfig({
-      ...legacyFileContents(),
-      features: { manuscriptDescriptions: 'false', bogusFlag: true },
-    });
+  it('falls back to defaults when response.json() throws (malformed JSON)', async () => {
+    apiFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.reject(new Error('bad json')),
+    } as unknown as Response);
+    const config = await readSiteFeatures();
+    expect(config).toEqual(getDefaultConfig());
+  });
+
+  it('ignores unknown flag keys and non-boolean values from the backend', async () => {
+    apiFetch.mockResolvedValueOnce(
+      jsonResponse({
+        ...legacyResponseBody(),
+        features: { manuscriptDescriptions: 'false', bogusFlag: true },
+      })
+    );
     const config = await readSiteFeatures();
     expect(config.features).toEqual({ manuscriptDescriptions: true });
   });
 });
 
-describe('writeSiteFeatures → readSiteFeatures round trip', () => {
-  it('preserves a disabled flag (the strict-whitelist trap)', async () => {
-    // If `features` were left out of writeSiteFeatures' whitelist, this save
-    // would drop the key, the read would restore the default, and the admin's
-    // "off" would silently become "on" again on every save.
+describe('writeSiteFeatures', () => {
+  it('PUTs the normalized config with the token and returns it on success', async () => {
+    authFetch.mockResolvedValueOnce(jsonResponse({ ok: true }));
     const config = getDefaultConfig();
     config.features.manuscriptDescriptions = false;
 
-    const normalized = await writeSiteFeatures(config);
+    const normalized = await writeSiteFeatures(config, 'staff-token');
+
     expect(normalized.features.manuscriptDescriptions).toBe(false);
-
-    const persisted = await readRawConfig();
-    expect(persisted.features).toEqual({ manuscriptDescriptions: false });
-
-    expect((await readSiteFeatures()).features.manuscriptDescriptions).toBe(false);
-  });
-
-  it('re-enabling a flag survives the round trip too (a flag never deletes data)', async () => {
-    const off = getDefaultConfig();
-    off.features.manuscriptDescriptions = false;
-    await writeSiteFeatures(off);
-
-    const on = getDefaultConfig();
-    await writeSiteFeatures(on);
-    expect((await readSiteFeatures()).features.manuscriptDescriptions).toBe(true);
+    expect(authFetch).toHaveBeenCalledTimes(1);
+    const [path, token, init] = authFetch.mock.calls[0];
+    expect(path).toBe('/api/v1/app-settings/');
+    expect(token).toBe('staff-token');
+    expect(init).toMatchObject({
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    expect(JSON.parse(init.body as string)).toEqual(normalized);
   });
 
   it('persists a complete boolean map even if the caller hands over a partial one', async () => {
+    authFetch.mockResolvedValueOnce(jsonResponse({ ok: true }));
     const config = getDefaultConfig();
     // @ts-expect-error — a hand-rolled/older payload without the flag map
     delete config.features;
 
-    await writeSiteFeatures(config);
-    expect(await readRawConfig()).toHaveProperty('features', { manuscriptDescriptions: true });
+    const normalized = await writeSiteFeatures(config, 'staff-token');
+    expect(normalized.features).toEqual({ manuscriptDescriptions: true });
   });
 
-  it('still writes the other whitelisted keys unchanged', async () => {
-    const config = getDefaultConfig();
-    config.sections.lightbox = false;
-    config.searchCategories.images.enabled = false;
+  it('throws when the backend responds with a non-ok status', async () => {
+    authFetch.mockResolvedValueOnce(jsonResponse({ error: 'bad request' }, 400));
+    await expect(writeSiteFeatures(getDefaultConfig(), 'staff-token')).rejects.toThrow();
+  });
 
-    const persisted = await writeSiteFeatures(config);
-    expect(persisted.sections.lightbox).toBe(false);
-    expect(persisted.searchCategories.images.enabled).toBe(false);
-    expect(Object.keys(await readRawConfig()).sort()).toEqual([
-      'features',
-      'searchCategories',
-      'sectionOrder',
-      'sections',
-    ]);
+  it('propagates a network error', async () => {
+    authFetch.mockRejectedValueOnce(new Error('network down'));
+    await expect(writeSiteFeatures(getDefaultConfig(), 'staff-token')).rejects.toThrow(
+      'network down'
+    );
   });
 });
