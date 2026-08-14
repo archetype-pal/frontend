@@ -307,7 +307,7 @@
     },
     "gallery": {
       "deleteConfirm": "Delete graph #{id}? It moves to the trash; an admin can restore it.",
-      "deleteSuccess": "Graph #{id} moved to trash",
+      "deleteSuccess": "Graph #{id} moved to trash; an admin can restore it",
       "deleteFailed": "Failed to delete graph #{id}"
     }
   },

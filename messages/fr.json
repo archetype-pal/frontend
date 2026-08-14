@@ -307,7 +307,7 @@
     },
     "gallery": {
       "deleteConfirm": "Supprimer le graphe n°{id} ? Il est déplacé dans la corbeille ; un administrateur peut le restaurer.",
-      "deleteSuccess": "Graphe n°{id} déplacé dans la corbeille",
+      "deleteSuccess": "Graphe n°{id} déplacé dans la corbeille ; un administrateur peut le restaurer",
       "deleteFailed": "Échec de la suppression du graphe n°{id}"
     }
   },
