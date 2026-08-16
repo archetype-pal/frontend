@@ -82,8 +82,11 @@ async function loadConfig(origin: string): Promise<MinConfig> {
   }
 
   // An expired config beats none: an empty one routes every section an admin
-  // disabled until the backend recovers.
-  return cachedConfig ?? { sections: {}, searchCategories: {} };
+  // disabled. Refreshing the timestamp on failure keeps a sustained outage
+  // throttled to one attempt per TTL instead of one per page view.
+  cachedConfig ??= { sections: {}, searchCategories: {} };
+  cacheTimestamp = now;
+  return cachedConfig;
 }
 
 export async function proxy(request: NextRequest) {
