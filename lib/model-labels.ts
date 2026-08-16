@@ -70,13 +70,13 @@ export const DEFAULT_MODEL_LABELS: Record<ModelLabelKey, LocalizedLabel> = {
   },
   footerBottomLine: {
     en:
-      'Archetype is freely-available software for structured annotations of images which allows users to search for, ' +
-      'view, and organise detailed characteristics of handwriting or other material in both verbal and visual form. ' +
-      'Archetype is designed primarily for the palaeographical analysis of handwriting.',
+      '©2015–17 Models of Authority. Some parts available under CC-BY licence. ' +
+      'All manuscript images are copyright of their respective repositories. ' +
+      'Website by DDH / KDL. Built with Archetype.',
     fr:
-      'Archetype est un logiciel libre pour les annotations structurées d’images qui permet aux utilisateurs de rechercher' +
-      ' , de visualiser et d’organiser les caractéristiques détaillées de l’écriture ou d’autres matériaux sous forme verbale et visuelle. ' +
-      'Archetype est conçu principalement pour l’analyse paléographique de l’écriture.',
+      '©2015–17 Models of Authority. Certaines parties sont disponibles sous licence CC-BY. ' +
+      'Toutes les images de manuscrits sont la propriété de leurs dépôts respectifs. ' +
+      'Site web par DDH / KDL. Construit avec Archetype.',
   },
 };
 

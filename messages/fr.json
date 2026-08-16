@@ -1948,7 +1948,8 @@
       "sectionSearchTitle": "Catégories de résultats de recherche",
       "sectionSearchDesc": "Renommer les onglets de catégorie sur la page de recherche publique (ex. « Manuscrits » → « Corpus »). L'onglet Manuscrits suit le libellé « Nom de l'app : Manuscrits » ci-dessus.",
       "toastSaved": "Libellés du modèle enregistrés",
-      "toastFailedSave": "Échec de l'enregistrement des libellés du modèle"
+      "toastFailedSave": "Échec de l'enregistrement des libellés du modèle",
+      "failedLoad": "Échec du chargement des libellés."
     },
     "symbols": {
       "loadingStructure": "Chargement de la structure des symboles...",

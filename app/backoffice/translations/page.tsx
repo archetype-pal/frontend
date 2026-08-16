@@ -4,16 +4,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { Languages, Loader2 } from 'lucide-react';
+import { Languages } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  BackofficeErrorState,
+  BackofficeLoadingState,
+} from '@/components/backoffice/common/query-state';
 import { UnsavedChangesBar } from '@/components/backoffice/common/unsaved-changes-bar';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import {
   getDefaultModelLabelsConfig,
+  type LocalizedLabel,
   type ModelLabelKey,
   type ModelLabelLocale,
   type ModelLabelsConfig,
@@ -149,7 +154,7 @@ async function fetchModelLabels(): Promise<ModelLabelsConfig> {
 
 async function saveModelLabels(
   token: string,
-  config: ModelLabelsConfig
+  labels: Partial<Record<ModelLabelKey, LocalizedLabel>>
 ): Promise<ModelLabelsConfig> {
   const res = await fetch('/api/model-labels', {
     method: 'PUT',
@@ -157,11 +162,11 @@ async function saveModelLabels(
       'Content-Type': 'application/json',
       Authorization: `Token ${token}`,
     },
-    body: JSON.stringify(config),
+    body: JSON.stringify({ labels }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(err.error || 'Failed to save');
+    throw new Error(err.detail || err.error || 'Failed to save');
   }
   return res.json();
 }
@@ -219,7 +224,12 @@ export default function TranslationsPage() {
   const queryClient = useQueryClient();
   const defaults = getDefaultModelLabelsConfig();
 
-  const { data: serverConfig, isLoading } = useQuery({
+  const {
+    data: serverConfig,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['model-labels'],
     queryFn: fetchModelLabels,
   });
@@ -236,7 +246,17 @@ export default function TranslationsPage() {
   useUnsavedGuard(dirty);
 
   const saveMut = useMutation({
-    mutationFn: () => saveModelLabels(token!, config),
+    mutationFn: () => {
+      const changed = (Object.keys(config.labels) as ModelLabelKey[]).filter(
+        (key) =>
+          config.labels[key].en !== serverConfig!.labels[key].en ||
+          config.labels[key].fr !== serverConfig!.labels[key].fr
+      );
+      return saveModelLabels(
+        token!,
+        Object.fromEntries(changed.map((key) => [key, config.labels[key]]))
+      );
+    },
     onSuccess: (saved) => {
       toast.success(t('translations.toastSaved'));
       queryClient.setQueryData(['model-labels'], saved);
@@ -273,10 +293,13 @@ export default function TranslationsPage() {
   };
 
   if (isLoading) {
+    return <BackofficeLoadingState />;
+  }
+
+  // Without this the form would present the hardcoded defaults as stored labels.
+  if (isError) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
+      <BackofficeErrorState message={t('translations.failedLoad')} onRetry={() => refetch()} />
     );
   }
 

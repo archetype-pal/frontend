@@ -2,6 +2,8 @@ import { apiFetch, authFetch } from './api-fetch';
 import {
   getDefaultModelLabelsConfig,
   normalizeModelLabels,
+  type LocalizedLabel,
+  type ModelLabelKey,
   type ModelLabelsConfig,
 } from './model-labels';
 
@@ -14,49 +16,49 @@ const SITE_LABELS_PATH = '/api/v1/site-labels/';
 export const SITE_LABELS_TAG = 'site-labels';
 
 /**
- * Model labels are backend-owned (`SiteLabel` rows, superuser-editable via
- * the backoffice). Any failure - network error, non-200, or an unexpected
- * response shape - falls back to defaults so SSR never 500s over a backend
- * hiccup (matches `getPublishedPages`'s fallback behavior).
+ * Model labels are backend-owned (`SiteLabel` rows, superuser-editable via the
+ * backoffice); they previously lived in a container-local JSON file that
+ * survived neither a restart nor a second replica. Any failure — network
+ * error, non-200, or an unexpected response shape — falls back to defaults so
+ * SSR never 500s over a backend hiccup, flagged `degraded` so the GET route can
+ * refuse to serve them as if they were the stored labels.
  *
- * This fetch is on the critical path of every page render (the root layout
- * awaits it), so it must not hit the backend on every request: labels only
- * change on an admin PUT, so a short revalidation window (backstop) plus
- * explicit `revalidateTag` on write (immediate) is the right cache shape —
- * see the PUT handler in `app/api/model-labels/route.ts`. Before this, the
- * absence of any `next.revalidate`/`tags` here made that route's
- * `revalidatePath` call a no-op and meant every single page render round-
- * tripped to the backend, which is what let a backend rate-limit hiccup
- * degrade the whole site to hardcoded defaults.
+ * The root layout awaits this on every render, hence the revalidation window
+ * (backstop) plus `revalidateTag` on write (immediate) — see the PUT handler in
+ * `app/api/model-labels/route.ts`.
  */
-export async function readModelLabels(): Promise<ModelLabelsConfig> {
+export async function readModelLabels(): Promise<ModelLabelsConfig & { degraded?: boolean }> {
   const defaults = getDefaultModelLabelsConfig();
   try {
     const res = await apiFetch(SITE_LABELS_PATH, {
       next: { revalidate: 60, tags: [SITE_LABELS_TAG] },
     });
-    if (!res.ok) return defaults; // apiFetch already logged the non-2xx above.
+    if (!res.ok) return { ...defaults, degraded: true }; // apiFetch already logged the non-2xx.
     const raw = await res.json();
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-      // A 200 with a malformed body isn't an HTTP-layer failure, so apiFetch
-      // never sees it — log it here or this degrades to defaults just as
-      // silently as the 429 that prompted this whole logging pass.
+      // A 200 with a malformed body isn't an HTTP-layer failure, so apiFetch never sees it.
       console.error(`[API] GET ${SITE_LABELS_PATH} → 200 with unexpected body shape`, raw);
-      return defaults;
+      return { ...defaults, degraded: true };
     }
     const parsed = raw as Partial<ModelLabelsConfig>;
     return { labels: normalizeModelLabels(parsed.labels) };
   } catch {
-    return defaults;
+    return { ...defaults, degraded: true };
   }
 }
 
-/** Upserts the given keys via the backend's superuser-only PUT; throws on failure. */
-export async function writeModelLabels(config: ModelLabelsConfig, token: string): Promise<void> {
+/**
+ * Upserts only the given keys via the backend's superuser-only PUT; throws on
+ * failure. Returns the backend's post-write re-read, not the payload.
+ */
+export async function writeModelLabels(
+  labels: Partial<Record<ModelLabelKey, LocalizedLabel>>,
+  token: string
+): Promise<ModelLabelsConfig> {
   const res = await authFetch(SITE_LABELS_PATH, token, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ labels: normalizeModelLabels(config.labels) }),
+    body: JSON.stringify({ labels }),
   });
   if (!res.ok) {
     const details = await res.text().catch(() => '');
@@ -65,4 +67,6 @@ export async function writeModelLabels(config: ModelLabelsConfig, token: string)
       { status: res.status }
     );
   }
+  const raw = (await res.json()) as Partial<ModelLabelsConfig>;
+  return { labels: normalizeModelLabels(raw?.labels) };
 }

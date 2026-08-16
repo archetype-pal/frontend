@@ -16,9 +16,7 @@ export async function getPublishedPages(): Promise<PageListItem[]> {
     const raw = await res.json();
     if (!Array.isArray(raw)) {
       // A 200 with a malformed body isn't an HTTP-layer failure, so apiFetch
-      // never sees it — log it here or this degrades to an empty list just
-      // as silently as the /site-labels/ 429 that prompted this logging pass
-      // (see the equivalent check in model-labels-server.ts).
+      // never sees it (see the equivalent check in model-labels-server.ts).
       console.error(`[API] GET ${PAGES_PATH} → 200 with unexpected body shape`, raw);
       return [];
     }
