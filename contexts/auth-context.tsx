@@ -60,19 +60,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const stopImpersonation = useCallback(() => {
     const originalToken = getImpersonatorTokenCookie();
-    if (originalToken) {
-      setAuthToken(originalToken);
-      clearImpersonatorTokenCookie();
-    }
+    clearImpersonatorTokenCookie();
+    // No stash means there is no way back to the admin identity: sign out
+    // locally rather than leave the caller silently wearing the target's.
+    setAuthToken(originalToken);
+    if (!originalToken) setUser(null);
     setIsImpersonating(false);
   }, [setAuthToken]);
 
   const logout = useCallback(() => {
     // Revoke the server-side token so a captured token can't be reused after
     // logout. Fire-and-forget: a network/HTTP failure must not block the local
-    // sign-out, so swallow any error.
-    if (token) {
-      void logoutUser(token).catch(() => {});
+    // sign-out, so swallow any error. While impersonating, `token` is the
+    // TARGET's own persistent token — revoking it would sign a third party out
+    // of their own session, so revoke the stashed admin token instead.
+    const revokeToken = getImpersonatorTokenCookie() ?? token;
+    if (revokeToken) {
+      void logoutUser(revokeToken).catch(() => {});
     }
     setAuthToken(null);
     // Don't leave a stale stashed original token around if the user fully
@@ -117,7 +121,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!active) return;
         // Stale/invalid token or transient API failure: clear local auth state
         // silently. Do not navigate — public pages must stay viewable for guests.
+        // The stash must go too: an orphaned one session-scopes every later
+        // auth-cookie write, including a fresh non-impersonating login.
         setAuthToken(null);
+        clearImpersonatorTokenCookie();
         setUser(null);
         return;
       } finally {
