@@ -78,10 +78,12 @@ async function loadConfig(origin: string): Promise<MinConfig> {
       return cachedConfig;
     }
   } catch {
-    // Fall through to defaults
+    // Fall through to the last known config
   }
 
-  return { sections: {}, searchCategories: {} };
+  // An expired config beats none: an empty one routes every section an admin
+  // disabled until the backend recovers.
+  return cachedConfig ?? { sections: {}, searchCategories: {} };
 }
 
 export async function proxy(request: NextRequest) {

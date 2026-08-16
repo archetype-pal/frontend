@@ -15,8 +15,13 @@ async function verifySuperuser(token: string): Promise<boolean> {
   }
 }
 
+/** 503 rather than a 200 full of defaults: the backoffice editor PUTs back
+ *  whatever it was handed, so a fallback served as healthy erases the config. */
 export async function GET() {
   const config = await readSiteFeatures();
+  if (config.degraded) {
+    return NextResponse.json({ error: 'Site features unavailable' }, { status: 503 });
+  }
   return NextResponse.json(config);
 }
 
@@ -50,6 +55,11 @@ export async function PUT(request: NextRequest) {
   // the full map still wins key-by-key.
   const payload = body as SiteFeaturesConfig;
   const current = await readSiteFeatures();
+  // The merge below is over `current`, so merging over a degraded read would
+  // re-enable flags nobody touched.
+  if (current.degraded) {
+    return NextResponse.json({ error: 'Site features unavailable' }, { status: 503 });
+  }
   let normalized: SiteFeaturesConfig;
   try {
     normalized = await writeSiteFeatures(
@@ -59,16 +69,13 @@ export async function PUT(request: NextRequest) {
       },
       token
     );
-  } catch {
+  } catch (err) {
+    console.error('[site-features] backend write failed', err);
     return NextResponse.json({ error: 'Failed to update site features' }, { status: 502 });
   }
-  // Invalidate the cached `readSiteFeatures()` fetch entry itself (the actual
-  // fix — see the doc comment on `SITE_FEATURES_TAG`) as well as the rendered
-  // layout, so an edit is visible immediately instead of waiting out the
-  // revalidation window. The second argument is a cache-life profile, not
-  // optional as of Next 16 — 'minutes' (revalidate: 60s) matches the
-  // `next.revalidate: 60` used when tagging the fetch in `readSiteFeatures`.
-  revalidateTag(SITE_FEATURES_TAG, 'minutes');
+  // `{ expire: 0 }` purges the cached fetch entry; a named cache-life profile
+  // would only mark it stale, and a stale entry still serves the old body.
+  revalidateTag(SITE_FEATURES_TAG, { expire: 0 });
   revalidatePath('/', 'layout');
   // Return the normalized config (with sectionOrder canonicalized) so the
   // client's cache reflects what's actually on disk.
