@@ -24,15 +24,15 @@ let lastGood: SiteFeaturesConfig | null = null;
 type SiteFeaturesRead = SiteFeaturesConfig & { degraded?: boolean };
 
 function degradedRead(): SiteFeaturesRead {
-  return { ...(lastGood ?? getDefaultConfig()), degraded: true };
+  return { ...structuredClone(lastGood ?? getDefaultConfig()), degraded: true };
 }
 
 /**
  * Site features are backend-owned (`AppSettings`, superuser-editable via the
- * backoffice). A failed read serves the last config this process saw — or the
- * hardcoded defaults if it has seen none — so SSR never 500s over a backend
- * hiccup, and flags it `degraded` so callers that must not act on a guess (the
- * backoffice editor, the PUT's pre-write read) can refuse instead. The
+ * backoffice). A failed read serves the last config this process read or wrote —
+ * or the hardcoded defaults if it has seen none — so SSR never 500s over a
+ * backend hiccup, and flags it `degraded` so callers that must not act on a
+ * guess (the backoffice editor, the PUT's pre-write read) can refuse instead. The
  * last-known-good is per-process and lost on restart: it bounds the window in
  * which a blip re-enables everything an admin turned off, it does not close it.
  *
@@ -88,7 +88,9 @@ export async function readSiteFeatures(): Promise<SiteFeaturesRead> {
         ),
       },
     };
-    return lastGood;
+    // Cloned on the way out so a caller mutating its copy can't corrupt the
+    // process-wide last-known-good.
+    return structuredClone(lastGood);
   } catch {
     return degradedRead();
   }
@@ -124,6 +126,9 @@ export async function writeSiteFeatures(
   if (!res.ok) {
     throw new Error(`Failed to write site features: ${res.status}`);
   }
+  // What was just persisted is now the last-known-good; without this a backend
+  // failure right after a save serves the pre-write config back.
+  lastGood = structuredClone(normalized);
   // Return the normalized config so callers (e.g. the PUT route handler) can
   // echo back exactly what was persisted. Returning the input verbatim would
   // let the client's TanStack Query cache diverge from the backend on every

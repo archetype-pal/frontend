@@ -101,6 +101,16 @@ describe('readSiteFeatures', () => {
     expect(config.degraded).toBe(true);
   });
 
+  it('hands out copies, so a consumer mutation cannot corrupt the remembered config', async () => {
+    const stored = getDefaultConfig();
+    stored.sections.lightbox = false;
+    apiFetch.mockResolvedValueOnce(jsonResponse(stored));
+    (await readSiteFeatures()).sections.lightbox = true;
+
+    apiFetch.mockRejectedValueOnce(new Error('network down'));
+    expect((await readSiteFeatures()).sections.lightbox).toBe(false);
+  });
+
   it('ignores unknown flag keys and non-boolean values from the backend', async () => {
     apiFetch.mockResolvedValueOnce(
       jsonResponse({
@@ -141,6 +151,19 @@ describe('writeSiteFeatures', () => {
 
     const normalized = await writeSiteFeatures(config, 'staff-token');
     expect(normalized.features).toEqual({ manuscriptDescriptions: true });
+  });
+
+  it('becomes the last-known-good, so a read failing right after a save keeps it', async () => {
+    apiFetch.mockResolvedValueOnce(jsonResponse(getDefaultConfig()));
+    await readSiteFeatures();
+
+    const saved = getDefaultConfig();
+    saved.sections.lightbox = false;
+    authFetch.mockResolvedValueOnce(jsonResponse({ ok: true }));
+    await writeSiteFeatures(saved, 'staff-token');
+
+    apiFetch.mockRejectedValueOnce(new Error('network down'));
+    expect((await readSiteFeatures()).sections.lightbox).toBe(false);
   });
 
   it('throws when the backend responds with a non-ok status', async () => {
