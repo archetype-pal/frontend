@@ -60,19 +60,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const stopImpersonation = useCallback(() => {
     const originalToken = getImpersonatorTokenCookie();
-    if (originalToken) {
-      setAuthToken(originalToken);
-      clearImpersonatorTokenCookie();
-    }
+    clearImpersonatorTokenCookie();
+    // No stash means there is no way back to the admin identity: sign out
+    // locally rather than leave the caller silently wearing the target's.
+    setAuthToken(originalToken);
     setIsImpersonating(false);
   }, [setAuthToken]);
 
   const logout = useCallback(() => {
     // Revoke the server-side token so a captured token can't be reused after
     // logout. Fire-and-forget: a network/HTTP failure must not block the local
-    // sign-out, so swallow any error.
-    if (token) {
-      void logoutUser(token).catch(() => {});
+    // sign-out, so swallow any error. While impersonating, `token` is the
+    // TARGET's own persistent token — revoking it would sign a third party out
+    // of their own session, so revoke the stashed admin token instead.
+    const revokeToken = getImpersonatorTokenCookie() ?? token;
+    if (revokeToken) {
+      void logoutUser(revokeToken).catch(() => {});
     }
     setAuthToken(null);
     // Don't leave a stale stashed original token around if the user fully

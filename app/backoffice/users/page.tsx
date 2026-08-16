@@ -80,9 +80,10 @@ function fullName(user: UserListItem): string {
 
 // Mirrors the backend's own restrictions (apps.users.services.impersonate_user):
 // never yourself, never a staff/superuser account. No point offering an action
-// that is guaranteed to 400/403.
+// that is guaranteed to 400/403. Inactive accounts are excluded too: the API
+// hands out a token but DRF then rejects it, logging the admin out app-wide.
 function canImpersonate(row: UserListItem, currentUserId: number | undefined): boolean {
-  return row.id !== currentUserId && !row.is_staff && !row.is_superuser;
+  return row.id !== currentUserId && !row.is_staff && !row.is_superuser && row.is_active;
 }
 
 function relativeTime(dateStr: string | null, t: (key: string) => string): string {
@@ -391,6 +392,8 @@ export default function UsersPage() {
       toast.success(t('users.toastImpersonating', { username: target.username }));
       setImpersonateTarget(null);
       router.push('/');
+      // Drop RSC payloads cached under the admin identity.
+      router.refresh();
     },
     onError: (err) => {
       toast.error(t('users.toastFailedImpersonate'), { description: formatApiError(err) });
@@ -762,7 +765,9 @@ export default function UsersPage() {
                             const reasonKey =
                               u.id === user?.id
                                 ? 'users.tooltipImpersonateSelf'
-                                : 'users.tooltipImpersonateProtected';
+                                : u.is_staff || u.is_superuser
+                                  ? 'users.tooltipImpersonateProtected'
+                                  : 'users.tooltipImpersonateInactive';
                             return (
                               <Tooltip>
                                 <TooltipTrigger asChild>

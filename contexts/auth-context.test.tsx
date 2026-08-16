@@ -112,6 +112,22 @@ describe('AuthProvider impersonation', () => {
     expect(getImpersonatorTokenCookie()).toBeNull();
   });
 
+  it('stopImpersonation with no stash signs out locally instead of leaving you as the target', async () => {
+    setAuthTokenCookie('target-token');
+    setImpersonatorTokenCookie('admin-token');
+    getUserProfile.mockImplementation(async (token: string) => fakeProfile(`user-${token}`));
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.isImpersonating).toBe(true));
+
+    clearImpersonatorTokenCookie();
+    act(() => result.current.stopImpersonation());
+
+    await waitFor(() => expect(result.current.token).toBeNull());
+    expect(getAuthTokenCookie()).toBeNull();
+    expect(result.current.isImpersonating).toBe(false);
+  });
+
   it('restores isImpersonating on initial mount when an impersonator cookie is already present', async () => {
     setAuthTokenCookie('target-token');
     setImpersonatorTokenCookie('admin-token');
@@ -134,7 +150,7 @@ describe('AuthProvider impersonation', () => {
     expect(result.current.isImpersonating).toBe(false);
   });
 
-  it('logout clears the stashed impersonator token', async () => {
+  it('logout revokes the stashed admin token, not the impersonated one', async () => {
     getUserProfile.mockImplementation(async (token: string) => fakeProfile(`user-${token}`));
 
     const { result } = renderHook(() => useAuth(), { wrapper });
@@ -149,6 +165,7 @@ describe('AuthProvider impersonation', () => {
     act(() => result.current.logout());
 
     await waitFor(() => expect(result.current.token).toBeNull());
+    expect(logoutUser).toHaveBeenCalledWith('admin-token');
     expect(result.current.isImpersonating).toBe(false);
     expect(getImpersonatorTokenCookie()).toBeNull();
     expect(push).toHaveBeenCalledWith('/login');
