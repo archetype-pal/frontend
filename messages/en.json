@@ -1817,6 +1817,7 @@
       "subtitle": "Enable or disable site features and configure search behaviour.",
       "toastSaved": "Site features saved",
       "toastFailedSave": "Failed to save site features",
+      "failedLoad": "Failed to load site features",
       "dragToReorder": "Drag to reorder",
       "reorderSection": "Reorder {section}",
       "sectionsTitle": "Site Sections",

@@ -3,13 +3,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ToggleLeft, Loader2 } from 'lucide-react';
+import { ToggleLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { UnsavedChangesBar } from '@/components/backoffice/common/unsaved-changes-bar';
+import {
+  BackofficeErrorState,
+  BackofficeLoadingState,
+} from '@/components/backoffice/common/query-state';
 import { SectionToggles } from '@/components/backoffice/site-features/section-toggles';
 import { FeatureToggles } from '@/components/backoffice/site-features/feature-toggles';
 import { SearchCategoryConfigPanel } from '@/components/backoffice/site-features/search-category-config';
@@ -24,7 +28,7 @@ import {
 import type { ResultType } from '@/lib/search-types';
 
 async function fetchSiteFeatures(): Promise<SiteFeaturesConfig> {
-  const res = await fetch('/api/site-features');
+  const res = await fetch('/api/app-settings');
   if (!res.ok) throw new Error('Failed to load site features');
   return res.json();
 }
@@ -33,7 +37,7 @@ async function saveSiteFeatures(
   token: string,
   config: SiteFeaturesConfig
 ): Promise<SiteFeaturesConfig> {
-  const res = await fetch('/api/site-features', {
+  const res = await fetch('/api/app-settings', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -55,7 +59,12 @@ export default function SiteFeaturesPage() {
   const t = useTranslations('backoffice');
   const defaults = getDefaultConfig();
 
-  const { data: serverConfig, isLoading } = useQuery({
+  const {
+    data: serverConfig,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['site-features'],
     queryFn: fetchSiteFeatures,
   });
@@ -131,13 +140,12 @@ export default function SiteFeaturesPage() {
     setDirty(true);
   };
 
-  if (isLoading) {
+  if (isLoading) return <BackofficeLoadingState />;
+  // Never render the form off `defaults` — saving it would erase the stored config.
+  if (isError)
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
+      <BackofficeErrorState message={t('siteFeatures.failedLoad')} onRetry={() => refetch()} />
     );
-  }
 
   return (
     <div className="space-y-5 pb-16">
