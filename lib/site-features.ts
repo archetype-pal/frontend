@@ -31,15 +31,17 @@ export type SiteFeaturesConfig = {
   searchCategories: Record<ResultType, SearchCategoryConfig>;
 };
 
+/** Order matters: this is the default nav order, and it must match the backend
+ *  seed (`0010_seed_site_features.py`) and `config/site-features.json`. */
 export const ALL_SECTION_KEYS: SectionKey[] = [
   'search',
-  'collection',
   'lightbox',
-  'news',
+  'collection',
   'blogs',
   'featureArticles',
-  'events',
   'about',
+  'news',
+  'events',
 ];
 
 export const SECTION_LABELS: Record<SectionKey, string> = {

@@ -12,8 +12,9 @@ const { apiFetch, authFetch } = vi.hoisted(() => ({
 
 vi.mock('@/lib/api-fetch', () => ({ apiFetch, authFetch }));
 
+import { revalidateTag } from 'next/cache';
 import type { NextRequest } from 'next/server';
-import { PUT } from './route';
+import { GET, PUT } from './route';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -147,6 +148,29 @@ describe('PUT /api/app-settings — the superuser gate protecting the flags', ()
     );
     expect(res.status).toBe(403);
     expect((await readSiteFeatures()).features).toEqual(before.features);
+  });
+});
+
+describe('a degraded read is never passed off as the stored config', () => {
+  beforeEach(() => {
+    apiFetch.mockImplementation(async () => jsonResponse({ error: 'down' }, 503));
+  });
+
+  it('GET answers 503 instead of a 200 the editor would PUT straight back', async () => {
+    expect((await GET()).status).toBe(503);
+  });
+
+  it('PUT refuses rather than merging the payload over the fallback', async () => {
+    const response = await PUT(putRequest(getDefaultConfig()));
+    expect(response.status).toBe(503);
+    expect(authFetch.mock.calls.some(([path]) => path === '/api/v1/app-settings/')).toBe(false);
+  });
+});
+
+describe('PUT /api/app-settings — cache invalidation', () => {
+  it('purges the cached read rather than only marking it stale', async () => {
+    await PUT(putRequest(getDefaultConfig()));
+    expect(revalidateTag).toHaveBeenCalledWith('site-features', { expire: 0 });
   });
 });
 
