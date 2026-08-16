@@ -17,6 +17,7 @@ import {
   type UploadBreadcrumb,
 } from '@/lib/backoffice/upload-breadcrumbs';
 import {
+  abortUploadSession,
   getUploadSession,
   uploadImageFile,
   watchUploadSession,
@@ -46,12 +47,14 @@ vi.mock('@/services/backoffice/uploads', async (importOriginal) => {
     uploadImageFile: vi.fn(),
     getUploadSession: vi.fn(),
     watchUploadSession: vi.fn(),
+    abortUploadSession: vi.fn(() => Promise.resolve()),
   };
 });
 
 const mockedUpload = vi.mocked(uploadImageFile);
 const mockedGetSession = vi.mocked(getUploadSession);
 const mockedWatch = vi.mocked(watchUploadSession);
+const mockedAbort = vi.mocked(abortUploadSession);
 
 const session = (over: Partial<UploadSession> = {}): UploadSession => ({
   id: 's1',
@@ -99,7 +102,7 @@ function seedCrumb(over: Partial<UploadBreadcrumb> = {}): void {
 const makeFile = (name: string, bytes: number) => new File(['x'.repeat(bytes)], name);
 
 function Harness() {
-  const { items, interrupted, enqueue, retry, resumeInterrupted, dismissInterrupted } =
+  const { items, interrupted, enqueue, cancel, retry, resumeInterrupted, dismissInterrupted } =
     useUploadManager();
   const [resume, setResume] = useState<ResumeResult | null>(null);
   return (
@@ -137,6 +140,9 @@ function Harness() {
       </button>
       <button type="button" onClick={() => items[0] && retry(items[0].id)}>
         retry first
+      </button>
+      <button type="button" onClick={() => items[0] && cancel(items[0].id)}>
+        cancel first
       </button>
     </div>
   );
@@ -272,8 +278,9 @@ describe('resume & dismiss', () => {
     expect(mockedUpload).not.toHaveBeenCalled();
   });
 
-  it('dismiss deletes the breadcrumb for good', async () => {
-    seedCrumb();
+  it('dismiss deletes the breadcrumb and the server session with it', async () => {
+    seedCrumb({ sessionId: 's1' });
+    mockedGetSession.mockRejectedValue(new Error('offline'));
     renderHarness();
     await waitFor(() =>
       expect(screen.getByTestId('interrupted').textContent).toContain('f12r.tif')
@@ -281,6 +288,8 @@ describe('resume & dismiss', () => {
 
     fireEvent.click(screen.getByText('dismiss interrupted'));
     await waitFor(() => expect(screen.getByTestId('interrupted').textContent).toBe(''));
+    // Discarding the last handle on a session must free its chunks too.
+    expect(mockedAbort).toHaveBeenCalledWith('tok', 's1');
     expect(listUploadBreadcrumbs()).toEqual([]);
   });
 });
@@ -371,6 +380,41 @@ describe('multi-tab ownership', () => {
     fireEvent.click(screen.getByText('enqueue one'));
     await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('new.tif:busy'));
     expect(listUploadBreadcrumbs().map((c) => c.id)).toEqual(['a-elder']);
+  });
+});
+
+describe('cancel', () => {
+  it('discards the server session and the breadcrumb with it', async () => {
+    mockedUpload.mockImplementation((_token, _file, _meta, options) => {
+      options?.onProgress?.({
+        phase: 'uploading',
+        sentBytes: 1,
+        totalBytes: 4,
+        session: session({ id: 's-new' }),
+      });
+      return new Promise((_resolve, reject) =>
+        options?.signal?.addEventListener('abort', () =>
+          reject(new DOMException('Aborted', 'AbortError'))
+        )
+      );
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue one'));
+    await waitFor(() =>
+      expect(screen.getByTestId('items').textContent).toContain('new.tif:uploading')
+    );
+
+    fireEvent.click(screen.getByText('cancel first'));
+    await waitFor(() =>
+      expect(screen.getByTestId('items').textContent).toContain('new.tif:canceled')
+    );
+    // Without the DELETE the half-uploaded chunks stay on disk and the session
+    // keeps the destination reserved against every other editor.
+    expect(mockedAbort).toHaveBeenCalledWith('tok', 's-new');
+    // Keeping the crumb (as 'canceled') would have a reload re-offer the
+    // upload the editor just stopped as "interrupted by a reload".
+    expect(listUploadBreadcrumbs()).toEqual([]);
   });
 });
 

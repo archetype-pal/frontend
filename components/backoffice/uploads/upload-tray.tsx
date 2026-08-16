@@ -198,6 +198,12 @@ function UploadTrayItem({
   onDismiss: () => void;
 }) {
   const active = item.status === 'uploading' || item.status === 'processing';
+  // Only bytes still in flight can be called back. Once finalize is posted the
+  // server is assembling and then converting, and a DELETE would either lose
+  // the race (the image publishes anyway) or pull the chunks out from under
+  // it — so from 'finalizing' on, the X stops tracking instead.
+  const cancellable =
+    item.status === 'pending' || (item.status === 'uploading' && item.phase !== 'finalizing');
   // A recovered watch item has no File in memory — nothing to retry with.
   const retryable = RETRYABLE_STATUSES.includes(item.status) && item.file != null;
   const pct =
@@ -274,9 +280,14 @@ function UploadTrayItem({
             variant="ghost"
             size="icon"
             className="h-6 w-6"
-            aria-label={active ? `Cancel upload of ${item.fileName}` : `Dismiss ${item.fileName}`}
-            onClick={active ? onCancel : onDismiss}
-            disabled={item.status === 'pending'}
+            aria-label={
+              cancellable
+                ? `Cancel upload of ${item.fileName}`
+                : active
+                  ? `Stop tracking ${item.fileName}`
+                  : `Dismiss ${item.fileName}`
+            }
+            onClick={cancellable ? onCancel : onDismiss}
           >
             <X className="h-3.5 w-3.5" />
           </Button>

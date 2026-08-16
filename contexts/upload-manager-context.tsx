@@ -29,6 +29,7 @@ import {
   type UploadBreadcrumb,
 } from '@/lib/backoffice/upload-breadcrumbs';
 import {
+  abortUploadSession,
   describeUploadError,
   getUploadSession,
   isConflictError,
@@ -331,7 +332,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
               removeUploadBreadcrumbs([id]);
             } else {
               patch(id, { status: 'canceled' });
-              updateUploadBreadcrumb(id, { status: 'canceled' });
+              removeUploadBreadcrumbs([id]);
             }
           } else if (isConflictError(err)) {
             // A duplicate proves the image already exists server-side — refresh
@@ -389,17 +390,22 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     [drain]
   );
 
+  /** Fire-and-forget: a failed abort leaves nothing the user could act on. */
+  const abortSession = useCallback((sessionId: string) => {
+    const authToken = tokenRef.current;
+    if (sessionId && authToken) void abortUploadSession(authToken, sessionId).catch(() => {});
+  }, []);
+
   const cancel = useCallback(
     (id: string) => {
+      abortSession(listUploadBreadcrumbs().find((c) => c.id === id)?.sessionId ?? '');
+      removeUploadBreadcrumbs([id]);
       const controller = controllers.current.get(id);
       if (controller) controller.abort();
       // Not yet started: mark canceled so the runner skips it when reached.
-      else {
-        patch(id, { status: 'canceled' });
-        updateUploadBreadcrumb(id, { status: 'canceled' });
-      }
+      else patch(id, { status: 'canceled' });
     },
-    [patch]
+    [abortSession, patch]
   );
 
   const retry = useCallback(
@@ -418,6 +424,9 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
   );
 
   const dismiss = useCallback((id: string) => {
+    // Dismissing a `processing` row means "stop tracking": the server-side
+    // conversion finishes either way, so only the polling loop is dropped.
+    controllers.current.get(id)?.abort();
     itemsRef.current.delete(id);
     removeUploadBreadcrumbs([id]);
     setItems((prev) => prev.filter((it) => it.id !== id));
@@ -607,11 +616,15 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     [addItem, drain]
   );
 
-  const dismissInterrupted = useCallback((id: string) => {
-    removeUploadBreadcrumbs([id]);
-    promptOnlyRef.current.delete(id);
-    setInterrupted((prev) => prev.filter((c) => c.id !== id));
-  }, []);
+  const dismissInterrupted = useCallback(
+    (id: string) => {
+      abortSession(interruptedRef.current.find((c) => c.id === id)?.sessionId ?? '');
+      removeUploadBreadcrumbs([id]);
+      promptOnlyRef.current.delete(id);
+      setInterrupted((prev) => prev.filter((c) => c.id !== id));
+    },
+    [abortSession]
+  );
 
   const activeCount = items.filter((it) => !UPLOAD_TERMINAL_STATUSES.includes(it.status)).length;
 
