@@ -118,7 +118,8 @@ describe('AuthProvider impersonation', () => {
     getUserProfile.mockImplementation(async (token: string) => fakeProfile(`user-${token}`));
 
     const { result } = renderHook(() => useAuth(), { wrapper });
-    await waitFor(() => expect(result.current.isImpersonating).toBe(true));
+    await waitFor(() => expect(result.current.user?.username).toBe('user-target-token'));
+    expect(result.current.isImpersonating).toBe(true);
 
     clearImpersonatorTokenCookie();
     act(() => result.current.stopImpersonation());
@@ -126,6 +127,19 @@ describe('AuthProvider impersonation', () => {
     await waitFor(() => expect(result.current.token).toBeNull());
     expect(getAuthTokenCookie()).toBeNull();
     expect(result.current.isImpersonating).toBe(false);
+    expect(result.current.user).toBeNull();
+  });
+
+  it('clears the stashed admin token when the profile fetch rejects', async () => {
+    setAuthTokenCookie('target-token');
+    setImpersonatorTokenCookie('admin-token');
+    getUserProfile.mockRejectedValue(new Error('401'));
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    expect(result.current.token).toBeNull();
+    expect(getImpersonatorTokenCookie()).toBeNull();
   });
 
   it('restores isImpersonating on initial mount when an impersonator cookie is already present', async () => {

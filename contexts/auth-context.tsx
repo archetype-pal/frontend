@@ -64,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // No stash means there is no way back to the admin identity: sign out
     // locally rather than leave the caller silently wearing the target's.
     setAuthToken(originalToken);
+    if (!originalToken) setUser(null);
     setIsImpersonating(false);
   }, [setAuthToken]);
 
@@ -120,7 +121,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!active) return;
         // Stale/invalid token or transient API failure: clear local auth state
         // silently. Do not navigate — public pages must stay viewable for guests.
+        // The stash must go too: an orphaned one session-scopes every later
+        // auth-cookie write, including a fresh non-impersonating login.
         setAuthToken(null);
+        clearImpersonatorTokenCookie();
         setUser(null);
         return;
       } finally {

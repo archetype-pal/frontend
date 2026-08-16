@@ -125,6 +125,11 @@ describe('UsersPage impersonation action', () => {
 
     const button = within(rowFor('dormant')).getByLabelText(/impersonate user/i);
     expect((button as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.focus(button.parentElement as HTMLElement);
+    expect((await screen.findByRole('tooltip')).textContent).toBe(
+      'Deactivated accounts cannot be impersonated'
+    );
   });
 
   it('enables the impersonate button for a regular, non-staff, non-self row', async () => {
