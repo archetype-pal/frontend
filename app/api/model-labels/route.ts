@@ -2,7 +2,12 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
 import { readModelLabels, writeModelLabels, SITE_LABELS_TAG } from '@/lib/model-labels-server';
-import { normalizeModelLabels, type ModelLabelsConfig } from '@/lib/model-labels';
+import {
+  DEFAULT_MODEL_LABELS,
+  normalizeLocalizedValue,
+  type ModelLabelKey,
+  type ModelLabelsConfig,
+} from '@/lib/model-labels';
 
 async function verifySuperuser(token: string): Promise<boolean> {
   try {
@@ -17,6 +22,9 @@ async function verifySuperuser(token: string): Promise<boolean> {
 
 export async function GET() {
   const config = await readModelLabels();
+  if (config.degraded) {
+    return NextResponse.json({ error: 'Labels backend unavailable' }, { status: 503 });
+  }
   return NextResponse.json(config);
 }
 
@@ -43,12 +51,20 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid config shape' }, { status: 400 });
   }
 
-  const config: ModelLabelsConfig = {
-    labels: normalizeModelLabels((body as { labels?: unknown }).labels as Record<string, unknown>),
-  };
+  // Forward only the keys the client sent: the backend upserts per key, so an
+  // absent key keeps its stored value instead of being reset to a default.
+  const incoming = (body as { labels?: Record<string, unknown> }).labels ?? {};
+  const labels = Object.fromEntries(
+    (Object.keys(incoming) as ModelLabelKey[])
+      .filter((key) => key in DEFAULT_MODEL_LABELS)
+      .map((key) => [key, normalizeLocalizedValue(incoming[key], DEFAULT_MODEL_LABELS[key])])
+  );
+
+  let config: ModelLabelsConfig | null;
   try {
-    await writeModelLabels(config, token);
+    config = await writeModelLabels(labels, token);
   } catch (err) {
+    console.error('[model-labels] write failed', err);
     const status =
       err &&
       typeof err === 'object' &&
@@ -56,15 +72,18 @@ export async function PUT(request: NextRequest) {
       typeof (err as { status: unknown }).status === 'number'
         ? (err as { status: number }).status
         : 502;
-    return NextResponse.json({ error: 'Failed to update site labels' }, { status });
+    return NextResponse.json(
+      {
+        error: 'Failed to update site labels',
+        // A 5xx body is a DRF HTML error page; it must not reach a toast.
+        detail: status < 500 ? (err as Error).message : undefined,
+      },
+      { status }
+    );
   }
-  // Invalidate the cached `readModelLabels()` fetch entry itself (the actual
-  // fix — see the doc comment on `SITE_LABELS_TAG`) as well as the rendered
-  // layout, so an edit is visible immediately instead of waiting out the
-  // revalidation window. The second argument is a cache-life profile, not
-  // optional as of Next 16 — 'minutes' (revalidate: 60s) matches the
-  // `next.revalidate: 60` used when tagging the fetch in `readModelLabels`.
-  revalidateTag(SITE_LABELS_TAG, 'minutes');
+  // `{ expire: 0 }` hard-expires the tag; a named cacheLife profile only marks it stale.
+  revalidateTag(SITE_LABELS_TAG, { expire: 0 });
   revalidatePath('/', 'layout');
-  return NextResponse.json(config);
+  // The upsert landed; 204 says so without inventing a config the client would cache.
+  return config ? NextResponse.json(config) : new NextResponse(null, { status: 204 });
 }
