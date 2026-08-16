@@ -198,9 +198,12 @@ function UploadTrayItem({
   onDismiss: () => void;
 }) {
   const active = item.status === 'uploading' || item.status === 'processing';
-  // Only bytes in flight can be called back — a converting session refuses to
-  // abort, so its X stops tracking rather than promise a cancel it can't do.
-  const cancellable = item.status === 'pending' || item.status === 'uploading';
+  // Only bytes still in flight can be called back. Once finalize is posted the
+  // server is assembling and then converting, and a DELETE would either lose
+  // the race (the image publishes anyway) or pull the chunks out from under
+  // it — so from 'finalizing' on, the X stops tracking instead.
+  const cancellable =
+    item.status === 'pending' || (item.status === 'uploading' && item.phase !== 'finalizing');
   // A recovered watch item has no File in memory — nothing to retry with.
   const retryable = RETRYABLE_STATUSES.includes(item.status) && item.file != null;
   const pct =
@@ -280,7 +283,7 @@ function UploadTrayItem({
             aria-label={
               cancellable
                 ? `Cancel upload of ${item.fileName}`
-                : item.status === 'processing'
+                : active
                   ? `Stop tracking ${item.fileName}`
                   : `Dismiss ${item.fileName}`
             }

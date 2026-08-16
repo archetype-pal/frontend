@@ -169,11 +169,12 @@ describe('watchUploadSession', () => {
     expect(result.status).toBe('complete');
   });
 
-  it('gives up once the failures stop looking transient', async () => {
+  it('gives up on the sixth consecutive failure, not the first', async () => {
     mockedGet.mockRejectedValue(new Error('API gone'));
     await expect(watchUploadSession('tok', session(), { pollIntervalMs: 0 })).rejects.toThrow(
       'API gone'
     );
+    expect(mockedGet).toHaveBeenCalledTimes(6); // MAX_POLL_FAILURES + 1
   });
 
   it('stops with AbortError when the signal is already aborted', async () => {

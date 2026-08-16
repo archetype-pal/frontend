@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { UploadTray } from './upload-tray';
@@ -49,10 +49,19 @@ function renderTray(over: Partial<UploadItem>) {
 beforeEach(() => vi.clearAllMocks());
 
 describe('upload tray X button', () => {
-  it('cancels while bytes are still in flight', () => {
-    renderTray({ status: 'uploading' });
+  it('cancels bytes in flight, but only stops tracking once finalize has started', () => {
+    renderTray({ phase: 'uploading' });
     fireEvent.click(screen.getByLabelText('Cancel upload of f12r.tif'));
     expect(cancel).toHaveBeenCalledWith('i1');
+
+    // Same status, later phase: finalize is already assembling server-side, so
+    // a DELETE would either lose the race or corrupt it.
+    cleanup();
+    renderTray({ phase: 'finalizing' });
+    expect(screen.queryByLabelText('Cancel upload of f12r.tif')).toBeNull();
+    fireEvent.click(screen.getByLabelText('Stop tracking f12r.tif'));
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(dismiss).toHaveBeenCalledWith('i1');
   });
 
   it('drops a queued upload instead of trapping it behind a disabled button', () => {
