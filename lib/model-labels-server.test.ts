@@ -45,6 +45,11 @@ describe('readModelLabels', () => {
     ['a non-2xx response', () => apiFetch.mockResolvedValueOnce(jsonResponse({}, 503))],
     ['a 200 with a malformed body', () => apiFetch.mockResolvedValueOnce(jsonResponse([]))],
     ['a thrown fetch', () => apiFetch.mockRejectedValueOnce(new Error('network down'))],
+    // What an un-migrated / empty `SiteLabel` table answers with.
+    [
+      'a 200 with an empty labels map',
+      () => apiFetch.mockResolvedValueOnce(jsonResponse({ labels: {} })),
+    ],
   ])('flags the defaults as degraded on %s', async (_case, arrange) => {
     arrange();
 
@@ -65,14 +70,14 @@ describe('writeModelLabels', () => {
 
     const body = JSON.parse(authFetch.mock.calls[0][2].body);
     expect(Object.keys(body.labels)).toEqual(['siteTitle']);
-    expect(config.labels.siteTitle).toEqual({ en: 'Stored', fr: 'Stocké' });
+    expect(config?.labels.siteTitle).toEqual({ en: 'Stored', fr: 'Stocké' });
   });
 
-  it('throws with the upstream status attached on a non-2xx', async () => {
-    authFetch.mockResolvedValueOnce(new Response('unknown key', { status: 400 }));
+  it('returns null rather than defaults when the write lands but returns no labels', async () => {
+    authFetch.mockResolvedValueOnce(jsonResponse({ labels: {} }));
 
     await expect(
-      writeModelLabels({ siteTitle: { en: 'x', fr: 'x' } }, 'tok')
-    ).rejects.toMatchObject({ status: 400 });
+      writeModelLabels({ siteTitle: { en: 'MoA', fr: 'MoA' } }, 'tok')
+    ).resolves.toBeNull();
   });
 });

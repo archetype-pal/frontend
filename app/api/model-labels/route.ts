@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
 import { readModelLabels, writeModelLabels, SITE_LABELS_TAG } from '@/lib/model-labels-server';
 import {
-  normalizeModelLabels,
+  DEFAULT_MODEL_LABELS,
+  normalizeLocalizedValue,
   type ModelLabelKey,
   type ModelLabelsConfig,
 } from '@/lib/model-labels';
@@ -53,14 +54,13 @@ export async function PUT(request: NextRequest) {
   // Forward only the keys the client sent: the backend upserts per key, so an
   // absent key keeps its stored value instead of being reset to a default.
   const incoming = (body as { labels?: Record<string, unknown> }).labels ?? {};
-  const normalized = normalizeModelLabels(incoming);
   const labels = Object.fromEntries(
-    Object.keys(incoming)
-      .filter((key): key is ModelLabelKey => key in normalized)
-      .map((key) => [key, normalized[key]])
+    (Object.keys(incoming) as ModelLabelKey[])
+      .filter((key) => key in DEFAULT_MODEL_LABELS)
+      .map((key) => [key, normalizeLocalizedValue(incoming[key], DEFAULT_MODEL_LABELS[key])])
   );
 
-  let config: ModelLabelsConfig;
+  let config: ModelLabelsConfig | null;
   try {
     config = await writeModelLabels(labels, token);
   } catch (err) {
@@ -84,5 +84,6 @@ export async function PUT(request: NextRequest) {
   // `{ expire: 0 }` hard-expires the tag; a named cacheLife profile only marks it stale.
   revalidateTag(SITE_LABELS_TAG, { expire: 0 });
   revalidatePath('/', 'layout');
-  return NextResponse.json(config);
+  // The upsert landed; 204 says so without inventing a config the client would cache.
+  return config ? NextResponse.json(config) : new NextResponse(null, { status: 204 });
 }

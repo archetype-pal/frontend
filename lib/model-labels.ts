@@ -80,7 +80,7 @@ export const DEFAULT_MODEL_LABELS: Record<ModelLabelKey, LocalizedLabel> = {
   },
 };
 
-function normalizeLocalizedValue(value: unknown, fallback: LocalizedLabel): LocalizedLabel {
+export function normalizeLocalizedValue(value: unknown, fallback: LocalizedLabel): LocalizedLabel {
   // Pre-i18n config files stored a single string shown to every locale. Seed
   // both languages from it so an existing customization survives the upgrade
   // instead of reverting to the English default for French visitors.

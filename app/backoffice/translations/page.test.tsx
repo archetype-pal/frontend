@@ -57,4 +57,19 @@ describe('<TranslationsPage>', () => {
     // A concurrent rename of another key must not be reverted by this save.
     expect(Object.keys(body.labels)).toEqual(['siteTitle']);
   });
+
+  it('refetches rather than caching anything when the save returns no labels', async () => {
+    fetchMock.mockImplementation(async (_url: string, init?: RequestInit) =>
+      init?.method === 'PUT'
+        ? new Response(null, { status: 204 })
+        : new Response(JSON.stringify(stored), { status: 200 })
+    );
+    renderPage();
+
+    const input = (await screen.findAllByLabelText('English'))[0] as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Models of Authority' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+  });
 });

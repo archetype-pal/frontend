@@ -155,7 +155,7 @@ async function fetchModelLabels(): Promise<ModelLabelsConfig> {
 async function saveModelLabels(
   token: string,
   labels: Partial<Record<ModelLabelKey, LocalizedLabel>>
-): Promise<ModelLabelsConfig> {
+): Promise<ModelLabelsConfig | null> {
   const res = await fetch('/api/model-labels', {
     method: 'PUT',
     headers: {
@@ -168,7 +168,8 @@ async function saveModelLabels(
     const err = await res.json().catch(() => ({ error: 'Unknown error' }));
     throw new Error(err.detail || err.error || 'Failed to save');
   }
-  return res.json();
+  // 204: the write landed but the backend returned no labels to cache.
+  return res.status === 204 ? null : res.json();
 }
 
 const LOCALE_FIELD_META: Array<{ locale: ModelLabelLocale; title: string }> = [
@@ -259,7 +260,8 @@ export default function TranslationsPage() {
     },
     onSuccess: (saved) => {
       toast.success(t('translations.toastSaved'));
-      queryClient.setQueryData(['model-labels'], saved);
+      if (saved) queryClient.setQueryData(['model-labels'], saved);
+      else queryClient.invalidateQueries({ queryKey: ['model-labels'] });
       setDirty(false);
       router.refresh();
     },
@@ -296,7 +298,6 @@ export default function TranslationsPage() {
     return <BackofficeLoadingState />;
   }
 
-  // Without this the form would present the hardcoded defaults as stored labels.
   if (isError) {
     return (
       <BackofficeErrorState message={t('translations.failedLoad')} onRetry={() => refetch()} />

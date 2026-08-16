@@ -22,13 +22,10 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-/** In-memory stand-in for the backend's per-key `SiteLabel` rows. */
 let stored: ModelLabelsConfig;
-let writeStatus: number;
 
 beforeEach(() => {
   stored = getDefaultModelLabelsConfig();
-  writeStatus = 200;
 
   apiFetch.mockReset();
   authFetch.mockReset();
@@ -38,7 +35,6 @@ beforeEach(() => {
   apiFetch.mockImplementation(async () => jsonResponse(stored));
   authFetch.mockImplementation(async (path: string, _token: string, init?: RequestInit) => {
     if (path === '/api/v1/auth/profile') return jsonResponse({ is_superuser: true });
-    if (writeStatus !== 200) return new Response('nope', { status: writeStatus });
     const { labels } = JSON.parse((init?.body as string) ?? '{}');
     stored = { labels: { ...stored.labels, ...labels } };
     return jsonResponse(stored);
@@ -54,7 +50,10 @@ function putRequest(body: unknown): NextRequest {
 
 describe('GET /api/model-labels', () => {
   it('serves the stored labels when the backend is healthy', async () => {
+    stored.labels.siteTitle = { en: 'Models of Authority', fr: 'Models of Authority' };
+
     const response = await GET();
+
     expect(response.status).toBe(200);
     expect((await response.json()).labels.siteTitle).toEqual(stored.labels.siteTitle);
   });
@@ -89,20 +88,53 @@ describe('PUT /api/model-labels', () => {
     expect(revalidateTag).toHaveBeenCalledWith('site-labels', { expire: 0 });
   });
 
-  it('propagates an upstream 4xx with its reason', async () => {
-    writeStatus = 403;
-    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'x', fr: 'x' } } }));
-    expect(response.status).toBe(403);
-    expect((await response.json()).detail).toContain('nope');
+  it('acknowledges a write whose response carries no labels, and still purges the tag', async () => {
+    authFetch.mockImplementation(async (path: string) =>
+      path === '/api/v1/auth/profile'
+        ? jsonResponse({ is_superuser: true })
+        : jsonResponse({ labels: {} })
+    );
+
+    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'MoA', fr: 'MoA' } } }));
+
+    expect(response.status).toBe(204);
+    expect(revalidateTag).toHaveBeenCalledWith('site-labels', { expire: 0 });
   });
 
-  it('maps a thrown write to 502 and withholds the 5xx body', async () => {
+  it('propagates an upstream 4xx with its reason', async () => {
+    authFetch.mockImplementation(async (path: string) =>
+      path === '/api/v1/auth/profile'
+        ? jsonResponse({ is_superuser: true })
+        : new Response('unknown key', { status: 403 })
+    );
+
+    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'x', fr: 'x' } } }));
+
+    expect(response.status).toBe(403);
+    expect((await response.json()).detail).toContain('unknown key');
+  });
+
+  it('passes an upstream 5xx through without leaking its body', async () => {
+    authFetch.mockImplementation(async (path: string) =>
+      path === '/api/v1/auth/profile'
+        ? jsonResponse({ is_superuser: true })
+        : new Response('<html>DRF error page</html>', { status: 500 })
+    );
+
+    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'x', fr: 'x' } } }));
+
+    expect(response.status).toBe(500);
+    expect(JSON.stringify(await response.json())).not.toContain('DRF');
+  });
+
+  it('maps a thrown write to 502', async () => {
     authFetch.mockImplementation(async (path: string) => {
       if (path === '/api/v1/auth/profile') return jsonResponse({ is_superuser: true });
       throw new Error('socket hang up');
     });
 
     const response = await PUT(putRequest({ labels: { siteTitle: { en: 'x', fr: 'x' } } }));
+
     expect(response.status).toBe(502);
     expect(await response.json()).not.toHaveProperty('detail');
   });
