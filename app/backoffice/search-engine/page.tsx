@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
+import { useUploadManager } from '@/contexts/upload-manager-context';
 import { toast } from 'sonner';
 import {
   Search,
@@ -738,15 +739,16 @@ function TaskProgressPanel({
   t: ReturnType<typeof useTranslations>;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const { items, interrupted } = useUploadManager();
   const completedCount = tasks.filter(
     (task) => task.status && ['SUCCESS', 'FAILURE'].includes(task.status.state)
   ).length;
 
   return (
     <FloatingPanel
-      // Step aside: the shell-level upload tray owns the bottom-right corner
-      // (panel width 380px + the 16px gutter it sits in).
-      className="right-[412px]"
+      // Step aside only while the shell-level upload tray is actually rendered
+      // in the bottom-right corner (its 380px width + the 16px gutter).
+      className={items.length + interrupted.length > 0 ? 'right-[412px]' : undefined}
       title={t('searchEngine.tasksPanelTitle', { count: tasks.length })}
       icon={<Activity className="h-4 w-4 text-primary" />}
       collapsed={collapsed}

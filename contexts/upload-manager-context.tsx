@@ -392,7 +392,8 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
 
   /** Fire-and-forget: a failed abort leaves nothing the user could act on. */
   const abortSession = useCallback((sessionId: string) => {
-    if (sessionId) void abortUploadSession(tokenRef.current ?? '', sessionId).catch(() => {});
+    const authToken = tokenRef.current;
+    if (sessionId && authToken) void abortUploadSession(authToken, sessionId).catch(() => {});
   }, []);
 
   const cancel = useCallback(

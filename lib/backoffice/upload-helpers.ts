@@ -35,7 +35,9 @@ export function isAcceptedImageFilename(filename: string): boolean {
  *   0032v.jp2      → f.32v
  *   MS_Add_1234_f005r.tiff → f.5r
  *   scan_0001.jpg  → ''  (no r/v side, ambiguous)
- *   Add_ch_33792r.tif → ''  (>4 digits; `(?<!\d)` stops it matching a tail)
+ *   Add_ch_33792r.tif → ''  (`(?<!\d)` blanks any run over 4 digits rather
+ *                            than guess from its tail — zero-padded 5-digit
+ *                            loci lose their suggestion too, deliberately)
  */
 export function guessLocusFromFilename(filename: string): string {
   const stem = filename.replace(/\.[^.]+$/, '');

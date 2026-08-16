@@ -278,8 +278,9 @@ describe('resume & dismiss', () => {
     expect(mockedUpload).not.toHaveBeenCalled();
   });
 
-  it('dismiss deletes the breadcrumb for good', async () => {
-    seedCrumb();
+  it('dismiss deletes the breadcrumb and the server session with it', async () => {
+    seedCrumb({ sessionId: 's1' });
+    mockedGetSession.mockRejectedValue(new Error('offline'));
     renderHarness();
     await waitFor(() =>
       expect(screen.getByTestId('interrupted').textContent).toContain('f12r.tif')
@@ -287,6 +288,8 @@ describe('resume & dismiss', () => {
 
     fireEvent.click(screen.getByText('dismiss interrupted'));
     await waitFor(() => expect(screen.getByTestId('interrupted').textContent).toBe(''));
+    // Discarding the last handle on a session must free its chunks too.
+    expect(mockedAbort).toHaveBeenCalledWith('tok', 's1');
     expect(listUploadBreadcrumbs()).toEqual([]);
   });
 });

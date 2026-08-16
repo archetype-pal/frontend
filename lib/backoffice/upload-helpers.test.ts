@@ -40,6 +40,8 @@ describe('guessLocusFromFilename', () => {
   it('refuses to invent a locus from the tail of a longer number', () => {
     expect(guessLocusFromFilename('Add_ch_33792r.tif')).toBe('');
     expect(guessLocusFromFilename('MS_12345v.tif')).toBe('');
+    // Accepted cost: a zero-padded 5-digit locus loses its suggestion too.
+    expect(guessLocusFromFilename('Cotton_Nero_D_IV_f_00027r.tif')).toBe('');
   });
 });
 
