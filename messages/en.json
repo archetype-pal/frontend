@@ -1991,7 +1991,8 @@
       "sectionSearchTitle": "Search result categories",
       "sectionSearchDesc": "Rename the category tabs on the public search page (e.g. \"Manuscripts\" → \"Corpus\"). The Manuscripts tab follows the \"App Name: Manuscripts\" label above.",
       "toastSaved": "Model labels saved",
-      "toastFailedSave": "Failed to save model labels"
+      "toastFailedSave": "Failed to save model labels",
+      "failedLoad": "Failed to load labels."
     },
     "symbols": {
       "loadingStructure": "Loading symbols structure...",
