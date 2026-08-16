@@ -938,6 +938,7 @@
       "dataQuality": "Data Quality",
       "translations": "Translations",
       "siteFeatures": "Site Features",
+      "sanityChecks": "Sanity Checks",
       "subGroupExpand": "Expand {label}",
       "subGroupCollapse": "Collapse {label}"
     },
@@ -2262,6 +2263,48 @@
         "translationExists": "Translation exists",
         "transcription": "Transcription",
         "translation": "Translation"
+      }
+    },
+    "sanityChecks": {
+      "title": "System Sanity Checks",
+      "subtitle": "Operational health snapshot for this deployment: migrations, dependent services, storage, and email delivery.",
+      "refresh": "Refresh",
+      "error": "Error: {message}",
+      "migrations": {
+        "title": "Pending Migrations",
+        "upToDate": "Up to date",
+        "pendingLabel": "pending"
+      },
+      "services": {
+        "title": "Dependent Services",
+        "database": "Database",
+        "redis": "Redis",
+        "meilisearch": "Meilisearch",
+        "celeryBroker": "Celery Broker"
+      },
+      "storage": {
+        "title": "Storage",
+        "databaseSize": "Database size",
+        "mediaSize": "Media directory size",
+        "unavailable": "Unavailable (non-PostgreSQL backend)",
+        "path": "Path: {path}"
+      },
+      "permissions": {
+        "title": "Filesystem Permissions",
+        "mediaWritable": "Media directory writable",
+        "logsWritable": "Log directory writable"
+      },
+      "smtp": {
+        "title": "Email (SMTP)",
+        "configured": "SMTP looks configured",
+        "notConfigured": "SMTP is not configured",
+        "cannotSendTitle": "Test email unavailable",
+        "notConfiguredDescription": "EMAIL_HOST is unset or still using Django's default — configure SMTP on the backend before a test email can be sent.",
+        "description": "Sends a test email to the configured admin addresses (ADMIN_EMAILS).",
+        "send": "Send test email",
+        "sending": "Sending…",
+        "toastSuccess": "Test email sent",
+        "toastError": "Failed to send test email"
       }
     },
     "reviewAge": {
