@@ -50,8 +50,16 @@ describe('describeUploadError', () => {
     expect(describeUploadError(err)).not.toBe('API error 409');
   });
 
-  it('falls back to a status message when the body has no detail', () => {
-    expect(describeUploadError(new BackofficeApiError(500, {}))).toBe('Request failed (500).');
+  it('names the offending field on a DRF validation 400', () => {
+    const err = new BackofficeApiError(400, {
+      tags: ['Ensure this field has no more than 255 characters.'],
+    });
+    expect(describeUploadError(err)).toContain('tags');
+    expect(describeUploadError(err)).toContain('no more than 255');
+  });
+
+  it('falls back to a status message when the body says nothing', () => {
+    expect(describeUploadError(new BackofficeApiError(500, {}))).toBe('Server error (500)');
   });
 
   it('handles chunk, upload-failed, generic and unknown errors', () => {
@@ -60,7 +68,7 @@ describe('describeUploadError', () => {
       'conversion died'
     );
     expect(describeUploadError(new Error('boom'))).toBe('boom');
-    expect(describeUploadError('weird')).toBe('Upload failed.');
+    expect(describeUploadError('weird')).toBe('An unexpected error occurred');
   });
 });
 
@@ -147,6 +155,24 @@ describe('watchUploadSession', () => {
     mockedGet.mockResolvedValueOnce(session({ status: 'failed', error: 'tile smoke test failed' }));
     await expect(watchUploadSession('tok', session(), { pollIntervalMs: 0 })).rejects.toThrow(
       'tile smoke test failed'
+    );
+  });
+
+  it('rides out a burst of unreadable polls instead of failing a live conversion', async () => {
+    mockedGet
+      .mockRejectedValueOnce(new Error('API restarting'))
+      .mockRejectedValueOnce(new Error('API restarting'))
+      .mockRejectedValueOnce(new Error('API restarting'))
+      .mockResolvedValueOnce(session({ status: 'complete', item_image: 9 }));
+
+    const result = await watchUploadSession('tok', session(), { pollIntervalMs: 0 });
+    expect(result.status).toBe('complete');
+  });
+
+  it('gives up once the failures stop looking transient', async () => {
+    mockedGet.mockRejectedValue(new Error('API gone'));
+    await expect(watchUploadSession('tok', session(), { pollIntervalMs: 0 })).rejects.toThrow(
+      'API gone'
     );
   });
 

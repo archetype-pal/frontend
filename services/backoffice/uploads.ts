@@ -1,5 +1,6 @@
-import { backofficeGet, backofficePost, BackofficeApiError } from './api-client';
+import { backofficeDelete, backofficeGet, backofficePost, BackofficeApiError } from './api-client';
 import { API_BASE_URL } from '@/lib/api-fetch';
+import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { planChunks } from '@/lib/backoffice/upload-helpers';
 
 /* ------------------------------------------------------------------ */
@@ -75,6 +76,11 @@ export function finalizeUploadSession(token: string, id: string): Promise<Upload
   return backofficePost<UploadSession>(`${BASE}${id}/finalize/`, token, {});
 }
 
+/** Discard a session server-side, freeing its destination and chunk files. */
+export function abortUploadSession(token: string, id: string): Promise<void> {
+  return backofficeDelete(`${BASE}${id}/`, token);
+}
+
 /* ------------------------------------------------------------------ */
 /*  Chunk transport (XHR — fetch cannot report upload progress)        */
 /* ------------------------------------------------------------------ */
@@ -139,7 +145,9 @@ function putChunk(
         resolve();
       } else {
         // Full body to the console for developers; a sanitized detail to the UI.
-        console.error(`Chunk ${index} upload failed (${xhr.status}):`, xhr.responseText);
+        if (process.env.NODE_ENV === 'development') {
+          console.error(`Chunk ${index} upload failed (${xhr.status}):`, xhr.responseText);
+        }
         reject(new ChunkUploadError(xhr.status, chunkErrorDetail(xhr.status, xhr.responseText)));
       }
     };
@@ -216,22 +224,19 @@ export function isConflictError(err: unknown): boolean {
 }
 
 /**
- * Human-readable reason for an upload failure. Prefers the backend's `detail`
- * string (e.g. "A file already exists at '…'. Uploads never overwrite.") over
- * the generic "API error 409" that BackofficeApiError.message carries.
+ * Human-readable reason for an upload failure. `formatApiError` covers the
+ * backend's `detail` string and DRF's field-shaped 400s; only a chunk error
+ * needs special handling, because its `message` embeds the raw status.
  */
 export function describeUploadError(err: unknown): string {
-  if (err instanceof BackofficeApiError) {
-    const detail = err.body?.detail;
-    return typeof detail === 'string' && detail ? detail : `Request failed (${err.status}).`;
-  }
   if (err instanceof ChunkUploadError) return err.detail || err.message;
-  if (err instanceof UploadFailedError) return err.message;
-  if (err instanceof Error) return err.message;
-  return 'Upload failed.';
+  return formatApiError(err);
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Consecutive poll failures tolerated before a conversion is called dead. */
+const MAX_POLL_FAILURES = 5;
 
 /**
  * Poll an already-finalized session until the server-side conversion reaches
@@ -253,13 +258,21 @@ export async function watchUploadSession(
     onProgress?.({ totalBytes: total, ...progress });
 
   const deadline = Date.now() + processTimeoutMs;
+  let failures = 0;
   while (session.status !== 'complete' && session.status !== 'failed') {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     if (Date.now() > deadline) {
       throw new UploadFailedError('Timed out waiting for server-side processing.', session);
     }
     await sleep(pollIntervalMs);
-    session = await getUploadSession(token, session.id);
+    try {
+      session = await getUploadSession(token, session.id);
+      failures = 0;
+    } catch (err) {
+      // A conversion runs for minutes; one unreadable status is not a verdict.
+      if (++failures > MAX_POLL_FAILURES) throw err;
+      continue;
+    }
     report({
       phase: 'processing',
       sentBytes: total,

@@ -237,8 +237,11 @@ function StagedFileItem({
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Locus</Label>
+              <Label htmlFor={`locus-${staged.id}`} className="text-[10px] text-muted-foreground">
+                Locus
+              </Label>
               <Input
+                id={`locus-${staged.id}`}
                 value={staged.locus}
                 onChange={(e) => onLocusChange(e.target.value)}
                 placeholder="e.g. f.1r"
@@ -246,8 +249,11 @@ function StagedFileItem({
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Tags</Label>
+              <Label htmlFor={`tags-${staged.id}`} className="text-[10px] text-muted-foreground">
+                Tags
+              </Label>
               <Input
+                id={`tags-${staged.id}`}
                 value={staged.tags}
                 onChange={(e) => onTagsChange(e.target.value)}
                 placeholder="comma,separated"

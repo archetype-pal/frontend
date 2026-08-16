@@ -36,6 +36,11 @@ describe('guessLocusFromFilename', () => {
     expect(guessLocusFromFilename('scan_0001.jpg')).toBe('');
     expect(guessLocusFromFilename('cover.png')).toBe('');
   });
+
+  it('refuses to invent a locus from the tail of a longer number', () => {
+    expect(guessLocusFromFilename('Add_ch_33792r.tif')).toBe('');
+    expect(guessLocusFromFilename('MS_12345v.tif')).toBe('');
+  });
 });
 
 describe('planChunks', () => {

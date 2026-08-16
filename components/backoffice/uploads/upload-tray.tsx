@@ -198,6 +198,9 @@ function UploadTrayItem({
   onDismiss: () => void;
 }) {
   const active = item.status === 'uploading' || item.status === 'processing';
+  // Only bytes in flight can be called back — a converting session refuses to
+  // abort, so its X stops tracking rather than promise a cancel it can't do.
+  const cancellable = item.status === 'pending' || item.status === 'uploading';
   // A recovered watch item has no File in memory — nothing to retry with.
   const retryable = RETRYABLE_STATUSES.includes(item.status) && item.file != null;
   const pct =
@@ -274,9 +277,14 @@ function UploadTrayItem({
             variant="ghost"
             size="icon"
             className="h-6 w-6"
-            aria-label={active ? `Cancel upload of ${item.fileName}` : `Dismiss ${item.fileName}`}
-            onClick={active ? onCancel : onDismiss}
-            disabled={item.status === 'pending'}
+            aria-label={
+              cancellable
+                ? `Cancel upload of ${item.fileName}`
+                : item.status === 'processing'
+                  ? `Stop tracking ${item.fileName}`
+                  : `Dismiss ${item.fileName}`
+            }
+            onClick={cancellable ? onCancel : onDismiss}
           >
             <X className="h-3.5 w-3.5" />
           </Button>

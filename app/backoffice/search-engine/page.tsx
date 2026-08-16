@@ -744,6 +744,9 @@ function TaskProgressPanel({
 
   return (
     <FloatingPanel
+      // Step aside: the shell-level upload tray owns the bottom-right corner
+      // (panel width 380px + the 16px gutter it sits in).
+      className="right-[412px]"
       title={t('searchEngine.tasksPanelTitle', { count: tasks.length })}
       icon={<Activity className="h-4 w-4 text-primary" />}
       collapsed={collapsed}
