@@ -23,8 +23,16 @@ describe('normalizeModelLabels', () => {
       historicalItem: { en: 'Object', fr: 'Objet' },
       catalogueNumber: { en: 'Cat #', fr: 'N° cat.' },
     });
-    expect(result.historicalItem).toEqual({ en: 'Object', fr: 'Objet' });
-    expect(result.catalogueNumber).toEqual({ en: 'Cat #', fr: 'N° cat.' });
+    expect(result.historicalItem).toEqual({
+      en: 'Object',
+      fr: 'Objet',
+      de: DEFAULT_MODEL_LABELS.historicalItem.de,
+    });
+    expect(result.catalogueNumber).toEqual({
+      en: 'Cat #',
+      fr: 'N° cat.',
+      de: DEFAULT_MODEL_LABELS.catalogueNumber.de,
+    });
     // Untouched keys keep defaults
     expect(result.position).toEqual(DEFAULT_MODEL_LABELS.position);
     expect(result.appManuscripts).toEqual(DEFAULT_MODEL_LABELS.appManuscripts);
@@ -35,6 +43,7 @@ describe('normalizeModelLabels', () => {
     expect(result.historicalItem).toEqual({
       en: DEFAULT_MODEL_LABELS.historicalItem.en,
       fr: 'Objet',
+      de: DEFAULT_MODEL_LABELS.historicalItem.de,
     });
   });
 
@@ -42,14 +51,14 @@ describe('normalizeModelLabels', () => {
     const result = normalizeModelLabels({
       historicalItem: 'Object' as unknown as Record<string, unknown>,
     });
-    expect(result.historicalItem).toEqual({ en: 'Object', fr: 'Object' });
+    expect(result.historicalItem).toEqual({ en: 'Object', fr: 'Object', de: 'Object' });
   });
 
   it('trims whitespace around override values', () => {
     expect(
       normalizeModelLabels({ historicalItem: { en: '   Object   ', fr: '   Objet   ' } })
         .historicalItem
-    ).toEqual({ en: 'Object', fr: 'Objet' });
+    ).toEqual({ en: 'Object', fr: 'Objet', de: DEFAULT_MODEL_LABELS.historicalItem.de });
   });
 
   it('falls back to the default for empty / whitespace-only strings', () => {
@@ -83,7 +92,7 @@ describe('getDefaultModelLabelsConfig', () => {
     const a = getDefaultModelLabelsConfig();
     const b = getDefaultModelLabelsConfig();
     expect(a.labels).not.toBe(b.labels);
-    a.labels.historicalItem = { en: 'mutated', fr: 'mutated' };
+    a.labels.historicalItem = { en: 'mutated', fr: 'mutated', de: 'mutated' };
     expect(b.labels.historicalItem).toEqual(DEFAULT_MODEL_LABELS.historicalItem);
   });
 
@@ -97,11 +106,13 @@ describe('getDefaultModelLabelsConfig', () => {
 
 describe('resolveModelLabel', () => {
   it('returns the value for the requested locale', () => {
-    expect(resolveModelLabel({ en: 'Manuscripts', fr: 'Manuscrits' }, 'fr')).toBe('Manuscrits');
+    expect(
+      resolveModelLabel({ en: 'Manuscripts', fr: 'Manuscrits', de: 'Manuskripte' }, 'fr')
+    ).toBe('Manuscrits');
   });
 
   it('falls back to English when the requested locale is empty', () => {
-    expect(resolveModelLabel({ en: 'Manuscripts', fr: '' }, 'fr')).toBe('Manuscripts');
+    expect(resolveModelLabel({ en: 'Manuscripts', fr: '', de: '' }, 'fr')).toBe('Manuscripts');
   });
 });
 

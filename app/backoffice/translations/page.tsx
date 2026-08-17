@@ -175,6 +175,7 @@ async function saveModelLabels(
 const LOCALE_FIELD_META: Array<{ locale: ModelLabelLocale; title: string }> = [
   { locale: 'en', title: 'English' },
   { locale: 'fr', title: 'French' },
+  { locale: 'de', title: 'German' },
 ];
 
 function LabelFieldsGrid({
@@ -193,7 +194,7 @@ function LabelFieldsGrid({
       {fields.map((field) => (
         <div key={field.key} className="space-y-3 rounded-md border p-4">
           <Label className="font-medium">{field.title}</Label>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-3">
             {LOCALE_FIELD_META.map(({ locale, title }) => (
               <div key={locale} className="space-y-1">
                 <Label

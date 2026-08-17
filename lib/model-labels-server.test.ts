@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getDefaultModelLabelsConfig } from './model-labels';
+import { DEFAULT_MODEL_LABELS, getDefaultModelLabelsConfig } from './model-labels';
 
 const { apiFetch, authFetch } = vi.hoisted(() => ({
   apiFetch: vi.fn(),
@@ -33,8 +33,8 @@ describe('readModelLabels', () => {
 
     const config = await readModelLabels();
 
-    expect(config.labels.siteTitle).toEqual({ en: 'MoA', fr: 'MoA' });
-    expect(config.labels.appManuscripts).toEqual({ en: 'Manuscripts', fr: 'Manuscrits' });
+    expect(config.labels.siteTitle).toEqual({ en: 'MoA', fr: 'MoA', de: DEFAULT_MODEL_LABELS.siteTitle.de });
+    expect(config.labels.appManuscripts).toEqual(DEFAULT_MODEL_LABELS.appManuscripts);
     expect(config.degraded).toBeUndefined();
     expect(apiFetch).toHaveBeenCalledWith('/api/v1/site-labels/', {
       next: { revalidate: 60, tags: [SITE_LABELS_TAG] },
@@ -66,18 +66,22 @@ describe('writeModelLabels', () => {
       jsonResponse({ labels: { siteTitle: { en: 'Stored', fr: 'Stocké' } } })
     );
 
-    const config = await writeModelLabels({ siteTitle: { en: 'MoA', fr: 'MoA' } }, 'tok');
+    const config = await writeModelLabels({ siteTitle: { en: 'MoA', fr: 'MoA', de: 'MoA' } }, 'tok');
 
     const body = JSON.parse(authFetch.mock.calls[0][2].body);
     expect(Object.keys(body.labels)).toEqual(['siteTitle']);
-    expect(config?.labels.siteTitle).toEqual({ en: 'Stored', fr: 'Stocké' });
+    expect(config?.labels.siteTitle).toEqual({
+      en: 'Stored',
+      fr: 'Stocké',
+      de: DEFAULT_MODEL_LABELS.siteTitle.de,
+    });
   });
 
   it('returns null rather than defaults when the write lands but returns no labels', async () => {
     authFetch.mockResolvedValueOnce(jsonResponse({ labels: {} }));
 
     await expect(
-      writeModelLabels({ siteTitle: { en: 'MoA', fr: 'MoA' } }, 'tok')
+      writeModelLabels({ siteTitle: { en: 'MoA', fr: 'MoA', de: 'MoA' } }, 'tok')
     ).resolves.toBeNull();
   });
 });

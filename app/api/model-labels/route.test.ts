@@ -50,7 +50,11 @@ function putRequest(body: unknown): NextRequest {
 
 describe('GET /api/model-labels', () => {
   it('serves the stored labels when the backend is healthy', async () => {
-    stored.labels.siteTitle = { en: 'Models of Authority', fr: 'Models of Authority' };
+    stored.labels.siteTitle = {
+      en: 'Models of Authority',
+      fr: 'Models of Authority',
+      de: 'Models of Authority',
+    };
 
     const response = await GET();
 
@@ -67,15 +71,19 @@ describe('GET /api/model-labels', () => {
 
 describe('PUT /api/model-labels', () => {
   it('forwards only the keys it was given and leaves the rest stored', async () => {
-    stored.labels.appManuscripts = { en: 'Corpus', fr: 'Corpus' };
+    stored.labels.appManuscripts = { en: 'Corpus', fr: 'Corpus', de: 'Corpus' };
 
     const response = await PUT(putRequest({ labels: { siteTitle: { en: 'MoA', fr: 'MoA' } } }));
 
     const body = JSON.parse(authFetch.mock.calls[1][2].body);
     expect(Object.keys(body.labels)).toEqual(['siteTitle']);
     // A concurrent rename must survive an unrelated save.
-    expect(stored.labels.appManuscripts).toEqual({ en: 'Corpus', fr: 'Corpus' });
-    expect((await response.json()).labels.appManuscripts).toEqual({ en: 'Corpus', fr: 'Corpus' });
+    expect(stored.labels.appManuscripts).toEqual({ en: 'Corpus', fr: 'Corpus', de: 'Corpus' });
+    expect((await response.json()).labels.appManuscripts).toEqual({
+      en: 'Corpus',
+      fr: 'Corpus',
+      de: 'Corpus',
+    });
   });
 
   it('drops unknown keys instead of letting the backend reject the payload', async () => {
