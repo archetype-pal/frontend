@@ -22,8 +22,9 @@ export type ModelLabelKey =
   // General site branding, shown in the header and footer.
   | 'siteTitle'
   | 'siteTagline'
-  | 'footerFunded'
-  | 'footerCopyright';
+  | 'footerLine1'
+  | 'footerLine2'
+  | 'footerBottomLine';
 
 export type ModelLabelLocale = 'en' | 'fr';
 
@@ -59,17 +60,27 @@ export const DEFAULT_MODEL_LABELS: Record<ModelLabelKey, LocalizedLabel> = {
     en: 'Archetype tagline',
     fr: 'Archetype tagline',
   },
-  footerFunded: {
-    en: 'Archetype funding text.',
-    fr: "Texte de financement d'Archetype.",
+  footerLine1: {
+    en: 'Footer first section',
+    fr: 'Pied de page, première section',
   },
-  footerCopyright: {
-    en: 'Archetype copyright',
-    fr: "Droits d'auteur d'Archetype",
+  footerLine2: {
+    en: 'Footer second section',
+    fr: 'Pied de page, deuxième section',
+  },
+  footerBottomLine: {
+    en:
+      '©2015–17 Models of Authority. Some parts available under CC-BY licence. ' +
+      'All manuscript images are copyright of their respective repositories. ' +
+      'Website by DDH / KDL. Built with Archetype.',
+    fr:
+      '©2015–17 Models of Authority. Certaines parties sont disponibles sous licence CC-BY. ' +
+      'Toutes les images de manuscrits sont la propriété de leurs dépôts respectifs. ' +
+      'Site web par DDH / KDL. Construit avec Archetype.',
   },
 };
 
-function normalizeLocalizedValue(value: unknown, fallback: LocalizedLabel): LocalizedLabel {
+export function normalizeLocalizedValue(value: unknown, fallback: LocalizedLabel): LocalizedLabel {
   // Pre-i18n config files stored a single string shown to every locale. Seed
   // both languages from it so an existing customization survives the upgrade
   // instead of reverting to the English default for French visitors.

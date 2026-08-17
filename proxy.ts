@@ -29,7 +29,7 @@ function buildCsp(nonce: string): string {
     isProduction ? "img-src 'self' data: blob: https:" : "img-src 'self' data: blob: https: http:",
     "font-src 'self' data:",
     isProduction ? "connect-src 'self' https:" : "connect-src 'self' https: http: ws: wss:",
-    "frame-src 'self'",
+    "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -69,7 +69,7 @@ async function loadConfig(origin: string): Promise<MinConfig> {
   }
 
   try {
-    const res = await fetch(`${origin}/api/site-features`, {
+    const res = await fetch(`${origin}/api/app-settings`, {
       cache: 'no-store',
     });
     if (res.ok) {
@@ -78,10 +78,15 @@ async function loadConfig(origin: string): Promise<MinConfig> {
       return cachedConfig;
     }
   } catch {
-    // Fall through to defaults
+    // Fall through to the last known config
   }
 
-  return { sections: {}, searchCategories: {} };
+  // An expired config beats none: an empty one routes every section an admin
+  // disabled. Refreshing the timestamp on failure keeps a sustained outage
+  // throttled to one attempt per TTL instead of one per page view.
+  cachedConfig ??= { sections: {}, searchCategories: {} };
+  cacheTimestamp = now;
+  return cachedConfig;
 }
 
 export async function proxy(request: NextRequest) {

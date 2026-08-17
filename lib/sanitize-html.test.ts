@@ -7,6 +7,17 @@ describe('sanitizeHtml', () => {
     expect(sanitizeHtml(input)).toBe('<p>Hello <strong>world</strong></p>');
   });
 
+  it('preserves semantic definition lists used by legacy publication content', () => {
+    const input =
+      '<dl class="sys_events-details">' +
+      '<dt><a href="/event"><img src="/media/uploads/News/2016/example.jpg" alt="Example"></a></dt>' +
+      '<dt>Register here: <a href="https://example.com/">https://example.com/</a></dt>' +
+      '<dd>Event details</dd>' +
+      '</dl>';
+
+    expect(sanitizeHtml(input)).toBe(input);
+  });
+
   it('strips script tags', () => {
     const input = '<p>OK</p><script>alert("xss")</script>';
     expect(sanitizeHtml(input)).toBe('<p>OK</p>');
@@ -33,6 +44,33 @@ describe('sanitizeHtml', () => {
         '<table><tbody><tr><td style="border: 1px solid black;">Cell</td></tr></tbody></table>' +
         '<p style="padding-left: 30px;">Nested</p>'
     );
+  });
+
+  it('preserves normalized YouTube embeds in legacy publication content', () => {
+    const input =
+      '<p><iframe height="315" src="https://www.youtube.com/embed/zRxcyaOfuBY?start=30&autoplay=1" width="560" onload="alert(1)"></iframe></p>';
+    const sanitized = sanitizeHtml(input, { allowLegacyPublicationStyles: true });
+
+    expect(sanitized).toContain('<iframe');
+    expect(sanitized).toContain('src="https://www.youtube.com/embed/zRxcyaOfuBY?start=30"');
+    expect(sanitized).toContain('width="560"');
+    expect(sanitized).toContain('height="315"');
+    expect(sanitized).toContain('title="YouTube video player"');
+    expect(sanitized).toContain('allowfullscreen=""');
+    expect(sanitized).not.toContain('autoplay=1');
+    expect(sanitized).not.toContain('onload');
+  });
+
+  it('strips non-YouTube iframes from legacy publication content', () => {
+    const input =
+      '<p>Before</p><iframe src="https://legacy-embed.example.invalid/widget"></iframe><p>After</p>';
+
+    const sanitized = sanitizeHtml(input, { allowLegacyPublicationStyles: true });
+
+    expect(sanitized).toContain('<p>Before</p>');
+    expect(sanitized).toContain('<p>After</p>');
+    expect(sanitized).not.toContain('<iframe');
+    expect(sanitized).not.toContain('legacy-embed.example.invalid');
   });
 
   it('strips unsafe legacy publication style declarations', () => {

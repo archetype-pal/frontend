@@ -957,6 +957,7 @@
       "translations": "Traductions",
       "siteFeatures": "Fonctionnalités du site",
       "trash": "Corbeille",
+      "sanityChecks": "Vérifications système",
       "subGroupExpand": "Développer {label}",
       "subGroupCollapse": "Réduire {label}"
     },
@@ -1523,6 +1524,8 @@
       "tabEditor": "Éditeur",
       "tabPreview": "Aperçu",
       "contentPlaceholder": "Commencez à rédiger votre publication...",
+      "legacyRichContentTitle": "Contenu enrichi hérité",
+      "legacyRichContentDescription": "Cette publication contient du HTML hérité que l'éditeur visuel ne peut pas conserver de manière fiable. Modifiez-la en mode source HTML et utilisez l'aperçu pour vérifier le rendu public.",
       "fieldPreviewText": "Texte d'aperçu",
       "previewPlaceholder": "Court texte d'aperçu...",
       "deleteTitle": "Supprimer cette publication ?",
@@ -1877,6 +1880,7 @@
       "subtitle": "Activer ou désactiver les fonctionnalités du site et configurer le comportement de la recherche.",
       "toastSaved": "Fonctionnalités du site enregistrées",
       "toastFailedSave": "Échec de l'enregistrement des fonctionnalités du site",
+      "failedLoad": "Échec du chargement des fonctionnalités du site",
       "dragToReorder": "Glisser pour réorganiser",
       "reorderSection": "Réorganiser {section}",
       "sectionsTitle": "Sections du site",
@@ -2051,7 +2055,8 @@
       "sectionSearchTitle": "Catégories de résultats de recherche",
       "sectionSearchDesc": "Renommer les onglets de catégorie sur la page de recherche publique (ex. « Manuscrits » → « Corpus »). L'onglet Manuscrits suit le libellé « Nom de l'app : Manuscrits » ci-dessus.",
       "toastSaved": "Libellés du modèle enregistrés",
-      "toastFailedSave": "Échec de l'enregistrement des libellés du modèle"
+      "toastFailedSave": "Échec de l'enregistrement des libellés du modèle",
+      "failedLoad": "Échec du chargement des libellés."
     },
     "symbols": {
       "loadingStructure": "Chargement de la structure des symboles...",
@@ -2320,6 +2325,48 @@
         "translationExists": "Une traduction existe",
         "transcription": "Transcription",
         "translation": "Traduction"
+      }
+    },
+    "sanityChecks": {
+      "title": "Vérifications de l'état du système",
+      "subtitle": "Aperçu de l'état opérationnel de ce déploiement : migrations, services dépendants, stockage et envoi d'e-mails.",
+      "refresh": "Actualiser",
+      "error": "Erreur : {message}",
+      "migrations": {
+        "title": "Migrations en attente",
+        "upToDate": "À jour",
+        "pendingLabel": "en attente"
+      },
+      "services": {
+        "title": "Services dépendants",
+        "database": "Base de données",
+        "redis": "Redis",
+        "meilisearch": "Meilisearch",
+        "celeryBroker": "Broker Celery"
+      },
+      "storage": {
+        "title": "Stockage",
+        "databaseSize": "Taille de la base de données",
+        "mediaSize": "Taille du répertoire média",
+        "unavailable": "Indisponible (backend non-PostgreSQL)",
+        "path": "Chemin : {path}"
+      },
+      "permissions": {
+        "title": "Permissions du système de fichiers",
+        "mediaWritable": "Répertoire média accessible en écriture",
+        "logsWritable": "Répertoire de logs accessible en écriture"
+      },
+      "smtp": {
+        "title": "E-mail (SMTP)",
+        "configured": "SMTP semble configuré",
+        "notConfigured": "SMTP n'est pas configuré",
+        "cannotSendTitle": "E-mail de test indisponible",
+        "notConfiguredDescription": "EMAIL_HOST n'est pas défini ou utilise encore la valeur par défaut de Django — configurez SMTP côté serveur avant de pouvoir envoyer un e-mail de test.",
+        "description": "Envoie un e-mail de test aux adresses administrateur configurées (ADMIN_EMAILS).",
+        "send": "Envoyer un e-mail de test",
+        "sending": "Envoi…",
+        "toastSuccess": "E-mail de test envoyé",
+        "toastError": "Échec de l'envoi de l'e-mail de test"
       }
     },
     "reviewAge": {

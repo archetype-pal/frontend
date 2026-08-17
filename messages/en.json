@@ -957,6 +957,7 @@
       "translations": "Translations",
       "siteFeatures": "Site Features",
       "trash": "Trash",
+      "sanityChecks": "Sanity Checks",
       "subGroupExpand": "Expand {label}",
       "subGroupCollapse": "Collapse {label}"
     },
@@ -1523,6 +1524,8 @@
       "tabEditor": "Editor",
       "tabPreview": "Preview",
       "contentPlaceholder": "Start writing your publication...",
+      "legacyRichContentTitle": "Legacy-rich content",
+      "legacyRichContentDescription": "This publication contains legacy HTML that the visual editor cannot preserve reliably. Edit it in raw source mode, and use Preview to check the public rendering.",
       "fieldPreviewText": "Preview Text",
       "previewPlaceholder": "Short preview text...",
       "deleteTitle": "Delete this publication?",
@@ -1877,6 +1880,7 @@
       "subtitle": "Enable or disable site features and configure search behaviour.",
       "toastSaved": "Site features saved",
       "toastFailedSave": "Failed to save site features",
+      "failedLoad": "Failed to load site features",
       "dragToReorder": "Drag to reorder",
       "reorderSection": "Reorder {section}",
       "sectionsTitle": "Site Sections",
@@ -2051,7 +2055,8 @@
       "sectionSearchTitle": "Search result categories",
       "sectionSearchDesc": "Rename the category tabs on the public search page (e.g. \"Manuscripts\" → \"Corpus\"). The Manuscripts tab follows the \"App Name: Manuscripts\" label above.",
       "toastSaved": "Model labels saved",
-      "toastFailedSave": "Failed to save model labels"
+      "toastFailedSave": "Failed to save model labels",
+      "failedLoad": "Failed to load labels."
     },
     "symbols": {
       "loadingStructure": "Loading symbols structure...",
@@ -2320,6 +2325,48 @@
         "translationExists": "Translation exists",
         "transcription": "Transcription",
         "translation": "Translation"
+      }
+    },
+    "sanityChecks": {
+      "title": "System Sanity Checks",
+      "subtitle": "Operational health snapshot for this deployment: migrations, dependent services, storage, and email delivery.",
+      "refresh": "Refresh",
+      "error": "Error: {message}",
+      "migrations": {
+        "title": "Pending Migrations",
+        "upToDate": "Up to date",
+        "pendingLabel": "pending"
+      },
+      "services": {
+        "title": "Dependent Services",
+        "database": "Database",
+        "redis": "Redis",
+        "meilisearch": "Meilisearch",
+        "celeryBroker": "Celery Broker"
+      },
+      "storage": {
+        "title": "Storage",
+        "databaseSize": "Database size",
+        "mediaSize": "Media directory size",
+        "unavailable": "Unavailable (non-PostgreSQL backend)",
+        "path": "Path: {path}"
+      },
+      "permissions": {
+        "title": "Filesystem Permissions",
+        "mediaWritable": "Media directory writable",
+        "logsWritable": "Log directory writable"
+      },
+      "smtp": {
+        "title": "Email (SMTP)",
+        "configured": "SMTP looks configured",
+        "notConfigured": "SMTP is not configured",
+        "cannotSendTitle": "Test email unavailable",
+        "notConfiguredDescription": "EMAIL_HOST is unset or still using Django's default — configure SMTP on the backend before a test email can be sent.",
+        "description": "Sends a test email to the configured admin addresses (ADMIN_EMAILS).",
+        "send": "Send test email",
+        "sending": "Sending…",
+        "toastSuccess": "Test email sent",
+        "toastError": "Failed to send test email"
       }
     },
     "reviewAge": {

@@ -80,12 +80,10 @@ export default async function RootLayout({
 }>) {
   const requestHeaders = await headers();
   const nonce = requestHeaders.get('x-nonce') ?? undefined;
-  const [siteFeaturesConfig, modelLabelsConfig, locale, messages] = await Promise.all([
-    readSiteFeatures(),
-    readModelLabels(),
-    getLocale(),
-    getMessages(),
-  ]);
+  // `degraded` is dropped here: it would otherwise be serialized into the RSC
+  // payload of the client provider below and advertise backend health publicly.
+  const [{ degraded: _degraded, ...siteFeaturesConfig }, modelLabelsConfig, locale, messages] =
+    await Promise.all([readSiteFeatures(), readModelLabels(), getLocale(), getMessages()]);
 
   return (
     <html lang={locale} suppressHydrationWarning>

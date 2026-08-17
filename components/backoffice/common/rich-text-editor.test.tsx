@@ -21,6 +21,12 @@ beforeAll(() => {
 });
 
 describe('<RichTextEditor> hydration', () => {
+  it('uses the project-owned rich text styling hook', () => {
+    render(<RichTextEditor content="<p>styled editor</p>" onChange={() => {}} />);
+
+    expect(document.querySelector('.rich-text-editor-content')).toBeTruthy();
+  });
+
   it('renders content that arrives after mount', async () => {
     function Host() {
       const [content, setContent] = useState('');
@@ -54,5 +60,18 @@ describe('<RichTextEditor> hydration', () => {
     // not re-setContent the value (which would steal the caret and break
     // typing).
     expect(() => render(<Host />)).not.toThrow();
+  });
+
+  it('can open directly in raw source mode', async () => {
+    render(
+      <RichTextEditor
+        content='<p class="highlight-box">Legacy</p>'
+        onChange={() => {}}
+        defaultMode="raw"
+      />
+    );
+
+    expect(screen.getByDisplayValue('<p class="highlight-box">Legacy</p>')).toBeTruthy();
+    expect(screen.getByText('Editing raw HTML source')).toBeTruthy();
   });
 });

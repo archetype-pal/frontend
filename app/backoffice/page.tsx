@@ -157,7 +157,7 @@ export default function BackofficeDashboardPage() {
   });
 
   const publications = useQuery({
-    queryKey: backofficeKeys.publications.all(),
+    queryKey: backofficeKeys.publications.list({ limit: 1 }),
     queryFn: () => getPublications(token!, { limit: 1 }),
     enabled: !!token,
   });
@@ -167,7 +167,7 @@ export default function BackofficeDashboardPage() {
   // drafts in the first 100 publications (DRF max_limit), silently lying
   // about the queue depth when a busy editor had >100 publications.
   const draftPublications = useQuery({
-    queryKey: backofficeKeys.publications.list({ status: 'Draft' }),
+    queryKey: backofficeKeys.publications.list({ limit: 1, status: 'Draft' }),
     queryFn: () => getPublications(token!, { limit: 1, status: 'Draft' }),
     enabled: !!token,
   });
