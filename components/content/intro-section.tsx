@@ -8,6 +8,7 @@ import { ChevronRight, ChevronLeft, ChevronDown, Search, BookOpen } from 'lucide
 import { useTranslations } from 'next-intl';
 import type { CarouselItem } from '@/types/backoffice';
 import { fetchCarouselItems, getCarouselImageUrl } from '@/utils/api';
+import { sanitizeHtml, stripHtml } from '@/lib/sanitize-html';
 
 const ABOUT_MODELS_OF_AUTHORITY_PATH = '/about/about-models-of-authority';
 
@@ -165,7 +166,7 @@ export default function IntroSection() {
                   const slide = (
                     <Image
                       src={getCarouselImageUrl(item.image)}
-                      alt={item.title}
+                      alt={stripHtml(item.title)}
                       fill
                       // Only animate the visible slide — running the ken-burns
                       // transform on hidden (opacity-0) slides is wasted
@@ -242,16 +243,14 @@ export default function IntroSection() {
                       href={currentItemUrl}
                       className="text-white text-lg font-semibold hover:text-accent transition-colors truncate block"
                       style={{ fontFamily: 'var(--font-display)' }}
-                    >
-                      {currentItem?.title}
-                    </Link>
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentItem.title) }}
+                    />
                   ) : (
                     <p
                       className="text-white text-lg font-semibold truncate"
                       style={{ fontFamily: 'var(--font-display)' }}
-                    >
-                      {currentItem?.title}
-                    </p>
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentItem.title) }}
+                    />
                   )}
                 </div>
 

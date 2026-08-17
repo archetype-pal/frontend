@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getCarouselImageUrl } from '@/utils/api';
+import { sanitizeHtml, stripHtml } from '@/lib/sanitize-html';
 import type { CarouselItem } from '@/types/backoffice';
 
 interface CarouselPreviewProps {
@@ -58,7 +59,11 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
           {hasImage ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imageUrl} alt={currentItem.title} className="h-full w-full object-cover" />
+              <img
+                src={imageUrl}
+                alt={stripHtml(currentItem.title)}
+                className="h-full w-full object-cover"
+              />
             </>
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-muted">
@@ -111,7 +116,10 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
           {currentItem?.title && (
             <div className="absolute inset-x-0 bottom-0 px-4 pb-4">
               <div className="rounded-md border border-white/20 bg-black/55 px-3 py-2 backdrop-blur-sm">
-                <p className="text-sm font-medium text-white line-clamp-2">{currentItem.title}</p>
+                <p
+                  className="text-sm font-medium text-white line-clamp-2"
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentItem.title) }}
+                />
               </div>
               {currentItem.url && (
                 <p className="mt-1 text-xs text-white/75 truncate">{currentItem.url}</p>
