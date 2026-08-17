@@ -309,6 +309,19 @@
       "deleteConfirm": "Delete graph #{id}? It moves to the trash; an admin can restore it.",
       "deleteSuccess": "Graph #{id} moved to trash; an admin can restore it",
       "deleteFailed": "Failed to delete graph #{id}"
+    },
+    "delete": {
+      "draftConfirm": "{kind, select, editorial {Delete this editorial draft annotation?} other {Delete this public draft annotation?}}\n\nThis will discard it locally.",
+      "savedConfirm": "{kind, select, editorial {Delete this saved editorial annotation?} other {Delete this saved public annotation?}}\n\nPress Save to move it to the trash, where an admin can restore it.",
+      "bulkMixed": "Delete {total} selected annotations?\n\nThis will discard {draftCount, plural, =1 {# draft annotation} other {# draft annotations}} locally and mark {savedCount, plural, =1 {# saved annotation} other {# saved annotations}} for deletion.\nPress Save to move the saved ones to the trash, where an admin can restore them.",
+      "bulkDrafts": "Delete {total} selected annotations?\n\nThis will discard {draftCount, plural, =1 {# draft annotation} other {# draft annotations}} locally.",
+      "bulkSaved": "Delete {total} selected annotations?\n\nThis will mark {savedCount, plural, =1 {# saved annotation} other {# saved annotations}} for deletion.\nPress Save to move them to the trash, where an admin can restore them.",
+      "regionConfirm": "Delete this linked region?\n\nIt moves to the trash and disappears from the image. Its link to the transcription is kept, so an admin can restore both.",
+      "removeRegion": "Remove region",
+      "regionTrashedTitle": "Region moved to trash",
+      "regionTrashedDescription": "An admin can restore it, with its link to the transcription.",
+      "regionFailedTitle": "Delete failed",
+      "regionFailedDescription": "Could not delete region."
     }
   },
   "annotation": {

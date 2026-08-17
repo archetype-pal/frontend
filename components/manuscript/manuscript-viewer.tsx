@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 
 import { useAuth } from '@/contexts/auth-context';
 
@@ -99,6 +100,7 @@ export default function ManuscriptViewer({
   );
 
   const { token } = useAuth();
+  const tManuscript = useTranslations('manuscript');
 
   const isPublicDemoMode = mode === 'public';
 
@@ -308,7 +310,7 @@ export default function ManuscriptViewer({
     setSelectedRegionGraphId,
     hoveredRegionGraphId,
     setHoveredRegionGraphId,
-    unlinkSelectedRegion,
+    trashSelectedRegion,
     unlinkElementFromRegion,
     linkExistingRegionToElement,
     persistRegionGeometry,
@@ -1364,13 +1366,8 @@ export default function ManuscriptViewer({
               onDeleteMany={handleViewerDeleteMany}
               onDeleteTextRegion={(annotation) => {
                 const graphId = dbIdFromA9s(annotation);
-                if (
-                  graphId != null &&
-                  window.confirm(
-                    'Delete this linked region?\n\nIt will be removed from the image and unlinked from the transcription.'
-                  )
-                ) {
-                  unlinkSelectedRegion(graphId);
+                if (graphId != null && window.confirm(tManuscript('delete.regionConfirm'))) {
+                  trashSelectedRegion(graphId);
                 }
               }}
               confirmDelete={handleConfirmDelete}
@@ -1483,7 +1480,7 @@ export default function ManuscriptViewer({
                     rearmCreateTool();
                   }}
                   selectedRegionGraphId={selectedRegionGraphId}
-                  onDeleteRegion={(graphId) => unlinkSelectedRegion(graphId)}
+                  onDeleteRegion={(graphId) => trashSelectedRegion(graphId)}
                   onUnlinkElement={(textId, elementIndex, graphId) =>
                     unlinkElementFromRegion(textId, elementIndex, graphId)
                   }
