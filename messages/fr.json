@@ -623,6 +623,7 @@
       "title": "Comparer",
       "emptyTitle": "Rien à comparer pour l'instant",
       "emptyDescription": "Ajoutez des manuscrits à Comparer depuis leur page manuscrit, puis revenez ici pour les visualiser côte à côte.",
+      "browseManuscripts": "Parcourir les manuscrits",
       "clearButton": "Tout effacer",
       "removeItem": "Retirer {label} de Comparer"
     }

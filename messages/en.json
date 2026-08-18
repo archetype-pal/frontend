@@ -623,6 +623,7 @@
       "title": "Compare",
       "emptyTitle": "Nothing to compare yet",
       "emptyDescription": "Add manuscripts to Compare from their manuscript page, then come back here to view them side by side.",
+      "browseManuscripts": "Browse manuscripts",
       "clearButton": "Clear all",
       "removeItem": "Remove {label} from Compare"
     }
