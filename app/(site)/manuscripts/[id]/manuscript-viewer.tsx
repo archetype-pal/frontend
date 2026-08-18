@@ -16,6 +16,7 @@ import { renderPublicMsDescAreas } from '@/lib/msdesc-public';
 import { sanitizeHtml } from '@/lib/sanitize-html';
 import { Button } from '@/components/ui/button';
 import { CopyManifestUrlButton } from '@/components/manuscript/copy-manifest-url-button';
+import { CompareToggleButton } from '@/components/compare/compare-toggle-button';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -300,6 +301,14 @@ export function ManuscriptViewer({
             ) : null}
             <BackofficeLink kind="item-part" id={manuscript.id} />
             <CopyManifestUrlButton itemPartId={manuscript.id} />
+            <CompareToggleButton
+              item={{
+                itemPartId: manuscript.id,
+                displayLabel: title,
+                shelfmark: current.shelfmark ?? undefined,
+                repositoryLabel: repository.label ?? undefined,
+              }}
+            />
           </div>
 
           {sections.length > 1 ? (

@@ -47,6 +47,7 @@
     "search": "Search",
     "collection": "{name} ({count})",
     "lightbox": "Lightbox",
+    "compare": "Compare ({count})",
     "news": "News",
     "blogs": "Blogs",
     "featureArticles": "Feature Articles",
@@ -609,6 +610,21 @@
       "sectionGraphs": "Graphs",
       "sectionEditorialAnnotations": "Editorial Annotations",
       "untitled": "Untitled"
+    }
+  },
+  "compare": {
+    "toggle": {
+      "add": "Add to Compare",
+      "remove": "Remove from Compare",
+      "atCapTitle": "Compare is full",
+      "atCapDescription": "You can compare up to {max} manuscripts at once. Remove one from the Compare page first."
+    },
+    "page": {
+      "title": "Compare",
+      "emptyTitle": "Nothing to compare yet",
+      "emptyDescription": "Add manuscripts to Compare from their manuscript page, then come back here to view them side by side.",
+      "clearButton": "Clear all",
+      "removeItem": "Remove {label} from Compare"
     }
   },
   "about": {
@@ -1832,6 +1848,7 @@
         "search": "Explore",
         "collection": "My Collection",
         "lightbox": "Lightbox",
+        "compare": "Compare",
         "news": "News",
         "blogs": "Blogs",
         "featureArticles": "Feature Articles",

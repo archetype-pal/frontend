@@ -47,6 +47,7 @@
     "search": "Rechercher",
     "collection": "{name} ({count})",
     "lightbox": "Visionneuse",
+    "compare": "Comparer ({count})",
     "news": "Actualités",
     "blogs": "Blogs",
     "featureArticles": "Articles de fond",
@@ -609,6 +610,21 @@
       "sectionGraphs": "Graphes",
       "sectionEditorialAnnotations": "Annotations éditoriales",
       "untitled": "Sans titre"
+    }
+  },
+  "compare": {
+    "toggle": {
+      "add": "Ajouter à Comparer",
+      "remove": "Retirer de Comparer",
+      "atCapTitle": "Comparer est plein",
+      "atCapDescription": "Vous pouvez comparer jusqu'à {max} manuscrits à la fois. Retirez-en un de la page Comparer d'abord."
+    },
+    "page": {
+      "title": "Comparer",
+      "emptyTitle": "Rien à comparer pour l'instant",
+      "emptyDescription": "Ajoutez des manuscrits à Comparer depuis leur page manuscrit, puis revenez ici pour les visualiser côte à côte.",
+      "clearButton": "Tout effacer",
+      "removeItem": "Retirer {label} de Comparer"
     }
   },
   "about": {
@@ -1832,6 +1848,7 @@
         "search": "Explorer",
         "collection": "Ma collection",
         "lightbox": "Lightbox",
+        "compare": "Comparer",
         "news": "Actualités",
         "blogs": "Blogs",
         "featureArticles": "Articles de fond",
