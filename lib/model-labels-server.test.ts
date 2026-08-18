@@ -28,12 +28,18 @@ beforeEach(() => {
 describe('readModelLabels', () => {
   it('returns the backend labels merged over defaults, from a tagged fetch', async () => {
     apiFetch.mockResolvedValueOnce(
-      jsonResponse({ labels: { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } } })
+      jsonResponse({
+        labels: { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } },
+      })
     );
 
     const config = await readModelLabels();
 
-    expect(config.labels.siteTitle).toEqual({ en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' });
+    expect(config.labels.siteTitle).toEqual({
+      en: 'Archetype EN',
+      fr: 'Archetype FR',
+      de: 'Archetype DE',
+    });
     expect(config.labels.appManuscripts).toEqual(DEFAULT_MODEL_LABELS.appManuscripts);
     expect(config.degraded).toBeUndefined();
     expect(apiFetch).toHaveBeenCalledWith('/api/v1/site-labels/', {
@@ -66,7 +72,10 @@ describe('writeModelLabels', () => {
       jsonResponse({ labels: { siteTitle: { en: 'Stored', fr: 'Stocké', de: 'Gespeichert' } } })
     );
 
-    const config = await writeModelLabels({ siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } }, 'tok');
+    const config = await writeModelLabels(
+      { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } },
+      'tok'
+    );
 
     const body = JSON.parse(authFetch.mock.calls[0][2].body);
     expect(Object.keys(body.labels)).toEqual(['siteTitle']);
@@ -81,7 +90,10 @@ describe('writeModelLabels', () => {
     authFetch.mockResolvedValueOnce(jsonResponse({ labels: {} }));
 
     await expect(
-      writeModelLabels({ siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } }, 'tok')
+      writeModelLabels(
+        { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } },
+        'tok'
+      )
     ).resolves.toBeNull();
   });
 });

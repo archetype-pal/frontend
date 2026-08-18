@@ -73,12 +73,9 @@ export const DEFAULT_MODEL_LABELS: Record<ModelLabelKey, LocalizedLabel> = {
     de: 'Fußzeile, zweiter Abschnitt',
   },
   footerBottomLine: {
-    en:
-      'Built with Archetype.',
-    fr:
-      'Construit avec Archetype.',
-    de:
-      'Erstellt mit Archetype.',
+    en: 'Built with Archetype.',
+    fr: 'Construit avec Archetype.',
+    de: 'Erstellt mit Archetype.',
   },
 };
 
