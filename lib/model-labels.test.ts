@@ -20,18 +20,18 @@ describe('normalizeModelLabels', () => {
 
   it('overrides only the keys explicitly provided', () => {
     const result = normalizeModelLabels({
-      historicalItem: { en: 'Object', fr: 'Objet' },
-      catalogueNumber: { en: 'Cat #', fr: 'N° cat.' },
+      historicalItem: { en: 'Object', fr: 'Objet', de: 'Objekt' },
+      catalogueNumber: { en: 'Cat #', fr: 'N° cat.', de: 'Katalognummer' },
     });
     expect(result.historicalItem).toEqual({
       en: 'Object',
       fr: 'Objet',
-      de: DEFAULT_MODEL_LABELS.historicalItem.de,
+      de: 'Objekt',
     });
     expect(result.catalogueNumber).toEqual({
       en: 'Cat #',
       fr: 'N° cat.',
-      de: DEFAULT_MODEL_LABELS.catalogueNumber.de,
+      de: 'Katalognummer',
     });
     // Untouched keys keep defaults
     expect(result.position).toEqual(DEFAULT_MODEL_LABELS.position);
@@ -63,7 +63,7 @@ describe('normalizeModelLabels', () => {
 
   it('falls back to the default for empty / whitespace-only strings', () => {
     const result = normalizeModelLabels({
-      historicalItem: { en: '', fr: '   ' },
+      historicalItem: { en: '', fr: '   ', de: '' },
     });
     expect(result.historicalItem).toEqual(DEFAULT_MODEL_LABELS.historicalItem);
   });
@@ -79,7 +79,7 @@ describe('normalizeModelLabels', () => {
 
   it('does not include keys not in DEFAULT_MODEL_LABELS even if supplied', () => {
     const result = normalizeModelLabels({
-      historicalItem: { en: 'Object', fr: 'Objet' },
+      historicalItem: { en: 'Object', fr: 'Objet', de: 'Objekt' },
       // @ts-expect-error — testing runtime behavior
       bogusKey: 'should be ignored',
     });

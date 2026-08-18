@@ -51,9 +51,9 @@ function putRequest(body: unknown): NextRequest {
 describe('GET /api/model-labels', () => {
   it('serves the stored labels when the backend is healthy', async () => {
     stored.labels.siteTitle = {
-      en: 'Models of Authority',
-      fr: 'Models of Authority',
-      de: 'Models of Authority',
+      en: 'Archetype EN',
+      fr: 'Archetype FR',
+      de: 'Archetype DE',
     };
 
     const response = await GET();
@@ -73,7 +73,7 @@ describe('PUT /api/model-labels', () => {
   it('forwards only the keys it was given and leaves the rest stored', async () => {
     stored.labels.appManuscripts = { en: 'Corpus', fr: 'Corpus', de: 'Corpus' };
 
-    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'MoA', fr: 'MoA' } } }));
+    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } } }));
 
     const body = JSON.parse(authFetch.mock.calls[1][2].body);
     expect(Object.keys(body.labels)).toEqual(['siteTitle']);
@@ -92,7 +92,7 @@ describe('PUT /api/model-labels', () => {
   });
 
   it('hard-expires the cache tag on success', async () => {
-    await PUT(putRequest({ labels: { siteTitle: { en: 'MoA', fr: 'MoA' } } }));
+    await PUT(putRequest({ labels: { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } } }));
     expect(revalidateTag).toHaveBeenCalledWith('site-labels', { expire: 0 });
   });
 
@@ -103,7 +103,7 @@ describe('PUT /api/model-labels', () => {
         : jsonResponse({ labels: {} })
     );
 
-    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'MoA', fr: 'MoA' } } }));
+    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } } }));
 
     expect(response.status).toBe(204);
     expect(revalidateTag).toHaveBeenCalledWith('site-labels', { expire: 0 });
@@ -116,7 +116,7 @@ describe('PUT /api/model-labels', () => {
         : new Response('unknown key', { status: 403 })
     );
 
-    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'x', fr: 'x' } } }));
+    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } } }));
 
     expect(response.status).toBe(403);
     expect((await response.json()).detail).toContain('unknown key');
@@ -129,7 +129,7 @@ describe('PUT /api/model-labels', () => {
         : new Response('<html>DRF error page</html>', { status: 500 })
     );
 
-    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'x', fr: 'x' } } }));
+    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } } }));
 
     expect(response.status).toBe(500);
     expect(JSON.stringify(await response.json())).not.toContain('DRF');
@@ -141,7 +141,7 @@ describe('PUT /api/model-labels', () => {
       throw new Error('socket hang up');
     });
 
-    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'x', fr: 'x' } } }));
+    const response = await PUT(putRequest({ labels: { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } } }));
 
     expect(response.status).toBe(502);
     expect(await response.json()).not.toHaveProperty('detail');

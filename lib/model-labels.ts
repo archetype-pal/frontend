@@ -74,17 +74,11 @@ export const DEFAULT_MODEL_LABELS: Record<ModelLabelKey, LocalizedLabel> = {
   },
   footerBottomLine: {
     en:
-      '©2015–17 Models of Authority. Some parts available under CC-BY licence. ' +
-      'All manuscript images are copyright of their respective repositories. ' +
-      'Website by DDH / KDL. Built with Archetype.',
+      'Built with Archetype.',
     fr:
-      '©2015–17 Models of Authority. Certaines parties sont disponibles sous licence CC-BY. ' +
-      'Toutes les images de manuscrits sont la propriété de leurs dépôts respectifs. ' +
-      'Site web par DDH / KDL. Construit avec Archetype.',
+      'Construit avec Archetype.',
     de:
-      '©2015–17 Models of Authority. Teile davon sind unter der CC-BY-Lizenz verfügbar. ' +
-      'Alle Handschriftenbilder unterliegen dem Urheberrecht ihrer jeweiligen Archive. ' +
-      'Website von DDH / KDL. Erstellt mit Archetype.',
+      'Erstellt mit Archetype.',
   },
 };
 
