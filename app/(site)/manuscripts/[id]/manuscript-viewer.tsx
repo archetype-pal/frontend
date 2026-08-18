@@ -15,6 +15,7 @@ import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { renderPublicMsDescAreas } from '@/lib/msdesc-public';
 import { sanitizeHtml } from '@/lib/sanitize-html';
 import { Button } from '@/components/ui/button';
+import { CopyManifestUrlButton } from '@/components/manuscript/copy-manifest-url-button';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -298,6 +299,7 @@ export function ManuscriptViewer({
               </Button>
             ) : null}
             <BackofficeLink kind="item-part" id={manuscript.id} />
+            <CopyManifestUrlButton itemPartId={manuscript.id} />
           </div>
 
           {sections.length > 1 ? (

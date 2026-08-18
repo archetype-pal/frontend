@@ -299,6 +299,11 @@
       "numberedFallbackTitle": "Manuscrit n°{id}",
       "description": "Consulter le manuscrit {label} – {siteTitle}"
     },
+    "iiifManifest": {
+      "copyButton": "Copier l'URL du manifeste IIIF",
+      "toastCopied": "URL du manifeste copiée",
+      "toastCopyFailed": "Impossible de copier l'URL du manifeste"
+    },
     "loadError": {
       "title": "Impossible de charger le manuscrit",
       "description": "Le service des manuscrits est actuellement indisponible. Veuillez réessayer sous peu.",

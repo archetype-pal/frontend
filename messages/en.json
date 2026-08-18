@@ -299,6 +299,11 @@
       "numberedFallbackTitle": "Manuscript #{id}",
       "description": "View manuscript {label} – {siteTitle}"
     },
+    "iiifManifest": {
+      "copyButton": "Copy IIIF manifest URL",
+      "toastCopied": "Manifest URL copied",
+      "toastCopyFailed": "Couldn't copy the manifest URL"
+    },
     "loadError": {
       "title": "Unable to load manuscript",
       "description": "The manuscript service is currently unavailable. Please try again shortly.",
