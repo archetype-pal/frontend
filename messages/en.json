@@ -2635,7 +2635,7 @@
     "usernameLabel": "Username",
     "passwordPlaceholder": "Password",
     "passwordLabel": "Password",
-    "signIn": "Se connecter",
+    "signIn": "Sign in",
     "hidePassword": "Hide password",
     "showPassword": "Show password",
     "signingIn": "Signing in…"
