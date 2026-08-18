@@ -252,7 +252,8 @@ export default function TranslationsPage() {
       const changed = (Object.keys(config.labels) as ModelLabelKey[]).filter(
         (key) =>
           config.labels[key].en !== serverConfig!.labels[key].en ||
-          config.labels[key].fr !== serverConfig!.labels[key].fr
+          config.labels[key].fr !== serverConfig!.labels[key].fr ||
+          config.labels[key].de !== serverConfig!.labels[key].de
       );
       return saveModelLabels(
         token!,
