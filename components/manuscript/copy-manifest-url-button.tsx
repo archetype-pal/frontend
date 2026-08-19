@@ -22,8 +22,8 @@ export function CopyManifestUrlButton({ itemPartId }: { itemPartId: number }) {
   };
 
   return (
-    <Button type="button" variant="outline" onClick={handleClick} title={manifestUrl}>
-      <Copy className="mr-2 h-4 w-4" />
+    <Button type="button" variant="outline" size="sm" onClick={handleClick} title={manifestUrl}>
+      <Copy className="mr-1.5 h-3.5 w-3.5" />
       {t('copyButton')}
     </Button>
   );

@@ -28,8 +28,17 @@ export function CompareToggleButton({ item }: { item: CompareItem }) {
   };
 
   return (
-    <Button type="button" variant={isInCompare ? 'secondary' : 'outline'} onClick={handleClick}>
-      {isInCompare ? <X className="mr-2 h-4 w-4" /> : <GitCompare className="mr-2 h-4 w-4" />}
+    <Button
+      type="button"
+      variant={isInCompare ? 'secondary' : 'outline'}
+      size="sm"
+      onClick={handleClick}
+    >
+      {isInCompare ? (
+        <X className="mr-1.5 h-3.5 w-3.5" />
+      ) : (
+        <GitCompare className="mr-1.5 h-3.5 w-3.5" />
+      )}
       {isInCompare ? t('remove') : t('add')}
     </Button>
   );

@@ -290,7 +290,7 @@ export function ManuscriptViewer({
             ) : null}
           </dl>
 
-          <div className="mt-8 flex flex-wrap items-center gap-4">
+          <div className="mt-8 flex flex-wrap items-center gap-3">
             {featured ? (
               <Button asChild size="lg">
                 <Link href={`/manuscripts/${manuscript.id}/images/${featured.id}`}>
@@ -299,15 +299,21 @@ export function ManuscriptViewer({
                 </Link>
               </Button>
             ) : null}
-            <BackofficeLink kind="item-part" id={manuscript.id} />
-            <CopyManifestUrlButton itemPartId={manuscript.id} />
-            <CompareToggleButton
-              item={{
-                itemPartId: manuscript.id,
-                displayLabel: title,
-                shelfmark: current.shelfmark ?? undefined,
-                repositoryLabel: repository.label ?? undefined,
-              }}
+            <div className="flex flex-wrap items-center gap-2">
+              <CopyManifestUrlButton itemPartId={manuscript.id} />
+              <CompareToggleButton
+                item={{
+                  itemPartId: manuscript.id,
+                  displayLabel: title,
+                  shelfmark: current.shelfmark ?? undefined,
+                  repositoryLabel: repository.label ?? undefined,
+                }}
+              />
+            </div>
+            <BackofficeLink
+              kind="item-part"
+              id={manuscript.id}
+              className="ml-auto border-l border-border pl-3"
             />
           </div>
 
