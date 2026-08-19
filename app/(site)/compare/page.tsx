@@ -40,31 +40,35 @@ export default function ComparePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <h1 className="sr-only">{t('title')}</h1>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-foreground">{t('title')}</h1>
-        <Button variant="outline" size="sm" onClick={clear}>
+        <ul className="flex flex-wrap items-center gap-2">
+          {items.map((item) => (
+            <li
+              key={item.itemPartId}
+              className="flex items-center gap-1.5 rounded-full border bg-card py-1 pl-3 pr-1.5 text-sm"
+            >
+              <Link
+                href={`/manuscripts/${item.itemPartId}`}
+                className="max-w-xs truncate hover:text-primary hover:underline"
+              >
+                {item.shelfmark || item.displayLabel}
+              </Link>
+              <button
+                type="button"
+                onClick={() => removeItem(item.itemPartId)}
+                aria-label={t('removeItem', { label: item.displayLabel })}
+                className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+        <Button variant="outline" size="sm" onClick={clear} className="shrink-0">
           {t('clearButton')}
         </Button>
       </div>
-
-      <ul className="mb-4 flex flex-wrap gap-2">
-        {items.map((item) => (
-          <li
-            key={item.itemPartId}
-            className="flex items-center gap-1.5 rounded-full border bg-card py-1 pl-3 pr-1.5 text-sm"
-          >
-            <span className="max-w-xs truncate">{item.shelfmark || item.displayLabel}</span>
-            <button
-              type="button"
-              onClick={() => removeItem(item.itemPartId)}
-              aria-label={t('removeItem', { label: item.displayLabel })}
-              className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </li>
-        ))}
-      </ul>
 
       <MiradorViewer manifestUrls={manifestUrls} className="h-[75vh] w-full rounded-lg border" />
     </div>
