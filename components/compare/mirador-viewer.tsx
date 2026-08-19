@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 
+import { cn } from '@/lib/utils';
+
 export interface MiradorViewerProps {
   /** IIIF Presentation manifest URLs, one per window, opened side by side. */
   manifestUrls: string[];
@@ -46,5 +48,11 @@ export function MiradorViewer({ manifestUrls, className }: MiradorViewerProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [containerId, manifestUrlsKey]);
 
-  return <div id={containerId} className={className} />;
+  return (
+    // Mirador's root workspace is styled `position: absolute; inset: 0`, so it
+    // fills the nearest *positioned* ancestor. Without `relative` here, that
+    // ancestor is the page itself — Mirador then covers the whole viewport,
+    // including the site header, instead of staying inside this component.
+    <div id={containerId} className={cn('relative overflow-hidden', className)} />
+  );
 }
