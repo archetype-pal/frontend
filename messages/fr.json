@@ -92,6 +92,11 @@
     "noResultsFilters": "Aucun {typeLabel} ne correspond aux filtres actuels.",
     "clearAllFilters": "Effacer tous les filtres",
     "clearKeyword": "Effacer le mot-clé",
+    "compareAction": {
+      "button": "Comparer ({count})",
+      "atCapTitle": "Comparer est plein",
+      "atCapDescription": "Vous pouvez comparer jusqu'à {max} manuscrits à la fois. Retirez-en un de la page Comparer d'abord."
+    },
     "actions": "Actions",
     "actionsTitle": "Actions de recherche — recherches sauvegardées, vue et export",
     "actionsLabel": "Actions de recherche",

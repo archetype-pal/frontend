@@ -92,6 +92,11 @@
     "noResultsFilters": "No {typeLabel} matched the current filters.",
     "clearAllFilters": "Clear all filters",
     "clearKeyword": "Clear keyword",
+    "compareAction": {
+      "button": "Compare ({count})",
+      "atCapTitle": "Compare is full",
+      "atCapDescription": "You can compare up to {max} manuscripts at once. Remove one from the Compare page first."
+    },
     "actions": "Actions",
     "actionsTitle": "Search actions — saved searches, view, and export",
     "actionsLabel": "Search actions",

@@ -1,8 +1,10 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { PanelLeftClose, PanelLeftOpen, SearchX } from 'lucide-react';
+import { GitCompare, PanelLeftClose, PanelLeftOpen, SearchX } from 'lucide-react';
 import { ResultsTable } from '@/components/search/results-table';
 import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';
@@ -42,6 +44,10 @@ const SearchMapView = React.lazy(() =>
 );
 import { cn } from '@/lib/utils';
 import { useSearchPageState } from '@/hooks/search/use-search-page-state';
+import { useManuscriptCompareSelection } from '@/hooks/search/use-manuscript-compare-selection';
+import { manuscriptToCompareItem } from '@/lib/manuscript-compare';
+import { useCompareStore, MAX_COMPARE_ITEMS } from '@/stores/compare-store';
+import type { ManuscriptListItem } from '@/types/search';
 import { useTranslations } from 'next-intl';
 
 type ResultListItem = ResultMap[ResultType];
@@ -52,6 +58,32 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const [thumbnailSize, setThumbnailSize] = useThumbnailSize();
   const { getLabel } = useModelLabels();
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
+  const router = useRouter();
+  const addToCompare = useCompareStore((state) => state.addItem);
+  const manuscriptSelectionResetKey = `${s.resultType}|${s.submittedKeyword}|${JSON.stringify(
+    s.queryState.selected_facets
+  )}|${s.queryState.offset}`;
+  const manuscriptSelection = useManuscriptCompareSelection(manuscriptSelectionResetKey);
+  const isManuscripts = s.resultType === 'manuscripts';
+
+  const handleCompareSelected = () => {
+    const selected = (s.filtered as ManuscriptListItem[]).filter((item) =>
+      manuscriptSelection.isSelected(item.id)
+    );
+    let added = 0;
+    for (const item of selected) {
+      if (addToCompare(manuscriptToCompareItem(item))) added += 1;
+    }
+    if (added < selected.length) {
+      toast.error(t('compareAction.atCapTitle'), {
+        description: t('compareAction.atCapDescription', { max: MAX_COMPARE_ITEMS }),
+      });
+    }
+    if (added > 0) {
+      manuscriptSelection.clear();
+      router.push('/compare');
+    }
+  };
 
   return (
     <div className="flex min-h-[calc(100dvh-var(--site-header-h,0px))] flex-col bg-background">
@@ -193,6 +225,19 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 />
               </MobileFilterSheet>
             </div>
+            {isManuscripts && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                disabled={manuscriptSelection.count === 0}
+                onClick={handleCompareSelected}
+              >
+                <GitCompare className="mr-1.5 h-4 w-4" />
+                {t('compareAction.button', { count: manuscriptSelection.count })}
+              </Button>
+            )}
             {s.visibility.isResearcher && (
               <FieldVisibilityMenu
                 resultType={s.resultType}
@@ -338,6 +383,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     highlightKeyword={s.submittedKeyword}
                     visibleColumns={s.categoryConfig.visibleColumns}
                     isFetching={s.isFetching}
+                    manuscriptSelection={isManuscripts ? manuscriptSelection : undefined}
                   />
                 ) : s.viewMode === 'timeline' ? (
                   <React.Suspense
@@ -411,6 +457,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     highlightKeyword={s.submittedKeyword}
                     isFetching={s.isFetching}
                     thumbnailSize={thumbnailSize}
+                    manuscriptSelection={isManuscripts ? manuscriptSelection : undefined}
                   />
                 )
               ) : s.data.count > 0 && s.queryState.offset >= s.data.count ? (
