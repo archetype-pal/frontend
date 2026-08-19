@@ -94,6 +94,7 @@
     "clearKeyword": "Clear keyword",
     "compareAction": {
       "button": "Compare ({count})",
+      "selectAriaLabel": "Select {label} to compare",
       "atCapTitle": "Compare is full",
       "atCapDescription": "You can compare up to {max} manuscripts at once. Remove one from the Compare page first."
     },

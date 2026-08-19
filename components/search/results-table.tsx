@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Table, TableHeader, TableRow, TableCell, TableHead } from '@/components/ui/table';
 import { IiifImage } from '@/components/ui/iiif-image';
 import Link from 'next/link';
@@ -448,6 +449,7 @@ function ResultsTableComponent<K extends ResultType>({
   manuscriptSelection?: ManuscriptCompareSelection;
 }) {
   const { getLabel } = useModelLabels();
+  const t = useTranslations('search');
   const resolveHeader = React.useCallback(
     (col: Column<ResultMap[K]>) => (col.labelKey ? getLabel(col.labelKey) : col.header),
     [getLabel]
@@ -528,7 +530,7 @@ function ResultsTableComponent<K extends ResultType>({
                       checked={manuscriptSelection.isSelected(manuscript.id)}
                       disabled={manuscriptSelection.isDisabled(manuscript.id)}
                       onCheckedChange={() => manuscriptSelection.toggle(manuscript.id)}
-                      aria-label={`Select ${label} to compare`}
+                      aria-label={t('compareAction.selectAriaLabel', { label })}
                       className="relative z-[2]"
                     />
                   </TableCell>
@@ -693,6 +695,7 @@ function ResultsTableComponent<K extends ResultType>({
       resultType,
       rowKeyOf,
       subRowAccessor,
+      t,
       totalColSpan,
     ]
   );

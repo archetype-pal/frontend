@@ -94,6 +94,7 @@
     "clearKeyword": "Effacer le mot-clé",
     "compareAction": {
       "button": "Comparer ({count})",
+      "selectAriaLabel": "Sélectionner {label} pour comparer",
       "atCapTitle": "Comparer est plein",
       "atCapDescription": "Vous pouvez comparer jusqu'à {max} manuscrits à la fois. Retirez-en un de la page Comparer d'abord."
     },

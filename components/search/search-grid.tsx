@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { IiifImage } from '@/components/ui/iiif-image';
 import Link from 'next/link';
 import type { GraphListItem, ImageListItem, ManuscriptListItem } from '@/types/search';
@@ -287,6 +288,7 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   eager: boolean;
   selection?: ManuscriptCompareSelection;
 }) {
+  const t = useTranslations('search');
   const meta = [item.type, item.date].filter(Boolean).join(' · ');
   const isChecked = selection?.isSelected(item.id) ?? false;
   return (
@@ -301,7 +303,7 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
               e.stopPropagation();
             }}
             onCheckedChange={() => selection.toggle(item.id)}
-            aria-label={`Select ${displayText} to compare`}
+            aria-label={t('compareAction.selectAriaLabel', { label: displayText })}
             className={cn(
               'absolute left-2 top-2 z-20 border-border bg-background/90 shadow-sm transition-opacity duration-200',
               isChecked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
