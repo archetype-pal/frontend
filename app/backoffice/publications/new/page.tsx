@@ -40,17 +40,17 @@ export default function NewPublicationPage() {
   };
 
   const createMut = useMutation({
-    mutationFn: () =>
-      createPublication(token!, {
+    mutationFn: () => {
+      if (!token) throw new Error('Missing auth token');
+
+      return createPublication(token, {
         title,
         slug: slug || generateSlug(title),
-        content: '<p></p>',
-        preview: '',
         is_blog_post: isBlog,
         is_news: isNews,
         status: 'Draft',
-        author: user?.id,
-      }),
+      });
+    },
     onSuccess: (data) => {
       toast.success(t('publicationsNew.toastCreated'));
       router.push(`/backoffice/publications/${data.slug}`);
@@ -148,7 +148,7 @@ export default function NewPublicationPage() {
 
         <Button
           onClick={() => createMut.mutate()}
-          disabled={!title.trim() || createMut.isPending}
+          disabled={!token || !title.trim() || createMut.isPending}
           className="w-full"
         >
           {createMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
