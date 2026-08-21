@@ -63,12 +63,17 @@ export function ItemImageEditDialog({
     });
 
   const saveMut = useMutation({
-    mutationFn: () =>
-      updateItemImage(token!, image.id, {
-        locus,
-        tags,
-        image: imagePath || null,
-      }),
+    mutationFn: () => {
+      // The backend `image` field is path-string-only and non-nullable
+      // (raw bytes must go through the upload pipeline). Send `image` only
+      // when the editor actually repointed it to a non-empty path; omitting
+      // it keeps locus/tags-only edits valid. Clearing the path is not a
+      // supported operation — delete the row instead.
+      const payload: { locus: string; tags: string; image?: string } = { locus, tags };
+      const trimmed = imagePath.trim();
+      if (trimmed && trimmed !== (image.image ?? '')) payload.image = trimmed;
+      return updateItemImage(token!, image.id, payload);
+    },
     onSuccess: () => {
       toast.success(t('manuscriptsDetail.imageUpdated'));
       invalidate();
