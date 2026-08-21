@@ -2,7 +2,9 @@ import { apiFetch, authFetch } from './api-fetch';
 import {
   getDefaultConfig,
   getDefaultFeatures,
+  getDefaultThemeColors,
   mergeFeatureFlags,
+  mergeThemeColors,
   normalizeSectionOrder,
   type SiteFeaturesConfig,
 } from './site-features';
@@ -87,6 +89,11 @@ export async function readSiteFeatures(): Promise<SiteFeaturesRead> {
           ])
         ),
       },
+      // Same backward-compat story as `features`: a config saved before this
+      // field existed has no `theme` key, so every colour falls back to
+      // `defaults.theme` (this deployment's current look) rather than a
+      // stored `undefined`.
+      theme: mergeThemeColors(defaults.theme, parsed.theme),
     };
     // Cloned on the way out so a caller mutating its copy can't corrupt the
     // process-wide last-known-good.
@@ -117,6 +124,10 @@ export async function writeSiteFeatures(
     // complete and boolean-typed even if a caller hands us a partial object.
     features: mergeFeatureFlags(getDefaultFeatures(), config.features),
     searchCategories: config.searchCategories,
+    // Same whitelist rule as `features`: validated key-by-key against the
+    // hardcoded defaults rather than trusted verbatim, so a malformed value
+    // can't get written to the backend as-is.
+    theme: mergeThemeColors(getDefaultThemeColors(), config.theme),
   };
   const res = await authFetch(SITE_FEATURES_PATH, token, {
     method: 'PUT',

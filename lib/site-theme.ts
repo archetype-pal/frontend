@@ -48,3 +48,37 @@ export function getSiteThemeName(): SiteThemeName {
 export function getSiteThemeVars(): ThemeVars {
   return SITE_THEME_PRESETS[getSiteThemeName()];
 }
+
+const HSL_VAR_RE = /^hsl\(\s*(-?[\d.]+)\s+(-?[\d.]+)%\s+(-?[\d.]+)%\s*\)$/;
+
+/**
+ * Converts one of this module's `hsl(H S% L%)` preset values to a `#rrggbb`
+ * hex string, for callers (the backoffice colour pickers) that need a value
+ * an `<input type="color">` can render. Returns null for anything that isn't
+ * this exact preset format rather than guessing.
+ */
+export function siteThemeVarToHex(value: string): string | null {
+  const match = HSL_VAR_RE.exec(value.trim());
+  if (!match) return null;
+  const [, hStr, sStr, lStr] = match;
+  const h = Number(hStr);
+  const s = Number(sStr) / 100;
+  const l = Number(lStr) / 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (h < 60) [r, g, b] = [c, x, 0];
+  else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x];
+  else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+  const toHex = (v: number) =>
+    Math.round((v + m) * 255)
+      .toString(16)
+      .padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}

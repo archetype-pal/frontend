@@ -16,7 +16,6 @@ import { env } from '@/lib/env';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
-import { getSiteThemeVars } from '@/lib/site-theme';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -86,7 +85,18 @@ export default async function RootLayout({
   const [{ degraded: _degraded, ...siteFeaturesConfig }, modelLabelsConfig, locale, messages] =
     await Promise.all([readSiteFeatures(), readModelLabels(), getLocale(), getMessages()]);
 
-  const siteThemeVars = getSiteThemeVars();
+  // `getDefaultThemeColors()` (baked into `siteFeaturesConfig.theme` by
+  // `readSiteFeatures`) already resolves to this deployment's build-time
+  // `NEXT_PUBLIC_SITE_THEME` preset when no admin override is stored, so this
+  // is the one place brand colours need to be read from — no separate
+  // `lib/site-theme.ts` lookup here.
+  const { primaryColor, primaryForegroundColor, accentColor } = siteFeaturesConfig.theme;
+  const siteThemeVars = {
+    '--primary': primaryColor,
+    '--ring': primaryColor,
+    '--primary-foreground': primaryForegroundColor,
+    '--accent': accentColor,
+  };
 
   return (
     <html

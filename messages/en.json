@@ -1842,6 +1842,17 @@
       "featureDescriptions": {
         "manuscriptDescriptions": "Structured TEI descriptions: the description section on public manuscript pages and the msDesc editor in the manuscript workspace. Nothing is deleted — turning this back on restores everything. Search facets are configured separately under Search Categories."
       },
+      "theme": {
+        "title": "UI Customization",
+        "description": "Repaint the site's brand colours to match your organization.",
+        "backgroundColor": "Main background color",
+        "backgroundColorDescription": "The brand colour used for the header, primary buttons, and active navigation.",
+        "frontColor": "Primary front color",
+        "frontColorDescription": "The text and icon colour drawn on top of the main background colour.",
+        "secondaryColor": "Secondary color",
+        "secondaryColorDescription": "The accent colour used for highlights, badges, and call-outs.",
+        "reset": "Reset"
+      },
       "searchCategoriesTitle": "Search Categories",
       "searchCategoriesDescription": "Toggle categories and configure visible columns and facets. Drag to reorder.",
       "categorySummary": "{columns} col · {facets} facets",
