@@ -3,7 +3,12 @@
 import * as React from 'react';
 import { IiifImage } from '@/components/ui/iiif-image';
 import Link from 'next/link';
-import type { GraphListItem, ImageListItem, ManuscriptListItem } from '@/types/search';
+import type {
+  ClauseListItem,
+  GraphListItem,
+  ImageListItem,
+  ManuscriptListItem,
+} from '@/types/search';
 import type { ResultType } from '@/lib/search-types';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
@@ -12,9 +17,11 @@ import { CollectionStar } from '@/components/collection/collection-star';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { getImageDetailUrl } from '@/lib/media-url';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
+import { clauseToGraphCollectionItem } from '@/lib/collection-item';
+import { cn } from '@/lib/utils';
 import type { ThumbnailSize } from '@/components/search/thumbnail-size-control';
 
-type GridItem = ImageListItem | GraphListItem | ManuscriptListItem;
+type GridItem = ImageListItem | GraphListItem | ManuscriptListItem | ClauseListItem;
 
 export interface SearchGridProps {
   results?: GridItem[];
@@ -22,6 +29,7 @@ export interface SearchGridProps {
   highlightKeyword?: string;
   isFetching?: boolean;
   thumbnailSize?: ThumbnailSize;
+  showThumbnails?: boolean;
 }
 
 // Column counts per thumbnail size. 'medium' preserves the historical grid;
@@ -56,6 +64,15 @@ type GridCard =
       displayText: string;
       formattedDisplayText?: string;
       imageUrl: string | null;
+    }
+  | {
+      kind: 'clause';
+      item: ClauseListItem;
+      detailUrl: string | null;
+      displayText: string;
+      formattedDisplayText?: string;
+      content?: string;
+      formattedContent?: string;
     };
 
 type MediaGridCardProps = {
@@ -69,6 +86,7 @@ type MediaGridCardProps = {
   loadingFallback?: string;
   item: ImageListItem | GraphListItem;
   itemType: 'image' | 'graph';
+  showThumbnail?: boolean;
   eager?: boolean;
 };
 
@@ -139,6 +157,23 @@ export function toGridCard(resultType: ResultType, item: GridItem): GridCard | n
       formattedDisplayText: label.formattedText,
     };
   }
+  if (resultType === 'clauses') {
+    const clause = item as ClauseListItem;
+    const label = composeCardLabel([
+      { plain: clause.clause_type, formatted: formatted.clause_type },
+      { plain: clause.shelfmark, formatted: formatted.shelfmark },
+      { plain: clause.locus, formatted: formatted.locus },
+    ]);
+    return {
+      kind: 'clause',
+      item: clause,
+      detailUrl: getImageDetailUrl(clause),
+      displayText: label.text || 'Untitled',
+      formattedDisplayText: label.formattedText,
+      content: clause.content,
+      formattedContent: formatted.content,
+    };
+  }
   return null;
 }
 
@@ -153,6 +188,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
   loadingFallback = 'No Image',
   item,
   itemType,
+  showThumbnail = true,
   eager = false,
 }: MediaGridCardProps) {
   const renderLink = (children: React.ReactNode, className: string) =>
@@ -184,31 +220,33 @@ const MediaGridCard = React.memo(function MediaGridCard({
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
-      <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
-        {imageUrl ? (
-          <>
-            {renderLink(image, 'relative block h-full w-full')}
-            <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
-          </>
-        ) : (
-          renderLink(
-            <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-              {loadingFallback}
-            </span>,
-            'block h-full w-full'
-          )
-        )}
-        <div className="absolute right-2 top-2 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-          <OpenLightboxButton
-            item={item}
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 bg-card/90 shadow-sm hover:bg-card"
-          />
-          {collectable && <CollectionStar itemId={item.id} itemType={itemType} item={item} />}
+      {showThumbnail && (
+        <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
+          {imageUrl ? (
+            <>
+              {renderLink(image, 'relative block h-full w-full')}
+              <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
+            </>
+          ) : (
+            renderLink(
+              <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                {loadingFallback}
+              </span>,
+              'block h-full w-full'
+            )
+          )}
+          <div className="absolute right-2 top-2 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <OpenLightboxButton
+              item={item}
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 bg-card/90 shadow-sm hover:bg-card"
+            />
+            {collectable && <CollectionStar itemId={item.id} itemType={itemType} item={item} />}
+          </div>
         </div>
-      </div>
-      <div className="border-t border-border/70 px-2.5 py-1.5">
+      )}
+      <div className={cn('px-2.5 py-1.5', showThumbnail && 'border-t border-border/70')}>
         {renderLink(
           <span
             title={displayText}
@@ -237,12 +275,14 @@ const GraphGridCard = React.memo(function GraphGridCard({
   displayText,
   formattedDisplayText,
   highlightKeyword,
+  showThumbnail = true,
   eager,
 }: {
   item: GraphListItem;
   displayText: string;
   formattedDisplayText?: string;
   highlightKeyword: string;
+  showThumbnail?: boolean;
   eager: boolean;
 }) {
   const infoUrl = (item.image_iiif || '').trim();
@@ -258,6 +298,7 @@ const GraphGridCard = React.memo(function GraphGridCard({
       loadingFallback={infoUrl ? '…' : 'No Image'}
       item={item}
       itemType="graph"
+      showThumbnail={showThumbnail}
       eager={eager}
     />
   );
@@ -270,6 +311,7 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   displayText,
   formattedDisplayText,
   highlightKeyword,
+  showThumbnail = true,
   eager,
 }: {
   item: ManuscriptListItem;
@@ -278,33 +320,36 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   displayText: string;
   formattedDisplayText?: string;
   highlightKeyword: string;
+  showThumbnail?: boolean;
   eager: boolean;
 }) {
   const meta = [item.type, item.date].filter(Boolean).join(' · ');
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
-      <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
-        <Link href={detailUrl} className="relative block h-full w-full">
-          {imageUrl ? (
-            <IiifImage
-              src={imageUrl}
-              alt={displayText}
-              fill
-              className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
-              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
-              loading={eager ? 'eager' : 'lazy'}
-            />
-          ) : (
-            <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-              No Image
-            </span>
+      {showThumbnail && (
+        <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
+          <Link href={detailUrl} className="relative block h-full w-full">
+            {imageUrl ? (
+              <IiifImage
+                src={imageUrl}
+                alt={displayText}
+                fill
+                className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
+                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                loading={eager ? 'eager' : 'lazy'}
+              />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                No Image
+              </span>
+            )}
+          </Link>
+          {imageUrl && (
+            <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
           )}
-        </Link>
-        {imageUrl && (
-          <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
-        )}
-      </div>
-      <div className="border-t border-border/70 px-2.5 py-1.5">
+        </div>
+      )}
+      <div className={cn('px-2.5 py-1.5', showThumbnail && 'border-t border-border/70')}>
         <Link href={detailUrl} className="block">
           <span className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
             <Highlight
@@ -327,12 +372,110 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   );
 });
 
+const ClauseGridCard = React.memo(function ClauseGridCard({
+  item,
+  detailUrl,
+  displayText,
+  formattedDisplayText,
+  content,
+  formattedContent,
+  highlightKeyword,
+  showThumbnail = true,
+  eager = false,
+}: {
+  item: ClauseListItem;
+  detailUrl: string | null;
+  displayText: string;
+  formattedDisplayText?: string;
+  content?: string;
+  formattedContent?: string;
+  highlightKeyword: string;
+  showThumbnail?: boolean;
+  eager?: boolean;
+}) {
+  const infoUrl = (item.thumbnail_iiif || '').trim();
+  const imageUrl = useIiifThumbnailUrl(infoUrl, item.annotation_coordinates);
+  const collectionItem = React.useMemo(() => clauseToGraphCollectionItem(item), [item]);
+  const meta = [item.date, item.repository_name].filter(Boolean).join(' · ');
+
+  return (
+    <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
+      {showThumbnail && (
+        <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
+          {imageUrl ? (
+            <Link href={detailUrl ?? '#'} className="relative block h-full w-full">
+              <IiifImage
+                src={imageUrl}
+                alt={displayText}
+                fill
+                className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
+                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                loading={eager ? 'eager' : 'lazy'}
+              />
+              <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
+            </Link>
+          ) : (
+            <Link href={detailUrl ?? '#'} className="block h-full w-full">
+              <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                {infoUrl ? '…' : 'No Image'}
+              </span>
+            </Link>
+          )}
+          <div className="absolute right-2 top-2 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            {collectionItem && (
+              <>
+                <OpenLightboxButton
+                  item={collectionItem}
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 bg-card/90 shadow-sm hover:bg-card"
+                />
+                <CollectionStar itemId={collectionItem.id} itemType="graph" item={collectionItem} />
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      <div
+        className={cn(
+          'flex flex-1 flex-col px-2.5 py-2',
+          showThumbnail && 'border-t border-border/70'
+        )}
+      >
+        <Link href={detailUrl ?? '#'} className="block">
+          <span
+            title={displayText}
+            className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary"
+          >
+            <Highlight
+              text={displayText}
+              keyword={highlightKeyword}
+              formattedText={formattedDisplayText}
+            />
+          </span>
+        </Link>
+        {content && (
+          <p className="mt-1 line-clamp-3 font-serif text-xs italic leading-relaxed text-muted-foreground">
+            <Highlight text={content} keyword={highlightKeyword} formattedText={formattedContent} />
+          </p>
+        )}
+        {meta && (
+          <div className="mt-auto pt-2 text-[11px] text-muted-foreground/80">
+            <span className="truncate">{meta}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
 function SearchGridComponent({
   results = [],
   resultType,
   highlightKeyword = '',
   isFetching = false,
   thumbnailSize = 'medium',
+  showThumbnails = true,
 }: SearchGridProps) {
   const cards = React.useMemo(
     () => results.map((item) => ({ card: toGridCard(resultType, item) })),
@@ -342,6 +485,23 @@ function SearchGridComponent({
   const renderCard = React.useCallback(
     (card: GridCard, index: number) => {
       const eager = index < SEARCH_EAGER_THUMBNAIL_COUNT;
+
+      if (card.kind === 'clause') {
+        return (
+          <ClauseGridCard
+            key={card.item.id}
+            item={card.item}
+            detailUrl={card.detailUrl}
+            displayText={card.displayText}
+            formattedDisplayText={card.formattedDisplayText}
+            content={card.content}
+            formattedContent={card.formattedContent}
+            highlightKeyword={highlightKeyword}
+            showThumbnail={showThumbnails}
+            eager={eager}
+          />
+        );
+      }
 
       if (card.kind === 'manuscript') {
         return (
@@ -353,6 +513,7 @@ function SearchGridComponent({
             displayText={card.displayText}
             formattedDisplayText={card.formattedDisplayText}
             highlightKeyword={highlightKeyword}
+            showThumbnail={showThumbnails}
             eager={eager}
           />
         );
@@ -366,6 +527,7 @@ function SearchGridComponent({
             displayText={card.displayText}
             formattedDisplayText={card.formattedDisplayText}
             highlightKeyword={highlightKeyword}
+            showThumbnail={showThumbnails}
             eager={eager}
           />
         );
@@ -383,11 +545,12 @@ function SearchGridComponent({
           annotationCount={card.kind === 'image' ? card.item.number_of_annotations : null}
           item={card.item}
           itemType={card.kind}
+          showThumbnail={showThumbnails}
           eager={eager}
         />
       );
     },
-    [highlightKeyword]
+    [highlightKeyword, showThumbnails]
   );
 
   if (!results.length) {

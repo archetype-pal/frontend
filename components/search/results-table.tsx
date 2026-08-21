@@ -430,6 +430,7 @@ function ResultsTableComponent<K extends ResultType>({
   highlightKeyword = '',
   visibleColumns,
   isFetching = false,
+  showThumbnails = true,
 }: {
   resultType: K;
   results: ResultMap[K][];
@@ -441,6 +442,7 @@ function ResultsTableComponent<K extends ResultType>({
   highlightKeyword?: string;
   visibleColumns?: string[];
   isFetching?: boolean;
+  showThumbnails?: boolean;
 }) {
   const { getLabel } = useModelLabels();
   const resolveHeader = React.useCallback(
@@ -589,7 +591,7 @@ function ResultsTableComponent<K extends ResultType>({
                 </TableRow>
               );
             })()}
-          {preview && (
+          {showThumbnails && preview && (
             <TableRow className="relative cursor-pointer group-hover:bg-muted/50 transition-colors">
               <TableCell
                 colSpan={totalColSpan}
@@ -667,6 +669,7 @@ function ResultsTableComponent<K extends ResultType>({
       previewAccessor,
       resultType,
       rowKeyOf,
+      showThumbnails,
       subRowAccessor,
       totalColSpan,
     ]
