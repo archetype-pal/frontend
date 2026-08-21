@@ -241,8 +241,16 @@ export interface AdminHandListItem {
   date_display: string | null;
   place: number | null;
   place_display: string | null;
-  description: string;
+  descriptions: HandDescription[];
   item_part_images: number[];
+}
+
+export interface HandDescription {
+  id: number;
+  hand: number;
+  source: number | null;
+  source_label: string | null;
+  content: string;
 }
 
 export interface Script {

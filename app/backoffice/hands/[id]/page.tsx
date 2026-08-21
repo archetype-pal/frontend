@@ -8,17 +8,10 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, Image as ImageIcon, Check, ExternalLink } from 'lucide-react';
 import { IiifThumbnail } from '@/components/backoffice/common/iiif-thumbnail';
 import { PlaceCombobox } from '@/components/backoffice/common/place-combobox';
+import { HandDescriptionsSection } from '@/components/backoffice/scribes/hand-descriptions-section';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import dynamic from 'next/dynamic';
-const RichTextEditor = dynamic(
-  () => import('@/components/backoffice/common/rich-text-editor').then((m) => m.RichTextEditor),
-  {
-    ssr: false,
-    loading: () => <div className="h-[200px] rounded-md border animate-pulse bg-muted" />,
-  }
-);
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -57,7 +50,6 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
       name: h.name,
       place: h.place,
       date: h.date,
-      description: h.description,
       item_part_images: h.item_part_images ?? [],
     }),
     saveFn: (t, hid, form) => updateHand(t, hid, form),
@@ -205,15 +197,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label>{t('handsDetail.labelDescription')}</Label>
-        <RichTextEditor
-          content={form.description}
-          onChange={(html) => setForm({ description: html })}
-          placeholder={t('handsDetail.descriptionPlaceholder')}
-          minimal
-        />
-      </div>
+      <HandDescriptionsSection handId={id} descriptions={hand.descriptions} />
 
       {/* Image selection section */}
       <div className="space-y-3">

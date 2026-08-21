@@ -1119,6 +1119,14 @@
       "placeCreateFailed": "Failed to create place.",
       "labelDescription": "Description",
       "descriptionPlaceholder": "Enter hand description...",
+      "descriptionsLabel": "Descriptions",
+      "noDescriptions": "No descriptions yet.",
+      "sourceOptional": "No source",
+      "deleteDescriptionAria": "Delete description",
+      "descriptionAddFailed": "Failed to add description.",
+      "descriptionUpdateFailed": "Failed to update description.",
+      "descriptionRemoved": "Description removed.",
+      "descriptionRemoveFailed": "Failed to remove description.",
       "imagesLabel": "Images where this hand appears",
       "imagesCount": "{selected} of {total} selected",
       "selectAll": "Select All",
@@ -2672,6 +2680,7 @@
     "emptyStates": {
       "description": "No description associated to this record."
     },
+    "sourceLabel": "Source: {label}",
     "imageAltFallback": "Manuscript image",
     "annotationCount": "{count, plural, one {# Annotation} other {# Annotations}}",
     "metadata": {

@@ -1119,6 +1119,14 @@
       "placeCreateFailed": "Échec de la création du lieu.",
       "labelDescription": "Description",
       "descriptionPlaceholder": "Saisissez la description de la main...",
+      "descriptionsLabel": "Descriptions",
+      "noDescriptions": "Aucune description pour le moment.",
+      "sourceOptional": "Aucune source",
+      "deleteDescriptionAria": "Supprimer la description",
+      "descriptionAddFailed": "Échec de l'ajout de la description.",
+      "descriptionUpdateFailed": "Échec de la mise à jour de la description.",
+      "descriptionRemoved": "Description supprimée.",
+      "descriptionRemoveFailed": "Échec de la suppression de la description.",
       "imagesLabel": "Images où cette main apparaît",
       "imagesCount": "{selected} sur {total} sélectionné(s)",
       "selectAll": "Tout sélectionner",
@@ -2672,6 +2680,7 @@
     "emptyStates": {
       "description": "Aucune description associée à cette fiche."
     },
+    "sourceLabel": "Source : {label}",
     "imageAltFallback": "Image du manuscrit",
     "annotationCount": "{count, plural, one {# annotation} other {# annotations}}",
     "metadata": {
