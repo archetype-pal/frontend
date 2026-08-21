@@ -14,11 +14,18 @@ export async function runBulkAction<TId>(options: {
   action: (id: TId) => Promise<unknown>;
   invalidate: () => void;
   /** Past-tense verb for the success toast: "deleted", "approved", "activated". */
-  pastTense: string;
+  pastTense?: string;
   /** Singular noun for the toast: "user", "annotation", "comment". */
-  noun: string;
+  noun?: string;
+  /** Localized messages. Given these, pastTense/noun are unused — the English
+   *  template can't produce correct agreement in other languages. */
+  messages?: {
+    success: (count: number) => string;
+    allFailed: () => string;
+    partial: (succeeded: number, failed: number) => string;
+  };
 }): Promise<{ succeeded: number; failed: number }> {
-  const { ids, action, invalidate, pastTense, noun } = options;
+  const { ids, action, invalidate, pastTense = 'updated', noun = 'item', messages } = options;
   const results = await Promise.allSettled(ids.map((id) => action(id)));
   invalidate();
 
@@ -28,11 +35,13 @@ export async function runBulkAction<TId>(options: {
   const plural = total === 1 ? noun : `${noun}s`;
 
   if (failed === 0) {
-    toast.success(`${total} ${plural} ${pastTense}`);
+    toast.success(messages ? messages.success(total) : `${total} ${plural} ${pastTense}`);
   } else if (failed === total) {
-    toast.error(`Failed to update ${plural}`);
+    toast.error(messages ? messages.allFailed() : `Failed to update ${plural}`);
   } else {
-    toast.warning(`${succeeded} ${pastTense}, ${failed} failed`);
+    toast.warning(
+      messages ? messages.partial(succeeded, failed) : `${succeeded} ${pastTense}, ${failed} failed`
+    );
   }
 
   return { succeeded, failed };
