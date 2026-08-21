@@ -18,6 +18,7 @@ export interface BackendGraphComponent {
 export interface BackendGraph {
   id: number;
   item_image: number;
+  item_part?: number | null;
   annotation_type?: 'image' | 'text' | 'editorial' | 'unknown' | null;
   note?: string;
   internal_note?: string;
@@ -31,6 +32,7 @@ export interface BackendGraph {
     crs?: unknown;
   };
   allograph: number | null;
+  allograph_name?: string | null;
   hand: number | null;
   graphcomponent_set: BackendGraphComponent[];
   positions: number[];
@@ -57,6 +59,38 @@ export async function fetchAnnotationsForImage(
   });
   if (!res.ok) throw new Error('Failed to load annotations');
   return res.json();
+}
+
+/**
+ * Hydrate an arbitrary array of graph IDs into full BackendGraph entities.
+ * Automatically chunks large requests to avoid proxy query-string limits.
+ */
+export async function fetchGraphsByIds(
+  ids: number[],
+  token?: string | null
+): Promise<BackendGraph[]> {
+  if (ids.length === 0) return [];
+
+  const CHUNK_SIZE = 300;
+  const chunks: number[][] = [];
+  for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+    chunks.push(ids.slice(i, i + CHUNK_SIZE));
+  }
+
+  const responses = await Promise.all(
+    chunks.map(async (chunk) => {
+      const params = new URLSearchParams({ id__in: chunk.join(',') });
+      const res = await authFetch(
+        `/api/v1/manuscripts/graphs/?${params.toString()}`,
+        token ?? null,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error(`Failed to load graphs: ${res.status}`);
+      return (await res.json()) as BackendGraph[];
+    })
+  );
+
+  return responses.flat();
 }
 
 type ViewerAnnotationWritePayload = {
