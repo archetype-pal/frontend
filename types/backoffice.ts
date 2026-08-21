@@ -18,6 +18,11 @@ export interface BackofficeDate {
   max_weight: number;
 }
 
+export interface BackofficePlace {
+  id: number;
+  name: string;
+}
+
 // ── Symbols ─────────────────────────────────────────────────────────────
 
 export const CHARACTER_TYPES = [
@@ -234,7 +239,8 @@ export interface AdminHandListItem {
   is_default: boolean;
   date: number | null;
   date_display: string | null;
-  place: string;
+  place: number | null;
+  place_display: string | null;
   description: string;
   item_part_images: number[];
 }

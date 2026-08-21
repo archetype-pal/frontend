@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Image as ImageIcon, Check, ExternalLink } from 'lucide-react';
 import { IiifThumbnail } from '@/components/backoffice/common/iiif-thumbnail';
+import { PlaceCombobox } from '@/components/backoffice/common/place-combobox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -177,7 +178,11 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
         </div>
         <div className="space-y-1.5">
           <Label>{t('handsDetail.labelPlace')}</Label>
-          <Input value={form.place} onChange={(e) => setForm({ place: e.target.value })} />
+          <PlaceCombobox
+            value={form.place}
+            selectedLabel={form.place === hand.place ? hand.place_display : undefined}
+            onChange={(placeId) => setForm({ place: placeId })}
+          />
         </div>
         <div className="space-y-1.5">
           <Label>{t('handsDetail.labelDate')}</Label>
