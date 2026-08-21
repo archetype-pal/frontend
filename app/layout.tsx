@@ -85,8 +85,25 @@ export default async function RootLayout({
   const [{ degraded: _degraded, ...siteFeaturesConfig }, modelLabelsConfig, locale, messages] =
     await Promise.all([readSiteFeatures(), readModelLabels(), getLocale(), getMessages()]);
 
+  // `getDefaultThemeColors()` (baked into `siteFeaturesConfig.theme` by
+  // `readSiteFeatures`) already resolves to this deployment's build-time
+  // `NEXT_PUBLIC_SITE_THEME` preset when no admin override is stored, so this
+  // is the one place brand colours need to be read from — no separate
+  // `lib/site-theme.ts` lookup here.
+  const { primaryColor, primaryForegroundColor, accentColor } = siteFeaturesConfig.theme;
+  const siteThemeVars = {
+    '--primary': primaryColor,
+    '--ring': primaryColor,
+    '--primary-foreground': primaryForegroundColor,
+    '--accent': accentColor,
+  };
+
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html
+      lang={locale}
+      suppressHydrationWarning
+      style={siteThemeVars as React.CSSProperties}
+    >
       <body
         data-csp-nonce={nonce}
         className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${cormorant.variable} ${junicode.variable} antialiased`}

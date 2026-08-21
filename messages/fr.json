@@ -1102,11 +1102,12 @@
       "failedLoad": "Échec du chargement de la main.",
       "labelScribe": "Scribe :",
       "labelItemPart": "Partie de l'élément :",
-      "labelDate": "Date :",
+      "labelDate": "Date",
       "viewPublicPage": "Voir la page publique",
       "goToScribe": "Aller au scribe",
       "labelName": "Nom",
       "labelPlace": "Lieu",
+      "selectNoDate": "Aucune",
       "labelDescription": "Description",
       "descriptionPlaceholder": "Saisissez la description de la main...",
       "imagesLabel": "Images où cette main apparaît",
@@ -1840,6 +1841,17 @@
       },
       "featureDescriptions": {
         "manuscriptDescriptions": "Descriptions TEI structurées : la section de description sur les pages publiques de manuscrits et l'éditeur msDesc dans l'espace de travail des manuscrits. Rien n'est supprimé — la réactiver restaure tout. Les facettes de recherche se configurent séparément sous Catégories de recherche."
+      },
+      "theme": {
+        "title": "Personnalisation de l'interface",
+        "description": "Adaptez les couleurs de la charte graphique du site à votre organisation.",
+        "backgroundColor": "Couleur de fond principale",
+        "backgroundColorDescription": "La couleur de marque utilisée pour l'en-tête, les boutons principaux et la navigation active.",
+        "frontColor": "Couleur de premier plan principale",
+        "frontColorDescription": "La couleur du texte et des icônes affichés sur la couleur de fond principale.",
+        "secondaryColor": "Couleur secondaire",
+        "secondaryColorDescription": "La couleur d'accent utilisée pour les mises en évidence, badges et encarts.",
+        "reset": "Réinitialiser"
       },
       "searchCategoriesTitle": "Catégories de recherche",
       "searchCategoriesDescription": "Activez ou désactivez les catégories et configurez les colonnes et facettes visibles. Glissez pour réorganiser.",
