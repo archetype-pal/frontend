@@ -19,6 +19,7 @@ import {
   Menu,
   X,
   FolderOpen,
+  GitCompare,
   PanelTopClose,
   PanelTopOpen,
   LogIn,
@@ -26,6 +27,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useCollection } from '@/contexts/collection-context';
+import { useCompareStore } from '@/stores/compare-store';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { normalizeSectionOrder, type SectionKey } from '@/lib/site-features';
@@ -67,6 +69,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
     return () => observer.disconnect();
   }, []);
   const { items, activeCollection } = useCollection();
+  const compareItems = useCompareStore((state) => state.items);
   const { getLabel } = useModelLabels();
   const { token, user, logout } = useAuth();
   const { config, isSectionEnabled } = useSiteFeatures();
@@ -223,6 +226,22 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
               className={cn('group', navLinkClass(!!isActive('/lightbox', true)))}
             >
               <Link href="/lightbox">{t('lightbox')}</Link>
+            </Button>
+          </li>
+        );
+      case 'compare':
+        return (
+          <li key={sectionKey}>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className={cn('group', navLinkClass(!!isActive('/compare', true)))}
+            >
+              <Link href="/compare">
+                <GitCompare className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
+                {t('compare', { count: compareItems.length })}
+              </Link>
             </Button>
           </li>
         );
