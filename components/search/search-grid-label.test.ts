@@ -90,4 +90,37 @@ describe('graph grid card labels (frontend#69)', () => {
     );
     expect(card?.formattedDisplayText).toBe('__hl_start__BL__hl_end__ Cotton Ch. xviii.13');
   });
+
+  it('keeps the shelfmark label untouched and flags recentlyEdited when a graph override exists', () => {
+    const formattedItem = withFormatted(baseGraph, {
+      display_label: '__hl_start__BL__hl_end__ Cotton Ch. xviii.13',
+      shelfmark: 'Cotton Ch. xviii.13',
+    });
+    const override = {
+      id: 7,
+      item_image: 1,
+      annotation: {
+        type: 'Feature' as const,
+        geometry: { type: 'Polygon' as const, coordinates: [] },
+      },
+      allograph: 10,
+      allograph_name: 'Caroline a',
+      hand: 1,
+      graphcomponent_set: [],
+      positions: [],
+    };
+    const card = toGridCard('graphs', formattedItem, { 7: override });
+    // The identifying label and its highlight are untouched by the edit — the
+    // edit itself is surfaced via the card's tint/badge (recentlyEdited),
+    // not by altering the label text.
+    expect(card?.displayText).toBe('BL Cotton Ch. xviii.13');
+    expect(card?.formattedDisplayText).toBe('__hl_start__BL__hl_end__ Cotton Ch. xviii.13');
+    expect(card && 'recentlyEdited' in card && card.recentlyEdited).toBe(true);
+  });
+
+  it('does not flag recentlyEdited when no override exists', () => {
+    const card = toGridCard('graphs', baseGraph, {});
+    expect(card?.displayText).toBe('BL Cotton Ch. xviii.13');
+    expect(card && 'recentlyEdited' in card && card.recentlyEdited).toBe(false);
+  });
 });

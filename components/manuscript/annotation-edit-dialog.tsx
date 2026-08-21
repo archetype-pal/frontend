@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { SearchableOption } from '@/lib/searchable-option-ranking';
 import { cn } from '@/lib/utils';
 
@@ -152,6 +153,9 @@ export interface AnnotationEditDialogProps {
   /** IIIF info URL for the parent image, used to render a crop preview of the
    *  graph(s) under edit. */
   iiifImage?: string;
+  /** When true, disables the Hand control with an explanatory tooltip (e.g. cross-manuscript bulk edits). */
+  handDisabled?: boolean;
+  handDisabledReason?: string;
   /** Called for every successful per-graph PATCH so the parent can apply an
    *  optimistic override immediately. */
   onGraphSaved?: (graph: BackendGraph) => void;
@@ -174,6 +178,8 @@ function DialogBody({
   allographs,
   hands,
   iiifImage,
+  handDisabled,
+  handDisabledReason,
   onGraphSaved,
   onComplete,
 }: AnnotationEditDialogProps) {
@@ -269,7 +275,7 @@ function DialogBody({
   const hasPendingChanges =
     (allographId != null &&
       allographId !== (initialAllograph === MIXED ? null : initialAllograph)) ||
-    (hand !== MIXED && !Object.is(hand, initialHand)) ||
+    (!handDisabled && hand !== MIXED && !Object.is(hand, initialHand)) ||
     featureMap.hasMeaningfulEdits ||
     positionMap.hasMeaningfulEdits;
 
@@ -312,7 +318,7 @@ function DialogBody({
     if (allographId != null && allographId !== graph.allograph) {
       patch.allograph = allographId;
     }
-    if (hand !== MIXED && hand !== (graph.hand ?? null)) {
+    if (!handDisabled && hand !== MIXED && hand !== (graph.hand ?? null)) {
       patch.hand = hand;
     }
     if (featureMap.hasMeaningfulEdits) {
@@ -349,6 +355,14 @@ function DialogBody({
         }
         try {
           const updated = await updateViewerAnnotation(token, graph.id, patch);
+          if (!updated.allograph_name) {
+            if (updated.allograph) {
+              const matching = allographs.find((a) => a.id === updated.allograph);
+              if (matching) updated.allograph_name = matching.name;
+            } else if (graph.allograph_name) {
+              updated.allograph_name = graph.allograph_name;
+            }
+          }
           onGraphSaved?.(updated);
           savedCount += 1;
         } catch {
@@ -444,16 +458,52 @@ function DialogBody({
             </div>
             <div>
               <Label className="mb-1.5 block text-sm font-medium">Hand</Label>
-              <SearchableSelect
-                options={handOptions}
-                value={hand === MIXED || hand == null ? null : String(hand)}
-                onValueChange={(v) => setHand(v ? Number(v) : null)}
-                placeholder={hand === MIXED ? 'Mixed — pick one' : 'Hand'}
-                searchPlaceholder="Search hands…"
-                emptyText="No hands"
-                clearLabel="No hand"
-                triggerClassName="h-9 w-full text-sm"
-              />
+              {handDisabled ? (
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        tabIndex={0}
+                        role="group"
+                        aria-disabled="true"
+                        aria-label={
+                          handDisabledReason ??
+                          'A hand belongs to a single manuscript — this selection spans several.'
+                        }
+                        className="cursor-not-allowed rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <SearchableSelect
+                          options={handOptions}
+                          value={hand === MIXED || hand == null ? null : String(hand)}
+                          onValueChange={() => {}}
+                          disabled
+                          placeholder={
+                            hand === MIXED ? 'Mixed across manuscripts' : 'Hand disabled'
+                          }
+                          searchPlaceholder="Search hands…"
+                          emptyText="No hands"
+                          triggerClassName="h-9 w-full text-sm pointer-events-none opacity-60"
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-xs">
+                      {handDisabledReason ??
+                        'A hand belongs to a single manuscript — this selection spans several.'}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <SearchableSelect
+                  options={handOptions}
+                  value={hand === MIXED || hand == null ? null : String(hand)}
+                  onValueChange={(v) => setHand(v ? Number(v) : null)}
+                  placeholder={hand === MIXED ? 'Mixed — pick one' : 'Hand'}
+                  searchPlaceholder="Search hands…"
+                  emptyText="No hands"
+                  clearLabel="No hand"
+                  triggerClassName="h-9 w-full text-sm"
+                />
+              )}
             </div>
           </div>
 
