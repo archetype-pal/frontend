@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import {
@@ -12,6 +13,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+  VenetianMask,
   Eye,
   EyeOff,
   CheckCircle,
@@ -50,7 +52,13 @@ import {
   BackofficeErrorState,
   BackofficeLoadingState,
 } from '@/components/backoffice/common/query-state';
-import { getUsers, createUser, updateUser, deleteUser } from '@/services/backoffice/users';
+import {
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  impersonateUser,
+} from '@/services/backoffice/users';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
@@ -68,6 +76,13 @@ function getInitials(user: UserListItem): string {
 
 function fullName(user: UserListItem): string {
   return [user.first_name, user.last_name].filter(Boolean).join(' ');
+}
+
+// Mirrors the backend's own restrictions (apps.users.services.impersonate_user):
+// never yourself, never a staff/superuser account. No point offering an action
+// that is guaranteed to 400/403.
+function canImpersonate(row: UserListItem, currentUserId: number | undefined): boolean {
+  return row.id !== currentUserId && !row.is_staff && !row.is_superuser;
 }
 
 function relativeTime(dateStr: string | null, t: (key: string) => string): string {
@@ -181,13 +196,15 @@ function SortHeader({
 
 export default function UsersPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { token, user, startImpersonation } = useAuth();
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // Dialog / mutation targets
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<UserListItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserListItem | null>(null);
+  const [impersonateTarget, setImpersonateTarget] = useState<UserListItem | null>(null);
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([]);
 
   const [createForm, setCreateForm] = useState<UserCreatePayload>({ ...emptyCreate });
@@ -364,6 +381,19 @@ export default function UsersPage() {
     },
     onError: (err) => {
       toast.error(t('users.toastFailedDelete'), { description: formatApiError(err) });
+    },
+  });
+
+  const impersonateMut = useMutation({
+    mutationFn: (target: UserListItem) => impersonateUser(token!, target.id),
+    onSuccess: (data, target) => {
+      startImpersonation(data.auth_token);
+      toast.success(t('users.toastImpersonating', { username: target.username }));
+      setImpersonateTarget(null);
+      router.push('/');
+    },
+    onError: (err) => {
+      toast.error(t('users.toastFailedImpersonate'), { description: formatApiError(err) });
     },
   });
 
@@ -727,6 +757,34 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
+                          {(() => {
+                            const impersonable = canImpersonate(u, user?.id);
+                            const reasonKey =
+                              u.id === user?.id
+                                ? 'users.tooltipImpersonateSelf'
+                                : 'users.tooltipImpersonateProtected';
+                            return (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                                      disabled={!impersonable}
+                                      aria-label={t('users.tooltipImpersonateUser')}
+                                      onClick={() => setImpersonateTarget(u)}
+                                    >
+                                      <VenetianMask className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {impersonable ? t('users.tooltipImpersonateUser') : t(reasonKey)}
+                                </TooltipContent>
+                              </Tooltip>
+                            );
+                          })()}
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -1091,6 +1149,18 @@ export default function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Impersonate confirmation ────────────────────────────────── */}
+      <ConfirmDialog
+        open={!!impersonateTarget}
+        onOpenChange={(open) => !open && setImpersonateTarget(null)}
+        title={t('users.impersonateDialogTitle', { username: impersonateTarget?.username ?? '' })}
+        description={t('users.impersonateDialogDesc')}
+        confirmLabel={t('users.impersonateDialogConfirm')}
+        variant="default"
+        loading={impersonateMut.isPending}
+        onConfirm={() => impersonateTarget && impersonateMut.mutate(impersonateTarget)}
+      />
 
       {/* ── Single delete confirmation ──────────────────────────────── */}
       <ConfirmDialog

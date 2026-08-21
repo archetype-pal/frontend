@@ -1882,6 +1882,9 @@
       "statusInactive": "Inactive",
       "tooltipEditUser": "Edit user",
       "tooltipDeleteUser": "Delete user",
+      "tooltipImpersonateUser": "Impersonate user",
+      "tooltipImpersonateSelf": "You cannot impersonate yourself",
+      "tooltipImpersonateProtected": "Staff and superuser accounts cannot be impersonated",
       "createDialogTitle": "New User",
       "createDialogDesc": "Set up a new account. The password will be securely hashed.",
       "editDialogMemberSince": "Member since {date}",
@@ -1917,12 +1920,17 @@
       "bulkDeleteTitle": "Delete {count} user(s)?",
       "bulkDeleteDesc": "This action cannot be undone. All selected users will be permanently removed.",
       "bulkDeleteConfirm": "Delete All",
+      "impersonateDialogTitle": "Impersonate \"{username}\"?",
+      "impersonateDialogDesc": "This action is audited. Your active session will switch to this user's account so you can browse the site as them. Use \"Stop impersonating\" to return to your own account.",
+      "impersonateDialogConfirm": "Impersonate",
       "toastUserCreated": "User created",
       "toastFailedCreate": "Failed to create user",
       "toastUserUpdated": "User updated",
       "toastFailedUpdate": "Failed to update user",
       "toastUserDeleted": "User deleted",
       "toastFailedDelete": "Failed to delete user",
+      "toastImpersonating": "Now browsing as {username}",
+      "toastFailedImpersonate": "Failed to impersonate user",
       "failedLoad": "Failed to load users",
       "relativeNever": "Never",
       "relativeJustNow": "Just now"
@@ -2638,6 +2646,10 @@
     "hidePassword": "Hide password",
     "showPassword": "Show password",
     "signingIn": "Signing in…"
+  },
+  "impersonation": {
+    "bannerMessage": "Viewing the site as {username}",
+    "stopButton": "Stop impersonating"
   },
   "hand": {
     "breadcrumb": "Hands",
