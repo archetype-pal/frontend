@@ -16,6 +16,7 @@ import { env } from '@/lib/env';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
+import { getSiteThemeVars } from '@/lib/site-theme';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -85,8 +86,14 @@ export default async function RootLayout({
   const [{ degraded: _degraded, ...siteFeaturesConfig }, modelLabelsConfig, locale, messages] =
     await Promise.all([readSiteFeatures(), readModelLabels(), getLocale(), getMessages()]);
 
+  const siteThemeVars = getSiteThemeVars();
+
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html
+      lang={locale}
+      suppressHydrationWarning
+      style={siteThemeVars as React.CSSProperties}
+    >
       <body
         data-csp-nonce={nonce}
         className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${cormorant.variable} ${junicode.variable} antialiased`}
