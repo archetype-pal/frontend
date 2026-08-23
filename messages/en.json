@@ -169,7 +169,7 @@
     "editSelected": "Edit selected",
     "clearSelection": "Clear",
     "handDisabledTooltip": "A hand belongs to a single manuscript — this selection spans several.",
-    "stalenessNotice": "Search results may not reflect saved changes until the next reindex.",
+    "stalenessNotice": "Search results may not reflect saved changes until the next reindex. An edited card can stay in view even after it no longer matches your filters.",
     "confirmDeleteGraph": "Delete this graph annotation?",
     "discardUnsavedChanges": "Discard unsaved changes?",
     "graphDeleted": "Graph deleted",

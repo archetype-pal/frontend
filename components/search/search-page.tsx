@@ -22,7 +22,6 @@ import type { ResultMap } from '@/types/search';
 import {
   clearAllFacetFilters,
   clearDateFilters,
-  getSelectedForFacet,
   removeExclusionFromExtraParams,
 } from '@/lib/search-query';
 const SearchTimelineView = React.lazy(() =>
@@ -66,12 +65,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
 
   const [graphOverrides, setGraphOverrides] = React.useState<Record<number, BackendGraph>>({});
   const [deletedGraphIds, setDeletedGraphIds] = React.useState<Set<number>>(() => new Set());
-  // Graphs edited so their allograph no longer matches the active Allograph
-  // facet — same "does this still belong in the current view?" question
-  // deletedGraphIds already answers for deletions, applied to edits too.
-  const [filteredOutGraphIds, setFilteredOutGraphIds] = React.useState<Set<number>>(
-    () => new Set()
-  );
 
   // Deliberately excludes offset/limit/ordering: paging, changing page size, or
   // re-sorting doesn't change *which* graphs match, only how the same matched
@@ -87,7 +80,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
     setPrevQueryFingerprint(queryFingerprint);
     setGraphOverrides({});
     setDeletedGraphIds(new Set());
-    setFilteredOutGraphIds(new Set());
   }
 
   const editFlow = useGraphEditFlow({
@@ -103,13 +95,13 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   });
 
   const visibleFiltered = React.useMemo(() => {
-    if (deletedGraphIds.size === 0 && filteredOutGraphIds.size === 0) return s.filtered;
+    if (deletedGraphIds.size === 0) return s.filtered;
     return s.filtered.filter((item) => {
       const candidate = item as { id?: number };
       if (candidate.id == null) return true;
-      return !deletedGraphIds.has(candidate.id) && !filteredOutGraphIds.has(candidate.id);
+      return !deletedGraphIds.has(candidate.id);
     });
-  }, [s.filtered, deletedGraphIds, filteredOutGraphIds]);
+  }, [s.filtered, deletedGraphIds]);
 
   const handleClearSelection = React.useCallback(() => {
     s.selection.clear();
@@ -170,23 +162,12 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const allOnPageSelected =
     pageGraphIds.length > 0 && pageGraphIds.every((id) => s.selection.selected.has(id));
 
-  // A saved edit can move a graph out of the facet that put it in this view
-  // (e.g. filtered to Allograph=X, then reassigned to Allograph=Y) — the same
-  // "does it still belong here?" check onGraphDeleted already applies, scoped
-  // to the one facet (allograph) we can re-check with a simple equality
-  // comparison. Keyword search and other facets aren't re-evaluated here.
-  const handleGraphSaved = React.useCallback(
-    (updatedGraph: BackendGraph) => {
-      setGraphOverrides((prev) => ({ ...prev, [updatedGraph.id]: updatedGraph }));
-
-      const activeAllograph = getSelectedForFacet(s.queryState.selected_facets, 'allograph');
-      if (activeAllograph && updatedGraph.allograph_name !== activeAllograph) {
-        setFilteredOutGraphIds((prev) => new Set(prev).add(updatedGraph.id));
-        s.selection.remove(updatedGraph.id);
-      }
-    },
-    [s.queryState.selected_facets, s.selection]
-  );
+  // Deliberately doesn't re-check filter membership on edit (unlike delete,
+  // above): an edit only changes whether this row still matches the active
+  // filter, which the search index should answer — not a per-facet guess here.
+  const handleGraphSaved = React.useCallback((updatedGraph: BackendGraph) => {
+    setGraphOverrides((prev) => ({ ...prev, [updatedGraph.id]: updatedGraph }));
+  }, []);
 
   return (
     <div className="flex min-h-[calc(100dvh-var(--site-header-h,0px))] flex-col bg-background">
