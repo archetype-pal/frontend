@@ -49,7 +49,6 @@ import { GraphSelectionToolbar } from '@/components/search/graph-selection-toolb
 import { useGraphEditFlow } from '@/hooks/search/use-graph-edit-flow';
 import { AnnotationEditDialog } from '@/components/manuscript/annotation-edit-dialog';
 import type { BackendGraph } from '@/services/annotations';
-import type { GraphListItem } from '@/types/search';
 import { cn } from '@/lib/utils';
 import { useSearchPageState } from '@/hooks/search/use-search-page-state';
 import { useTranslations } from 'next-intl';
@@ -92,7 +91,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   }
 
   const editFlow = useGraphEditFlow({
-    searchResults: s.filtered as GraphListItem[],
     onGraphDeleted: (id) => {
       s.selection.remove(id);
       setDeletedGraphIds((prev) => new Set(prev).add(id));
@@ -671,7 +669,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
         graphs={editFlow.editingGraphs}
         allographs={editFlow.allographs}
         hands={editFlow.hands}
-        iiifImage={editFlow.previewIiifImage}
         handDisabled={editFlow.handDisabled}
         handDisabledReason={editFlow.handDisabledReason}
         onGraphSaved={handleGraphSaved}

@@ -19,6 +19,7 @@ export interface BackendGraph {
   id: number;
   item_image: number;
   item_part?: number | null;
+  image_iiif?: string | null;
   annotation_type?: 'image' | 'text' | 'editorial' | 'unknown' | null;
   note?: string;
   internal_note?: string;

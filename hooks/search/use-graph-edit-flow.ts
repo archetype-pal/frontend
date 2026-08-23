@@ -13,17 +13,12 @@ import {
 import { fetchAllographs, fetchHands } from '@/services/manuscripts';
 import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
-import type { GraphListItem } from '@/types/search';
 
 export interface UseGraphEditFlowOpts {
-  searchResults?: GraphListItem[];
   onGraphDeleted?: (id: number) => void;
 }
 
-export function useGraphEditFlow({
-  searchResults = [],
-  onGraphDeleted,
-}: UseGraphEditFlowOpts = {}) {
+export function useGraphEditFlow({ onGraphDeleted }: UseGraphEditFlowOpts = {}) {
   const { token } = useAuth();
   const t = useTranslations('search');
 
@@ -34,16 +29,6 @@ export function useGraphEditFlow({
   const [hands, setHands] = React.useState<HandType[]>([]);
   const [handDisabled, setHandDisabled] = React.useState(false);
   const [handDisabledReason, setHandDisabledReason] = React.useState<string | undefined>();
-  const [previewIiifImage, setPreviewIiifImage] = React.useState<string | undefined>();
-
-  // Map search items by ID for fast item_part lookup
-  const searchItemMap = React.useMemo(() => {
-    const map = new Map<number, GraphListItem>();
-    for (const item of searchResults) {
-      map.set(item.id, item);
-    }
-    return map;
-  }, [searchResults]);
 
   const startEdit = React.useCallback(
     async (ids: number[]) => {
@@ -98,10 +83,6 @@ export function useGraphEditFlow({
           setHandDisabledReason(t('handDisabledTooltip'));
         }
 
-        // 5. Preview image (from searchItemMap or graph if available)
-        const firstSearchItem = searchItemMap.get(graphs[0].id);
-        setPreviewIiifImage(firstSearchItem?.image_iiif);
-
         setEditingGraphs(graphs);
         setDialogOpen(true);
       } catch {
@@ -114,7 +95,7 @@ export function useGraphEditFlow({
         setIsHydrating(false);
       }
     },
-    [allographs, searchItemMap, t, token]
+    [allographs, t, token]
   );
 
   const deleteOne = React.useCallback(
@@ -150,7 +131,6 @@ export function useGraphEditFlow({
     hands,
     handDisabled,
     handDisabledReason,
-    previewIiifImage,
     startEdit,
     deleteOne,
   };

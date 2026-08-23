@@ -638,13 +638,28 @@ function DialogBody({
 // they're changing instead of trusting that they clicked the right thumb.
 const PREVIEW_LIMIT = 8;
 
-function GraphPreviewStrip({ graphs, iiifImage }: { graphs: BackendGraph[]; iiifImage: string }) {
+function GraphPreviewStrip({
+  graphs,
+  fallbackIiifImage,
+}: {
+  graphs: BackendGraph[];
+  /** Only relevant for single-image callers (the per-image gallery) that don't
+   *  populate each graph's own `image_iiif`. A cross-manuscript selection has
+   *  no single image to fall back to, so every graph must resolve its own —
+   *  using one shared image for all of them crops the wrong region (or fails
+   *  outright) for every graph that isn't from that one image. */
+  fallbackIiifImage?: string;
+}) {
   const shown = graphs.slice(0, PREVIEW_LIMIT);
   const overflow = graphs.length - shown.length;
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 p-3">
       {shown.map((g) => (
-        <GraphPreviewThumb key={g.id} graph={g} iiifImage={iiifImage} />
+        <GraphPreviewThumb
+          key={g.id}
+          graph={g}
+          iiifImage={g.image_iiif ?? fallbackIiifImage ?? ''}
+        />
       ))}
       {overflow > 0 && (
         <span className="flex h-16 w-16 items-center justify-center rounded border bg-background text-xs font-medium text-muted-foreground">
