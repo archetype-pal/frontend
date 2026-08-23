@@ -171,6 +171,7 @@
     "handDisabledTooltip": "A hand belongs to a single manuscript — this selection spans several.",
     "stalenessNotice": "Search results may not reflect saved changes until the next reindex.",
     "confirmDeleteGraph": "Delete this graph annotation?",
+    "discardUnsavedChanges": "Discard unsaved changes?",
     "graphDeleted": "Graph deleted",
     "deleteFailed": "Failed to delete graph",
     "noGraphData": "No graph data found for selected items",

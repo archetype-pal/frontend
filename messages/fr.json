@@ -171,6 +171,7 @@
     "handDisabledTooltip": "Une main appartient à un seul manuscrit — cette sélection en contient plusieurs.",
     "stalenessNotice": "Les résultats de recherche peuvent ne pas refléter les modifications enregistrées avant la prochaine réindexation.",
     "confirmDeleteGraph": "Supprimer cette annotation de graphème ?",
+    "discardUnsavedChanges": "Abandonner les modifications non enregistrées ?",
     "graphDeleted": "Graphème supprimé",
     "deleteFailed": "Échec de la suppression du graphème",
     "noGraphData": "Aucune donnée trouvée pour les graphèmes sélectionnés",

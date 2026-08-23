@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/contexts/auth-context';
@@ -90,7 +91,21 @@ function useTriStateMap<K extends string | number>(baseline: (key: K) => TriStat
   return {
     edits,
     get: (key) => edits[key] ?? baseline(key),
-    set: (key, state) => setEdits((prev) => ({ ...prev, [key]: state })),
+    // Cycling a control back to its original value (e.g. None -> All -> None)
+    // must drop the entry entirely, not just overwrite it with the same value
+    // as the baseline — otherwise hasMeaningfulEdits keeps counting a no-op as
+    // a pending change, unlike the Allograph/Hand fields, which already
+    // compare against their initial value rather than "was anything touched."
+    set: (key, state) =>
+      setEdits((prev) => {
+        const next = { ...prev };
+        if (state === baseline(key)) {
+          delete next[key];
+        } else {
+          next[key] = state;
+        }
+        return next;
+      }),
     reset: () => setEdits({}),
     hasMeaningfulEdits: Object.values(edits).some((s) => s !== MIXED),
   };
@@ -184,6 +199,7 @@ function DialogBody({
   onComplete,
 }: AnnotationEditDialogProps) {
   const { token } = useAuth();
+  const t = useTranslations('search');
   const isMulti = graphs.length > 1;
 
   const allographOptions = React.useMemo<SearchableOption[]>(
@@ -298,12 +314,12 @@ function DialogBody({
     if (
       hasPendingChanges &&
       typeof window !== 'undefined' &&
-      !window.confirm('Discard unsaved changes?')
+      !window.confirm(t('discardUnsavedChanges'))
     ) {
       return;
     }
     onOpenChange(false);
-  }, [hasPendingChanges, onOpenChange]);
+  }, [hasPendingChanges, onOpenChange, t]);
 
   // ---- Save ---------------------------------------------------------------
 
@@ -433,7 +449,7 @@ function DialogBody({
         </SheetHeader>
 
         <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
-          {iiifImage && <GraphPreviewStrip graphs={graphs} iiifImage={iiifImage} />}
+          <GraphPreviewStrip graphs={graphs} fallbackIiifImage={iiifImage} />
           {isMulti && initialAllograph === MIXED && (
             <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
               Selected graphs use different allographs. Choose one to set on all of them, or close
