@@ -456,7 +456,8 @@
       "recentSection": "Recent {title}",
       "backToList": "Back to list",
       "viewAll": "View all {title}",
-      "publicationFallbackTitle": "Publication"
+      "publicationFallbackTitle": "Publication",
+      "keywordsLabel": "Keywords"
     },
     "publicationKinds": {
       "news": {

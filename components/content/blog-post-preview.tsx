@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { User, Calendar, Newspaper, MessageSquare, ArrowRight } from 'lucide-react';
+import { User, Calendar, Newspaper, MessageSquare, ArrowRight, Tag } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Badge } from '@/components/ui/badge';
 import ShareButtons from './share-buttons';
 import { renderPublicationHtml } from '@/lib/publication-html';
 
@@ -19,12 +20,46 @@ const formatDate = (value: string) => {
   });
 };
 
+// The API sends Tagulous' render_tags output: tags joined with ", ", any tag
+// containing a comma or a space wrapped in quotes, inner quotes doubled ("").
+// Splitting on commas first would cut a quoted tag in half.
+const parseKeywords = (value?: string | null): string[] => {
+  if (!value) return [];
+  const tags: string[] = [];
+  let tag = '';
+  let inQuote = false;
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i];
+    if (char === '"') {
+      if (value[i + 1] === '"') {
+        tag += '"';
+        i++;
+      } else {
+        inQuote = !inQuote;
+      }
+    } else if (char === ',' && !inQuote) {
+      tags.push(tag);
+      tag = '';
+    } else {
+      tag += char;
+    }
+  }
+  tags.push(tag);
+  return tags.map((t) => t.trim()).filter(Boolean);
+};
+
+// The migrated corpus stores the publication's own category as a keyword on most
+// publications. It is already shown as the type label in the meta row, so drop it
+// rather than badge the same word twice.
+const CATEGORY_KEYWORDS = new Set(['news', 'blog', 'feature article']);
+
 interface BlogPostPreviewProps {
   title: string;
   author: string;
   date: string;
   excerpt: string;
   slug: string;
+  keywords?: string | null;
   commentsCount?: number;
   showShareBtns: boolean;
   showReadMoreBtn: boolean;
@@ -36,11 +71,13 @@ export default function BlogPostPreview({
   date,
   excerpt,
   slug,
+  keywords,
   commentsCount = 0,
   showShareBtns = true,
   showReadMoreBtn = true,
 }: BlogPostPreviewProps) {
   const t = useTranslations('content');
+  const tags = parseKeywords(keywords).filter((tag) => !CATEGORY_KEYWORDS.has(tag.toLowerCase()));
   const publicationLabel = slug.includes('/publications/feature')
     ? t('blog.typeFeature')
     : slug.includes('/publications/blogs')
@@ -76,6 +113,22 @@ export default function BlogPostPreview({
           {t('blog.comments', { count: commentsCount })}
         </Link>
       </div>
+
+      {tags.length > 0 && (
+        <div
+          className="flex flex-wrap items-center gap-1.5 mb-4"
+          aria-label={t('blog.keywordsLabel')}
+          data-testid="publication-keywords"
+        >
+          {tags.map((tag) => (
+            <Badge key={tag} variant="secondary" className="text-xs font-normal gap-1">
+              <Tag className="h-3 w-3 text-muted-foreground" />
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      )}
+
       {/* <div>, not <p>: excerpts are authored HTML and may contain block
           elements (e.g. <p>), which a <p> can't legally nest — the browser would
           reparent them and desync from the server HTML → hydration mismatch. */}
