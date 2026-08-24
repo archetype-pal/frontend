@@ -62,8 +62,10 @@ export default function TrashPage() {
   const [page, setPage] = useState(0);
   const [purgeTarget, setPurgeTarget] = useState<GraphItem | null>(null);
   const [bulkPurgeIds, setBulkPurgeIds] = useState<string[] | null>(null);
-  // Bumped after every bulk action: remounts the DataTable so row selection
-  // doesn't linger over rows that just left the trash.
+  // Bumped after anything that takes a row out of the trash: remounts the
+  // DataTable so row selection doesn't linger over rows that are gone. Selection
+  // is keyed by graph id, so a stale entry would otherwise be sent to the server
+  // and 404 -- a spurious "n succeeded, 1 failed".
   const [tableEpoch, setTableEpoch] = useState(0);
 
   const [filterState, setFilterState] = useState(EMPTY_TRASH_FILTERS);
@@ -74,9 +76,11 @@ export default function TrashPage() {
     setPage(0);
   };
 
-  const filters = useMemo(
+  // One object for both the cache key and the request, so they cannot drift.
+  // getTrashedGraphs adds `deleted`; it is in the key to keep the trash list
+  // from colliding with the live list on the same filters.
+  const params = useMemo(
     () => ({
-      deleted: 'true',
       limit: PAGE_SIZE,
       offset: page * PAGE_SIZE,
       ...buildTrashFilterParams(filterState),
@@ -85,13 +89,8 @@ export default function TrashPage() {
   );
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: backofficeKeys.graphs.list(filters),
-    queryFn: () =>
-      getTrashedGraphs(token!, {
-        limit: PAGE_SIZE,
-        offset: page * PAGE_SIZE,
-        ...buildTrashFilterParams(filterState),
-      }),
+    queryKey: backofficeKeys.graphs.list({ deleted: 'true', ...params }),
+    queryFn: () => getTrashedGraphs(token!, params),
     enabled: !!token,
   });
 
@@ -120,6 +119,7 @@ export default function TrashPage() {
     onSuccess: () => {
       toast.success(t('trash.toastRestored'), { description: t('trash.reindexHint') });
       invalidateGraphs();
+      setTableEpoch((n) => n + 1);
     },
     onError: (err) =>
       toast.error(t('trash.toastRestoreFailed'), { description: formatApiError(err) }),
@@ -131,10 +131,15 @@ export default function TrashPage() {
       toast.success(t('trash.toastPurged'), { description: t('trash.reindexHint') });
       invalidateGraphs();
       setPurgeTarget(null);
+      setTableEpoch((n) => n + 1);
     },
     onError: (err) =>
       toast.error(t('trash.toastPurgeFailed'), { description: formatApiError(err) }),
   });
+
+  // Bound out of the mutation object, which useMutation rebuilds every render:
+  // depending on it directly would make the memo below never hold.
+  const restore = restoreMut.mutate;
 
   const columns: ColumnDef<GraphItem>[] = useMemo(
     () => [
@@ -240,7 +245,7 @@ export default function TrashPage() {
               size="icon"
               className="h-7 w-7"
               aria-label={`${t('trash.restore')} #${row.original.id}`}
-              onClick={() => restoreMut.mutate(row.original.id)}
+              onClick={() => restore(row.original.id)}
             >
               <RotateCcw className="h-3.5 w-3.5" />
             </Button>
@@ -268,7 +273,7 @@ export default function TrashPage() {
         size: 110,
       },
     ],
-    [t, restoreMut]
+    [t, restore]
   );
 
   const rows = data?.results ?? [];
