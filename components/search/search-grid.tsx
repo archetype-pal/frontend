@@ -218,6 +218,28 @@ const MediaGridCard = React.memo(function MediaGridCard({
   // (mirrors clauseToGraphCollectionItem's null-on-missing-source guard).
   const collectable = itemType !== 'graph' || !!item.image_iiif?.trim();
 
+  // Rendered over the thumbnail when there is one, in the footer when there
+  // isn't: hiding thumbnails is a display preference, not a way to give up
+  // collecting and lightboxing results.
+  const actions = (
+    <>
+      <OpenLightboxButton
+        item={item}
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7 bg-card/90 shadow-sm hover:bg-card"
+      />
+      {collectable && (
+        <CollectionStar
+          itemId={item.id}
+          itemType={itemType}
+          item={item}
+          className={showThumbnail ? undefined : 'static'}
+        />
+      )}
+    </>
+  );
+
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
       {showThumbnail && (
@@ -236,35 +258,37 @@ const MediaGridCard = React.memo(function MediaGridCard({
             )
           )}
           <div className="absolute right-2 top-2 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <OpenLightboxButton
-              item={item}
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 bg-card/90 shadow-sm hover:bg-card"
-            />
-            {collectable && <CollectionStar itemId={item.id} itemType={itemType} item={item} />}
+            {actions}
           </div>
         </div>
       )}
-      <div className={cn('px-2.5 py-1.5', showThumbnail && 'border-t border-border/70')}>
-        {renderLink(
-          <span
-            title={displayText}
-            className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary"
-          >
-            <Highlight
-              text={displayText}
-              keyword={highlightKeyword}
-              formattedText={formattedDisplayText}
-            />
-          </span>,
-          'block'
+      <div
+        className={cn(
+          'flex items-center gap-2 px-2.5 py-1.5',
+          showThumbnail && 'border-t border-border/70'
         )}
-        {annotationCount != null && (
-          <span className="mt-0.5 block text-[11px] tabular-nums text-muted-foreground">
-            {annotationCount.toLocaleString()} annotation{annotationCount === 1 ? '' : 's'}
-          </span>
-        )}
+      >
+        <div className="min-w-0 flex-1">
+          {renderLink(
+            <span
+              title={displayText}
+              className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary"
+            >
+              <Highlight
+                text={displayText}
+                keyword={highlightKeyword}
+                formattedText={formattedDisplayText}
+              />
+            </span>,
+            'block'
+          )}
+          {annotationCount != null && (
+            <span className="mt-0.5 block text-[11px] tabular-nums text-muted-foreground">
+              {annotationCount.toLocaleString()} annotation{annotationCount === 1 ? '' : 's'}
+            </span>
+          )}
+        </div>
+        {!showThumbnail && <div className="flex shrink-0 items-center gap-1">{actions}</div>}
       </div>
     </div>
   );
@@ -286,7 +310,10 @@ const GraphGridCard = React.memo(function GraphGridCard({
   eager: boolean;
 }) {
   const infoUrl = (item.image_iiif || '').trim();
-  const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates);
+  // An empty info URL makes the hook a no-op. Text-only mode exists to avoid
+  // image work, and a bounded crop costs a fetchIiifImageInfo round-trip per
+  // distinct image — so don't ask for one nothing will render.
+  const imageUrl = useIiifThumbnailUrl(showThumbnail ? infoUrl : '', item.coordinates);
 
   return (
     <MediaGridCard
@@ -394,9 +421,27 @@ const ClauseGridCard = React.memo(function ClauseGridCard({
   eager?: boolean;
 }) {
   const infoUrl = (item.thumbnail_iiif || '').trim();
-  const imageUrl = useIiifThumbnailUrl(infoUrl, item.annotation_coordinates);
+  // See MediaGridCard: no thumbnail rendered, no IIIF info fetch.
+  const imageUrl = useIiifThumbnailUrl(showThumbnail ? infoUrl : '', item.annotation_coordinates);
   const collectionItem = React.useMemo(() => clauseToGraphCollectionItem(item), [item]);
   const meta = [item.date, item.repository_name].filter(Boolean).join(' · ');
+
+  const actions = collectionItem && (
+    <>
+      <OpenLightboxButton
+        item={collectionItem}
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7 bg-card/90 shadow-sm hover:bg-card"
+      />
+      <CollectionStar
+        itemId={collectionItem.id}
+        itemType="graph"
+        item={collectionItem}
+        className={showThumbnail ? undefined : 'static'}
+      />
+    </>
+  );
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
@@ -422,17 +467,7 @@ const ClauseGridCard = React.memo(function ClauseGridCard({
             </Link>
           )}
           <div className="absolute right-2 top-2 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            {collectionItem && (
-              <>
-                <OpenLightboxButton
-                  item={collectionItem}
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 bg-card/90 shadow-sm hover:bg-card"
-                />
-                <CollectionStar itemId={collectionItem.id} itemType="graph" item={collectionItem} />
-              </>
-            )}
+            {actions}
           </div>
         </div>
       )}
@@ -442,18 +477,23 @@ const ClauseGridCard = React.memo(function ClauseGridCard({
           showThumbnail && 'border-t border-border/70'
         )}
       >
-        <Link href={detailUrl ?? '#'} className="block">
-          <span
-            title={displayText}
-            className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary"
-          >
-            <Highlight
-              text={displayText}
-              keyword={highlightKeyword}
-              formattedText={formattedDisplayText}
-            />
-          </span>
-        </Link>
+        <div className="flex items-start gap-2">
+          <Link href={detailUrl ?? '#'} className="block min-w-0 flex-1">
+            <span
+              title={displayText}
+              className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary"
+            >
+              <Highlight
+                text={displayText}
+                keyword={highlightKeyword}
+                formattedText={formattedDisplayText}
+              />
+            </span>
+          </Link>
+          {!showThumbnail && actions && (
+            <div className="flex shrink-0 items-center gap-1">{actions}</div>
+          )}
+        </div>
         {content && (
           <p className="mt-1 line-clamp-3 font-serif text-xs italic leading-relaxed text-muted-foreground">
             <Highlight text={content} keyword={highlightKeyword} formattedText={formattedContent} />

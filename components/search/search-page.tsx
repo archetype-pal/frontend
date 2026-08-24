@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { PanelLeftClose, PanelLeftOpen, SearchX } from 'lucide-react';
-import { ResultsTable } from '@/components/search/results-table';
+import { hasTablePreview, ResultsTable } from '@/components/search/results-table';
 import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';
 import { ActiveFacetTags } from '@/components/filters/active-facet-tags';
@@ -253,11 +253,16 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 className="hidden shrink-0 sm:inline-flex"
               />
             )}
-            <ThumbnailToggle
-              showThumbnails={showThumbnails}
-              onChange={setShowThumbnails}
-              className="hidden shrink-0 sm:inline-flex"
-            />
+            {/* Only grid view, and the table views that actually render a
+                thumbnail row, have anything for this to hide. */}
+            {(s.viewMode === 'grid' ||
+              (s.viewMode === 'table' && hasTablePreview(s.resultType))) && (
+              <ThumbnailToggle
+                showThumbnails={showThumbnails}
+                onChange={setShowThumbnails}
+                className="hidden shrink-0 sm:inline-flex"
+              />
+            )}
           </div>
         </div>
       </header>

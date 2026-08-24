@@ -18,9 +18,10 @@ function subscribe(onChange: () => void): () => void {
 
 function getSnapshot(): boolean {
   try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved === null) return true;
-    return saved === 'true';
+    // Only an explicit 'false' turns thumbnails off, so an absent or corrupted
+    // value falls back to the default rather than stranding the user in
+    // text-only mode.
+    return window.localStorage.getItem(STORAGE_KEY) !== 'false';
   } catch {
     return true;
   }

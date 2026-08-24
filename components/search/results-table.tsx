@@ -418,6 +418,11 @@ const RESULT_TYPE_DESCRIPTORS = {
   },
 } satisfies { [K in ResultType]: ResultTypeDescriptor<K> };
 
+/** Table view only renders a thumbnail row for types that declare a preview. */
+export function hasTablePreview(resultType: ResultType): boolean {
+  return 'previewAccessor' in RESULT_TYPE_DESCRIPTORS[resultType];
+}
+
 function getDescriptor<K extends ResultType>(resultType: K): ResultTypeDescriptor<K> {
   return RESULT_TYPE_DESCRIPTORS[resultType] as ResultTypeDescriptor<K>;
 }
@@ -591,7 +596,10 @@ function ResultsTableComponent<K extends ResultType>({
                 </TableRow>
               );
             })()}
-          {showThumbnails && preview && (
+          {/* The star is this row's only route into a collection, so the row
+              survives hiding thumbnails whenever there is something to collect
+              — it just shrinks to the star. */}
+          {preview && (showThumbnails || previewCollectionItem) && (
             <TableRow className="relative cursor-pointer group-hover:bg-muted/50 transition-colors">
               <TableCell
                 colSpan={totalColSpan}
@@ -602,17 +610,20 @@ function ResultsTableComponent<K extends ResultType>({
                   // sibling of the link (a button inside an anchor is invalid),
                   // sharing the image's positioning context so it sits over it.
                   <span className="relative inline-block">
-                    <Link
-                      href={rowHref}
-                      className="inline-block after:content-[''] after:absolute after:inset-0 after:z-[1]"
-                    >
-                      <span className="relative z-[2] inline-block">{preview}</span>
-                    </Link>
+                    {showThumbnails && (
+                      <Link
+                        href={rowHref}
+                        className="inline-block after:content-[''] after:absolute after:inset-0 after:z-[1]"
+                      >
+                        <span className="relative z-[2] inline-block">{preview}</span>
+                      </Link>
+                    )}
                     <CollectionStar
                       itemId={previewCollectionItem.id}
                       itemType="graph"
                       item={previewCollectionItem}
                       size={16}
+                      className={showThumbnails ? undefined : 'static'}
                     />
                   </span>
                 ) : (

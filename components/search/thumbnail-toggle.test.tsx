@@ -24,4 +24,14 @@ describe('ThumbnailToggle', () => {
     fireEvent.click(button);
     expect(onChange).toHaveBeenCalledWith(true);
   });
+
+  it('exposes its state as a pressed toggle, named by its visible text', () => {
+    // An aria-label would replace the visible text in the accessible name,
+    // leaving "Text only" addressable only as "Show thumbnails" (WCAG 2.5.3).
+    const { rerender } = render(<ThumbnailToggle showThumbnails={true} onChange={vi.fn()} />);
+    expect(screen.getByRole('button', { pressed: true, name: 'Thumbnails' })).toBeTruthy();
+
+    rerender(<ThumbnailToggle showThumbnails={false} onChange={vi.fn()} />);
+    expect(screen.getByRole('button', { pressed: false, name: 'Text only' })).toBeTruthy();
+  });
 });
