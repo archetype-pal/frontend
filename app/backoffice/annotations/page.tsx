@@ -187,7 +187,7 @@ export default function AnnotationsPage() {
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error('Failed to delete annotation', {
+      toast.error(t('annotations.toastFailedDelete'), {
         description: formatApiError(err),
       });
     },
