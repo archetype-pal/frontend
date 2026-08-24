@@ -83,6 +83,39 @@ describe('runBulkAction', () => {
     expect(toastMocks.warning).toHaveBeenCalledWith('2 activated, 1 failed');
   });
 
+  it('prefers fully-formed localized messages over the English template', async () => {
+    // The template concatenates ("2 annotations restored"), which cannot produce
+    // correct agreement in languages that inflect for number. Callers with i18n
+    // pass complete sentences instead.
+    const invalidate = vi.fn();
+    await runBulkAction({
+      ids: [1, 2],
+      action: () => Promise.resolve(),
+      invalidate,
+      messages: {
+        success: (count) => `${count} annotations restaurées`,
+        allFailed: () => 'Échec',
+        partial: (succeeded, failed) => `${succeeded} / ${failed}`,
+      },
+    });
+    expect(toastMocks.success).toHaveBeenCalledWith('2 annotations restaurées');
+  });
+
+  it('uses localized messages for the failure branches too', async () => {
+    const invalidate = vi.fn();
+    await runBulkAction({
+      ids: [1],
+      action: () => Promise.reject(new Error('boom')),
+      invalidate,
+      messages: {
+        success: (count) => `${count} ok`,
+        allFailed: () => 'Échec de la restauration',
+        partial: (succeeded, failed) => `${succeeded} / ${failed}`,
+      },
+    });
+    expect(toastMocks.error).toHaveBeenCalledWith('Échec de la restauration');
+  });
+
   it('uses the singular noun when there is only one id', async () => {
     const invalidate = vi.fn();
     await runBulkAction({

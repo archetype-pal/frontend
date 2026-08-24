@@ -30,6 +30,7 @@ import {
   Settings,
   Languages,
   ToggleLeft,
+  Trash2,
   HeartPulse,
   ChevronDown,
   ChevronRight,
@@ -128,6 +129,7 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
         { label: t('sidebar.dataQuality'), href: '/backoffice/quality', icon: Settings },
         { label: t('sidebar.translations'), href: '/backoffice/translations', icon: Languages },
         { label: t('sidebar.siteFeatures'), href: '/backoffice/site-features', icon: ToggleLeft },
+        { label: t('sidebar.trash'), href: '/backoffice/trash', icon: Trash2 },
       ];
       // Superuser-only: the backend endpoints it calls 403 for staff who
       // aren't also superusers, so the link is hidden for them rather than

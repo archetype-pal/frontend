@@ -11,7 +11,6 @@ import type { A9sWithMeta } from '@/types/annotation-viewer';
 vi.mock('@/services/image-texts', () => ({
   fetchImageTextsForImage: vi.fn().mockResolvedValue([]),
   linkRegionToElement: vi.fn().mockResolvedValue(undefined),
-  unlinkRegion: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/components/ui/action-toast', () => ({

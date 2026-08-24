@@ -1,16 +1,16 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
 import { showActionNotification } from '@/components/ui/action-toast';
 import { a9sToBackendFeature, dbIdFromA9s } from '@/lib/anno-mapping';
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
-import { updateViewerAnnotation } from '@/services/annotations';
+import { deleteViewerAnnotation, updateViewerAnnotation } from '@/services/annotations';
 import {
   fetchImageTextsForImage,
   linkRegionToElement,
   unlinkElement,
-  unlinkRegion,
   type ImageTextDetail,
 } from '@/services/image-texts';
 import type {
@@ -66,6 +66,7 @@ export function useImageTextLinking({
   resetEditorFrom,
   setInitialA9sAnnots,
 }: UseImageTextLinkingArgs) {
+  const t = useTranslations('manuscript');
   const [imageTexts, setImageTexts] = React.useState<ImageTextDetail[]>([]);
   const [linkedGraphId, setLinkedGraphId] = React.useState<number | null>(null);
   // Graph id of a *linked region selected on the image* (region-click only, not
@@ -269,13 +270,13 @@ export function useImageTextLinking({
     [token, reloadTextsAndAnnotations]
   );
 
-  // Delete a selected linked region: removes the TEXT graph + strips its
-  // corresp from this image's texts (the endpoint accepts any of the image's
-  // text ids and clears the ref from all of them).
-  const unlinkSelectedRegion = React.useCallback(
+  // Trash a selected linked region — the plain annotation DELETE, NOT unlink-region
+  // (which strips the corresp and hard-deletes). A soft delete is a save(), so the
+  // pre_delete corresp-strip never fires and the text keeps its ref, which is what
+  // makes a restore lossless.
+  const trashSelectedRegion = React.useCallback(
     (graphId: number) => {
-      const anyTextId = imageTexts[0]?.id;
-      if (!(token && anyTextId)) return;
+      if (!token) return;
       // Drop the box from the canvas up front. removeAnnotationById → the lib's
       // removeAnnotation deselects a selected shape synchronously before dropping
       // it, so a region deleted while it is the live selection (the panel
@@ -287,29 +288,31 @@ export function useImageTextLinking({
       viewerApiRef.current?.removeAnnotationById?.(`db:${graphId}`);
       void (async () => {
         try {
-          await unlinkRegion(token, anyTextId, graphId);
+          await deleteViewerAnnotation(token, graphId);
           await reloadTextsAndAnnotations();
           showActionNotification({
             kind: 'deleted',
-            title: 'Region unlinked',
-            description: 'Removed the region and its link.',
+            title: t('delete.regionTrashedTitle'),
+            description: t('delete.regionTrashedDescription'),
             duration: 2200,
           });
         } catch (error) {
           showActionNotification({
             kind: 'error',
-            title: 'Unlink failed',
+            title: t('delete.regionFailedTitle'),
             description:
-              error instanceof Error ? error.message.slice(0, 160) : 'Could not unlink region.',
+              error instanceof Error
+                ? error.message.slice(0, 160)
+                : t('delete.regionFailedDescription'),
           });
         }
       })();
     },
-    [token, imageTexts, viewerApiRef, reloadTextsAndAnnotations]
+    [token, viewerApiRef, reloadTextsAndAnnotations, t]
   );
 
   // Per-element unlink: strip just this element's ref to a region, keeping the
-  // region graph and its other links (vs unlinkSelectedRegion, which deletes the
+  // region graph and its other links (vs trashSelectedRegion, which trashes the
   // whole region). The region stays on the canvas — no removeAnnotationById.
   const unlinkElementFromRegion = React.useCallback(
     (textId: number, elementIndex: number, graphId: number) => {
@@ -379,7 +382,7 @@ export function useImageTextLinking({
     setSelectedRegionGraphId,
     hoveredRegionGraphId,
     setHoveredRegionGraphId,
-    unlinkSelectedRegion,
+    trashSelectedRegion,
     unlinkElementFromRegion,
     linkExistingRegionToElement,
     persistRegionGeometry,

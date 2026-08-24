@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 
 import { useAuth } from '@/contexts/auth-context';
 
@@ -99,6 +100,7 @@ export default function ManuscriptViewer({
   );
 
   const { token } = useAuth();
+  const tManuscript = useTranslations('manuscript');
 
   const isPublicDemoMode = mode === 'public';
 
@@ -132,6 +134,9 @@ export default function ManuscriptViewer({
   const [osdReady, setOsdReady] = React.useState(false);
 
   const [initialA9sAnnots, setInitialA9sAnnots] = React.useState<A9sAnnotation[]>([]);
+  // The image whose annotations are loaded, else null. initialA9sAnnots can't say
+  // this: it is `[]` both before the first load and for a genuinely empty image.
+  const [annotationsLoadedFor, setAnnotationsLoadedFor] = React.useState<string | null>(null);
   const [selectedAnnotationIds, setSelectedAnnotationIds] = React.useState<string[]>([]);
 
   // Image tile controls: rotation + brightness/contrast/saturation. The OSD
@@ -308,7 +313,7 @@ export default function ManuscriptViewer({
     setSelectedRegionGraphId,
     hoveredRegionGraphId,
     setHoveredRegionGraphId,
-    unlinkSelectedRegion,
+    trashSelectedRegion,
     unlinkElementFromRegion,
     linkExistingRegionToElement,
     persistRegionGeometry,
@@ -336,6 +341,23 @@ export default function ManuscriptViewer({
     const withoutPending = initialA9sAnnots.filter((a) => a.id !== pendingLinkRegion.id);
     return [...withoutPending, pendingLinkRegion];
   }, [initialA9sAnnots, pendingLinkRegion]);
+
+  // Graph ids on the image, for the text panel's dangling-link check. Built from
+  // initialA9sAnnots, not a9sSnapshot — the latter excludes text regions.
+  //
+  // null until loaded: an empty Set claims "nothing is live" and would strip every
+  // text link for the duration of the fetch, permanently if the fetch failed.
+  const liveGraphIds = React.useMemo(
+    () =>
+      annotationsLoadedFor === imageId
+        ? new Set(
+            initialA9sAnnots
+              .map((annotation) => dbIdFromA9s(annotation))
+              .filter((id): id is number => id != null)
+          )
+        : null,
+    [annotationsLoadedFor, imageId, initialA9sAnnots]
+  );
 
   // ---- View mode (Allograph / Text / Both) ----
   // viewMode is the single source of truth; the text panel and the text-region
@@ -973,11 +995,13 @@ export default function ManuscriptViewer({
         if (isMounted) {
           setInitialA9sAnnots(merged);
           resetEditorFrom(merged);
+          setAnnotationsLoadedFor(imageId);
         }
       } catch {
         if (isMounted) {
           setInitialA9sAnnots([]);
           resetEditorFrom([]);
+          setAnnotationsLoadedFor(null); // don't-know, not nothing-is-live
         }
       }
     };
@@ -988,6 +1012,7 @@ export default function ManuscriptViewer({
       isMounted = false;
     };
   }, [
+    imageId, // stamped into annotationsLoadedFor; a stale id would gate the wrong image
     manuscriptImage,
     imageHeight,
     allographNameById,
@@ -1364,13 +1389,8 @@ export default function ManuscriptViewer({
               onDeleteMany={handleViewerDeleteMany}
               onDeleteTextRegion={(annotation) => {
                 const graphId = dbIdFromA9s(annotation);
-                if (
-                  graphId != null &&
-                  window.confirm(
-                    'Delete this linked region?\n\nIt will be removed from the image and unlinked from the transcription.'
-                  )
-                ) {
-                  unlinkSelectedRegion(graphId);
+                if (graphId != null && window.confirm(tManuscript('delete.regionConfirm'))) {
+                  trashSelectedRegion(graphId);
                 }
               }}
               confirmDelete={handleConfirmDelete}
@@ -1452,6 +1472,7 @@ export default function ManuscriptViewer({
                   onTextSaved={() => void reloadTextsAndAnnotations()}
                   linkedGraphId={linkedGraphId}
                   hoveredGraphId={hoveredRegionGraphId}
+                  liveGraphIds={liveGraphIds}
                   onSpanHover={(graphId) =>
                     setHoveredAnnotationId(graphId != null ? `db:${graphId}` : null)
                   }
@@ -1483,7 +1504,7 @@ export default function ManuscriptViewer({
                     rearmCreateTool();
                   }}
                   selectedRegionGraphId={selectedRegionGraphId}
-                  onDeleteRegion={(graphId) => unlinkSelectedRegion(graphId)}
+                  onDeleteRegion={(graphId) => trashSelectedRegion(graphId)}
                   onUnlinkElement={(textId, elementIndex, graphId) =>
                     unlinkElementFromRegion(textId, elementIndex, graphId)
                   }
