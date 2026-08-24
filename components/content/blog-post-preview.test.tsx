@@ -1,8 +1,34 @@
 import * as React from 'react';
+import { render } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import BlogPostPreview from './blog-post-preview';
+
+const renderPreview = (keywords?: string | null) =>
+  render(
+    <BlogPostPreview
+      title="Medieval Manuscripts"
+      author="Alice Smith"
+      date="2020-01-01T00:00:00Z"
+      excerpt="<p>An overview.</p>"
+      slug="/publications/blogs/medieval-manuscripts"
+      keywords={keywords}
+      showShareBtns={false}
+      showReadMoreBtn={false}
+    />
+  );
+
+/** The badge labels, in order, or null when the group is not rendered at all. */
+const badges = (keywords?: string | null): string[] | null => {
+  const { container, unmount } = renderPreview(keywords);
+  const group = container.querySelector('[data-testid="publication-keywords"]');
+  const labels = group
+    ? Array.from(group.children).map((badge) => badge.textContent?.trim() ?? '')
+    : null;
+  unmount();
+  return labels;
+};
 
 describe('BlogPostPreview', () => {
   it('renders publication HTML through the scoped legacy renderer', () => {
@@ -24,75 +50,41 @@ describe('BlogPostPreview', () => {
     expect(html).toContain('href="/manuscripts/259"');
   });
 
-  it('renders keywords as badges when keywords string is provided', () => {
-    const html = renderToStaticMarkup(
-      <BlogPostPreview
-        title="Medieval Manuscripts"
-        author="Alice Smith"
-        date="2020-01-01T00:00:00Z"
-        excerpt="<p>An overview.</p>"
-        slug="/publications/blogs/medieval-manuscripts"
-        keywords="palaeography, charters, medieval history"
-        showShareBtns={false}
-        showReadMoreBtn={false}
-      />
-    );
-
-    expect(html).toContain('data-testid="publication-keywords"');
-    expect(html).toContain('palaeography');
-    expect(html).toContain('charters');
-    expect(html).toContain('medieval history');
+  it('renders one badge per keyword', () => {
+    expect(badges('palaeography, charters, medieval history')).toEqual([
+      'palaeography',
+      'charters',
+      'medieval history',
+    ]);
   });
 
-  it('handles quotes and whitespace in keywords gracefully', () => {
-    const html = renderToStaticMarkup(
-      <BlogPostPreview
-        title="Medieval Manuscripts"
-        author="Alice Smith"
-        date="2020-01-01T00:00:00Z"
-        excerpt="<p>An overview.</p>"
-        slug="/publications/blogs/medieval-manuscripts"
-        keywords='"insular script", "anglo-saxon", latin'
-        showShareBtns={false}
-        showReadMoreBtn={false}
-      />
-    );
-
-    expect(html).toContain('insular script');
-    expect(html).toContain('anglo-saxon');
-    expect(html).toContain('latin');
-    expect(html).not.toContain('&quot;insular script&quot;');
+  it('reads the quoted form the API actually sends', () => {
+    // Tagulous' render_tags quotes any tag holding a comma or a space and doubles
+    // inner quotes, so a plain comma split would cut the first one into three.
+    expect(badges('"edinburgh, scotland", latin')).toEqual(['edinburgh, scotland', 'latin']);
+    expect(badges('"insular script", "anglo-saxon", latin')).toEqual([
+      'insular script',
+      'anglo-saxon',
+      'latin',
+    ]);
+    expect(badges('"great ""seal"""')).toEqual(['great "seal"']);
   });
 
-  it('does not render keywords container when keywords is undefined or empty', () => {
-    const htmlEmpty = renderToStaticMarkup(
-      <BlogPostPreview
-        title="No Keywords"
-        author="Bob"
-        date="2020-01-01T00:00:00Z"
-        excerpt="<p>None.</p>"
-        slug="/publications/blogs/no-keywords"
-        keywords=""
-        showShareBtns={false}
-        showReadMoreBtn={false}
-      />
-    );
+  it('drops the category keyword already shown as the publication type', () => {
+    expect(badges('Blog, palaeography')).toEqual(['palaeography']);
+    expect(badges('News')).toBeNull();
+  });
 
-    expect(htmlEmpty).not.toContain('data-testid="publication-keywords"');
+  it('renders no keyword group when there is nothing to show', () => {
+    expect(badges('')).toBeNull();
+    expect(badges(null)).toBeNull();
+    expect(badges(undefined)).toBeNull();
+  });
 
-    const htmlNull = renderToStaticMarkup(
-      <BlogPostPreview
-        title="No Keywords"
-        author="Bob"
-        date="2020-01-01T00:00:00Z"
-        excerpt="<p>None.</p>"
-        slug="/publications/blogs/no-keywords"
-        keywords={null}
-        showShareBtns={false}
-        showReadMoreBtn={false}
-      />
-    );
-
-    expect(htmlNull).not.toContain('data-testid="publication-keywords"');
+  it('names the keyword group for assistive tech', () => {
+    const { container, unmount } = renderPreview('palaeography');
+    const group = container.querySelector('[data-testid="publication-keywords"]');
+    expect(group?.getAttribute('aria-label')).toBe('Keywords');
+    unmount();
   });
 });

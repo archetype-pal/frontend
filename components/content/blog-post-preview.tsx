@@ -20,13 +20,38 @@ const formatDate = (value: string) => {
   });
 };
 
+// The API sends Tagulous' render_tags output: tags joined with ", ", any tag
+// containing a comma or a space wrapped in quotes, inner quotes doubled ("").
+// Splitting on commas first would cut a quoted tag in half.
 const parseKeywords = (value?: string | null): string[] => {
   if (!value) return [];
-  return value
-    .split(',')
-    .map((k) => k.trim().replace(/^["']|["']$/g, ''))
-    .filter(Boolean);
+  const tags: string[] = [];
+  let tag = '';
+  let inQuote = false;
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i];
+    if (char === '"') {
+      if (value[i + 1] === '"') {
+        tag += '"';
+        i++;
+      } else {
+        inQuote = !inQuote;
+      }
+    } else if (char === ',' && !inQuote) {
+      tags.push(tag);
+      tag = '';
+    } else {
+      tag += char;
+    }
+  }
+  tags.push(tag);
+  return tags.map((t) => t.trim()).filter(Boolean);
 };
+
+// The migrated corpus stores the publication's own category as a keyword on most
+// publications. It is already shown as the type label in the meta row, so drop it
+// rather than badge the same word twice.
+const CATEGORY_KEYWORDS = new Set(['news', 'blog', 'feature article']);
 
 interface BlogPostPreviewProps {
   title: string;
@@ -52,7 +77,7 @@ export default function BlogPostPreview({
   showReadMoreBtn = true,
 }: BlogPostPreviewProps) {
   const t = useTranslations('content');
-  const tags = parseKeywords(keywords);
+  const tags = parseKeywords(keywords).filter((tag) => !CATEGORY_KEYWORDS.has(tag.toLowerCase()));
   const publicationLabel = slug.includes('/publications/feature')
     ? t('blog.typeFeature')
     : slug.includes('/publications/blogs')
@@ -92,6 +117,7 @@ export default function BlogPostPreview({
       {tags.length > 0 && (
         <div
           className="flex flex-wrap items-center gap-1.5 mb-4"
+          aria-label={t('blog.keywordsLabel')}
           data-testid="publication-keywords"
         >
           {tags.map((tag) => (
