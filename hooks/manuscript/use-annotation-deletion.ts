@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
 import { isDbId } from '@/lib/annotation-popup-utils';
 import { isTextRegionAnnotation } from '@/lib/manuscript-viewer-annotation-types';
@@ -41,6 +42,8 @@ export function useAnnotationDeletion({
   viewerApiRef,
   setActiveTool,
 }: UseAnnotationDeletionArgs) {
+  const t = useTranslations('manuscript');
+
   const handleConfirmDelete = React.useCallback(
     (annotation: A9sAnnotation) => {
       const canonical = getCanonicalAnnotation(annotation);
@@ -53,12 +56,10 @@ export function useAnnotationDeletion({
       const isDraft = !isDbId(canonical.id);
 
       return window.confirm(
-        isDraft
-          ? `Delete this ${kind} draft annotation?\n\nThis will discard it locally.`
-          : `Delete this saved ${kind} annotation?\n\nThis will mark it for deletion. Press Save to persist the deletion.`
+        isDraft ? t('delete.draftConfirm', { kind }) : t('delete.savedConfirm', { kind })
       );
     },
-    [getCanonicalAnnotation, getAnnotationKind]
+    [getCanonicalAnnotation, getAnnotationKind, t]
   );
 
   const handleConfirmDeleteMany = React.useCallback(
@@ -68,31 +69,21 @@ export function useAnnotationDeletion({
 
       const draftCount = canonical.filter((annotation) => !isDbId(annotation.id)).length;
       const savedCount = canonical.length - draftCount;
+      const counts = { total: canonical.length, draftCount, savedCount };
 
-      const parts: string[] = [`Delete ${canonical.length} selected annotations?`];
+      // Pluralisation lives in the ICU message, not here: French does not
+      // pluralise on the same boundaries as English, so an `=== 1 ? '' : 's'`
+      // built in TS cannot be translated correctly.
+      const message =
+        draftCount > 0 && savedCount > 0
+          ? t('delete.bulkMixed', counts)
+          : draftCount > 0
+            ? t('delete.bulkDrafts', counts)
+            : t('delete.bulkSaved', counts);
 
-      if (draftCount > 0 && savedCount > 0) {
-        parts.push(
-          '',
-          `This will discard ${draftCount} draft annotation${draftCount === 1 ? '' : 's'} locally and mark ${savedCount} saved annotation${savedCount === 1 ? '' : 's'} for deletion.`,
-          'Press Save to persist saved deletions.'
-        );
-      } else if (draftCount > 0) {
-        parts.push(
-          '',
-          `This will discard ${draftCount} draft annotation${draftCount === 1 ? '' : 's'} locally.`
-        );
-      } else {
-        parts.push(
-          '',
-          `This will mark ${savedCount} saved annotation${savedCount === 1 ? '' : 's'} for deletion.`,
-          'Press Save to persist the deletion.'
-        );
-      }
-
-      return window.confirm(parts.join('\n'));
+      return window.confirm(message);
     },
-    [getCanonicalAnnotation]
+    [getCanonicalAnnotation, t]
   );
 
   const handleViewerDelete = React.useCallback(

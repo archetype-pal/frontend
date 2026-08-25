@@ -126,32 +126,6 @@ export async function linkRegionToElement(
 }
 
 /**
- * Track A — remove a text↔region link: delete the region's TEXT Graph and strip
- * its `corresp` reference from every text of the same image. `textId` may be any
- * image-text of that image. Returns the updated content of the addressed text.
- */
-export async function unlinkRegion(
-  token: string,
-  textId: number,
-  graphId: number
-): Promise<{ content: string }> {
-  const response = await authFetch(
-    `/api/v1/manuscripts/management/image-texts/${textId}/unlink-region/`,
-    token,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ graph_id: graphId }),
-    }
-  );
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Failed to unlink region: ${response.status}`);
-  }
-  return response.json();
-}
-
-/**
  * Track A — remove a SINGLE element↔region link: strip the region's `corresp`
  * reference from the element_index-th linkable element of *this* text only,
  * leaving the region Graph and its other links (e.g. the translation phrase)

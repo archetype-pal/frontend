@@ -102,6 +102,10 @@
     "viewCharts": "Graphiques",
     "viewMap": "Carte",
     "viewDisabled": "{label} (pas de données pour cet ensemble de résultats)",
+    "showThumbnailsTitle": "Afficher les miniatures d'images",
+    "hideThumbnailsTitle": "Masquer les miniatures d'images (texte seul)",
+    "thumbnailsOn": "Miniatures",
+    "textOnly": "Texte seul",
     "sortBy": "Trier par",
     "sortByLabel": "Trier les résultats par",
     "sortDefault": "Par défaut",
@@ -304,6 +308,24 @@
       "description": "Le service des manuscrits est actuellement indisponible. Veuillez réessayer sous peu.",
       "backLink": "Retour aux manuscrits",
       "message": "Ce manuscrit n'a pas pu être chargé. Veuillez réessayer."
+    },
+    "gallery": {
+      "deleteConfirm": "Supprimer le graphe n°{id} ? Il est déplacé dans la corbeille ; un administrateur peut le restaurer.",
+      "deleteSuccess": "Graphe n°{id} déplacé dans la corbeille ; un administrateur peut le restaurer",
+      "deleteFailed": "Échec de la suppression du graphe n°{id}"
+    },
+    "delete": {
+      "draftConfirm": "{kind, select, editorial {Supprimer ce brouillon d'annotation éditoriale ?} other {Supprimer ce brouillon d'annotation publique ?}}\n\nIl sera abandonné localement.",
+      "savedConfirm": "{kind, select, editorial {Supprimer cette annotation éditoriale enregistrée ?} other {Supprimer cette annotation publique enregistrée ?}}\n\nAppuyez sur Enregistrer pour la déplacer dans la corbeille, où un administrateur peut la restaurer.",
+      "bulkMixed": "Supprimer les {total} annotations sélectionnées ?\n\n{draftCount, plural, =1 {# brouillon sera abandonné} other {# brouillons seront abandonnés}} localement et {savedCount, plural, =1 {# annotation enregistrée sera marquée} other {# annotations enregistrées seront marquées}} pour suppression.\nAppuyez sur Enregistrer pour déplacer les annotations enregistrées dans la corbeille, où un administrateur peut les restaurer.",
+      "bulkDrafts": "Supprimer les {total} annotations sélectionnées ?\n\n{draftCount, plural, =1 {# brouillon sera abandonné} other {# brouillons seront abandonnés}} localement.",
+      "bulkSaved": "Supprimer les {total} annotations sélectionnées ?\n\n{savedCount, plural, =1 {# annotation enregistrée sera marquée} other {# annotations enregistrées seront marquées}} pour suppression.\nAppuyez sur Enregistrer pour les déplacer dans la corbeille, où un administrateur peut les restaurer.",
+      "regionConfirm": "Supprimer cette région liée ?\n\nElle est déplacée dans la corbeille et disparaît de l'image. Son lien avec la transcription est conservé, afin qu'un administrateur puisse restaurer les deux.",
+      "removeRegion": "Supprimer la région",
+      "regionTrashedTitle": "Région déplacée dans la corbeille",
+      "regionTrashedDescription": "Un administrateur peut la restaurer, avec son lien vers la transcription.",
+      "regionFailedTitle": "Échec de la suppression",
+      "regionFailedDescription": "Impossible de supprimer la région."
     }
   },
   "annotation": {
@@ -434,7 +456,8 @@
       "recentSection": "{title} récent(e)s",
       "backToList": "Retour à la liste",
       "viewAll": "Voir tous les {title}",
-      "publicationFallbackTitle": "Publication"
+      "publicationFallbackTitle": "Publication",
+      "keywordsLabel": "Mots-clés"
     },
     "publicationKinds": {
       "news": {
@@ -938,6 +961,8 @@
       "dataQuality": "Qualité des données",
       "translations": "Traductions",
       "siteFeatures": "Fonctionnalités du site",
+      "trash": "Corbeille",
+      "sanityChecks": "Vérifications système",
       "subGroupExpand": "Développer {label}",
       "subGroupCollapse": "Réduire {label}"
     },
@@ -1740,10 +1765,13 @@
       "colComponents": "Composants",
       "colPositions": "Positions",
       "deleteTitle": "Supprimer cette annotation ?",
-      "deleteDesc": "Le graphe #{id} ({allograph}) sera définitivement supprimé.",
+      "deleteDesc": "Le graphe n°{id} ({allograph}) sera déplacé dans la corbeille. Un administrateur peut le restaurer.",
       "deleteConfirm": "Supprimer",
-      "toastDeleted": "Annotation de graphe supprimée",
-      "toastFailedDelete": "Échec de la suppression de l'annotation"
+      "toastFailedDelete": "Échec de la suppression de l'annotation",
+      "toastMovedToTrash": "Annotation déplacée dans la corbeille",
+      "bulkTrashed": "{count, plural, =1 {# annotation déplacée dans la corbeille} other {# annotations déplacées dans la corbeille}}",
+      "bulkTrashFailed": "Échec du déplacement des annotations dans la corbeille",
+      "bulkPartial": "{succeeded} réussie(s), {failed} échouée(s)"
     },
     "imageTexts": {
       "failedLoad": "Impossible de charger le texte-image.",
@@ -1812,11 +1840,51 @@
       "toastSentBack": "Renvoyé au brouillon",
       "toastSendBackFailed": "Échec du renvoi"
     },
+    "trash": {
+      "title": "Corbeille",
+      "subtitle": "Les éléments supprimés sont conservés ici jusqu'à leur restauration ou leur suppression définitive. Rien n'expire automatiquement.",
+      "tabAnnotations": "Annotations",
+      "trashedCount": "{count} dans la corbeille",
+      "filters": "Filtres",
+      "filterAllTypes": "Tous les types",
+      "filterAllUsers": "N'importe qui",
+      "filterDeletedFrom": "Dans la corbeille depuis",
+      "filterDeletedTo": "Dans la corbeille jusqu'au",
+      "clearFilters": "Effacer tous les filtres",
+      "colId": "ID",
+      "colAllograph": "Allographe",
+      "colHand": "Main",
+      "colType": "Type",
+      "colImage": "Image",
+      "colCreated": "Créée le",
+      "colDeletedBy": "Supprimée par",
+      "colDeletedAge": "Dans la corbeille",
+      "typeUnknown": "inconnu",
+      "restore": "Restaurer",
+      "purge": "Purger",
+      "openImage": "Ouvrir l'image dans la visionneuse",
+      "toastRestored": "Annotation restaurée",
+      "toastRestoreFailed": "Échec de la restauration de l'annotation",
+      "toastPurged": "Annotation supprimée définitivement",
+      "toastPurgeFailed": "Échec de la suppression définitive de l'annotation",
+      "purgeTitle": "Supprimer définitivement cette annotation ?",
+      "purgeDesc": "L'annotation n°{id} et ses composants de description seront supprimés définitivement. Cette action est irréversible.",
+      "bulkPurgeTitle": "Supprimer définitivement {count} annotations ?",
+      "bulkPurgeDesc": "Les annotations sélectionnées et leurs composants de description seront supprimés définitivement. Cette action est irréversible.",
+      "purgeConfirm": "Supprimer pour toujours",
+      "reindexHint": "Les résultats de recherche se mettent à jour après la prochaine réindexation sur la page Moteur de recherche.",
+      "bulkRestored": "{count, plural, =1 {# annotation restaurée} other {# annotations restaurées}}",
+      "bulkRestoreFailed": "Échec de la restauration des annotations",
+      "bulkPurged": "{count, plural, =1 {# annotation supprimée définitivement} other {# annotations supprimées définitivement}}",
+      "bulkPurgeFailed": "Échec de la suppression définitive des annotations",
+      "bulkPartial": "{succeeded} réussie(s), {failed} échouée(s)"
+    },
     "siteFeatures": {
       "title": "Fonctionnalités du site",
       "subtitle": "Activer ou désactiver les fonctionnalités du site et configurer le comportement de la recherche.",
       "toastSaved": "Fonctionnalités du site enregistrées",
       "toastFailedSave": "Échec de l'enregistrement des fonctionnalités du site",
+      "failedLoad": "Échec du chargement des fonctionnalités du site",
       "dragToReorder": "Glisser pour réorganiser",
       "reorderSection": "Réorganiser {section}",
       "sectionsTitle": "Sections du site",
@@ -1991,7 +2059,8 @@
       "sectionSearchTitle": "Catégories de résultats de recherche",
       "sectionSearchDesc": "Renommer les onglets de catégorie sur la page de recherche publique (ex. « Manuscrits » → « Corpus »). L'onglet Manuscrits suit le libellé « Nom de l'app : Manuscrits » ci-dessus.",
       "toastSaved": "Libellés du modèle enregistrés",
-      "toastFailedSave": "Échec de l'enregistrement des libellés du modèle"
+      "toastFailedSave": "Échec de l'enregistrement des libellés du modèle",
+      "failedLoad": "Échec du chargement des libellés."
     },
     "symbols": {
       "loadingStructure": "Chargement de la structure des symboles...",
@@ -2260,6 +2329,48 @@
         "translationExists": "Une traduction existe",
         "transcription": "Transcription",
         "translation": "Traduction"
+      }
+    },
+    "sanityChecks": {
+      "title": "Vérifications de l'état du système",
+      "subtitle": "Aperçu de l'état opérationnel de ce déploiement : migrations, services dépendants, stockage et envoi d'e-mails.",
+      "refresh": "Actualiser",
+      "error": "Erreur : {message}",
+      "migrations": {
+        "title": "Migrations en attente",
+        "upToDate": "À jour",
+        "pendingLabel": "en attente"
+      },
+      "services": {
+        "title": "Services dépendants",
+        "database": "Base de données",
+        "redis": "Redis",
+        "meilisearch": "Meilisearch",
+        "celeryBroker": "Broker Celery"
+      },
+      "storage": {
+        "title": "Stockage",
+        "databaseSize": "Taille de la base de données",
+        "mediaSize": "Taille du répertoire média",
+        "unavailable": "Indisponible (backend non-PostgreSQL)",
+        "path": "Chemin : {path}"
+      },
+      "permissions": {
+        "title": "Permissions du système de fichiers",
+        "mediaWritable": "Répertoire média accessible en écriture",
+        "logsWritable": "Répertoire de logs accessible en écriture"
+      },
+      "smtp": {
+        "title": "E-mail (SMTP)",
+        "configured": "SMTP semble configuré",
+        "notConfigured": "SMTP n'est pas configuré",
+        "cannotSendTitle": "E-mail de test indisponible",
+        "notConfiguredDescription": "EMAIL_HOST n'est pas défini ou utilise encore la valeur par défaut de Django — configurez SMTP côté serveur avant de pouvoir envoyer un e-mail de test.",
+        "description": "Envoie un e-mail de test aux adresses administrateur configurées (ADMIN_EMAILS).",
+        "send": "Envoyer un e-mail de test",
+        "sending": "Envoi…",
+        "toastSuccess": "E-mail de test envoyé",
+        "toastError": "Échec de l'envoi de l'e-mail de test"
       }
     },
     "reviewAge": {

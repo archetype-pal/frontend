@@ -56,8 +56,9 @@ export const backofficeKeys = {
   // ── Publications ───────────────────────────────────────────
   publications: {
     all: () => [...backofficeKeys.all, 'publications'] as const,
+    lists: () => [...backofficeKeys.publications.all(), 'list'] as const,
     list: (filters?: Record<string, unknown>) =>
-      [...backofficeKeys.publications.all(), 'list', filters] as const,
+      [...backofficeKeys.publications.lists(), filters] as const,
     detail: (slug: string) => [...backofficeKeys.publications.all(), 'detail', slug] as const,
   },
   comments: {
