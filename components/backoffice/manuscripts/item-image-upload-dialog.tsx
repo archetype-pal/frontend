@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { FileImage, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -51,34 +52,40 @@ export function ItemImageUploadDialog({
   itemPartLabel,
   historicalItemId,
 }: ItemImageUploadDialogProps) {
+  const t = useTranslations('backoffice');
   const { enqueue } = useUploadManager();
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<StagedFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
 
-  const addFiles = useCallback((fileList: FileList | File[]) => {
-    const incoming = Array.from(fileList);
-    const accepted: StagedFile[] = [];
-    const rejected: string[] = [];
-    for (const file of incoming) {
-      if (isAcceptedImageFilename(file.name)) {
-        accepted.push({
-          id: crypto.randomUUID(),
-          file,
-          locus: guessLocusFromFilename(file.name),
-          tags: '',
-        });
-      } else {
-        rejected.push(file.name);
+  const addFiles = useCallback(
+    (fileList: FileList | File[]) => {
+      const incoming = Array.from(fileList);
+      const accepted: StagedFile[] = [];
+      const rejected: string[] = [];
+      for (const file of incoming) {
+        if (isAcceptedImageFilename(file.name)) {
+          accepted.push({
+            id: crypto.randomUUID(),
+            file,
+            locus: guessLocusFromFilename(file.name),
+            tags: '',
+          });
+        } else {
+          rejected.push(file.name);
+        }
       }
-    }
-    if (accepted.length) setFiles((prev) => [...prev, ...accepted]);
-    if (rejected.length) {
-      toast.error(`Skipped ${rejected.length} unsupported file(s)`, {
-        description: `Allowed: ${ACCEPTED_UPLOAD_EXTENSIONS.join(', ')}`,
-      });
-    }
-  }, []);
+      if (accepted.length) setFiles((prev) => [...prev, ...accepted]);
+      if (rejected.length) {
+        toast.error(t('uploads.toast.skipped', { count: rejected.length }), {
+          description: t('uploads.toast.allowed', {
+            list: ACCEPTED_UPLOAD_EXTENSIONS.join(', '),
+          }),
+        });
+      }
+    },
+    [t]
+  );
 
   const patchFile = useCallback((id: string, partial: Partial<StagedFile>) => {
     setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, ...partial } : f)));
@@ -108,8 +115,8 @@ export function ItemImageUploadDialog({
       { itemPartId, itemPartLabel, historicalItemId }
     );
     const count = files.length;
-    toast.success(`Uploading ${count} image${count === 1 ? '' : 's'} in the background`, {
-      description: 'Track progress in the panel at the bottom right — you can keep working.',
+    toast.success(t('uploads.toast.queued', { count }), {
+      description: t('uploads.toast.queuedHint'),
     });
     close(false);
   };
@@ -118,11 +125,12 @@ export function ItemImageUploadDialog({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col">
         <DialogHeader className="shrink-0">
-          <DialogTitle>Add images</DialogTitle>
+          <DialogTitle>{t('uploads.addImages')}</DialogTitle>
           <DialogDescription>
-            Upload manuscript scans to <span className="font-medium">{itemPartLabel}</span>. Each
-            file is converted to a lossless JP2 and served through IIIF. Uploading runs in the
-            background, so you can keep working while large files transfer.
+            {t.rich('uploads.description', {
+              part: itemPartLabel,
+              strong: (chunks) => <span className="font-medium">{chunks}</span>,
+            })}
           </DialogDescription>
         </DialogHeader>
 
@@ -131,7 +139,7 @@ export function ItemImageUploadDialog({
           <div
             role="button"
             tabIndex={0}
-            aria-label="Add images to upload"
+            aria-label={t('uploads.a11y.addFiles')}
             onClick={() => inputRef.current?.click()}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -153,7 +161,7 @@ export function ItemImageUploadDialog({
             )}
           >
             <Upload className="h-8 w-8 text-muted-foreground opacity-50" />
-            <p className="text-sm font-medium">Drop scans here or click to browse</p>
+            <p className="text-sm font-medium">{t('uploads.dropzone')}</p>
             <p className="text-xs text-muted-foreground">{ACCEPTED_UPLOAD_EXTENSIONS.join(', ')}</p>
             <input
               ref={inputRef}
@@ -161,7 +169,7 @@ export function ItemImageUploadDialog({
               multiple
               accept={ACCEPTED_UPLOAD_EXTENSIONS.join(',')}
               className="hidden"
-              aria-label="Choose image files"
+              aria-label={t('uploads.a11y.chooseFiles')}
               onChange={(e) => {
                 if (e.target.files?.length) addFiles(e.target.files);
                 if (inputRef.current) inputRef.current.value = '';
@@ -222,6 +230,7 @@ function StagedFileItem({
   onTagsChange: (value: string) => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations('backoffice');
   return (
     <li className="rounded-md border p-2.5">
       <div className="flex items-start gap-2.5">
@@ -238,25 +247,25 @@ function StagedFileItem({
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label htmlFor={`locus-${staged.id}`} className="text-[10px] text-muted-foreground">
-                Locus
+                {t('uploads.locus')}
               </Label>
               <Input
                 id={`locus-${staged.id}`}
                 value={staged.locus}
                 onChange={(e) => onLocusChange(e.target.value)}
-                placeholder="e.g. f.1r"
+                placeholder={t('uploads.locusPlaceholder')}
                 className="h-7 text-xs"
               />
             </div>
             <div className="space-y-1">
               <Label htmlFor={`tags-${staged.id}`} className="text-[10px] text-muted-foreground">
-                Tags
+                {t('uploads.tags')}
               </Label>
               <Input
                 id={`tags-${staged.id}`}
                 value={staged.tags}
                 onChange={(e) => onTagsChange(e.target.value)}
-                placeholder="comma,separated"
+                placeholder={t('uploads.tagsPlaceholder')}
                 className="h-7 text-xs"
               />
             </div>
@@ -267,7 +276,7 @@ function StagedFileItem({
           variant="ghost"
           size="icon"
           className="h-6 w-6 shrink-0"
-          aria-label={`Remove ${staged.file.name}`}
+          aria-label={t('uploads.a11y.remove', { name: staged.file.name })}
           onClick={onRemove}
         >
           <X className="h-3.5 w-3.5" />

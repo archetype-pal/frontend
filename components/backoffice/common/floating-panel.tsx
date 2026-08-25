@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ export function FloatingPanel({
   children,
   className,
 }: FloatingPanelProps) {
+  const t = useTranslations('backoffice');
   return (
     <div
       className={cn(
@@ -56,7 +58,9 @@ export function FloatingPanel({
               size="icon"
               className="h-6 w-6"
               onClick={onToggleCollapse}
-              aria-label={collapsed ? 'Expand panel' : 'Collapse panel'}
+              aria-label={
+                collapsed ? t('uploads.a11y.expandPanel') : t('uploads.a11y.collapsePanel')
+              }
               aria-expanded={!collapsed}
             >
               {collapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}

@@ -2693,6 +2693,60 @@
       "setLanguagePlaceholder": "e.g. la, en, enm. Empty for \"(unset)\"",
       "setLanguageApply": "Apply",
       "clearSelection": "Clear"
+    },
+    "uploads": {
+      "addImages": "Add images",
+      "description": "Upload manuscript scans to <strong>{part}</strong>. Each file is converted to a lossless JP2 and served through IIIF. Uploading runs in the background, so you can keep working while large files transfer.",
+      "dropzone": "Drop scans here or click to browse",
+      "locus": "Locus",
+      "locusPlaceholder": "e.g. f.1r",
+      "tags": "Tags",
+      "tagsPlaceholder": "comma,separated",
+      "converting": "Converting to JP2…",
+      "percentUploaded": "{pct}% uploaded",
+      "published": "Uploaded and published.",
+      "canceled": "Canceled.",
+      "alreadyPresent": "Already present — {reason}",
+      "busyInOtherTab": "Already uploading in another tab — track it there.",
+      "noMatch": "No match for {picked} — this upload needs \"{needed}\" ({size}).",
+      "tray": {
+        "title": "Uploads ({count})",
+        "uploading": "{count, plural, =1 {Uploading 1 image…} other {Uploading {count} images…}}",
+        "interrupted": "{count, plural, =1 {Interrupted upload (1)} other {Interrupted uploads ({count})}}"
+      },
+      "toast": {
+        "skipped": "{count, plural, =1 {Skipped 1 unsupported file} other {Skipped {count} unsupported files}}",
+        "queued": "{count, plural, =1 {Uploading 1 image in the background} other {Uploading {count} images in the background}}",
+        "failed": "Upload failed: {name}",
+        "reindexTitle": "{count, plural, =1 {1 image uploaded — not searchable until reindex} other {{count} images uploaded — not searchable until reindex}}",
+        "reindexBody": "Reindex Item Images / Item Parts to include them in search.",
+        "reindexAction": "Open Search Engine",
+        "allowed": "Allowed: {list}",
+        "queuedHint": "Track progress in the panel at the bottom right — you can keep working."
+      },
+      "errors": {
+        "chunkServerError": "Server error ({status}) while uploading a chunk — you can retry the upload.",
+        "chunkNetwork": "Network error while uploading a chunk.",
+        "processTimeout": "Timed out waiting for server-side processing.",
+        "processFailed": "Upload processing failed.",
+        "notAuthenticated": "Not authenticated."
+      },
+      "a11y": {
+        "addFiles": "Add images to upload",
+        "chooseFiles": "Choose image files",
+        "remove": "Remove {name}",
+        "reselect": "Re-select file for {name}",
+        "discard": "Discard interrupted upload {name}",
+        "retry": "Retry upload of {name}",
+        "cancel": "Cancel upload of {name}",
+        "stopTracking": "Stop tracking {name}",
+        "dismiss": "Dismiss {name}",
+        "expandPanel": "Expand panel",
+        "collapsePanel": "Collapse panel"
+      },
+      "clearFinished": "Clear finished",
+      "interruptedHint": "Interrupted by a reload. Re-add a file to resume — parts already uploaded are not re-sent.",
+      "readdFile": "Re-add file to resume"
     }
   },
   "login": {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import {
   AlertCircle,
@@ -34,6 +35,7 @@ import {
  * Hidden when there is nothing to show.
  */
 export function UploadTray() {
+  const t = useTranslations('backoffice');
   const {
     items,
     interrupted,
@@ -51,10 +53,10 @@ export function UploadTray() {
   const finishedCount = items.filter((it) => UPLOAD_TERMINAL_STATUSES.includes(it.status)).length;
   const title =
     activeCount > 0
-      ? `Uploading ${activeCount} image${activeCount === 1 ? '' : 's'}…`
+      ? t('uploads.tray.uploading', { count: activeCount })
       : interrupted.length > 0
-        ? `Interrupted upload${interrupted.length === 1 ? '' : 's'} (${interrupted.length})`
-        : `Uploads (${items.length})`;
+        ? t('uploads.tray.interrupted', { count: interrupted.length })
+        : t('uploads.tray.title', { count: items.length });
 
   return (
     <FloatingPanel
@@ -65,7 +67,7 @@ export function UploadTray() {
       action={
         finishedCount > 0 && !collapsed ? (
           <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={clearFinished}>
-            Clear finished
+            {t('uploads.clearFinished')}
           </Button>
         ) : null
       }
@@ -73,8 +75,7 @@ export function UploadTray() {
       {interrupted.length > 0 && (
         <div className="border-b">
           <p className="px-3 pb-1 pt-2.5 text-[10px] text-muted-foreground">
-            Interrupted by a reload. Re-add a file to resume — parts already uploaded are not
-            re-sent.
+            {t('uploads.interruptedHint')}
           </p>
           <ul className="divide-y">
             {interrupted.map((crumb) => (
@@ -119,6 +120,7 @@ function InterruptedTrayItem({
   onResume: (files: File[]) => ResumeResult;
   onDismiss: () => void;
 }) {
+  const t = useTranslations('backoffice');
   const inputRef = useRef<HTMLInputElement>(null);
   const [mismatch, setMismatch] = useState('');
 
@@ -128,7 +130,11 @@ function InterruptedTrayItem({
     const { unmatched } = onResume(files);
     setMismatch(
       unmatched.length > 0
-        ? `No match for ${unmatched.map((n) => `"${n}"`).join(', ')} — this upload needs "${crumb.fileName}" (${formatBytes(crumb.fileSize)}).`
+        ? t('uploads.noMatch', {
+            picked: unmatched.map((n) => `"${n}"`).join(', '),
+            needed: crumb.fileName,
+            size: formatBytes(crumb.fileSize),
+          })
         : ''
     );
   };
@@ -154,7 +160,7 @@ function InterruptedTrayItem({
             multiple
             accept={ACCEPTED_UPLOAD_EXTENSIONS.join(',')}
             className="hidden"
-            aria-label={`Re-select file for ${crumb.fileName}`}
+            aria-label={t('uploads.a11y.reselect', { name: crumb.fileName })}
             onChange={(e) => {
               handlePick(e.target.files);
               e.target.value = '';
@@ -168,7 +174,7 @@ function InterruptedTrayItem({
             onClick={() => inputRef.current?.click()}
           >
             <FolderOpen className="h-3 w-3" />
-            Re-add file to resume
+            {t('uploads.readdFile')}
           </Button>
         </div>
         <Button
@@ -176,7 +182,7 @@ function InterruptedTrayItem({
           variant="ghost"
           size="icon"
           className="h-6 w-6 shrink-0"
-          aria-label={`Discard interrupted upload ${crumb.fileName}`}
+          aria-label={t('uploads.a11y.discard', { name: crumb.fileName })}
           onClick={onDismiss}
         >
           <X className="h-3.5 w-3.5" />
@@ -197,6 +203,7 @@ function UploadTrayItem({
   onRetry: () => void;
   onDismiss: () => void;
 }) {
+  const t = useTranslations('backoffice');
   const active = item.status === 'uploading' || item.status === 'processing';
   // Only bytes still in flight can be called back. Once finalize is posted the
   // server is assembling and then converting, and a DELETE would either lose
@@ -237,25 +244,25 @@ function UploadTrayItem({
               </div>
               <p className="text-[10px] text-muted-foreground">
                 {item.status === 'processing'
-                  ? item.message || 'Converting to JP2…'
-                  : `${pct}% uploaded`}
+                  ? item.message || t('uploads.converting')
+                  : t('uploads.percentUploaded', { pct })}
               </p>
             </div>
           )}
 
           {item.status === 'done' && (
             <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
-              Uploaded and published.
+              {t('uploads.published')}
             </p>
           )}
           {item.status === 'error' && <p className="text-[10px] text-destructive">{item.error}</p>}
           {item.status === 'duplicate' && (
             <p className="text-[10px] text-amber-600 dark:text-amber-400">
-              Already present — {item.error}
+              {t('uploads.alreadyPresent', { reason: item.error })}
             </p>
           )}
           {item.status === 'canceled' && (
-            <p className="text-[10px] text-muted-foreground">Canceled.</p>
+            <p className="text-[10px] text-muted-foreground">{t('uploads.canceled')}</p>
           )}
           {item.status === 'busy' && (
             <p className="text-[10px] text-amber-600 dark:text-amber-400">{item.error}</p>
@@ -269,7 +276,7 @@ function UploadTrayItem({
               variant="ghost"
               size="icon"
               className="h-6 w-6"
-              aria-label={`Retry upload of ${item.fileName}`}
+              aria-label={t('uploads.a11y.retry', { name: item.fileName })}
               onClick={onRetry}
             >
               <RotateCcw className="h-3.5 w-3.5" />
@@ -282,10 +289,10 @@ function UploadTrayItem({
             className="h-6 w-6"
             aria-label={
               cancellable
-                ? `Cancel upload of ${item.fileName}`
+                ? t('uploads.a11y.cancel', { name: item.fileName })
                 : active
-                  ? `Stop tracking ${item.fileName}`
-                  : `Dismiss ${item.fileName}`
+                  ? t('uploads.a11y.stopTracking', { name: item.fileName })
+                  : t('uploads.a11y.dismiss', { name: item.fileName })
             }
             onClick={cancellable ? onCancel : onDismiss}
           >

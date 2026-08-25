@@ -88,7 +88,9 @@ export function abortUploadSession(token: string, id: string): Promise<void> {
 export class ChunkUploadError extends Error {
   constructor(
     public status: number,
-    public detail: string
+    public detail: string,
+    /** Set when `detail` is our own wording rather than the backend's. */
+    public code?: UploadMessageCode
   ) {
     super(`Chunk upload failed (${status}): ${detail}`);
     this.name = 'ChunkUploadError';
@@ -102,7 +104,17 @@ export class ChunkUploadError extends Error {
  * a short plain-text body, and otherwise fall back to a generic message; the
  * caller logs the raw body to the console for developers.
  */
-export function chunkErrorDetail(status: number, responseText: string): string {
+/**
+ * Failures this layer authors itself, as codes the presentation layer
+ * translates. A backend-authored `detail` never gets a code: it is server text
+ * in the server's language, and inventing a key for it would mean discarding
+ * the specific reason the API gave.
+ */
+export type UploadMessageCode =
+  'chunkServerError' | 'chunkNetwork' | 'processTimeout' | 'processFailed';
+
+/** The backend's own words for a chunk failure, or null if it gave none. */
+function backendChunkDetail(responseText: string): string | null {
   try {
     const detail = (JSON.parse(responseText) as { detail?: unknown }).detail;
     if (typeof detail === 'string' && detail) return detail;
@@ -110,8 +122,20 @@ export function chunkErrorDetail(status: number, responseText: string): string {
     /* not JSON */
   }
   const text = responseText.trim();
-  if (text && !text.startsWith('<') && text.length <= 300) return text;
-  return `Server error (${status}) while uploading a chunk — you can retry the upload.`;
+  // An HTML body is a Django debug traceback — alarming, and it leaks internals.
+  return text && !text.startsWith('<') && text.length <= 300 ? text : null;
+}
+
+export function chunkErrorDetail(status: number, responseText: string): string {
+  return (
+    backendChunkDetail(responseText) ??
+    `Server error (${status}) while uploading a chunk — you can retry the upload.`
+  );
+}
+
+/** Code for a chunk failure we worded ourselves; null when the backend spoke. */
+export function chunkErrorCode(responseText: string): UploadMessageCode | null {
+  return backendChunkDetail(responseText) === null ? 'chunkServerError' : null;
 }
 
 function putChunk(
@@ -148,12 +172,18 @@ function putChunk(
         if (process.env.NODE_ENV === 'development') {
           console.error(`Chunk ${index} upload failed (${xhr.status}):`, xhr.responseText);
         }
-        reject(new ChunkUploadError(xhr.status, chunkErrorDetail(xhr.status, xhr.responseText)));
+        reject(
+          new ChunkUploadError(
+            xhr.status,
+            chunkErrorDetail(xhr.status, xhr.responseText),
+            chunkErrorCode(xhr.responseText) ?? undefined
+          )
+        );
       }
     };
     xhr.onerror = () => {
       cleanup();
-      reject(new Error('Network error while uploading chunk.'));
+      reject(new ChunkUploadError(0, 'Network error while uploading chunk.', 'chunkNetwork'));
     };
     xhr.onabort = () => {
       cleanup();
@@ -190,7 +220,9 @@ export interface UploadImageOptions {
 export class UploadFailedError extends Error {
   constructor(
     message: string,
-    public session: UploadSession
+    public session: UploadSession,
+    /** Set when `message` is our own wording rather than the backend's. */
+    public code?: UploadMessageCode
   ) {
     super(message);
     this.name = 'UploadFailedError';
@@ -228,6 +260,16 @@ export function isConflictError(err: unknown): boolean {
  * backend's `detail` string and DRF's field-shaped 400s; only a chunk error
  * needs special handling, because its `message` embeds the raw status.
  */
+/**
+ * Catalog suffix for a failure this layer worded, or null when the text is the
+ * backend's. Presentation resolves it against `backoffice.uploads.errors.*`;
+ * `null` means fall back to `describeUploadError`, which surfaces server text.
+ */
+export function uploadMessageCode(err: unknown): UploadMessageCode | null {
+  if (err instanceof ChunkUploadError || err instanceof UploadFailedError) return err.code ?? null;
+  return null;
+}
+
 export function describeUploadError(err: unknown): string {
   if (err instanceof ChunkUploadError) return err.detail || err.message;
   return formatApiError(err);
@@ -262,7 +304,11 @@ export async function watchUploadSession(
   while (session.status !== 'complete' && session.status !== 'failed') {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     if (Date.now() > deadline) {
-      throw new UploadFailedError('Timed out waiting for server-side processing.', session);
+      throw new UploadFailedError(
+        'Timed out waiting for server-side processing.',
+        session,
+        'processTimeout'
+      );
     }
     await sleep(pollIntervalMs);
     try {
@@ -282,7 +328,13 @@ export async function watchUploadSession(
   }
 
   if (session.status === 'failed') {
-    throw new UploadFailedError(session.error || 'Upload processing failed.', session);
+    // session.error is the backend's wording when it has one; only our own
+    // fallback gets a code.
+    throw new UploadFailedError(
+      session.error || 'Upload processing failed.',
+      session,
+      session.error ? undefined : 'processFailed'
+    );
   }
   report({ phase: 'complete', sentBytes: total, session });
   return session;

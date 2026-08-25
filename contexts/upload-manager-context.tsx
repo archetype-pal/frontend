@@ -28,11 +28,15 @@ import {
   UPLOAD_BREADCRUMBS_STORAGE_KEY,
   type UploadBreadcrumb,
 } from '@/lib/backoffice/upload-breadcrumbs';
+import { useTranslations } from 'next-intl';
+
 import {
   abortUploadSession,
   describeUploadError,
+  uploadMessageCode,
   getUploadSession,
   isConflictError,
+  ChunkUploadError,
   uploadImageFile,
   watchUploadSession,
   type UploadPhase,
@@ -112,11 +116,11 @@ export const UPLOAD_TERMINAL_STATUSES: UploadItemStatus[] = [
 
 export const RETRYABLE_STATUSES: UploadItemStatus[] = ['error', 'canceled'];
 
-/** Shown when a live sibling tab already owns this file's upload. Deliberately
- *  no take-over affordance ('busy' is not retryable): once the other tab's
- *  upload finishes or is stopped, a fresh "Add images" simply works — the
- *  ownership check only counts crumbs that are actively uploading. */
-const BUSY_IN_OTHER_TAB = 'Already uploading in another tab — track it there.';
+/** Catalog key shown when a live sibling tab already owns this file's upload.
+ *  Deliberately no take-over affordance ('busy' is not retryable): once the
+ *  other tab's upload finishes or is stopped, a fresh "Add images" simply
+ *  works — the ownership check only counts crumbs that are actively uploading. */
+const BUSY_IN_OTHER_TAB_KEY = 'uploads.busyInOtherTab';
 
 /** Breadcrumb heartbeat cadence. Must stay well inside
  *  UPLOAD_BREADCRUMB_STALE_MS so live crumbs never look orphaned to other tabs. */
@@ -183,6 +187,7 @@ function itemFromCrumb(crumb: UploadBreadcrumb, over: Partial<UploadItem>): Uplo
  * resume skips the chunks the server already received.
  */
 export function UploadManagerProvider({ children }: { children: React.ReactNode }) {
+  const t = useTranslations('backoffice');
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -199,6 +204,11 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
   const drainingRef = useRef(false);
   const tokenRef = useRef(token);
   tokenRef.current = token;
+  // Read through a ref, like `token` above: `t` identity is not guaranteed
+  // stable across renders, and this provider's callback chain feeds effects —
+  // an unstable dependency here has caused a render loop before.
+  const tRef = useRef(t);
+  tRef.current = t;
   const interruptedRef = useRef(interrupted);
   interruptedRef.current = interrupted;
   // Recovery bookkeeping: `scanningRef` serializes scans; `promptOnlyRef`
@@ -229,21 +239,28 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     [queryClient]
   );
 
+  // `uploads.ts` reports failures it worded itself as codes; a backend `detail`
+  // arrives as text in the server's language and is passed through as-is.
+  const errorText = useCallback((err: unknown) => {
+    const code = uploadMessageCode(err);
+    if (!code) return describeUploadError(err);
+    return tRef.current(`uploads.errors.${code}`, {
+      status: err instanceof ChunkUploadError ? err.status : 0,
+    });
+  }, []);
+
   // Search is refreshed manually in this system (see the search-engine page,
   // which flags out-of-sync segments). Nudge once per batch so a newly
   // uploaded image isn't silently missing from search.
   const showReindexNudge = useCallback(
     (created: number) => {
-      toast.info(
-        `${created} image${created === 1 ? '' : 's'} uploaded — not searchable until reindex`,
-        {
-          description: 'Reindex Item Images / Item Parts to include them in search.',
-          action: {
-            label: 'Open Search Engine',
-            onClick: () => router.push('/backoffice/search-engine'),
-          },
-        }
-      );
+      toast.info(tRef.current('uploads.toast.reindexTitle', { count: created }), {
+        description: tRef.current('uploads.toast.reindexBody'),
+        action: {
+          label: tRef.current('uploads.toast.reindexAction'),
+          onClick: () => router.push('/backoffice/search-engine'),
+        },
+      });
     },
     [router]
   );
@@ -262,7 +279,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
 
         const authToken = tokenRef.current;
         if (!authToken) {
-          patch(id, { status: 'error', error: 'Not authenticated.' });
+          patch(id, { status: 'error', error: tRef.current('uploads.errors.notAuthenticated') });
           updateUploadBreadcrumb(id, { status: 'error' });
           continue;
         }
@@ -277,7 +294,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           Date.now()
         );
         if (duplicate) {
-          patch(id, { status: 'busy', error: BUSY_IN_OTHER_TAB });
+          patch(id, { status: 'busy', error: tRef.current(BUSY_IN_OTHER_TAB_KEY) });
           removeUploadBreadcrumbs([id]); // don't shadow the owner's crumb
           continue;
         }
@@ -328,7 +345,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
         } catch (err) {
           if (err instanceof DOMException && err.name === 'AbortError') {
             if (yieldedToRival) {
-              patch(id, { status: 'busy', error: BUSY_IN_OTHER_TAB });
+              patch(id, { status: 'busy', error: tRef.current(BUSY_IN_OTHER_TAB_KEY) });
               removeUploadBreadcrumbs([id]);
             } else {
               patch(id, { status: 'canceled' });
@@ -337,16 +354,18 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           } else if (isConflictError(err)) {
             // A duplicate proves the image already exists server-side — refresh
             // the manuscript so its thumbnail shows.
-            patch(id, { status: 'duplicate', error: describeUploadError(err) });
+            patch(id, { status: 'duplicate', error: errorText(err) });
             removeUploadBreadcrumbs([id]);
             invalidateManuscript(item.historicalItemId);
           } else {
-            const message = describeUploadError(err);
+            const message = errorText(err);
             patch(id, { status: 'error', error: message });
             updateUploadBreadcrumb(id, { status: 'error' });
             // The tray shows successes/duplicates; only failures need to chase
             // the user (who may have navigated away).
-            toast.error(`Upload failed: ${item.fileName}`, { description: message });
+            toast.error(tRef.current('uploads.toast.failed', { name: item.fileName }), {
+              description: message,
+            });
           }
         } finally {
           controllers.current.delete(id);
@@ -356,7 +375,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     } finally {
       drainingRef.current = false;
     }
-  }, [patch, invalidateManuscript, showReindexNudge]);
+  }, [patch, invalidateManuscript, showReindexNudge, errorText]);
 
   const enqueue = useCallback(
     (files: EnqueueFile[], target: EnqueueTarget) => {
@@ -482,9 +501,11 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           } else {
             // Keep the crumb: a poll hiccup isn't a verdict. The next scan or
             // reload re-reads the session and settles it properly.
-            const message = describeUploadError(err);
+            const message = errorText(err);
             patch(crumb.id, { status: 'error', error: message });
-            toast.error(`Upload failed: ${crumb.fileName}`, { description: message });
+            toast.error(tRef.current('uploads.toast.failed', { name: crumb.fileName }), {
+              description: message,
+            });
           }
         } finally {
           controllers.current.delete(crumb.id);
@@ -497,7 +518,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
         }
       })();
     },
-    [addItem, patch, invalidateManuscript, showReindexNudge]
+    [addItem, patch, invalidateManuscript, showReindexNudge, errorText]
   );
 
   /** Route an adopted crumb by the server's view of its session: 'complete' →
@@ -534,7 +555,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           itemFromCrumb(crumb, {
             status: 'error',
             phase: 'failed',
-            error: session.error || 'Upload processing failed.',
+            error: session.error || tRef.current('uploads.errors.processFailed'),
           })
         );
         return 'handled';
