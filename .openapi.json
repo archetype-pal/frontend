@@ -3871,7 +3871,7 @@
             "description": "Destination path taken. The body's `code` distinguishes a true duplicate (`destination_exists` \u2014 file on disk or ItemImage row) from a transient hold (`session_active` \u2014 another user's or an already-processing session)."
           },
           "503": {
-            "description": "A storage root (upload temp, originals archive, or media) is not writable by the service user \u2014 deployment/permissions problem."
+            "description": "A storage root (upload temp or media) is not writable by the service user \u2014 deployment/permissions problem."
           },
           "507": {
             "description": "Not enough free disk space for this upload."
@@ -3944,7 +3944,7 @@
             "description": "Session aborted; temp files removed."
           },
           "409": {
-            "description": "Session is processing and can no longer be aborted, or caller is not the owner."
+            "description": "Session is assembled or processing and can no longer be aborted, or the caller is not the owner."
           }
         }
       }
@@ -4065,46 +4065,6 @@
           },
           "409": {
             "description": "Chunks missing, session already finalized, or caller is not the owner."
-          }
-        }
-      }
-    },
-    "/api/v1/uploads/item-images/{item_image_id}/original/": {
-      "get": {
-        "operationId": "upload-download-original",
-        "tags": [
-          "uploads"
-        ],
-        "security": [
-          {
-            "api_key": []
-          }
-        ],
-        "description": "Stream the archived preservation original for an uploaded image, byte-identical to what was uploaded (verify against `checksum_sha256`). 404 when the image has no archived original (migrated corpus, or the served .jp2 is itself the original).",
-        "parameters": [
-          {
-            "name": "item_image_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The original file as an attachment.",
-            "content": {
-              "application/octet-stream": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Unknown image, or no archived original."
           }
         }
       }
@@ -5123,42 +5083,6 @@
             "items": {
               "$ref": "#/components/schemas/ImageTextManagementItem"
             }
-          },
-          "width": {
-            "type": "integer",
-            "nullable": true
-          },
-          "height": {
-            "type": "integer",
-            "nullable": true
-          },
-          "source_format": {
-            "type": "string"
-          },
-          "size_bytes": {
-            "type": "integer",
-            "nullable": true
-          },
-          "checksum_sha256": {
-            "type": "string"
-          },
-          "original_path": {
-            "type": "string",
-            "description": "Archive-relative path of the preservation original; empty for migrated rows."
-          },
-          "uploaded_by_username": {
-            "type": "string",
-            "nullable": true
-          },
-          "created": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "modified": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
           }
         }
       },
