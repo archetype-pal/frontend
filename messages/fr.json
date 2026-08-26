@@ -2751,7 +2751,10 @@
       "clearFinished": "Effacer les terminés",
       "interruptedHint": "Interrompu par un rechargement. Ajoutez à nouveau un fichier pour reprendre — les parties déjà téléversées ne sont pas renvoyées.",
       "readdFile": "Ajouter à nouveau le fichier pour reprendre",
-      "uploadCount": "{count, plural, =0 {Téléverser les images} =1 {Téléverser 1 image} other {Téléverser {count} images}}"
+      "uploadCount": "{count, plural, =0 {Téléverser les images} =1 {Téléverser 1 image} other {Téléverser {count} images}}",
+      "signOutTitle": "{count, plural, =1 {1 téléversement est encore en cours} other {{count} téléversements sont encore en cours}}",
+      "signOutDescription": "La déconnexion les interrompt. Les fichiers déjà entièrement téléversés seront tout de même traités par le serveur ; ceux en cours de transfert pourront être reprises après reconnexion en les sélectionnant à nouveau.",
+      "signOutConfirm": "Se déconnecter quand même"
     }
   },
   "login": {
