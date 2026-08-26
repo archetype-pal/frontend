@@ -2730,7 +2730,10 @@
         "chunkNetwork": "Erreur réseau lors de l'envoi d'un fragment.",
         "processTimeout": "Délai dépassé pendant le traitement côté serveur.",
         "processFailed": "Le traitement du téléversement a échoué.",
-        "notAuthenticated": "Non authentifié."
+        "notAuthenticated": "Non authentifié.",
+        "signedOut": "Déconnecté avant le début de ce téléversement.",
+        "signedOutResume": "Déconnecté. Reconnectez-vous et sélectionnez à nouveau ce fichier pour reprendre où il s'est arrêté.",
+        "signedOutProcessing": "Déconnecté. Le serveur termine ce téléversement — l'image apparaîtra sous peu."
       },
       "a11y": {
         "addFiles": "Ajouter des images à téléverser",

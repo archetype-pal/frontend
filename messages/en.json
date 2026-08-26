@@ -2730,7 +2730,10 @@
         "chunkNetwork": "Network error while uploading a chunk.",
         "processTimeout": "Timed out waiting for server-side processing.",
         "processFailed": "Upload processing failed.",
-        "notAuthenticated": "Not authenticated."
+        "notAuthenticated": "Not authenticated.",
+        "signedOut": "Signed out before this upload started.",
+        "signedOutResume": "Signed out. Sign in and re-select this file to resume where it stopped.",
+        "signedOutProcessing": "Signed out. The server is finishing this upload — it will appear shortly."
       },
       "a11y": {
         "addFiles": "Add images to upload",

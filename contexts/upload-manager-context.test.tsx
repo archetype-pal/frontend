@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { toast } from 'sonner';
 
 import {
   UploadManagerProvider,
@@ -20,6 +21,7 @@ import {
   abortUploadSession,
   getUploadSession,
   uploadImageFile,
+  BackofficeApiError,
   watchUploadSession,
   type UploadSession,
 } from '@/services/backoffice/uploads';
@@ -110,6 +112,7 @@ function Harness() {
       <output data-testid="items">
         {items.map((it) => `${it.fileName}:${it.status}`).join(',')}
       </output>
+      <output data-testid="itemErrors">{items.map((it) => it.error).join('|')}</output>
       <output data-testid="interrupted">{interrupted.map((c) => c.fileName).join(',')}</output>
       <output data-testid="resume-result">
         {resume ? `${resume.resumed}|${resume.unmatched.join(';')}` : ''}
@@ -144,6 +147,17 @@ function Harness() {
       <button type="button" onClick={() => items[0] && cancel(items[0].id)}>
         cancel first
       </button>
+      <button
+        type="button"
+        onClick={() =>
+          enqueue(
+            ['a.tif', 'b.tif', 'c.tif'].map((n) => ({ file: makeFile(n, 4), locus: '', tags: '' })),
+            { itemPartId: 3, itemPartLabel: 'MS A, part 1', historicalItemId: 7 }
+          )
+        }
+      >
+        enqueue three
+      </button>
     </div>
   );
 }
@@ -164,6 +178,10 @@ function renderHarness() {
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
+  // `drain` reads the token from the cookie, not the auth context — that is
+  // the only source that actually goes empty on logout. Signing in here makes
+  // the harness match reality; the `useAuth` mock above only feeds the shell.
+  document.cookie = 'archetype_auth_token=tok; Path=/';
   vi.clearAllMocks();
 });
 
@@ -415,6 +433,82 @@ describe('cancel', () => {
     // Keeping the crumb (as 'canceled') would have a reload re-offer the
     // upload the editor just stopped as "interrupted by a reload".
     expect(listUploadBreadcrumbs()).toEqual([]);
+  });
+});
+
+describe('logout mid-queue', () => {
+  it('stops the queue instead of firing a failed upload per file', async () => {
+    // Logout clears the cookie synchronously (clearAuthTokenCookie) but leaves
+    // this provider's tokenRef holding the revoked token, because
+    // BackofficeShell stops rendering it rather than re-rendering with null.
+    // Reading the ref meant every queued file hit createUploadSession with a
+    // dead token and raised a toast on the login page.
+    document.cookie = 'archetype_auth_token=; Path=/; Max-Age=0';
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue one'));
+
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('new.tif:error'));
+    expect(mockedUpload).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+});
+
+describe('signing out mid-upload', () => {
+  it('does not hand the rest of the queue to whoever signs in next', async () => {
+    // The server takes owner=request.user, so continuing under a new token puts
+    // someone else's name on files this user chose.
+    const tokens: string[] = [];
+    mockedUpload.mockImplementation((token: string) => {
+      tokens.push(token);
+      if (tokens.length === 1) {
+        document.cookie = 'archetype_auth_token=; Path=/; Max-Age=0';
+        document.cookie = 'archetype_auth_token=tok_other_user; Path=/';
+        return Promise.reject(new BackofficeApiError(401, { detail: 'Invalid token.' }));
+      }
+      return Promise.resolve(session({ status: 'complete', item_image: 1 }));
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue three'));
+
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('c.tif:error'));
+    // Only the file that was already in flight ever ran.
+    expect(tokens).toEqual(['tok']);
+  });
+
+  it('reports a signed-out transfer as resumable, not failed, and stays quiet', async () => {
+    mockedUpload.mockRejectedValue(new BackofficeApiError(401, { detail: 'Invalid token.' }));
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue one'));
+
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('new.tif:error'));
+    // No raw "Invalid token." reaches the editor, and no toast lands on the
+    // login page they were just redirected to.
+    expect(screen.getByTestId('itemErrors').textContent).not.toContain('Invalid token');
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it('does not call a finished conversion a failure', async () => {
+    // Bytes are all in and Celery is converting; the poll 401s but the server
+    // completes regardless, so this must not read as a failed upload.
+    mockedUpload.mockImplementation((_token, _file, _meta, options) => {
+      options?.onProgress?.({
+        phase: 'processing',
+        sentBytes: 4,
+        totalBytes: 4,
+        session: session({ status: 'processing' }),
+      });
+      return Promise.reject(new BackofficeApiError(401, { detail: 'Invalid token.' }));
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue one'));
+
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('new.tif:error'));
+    expect(screen.getByTestId('itemErrors').textContent).toContain('finishing');
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });
 

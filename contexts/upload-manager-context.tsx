@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
+import { getAuthTokenCookie } from '@/lib/auth-token-cookie';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import {
   findActiveDuplicate,
@@ -36,6 +37,7 @@ import {
   uploadMessageCode,
   getUploadSession,
   isConflictError,
+  uploadErrorStatus,
   ChunkUploadError,
   uploadImageFile,
   watchUploadSession,
@@ -208,6 +210,9 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
   // of not-yet-started ids.
   const itemsRef = useRef(new Map<string, UploadItem>());
   const controllers = useRef(new Map<string, AbortController>());
+  // Token that was current when each item was queued. Kept in a ref, not on the
+  // item, so a credential never enters React state or a breadcrumb.
+  const itemTokens = useRef(new Map<string, string>());
   const queueRef = useRef<string[]>([]);
   const drainingRef = useRef(false);
   const tokenRef = useRef(token);
@@ -285,10 +290,28 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
         // Recovered watch items never enqueue; this guard is for the compiler.
         if (!item.file) continue;
 
-        const authToken = tokenRef.current;
-        if (!authToken) {
-          patch(id, { status: 'error', error: tRef.current('uploads.errors.notAuthenticated') });
+        // The cookie, not `tokenRef`: logout clears the cookie synchronously,
+        // but the ref goes STALE rather than null — BackofficeShell's `!token`
+        // early return stops rendering this provider, so `tokenRef.current =
+        // token` never runs again and the ref keeps the revoked token. Reading
+        // it here let every queued file 401 at createUploadSession and raise a
+        // red toast on the login page the editor had just landed on.
+        // The cookie, not `tokenRef`: logout clears the cookie synchronously,
+        // but the ref goes STALE rather than null — BackofficeShell's `!token`
+        // early return stops rendering this provider, so `tokenRef.current =
+        // token` never runs again and it keeps the revoked token.
+        const authToken = getAuthTokenCookie();
+        // ...and it must be the SAME token that queued this file. Re-reading the
+        // cookie per item means a sign-out followed by anyone signing in would
+        // otherwise hand the rest of the queue to them — the server takes
+        // `owner=request.user`, so their name lands on files someone else chose.
+        // A same-user re-login also mints a new token and the cookie carries no
+        // identity, so any change stops the queue; resuming is deliberate.
+        const queuedWith = itemTokens.current.get(id);
+        if (!authToken || (queuedWith && authToken !== queuedWith)) {
+          patch(id, { status: 'error', error: tRef.current('uploads.errors.signedOut') });
           updateUploadBreadcrumb(id, { status: 'error' });
+          itemTokens.current.delete(id);
           continue;
         }
 
@@ -365,6 +388,23 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
             patch(id, { status: 'duplicate', error: errorText(err) });
             removeUploadBreadcrumbs([id]);
             invalidateManuscript(item.historicalItemId);
+          } else if (uploadErrorStatus(err) === 401) {
+            // Signing out mid-upload. The breadcrumb survives, and on the next
+            // sign-in `routeSessionCrumb` re-reads the session and settles it —
+            // re-attaching a conversion that finished server-side, or offering
+            // a re-select for one that still needs bytes. So this is not a
+            // failure to report, and a red toast would land on the login page
+            // where the editor can do nothing about it.
+            const stillSending = itemsRef.current.get(id)?.phase !== 'processing';
+            patch(id, {
+              status: 'error',
+              error: tRef.current(
+                stillSending
+                  ? 'uploads.errors.signedOutResume'
+                  : 'uploads.errors.signedOutProcessing'
+              ),
+            });
+            updateUploadBreadcrumb(id, { status: 'error' });
           } else {
             const message = errorText(err);
             patch(id, { status: 'error', error: message });
@@ -377,6 +417,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           }
         } finally {
           controllers.current.delete(id);
+          itemTokens.current.delete(id);
         }
       }
       if (created > 0) showReindexNudge(created);
@@ -406,8 +447,10 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
         message: '',
         error: '',
       }));
+      const queuedWith = getAuthTokenCookie();
       for (const it of newItems) {
         itemsRef.current.set(it.id, it);
+        if (queuedWith) itemTokens.current.set(it.id, queuedWith);
         saveUploadBreadcrumb(crumbFromItem(it, tabId, now));
       }
       queueRef.current.push(...newItems.map((it) => it.id));
