@@ -7,16 +7,18 @@ import {
   describeUploadError,
   isConflictError,
   uploadErrorStatus,
+  uploadImageFile,
   watchUploadSession,
+  type UploadProgress,
   type UploadSession,
 } from './uploads';
-import { backofficeGet } from './api-client';
+import { backofficeGet, backofficePost } from './api-client';
 
 // Mock only the transport; the real BackofficeApiError class must stay intact
 // for the error-helper tests below.
 vi.mock('./api-client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./api-client')>();
-  return { ...actual, backofficeGet: vi.fn() };
+  return { ...actual, backofficeGet: vi.fn(), backofficePost: vi.fn() };
 });
 
 describe('uploadErrorStatus / isConflictError', () => {
@@ -184,5 +186,100 @@ describe('watchUploadSession', () => {
       watchUploadSession('tok', session(), { signal: controller.signal })
     ).rejects.toMatchObject({ name: 'AbortError' });
     expect(mockedGet).not.toHaveBeenCalled();
+  });
+});
+
+describe('uploadImageFile chunk selection', () => {
+  const mockedPost = vi.mocked(backofficePost);
+  const mockedGet = vi.mocked(backofficeGet);
+
+  // 40 bytes at chunk_size 10 = 4 chunks. The server already holds 0 and 2.
+  const resumable = (over: Partial<UploadSession> = {}): UploadSession => ({
+    id: 's1',
+    status: 'uploading',
+    error: '',
+    item_part: 1,
+    original_filename: 'f12r.tif',
+    declared_size: 40,
+    chunk_size: 10,
+    total_chunks: 4,
+    received_chunks: [0, 2],
+    missing_chunks: [1, 3],
+    destination_path: 'uploads/item-part-1/f12r.jp2',
+    subfolder: '',
+    locus: '',
+    tags: '',
+    item_image: null,
+    task_id: '',
+    task: null,
+    ...over,
+  });
+
+  /** Records the chunk index of every PUT and resolves each one 204. */
+  function stubChunkTransport(): number[] {
+    const sent: number[] = [];
+    class FakeXhr {
+      status = 204;
+      responseText = '';
+      upload = {} as { onprogress?: (e: ProgressEvent) => void };
+      onload?: () => void;
+      onerror?: () => void;
+      onabort?: () => void;
+      open(_method: string, url: string) {
+        sent.push(Number(/chunks\/(\d+)\//.exec(url)![1]));
+      }
+      setRequestHeader() {}
+      send() {
+        this.onload?.();
+      }
+      abort() {}
+    }
+    vi.stubGlobal('XMLHttpRequest', FakeXhr);
+    return sent;
+  }
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('PUTs only the chunks the server still needs', async () => {
+    const sent = stubChunkTransport();
+    mockedPost
+      .mockResolvedValueOnce(resumable()) // create-or-resume
+      .mockResolvedValueOnce(resumable({ status: 'assembled', missing_chunks: [] })); // finalize
+    mockedGet.mockResolvedValueOnce(
+      resumable({ status: 'complete', missing_chunks: [], item_image: 9 })
+    );
+
+    await uploadImageFile('tok', new File(['x'.repeat(40)], 'f12r.tif'), { item_part: 1 });
+
+    // 0 and 2 are already server-side; re-sending them would double the
+    // transfer on every resume, and skipping 1 or 3 would strand the session.
+    expect(sent).toEqual([1, 3]);
+  });
+
+  it('anchors progress at the bytes the server already holds', async () => {
+    stubChunkTransport();
+    mockedPost
+      .mockResolvedValueOnce(resumable())
+      .mockResolvedValueOnce(resumable({ status: 'assembled', missing_chunks: [] }));
+    mockedGet.mockResolvedValueOnce(
+      resumable({ status: 'complete', missing_chunks: [], item_image: 9 })
+    );
+
+    const uploading: number[] = [];
+    await uploadImageFile(
+      'tok',
+      new File(['x'.repeat(40)], 'f12r.tif'),
+      { item_part: 1 },
+      {
+        pollIntervalMs: 0,
+        onProgress: (p: UploadProgress) => {
+          if (p.phase === 'uploading') uploading.push(p.sentBytes);
+        },
+      }
+    );
+
+    // Chunks 0 and 2 (20 bytes) are already accepted, so the bar starts there
+    // rather than at zero and reaches the full 40.
+    expect(uploading).toEqual([30, 40]);
   });
 });
