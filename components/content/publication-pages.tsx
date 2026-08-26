@@ -105,6 +105,7 @@ export async function PublicationDetailPage({
             date={item.published_at ?? ''}
             excerpt={item.content}
             slug={`${config.routeBase}/${item.slug}`}
+            keywords={item.keywords}
             commentsCount={item.number_of_comments}
             showShareBtns
             showReadMoreBtn={false}

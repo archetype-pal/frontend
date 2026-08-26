@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeHtml } from './sanitize-html';
+import { sanitizeHtml, stripHtml } from './sanitize-html';
 
 describe('sanitizeHtml', () => {
   it('allows safe HTML tags', () => {
@@ -96,5 +96,28 @@ describe('sanitizeHtml', () => {
 
   it('returns empty string for empty input', () => {
     expect(sanitizeHtml('')).toBe('');
+  });
+});
+
+describe('stripHtml', () => {
+  it('strips HTML formatting tags and returns plain text', () => {
+    expect(stripHtml('<i>St. Dunstan</i> &amp; <b>King Edgar</b>')).toBe(
+      'St. Dunstan &amp; King Edgar'
+    );
+  });
+
+  it('strips complex nested markup', () => {
+    expect(
+      stripHtml('<p>Charter from <a href="/manuscripts/1"><span>Glastonbury</span></a></p>')
+    ).toBe('Charter from Glastonbury');
+  });
+
+  it('returns plain text unchanged (trimmed)', () => {
+    expect(stripHtml('  Plain charter label  ')).toBe('Plain charter label');
+  });
+
+  it('returns empty string for empty or whitespace-only input', () => {
+    expect(stripHtml('')).toBe('');
+    expect(stripHtml('   ')).toBe('');
   });
 });

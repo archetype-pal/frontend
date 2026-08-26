@@ -172,7 +172,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
       queryClient.invalidateQueries({
         queryKey: backofficeKeys.publications.detail(slug),
       });
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.lists() });
       setDirty(false);
       if (data.slug !== slug) {
         router.replace(`/backoffice/publications/${data.slug}`);
@@ -198,8 +198,9 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
     mutationFn: () => deletePublication(token!, slug),
     onSuccess: () => {
       toast.success(t('publicationsDetail.toastDeleted'));
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
-      router.push('/backoffice/publications');
+      discardDraft();
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.lists() });
+      router.replace('/backoffice/publications');
     },
     onError: (err) => {
       toast.error(t('publicationsDetail.toastFailedDelete'), {
