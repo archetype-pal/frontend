@@ -2747,7 +2747,8 @@
       },
       "clearFinished": "Effacer les terminés",
       "interruptedHint": "Interrompu par un rechargement. Ajoutez à nouveau un fichier pour reprendre — les parties déjà téléversées ne sont pas renvoyées.",
-      "readdFile": "Ajouter à nouveau le fichier pour reprendre"
+      "readdFile": "Ajouter à nouveau le fichier pour reprendre",
+      "uploadCount": "{count, plural, =0 {Téléverser les images} =1 {Téléverser 1 image} other {Téléverser {count} images}}"
     }
   },
   "login": {

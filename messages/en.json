@@ -2747,7 +2747,8 @@
       },
       "clearFinished": "Clear finished",
       "interruptedHint": "Interrupted by a reload. Re-add a file to resume — parts already uploaded are not re-sent.",
-      "readdFile": "Re-add file to resume"
+      "readdFile": "Re-add file to resume",
+      "uploadCount": "{count, plural, =0 {Upload images} =1 {Upload 1 image} other {Upload {count} images}}"
     }
   },
   "login": {

@@ -98,13 +98,6 @@ export class ChunkUploadError extends Error {
 }
 
 /**
- * Human-safe failure detail from a chunk-upload response body. A Django debug
- * 500 returns a full HTML traceback page — that must never reach the tray or
- * a toast (alarming, and it leaks internals). Prefer a JSON `detail`, tolerate
- * a short plain-text body, and otherwise fall back to a generic message; the
- * caller logs the raw body to the console for developers.
- */
-/**
  * Failures this layer authors itself, as codes the presentation layer
  * translates. A backend-authored `detail` never gets a code: it is server text
  * in the server's language, and inventing a key for it would mean discarding
@@ -126,6 +119,13 @@ function backendChunkDetail(responseText: string): string | null {
   return text && !text.startsWith('<') && text.length <= 300 ? text : null;
 }
 
+/**
+ * Human-safe failure detail from a chunk-upload response body. A Django debug
+ * 500 returns a full HTML traceback page — that must never reach the tray or
+ * a toast (alarming, and it leaks internals). Prefer a JSON `detail`, tolerate
+ * a short plain-text body, and otherwise fall back to a generic message; the
+ * caller logs the raw body to the console for developers.
+ */
 export function chunkErrorDetail(status: number, responseText: string): string {
   return (
     backendChunkDetail(responseText) ??
@@ -256,11 +256,6 @@ export function isConflictError(err: unknown): boolean {
 }
 
 /**
- * Human-readable reason for an upload failure. `formatApiError` covers the
- * backend's `detail` string and DRF's field-shaped 400s; only a chunk error
- * needs special handling, because its `message` embeds the raw status.
- */
-/**
  * Catalog suffix for a failure this layer worded, or null when the text is the
  * backend's. Presentation resolves it against `backoffice.uploads.errors.*`;
  * `null` means fall back to `describeUploadError`, which surfaces server text.
@@ -270,6 +265,11 @@ export function uploadMessageCode(err: unknown): UploadMessageCode | null {
   return null;
 }
 
+/**
+ * Human-readable reason for an upload failure. `formatApiError` covers the
+ * backend's `detail` string and DRF's field-shaped 400s; only a chunk error
+ * needs special handling, because its `message` embeds the raw status.
+ */
 export function describeUploadError(err: unknown): string {
   if (err instanceof ChunkUploadError) return err.detail || err.message;
   return formatApiError(err);

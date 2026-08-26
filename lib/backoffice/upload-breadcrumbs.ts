@@ -58,14 +58,14 @@ export const UPLOAD_BREADCRUMB_STALE_MS = 90_000;
  *  `cleanup_stale_uploads` default, after which the session is reaped anyway. */
 export const UPLOAD_BREADCRUMB_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 
+const isDev = process.env.NODE_ENV === 'development';
+
 /** Bound on stored crumbs. 50 was too low to be safe: `enqueue` stamps every
  *  crumb in a batch with an identical `updatedAt`, and the heartbeat keeps live
  *  ones at the top, so the entries evicted first were exactly the not-yet-
  *  started uploads — the ones a reload most needs to recover. A quire is
  *  realistically over 50 folios and the picker imposes no limit. At roughly
  *  250 bytes of JSON each, 500 crumbs is ~125 KB against a ~5 MB origin quota. */
-const isDev = process.env.NODE_ENV === 'development';
-
 export const MAX_BREADCRUMBS = 500;
 
 const STATUSES: readonly string[] = ['pending', 'uploading', 'processing', 'error', 'canceled'];
@@ -168,7 +168,14 @@ export function getUploadTabId(): string {
   try {
     let id = window.sessionStorage.getItem(TAB_ID_STORAGE_KEY);
     if (!id) {
-      id = crypto.randomUUID();
+      // Guarded like the other id mints: crypto.randomUUID is secure-context
+      // only, and here a throw would be caught below and return '' — giving
+      // every tab the same empty id, which makes partitionUploadBreadcrumbs
+      // treat every crumb as own-tab and collapses cross-tab ownership.
+      id =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `tab_${Math.random().toString(36).slice(2)}`;
       window.sessionStorage.setItem(TAB_ID_STORAGE_KEY, id);
     }
     return id;

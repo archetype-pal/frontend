@@ -169,6 +169,14 @@ function itemFromCrumb(crumb: UploadBreadcrumb, over: Partial<UploadItem>): Uplo
   };
 }
 
+/** `crypto.randomUUID` is secure-context-only and throws on a plain-HTTP
+ *  origin — which here would be straight out of a drop handler. Mirrors
+ *  `newId()` in lib/search-query.ts. */
+function newId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `id_${Math.random().toString(36).slice(2)}`;
+}
+
 /**
  * Owns image uploads for the whole backoffice. Mounted once in BackofficeShell
  * so uploads keep running (and stay visible in the tray) as the user navigates
@@ -186,14 +194,6 @@ function itemFromCrumb(crumb: UploadBreadcrumb, over: Partial<UploadItem>): Uplo
  * automatically, and an unfinished transfer becomes a re-select prompt whose
  * resume skips the chunks the server already received.
  */
-/** `crypto.randomUUID` is secure-context-only and throws on a plain-HTTP
- *  origin — which here would be straight out of a drop handler. Mirrors
- *  `newId()` in lib/search-query.ts. */
-function newId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
-  return `id_${Math.random().toString(36).slice(2)}`;
-}
-
 export function UploadManagerProvider({ children }: { children: React.ReactNode }) {
   const t = useTranslations('backoffice');
   const { token } = useAuth();
@@ -246,19 +246,6 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     },
     [queryClient]
   );
-
-  // Logout unmounts this provider the instant the token clears (see
-  // BackofficeShell's `!token` early return), and in-app navigation out of the
-  // backoffice does the same. Nothing else aborts the in-flight XHRs, so the
-  // chunk PUT dies on a 401 mid-transfer and leaves the session holding its
-  // destination against every other editor until stale-cleanup.
-  useEffect(() => {
-    const inFlight = controllers.current;
-    return () => {
-      inFlight.forEach((controller) => controller.abort());
-      inFlight.clear();
-    };
-  }, []);
 
   // `uploads.ts` reports failures it worded itself as codes; a backend `detail`
   // arrives as text in the server's language and is passed through as-is.

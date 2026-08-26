@@ -249,7 +249,12 @@ describe('uploadImageFile chunk selection', () => {
       resumable({ status: 'complete', missing_chunks: [], item_image: 9 })
     );
 
-    await uploadImageFile('tok', new File(['x'.repeat(40)], 'f12r.tif'), { item_part: 1 });
+    await uploadImageFile(
+      'tok',
+      new File(['x'.repeat(40)], 'f12r.tif'),
+      { item_part: 1 },
+      { pollIntervalMs: 0 }
+    );
 
     // 0 and 2 are already server-side; re-sending them would double the
     // transfer on every resume, and skipping 1 or 3 would strand the session.

@@ -39,12 +39,6 @@ interface StagedFile {
   tags: string;
 }
 
-/**
- * Staging form for image uploads. It only collects files + per-file locus/tags
- * and hands them to the shell-level upload manager, then closes immediately —
- * the actual upload + conversion runs in the background (see the upload tray),
- * so the editor is never blocked waiting on a large transfer.
- */
 /** `crypto.randomUUID` is secure-context-only and throws on a plain-HTTP
  *  origin — which here would be straight out of a drop handler. Mirrors
  *  `newId()` in lib/search-query.ts. */
@@ -53,6 +47,12 @@ function newId(): string {
   return `id_${Math.random().toString(36).slice(2)}`;
 }
 
+/**
+ * Staging form for image uploads. It only collects files + per-file locus/tags
+ * and hands them to the shell-level upload manager, then closes immediately —
+ * the actual upload + conversion runs in the background (see the upload tray),
+ * so the editor is never blocked waiting on a large transfer.
+ */
 export function ItemImageUploadDialog({
   open,
   onOpenChange,
@@ -61,6 +61,7 @@ export function ItemImageUploadDialog({
   historicalItemId,
 }: ItemImageUploadDialogProps) {
   const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
   const { enqueue } = useUploadManager();
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<StagedFile[]>([]);
@@ -209,7 +210,7 @@ export function ItemImageUploadDialog({
             className="h-8 text-xs"
             onClick={() => close(false)}
           >
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button
             type="button"
@@ -219,7 +220,7 @@ export function ItemImageUploadDialog({
             disabled={files.length === 0}
           >
             <Upload className="h-3 w-3" />
-            {`Upload ${files.length || ''} image${files.length === 1 ? '' : 's'}`.trim()}
+            {t('uploads.uploadCount', { count: files.length })}
           </Button>
         </DialogFooter>
       </DialogContent>
