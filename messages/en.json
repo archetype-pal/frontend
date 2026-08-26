@@ -2474,7 +2474,8 @@
       "deletePartConfirmDescription": "This will remove this part and unlink it from the manuscript. Images attached to this part will also be removed.",
       "imageAlt": "Image {id}",
       "editImageAria": "Edit image {name}",
-      "textCountBadge": "{count}T"
+      "textCountBadge": "{count}T",
+      "imagePathRequired": "The IIIF path cannot be cleared. Repoint it to another file, or delete the image."
     },
     "dates": {
       "description": "Manage {dateLabel} records used across {historicalItemPlural}",

@@ -2474,7 +2474,8 @@
       "deletePartConfirmDescription": "Cela supprimera cette partie et la dissociera du manuscrit. Les images rattachées à cette partie seront également supprimées.",
       "imageAlt": "Image {id}",
       "editImageAria": "Modifier l'image {name}",
-      "textCountBadge": "{count}T"
+      "textCountBadge": "{count}T",
+      "imagePathRequired": "Le chemin IIIF ne peut pas être vidé. Redirigez-le vers un autre fichier, ou supprimez l'image."
     },
     "dates": {
       "description": "Gérer les enregistrements de {dateLabel} utilisés dans les {historicalItemPlural}",

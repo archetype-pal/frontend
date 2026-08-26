@@ -239,6 +239,19 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     [queryClient]
   );
 
+  // Logout unmounts this provider the instant the token clears (see
+  // BackofficeShell's `!token` early return), and in-app navigation out of the
+  // backoffice does the same. Nothing else aborts the in-flight XHRs, so the
+  // chunk PUT dies on a 401 mid-transfer and leaves the session holding its
+  // destination against every other editor until stale-cleanup.
+  useEffect(() => {
+    const inFlight = controllers.current;
+    return () => {
+      inFlight.forEach((controller) => controller.abort());
+      inFlight.clear();
+    };
+  }, []);
+
   // `uploads.ts` reports failures it worded itself as codes; a backend `detail`
   // arrives as text in the server's language and is passed through as-is.
   const errorText = useCallback((err: unknown) => {
