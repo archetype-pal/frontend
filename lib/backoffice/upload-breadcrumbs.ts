@@ -58,7 +58,15 @@ export const UPLOAD_BREADCRUMB_STALE_MS = 90_000;
  *  `cleanup_stale_uploads` default, after which the session is reaped anyway. */
 export const UPLOAD_BREADCRUMB_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 
-const MAX_BREADCRUMBS = 50;
+/** Bound on stored crumbs. 50 was too low to be safe: `enqueue` stamps every
+ *  crumb in a batch with an identical `updatedAt`, and the heartbeat keeps live
+ *  ones at the top, so the entries evicted first were exactly the not-yet-
+ *  started uploads — the ones a reload most needs to recover. A quire is
+ *  realistically over 50 folios and the picker imposes no limit. At roughly
+ *  250 bytes of JSON each, 500 crumbs is ~125 KB against a ~5 MB origin quota. */
+const isDev = process.env.NODE_ENV === 'development';
+
+export const MAX_BREADCRUMBS = 500;
 
 const STATUSES: readonly string[] = ['pending', 'uploading', 'processing', 'error', 'canceled'];
 
@@ -107,6 +115,14 @@ function writeAll(crumbs: UploadBreadcrumb[]): void {
   if (!canUseStorage()) return;
   try {
     const bounded = [...crumbs].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, MAX_BREADCRUMBS);
+    if (bounded.length < crumbs.length && isDev) {
+      // Dropping a crumb means that upload can no longer be recovered after a
+      // reload. `updateUploadBreadcrumb` on a missing id is a documented no-op,
+      // so nothing else would surface this.
+      console.warn(
+        `upload breadcrumbs: dropped ${crumbs.length - bounded.length} over the ${MAX_BREADCRUMBS} cap`
+      );
+    }
     window.localStorage.setItem(UPLOAD_BREADCRUMBS_STORAGE_KEY, JSON.stringify(bounded));
   } catch {
     /* quota / private mode — breadcrumbs are best-effort */

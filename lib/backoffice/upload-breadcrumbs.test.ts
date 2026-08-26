@@ -14,6 +14,7 @@ import {
   UPLOAD_BREADCRUMB_STALE_MS,
   UPLOAD_BREADCRUMBS_STORAGE_KEY,
   type UploadBreadcrumb,
+  MAX_BREADCRUMBS,
 } from './upload-breadcrumbs';
 
 function crumb(over: Partial<UploadBreadcrumb> = {}): UploadBreadcrumb {
@@ -92,12 +93,14 @@ describe('storage roundtrip', () => {
     expect(listUploadBreadcrumbs()).toEqual([]);
   });
 
-  it('caps storage at the 50 newest by heartbeat', () => {
-    for (let i = 0; i < 55; i++) {
+  it('caps storage at the newest MAX_BREADCRUMBS by heartbeat', () => {
+    // Expressed against the constant, not a literal: the cap was raised once
+    // already because 50 evicted the not-yet-started uploads in a large batch.
+    for (let i = 0; i < MAX_BREADCRUMBS + 5; i++) {
       saveUploadBreadcrumb(crumb({ id: `c${i}`, updatedAt: i }));
     }
     const kept = listUploadBreadcrumbs();
-    expect(kept).toHaveLength(50);
+    expect(kept).toHaveLength(MAX_BREADCRUMBS);
     // The five oldest heartbeats (0..4) fell off.
     expect(kept.some((c) => c.updatedAt < 5)).toBe(false);
   });

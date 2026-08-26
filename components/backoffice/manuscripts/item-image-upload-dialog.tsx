@@ -45,6 +45,14 @@ interface StagedFile {
  * the actual upload + conversion runs in the background (see the upload tray),
  * so the editor is never blocked waiting on a large transfer.
  */
+/** `crypto.randomUUID` is secure-context-only and throws on a plain-HTTP
+ *  origin — which here would be straight out of a drop handler. Mirrors
+ *  `newId()` in lib/search-query.ts. */
+function newId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `id_${Math.random().toString(36).slice(2)}`;
+}
+
 export function ItemImageUploadDialog({
   open,
   onOpenChange,
@@ -66,7 +74,7 @@ export function ItemImageUploadDialog({
       for (const file of incoming) {
         if (isAcceptedImageFilename(file.name)) {
           accepted.push({
-            id: crypto.randomUUID(),
+            id: newId(),
             file,
             locus: guessLocusFromFilename(file.name),
             tags: '',

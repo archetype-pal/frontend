@@ -186,6 +186,14 @@ function itemFromCrumb(crumb: UploadBreadcrumb, over: Partial<UploadItem>): Uplo
  * automatically, and an unfinished transfer becomes a re-select prompt whose
  * resume skips the chunks the server already received.
  */
+/** `crypto.randomUUID` is secure-context-only and throws on a plain-HTTP
+ *  origin — which here would be straight out of a drop handler. Mirrors
+ *  `newId()` in lib/search-query.ts. */
+function newId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `id_${Math.random().toString(36).slice(2)}`;
+}
+
 export function UploadManagerProvider({ children }: { children: React.ReactNode }) {
   const t = useTranslations('backoffice');
   const { token } = useAuth();
@@ -396,7 +404,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       const now = Date.now();
       const tabId = getUploadTabId();
       const newItems: UploadItem[] = files.map((f) => ({
-        id: crypto.randomUUID(),
+        id: newId(),
         file: f.file,
         fileName: f.file.name,
         itemPartId: target.itemPartId,
@@ -512,8 +520,11 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
             patch(crumb.id, { status: 'canceled' });
             removeUploadBreadcrumbs([crumb.id]);
           } else {
-            // Keep the crumb: a poll hiccup isn't a verdict. The next scan or
-            // reload re-reads the session and settles it properly.
+            // Keep the crumb: a poll hiccup isn't a verdict, and the session
+            // may well have completed server-side. Note only a full RELOAD can
+            // re-settle it — `addItem` put this item in `itemsRef`, and
+            // `scanBreadcrumbs` skips any crumb live in this tab, so the 30s
+            // rescan and the storage listener both pass over it.
             const message = errorText(err);
             patch(crumb.id, { status: 'error', error: message });
             toast.error(tRef.current('uploads.toast.failed', { name: crumb.fileName }), {
