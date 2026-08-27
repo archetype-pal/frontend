@@ -312,6 +312,60 @@ describe('resume & dismiss', () => {
   });
 });
 
+describe('reindex nudge', () => {
+  it('stays quiet for uploads recovered after a reload', async () => {
+    // The count cannot survive a reload: a crumb is deleted the moment its
+    // upload succeeds, so images that landed before the reload leave no trace.
+    // Nudging from here reported a number that understated what happened —
+    // 2 uploads announced as 1 — so the recovery paths say nothing at all.
+    seedCrumb({ id: 'crumb-A', sessionId: 'sA', fileName: 'a.tif' });
+    seedCrumb({ id: 'crumb-B', sessionId: 'sB', fileName: 'b.tif' });
+    mockedGetSession.mockImplementation((_t, id) =>
+      Promise.resolve(
+        session(id === 'sA' ? { status: 'complete', item_image: 1 } : { status: 'processing' })
+      )
+    );
+    mockedWatch.mockResolvedValue(session({ status: 'complete', item_image: 2 }));
+
+    renderHarness();
+
+    await waitFor(() => expect(mockedWatch).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('b.tif:done'));
+    expect(vi.mocked(toast.info)).not.toHaveBeenCalled();
+  });
+
+  it('stays quiet when the run was cut short by signing out', async () => {
+    // The count would only cover what got through before the token died, and
+    // the toast lands on the login page where it reads as a report on the whole
+    // batch. This was the last toast still reaching that screen.
+    let call = 0;
+    mockedUpload.mockImplementation(() => {
+      call += 1;
+      if (call === 1) return Promise.resolve(session({ status: 'complete', item_image: 1 }));
+      document.cookie = 'archetype_auth_token=; Path=/; Max-Age=0';
+      return Promise.reject(new BackofficeApiError(401, { detail: 'Invalid token.' }));
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue three'));
+
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('c.tif:error'));
+    // One file did land, so the guard is on the sign-out, not on the count.
+    expect(screen.getByTestId('items').textContent).toContain('a.tif:done');
+    expect(vi.mocked(toast.info)).not.toHaveBeenCalled();
+  });
+
+  it('nudges once, with the real count, for a batch this tab uploaded', async () => {
+    mockedUpload.mockResolvedValue(session({ status: 'complete', item_image: 9 }));
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue three'));
+
+    await waitFor(() => expect(vi.mocked(toast.info)).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(toast.info).mock.calls[0][0]).toContain('3');
+  });
+});
+
 describe('multi-tab ownership', () => {
   it('parks an upload whose file is live in another tab as busy', async () => {
     // A live sibling tab is already uploading new.tif (4 bytes) to part 3.

@@ -226,11 +226,11 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
   interruptedRef.current = interrupted;
   // Recovery bookkeeping: `scanningRef` serializes scans; `promptOnlyRef`
   // remembers session-crumbs already routed to "needs re-select" so rescans
-  // don't re-fetch them; `watchStatsRef` batches the reindex nudge across
-  // concurrent re-attached watches.
+  // don't re-fetch them; `watchStatsRef` counts re-attached watches still
+  // running, so a rescan can tell an in-flight re-attach from an idle one.
   const scanningRef = useRef(false);
   const promptOnlyRef = useRef(new Set<string>());
-  const watchStatsRef = useRef({ outstanding: 0, completed: 0 });
+  const watchStatsRef = useRef({ outstanding: 0 });
 
   const patch = useCallback((id: string, partial: Partial<UploadItem>) => {
     const current = itemsRef.current.get(id);
@@ -265,6 +265,12 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
   // Search is refreshed manually in this system (see the search-engine page,
   // which flags out-of-sync segments). Nudge once per batch so a newly
   // uploaded image isn't silently missing from search.
+  // Search is refreshed manually here (the search-engine page flags out-of-sync
+  // segments), so a finished batch gets one reminder. Only the queue runner
+  // sends it: it is the one path that can count honestly. A crumb is deleted
+  // the moment its upload succeeds, so after a reload the images that already
+  // landed leave no trace, and the recovery paths would report a number that
+  // silently understates — worse than staying quiet.
   const showReindexNudge = useCallback(
     (created: number) => {
       toast.info(tRef.current('uploads.toast.reindexTitle', { count: created }), {
@@ -282,6 +288,10 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     if (drainingRef.current) return;
     drainingRef.current = true;
     let created = 0;
+    // A run cut short by signing out has nothing worth announcing: the count
+    // only covers what got through before the token died, and the toast would
+    // land on the login page where it reads as a report on the whole batch.
+    let signedOut = false;
     try {
       while (queueRef.current.length > 0) {
         const id = queueRef.current.shift()!;
@@ -309,6 +319,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
         // identity, so any change stops the queue; resuming is deliberate.
         const queuedWith = itemTokens.current.get(id);
         if (!authToken || (queuedWith && authToken !== queuedWith)) {
+          signedOut = true;
           patch(id, { status: 'error', error: tRef.current('uploads.errors.signedOut') });
           updateUploadBreadcrumb(id, { status: 'error' });
           itemTokens.current.delete(id);
@@ -389,6 +400,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
             removeUploadBreadcrumbs([id]);
             invalidateManuscript(item.historicalItemId);
           } else if (uploadErrorStatus(err) === 401) {
+            signedOut = true;
             // Signing out mid-upload. The breadcrumb survives, and on the next
             // sign-in `routeSessionCrumb` re-reads the session and settles it —
             // re-attaching a conversion that finished server-side, or offering
@@ -420,7 +432,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           itemTokens.current.delete(id);
         }
       }
-      if (created > 0) showReindexNudge(created);
+      if (created > 0 && !signedOut) showReindexNudge(created);
     } finally {
       drainingRef.current = false;
     }
@@ -541,7 +553,6 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           });
           patch(crumb.id, { status: 'done', phase: 'complete', message: '' });
           removeUploadBreadcrumbs([crumb.id]);
-          watchStatsRef.current.completed++;
           invalidateManuscript(crumb.historicalItemId);
         } catch (err) {
           if (err instanceof DOMException && err.name === 'AbortError') {
@@ -563,16 +574,11 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           }
         } finally {
           controllers.current.delete(crumb.id);
-          const stats = watchStatsRef.current;
-          stats.outstanding--;
-          if (stats.outstanding === 0 && stats.completed > 0) {
-            showReindexNudge(stats.completed);
-            stats.completed = 0;
-          }
+          watchStatsRef.current.outstanding--;
         }
       })();
     },
-    [addItem, patch, invalidateManuscript, showReindexNudge, errorText]
+    [addItem, patch, invalidateManuscript, errorText]
   );
 
   /** Route an adopted crumb by the server's view of its session: 'complete' →
@@ -641,7 +647,6 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       if (expired.length > 0) removeUploadBreadcrumbs(expired.map((c) => c.id));
 
       const prompts: UploadBreadcrumb[] = [];
-      let completed = 0;
       for (const crumb of adoptable) {
         if (itemsRef.current.has(crumb.id)) continue; // already live in this tab
         if (!crumb.sessionId || promptOnlyRef.current.has(crumb.id)) {
@@ -649,8 +654,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           continue;
         }
         const outcome = await routeSessionCrumb(authToken, crumb);
-        if (outcome === 'complete') completed++;
-        else if (outcome === 'prompt') {
+        if (outcome === 'prompt') {
           promptOnlyRef.current.add(crumb.id);
           prompts.push(crumb);
         }
@@ -664,11 +668,10 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           ? prev
           : prompts
       );
-      if (completed > 0) showReindexNudge(completed);
     } finally {
       scanningRef.current = false;
     }
-  }, [routeSessionCrumb, showReindexNudge]);
+  }, [routeSessionCrumb]);
 
   const resumeInterrupted = useCallback(
     (files: File[]): ResumeResult => {
