@@ -75,12 +75,25 @@ export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeade
   // transferring is left to stale-cleanup. Warn rather than lose work silently.
   // This header lives inside UploadManagerProvider, so it can ask directly —
   // no need to teach the auth context about uploads.
-  const { activeCount } = useUploadManager();
+  const { activeCount, cancelAll } = useUploadManager();
   const [confirmSignOut, setConfirmSignOut] = React.useState(false);
+  const [signingOut, setSigningOut] = React.useState(false);
   const requestSignOut = React.useCallback(() => {
     if (activeCount > 0) setConfirmSignOut(true);
     else logout();
   }, [activeCount, logout]);
+  // Free the server sessions BEFORE signing out. Logout revokes the token, so
+  // afterwards the DELETEs would 401 and each abandoned session would keep its
+  // filename reserved against other editors until stale-cleanup is run by hand.
+  const signOutAfterFreeingSessions = React.useCallback(async () => {
+    setSigningOut(true);
+    try {
+      await cancelAll();
+    } finally {
+      setSigningOut(false);
+      logout();
+    }
+  }, [cancelAll, logout]);
   const { getLabel, getPluralLabel } = useModelLabels();
   const segmentLabels: Record<string, string> = React.useMemo(
     () => ({
@@ -174,7 +187,8 @@ export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeade
         title={t('uploads.signOutTitle', { count: activeCount })}
         description={t('uploads.signOutDescription')}
         confirmLabel={t('uploads.signOutConfirm')}
-        onConfirm={logout}
+        loading={signingOut}
+        onConfirm={signOutAfterFreeingSessions}
       />
     </header>
   );

@@ -37,6 +37,7 @@ function renderTray(over: Partial<UploadItem>) {
     interrupted: [],
     enqueue: vi.fn(),
     cancel,
+    cancelAll: vi.fn(() => Promise.resolve()),
     retry: vi.fn(),
     dismiss,
     clearFinished: vi.fn(),

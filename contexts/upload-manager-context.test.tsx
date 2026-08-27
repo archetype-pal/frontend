@@ -104,9 +104,18 @@ function seedCrumb(over: Partial<UploadBreadcrumb> = {}): void {
 const makeFile = (name: string, bytes: number) => new File(['x'.repeat(bytes)], name);
 
 function Harness() {
-  const { items, interrupted, enqueue, cancel, retry, resumeInterrupted, dismissInterrupted } =
-    useUploadManager();
+  const {
+    items,
+    interrupted,
+    enqueue,
+    cancel,
+    cancelAll,
+    retry,
+    resumeInterrupted,
+    dismissInterrupted,
+  } = useUploadManager();
   const [resume, setResume] = useState<ResumeResult | null>(null);
+  const [cancelAllDone, setCancelAllDone] = useState(false);
   return (
     <div>
       <output data-testid="items">
@@ -147,6 +156,15 @@ function Harness() {
       <button type="button" onClick={() => items[0] && cancel(items[0].id)}>
         cancel first
       </button>
+      <button
+        type="button"
+        onClick={() => {
+          void cancelAll().then(() => setCancelAllDone(true));
+        }}
+      >
+        cancel all
+      </button>
+      <output data-testid="cancelAllDone">{cancelAllDone ? 'yes' : 'no'}</output>
       <button
         type="button"
         onClick={() =>
@@ -505,6 +523,47 @@ describe('logout mid-queue', () => {
     await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('new.tif:error'));
     expect(mockedUpload).not.toHaveBeenCalled();
     expect(toast.error).not.toHaveBeenCalled();
+  });
+});
+
+describe('cancelAll', () => {
+  it('does not resolve until the server has confirmed the aborts', async () => {
+    // The caller signs out as soon as this resolves, and signing out revokes
+    // the token — so resolving early would leave the DELETEs to 401 and the
+    // session squatting on its filename.
+    let releaseAbort!: () => void;
+    mockedAbort.mockImplementation(
+      () =>
+        new Promise<void>((res) => {
+          releaseAbort = res;
+        })
+    );
+    mockedUpload.mockImplementation((_t, _f, _m, options) => {
+      options?.onProgress?.({
+        phase: 'uploading',
+        sentBytes: 1,
+        totalBytes: 4,
+        session: session({ id: 's-live' }),
+      });
+      return new Promise(() => {}); // stays in flight
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue one'));
+    await waitFor(() =>
+      expect(screen.getByTestId('items').textContent).toContain('new.tif:uploading')
+    );
+
+    fireEvent.click(screen.getByText('cancel all'));
+    await waitFor(() => expect(mockedAbort).toHaveBeenCalledWith('tok', 's-live'));
+    // Requested but unconfirmed: must still be pending.
+    expect(screen.getByTestId('cancelAllDone').textContent).toBe('no');
+
+    releaseAbort();
+    await waitFor(() => expect(screen.getByTestId('cancelAllDone').textContent).toBe('yes'));
+    expect(screen.getByTestId('items').textContent).toContain('new.tif:canceled');
+    // Crumb goes too: the session is gone server-side, nothing to recover.
+    expect(listUploadBreadcrumbs()).toEqual([]);
   });
 });
 

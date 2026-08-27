@@ -95,6 +95,10 @@ interface UploadManagerValue {
   interrupted: UploadBreadcrumb[];
   enqueue: (files: EnqueueFile[], target: EnqueueTarget) => void;
   cancel: (id: string) => void;
+  /** Abort every in-flight upload and WAIT for the server to confirm, so a
+   *  caller can free the sessions before doing something that invalidates the
+   *  token (signing out). Unlike `cancel`, which is fire-and-forget. */
+  cancelAll: () => Promise<void>;
   /** Re-run a failed/canceled item. Works only while the tab is open (the
    *  File is still in memory); the server resume then re-sends just the
    *  chunks it hasn't already received. */
@@ -490,6 +494,41 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     [abortSession, patch]
   );
 
+  /**
+   * Signing out revokes the token server-side, so anything still transferring
+   * would leave its session squatting on the destination — blocking other
+   * editors from that filename until `cleanup_stale_uploads` is run by hand.
+   * The DELETEs therefore have to land BEFORE the sign-out, which is why this
+   * awaits them instead of firing and forgetting like `cancel` does.
+   *
+   * `assembled`/`processing` sessions are refused by the backend on purpose:
+   * the bytes are in and Celery will finish them, so those are not abandoned.
+   * A rejection is swallowed — the sign-out must not be blocked by cleanup.
+   */
+  const cancelAll = useCallback(async () => {
+    const authToken = tokenRef.current;
+    const crumbs = listUploadBreadcrumbs();
+    const inFlight = Array.from(itemsRef.current.values()).filter(
+      (it) => !UPLOAD_TERMINAL_STATUSES.includes(it.status)
+    );
+
+    for (const it of inFlight) {
+      controllers.current.get(it.id)?.abort();
+      patch(it.id, { status: 'canceled' });
+    }
+
+    if (authToken) {
+      const sessionIds = inFlight
+        .map((it) => crumbs.find((c) => c.id === it.id)?.sessionId)
+        .filter((id): id is string => Boolean(id));
+      await Promise.all(
+        sessionIds.map((sessionId) => abortUploadSession(authToken, sessionId).catch(() => {}))
+      );
+    }
+
+    removeUploadBreadcrumbs(inFlight.map((it) => it.id));
+  }, [patch]);
+
   const retry = useCallback(
     (id: string) => {
       const item = itemsRef.current.get(id);
@@ -754,6 +793,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       interrupted,
       enqueue,
       cancel,
+      cancelAll,
       retry,
       dismiss,
       clearFinished,
@@ -766,6 +806,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       interrupted,
       enqueue,
       cancel,
+      cancelAll,
       retry,
       dismiss,
       clearFinished,
