@@ -89,6 +89,11 @@ export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeade
     setSigningOut(true);
     try {
       await cancelAll();
+    } catch {
+      // Best-effort tidying. Swallowed rather than rethrown: ConfirmDialog
+      // calls onConfirm without awaiting it, so a rejection here would escape
+      // as an unhandled promise rejection — and a failure to free the sessions
+      // must not trap the editor in a session they asked to leave.
     } finally {
       setSigningOut(false);
       logout();
