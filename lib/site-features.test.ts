@@ -180,6 +180,10 @@ describe('getDefaultThemeColors', () => {
       primaryColor: '#075783',
       primaryForegroundColor: '#faf8f5',
       accentColor: '#f59f0a',
+      titleBarBackgroundColor: '#075783',
+      titleBarTextColor: '#faf8f5',
+      navBarBackgroundColor: '#075783',
+      navBarTextColor: '#faf8f5',
     });
   });
 

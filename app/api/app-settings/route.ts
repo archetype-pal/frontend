@@ -2,7 +2,12 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
 import { readSiteFeatures, writeSiteFeatures, SITE_FEATURES_TAG } from '@/lib/site-features-server';
-import { mergeFeatureFlags, mergeThemeColors, type SiteFeaturesConfig } from '@/lib/site-features';
+import {
+  mergeBranding,
+  mergeFeatureFlags,
+  mergeThemeColors,
+  type SiteFeaturesConfig,
+} from '@/lib/site-features';
 
 async function verifySuperuser(token: string): Promise<boolean> {
   try {
@@ -67,6 +72,7 @@ export async function PUT(request: NextRequest) {
         ...payload,
         features: mergeFeatureFlags(current.features, (payload as { features?: unknown }).features),
         theme: mergeThemeColors(current.theme, (payload as { theme?: unknown }).theme),
+        branding: mergeBranding(current.branding, (payload as { branding?: unknown }).branding),
       },
       token
     );

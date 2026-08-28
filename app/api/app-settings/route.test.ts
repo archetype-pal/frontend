@@ -63,8 +63,8 @@ function putRequest(body: unknown): NextRequest {
   } as unknown as NextRequest;
 }
 
-/** A payload from a client that predates feature flags and theming: no `features`/`theme` keys. */
-function payloadWithoutFeatures(): Omit<SiteFeaturesConfig, 'features' | 'theme'> {
+/** A payload from a client that predates feature flags, theming, and branding: no `features`/`theme`/`branding` keys. */
+function payloadWithoutFeatures(): Omit<SiteFeaturesConfig, 'features' | 'theme' | 'branding'> {
   const { sections, sectionOrder, searchCategories } = getDefaultConfig();
   return { sections, sectionOrder, searchCategories };
 }

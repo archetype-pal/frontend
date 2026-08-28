@@ -90,20 +90,28 @@ export default async function RootLayout({
   // `NEXT_PUBLIC_SITE_THEME` preset when no admin override is stored, so this
   // is the one place brand colours need to be read from — no separate
   // `lib/site-theme.ts` lookup here.
-  const { primaryColor, primaryForegroundColor, accentColor } = siteFeaturesConfig.theme;
+  const {
+    primaryColor,
+    primaryForegroundColor,
+    accentColor,
+    titleBarBackgroundColor,
+    titleBarTextColor,
+    navBarBackgroundColor,
+    navBarTextColor,
+  } = siteFeaturesConfig.theme;
   const siteThemeVars = {
     '--primary': primaryColor,
     '--ring': primaryColor,
     '--primary-foreground': primaryForegroundColor,
     '--accent': accentColor,
+    '--title-bar-bg': titleBarBackgroundColor,
+    '--title-bar-fg': titleBarTextColor,
+    '--nav-bar-bg': navBarBackgroundColor,
+    '--nav-bar-fg': navBarTextColor,
   };
 
   return (
-    <html
-      lang={locale}
-      suppressHydrationWarning
-      style={siteThemeVars as React.CSSProperties}
-    >
+    <html lang={locale} suppressHydrationWarning style={siteThemeVars as React.CSSProperties}>
       <body
         data-csp-nonce={nonce}
         className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${cormorant.variable} ${junicode.variable} antialiased`}

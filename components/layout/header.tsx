@@ -172,7 +172,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
       'transition-colors w-full md:w-auto justify-start',
       active
         ? 'text-white font-semibold border-b-2 border-accent rounded-none'
-        : 'text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10'
+        : 'text-nav-bar-foreground/80 hover:text-white hover:bg-nav-bar-foreground/10'
     );
 
   const renderSectionButton = (sectionKey: SectionKey) => {
@@ -311,31 +311,36 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
     }
   };
 
+  const logoUrl = config.branding?.logoUrl;
+
   return (
-    <header
-      ref={headerRef}
-      className="sticky top-0 z-50 bg-primary text-primary-foreground shadow-md"
-    >
+    <header ref={headerRef} className="sticky top-0 z-50 shadow-md">
       {isBannerVisible && (
-        <div className="container mx-auto px-4 py-4 md:py-5">
-          <div className="flex items-end gap-6">
-            <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight text-primary-foreground leading-tight">
-              {getLabel('siteTitle')}
-            </h1>
-            <p className="hidden md:block text-sm text-primary-foreground/85 max-w-xs pb-0.5">
-              {getLabel('siteTagline')}
-            </p>
+        <div className="bg-title-bar text-title-bar-foreground">
+          <div className="container mx-auto px-4 py-4 md:py-5">
+            <div className="flex items-end gap-6">
+              {logoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt="" className="h-10 w-auto shrink-0 object-contain md:h-12" />
+              )}
+              <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight text-title-bar-foreground leading-tight">
+                {getLabel('siteTitle')}
+              </h1>
+              <p className="hidden md:block text-sm text-title-bar-foreground/85 max-w-xs pb-0.5">
+                {getLabel('siteTagline')}
+              </p>
+            </div>
           </div>
         </div>
       )}
-      <nav className="border-t border-primary-foreground/15 px-2 py-1.5">
+      <nav className="bg-nav-bar text-nav-bar-foreground border-t border-nav-bar-foreground/15 px-2 py-1.5">
         <div className="container mx-auto">
           <div className="flex items-center justify-between md:hidden mb-2">
-            <span className="text-sm font-medium text-primary-foreground">{t('menu')}</span>
+            <span className="text-sm font-medium text-nav-bar-foreground">{t('menu')}</span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/10"
+              className="h-8 w-8 text-nav-bar-foreground hover:bg-nav-bar-foreground/10"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label={isMenuOpen ? t('closeMenu') : t('openMenu')}
             >
@@ -382,8 +387,8 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                     suggestions={effectiveSuggestions}
                     placeholder={t('searchPlaceholder')}
                     className="w-full"
-                    inputClassName="h-10 w-full rounded-full border border-primary-foreground/25 bg-primary-foreground/15 text-[0.95rem] text-white shadow-none placeholder:text-primary-foreground/60 hover:bg-primary-foreground/20 focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/70"
-                    iconClassName="text-primary-foreground/65"
+                    inputClassName="h-10 w-full rounded-full border border-nav-bar-foreground/25 bg-nav-bar-foreground/15 text-[0.95rem] text-white shadow-none placeholder:text-nav-bar-foreground/60 hover:bg-nav-bar-foreground/20 focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/70"
+                    iconClassName="text-nav-bar-foreground/65"
                     clearOnFocus
                     onFocus={handleHeaderSearchFocus}
                     suggestionsLoading={serverSuggestionsQuery.isFetching}
@@ -410,7 +415,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                         asChild
                         variant="ghost"
                         size="sm"
-                        className="text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
+                        className="text-nav-bar-foreground/80 hover:text-white hover:bg-nav-bar-foreground/10"
                       >
                         <Link href="/backoffice">
                           <Shield className="h-4 w-4 mr-1" />
@@ -421,7 +426,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
+                      className="h-8 w-8 text-nav-bar-foreground/80 hover:text-white hover:bg-nav-bar-foreground/10"
                       onClick={logout}
                       title={tCommon('signOut')}
                     >
@@ -433,7 +438,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                     asChild
                     variant="ghost"
                     size="sm"
-                    className="text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
+                    className="text-nav-bar-foreground/80 hover:text-white hover:bg-nav-bar-foreground/10"
                   >
                     <Link href="/login">
                       <LogIn className="h-4 w-4 mr-1" />
@@ -444,7 +449,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
+                  className="h-8 w-8 text-nav-bar-foreground/80 hover:text-white hover:bg-nav-bar-foreground/10"
                   onClick={toggleBanner}
                   aria-label={isBannerVisible ? t('bannerHide') : t('bannerShow')}
                   title={isBannerVisible ? t('bannerHide') : t('bannerShow')}
