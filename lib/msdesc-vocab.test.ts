@@ -34,7 +34,7 @@ function resolveBackofficeKey(catalogue: Messages, key: string): unknown {
     );
 }
 
-const locales = ['en', 'fr'] as const;
+const locales = ['en', 'fr', 'de'] as const;
 const vocabIds = Object.keys(MSDESC_VOCABS) as MsDescVocabId[];
 
 describe('msdesc vocab', () => {

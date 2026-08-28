@@ -1598,6 +1598,7 @@
       "fieldQuickLink": "Show in footer quick links",
       "tabEnglish": "English",
       "tabFrench": "Français",
+      "tabGerman": "Deutsch",
       "fieldPageTitle": "Title",
       "titlePlaceholder": "Page title",
       "fieldContent": "Content",
@@ -2700,7 +2701,7 @@
     "usernameLabel": "Username",
     "passwordPlaceholder": "Password",
     "passwordLabel": "Password",
-    "signIn": "Se connecter",
+    "signIn": "Sign in",
     "hidePassword": "Hide password",
     "showPassword": "Show password",
     "signingIn": "Signing in…"
