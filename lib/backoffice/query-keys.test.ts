@@ -59,14 +59,19 @@ describe('backofficeKeys structure', () => {
 
   it('keeps publication list queries distinct from the broad invalidation key', () => {
     const all = backofficeKeys.publications.all();
+    const lists = backofficeKeys.publications.lists();
     const countList = backofficeKeys.publications.list({ limit: 1 });
     const allPagesList = backofficeKeys.publications.list({ scope: 'all-pages', limit: 100 });
+    const detail = backofficeKeys.publications.detail('my-post');
 
     expect(countList).not.toEqual(all);
     expect(allPagesList).not.toEqual(all);
     expect(countList).not.toEqual(allPagesList);
     expect(countList.slice(0, all.length)).toEqual([...all]);
     expect(allPagesList.slice(0, all.length)).toEqual([...all]);
+    expect(countList.slice(0, lists.length)).toEqual([...lists]);
+    expect(allPagesList.slice(0, lists.length)).toEqual([...lists]);
+    expect(detail.slice(0, lists.length)).not.toEqual([...lists]);
   });
 
   it('produces distinct keys for different filter objects (cache isolation)', () => {

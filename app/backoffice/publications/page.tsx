@@ -184,7 +184,7 @@ export default function PublicationsPage() {
   });
 
   const invalidatePubs = () =>
-    queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.lists() });
 
   const bulkActions: BulkAction[] = [
     {

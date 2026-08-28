@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { toGridCard } from './search-grid';
-import type { GraphListItem, ImageListItem } from '@/types/search';
+import type { ClauseListItem, GraphListItem, ImageListItem } from '@/types/search';
 
 const baseImage: ImageListItem = {
   id: 1,
@@ -89,5 +89,58 @@ describe('graph grid card labels (frontend#69)', () => {
       })
     );
     expect(card?.formattedDisplayText).toBe('__hl_start__BL__hl_end__ Cotton Ch. xviii.13');
+  });
+});
+
+const baseClause: ClauseListItem = {
+  id: '1576_1',
+  item_image: 1576,
+  item_part: 227,
+  text_type: 'Charter',
+  repository_city: 'London',
+  repository_name: 'British Library',
+  shelfmark: 'Cotton Ch. xviii.13',
+  date: '1160',
+  date_min: 1160,
+  date_max: 1160,
+  catalogue_numbers: '123',
+  locus: 'face',
+  type: 'Charter',
+  status: 'Published',
+  thumbnail_iiif: 'http://localhost:8182/iiif/2/image.jp2/info.json',
+  annotation_id: 42,
+  annotation_coordinates:
+    '{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[100,200],[300,200],[300,400],[100,400],[100,200]]]}}',
+  clause_type: 'disposition',
+  content: 'Sciant presentes et futuri...',
+};
+
+describe('clause grid card labels and mapping (frontend#74)', () => {
+  it('labels cards with clause_type, shelfmark, and locus', () => {
+    const card = toGridCard('clauses', baseClause);
+    expect(card?.kind).toBe('clause');
+    expect(card?.displayText).toBe('disposition, Cotton Ch. xviii.13, face');
+    if (card?.kind === 'clause') {
+      expect(card.content).toBe('Sciant presentes et futuri...');
+      expect(card.detailUrl).toBe('/manuscripts/227/images/1576');
+    }
+  });
+
+  it('composes highlight formatting for clause fields', () => {
+    const card = toGridCard(
+      'clauses',
+      withFormatted(baseClause, {
+        clause_type: '__hl_start__disposition__hl_end__',
+        shelfmark: 'Cotton Ch. xviii.13',
+        content: '__hl_start__Sciant__hl_end__ presentes et futuri...',
+      })
+    );
+    expect(card?.kind).toBe('clause');
+    expect(card?.formattedDisplayText).toBe(
+      '__hl_start__disposition__hl_end__, Cotton Ch. xviii.13, face'
+    );
+    if (card?.kind === 'clause') {
+      expect(card.formattedContent).toBe('__hl_start__Sciant__hl_end__ presentes et futuri...');
+    }
   });
 });

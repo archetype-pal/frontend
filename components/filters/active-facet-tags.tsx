@@ -56,7 +56,9 @@ export function ActiveFacetTags({
                 : 'bg-muted'
             )}
           >
-            <span className="max-w-[180px] truncate">{item.label}</span>
+            <span title={item.label} className="max-w-[180px] truncate">
+              {item.label}
+            </span>
             <button
               type="button"
               onClick={() => onRemove(item)}

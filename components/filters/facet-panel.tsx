@@ -170,7 +170,10 @@ export function FacetPanel({
                   className="group flex w-full items-center gap-1.5 rounded-md border border-destructive/40 bg-background/40 px-2 py-1 text-left text-[13px] transition-colors hover:bg-destructive/10"
                 >
                   <Ban className="h-3 w-3 shrink-0 text-destructive/70" />
-                  <span className="min-w-0 flex-1 truncate text-muted-foreground line-through decoration-destructive/50">
+                  <span
+                    title={value}
+                    className="min-w-0 flex-1 truncate text-muted-foreground line-through decoration-destructive/50"
+                  >
                     {value}
                   </span>
                   <X className="h-3.5 w-3.5 shrink-0 text-destructive/70 transition-colors group-hover:text-destructive" />
@@ -208,7 +211,9 @@ export function FacetPanel({
                         : 'hover:bg-muted/60'
                     )}
                   >
-                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    <span title={item.label} className="min-w-0 flex-1 truncate">
+                      {item.label}
+                    </span>
                     <span className="inline-flex shrink-0 items-center gap-2">
                       <span className="tabular-nums text-muted-foreground">{item.count}</span>
                       {showSparklines && (

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { PanelLeftClose, PanelLeftOpen, SearchX } from 'lucide-react';
-import { ResultsTable } from '@/components/search/results-table';
+import { hasTablePreview, ResultsTable } from '@/components/search/results-table';
 import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';
 import { ActiveFacetTags } from '@/components/filters/active-facet-tags';
@@ -42,6 +42,8 @@ const SearchMapView = React.lazy(() =>
 );
 import { cn } from '@/lib/utils';
 import { useSearchPageState } from '@/hooks/search/use-search-page-state';
+import { useShowThumbnails } from '@/hooks/search/use-show-thumbnails';
+import { ThumbnailToggle } from '@/components/search/thumbnail-toggle';
 import { useTranslations } from 'next-intl';
 
 type ResultListItem = ResultMap[ResultType];
@@ -50,6 +52,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const t = useTranslations('search');
   const s = useSearchPageState(initialType);
   const [thumbnailSize, setThumbnailSize] = useThumbnailSize();
+  const [showThumbnails, setShowThumbnails] = useShowThumbnails();
   const { getLabel } = useModelLabels();
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
 
@@ -242,13 +245,25 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               counts={s.countsByType}
             />
           </div>
-          {s.viewMode === 'grid' && (
-            <ThumbnailSizeControl
-              size={thumbnailSize}
-              onChange={setThumbnailSize}
-              className="hidden shrink-0 sm:inline-flex"
-            />
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {s.viewMode === 'grid' && showThumbnails && (
+              <ThumbnailSizeControl
+                size={thumbnailSize}
+                onChange={setThumbnailSize}
+                className="hidden shrink-0 sm:inline-flex"
+              />
+            )}
+            {/* Only grid view, and the table views that actually render a
+                thumbnail row, have anything for this to hide. */}
+            {(s.viewMode === 'grid' ||
+              (s.viewMode === 'table' && hasTablePreview(s.resultType))) && (
+              <ThumbnailToggle
+                showThumbnails={showThumbnails}
+                onChange={setShowThumbnails}
+                className="hidden shrink-0 sm:inline-flex"
+              />
+            )}
+          </div>
         </div>
       </header>
 
@@ -338,6 +353,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     highlightKeyword={s.submittedKeyword}
                     visibleColumns={s.categoryConfig.visibleColumns}
                     isFetching={s.isFetching}
+                    showThumbnails={showThumbnails}
                   />
                 ) : s.viewMode === 'timeline' ? (
                   <React.Suspense
@@ -411,6 +427,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     highlightKeyword={s.submittedKeyword}
                     isFetching={s.isFetching}
                     thumbnailSize={thumbnailSize}
+                    showThumbnails={showThumbnails}
                   />
                 )
               ) : s.data.count > 0 && s.queryState.offset >= s.data.count ? (
