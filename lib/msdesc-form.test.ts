@@ -60,7 +60,7 @@ const CANONICAL_MS_CONTENTS = `<msContents>
 </msContents>`;
 
 /**
- * The PO's physDesc example (TEI-DESCRIPTIONS-FINDINGS §0/§3: "Form: codex /
+ * The PO's physDesc example (root docs/tei.md §3: "Form: codex /
  * Support: parchment / Dimensions (leaf): 103 × 75 mm / Layout: 15 lines /
  * Decoration: …"), encoded per the msdesc-minimal ODD's own examples —
  * including inline markup inside the prose leaves (hi, origDate).
