@@ -34,7 +34,7 @@
 - Auth:
   - Token login/profile calls target backend `/api/v1/auth/*`.
   - Three checks guard the backoffice, at three layers, and only the last is the
-    security boundary: `proxy.ts` checks that the auth cookie *exists*;
+    security boundary: `proxy.ts` checks that the auth cookie _exists_;
     `BackofficeShell` checks `is_staff` client-side; the backend's management
     viewsets require **`is_superuser`**. A staff-but-not-superuser account
     reaches the UI and is refused by every write.
