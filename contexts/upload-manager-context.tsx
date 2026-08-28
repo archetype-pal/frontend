@@ -321,8 +321,11 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
         // `owner=request.user`, so their name lands on files someone else chose.
         // A same-user re-login also mints a new token and the cookie carries no
         // identity, so any change stops the queue; resuming is deliberate.
+        // Fail CLOSED on a missing entry: `queuedWith &&` used to skip the
+        // comparison entirely, so any path that did not record a token ran
+        // under whatever was in the cookie — including another user's.
         const queuedWith = itemTokens.current.get(id);
-        if (!authToken || (queuedWith && authToken !== queuedWith)) {
+        if (!authToken || authToken !== queuedWith) {
           signedOut = true;
           patch(id, { status: 'error', error: tRef.current('uploads.errors.signedOut') });
           updateUploadBreadcrumb(id, { status: 'error' });
@@ -442,6 +445,35 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     }
   }, [patch, invalidateManuscript, showReindexNudge, errorText]);
 
+  /**
+   * The ONLY way an item may enter the runner. It records the token the item was
+   * queued with, which `drain` then requires to still be current — a sign-out
+   * followed by anyone signing in must not hand the rest of the batch to them,
+   * because the server takes `owner=request.user`.
+   *
+   * Centralised deliberately: this used to be recorded in `enqueue` alone, so
+   * items arriving via `retry` or `resumeInterrupted` had no entry and the guard
+   * fell open. `drain` now treats a missing entry as a mismatch, so a future
+   * path that bypassed this helper would stall rather than leak — but the helper
+   * is what makes bypassing it hard in the first place.
+   */
+  const queueForDrain = useCallback(
+    (ids: string[]) => {
+      const queuedWith = getAuthTokenCookie();
+      for (const id of ids) {
+        if (queuedWith) itemTokens.current.set(id, queuedWith);
+        // Never queue one item twice. `cancel` on a not-yet-started item leaves
+        // it in the queue (there is no controller to abort, only a status
+        // patch), so a later `retry` would add a second entry and the runner
+        // would upload the same file twice — the second attempt colliding with
+        // the row the first one just created.
+        if (!queueRef.current.includes(id)) queueRef.current.push(id);
+      }
+      void drain();
+    },
+    [drain]
+  );
+
   const enqueue = useCallback(
     (files: EnqueueFile[], target: EnqueueTarget) => {
       if (files.length === 0) return;
@@ -463,17 +495,14 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
         message: '',
         error: '',
       }));
-      const queuedWith = getAuthTokenCookie();
       for (const it of newItems) {
         itemsRef.current.set(it.id, it);
-        if (queuedWith) itemTokens.current.set(it.id, queuedWith);
         saveUploadBreadcrumb(crumbFromItem(it, tabId, now));
       }
-      queueRef.current.push(...newItems.map((it) => it.id));
       setItems((prev) => [...prev, ...newItems]);
-      void drain();
+      queueForDrain(newItems.map((it) => it.id));
     },
-    [drain]
+    [queueForDrain]
   );
 
   /** Fire-and-forget: a failed abort leaves nothing the user could act on. */
@@ -538,10 +567,9 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       patch(id, { status: 'pending', phase: null, sentBytes: 0, message: '', error: '' });
       // Upsert, not update: the crumb may have been evicted meanwhile.
       saveUploadBreadcrumb(crumbFromItem(item, getUploadTabId(), Date.now()));
-      queueRef.current.push(id);
-      void drain();
+      queueForDrain([id]);
     },
-    [patch, drain]
+    [patch, queueForDrain]
   );
 
   const dismiss = useCallback((id: string) => {
@@ -723,14 +751,13 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           // the server-side create-or-resume skips chunks it already holds.
           updateUploadBreadcrumb(breadcrumb.id, { status: 'pending', tabId: getUploadTabId() });
           addItem(itemFromCrumb(breadcrumb, { file }));
-          queueRef.current.push(breadcrumb.id);
         }
         setInterrupted((prev) => prev.filter((c) => !resumedIds.has(c.id)));
-        void drain();
+        queueForDrain(matches.map((m) => m.breadcrumb.id));
       }
       return { resumed: matches.length, unmatched: unmatched.map((f) => f.name) };
     },
-    [addItem, drain]
+    [addItem, queueForDrain]
   );
 
   const dismissInterrupted = useCallback(

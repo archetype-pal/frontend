@@ -143,6 +143,12 @@ function Harness() {
       </button>
       <button
         type="button"
+        onClick={() => setResume(resumeInterrupted([makeFile('a.tif', 4), makeFile('b.tif', 4)]))}
+      >
+        resume both
+      </button>
+      <button
+        type="button"
         onClick={() => setResume(resumeInterrupted([makeFile('other.tif', 9)]))}
       >
         resume mismatching
@@ -155,6 +161,12 @@ function Harness() {
       </button>
       <button type="button" onClick={() => items[0] && cancel(items[0].id)}>
         cancel first
+      </button>
+      <button type="button" onClick={() => items[1] && cancel(items[1].id)}>
+        cancel second
+      </button>
+      <button type="button" onClick={() => items[1] && retry(items[1].id)}>
+        retry second
       </button>
       <button
         type="button"
@@ -526,6 +538,44 @@ describe('logout mid-queue', () => {
   });
 });
 
+describe('queue integrity', () => {
+  it('cancel-then-retry of a not-yet-started item uploads it once, not twice', async () => {
+    // `cancel` on an item the runner has not reached only patches the status —
+    // there is no controller to abort — so the id stays in the queue. A later
+    // `retry` used to push a SECOND entry, and the runner uploaded the same
+    // file twice, the second attempt colliding with the row the first created.
+    let releaseFirst!: (s: UploadSession) => void;
+    mockedUpload.mockImplementation((_t, file) => {
+      if ((file as File).name === 'a.tif') {
+        return new Promise<UploadSession>((res) => {
+          releaseFirst = res;
+        });
+      }
+      return Promise.resolve(session({ status: 'complete', item_image: 2 }));
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue three'));
+    await waitFor(() =>
+      expect(screen.getByTestId('items').textContent).toContain('a.tif:uploading')
+    );
+    expect(screen.getByTestId('items').textContent).toContain('b.tif:pending');
+
+    fireEvent.click(screen.getByText('cancel second'));
+    await waitFor(() =>
+      expect(screen.getByTestId('items').textContent).toContain('b.tif:canceled')
+    );
+    fireEvent.click(screen.getByText('retry second'));
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('b.tif:pending'));
+
+    releaseFirst(session({ status: 'complete', item_image: 1 }));
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('b.tif:done'));
+
+    const bCalls = mockedUpload.mock.calls.filter((c) => (c[1] as File).name === 'b.tif').length;
+    expect(bCalls).toBe(1);
+  });
+});
+
 describe('cancelAll', () => {
   it('does not resolve until the server has confirmed the aborts', async () => {
     // The caller signs out as soon as this resolves, and signing out revokes
@@ -587,6 +637,34 @@ describe('signing out mid-upload', () => {
 
     await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('c.tif:error'));
     // Only the file that was already in flight ever ran.
+    expect(tokens).toEqual(['tok']);
+  });
+
+  it('does not hand a RESUMED batch to whoever signs in next either', async () => {
+    // The guard used to be recorded only in `enqueue`, so items arriving via
+    // resumeInterrupted had no entry and `queuedWith && ...` skipped the
+    // comparison — the rest of the batch then uploaded under the new session,
+    // and the server records owner=request.user.
+    seedCrumb({ id: 'c-a', sessionId: '', fileName: 'a.tif', fileSize: 4 });
+    seedCrumb({ id: 'c-b', sessionId: '', fileName: 'b.tif', fileSize: 4 });
+    const tokens: string[] = [];
+    mockedUpload.mockImplementation((token: string) => {
+      tokens.push(token);
+      if (tokens.length === 1) {
+        document.cookie = 'archetype_auth_token=; Path=/; Max-Age=0';
+        document.cookie = 'archetype_auth_token=tok_other_user; Path=/';
+        return Promise.reject(new BackofficeApiError(401, { detail: 'Invalid token.' }));
+      }
+      return Promise.resolve(session({ status: 'complete', item_image: 1 }));
+    });
+    renderHarness();
+
+    await waitFor(() => expect(screen.getByTestId('interrupted').textContent).toContain('a.tif'));
+    fireEvent.click(screen.getByText('resume both'));
+
+    await waitFor(() => expect(tokens.length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('b.tif:error'));
+    // Only the file already in flight ever ran; the second never used the new token.
     expect(tokens).toEqual(['tok']);
   });
 
