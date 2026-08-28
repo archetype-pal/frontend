@@ -7,18 +7,19 @@ import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Image as ImageIcon, Check, ExternalLink } from 'lucide-react';
 import { IiifThumbnail } from '@/components/backoffice/common/iiif-thumbnail';
+import { PlaceCombobox } from '@/components/backoffice/common/place-combobox';
+import { HandDescriptionsSection } from '@/components/backoffice/scribes/hand-descriptions-section';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import dynamic from 'next/dynamic';
-const RichTextEditor = dynamic(
-  () => import('@/components/backoffice/common/rich-text-editor').then((m) => m.RichTextEditor),
-  {
-    ssr: false,
-    loading: () => <div className="h-[200px] rounded-md border animate-pulse bg-muted" />,
-  }
-);
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { EntityEditorActions } from '@/components/backoffice/common/entity-editor-actions';
 import {
@@ -26,6 +27,7 @@ import {
   BackofficeLoadingState,
 } from '@/components/backoffice/common/query-state';
 import { getHand, updateHand, deleteHand } from '@/services/backoffice/scribes';
+import { getDates } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
@@ -47,7 +49,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
     toForm: (h) => ({
       name: h.name,
       place: h.place,
-      description: h.description,
+      date: h.date,
       item_part_images: h.item_part_images ?? [],
     }),
     saveFn: (t, hid, form) => updateHand(t, hid, form),
@@ -71,6 +73,12 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
   });
 
   const availableImages = useMemo(() => imagesData ?? [], [imagesData]);
+
+  const { data: dates } = useQuery({
+    queryKey: backofficeKeys.dates.all(),
+    queryFn: () => getDates(token!),
+    enabled: !!token,
+  });
 
   if (editor.isError) {
     return (
@@ -137,12 +145,6 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
             {hand.item_part_display}
           </Link>
         </p>
-        {hand.date_display && (
-          <p>
-            <span className="text-muted-foreground">{t('handsDetail.labelDate')}</span>{' '}
-            {hand.date_display}
-          </p>
-        )}
       </div>
 
       {/* Quick links */}
@@ -168,19 +170,34 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
         </div>
         <div className="space-y-1.5">
           <Label>{t('handsDetail.labelPlace')}</Label>
-          <Input value={form.place} onChange={(e) => setForm({ place: e.target.value })} />
+          <PlaceCombobox
+            value={form.place}
+            selectedLabel={form.place === hand.place ? hand.place_display : undefined}
+            onChange={(placeId) => setForm({ place: placeId })}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>{t('handsDetail.labelDate')}</Label>
+          <Select
+            value={String(form.date ?? '__none')}
+            onValueChange={(val) => setForm({ date: val === '__none' ? null : Number(val) })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none">{t('handsDetail.selectNoDate')}</SelectItem>
+              {(dates ?? []).map((d) => (
+                <SelectItem key={d.id} value={String(d.id)}>
+                  {d.date}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label>{t('handsDetail.labelDescription')}</Label>
-        <RichTextEditor
-          content={form.description}
-          onChange={(html) => setForm({ description: html })}
-          placeholder={t('handsDetail.descriptionPlaceholder')}
-          minimal
-        />
-      </div>
+      <HandDescriptionsSection handId={id} descriptions={hand.descriptions} />
 
       {/* Image selection section */}
       <div className="space-y-3">
