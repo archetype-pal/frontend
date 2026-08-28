@@ -6,7 +6,15 @@ import {
 } from './search-types';
 
 export type SectionKey =
-  'search' | 'collection' | 'lightbox' | 'news' | 'blogs' | 'featureArticles' | 'events' | 'about';
+  | 'search'
+  | 'collection'
+  | 'lightbox'
+  | 'compare'
+  | 'news'
+  | 'blogs'
+  | 'featureArticles'
+  | 'events'
+  | 'about';
 
 /**
  * Admin-controlled flags for optional site *features* — as opposed to
@@ -37,6 +45,7 @@ export const ALL_SECTION_KEYS: SectionKey[] = [
   'search',
   'lightbox',
   'collection',
+  'compare',
   'blogs',
   'featureArticles',
   'about',
@@ -48,6 +57,7 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   search: 'Explore',
   collection: 'My Collection',
   lightbox: 'Lightbox',
+  compare: 'Compare',
   news: 'News',
   blogs: 'Blogs',
   featureArticles: 'Feature Articles',

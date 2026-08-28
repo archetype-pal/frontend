@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { IiifImage } from '@/components/ui/iiif-image';
 import Link from 'next/link';
 import type {
@@ -14,12 +15,15 @@ import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { Highlight } from './highlight';
 import { CollectionStar } from '@/components/collection/collection-star';
+import { Checkbox } from '@/components/ui/checkbox';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { getImageDetailUrl } from '@/lib/media-url';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
 import { clauseToGraphCollectionItem } from '@/lib/collection-item';
 import { cn } from '@/lib/utils';
 import type { ThumbnailSize } from '@/components/search/thumbnail-size-control';
+import type { ManuscriptCompareSelection } from '@/hooks/search/use-manuscript-compare-selection';
+import { cn } from '@/lib/utils';
 
 type GridItem = ImageListItem | GraphListItem | ManuscriptListItem | ClauseListItem;
 
@@ -29,6 +33,8 @@ export interface SearchGridProps {
   highlightKeyword?: string;
   isFetching?: boolean;
   thumbnailSize?: ThumbnailSize;
+  /** Only meaningful (and only passed) when `resultType === 'manuscripts'`. */
+  manuscriptSelection?: ManuscriptCompareSelection;
   showThumbnails?: boolean;
 }
 
@@ -340,6 +346,7 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   highlightKeyword,
   showThumbnail = true,
   eager,
+  selection,
 }: {
   item: ManuscriptListItem;
   detailUrl: string;
@@ -349,13 +356,32 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   highlightKeyword: string;
   showThumbnail?: boolean;
   eager: boolean;
+  selection?: ManuscriptCompareSelection;
 }) {
+  const t = useTranslations('search');
   const meta = [item.type, item.date].filter(Boolean).join(' · ');
+  const isChecked = selection?.isSelected(item.id) ?? false;
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
-      {showThumbnail && (
-        <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
-          <Link href={detailUrl} className="relative block h-full w-full">
+        {showThumbnail && (
+          <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
+            {selection && (
+              <Checkbox
+                checked={isChecked}
+                disabled={selection.isDisabled(item.id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onCheckedChange={() => selection.toggle(item.id)}
+                aria-label={t('compareAction.selectAriaLabel', { label: displayText })}
+                className={cn(
+                  'absolute left-2 top-2 z-20 border-border bg-background/90 shadow-sm transition-opacity duration-200',
+                  isChecked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                )}
+              />
+            )}
+            <Link href={detailUrl} className="relative block h-full w-full">
             {imageUrl ? (
               <IiifImage
                 src={imageUrl}
@@ -370,12 +396,12 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
                 No Image
               </span>
             )}
-          </Link>
-          {imageUrl && (
-            <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
-          )}
+            </Link>
+            {imageUrl && (
+              <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
+            )}
         </div>
-      )}
+        )}
       <div className={cn('px-2.5 py-1.5', showThumbnail && 'border-t border-border/70')}>
         <Link href={detailUrl} className="block">
           <span className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
@@ -515,6 +541,7 @@ function SearchGridComponent({
   highlightKeyword = '',
   isFetching = false,
   thumbnailSize = 'medium',
+  manuscriptSelection,
   showThumbnails = true,
 }: SearchGridProps) {
   const cards = React.useMemo(
@@ -548,6 +575,7 @@ function SearchGridComponent({
           <ManuscriptGridCard
             key={card.item.id}
             item={card.item}
+            selection={manuscriptSelection}
             detailUrl={card.detailUrl}
             imageUrl={card.imageUrl}
             displayText={card.displayText}
@@ -590,7 +618,7 @@ function SearchGridComponent({
         />
       );
     },
-    [highlightKeyword, showThumbnails]
+    [highlightKeyword, showThumbnails, manuscriptSelection]
   );
 
   if (!results.length) {

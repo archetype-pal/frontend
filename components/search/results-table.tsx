@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Table, TableHeader, TableRow, TableCell, TableHead } from '@/components/ui/table';
 import { IiifImage } from '@/components/ui/iiif-image';
 import Link from 'next/link';
@@ -24,6 +25,8 @@ import { useModelLabels } from '@/contexts/model-labels-context';
 import type { ModelLabelKey } from '@/lib/model-labels';
 import { Highlight, MatchSnippet } from './highlight';
 import { CollectionStar } from '@/components/collection/collection-star';
+import { Checkbox } from '@/components/ui/checkbox';
+import type { ManuscriptCompareSelection } from '@/hooks/search/use-manuscript-compare-selection';
 import { clauseToGraphCollectionItem } from '@/lib/collection-item';
 import type { CollectionItem } from '@/lib/collection-storage';
 import { getImageDetailUrl, getGraphDetailUrl } from '@/lib/media-url';
@@ -436,6 +439,7 @@ function ResultsTableComponent<K extends ResultType>({
   visibleColumns,
   isFetching = false,
   showThumbnails = true,
+  manuscriptSelection,
 }: {
   resultType: K;
   results: ResultMap[K][];
@@ -447,9 +451,12 @@ function ResultsTableComponent<K extends ResultType>({
   highlightKeyword?: string;
   visibleColumns?: string[];
   isFetching?: boolean;
+  /** Only meaningful (and only passed) when `resultType === 'manuscripts'`. */
+  manuscriptSelection?: ManuscriptCompareSelection;
   showThumbnails?: boolean;
 }) {
   const { getLabel } = useModelLabels();
+  const t = useTranslations('search');
   const resolveHeader = React.useCallback(
     (col: Column<ResultMap[K]>) => (col.labelKey ? getLabel(col.labelKey) : col.header),
     [getLabel]
@@ -488,7 +495,8 @@ function ResultsTableComponent<K extends ResultType>({
 
   const { subRowAccessor, previewAccessor, collectionItemAccessor } = descriptor;
   const hasSubRow = !!subRowAccessor;
-  const totalColSpan = cols.length + (hasSubRow ? 1 : 0);
+  const hasSelection = resultType === 'manuscripts' && !!manuscriptSelection;
+  const totalColSpan = cols.length + (hasSubRow ? 1 : 0) + (hasSelection ? 1 : 0);
   const rowKeyOf = React.useCallback((row: ResultMap[K], index: number): React.Key => {
     const withId = row as { id?: string | number };
     if (typeof withId.id === 'string' || typeof withId.id === 'number') return withId.id;
@@ -518,6 +526,23 @@ function ResultsTableComponent<K extends ResultType>({
           <TableRow
             className={`relative cursor-pointer transition-colors group-hover:bg-secondary/80 ${ri % 2 === 0 ? 'bg-secondary/30' : ''}${hasSubRow ? ' border-b-0' : ''}`}
           >
+            {hasSelection &&
+              manuscriptSelection &&
+              (() => {
+                const manuscript = row as ManuscriptListItem;
+                const label = manuscript.shelfmark || manuscript.display_label || `#${manuscript.id}`;
+                return (
+                  <TableCell className="w-10 py-1.5">
+                    <Checkbox
+                      checked={manuscriptSelection.isSelected(manuscript.id)}
+                      disabled={manuscriptSelection.isDisabled(manuscript.id)}
+                      onCheckedChange={() => manuscriptSelection.toggle(manuscript.id)}
+                      aria-label={t('compareAction.selectAriaLabel', { label })}
+                      className="relative z-[2]"
+                    />
+                  </TableCell>
+                );
+              })()}
             {hasSubRow && (
               <TableCell className="w-16 py-1.5">
                 <Link
@@ -675,13 +700,16 @@ function ResultsTableComponent<K extends ResultType>({
       cols,
       collectionItemAccessor,
       descriptor,
+      hasSelection,
       hasSubRow,
       highlightKeyword,
+      manuscriptSelection,
       previewAccessor,
       resultType,
       rowKeyOf,
       showThumbnails,
       subRowAccessor,
+      t,
       totalColSpan,
     ]
   );
@@ -696,6 +724,7 @@ function ResultsTableComponent<K extends ResultType>({
             divider is the th's sticky inset border (single line under the head). */}
         <TableHeader className="[&_tr]:border-b-0 [&_th]:sticky [&_th]:top-[var(--site-header-h,0px)] [&_th]:z-10 [&_th]:bg-secondary [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-muted-foreground [&_th]:shadow-[inset_0_-1px_0_var(--border)]">
           <TableRow>
+            {hasSelection && <TableHead className="w-10" />}
             {hasSubRow && <TableHead className="w-16" />}
             {cols.map((col) => {
               const sortable = !!(col.sortKey || col.sortUrl);

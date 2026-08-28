@@ -47,6 +47,7 @@
     "search": "Rechercher",
     "collection": "{name} ({count})",
     "lightbox": "Visionneuse",
+    "compare": "Comparer ({count})",
     "news": "Actualités",
     "blogs": "Blogs",
     "featureArticles": "Articles de fond",
@@ -91,6 +92,12 @@
     "noResultsFilters": "Aucun {typeLabel} ne correspond aux filtres actuels.",
     "clearAllFilters": "Effacer tous les filtres",
     "clearKeyword": "Effacer le mot-clé",
+    "compareAction": {
+      "button": "Comparer ({count})",
+      "selectAriaLabel": "Sélectionner {label} pour comparer",
+      "atCapTitle": "Comparer est plein",
+      "atCapDescription": "Vous pouvez comparer jusqu'à {max} manuscrits à la fois. Retirez-en un de la page Comparer d'abord."
+    },
     "actions": "Actions",
     "actionsTitle": "Actions de recherche — recherches sauvegardées, vue et export",
     "actionsLabel": "Actions de recherche",
@@ -302,6 +309,11 @@
       "fallbackTitle": "Manuscrit",
       "numberedFallbackTitle": "Manuscrit n°{id}",
       "description": "Consulter le manuscrit {label} – {siteTitle}"
+    },
+    "iiifManifest": {
+      "copyButton": "Copier l'URL du manifeste IIIF",
+      "toastCopied": "URL du manifeste copiée",
+      "toastCopyFailed": "Impossible de copier l'URL du manifeste"
     },
     "loadError": {
       "title": "Impossible de charger le manuscrit",
@@ -627,6 +639,22 @@
       "sectionGraphs": "Graphes",
       "sectionEditorialAnnotations": "Annotations éditoriales",
       "untitled": "Sans titre"
+    }
+  },
+  "compare": {
+    "toggle": {
+      "add": "Ajouter à Comparer",
+      "remove": "Retirer de Comparer",
+      "atCapTitle": "Comparer est plein",
+      "atCapDescription": "Vous pouvez comparer jusqu'à {max} manuscrits à la fois. Retirez-en un de la page Comparer d'abord."
+    },
+    "page": {
+      "title": "Comparer",
+      "emptyTitle": "Rien à comparer pour l'instant",
+      "emptyDescription": "Ajoutez des manuscrits à Comparer depuis leur page manuscrit, puis revenez ici pour les visualiser côte à côte.",
+      "browseManuscripts": "Parcourir les manuscrits",
+      "clearButton": "Tout effacer",
+      "removeItem": "Retirer {label} de Comparer"
     }
   },
   "about": {
@@ -1894,6 +1922,7 @@
         "search": "Explorer",
         "collection": "Ma collection",
         "lightbox": "Lightbox",
+        "compare": "Comparer",
         "news": "Actualités",
         "blogs": "Blogs",
         "featureArticles": "Articles de fond",
