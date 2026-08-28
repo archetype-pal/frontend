@@ -46,4 +46,16 @@ describe('<SiteFeaturesPage>', () => {
     renderPage();
     expect(await screen.findByText('Site Sections')).toBeTruthy();
   });
+
+  it('renders the UI customization section with the default colours', async () => {
+    renderPage();
+    expect(await screen.findByText('UI Customization')).toBeTruthy();
+    const defaults = getDefaultConfig().theme;
+    // Each colour renders twice: the native swatch and the hex text input.
+    // The header rows default to the same primary/foreground pair, so their
+    // fields add 2 more matches apiece for those two values.
+    expect(screen.getAllByDisplayValue(defaults.primaryColor)).toHaveLength(6);
+    expect(screen.getAllByDisplayValue(defaults.primaryForegroundColor)).toHaveLength(6);
+    expect(screen.getAllByDisplayValue(defaults.accentColor)).toHaveLength(2);
+  });
 });

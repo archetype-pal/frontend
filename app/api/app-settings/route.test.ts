@@ -63,8 +63,8 @@ function putRequest(body: unknown): NextRequest {
   } as unknown as NextRequest;
 }
 
-/** A payload from a client that predates feature flags: no `features` key. */
-function payloadWithoutFeatures(): Omit<SiteFeaturesConfig, 'features'> {
+/** A payload from a client that predates feature flags, theming, and branding: no `features`/`theme`/`branding` keys. */
+function payloadWithoutFeatures(): Omit<SiteFeaturesConfig, 'features' | 'theme' | 'branding'> {
   const { sections, sectionOrder, searchCategories } = getDefaultConfig();
   return { sections, sectionOrder, searchCategories };
 }
@@ -116,6 +116,43 @@ describe('PUT /api/app-settings — feature flags', () => {
   it('still rejects a payload missing the required keys', async () => {
     const response = await PUT(putRequest({ features: { manuscriptDescriptions: false } }));
     expect(response.status).toBe(400);
+  });
+});
+
+describe('PUT /api/app-settings — theme', () => {
+  it('accepts a payload with no `theme` key (backward compatible with older clients)', async () => {
+    const response = await PUT(putRequest(payloadWithoutFeatures()));
+    expect(response.status).toBe(200);
+    expect((await response.json()).theme).toEqual(getDefaultConfig().theme);
+  });
+
+  it('does NOT wipe a saved custom colour when the payload omits `theme`', async () => {
+    const custom = getDefaultConfig();
+    custom.theme.primaryColor = '#123456';
+    stored = custom;
+
+    const response = await PUT(putRequest(payloadWithoutFeatures()));
+    expect(response.status).toBe(200);
+    expect((await readSiteFeatures()).theme.primaryColor).toBe('#123456');
+  });
+
+  it('applies the colours a current client does send', async () => {
+    const config = getDefaultConfig();
+    config.theme.accentColor = '#abcdef';
+
+    await PUT(putRequest(config));
+    expect((await readSiteFeatures()).theme.accentColor).toBe('#abcdef');
+  });
+
+  it('ignores a malformed colour in the payload, keeping the stored value', async () => {
+    const custom = getDefaultConfig();
+    custom.theme.accentColor = '#abcdef';
+    stored = custom;
+
+    const config = getDefaultConfig();
+    config.theme.accentColor = 'not-a-colour';
+    await PUT(putRequest(config));
+    expect((await readSiteFeatures()).theme.accentColor).toBe('#abcdef');
   });
 });
 

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   ALL_FEATURE_KEYS,
@@ -11,7 +11,9 @@ import {
   FEATURE_LABELS,
   getDefaultConfig,
   getDefaultFeatures,
+  getDefaultThemeColors,
   mergeFeatureFlags,
+  mergeThemeColors,
   normalizeSectionOrder,
   type FeatureKey,
   type SectionKey,
@@ -162,6 +164,83 @@ describe('mergeFeatureFlags', () => {
     const base = getDefaultFeatures();
     mergeFeatureFlags(base, { manuscriptDescriptions: false });
     expect(base.manuscriptDescriptions).toBe(true);
+  });
+});
+
+describe('getDefaultThemeColors', () => {
+  const ORIGINAL_SITE_THEME = process.env.NEXT_PUBLIC_SITE_THEME;
+
+  afterEach(() => {
+    process.env.NEXT_PUBLIC_SITE_THEME = ORIGINAL_SITE_THEME;
+  });
+
+  it('reproduces the hardcoded globals.css colours for the moa deployment', () => {
+    process.env.NEXT_PUBLIC_SITE_THEME = 'moa';
+    expect(getDefaultThemeColors()).toEqual({
+      primaryColor: '#075783',
+      primaryForegroundColor: '#faf8f5',
+      accentColor: '#f59f0a',
+      titleBarBackgroundColor: '#075783',
+      titleBarTextColor: '#faf8f5',
+      navBarBackgroundColor: '#075783',
+      navBarTextColor: '#faf8f5',
+    });
+  });
+
+  it('reproduces the build-time preset for a non-moa deployment, not MoA blue', () => {
+    process.env.NEXT_PUBLIC_SITE_THEME = 'digipal';
+    const theme = getDefaultThemeColors();
+    expect(theme.primaryColor).not.toBe('#075783');
+    expect(theme.accentColor).not.toBe('#075783');
+    // No preset overrides the foreground colour drawn on top of --primary.
+    expect(theme.primaryForegroundColor).toBe('#faf8f5');
+  });
+
+  it('included in getDefaultConfig()', () => {
+    process.env.NEXT_PUBLIC_SITE_THEME = 'moa';
+    expect(getDefaultConfig().theme).toEqual(getDefaultThemeColors());
+  });
+});
+
+describe('mergeThemeColors', () => {
+  it('returns the base palette when the payload omits `theme` entirely', () => {
+    const base = { ...getDefaultThemeColors(), accentColor: '#123456' };
+    expect(mergeThemeColors(base, undefined)).toEqual(base);
+    expect(mergeThemeColors(base, null)).toEqual(base);
+  });
+
+  it('applies valid hex overrides key by key', () => {
+    const base = getDefaultThemeColors();
+    expect(mergeThemeColors(base, { accentColor: '#abcdef' })).toEqual({
+      ...base,
+      accentColor: '#abcdef',
+    });
+  });
+
+  it('ignores non-plain-object payloads instead of spreading them into index keys', () => {
+    const base = getDefaultThemeColors();
+    for (const junk of ['nope', 42, true, ['primaryColor']]) {
+      expect(mergeThemeColors(base, junk)).toEqual(base);
+    }
+  });
+
+  it('ignores malformed hex values, keeping the base colour', () => {
+    const base = getDefaultThemeColors();
+    for (const junk of ['blue', '#fff', '#gggggg', 'rgb(0,0,0)', '']) {
+      expect(mergeThemeColors(base, { primaryColor: junk }).primaryColor).toBe(base.primaryColor);
+    }
+  });
+
+  it('drops unknown keys so garbage never reaches disk', () => {
+    const base = getDefaultThemeColors();
+    const merged = mergeThemeColors(base, { somethingBogus: '#123456' });
+    expect(merged).toEqual(base);
+  });
+
+  it('never mutates the base palette', () => {
+    const base = getDefaultThemeColors();
+    mergeThemeColors(base, { primaryColor: '#123456' });
+    expect(base).toEqual(getDefaultThemeColors());
   });
 });
 

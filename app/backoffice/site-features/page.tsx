@@ -17,6 +17,8 @@ import {
 import { SectionToggles } from '@/components/backoffice/site-features/section-toggles';
 import { FeatureToggles } from '@/components/backoffice/site-features/feature-toggles';
 import { SearchCategoryConfigPanel } from '@/components/backoffice/site-features/search-category-config';
+import { ThemeCustomization } from '@/components/backoffice/site-features/theme-customization';
+import { BrandingCustomization } from '@/components/backoffice/site-features/branding-customization';
 import {
   getDefaultConfig,
   normalizeSectionOrder,
@@ -24,6 +26,7 @@ import {
   type SectionKey,
   type FeatureKey,
   type SearchCategoryConfig,
+  type ThemeColors,
 } from '@/lib/site-features';
 import type { ResultType } from '@/lib/search-types';
 
@@ -140,6 +143,22 @@ export default function SiteFeaturesPage() {
     setDirty(true);
   };
 
+  const handleThemeChange = (key: keyof ThemeColors, value: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      theme: { ...prev.theme, [key]: value },
+    }));
+    setDirty(true);
+  };
+
+  const handleBrandingChange = (logoUrl: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      branding: { ...prev.branding, logoUrl },
+    }));
+    setDirty(true);
+  };
+
   if (isLoading) return <BackofficeLoadingState />;
   // Never render the form off `defaults` — saving it would erase the stored config.
   if (isError)
@@ -164,6 +183,12 @@ export default function SiteFeaturesPage() {
         onOrderChange={handleSectionOrderChange}
       />
       <FeatureToggles features={config.features} onChange={handleFeatureChange} />
+      <BrandingCustomization branding={config.branding} onChange={handleBrandingChange} />
+      <ThemeCustomization
+        theme={config.theme}
+        defaults={defaults.theme}
+        onChange={handleThemeChange}
+      />
       <SearchCategoryConfigPanel
         categories={config.searchCategories}
         onChange={handleCategoryChange}
