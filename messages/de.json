@@ -102,6 +102,10 @@
     "viewCharts": "Diagramme",
     "viewMap": "Karte",
     "viewDisabled": "{label} (keine Daten für diese Ergebnismenge)",
+    "showThumbnailsTitle": "Bildminiaturen anzeigen",
+    "hideThumbnailsTitle": "Bildminiaturen ausblenden (nur Text)",
+    "thumbnailsOn": "Miniaturen",
+    "textOnly": "Nur Text",
     "sortBy": "Sortieren nach",
     "sortByLabel": "Ergebnisse sortieren nach",
     "sortDefault": "Standard",
@@ -304,6 +308,24 @@
       "description": "Der Manuskriptdienst ist derzeit nicht verfügbar. Bitte versuchen Sie es in Kürze erneut.",
       "backLink": "Zurück zu den Manuskripten",
       "message": "Dieses Manuskript konnte nicht geladen werden. Bitte versuchen Sie es erneut."
+    },
+    "gallery": {
+      "deleteConfirm": "Graph #{id} löschen? Er wird in den Papierkorb verschoben; ein Administrator kann ihn wiederherstellen.",
+      "deleteSuccess": "Graph #{id} in den Papierkorb verschoben; ein Administrator kann ihn wiederherstellen",
+      "deleteFailed": "Graph #{id} konnte nicht gelöscht werden"
+    },
+    "delete": {
+      "draftConfirm": "{kind, select, editorial {Diesen editorischen Entwurf löschen?} other {Diesen öffentlichen Entwurf löschen?}}\n\nEr wird lokal verworfen.",
+      "savedConfirm": "{kind, select, editorial {Diese gespeicherte editorische Annotation löschen?} other {Diese gespeicherte öffentliche Annotation löschen?}}\n\nDrücken Sie Speichern, um sie in den Papierkorb zu verschieben, wo ein Administrator sie wiederherstellen kann.",
+      "bulkMixed": "{total} ausgewählte Annotationen löschen?\n\nDadurch werden {draftCount, plural, =1 {# Entwurfsannotation} other {# Entwurfsannotationen}} lokal verworfen und {savedCount, plural, =1 {# gespeicherte Annotation} other {# gespeicherte Annotationen}} zum Löschen markiert.\nDrücken Sie Speichern, um die gespeicherten in den Papierkorb zu verschieben, wo ein Administrator sie wiederherstellen kann.",
+      "bulkDrafts": "{total} ausgewählte Annotationen löschen?\n\nDadurch werden {draftCount, plural, =1 {# Entwurfsannotation} other {# Entwurfsannotationen}} lokal verworfen.",
+      "bulkSaved": "{total} ausgewählte Annotationen löschen?\n\nDadurch werden {savedCount, plural, =1 {# gespeicherte Annotation} other {# gespeicherte Annotationen}} zum Löschen markiert.\nDrücken Sie Speichern, um sie in den Papierkorb zu verschieben, wo ein Administrator sie wiederherstellen kann.",
+      "regionConfirm": "Diese verknüpfte Region löschen?\n\nSie wird in den Papierkorb verschoben und verschwindet aus dem Bild. Ihre Verknüpfung mit der Transkription bleibt erhalten, sodass ein Administrator beides wiederherstellen kann.",
+      "removeRegion": "Region entfernen",
+      "regionTrashedTitle": "Region in den Papierkorb verschoben",
+      "regionTrashedDescription": "Ein Administrator kann sie mit ihrer Verknüpfung zur Transkription wiederherstellen.",
+      "regionFailedTitle": "Löschen fehlgeschlagen",
+      "regionFailedDescription": "Die Region konnte nicht gelöscht werden."
     }
   },
   "annotation": {
@@ -434,7 +456,8 @@
       "recentSection": "Neueste {title}",
       "backToList": "Zurück zur Liste",
       "viewAll": "Alle {title} anzeigen",
-      "publicationFallbackTitle": "Publikation"
+      "publicationFallbackTitle": "Publikation",
+      "keywordsLabel": "Schlagwörter"
     },
     "publicationKinds": {
       "news": {
@@ -938,6 +961,7 @@
       "dataQuality": "Datenqualität",
       "translations": "Übersetzungen",
       "siteFeatures": "Website-Funktionen",
+      "trash": "Papierkorb",
       "sanityChecks": "Plausibilitätsprüfungen",
       "subGroupExpand": "{label} erweitern",
       "subGroupCollapse": "{label} einklappen"
@@ -1742,10 +1766,13 @@
       "colComponents": "Komponenten",
       "colPositions": "Positionen",
       "deleteTitle": "Diese Annotation löschen?",
-      "deleteDesc": "Graph Nr. {id} ({allograph}) wird endgültig gelöscht.",
+      "deleteDesc": "Graph Nr. {id} ({allograph}) wird in den Papierkorb verschoben. Ein Administrator kann ihn wiederherstellen.",
       "deleteConfirm": "Löschen",
-      "toastDeleted": "Graph-Annotation gelöscht",
-      "toastFailedDelete": "Annotation konnte nicht gelöscht werden"
+      "toastMovedToTrash": "Graph-Annotation in den Papierkorb verschoben",
+      "toastFailedDelete": "Annotation konnte nicht gelöscht werden",
+      "bulkTrashed": "{count, plural, =1 {# Annotation in den Papierkorb verschoben} other {# Annotationen in den Papierkorb verschoben}}",
+      "bulkTrashFailed": "Annotationen konnten nicht in den Papierkorb verschoben werden",
+      "bulkPartial": "{succeeded} erfolgreich, {failed} fehlgeschlagen"
     },
     "imageTexts": {
       "failedLoad": "Bildtext konnte nicht geladen werden.",
@@ -1813,6 +1840,45 @@
       "toastApproveFailed": "Genehmigung fehlgeschlagen",
       "toastSentBack": "Zurück an Entwurf gesendet",
       "toastSendBackFailed": "Zurücksenden fehlgeschlagen"
+    },
+    "trash": {
+      "title": "Papierkorb",
+      "subtitle": "Gelöschte Elemente werden hier aufbewahrt, bis sie wiederhergestellt oder endgültig entfernt werden. Nichts läuft von selbst ab.",
+      "tabAnnotations": "Annotationen",
+      "trashedCount": "{count} im Papierkorb",
+      "filters": "Filter",
+      "filterAllTypes": "Alle Typen",
+      "filterAllUsers": "Alle",
+      "filterDeletedFrom": "Im Papierkorb seit",
+      "filterDeletedTo": "Im Papierkorb bis",
+      "clearFilters": "Alle Filter zurücksetzen",
+      "colId": "ID",
+      "colAllograph": "Allograph",
+      "colHand": "Hand",
+      "colType": "Typ",
+      "colImage": "Bild",
+      "colCreated": "Erstellt",
+      "colDeletedBy": "Gelöscht von",
+      "colDeletedAge": "Im Papierkorb",
+      "typeUnknown": "unbekannt",
+      "restore": "Wiederherstellen",
+      "purge": "Endgültig löschen",
+      "openImage": "Bild im Viewer öffnen",
+      "toastRestored": "Annotation wiederhergestellt",
+      "toastRestoreFailed": "Annotation konnte nicht wiederhergestellt werden",
+      "toastPurged": "Annotation endgültig gelöscht",
+      "toastPurgeFailed": "Annotation konnte nicht endgültig gelöscht werden",
+      "purgeTitle": "Diese Annotation endgültig löschen?",
+      "purgeDesc": "Annotation Nr. {id} und ihre Beschreibungskomponenten werden endgültig gelöscht. Dies kann nicht rückgängig gemacht werden.",
+      "bulkPurgeTitle": "{count} Annotationen endgültig löschen?",
+      "bulkPurgeDesc": "Die ausgewählten Annotationen und ihre Beschreibungskomponenten werden endgültig gelöscht. Dies kann nicht rückgängig gemacht werden.",
+      "purgeConfirm": "Endgültig löschen",
+      "reindexHint": "Die Suchergebnisse werden nach der nächsten Neuindizierung auf der Seite Suchmaschine aktualisiert.",
+      "bulkRestored": "{count, plural, =1 {# Annotation wiederhergestellt} other {# Annotationen wiederhergestellt}}",
+      "bulkRestoreFailed": "Annotationen konnten nicht wiederhergestellt werden",
+      "bulkPurged": "{count, plural, =1 {# Annotation endgültig gelöscht} other {# Annotationen endgültig gelöscht}}",
+      "bulkPurgeFailed": "Annotationen konnten nicht endgültig gelöscht werden",
+      "bulkPartial": "{succeeded} erfolgreich, {failed} fehlgeschlagen"
     },
     "siteFeatures": {
       "title": "Website-Funktionen",
