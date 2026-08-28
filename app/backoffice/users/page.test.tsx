@@ -6,7 +6,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { PaginatedResponse, UserListItem } from '@/types/backoffice';
 
 const push = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+const refresh = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh }) }));
 
 const startImpersonation = vi.fn();
 let mockAuthUser: { id: number; username: string } | null = { id: 1, username: 'admin' };
@@ -57,6 +58,7 @@ const ADMIN = baseUser({ id: 1, username: 'admin' });
 const STAFF = baseUser({ id: 2, username: 'staffer', is_staff: true });
 const SUPERUSER = baseUser({ id: 3, username: 'superadmin', is_superuser: true });
 const REGULAR = baseUser({ id: 4, username: 'regular' });
+const INACTIVE = baseUser({ id: 5, username: 'dormant', is_active: false });
 
 function usersResponse(results: UserListItem[]): PaginatedResponse<UserListItem> {
   return { count: results.length, next: null, previous: null, results };
@@ -79,6 +81,7 @@ function rowFor(username: string): HTMLElement {
 
 beforeEach(() => {
   push.mockClear();
+  refresh.mockClear();
   startImpersonation.mockClear();
   vi.mocked(toast.success).mockClear();
   vi.mocked(toast.error).mockClear();
@@ -88,7 +91,7 @@ beforeEach(() => {
   deleteUser.mockReset();
   impersonateUser.mockReset();
   mockAuthUser = { id: 1, username: 'admin' };
-  getUsers.mockResolvedValue(usersResponse([ADMIN, STAFF, SUPERUSER, REGULAR]));
+  getUsers.mockResolvedValue(usersResponse([ADMIN, STAFF, SUPERUSER, REGULAR, INACTIVE]));
 });
 
 describe('UsersPage impersonation action', () => {
@@ -114,6 +117,19 @@ describe('UsersPage impersonation action', () => {
 
     const button = within(rowFor('superadmin')).getByLabelText(/impersonate user/i);
     expect((button as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('disables the impersonate button for deactivated rows', async () => {
+    renderPage();
+    await screen.findByText('dormant');
+
+    const button = within(rowFor('dormant')).getByLabelText(/impersonate user/i);
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.focus(button.parentElement as HTMLElement);
+    expect((await screen.findByRole('tooltip')).textContent).toBe(
+      'Deactivated accounts cannot be impersonated'
+    );
   });
 
   it('enables the impersonate button for a regular, non-staff, non-self row', async () => {
@@ -146,6 +162,7 @@ describe('UsersPage impersonation action', () => {
     await waitFor(() => expect(impersonateUser).toHaveBeenCalledWith('admin-token', 4));
     await waitFor(() => expect(startImpersonation).toHaveBeenCalledWith('target-token'));
     expect(push).toHaveBeenCalledWith('/');
+    expect(refresh).toHaveBeenCalled();
     expect(toast.success).toHaveBeenCalled();
   });
 

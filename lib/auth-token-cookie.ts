@@ -2,10 +2,10 @@ const AUTH_TOKEN_COOKIE_NAME = 'archetype_auth_token';
 const AUTH_TOKEN_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
 // Stashes the ORIGINAL admin's token while impersonating another user, so it
-// can be restored when impersonation ends. Same shape/lifetime as the main
-// auth token cookie.
+// can be restored when impersonation ends. Both impersonation cookies are
+// session-scoped: if the stash could expire first, the admin would be left
+// silently wearing the target's identity with no way back.
 const IMPERSONATOR_TOKEN_COOKIE_NAME = 'archetype_impersonator_token';
-const IMPERSONATOR_TOKEN_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
 function secureSuffix(): string {
   if (typeof window === 'undefined') {
@@ -18,8 +18,11 @@ export function setAuthTokenCookie(token: string): void {
   if (typeof document === 'undefined') {
     return;
   }
+  const maxAge = getImpersonatorTokenCookie()
+    ? ''
+    : `; Max-Age=${AUTH_TOKEN_COOKIE_MAX_AGE_SECONDS}`;
   document.cookie =
-    `${AUTH_TOKEN_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; Max-Age=${AUTH_TOKEN_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax` +
+    `${AUTH_TOKEN_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/${maxAge}; SameSite=Lax` +
     secureSuffix();
 }
 
@@ -45,7 +48,7 @@ export function setImpersonatorTokenCookie(token: string): void {
     return;
   }
   document.cookie =
-    `${IMPERSONATOR_TOKEN_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; Max-Age=${IMPERSONATOR_TOKEN_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax` +
+    `${IMPERSONATOR_TOKEN_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; SameSite=Lax` +
     secureSuffix();
 }
 
