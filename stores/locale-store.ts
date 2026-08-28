@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { type Locale, defaultLocale, locales, LOCALE_COOKIE } from '@/lib/locale';
+import { type Locale, defaultLocale, coerceLocale, LOCALE_COOKIE } from '@/lib/locale';
 
 interface LocaleState {
   locale: Locale;
@@ -10,7 +10,7 @@ function readInitialLocale(): Locale {
   if (typeof document === 'undefined') return defaultLocale;
   const match = document.cookie.match(new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`));
   const value = match ? decodeURIComponent(match[1]) : undefined;
-  return locales.includes(value as Locale) ? (value as Locale) : defaultLocale;
+  return coerceLocale(value);
 }
 
 export const useLocaleStore = create<LocaleState>((set) => ({

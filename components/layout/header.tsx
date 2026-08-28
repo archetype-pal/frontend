@@ -30,7 +30,6 @@ import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { normalizeSectionOrder, type SectionKey } from '@/lib/site-features';
 import { resolvePageText, type PageListItem, type PageLocale } from '@/lib/pages';
-import { useLocaleStore } from '@/stores/locale-store';
 import { ChevronDown } from 'lucide-react';
 import {
   addSearchHistory,
@@ -41,14 +40,15 @@ import {
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { coerceLocale } from '@/lib/locale';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 
 export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[] }) {
   const t = useTranslations('nav');
   const tCommon = useTranslations('common');
-  const locale = useLocaleStore((state) => state.locale);
+  const locale = coerceLocale(useLocale());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
   const headerRef = useRef<HTMLElement>(null);

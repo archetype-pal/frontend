@@ -5,19 +5,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_MODEL_LABELS,
   getDefaultModelLabelsConfig,
+  type ModelLabelLocale,
   type ModelLabelsConfig,
 } from '@/lib/model-labels';
-import { useLocaleStore } from '@/stores/locale-store';
 import { ModelLabelsProvider, useModelLabels } from './model-labels-context';
 
-function withProvider(initialConfig?: ModelLabelsConfig) {
+function withProvider(initialConfig?: ModelLabelsConfig, locale?: ModelLabelLocale) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return <ModelLabelsProvider initialConfig={initialConfig}>{children}</ModelLabelsProvider>;
+    return (
+      <ModelLabelsProvider initialConfig={initialConfig} locale={locale}>
+        {children}
+      </ModelLabelsProvider>
+    );
   };
 }
 
 const originalFetch = globalThis.fetch;
-const initialLocale = useLocaleStore.getState().locale;
 
 beforeEach(() => {
   globalThis.fetch = vi.fn(
@@ -31,7 +34,6 @@ beforeEach(() => {
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
-  useLocaleStore.setState({ locale: initialLocale });
   vi.restoreAllMocks();
 });
 
@@ -60,16 +62,21 @@ describe('ModelLabelsProvider with initialConfig', () => {
     const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider(cfg) });
     expect(result.current.getLabel('appManuscripts')).toBe('Charters');
 
-    useLocaleStore.setState({ locale: 'fr' });
-    const { result: frResult } = renderHook(() => useModelLabels(), { wrapper: withProvider(cfg) });
+    const { result: frResult } = renderHook(() => useModelLabels(), {
+      wrapper: withProvider(cfg, 'fr'),
+    });
     expect(frResult.current.getLabel('appManuscripts')).toBe('Chartes');
+
+    const { result: deResult } = renderHook(() => useModelLabels(), {
+      wrapper: withProvider(cfg, 'de'),
+    });
+    expect(deResult.current.getLabel('appManuscripts')).toBe('Urkunden');
   });
 
   it('getLabel falls back to English when the French value is blank', () => {
     const cfg = getDefaultModelLabelsConfig();
     cfg.labels.appManuscripts = { en: 'Charters', fr: '', de: '' };
-    useLocaleStore.setState({ locale: 'fr' });
-    const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider(cfg) });
+    const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider(cfg, 'fr') });
     expect(result.current.getLabel('appManuscripts')).toBe('Charters');
   });
 

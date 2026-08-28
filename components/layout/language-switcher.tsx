@@ -7,7 +7,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { locales, type Locale } from '@/lib/locale';
+import { useLocale } from 'next-intl';
+import { coerceLocale, locales, type Locale } from '@/lib/locale';
 import { useLocaleStore } from '@/stores/locale-store';
 
 const LOCALE_LABELS: Record<Locale, { short: string; full: string }> = {
@@ -17,7 +18,8 @@ const LOCALE_LABELS: Record<Locale, { short: string; full: string }> = {
 };
 
 export function LanguageSwitcher() {
-  const { locale, setLocale } = useLocaleStore();
+  const locale = coerceLocale(useLocale());
+  const setLocale = useLocaleStore((state) => state.setLocale);
 
   return (
     <DropdownMenu>
