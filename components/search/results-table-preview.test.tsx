@@ -16,7 +16,8 @@ vi.mock('@/contexts/collection-context', () => ({
 }));
 
 vi.mock('@/hooks/use-iiif-thumbnail', () => ({
-  useIiifThumbnailUrl: (infoUrl: string) => (infoUrl ? 'https://example.test/crop.jpg' : null),
+  useIiifThumbnailUrl: (infoUrl: string, _coords?: string | null, maxSize?: number) =>
+    infoUrl ? `https://example.test/crop.jpg?px=${maxSize}` : null,
 }));
 
 const clause: ClauseListItem = {
@@ -47,6 +48,23 @@ describe('ResultsTable thumbnail row (frontend#74)', () => {
 
     expect(screen.getByRole('img')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add to collection' })).toBeTruthy();
+  });
+
+  it('asks IIIF for a wider crop as the thumbnail size grows', () => {
+    // A clause region is a wide strip of a manuscript line: the requested crop
+    // width is what decides whether the words are legible, so the t-shirt size
+    // has to reach the IIIF request, not just the CSS box.
+    const widthFor = (size: 'small' | 'medium' | 'large') => {
+      const { unmount } = render(
+        <ResultsTable resultType="clauses" results={[clause]} thumbnailSize={size} />
+      );
+      const src = screen.getByRole('img').getAttribute('src') ?? '';
+      unmount();
+      return Number(new URL(src, 'https://example.test').searchParams.get('px'));
+    };
+
+    expect(widthFor('small')).toBeLessThan(widthFor('medium'));
+    expect(widthFor('medium')).toBeLessThan(widthFor('large'));
   });
 
   it('keeps the clause star when the preview is hidden', () => {

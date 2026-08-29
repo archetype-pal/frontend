@@ -120,6 +120,35 @@ describe('TEI descriptions', () => {
     expect(out.html).not.toContain('javascript:');
   });
 
+  it('render a STAMPED entity as one anchor, not a nested pair', () => {
+    // docs/tei.md §3.4's payoff: the link lives on the entity, so the renderer
+    // emits a single <a> instead of having to degrade an inner anchor to a span.
+    const out = render(
+      wrapTeiDescription(
+        '<p>Granted by <persName key="person_42" target="/scribes/42">William I</persName>.</p>'
+      )
+    );
+    expect(out.html).toContain('<a href="/scribes/42"');
+    expect(out.html).toContain('tei-el-persName');
+    expect(out.html.match(/<a /g)?.length ?? 0).toBe(1);
+    expect(out.html).not.toContain('<ref');
+  });
+
+  it('render a stamped placeName as an anchor to its search', () => {
+    const out = render(
+      wrapTeiDescription(
+        '<p>at <placeName target="/search/places?keyword=Melrose">Melrose</placeName>.</p>'
+      )
+    );
+    expect(out.html).toContain('href="/search/places?keyword=Melrose"');
+  });
+
+  it('render an unstamped entity as a plain span — meaning without a destination', () => {
+    const out = render(wrapTeiDescription('<p>by <persName>an unknown scribe</persName>.</p>'));
+    expect(out.html).toContain('tei-el-persName');
+    expect(out.html).not.toContain('<a ');
+  });
+
   it('render an unresolved key as text, not a link', () => {
     const out = render(wrapTeiDescription('<p><ref type="work" key="work_9">Liber</ref></p>'));
     expect(out.html).toContain('msdesc-unresolved');
