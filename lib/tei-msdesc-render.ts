@@ -597,7 +597,10 @@ function renderInlineNode(node: XmlNode, t: MsDescTranslate): string {
 }
 
 function renderInlineElement(node: XmlElementNode, t: MsDescTranslate): string {
-  if (node.name === 'hi') {
+  // Link-bearing FIRST. A `<hi rend="italic" target="/scribes/1">` is both
+  // emphasis and a link; returning the `<em>` early would silently drop the
+  // href, and hand-authored Source-mode markup can produce exactly that.
+  if (!isLinkBearing(node) && node.name === 'hi') {
     const tag = HI_REND_TAGS[node.attrs['rend'] ?? ''];
     if (tag) return `<${tag}>${renderInlineNodes(node.children, t)}</${tag}>`;
   }

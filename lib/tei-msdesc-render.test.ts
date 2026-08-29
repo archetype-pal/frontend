@@ -129,6 +129,26 @@ describe('renderMsDescArea — the PO physDesc example', () => {
   });
 });
 
+describe('renderMsDescArea — a link on a formatting element', () => {
+  it('keeps the link when <hi> also carries a target', () => {
+    // The <hi> @rend branch used to return before the link check, so a
+    // hand-authored `<hi rend="italic" target="…">` lost its href silently.
+    const root = render(
+      'history',
+      '<history><provenance><p><hi rend="italic" target="/scribes/1">Liber</hi></p></provenance></history>'
+    );
+    expect(root.querySelector('a[href="/scribes/1"]')).not.toBeNull();
+  });
+
+  it('still renders a plain <hi rend="italic"> as emphasis', () => {
+    const root = render(
+      'history',
+      '<history><provenance><p><hi rend="italic">Liber</hi></p></provenance></history>'
+    );
+    expect(root.querySelector('em')?.textContent).toBe('Liber');
+  });
+});
+
 describe('renderMsDescArea — seals', () => {
   it('renders a sealDesc as a section with one heading per seal', () => {
     const root = render(
