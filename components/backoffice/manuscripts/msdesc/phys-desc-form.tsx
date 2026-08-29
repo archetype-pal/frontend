@@ -9,6 +9,7 @@ import type {
   MsHandNote,
   MsMeasure,
   MsObjectDesc,
+  MsSeal,
   MsSupportDesc,
   PhysDescState,
 } from '@/lib/msdesc-form';
@@ -332,6 +333,34 @@ export function PhysDescForm({
         )}
       </MsOptionalSection>
 
+      {/* sealDesc/seal */}
+      <MsOptionalSection
+        title={sec('sealDesc')}
+        present={state.seals !== undefined}
+        onAdd={() => set({ seals: [{ innerXml: '' }] })}
+        onRemove={() => set({ seals: undefined })}
+      >
+        {state.seals && (
+          <div className="space-y-2">
+            {state.seals.map((seal, index) => (
+              <SealRow
+                key={index}
+                index={index}
+                seal={seal}
+                onChange={(next) =>
+                  set({ seals: state.seals!.map((s, i) => (i === index ? next : s)) })
+                }
+                onRemove={() => set({ seals: state.seals!.filter((_, i) => i !== index) })}
+              />
+            ))}
+            <MsAddButton
+              label={sec('seal')}
+              onClick={() => set({ seals: [...state.seals!, { innerXml: '' }] })}
+            />
+          </div>
+        )}
+      </MsOptionalSection>
+
       {/* accMat */}
       <MsDescLeafEditor
         label={f('accMat')}
@@ -466,6 +495,61 @@ function HandNoteRow({
         label={f('note')}
         value={handNote.innerXml}
         onChange={(v) => onChange({ ...handNote, innerXml: v })}
+      />
+    </MsSubsection>
+  );
+}
+
+function SealRow({
+  index,
+  seal,
+  onChange,
+  onRemove,
+}: {
+  index: number;
+  seal: MsSeal;
+  onChange: (next: MsSeal) => void;
+  onRemove: () => void;
+}) {
+  const t = useTranslations('backoffice');
+  const f = (key: string) => t(`msdesc.render.fields.${key}`);
+  return (
+    <MsSubsection title={`${t('msdesc.render.sections.seal')} ${index + 1}`} onRemove={onRemove}>
+      <div className="grid grid-cols-3 gap-3">
+        <MsVocabSelect
+          vocab="sealType"
+          label={f('type')}
+          value={seal.type}
+          onChange={(v) => onChange({ ...seal, type: v })}
+        />
+        <MsTextField
+          label={t('msdesc.form.number')}
+          value={seal.n ?? ''}
+          onChange={(v) => onChange({ ...seal, n: opt(v) })}
+        />
+        <MsTextField
+          label={t('msdesc.form.contemporary')}
+          value={seal.contemporary ?? ''}
+          onChange={(v) => onChange({ ...seal, contemporary: opt(v) })}
+          placeholder="true"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <MsTextField
+          label={f('material')}
+          value={seal.materialText ?? ''}
+          onChange={(v) => onChange({ ...seal, materialText: opt(v) })}
+        />
+        <MsTextField
+          label={f('condition')}
+          value={seal.conditionText ?? ''}
+          onChange={(v) => onChange({ ...seal, conditionText: opt(v) })}
+        />
+      </div>
+      <MsDescLeafEditor
+        label={f('note')}
+        value={seal.innerXml}
+        onChange={(v) => onChange({ ...seal, innerXml: v })}
       />
     </MsSubsection>
   );

@@ -1371,6 +1371,14 @@
           "crayon": "Kreide",
           "mixed": "Gemischt",
           "unknown": "Unbekannt"
+        },
+        "sealType": {
+          "greatSeal": "Großes Siegel",
+          "privySeal": "Geheimsiegel",
+          "secretum": "Secretum",
+          "signet": "Signet",
+          "counterseal": "Rücksiegel",
+          "other": "Andere"
         }
       },
       "render": {
@@ -1382,7 +1390,9 @@
           "bindingDesc": "Einband",
           "additions": "Zusätze",
           "origin": "Entstehung",
-          "msItem": "Werk"
+          "msItem": "Werk",
+          "sealDesc": "Siegel",
+          "seal": "Siegel"
         },
         "fields": {
           "form": "Form",
@@ -1435,7 +1445,8 @@
           "origDate": "Datum",
           "origPlace": "Ort",
           "provenance": "Provenienz",
-          "acquisition": "Erwerbung"
+          "acquisition": "Erwerbung",
+          "contemporary": "Zeitgenössisch"
         }
       }
     },

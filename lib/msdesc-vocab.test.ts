@@ -39,13 +39,15 @@ const vocabIds = Object.keys(MSDESC_VOCABS) as MsDescVocabId[];
 
 describe('msdesc vocab', () => {
   // Counts verified against the valItem lists in msdesc-minimal/msdesc-minimal.odd
-  // (rulingMedium is the ODD's documented suggested-value list, not a valList).
+  // (rulingMedium is the ODD's documented suggested-value list, not a valList;
+  // sealType has no ODD counterpart at all — the ODD models no seals).
   const EXPECTED_LENGTHS: Record<MsDescVocabId, number> = {
     form: 7,
     material: 7,
     script: 19,
     execution: 3,
     decoType: 23,
+    sealType: 6,
     availabilityStatus: 7,
     topLine: 3,
     rulingMedium: 7,

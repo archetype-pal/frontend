@@ -129,6 +129,33 @@ describe('renderMsDescArea — the PO physDesc example', () => {
   });
 });
 
+describe('renderMsDescArea — seals', () => {
+  it('renders a sealDesc as a section with one heading per seal', () => {
+    const root = render(
+      'physDesc',
+      '<physDesc><sealDesc>' +
+        '<seal n="1" type="greatSeal" contemporary="true">' +
+        '<material>green wax</material><condition>fragment</condition>' +
+        '<p>Appended on a parchment tag.</p></seal>' +
+        '<seal n="2" type="counterseal"><material>green wax</material></seal>' +
+        '</sealDesc></physDesc>'
+    );
+    const headings = Array.from(root.querySelectorAll('.msdesc-heading')).map((h) => h.textContent);
+    expect(headings).toEqual(['Physical description', 'Seals', 'Seal 1', 'Seal 2']);
+    const rows = fieldRows(root);
+    expect(rows).toContainEqual(['Type', 'Great seal']);
+    expect(rows).toContainEqual(['Contemporary', 'true']);
+    expect(rows).toContainEqual(['Material', 'green wax']);
+    expect(rows).toContainEqual(['Condition', 'fragment']);
+    expect(root.textContent).toContain('Appended on a parchment tag.');
+  });
+
+  it('suppresses an empty seeded sealDesc', () => {
+    const root = render('physDesc', '<physDesc><sealDesc><seal/></sealDesc></physDesc>');
+    expect(root.textContent?.trim()).toBe('');
+  });
+});
+
 describe('renderMsDescArea — dimensions and measure formatting', () => {
   it('formats dimensions as "height × width unit" with the type in the label', () => {
     const root = render('physDesc', PHYS_DESC);

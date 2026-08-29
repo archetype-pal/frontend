@@ -165,6 +165,10 @@ const SECTION_ELEMENTS = new Set([
   'handDesc',
   'decoDesc',
   'bindingDesc',
+  'sealDesc',
+  // A section rather than a container so each seal gets its own heading, and
+  // so `@n` renders as part of it ("Seal 1", "Seal 2").
+  'seal',
   'additions',
   'origin',
   'msItem',
@@ -253,6 +257,10 @@ const ATTR_FIELD_SPECS: Record<string, AttrFieldSpec[]> = {
     { attr: 'medium', labelKey: fieldKey('medium') },
   ],
   decoNote: [{ attr: 'type', labelKey: fieldKey('type'), vocab: 'decoType' }],
+  seal: [
+    { attr: 'type', labelKey: fieldKey('type'), vocab: 'sealType' },
+    { attr: 'contemporary', labelKey: fieldKey('contemporary') },
+  ],
   availability: [{ attr: 'status', labelKey: fieldKey('status'), vocab: 'availabilityStatus' }],
 };
 

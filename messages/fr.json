@@ -1371,6 +1371,14 @@
           "crayon": "Crayon",
           "mixed": "Mixte",
           "unknown": "Inconnu"
+        },
+        "sealType": {
+          "greatSeal": "Grand sceau",
+          "privySeal": "Sceau privé",
+          "secretum": "Secretum",
+          "signet": "Signet",
+          "counterseal": "Contre-sceau",
+          "other": "Autre"
         }
       },
       "render": {
@@ -1382,7 +1390,9 @@
           "bindingDesc": "Reliure",
           "additions": "Ajouts",
           "origin": "Origine",
-          "msItem": "Item"
+          "msItem": "Item",
+          "sealDesc": "Sceaux",
+          "seal": "Sceau"
         },
         "fields": {
           "form": "Forme",
@@ -1435,7 +1445,8 @@
           "origDate": "Date",
           "origPlace": "Lieu",
           "provenance": "Provenance",
-          "acquisition": "Acquisition"
+          "acquisition": "Acquisition",
+          "contemporary": "Contemporain"
         }
       }
     },

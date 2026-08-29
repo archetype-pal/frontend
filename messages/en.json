@@ -1371,6 +1371,14 @@
           "crayon": "Crayon",
           "mixed": "Mixed",
           "unknown": "Unknown"
+        },
+        "sealType": {
+          "greatSeal": "Great seal",
+          "privySeal": "Privy seal",
+          "secretum": "Secretum",
+          "signet": "Signet",
+          "counterseal": "Counterseal",
+          "other": "Other"
         }
       },
       "render": {
@@ -1382,7 +1390,9 @@
           "bindingDesc": "Binding",
           "additions": "Additions",
           "origin": "Origin",
-          "msItem": "Item"
+          "msItem": "Item",
+          "sealDesc": "Seals",
+          "seal": "Seal"
         },
         "fields": {
           "form": "Form",
@@ -1435,7 +1445,8 @@
           "origDate": "Date",
           "origPlace": "Place",
           "provenance": "Provenance",
-          "acquisition": "Acquisition"
+          "acquisition": "Acquisition",
+          "contemporary": "Contemporary"
         }
       }
     },
