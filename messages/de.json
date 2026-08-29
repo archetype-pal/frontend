@@ -1224,12 +1224,13 @@
       },
       "refPicker": {
         "title": "Referenz einfügen",
-        "description": "Mit einer Person, einem Ort, einer Handschrift, einer gespeicherten Suche oder einer externen URL verknüpfen.",
+        "description": "Auf eine Person, einen Ort, eine Handschrift, ein Blatt, eine gespeicherte Suche oder eine externe URL verweisen.",
         "tabsLabel": "Referenztyp",
         "tab": {
           "person": "Person",
           "place": "Ort",
           "manuscript": "Handschrift",
+          "image": "Bild",
           "search": "Suche",
           "external": "Extern"
         },
@@ -1237,6 +1238,7 @@
           "person": "Schreiber suchen…",
           "place": "Orte suchen…",
           "manuscript": "Handschriften suchen…",
+          "image": "Blätter suchen…",
           "search": "Gespeicherte Suchen filtern…"
         },
         "typeToSearch": "Zum Suchen tippen",

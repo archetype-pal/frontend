@@ -1224,12 +1224,13 @@
       },
       "refPicker": {
         "title": "Insert reference",
-        "description": "Link to a person, place, manuscript, saved search, or external URL.",
+        "description": "Link to a person, place, manuscript, folio, saved search, or external URL.",
         "tabsLabel": "Reference type",
         "tab": {
           "person": "Person",
           "place": "Place",
           "manuscript": "Manuscript",
+          "image": "Image",
           "search": "Search",
           "external": "External"
         },
@@ -1237,6 +1238,7 @@
           "person": "Search scribes…",
           "place": "Search places…",
           "manuscript": "Search manuscripts…",
+          "image": "Search folios…",
           "search": "Filter saved searches…"
         },
         "typeToSearch": "Type to search",

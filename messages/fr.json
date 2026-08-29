@@ -1224,12 +1224,13 @@
       },
       "refPicker": {
         "title": "Insérer une référence",
-        "description": "Lier une personne, un lieu, un manuscrit, une recherche enregistrée ou une URL externe.",
+        "description": "Lier à une personne, un lieu, un manuscrit, un feuillet, une recherche enregistrée ou une URL externe.",
         "tabsLabel": "Type de référence",
         "tab": {
           "person": "Personne",
           "place": "Lieu",
           "manuscript": "Manuscrit",
+          "image": "Image",
           "search": "Recherche",
           "external": "Externe"
         },
@@ -1237,6 +1238,7 @@
           "person": "Rechercher des scribes…",
           "place": "Rechercher des lieux…",
           "manuscript": "Rechercher des manuscrits…",
+          "image": "Rechercher des feuillets…",
           "search": "Filtrer les recherches enregistrées…"
         },
         "typeToSearch": "Saisissez pour rechercher",

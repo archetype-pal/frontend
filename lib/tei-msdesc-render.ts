@@ -146,6 +146,43 @@ export function renderMsDescArea(
   return `<div class="msdesc-area msdesc-area-${area}">${heading}${body}</div>`;
 }
 
+/**
+ * Render a bare TEI `<p>`-sequence — a linked catalogue description
+ * (docs/tei.md §4.5) — with inline entities and `<ref>` anchors, but none of the
+ * area/section chrome `renderMsDescArea` adds.
+ *
+ * Deliberately does NOT route through `renderBlockNodes`: that dispatch ends at
+ * `renderField`, so a root-level `<note>` or `<seg>` in prose would silently
+ * acquire a `Label: value` field row. Prose has no fields — anything that is not
+ * a paragraph or a line break renders inline.
+ *
+ * Like `renderMsDescArea` this is **not** a sanitizer; callers pass the result
+ * through `sanitizeHtml(html, { allowDataAttr: true })`.
+ */
+export function renderTeiProse(fragment: string, options: RenderTeiProseOptions = {}): string {
+  const t = options.t ?? defaultTranslate;
+  return parseXmlFragment(fragment)
+    .map((node) => renderProseNode(node, t))
+    .join('');
+}
+
+export interface RenderTeiProseOptions {
+  t?: MsDescTranslate;
+}
+
+function renderProseNode(node: XmlNode, t: MsDescTranslate): string {
+  if (node.kind === 'text') {
+    const text = emitText(node.raw).trim();
+    return text ? `<p>${text}</p>` : '';
+  }
+  if (node.name === 'p') return renderParagraph(node, t);
+  if (node.name === 'lb') return '<br>';
+  // Not a block — render it as the inline entity it is, wrapped so it still
+  // occupies a paragraph of its own at the root of a prose sequence.
+  const inline = renderInlineNode(node, t).trim();
+  return inline ? `<p>${inline}</p>` : '';
+}
+
 // ── Label keys ──────────────────────────────────────────────────────────
 
 const fieldKey = (name: string): string => `msdesc.render.fields.${name}`;
@@ -613,6 +650,22 @@ function withAnchorScope<T>(active: boolean, render: () => T): T {
   }
 }
 
+/**
+ * The ref's identity, echoed onto the anchor as data attributes.
+ *
+ * Emitted so an entity hover card (docs/tei.md §4.5 phase 5) is later a purely
+ * client-side addition — it can read kind and key off the DOM instead of the
+ * corpus needing a re-render. Nothing consumes these today.
+ */
+function refDataAttrs(el: XmlElementNode): string {
+  const kind = el.attrs['type'];
+  const key = el.attrs['key'];
+  return (
+    (kind ? ` data-ref-kind="${escapeHtml(kind)}"` : '') +
+    (key ? ` data-ref-key="${escapeHtml(key)}"` : '')
+  );
+}
+
 function renderLinkEl(
   el: XmlElementNode,
   innerHtml: string,
@@ -626,7 +679,7 @@ function renderLinkEl(
   if (href && anchor) {
     const external = /^https?:/i.test(href);
     const externalAttrs = external ? ' target="_blank" rel="noopener noreferrer"' : '';
-    return `<a href="${escapeHtml(href)}" class="${baseClass}" ${labelAttr}${externalAttrs}>${innerHtml}</a>`;
+    return `<a href="${escapeHtml(href)}" class="${baseClass}" ${labelAttr}${refDataAttrs(el)}${externalAttrs}>${innerHtml}</a>`;
   }
   // Resolvable but nested inside an ancestor anchor: keep the entity styling,
   // drop the (illegal) inner `<a>`. The ancestor's href still covers the text.
