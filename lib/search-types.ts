@@ -49,6 +49,8 @@ export const SEARCH_RESULT_CONFIG = {
       { key: 'script', render: 'checkbox' },
       { key: 'material', render: 'checkbox' },
       { key: 'deco_type', render: 'checkbox' },
+      { key: 'seal_type', render: 'checkbox' },
+      { key: 'seal_material', render: 'checkbox' },
       { key: 'origin_place', render: 'checkbox' },
     ],
   },
