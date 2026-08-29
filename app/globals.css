@@ -1586,6 +1586,15 @@ g.a9s-annotation.a9s-text:hover .a9s-outer {
   background: color-mix(in oklch, var(--primary) 12%, transparent);
 }
 
+/* An entity the cataloguer tagged but did not link. Without this it renders as
+   an unstyled span — visually plain text — so the tagging is invisible to a
+   reader and, worse, invisible to the cataloguer checking their own work. Kept
+   deliberately quieter than a link: it carries meaning, not a destination. */
+.tei-linked-prose .tei-el-persName:not(a),
+.tei-linked-prose .tei-el-placeName:not(a) {
+  border-bottom: 1px dotted color-mix(in oklch, var(--muted-foreground) 70%, transparent);
+}
+
 .tei-linked-prose .msdesc-unresolved {
   border-bottom: 1px dotted var(--muted-foreground);
 }

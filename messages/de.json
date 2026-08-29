@@ -2280,6 +2280,9 @@
       "source": "Quelle",
       "rich": "Formatiert",
       "preview": "Vorschau",
+      "format": "Formatieren",
+      "formatHint": "Das Markup auf mehrere Zeilen verteilen — der Text selbst bleibt unverändert",
+      "formatUnavailable": "Beheben Sie das Markup vor dem Formatieren",
       "richUnavailableFullEditor": "Formatierte Bearbeitung für dieses Dokument nicht verfügbar — verwenden Sie „Im vollständigen Editor öffnen“",
       "richUnavailableSource": "Formatierte Bearbeitung für dieses Dokument nicht verfügbar — verwenden Sie „Quelle“",
       "validTei": "Gültiges TEI",
@@ -2495,7 +2498,15 @@
       },
       "descriptionPreviewEmpty": "Noch nichts zur Vorschau.",
       "descriptionFormatTei": "TEI",
-      "descriptionConvertToTei": "In verknüpften Text umwandeln"
+      "descriptionConvertToTei": "In verknüpften Text umwandeln",
+      "descriptionEntity": {
+        "persName": "Person",
+        "placeName": "Ort"
+      },
+      "descriptionEntityHint": {
+        "persName": "Auswahl als Personenname markieren",
+        "placeName": "Auswahl als Ortsname markieren"
+      }
     },
     "dates": {
       "description": "Verwalten Sie {dateLabel}-Datensätze, die in {historicalItemPlural} verwendet werden",

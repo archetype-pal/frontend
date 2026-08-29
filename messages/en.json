@@ -2280,6 +2280,9 @@
       "source": "Source",
       "rich": "Rich",
       "preview": "Preview",
+      "format": "Format",
+      "formatHint": "Lay the markup out across lines — the text itself is unchanged",
+      "formatUnavailable": "Fix the markup before formatting",
       "richUnavailableFullEditor": "Rich editing unavailable for this document — use “Open in the full editor”",
       "richUnavailableSource": "Rich editing unavailable for this document — use Source",
       "validTei": "Valid TEI",
@@ -2495,7 +2498,15 @@
       },
       "descriptionPreviewEmpty": "Nothing to preview yet.",
       "descriptionFormatTei": "TEI",
-      "descriptionConvertToTei": "Convert to linked prose"
+      "descriptionConvertToTei": "Convert to linked prose",
+      "descriptionEntity": {
+        "persName": "Person",
+        "placeName": "Place"
+      },
+      "descriptionEntityHint": {
+        "persName": "Mark the selection as a person name",
+        "placeName": "Mark the selection as a place name"
+      }
     },
     "dates": {
       "description": "Manage {dateLabel} records used across {historicalItemPlural}",

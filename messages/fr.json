@@ -2280,6 +2280,9 @@
       "source": "Source",
       "rich": "Enrichi",
       "preview": "Aperçu",
+      "format": "Mettre en forme",
+      "formatHint": "Répartir le balisage sur plusieurs lignes — le texte lui-même est inchangé",
+      "formatUnavailable": "Corrigez le balisage avant la mise en forme",
       "richUnavailableFullEditor": "Édition enrichie indisponible pour ce document — utilisez « Ouvrir dans l'éditeur complet »",
       "richUnavailableSource": "Édition enrichie indisponible pour ce document — utilisez Source",
       "validTei": "TEI valide",
@@ -2495,7 +2498,15 @@
       },
       "descriptionPreviewEmpty": "Rien à prévisualiser pour le moment.",
       "descriptionFormatTei": "TEI",
-      "descriptionConvertToTei": "Convertir en prose liée"
+      "descriptionConvertToTei": "Convertir en prose liée",
+      "descriptionEntity": {
+        "persName": "Personne",
+        "placeName": "Lieu"
+      },
+      "descriptionEntityHint": {
+        "persName": "Marquer la sélection comme nom de personne",
+        "placeName": "Marquer la sélection comme nom de lieu"
+      }
     },
     "dates": {
       "description": "Gérer les enregistrements de {dateLabel} utilisés dans les {historicalItemPlural}",

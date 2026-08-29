@@ -142,6 +142,21 @@ function toLeafContent(value: string): Record<string, unknown> {
   return (doc.content.length > 0 ? doc : EMPTY_DOC) as unknown as Record<string, unknown>;
 }
 
+/**
+ * One entity button. The caller supplies already-translated strings, so this
+ * component stays i18n-agnostic about a palette it does not own.
+ *
+ * `attrs` is usually empty. Do NOT stamp `type="name"` the way the charter
+ * toolbar does: the renderer's hover pill reads `attrs['type'] ?? name`
+ * (`tei-msdesc-render.ts`), so every person would be labelled "name".
+ */
+export interface TeiEntityTool {
+  el: string;
+  attrs?: Record<string, string>;
+  label: string;
+  title: string;
+}
+
 interface MsDescLeafEditorProps {
   label: string;
   value: string;
@@ -149,6 +164,12 @@ interface MsDescLeafEditorProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  /**
+   * Entity buttons to offer beside Link/Unlink. Omitted by the msDesc area
+   * panels, which deliberately keep prose leaves to linking only; supplied by
+   * the catalogue-description editor, whose palette is fixed by the project ODD.
+   */
+  entityTools?: readonly TeiEntityTool[];
 }
 
 /**
@@ -176,7 +197,14 @@ export function MsDescLeafEditor(props: MsDescLeafEditorProps) {
   return <RichLeaf {...props} />;
 }
 
-function RichLeaf({ label, value, onChange, disabled, className }: MsDescLeafEditorProps) {
+function RichLeaf({
+  label,
+  value,
+  onChange,
+  disabled,
+  className,
+  entityTools,
+}: MsDescLeafEditorProps) {
   const t = useTranslations('backoffice');
   // Guard the controlled-value effect against the editor's own emits so
   // reflecting `value` back never steals the caret (mirrors tei-rich-editor).
@@ -287,6 +315,21 @@ function RichLeaf({ label, value, onChange, disabled, className }: MsDescLeafEdi
       <div className="flex items-center justify-between gap-2">
         <label className="block text-xs font-medium text-muted-foreground">{label}</label>
         <div className="flex items-center gap-0.5">
+          {entityTools?.map((tool) => (
+            <button
+              key={tool.el}
+              type="button"
+              onClick={() => editor && wrapTei(editor, tool.el, tool.attrs ?? {})}
+              disabled={disabled || !editor}
+              title={tool.title}
+              className="inline-flex h-6 items-center justify-center rounded px-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {tool.label}
+            </button>
+          ))}
+          {entityTools?.length ? (
+            <span className="mx-0.5 h-4 w-px shrink-0 self-center bg-border" aria-hidden />
+          ) : null}
           <button
             type="button"
             onClick={openPicker}

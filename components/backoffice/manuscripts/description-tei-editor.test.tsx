@@ -48,6 +48,19 @@ describe('DescriptionTeiEditor', () => {
     expect(anchor.getAttribute('data-ref-kind')).toBe('person');
   });
 
+  it('offers only the two ODD-permitted entity tools', async () => {
+    render(<DescriptionTeiEditor label="Description" value={PROSE} onChange={vi.fn()} />);
+    await waitFor(() => expect(document.querySelector('.tei-rich')).not.toBeNull());
+
+    expect(screen.getByRole('button', { name: 'Person' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Place' })).toBeTruthy();
+    // seg / ex / supplied are excluded by msdesc-minimal.odd — the charter
+    // toolbar offers them, and a description must not.
+    expect(screen.queryByRole('button', { name: /clause/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /expansion/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /supplied/i })).toBeNull();
+  });
+
   it('says so rather than showing an empty box when there is nothing to preview', async () => {
     render(<DescriptionTeiEditor label="Description" value="" onChange={vi.fn()} />);
 

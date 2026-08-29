@@ -17,6 +17,22 @@ const TeiCodeMirror = dynamic(() => import('@/components/backoffice/tei-codemirr
 
 type Mode = 'rich' | 'source' | 'preview';
 
+/**
+ * The description entity palette, fixed by the project ODD.
+ *
+ * `persName` and `placeName` only. Both are whitelisted in
+ * `msdesc-minimal.odd`'s namesdates module. The charter editor's other two
+ * entity tools are NOT: `ex` and `supplied` belong to the `transcr` module and
+ * its clause dropdown emits `seg` from `linking` — all three are listed under
+ * "MODULES DELIBERATELY EXCLUDED". They are transcriptional markup for reading a
+ * manuscript, not for describing one, which is why this editor composes its own
+ * toolbar instead of embedding the charter one.
+ *
+ * No `@type`: the renderer labels an entity `attrs['type'] ?? name`, so
+ * stamping `type="name"` would caption every person "name".
+ */
+const DESCRIPTION_ENTITIES = ['persName', 'placeName'] as const;
+
 const MODES: Mode[] = ['rich', 'source', 'preview'];
 
 interface DescriptionTeiEditorProps {
@@ -50,6 +66,16 @@ export function DescriptionTeiEditor({ value, onChange, label }: DescriptionTeiE
   const t = useTranslations('backoffice');
   const [mode, setMode] = React.useState<Mode>('rich');
 
+  const entityTools = React.useMemo(
+    () =>
+      DESCRIPTION_ENTITIES.map((el) => ({
+        el,
+        label: t(`manuscriptsDetail.descriptionEntity.${el}`),
+        title: t(`manuscriptsDetail.descriptionEntityHint.${el}`),
+      })),
+    [t]
+  );
+
   // Wrapped before rendering: `renderPublicDescription` takes STORED content and
   // discriminates on the wrapper. Handing it bare prose sends it down the legacy
   // HTML branch, where sanitize strips every <ref> — a preview that silently
@@ -75,7 +101,12 @@ export function DescriptionTeiEditor({ value, onChange, label }: DescriptionTeiE
       />
 
       {mode === 'rich' ? (
-        <MsDescLeafEditor label={label} value={value} onChange={onChange} />
+        <MsDescLeafEditor
+          label={label}
+          value={value}
+          onChange={onChange}
+          entityTools={entityTools}
+        />
       ) : null}
 
       {mode === 'source' ? (
