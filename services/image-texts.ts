@@ -86,6 +86,24 @@ export async function validateTei(content: string, token: string): Promise<TeiVa
   return response.json();
 }
 
+/**
+ * Lay the TEI out for reading (server-side, so the editor button and the
+ * `format_image_text_tei` management command can never drift apart). Rejects
+ * malformed markup rather than reflowing it.
+ */
+export async function formatTei(content: string, token: string): Promise<string> {
+  const response = await authFetch('/api/v1/manuscripts/image-texts/format-tei/', token, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  });
+  if (!response.ok) {
+    throw new Error(`Format request failed: ${response.status}`);
+  }
+  const data = (await response.json()) as { content: string };
+  return data.content;
+}
+
 export interface LinkRegionResult {
   graph_id: number;
   content: string;
