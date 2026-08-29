@@ -326,6 +326,11 @@
       "regionTrashedDescription": "Un administrateur peut la restaurer, avec son lien vers la transcription.",
       "regionFailedTitle": "Échec de la suppression",
       "regionFailedDescription": "Impossible de supprimer la région."
+    },
+    "entityCard": {
+      "person": "Personne",
+      "loading": "Chargement…",
+      "idiographs": "{count} formes de lettres enregistrées"
     }
   },
   "annotation": {

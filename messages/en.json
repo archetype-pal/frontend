@@ -326,6 +326,11 @@
       "regionTrashedDescription": "An admin can restore it, with its link to the transcription.",
       "regionFailedTitle": "Delete failed",
       "regionFailedDescription": "Could not delete region."
+    },
+    "entityCard": {
+      "person": "Person",
+      "loading": "Loading…",
+      "idiographs": "{count} recorded letter-forms"
     }
   },
   "annotation": {

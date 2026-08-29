@@ -326,6 +326,11 @@
       "regionTrashedDescription": "Ein Administrator kann sie mit ihrer Verknüpfung zur Transkription wiederherstellen.",
       "regionFailedTitle": "Löschen fehlgeschlagen",
       "regionFailedDescription": "Die Region konnte nicht gelöscht werden."
+    },
+    "entityCard": {
+      "person": "Person",
+      "loading": "Wird geladen…",
+      "idiographs": "{count} erfasste Buchstabenformen"
     }
   },
   "annotation": {

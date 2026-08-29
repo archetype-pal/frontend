@@ -660,8 +660,20 @@ function withAnchorScope<T>(active: boolean, render: () => T): T {
  * client-side addition — it can read kind and key off the DOM instead of the
  * corpus needing a re-render. Nothing consumes these today.
  */
+/**
+ * Entity elements whose NAME implies the ref kind. A stamped
+ * `<persName key="person_42" target="…">` carries no `@type` — deliberately, or
+ * the hover pill would caption every person "name" — so the kind is recovered
+ * from the element instead, and a consumer sees one uniform contract whether the
+ * link was stamped or wrapped in a `<ref>`.
+ */
+const ENTITY_REF_KIND: Record<string, string> = {
+  persname: 'person',
+  placename: 'place',
+};
+
 function refDataAttrs(el: XmlElementNode): string {
-  const kind = el.attrs['type'];
+  const kind = el.attrs['type'] ?? ENTITY_REF_KIND[el.name.toLowerCase()];
   const key = el.attrs['key'];
   return (
     (kind ? ` data-ref-kind="${escapeHtml(kind)}"` : '') +

@@ -14,6 +14,7 @@ import { BackofficeLink } from '@/components/common/backoffice-link';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { renderPublicMsDescAreas } from '@/lib/msdesc-public';
 import { renderPublicDescription } from '@/lib/description-public';
+import { LinkedProse } from '@/components/manuscript/linked-prose';
 import { Button } from '@/components/ui/button';
 import {
   Breadcrumb,
@@ -385,7 +386,9 @@ export function ManuscriptViewer({
                 {/* Either legacy catalogue HTML or linked TEI prose — the
                     format is discriminated, sanitized and rendered in one
                     place, so this surface never chooses a policy. */}
-                <div
+                <LinkedProse
+                  html={renderedDescriptions[index]?.html ?? ''}
+                  gloss={renderedDescriptions[index]?.isTei ?? false}
                   className={cn(
                     'font-serif text-lg leading-relaxed text-foreground',
                     '[&_p]:m-0 [&_p+p]:mt-4',
@@ -393,7 +396,6 @@ export function ManuscriptViewer({
                     renderedDescriptions[index]?.isTei && 'tei-linked-prose',
                     index === 0 && 'drop-cap'
                   )}
-                  dangerouslySetInnerHTML={{ __html: renderedDescriptions[index]?.html ?? '' }}
                 />
                 {nonEmpty(desc.source?.name) ? (
                   <p className="mt-4 text-xs uppercase tracking-[0.16em] text-muted-foreground">
