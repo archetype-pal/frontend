@@ -186,7 +186,7 @@ const CONTAINER_ELEMENTS = new Set([
 ]);
 
 /** Elements whose `@notBefore`/`@notAfter`/`@when` render as a Date row. */
-const DATE_RANGE_ELEMENTS = new Set(['binding']);
+const DATE_RANGE_ELEMENTS = new Set(['binding', 'provenance', 'acquisition']);
 
 /**
  * Known leaf fields — rendered as a labelled row (or a labelled block when
@@ -372,9 +372,14 @@ function renderField(el: XmlElementNode, t: MsDescTranslate): string {
   const known = FIELD_ELEMENTS.has(el.name);
   const label = known ? escapeHtml(t(fieldLabelKey(el))) : escapeHtml(el.name);
   const unknownClass = known ? '' : ' msdesc-field-unknown';
+  // `provenance`/`acquisition` hold their date in attributes rather than text,
+  // and `renderAttrRows` runs only for sections and containers — so a field's
+  // Date row has to be emitted here or it never renders at all.
+  const date = DATE_RANGE_ELEMENTS.has(el.name) ? dateRangeText(el.attrs) : '';
 
   if (hasBlockContent(el)) {
-    const body = renderBlockNodes(el.children, t);
+    const dateRow = date ? fieldRow(escapeHtml(t(fieldKey('date'))), escapeHtml(date)) : '';
+    const body = dateRow + renderBlockNodes(el.children, t);
     // `<collation><p/></collation>` and friends: block-shaped but empty. The
     // seeded skeleton is full of these, and a bare "Collation:" with nothing
     // after it is scaffolding leaking onto the public page.
@@ -402,6 +407,8 @@ function renderField(el: XmlElementNode, t: MsDescTranslate): string {
 
   let value = renderFieldValue(el, t);
   if (!hasRenderedText(value)) value = escapeHtml(fieldFallbackText(el));
+  // Attribute-only `<acquisition when="1900"/>`: the date is the value.
+  if (!hasRenderedText(value)) value = escapeHtml(date);
   if (!hasRenderedText(value)) return '';
   return fieldRow(label, value, unknownClass);
 }

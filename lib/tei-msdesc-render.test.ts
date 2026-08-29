@@ -234,6 +234,33 @@ describe('renderMsDescArea — msIdentifier / msContents / history', () => {
     expect(person?.getAttribute('data-tei-label')).toBe('persName');
   });
 
+  it('renders provenance and acquisition dating attributes as Date rows', () => {
+    const root = render(
+      'history',
+      '<history>' +
+        '<provenance notAfter="1250"><p>In the abbey treasury.</p></provenance>' +
+        '<acquisition when="1900"><p>Purchased at auction.</p></acquisition>' +
+        '</history>'
+    );
+    const dates = fieldRows(root)
+      .filter(([label]) => label === 'Date')
+      .map(([, value]) => value);
+    expect(dates).toEqual(['–1250', '1900']);
+    // The prose still renders alongside the date, not instead of it.
+    expect(root.textContent).toContain('In the abbey treasury.');
+    expect(root.textContent).toContain('Purchased at auction.');
+  });
+
+  it('uses the date as the value for an attribute-only acquisition', () => {
+    const root = render('history', '<history><acquisition when="1900"/></history>');
+    expect(fieldValue(root, 'Acquisition')).toBe('1900');
+  });
+
+  it('still suppresses a seeded provenance carrying neither prose nor a date', () => {
+    const root = render('history', '<history><provenance><p/></provenance></history>');
+    expect(root.textContent?.trim()).toBe('');
+  });
+
   it('derives an origDate value from dating attributes when it has no text', () => {
     const root = render(
       'history',
