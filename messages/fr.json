@@ -2486,7 +2486,16 @@
       "deletePartConfirmDescription": "Cela supprimera cette partie et la dissociera du manuscrit. Les images rattachées à cette partie seront également supprimées.",
       "imageAlt": "Image {id}",
       "editImageAria": "Modifier l'image {name}",
-      "textCountBadge": "{count}T"
+      "textCountBadge": "{count}T",
+      "descriptionEditorMode": "Mode de l'éditeur de description",
+      "descriptionMode": {
+        "rich": "Enrichi",
+        "source": "Source",
+        "preview": "Aperçu"
+      },
+      "descriptionPreviewEmpty": "Rien à prévisualiser pour le moment.",
+      "descriptionFormatTei": "TEI",
+      "descriptionConvertToTei": "Convertir en prose liée"
     },
     "dates": {
       "description": "Gérer les enregistrements de {dateLabel} utilisés dans les {historicalItemPlural}",

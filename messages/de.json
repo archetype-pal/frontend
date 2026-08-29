@@ -2486,7 +2486,16 @@
       "deletePartConfirmDescription": "Dadurch werden dieser Teil entfernt und die Verknüpfung mit dem Manuskript aufgehoben. Bilder, die diesem Teil zugeordnet sind, werden ebenfalls entfernt.",
       "imageAlt": "Bild {id}",
       "editImageAria": "Bild {name} bearbeiten",
-      "textCountBadge": "{count}T"
+      "textCountBadge": "{count}T",
+      "descriptionEditorMode": "Modus des Beschreibungseditors",
+      "descriptionMode": {
+        "rich": "Formatiert",
+        "source": "Quelltext",
+        "preview": "Vorschau"
+      },
+      "descriptionPreviewEmpty": "Noch nichts zur Vorschau.",
+      "descriptionFormatTei": "TEI",
+      "descriptionConvertToTei": "In verknüpften Text umwandeln"
     },
     "dates": {
       "description": "Verwalten Sie {dateLabel}-Datensätze, die in {historicalItemPlural} verwendet werden",
