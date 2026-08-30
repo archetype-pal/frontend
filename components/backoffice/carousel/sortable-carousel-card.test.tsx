@@ -23,7 +23,7 @@ describe('SortableCarouselCard', () => {
       title: 'Manuscript with <i>Insular</i> script',
       url: '/manuscripts/42',
       image: 'media/carousel/ms42.jpg',
-      weight: 0,
+      ordering: 0,
     };
 
     const html = renderToStaticMarkup(
