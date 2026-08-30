@@ -104,18 +104,20 @@ export function LinkedProse({
     const container = containerRef.current;
     if (!container || !gloss) return;
 
-    // Opening and closing both hang off `mouseover`, deliberately. `mouseout`
-    // does not reliably reach this container, so relying on it left the card
-    // stuck open; `mouseover` fires for every element the pointer enters, so
-    // entering a non-anchor IS the close signal. `mouseleave` covers leaving the
-    // prose altogether, which produces no further `mouseover` here.
-    const close = () => setTarget(null);
-
+    // Bound on the DOCUMENT, not the container. Opening and closing both hang
+    // off `mouseover`: it fires for every element the pointer enters, so
+    // entering anything that is not one of OUR anchors is the close signal.
+    //
+    // Two earlier shapes were wrong, both found by driving a real browser:
+    // `mouseout` does not reliably reach the container, and a container-scoped
+    // `mouseover` never fires when the pointer moves to a DIFFERENT instance —
+    // a page carries one of these per description plus one for the structured
+    // description, so a card would stay open while the reader hovered another.
     const point = (event: Event) => {
       const anchor = (event.target as HTMLElement | null)?.closest<HTMLElement>('a[data-ref-key]');
       const key = anchor?.dataset.refKey ?? '';
       if (!anchor || !container.contains(anchor) || !PERSON_KEY_RE.test(key)) {
-        close();
+        setTarget(null);
         return;
       }
 
@@ -129,15 +131,11 @@ export function LinkedProse({
       });
     };
 
-    container.addEventListener('mouseover', point);
-    container.addEventListener('mouseleave', close);
-    container.addEventListener('focusin', point);
-    container.addEventListener('focusout', close);
+    document.addEventListener('mouseover', point);
+    document.addEventListener('focusin', point);
     return () => {
-      container.removeEventListener('mouseover', point);
-      container.removeEventListener('mouseleave', close);
-      container.removeEventListener('focusin', point);
-      container.removeEventListener('focusout', close);
+      document.removeEventListener('mouseover', point);
+      document.removeEventListener('focusin', point);
     };
   }, [gloss]);
 

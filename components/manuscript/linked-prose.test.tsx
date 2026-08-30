@@ -90,14 +90,18 @@ describe('LinkedProse', () => {
     await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
   });
 
-  it('dismisses the card when the pointer leaves the prose entirely', async () => {
+  it('dismisses the card when the pointer moves anywhere outside this prose', async () => {
+    // The listener is on the document, not the container: a page carries one of
+    // these per description plus one for the structured description, and a
+    // container-scoped listener never fires when the pointer moves to a
+    // different instance — so the card stayed open. Found in a real browser.
     stubScribe({ id: 1, name: 'Barrow, Scribe Ab' });
-    const { container } = renderProse(PERSON_LINK);
+    renderProse(PERSON_LINK);
 
     fireEvent.mouseOver(screen.getByRole('link', { name: 'William I' }));
     expect(await screen.findByRole('tooltip')).toBeTruthy();
 
-    fireEvent.mouseLeave(container.querySelector('.relative') as HTMLElement);
+    fireEvent.mouseOver(document.body);
     await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
   });
 
