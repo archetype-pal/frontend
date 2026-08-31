@@ -538,6 +538,26 @@ describe('logout mid-queue', () => {
   });
 });
 
+describe('watching a conversion across a sign-out', () => {
+  it('does not toast a failure for an image the server is still converting', async () => {
+    // `tokenRef` goes STALE rather than null on sign-out, so a re-attached
+    // watch kept polling with the revoked token, got a 401, and fired a red
+    // "Upload failed" on the login page for an image that converted fine —
+    // the exact symptom the cookie read was introduced to remove from `drain`.
+    seedCrumb({ id: 'crumb-W', sessionId: 'sW', fileName: 'w.tif' });
+    mockedGetSession.mockResolvedValue(session({ id: 'sW', status: 'processing' }));
+    mockedWatch.mockRejectedValue(new BackofficeApiError(401, { detail: 'Invalid token.' }));
+
+    renderHarness();
+
+    await waitFor(() => expect(mockedWatch).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('w.tif:error'));
+    expect(vi.mocked(toast.error)).not.toHaveBeenCalled();
+    // The crumb survives so the next sign-in's scan can settle it.
+    expect(listUploadBreadcrumbs().map((c) => c.id)).toContain('crumb-W');
+  });
+});
+
 describe('queue integrity', () => {
   it('cancel-then-retry of a not-yet-started item uploads it once, not twice', async () => {
     // `cancel` on an item the runner has not reached only patches the status —
@@ -614,6 +634,62 @@ describe('cancelAll', () => {
     expect(screen.getByTestId('items').textContent).toContain('new.tif:canceled');
     // Crumb goes too: the session is gone server-side, nothing to recover.
     expect(listUploadBreadcrumbs()).toEqual([]);
+  });
+
+  it('leaves a converting upload alone, and keeps its crumb', async () => {
+    // The backend refuses to abort `processing` — the bytes are in and Celery
+    // will publish the image. Cancelling it locally would mark a succeeding
+    // upload 'canceled' and delete the crumb that re-attaches it on the next
+    // sign-in, which is what the sign-out dialog promises.
+    mockedUpload.mockImplementation((_t, _f, _m, options) => {
+      options?.onProgress?.({
+        phase: 'processing',
+        sentBytes: 4,
+        totalBytes: 4,
+        session: session({ id: 's-conv', status: 'processing' }),
+      });
+      return new Promise(() => {}); // conversion still running
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue one'));
+    await waitFor(() =>
+      expect(screen.getByTestId('items').textContent).toContain('new.tif:processing')
+    );
+
+    fireEvent.click(screen.getByText('cancel all'));
+    await waitFor(() => expect(screen.getByTestId('cancelAllDone').textContent).toBe('yes'));
+
+    expect(mockedAbort).not.toHaveBeenCalled();
+    expect(screen.getByTestId('items').textContent).toContain('new.tif:processing');
+    expect(listUploadBreadcrumbs().map((c) => c.id)).toHaveLength(1);
+  });
+
+  it('keeps the crumb when the server refuses the abort', async () => {
+    // A refused DELETE means the session is still live server-side, so the
+    // crumb is the only thing that can settle it later.
+    mockedAbort.mockRejectedValue(new BackofficeApiError(409, { detail: 'assembled' }));
+    mockedUpload.mockImplementation((_t, _f, _m, options) => {
+      options?.onProgress?.({
+        phase: 'uploading',
+        sentBytes: 1,
+        totalBytes: 4,
+        session: session({ id: 's-refused' }),
+      });
+      return new Promise(() => {});
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue one'));
+    await waitFor(() =>
+      expect(screen.getByTestId('items').textContent).toContain('new.tif:uploading')
+    );
+
+    fireEvent.click(screen.getByText('cancel all'));
+    await waitFor(() => expect(screen.getByTestId('cancelAllDone').textContent).toBe('yes'));
+
+    expect(mockedAbort).toHaveBeenCalledWith('tok', 's-refused');
+    expect(listUploadBreadcrumbs().map((c) => c.sessionId)).toEqual(['s-refused']);
   });
 });
 

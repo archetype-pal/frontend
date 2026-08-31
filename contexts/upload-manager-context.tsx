@@ -535,27 +535,44 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
    * A rejection is swallowed — the sign-out must not be blocked by cleanup.
    */
   const cancelAll = useCallback(async () => {
-    const authToken = tokenRef.current;
+    const authToken = getAuthTokenCookie();
     const crumbs = listUploadBreadcrumbs();
-    const inFlight = Array.from(itemsRef.current.values()).filter(
-      (it) => !UPLOAD_TERMINAL_STATUSES.includes(it.status)
+    // Only what the SERVER will still discard. `processing` and the finalizing
+    // phase belong to the ingest task: the bytes are in, Celery will publish
+    // the image, and the backend refuses the abort by design. Cancelling those
+    // locally would mark a succeeding upload 'canceled' AND delete the crumb
+    // that `routeSessionCrumb` needs to re-attach it after the next sign-in —
+    // which is precisely what the sign-out dialog promises will happen.
+    const abandonable = Array.from(itemsRef.current.values()).filter(
+      (it) =>
+        !UPLOAD_TERMINAL_STATUSES.includes(it.status) &&
+        it.status !== 'processing' &&
+        it.phase !== 'finalizing'
     );
 
-    for (const it of inFlight) {
+    for (const it of abandonable) {
       controllers.current.get(it.id)?.abort();
       patch(it.id, { status: 'canceled' });
     }
 
-    if (authToken) {
-      const sessionIds = inFlight
-        .map((it) => crumbs.find((c) => c.id === it.id)?.sessionId)
-        .filter((id): id is string => Boolean(id));
-      await Promise.all(
-        sessionIds.map((sessionId) => abortUploadSession(authToken, sessionId).catch(() => {}))
-      );
-    }
+    // No token means nothing can be freed, so every crumb must survive.
+    if (!authToken) return;
 
-    removeUploadBreadcrumbs(inFlight.map((it) => it.id));
+    const settled = await Promise.all(
+      abandonable.map(async (it) => {
+        const sessionId = crumbs.find((c) => c.id === it.id)?.sessionId;
+        if (!sessionId) return { id: it.id, freed: false };
+        try {
+          await abortUploadSession(authToken, sessionId);
+          return { id: it.id, freed: true };
+        } catch {
+          return { id: it.id, freed: false };
+        }
+      })
+    );
+    // Drop only the crumbs whose session the server actually discarded. Anything
+    // still live server-side keeps its crumb so the next sign-in can settle it.
+    removeUploadBreadcrumbs(settled.filter((r) => r.freed).map((r) => r.id));
   }, [patch]);
 
   const retry = useCallback(
@@ -614,7 +631,10 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       watchStatsRef.current.outstanding++;
       void (async () => {
         try {
-          await watchUploadSession(tokenRef.current ?? '', session, {
+          // The cookie, not `tokenRef`: the ref goes STALE rather than null on
+          // sign-out (see the note in `drain`), so a watch that outlives a
+          // sign-out would keep polling with a revoked token.
+          await watchUploadSession(getAuthTokenCookie() ?? '', session, {
             signal: controller.signal,
             onProgress: (p) => patch(crumb.id, { message: p.message ?? '' }),
           });
@@ -633,6 +653,17 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
             // re-settle it — `addItem` put this item in `itemsRef`, and
             // `scanBreadcrumbs` skips any crumb live in this tab, so the 30s
             // rescan and the storage listener both pass over it.
+            if (uploadErrorStatus(err) === 401) {
+              // Signed out while watching. The conversion is the server's now,
+              // so this is not a failure to announce — a red "Upload failed"
+              // toast would land on the login page for an image that converted
+              // fine. The crumb above is what settles it on the next sign-in.
+              patch(crumb.id, {
+                status: 'error',
+                error: tRef.current('uploads.errors.signedOutProcessing'),
+              });
+              return;
+            }
             const message = errorText(err);
             patch(crumb.id, { status: 'error', error: message });
             toast.error(tRef.current('uploads.toast.failed', { name: crumb.fileName }), {
