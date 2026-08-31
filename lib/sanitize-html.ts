@@ -241,3 +241,12 @@ export function sanitizeHtml(dirty: string, options: SanitizeOptions = {}): stri
     DOMPurify.removeHook('afterSanitizeAttributes', iframeHook);
   }
 }
+
+/**
+ * Strip all HTML tags, returning plain text.
+ * Useful for alt attributes, tooltips, or plain text contexts.
+ */
+export function stripHtml(dirty: string): string {
+  if (!dirty) return '';
+  return DOMPurify.sanitize(dirty, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }).trim();
+}

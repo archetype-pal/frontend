@@ -7,6 +7,9 @@
  */
 
 import type { SaveOutcome } from '@/hooks/use-annotation-editor-state';
+import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
+import type { AnnotationCreationKind } from '@/types/annotation-viewer';
+import { isTextRegionAnnotation } from './manuscript-viewer-annotation-types';
 import { formatSavedAnnotationDescription } from './manuscript-viewer-collection';
 
 export interface SaveNotice {
@@ -80,4 +83,31 @@ export function describeSaveOutcome(outcome: SaveOutcome): SaveOutcomeView {
         committed: true,
       };
   }
+}
+
+/**
+ * Why a not-yet-saved annotation cannot be saved, or null when it can.
+ *
+ * Pre-flight validation lives outside `editorState.saveAll` because the rules
+ * depend on viewer-side classification — the caller passes the `kind` it
+ * derived from the canonical annotation.
+ */
+export function standardSaveValidationError(
+  annotation: A9sAnnotation,
+  kind: AnnotationCreationKind
+): string | null {
+  if (isTextRegionAnnotation(annotation) || kind === 'editorial') return null;
+
+  const allographId = annotation._meta?.allographId;
+  const handId = annotation._meta?.handId;
+
+  if (typeof allographId !== 'number' || allographId <= 0) {
+    return 'Choose an allograph from the dropdown before saving a new annotation.';
+  }
+
+  if (typeof handId !== 'number' || handId <= 0) {
+    return 'Choose a hand from the dropdown before saving a new annotation.';
+  }
+
+  return null;
 }

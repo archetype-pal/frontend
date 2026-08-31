@@ -5,19 +5,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_MODEL_LABELS,
   getDefaultModelLabelsConfig,
+  type ModelLabelLocale,
   type ModelLabelsConfig,
 } from '@/lib/model-labels';
-import { useLocaleStore } from '@/stores/locale-store';
 import { ModelLabelsProvider, useModelLabels } from './model-labels-context';
 
-function withProvider(initialConfig?: ModelLabelsConfig) {
+function withProvider(initialConfig?: ModelLabelsConfig, locale?: ModelLabelLocale) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return <ModelLabelsProvider initialConfig={initialConfig}>{children}</ModelLabelsProvider>;
+    return (
+      <ModelLabelsProvider initialConfig={initialConfig} locale={locale}>
+        {children}
+      </ModelLabelsProvider>
+    );
   };
 }
 
 const originalFetch = globalThis.fetch;
-const initialLocale = useLocaleStore.getState().locale;
 
 beforeEach(() => {
   globalThis.fetch = vi.fn(
@@ -31,7 +34,6 @@ beforeEach(() => {
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
-  useLocaleStore.setState({ locale: initialLocale });
   vi.restoreAllMocks();
 });
 
@@ -48,7 +50,7 @@ describe('useModelLabels (without provider)', () => {
 describe('ModelLabelsProvider with initialConfig', () => {
   it('uses the supplied config and skips the fetch', () => {
     const cfg = getDefaultModelLabelsConfig();
-    cfg.labels.appManuscripts = { en: 'Charters', fr: 'Chartes' };
+    cfg.labels.appManuscripts = { en: 'Charters', fr: 'Chartes', de: 'Urkunden' };
     const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider(cfg) });
     expect(result.current.config).toBe(cfg);
     expect(globalThis.fetch).not.toHaveBeenCalled();
@@ -56,20 +58,25 @@ describe('ModelLabelsProvider with initialConfig', () => {
 
   it('getLabel returns the overridden value for the active locale', () => {
     const cfg = getDefaultModelLabelsConfig();
-    cfg.labels.appManuscripts = { en: 'Charters', fr: 'Chartes' };
+    cfg.labels.appManuscripts = { en: 'Charters', fr: 'Chartes', de: 'Urkunden' };
     const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider(cfg) });
     expect(result.current.getLabel('appManuscripts')).toBe('Charters');
 
-    useLocaleStore.setState({ locale: 'fr' });
-    const { result: frResult } = renderHook(() => useModelLabels(), { wrapper: withProvider(cfg) });
+    const { result: frResult } = renderHook(() => useModelLabels(), {
+      wrapper: withProvider(cfg, 'fr'),
+    });
     expect(frResult.current.getLabel('appManuscripts')).toBe('Chartes');
+
+    const { result: deResult } = renderHook(() => useModelLabels(), {
+      wrapper: withProvider(cfg, 'de'),
+    });
+    expect(deResult.current.getLabel('appManuscripts')).toBe('Urkunden');
   });
 
   it('getLabel falls back to English when the French value is blank', () => {
     const cfg = getDefaultModelLabelsConfig();
-    cfg.labels.appManuscripts = { en: 'Charters', fr: '' };
-    useLocaleStore.setState({ locale: 'fr' });
-    const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider(cfg) });
+    cfg.labels.appManuscripts = { en: 'Charters', fr: '', de: '' };
+    const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider(cfg, 'fr') });
     expect(result.current.getLabel('appManuscripts')).toBe('Charters');
   });
 
@@ -83,15 +90,15 @@ describe('ModelLabelsProvider with initialConfig', () => {
 
   it('getPluralLabel pluralizes the resolved label', () => {
     const cfg = getDefaultModelLabelsConfig();
-    cfg.labels.appManuscripts = { en: 'Charter', fr: 'Charte' };
+    cfg.labels.appManuscripts = { en: 'Charter', fr: 'Charte', de: 'Urkunde' };
     const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider(cfg) });
     expect(result.current.getPluralLabel('appManuscripts')).toBe('Charters');
   });
 
   it('getPluralLabel handles ies / es rules transitively', () => {
     const cfg = getDefaultModelLabelsConfig();
-    cfg.labels.historicalItem = { en: 'City', fr: 'Ville' };
-    cfg.labels.catalogueNumber = { en: 'Box', fr: 'Boîte' };
+    cfg.labels.historicalItem = { en: 'City', fr: 'Ville', de: 'Stadt' };
+    cfg.labels.catalogueNumber = { en: 'Box', fr: 'Boîte', de: 'Kiste' };
     const { result } = renderHook(() => useModelLabels(), { wrapper: withProvider(cfg) });
     expect(result.current.getPluralLabel('historicalItem')).toBe('Cities');
     expect(result.current.getPluralLabel('catalogueNumber')).toBe('Boxes');
@@ -109,9 +116,9 @@ describe('ModelLabelsProvider without initialConfig', () => {
 describe('ModelLabelsProvider sync with replaced initialConfig prop', () => {
   it('adopts a new initialConfig when the prop reference changes (e.g. router.refresh)', () => {
     const cfgA = getDefaultModelLabelsConfig();
-    cfgA.labels.appManuscripts = { en: 'A', fr: 'A' };
+    cfgA.labels.appManuscripts = { en: 'A', fr: 'A', de: 'A' };
     const cfgB = getDefaultModelLabelsConfig();
-    cfgB.labels.appManuscripts = { en: 'B', fr: 'B' };
+    cfgB.labels.appManuscripts = { en: 'B', fr: 'B', de: 'B' };
 
     const probeRef = React.createRef<{ value: ReturnType<typeof useModelLabels> | null }>();
     const Probe = React.forwardRef<{ value: ReturnType<typeof useModelLabels> | null }>(

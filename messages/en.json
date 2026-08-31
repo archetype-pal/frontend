@@ -102,6 +102,10 @@
     "viewCharts": "Charts",
     "viewMap": "Map",
     "viewDisabled": "{label} (no data for this result set)",
+    "showThumbnailsTitle": "Show image thumbnails",
+    "hideThumbnailsTitle": "Hide image thumbnails (text only)",
+    "thumbnailsOn": "Thumbnails",
+    "textOnly": "Text only",
     "sortBy": "Sort by",
     "sortByLabel": "Sort results by",
     "sortDefault": "Default",
@@ -324,6 +328,29 @@
       "description": "The manuscript service is currently unavailable. Please try again shortly.",
       "backLink": "Back to manuscripts",
       "message": "This manuscript could not be loaded. Please try again."
+    },
+    "gallery": {
+      "deleteConfirm": "Delete graph #{id}? It moves to the trash; an admin can restore it.",
+      "deleteSuccess": "Graph #{id} moved to trash; an admin can restore it",
+      "deleteFailed": "Failed to delete graph #{id}"
+    },
+    "delete": {
+      "draftConfirm": "{kind, select, editorial {Delete this editorial draft annotation?} other {Delete this public draft annotation?}}\n\nThis will discard it locally.",
+      "savedConfirm": "{kind, select, editorial {Delete this saved editorial annotation?} other {Delete this saved public annotation?}}\n\nPress Save to move it to the trash, where an admin can restore it.",
+      "bulkMixed": "Delete {total} selected annotations?\n\nThis will discard {draftCount, plural, =1 {# draft annotation} other {# draft annotations}} locally and mark {savedCount, plural, =1 {# saved annotation} other {# saved annotations}} for deletion.\nPress Save to move the saved ones to the trash, where an admin can restore them.",
+      "bulkDrafts": "Delete {total} selected annotations?\n\nThis will discard {draftCount, plural, =1 {# draft annotation} other {# draft annotations}} locally.",
+      "bulkSaved": "Delete {total} selected annotations?\n\nThis will mark {savedCount, plural, =1 {# saved annotation} other {# saved annotations}} for deletion.\nPress Save to move them to the trash, where an admin can restore them.",
+      "regionConfirm": "Delete this linked region?\n\nIt moves to the trash and disappears from the image. Its link to the transcription is kept, so an admin can restore both.",
+      "removeRegion": "Remove region",
+      "regionTrashedTitle": "Region moved to trash",
+      "regionTrashedDescription": "An admin can restore it, with its link to the transcription.",
+      "regionFailedTitle": "Delete failed",
+      "regionFailedDescription": "Could not delete region."
+    },
+    "entityCard": {
+      "person": "Person",
+      "loading": "Loading…",
+      "idiographs": "{count} recorded letter-forms"
     }
   },
   "annotation": {
@@ -454,7 +481,8 @@
       "recentSection": "Recent {title}",
       "backToList": "Back to list",
       "viewAll": "View all {title}",
-      "publicationFallbackTitle": "Publication"
+      "publicationFallbackTitle": "Publication",
+      "keywordsLabel": "Keywords"
     },
     "publicationKinds": {
       "news": {
@@ -958,6 +986,7 @@
       "dataQuality": "Data Quality",
       "translations": "Translations",
       "siteFeatures": "Site Features",
+      "trash": "Trash",
       "sanityChecks": "Sanity Checks",
       "subGroupExpand": "Expand {label}",
       "subGroupCollapse": "Collapse {label}"
@@ -1220,12 +1249,13 @@
       },
       "refPicker": {
         "title": "Insert reference",
-        "description": "Link to a person, place, manuscript, saved search, or external URL.",
+        "description": "Link to a person, place, manuscript, folio, saved search, or external URL.",
         "tabsLabel": "Reference type",
         "tab": {
           "person": "Person",
           "place": "Place",
           "manuscript": "Manuscript",
+          "image": "Image",
           "search": "Search",
           "external": "External"
         },
@@ -1233,6 +1263,7 @@
           "person": "Search scribes…",
           "place": "Search places…",
           "manuscript": "Search manuscripts…",
+          "image": "Search folios…",
           "search": "Filter saved searches…"
         },
         "typeToSearch": "Type to search",
@@ -1367,6 +1398,14 @@
           "crayon": "Crayon",
           "mixed": "Mixed",
           "unknown": "Unknown"
+        },
+        "sealType": {
+          "greatSeal": "Great seal",
+          "privySeal": "Privy seal",
+          "secretum": "Secretum",
+          "signet": "Signet",
+          "counterseal": "Counterseal",
+          "other": "Other"
         }
       },
       "render": {
@@ -1378,7 +1417,9 @@
           "bindingDesc": "Binding",
           "additions": "Additions",
           "origin": "Origin",
-          "msItem": "Item"
+          "msItem": "Item",
+          "sealDesc": "Seals",
+          "seal": "Seal"
         },
         "fields": {
           "form": "Form",
@@ -1431,7 +1472,8 @@
           "origDate": "Date",
           "origPlace": "Place",
           "provenance": "Provenance",
-          "acquisition": "Acquisition"
+          "acquisition": "Acquisition",
+          "contemporary": "Contemporary"
         }
       }
     },
@@ -1594,6 +1636,7 @@
       "fieldQuickLink": "Show in footer quick links",
       "tabEnglish": "English",
       "tabFrench": "Français",
+      "tabGerman": "Deutsch",
       "fieldPageTitle": "Title",
       "titlePlaceholder": "Page title",
       "fieldContent": "Content",
@@ -1761,10 +1804,13 @@
       "colComponents": "Components",
       "colPositions": "Positions",
       "deleteTitle": "Delete this annotation?",
-      "deleteDesc": "Graph #{id} ({allograph}) will be permanently deleted.",
+      "deleteDesc": "Graph #{id} ({allograph}) will be moved to the trash. An admin can restore it.",
       "deleteConfirm": "Delete",
-      "toastDeleted": "Graph annotation deleted",
-      "toastFailedDelete": "Failed to delete annotation"
+      "toastFailedDelete": "Failed to delete annotation",
+      "toastMovedToTrash": "Graph annotation moved to trash",
+      "bulkTrashed": "{count, plural, =1 {# annotation moved to trash} other {# annotations moved to trash}}",
+      "bulkTrashFailed": "Failed to move annotations to trash",
+      "bulkPartial": "{succeeded} succeeded, {failed} failed"
     },
     "imageTexts": {
       "failedLoad": "Could not load image text.",
@@ -1832,6 +1878,45 @@
       "toastApproveFailed": "Approve failed",
       "toastSentBack": "Sent back to Draft",
       "toastSendBackFailed": "Send-back failed"
+    },
+    "trash": {
+      "title": "Trash",
+      "subtitle": "Deleted items are kept here until restored or permanently removed. Nothing expires on its own.",
+      "tabAnnotations": "Annotations",
+      "trashedCount": "{count} trashed",
+      "filters": "Filters",
+      "filterAllTypes": "All types",
+      "filterAllUsers": "Anyone",
+      "filterDeletedFrom": "In trash since",
+      "filterDeletedTo": "In trash until",
+      "clearFilters": "Clear all filters",
+      "colId": "ID",
+      "colAllograph": "Allograph",
+      "colHand": "Hand",
+      "colType": "Type",
+      "colImage": "Image",
+      "colCreated": "Created",
+      "colDeletedBy": "Deleted by",
+      "colDeletedAge": "In trash",
+      "typeUnknown": "unknown",
+      "restore": "Restore",
+      "purge": "Purge",
+      "openImage": "Open image in viewer",
+      "toastRestored": "Annotation restored",
+      "toastRestoreFailed": "Failed to restore annotation",
+      "toastPurged": "Annotation permanently deleted",
+      "toastPurgeFailed": "Failed to permanently delete annotation",
+      "purgeTitle": "Permanently delete this annotation?",
+      "purgeDesc": "Annotation #{id} and its description components will be permanently deleted. This cannot be undone.",
+      "bulkPurgeTitle": "Permanently delete {count} annotations?",
+      "bulkPurgeDesc": "The selected annotations and their description components will be permanently deleted. This cannot be undone.",
+      "purgeConfirm": "Delete forever",
+      "reindexHint": "Search results update after the next reindex on the Search Engine page.",
+      "bulkRestored": "{count, plural, =1 {# annotation restored} other {# annotations restored}}",
+      "bulkRestoreFailed": "Failed to restore annotations",
+      "bulkPurged": "{count, plural, =1 {# annotation permanently deleted} other {# annotations permanently deleted}}",
+      "bulkPurgeFailed": "Failed to permanently delete annotations",
+      "bulkPartial": "{succeeded} succeeded, {failed} failed"
     },
     "siteFeatures": {
       "title": "Site Features",
@@ -2220,6 +2305,9 @@
       "source": "Source",
       "rich": "Rich",
       "preview": "Preview",
+      "format": "Format",
+      "formatHint": "Lay the markup out across lines — the text itself is unchanged",
+      "formatUnavailable": "Fix the markup before formatting",
       "richUnavailableFullEditor": "Rich editing unavailable for this document — use “Open in the full editor”",
       "richUnavailableSource": "Rich editing unavailable for this document — use Source",
       "validTei": "Valid TEI",
@@ -2426,7 +2514,24 @@
       "deletePartConfirmDescription": "This will remove this part and unlink it from the manuscript. Images attached to this part will also be removed.",
       "imageAlt": "Image {id}",
       "editImageAria": "Edit image {name}",
-      "textCountBadge": "{count}T"
+      "textCountBadge": "{count}T",
+      "descriptionEditorMode": "Description editor mode",
+      "descriptionMode": {
+        "rich": "Rich",
+        "source": "Source",
+        "preview": "Preview"
+      },
+      "descriptionPreviewEmpty": "Nothing to preview yet.",
+      "descriptionFormatTei": "TEI",
+      "descriptionConvertToTei": "Convert to linked prose",
+      "descriptionEntity": {
+        "persName": "Person",
+        "placeName": "Place"
+      },
+      "descriptionEntityHint": {
+        "persName": "Mark the selection as a person name",
+        "placeName": "Mark the selection as a place name"
+      }
     },
     "dates": {
       "description": "Manage {dateLabel} records used across {historicalItemPlural}",
@@ -2654,7 +2759,7 @@
     "usernameLabel": "Username",
     "passwordPlaceholder": "Password",
     "passwordLabel": "Password",
-    "signIn": "Se connecter",
+    "signIn": "Sign in",
     "hidePassword": "Hide password",
     "showPassword": "Show password",
     "signingIn": "Signing in…"

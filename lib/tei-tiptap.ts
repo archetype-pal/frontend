@@ -336,9 +336,20 @@ export function linkTargetAt(editor: Editor): EditorLinkSelection | null {
 }
 
 /** Change the @type of the innermost element covering the selection. */
-export function retypeTei(editor: Editor, newType: string): void {
+/**
+ * Merge attributes onto the innermost element covering the selection, across
+ * every run it spans. A `null` value REMOVES that attribute.
+ *
+ * The element is addressed by instance id, not by position, so a partial
+ * selection still rewrites the whole element rather than splitting it — the same
+ * invariant {@link unwrapTei} keeps.
+ *
+ * Returns `false` when there is no element under the caret, so a caller can
+ * surface a hint instead of a silent no-op.
+ */
+export function setTeiAttrs(editor: Editor, patch: Record<string, string | null>): boolean {
   const target = currentElement(editor);
-  if (!target) return;
+  if (!target) return false;
   const teiType = editor.state.schema.marks.tei;
   const tr = editor.state.tr;
   editor.state.doc.descendants((node, pos) => {
@@ -349,13 +360,30 @@ export function retypeTei(editor: Editor, newType: string): void {
     const idx = stack.findIndex((e) => e.id === target.id);
     if (idx === -1) return;
     const newStack = stack.map((e, i) =>
-      i === idx ? { ...e, attrs: { ...e.attrs, type: newType } } : e
+      i === idx ? { ...e, attrs: mergeAttrs(e.attrs, patch) } : e
     );
     tr.removeMark(pos, pos + node.nodeSize, teiType);
     tr.addMark(pos, pos + node.nodeSize, teiType.create({ stack: newStack }));
   });
   editor.view.dispatch(tr);
   editor.commands.focus();
+  return true;
+}
+
+function mergeAttrs(
+  attrs: Record<string, string>,
+  patch: Record<string, string | null>
+): Record<string, string> {
+  const next = { ...attrs };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === null) delete next[key];
+    else next[key] = value;
+  }
+  return next;
+}
+
+export function retypeTei(editor: Editor, newType: string): void {
+  setTeiAttrs(editor, { type: newType });
 }
 
 export const SEG_TYPES = [

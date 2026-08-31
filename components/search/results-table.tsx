@@ -20,6 +20,7 @@ import type {
 } from '@/types/search';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
+import type { ThumbnailSize } from '@/components/search/thumbnail-size-control';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import type { ModelLabelKey } from '@/lib/model-labels';
 import { Highlight, MatchSnippet } from './highlight';
@@ -132,17 +133,29 @@ function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
   );
 }
 
+// Clause/person/place regions are wide, short strips of a manuscript line, so
+// the crop width is what decides whether the words are legible. Each t-shirt
+// size asks IIIF for that many pixels and caps the rendered box to match.
+const PREVIEW_SIZES: Record<ThumbnailSize, { px: number; className: string }> = {
+  small: { px: 260, className: 'max-h-24 max-w-[260px]' },
+  medium: { px: 520, className: 'max-h-48 max-w-[520px]' },
+  large: { px: 1040, className: 'max-h-96 max-w-[1040px]' },
+};
+
 function AnnotationInlinePreview({
   thumbnailIiif,
   coordinates,
   alt,
+  size,
 }: {
   thumbnailIiif: string | null;
   coordinates: string | null;
   alt: string;
+  size: ThumbnailSize;
 }) {
   const infoUrl = (thumbnailIiif || '').trim();
-  const src = useIiifThumbnailUrl(infoUrl, coordinates);
+  const { px, className } = PREVIEW_SIZES[size];
+  const src = useIiifThumbnailUrl(infoUrl, coordinates, px);
 
   if (!infoUrl || !src) return null;
 
@@ -150,10 +163,10 @@ function AnnotationInlinePreview({
     <IiifImage
       src={src}
       alt={alt}
-      width={360}
-      height={140}
-      sizes="(max-width: 768px) 100vw, 360px"
-      className="block h-auto w-full max-h-40 max-w-[360px] object-contain"
+      width={px}
+      height={Math.round(px * 0.4)}
+      sizes={`(max-width: 768px) 100vw, ${px}px`}
+      className={`block h-auto w-full object-contain ${className}`}
     />
   );
 }
@@ -336,7 +349,7 @@ export const COLUMN_HEADERS_BY_TYPE: Record<ResultType, string[]> = Object.fromE
 /* ---------- sub-row accessors (legacy two-row pattern) ---------- */
 
 type SubRowAccessor<T> = (item: T) => string;
-type PreviewAccessor<T> = (item: T) => React.ReactNode;
+type PreviewAccessor<T> = (item: T, size: ThumbnailSize) => React.ReactNode;
 
 type ResultTypeDescriptor<K extends ResultType> = {
   columns: Column<ResultMap[K]>[];
@@ -371,11 +384,12 @@ const RESULT_TYPE_DESCRIPTORS = {
   texts: {
     columns: COLUMNS.texts,
     detailUrl: (item: TextListItem) => getImageDetailUrl(item),
-    previewAccessor: (item: TextListItem) => (
+    previewAccessor: (item: TextListItem, size: ThumbnailSize) => (
       <AnnotationInlinePreview
         thumbnailIiif={item.thumbnail_iiif}
         coordinates={item.annotation_coordinates}
         alt={item.shelfmark || 'Text annotation'}
+        size={size}
       />
     ),
   },
@@ -383,11 +397,12 @@ const RESULT_TYPE_DESCRIPTORS = {
     columns: COLUMNS.clauses,
     detailUrl: (item: ClauseListItem) => getImageDetailUrl(item),
     subRowAccessor: (item: ClauseListItem) => item.content,
-    previewAccessor: (item: ClauseListItem) => (
+    previewAccessor: (item: ClauseListItem, size: ThumbnailSize) => (
       <AnnotationInlinePreview
         thumbnailIiif={item.thumbnail_iiif}
         coordinates={item.annotation_coordinates}
         alt={item.shelfmark || 'Clause annotation'}
+        size={size}
       />
     ),
     collectionItemAccessor: (item: ClauseListItem) => clauseToGraphCollectionItem(item),
@@ -396,11 +411,12 @@ const RESULT_TYPE_DESCRIPTORS = {
     columns: COLUMNS.people,
     detailUrl: (item: PersonListItem) => getImageDetailUrl(item),
     subRowAccessor: (item: PersonListItem) => item.name,
-    previewAccessor: (item: PersonListItem) => (
+    previewAccessor: (item: PersonListItem, size: ThumbnailSize) => (
       <AnnotationInlinePreview
         thumbnailIiif={item.thumbnail_iiif}
         coordinates={item.annotation_coordinates}
         alt={item.shelfmark || 'Person annotation'}
+        size={size}
       />
     ),
   },
@@ -408,15 +424,21 @@ const RESULT_TYPE_DESCRIPTORS = {
     columns: COLUMNS.places,
     detailUrl: (item: PlaceListItem) => getImageDetailUrl(item),
     subRowAccessor: (item: PlaceListItem) => item.name,
-    previewAccessor: (item: PlaceListItem) => (
+    previewAccessor: (item: PlaceListItem, size: ThumbnailSize) => (
       <AnnotationInlinePreview
         thumbnailIiif={item.thumbnail_iiif}
         coordinates={item.annotation_coordinates}
         alt={item.shelfmark || 'Place annotation'}
+        size={size}
       />
     ),
   },
 } satisfies { [K in ResultType]: ResultTypeDescriptor<K> };
+
+/** Table view only renders a thumbnail row for types that declare a preview. */
+export function hasTablePreview(resultType: ResultType): boolean {
+  return 'previewAccessor' in RESULT_TYPE_DESCRIPTORS[resultType];
+}
 
 function getDescriptor<K extends ResultType>(resultType: K): ResultTypeDescriptor<K> {
   return RESULT_TYPE_DESCRIPTORS[resultType] as ResultTypeDescriptor<K>;
@@ -430,6 +452,8 @@ function ResultsTableComponent<K extends ResultType>({
   highlightKeyword = '',
   visibleColumns,
   isFetching = false,
+  showThumbnails = true,
+  thumbnailSize = 'medium',
 }: {
   resultType: K;
   results: ResultMap[K][];
@@ -441,6 +465,8 @@ function ResultsTableComponent<K extends ResultType>({
   highlightKeyword?: string;
   visibleColumns?: string[];
   isFetching?: boolean;
+  showThumbnails?: boolean;
+  thumbnailSize?: ThumbnailSize;
 }) {
   const { getLabel } = useModelLabels();
   const resolveHeader = React.useCallback(
@@ -503,7 +529,7 @@ function ResultsTableComponent<K extends ResultType>({
           rowHref = `${rowUrl}${rowUrl.includes('?') ? '&' : '?'}q=${encodeURIComponent(term)}`;
         }
       }
-      const preview = previewAccessor ? previewAccessor(row) : null;
+      const preview = previewAccessor ? previewAccessor(row, thumbnailSize) : null;
       const previewCollectionItem = collectionItemAccessor ? collectionItemAccessor(row) : null;
       const rowKey = rowKeyOf(row, ri);
       return (
@@ -589,7 +615,10 @@ function ResultsTableComponent<K extends ResultType>({
                 </TableRow>
               );
             })()}
-          {preview && (
+          {/* The star is this row's only route into a collection, so the row
+              survives hiding thumbnails whenever there is something to collect
+              — it just shrinks to the star. */}
+          {preview && (showThumbnails || previewCollectionItem) && (
             <TableRow className="relative cursor-pointer group-hover:bg-muted/50 transition-colors">
               <TableCell
                 colSpan={totalColSpan}
@@ -600,17 +629,20 @@ function ResultsTableComponent<K extends ResultType>({
                   // sibling of the link (a button inside an anchor is invalid),
                   // sharing the image's positioning context so it sits over it.
                   <span className="relative inline-block">
-                    <Link
-                      href={rowHref}
-                      className="inline-block after:content-[''] after:absolute after:inset-0 after:z-[1]"
-                    >
-                      <span className="relative z-[2] inline-block">{preview}</span>
-                    </Link>
+                    {showThumbnails && (
+                      <Link
+                        href={rowHref}
+                        className="inline-block after:content-[''] after:absolute after:inset-0 after:z-[1]"
+                      >
+                        <span className="relative z-[2] inline-block">{preview}</span>
+                      </Link>
+                    )}
                     <CollectionStar
                       itemId={previewCollectionItem.id}
                       itemType="graph"
                       item={previewCollectionItem}
                       size={16}
+                      className={showThumbnails ? undefined : 'static'}
                     />
                   </span>
                 ) : (
@@ -667,7 +699,9 @@ function ResultsTableComponent<K extends ResultType>({
       previewAccessor,
       resultType,
       rowKeyOf,
+      showThumbnails,
       subRowAccessor,
+      thumbnailSize,
       totalColSpan,
     ]
   );

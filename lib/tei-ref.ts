@@ -62,7 +62,7 @@ import { resolveRefKeyHref, sanitizeRefHref } from '@/lib/tei-msdesc-render';
 // ── Descriptor ──────────────────────────────────────────────────────────
 
 /** v1 resource kinds (roadmap 0.1): no Work tab — `work_` deferred to v2. */
-export type ResourceKind = 'person' | 'place' | 'manuscript' | 'search' | 'external';
+export type ResourceKind = 'person' | 'place' | 'manuscript' | 'image' | 'search' | 'external';
 
 /**
  * A resolved site-resource reference. `target` is the authoritative href (always
@@ -182,6 +182,7 @@ function classifyKind(type: string | undefined): ResourceKind {
     case 'person':
     case 'place':
     case 'manuscript':
+    case 'image':
     case 'search':
       return type;
     default:
@@ -195,6 +196,13 @@ function deriveId(kind: ResourceKind, key: string | undefined, target: string): 
     const fromKey = key ? /^person_(\d+)$/.exec(key.trim()) : null;
     if (fromKey) return fromKey[1];
     const fromTarget = /^\/scribes\/(\d+)\b/.exec(target);
+    return fromTarget ? fromTarget[1] : undefined;
+  }
+  // Before the manuscript branch, and matching the FULL path: the manuscript
+  // regex ends in `\b`, so `/manuscripts/5/images/9` matches it too and would
+  // report the part id as the image ref's id.
+  if (kind === 'image') {
+    const fromTarget = /^\/manuscripts\/\d+\/images\/(\d+)\b/.exec(target);
     return fromTarget ? fromTarget[1] : undefined;
   }
   if (kind === 'manuscript') {

@@ -6,7 +6,7 @@ import { fetchManuscriptImage, fetchManuscript } from '@/services/manuscripts';
 import { fetchAnnotationsForImage } from '@/services/annotations';
 import { fetchImageTextsForImage } from '@/services/image-texts';
 import { fetchOtherImages } from '@/services/manuscript-image-tabs';
-import { sanitizeHtml } from '@/lib/sanitize-html';
+import { renderPublicDescription } from '@/lib/description-public';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -106,7 +106,7 @@ export default async function ManuscriptImageLayout({ children, params }: Layout
           // 2-line clamp still reads as a brief teaser.
           <div
             className="mt-2 line-clamp-2 max-w-3xl text-sm leading-relaxed text-muted-foreground [&_p]:m-0 [&_p]:inline"
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(description) }}
+            dangerouslySetInnerHTML={{ __html: renderPublicDescription(description).html }}
           />
         ) : null}
 
