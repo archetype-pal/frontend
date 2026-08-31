@@ -2489,12 +2489,15 @@
       "noPartsYet": "Noch keine Teile vorhanden. Fügen Sie einen Teil hinzu, um dieses Manuskript mit einem physischen Band zu verknüpfen.",
       "unsaved": "nicht gespeichert",
       "imagesHeading": "Bilder ({count})",
+      "addImages": "Bilder hinzufügen",
+      "noImagesYet": "Noch keine Bilder vorhanden. Laden Sie Scans zu diesem Teil hoch.",
       "savePart": "Teil speichern",
       "deletePartConfirmTitle": "Diesen Teil löschen?",
       "deletePartConfirmDescription": "Dadurch werden dieser Teil entfernt und die Verknüpfung mit dem Manuskript aufgehoben. Bilder, die diesem Teil zugeordnet sind, werden ebenfalls entfernt.",
       "imageAlt": "Bild {id}",
       "editImageAria": "Bild {name} bearbeiten",
       "textCountBadge": "{count}T",
+      "imagePathRequired": "Der IIIF-Pfad kann nicht geleert werden. Verweisen Sie ihn auf eine andere Datei oder löschen Sie das Bild.",
       "descriptionEditorMode": "Modus des Beschreibungseditors",
       "descriptionMode": {
         "rich": "Formatiert",
@@ -2730,6 +2733,67 @@
       "setLanguagePlaceholder": "z. B. la, en, enm. Leer lassen für „(nicht gesetzt)“",
       "setLanguageApply": "Übernehmen",
       "clearSelection": "Auswahl aufheben"
+    },
+    "uploads": {
+      "addImages": "Bilder hinzufügen",
+      "description": "Laden Sie Manuskript-Scans zu <strong>{part}</strong> hoch. Jede Datei wird verlustfrei in JP2 konvertiert und über IIIF bereitgestellt. Das Hochladen läuft im Hintergrund, sodass Sie während der Übertragung großer Dateien weiterarbeiten können.",
+      "dropzone": "Scans hier ablegen oder klicken, um zu durchsuchen",
+      "locus": "Locus",
+      "locusPlaceholder": "z. B. f.1r",
+      "tags": "Tags",
+      "tagsPlaceholder": "komma,getrennt",
+      "converting": "Konvertierung in JP2…",
+      "percentUploaded": "{pct} % hochgeladen",
+      "published": "Hochgeladen und veröffentlicht.",
+      "canceled": "Abgebrochen.",
+      "alreadyPresent": "Bereits vorhanden — {reason}",
+      "busyInOtherTab": "Wird bereits in einem anderen Tab hochgeladen — verfolgen Sie es dort.",
+      "noMatch": "Keine Übereinstimmung für {picked} — dieses Hochladen erwartet „{needed}“ ({size}).",
+      "tray": {
+        "title": "Hochladevorgänge ({count})",
+        "uploading": "{count, plural, =1 {1 Bild wird hochgeladen…} other {{count} Bilder werden hochgeladen…}}",
+        "interrupted": "{count, plural, =1 {Unterbrochenes Hochladen (1)} other {Unterbrochene Hochladevorgänge ({count})}}"
+      },
+      "toast": {
+        "skipped": "{count, plural, =1 {1 nicht unterstützte Datei übersprungen} other {{count} nicht unterstützte Dateien übersprungen}}",
+        "queued": "{count, plural, =1 {1 Bild wird im Hintergrund hochgeladen} other {{count} Bilder werden im Hintergrund hochgeladen}}",
+        "failed": "Hochladen fehlgeschlagen: {name}",
+        "reindexTitle": "{count, plural, =1 {1 Bild hochgeladen — bis zur Neuindizierung nicht durchsuchbar} other {{count} Bilder hochgeladen — bis zur Neuindizierung nicht durchsuchbar}}",
+        "reindexBody": "Indizieren Sie Item Images / Item Parts neu, um sie in die Suche aufzunehmen.",
+        "reindexAction": "Suchmaschine öffnen",
+        "allowed": "Zulässig: {list}",
+        "queuedHint": "Verfolgen Sie den Fortschritt im Panel unten rechts — Sie können weiterarbeiten."
+      },
+      "errors": {
+        "chunkServerError": "Serverfehler ({status}) beim Hochladen eines Teilstücks — Sie können das Hochladen erneut versuchen.",
+        "chunkNetwork": "Netzwerkfehler beim Hochladen eines Teilstücks.",
+        "processTimeout": "Zeitüberschreitung beim Warten auf die serverseitige Verarbeitung.",
+        "processFailed": "Die Verarbeitung des Hochladens ist fehlgeschlagen.",
+        "notAuthenticated": "Nicht authentifiziert.",
+        "signedOut": "Vor dem Start dieses Hochladens abgemeldet.",
+        "signedOutResume": "Abgemeldet. Melden Sie sich an und wählen Sie diese Datei erneut aus, um dort fortzusetzen, wo sie unterbrochen wurde.",
+        "signedOutProcessing": "Abgemeldet. Der Server schließt dieses Hochladen ab — das Bild erscheint in Kürze."
+      },
+      "a11y": {
+        "addFiles": "Bilder zum Hochladen hinzufügen",
+        "chooseFiles": "Bilddateien auswählen",
+        "remove": "{name} entfernen",
+        "reselect": "Datei für {name} erneut auswählen",
+        "discard": "Unterbrochenes Hochladen von {name} verwerfen",
+        "retry": "Hochladen von {name} erneut versuchen",
+        "cancel": "Hochladen von {name} abbrechen",
+        "stopTracking": "Nachverfolgung von {name} beenden",
+        "dismiss": "{name} ausblenden",
+        "expandPanel": "Panel ausklappen",
+        "collapsePanel": "Panel einklappen"
+      },
+      "clearFinished": "Abgeschlossene entfernen",
+      "interruptedHint": "Durch ein Neuladen unterbrochen. Fügen Sie eine Datei erneut hinzu, um fortzusetzen — bereits hochgeladene Teile werden nicht erneut gesendet.",
+      "readdFile": "Datei erneut hinzufügen, um fortzusetzen",
+      "uploadCount": "{count, plural, =0 {Bilder hochladen} =1 {1 Bild hochladen} other {{count} Bilder hochladen}}",
+      "signOutTitle": "{count, plural, =1 {1 Hochladevorgang läuft noch} other {{count} Hochladevorgänge laufen noch}}",
+      "signOutDescription": "Durch das Abmelden werden sie gestoppt. Dateien, die bereits vollständig hochgeladen sind, werden vom Server dennoch verarbeitet; alles, was noch übertragen wird, können Sie nach erneuter Anmeldung durch erneutes Auswählen fortsetzen.",
+      "signOutConfirm": "Trotzdem abmelden"
     }
   },
   "login": {
