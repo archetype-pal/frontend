@@ -378,6 +378,13 @@ export async function uploadImageFile(
   // when resuming a session whose id was reused). Anchors the progress bar.
   let sentBytes = plan.reduce((acc, c) => (missing.has(c.index) ? acc : acc + c.size), 0);
 
+  // Hand the session to the caller BEFORE the first chunk goes out. Until it
+  // reaches the breadcrumb, `cancel` has no id to DELETE with and silently
+  // no-ops, so an X clicked in this window abandons a live server session that
+  // then holds the destination until stale cleanup — the residual of the
+  // "call DELETE on real cancels" review item.
+  report({ phase: 'creating', sentBytes, session });
+
   for (const chunk of plan) {
     if (!missing.has(chunk.index)) continue;
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');

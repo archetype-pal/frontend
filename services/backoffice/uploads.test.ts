@@ -261,6 +261,35 @@ describe('uploadImageFile chunk selection', () => {
     expect(sent).toEqual([1, 3]);
   });
 
+  it('reports the session before the first chunk goes out', async () => {
+    // `cancel` reads the session id off the breadcrumb, and the breadcrumb is
+    // only written from a progress event carrying `session`. If the first such
+    // event is the initial chunk-progress callback, an X clicked before then
+    // DELETEs nothing and the server session is stranded on its destination.
+    stubChunkTransport();
+    mockedPost
+      .mockResolvedValueOnce(resumable())
+      .mockResolvedValueOnce(resumable({ status: 'assembled', missing_chunks: [] }));
+    mockedGet.mockResolvedValueOnce(
+      resumable({ status: 'complete', missing_chunks: [], item_image: 9 })
+    );
+
+    const withSession: string[] = [];
+    await uploadImageFile(
+      'tok',
+      new File(['x'.repeat(40)], 'f12r.tif'),
+      { item_part: 1 },
+      {
+        pollIntervalMs: 0,
+        onProgress: (p: UploadProgress) => {
+          if (p.session) withSession.push(p.phase);
+        },
+      }
+    );
+
+    expect(withSession[0]).toBe('creating');
+  });
+
   it('anchors progress at the bytes the server already holds', async () => {
     stubChunkTransport();
     mockedPost
