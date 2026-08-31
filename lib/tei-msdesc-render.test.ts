@@ -129,6 +129,53 @@ describe('renderMsDescArea — the PO physDesc example', () => {
   });
 });
 
+describe('renderMsDescArea — a link on a formatting element', () => {
+  it('keeps the link when <hi> also carries a target', () => {
+    // The <hi> @rend branch used to return before the link check, so a
+    // hand-authored `<hi rend="italic" target="…">` lost its href silently.
+    const root = render(
+      'history',
+      '<history><provenance><p><hi rend="italic" target="/scribes/1">Liber</hi></p></provenance></history>'
+    );
+    expect(root.querySelector('a[href="/scribes/1"]')).not.toBeNull();
+  });
+
+  it('still renders a plain <hi rend="italic"> as emphasis', () => {
+    const root = render(
+      'history',
+      '<history><provenance><p><hi rend="italic">Liber</hi></p></provenance></history>'
+    );
+    expect(root.querySelector('em')?.textContent).toBe('Liber');
+  });
+});
+
+describe('renderMsDescArea — seals', () => {
+  it('renders a sealDesc as a section with one heading per seal', () => {
+    const root = render(
+      'physDesc',
+      '<physDesc><sealDesc>' +
+        '<seal n="1" type="greatSeal" contemporary="true">' +
+        '<material>green wax</material><condition>fragment</condition>' +
+        '<p>Appended on a parchment tag.</p></seal>' +
+        '<seal n="2" type="counterseal"><material>green wax</material></seal>' +
+        '</sealDesc></physDesc>'
+    );
+    const headings = Array.from(root.querySelectorAll('.msdesc-heading')).map((h) => h.textContent);
+    expect(headings).toEqual(['Physical description', 'Seals', 'Seal 1', 'Seal 2']);
+    const rows = fieldRows(root);
+    expect(rows).toContainEqual(['Type', 'Great seal']);
+    expect(rows).toContainEqual(['Contemporary', 'true']);
+    expect(rows).toContainEqual(['Material', 'green wax']);
+    expect(rows).toContainEqual(['Condition', 'fragment']);
+    expect(root.textContent).toContain('Appended on a parchment tag.');
+  });
+
+  it('suppresses an empty seeded sealDesc', () => {
+    const root = render('physDesc', '<physDesc><sealDesc><seal/></sealDesc></physDesc>');
+    expect(root.textContent?.trim()).toBe('');
+  });
+});
+
 describe('renderMsDescArea — dimensions and measure formatting', () => {
   it('formats dimensions as "height × width unit" with the type in the label', () => {
     const root = render('physDesc', PHYS_DESC);
@@ -232,6 +279,33 @@ describe('renderMsDescArea — msIdentifier / msContents / history', () => {
     expect(person?.getAttribute('href')).toBe('/scribes/42');
     expect(person?.classList.contains('tei-el')).toBe(true);
     expect(person?.getAttribute('data-tei-label')).toBe('persName');
+  });
+
+  it('renders provenance and acquisition dating attributes as Date rows', () => {
+    const root = render(
+      'history',
+      '<history>' +
+        '<provenance notAfter="1250"><p>In the abbey treasury.</p></provenance>' +
+        '<acquisition when="1900"><p>Purchased at auction.</p></acquisition>' +
+        '</history>'
+    );
+    const dates = fieldRows(root)
+      .filter(([label]) => label === 'Date')
+      .map(([, value]) => value);
+    expect(dates).toEqual(['–1250', '1900']);
+    // The prose still renders alongside the date, not instead of it.
+    expect(root.textContent).toContain('In the abbey treasury.');
+    expect(root.textContent).toContain('Purchased at auction.');
+  });
+
+  it('uses the date as the value for an attribute-only acquisition', () => {
+    const root = render('history', '<history><acquisition when="1900"/></history>');
+    expect(fieldValue(root, 'Acquisition')).toBe('1900');
+  });
+
+  it('still suppresses a seeded provenance carrying neither prose nor a date', () => {
+    const root = render('history', '<history><provenance><p/></provenance></history>');
+    expect(root.textContent?.trim()).toBe('');
   });
 
   it('derives an origDate value from dating attributes when it has no text', () => {

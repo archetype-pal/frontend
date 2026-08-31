@@ -13,7 +13,8 @@ import { useModelLabels } from '@/contexts/model-labels-context';
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { renderPublicMsDescAreas } from '@/lib/msdesc-public';
-import { sanitizeHtml } from '@/lib/sanitize-html';
+import { renderPublicDescription } from '@/lib/description-public';
+import { LinkedProse } from '@/components/manuscript/linked-prose';
 import { Button } from '@/components/ui/button';
 import {
   Breadcrumb,
@@ -200,7 +201,12 @@ export function ManuscriptViewer({
     [orderedImages]
   );
 
-  const descriptions = historical.descriptions ?? [];
+  // Memoised: a fresh `[]` from the `??` on every render would re-run the
+  // description render below for every row.
+  const descriptions = React.useMemo(
+    () => historical.descriptions ?? [],
+    [historical.descriptions]
+  );
   const catalogueNumbers = historical.catalogue_numbers ?? [];
   const totalAnnotations = orderedImages.reduce((sum, img) => sum + annotationCount(img), 0);
 
@@ -216,6 +222,15 @@ export function ManuscriptViewer({
     () =>
       msDescEnabled ? renderPublicMsDescAreas(manuscript.msdesc_areas, (key) => tMsDesc(key)) : [],
     [msDescEnabled, manuscript.msdesc_areas, tMsDesc]
+  );
+
+  // Catalogue descriptions render in either format (docs/tei.md §4.5): legacy
+  // HTML, or TEI prose whose entities are links. Memoised for the same reason
+  // the msDesc block is — the sanitize pass would otherwise re-run on every
+  // render, for every description.
+  const renderedDescriptions = React.useMemo(
+    () => descriptions.map((desc) => renderPublicDescription(desc.content, (key) => tMsDesc(key))),
+    [descriptions, tMsDesc]
   );
 
   // Section anchors — only advertise the ones that actually render.
@@ -368,16 +383,19 @@ export function ManuscriptViewer({
           <div className="max-w-3xl space-y-10">
             {descriptions.map((desc, index) => (
               <article key={index}>
-                {/* Descriptions are authored as HTML (paragraphs, italics, entities),
-                    so sanitize and render rather than printing the raw markup. */}
-                <div
+                {/* Either legacy catalogue HTML or linked TEI prose — the
+                    format is discriminated, sanitized and rendered in one
+                    place, so this surface never chooses a policy. */}
+                <LinkedProse
+                  html={renderedDescriptions[index]?.html ?? ''}
+                  gloss={renderedDescriptions[index]?.isTei ?? false}
                   className={cn(
                     'font-serif text-lg leading-relaxed text-foreground',
                     '[&_p]:m-0 [&_p+p]:mt-4',
                     '[&_a]:text-primary [&_a]:underline-offset-4 [&_a:hover]:underline',
+                    renderedDescriptions[index]?.isTei && 'tei-linked-prose',
                     index === 0 && 'drop-cap'
                   )}
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(desc.content) }}
                 />
                 {nonEmpty(desc.source?.name) ? (
                   <p className="mt-4 text-xs uppercase tracking-[0.16em] text-muted-foreground">

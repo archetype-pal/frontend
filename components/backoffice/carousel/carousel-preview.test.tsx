@@ -12,7 +12,7 @@ describe('CarouselPreview', () => {
         title: 'Charter of <i>King Edgar</i> &amp; <b>St. Dunstan</b>',
         url: '/manuscripts/1',
         image: 'media/carousel/edgar.jpg',
-        weight: 1,
+        ordering: 1,
       },
     ];
 

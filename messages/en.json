@@ -326,6 +326,11 @@
       "regionTrashedDescription": "An admin can restore it, with its link to the transcription.",
       "regionFailedTitle": "Delete failed",
       "regionFailedDescription": "Could not delete region."
+    },
+    "entityCard": {
+      "person": "Person",
+      "loading": "Loading…",
+      "idiographs": "{count} recorded letter-forms"
     }
   },
   "annotation": {
@@ -1224,12 +1229,13 @@
       },
       "refPicker": {
         "title": "Insert reference",
-        "description": "Link to a person, place, manuscript, saved search, or external URL.",
+        "description": "Link to a person, place, manuscript, folio, saved search, or external URL.",
         "tabsLabel": "Reference type",
         "tab": {
           "person": "Person",
           "place": "Place",
           "manuscript": "Manuscript",
+          "image": "Image",
           "search": "Search",
           "external": "External"
         },
@@ -1237,6 +1243,7 @@
           "person": "Search scribes…",
           "place": "Search places…",
           "manuscript": "Search manuscripts…",
+          "image": "Search folios…",
           "search": "Filter saved searches…"
         },
         "typeToSearch": "Type to search",
@@ -1371,6 +1378,14 @@
           "crayon": "Crayon",
           "mixed": "Mixed",
           "unknown": "Unknown"
+        },
+        "sealType": {
+          "greatSeal": "Great seal",
+          "privySeal": "Privy seal",
+          "secretum": "Secretum",
+          "signet": "Signet",
+          "counterseal": "Counterseal",
+          "other": "Other"
         }
       },
       "render": {
@@ -1382,7 +1397,9 @@
           "bindingDesc": "Binding",
           "additions": "Additions",
           "origin": "Origin",
-          "msItem": "Item"
+          "msItem": "Item",
+          "sealDesc": "Seals",
+          "seal": "Seal"
         },
         "fields": {
           "form": "Form",
@@ -1435,7 +1452,8 @@
           "origDate": "Date",
           "origPlace": "Place",
           "provenance": "Provenance",
-          "acquisition": "Acquisition"
+          "acquisition": "Acquisition",
+          "contemporary": "Contemporary"
         }
       }
     },
@@ -1598,6 +1616,7 @@
       "fieldQuickLink": "Show in footer quick links",
       "tabEnglish": "English",
       "tabFrench": "Français",
+      "tabGerman": "Deutsch",
       "fieldPageTitle": "Title",
       "titlePlaceholder": "Page title",
       "fieldContent": "Content",
@@ -2266,6 +2285,9 @@
       "source": "Source",
       "rich": "Rich",
       "preview": "Preview",
+      "format": "Format",
+      "formatHint": "Lay the markup out across lines — the text itself is unchanged",
+      "formatUnavailable": "Fix the markup before formatting",
       "richUnavailableFullEditor": "Rich editing unavailable for this document — use “Open in the full editor”",
       "richUnavailableSource": "Rich editing unavailable for this document — use Source",
       "validTei": "Valid TEI",
@@ -2475,7 +2497,24 @@
       "imageAlt": "Image {id}",
       "editImageAria": "Edit image {name}",
       "textCountBadge": "{count}T",
-      "imagePathRequired": "The IIIF path cannot be cleared. Repoint it to another file, or delete the image."
+      "imagePathRequired": "The IIIF path cannot be cleared. Repoint it to another file, or delete the image.",
+      "descriptionEditorMode": "Description editor mode",
+      "descriptionMode": {
+        "rich": "Rich",
+        "source": "Source",
+        "preview": "Preview"
+      },
+      "descriptionPreviewEmpty": "Nothing to preview yet.",
+      "descriptionFormatTei": "TEI",
+      "descriptionConvertToTei": "Convert to linked prose",
+      "descriptionEntity": {
+        "persName": "Person",
+        "placeName": "Place"
+      },
+      "descriptionEntityHint": {
+        "persName": "Mark the selection as a person name",
+        "placeName": "Mark the selection as a place name"
+      }
     },
     "dates": {
       "description": "Manage {dateLabel} records used across {historicalItemPlural}",
@@ -2764,7 +2803,7 @@
     "usernameLabel": "Username",
     "passwordPlaceholder": "Password",
     "passwordLabel": "Password",
-    "signIn": "Se connecter",
+    "signIn": "Sign in",
     "hidePassword": "Hide password",
     "showPassword": "Show password",
     "signingIn": "Signing in…"

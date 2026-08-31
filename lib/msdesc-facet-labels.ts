@@ -1,15 +1,15 @@
 /**
  * Human labels for the msDesc-derived search facet *values* (TEI-descriptions 7.1).
  *
- * The `material` / `script` / `deco_type` facets are indexed as ODD attribute
- * codes — `perg`, `textualisNorthern`, `flourInit` — because the code is the
+ * The `material` / `script` / `deco_type` / `seal_type` facets are indexed as
+ * attribute codes — `perg`, `textualisNorthern`, `flourInit` — because the code is the
  * filter identity (`<facetKey>_exact:<value>`) and display labels are a
  * frontend concern. The labels already exist in both locales under
  * `backoffice.msdesc.vocab.*` (the authoring dropdowns use them), so the public
  * facet rail glosses the same keys rather than inventing a second wording.
  *
- * `origin_place` is deliberately absent: those values are authored place names,
- * already human-readable.
+ * `origin_place` and `seal_material` are deliberately absent: those values are
+ * authored free text (a place name, "green wax"), already human-readable.
  *
  * Values outside the ODD list pass through as authored — three of these
  * vocabularies are `type="semi"` (open by design), and glossing an unlisted
@@ -32,6 +32,7 @@ const FACET_VOCABULARIES: Record<string, MsDescVocabId> = {
   material: 'material',
   script: 'script',
   deco_type: 'decoType',
+  seal_type: 'sealType',
 };
 
 /** Gloss one facet value; non-vocabulary facets and unlisted values pass through. */

@@ -41,6 +41,15 @@ const GRID_COLUMNS: Record<ThumbnailSize, string> = {
   large: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
 };
 
+// Pixels to ask IIIF for when cropping a region. Fewer columns means a wider
+// cell, so the crop has to grow with the card or a larger size just upscales
+// the same 300px strip.
+const CROP_PIXELS: Record<ThumbnailSize, number> = {
+  small: 260,
+  medium: 520,
+  large: 1040,
+};
+
 type GridCard =
   | {
       kind: 'image';
@@ -301,6 +310,7 @@ const GraphGridCard = React.memo(function GraphGridCard({
   highlightKeyword,
   showThumbnail = true,
   eager,
+  thumbnailSize,
 }: {
   item: GraphListItem;
   displayText: string;
@@ -308,12 +318,17 @@ const GraphGridCard = React.memo(function GraphGridCard({
   highlightKeyword: string;
   showThumbnail?: boolean;
   eager: boolean;
+  thumbnailSize: ThumbnailSize;
 }) {
   const infoUrl = (item.image_iiif || '').trim();
   // An empty info URL makes the hook a no-op. Text-only mode exists to avoid
   // image work, and a bounded crop costs a fetchIiifImageInfo round-trip per
   // distinct image — so don't ask for one nothing will render.
-  const imageUrl = useIiifThumbnailUrl(showThumbnail ? infoUrl : '', item.coordinates);
+  const imageUrl = useIiifThumbnailUrl(
+    showThumbnail ? infoUrl : '',
+    item.coordinates,
+    CROP_PIXELS[thumbnailSize]
+  );
 
   return (
     <MediaGridCard
@@ -409,6 +424,7 @@ const ClauseGridCard = React.memo(function ClauseGridCard({
   highlightKeyword,
   showThumbnail = true,
   eager = false,
+  thumbnailSize,
 }: {
   item: ClauseListItem;
   detailUrl: string | null;
@@ -419,10 +435,15 @@ const ClauseGridCard = React.memo(function ClauseGridCard({
   highlightKeyword: string;
   showThumbnail?: boolean;
   eager?: boolean;
+  thumbnailSize: ThumbnailSize;
 }) {
   const infoUrl = (item.thumbnail_iiif || '').trim();
   // See MediaGridCard: no thumbnail rendered, no IIIF info fetch.
-  const imageUrl = useIiifThumbnailUrl(showThumbnail ? infoUrl : '', item.annotation_coordinates);
+  const imageUrl = useIiifThumbnailUrl(
+    showThumbnail ? infoUrl : '',
+    item.annotation_coordinates,
+    CROP_PIXELS[thumbnailSize]
+  );
   const collectionItem = React.useMemo(() => clauseToGraphCollectionItem(item), [item]);
   const meta = [item.date, item.repository_name].filter(Boolean).join(' · ');
 
@@ -539,6 +560,7 @@ function SearchGridComponent({
             highlightKeyword={highlightKeyword}
             showThumbnail={showThumbnails}
             eager={eager}
+            thumbnailSize={thumbnailSize}
           />
         );
       }
@@ -569,6 +591,7 @@ function SearchGridComponent({
             highlightKeyword={highlightKeyword}
             showThumbnail={showThumbnails}
             eager={eager}
+            thumbnailSize={thumbnailSize}
           />
         );
       }
@@ -590,7 +613,7 @@ function SearchGridComponent({
         />
       );
     },
-    [highlightKeyword, showThumbnails]
+    [highlightKeyword, showThumbnails, thumbnailSize]
   );
 
   if (!results.length) {

@@ -5,6 +5,7 @@ import { docToTei, indexLinkableElements, teiToDoc } from '@/lib/tei-prosemirror
 import { buildRefMarkup, parseRefMarkup, type ResourceRef } from '@/lib/tei-ref';
 import { leafIsRichRepresentable } from '@/components/backoffice/manuscripts/msdesc/msdesc-leaf-editor';
 import {
+  imageRefsFromHits,
   externalRef,
   keyFromRef,
   manuscriptRefFromItemPart,
@@ -273,5 +274,39 @@ describe('a ref-bearing prose leaf is rich-representable and not linkable', () =
     const ref = externalRef("https://example.org/x?q=O'Brien>", 'CPL 313');
     const leaf = `<p>${buildRefMarkup(ref!, ref!.label)}</p>`;
     expect(leafIsRichRepresentable(leaf)).toBe(true);
+  });
+});
+
+describe('imageRefsFromHits (docs/tei.md §4.5)', () => {
+  it('builds a two-id target from the part and the image', () => {
+    const [ref] = imageRefsFromHits([
+      { id: 1581, item_part: 228, locus: 'f. 1r', display_label: 'BL Cotton Ch. xviii.14' },
+    ]);
+    expect(ref.target).toBe('/manuscripts/228/images/1581');
+    expect(ref.kind).toBe('image');
+  });
+
+  it('keys the row by the IMAGE id, so folios of one manuscript stay distinct', () => {
+    const refs = imageRefsFromHits([
+      { id: 1580, item_part: 228, locus: 'f. 1r', display_label: 'Cotton' },
+      { id: 1581, item_part: 228, locus: 'f. 1v', display_label: 'Cotton' },
+    ]);
+    expect(refs.map((r) => r.id)).toEqual([1580, 1581]);
+  });
+
+  it('combines label and locus, because display_label is the PART label', () => {
+    const refs = imageRefsFromHits([
+      { id: 1580, item_part: 228, locus: 'f. 1r', display_label: 'Cotton' },
+      { id: 1581, item_part: 228, locus: 'f. 1v', display_label: 'Cotton' },
+    ]);
+    expect(refs.map((r) => r.label)).toEqual(['Cotton, f. 1r', 'Cotton, f. 1v']);
+  });
+
+  it('drops a hit with no item_part rather than guessing a path', () => {
+    expect(imageRefsFromHits([{ id: 9, locus: 'f. 2r' }])).toEqual([]);
+  });
+
+  it('falls back to the id when nothing nameable is present', () => {
+    expect(imageRefsFromHits([{ id: 9, item_part: 3 }])[0].label).toBe('#9');
   });
 });

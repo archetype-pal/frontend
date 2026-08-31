@@ -326,6 +326,11 @@
       "regionTrashedDescription": "Un administrateur peut la restaurer, avec son lien vers la transcription.",
       "regionFailedTitle": "Échec de la suppression",
       "regionFailedDescription": "Impossible de supprimer la région."
+    },
+    "entityCard": {
+      "person": "Personne",
+      "loading": "Chargement…",
+      "idiographs": "{count} formes de lettres enregistrées"
     }
   },
   "annotation": {
@@ -1224,12 +1229,13 @@
       },
       "refPicker": {
         "title": "Insérer une référence",
-        "description": "Lier une personne, un lieu, un manuscrit, une recherche enregistrée ou une URL externe.",
+        "description": "Lier à une personne, un lieu, un manuscrit, un feuillet, une recherche enregistrée ou une URL externe.",
         "tabsLabel": "Type de référence",
         "tab": {
           "person": "Personne",
           "place": "Lieu",
           "manuscript": "Manuscrit",
+          "image": "Image",
           "search": "Recherche",
           "external": "Externe"
         },
@@ -1237,6 +1243,7 @@
           "person": "Rechercher des scribes…",
           "place": "Rechercher des lieux…",
           "manuscript": "Rechercher des manuscrits…",
+          "image": "Rechercher des feuillets…",
           "search": "Filtrer les recherches enregistrées…"
         },
         "typeToSearch": "Saisissez pour rechercher",
@@ -1371,6 +1378,14 @@
           "crayon": "Crayon",
           "mixed": "Mixte",
           "unknown": "Inconnu"
+        },
+        "sealType": {
+          "greatSeal": "Grand sceau",
+          "privySeal": "Sceau privé",
+          "secretum": "Secretum",
+          "signet": "Signet",
+          "counterseal": "Contre-sceau",
+          "other": "Autre"
         }
       },
       "render": {
@@ -1382,7 +1397,9 @@
           "bindingDesc": "Reliure",
           "additions": "Ajouts",
           "origin": "Origine",
-          "msItem": "Item"
+          "msItem": "Item",
+          "sealDesc": "Sceaux",
+          "seal": "Sceau"
         },
         "fields": {
           "form": "Forme",
@@ -1435,7 +1452,8 @@
           "origDate": "Date",
           "origPlace": "Lieu",
           "provenance": "Provenance",
-          "acquisition": "Acquisition"
+          "acquisition": "Acquisition",
+          "contemporary": "Contemporain"
         }
       }
     },
@@ -1598,6 +1616,7 @@
       "fieldQuickLink": "Afficher dans les liens rapides du pied de page",
       "tabEnglish": "Anglais",
       "tabFrench": "Français",
+      "tabGerman": "Allemand",
       "fieldPageTitle": "Titre",
       "titlePlaceholder": "Titre de la page",
       "fieldContent": "Contenu",
@@ -2266,6 +2285,9 @@
       "source": "Source",
       "rich": "Enrichi",
       "preview": "Aperçu",
+      "format": "Mettre en forme",
+      "formatHint": "Répartir le balisage sur plusieurs lignes — le texte lui-même est inchangé",
+      "formatUnavailable": "Corrigez le balisage avant la mise en forme",
       "richUnavailableFullEditor": "Édition enrichie indisponible pour ce document — utilisez « Ouvrir dans l'éditeur complet »",
       "richUnavailableSource": "Édition enrichie indisponible pour ce document — utilisez Source",
       "validTei": "TEI valide",
@@ -2475,7 +2497,24 @@
       "imageAlt": "Image {id}",
       "editImageAria": "Modifier l'image {name}",
       "textCountBadge": "{count}T",
-      "imagePathRequired": "Le chemin IIIF ne peut pas être vidé. Redirigez-le vers un autre fichier, ou supprimez l'image."
+      "imagePathRequired": "Le chemin IIIF ne peut pas être vidé. Redirigez-le vers un autre fichier, ou supprimez l'image.",
+      "descriptionEditorMode": "Mode de l'éditeur de description",
+      "descriptionMode": {
+        "rich": "Enrichi",
+        "source": "Source",
+        "preview": "Aperçu"
+      },
+      "descriptionPreviewEmpty": "Rien à prévisualiser pour le moment.",
+      "descriptionFormatTei": "TEI",
+      "descriptionConvertToTei": "Convertir en prose liée",
+      "descriptionEntity": {
+        "persName": "Personne",
+        "placeName": "Lieu"
+      },
+      "descriptionEntityHint": {
+        "persName": "Marquer la sélection comme nom de personne",
+        "placeName": "Marquer la sélection comme nom de lieu"
+      }
     },
     "dates": {
       "description": "Gérer les enregistrements de {dateLabel} utilisés dans les {historicalItemPlural}",

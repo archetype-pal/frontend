@@ -131,7 +131,11 @@ export function useSearchPageState(initialType?: ResultType) {
     );
   }, [currentOrdering, sortOrdering, setQueryState]);
 
-  const filtered = data.results;
+  // Same rationale as `sortOrdering` above: `keepPreviousData` can still be
+  // showing the OUTGOING type's rows while the new type's response is in
+  // flight. Withhold them so a graphs-tab table never renders (and
+  // GraphDetailLink never tries to resolve) a stale manuscript/scribe row.
+  const filtered = dataResultType === resultType ? data.results : [];
   const timelineDistribution = data.facetDistribution?.date_min ?? {};
   const cityDistribution = data.facetDistribution?.repository_city ?? {};
 

@@ -31,7 +31,29 @@ import {
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { sanitizeHtml } from '@/lib/sanitize-html';
+import { cn } from '@/lib/utils';
+import { renderPublicDescription } from '@/lib/description-public';
+import {
+  isTeiDescription,
+  teiDescriptionFromText,
+  teiDescriptionProse,
+  wrapTeiDescription,
+} from '@/lib/tei-description';
+import { DescriptionTeiEditor } from './description-tei-editor';
 import type { HistoricalItemDescription } from '@/types/backoffice';
+
+/**
+ * Legacy HTML → plain text, entities decoded.
+ *
+ * `stripHtml` alone leaves entities encoded, so a surviving `&nbsp;` would be
+ * escaped again on the way into TEI and the reader would see the literal
+ * characters. Sanitize first (never trust the row), then let the DOM decode.
+ */
+function htmlToText(html: string): string {
+  const host = document.createElement('div');
+  host.innerHTML = sanitizeHtml(html);
+  return host.textContent ?? '';
+}
 
 interface DescriptionsSectionProps {
   historicalItemId: number;
@@ -58,6 +80,10 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
   const [newContent, setNewContent] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState('');
+  // The edit buffer holds legacy HTML or a TEI `<p>`-sequence. Which one cannot
+  // be derived from the row alone: a convert leaves the row still HTML on the
+  // server while the buffer is already TEI.
+  const [editFormat, setEditFormat] = useState<'html' | 'tei'>('html');
   const [editingSourceId, setEditingSourceId] = useState<number | null>(null);
   const [editSourceValue, setEditSourceValue] = useState('');
 
@@ -204,7 +230,12 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                         onClick={() =>
                           updateMut.mutate({
                             id: desc.id,
-                            data: { content: editContent },
+                            data: {
+                              content:
+                                editFormat === 'tei'
+                                  ? wrapTeiDescription(editContent)
+                                  : editContent,
+                            },
                           })
                         }
                         aria-label={t('manuscriptsDetail.saveDescriptionAria')}
@@ -223,13 +254,37 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                     </>
                   ) : (
                     <>
+                      {isTeiDescription(desc.content) ? (
+                        <span className="self-center rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-primary">
+                          {t('manuscriptsDetail.descriptionFormatTei')}
+                        </span>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-[11px] text-muted-foreground"
+                          onClick={() => {
+                            setEditingId(desc.id);
+                            setEditFormat('tei');
+                            setEditContent(
+                              teiDescriptionProse(
+                                teiDescriptionFromText(htmlToText(desc.content))
+                              ) ?? ''
+                            );
+                          }}
+                        >
+                          {t('manuscriptsDetail.descriptionConvertToTei')}
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6"
                         onClick={() => {
+                          const prose = teiDescriptionProse(desc.content);
                           setEditingId(desc.id);
-                          setEditContent(desc.content);
+                          setEditFormat(prose === null ? 'html' : 'tei');
+                          setEditContent(prose ?? desc.content);
                         }}
                         aria-label={t('manuscriptsDetail.editDescriptionAria')}
                       >
@@ -249,16 +304,27 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                 </div>
               </div>
               {editingId === desc.id ? (
-                <RichTextEditor
-                  content={editContent}
-                  onChange={(html) => setEditContent(html)}
-                  placeholder={t('manuscriptsDetail.enterDescriptionPlaceholder')}
-                  minimal
-                />
+                editFormat === 'tei' ? (
+                  <DescriptionTeiEditor
+                    label={t('manuscriptsDetail.descriptions')}
+                    value={editContent}
+                    onChange={setEditContent}
+                  />
+                ) : (
+                  <RichTextEditor
+                    content={editContent}
+                    onChange={(html) => setEditContent(html)}
+                    placeholder={t('manuscriptsDetail.enterDescriptionPlaceholder')}
+                    minimal
+                  />
+                )
               ) : (
                 <div
-                  className="prose prose-sm dark:prose-invert max-w-none line-clamp-3"
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(desc.content) }}
+                  className={cn(
+                    'prose prose-sm dark:prose-invert max-w-none line-clamp-3',
+                    isTeiDescription(desc.content) && 'tei-linked-prose'
+                  )}
+                  dangerouslySetInnerHTML={{ __html: renderPublicDescription(desc.content).html }}
                 />
               )}
             </div>

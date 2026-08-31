@@ -234,8 +234,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             />
           </div>
         </div>
-        {/* Row 2: the result-type tabs, with the grid thumbnail-size control
-            right-aligned on the same line (grid view only). */}
+        {/* Row 2: the result-type tabs, with the thumbnail-size control
+            right-aligned on the same line. */}
         <div className="flex min-w-0 items-center gap-3">
           <div className="min-w-0 flex-1">
             <ResultTypeToggle
@@ -246,13 +246,17 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             />
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            {s.viewMode === 'grid' && showThumbnails && (
-              <ThumbnailSizeControl
-                size={thumbnailSize}
-                onChange={setThumbnailSize}
-                className="hidden shrink-0 sm:inline-flex"
-              />
-            )}
+            {/* Sizes whatever thumbnail the current view draws: the grid's
+                cards, and the region crop the table renders under each row. */}
+            {showThumbnails &&
+              (s.viewMode === 'grid' ||
+                (s.viewMode === 'table' && hasTablePreview(s.resultType))) && (
+                <ThumbnailSizeControl
+                  size={thumbnailSize}
+                  onChange={setThumbnailSize}
+                  className="hidden shrink-0 sm:inline-flex"
+                />
+              )}
             {/* Only grid view, and the table views that actually render a
                 thumbnail row, have anything for this to hide. */}
             {(s.viewMode === 'grid' ||
@@ -354,6 +358,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     visibleColumns={s.categoryConfig.visibleColumns}
                     isFetching={s.isFetching}
                     showThumbnails={showThumbnails}
+                    thumbnailSize={thumbnailSize}
                   />
                 ) : s.viewMode === 'timeline' ? (
                   <React.Suspense

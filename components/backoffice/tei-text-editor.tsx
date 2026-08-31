@@ -4,7 +4,15 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { AlertTriangle, CheckCircle2, Code2, Eye, Highlighter, Pencil } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Code2,
+  Eye,
+  Highlighter,
+  Pencil,
+  WrapText,
+} from 'lucide-react';
 
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import {
@@ -25,7 +33,7 @@ import {
 } from '@/lib/tei-highlight';
 import { docToTei, teiToDoc } from '@/lib/tei-prosemirror';
 import type { EditorLinkSelection } from '@/lib/tei-tiptap';
-import { validateTei, type TeiValidationError } from '@/services/image-texts';
+import { formatTei, validateTei, type TeiValidationError } from '@/services/image-texts';
 
 function LoadingBox() {
   const t = useTranslations('backoffice');
@@ -213,6 +221,25 @@ export function TeiTextEditor({
   const valid = errors.length === 0;
   const hosted = Boolean(toolbarContainer);
 
+  // Source view only: the migrated corpus is one unbroken line per text, which
+  // is unreadable to edit. Formatting is done server-side so this button and
+  // the `format_image_text_tei` command can't drift apart, and it stays
+  // disabled while the markup is broken — reflowing a fragment mid-repair
+  // would only lose the author's place.
+  const [formatting, setFormatting] = React.useState(false);
+  const handleFormat = React.useCallback(async () => {
+    if (!token || formatting) return;
+    setFormatting(true);
+    try {
+      const formatted = await formatTei(value, token);
+      if (formatted !== value) onChange(formatted);
+    } catch {
+      // The validity badge already reports why; leave the text as it is.
+    } finally {
+      setFormatting(false);
+    }
+  }, [value, token, onChange, formatting]);
+
   // Hosted in a panel header: render icon-only tabs + an icon-only validity badge
   // so the whole bar fits a narrow (split-column) header without a second row.
   const toolbar = (
@@ -248,6 +275,17 @@ export function TeiTextEditor({
         label={t('teiEditor.preview')}
         compact={hosted}
       />
+      {mode === 'source' && (
+        <ModeButton
+          active={false}
+          onClick={handleFormat}
+          icon={WrapText}
+          label={t('teiEditor.format')}
+          compact={hosted}
+          disabled={!token || !valid || formatting}
+          title={valid ? t('teiEditor.formatHint') : t('teiEditor.formatUnavailable')}
+        />
+      )}
       {mode === 'preview' && (
         <HighlightMenu
           options={highlightOptions}
