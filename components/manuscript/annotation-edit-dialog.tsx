@@ -360,32 +360,31 @@ function DialogBody({
     let savedCount = 0;
     const failed: number[] = [];
 
-    await Promise.all(
-      targets.map(async (graph) => {
-        const patch = buildPatchForGraph(graph);
-        if (Object.keys(patch).length === 0) {
-          // Nothing to do for this graph (e.g. multi-mode where only 'mixed'
-          // states stayed mixed) — count as success and skip the round trip.
-          savedCount += 1;
-          return;
-        }
-        try {
-          const updated = await updateViewerAnnotation(token, graph.id, patch);
-          if (!updated.allograph_name) {
-            if (updated.allograph) {
-              const matching = allographs.find((a) => a.id === updated.allograph);
-              if (matching) updated.allograph_name = matching.name;
-            } else if (graph.allograph_name) {
-              updated.allograph_name = graph.allograph_name;
-            }
-          }
-          onGraphSaved?.(updated);
-          savedCount += 1;
-        } catch {
-          failed.push(graph.id);
-        }
-      })
-    );
+    const saveOne = async (graph: BackendGraph) => {
+      const patch = buildPatchForGraph(graph);
+      if (Object.keys(patch).length === 0) {
+        // Nothing to do for this graph (e.g. multi-mode where only 'mixed'
+        // states stayed mixed) — count as success and skip the round trip.
+        savedCount += 1;
+        return;
+      }
+      try {
+        const updated = await updateViewerAnnotation(token, graph.id, patch);
+        onGraphSaved?.(updated);
+        savedCount += 1;
+      } catch {
+        failed.push(graph.id);
+      }
+    };
+
+    // Selection can hold up to MAX_SELECTION (search-page.tsx) graphs; firing
+    // one PATCH per graph unbounded would open hundreds-to-thousands of
+    // simultaneous requests. Save in bounded batches instead, mirroring the
+    // chunking fetchGraphsByIds already does for the read side.
+    const SAVE_CONCURRENCY = 20;
+    for (let i = 0; i < targets.length; i += SAVE_CONCURRENCY) {
+      await Promise.all(targets.slice(i, i + SAVE_CONCURRENCY).map(saveOne));
+    }
 
     setSaving(false);
     setFailedIds(failed);

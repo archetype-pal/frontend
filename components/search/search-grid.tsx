@@ -801,7 +801,7 @@ function SearchGridComponent({
         );
       }
 
-      if (card.kind === 'graph' && card.item.image_iiif) {
+      if (card.kind === 'graph') {
         const isSelected = selectedIds ? selectedIds.has(card.item.id) : false;
         return (
           <GraphGridCard
@@ -831,13 +831,11 @@ function SearchGridComponent({
           displayText={card.displayText}
           formattedDisplayText={card.formattedDisplayText}
           highlightKeyword={highlightKeyword}
-          graphItem={card.kind === 'graph' ? card.item : undefined}
           annotationCount={card.kind === 'image' ? card.item.number_of_annotations : null}
           item={card.item}
           itemType={card.kind}
           showThumbnail={showThumbnails}
           eager={eager}
-          recentlyEdited={card.kind === 'graph' ? card.recentlyEdited : false}
         />
       );
     },
