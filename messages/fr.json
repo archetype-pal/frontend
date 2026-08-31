@@ -169,7 +169,7 @@
     "editSelected": "Modifier la sélection",
     "clearSelection": "Effacer",
     "handDisabledTooltip": "Une main appartient à un seul manuscrit — cette sélection en contient plusieurs.",
-    "stalenessNotice": "Les résultats de recherche peuvent ne pas refléter les modifications enregistrées avant la prochaine réindexation. Une fiche modifiée peut rester affichée même si elle ne correspond plus à vos filtres.",
+    "stalenessNotice": "Une fiche modifiée peut rester affichée même si elle ne correspond plus à vos filtres.",
     "confirmDeleteGraph": "Supprimer cette annotation de graphème ?",
     "discardUnsavedChanges": "Abandonner les modifications non enregistrées ?",
     "graphDeleted": "Graphème supprimé",
@@ -179,7 +179,7 @@
     "notAuthenticated": "Non authentifié.",
     "failedToLoadHands": "Impossible de charger les mains pour ce manuscrit.",
     "recentlyEditedBadge": "Modifié",
-    "recentlyEditedTooltip": "Modifié — réindexation en attente",
+    "recentlyEditedTooltip": "Récemment modifié",
     "queryBuilder": {
       "opIs": "est",
       "opIsNot": "n'est pas",
