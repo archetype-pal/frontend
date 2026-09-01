@@ -2792,7 +2792,7 @@
       "readdFile": "Re-add file to resume",
       "uploadCount": "{count, plural, =0 {Upload images} =1 {Upload 1 image} other {Upload {count} images}}",
       "signOutTitle": "{count, plural, =1 {1 upload is still running} other {{count} uploads are still running}}",
-      "signOutDescription": "Signing out stops them. Files already fully uploaded will still be processed by the server; anything mid-transfer can be resumed after you sign back in by re-selecting it.",
+      "signOutDescription": "Signing out stops them. Files that finished uploading will still be processed by the server and appear shortly; anything still transferring is discarded and will need uploading again.",
       "signOutConfirm": "Sign out anyway"
     }
   },

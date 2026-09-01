@@ -2792,7 +2792,7 @@
       "readdFile": "Datei erneut hinzufügen, um fortzusetzen",
       "uploadCount": "{count, plural, =0 {Bilder hochladen} =1 {1 Bild hochladen} other {{count} Bilder hochladen}}",
       "signOutTitle": "{count, plural, =1 {1 Hochladevorgang läuft noch} other {{count} Hochladevorgänge laufen noch}}",
-      "signOutDescription": "Durch das Abmelden werden sie gestoppt. Dateien, die bereits vollständig hochgeladen sind, werden vom Server dennoch verarbeitet; alles, was noch übertragen wird, können Sie nach erneuter Anmeldung durch erneutes Auswählen fortsetzen.",
+      "signOutDescription": "Durch das Abmelden werden sie gestoppt. Dateien, deren Hochladen abgeschlossen ist, werden vom Server dennoch verarbeitet und erscheinen in Kürze; alles, was noch übertragen wird, wird verworfen und muss erneut hochgeladen werden.",
       "signOutConfirm": "Trotzdem abmelden"
     }
   },
