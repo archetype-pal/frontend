@@ -10,11 +10,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { getFacetOrder, SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { formatFacetTitle } from '@/lib/search-query';
-import {
-  DEFAULT_COLUMNS,
-  getEnabledSearchCategories,
-  type SearchCategoryConfig,
-} from '@/lib/site-features';
+import { getEnabledSearchCategories, type SearchCategoryConfig } from '@/lib/site-features';
+import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
 import { SortableCheckboxList, type SortableItem } from './sortable-checkbox-list';
 import { useModelLabels } from '@/contexts/model-labels-context';
 
@@ -24,7 +21,10 @@ type Props = {
 };
 
 function useColumnItems(type: ResultType): SortableItem[] {
-  return useMemo(() => DEFAULT_COLUMNS[type].map((col) => ({ id: col, label: col })), [type]);
+  return useMemo(
+    () => COLUMN_HEADERS_BY_TYPE[type].map((col) => ({ id: col, label: col })),
+    [type]
+  );
 }
 
 function useFacetItems(type: ResultType): SortableItem[] {

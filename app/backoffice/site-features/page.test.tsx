@@ -1,8 +1,9 @@
 /** @vitest-environment jsdom */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
 import { getDefaultConfig, type SiteFeaturesConfig } from '@/lib/site-features';
 import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
 import SiteFeaturesPage from './page';
@@ -61,5 +62,27 @@ describe('<SiteFeaturesPage>', () => {
 
     expect((manuscriptsSwitch as HTMLButtonElement).disabled).toBe(true);
     expect((imagesSwitch as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('offers every implemented table column for search category configuration', async () => {
+    renderPage();
+    const manuscriptsButton = await screen.findByRole('button', { name: /appManuscripts/ });
+
+    fireEvent.click(manuscriptsButton);
+
+    for (const column of COLUMN_HEADERS_BY_TYPE.manuscripts) {
+      expect(screen.getAllByText(column).length).toBeGreaterThan(0);
+    }
+    expect(screen.getAllByText('Format').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Display Label').length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: /searchCategoryImages/ }));
+
+    for (const column of COLUMN_HEADERS_BY_TYPE.images) {
+      expect(screen.getAllByText(column).length).toBeGreaterThan(0);
+    }
+    expect(screen.getAllByText('Date').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Locus').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Tags').length).toBeGreaterThan(0);
   });
 });
