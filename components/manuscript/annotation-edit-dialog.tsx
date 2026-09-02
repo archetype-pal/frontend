@@ -307,6 +307,20 @@ function DialogBody({
     setFailedIds([]);
   }
 
+  // Also reset them when the Allograph changes. A feature/position edit is
+  // keyed by component/position IDs that belong to a specific allograph's
+  // schema — after switching allograph, those keys are stale. Left alone,
+  // they don't disappear from the UI (the rendered rows now come from the
+  // new allograph's schema) but `buildPatchForGraph` still applies them on
+  // save, silently attaching a component from the old allograph's schema to
+  // a graph now being set to a different one.
+  const [prevAllographId, setPrevAllographId] = React.useState(allographId);
+  if (!Object.is(prevAllographId, allographId)) {
+    setPrevAllographId(allographId);
+    featureMap.reset();
+    positionMap.reset();
+  }
+
   // Guard every close path (Cancel, Escape, overlay click) against discarding
   // unsaved edits. The Sheet's `open` is controlled by the parent, so simply
   // not calling `onOpenChange(false)` keeps it open when the user backs out.
