@@ -351,14 +351,36 @@ function DialogBody({
     if (!handDisabled && hand !== MIXED && hand !== (graph.hand ?? null)) {
       patch.hand = hand;
     }
-    if (featureMap.hasMeaningfulEdits) {
-      patch.graphcomponent_set = applyFeatureEdits(
-        graph.graphcomponent_set ?? [],
-        featureMap.edits
-      );
+
+    // A component/position only stays valid for as long as it belongs to the
+    // currently-selected allograph's schema. `applyFeatureEdits`/
+    // `applyPositionEdits` only ever touch keys explicitly present in the
+    // tri-state edits, so anything left out of the schema — a component from
+    // an allograph the graph (or a past save) has since moved on from —
+    // would otherwise pass through untouched and accumulate indefinitely.
+    // Pruning the base to the current schema before applying edits also
+    // self-heals a graph that already accumulated stale rows from before
+    // this fix, the next time it's saved.
+    const validComponentIds = schemaAllograph
+      ? new Set(schemaAllograph.components.map((c) => c.component_id))
+      : null;
+    const currentComponents = graph.graphcomponent_set ?? [];
+    const baseComponents = validComponentIds
+      ? currentComponents.filter((c) => validComponentIds.has(c.component))
+      : currentComponents;
+    if (featureMap.hasMeaningfulEdits || baseComponents.length !== currentComponents.length) {
+      patch.graphcomponent_set = applyFeatureEdits(baseComponents, featureMap.edits);
     }
-    if (positionMap.hasMeaningfulEdits) {
-      patch.positions = applyPositionEdits(graph.positions ?? [], positionMap.edits);
+
+    const validPositionIds = schemaAllograph
+      ? new Set(schemaAllograph.positions.map((p) => p.id))
+      : null;
+    const currentPositions = graph.positions ?? [];
+    const basePositions = validPositionIds
+      ? currentPositions.filter((id) => validPositionIds.has(id))
+      : currentPositions;
+    if (positionMap.hasMeaningfulEdits || basePositions.length !== currentPositions.length) {
+      patch.positions = applyPositionEdits(basePositions, positionMap.edits);
     }
     return patch;
   }
