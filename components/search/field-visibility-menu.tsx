@@ -16,6 +16,8 @@ type Props = {
   resultType: ResultType;
   visibleColumns: string[];
   visibleFacets: string[];
+  availableColumns?: string[];
+  availableFacets?: string[];
   onColumnsChange: (next: string[]) => void;
   onFacetsChange: (next: string[]) => void;
   onReset: () => void;
@@ -25,17 +27,27 @@ export function FieldVisibilityMenu({
   resultType,
   visibleColumns,
   visibleFacets,
+  availableColumns,
+  availableFacets,
   onColumnsChange,
   onFacetsChange,
   onReset,
 }: Props) {
   const columnItems = useMemo<SortableItem[]>(
-    () => COLUMN_HEADERS_BY_TYPE[resultType].map((col) => ({ id: col, label: col })),
-    [resultType]
+    () =>
+      (availableColumns ?? COLUMN_HEADERS_BY_TYPE[resultType]).map((col) => ({
+        id: col,
+        label: col,
+      })),
+    [availableColumns, resultType]
   );
   const facetItems = useMemo<SortableItem[]>(
-    () => getFacetOrder(resultType).map((f) => ({ id: f, label: formatFacetTitle(f, resultType) })),
-    [resultType]
+    () =>
+      (availableFacets ?? getFacetOrder(resultType)).map((f) => ({
+        id: f,
+        label: formatFacetTitle(f, resultType),
+      })),
+    [availableFacets, resultType]
   );
 
   return (
