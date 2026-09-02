@@ -27,6 +27,8 @@ import {
 import { cn } from '@/lib/utils';
 import { MsDescSection, MSDESC_SECTION_ID } from './msdesc-section';
 import { SectionHeading } from './section-heading';
+import { useSiteFeatures } from '@/contexts/site-features-context';
+import { isSearchCategoryEnabled } from '@/lib/site-features';
 
 interface ManuscriptViewerProps {
   manuscript: Manuscript;
@@ -165,6 +167,9 @@ export function ManuscriptViewer({
 }: ManuscriptViewerProps) {
   const { getLabel, getPluralLabel } = useModelLabels();
   const t = useTranslations('manuscript');
+  const { config: siteFeatures, isSectionEnabled } = useSiteFeatures();
+  const manuscriptsSearchEnabled =
+    isSectionEnabled('search') && isSearchCategoryEnabled(siteFeatures, 'manuscripts');
   // The msDesc renderer's label keys (`msdesc.areas.*` / `msdesc.render.*` /
   // `msdesc.vocab.*`) live in the `backoffice` namespace — one vocabulary
   // shared by the authoring form and every render surface (lib/msdesc-vocab.ts).
@@ -254,9 +259,13 @@ export function ManuscriptViewer({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/search/manuscripts">{getLabel('appManuscripts')}</Link>
-            </BreadcrumbLink>
+            {manuscriptsSearchEnabled ? (
+              <BreadcrumbLink asChild>
+                <Link href="/search/manuscripts">{getLabel('appManuscripts')}</Link>
+              </BreadcrumbLink>
+            ) : (
+              <BreadcrumbPage>{getLabel('appManuscripts')}</BreadcrumbPage>
+            )}
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>

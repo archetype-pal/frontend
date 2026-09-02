@@ -21,17 +21,29 @@ export function useSearchData(opts: {
   viewMode: ViewMode;
   dataCount: number;
   results: unknown[];
+  enabledCategories: ResultType[];
 }) {
-  const { resultType, baseFacetURL, queryState, submittedKeyword, viewMode, dataCount, results } =
-    opts;
+  const {
+    resultType,
+    baseFacetURL,
+    queryState,
+    submittedKeyword,
+    viewMode,
+    dataCount,
+    results,
+    enabledCategories,
+  } = opts;
   const { setSuggestionsPool, resetSuggestionsPool } = useSearchContext();
 
   // The active tab's count comes from the main results query (dataCount), so
   // only the other tabs need a count request — via the list endpoint, which
   // skips the (much heavier) facet-distribution computation.
   const quickStatsItems = React.useMemo(
-    () => resultTypeItems.filter((item) => item.value !== resultType),
-    [resultType]
+    () =>
+      resultTypeItems.filter(
+        (item) => item.value !== resultType && enabledCategories.includes(item.value)
+      ),
+    [enabledCategories, resultType]
   );
 
   const quickStatsQueries = useQueries({
@@ -54,7 +66,7 @@ export function useSearchData(opts: {
       item.value,
       quickStatsQueries[idx]?.data ?? 0,
     ]);
-    const next = Object.fromEntries(entries) as Record<ResultType, number>;
+    const next = Object.fromEntries(entries) as Partial<Record<ResultType, number>>;
     next[resultType] = dataCount;
     return next;
   }, [dataCount, quickStatsItems, quickStatsQueries, resultType]);

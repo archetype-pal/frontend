@@ -1904,6 +1904,7 @@
       "toastSaved": "Site features saved",
       "toastFailedSave": "Failed to save site features",
       "failedLoad": "Failed to load site features",
+      "searchCategoriesRequired": "Keep at least one search category enabled",
       "dragToReorder": "Drag to reorder",
       "reorderSection": "Reorder {section}",
       "sectionsTitle": "Site Sections",

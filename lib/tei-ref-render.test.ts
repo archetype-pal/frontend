@@ -95,7 +95,7 @@ describe('renderMsDescArea covers the origPlace @key shape (form path)', () => {
 });
 
 describe('every place target the picker emits resolves to a real route', () => {
-  it('never emits a bare /search/ (which 404s) and always carries ?keyword=', () => {
+  it('emits a typed /search/{type} path and always carries ?keyword=', () => {
     for (const name of ['Kelso', 'St Andrews', "St Andrew's"]) {
       const target = placeSearchTarget(name);
       const [path, query] = target.split('?');

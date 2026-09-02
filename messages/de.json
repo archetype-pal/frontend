@@ -1904,6 +1904,7 @@
       "toastSaved": "Website-Funktionen gespeichert",
       "toastFailedSave": "Website-Funktionen konnten nicht gespeichert werden",
       "failedLoad": "Website-Funktionen konnten nicht geladen werden",
+      "searchCategoriesRequired": "Lassen Sie mindestens eine Suchkategorie aktiviert",
       "dragToReorder": "Zum Neuordnen ziehen",
       "reorderSection": "{section} neu ordnen",
       "sectionsTitle": "Website-Bereiche",

@@ -9,6 +9,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 import { readSiteFeatures } from '@/lib/site-features-server';
+import { isSearchCategoryEnabled } from '@/lib/site-features';
 
 async function getManuscript(id: string): Promise<Manuscript | null> {
   try {
@@ -92,6 +93,9 @@ export default async function ManuscriptPage({ params }: { params: Promise<{ id:
 
   if (!manuscript) {
     const t = await getTranslations('manuscript.loadError');
+    const manuscriptsSearchEnabled =
+      siteFeatures.sections.search !== false &&
+      isSearchCategoryEnabled(siteFeatures, 'manuscripts');
     return (
       <main className="mx-auto flex max-w-6xl flex-col items-center px-4 py-24 text-center sm:px-6">
         <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
@@ -99,12 +103,14 @@ export default async function ManuscriptPage({ params }: { params: Promise<{ id:
         </h1>
         <p className="mt-3 max-w-md text-muted-foreground">{t('description')}</p>
         <div className="ornament-divider mt-6 w-44 text-border" aria-hidden />
-        <Link
-          href="/search/manuscripts"
-          className="mt-5 text-sm font-medium text-primary underline-offset-4 hover:underline"
-        >
-          {t('backLink')}
-        </Link>
+        {manuscriptsSearchEnabled && (
+          <Link
+            href="/search/manuscripts"
+            className="mt-5 text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            {t('backLink')}
+          </Link>
+        )}
       </main>
     );
   }

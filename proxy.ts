@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { AUTH_TOKEN_COOKIE } from '@/lib/auth-token-cookie';
-import type { SectionKey } from '@/lib/site-features';
-import type { ResultType } from '@/lib/search-types';
+import { getDefaultSearchCategory, type SectionKey } from '@/lib/site-features';
+import { SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -124,14 +124,30 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  const searchMatch = pathname.match(/^\/search\/([^/]+)/);
+  if (pathname === '/search') {
+    const firstEnabled = getDefaultSearchCategory(featureConfig);
+    const url = request.nextUrl.clone();
+    if (!firstEnabled) {
+      url.pathname = '/not-found';
+      return attachSecurityHeaders(NextResponse.rewrite(url), nonce, csp);
+    }
+    url.pathname = `/search/${firstEnabled}`;
+    return attachSecurityHeaders(NextResponse.redirect(url), nonce, csp);
+  }
+
+  const searchMatch = pathname.match(/^\/search\/([^/]+)\/?$/);
   if (searchMatch) {
     const categoryType = searchMatch[1] as ResultType;
     const catConfig = featureConfig.searchCategories[categoryType];
-    if (catConfig && catConfig.enabled === false) {
+    if (!SEARCH_RESULT_TYPES.includes(categoryType) || catConfig?.enabled === false) {
       const url = request.nextUrl.clone();
-      url.pathname = '/not-found';
-      return attachSecurityHeaders(NextResponse.rewrite(url), nonce, csp);
+      const firstEnabled = getDefaultSearchCategory(featureConfig);
+      if (!firstEnabled) {
+        url.pathname = '/not-found';
+        return attachSecurityHeaders(NextResponse.rewrite(url), nonce, csp);
+      }
+      url.pathname = `/search/${firstEnabled}`;
+      return attachSecurityHeaders(NextResponse.redirect(url), nonce, csp);
     }
   }
 

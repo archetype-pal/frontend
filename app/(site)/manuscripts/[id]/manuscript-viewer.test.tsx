@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { Manuscript } from '@/types/manuscript';
 import type { HandType } from '@/types/hands';
+import { SiteFeaturesProvider } from '@/contexts/site-features-context';
+import { getDefaultConfig } from '@/lib/site-features';
 import { ManuscriptViewer } from './manuscript-viewer';
 
 // The viewer only needs these for chrome around the section under test.
@@ -48,12 +50,14 @@ const MANUSCRIPT = {
 
 function renderViewer(msDescEnabled: boolean, hands: HandType[] = []) {
   return render(
-    <ManuscriptViewer
-      manuscript={MANUSCRIPT}
-      images={[]}
-      hands={hands}
-      msDescEnabled={msDescEnabled}
-    />
+    <SiteFeaturesProvider initialConfig={getDefaultConfig()}>
+      <ManuscriptViewer
+        manuscript={MANUSCRIPT}
+        images={[]}
+        hands={hands}
+        msDescEnabled={msDescEnabled}
+      />
+    </SiteFeaturesProvider>
   );
 }
 

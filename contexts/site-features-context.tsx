@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import {
+  getEnabledSearchCategories,
   getDefaultConfig,
   type SiteFeaturesConfig,
   type SectionKey,
@@ -63,13 +64,7 @@ export function SiteFeaturesProvider({
     [config]
   );
 
-  const enabledCategories = useMemo(
-    () =>
-      (Object.entries(config.searchCategories) as [ResultType, SearchCategoryConfig][])
-        .filter(([, c]) => c.enabled)
-        .map(([t]) => t),
-    [config]
-  );
+  const enabledCategories = useMemo(() => getEnabledSearchCategories(config), [config]);
 
   const value = useMemo<SiteFeaturesContextValue>(
     () => ({ config, isSectionEnabled, isFeatureEnabled, getCategoryConfig, enabledCategories }),

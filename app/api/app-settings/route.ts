@@ -2,7 +2,11 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
 import { readSiteFeatures, writeSiteFeatures, SITE_FEATURES_TAG } from '@/lib/site-features-server';
-import { mergeFeatureFlags, type SiteFeaturesConfig } from '@/lib/site-features';
+import {
+  hasEnabledSearchCategory,
+  mergeFeatureFlags,
+  type SiteFeaturesConfig,
+} from '@/lib/site-features';
 
 async function verifySuperuser(token: string): Promise<boolean> {
   try {
@@ -43,7 +47,21 @@ export async function PUT(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
-  if (!body || typeof body !== 'object' || !('sections' in body) || !('searchCategories' in body)) {
+  if (
+    !body ||
+    typeof body !== 'object' ||
+    Array.isArray(body) ||
+    !('sections' in body) ||
+    !('searchCategories' in body)
+  ) {
+    return NextResponse.json({ error: 'Invalid config shape' }, { status: 400 });
+  }
+  const searchCategories = (body as { searchCategories?: unknown }).searchCategories;
+  if (
+    !searchCategories ||
+    typeof searchCategories !== 'object' ||
+    Array.isArray(searchCategories)
+  ) {
     return NextResponse.json({ error: 'Invalid config shape' }, { status: 400 });
   }
   // `features` is deliberately NOT required by the shape guard, and is merged
@@ -54,6 +72,12 @@ export async function PUT(request: NextRequest) {
   // means an omitted key keeps the stored value while a newer client that sends
   // the full map still wins key-by-key.
   const payload = body as SiteFeaturesConfig;
+  if (!hasEnabledSearchCategory(payload)) {
+    return NextResponse.json(
+      { error: 'At least one search category must remain enabled' },
+      { status: 400 }
+    );
+  }
   const current = await readSiteFeatures();
   // The merge below is over `current`, so merging over a degraded read would
   // re-enable flags nobody touched.

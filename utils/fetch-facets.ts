@@ -100,7 +100,8 @@ export const searchKeys = {
   resultType: (resultType: ResultType) => [...searchKeys.all, resultType] as const,
   facets: (resultType: ResultType, url: string) =>
     [...searchKeys.resultType(resultType), 'facets', url] as const,
-  globalSuggestions: () => [...searchKeys.all, 'global-suggestions'] as const,
+  globalSuggestions: (resultType: ResultType) =>
+    [...searchKeys.all, 'global-suggestions', resultType] as const,
   suggestions: (path: string) => [...searchKeys.all, 'suggestions', path] as const,
 } as const;
 

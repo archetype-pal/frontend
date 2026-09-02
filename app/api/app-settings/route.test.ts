@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getDefaultConfig, type SiteFeaturesConfig } from '@/lib/site-features';
 import { readSiteFeatures } from '@/lib/site-features-server';
+import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
 
@@ -116,6 +117,20 @@ describe('PUT /api/app-settings — feature flags', () => {
   it('still rejects a payload missing the required keys', async () => {
     const response = await PUT(putRequest({ features: { manuscriptDescriptions: false } }));
     expect(response.status).toBe(400);
+  });
+
+  it('rejects a config that disables every search category', async () => {
+    const config = getDefaultConfig();
+    for (const type of SEARCH_RESULT_TYPES) {
+      config.searchCategories[type].enabled = false;
+    }
+
+    const response = await PUT(putRequest(config));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: 'At least one search category must remain enabled',
+    });
+    expect(authFetch.mock.calls.some(([path]) => path === '/api/v1/app-settings/')).toBe(false);
   });
 });
 

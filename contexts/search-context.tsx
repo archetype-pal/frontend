@@ -7,6 +7,7 @@ import { DEFAULT_QUERY, getSuggestionsPool } from '@/lib/search-query';
 import { API_BASE_URL } from '@/lib/api-fetch';
 import { SEARCH_RESULT_CONFIG, type ResultType } from '@/lib/search-types';
 import type { KeywordSuggestionItem } from '@/components/search/keyword-search-input';
+import { useSiteFeatures } from '@/contexts/site-features-context';
 
 type SearchContextType = {
   suggestionsPool: string[];
@@ -23,33 +24,48 @@ const SearchContext = React.createContext<SearchContextType | undefined>(undefin
 export function SearchProvider({ children }: { children: React.ReactNode }) {
   const [suggestionsPool, setSuggestionsPool] = React.useState<string[]>([]);
   const globalLoadRequestedRef = React.useRef(false);
+  const globalPoolTypeRef = React.useRef<ResultType | null>(null);
   // The API-loaded global pool, kept separately from the active pool so a
   // page-derived override can be reverted to it without re-fetching. Also lets
   // loadGlobalSuggestions read "already loaded?" without depending on the active
   // pool's length (which page results churn through empty→N→empty).
   const globalPoolRef = React.useRef<string[]>([]);
   const queryClient = useQueryClient();
+  const { enabledCategories } = useSiteFeatures();
+  const defaultSearchType = enabledCategories[0] ?? null;
 
   const loadGlobalSuggestions = React.useCallback(async () => {
-    if (globalPoolRef.current.length > 0 || globalLoadRequestedRef.current) return;
+    if (!defaultSearchType) return;
+    if (
+      globalPoolTypeRef.current === defaultSearchType &&
+      (globalPoolRef.current.length > 0 || globalLoadRequestedRef.current)
+    ) {
+      return;
+    }
     globalLoadRequestedRef.current = true;
-    const url = buildSearchRequestUrl('manuscripts', { ...DEFAULT_QUERY, limit: 100 }, '');
+    const requestedType = defaultSearchType;
+    const replacingType = globalPoolTypeRef.current !== requestedType;
+    globalPoolTypeRef.current = requestedType;
+    const url = buildSearchRequestUrl(requestedType, { ...DEFAULT_QUERY, limit: 100 }, '');
     try {
       const pool = await queryClient.fetchQuery({
-        queryKey: searchKeys.globalSuggestions(),
+        queryKey: searchKeys.globalSuggestions(requestedType),
         queryFn: async () => {
-          const resp = await fetchFacetsAndResults('manuscripts', url);
+          const resp = await fetchFacetsAndResults(requestedType, url);
           if (!resp || !Array.isArray(resp.results)) return [];
           return getSuggestionsPool(resp.results);
         },
         staleTime: 5 * 60_000,
       });
+      if (globalPoolTypeRef.current !== requestedType) return;
       globalPoolRef.current = pool;
-      setSuggestionsPool((prev) => (prev.length > 0 ? prev : pool));
+      setSuggestionsPool((prev) => (replacingType || prev.length === 0 ? pool : prev));
     } finally {
-      globalLoadRequestedRef.current = false;
+      if (globalPoolTypeRef.current === requestedType) {
+        globalLoadRequestedRef.current = false;
+      }
     }
-  }, [queryClient]);
+  }, [defaultSearchType, queryClient]);
 
   const resetSuggestionsPool = React.useCallback(() => {
     setSuggestionsPool(globalPoolRef.current);

@@ -2,9 +2,8 @@
 
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
-import { SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
+import type { ResultType } from '@/lib/search-types';
 import { useSiteFeatures } from '@/contexts/site-features-context';
-import { useAuth } from '@/contexts/auth-context';
 import { useSearchVisibility } from '@/lib/search-visibility';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { useSearchResults } from '@/hooks/search/use-search-results';
@@ -34,17 +33,18 @@ import { useSearchData } from '@/hooks/search/use-search-data';
 export function useSearchPageState(initialType?: ResultType) {
   const searchParams = useSearchParams();
   const { getLabel } = useModelLabels();
-  const [resultType, setResultType] = React.useState<ResultType>(initialType ?? 'manuscripts');
+  const { enabledCategories } = useSiteFeatures();
+  const firstEnabledCategory = enabledCategories[0] ?? 'manuscripts';
+  const initialResultType =
+    initialType && enabledCategories.includes(initialType) ? initialType : firstEnabledCategory;
+  const [resultType, setResultType] = React.useState<ResultType>(initialResultType);
+  if (enabledCategories.length > 0 && !enabledCategories.includes(resultType)) {
+    setResultType(firstEnabledCategory);
+  }
   const [advancedSearch, setAdvancedSearch] = React.useState<AdvancedSearchState>(
     DEFAULT_ADVANCED_SEARCH_STATE
   );
-  const { enabledCategories: guestEnabledCategories } = useSiteFeatures();
-  const { token } = useAuth();
   const visibility = useSearchVisibility(resultType);
-  const enabledCategories = React.useMemo(
-    () => (token ? [...SEARCH_RESULT_TYPES] : guestEnabledCategories),
-    [token, guestEnabledCategories]
-  );
   const categoryConfig = React.useMemo(
     () => ({
       enabled: true,
@@ -66,7 +66,7 @@ export function useSearchPageState(initialType?: ResultType) {
   const prevInitialTypeRef = React.useRef(initialType);
   if (initialType != null && initialType !== prevInitialTypeRef.current) {
     prevInitialTypeRef.current = initialType;
-    setResultType(initialType);
+    setResultType(enabledCategories.includes(initialType) ? initialType : firstEnabledCategory);
   }
 
   const baseFacetURL = React.useMemo(() => getSearchBaseFacetUrl(resultType), [resultType]);
@@ -162,6 +162,7 @@ export function useSearchPageState(initialType?: ResultType) {
     viewMode,
     dataCount: data.count,
     results: data.results,
+    enabledCategories,
   });
 
   // --- Advanced search sync ---

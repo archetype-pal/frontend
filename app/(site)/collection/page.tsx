@@ -53,6 +53,9 @@ import {
 } from '@/hooks/collection/use-collection-view-state';
 import { getWorkset } from '@/services/worksets';
 import { getAvailableCollectionName } from '@/lib/collection-storage';
+import { useSiteFeatures } from '@/contexts/site-features-context';
+import { isSearchCategoryEnabled } from '@/lib/site-features';
+import { searchHref } from '@/lib/search-routing';
 
 type SharedCollectionState =
   | { status: 'idle' }
@@ -221,6 +224,11 @@ function CollectionPageContent() {
   const t = useTranslations('collection');
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { config: siteFeatures, isSectionEnabled } = useSiteFeatures();
+  const imagesSearchEnabled =
+    isSectionEnabled('search') && isSearchCategoryEnabled(siteFeatures, 'images');
+  const graphsSearchEnabled =
+    isSectionEnabled('search') && isSearchCategoryEnabled(siteFeatures, 'graphs');
   const shareId = searchParams.get('share')?.trim() ?? '';
   const anonymousShareHashPayload = useAnonymousShareHashPayload();
   const anonymousSharePayload =
@@ -467,18 +475,22 @@ function CollectionPageContent() {
           <p className="text-muted-foreground text-lg mb-10 leading-relaxed max-w-md mx-auto">
             {isSharedView ? t('page.emptySharedDesc') : t('page.emptyLocalDesc')}
           </p>
-          {!isSharedView && (
+          {!isSharedView && (imagesSearchEnabled || graphsSearchEnabled) && (
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/search/images">
-                <Button size="lg" className="w-full sm:w-auto">
-                  {t('page.browseImages')}
-                </Button>
-              </Link>
-              <Link href="/search/graphs">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  {t('page.browseGraphs')}
-                </Button>
-              </Link>
+              {imagesSearchEnabled && (
+                <Link href={searchHref('images')}>
+                  <Button size="lg" className="w-full sm:w-auto">
+                    {t('page.browseImages')}
+                  </Button>
+                </Link>
+              )}
+              {graphsSearchEnabled && (
+                <Link href={searchHref('graphs')}>
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                    {t('page.browseGraphs')}
+                  </Button>
+                </Link>
+              )}
             </div>
           )}
         </div>

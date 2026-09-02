@@ -31,6 +31,12 @@ export type SiteFeaturesConfig = {
   searchCategories: Record<ResultType, SearchCategoryConfig>;
 };
 
+export type SearchCategoryFlags = Partial<Record<ResultType, { enabled?: boolean }>>;
+
+export type SearchCategoryConfigOwner = {
+  searchCategories: SearchCategoryFlags;
+};
+
 /** Order matters: this is the default nav order, and it must match the backend
  *  seed (`0010_seed_site_features.py`) and `config/site-features.json`. */
 export const ALL_SECTION_KEYS: SectionKey[] = [
@@ -105,6 +111,25 @@ export function mergeFeatureFlags(
  */
 export function getDefaultFeatures(): Record<FeatureKey, boolean> {
   return Object.fromEntries(ALL_FEATURE_KEYS.map((k) => [k, true])) as Record<FeatureKey, boolean>;
+}
+
+export function getEnabledSearchCategories(config: SearchCategoryConfigOwner): ResultType[] {
+  return SEARCH_RESULT_TYPES.filter((type) => config.searchCategories[type]?.enabled !== false);
+}
+
+export function isSearchCategoryEnabled(
+  config: SearchCategoryConfigOwner,
+  type: ResultType
+): boolean {
+  return config.searchCategories[type]?.enabled !== false;
+}
+
+export function getDefaultSearchCategory(config: SearchCategoryConfigOwner): ResultType | null {
+  return getEnabledSearchCategories(config)[0] ?? null;
+}
+
+export function hasEnabledSearchCategory(config: SearchCategoryConfigOwner): boolean {
+  return getEnabledSearchCategories(config).length > 0;
 }
 
 export function normalizeSectionOrder(order: readonly SectionKey[] | undefined): SectionKey[] {

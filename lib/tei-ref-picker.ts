@@ -56,10 +56,9 @@ export const REF_PICKER_KINDS: readonly ResourceKind[] = [
 ];
 
 /**
- * The result tab a place link lands on. The site has NO bare `/search/` route
- * (`app/(site)/search/` holds only `[type]/page.tsx`), so the type segment is
- * mandatory; `manuscripts` is the default landing tab used by the header search
- * and the not-found page.
+ * The legacy result tab a persisted place link lands on. Current generic search
+ * entry points choose the first enabled category, and the search route/proxy
+ * redirect this link if the Manuscripts category is disabled.
  */
 export const PLACE_SEARCH_RESULT_TYPE = 'manuscripts';
 
@@ -67,9 +66,8 @@ export const PLACE_SEARCH_RESULT_TYPE = 'manuscripts';
  * A `@target`-only site-search link for a place name (`§8.3`: Place has no
  * model, so it links to a keyword search, not a detail route).
  *
- * The shape must match the site's own search URLs — `/search/{type}?keyword=…`
- * (`components/layout/header.tsx`, `components/search/search-keyword-bar.tsx`).
- * The search page reads `keyword`, never `q`, and a bare `/search/` 404s.
+ * The shape must match the site's typed search URLs —
+ * `/search/{type}?keyword=…`. The search page reads `keyword`, never `q`.
  */
 export function placeSearchTarget(query: string): string {
   return `/search/${PLACE_SEARCH_RESULT_TYPE}?keyword=${encodeURIComponent(query.trim())}`;

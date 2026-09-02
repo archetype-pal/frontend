@@ -1904,6 +1904,7 @@
       "toastSaved": "Fonctionnalités du site enregistrées",
       "toastFailedSave": "Échec de l'enregistrement des fonctionnalités du site",
       "failedLoad": "Échec du chargement des fonctionnalités du site",
+      "searchCategoriesRequired": "Gardez au moins une catégorie de recherche activée",
       "dragToReorder": "Glisser pour réorganiser",
       "reorderSection": "Réorganiser {section}",
       "sectionsTitle": "Sections du site",

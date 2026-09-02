@@ -2,13 +2,25 @@ import type { MetadataRoute } from 'next';
 import { apiFetch } from '@/lib/api-fetch';
 import { env } from '@/lib/env';
 import { getPublishedPages } from '@/lib/pages-server';
+import { readSiteFeatures } from '@/lib/site-features-server';
+import { getEnabledSearchCategories } from '@/lib/site-features';
 
 const BASE_URL = env.siteUrl;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const siteFeatures = await readSiteFeatures();
+  const searchRoutes: MetadataRoute.Sitemap =
+    siteFeatures.sections.search !== false
+      ? getEnabledSearchCategories(siteFeatures).map((type) => ({
+          url: `${BASE_URL}/search/${type}`,
+          changeFrequency: 'weekly',
+          priority: type === 'manuscripts' ? 0.9 : 0.7,
+        }))
+      : [];
+
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: 'weekly', priority: 1 },
-    { url: `${BASE_URL}/search/manuscripts`, changeFrequency: 'weekly', priority: 0.9 },
+    ...searchRoutes,
     { url: `${BASE_URL}/publications/news`, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE_URL}/publications/blogs`, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE_URL}/publications/feature`, changeFrequency: 'monthly', priority: 0.7 },
