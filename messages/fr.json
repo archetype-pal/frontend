@@ -173,7 +173,6 @@
     "editSelected": "Modifier la sélection",
     "clearSelection": "Effacer",
     "handDisabledTooltip": "Une main appartient à un seul manuscrit — cette sélection en contient plusieurs.",
-    "stalenessNotice": "Une fiche modifiée peut rester affichée même si elle ne correspond plus à vos filtres.",
     "confirmDeleteGraph": "Supprimer cette annotation de graphème ?",
     "discardUnsavedChanges": "Abandonner les modifications non enregistrées ?",
     "graphDeleted": "Graphème supprimé",

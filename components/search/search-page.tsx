@@ -676,11 +676,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
         handDisabled={editFlow.handDisabled}
         handDisabledReason={editFlow.handDisabledReason}
         onGraphSaved={handleGraphSaved}
-        onComplete={({ savedCount }) => {
-          if (savedCount > 0) {
-            toast.info(t('stalenessNotice'));
-          }
-        }}
       />
     </div>
   );

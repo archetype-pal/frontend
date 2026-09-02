@@ -173,7 +173,6 @@
     "editSelected": "Auswahl bearbeiten",
     "clearSelection": "Auswahl aufheben",
     "handDisabledTooltip": "Eine Hand gehört zu einer einzigen Handschrift — diese Auswahl umfasst mehrere.",
-    "stalenessNotice": "Ein bearbeitetes Suchergebnis kann sichtbar bleiben, auch wenn es nicht mehr Ihren Filtern entspricht.",
     "confirmDeleteGraph": "Diese Graph-Annotation löschen?",
     "discardUnsavedChanges": "Nicht gespeicherte Änderungen verwerfen?",
     "graphDeleted": "Graph gelöscht",
