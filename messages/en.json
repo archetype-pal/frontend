@@ -1891,7 +1891,6 @@
       "bulkPurgeTitle": "Permanently delete {count} annotations?",
       "bulkPurgeDesc": "The selected annotations and their description components will be permanently deleted. This cannot be undone.",
       "purgeConfirm": "Delete forever",
-      "reindexHint": "Search results update after the next reindex on the Search Engine page.",
       "bulkRestored": "{count, plural, =1 {# annotation restored} other {# annotations restored}}",
       "bulkRestoreFailed": "Failed to restore annotations",
       "bulkPurged": "{count, plural, =1 {# annotation permanently deleted} other {# annotations permanently deleted}}",

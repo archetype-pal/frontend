@@ -1891,7 +1891,6 @@
       "bulkPurgeTitle": "{count} Annotationen endgültig löschen?",
       "bulkPurgeDesc": "Die ausgewählten Annotationen und ihre Beschreibungskomponenten werden endgültig gelöscht. Dies kann nicht rückgängig gemacht werden.",
       "purgeConfirm": "Endgültig löschen",
-      "reindexHint": "Die Suchergebnisse werden nach der nächsten Neuindizierung auf der Seite Suchmaschine aktualisiert.",
       "bulkRestored": "{count, plural, =1 {# Annotation wiederhergestellt} other {# Annotationen wiederhergestellt}}",
       "bulkRestoreFailed": "Annotationen konnten nicht wiederhergestellt werden",
       "bulkPurged": "{count, plural, =1 {# Annotation endgültig gelöscht} other {# Annotationen endgültig gelöscht}}",
