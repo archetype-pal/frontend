@@ -75,6 +75,22 @@ const ALLOGRAPH_B: Allograph = {
   positions: [{ id: 2000, name: 'medial' }],
 };
 
+// A third allograph, disjoint from both A and B, that neither graph starts
+// on — for the mixed-multi-selection scenario, where two graphs starting on
+// two different allographs both get bulk-assigned to a third.
+const ALLOGRAPH_C: Allograph = {
+  id: 3,
+  name: 'c-shape',
+  components: [
+    {
+      component_id: 30,
+      component_name: 'loop',
+      features: [{ id: 300, name: 'open', set_by_default: false }],
+    },
+  ],
+  positions: [],
+};
+
 const HAND: HandType = {
   id: 5,
   name: 'Main Hand',
@@ -191,5 +207,56 @@ describe('AnnotationEditDialog — allograph-switch save correctness', () => {
       (c) => c.component
     );
     expect(componentIds).not.toContain(20);
+  });
+
+  it('prunes each graph to the bulk-assigned allograph when the original selection was mixed', async () => {
+    // Two graphs starting on two different allographs — `initialAllograph`
+    // is MIXED, which used to pin `schemaAllograph` to null for the whole
+    // dialog session even after picking one, silently skipping the prune
+    // for both graphs.
+    const graphA = makeGraph({
+      id: 39,
+      allograph: 1,
+      graphcomponent_set: [{ component: 10, features: [100] }],
+    });
+    const graphB = makeGraph({
+      id: 41,
+      allograph: 2,
+      graphcomponent_set: [{ component: 20, features: [200] }],
+    });
+
+    render(
+      <AnnotationEditDialog
+        open
+        onOpenChange={vi.fn()}
+        graphs={[graphA, graphB]}
+        allographs={[ALLOGRAPH_A, ALLOGRAPH_B, ALLOGRAPH_C]}
+        hands={[HAND]}
+      />
+    );
+
+    // Mixed-selection banner and the "pick one" placeholder are both shown
+    // before any allograph is chosen.
+    expect(screen.getByText(/Selected graphs use different allographs/)).toBeDefined();
+
+    await switchAllographTo('c-shape');
+
+    // Banner clears once an allograph has been picked, and the components
+    // section — driven by the newly-picked allograph's schema — becomes
+    // editable instead of staying stuck on "pick an allograph".
+    expect(screen.queryByText(/Selected graphs use different allographs/)).toBeNull();
+    expect(screen.getByRole('radio', { name: 'Set open on all selected' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: /^Save/ }));
+
+    await waitFor(() => expect(updateViewerAnnotationMock).toHaveBeenCalledTimes(2));
+    const patchByGraphId = new Map(
+      updateViewerAnnotationMock.mock.calls.map((call) => [call[1], call[2]])
+    );
+
+    // Both graphs' old, now-foreign components must be pruned — neither
+    // "stem" (A) nor "bowl" (B) belongs to "loop" (C)'s schema.
+    expect(patchByGraphId.get(39)).toEqual({ allograph: 3, graphcomponent_set: [] });
+    expect(patchByGraphId.get(41)).toEqual({ allograph: 3, graphcomponent_set: [] });
   });
 });

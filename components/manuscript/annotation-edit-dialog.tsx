@@ -257,11 +257,18 @@ function DialogBody({
     [allographs, allographId]
   );
 
-  // The schema source for editable components/positions. In multi-mode we
-  // only have one when every selected graph already agrees on its allograph
-  // — otherwise we hide those sections and prompt the user to pick one.
-  const schemaAllograph: Allograph | null =
-    isMulti && initialAllograph === MIXED ? null : selectedAllograph;
+  // The schema source for editable components/positions: whatever allograph
+  // is currently selected, regardless of whether the selection started out
+  // mixed. `selectedAllograph` is already null until the user picks one, so
+  // this doesn't need its own "mixed and unpicked" guard — and must not gate
+  // on `initialAllograph` (fixed from a bug in that: `initialAllograph` is
+  // derived from `graphs`, which doesn't change while the dialog is open, so
+  // gating on it kept this permanently null even after picking an allograph
+  // for a mixed selection — hiding components/positions from editing, and
+  // in buildPatchForGraph silently skipping the schema-prune, so each
+  // graph's *existing* components/positions from its original allograph
+  // survived the save untouched under the new allograph_id).
+  const schemaAllograph: Allograph | null = selectedAllograph;
 
   const components = React.useMemo<Component[]>(
     () => schemaAllograph?.components ?? [],
@@ -485,7 +492,7 @@ function DialogBody({
 
         <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
           <GraphPreviewStrip graphs={graphs} fallbackIiifImage={iiifImage} />
-          {isMulti && initialAllograph === MIXED && (
+          {isMulti && initialAllograph === MIXED && allographId == null && (
             <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
               Selected graphs use different allographs. Choose one to set on all of them, or close
               and refine the selection.
