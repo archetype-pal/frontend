@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getDefaultConfig, type SiteFeaturesConfig } from '@/lib/site-features';
 import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
@@ -24,6 +24,24 @@ beforeEach(() => {
   readSiteFeaturesMock.mockReset();
   readSiteFeaturesMock.mockResolvedValue(config);
   redirectMock.mockClear();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          total: 7,
+          results: [],
+          facetDistribution: { date_min: { '1100': 2 } },
+          facetStats: {},
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    )
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('/search/[type]', () => {
@@ -66,5 +84,25 @@ describe('/search/[type]', () => {
       SearchTypePage({ params: Promise.resolve({ type: 'manuscripts' }) })
     ).rejects.toThrow('redirect:/not-found');
     expect(redirectMock).toHaveBeenCalledWith('/not-found');
+  });
+
+  it('prefetches the active search query for hydration', async () => {
+    await SearchTypePage({
+      params: Promise.resolve({ type: 'manuscripts' }),
+      searchParams: Promise.resolve({
+        keyword: 'Kelso',
+        limit: '20',
+        offset: '0',
+        repository: ['NLS', 'BL'],
+      }),
+    });
+
+    const fetchMock = vi.mocked(fetch);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe(
+      'http://localhost:8000/api/v1/search/item-parts/facets/?limit=20&offset=0&repository=BL&repository=NLS&q=Kelso'
+    );
+    expect(init).toEqual(expect.objectContaining({ cache: 'no-store' }));
   });
 });

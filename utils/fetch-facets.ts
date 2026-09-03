@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/lib/api-fetch';
+import { env } from '@/lib/env';
 import { SEARCH_RESULT_CONFIG, type ResultType } from '@/lib/search-types';
 import {
   buildApiUrl,
@@ -95,6 +96,8 @@ export const EMPTY_SEARCH_RESULT: SearchResult = {
   offset: 0,
 };
 
+export const SEARCH_RESULTS_STALE_TIME_MS = 10_000;
+
 export const searchKeys = {
   all: ['search'] as const,
   resultType: (resultType: ResultType) => [...searchKeys.all, resultType] as const,
@@ -106,8 +109,12 @@ export const searchKeys = {
 } as const;
 
 export function getSearchBaseFacetUrl(resultType: ResultType): string {
+  return getSearchBaseFacetUrlForBase(resultType, API_BASE_URL);
+}
+
+function getSearchBaseFacetUrlForBase(resultType: ResultType, baseUrl: string): string {
   const apiSegment = SEARCH_RESULT_CONFIG[resultType].apiPath;
-  return `${API_BASE_URL}/api/v1/search/${apiSegment}/facets/`;
+  return `${baseUrl}/api/v1/search/${apiSegment}/facets/`;
 }
 
 /** List endpoint — same filters as the facets endpoint but skips facet computation. */
@@ -119,13 +126,38 @@ export function getSearchBaseListUrl(resultType: ResultType): string {
 export function buildSearchRequestUrl(
   resultType: ResultType,
   queryState: QueryState,
-  keyword: string
+  keyword: string,
+  baseUrl = API_BASE_URL
 ): string {
   return buildApiUrl(
-    getSearchBaseFacetUrl(resultType),
+    getSearchBaseFacetUrlForBase(resultType, baseUrl),
     normalizeQueryState(queryState),
     normalizeKeyword(keyword)
   );
+}
+
+export function getSearchResultsQueryOptions(
+  resultType: ResultType,
+  queryState: QueryState,
+  keyword: string,
+  opts: { fetchBaseUrl?: string; keyBaseUrl?: string } = {}
+) {
+  const apiUrl = buildSearchRequestUrl(resultType, queryState, keyword, opts.fetchBaseUrl);
+  const keyUrl = buildSearchRequestUrl(
+    resultType,
+    queryState,
+    keyword,
+    opts.keyBaseUrl ?? env.apiUrl
+  );
+  return {
+    apiUrl,
+    queryKey: searchKeys.facets(resultType, keyUrl),
+    queryFn: async ({ signal }: { signal?: AbortSignal }) => {
+      const response = await fetchFacetsAndResults(resultType, apiUrl, signal);
+      return response ?? EMPTY_SEARCH_RESULT;
+    },
+    staleTime: SEARCH_RESULTS_STALE_TIME_MS,
+  };
 }
 
 /** Convert Meilisearch facetDistribution + facetStats into "fields" shape for normalizeFacets. */
