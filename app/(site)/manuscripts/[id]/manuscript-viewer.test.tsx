@@ -101,8 +101,7 @@ describe('ManuscriptViewer — catalogue descriptions', () => {
               location: '',
               url: '',
             },
-            content:
-              '<p><b>Melrose, Liber Sancte Marie</b>, no. 175.</p><script>alert(1)</script>',
+            content: '<p><b>Melrose, Liber Sancte Marie</b>, no. 175.</p><script>alert(1)</script>',
           },
         ],
       },
