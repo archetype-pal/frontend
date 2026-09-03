@@ -1891,7 +1891,6 @@
       "bulkPurgeTitle": "Supprimer définitivement {count} annotations ?",
       "bulkPurgeDesc": "Les annotations sélectionnées et leurs composants de description seront supprimés définitivement. Cette action est irréversible.",
       "purgeConfirm": "Supprimer pour toujours",
-      "reindexHint": "Les résultats de recherche se mettent à jour après la prochaine réindexation sur la page Moteur de recherche.",
       "bulkRestored": "{count, plural, =1 {# annotation restaurée} other {# annotations restaurées}}",
       "bulkRestoreFailed": "Échec de la restauration des annotations",
       "bulkPurged": "{count, plural, =1 {# annotation supprimée définitivement} other {# annotations supprimées définitivement}}",
