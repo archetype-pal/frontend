@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { PanelLeftClose, PanelLeft, LogOut, User, Keyboard } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
+import { useUploadManager } from '@/contexts/upload-manager-context';
+import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Breadcrumb,
@@ -69,6 +71,34 @@ function useBreadcrumbs(segmentLabels: Record<string, string>) {
 export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeaderProps) {
   const t = useTranslations('backoffice');
   const { user, logout } = useAuth();
+  // Signing out kills the token, and the server-side session of anything still
+  // transferring is left to stale-cleanup. Warn rather than lose work silently.
+  // This header lives inside UploadManagerProvider, so it can ask directly —
+  // no need to teach the auth context about uploads.
+  const { activeCount, cancelAll } = useUploadManager();
+  const [confirmSignOut, setConfirmSignOut] = React.useState(false);
+  const [signingOut, setSigningOut] = React.useState(false);
+  const requestSignOut = React.useCallback(() => {
+    if (activeCount > 0) setConfirmSignOut(true);
+    else logout();
+  }, [activeCount, logout]);
+  // Free the server sessions BEFORE signing out. Logout revokes the token, so
+  // afterwards the DELETEs would 401 and each abandoned session would keep its
+  // filename reserved against other editors until stale-cleanup is run by hand.
+  const signOutAfterFreeingSessions = React.useCallback(async () => {
+    setSigningOut(true);
+    try {
+      await cancelAll();
+    } catch {
+      // Best-effort tidying. Swallowed rather than rethrown: ConfirmDialog
+      // calls onConfirm without awaiting it, so a rejection here would escape
+      // as an unhandled promise rejection — and a failure to free the sessions
+      // must not trap the editor in a session they asked to leave.
+    } finally {
+      setSigningOut(false);
+      logout();
+    }
+  }, [cancelAll, logout]);
   const { getLabel, getPluralLabel } = useModelLabels();
   const segmentLabels: Record<string, string> = React.useMemo(
     () => ({
@@ -149,12 +179,22 @@ export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeade
             {user?.email}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={logout} className="text-destructive">
+          <DropdownMenuItem onClick={requestSignOut} className="text-destructive">
             <LogOut className="mr-2 h-4 w-4" />
             {t('header.signOut')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ConfirmDialog
+        open={confirmSignOut}
+        onOpenChange={setConfirmSignOut}
+        title={t('uploads.signOutTitle', { count: activeCount })}
+        description={t('uploads.signOutDescription')}
+        confirmLabel={t('uploads.signOutConfirm')}
+        loading={signingOut}
+        onConfirm={signOutAfterFreeingSessions}
+      />
     </header>
   );
 }

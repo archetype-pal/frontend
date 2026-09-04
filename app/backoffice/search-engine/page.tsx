@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
+import { useUploadManager } from '@/contexts/upload-manager-context';
 import { toast } from 'sonner';
 import {
   Search,
@@ -37,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { FloatingPanel } from '@/components/backoffice/common/floating-panel';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import {
   getSearchEngineStats,
@@ -736,34 +738,35 @@ function TaskProgressPanel({
   onDismissCompleted: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const { items, interrupted } = useUploadManager();
   const completedCount = tasks.filter(
     (task) => task.status && ['SUCCESS', 'FAILURE'].includes(task.status.state)
   ).length;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-[380px] max-h-[50vh] overflow-auto rounded-lg border bg-card shadow-lg">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b px-3 py-2">
-        <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">
-            {t('searchEngine.tasksPanelTitle', { count: tasks.length })}
-          </span>
-        </div>
-        {completedCount > 0 && (
+    <FloatingPanel
+      // Step aside only while the shell-level upload tray is actually rendered
+      // in the bottom-right corner (its 380px width + the 16px gutter).
+      className={items.length + interrupted.length > 0 ? 'right-[412px]' : undefined}
+      title={t('searchEngine.tasksPanelTitle', { count: tasks.length })}
+      icon={<Activity className="h-4 w-4 text-primary" />}
+      collapsed={collapsed}
+      onToggleCollapse={() => setCollapsed((c) => !c)}
+      action={
+        completedCount > 0 && !collapsed ? (
           <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={onDismissCompleted}>
             {t('searchEngine.clearCompleted')}
           </Button>
-        )}
-      </div>
-
-      {/* Task list */}
+        ) : null
+      }
+    >
       <div className="divide-y">
         {tasks.map((task) => (
           <TaskProgressItem key={task.taskId} task={task} onDismiss={onDismiss} t={t} />
         ))}
       </div>
-    </div>
+    </FloatingPanel>
   );
 }
 

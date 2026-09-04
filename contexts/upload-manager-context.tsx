@@ -1,0 +1,883 @@
+'use client';
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/auth-context';
+import { getAuthTokenCookie } from '@/lib/auth-token-cookie';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import {
+  findActiveDuplicate,
+  findSessionRival,
+  getUploadTabId,
+  listUploadBreadcrumbs,
+  matchFilesToUploadBreadcrumbs,
+  partitionUploadBreadcrumbs,
+  removeUploadBreadcrumbs,
+  saveUploadBreadcrumb,
+  touchUploadBreadcrumbs,
+  updateUploadBreadcrumb,
+  UPLOAD_BREADCRUMBS_STORAGE_KEY,
+  type UploadBreadcrumb,
+} from '@/lib/backoffice/upload-breadcrumbs';
+import { useTranslations } from 'next-intl';
+
+import {
+  abortUploadSession,
+  describeUploadError,
+  uploadMessageCode,
+  getUploadSession,
+  isConflictError,
+  uploadErrorStatus,
+  ChunkUploadError,
+  uploadImageFile,
+  watchUploadSession,
+  type UploadPhase,
+  type UploadSession,
+} from '@/services/backoffice/uploads';
+
+export type UploadItemStatus =
+  'pending' | 'uploading' | 'processing' | 'done' | 'error' | 'duplicate' | 'canceled' | 'busy';
+
+export interface UploadItem {
+  id: string;
+  /** The staged File. Absent for an item recovered after a reload — a browser
+   *  cannot re-read a File across reloads, so a recovered item either watches
+   *  the server-side conversion or waits for the user to re-select. */
+  file?: File;
+  fileName: string;
+  itemPartId: number;
+  itemPartLabel: string;
+  historicalItemId: number;
+  locus: string;
+  tags: string;
+  status: UploadItemStatus;
+  phase: UploadPhase | null;
+  sentBytes: number;
+  totalBytes: number;
+  message: string;
+  error: string;
+}
+
+export interface EnqueueFile {
+  file: File;
+  locus: string;
+  tags: string;
+}
+
+export interface EnqueueTarget {
+  itemPartId: number;
+  itemPartLabel: string;
+  historicalItemId: number;
+}
+
+export interface ResumeResult {
+  resumed: number;
+  /** Names of picked files that matched no interrupted upload. */
+  unmatched: string[];
+}
+
+interface UploadManagerValue {
+  items: UploadItem[];
+  activeCount: number;
+  /** Uploads interrupted by a reload/crash that need their file re-selected
+   *  (recovered from localStorage breadcrumbs; the File itself cannot survive
+   *  a reload, only its description can). */
+  interrupted: UploadBreadcrumb[];
+  enqueue: (files: EnqueueFile[], target: EnqueueTarget) => void;
+  cancel: (id: string) => void;
+  /** Abort every in-flight upload and WAIT for the server to confirm, so a
+   *  caller can free the sessions before doing something that invalidates the
+   *  token (signing out). Unlike `cancel`, which is fire-and-forget. */
+  cancelAll: () => Promise<void>;
+  /** Re-run a failed/canceled item. Works only while the tab is open (the
+   *  File is still in memory); the server resume then re-sends just the
+   *  chunks it hasn't already received. */
+  retry: (id: string) => void;
+  dismiss: (id: string) => void;
+  clearFinished: () => void;
+  /** Pair re-selected files with interrupted uploads by (name, size) and
+   *  re-enqueue the matches with their saved target/locus/tags; the server
+   *  resumes from the chunks it already holds. */
+  resumeInterrupted: (files: File[]) => ResumeResult;
+  dismissInterrupted: (id: string) => void;
+}
+
+export const UPLOAD_TERMINAL_STATUSES: UploadItemStatus[] = [
+  'done',
+  'error',
+  'duplicate',
+  'canceled',
+  'busy',
+];
+
+export const RETRYABLE_STATUSES: UploadItemStatus[] = ['error', 'canceled'];
+
+/** Catalog key shown when a live sibling tab already owns this file's upload.
+ *  Deliberately no take-over affordance ('busy' is not retryable): once the
+ *  other tab's upload finishes or is stopped, a fresh "Add images" simply
+ *  works — the ownership check only counts crumbs that are actively uploading. */
+const BUSY_IN_OTHER_TAB_KEY = 'uploads.busyInOtherTab';
+
+/** Breadcrumb heartbeat cadence. Must stay well inside
+ *  UPLOAD_BREADCRUMB_STALE_MS so live crumbs never look orphaned to other tabs. */
+const HEARTBEAT_MS = 20_000;
+/** How often to re-scan storage for crumbs orphaned by a dead sibling tab. */
+const RESCAN_MS = 30_000;
+
+const UploadManagerContext = createContext<UploadManagerValue | null>(null);
+
+/** Breadcrumb describing a live tray item, for enqueue and retry (upsert). */
+function crumbFromItem(item: UploadItem, tabId: string, now: number): UploadBreadcrumb {
+  return {
+    id: item.id,
+    fileName: item.fileName,
+    fileSize: item.totalBytes,
+    itemPartId: item.itemPartId,
+    itemPartLabel: item.itemPartLabel,
+    historicalItemId: item.historicalItemId,
+    locus: item.locus,
+    tags: item.tags,
+    sessionId: '',
+    status: 'pending',
+    tabId,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+/** Tray item reconstructed from a breadcrumb (recovery paths have no File). */
+function itemFromCrumb(crumb: UploadBreadcrumb, over: Partial<UploadItem>): UploadItem {
+  return {
+    id: crumb.id,
+    fileName: crumb.fileName,
+    itemPartId: crumb.itemPartId,
+    itemPartLabel: crumb.itemPartLabel,
+    historicalItemId: crumb.historicalItemId,
+    locus: crumb.locus,
+    tags: crumb.tags,
+    status: 'pending',
+    phase: null,
+    sentBytes: 0,
+    totalBytes: crumb.fileSize,
+    message: '',
+    error: '',
+    ...over,
+  };
+}
+
+/** `crypto.randomUUID` is secure-context-only and throws on a plain-HTTP
+ *  origin — which here would be straight out of a drop handler. Mirrors
+ *  `newId()` in lib/search-query.ts. */
+function newId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `id_${Math.random().toString(36).slice(2)}`;
+}
+
+/**
+ * Owns image uploads for the whole backoffice. Mounted once in BackofficeShell
+ * so uploads keep running (and stay visible in the tray) as the user navigates
+ * between backoffice pages — a modal can't do that because it unmounts on
+ * close. Reuses the `uploadImageFile` orchestrator unchanged; this layer only
+ * adds a queue, cross-navigation lifetime, and per-manuscript cache
+ * invalidation.
+ *
+ * Uploads run sequentially (one server-side Celery worker; avoids bandwidth
+ * contention on large scans). The queue is in-memory, but every unfinished
+ * item leaves a localStorage breadcrumb (lib/backoffice/upload-breadcrumbs).
+ * A reload still interrupts the transfer — the File cannot be re-read across
+ * reloads, so beforeunload warns first — but afterwards the breadcrumbs come
+ * back: a finalized upload re-attaches to the server-side conversion
+ * automatically, and an unfinished transfer becomes a re-select prompt whose
+ * resume skips the chunks the server already received.
+ */
+export function UploadManagerProvider({ children }: { children: React.ReactNode }) {
+  const t = useTranslations('backoffice');
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  const [items, setItems] = useState<UploadItem[]>([]);
+  const [interrupted, setInterrupted] = useState<UploadBreadcrumb[]>([]);
+
+  // Refs mirror state for the sequential runner, which reads/advances outside
+  // React's render cycle. `itemsRef` is the runner's source of truth;
+  // `controllers` holds each in-flight AbortController; `queueRef` is the FIFO
+  // of not-yet-started ids.
+  const itemsRef = useRef(new Map<string, UploadItem>());
+  const controllers = useRef(new Map<string, AbortController>());
+  // Token that was current when each item was queued. Kept in a ref, not on the
+  // item, so a credential never enters React state or a breadcrumb.
+  const itemTokens = useRef(new Map<string, string>());
+  const queueRef = useRef<string[]>([]);
+  const drainingRef = useRef(false);
+  const tokenRef = useRef(token);
+  tokenRef.current = token;
+  // Read through a ref, like `token` above: `t` identity is not guaranteed
+  // stable across renders, and this provider's callback chain feeds effects —
+  // an unstable dependency here has caused a render loop before.
+  const tRef = useRef(t);
+  tRef.current = t;
+  const interruptedRef = useRef(interrupted);
+  interruptedRef.current = interrupted;
+  // Recovery bookkeeping: `scanningRef` serializes scans; `promptOnlyRef`
+  // remembers session-crumbs already routed to "needs re-select" so rescans
+  // don't re-fetch them; `watchStatsRef` counts re-attached watches still
+  // running, so a rescan can tell an in-flight re-attach from an idle one.
+  const scanningRef = useRef(false);
+  const promptOnlyRef = useRef(new Set<string>());
+  const watchStatsRef = useRef({ outstanding: 0 });
+
+  const patch = useCallback((id: string, partial: Partial<UploadItem>) => {
+    const current = itemsRef.current.get(id);
+    if (current) itemsRef.current.set(id, { ...current, ...partial });
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...partial } : it)));
+  }, []);
+
+  const addItem = useCallback((item: UploadItem) => {
+    itemsRef.current.set(item.id, item);
+    setItems((prev) => [...prev, item]);
+  }, []);
+
+  const invalidateManuscript = useCallback(
+    (historicalItemId: number) => {
+      queryClient.invalidateQueries({
+        queryKey: backofficeKeys.manuscripts.detail(historicalItemId),
+      });
+    },
+    [queryClient]
+  );
+
+  // `uploads.ts` reports failures it worded itself as codes; a backend `detail`
+  // arrives as text in the server's language and is passed through as-is.
+  const errorText = useCallback((err: unknown) => {
+    const code = uploadMessageCode(err);
+    if (!code) return describeUploadError(err);
+    return tRef.current(`uploads.errors.${code}`, {
+      status: err instanceof ChunkUploadError ? err.status : 0,
+    });
+  }, []);
+
+  // Search is refreshed manually in this system (see the search-engine page,
+  // which flags out-of-sync segments). Nudge once per batch so a newly
+  // uploaded image isn't silently missing from search.
+  // Search is refreshed manually here (the search-engine page flags out-of-sync
+  // segments), so a finished batch gets one reminder. Only the queue runner
+  // sends it: it is the one path that can count honestly. A crumb is deleted
+  // the moment its upload succeeds, so after a reload the images that already
+  // landed leave no trace, and the recovery paths would report a number that
+  // silently understates — worse than staying quiet.
+  const showReindexNudge = useCallback(
+    (created: number) => {
+      toast.info(tRef.current('uploads.toast.reindexTitle', { count: created }), {
+        description: tRef.current('uploads.toast.reindexBody'),
+        action: {
+          label: tRef.current('uploads.toast.reindexAction'),
+          onClick: () => router.push('/backoffice/search-engine'),
+        },
+      });
+    },
+    [router]
+  );
+
+  const drain = useCallback(async () => {
+    if (drainingRef.current) return;
+    drainingRef.current = true;
+    let created = 0;
+    // A run cut short by signing out has nothing worth announcing: the count
+    // only covers what got through before the token died, and the toast would
+    // land on the login page where it reads as a report on the whole batch.
+    let signedOut = false;
+    try {
+      while (queueRef.current.length > 0) {
+        const id = queueRef.current.shift()!;
+        const item = itemsRef.current.get(id);
+        if (!item || item.status === 'canceled') continue;
+        // Recovered watch items never enqueue; this guard is for the compiler.
+        if (!item.file) continue;
+
+        // The cookie, not `tokenRef`: logout clears the cookie synchronously,
+        // but the ref goes STALE rather than null — BackofficeShell's `!token`
+        // early return stops rendering this provider, so `tokenRef.current =
+        // token` never runs again and the ref keeps the revoked token. Reading
+        // it here let every queued file 401 at createUploadSession and raise a
+        // red toast on the login page the editor had just landed on.
+        // The cookie, not `tokenRef`: logout clears the cookie synchronously,
+        // but the ref goes STALE rather than null — BackofficeShell's `!token`
+        // early return stops rendering this provider, so `tokenRef.current =
+        // token` never runs again and it keeps the revoked token.
+        const authToken = getAuthTokenCookie();
+        // ...and it must be the SAME token that queued this file. Re-reading the
+        // cookie per item means a sign-out followed by anyone signing in would
+        // otherwise hand the rest of the queue to them — the server takes
+        // `owner=request.user`, so their name lands on files someone else chose.
+        // A same-user re-login also mints a new token and the cookie carries no
+        // identity, so any change stops the queue; resuming is deliberate.
+        // Fail CLOSED on a missing entry: `queuedWith &&` used to skip the
+        // comparison entirely, so any path that did not record a token ran
+        // under whatever was in the cookie — including another user's.
+        const queuedWith = itemTokens.current.get(id);
+        if (!authToken || authToken !== queuedWith) {
+          signedOut = true;
+          patch(id, { status: 'error', error: tRef.current('uploads.errors.signedOut') });
+          updateUploadBreadcrumb(id, { status: 'error' });
+          itemTokens.current.delete(id);
+          continue;
+        }
+
+        // Cross-tab ownership: a live sibling tab already uploading the same
+        // file to the same part would be handed the SAME server session —
+        // don't compete with it, park this item as busy (Retry = take over).
+        const duplicate = findActiveDuplicate(
+          listUploadBreadcrumbs(),
+          { id, fileName: item.fileName, fileSize: item.totalBytes, itemPartId: item.itemPartId },
+          getUploadTabId(),
+          Date.now()
+        );
+        if (duplicate) {
+          patch(id, { status: 'busy', error: tRef.current(BUSY_IN_OTHER_TAB_KEY) });
+          removeUploadBreadcrumbs([id]); // don't shadow the owner's crumb
+          continue;
+        }
+
+        const controller = new AbortController();
+        controllers.current.set(id, controller);
+        patch(id, { status: 'uploading', phase: 'creating', error: '', sentBytes: 0 });
+        updateUploadBreadcrumb(id, { status: 'uploading' });
+        // Written once per item: recovery uses the session id to ask the
+        // server for the truth instead of guessing from the crumb.
+        let crumbSessionId = '';
+        let yieldedToRival = false;
+
+        try {
+          await uploadImageFile(
+            authToken,
+            item.file,
+            { item_part: item.itemPartId, locus: item.locus.trim(), tags: item.tags.trim() },
+            {
+              signal: controller.signal,
+              onProgress: (p) => {
+                patch(id, {
+                  status: p.phase === 'processing' ? 'processing' : 'uploading',
+                  phase: p.phase,
+                  sentBytes: p.sentBytes,
+                  message: p.message ?? '',
+                });
+                if (p.session && p.session.id !== crumbSessionId) {
+                  crumbSessionId = p.session.id;
+                  updateUploadBreadcrumb(id, { sessionId: crumbSessionId });
+                  // Near-simultaneous start in two tabs slips past the
+                  // duplicate check; both then hold the same session. The
+                  // deterministically-younger crumb yields (see findSessionRival).
+                  const all = listUploadBreadcrumbs();
+                  const ours = all.find((c) => c.id === id);
+                  if (ours && findSessionRival(ours, all, Date.now())) {
+                    yieldedToRival = true;
+                    controller.abort();
+                  }
+                }
+              },
+            }
+          );
+          patch(id, { status: 'done', phase: 'complete', message: '' });
+          removeUploadBreadcrumbs([id]);
+          created++;
+          invalidateManuscript(item.historicalItemId);
+        } catch (err) {
+          if (err instanceof DOMException && err.name === 'AbortError') {
+            if (yieldedToRival) {
+              patch(id, { status: 'busy', error: tRef.current(BUSY_IN_OTHER_TAB_KEY) });
+              removeUploadBreadcrumbs([id]);
+            } else {
+              patch(id, { status: 'canceled' });
+              removeUploadBreadcrumbs([id]);
+            }
+          } else if (isConflictError(err)) {
+            // A duplicate proves the image already exists server-side — refresh
+            // the manuscript so its thumbnail shows.
+            patch(id, { status: 'duplicate', error: errorText(err) });
+            removeUploadBreadcrumbs([id]);
+            invalidateManuscript(item.historicalItemId);
+          } else if (uploadErrorStatus(err) === 401) {
+            signedOut = true;
+            // Signing out mid-upload. The breadcrumb survives, and on the next
+            // sign-in `routeSessionCrumb` re-reads the session and settles it —
+            // re-attaching a conversion that finished server-side, or offering
+            // a re-select for one that still needs bytes. So this is not a
+            // failure to report, and a red toast would land on the login page
+            // where the editor can do nothing about it.
+            const stillSending = itemsRef.current.get(id)?.phase !== 'processing';
+            patch(id, {
+              status: 'error',
+              error: tRef.current(
+                stillSending
+                  ? 'uploads.errors.signedOutResume'
+                  : 'uploads.errors.signedOutProcessing'
+              ),
+            });
+            updateUploadBreadcrumb(id, { status: 'error' });
+          } else {
+            const message = errorText(err);
+            patch(id, { status: 'error', error: message });
+            updateUploadBreadcrumb(id, { status: 'error' });
+            // The tray shows successes/duplicates; only failures need to chase
+            // the user (who may have navigated away).
+            toast.error(tRef.current('uploads.toast.failed', { name: item.fileName }), {
+              description: message,
+            });
+          }
+        } finally {
+          controllers.current.delete(id);
+          itemTokens.current.delete(id);
+        }
+      }
+      if (created > 0 && !signedOut) showReindexNudge(created);
+    } finally {
+      drainingRef.current = false;
+    }
+  }, [patch, invalidateManuscript, showReindexNudge, errorText]);
+
+  /**
+   * The ONLY way an item may enter the runner. It records the token the item was
+   * queued with, which `drain` then requires to still be current — a sign-out
+   * followed by anyone signing in must not hand the rest of the batch to them,
+   * because the server takes `owner=request.user`.
+   *
+   * Centralised deliberately: this used to be recorded in `enqueue` alone, so
+   * items arriving via `retry` or `resumeInterrupted` had no entry and the guard
+   * fell open. `drain` now treats a missing entry as a mismatch, so a future
+   * path that bypassed this helper would stall rather than leak — but the helper
+   * is what makes bypassing it hard in the first place.
+   */
+  const queueForDrain = useCallback(
+    (ids: string[]) => {
+      const queuedWith = getAuthTokenCookie();
+      for (const id of ids) {
+        if (queuedWith) itemTokens.current.set(id, queuedWith);
+        // Never queue one item twice. `cancel` on a not-yet-started item leaves
+        // it in the queue (there is no controller to abort, only a status
+        // patch), so a later `retry` would add a second entry and the runner
+        // would upload the same file twice — the second attempt colliding with
+        // the row the first one just created.
+        if (!queueRef.current.includes(id)) queueRef.current.push(id);
+      }
+      void drain();
+    },
+    [drain]
+  );
+
+  const enqueue = useCallback(
+    (files: EnqueueFile[], target: EnqueueTarget) => {
+      if (files.length === 0) return;
+      const now = Date.now();
+      const tabId = getUploadTabId();
+      const newItems: UploadItem[] = files.map((f) => ({
+        id: newId(),
+        file: f.file,
+        fileName: f.file.name,
+        itemPartId: target.itemPartId,
+        itemPartLabel: target.itemPartLabel,
+        historicalItemId: target.historicalItemId,
+        locus: f.locus,
+        tags: f.tags,
+        status: 'pending',
+        phase: null,
+        sentBytes: 0,
+        totalBytes: f.file.size,
+        message: '',
+        error: '',
+      }));
+      for (const it of newItems) {
+        itemsRef.current.set(it.id, it);
+        saveUploadBreadcrumb(crumbFromItem(it, tabId, now));
+      }
+      setItems((prev) => [...prev, ...newItems]);
+      queueForDrain(newItems.map((it) => it.id));
+    },
+    [queueForDrain]
+  );
+
+  /** Fire-and-forget: a failed abort leaves nothing the user could act on. */
+  const abortSession = useCallback((sessionId: string) => {
+    const authToken = tokenRef.current;
+    if (sessionId && authToken) void abortUploadSession(authToken, sessionId).catch(() => {});
+  }, []);
+
+  const cancel = useCallback(
+    (id: string) => {
+      abortSession(listUploadBreadcrumbs().find((c) => c.id === id)?.sessionId ?? '');
+      removeUploadBreadcrumbs([id]);
+      const controller = controllers.current.get(id);
+      if (controller) controller.abort();
+      // Not yet started: mark canceled so the runner skips it when reached.
+      else patch(id, { status: 'canceled' });
+    },
+    [abortSession, patch]
+  );
+
+  /**
+   * Signing out revokes the token server-side, so anything still transferring
+   * would leave its session squatting on the destination — blocking other
+   * editors from that filename until `cleanup_stale_uploads` is run by hand.
+   * The DELETEs therefore have to land BEFORE the sign-out, which is why this
+   * awaits them instead of firing and forgetting like `cancel` does.
+   *
+   * `assembled`/`processing` sessions are refused by the backend on purpose:
+   * the bytes are in and Celery will finish them, so those are not abandoned.
+   * A rejection is swallowed — the sign-out must not be blocked by cleanup.
+   */
+  const cancelAll = useCallback(async () => {
+    const authToken = getAuthTokenCookie();
+    const crumbs = listUploadBreadcrumbs();
+    // Only what the SERVER will still discard. `processing` and the finalizing
+    // phase belong to the ingest task: the bytes are in, Celery will publish
+    // the image, and the backend refuses the abort by design. Cancelling those
+    // locally would mark a succeeding upload 'canceled' AND delete the crumb
+    // that `routeSessionCrumb` needs to re-attach it after the next sign-in —
+    // which is precisely what the sign-out dialog promises will happen.
+    const abandonable = Array.from(itemsRef.current.values()).filter(
+      (it) =>
+        !UPLOAD_TERMINAL_STATUSES.includes(it.status) &&
+        it.status !== 'processing' &&
+        it.phase !== 'finalizing'
+    );
+
+    for (const it of abandonable) {
+      controllers.current.get(it.id)?.abort();
+      patch(it.id, { status: 'canceled' });
+    }
+
+    // No token means nothing can be freed, so every crumb must survive.
+    if (!authToken) return;
+
+    const settled = await Promise.all(
+      abandonable.map(async (it) => {
+        const sessionId = crumbs.find((c) => c.id === it.id)?.sessionId;
+        if (!sessionId) return { id: it.id, freed: false };
+        try {
+          await abortUploadSession(authToken, sessionId);
+          return { id: it.id, freed: true };
+        } catch {
+          return { id: it.id, freed: false };
+        }
+      })
+    );
+    // Drop only the crumbs whose session the server actually discarded. Anything
+    // still live server-side keeps its crumb so the next sign-in can settle it.
+    removeUploadBreadcrumbs(settled.filter((r) => r.freed).map((r) => r.id));
+  }, [patch]);
+
+  const retry = useCallback(
+    (id: string) => {
+      const item = itemsRef.current.get(id);
+      // Only failed/canceled items whose File is still in memory can be
+      // retried; a recovered watch item has no File — nothing to resend.
+      if (!item || !item.file || !RETRYABLE_STATUSES.includes(item.status)) return;
+      patch(id, { status: 'pending', phase: null, sentBytes: 0, message: '', error: '' });
+      // Upsert, not update: the crumb may have been evicted meanwhile.
+      saveUploadBreadcrumb(crumbFromItem(item, getUploadTabId(), Date.now()));
+      queueForDrain([id]);
+    },
+    [patch, queueForDrain]
+  );
+
+  const dismiss = useCallback((id: string) => {
+    // Dismissing a `processing` row means "stop tracking": the server-side
+    // conversion finishes either way, so only the polling loop is dropped.
+    controllers.current.get(id)?.abort();
+    itemsRef.current.delete(id);
+    removeUploadBreadcrumbs([id]);
+    setItems((prev) => prev.filter((it) => it.id !== id));
+  }, []);
+
+  const clearFinished = useCallback(() => {
+    const finished = [...itemsRef.current.values()].filter((it) =>
+      UPLOAD_TERMINAL_STATUSES.includes(it.status)
+    );
+    for (const it of finished) itemsRef.current.delete(it.id);
+    removeUploadBreadcrumbs(finished.map((it) => it.id));
+    setItems((prev) => prev.filter((it) => !UPLOAD_TERMINAL_STATUSES.includes(it.status)));
+  }, []);
+
+  /** Re-attach to a finalized upload whose conversion is still running
+   *  server-side. No File is needed — every byte is already on the server —
+   *  so this survives the reload that killed the original tray item. */
+  const startWatch = useCallback(
+    (crumb: UploadBreadcrumb, session: UploadSession) => {
+      addItem(
+        itemFromCrumb(crumb, {
+          status: 'processing',
+          phase: 'processing',
+          sentBytes: crumb.fileSize,
+          message: session.task?.progress?.message ?? '',
+        })
+      );
+      // Claim the crumb for this tab so sibling tabs stop seeing it as orphaned.
+      updateUploadBreadcrumb(crumb.id, {
+        status: 'processing',
+        sessionId: session.id,
+        tabId: getUploadTabId(),
+      });
+      const controller = new AbortController();
+      controllers.current.set(crumb.id, controller);
+      watchStatsRef.current.outstanding++;
+      void (async () => {
+        try {
+          // The cookie, not `tokenRef`: the ref goes STALE rather than null on
+          // sign-out (see the note in `drain`), so a watch that outlives a
+          // sign-out would keep polling with a revoked token.
+          await watchUploadSession(getAuthTokenCookie() ?? '', session, {
+            signal: controller.signal,
+            onProgress: (p) => patch(crumb.id, { message: p.message ?? '' }),
+          });
+          patch(crumb.id, { status: 'done', phase: 'complete', message: '' });
+          removeUploadBreadcrumbs([crumb.id]);
+          invalidateManuscript(crumb.historicalItemId);
+        } catch (err) {
+          if (err instanceof DOMException && err.name === 'AbortError') {
+            // "Cancel" here only stops tracking — the server-side conversion
+            // runs on regardless, so drop the crumb rather than re-adopt it.
+            patch(crumb.id, { status: 'canceled' });
+            removeUploadBreadcrumbs([crumb.id]);
+          } else {
+            // Keep the crumb: a poll hiccup isn't a verdict, and the session
+            // may well have completed server-side. Note only a full RELOAD can
+            // re-settle it — `addItem` put this item in `itemsRef`, and
+            // `scanBreadcrumbs` skips any crumb live in this tab, so the 30s
+            // rescan and the storage listener both pass over it.
+            if (uploadErrorStatus(err) === 401) {
+              // Signed out while watching. The conversion is the server's now,
+              // so this is not a failure to announce — a red "Upload failed"
+              // toast would land on the login page for an image that converted
+              // fine. The crumb above is what settles it on the next sign-in.
+              patch(crumb.id, {
+                status: 'error',
+                error: tRef.current('uploads.errors.signedOutProcessing'),
+              });
+              return;
+            }
+            const message = errorText(err);
+            patch(crumb.id, { status: 'error', error: message });
+            toast.error(tRef.current('uploads.toast.failed', { name: crumb.fileName }), {
+              description: message,
+            });
+          }
+        } finally {
+          controllers.current.delete(crumb.id);
+          watchStatsRef.current.outstanding--;
+        }
+      })();
+    },
+    [addItem, patch, invalidateManuscript, errorText]
+  );
+
+  /** Route an adopted crumb by the server's view of its session: 'complete' →
+   *  the row exists, just refresh; 'watch' → re-attach to the conversion;
+   *  'prompt' → chunks are missing, only the user can supply the File again.
+   *  Any lookup failure degrades to 'prompt' — re-selecting is safe in every
+   *  state, because the server's create-or-resume sorts it out. */
+  const routeSessionCrumb = useCallback(
+    async (
+      authToken: string,
+      crumb: UploadBreadcrumb
+    ): Promise<'handled' | 'complete' | 'prompt'> => {
+      let session: UploadSession;
+      try {
+        session = await getUploadSession(authToken, crumb.sessionId);
+      } catch {
+        return 'prompt';
+      }
+      if (session.status === 'complete') {
+        removeUploadBreadcrumbs([crumb.id]);
+        addItem(
+          itemFromCrumb(crumb, {
+            status: 'done',
+            phase: 'complete',
+            sentBytes: crumb.fileSize,
+          })
+        );
+        invalidateManuscript(crumb.historicalItemId);
+        return 'complete';
+      }
+      if (session.status === 'failed') {
+        removeUploadBreadcrumbs([crumb.id]);
+        addItem(
+          itemFromCrumb(crumb, {
+            status: 'error',
+            phase: 'failed',
+            error: session.error || tRef.current('uploads.errors.processFailed'),
+          })
+        );
+        return 'handled';
+      }
+      if (session.status === 'processing' || session.status === 'assembled') {
+        startWatch(crumb, session);
+        return 'handled';
+      }
+      return 'prompt'; // pending | uploading — chunks incomplete
+    },
+    [addItem, invalidateManuscript, startWatch]
+  );
+
+  /** Recover breadcrumbs after a reload (or from a dead sibling tab): route
+   *  session-backed crumbs by live server state, everything else into the
+   *  re-select prompt list. `interrupted` is recomputed wholesale each scan so
+   *  rows vanish when another tab claims or finishes them. */
+  const scanBreadcrumbs = useCallback(async () => {
+    if (scanningRef.current) return;
+    const authToken = tokenRef.current;
+    if (!authToken) return;
+    scanningRef.current = true;
+    try {
+      const { adoptable, expired } = partitionUploadBreadcrumbs(
+        listUploadBreadcrumbs(),
+        getUploadTabId(),
+        Date.now()
+      );
+      if (expired.length > 0) removeUploadBreadcrumbs(expired.map((c) => c.id));
+
+      const prompts: UploadBreadcrumb[] = [];
+      for (const crumb of adoptable) {
+        if (itemsRef.current.has(crumb.id)) continue; // already live in this tab
+        if (!crumb.sessionId || promptOnlyRef.current.has(crumb.id)) {
+          prompts.push(crumb);
+          continue;
+        }
+        const outcome = await routeSessionCrumb(authToken, crumb);
+        if (outcome === 'prompt') {
+          promptOnlyRef.current.add(crumb.id);
+          prompts.push(crumb);
+        }
+      }
+      // Keep the previous array identity when nothing changed: rescans run on
+      // an interval, and a fresh-but-equal array would re-render every
+      // consumer (and can feed render→effect→scan loops in test harnesses).
+      setInterrupted((prev) =>
+        prev.length === prompts.length &&
+        prev.every((c, i) => c.id === prompts[i].id && c.updatedAt === prompts[i].updatedAt)
+          ? prev
+          : prompts
+      );
+    } finally {
+      scanningRef.current = false;
+    }
+  }, [routeSessionCrumb]);
+
+  const resumeInterrupted = useCallback(
+    (files: File[]): ResumeResult => {
+      const { matches, unmatched } = matchFilesToUploadBreadcrumbs(files, interruptedRef.current);
+      if (matches.length > 0) {
+        const resumedIds = new Set(matches.map((m) => m.breadcrumb.id));
+        for (const { breadcrumb, file } of matches) {
+          promptOnlyRef.current.delete(breadcrumb.id);
+          // Claim + reset: the queue runner drives it like a fresh enqueue;
+          // the server-side create-or-resume skips chunks it already holds.
+          updateUploadBreadcrumb(breadcrumb.id, { status: 'pending', tabId: getUploadTabId() });
+          addItem(itemFromCrumb(breadcrumb, { file }));
+        }
+        setInterrupted((prev) => prev.filter((c) => !resumedIds.has(c.id)));
+        queueForDrain(matches.map((m) => m.breadcrumb.id));
+      }
+      return { resumed: matches.length, unmatched: unmatched.map((f) => f.name) };
+    },
+    [addItem, queueForDrain]
+  );
+
+  const dismissInterrupted = useCallback(
+    (id: string) => {
+      abortSession(interruptedRef.current.find((c) => c.id === id)?.sessionId ?? '');
+      removeUploadBreadcrumbs([id]);
+      promptOnlyRef.current.delete(id);
+      setInterrupted((prev) => prev.filter((c) => c.id !== id));
+    },
+    [abortSession]
+  );
+
+  const activeCount = items.filter((it) => !UPLOAD_TERMINAL_STATUSES.includes(it.status)).length;
+
+  // Warn before a reload/close drops in-flight transfers. Breadcrumbs make
+  // the loss recoverable, but resuming still costs a re-select — warn anyway.
+  useEffect(() => {
+    if (activeCount === 0) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [activeCount]);
+
+  // Recover interrupted uploads once authenticated; re-scan periodically and
+  // on cross-tab storage changes so crumbs orphaned by a dead sibling tab get
+  // picked up and rows claimed elsewhere disappear.
+  useEffect(() => {
+    if (!token) return;
+    void scanBreadcrumbs();
+    const interval = window.setInterval(() => void scanBreadcrumbs(), RESCAN_MS);
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === UPLOAD_BREADCRUMBS_STORAGE_KEY) void scanBreadcrumbs();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, [token, scanBreadcrumbs]);
+
+  // Heartbeat the crumbs of live items so sibling tabs don't adopt them.
+  useEffect(() => {
+    if (activeCount === 0) return;
+    const interval = window.setInterval(() => {
+      const ids = [...itemsRef.current.values()]
+        .filter((it) => !UPLOAD_TERMINAL_STATUSES.includes(it.status))
+        .map((it) => it.id);
+      if (ids.length > 0) touchUploadBreadcrumbs(ids);
+    }, HEARTBEAT_MS);
+    return () => window.clearInterval(interval);
+  }, [activeCount]);
+
+  const value = useMemo(
+    () => ({
+      items,
+      activeCount,
+      interrupted,
+      enqueue,
+      cancel,
+      cancelAll,
+      retry,
+      dismiss,
+      clearFinished,
+      resumeInterrupted,
+      dismissInterrupted,
+    }),
+    [
+      items,
+      activeCount,
+      interrupted,
+      enqueue,
+      cancel,
+      cancelAll,
+      retry,
+      dismiss,
+      clearFinished,
+      resumeInterrupted,
+      dismissInterrupted,
+    ]
+  );
+
+  return <UploadManagerContext.Provider value={value}>{children}</UploadManagerContext.Provider>;
+}
+
+export function useUploadManager(): UploadManagerValue {
+  const ctx = useContext(UploadManagerContext);
+  if (!ctx) throw new Error('useUploadManager must be used within an UploadManagerProvider.');
+  return ctx;
+}
