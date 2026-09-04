@@ -95,7 +95,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
       setAllowComments(pub.allow_comments);
       setKeywords(pub.keywords ?? '');
       setDirty(false);
-      track({ label: pub.title, href: `/backoffice/publications/${slug}`, type: 'Publication' });
+      track({ label: pub.title, href: `/backoffice/publications/${slug}`, type: 'Post' });
     }
   }, [pub, slug, track]);
 

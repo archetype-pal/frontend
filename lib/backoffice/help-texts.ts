@@ -130,18 +130,17 @@ export const helpTexts: Record<string, HelpEntry> = {
       'The specific part of a manuscript this hand is associated with. Changing this will update the available images.',
   },
 
-  // -- Publications --
+  // -- Posts --
   'publication.status': {
     description:
-      'Draft publications are only visible to staff. Published items appear on the public site.',
+      'Draft posts are only visible to staff. Published items appear on the public site.',
   },
   'publication.keywords': {
     description: 'Comma-separated tags used for filtering and related post suggestions.',
     example: 'palaeography, charter, twelfth-century',
   },
   'publication.published_at': {
-    description:
-      'The date this publication goes live. Can be set in the future for scheduled publishing.',
+    description: 'The date this post goes live. Can be set in the future for scheduled publishing.',
   },
 
   // -- Common --
