@@ -3,7 +3,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { PanelLeftClose, PanelLeft, LogOut, User, Keyboard } from 'lucide-react';
+import { PanelLeftClose, PanelLeft, LogOut, User, Keyboard, ExternalLink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -134,6 +134,13 @@ export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeade
           ?
         </kbd>
       </div>
+
+      <Button asChild variant="ghost" size="sm" className="gap-2 text-xs">
+        <Link href="/" aria-label={t('header.viewPublicSite')} title={t('header.viewPublicSite')}>
+          <ExternalLink className="h-4 w-4" />
+          <span className="hidden md:inline">{t('header.viewPublicSite')}</span>
+        </Link>
+      </Button>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

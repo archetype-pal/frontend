@@ -26,7 +26,6 @@ import {
   Database,
   Hash,
   Library,
-  ExternalLink,
   Settings,
   Languages,
   ToggleLeft,
@@ -192,33 +191,6 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
           />
         ))}
       </nav>
-
-      {/* Footer: View public site */}
-      <div className="border-t p-2 flex flex-col gap-0.5">
-        {collapsed ? (
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Link
-                href="/"
-                className="flex h-9 w-9 items-center justify-center rounded-md mx-auto text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ExternalLink className="h-4 w-4 shrink-0" />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8}>
-              {t('sidebar.viewPublicSite')}
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <Link
-            href="/"
-            className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ExternalLink className="h-4 w-4 shrink-0" />
-            <span>{t('sidebar.viewPublicSite')}</span>
-          </Link>
-        )}
-      </div>
     </aside>
   );
 }

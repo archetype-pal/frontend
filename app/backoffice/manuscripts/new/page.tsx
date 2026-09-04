@@ -148,7 +148,7 @@ export default function NewManuscriptPage() {
           try {
             await deleteCurrentItem(token, createdCurrentItemId);
           } catch {
-            cleanupFailures.push('physical volume');
+            cleanupFailures.push('item');
           }
         }
 

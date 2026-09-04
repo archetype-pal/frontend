@@ -141,9 +141,12 @@ export default function PhysicalVolumesPage() {
         <div className="flex items-center gap-3">
           <Archive className="h-6 w-6 text-primary" />
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Physical Volumes</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('physicalVolumes.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              {data?.count ?? '...'} volumes across {repositories.length} repositories
+              {t('physicalVolumes.subtitle', {
+                count: data?.count ?? '...',
+                repos: repositories.length,
+              })}
             </p>
           </div>
         </div>
@@ -183,7 +186,7 @@ export default function PhysicalVolumesPage() {
         pagination={false}
         enableColumnVisibility
         enableExport
-        exportFilename="physical-volumes"
+        exportFilename="items"
       />
 
       {data && (

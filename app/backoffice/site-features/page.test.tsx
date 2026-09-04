@@ -42,7 +42,7 @@ describe('<SiteFeaturesPage>', () => {
     getStatus = 503;
     renderPage();
 
-    expect(await screen.findByText('Failed to load site features')).toBeTruthy();
+    expect(await screen.findByText('Failed to load site customisation')).toBeTruthy();
     expect(screen.queryByText('Site Sections')).toBeNull();
   });
 

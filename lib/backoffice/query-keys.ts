@@ -127,7 +127,7 @@ export const backofficeKeys = {
     detail: (id: number) => [...backofficeKeys.users.all(), 'detail', id] as const,
   },
 
-  // ── Search Engine ───────────────────────────────────────────
+  // ── Indexing ────────────────────────────────────────────────
   searchEngine: {
     all: () => [...backofficeKeys.all, 'searchEngine'] as const,
     stats: () => [...backofficeKeys.all, 'searchEngine', 'stats'] as const,
