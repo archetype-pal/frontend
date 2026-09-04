@@ -15,6 +15,7 @@ import { createPublication } from '@/services/backoffice/publications';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
+import { getPublicationRoutes } from '@/lib/publications';
 
 export default function NewPublicationPage() {
   const { token, user } = useAuth();
@@ -25,6 +26,7 @@ export default function NewPublicationPage() {
   const [slugLocked, setSlugLocked] = useState(false);
   const [isBlog, setIsBlog] = useState(false);
   const [isNews, setIsNews] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(false);
 
   const generateSlug = (value: string) =>
     value
@@ -48,6 +50,7 @@ export default function NewPublicationPage() {
         slug: slug || generateSlug(title),
         is_blog_post: isBlog,
         is_news: isNews,
+        is_featured: isFeatured,
         status: 'Draft',
       });
     },
@@ -62,7 +65,10 @@ export default function NewPublicationPage() {
     },
   });
 
-  const publicationKindPath = isNews ? 'news' : isBlog ? 'blogs' : 'feature';
+  const publicationRoutes = getPublicationRoutes(
+    { is_news: isNews, is_blog_post: isBlog, is_featured: isFeatured },
+    slug
+  );
 
   return (
     <div className="max-w-lg space-y-6">
@@ -114,9 +120,20 @@ export default function NewPublicationPage() {
             className="font-mono text-sm"
           />
           {slug && (
-            <p className="text-xs text-muted-foreground">
-              {t('publicationsNew.slugUrlPreview', { kind: publicationKindPath, slug })}
-            </p>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              {publicationRoutes.length > 0 ? (
+                <>
+                  <p>{t('publicationsNew.slugUrlPreviewLabel')}</p>
+                  <ul className="space-y-0.5 font-mono">
+                    {publicationRoutes.map((route) => (
+                      <li key={route.kind}>{route.href}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p>{t('publicationsNew.slugNoCategory')}</p>
+              )}
+            </div>
           )}
         </div>
 
@@ -135,7 +152,7 @@ export default function NewPublicationPage() {
           </div>
         )}
 
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center gap-6">
           <label className="flex items-center gap-2 text-sm">
             <Switch checked={isBlog} onCheckedChange={setIsBlog} />
             {t('publicationsNew.switchBlogPost')}
@@ -143,6 +160,10 @@ export default function NewPublicationPage() {
           <label className="flex items-center gap-2 text-sm">
             <Switch checked={isNews} onCheckedChange={setIsNews} />
             {t('publicationsNew.switchNews')}
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
+            {t('publicationsNew.switchFeatured')}
           </label>
         </div>
 

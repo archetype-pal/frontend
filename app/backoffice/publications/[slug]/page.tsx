@@ -44,6 +44,7 @@ import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
 import { useAutosave } from '@/hooks/backoffice/use-autosave';
 import { renderPublicationHtml } from '@/lib/publication-html';
 import { hasLegacyRichPublicationHtml } from '@/lib/legacy-publication-html';
+import { getPublicationRoutes } from '@/lib/publications';
 
 export default function PublicationEditorPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -51,6 +52,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
   const router = useRouter();
   const queryClient = useQueryClient();
   const t = useTranslations('backoffice');
+  const tContent = useTranslations('content');
 
   const { data: pub, isLoading } = useQuery({
     queryKey: backofficeKeys.publications.detail(slug),
@@ -218,7 +220,10 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
   }
 
   const markDirty = () => setDirty(true);
-  const publicationKindPath = isNews ? 'news' : isBlog ? 'blogs' : isFeatured ? 'feature' : 'blogs';
+  const publicationRoutes = getPublicationRoutes(
+    { is_news: isNews, is_blog_post: isBlog, is_featured: isFeatured },
+    pubSlug
+  );
   const hasLegacyRichContent =
     hasLegacyRichPublicationHtml(pub.content) || hasLegacyRichPublicationHtml(content);
 
@@ -236,21 +241,20 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
           <h1 className="text-xl font-semibold line-clamp-1">{pub.title}</h1>
           <Badge variant={status === 'Published' ? 'default' : 'secondary'}>{status}</Badge>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {/* Jump to the live public page (only meaningful once published).
               archetype-pal/frontend#77 */}
-          {status === 'Published' && pubSlug && (
-            <Link
-              href={`/publications/${publicationKindPath}/${pubSlug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="outline" size="sm" className="gap-1 text-xs">
-                <ExternalLink className="h-3.5 w-3.5" />
-                {t('publicationsDetail.viewPublicPage')}
-              </Button>
-            </Link>
-          )}
+          {status === 'Published' &&
+            publicationRoutes.map((route) => (
+              <Link key={route.kind} href={route.href} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm" className="gap-1 text-xs">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {t('publicationsDetail.viewPublicPage', {
+                    kind: tContent(`publicationKinds.${route.kind}.summaryLabel`),
+                  })}
+                </Button>
+              </Link>
+            ))}
           <Button
             variant="outline"
             size="sm"
@@ -342,9 +346,20 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
             }}
             className="font-mono text-sm"
           />
-          <p className="text-xs text-muted-foreground">
-            URL: /publications/{publicationKindPath}/{pubSlug || '...'}
-          </p>
+          <div className="space-y-1 text-xs text-muted-foreground">
+            {publicationRoutes.length > 0 ? (
+              <>
+                <p>{t('publicationsDetail.slugUrlPreviewLabel')}</p>
+                <ul className="space-y-0.5 font-mono">
+                  {publicationRoutes.map((route) => (
+                    <li key={route.kind}>{route.href}</li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p>{t('publicationsDetail.slugNoCategory')}</p>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
