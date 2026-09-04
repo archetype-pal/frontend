@@ -1,12 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { type Dispatch, type SetStateAction, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Shortcut {
   keys: string[];
   description: string;
+}
+
+interface KeyboardShortcutsDialogProps {
+  open: boolean;
+  onOpenChange: Dispatch<SetStateAction<boolean>>;
 }
 
 /**
@@ -16,8 +21,7 @@ interface Shortcut {
  * This component is rendered once in the backoffice shell and
  * listens globally for the "?" key.
  */
-export function KeyboardShortcutsDialog() {
-  const [open, setOpen] = useState(false);
+export function KeyboardShortcutsDialog({ open, onOpenChange }: KeyboardShortcutsDialogProps) {
   const t = useTranslations('backoffice');
 
   const shortcuts: { group: string; items: Shortcut[] }[] = [
@@ -45,15 +49,15 @@ export function KeyboardShortcutsDialog() {
         target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
       if (e.key === '?' && !isInput && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
-        setOpen(true);
+        onOpenChange(true);
       }
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [onOpenChange]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>{t('keyboardShortcuts.title')}</DialogTitle>

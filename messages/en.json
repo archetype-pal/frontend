@@ -999,7 +999,9 @@
       "groupNavigation": "Navigation",
       "groupEditing": "Editing",
       "openCommandPalette": "Open command palette",
+      "openCommandPaletteHint": "Open command palette (Ctrl/Cmd+K)",
       "showHelpDialog": "Show this help dialog",
+      "showShortcutsHint": "Show keyboard shortcuts (press ?)",
       "saveCurrentForm": "Save current form",
       "closeDialog": "Close dialog / discard changes"
     },

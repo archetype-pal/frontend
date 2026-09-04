@@ -999,7 +999,9 @@
       "groupNavigation": "Navigation",
       "groupEditing": "Bearbeiten",
       "openCommandPalette": "Befehlspalette öffnen",
+      "openCommandPaletteHint": "Befehlspalette öffnen (Strg/Cmd+K)",
       "showHelpDialog": "Diesen Hilfedialog anzeigen",
+      "showShortcutsHint": "Tastaturkürzel anzeigen (? drücken)",
       "saveCurrentForm": "Aktuelles Formular speichern",
       "closeDialog": "Dialog schließen / Änderungen verwerfen"
     },

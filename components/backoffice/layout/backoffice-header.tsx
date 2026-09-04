@@ -22,12 +22,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
 import { useModelLabels } from '@/contexts/model-labels-context';
 
 interface BackofficeHeaderProps {
   collapsed: boolean;
   onToggleSidebar: () => void;
+  onOpenCommandPalette: () => void;
+  onOpenKeyboardShortcuts: () => void;
 }
 
 function useBreadcrumbs(segmentLabels: Record<string, string>) {
@@ -66,7 +69,12 @@ function useBreadcrumbs(segmentLabels: Record<string, string>) {
   });
 }
 
-export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeaderProps) {
+export function BackofficeHeader({
+  collapsed,
+  onToggleSidebar,
+  onOpenCommandPalette,
+  onOpenKeyboardShortcuts,
+}: BackofficeHeaderProps) {
   const t = useTranslations('backoffice');
   const { user, logout } = useAuth();
   const { getLabel, getPluralLabel } = useModelLabels();
@@ -124,15 +132,37 @@ export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeade
         </BreadcrumbList>
       </Breadcrumb>
 
-      {/* Keyboard shortcut hints */}
       <div className="hidden sm:flex items-center gap-1.5">
-        <kbd className="inline-flex items-center gap-1 rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-          <Keyboard className="h-3 w-3" />
-          <span>Ctrl+K</span>
-        </kbd>
-        <kbd className="inline-flex items-center rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-          ?
-        </kbd>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-label={t('keyboardShortcuts.openCommandPaletteHint')}
+              onClick={onOpenCommandPalette}
+              className="inline-flex items-center gap-1 rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:border-accent hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <Keyboard className="h-3 w-3" aria-hidden="true" />
+              <span>Ctrl+K</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            {t('keyboardShortcuts.openCommandPaletteHint')}
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-label={t('keyboardShortcuts.showShortcutsHint')}
+              onClick={onOpenKeyboardShortcuts}
+              className="inline-flex items-center rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:border-accent hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              ?
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{t('keyboardShortcuts.showShortcutsHint')}</TooltipContent>
+        </Tooltip>
       </div>
 
       <Button asChild variant="ghost" size="sm" className="gap-2 text-xs">

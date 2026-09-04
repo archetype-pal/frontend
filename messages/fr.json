@@ -999,7 +999,9 @@
       "groupNavigation": "Navigation",
       "groupEditing": "Édition",
       "openCommandPalette": "Ouvrir la palette de commandes",
+      "openCommandPaletteHint": "Ouvrir la palette de commandes (Ctrl/Cmd+K)",
       "showHelpDialog": "Afficher cette aide",
+      "showShortcutsHint": "Afficher les raccourcis clavier (appuyez sur ?)",
       "saveCurrentForm": "Enregistrer le formulaire actuel",
       "closeDialog": "Fermer / annuler les modifications"
     },
