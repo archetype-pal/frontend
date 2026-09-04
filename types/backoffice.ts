@@ -148,7 +148,7 @@ export interface ItemPartImage {
   id: number;
   image: string | null;
   locus: string;
-  tags: string;
+  tags: string[];
   text_count: number;
 }
 
