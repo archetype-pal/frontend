@@ -46,12 +46,17 @@ export function ItemImageEditDialog({
   const [tags, setTags] = useState((image.tags ?? []).join(', '));
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  const tagsKey = (image.tags ?? []).join(', ');
+
   useEffect(() => {
     if (open) {
       setLocus(image.locus); // eslint-disable-line react-hooks/set-state-in-effect
-      setTags((image.tags ?? []).join(', '));
+      setTags(tagsKey);
     }
-  }, [open, image.id, image.locus, image.tags]);
+    // `tagsKey` (not `image.tags`) so an equal-content refetch — which
+    // returns a new array reference — doesn't re-trigger this and wipe an
+    // in-progress edit; strings compare by value like `image.locus` already does.
+  }, [open, image.id, image.locus, tagsKey]);
 
   const invalidate = () =>
     queryClient.invalidateQueries({
