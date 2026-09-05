@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/contexts/auth-context';
@@ -20,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { SearchableOption } from '@/lib/searchable-option-ranking';
 import { cn } from '@/lib/utils';
 
@@ -89,7 +91,21 @@ function useTriStateMap<K extends string | number>(baseline: (key: K) => TriStat
   return {
     edits,
     get: (key) => edits[key] ?? baseline(key),
-    set: (key, state) => setEdits((prev) => ({ ...prev, [key]: state })),
+    // Cycling a control back to its original value (e.g. None -> All -> None)
+    // must drop the entry entirely, not just overwrite it with the same value
+    // as the baseline — otherwise hasMeaningfulEdits keeps counting a no-op as
+    // a pending change, unlike the Allograph/Hand fields, which already
+    // compare against their initial value rather than "was anything touched."
+    set: (key, state) =>
+      setEdits((prev) => {
+        const next = { ...prev };
+        if (state === baseline(key)) {
+          delete next[key];
+        } else {
+          next[key] = state;
+        }
+        return next;
+      }),
     reset: () => setEdits({}),
     hasMeaningfulEdits: Object.values(edits).some((s) => s !== MIXED),
   };
@@ -152,6 +168,9 @@ export interface AnnotationEditDialogProps {
   /** IIIF info URL for the parent image, used to render a crop preview of the
    *  graph(s) under edit. */
   iiifImage?: string;
+  /** When true, disables the Hand control with an explanatory tooltip (e.g. cross-manuscript bulk edits). */
+  handDisabled?: boolean;
+  handDisabledReason?: string;
   /** Called for every successful per-graph PATCH so the parent can apply an
    *  optimistic override immediately. */
   onGraphSaved?: (graph: BackendGraph) => void;
@@ -174,10 +193,13 @@ function DialogBody({
   allographs,
   hands,
   iiifImage,
+  handDisabled,
+  handDisabledReason,
   onGraphSaved,
   onComplete,
 }: AnnotationEditDialogProps) {
   const { token } = useAuth();
+  const t = useTranslations('search');
   const isMulti = graphs.length > 1;
 
   const allographOptions = React.useMemo<SearchableOption[]>(
@@ -235,11 +257,18 @@ function DialogBody({
     [allographs, allographId]
   );
 
-  // The schema source for editable components/positions. In multi-mode we
-  // only have one when every selected graph already agrees on its allograph
-  // — otherwise we hide those sections and prompt the user to pick one.
-  const schemaAllograph: Allograph | null =
-    isMulti && initialAllograph === MIXED ? null : selectedAllograph;
+  // The schema source for editable components/positions: whatever allograph
+  // is currently selected, regardless of whether the selection started out
+  // mixed. `selectedAllograph` is already null until the user picks one, so
+  // this doesn't need its own "mixed and unpicked" guard — and must not gate
+  // on `initialAllograph` (fixed from a bug in that: `initialAllograph` is
+  // derived from `graphs`, which doesn't change while the dialog is open, so
+  // gating on it kept this permanently null even after picking an allograph
+  // for a mixed selection — hiding components/positions from editing, and
+  // in buildPatchForGraph silently skipping the schema-prune, so each
+  // graph's *existing* components/positions from its original allograph
+  // survived the save untouched under the new allograph_id).
+  const schemaAllograph: Allograph | null = selectedAllograph;
 
   const components = React.useMemo<Component[]>(
     () => schemaAllograph?.components ?? [],
@@ -269,7 +298,7 @@ function DialogBody({
   const hasPendingChanges =
     (allographId != null &&
       allographId !== (initialAllograph === MIXED ? null : initialAllograph)) ||
-    (hand !== MIXED && !Object.is(hand, initialHand)) ||
+    (!handDisabled && hand !== MIXED && !Object.is(hand, initialHand)) ||
     featureMap.hasMeaningfulEdits ||
     positionMap.hasMeaningfulEdits;
 
@@ -285,6 +314,20 @@ function DialogBody({
     setFailedIds([]);
   }
 
+  // Also reset them when the Allograph changes. A feature/position edit is
+  // keyed by component/position IDs that belong to a specific allograph's
+  // schema — after switching allograph, those keys are stale. Left alone,
+  // they don't disappear from the UI (the rendered rows now come from the
+  // new allograph's schema) but `buildPatchForGraph` still applies them on
+  // save, silently attaching a component from the old allograph's schema to
+  // a graph now being set to a different one.
+  const [prevAllographId, setPrevAllographId] = React.useState(allographId);
+  if (!Object.is(prevAllographId, allographId)) {
+    setPrevAllographId(allographId);
+    featureMap.reset();
+    positionMap.reset();
+  }
+
   // Guard every close path (Cancel, Escape, overlay click) against discarding
   // unsaved edits. The Sheet's `open` is controlled by the parent, so simply
   // not calling `onOpenChange(false)` keeps it open when the user backs out.
@@ -292,12 +335,12 @@ function DialogBody({
     if (
       hasPendingChanges &&
       typeof window !== 'undefined' &&
-      !window.confirm('Discard unsaved changes?')
+      !window.confirm(t('discardUnsavedChanges'))
     ) {
       return;
     }
     onOpenChange(false);
-  }, [hasPendingChanges, onOpenChange]);
+  }, [hasPendingChanges, onOpenChange, t]);
 
   // ---- Save ---------------------------------------------------------------
 
@@ -312,17 +355,39 @@ function DialogBody({
     if (allographId != null && allographId !== graph.allograph) {
       patch.allograph = allographId;
     }
-    if (hand !== MIXED && hand !== (graph.hand ?? null)) {
+    if (!handDisabled && hand !== MIXED && hand !== (graph.hand ?? null)) {
       patch.hand = hand;
     }
-    if (featureMap.hasMeaningfulEdits) {
-      patch.graphcomponent_set = applyFeatureEdits(
-        graph.graphcomponent_set ?? [],
-        featureMap.edits
-      );
+
+    // A component/position only stays valid for as long as it belongs to the
+    // currently-selected allograph's schema. `applyFeatureEdits`/
+    // `applyPositionEdits` only ever touch keys explicitly present in the
+    // tri-state edits, so anything left out of the schema — a component from
+    // an allograph the graph (or a past save) has since moved on from —
+    // would otherwise pass through untouched and accumulate indefinitely.
+    // Pruning the base to the current schema before applying edits also
+    // self-heals a graph that already accumulated stale rows from before
+    // this fix, the next time it's saved.
+    const validComponentIds = schemaAllograph
+      ? new Set(schemaAllograph.components.map((c) => c.component_id))
+      : null;
+    const currentComponents = graph.graphcomponent_set ?? [];
+    const baseComponents = validComponentIds
+      ? currentComponents.filter((c) => validComponentIds.has(c.component))
+      : currentComponents;
+    if (featureMap.hasMeaningfulEdits || baseComponents.length !== currentComponents.length) {
+      patch.graphcomponent_set = applyFeatureEdits(baseComponents, featureMap.edits);
     }
-    if (positionMap.hasMeaningfulEdits) {
-      patch.positions = applyPositionEdits(graph.positions ?? [], positionMap.edits);
+
+    const validPositionIds = schemaAllograph
+      ? new Set(schemaAllograph.positions.map((p) => p.id))
+      : null;
+    const currentPositions = graph.positions ?? [];
+    const basePositions = validPositionIds
+      ? currentPositions.filter((id) => validPositionIds.has(id))
+      : currentPositions;
+    if (positionMap.hasMeaningfulEdits || basePositions.length !== currentPositions.length) {
+      patch.positions = applyPositionEdits(basePositions, positionMap.edits);
     }
     return patch;
   }
@@ -338,24 +403,31 @@ function DialogBody({
     let savedCount = 0;
     const failed: number[] = [];
 
-    await Promise.all(
-      targets.map(async (graph) => {
-        const patch = buildPatchForGraph(graph);
-        if (Object.keys(patch).length === 0) {
-          // Nothing to do for this graph (e.g. multi-mode where only 'mixed'
-          // states stayed mixed) — count as success and skip the round trip.
-          savedCount += 1;
-          return;
-        }
-        try {
-          const updated = await updateViewerAnnotation(token, graph.id, patch);
-          onGraphSaved?.(updated);
-          savedCount += 1;
-        } catch {
-          failed.push(graph.id);
-        }
-      })
-    );
+    const saveOne = async (graph: BackendGraph) => {
+      const patch = buildPatchForGraph(graph);
+      if (Object.keys(patch).length === 0) {
+        // Nothing to do for this graph (e.g. multi-mode where only 'mixed'
+        // states stayed mixed) — count as success and skip the round trip.
+        savedCount += 1;
+        return;
+      }
+      try {
+        const updated = await updateViewerAnnotation(token, graph.id, patch);
+        onGraphSaved?.(updated);
+        savedCount += 1;
+      } catch {
+        failed.push(graph.id);
+      }
+    };
+
+    // Selection can hold up to MAX_SELECTION (search-page.tsx) graphs; firing
+    // one PATCH per graph unbounded would open hundreds-to-thousands of
+    // simultaneous requests. Save in bounded batches instead, mirroring the
+    // chunking fetchGraphsByIds already does for the read side.
+    const SAVE_CONCURRENCY = 20;
+    for (let i = 0; i < targets.length; i += SAVE_CONCURRENCY) {
+      await Promise.all(targets.slice(i, i + SAVE_CONCURRENCY).map(saveOne));
+    }
 
     setSaving(false);
     setFailedIds(failed);
@@ -419,8 +491,8 @@ function DialogBody({
         </SheetHeader>
 
         <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
-          {iiifImage && <GraphPreviewStrip graphs={graphs} iiifImage={iiifImage} />}
-          {isMulti && initialAllograph === MIXED && (
+          <GraphPreviewStrip graphs={graphs} fallbackIiifImage={iiifImage} />
+          {isMulti && initialAllograph === MIXED && allographId == null && (
             <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
               Selected graphs use different allographs. Choose one to set on all of them, or close
               and refine the selection.
@@ -444,16 +516,52 @@ function DialogBody({
             </div>
             <div>
               <Label className="mb-1.5 block text-sm font-medium">Hand</Label>
-              <SearchableSelect
-                options={handOptions}
-                value={hand === MIXED || hand == null ? null : String(hand)}
-                onValueChange={(v) => setHand(v ? Number(v) : null)}
-                placeholder={hand === MIXED ? 'Mixed — pick one' : 'Hand'}
-                searchPlaceholder="Search hands…"
-                emptyText="No hands"
-                clearLabel="No hand"
-                triggerClassName="h-9 w-full text-sm"
-              />
+              {handDisabled ? (
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        tabIndex={0}
+                        role="group"
+                        aria-disabled="true"
+                        aria-label={
+                          handDisabledReason ??
+                          'A hand belongs to a single manuscript — this selection spans several.'
+                        }
+                        className="cursor-not-allowed rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <SearchableSelect
+                          options={handOptions}
+                          value={hand === MIXED || hand == null ? null : String(hand)}
+                          onValueChange={() => {}}
+                          disabled
+                          placeholder={
+                            hand === MIXED ? 'Mixed across manuscripts' : 'Hand disabled'
+                          }
+                          searchPlaceholder="Search hands…"
+                          emptyText="No hands"
+                          triggerClassName="h-9 w-full text-sm pointer-events-none opacity-60"
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-xs">
+                      {handDisabledReason ??
+                        'A hand belongs to a single manuscript — this selection spans several.'}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <SearchableSelect
+                  options={handOptions}
+                  value={hand === MIXED || hand == null ? null : String(hand)}
+                  onValueChange={(v) => setHand(v ? Number(v) : null)}
+                  placeholder={hand === MIXED ? 'Mixed — pick one' : 'Hand'}
+                  searchPlaceholder="Search hands…"
+                  emptyText="No hands"
+                  clearLabel="No hand"
+                  triggerClassName="h-9 w-full text-sm"
+                />
+              )}
             </div>
           </div>
 
@@ -572,13 +680,28 @@ function DialogBody({
 // they're changing instead of trusting that they clicked the right thumb.
 const PREVIEW_LIMIT = 8;
 
-function GraphPreviewStrip({ graphs, iiifImage }: { graphs: BackendGraph[]; iiifImage: string }) {
+function GraphPreviewStrip({
+  graphs,
+  fallbackIiifImage,
+}: {
+  graphs: BackendGraph[];
+  /** Only relevant for single-image callers (the per-image gallery) that don't
+   *  populate each graph's own `image_iiif`. A cross-manuscript selection has
+   *  no single image to fall back to, so every graph must resolve its own —
+   *  using one shared image for all of them crops the wrong region (or fails
+   *  outright) for every graph that isn't from that one image. */
+  fallbackIiifImage?: string;
+}) {
   const shown = graphs.slice(0, PREVIEW_LIMIT);
   const overflow = graphs.length - shown.length;
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 p-3">
       {shown.map((g) => (
-        <GraphPreviewThumb key={g.id} graph={g} iiifImage={iiifImage} />
+        <GraphPreviewThumb
+          key={g.id}
+          graph={g}
+          iiifImage={g.image_iiif ?? fallbackIiifImage ?? ''}
+        />
       ))}
       {overflow > 0 && (
         <span className="flex h-16 w-16 items-center justify-center rounded border bg-background text-xs font-medium text-muted-foreground">

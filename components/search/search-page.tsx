@@ -40,6 +40,14 @@ import { FieldVisibilityMenu } from '@/components/search/field-visibility-menu';
 const SearchMapView = React.lazy(() =>
   import('@/components/search/search-map-view').then((m) => ({ default: m.SearchMapView }))
 );
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/auth-context';
+import { toast } from 'sonner';
+import { GraphSelectionToolbar } from '@/components/search/graph-selection-toolbar';
+import { useGraphEditFlow } from '@/hooks/search/use-graph-edit-flow';
+import { AnnotationEditDialog } from '@/components/manuscript/annotation-edit-dialog';
+import type { BackendGraph } from '@/services/annotations';
 import { cn } from '@/lib/utils';
 import { useSearchPageState } from '@/hooks/search/use-search-page-state';
 import { useShowThumbnails } from '@/hooks/search/use-show-thumbnails';
@@ -54,7 +62,115 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const [thumbnailSize, setThumbnailSize] = useThumbnailSize();
   const [showThumbnails, setShowThumbnails] = useShowThumbnails();
   const { getLabel } = useModelLabels();
+  const { user } = useAuth();
+  const isStaff = Boolean(user?.is_staff);
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
+
+  const [graphOverrides, setGraphOverrides] = React.useState<Record<number, BackendGraph>>({});
+  const [deletedGraphIds, setDeletedGraphIds] = React.useState<Set<number>>(() => new Set());
+
+  // Deliberately excludes offset/limit/ordering: paging, changing page size, or
+  // re-sorting doesn't change *which* graphs match, only how the same matched
+  // set is sliced/ordered — resetting the overlays on those would silently
+  // undo a delete/edit the moment the user pages away and back.
+  const queryFingerprint = `${s.resultType}:${s.submittedKeyword}:${JSON.stringify({
+    selected_facets: s.queryState.selected_facets,
+    dateParams: s.queryState.dateParams,
+    extraParams: s.queryState.extraParams,
+  })}`;
+  const [prevQueryFingerprint, setPrevQueryFingerprint] = React.useState(queryFingerprint);
+  if (prevQueryFingerprint !== queryFingerprint) {
+    setPrevQueryFingerprint(queryFingerprint);
+    setGraphOverrides({});
+    setDeletedGraphIds(new Set());
+  }
+
+  const editFlow = useGraphEditFlow({
+    onGraphDeleted: (id) => {
+      s.selection.remove(id);
+      setDeletedGraphIds((prev) => new Set(prev).add(id));
+      setGraphOverrides((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    },
+  });
+
+  const visibleFiltered = React.useMemo(() => {
+    if (deletedGraphIds.size === 0) return s.filtered;
+    return s.filtered.filter((item) => {
+      const candidate = item as { id?: number };
+      if (candidate.id == null) return true;
+      return !deletedGraphIds.has(candidate.id);
+    });
+  }, [s.filtered, deletedGraphIds]);
+
+  const handleClearSelection = React.useCallback(() => {
+    s.selection.clear();
+  }, [s.selection]);
+
+  // A single "Edit selected" batch does N parallel PATCHes plus a chunked
+  // id__in hydration fetch — cap how large one batch can get, regardless of
+  // how many individual clicks or page-selections accumulated it (selection
+  // persists across pages).
+  const MAX_SELECTION = 1000;
+
+  const toggleSelectionCapped = React.useCallback(
+    (id: number) => {
+      if (!s.selection.selected.has(id) && s.selection.selected.size >= MAX_SELECTION) {
+        toast.error(t('selectionCapReached', { max: MAX_SELECTION }));
+        return;
+      }
+      s.selection.toggle(id);
+    },
+    [s.selection, t]
+  );
+
+  const addManySelectionCapped = React.useCallback(
+    (ids: number[]) => {
+      const current = s.selection.selected;
+      const room = MAX_SELECTION - current.size;
+      if (room <= 0) {
+        toast.error(t('selectionCapReached', { max: MAX_SELECTION }));
+        return;
+      }
+      const newIds = ids.filter((id) => !current.has(id));
+      if (newIds.length > room) toast.error(t('selectionCapReached', { max: MAX_SELECTION }));
+      s.selection.addMany(newIds.slice(0, room));
+    },
+    [s.selection, t]
+  );
+
+  const pageGraphIds = React.useMemo(
+    () =>
+      visibleFiltered
+        .map((item) => (item as { id?: number }).id)
+        .filter((id): id is number => id != null),
+    [visibleFiltered]
+  );
+
+  const handleSelectAllOnPage = React.useCallback(() => {
+    addManySelectionCapped(pageGraphIds);
+  }, [pageGraphIds, addManySelectionCapped]);
+
+  const handleUnselectAllOnPage = React.useCallback(() => {
+    s.selection.removeMany(pageGraphIds);
+  }, [pageGraphIds, s.selection]);
+
+  // Selection persists across pages, so it can be larger (or smaller, after a
+  // filter/delete) than this page's own item count — comparing sizes doesn't
+  // tell you whether *this page's* items are selected. Check membership of
+  // this page's actual ids instead.
+  const allOnPageSelected =
+    pageGraphIds.length > 0 && pageGraphIds.every((id) => s.selection.selected.has(id));
+
+  // Deliberately doesn't re-check filter membership on edit (unlike delete,
+  // above): an edit only changes whether this row still matches the active
+  // filter, which the search index should answer — not a per-facet guess here.
+  const handleGraphSaved = React.useCallback((updatedGraph: BackendGraph) => {
+    setGraphOverrides((prev) => ({ ...prev, [updatedGraph.id]: updatedGraph }));
+  }, []);
 
   return (
     <div className="flex min-h-[calc(100dvh-var(--site-header-h,0px))] flex-col bg-background">
@@ -236,8 +352,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             />
           </div>
         </div>
-        {/* Row 2: the result-type tabs, with the thumbnail-size control
-            right-aligned on the same line. */}
+        {/* Row 2: the result-type tabs, with the annotating-mode switch and
+            the thumbnail-size/visibility controls right-aligned on the same
+            line. */}
         <div className="flex min-w-0 items-center gap-3">
           <div className="min-w-0 flex-1">
             <ResultTypeToggle
@@ -247,6 +364,22 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               counts={s.countsByType}
             />
           </div>
+          {s.resultType === 'graphs' && isStaff && (
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="annotating-mode-toggle"
+                className="cursor-pointer select-none text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                {t('annotatingMode')}
+              </Label>
+              <Switch
+                id="annotating-mode-toggle"
+                checked={s.annotatingMode}
+                onCheckedChange={s.setAnnotatingMode}
+                aria-label={t('annotatingModeHint')}
+              />
+            </div>
+          )}
           <div className="flex items-center gap-1.5 shrink-0">
             {/* Sizes whatever thumbnail the current view draws: the grid's
                 cards, and the region crop the table renders under each row. */}
@@ -349,11 +482,23 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             {/* Table view renders flush (its sticky header carries the divider);
                 the other views get their own padding. */}
             <div className={cn('flex min-w-0 flex-col', s.viewMode !== 'table' && 'p-3')}>
-              {s.filtered.length > 0 ? (
+              {s.resultType === 'graphs' && s.annotatingMode && isStaff && (
+                <GraphSelectionToolbar
+                  selectedCount={s.selection.selected.size}
+                  pageCount={pageGraphIds.length}
+                  allOnPageSelected={allOnPageSelected}
+                  onClearSelection={handleClearSelection}
+                  onSelectAllOnPage={handleSelectAllOnPage}
+                  onUnselectAllOnPage={handleUnselectAllOnPage}
+                  onEditSelected={() => editFlow.startEdit(Array.from(s.selection.selected))}
+                  isHydrating={editFlow.isHydrating}
+                />
+              )}
+              {visibleFiltered.length > 0 ? (
                 s.viewMode === 'table' ? (
                   <ResultsTable
                     resultType={s.resultType}
-                    results={s.filtered as ResultListItem[]}
+                    results={visibleFiltered as ResultListItem[]}
                     ordering={s.sortOrdering}
                     onSort={s.handleSort}
                     highlightKeyword={s.submittedKeyword}
@@ -429,11 +574,18 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   </React.Suspense>
                 ) : (
                   <SearchGrid
-                    results={s.filtered as Parameters<typeof SearchGrid>[0]['results']}
+                    results={visibleFiltered as Parameters<typeof SearchGrid>[0]['results']}
                     resultType={s.resultType}
                     highlightKeyword={s.submittedKeyword}
                     isFetching={s.isFetching}
                     thumbnailSize={thumbnailSize}
+                    annotatingMode={s.annotatingMode && isStaff}
+                    selectedIds={s.selection.selected}
+                    onToggleSelect={toggleSelectionCapped}
+                    onSelectMany={addManySelectionCapped}
+                    onEditOne={(id) => editFlow.startEdit([id])}
+                    onDeleteOne={editFlow.deleteOne}
+                    graphOverrides={graphOverrides}
                     showThumbnails={showThumbnails}
                   />
                 )
@@ -516,6 +668,17 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           </div>
         </main>
       </div>
+
+      <AnnotationEditDialog
+        open={editFlow.dialogOpen}
+        onOpenChange={editFlow.setDialogOpen}
+        graphs={editFlow.editingGraphs}
+        allographs={editFlow.allographs}
+        hands={editFlow.hands}
+        handDisabled={editFlow.handDisabled}
+        handDisabledReason={editFlow.handDisabledReason}
+        onGraphSaved={handleGraphSaved}
+      />
     </div>
   );
 }
