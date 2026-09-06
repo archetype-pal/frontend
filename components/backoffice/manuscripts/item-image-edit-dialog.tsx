@@ -113,7 +113,7 @@ export function ItemImageEditDialog({
                 <Label className="text-xs">{t('manuscriptsDetail.iiifImagePath')}</Label>
                 <Input
                   readOnly
-                  value={image.image ?? ''}
+                  value={image.image_path ?? ''}
                   className="h-9 font-mono text-xs bg-muted text-muted-foreground"
                 />
               </div>
