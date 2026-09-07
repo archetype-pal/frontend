@@ -263,6 +263,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                           variant="ghost"
                           size="sm"
                           className="h-6 px-2 text-[11px] text-muted-foreground"
+                          title={t('manuscriptsDetail.descriptionConvertToTeiHint')}
                           onClick={() => {
                             setEditingId(desc.id);
                             setEditFormat('tei');

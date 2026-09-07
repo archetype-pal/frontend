@@ -1215,7 +1215,7 @@
         "errorLine": "Line {line}, col {col}: {message}",
         "unrepresentableTitle": "Structured form unavailable",
         "unrepresentableBody": "This area contains TEI beyond the structured form's model, so it can only be edited as source. The stored markup is preserved exactly.",
-        "proseHint": "TEI prose — rich editor coming in Phase 3",
+        "proseHint": "TEI markup",
         "leafNotRepresentable": "Markup not representable as rich text — editing as TEI source",
         "loading": "Loading…",
         "previewEmpty": "Nothing to preview yet.",
@@ -2511,7 +2511,7 @@
       },
       "descriptionPreviewEmpty": "Nothing to preview yet.",
       "descriptionFormatTei": "TEI",
-      "descriptionConvertToTei": "Convert to linked prose",
+      "descriptionConvertToTei": "Convert to TEI",
       "descriptionEntity": {
         "persName": "Person",
         "placeName": "Place"
@@ -2519,7 +2519,8 @@
       "descriptionEntityHint": {
         "persName": "Mark the selection as a person name",
         "placeName": "Mark the selection as a place name"
-      }
+      },
+      "descriptionConvertToTeiHint": "Re-encode this description as TEI so names in it can be linked to people, places, manuscripts and images."
     },
     "dates": {
       "description": "Manage {dateLabel} records used across {historicalItemPlural}",

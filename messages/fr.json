@@ -1215,7 +1215,7 @@
         "errorLine": "Ligne {line}, col {col} : {message}",
         "unrepresentableTitle": "Formulaire structuré indisponible",
         "unrepresentableBody": "Cette zone contient du TEI au-delà du modèle du formulaire structuré ; elle ne peut être modifiée qu'en mode source. Le balisage stocké est préservé à l'identique.",
-        "proseHint": "Prose TEI — éditeur riche à venir en phase 3",
+        "proseHint": "Balisage TEI",
         "leafNotRepresentable": "Balisage non représentable en texte enrichi — édition en source TEI",
         "loading": "Chargement…",
         "previewEmpty": "Rien à prévisualiser pour l'instant.",
@@ -2511,7 +2511,7 @@
       },
       "descriptionPreviewEmpty": "Rien à prévisualiser pour le moment.",
       "descriptionFormatTei": "TEI",
-      "descriptionConvertToTei": "Convertir en prose liée",
+      "descriptionConvertToTei": "Convertir en TEI",
       "descriptionEntity": {
         "persName": "Personne",
         "placeName": "Lieu"
@@ -2519,7 +2519,8 @@
       "descriptionEntityHint": {
         "persName": "Marquer la sélection comme nom de personne",
         "placeName": "Marquer la sélection comme nom de lieu"
-      }
+      },
+      "descriptionConvertToTeiHint": "Ré-encoder cette description en TEI afin que les noms puissent être liés à des personnes, des lieux, des manuscrits et des images."
     },
     "dates": {
       "description": "Gérer les enregistrements de {dateLabel} utilisés dans les {historicalItemPlural}",

@@ -1215,7 +1215,7 @@
         "errorLine": "Zeile {line}, Spalte {col}: {message}",
         "unrepresentableTitle": "Strukturierte Ansicht nicht verfügbar",
         "unrepresentableBody": "Dieser Bereich enthält TEI, das über das Modell der strukturierten Ansicht hinausgeht, und kann daher nur als Quelltext bearbeitet werden. Die gespeicherte Auszeichnung bleibt dabei unverändert erhalten.",
-        "proseHint": "TEI-Fließtext — umfassender Editor folgt in Phase 3",
+        "proseHint": "TEI-Auszeichnung",
         "leafNotRepresentable": "Auszeichnung nicht als Rich-Text darstellbar — Bearbeitung als TEI-Quelltext",
         "loading": "Wird geladen…",
         "previewEmpty": "Noch nichts zum Anzeigen.",
@@ -2511,7 +2511,7 @@
       },
       "descriptionPreviewEmpty": "Noch nichts zur Vorschau.",
       "descriptionFormatTei": "TEI",
-      "descriptionConvertToTei": "In verknüpften Text umwandeln",
+      "descriptionConvertToTei": "In TEI umwandeln",
       "descriptionEntity": {
         "persName": "Person",
         "placeName": "Ort"
@@ -2519,7 +2519,8 @@
       "descriptionEntityHint": {
         "persName": "Auswahl als Personenname markieren",
         "placeName": "Auswahl als Ortsname markieren"
-      }
+      },
+      "descriptionConvertToTeiHint": "Diese Beschreibung als TEI kodieren, damit Namen darin mit Personen, Orten, Handschriften und Bildern verknüpft werden können."
     },
     "dates": {
       "description": "Verwalten Sie {dateLabel}-Datensätze, die in {historicalItemPlural} verwendet werden",
