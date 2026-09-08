@@ -1977,7 +1977,7 @@
       "tooltipDeleteUser": "Delete user",
       "tooltipImpersonateUser": "Impersonate user",
       "tooltipImpersonateSelf": "You cannot impersonate yourself",
-      "tooltipImpersonateProtected": "Staff and superuser accounts cannot be impersonated",
+      "tooltipImpersonateProtected": "Superuser accounts cannot be impersonated",
       "tooltipImpersonateInactive": "Deactivated accounts cannot be impersonated",
       "createDialogTitle": "New User",
       "createDialogDesc": "Set up a new account. The password will be securely hashed.",

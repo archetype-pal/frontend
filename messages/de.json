@@ -1977,7 +1977,7 @@
       "tooltipDeleteUser": "Benutzer löschen",
       "tooltipImpersonateUser": "Identität des Benutzers annehmen",
       "tooltipImpersonateSelf": "Sie können nicht Ihre eigene Identität annehmen",
-      "tooltipImpersonateProtected": "Die Identität von Mitarbeiter- und Superuser-Konten kann nicht angenommen werden",
+      "tooltipImpersonateProtected": "Die Identität von Superuser-Konten kann nicht angenommen werden",
       "tooltipImpersonateInactive": "Die Identität deaktivierter Konten kann nicht angenommen werden",
       "createDialogTitle": "Neuer Benutzer",
       "createDialogDesc": "Neues Konto einrichten. Das Passwort wird sicher gehasht.",

@@ -1977,7 +1977,7 @@
       "tooltipDeleteUser": "Supprimer l'utilisateur",
       "tooltipImpersonateUser": "Emprunter l'identité de l'utilisateur",
       "tooltipImpersonateSelf": "Vous ne pouvez pas emprunter votre propre identité",
-      "tooltipImpersonateProtected": "Impossible d'emprunter l'identité d'un compte du personnel ou superutilisateur",
+      "tooltipImpersonateProtected": "Impossible d'emprunter l'identité d'un compte superutilisateur",
       "tooltipImpersonateInactive": "Impossible d'emprunter l'identité d'un compte désactivé",
       "createDialogTitle": "Nouvel utilisateur",
       "createDialogDesc": "Configurer un nouveau compte. Le mot de passe sera stocké de façon sécurisée (hashé).",

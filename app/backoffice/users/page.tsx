@@ -79,11 +79,12 @@ function fullName(user: UserListItem): string {
 }
 
 // Mirrors the backend's own restrictions (apps.users.services.impersonate_user):
-// never yourself, never a staff/superuser account. No point offering an action
-// that is guaranteed to 400/403. Inactive accounts are excluded too: the API
-// hands out a token but DRF then rejects it, logging the admin out app-wide.
+// never yourself, never a superuser account. Staff accounts ARE impersonable —
+// this action is superuser-only to begin with, so a superuser impersonating
+// staff is not a privilege escalation. Inactive accounts are excluded too: the
+// API hands out a token but DRF then rejects it, logging the admin out app-wide.
 function canImpersonate(row: UserListItem, currentUserId: number | undefined): boolean {
-  return row.id !== currentUserId && !row.is_staff && !row.is_superuser && row.is_active;
+  return row.id !== currentUserId && !row.is_superuser && row.is_active;
 }
 
 function relativeTime(dateStr: string | null, t: (key: string) => string): string {
@@ -765,7 +766,7 @@ export default function UsersPage() {
                             const reasonKey =
                               u.id === user?.id
                                 ? 'users.tooltipImpersonateSelf'
-                                : u.is_staff || u.is_superuser
+                                : u.is_superuser
                                   ? 'users.tooltipImpersonateProtected'
                                   : 'users.tooltipImpersonateInactive';
                             return (

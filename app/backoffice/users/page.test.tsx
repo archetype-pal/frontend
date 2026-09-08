@@ -103,12 +103,12 @@ describe('UsersPage impersonation action', () => {
     expect((button as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('disables the impersonate button for staff rows', async () => {
+  it('enables the impersonate button for staff rows (superusers may impersonate staff)', async () => {
     renderPage();
     await screen.findByText('staffer');
 
     const button = within(rowFor('staffer')).getByLabelText(/impersonate user/i);
-    expect((button as HTMLButtonElement).disabled).toBe(true);
+    expect((button as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('disables the impersonate button for superuser rows', async () => {
