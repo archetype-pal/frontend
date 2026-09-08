@@ -36,7 +36,6 @@ export interface UploadSession {
   received_chunks: number[];
   missing_chunks: number[];
   destination_path: string;
-  subfolder: string;
   locus: string;
   tags: string;
   item_image: number | null;
@@ -48,10 +47,8 @@ export interface CreateUploadSessionInput {
   item_part: number;
   filename: string;
   size: number;
-  sha256?: string;
   locus?: string;
   tags?: string;
-  subfolder?: string;
 }
 
 const BASE = '/api/v1/uploads/sessions/';
@@ -351,7 +348,7 @@ export async function watchUploadSession(
 export async function uploadImageFile(
   token: string,
   file: File,
-  meta: { item_part: number; locus?: string; tags?: string; subfolder?: string },
+  meta: { item_part: number; locus?: string; tags?: string },
   options: UploadImageOptions = {}
 ): Promise<UploadSession> {
   const { onProgress, signal, pollIntervalMs = 2000, processTimeoutMs = 30 * 60 * 1000 } = options;
@@ -360,16 +357,12 @@ export async function uploadImageFile(
     onProgress?.({ totalBytes: total, ...progress });
 
   report({ phase: 'creating', sentBytes: 0 });
-  // sha256 is intentionally omitted: hashing multi-GB files on the main
-  // thread would freeze the UI, and the server verifies byte-count on every
-  // finalize plus exact per-chunk sizes, which catches truncation/corruption.
   let session = await createUploadSession(token, {
     item_part: meta.item_part,
     filename: file.name,
     size: file.size,
     locus: meta.locus,
     tags: meta.tags,
-    subfolder: meta.subfolder,
   });
 
   const plan = planChunks(total, session.chunk_size);

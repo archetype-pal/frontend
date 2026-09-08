@@ -70,7 +70,6 @@ const session = (over: Partial<UploadSession> = {}): UploadSession => ({
   received_chunks: [0],
   missing_chunks: [],
   destination_path: 'uploads/item-part-3/f12r.jp2',
-  subfolder: '',
   locus: 'f.3r',
   tags: '',
   item_image: null,

@@ -3838,7 +3838,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UploadSessionCreate"
+                "$ref": "#/components/schemas/ImageUploadSessionCreate"
               }
             }
           }
@@ -3849,7 +3849,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UploadSession"
+                  "$ref": "#/components/schemas/ImageUploadSession"
                 }
               }
             }
@@ -3859,13 +3859,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UploadSession"
+                  "$ref": "#/components/schemas/ImageUploadSession"
                 }
               }
             }
           },
           "400": {
-            "description": "Invalid filename, type, size, sha256 or subfolder."
+            "description": "Invalid filename, type or size."
           },
           "409": {
             "description": "Destination path taken. The body's `code` distinguishes a true duplicate (`destination_exists` \u2014 file on disk or ItemImage row) from a transient hold (`session_active` \u2014 another user's or an already-processing session)."
@@ -3908,7 +3908,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UploadSession"
+                  "$ref": "#/components/schemas/ImageUploadSession"
                 }
               }
             }
@@ -4037,7 +4037,7 @@
             "api_key": []
           }
         ],
-        "description": "Assemble the chunks, verify byte count and sha256, then dispatch the Celery ingest pipeline (inspect \u2192 lossless JP2 \u2192 SIPI tile smoke test \u2192 ItemImage row \u2192 search reindex). Poll the session for progress.",
+        "description": "Assemble the chunks, check the result, then dispatch the Celery ingest pipeline (inspect \u2192 lossless JP2 \u2192 SIPI tile smoke test \u2192 ItemImage row \u2192 search reindex). Poll the session for progress.",
         "parameters": [
           {
             "name": "id",
@@ -4055,13 +4055,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UploadSession"
+                  "$ref": "#/components/schemas/ImageUploadSession"
                 }
               }
             }
           },
           "400": {
-            "description": "Integrity check failed (size or sha256 mismatch)."
+            "description": "The assembled file failed its integrity check."
           },
           "409": {
             "description": "Chunks missing, session already finalized, or caller is not the owner."
@@ -5999,7 +5999,7 @@
           }
         }
       },
-      "UploadSession": {
+      "ImageUploadSession": {
         "type": "object",
         "properties": {
           "id": {
@@ -6029,12 +6029,6 @@
           "declared_size": {
             "type": "integer"
           },
-          "declared_sha256": {
-            "type": "string"
-          },
-          "computed_sha256": {
-            "type": "string"
-          },
           "chunk_size": {
             "type": "integer"
           },
@@ -6056,9 +6050,6 @@
           "destination_path": {
             "type": "string",
             "description": "Media-relative path of the served .jp2 (the SIPI IIIF identifier)."
-          },
-          "subfolder": {
-            "type": "string"
           },
           "locus": {
             "type": "string"
@@ -6108,7 +6099,7 @@
           }
         }
       },
-      "UploadSessionCreate": {
+      "ImageUploadSessionCreate": {
         "type": "object",
         "required": [
           "item_part",
@@ -6127,20 +6118,12 @@
             "type": "integer",
             "description": "Total file size in bytes."
           },
-          "sha256": {
-            "type": "string",
-            "description": "Optional hex sha256 of the whole file; verified at finalize."
-          },
           "locus": {
             "type": "string"
           },
           "tags": {
             "type": "string",
             "description": "Comma-separated tags applied to the created ItemImage."
-          },
-          "subfolder": {
-            "type": "string",
-            "description": "Optional media-relative destination folder (lowercase letters, digits, '-', '_', '/'). Defaults to uploads/item-part-{id}."
           }
         }
       }
