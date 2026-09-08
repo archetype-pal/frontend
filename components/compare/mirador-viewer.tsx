@@ -62,6 +62,10 @@ export function MiradorViewer({ manifestUrls, className }: MiradorViewerProps) {
     //    layout` establishes both a containing block *and* a new stacking
     //    context for this subtree, so nothing inside Mirador can size or
     //    stack itself against anything outside this div.
-    <div id={containerId} className={cn('overflow-hidden', className)} style={{ contain: 'layout' }} />
+    <div
+      id={containerId}
+      className={cn('overflow-hidden', className)}
+      style={{ contain: 'layout' }}
+    />
   );
 }

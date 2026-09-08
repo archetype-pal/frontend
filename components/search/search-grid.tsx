@@ -377,25 +377,25 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   const isChecked = selection?.isSelected(item.id) ?? false;
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
-        {showThumbnail && (
-          <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
-            {selection && (
-              <Checkbox
-                checked={isChecked}
-                disabled={selection.isDisabled(item.id)}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onCheckedChange={() => selection.toggle(item.id)}
-                aria-label={t('compareAction.selectAriaLabel', { label: displayText })}
-                className={cn(
-                  'absolute left-2 top-2 z-20 border-border bg-background/90 shadow-sm transition-opacity duration-200',
-                  isChecked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                )}
-              />
-            )}
-            <Link href={detailUrl} className="relative block h-full w-full">
+      {showThumbnail && (
+        <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
+          {selection && (
+            <Checkbox
+              checked={isChecked}
+              disabled={selection.isDisabled(item.id)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onCheckedChange={() => selection.toggle(item.id)}
+              aria-label={t('compareAction.selectAriaLabel', { label: displayText })}
+              className={cn(
+                'absolute left-2 top-2 z-20 border-border bg-background/90 shadow-sm transition-opacity duration-200',
+                isChecked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              )}
+            />
+          )}
+          <Link href={detailUrl} className="relative block h-full w-full">
             {imageUrl ? (
               <IiifImage
                 src={imageUrl}
@@ -410,12 +410,12 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
                 No Image
               </span>
             )}
-            </Link>
-            {imageUrl && (
-              <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
-            )}
+          </Link>
+          {imageUrl && (
+            <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
+          )}
         </div>
-        )}
+      )}
       <div className={cn('px-2.5 py-1.5', showThumbnail && 'border-t border-border/70')}>
         <Link href={detailUrl} className="block">
           <span className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary">

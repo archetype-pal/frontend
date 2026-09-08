@@ -15,7 +15,10 @@ export default function ComparePage() {
   const items = useCompareStore((state) => state.items);
   const removeItem = useCompareStore((state) => state.removeItem);
   const clear = useCompareStore((state) => state.clear);
-  const manifestUrls = React.useMemo(() => items.map((item) => getManifestUrl(item.itemPartId)), [items]);
+  const manifestUrls = React.useMemo(
+    () => items.map((item) => getManifestUrl(item.itemPartId)),
+    [items]
+  );
 
   if (items.length === 0) {
     return (

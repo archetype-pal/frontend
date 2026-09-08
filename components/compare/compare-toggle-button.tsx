@@ -23,7 +23,9 @@ export function CompareToggleButton({ item }: { item: CompareItem }) {
     }
     const added = addItem(item);
     if (!added) {
-      toast.error(t('atCapTitle'), { description: t('atCapDescription', { max: MAX_COMPARE_ITEMS }) });
+      toast.error(t('atCapTitle'), {
+        description: t('atCapDescription', { max: MAX_COMPARE_ITEMS }),
+      });
     }
   };
 

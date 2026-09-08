@@ -555,7 +555,8 @@ function ResultsTableComponent<K extends ResultType>({
               manuscriptSelection &&
               (() => {
                 const manuscript = row as ManuscriptListItem;
-                const label = manuscript.shelfmark || manuscript.display_label || `#${manuscript.id}`;
+                const label =
+                  manuscript.shelfmark || manuscript.display_label || `#${manuscript.id}`;
                 return (
                   <TableCell className="w-10 py-1.5">
                     <Checkbox

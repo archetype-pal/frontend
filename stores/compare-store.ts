@@ -32,7 +32,10 @@ export const useCompareStore = create<CompareState>()(
 
       addItem: (item) => {
         const { items } = get();
-        if (items.length >= MAX_COMPARE_ITEMS || items.some((i) => i.itemPartId === item.itemPartId)) {
+        if (
+          items.length >= MAX_COMPARE_ITEMS ||
+          items.some((i) => i.itemPartId === item.itemPartId)
+        ) {
           return false;
         }
         set({ items: [...items, item] });
