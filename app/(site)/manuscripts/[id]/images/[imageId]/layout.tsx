@@ -9,6 +9,9 @@ import { fetchOtherImages } from '@/services/manuscript-image-tabs';
 import { renderPublicDescription } from '@/lib/description-public';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import { isSearchCategoryEnabled } from '@/lib/site-features';
+import { getLocale } from 'next-intl/server';
+import { readModelLabels } from '@/lib/model-labels-server';
+import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -37,19 +40,26 @@ export default async function ManuscriptImageLayout({ children, params }: Layout
     );
   }
 
-  const [manuscript, otherImages, imageGraphs, visibleTexts, siteFeatures] = await Promise.all([
-    fetchManuscript(image.item_part).catch(() => null),
-    fetchOtherImages(image.item_part, image.id).catch(() => []),
-    fetchAnnotationsForImage(imageId).catch(() => []),
-    fetchImageTextsForImage(imageId).catch(() => []),
-    readSiteFeatures(),
-  ]);
+  const [manuscript, otherImages, imageGraphs, visibleTexts, siteFeatures, locale, modelLabels] =
+    await Promise.all([
+      fetchManuscript(image.item_part).catch(() => null),
+      fetchOtherImages(image.item_part, image.id).catch(() => []),
+      fetchAnnotationsForImage(imageId).catch(() => []),
+      fetchImageTextsForImage(imageId).catch(() => []),
+      readSiteFeatures(),
+      getLocale(),
+      readModelLabels(),
+    ]);
 
   const label = manuscript?.display_label?.trim() || 'Unknown manuscript';
   const locus = image.locus?.trim() || '';
   const description = manuscript?.historical_item?.descriptions?.[0]?.content;
   const manuscriptsSearchEnabled =
     siteFeatures.sections.search !== false && isSearchCategoryEnabled(siteFeatures, 'manuscripts');
+  const manuscriptsLabel = resolveModelLabel(
+    modelLabels.labels.appManuscripts,
+    locale as ModelLabelLocale
+  );
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -65,10 +75,10 @@ export default async function ManuscriptImageLayout({ children, params }: Layout
             <BreadcrumbItem>
               {manuscriptsSearchEnabled ? (
                 <BreadcrumbLink asChild>
-                  <Link href="/search/manuscripts">Manuscripts</Link>
+                  <Link href="/search/manuscripts">{manuscriptsLabel}</Link>
                 </BreadcrumbLink>
               ) : (
-                <BreadcrumbPage>Manuscripts</BreadcrumbPage>
+                <BreadcrumbPage>{manuscriptsLabel}</BreadcrumbPage>
               )}
             </BreadcrumbItem>
             <BreadcrumbSeparator />
