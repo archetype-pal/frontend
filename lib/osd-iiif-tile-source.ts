@@ -20,6 +20,27 @@ function hasTileDescriptors(tiles: unknown): boolean {
   return Array.isArray(tiles) && tiles.length > 0;
 }
 
+function isPowerOfTwo(value: unknown): boolean {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0 && (value & (value - 1)) === 0;
+}
+
+// OpenSeadragon's IIIFTileSource derives each zoom level's scale factor as
+// 2^(maxLevel - level) (unchanged from OSD v2.x through at least v6.1.0), so it
+// only tiles correctly when every advertised scaleFactor is itself a power of
+// two. SIPI is free to advertise arbitrary integer scaleFactors per the IIIF
+// Image API spec (e.g. [1, 2, 3]) — when it does, OSD derives the wrong
+// maxLevel/tile geometry and only ever paints a fraction of the canvas. Treat
+// that the same as "no tiles advertised" and fall back to the full-image
+// pyramid built from `sizes`, which OSD tiles correctly regardless.
+function hasUsableTileDescriptors(tiles: unknown): boolean {
+  if (!hasTileDescriptors(tiles)) return false;
+
+  return (tiles as unknown[]).every((descriptor) => {
+    const scaleFactors = (descriptor as { scaleFactors?: unknown }).scaleFactors;
+    return Array.isArray(scaleFactors) && scaleFactors.every(isPowerOfTwo);
+  });
+}
+
 function imageSize(value: unknown): { width: number; height: number } | null {
   if (!value || typeof value !== 'object') return null;
 
@@ -53,7 +74,7 @@ export function buildOpenSeadragonTileSource(
 ): Record<string, unknown> {
   const source: Record<string, unknown> = { ...info, id: proxiedBaseUrl, '@id': proxiedBaseUrl };
 
-  if (!isIiif3ImageService(source) || hasTileDescriptors(source.tiles)) {
+  if (!isIiif3ImageService(source) || hasUsableTileDescriptors(source.tiles)) {
     return source;
   }
 

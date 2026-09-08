@@ -470,25 +470,26 @@ export default function ManuscriptAnnotorious({
         }
         return;
       }
-      if (baseUrl.includes('/iiif-proxy')) {
-        try {
-          const res = await fetch(tileSourceUrl);
-          if (!res.ok) throw new Error(`IIIF info: ${res.status}`);
-          const obj = (await res.json()) as Record<string, unknown>;
-          // Keep SIPI v5's IIIF 3 URL syntax, but when SIPI omits `tiles`, build
-          // OSD a full-image pyramid from its advertised sizes. That avoids OSD's
-          // inferred cropped tile pyramid, which can drift from Annotorious.
-          tileSources = buildOpenSeadragonTileSource(obj, baseUrl);
-        } catch (err) {
-          if (isMounted) {
-            setState({
-              hasError: true,
-              errorMessage: `Failed to load IIIF info: ${err instanceof Error ? err.message : String(err)}`,
-              isLoading: false,
-            });
-          }
-          return;
+      try {
+        const res = await fetch(tileSourceUrl);
+        if (!res.ok) throw new Error(`IIIF info: ${res.status}`);
+        const obj = (await res.json()) as Record<string, unknown>;
+        // Keep SIPI v5's IIIF 3 URL syntax, but when SIPI omits `tiles` (or
+        // advertises non-power-of-two scaleFactors OSD can't tile correctly —
+        // see lib/osd-iiif-tile-source.ts), build OSD a full-image pyramid from
+        // its advertised sizes instead. That avoids OSD's inferred/cropped tile
+        // pyramid, which can drift from Annotorious or only cover part of the
+        // canvas.
+        tileSources = buildOpenSeadragonTileSource(obj, baseUrl);
+      } catch (err) {
+        if (isMounted) {
+          setState({
+            hasError: true,
+            errorMessage: `Failed to load IIIF info: ${err instanceof Error ? err.message : String(err)}`,
+            isLoading: false,
+          });
         }
+        return;
       }
       if (!isMounted) return;
 
