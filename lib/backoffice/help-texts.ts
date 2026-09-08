@@ -60,12 +60,11 @@ export const helpTexts: Record<string, HelpEntry> = {
 
   // -- Item Parts --
   'itemPart.locus': {
-    description: 'The folio or page range within the physical volume for this part.',
+    description: 'The folio or page range within the item for this part.',
     example: 'f.1r, ff.2-173, pp.1-24',
   },
   'itemPart.currentItem': {
-    description:
-      'The physical volume (repository + shelfmark) where this manuscript currently resides.',
+    description: 'The item (repository + shelfmark) where this manuscript currently resides.',
   },
   'itemPart.customLabel': {
     description:
@@ -75,10 +74,11 @@ export const helpTexts: Record<string, HelpEntry> = {
 
   // -- Catalogue Numbers --
   'catalogueNumber.source': {
-    description: 'The bibliographic source that assigned this catalogue number (e.g. Ker, Gneuss).',
+    description:
+      'The bibliographic reference that assigned this catalogue number (e.g. Ker, Gneuss).',
   },
   'catalogueNumber.number': {
-    description: 'The identifier assigned by the catalogue source.',
+    description: 'The identifier assigned by the bibliographic reference.',
     example: '001, 345a',
   },
   'catalogueNumber.url': {
@@ -130,18 +130,17 @@ export const helpTexts: Record<string, HelpEntry> = {
       'The specific part of a manuscript this hand is associated with. Changing this will update the available images.',
   },
 
-  // -- Publications --
+  // -- Posts --
   'publication.status': {
     description:
-      'Draft publications are only visible to staff. Published items appear on the public site.',
+      'Draft posts are only visible to staff. Published items appear on the public site.',
   },
   'publication.keywords': {
     description: 'Comma-separated tags used for filtering and related post suggestions.',
     example: 'palaeography, charter, twelfth-century',
   },
   'publication.published_at': {
-    description:
-      'The date this publication goes live. Can be set in the future for scheduled publishing.',
+    description: 'The date this post goes live. Can be set in the future for scheduled publishing.',
   },
 
   // -- Common --

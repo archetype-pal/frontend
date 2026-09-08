@@ -16,6 +16,8 @@ import type { ScribeDetail, ScribeHand } from '@/types/scribe-detail';
 import { Calendar, Building2, User, PenTool, Pen } from 'lucide-react';
 import { sanitizeHtml } from '@/lib/sanitize-html';
 import { BackofficeLink } from '@/components/common/backoffice-link';
+import { useSiteFeatures } from '@/contexts/site-features-context';
+import { isSearchCategoryEnabled } from '@/lib/site-features';
 
 const TAB_VALUES = ['information', 'hands', 'idiographs'] as const;
 const DEFAULT_TAB = 'information';
@@ -28,6 +30,9 @@ interface ScribeViewerProps {
 export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
   const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB);
   const t = useTranslations('scribe');
+  const { config: siteFeatures, isSectionEnabled } = useSiteFeatures();
+  const scribesSearchEnabled =
+    isSectionEnabled('search') && isSearchCategoryEnabled(siteFeatures, 'scribes');
 
   const period = scribe.period ?? scribe.date ?? null;
 
@@ -36,9 +41,13 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
       {/* Header */}
       <div className="mb-6">
         <p className="text-sm text-muted-foreground mb-1">
-          <Link href="/search/scribes" className="hover:underline">
-            {t('breadcrumb')}
-          </Link>
+          {scribesSearchEnabled ? (
+            <Link href="/search/scribes" className="hover:underline">
+              {t('breadcrumb')}
+            </Link>
+          ) : (
+            t('breadcrumb')
+          )}
         </p>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-3xl font-medium text-foreground">

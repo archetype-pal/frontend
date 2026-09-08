@@ -18,6 +18,8 @@ import {
 } from '@/lib/search-history';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import type { ResultType } from '@/lib/search-types';
+import { useSiteFeatures } from '@/contexts/site-features-context';
+import { searchHrefForKeyword } from '@/lib/search-routing';
 
 type SearchKeywordBarProps = {
   searchType: ResultType;
@@ -54,6 +56,7 @@ export function SearchKeywordBar({
 }: SearchKeywordBarProps) {
   const { suggestionsPool, getServerSuggestions } = useSearchContext();
   const { getLabel } = useModelLabels();
+  const { enabledCategories } = useSiteFeatures();
   const router = useRouter();
   const [history, setHistory] = React.useState<SearchHistoryEntry[]>([]);
   const localSuggestions = useKeywordSuggestions(value, suggestionsPool);
@@ -100,12 +103,12 @@ export function SearchKeywordBar({
         return true;
       }
       if (target.resultType === searchType) return false;
+      if (!enabledCategories.includes(target.resultType)) return false;
       const keyword = item.value.trim();
-      const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
-      router.push(`/search/${target.resultType}${query}`);
+      router.push(searchHrefForKeyword(target.resultType, keyword));
       return true;
     },
-    [router, searchType]
+    [enabledCategories, router, searchType]
   );
 
   return (

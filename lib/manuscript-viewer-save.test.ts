@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { describeSaveOutcome } from './manuscript-viewer-save';
+import { describeSaveOutcome, standardSaveValidationError } from './manuscript-viewer-save';
+import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
 
 describe('describeSaveOutcome', () => {
   it('prompts re-login on no-token (not committed)', () => {
@@ -60,5 +61,39 @@ describe('describeSaveOutcome', () => {
     expect(v.committed).toBe(true);
     expect(v.notice).toMatchObject({ kind: 'error', title: 'Some annotations could not be saved' });
     expect(v.notice?.description).toContain('3 saved, 1 still unsaved');
+  });
+});
+
+describe('standardSaveValidationError', () => {
+  const glyph = (meta: Record<string, unknown>) =>
+    ({ id: 'a1', target: {}, body: [], _meta: meta }) as unknown as A9sAnnotation;
+
+  it('requires both an allograph and a hand on a public glyph', () => {
+    expect(standardSaveValidationError(glyph({}), 'public')).toContain('allograph');
+    expect(standardSaveValidationError(glyph({ allographId: 3 }), 'public')).toContain('hand');
+    expect(standardSaveValidationError(glyph({ allographId: 3, handId: 7 }), 'public')).toBeNull();
+  });
+
+  it('rejects non-positive ids rather than treating them as present', () => {
+    expect(standardSaveValidationError(glyph({ allographId: 0, handId: 7 }), 'public')).toContain(
+      'allograph'
+    );
+    expect(standardSaveValidationError(glyph({ allographId: 3, handId: 0 }), 'public')).toContain(
+      'hand'
+    );
+  });
+
+  it('exempts editorial annotations — they carry neither', () => {
+    expect(standardSaveValidationError(glyph({}), 'editorial')).toBeNull();
+  });
+
+  it('exempts text regions whatever their kind', () => {
+    const textRegion = {
+      id: 'a2',
+      target: {},
+      body: [],
+      _meta: { annotationType: 'text' },
+    } as unknown as A9sAnnotation;
+    expect(standardSaveValidationError(textRegion, 'public')).toBeNull();
   });
 });

@@ -2,13 +2,26 @@ import type { MetadataRoute } from 'next';
 import { apiFetch } from '@/lib/api-fetch';
 import { env } from '@/lib/env';
 import { getPublishedPages } from '@/lib/pages-server';
+import { readSiteFeatures } from '@/lib/site-features-server';
+import { getEnabledSearchCategories } from '@/lib/site-features';
+import { getPublicationRoutes } from '@/lib/publications';
 
 const BASE_URL = env.siteUrl;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const siteFeatures = await readSiteFeatures();
+  const searchRoutes: MetadataRoute.Sitemap =
+    siteFeatures.sections.search !== false
+      ? getEnabledSearchCategories(siteFeatures).map((type) => ({
+          url: `${BASE_URL}/search/${type}`,
+          changeFrequency: 'weekly',
+          priority: type === 'manuscripts' ? 0.9 : 0.7,
+        }))
+      : [];
+
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: 'weekly', priority: 1 },
-    { url: `${BASE_URL}/search/manuscripts`, changeFrequency: 'weekly', priority: 0.9 },
+    ...searchRoutes,
     { url: `${BASE_URL}/publications/news`, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE_URL}/publications/blogs`, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE_URL}/publications/feature`, changeFrequency: 'monthly', priority: 0.7 },
@@ -27,15 +40,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const pubs = pubData.results ?? pubData ?? [];
       for (const pub of pubs) {
         if (!pub.slug) continue;
-        let prefix = '/publications/blogs';
-        if (pub.is_news) prefix = '/publications/news';
-        else if (pub.is_featured) prefix = '/publications/feature';
-        dynamicRoutes.push({
-          url: `${BASE_URL}${prefix}/${pub.slug}`,
-          lastModified: pub.updated_at ? new Date(pub.updated_at) : undefined,
-          changeFrequency: 'monthly',
-          priority: 0.6,
-        });
+        for (const route of getPublicationRoutes(pub, pub.slug)) {
+          dynamicRoutes.push({
+            url: `${BASE_URL}${route.href}`,
+            lastModified: pub.updated_at ? new Date(pub.updated_at) : undefined,
+            changeFrequency: 'monthly',
+            priority: 0.6,
+          });
+        }
       }
     }
   } catch {

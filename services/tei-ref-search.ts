@@ -31,6 +31,20 @@ export interface ItemPartHit {
   shelfmark?: string;
 }
 
+/**
+ * An item-image hit (the `item-images` index) → resolves to
+ * `/manuscripts/{item_part}/images/{id}`. `item_part` is the ONLY route to a
+ * valid target and the document drops null fields, so a hit without it cannot
+ * be linked at all.
+ */
+export interface ItemImageHit {
+  id: number;
+  item_part?: number;
+  locus?: string;
+  display_label?: string;
+  shelfmark?: string;
+}
+
 /** A place-mention hit (the `places` index) — names only; target is a search link. */
 export interface PlaceHit {
   id: number | string;
@@ -70,4 +84,12 @@ export function searchItemParts(
 
 export function searchPlaces(q: string, limit = 20, signal?: AbortSignal): Promise<PlaceHit[]> {
   return searchIndex<PlaceHit>('places', q, limit, signal);
+}
+
+export function searchItemImages(
+  q: string,
+  limit = 12,
+  signal?: AbortSignal
+): Promise<ItemImageHit[]> {
+  return searchIndex<ItemImageHit>('item-images', q, limit, signal);
 }

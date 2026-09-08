@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeHtml, stripHtml } from './sanitize-html';
+import { sanitizeHtml, stripHtml, stripHtmlToPlainText } from './sanitize-html';
 
 describe('sanitizeHtml', () => {
   it('allows safe HTML tags', () => {
@@ -119,5 +119,15 @@ describe('stripHtml', () => {
   it('returns empty string for empty or whitespace-only input', () => {
     expect(stripHtml('')).toBe('');
     expect(stripHtml('   ')).toBe('');
+  });
+});
+
+describe('stripHtmlToPlainText', () => {
+  it('strips tags, decodes entities, and normalizes whitespace', () => {
+    expect(
+      stripHtmlToPlainText(
+        '<p>a. <span data-dpt="record" data-dpt-model="graph">#1</span>&nbsp;</p>\r\n<p>e. <span>#6</span> <span>#7</span></p>'
+      )
+    ).toBe('a. #1 e. #6 #7');
   });
 });

@@ -1,8 +1,9 @@
-export type PageLocale = 'en' | 'fr';
+export type PageLocale = 'en' | 'fr' | 'de';
 
 export type LocalizedText = {
   en: string;
   fr: string;
+  de: string;
 };
 
 export type PageStatus = 'Draft' | 'Published';
@@ -37,11 +38,12 @@ export function resolvePageText(text: LocalizedText, locale: PageLocale): string
 }
 
 function normalizeLocalizedText(value: unknown): LocalizedText {
-  if (!value || typeof value !== 'object') return { en: '', fr: '' };
+  if (!value || typeof value !== 'object') return { en: '', fr: '', de: '' };
   const partial = value as Partial<Record<PageLocale, unknown>>;
   return {
     en: typeof partial.en === 'string' ? partial.en : '',
     fr: typeof partial.fr === 'string' ? partial.fr : '',
+    de: typeof partial.de === 'string' ? partial.de : '',
   };
 }
 

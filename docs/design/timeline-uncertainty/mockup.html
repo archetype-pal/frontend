@@ -1,0 +1,1264 @@
+<title>Between Two Dates</title>
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&display=swap"
+/>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #faf9f6;
+    --surface: #fcfcfb;
+    --ink: #141310;
+    --ink-2: #57544c;
+    --muted: #8a877e;
+    --hairline: #e4e1d8;
+    --baseline: #c9c6bb;
+    --rule: rgba(20, 19, 16, 0.1);
+    --certain: #2a78d6;
+    --possible: #86b6ef;
+    --flag: #d03b3b;
+    --flag-wash: rgba(208, 59, 59, 0.09);
+    --accent-wash: rgba(42, 120, 214, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      color-scheme: dark;
+      --page: #111110;
+      --surface: #1a1a19;
+      --ink: #f5f4f0;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --hairline: #2c2c2a;
+      --baseline: #383835;
+      --rule: rgba(255, 255, 255, 0.1);
+      --certain: #5598e7;
+      --possible: #1c5cab;
+      --flag: #e26b6b;
+      --flag-wash: rgba(226, 107, 107, 0.12);
+      --accent-wash: rgba(85, 152, 231, 0.1);
+    }
+  }
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --page: #111110;
+    --surface: #1a1a19;
+    --ink: #f5f4f0;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --hairline: #2c2c2a;
+    --baseline: #383835;
+    --rule: rgba(255, 255, 255, 0.1);
+    --certain: #5598e7;
+    --possible: #1c5cab;
+    --flag: #e26b6b;
+    --flag-wash: rgba(226, 107, 107, 0.12);
+    --accent-wash: rgba(85, 152, 231, 0.1);
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family:
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  /* ---- masthead ---- */
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  h1 {
+    font-family: Spectral, Georgia, 'Times New Roman', serif;
+    font-weight: 600;
+    font-size: clamp(34px, 5vw, 46px);
+    line-height: 1.08;
+    margin: 0;
+    text-wrap: balance;
+    letter-spacing: -0.015em;
+  }
+  .standfirst {
+    font-family: Spectral, Georgia, serif;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 63ch;
+  }
+  .standfirst em {
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  /* ---- figures strip ---- */
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--hairline);
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .fig {
+    background: var(--surface);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .fig-n {
+    font-size: 27px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .fig-l {
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.4;
+  }
+
+  /* ---- defects ---- */
+  .defects {
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .defects h2 {
+    margin: 0;
+    padding: 14px 18px;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    font-weight: 600;
+    border-bottom: 1px solid var(--hairline);
+    font-family: system-ui, sans-serif;
+  }
+  .defect {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--hairline);
+    align-items: start;
+  }
+  .defect:last-child {
+    border-bottom: 0;
+  }
+  .chip {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border-radius: 2px;
+    background: var(--flag-wash);
+    color: var(--flag);
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+  .defect p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+  .defect strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* ---- option cards ---- */
+  .opt {
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .opt-head {
+    padding: 20px 22px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .opt-tag {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .opt-tag.now {
+    color: var(--flag);
+  }
+  .opt h3 {
+    margin: 0;
+    font-family: Spectral, Georgia, serif;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .opt-thesis {
+    margin: 0;
+    font-size: 15px;
+    color: var(--ink-2);
+    max-width: 68ch;
+  }
+
+  .chart-area {
+    padding: 20px 22px 8px;
+  }
+  .legend {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .lg {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    color: var(--ink-2);
+  }
+  .sw {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    flex: none;
+  }
+  .chart-scroll {
+    overflow-x: auto;
+  }
+
+  .opt-foot {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--hairline);
+    border-top: 1px solid var(--hairline);
+  }
+  .foot-cell {
+    background: var(--surface);
+    padding: 15px 22px;
+  }
+  .foot-k {
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+  .foot-v {
+    font-size: 13.5px;
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
+  @media (max-width: 640px) {
+    .opt-foot {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ---- table toggle ---- */
+  .tbtn {
+    font: inherit;
+    font-size: 12px;
+    color: var(--ink-2);
+    background: transparent;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    padding: 4px 10px;
+    cursor: pointer;
+    margin: 4px 22px 18px;
+  }
+  .tbtn:hover {
+    background: var(--accent-wash);
+    color: var(--ink);
+  }
+  .tbtn:focus-visible {
+    outline: 2px solid var(--certain);
+    outline-offset: 2px;
+  }
+  .dtable {
+    margin: 0 22px 20px;
+    overflow-x: auto;
+  }
+  table {
+    border-collapse: collapse;
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+    width: 100%;
+  }
+  th,
+  td {
+    text-align: right;
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--hairline);
+    white-space: nowrap;
+  }
+  th:first-child,
+  td:first-child {
+    text-align: left;
+  }
+  th {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ---- svg chart chrome ---- */
+  svg {
+    display: block;
+  }
+  .grid-line {
+    stroke: var(--hairline);
+    stroke-width: 1;
+  }
+  .axis-line {
+    stroke: var(--baseline);
+    stroke-width: 1;
+  }
+  .tick {
+    fill: var(--muted);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    font-family: system-ui, sans-serif;
+  }
+  .axis-title {
+    fill: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-family: system-ui, sans-serif;
+  }
+  .bar {
+    transition: opacity 0.12s ease;
+  }
+  .hit {
+    fill: transparent;
+    cursor: pointer;
+  }
+  .hitrow:hover .bar,
+  .hitrow:focus-visible .bar {
+    opacity: 0.72;
+  }
+  .hitrow:focus-visible {
+    outline: none;
+  }
+  .focusring {
+    fill: none;
+    stroke: none;
+  }
+  .hitrow:focus-visible .focusring {
+    stroke: var(--ink);
+    stroke-width: 1.5;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bar {
+      transition: none;
+    }
+  }
+
+  /* ---- tooltip ---- */
+  #tip {
+    position: fixed;
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0;
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 8px 11px;
+    font-size: 12.5px;
+    line-height: 1.45;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.13);
+    font-variant-numeric: tabular-nums;
+    max-width: 260px;
+  }
+  #tip.on {
+    opacity: 1;
+  }
+  #tip .tt {
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  #tip .tr {
+    color: var(--ink-2);
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+  }
+
+  /* ---- close ---- */
+  .close {
+    border-top: 1px solid var(--hairline);
+    padding-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .close h2 {
+    font-family: Spectral, Georgia, serif;
+    font-size: 21px;
+    margin: 0;
+    font-weight: 600;
+  }
+  .close p {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 14.5px;
+    max-width: 68ch;
+  }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9em;
+    background: var(--accent-wash);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+  .src {
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="eyebrow">archetype-pal/frontend #75 · design options</div>
+    <h1>Between Two Dates</h1>
+    <p class="standfirst">
+      Over half the Models of Authority clause corpus is dated to a <em>range</em> —
+      <em>1235 × 1265</em>, <em>circa 1170 × 1174</em> — and the search timeline throws that away,
+      plotting every charter at the earliest year it could possibly be. Three ways to give the
+      uncertainty back, each drawn below from the live index.
+    </p>
+  </header>
+
+  <section class="figures" aria-label="Corpus figures">
+    <div class="fig">
+      <div class="fig-n" id="f-total">—</div>
+      <div class="fig-l">clauses indexed</div>
+    </div>
+    <div class="fig">
+      <div class="fig-n" id="f-ranged">—</div>
+      <div class="fig-l">carry a date range, not a point</div>
+    </div>
+    <div class="fig">
+      <div class="fig-n" id="f-span">—</div>
+      <div class="fig-l">widest range, in years</div>
+    </div>
+    <div class="fig">
+      <div class="fig-n" id="f-undated">—</div>
+      <div class="fig-l">undated, currently drawn as year 0</div>
+    </div>
+  </section>
+
+  <section class="defects">
+    <h2>What the timeline drops today</h2>
+    <div class="defect">
+      <span class="chip">Ignored</span>
+      <p>
+        <strong><code>date_max</code> is never read.</strong> The chart is built from
+        <code>facetDistribution.date_min</code> alone, so a charter that could be anywhere in a
+        30-year window is drawn as a spike on its first year.
+      </p>
+    </div>
+    <div class="defect">
+      <span class="chip">Phantom</span>
+      <p>
+        <strong>A “0s” bar opens the chart.</strong> 191 undated clauses carry
+        <code>date_min = 0</code> and render as a first-century decade, ahead of the 1090s.
+      </p>
+    </div>
+    <div class="defect">
+      <span class="chip">Truncated</span>
+      <p>
+        <strong>163 clauses never reach the chart.</strong> Meilisearch caps facet values at 100;
+        the corpus has 108 distinct <code>date_min</code> values, and the overflow is dropped
+        silently.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ BASELINE ============ -->
+  <article class="opt">
+    <div class="opt-head">
+      <div class="opt-tag now">Ships today</div>
+      <h3>Earliest year only</h3>
+      <p class="opt-thesis">
+        Every charter counted once, at <code>date_min</code>. A range of 1214 × 1249 lands entirely
+        in the 1210s and says nothing about the 35 years after it.
+      </p>
+    </div>
+    <div class="chart-area"><div class="chart-scroll" id="c-base"></div></div>
+    <button class="tbtn" data-table="t-base" aria-expanded="false">Show numbers</button>
+    <div class="dtable" id="t-base" hidden></div>
+    <div class="opt-foot">
+      <div class="foot-cell">
+        <div class="foot-k">Reads as</div>
+        <div class="foot-v">
+          False precision. The peaks are artefacts of where ranges begin, not where charters are.
+        </div>
+      </div>
+      <div class="foot-cell">
+        <div class="foot-k">Cost to change</div>
+        <div class="foot-v">
+          One line — <code>use-search-page-state.ts:139</code> already has <code>date_max</code> in
+          the same payload.
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ============ OPTION 1 ============ -->
+  <article class="opt">
+    <div class="opt-head">
+      <div class="opt-tag">Option 1</div>
+      <h3>Spread the weight</h3>
+      <p class="opt-thesis">
+        Each charter contributes <code>1 ÷ span</code> to every year it could belong to. A 1235 ×
+        1265 charter puts 1/31 of itself in each of 31 years. Totals still sum to the corpus, so the
+        axis stays a count.
+      </p>
+    </div>
+    <div class="chart-area"><div class="chart-scroll" id="c-spread"></div></div>
+    <button class="tbtn" data-table="t-spread" aria-expanded="false">Show numbers</button>
+    <div class="dtable" id="t-spread" hidden></div>
+    <div class="opt-foot">
+      <div class="foot-cell">
+        <div class="foot-k">Reads as</div>
+        <div class="foot-v">
+          Where the corpus probably sits. Honest shape, no invented spikes, and the total is
+          conserved.
+        </div>
+      </div>
+      <div class="foot-cell">
+        <div class="foot-k">Trade-off</div>
+        <div class="foot-v">
+          Bars become fractional — no decade means “N charters” any more, and a click-to-filter
+          needs its own count.
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ============ OPTION 2 ============ -->
+  <article class="opt">
+    <div class="opt-head">
+      <div class="opt-tag">Option 2</div>
+      <h3>Certain and possible</h3>
+      <p class="opt-thesis">
+        Two stacked segments per decade. Solid: charters whose whole range falls inside it — these
+        are certainly here. Pale: charters whose range merely overlaps it — these might be. The
+        floor is a guarantee; the ceiling is the outer limit.
+      </p>
+    </div>
+    <div class="chart-area">
+      <div class="legend">
+        <span class="lg"
+          ><span class="sw" style="background: var(--certain)"></span>Certainly in this decade</span
+        >
+        <span class="lg"
+          ><span class="sw" style="background: var(--possible)"></span>Possibly in this decade</span
+        >
+      </div>
+      <div class="chart-scroll" id="c-stack"></div>
+    </div>
+    <button class="tbtn" data-table="t-stack" aria-expanded="false">Show numbers</button>
+    <div class="dtable" id="t-stack" hidden></div>
+    <div class="opt-foot">
+      <div class="foot-cell">
+        <div class="foot-k">Reads as</div>
+        <div class="foot-v">
+          “At least 40, at most 260.” Keeps whole charters, so every segment is still a real count
+          you can filter on.
+        </div>
+      </div>
+      <div class="foot-cell">
+        <div class="foot-k">Trade-off</div>
+        <div class="foot-v">
+          The pale band double-counts — one charter appears in every decade it touches, so the
+          ceilings don’t sum to the corpus.
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ============ OPTION 3 ============ -->
+  <article class="opt">
+    <div class="opt-head">
+      <div class="opt-tag">Option 3</div>
+      <h3>Span ribbons</h3>
+      <p class="opt-thesis">
+        Abandon the histogram. One horizontal ribbon per distinct dating, sorted by its earliest
+        year — 290 of them across the corpus. Point-dated charters are ticks; wide ranges are long
+        bars. The uncertainty <em>is</em> the picture.
+      </p>
+    </div>
+    <div class="chart-area"><div class="chart-scroll" id="c-ribbon"></div></div>
+    <div class="opt-foot">
+      <div class="foot-cell">
+        <div class="foot-k">Reads as</div>
+        <div class="foot-v">
+          The editorial reality of the corpus: dense certainty around the great charters, long
+          shallow ranges either side.
+        </div>
+      </div>
+      <div class="foot-cell">
+        <div class="foot-k">Trade-off</div>
+        <div class="foot-v">
+          Not a distribution — you can’t read “how many” off it, and it needs real height. Best as a
+          companion to 1 or 2, not a replacement.
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <section class="close">
+    <h2>Whichever way this goes</h2>
+    <p>
+      The two smaller defects are worth fixing in the same pass regardless: undated records should
+      be excluded from the axis and reported beside the chart (“191 undated”), not drawn as year 0;
+      and the timeline should stop being built from a capped facet distribution, which is silently
+      losing 163 clauses today.
+    </p>
+    <p class="src">
+      Rendered from the live <code>clauses</code> index — 5,424 documents, 290 distinct datings,
+      1095–1309. Models of Authority, Archetype v3.
+    </p>
+  </section>
+</div>
+<div id="tip" role="status" aria-live="polite"></div>
+
+<script>
+  const DATA = {
+    total: 5424,
+    undated: 191,
+    pairs: [
+      [1095, 1095, 18],
+      [1095, 1107, 10],
+      [1097, 1107, 14],
+      [1107, 1124, 14],
+      [1113, 1118, 6],
+      [1116, 1116, 12],
+      [1116, 1118, 14],
+      [1124, 1124, 22],
+      [1124, 1129, 28],
+      [1124, 1136, 26],
+      [1124, 1138, 14],
+      [1124, 1139, 37],
+      [1126, 1127, 30],
+      [1127, 1127, 32],
+      [1127, 1151, 12],
+      [1128, 1147, 26],
+      [1128, 1153, 16],
+      [1128, 1159, 10],
+      [1135, 1135, 10],
+      [1136, 1136, 10],
+      [1136, 1137, 8],
+      [1136, 1147, 12],
+      [1138, 1138, 12],
+      [1138, 1139, 29],
+      [1139, 1139, 14],
+      [1139, 1141, 22],
+      [1140, 1140, 44],
+      [1140, 1150, 8],
+      [1140, 1151, 3],
+      [1141, 1141, 24],
+      [1141, 1147, 19],
+      [1141, 1151, 18],
+      [1141, 1152, 14],
+      [1142, 1147, 12],
+      [1142, 1183, 14],
+      [1143, 1147, 12],
+      [1147, 1147, 14],
+      [1147, 1153, 17],
+      [1147, 1178, 4],
+      [1147, 1179, 9],
+      [1150, 1150, 12],
+      [1150, 1153, 23],
+      [1152, 1152, 14],
+      [1152, 1159, 8],
+      [1152, 1186, 10],
+      [1153, 1159, 22],
+      [1153, 1162, 20],
+      [1153, 1167, 14],
+      [1157, 1159, 28],
+      [1159, 1159, 8],
+      [1159, 1163, 8],
+      [1159, 1165, 8],
+      [1161, 1161, 8],
+      [1161, 1162, 28],
+      [1161, 1164, 42],
+      [1162, 1165, 10],
+      [1164, 1165, 8],
+      [1164, 1166, 2],
+      [1164, 1170, 30],
+      [1164, 1174, 7],
+      [1165, 1165, 8],
+      [1165, 1167, 46],
+      [1165, 1168, 16],
+      [1165, 1169, 14],
+      [1165, 1170, 14],
+      [1165, 1171, 12],
+      [1165, 1173, 6],
+      [1165, 1174, 16],
+      [1165, 1185, 12],
+      [1165, 1188, 14],
+      [1165, 1200, 10],
+      [1166, 1166, 28],
+      [1166, 1167, 5],
+      [1166, 1171, 18],
+      [1166, 1179, 8],
+      [1167, 1167, 6],
+      [1167, 1170, 14],
+      [1167, 1186, 14],
+      [1170, 1170, 6],
+      [1170, 1172, 16],
+      [1170, 1174, 14],
+      [1170, 1190, 22],
+      [1170, 1204, 16],
+      [1171, 1171, 16],
+      [1172, 1172, 14],
+      [1173, 1177, 24],
+      [1173, 1178, 7],
+      [1173, 1210, 16],
+      [1175, 1185, 14],
+      [1175, 1189, 24],
+      [1175, 1198, 12],
+      [1175, 1199, 32],
+      [1177, 1177, 14],
+      [1177, 1196, 7],
+      [1177, 1204, 4],
+      [1178, 1189, 6],
+      [1178, 1190, 16],
+      [1179, 1185, 12],
+      [1179, 1188, 11],
+      [1179, 1190, 8],
+      [1180, 1180, 16],
+      [1180, 1193, 10],
+      [1180, 1195, 12],
+      [1180, 1196, 1],
+      [1180, 1221, 6],
+      [1181, 1181, 12],
+      [1181, 1186, 12],
+      [1182, 1194, 16],
+      [1182, 1198, 16],
+      [1182, 1200, 12],
+      [1182, 1214, 8],
+      [1182, 1232, 13],
+      [1185, 1185, 30],
+      [1185, 1215, 13],
+      [1186, 1186, 10],
+      [1188, 1188, 12],
+      [1189, 1190, 7],
+      [1189, 1193, 36],
+      [1189, 1194, 14],
+      [1189, 1196, 21],
+      [1189, 1198, 4],
+      [1189, 1203, 12],
+      [1189, 1207, 14],
+      [1189, 1250, 6],
+      [1190, 1200, 38],
+      [1190, 1205, 10],
+      [1192, 1193, 12],
+      [1192, 1201, 10],
+      [1193, 1193, 22],
+      [1194, 1194, 6],
+      [1194, 1196, 18],
+      [1194, 1211, 16],
+      [1195, 1195, 8],
+      [1195, 1196, 11],
+      [1195, 1198, 8],
+      [1195, 1200, 6],
+      [1195, 1214, 14],
+      [1196, 1199, 6],
+      [1196, 1212, 8],
+      [1197, 1250, 7],
+      [1198, 1198, 46],
+      [1198, 1202, 9],
+      [1198, 1214, 8],
+      [1199, 1200, 6],
+      [1199, 1214, 16],
+      [1200, 1200, 73],
+      [1200, 1202, 47],
+      [1200, 1207, 14],
+      [1200, 1209, 12],
+      [1200, 1225, 16],
+      [1200, 1232, 18],
+      [1200, 1234, 14],
+      [1200, 1235, 19],
+      [1200, 1253, 10],
+      [1201, 1205, 8],
+      [1202, 1216, 14],
+      [1203, 1203, 14],
+      [1203, 1207, 20],
+      [1203, 1208, 6],
+      [1203, 1209, 24],
+      [1203, 1210, 24],
+      [1203, 1212, 8],
+      [1203, 1213, 8],
+      [1204, 1204, 70],
+      [1204, 1207, 6],
+      [1204, 1208, 18],
+      [1204, 1209, 12],
+      [1204, 1211, 14],
+      [1204, 1212, 14],
+      [1204, 1213, 26],
+      [1204, 1214, 8],
+      [1204, 1241, 12],
+      [1204, 1266, 24],
+      [1205, 1205, 26],
+      [1205, 1206, 6],
+      [1207, 1207, 12],
+      [1207, 1208, 7],
+      [1207, 1209, 16],
+      [1207, 1213, 14],
+      [1207, 1219, 16],
+      [1208, 1208, 22],
+      [1208, 1212, 14],
+      [1208, 1218, 9],
+      [1208, 1241, 16],
+      [1209, 1211, 8],
+      [1209, 1238, 12],
+      [1211, 1211, 21],
+      [1211, 1221, 10],
+      [1211, 1224, 29],
+      [1211, 1232, 12],
+      [1211, 1233, 12],
+      [1212, 1214, 28],
+      [1212, 1247, 10],
+      [1213, 1213, 33],
+      [1213, 1219, 10],
+      [1214, 1214, 37],
+      [1214, 1219, 12],
+      [1214, 1221, 4],
+      [1214, 1232, 14],
+      [1214, 1233, 14],
+      [1214, 1238, 12],
+      [1214, 1249, 48],
+      [1215, 1215, 8],
+      [1215, 1255, 14],
+      [1216, 1216, 14],
+      [1216, 1219, 16],
+      [1216, 1241, 6],
+      [1217, 1219, 14],
+      [1218, 1218, 15],
+      [1218, 1221, 8],
+      [1218, 1234, 12],
+      [1219, 1219, 41],
+      [1220, 1220, 55],
+      [1220, 1232, 14],
+      [1220, 1238, 14],
+      [1220, 1243, 9],
+      [1221, 1221, 18],
+      [1221, 1229, 8],
+      [1221, 1230, 18],
+      [1221, 1247, 6],
+      [1222, 1222, 66],
+      [1222, 1223, 16],
+      [1222, 1230, 7],
+      [1223, 1224, 4],
+      [1224, 1224, 18],
+      [1224, 1226, 10],
+      [1225, 1226, 14],
+      [1225, 1230, 14],
+      [1225, 1235, 15],
+      [1225, 1238, 14],
+      [1226, 1226, 7],
+      [1226, 1227, 14],
+      [1227, 1227, 14],
+      [1227, 1228, 10],
+      [1227, 1230, 10],
+      [1227, 1232, 16],
+      [1227, 1238, 15],
+      [1228, 1228, 16],
+      [1229, 1229, 40],
+      [1229, 1231, 14],
+      [1229, 1234, 26],
+      [1230, 1230, 34],
+      [1230, 1240, 29],
+      [1230, 1250, 16],
+      [1230, 1260, 16],
+      [1231, 1231, 51],
+      [1231, 1232, 10],
+      [1232, 1232, 62],
+      [1232, 1238, 18],
+      [1232, 1247, 9],
+      [1232, 1248, 12],
+      [1233, 1233, 31],
+      [1234, 1234, 24],
+      [1234, 1244, 4],
+      [1235, 1235, 16],
+      [1235, 1238, 14],
+      [1235, 1253, 9],
+      [1235, 1255, 14],
+      [1235, 1265, 11],
+      [1236, 1236, 68],
+      [1237, 1237, 17],
+      [1239, 1239, 14],
+      [1239, 1242, 12],
+      [1240, 1240, 22],
+      [1240, 1250, 16],
+      [1240, 1253, 14],
+      [1241, 1253, 16],
+      [1242, 1242, 368],
+      [1242, 1295, 8],
+      [1244, 1247, 12],
+      [1244, 1248, 10],
+      [1245, 1245, 63],
+      [1245, 1248, 16],
+      [1245, 1250, 12],
+      [1245, 1251, 14],
+      [1245, 1295, 13],
+      [1246, 1246, 42],
+      [1247, 1247, 48],
+      [1248, 1248, 44],
+      [1249, 1249, 24],
+      [1250, 1250, 46],
+      [1250, 1251, 16],
+      [1255, 1255, 10],
+      [1260, 1260, 14],
+      [1260, 1295, 14],
+      [1274, 1274, 12],
+      [1279, 1279, 10],
+      [1283, 1283, 14],
+      [1284, 1284, 11],
+      [1308, 1309, 16],
+    ],
+  };
+</script>
+<script>
+  (function () {
+    const NS = 'http://www.w3.org/2000/svg';
+    const el = (n, a) => {
+      const e = document.createElementNS(NS, n);
+      for (const k in a) e.setAttribute(k, a[k]);
+      return e;
+    };
+    const fmt = (n) => Math.round(n).toLocaleString('en-GB');
+    const fmt1 = (n) => n.toLocaleString('en-GB', { maximumFractionDigits: 1 });
+
+    const { total, undated, pairs } = DATA;
+    const ranged = pairs.filter((p) => p[1] > p[0]).reduce((s, p) => s + p[2], 0);
+    const widest = Math.max(...pairs.map((p) => p[1] - p[0]));
+    document.getElementById('f-total').textContent = fmt(total);
+    document.getElementById('f-ranged').textContent =
+      Math.round((ranged / (total - undated)) * 100) + '%';
+    document.getElementById('f-span').textContent = widest;
+    document.getElementById('f-undated').textContent = undated;
+
+    const YMIN = Math.min(...pairs.map((p) => p[0]));
+    const YMAX = Math.max(...pairs.map((p) => p[1]));
+    const D0 = Math.floor(YMIN / 10) * 10,
+      D1 = Math.floor(YMAX / 10) * 10;
+    const decades = [];
+    for (let d = D0; d <= D1; d += 10) decades.push(d);
+
+    // ---- the three models ----
+    const zero = () => Object.fromEntries(decades.map((d) => [d, 0]));
+
+    const baseline = zero();
+    for (const [lo, , n] of pairs) baseline[Math.floor(lo / 10) * 10] += n;
+
+    const spread = zero();
+    for (const [lo, hi, n] of pairs) {
+      const per = n / (hi - lo + 1);
+      for (let y = lo; y <= hi; y++) spread[Math.floor(y / 10) * 10] += per;
+    }
+
+    const certain = zero(),
+      possible = zero();
+    for (const [lo, hi, n] of pairs) {
+      for (const d of decades) {
+        const a = d,
+          b = d + 9;
+        if (lo >= a && hi <= b) certain[d] += n;
+        else if (lo <= b && hi >= a) possible[d] += n;
+      }
+    }
+
+    // ---- tooltip ----
+    const tip = document.getElementById('tip');
+    function show(e, title, rows) {
+      tip.innerHTML =
+        '<div class="tt">' +
+        title +
+        '</div>' +
+        rows
+          .map((r) => '<div class="tr"><span>' + r[0] + '</span><span>' + r[1] + '</span></div>')
+          .join('');
+      tip.classList.add('on');
+      const r = tip.getBoundingClientRect();
+      let x = e.clientX + 14,
+        y = e.clientY - r.height - 12;
+      if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+      if (y < 8) y = e.clientY + 18;
+      tip.style.left = x + 'px';
+      tip.style.top = y + 'px';
+    }
+    const hide = () => tip.classList.remove('on');
+    addEventListener('scroll', hide, true);
+
+    // ---- column chart (one or two stacked series) ----
+    function columns(mount, series, opts) {
+      const W = 940,
+        H = 258,
+        ML = 46,
+        MR = 8,
+        MT = 12,
+        MB = 30;
+      const iw = W - ML - MR,
+        ih = H - MT - MB;
+      const peak = Math.max(...decades.map((d) => series.reduce((s, se) => s + se.data[d], 0)));
+      // Nice 1/2/5 x 10^k step aiming at ~4 gridlines, so the plot isn't half empty.
+      const raw = peak / 4,
+        mag = Math.pow(10, Math.floor(Math.log10(raw)));
+      const step = (raw / mag <= 1 ? 1 : raw / mag <= 2 ? 2 : raw / mag <= 5 ? 5 : 10) * mag;
+      const top = Math.ceil(peak / step) * step;
+      const y = (v) => MT + ih - (v / top) * ih;
+      const bw = iw / decades.length;
+      const svg = el('svg', {
+        viewBox: `0 0 ${W} ${H}`,
+        width: W,
+        height: H,
+        role: 'img',
+        'aria-label': opts.label,
+      });
+
+      for (let v = 0; v <= top; v += step) {
+        svg.appendChild(
+          el('line', {
+            class: v === 0 ? 'axis-line' : 'grid-line',
+            x1: ML,
+            x2: W - MR,
+            y1: y(v),
+            y2: y(v),
+          })
+        );
+        const t = el('text', { class: 'tick', x: ML - 8, y: y(v) + 4, 'text-anchor': 'end' });
+        t.textContent = fmt(v);
+        svg.appendChild(t);
+      }
+
+      decades.forEach((d, i) => {
+        const g = el('g', { class: 'hitrow', tabindex: '0', role: 'listitem' });
+        const cx = ML + i * bw;
+        const totalV = series.reduce((s, se) => s + se.data[d], 0);
+        let acc = 0;
+        series.forEach((se) => {
+          const v = se.data[d];
+          if (v <= 0) return;
+          const yTop = y(acc + v),
+            yBot = y(acc);
+          // 2px surface gap between stacked segments, never a border
+          const h = Math.max(1, yBot - yTop - (acc > 0 ? 2 : 0));
+          svg.appendChild(
+            el('rect', {
+              class: 'bar',
+              x: cx + bw * 0.16,
+              y: yTop,
+              width: bw * 0.68,
+              height: h,
+              style: 'fill:' + se.color,
+              rx: 2,
+            })
+          );
+          acc += v;
+        });
+        const hit = el('rect', { class: 'hit', x: cx, y: MT, width: bw, height: ih });
+        g.appendChild(hit);
+        g.appendChild(
+          el('rect', { class: 'focusring', x: cx + 1, y: MT, width: bw - 2, height: ih, rx: 2 })
+        );
+        const rows = series.map((se) => [se.name, opts.frac ? fmt1(se.data[d]) : fmt(se.data[d])]);
+        if (series.length > 1) rows.push(['Total shown', fmt(totalV)]);
+        const label = d + 's';
+        const on = (e) => show(e, label, rows);
+        g.addEventListener('mousemove', on);
+        g.addEventListener('mouseleave', hide);
+        g.addEventListener('focus', (e) => {
+          const r = hit.getBoundingClientRect();
+          show({ clientX: r.left + r.width / 2, clientY: r.top }, label, rows);
+        });
+        g.addEventListener('blur', hide);
+        svg.appendChild(g);
+
+        if (i % 2 === 0) {
+          const t = el('text', {
+            class: 'tick',
+            x: cx + bw / 2,
+            y: H - MB + 18,
+            'text-anchor': 'middle',
+          });
+          t.textContent = d + 's';
+          svg.appendChild(t);
+        }
+      });
+
+      mount.appendChild(svg);
+    }
+
+    // ---- ribbon chart ----
+    function ribbons(mount) {
+      const rows = pairs.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      const RH = 1.7,
+        W = 940,
+        ML = 46,
+        MR = 8,
+        MT = 12,
+        MB = 26;
+      const ih = rows.length * RH,
+        H = ih + MT + MB,
+        iw = W - ML - MR;
+      const x = (yr) => ML + ((yr - YMIN) / (YMAX - YMIN)) * iw;
+      const svg = el('svg', {
+        viewBox: `0 0 ${W} ${H}`,
+        width: W,
+        height: H,
+        role: 'img',
+        'aria-label': 'One ribbon per distinct dating, sorted by earliest year',
+      });
+
+      for (let yr = 1100; yr <= YMAX; yr += 50) {
+        svg.appendChild(
+          el('line', { class: 'grid-line', x1: x(yr), x2: x(yr), y1: MT, y2: MT + ih })
+        );
+        const t = el('text', { class: 'tick', x: x(yr), y: MT + ih + 18, 'text-anchor': 'middle' });
+        t.textContent = yr;
+        svg.appendChild(t);
+      }
+      svg.appendChild(
+        el('line', { class: 'axis-line', x1: ML, x2: W - MR, y1: MT + ih, y2: MT + ih })
+      );
+
+      rows.forEach(([lo, hi, n], i) => {
+        const g = el('g', { class: 'hitrow' });
+        const w = Math.max(1.5, x(hi) - x(lo));
+        g.appendChild(
+          el('rect', {
+            class: 'bar',
+            x: x(lo),
+            y: MT + i * RH,
+            width: w,
+            height: RH * 0.8,
+            style: 'fill:var(--certain)',
+            rx: 0.8,
+          })
+        );
+        g.appendChild(
+          el('rect', { class: 'hit', x: ML, y: MT + i * RH - 1, width: iw, height: RH + 2 })
+        );
+        const label = lo === hi ? String(lo) : lo + ' × ' + hi;
+        const rows2 = [
+          ['Clauses', fmt(n)],
+          ['Uncertainty', hi - lo + ' yr'],
+        ];
+        g.addEventListener('mousemove', (e) => show(e, label, rows2));
+        g.addEventListener('mouseleave', hide);
+        svg.appendChild(g);
+      });
+
+      mount.appendChild(svg);
+    }
+
+    // ---- tables (the accessibility relief for every chart) ----
+    function table(mount, cols, rowsOf) {
+      const t = document.createElement('table');
+      t.innerHTML =
+        '<thead><tr>' + cols.map((c) => '<th>' + c + '</th>').join('') + '</tr></thead>';
+      const tb = document.createElement('tbody');
+      decades.forEach((d) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = rowsOf(d)
+          .map((v) => '<td>' + v + '</td>')
+          .join('');
+        tb.appendChild(tr);
+      });
+      t.appendChild(tb);
+      mount.appendChild(t);
+    }
+
+    columns(
+      document.getElementById('c-base'),
+      [{ name: 'Clauses', data: baseline, color: 'var(--certain)' }],
+      { label: 'Clauses per decade, counted at their earliest possible year' }
+    );
+    columns(
+      document.getElementById('c-spread'),
+      [{ name: 'Weighted clauses', data: spread, color: 'var(--certain)' }],
+      { label: 'Clause weight per decade, spread across each dating range', frac: true }
+    );
+    columns(
+      document.getElementById('c-stack'),
+      [
+        { name: 'Certainly here', data: certain, color: 'var(--certain)' },
+        { name: 'Possibly here', data: possible, color: 'var(--possible)' },
+      ],
+      { label: 'Clauses certainly and possibly in each decade' }
+    );
+    ribbons(document.getElementById('c-ribbon'));
+
+    table(document.getElementById('t-base'), ['Decade', 'Clauses'], (d) => [
+      d + 's',
+      fmt(baseline[d]),
+    ]);
+    table(document.getElementById('t-spread'), ['Decade', 'Weighted clauses'], (d) => [
+      d + 's',
+      fmt1(spread[d]),
+    ]);
+    table(
+      document.getElementById('t-stack'),
+      ['Decade', 'Certainly here', 'Possibly here', 'Upper bound'],
+      (d) => [d + 's', fmt(certain[d]), fmt(possible[d]), fmt(certain[d] + possible[d])]
+    );
+
+    document.querySelectorAll('.tbtn').forEach((b) =>
+      b.addEventListener('click', () => {
+        const t = document.getElementById(b.dataset.table);
+        const open = !t.hidden;
+        t.hidden = open;
+        b.setAttribute('aria-expanded', String(!open));
+        b.textContent = open ? 'Show numbers' : 'Hide numbers';
+      })
+    );
+  })();
+</script>

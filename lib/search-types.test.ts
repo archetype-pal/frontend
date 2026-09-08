@@ -31,7 +31,14 @@ describe('search type metadata', () => {
 
   it('whitelists the msDesc-derived manuscript facets as checkboxes', () => {
     const renderMap = getFacetRenderMap('manuscripts');
-    for (const key of ['script', 'material', 'deco_type', 'origin_place']) {
+    for (const key of [
+      'script',
+      'material',
+      'deco_type',
+      'seal_type',
+      'seal_material',
+      'origin_place',
+    ]) {
       expect(renderMap[key]).toBe('checkbox');
     }
   });

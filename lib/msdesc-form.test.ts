@@ -60,7 +60,7 @@ const CANONICAL_MS_CONTENTS = `<msContents>
 </msContents>`;
 
 /**
- * The PO's physDesc example (TEI-DESCRIPTIONS-FINDINGS §0/§3: "Form: codex /
+ * The PO's physDesc example (root docs/tei.md §3: "Form: codex /
  * Support: parchment / Dimensions (leaf): 103 × 75 mm / Layout: 15 lines /
  * Decoration: …"), encoded per the msdesc-minimal ODD's own examples —
  * including inline markup inside the prose leaves (hi, origDate).
@@ -214,6 +214,40 @@ describe('state → fragment → state (deep-equal)', () => {
     expect(expectOk(physDescFromFragment(fragment))).toEqual(state);
   });
 
+  it('physDesc with seals, keeping TEI child order and dropping nothing', () => {
+    const state: PhysDescState = {
+      objectDesc: { form: 'codex', supportDesc: { extent: { measures: [], dimensions: [] } } },
+      binding: { contemporary: 'false', innerXml: '<p>Rebound.</p>' },
+      seals: [
+        {
+          n: '1',
+          type: 'greatSeal',
+          contemporary: 'true',
+          materialText: 'green wax',
+          conditionText: 'fragment, obverse only',
+          innerXml: '<p>Appended on a parchment tag through a plica.</p>',
+        },
+        { n: '2', type: 'counterseal', innerXml: '' },
+      ],
+      accMatInnerXml: '<p>Modern box.</p>',
+    };
+    const fragment = physDescToFragment(state);
+    // TEI orders physDesc children ... bindingDesc, sealDesc, accMat.
+    expect(fragment.indexOf('<sealDesc>')).toBeGreaterThan(fragment.indexOf('<bindingDesc>'));
+    expect(fragment.indexOf('<sealDesc>')).toBeLessThan(fragment.indexOf('<accMat>'));
+    expect(fragment).toContain('<seal n="1" type="greatSeal" contemporary="true">');
+    expect(fragment).toContain('<material>green wax</material>');
+    expect(fragment).toContain('<condition>fragment, obverse only</condition>');
+    expect(expectOk(physDescFromFragment(fragment))).toEqual(state);
+  });
+
+  it('rejects a seal type outside the closed vocabulary', () => {
+    const reason = expectRejected(
+      physDescFromFragment('<physDesc><sealDesc><seal type="wax"/></sealDesc></physDesc>')
+    );
+    expect(reason).toContain('type="wax"');
+  });
+
   it('history with every optional populated', () => {
     const state: HistoryState = {
       origin: {
@@ -247,11 +281,18 @@ describe('state → fragment → state (deep-equal)', () => {
 });
 
 describe('representability gate', () => {
-  it('rejects unknown elements (e.g. <sealDesc>)', () => {
+  it('rejects unknown elements (e.g. <musicNotation>)', () => {
+    const reason = expectRejected(
+      physDescFromFragment('<physDesc><musicNotation><p>Neumes.</p></musicNotation></physDesc>')
+    );
+    expect(reason).toContain('<musicNotation>');
+  });
+
+  it('rejects prose directly inside <sealDesc> — only <seal> entries belong there', () => {
     const reason = expectRejected(
       physDescFromFragment('<physDesc><sealDesc><p>Seal on tag.</p></sealDesc></physDesc>')
     );
-    expect(reason).toContain('<sealDesc>');
+    expect(reason).toContain('<p>');
   });
 
   it('rejects unknown attributes', () => {

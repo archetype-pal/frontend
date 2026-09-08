@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, ExternalLink, MapPin, Search, User } from 'lucide-react';
+import { BookOpen, ExternalLink, Images, MapPin, Search, User } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -29,6 +29,7 @@ import {
   REF_INDEX_SEGMENT,
   REF_PICKER_KINDS,
   externalRef,
+  imageRefsFromHits,
   isSearchableRefKind,
   manuscriptRefFromItemPart,
   personRefFromScribe,
@@ -38,7 +39,12 @@ import {
   type SearchableRefKind,
 } from '@/lib/tei-ref-picker';
 import { getSavedSearches } from '@/lib/saved-searches';
-import { searchItemParts, searchPlaces, searchScribes } from '@/services/tei-ref-search';
+import {
+  searchItemImages,
+  searchItemParts,
+  searchPlaces,
+  searchScribes,
+} from '@/services/tei-ref-search';
 
 interface TeiRefPickerProps {
   open: boolean;
@@ -55,6 +61,7 @@ const KIND_ICON: Record<ResourceKind, React.ComponentType<{ className?: string }
   person: User,
   place: MapPin,
   manuscript: BookOpen,
+  image: Images,
   search: Search,
   external: ExternalLink,
 };
@@ -69,6 +76,10 @@ async function runIndexSearch(
   if (kind === 'manuscript') {
     return (await searchItemParts(q, 12, signal)).map(manuscriptRefFromItemPart);
   }
+  // Before the place fall-through: a new searchable kind that reaches the last
+  // line would silently run a PLACE search and return plausible-looking refs of
+  // the wrong kind.
+  if (kind === 'image') return imageRefsFromHits(await searchItemImages(q, 12, signal));
   return placeRefsFromHits(await searchPlaces(q, 20, signal));
 }
 
