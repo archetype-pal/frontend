@@ -47,6 +47,7 @@
     "search": "Suche",
     "collection": "{name} ({count})",
     "lightbox": "Lightbox",
+    "compare": "Vergleichen ({count})",
     "news": "Neuigkeiten",
     "blogs": "Blogs",
     "featureArticles": "Beiträge",
@@ -91,6 +92,12 @@
     "noResultsFilters": "Keine {typeLabel} entsprachen den aktuellen Filtern.",
     "clearAllFilters": "Alle Filter löschen",
     "clearKeyword": "Suchbegriff löschen",
+    "compareAction": {
+      "button": "Vergleichen ({count})",
+      "selectAriaLabel": "{label} zum Vergleichen auswählen",
+      "atCapTitle": "Vergleichen ist voll",
+      "atCapDescription": "Sie können bis zu {max} Manuskripte gleichzeitig vergleichen. Entfernen Sie zuerst eines von der Seite Vergleichen."
+    },
     "actions": "Aktionen",
     "actionsTitle": "Suchaktionen — gespeicherte Suchen, Ansicht und Export",
     "actionsLabel": "Suchaktionen",
@@ -302,6 +309,11 @@
       "fallbackTitle": "Manuskript",
       "numberedFallbackTitle": "Manuskript Nr. {id}",
       "description": "Manuskript {label} ansehen – {siteTitle}"
+    },
+    "iiifManifest": {
+      "copyButton": "IIIF-Manifest-URL kopieren",
+      "toastCopied": "Manifest-URL kopiert",
+      "toastCopyFailed": "Die Manifest-URL konnte nicht kopiert werden"
     },
     "loadError": {
       "title": "Manuskript kann nicht geladen werden",
@@ -632,6 +644,22 @@
       "sectionGraphs": "Graphen",
       "sectionEditorialAnnotations": "Redaktionelle Anmerkungen",
       "untitled": "Ohne Titel"
+    }
+  },
+  "compare": {
+    "toggle": {
+      "add": "Zu Vergleichen hinzufügen",
+      "remove": "Aus Vergleichen entfernen",
+      "atCapTitle": "Vergleichen ist voll",
+      "atCapDescription": "Sie können bis zu {max} Manuskripte gleichzeitig vergleichen. Entfernen Sie zuerst eines von der Seite Vergleichen."
+    },
+    "page": {
+      "title": "Vergleichen",
+      "emptyTitle": "Noch nichts zu vergleichen",
+      "emptyDescription": "Fügen Sie Manuskripte von ihrer Manuskriptseite aus zu Vergleichen hinzu und kehren Sie dann hierher zurück, um sie nebeneinander anzuzeigen.",
+      "browseManuscripts": "Manuskripte durchsuchen",
+      "clearButton": "Alle löschen",
+      "removeItem": "{label} aus Vergleichen entfernen"
     }
   },
   "about": {
@@ -1920,6 +1948,7 @@
         "search": "Entdecken",
         "collection": "Meine Sammlung",
         "lightbox": "Lightbox",
+        "compare": "Vergleichen",
         "news": "News",
         "blogs": "Blogs",
         "featureArticles": "Themenartikel",
