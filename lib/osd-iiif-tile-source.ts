@@ -21,7 +21,9 @@ function hasTileDescriptors(tiles: unknown): boolean {
 }
 
 function isPowerOfTwo(value: unknown): boolean {
-  return typeof value === 'number' && Number.isInteger(value) && value > 0 && (value & (value - 1)) === 0;
+  return (
+    typeof value === 'number' && Number.isInteger(value) && value > 0 && (value & (value - 1)) === 0
+  );
 }
 
 // OpenSeadragon's IIIFTileSource derives each zoom level's scale factor as
