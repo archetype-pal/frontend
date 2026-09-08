@@ -1975,6 +1975,10 @@
       "statusInactive": "Inaktiv",
       "tooltipEditUser": "Benutzer bearbeiten",
       "tooltipDeleteUser": "Benutzer löschen",
+      "tooltipImpersonateUser": "Identität des Benutzers annehmen",
+      "tooltipImpersonateSelf": "Sie können nicht Ihre eigene Identität annehmen",
+      "tooltipImpersonateProtected": "Die Identität von Mitarbeiter- und Superuser-Konten kann nicht angenommen werden",
+      "tooltipImpersonateInactive": "Die Identität deaktivierter Konten kann nicht angenommen werden",
       "createDialogTitle": "Neuer Benutzer",
       "createDialogDesc": "Neues Konto einrichten. Das Passwort wird sicher gehasht.",
       "editDialogMemberSince": "Mitglied seit {date}",
@@ -2010,12 +2014,17 @@
       "bulkDeleteTitle": "{count} Benutzer löschen?",
       "bulkDeleteDesc": "Diese Aktion kann nicht widerrufen werden. Alle ausgewählten Benutzer werden endgültig entfernt.",
       "bulkDeleteConfirm": "Alle löschen",
+      "impersonateDialogTitle": "Identität von „{username}“ annehmen?",
+      "impersonateDialogDesc": "Der Beginn dieser Identitätsübernahme wird im Audit-Protokoll erfasst; alles, was Sie danach tun, ist von den eigenen Aktivitäten des Benutzers nicht zu unterscheiden. Ihre aktive Sitzung wechselt zum Konto dieses Benutzers, damit Sie die Website in seinem Namen durchsuchen können. Verwenden Sie „Identitätsübernahme beenden“, um zu Ihrem eigenen Konto zurückzukehren.",
+      "impersonateDialogConfirm": "Identität annehmen",
       "toastUserCreated": "Benutzer erstellt",
       "toastFailedCreate": "Benutzer konnte nicht erstellt werden",
       "toastUserUpdated": "Benutzer aktualisiert",
       "toastFailedUpdate": "Benutzer konnte nicht aktualisiert werden",
       "toastUserDeleted": "Benutzer gelöscht",
       "toastFailedDelete": "Benutzer konnte nicht gelöscht werden",
+      "toastImpersonating": "Sie surfen jetzt als {username}",
+      "toastFailedImpersonate": "Identitätsübernahme fehlgeschlagen",
       "failedLoad": "Benutzer konnten nicht geladen werden",
       "relativeNever": "Nie",
       "relativeJustNow": "Gerade eben"
@@ -2752,6 +2761,10 @@
     "hidePassword": "Passwort ausblenden",
     "showPassword": "Passwort anzeigen",
     "signingIn": "Anmeldung läuft…"
+  },
+  "impersonation": {
+    "bannerMessage": "Sie sehen die Website als {username}",
+    "stopButton": "Identitätsübernahme beenden"
   },
   "hand": {
     "breadcrumb": "Hände",
