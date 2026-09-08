@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { GitCompare, PanelLeftClose, PanelLeftOpen, SearchX } from 'lucide-react';
-import { ResultsTable } from '@/components/search/results-table';
-import { PanelLeftClose, PanelLeftOpen, SearchX } from 'lucide-react';
 import { hasTablePreview, ResultsTable } from '@/components/search/results-table';
 import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';

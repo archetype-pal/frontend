@@ -23,7 +23,6 @@ import { clauseToGraphCollectionItem } from '@/lib/collection-item';
 import { cn } from '@/lib/utils';
 import type { ThumbnailSize } from '@/components/search/thumbnail-size-control';
 import type { ManuscriptCompareSelection } from '@/hooks/search/use-manuscript-compare-selection';
-import { cn } from '@/lib/utils';
 
 type GridItem = ImageListItem | GraphListItem | ManuscriptListItem | ClauseListItem;
 
