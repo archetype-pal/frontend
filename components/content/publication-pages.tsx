@@ -2,7 +2,6 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getLocale, getTranslations } from 'next-intl/server';
-import { notFound } from 'next/navigation';
 import PaginatedPublications from '@/components/content/paginated-publications';
 import BlogPostPreview from '@/components/content/blog-post-preview';
 import {
@@ -11,7 +10,11 @@ import {
   type Publication,
   getPublications,
 } from '@/utils/api';
-import { PUBLICATION_KIND_CONFIG, type PublicationKind } from '@/lib/publications';
+import {
+  PUBLICATION_KIND_CONFIG,
+  publicationMatchesKind,
+  type PublicationKind,
+} from '@/lib/publications';
 import { PageLoadingState } from '@/components/page/page-loading-state';
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { readModelLabels } from '@/lib/model-labels-server';
@@ -19,11 +22,11 @@ import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
 export const dynamic = 'force-dynamic';
 
-async function getPublicationBySlug(slug: string): Promise<Publication> {
+export async function fetchPublicationBySlug(slug: string): Promise<Publication | null> {
   try {
     return await getPublicationItem(slug);
   } catch (error) {
-    if (error instanceof PublicationNotFoundError) notFound();
+    if (error instanceof PublicationNotFoundError) return null;
     throw error;
   }
 }
@@ -57,8 +60,14 @@ export async function publicationMetadata({
   ]);
   const siteTitle = resolveModelLabel(modelLabels.labels.siteTitle, locale as ModelLabelLocale);
   const summaryLabel = t(`publicationKinds.${kind}.summaryLabel`);
+  const fallbackMetadata: Metadata = {
+    title: summaryLabel,
+    robots: { index: false, follow: false },
+  };
   try {
-    const item = await getPublicationBySlug(slug);
+    const item = await fetchPublicationBySlug(slug);
+    if (!item) return fallbackMetadata;
+    if (!publicationMatchesKind(item, kind)) return fallbackMetadata;
     const author = [item.author?.first_name, item.author?.last_name].filter(Boolean).join(' ');
     return {
       // The root layout applies a `%s | ${siteTitle}` title template, so
@@ -74,19 +83,18 @@ export async function publicationMetadata({
       },
     };
   } catch {
-    return { title: summaryLabel };
+    return fallbackMetadata;
   }
 }
 
 export async function PublicationDetailPage({
   kind,
-  slug,
+  item,
 }: {
   kind: PublicationKind;
-  slug: string;
+  item: Publication;
 }) {
   const config = PUBLICATION_KIND_CONFIG[kind];
-  const item = await getPublicationBySlug(slug);
   const recent = await getPublications({ [config.queryFlag]: true, limit: 5, offset: 0 });
   const t = await getTranslations('content');
   const title = t(`publicationKinds.${kind}.title`);

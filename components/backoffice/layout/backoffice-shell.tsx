@@ -16,6 +16,8 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
   const { token, user } = useAuth();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   // Auth guard — redirect non-authenticated visitors to login
   useEffect(() => {
@@ -51,13 +53,18 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
       <div className="backoffice-shell fixed inset-0 z-50 flex bg-background">
         <BackofficeSidebar collapsed={collapsed} />
         <div className="flex flex-1 flex-col overflow-hidden">
-          <BackofficeHeader collapsed={collapsed} onToggleSidebar={() => setCollapsed((c) => !c)} />
+          <BackofficeHeader
+            collapsed={collapsed}
+            onToggleSidebar={() => setCollapsed((c) => !c)}
+            onOpenCommandPalette={() => setCommandOpen(true)}
+            onOpenKeyboardShortcuts={() => setShortcutsOpen(true)}
+          />
           <main className="flex-1 overflow-y-auto">
             <div className="p-6">{children}</div>
           </main>
         </div>
-        <SearchCommand />
-        <KeyboardShortcutsDialog />
+        <SearchCommand open={commandOpen} onOpenChange={setCommandOpen} />
+        <KeyboardShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       </div>
     </TooltipProvider>
   );

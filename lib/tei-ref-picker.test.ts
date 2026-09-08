@@ -74,9 +74,8 @@ describe('search hit → ResourceRef → markup', () => {
   });
 
   it('emits a place target that is a real route with a real query param', () => {
-    // The site has NO bare `/search/` route (only `search/[type]/page.tsx`) and
-    // the page reads `keyword`, never `q` — a bare `/search/?q=` 404s. Pin the
-    // shape so it can never regress back.
+    // Place targets stay typed so persisted TEI links can route directly, and
+    // they use the same `keyword` query param the search page reads.
     const target = placeSearchTarget('Kelso');
     const [path, query] = target.split('?');
     expect(path).toMatch(/^\/search\/[^/?]+$/);
