@@ -62,10 +62,14 @@ interface ViewerTextPanelProps {
   onLinkPhrase?: (textId: number, elementIndex: number, label: string) => void;
   /** Cancel the pending (drawn-but-unlinked) region. */
   onCancelPendingLink?: () => void;
+  /** Every graph id currently on the image — what separates a live link from a
+   *  dangling one. `null` disables the check (the safe default: a consumer that
+   *  cannot supply it keeps today's behaviour instead of deadening every link). */
+  liveGraphIds?: Set<number> | null;
   /** Graph id of a linked region selected on the image (region-click) — shows
    *  its phrase + Also-link / Delete actions. Null when no region is selected. */
   selectedRegionGraphId?: number | null;
-  /** Delete the selected region (removes the region graph + its link). */
+  /** Move the selected region to the trash (its link to the text is kept). */
   onDeleteRegion?: (graphId: number) => void;
   /** Remove a single element's link to a region (per-link unlink), keeping the region. */
   onUnlinkElement?: (textId: number, elementIndex: number, graphId: number) => void;
@@ -88,6 +92,16 @@ interface ViewerTextPanelProps {
    * text is its own bounded card either way.
    */
   layout?: 'row' | 'column';
+}
+
+/**
+ * Which of a span's linked regions are still on the image. A trashed region keeps
+ * its `corresp` (that is what makes a restore lossless), so a span can point at a
+ * region that is gone. Empty result → the span is inert: plain prose, no hover,
+ * no activate.
+ */
+function liveGraphIdsIn(ids: number[], live: Set<number>): number[] {
+  return ids.filter((id) => live.has(id));
 }
 
 // A span can carry several ids ("10,11") when one element was annotated by
@@ -433,6 +447,7 @@ export function ViewerTextPanel({
   pendingLink = false,
   onLinkPhrase,
   onCancelPendingLink,
+  liveGraphIds = null,
   selectedRegionGraphId = null,
   onDeleteRegion,
   onUnlinkElement,
@@ -508,6 +523,61 @@ export function ViewerTextPanel({
   // would just move the page. Image→text selections leave it false (do scroll).
   const skipLinkScrollRef = React.useRef(false);
 
+  // null → no information, so gate nothing. The policy lives in liveGraphIdsIn.
+  const filterLive = React.useCallback(
+    (ids: number[]) => (liveGraphIds ? liveGraphIdsIn(ids, liveGraphIds) : ids),
+    [liveGraphIds]
+  );
+
+  // Render spans whose regions are all gone as plain prose. A stylesheet, not a
+  // per-span attribute, for the same reason as the hover highlight below: the Rich
+  // TEI editor reverts external DOM mutations, so a stamped attribute is removed
+  // again. Reading the DOM is fine — only writing gets undone.
+  const danglingStyleRef = React.useRef<HTMLStyleElement | null>(null);
+  React.useEffect(() => {
+    let styleEl = danglingStyleRef.current;
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.dataset.viewerDanglingLinks = 'true';
+      document.head.appendChild(styleEl);
+      danglingStyleRef.current = styleEl;
+    }
+    const root = containerRef.current;
+    if (!root || !liveGraphIds) {
+      styleEl.textContent = '';
+      return;
+    }
+    // Exact attribute value, so a multi-region span is only neutralised when all
+    // of its regions are gone.
+    const dangling = Array.from(
+      new Set(
+        Array.from(root.querySelectorAll<HTMLElement>('[data-graph-id]'))
+          .filter((el) => filterLive(graphIdsOf(el)).length === 0)
+          .map((el) => el.getAttribute('data-graph-id') ?? '')
+      )
+    ).filter((value) => /^[\d,\s]+$/.test(value));
+
+    // The `:hover` variant is required: globals.css hovers `[data-graph-id]:hover`
+    // at (0,3,0) and a bare attribute selector is only (0,2,0), so without it the
+    // phrase keeps highlighting. Matching the pseudo-class ties specificity, and
+    // this sheet is appended to <head> so it wins on document order.
+    styleEl.textContent = dangling.length
+      ? `${dangling
+          .flatMap((value) => [
+            `.viewer-text-panel [data-graph-id="${value}"]`,
+            `.viewer-text-panel [data-graph-id="${value}"]:hover`,
+          ])
+          .join(',')}{cursor:auto;background-color:transparent;box-shadow:none;}`
+      : '';
+  }, [liveGraphIds, filterLive, shownKey]);
+  React.useEffect(
+    () => () => {
+      danglingStyleRef.current?.remove();
+      danglingStyleRef.current = null;
+    },
+    []
+  );
+
   // region → text: mark every span linked to the selected region and bring the
   // first into view. Covers all shown columns (the query spans the whole panel).
   React.useEffect(() => {
@@ -582,7 +652,7 @@ export function ViewerTextPanel({
     // Click a linked phrase → jump to its region on the image. Navigation only:
     // creating and removing links is now an explicit action in the Link Bar,
     // never a side effect of clicking (or drawing).
-    const linkedIds = graphIdsOf(target.closest<HTMLElement>('[data-graph-id]'));
+    const linkedIds = filterLive(graphIdsOf(target.closest<HTMLElement>('[data-graph-id]')));
     if (linkedIds.length > 0) {
       skipLinkScrollRef.current = true;
       onSpanActivate(linkedIds[0]);
@@ -594,7 +664,7 @@ export function ViewerTextPanel({
     // direction (region → phrase highlight) is driven by hoveredGraphId, not this
     // handler, so it still works in the editor.
     if ((event.target as Element).closest('[contenteditable="true"]')) return;
-    const ids = graphIdsOf((event.target as Element).closest('[data-graph-id]'));
+    const ids = filterLive(graphIdsOf((event.target as Element).closest('[data-graph-id]')));
     onSpanHover(ids.length > 0 ? ids[0] : null);
   };
 

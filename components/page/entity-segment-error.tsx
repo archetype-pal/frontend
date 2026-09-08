@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react';
 import { EntityErrorState } from '@/components/page/entity-error-state';
+import { useSiteFeatures } from '@/contexts/site-features-context';
+import { searchHref } from '@/lib/search-routing';
 
 export function EntitySegmentError({
   scope,
@@ -16,6 +18,11 @@ export function EntitySegmentError({
   fallbackMessage: string;
   backLabel: string;
 }) {
+  const { enabledCategories, isSectionEnabled } = useSiteFeatures();
+  const defaultSearchType = enabledCategories[0] ?? null;
+  const backHref =
+    isSectionEnabled('search') && defaultSearchType ? searchHref(defaultSearchType) : '/';
+
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       console.error(`[${scope}]`, error.message);
@@ -26,7 +33,7 @@ export function EntitySegmentError({
     <EntityErrorState
       message={error.message || fallbackMessage}
       reset={reset}
-      backHref="/search/manuscripts"
+      backHref={backHref}
       backLabel={backLabel}
     />
   );

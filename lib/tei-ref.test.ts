@@ -412,3 +412,30 @@ describe('stampKeyOnElement / unstampKey', () => {
     );
   });
 });
+
+describe('image refs (docs/tei.md §4.5)', () => {
+  const IMAGE = '<ref type="image" target="/manuscripts/228/images/1581">Cotton, f. 1r</ref>';
+
+  it('round-trips the type rather than dropping it into the external bucket', () => {
+    const parsed = parseRefMarkup(IMAGE);
+    expect(parsed?.kind).toBe('image');
+    expect(buildRefMarkup(parsed!, 'Cotton, f. 1r')).toBe(IMAGE);
+  });
+
+  it('derives the IMAGE id, not the part id', () => {
+    // The manuscript regex ends in \b, so /manuscripts/228/images/1581 matches
+    // it too — an image ref must not report 228.
+    expect(parseRefMarkup(IMAGE)?.id).toBe('1581');
+  });
+
+  it('still derives the part id for a plain manuscript ref', () => {
+    const ms = '<ref type="manuscript" target="/manuscripts/228">Cotton</ref>';
+    expect(parseRefMarkup(ms)?.id).toBe('228');
+  });
+
+  it('carries no @key — two ids cannot fit in one', () => {
+    expect(
+      buildRefMarkup({ kind: 'image', target: '/manuscripts/1/images/2', label: 'x' }, 'x')
+    ).not.toContain('key=');
+  });
+});

@@ -7,13 +7,14 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, Save, Trash2, Loader2, Eye, ExternalLink } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Save, Trash2, Loader2, Eye, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import dynamic from 'next/dynamic';
 const RichTextEditor = dynamic(
   () => import('@/components/backoffice/common/rich-text-editor').then((m) => m.RichTextEditor),
@@ -41,7 +42,9 @@ import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
 import { useAutosave } from '@/hooks/backoffice/use-autosave';
-import { sanitizeHtml } from '@/lib/sanitize-html';
+import { renderPublicationHtml } from '@/lib/publication-html';
+import { hasLegacyRichPublicationHtml } from '@/lib/legacy-publication-html';
+import { getPublicationRoutes } from '@/lib/publications';
 
 export default function PublicationEditorPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -49,6 +52,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
   const router = useRouter();
   const queryClient = useQueryClient();
   const t = useTranslations('backoffice');
+  const tContent = useTranslations('content');
 
   const { data: pub, isLoading } = useQuery({
     queryKey: backofficeKeys.publications.detail(slug),
@@ -91,7 +95,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
       setAllowComments(pub.allow_comments);
       setKeywords(pub.keywords ?? '');
       setDirty(false);
-      track({ label: pub.title, href: `/backoffice/publications/${slug}`, type: 'Publication' });
+      track({ label: pub.title, href: `/backoffice/publications/${slug}`, type: 'Post' });
     }
   }, [pub, slug, track]);
 
@@ -170,7 +174,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
       queryClient.invalidateQueries({
         queryKey: backofficeKeys.publications.detail(slug),
       });
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.lists() });
       setDirty(false);
       if (data.slug !== slug) {
         router.replace(`/backoffice/publications/${data.slug}`);
@@ -196,8 +200,9 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
     mutationFn: () => deletePublication(token!, slug),
     onSuccess: () => {
       toast.success(t('publicationsDetail.toastDeleted'));
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
-      router.push('/backoffice/publications');
+      discardDraft();
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.lists() });
+      router.replace('/backoffice/publications');
     },
     onError: (err) => {
       toast.error(t('publicationsDetail.toastFailedDelete'), {
@@ -215,7 +220,12 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
   }
 
   const markDirty = () => setDirty(true);
-  const publicationKindPath = isNews ? 'news' : isBlog ? 'blogs' : isFeatured ? 'feature' : 'blogs';
+  const publicationRoutes = getPublicationRoutes(
+    { is_news: isNews, is_blog_post: isBlog, is_featured: isFeatured },
+    pubSlug
+  );
+  const hasLegacyRichContent =
+    hasLegacyRichPublicationHtml(pub.content) || hasLegacyRichPublicationHtml(content);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -231,21 +241,20 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
           <h1 className="text-xl font-semibold line-clamp-1">{pub.title}</h1>
           <Badge variant={status === 'Published' ? 'default' : 'secondary'}>{status}</Badge>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {/* Jump to the live public page (only meaningful once published).
               archetype-pal/frontend#77 */}
-          {status === 'Published' && pubSlug && (
-            <Link
-              href={`/publications/${publicationKindPath}/${pubSlug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="outline" size="sm" className="gap-1 text-xs">
-                <ExternalLink className="h-3.5 w-3.5" />
-                {t('publicationsDetail.viewPublicPage')}
-              </Button>
-            </Link>
-          )}
+          {status === 'Published' &&
+            publicationRoutes.map((route) => (
+              <Link key={route.kind} href={route.href} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm" className="gap-1 text-xs">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {t('publicationsDetail.viewPublicPage', {
+                    kind: tContent(`publicationKinds.${route.kind}.summaryLabel`),
+                  })}
+                </Button>
+              </Link>
+            ))}
           <Button
             variant="outline"
             size="sm"
@@ -337,9 +346,20 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
             }}
             className="font-mono text-sm"
           />
-          <p className="text-xs text-muted-foreground">
-            URL: /publications/{publicationKindPath}/{pubSlug || '...'}
-          </p>
+          <div className="space-y-1 text-xs text-muted-foreground">
+            {publicationRoutes.length > 0 ? (
+              <>
+                <p>{t('publicationsDetail.slugUrlPreviewLabel')}</p>
+                <ul className="space-y-0.5 font-mono">
+                  {publicationRoutes.map((route) => (
+                    <li key={route.kind}>{route.href}</li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p>{t('publicationsDetail.slugNoCategory')}</p>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -429,20 +449,31 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
               </TabsTrigger>
             </TabsList>
             <TabsContent value="editor" className="mt-2">
+              {hasLegacyRichContent && (
+                <Alert className="mb-2 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>{t('publicationsDetail.legacyRichContentTitle')}</AlertTitle>
+                  <AlertDescription>
+                    {t('publicationsDetail.legacyRichContentDescription')}
+                  </AlertDescription>
+                </Alert>
+              )}
               <RichTextEditor
+                key={hasLegacyRichContent ? 'legacy-rich-content' : 'standard-rich-content'}
                 content={content}
                 onChange={(html) => {
                   setContent(html);
                   markDirty();
                 }}
                 placeholder={t('publicationsDetail.contentPlaceholder')}
+                defaultMode={hasLegacyRichContent ? 'raw' : 'rich'}
               />
             </TabsContent>
             <TabsContent value="preview" className="mt-2">
               <div
-                className="prose prose-sm dark:prose-invert max-w-none rounded-md border px-4 py-3 min-h-[200px]"
+                className="publication-body rounded-md border px-4 py-3 min-h-[200px]"
                 dangerouslySetInnerHTML={{
-                  __html: sanitizeHtml(content, { allowLegacyPublicationStyles: true }),
+                  __html: renderPublicationHtml(content),
                 }}
               />
             </TabsContent>

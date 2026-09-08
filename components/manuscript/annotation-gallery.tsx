@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   AlertTriangle,
   ArrowUp,
@@ -204,6 +205,7 @@ export function AnnotationGallery({
   loadError = false,
   supportingDataIncomplete = false,
 }: AnnotationGalleryProps) {
+  const t = useTranslations('manuscript');
   const { user, token } = useAuth();
   const router = useRouter();
   const { addItem, isInCollection } = useCollection();
@@ -342,24 +344,24 @@ export function AnnotationGallery({
       if (!token) return;
       if (
         typeof window !== 'undefined' &&
-        !window.confirm(`Delete graph #${graphId}? This cannot be undone.`)
+        !window.confirm(t('gallery.deleteConfirm', { id: graphId }))
       ) {
         return;
       }
       setDeletedIds((prev) => new Set(prev).add(graphId));
       try {
         await deleteViewerAnnotation(token, graphId);
-        toast.success(`Graph #${graphId} deleted`);
+        toast.success(t('gallery.deleteSuccess', { id: graphId }));
       } catch {
         setDeletedIds((prev) => {
           const next = new Set(prev);
           next.delete(graphId);
           return next;
         });
-        toast.error(`Failed to delete graph #${graphId}`);
+        toast.error(t('gallery.deleteFailed', { id: graphId }));
       }
     },
-    [token]
+    [token, t]
   );
 
   const editingGraphs = React.useMemo(() => {

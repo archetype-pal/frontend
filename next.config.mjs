@@ -20,12 +20,21 @@ const toIPv4Loopback = (url) => url.replace(/^(https?:\/\/)localhost(?=[:/]|$)/,
 // Proxy IIIF (Sipi) so same-origin requests avoid CORS when frontend is on different port.
 // Set NEXT_PUBLIC_IIIF_UPSTREAM in Docker to e.g. http://image_server:1024 so the server can reach Sipi.
 const IIIF_UPSTREAM = toIPv4Loopback(requireEnv('NEXT_PUBLIC_IIIF_UPSTREAM').replace(/\/$/, ''));
+const PUBLIC_API_BASE = requireEnv('NEXT_PUBLIC_API_URL').replace(/\/$/, '');
+const SERVER_API_BASE = (process.env.INTERNAL_API_URL?.trim() || PUBLIC_API_BASE).replace(
+  /\/$/,
+  ''
+);
 // API base for rewrites — these are fetched server-side, so prefer the
 // in-container override (INTERNAL_API_URL) when set.
-const API_BASE = toIPv4Loopback(
-  (process.env.INTERNAL_API_URL?.trim() || requireEnv('NEXT_PUBLIC_API_URL')).replace(/\/$/, '')
-);
+const API_BASE = toIPv4Loopback(SERVER_API_BASE);
+const SITE_ORIGIN = new URL(requireEnv('NEXT_PUBLIC_SITE_URL')).origin;
+const MEDIA_ORIGIN = new URL(PUBLIC_API_BASE).origin;
 const ALLOWED_ORIGINS = requireEnv('CORS_ALLOWED_ORIGINS');
+const mediaRewrites =
+  SITE_ORIGIN === MEDIA_ORIGIN
+    ? []
+    : [{ source: '/media/:path*', destination: `${PUBLIC_API_BASE}/media/:path*` }];
 
 const nextConfig = {
   reactStrictMode: true,
@@ -43,6 +52,7 @@ const nextConfig = {
   },
   async rewrites() {
     return [
+      ...mediaRewrites,
       // Route /scans through API base for IIIF assets.
       { source: '/iiif-proxy/scans/:path*', destination: `${API_BASE}/scans/:path*` },
       { source: '/iiif-proxy/:path*', destination: `${IIIF_UPSTREAM}/:path*` },

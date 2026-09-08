@@ -56,8 +56,9 @@ export const backofficeKeys = {
   // ── Publications ───────────────────────────────────────────
   publications: {
     all: () => [...backofficeKeys.all, 'publications'] as const,
+    lists: () => [...backofficeKeys.publications.all(), 'list'] as const,
     list: (filters?: Record<string, unknown>) =>
-      [...backofficeKeys.publications.all(), 'list', filters] as const,
+      [...backofficeKeys.publications.lists(), filters] as const,
     detail: (slug: string) => [...backofficeKeys.publications.all(), 'detail', slug] as const,
   },
   comments: {
@@ -72,6 +73,9 @@ export const backofficeKeys = {
     all: () => [...backofficeKeys.all, 'pages'] as const,
     list: () => [...backofficeKeys.pages.all(), 'list'] as const,
     detail: (slug: string) => [...backofficeKeys.pages.all(), 'detail', slug] as const,
+  },
+  partners: {
+    all: () => [...backofficeKeys.all, 'partners'] as const,
   },
 
   // ── Scribes ────────────────────────────────────────────────
@@ -123,7 +127,7 @@ export const backofficeKeys = {
     detail: (id: number) => [...backofficeKeys.users.all(), 'detail', id] as const,
   },
 
-  // ── Search Engine ───────────────────────────────────────────
+  // ── Indexing ────────────────────────────────────────────────
   searchEngine: {
     all: () => [...backofficeKeys.all, 'searchEngine'] as const,
     stats: () => [...backofficeKeys.all, 'searchEngine', 'stats'] as const,

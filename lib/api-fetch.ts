@@ -1,7 +1,11 @@
 /**
- * Centralized API fetch wrapper with optional performance logging.
+ * Centralized API fetch wrapper with performance + failure logging.
  *
- * In development, logs method, path, status and duration for each request.
+ * In development, logs method, path, status and duration for every request.
+ * In all environments, a non-2xx response or a thrown error is logged:
+ * callers like `readModelLabels()`/`readSiteFeatures()`/`getPublishedPages()`
+ * swallow those into a default value, so nothing else would ever surface them.
+ * Successful responses stay dev-only to avoid flooding production logs.
  */
 
 import { env } from '@/lib/env';
@@ -22,16 +26,22 @@ export async function apiFetch(path: string, init?: RequestInit): Promise<Respon
 
   try {
     const res = await fetch(url, init);
-    if (isDev) {
-      const duration = performance.now() - start;
+    const duration = performance.now() - start;
+    if (!res.ok) {
+      console.error(
+        `[API] ${method} ${path} → ${res.status} ${res.statusText} (${duration.toFixed(1)}ms)`
+      );
+    } else if (isDev) {
       const tag = duration > SLOW_THRESHOLD ? 'SLOW' : 'OK';
       console.log(`[API] ${tag} ${method} ${path} → ${res.status} (${duration.toFixed(1)}ms)`);
     }
     return res;
   } catch (err) {
-    if (isDev) {
+    // TanStack Query aborts the in-flight request on every key change, i.e. on
+    // every keystroke in the tei-ref picker. Not a failure worth logging.
+    if ((err as Error)?.name !== 'AbortError') {
       const duration = performance.now() - start;
-      console.error(`[API] ERR  ${method} ${path} FAILED (${duration.toFixed(1)}ms)`, err);
+      console.error(`[API] ${method} ${path} FAILED (${duration.toFixed(1)}ms)`, err);
     }
     throw err;
   }

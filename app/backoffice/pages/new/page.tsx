@@ -43,8 +43,8 @@ export default function NewPagePage() {
     mutationFn: () =>
       createPage(token!, {
         slug: resolvedSlug,
-        title: { en: title, fr: '' },
-        content: { en: '', fr: '' },
+        title: { en: title, fr: '', de: '' },
+        content: { en: '', fr: '', de: '' },
         status: 'Draft',
         order: 0,
       }),

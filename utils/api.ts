@@ -1,5 +1,6 @@
-import { apiFetch, authFetch, API_BASE_URL } from '@/lib/api-fetch';
-import type { CarouselItem } from '@/types/backoffice';
+import { apiFetch, authFetch } from '@/lib/api-fetch';
+import { env } from '@/lib/env';
+import type { CarouselItem, PartnerItem } from '@/types/backoffice';
 import type { UserProfile } from '@/types';
 
 export interface PublicationAuthor {
@@ -36,11 +37,29 @@ interface PaginatedPublications {
   count: number;
 }
 
-/** Build absolute URL for carousel (or other API-served) images. API returns relative paths like "media/carousel/…". */
+/**
+ * Build an absolute, browser-facing URL for carousel/partner images.
+ *
+ * Resolved against the public origin, not API_BASE_URL: the result lands in an
+ * `<img src>`, and during SSR API_BASE_URL is the container-internal INTERNAL_API_URL
+ * (e.g. `http://api`) that no browser can resolve. DRF serialises ImageFields with
+ * build_absolute_uri, so a server-side fetch returns absolute URLs carrying that
+ * internal host — re-host those, and leave genuinely external images alone.
+ */
 export function getCarouselImageUrl(imagePath: string | null | undefined): string {
   if (!imagePath) return '/placeholder.svg';
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return imagePath;
-  const base = API_BASE_URL.replace(/\/$/, '');
+  const base = env.apiUrl.replace(/\/$/, '');
+
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    try {
+      const { pathname, search } = new URL(imagePath);
+      if (pathname.startsWith('/media/')) return `${base}${pathname}${search}`;
+    } catch {
+      // Unparseable URL — hand it back untouched.
+    }
+    return imagePath;
+  }
+
   return imagePath.startsWith('/') ? `${base}${imagePath}` : `${base}/${imagePath}`;
 }
 
@@ -200,4 +219,13 @@ export async function fetchCarouselItems(): Promise<CarouselItem[]> {
     console.error('Error fetching carousel items:', error);
     throw error;
   }
+}
+
+/** Public read of the backoffice-managed partners list, used by the footer. */
+export async function fetchPartners(): Promise<PartnerItem[]> {
+  const response = await apiFetch(`/api/v1/media/partners/`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch partners');
+  }
+  return response.json() as Promise<PartnerItem[]>;
 }

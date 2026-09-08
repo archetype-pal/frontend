@@ -153,7 +153,9 @@ export function FacetTreePanel({
                         nodeExpanded ? 'rotate-0' : '-rotate-90'
                       )}
                     />
-                    <span className="truncate">{node.component}</span>
+                    <span title={node.component} className="truncate">
+                      {node.component}
+                    </span>
                   </span>
                   <span className="tabular-nums text-muted-foreground">{node.total}</span>
                 </button>
@@ -174,7 +176,9 @@ export function FacetTreePanel({
                             )}
                             onClick={() => onSelect(child.value, isSelected)}
                           >
-                            <span className="truncate">{child.label}</span>
+                            <span title={child.label} className="truncate">
+                              {child.label}
+                            </span>
                             <span className="inline-flex shrink-0 items-center gap-2">
                               <span className="tabular-nums text-muted-foreground">
                                 {child.count}

@@ -17,6 +17,7 @@ import {
   ScrollText,
   MessageSquare,
   Image,
+  Handshake,
   Users,
   UserCog,
   Hand,
@@ -25,10 +26,11 @@ import {
   Database,
   Hash,
   Library,
-  ExternalLink,
   Settings,
   Languages,
   ToggleLeft,
+  Trash2,
+  HeartPulse,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
@@ -68,6 +70,10 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
   const { getLabel, getPluralLabel } = useModelLabels();
   const t = useTranslations('backoffice');
   const includeAdmin = Boolean(user?.is_staff);
+  // The sanity-checks page hits superuser-only backend endpoints (403s for a
+  // staff-but-not-superuser user), so its link is gated more strictly than
+  // the rest of the admin group.
+  const isSuperuser = Boolean(user?.is_superuser);
   const navigation = useMemo<NavGroup[]>(() => {
     const groups: NavGroup[] = [
       {
@@ -111,24 +117,37 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
           { label: t('sidebar.comments'), href: '/backoffice/comments', icon: MessageSquare },
           { label: t('sidebar.carousel'), href: '/backoffice/carousel', icon: Image },
           { label: t('sidebar.pages'), href: '/backoffice/pages', icon: Files },
+          { label: t('sidebar.partners'), href: '/backoffice/partners', icon: Handshake },
         ],
       },
     ];
     if (includeAdmin) {
+      const adminItems: NavItem[] = [
+        { label: t('sidebar.userManagement'), href: '/backoffice/users', icon: UserCog },
+        { label: t('sidebar.searchEngine'), href: '/backoffice/search-engine', icon: Search },
+        { label: t('sidebar.dataQuality'), href: '/backoffice/quality', icon: Settings },
+        { label: t('sidebar.translations'), href: '/backoffice/translations', icon: Languages },
+        { label: t('sidebar.siteFeatures'), href: '/backoffice/site-features', icon: ToggleLeft },
+        { label: t('sidebar.trash'), href: '/backoffice/trash', icon: Trash2 },
+      ];
+      // Superuser-only: the backend endpoints it calls 403 for staff who
+      // aren't also superusers, so the link is hidden for them rather than
+      // dangling to a page that will just error out.
+      if (isSuperuser) {
+        adminItems.push({
+          label: t('sidebar.sanityChecks'),
+          href: '/backoffice/sanity-checks',
+          icon: HeartPulse,
+        });
+      }
       groups.push({
         label: t('sidebar.groupAdmin'),
         icon: Settings,
-        items: [
-          { label: t('sidebar.userManagement'), href: '/backoffice/users', icon: UserCog },
-          { label: t('sidebar.searchEngine'), href: '/backoffice/search-engine', icon: Search },
-          { label: t('sidebar.dataQuality'), href: '/backoffice/quality', icon: Settings },
-          { label: t('sidebar.translations'), href: '/backoffice/translations', icon: Languages },
-          { label: t('sidebar.siteFeatures'), href: '/backoffice/site-features', icon: ToggleLeft },
-        ],
+        items: adminItems,
       });
     }
     return groups;
-  }, [getLabel, getPluralLabel, includeAdmin, t]);
+  }, [getLabel, getPluralLabel, includeAdmin, isSuperuser, t]);
 
   // Lightweight poll for pending comments (60s)
   const { data: pendingComments } = useQuery({
@@ -172,33 +191,6 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
           />
         ))}
       </nav>
-
-      {/* Footer: View public site */}
-      <div className="border-t p-2 flex flex-col gap-0.5">
-        {collapsed ? (
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Link
-                href="/"
-                className="flex h-9 w-9 items-center justify-center rounded-md mx-auto text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ExternalLink className="h-4 w-4 shrink-0" />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8}>
-              {t('sidebar.viewPublicSite')}
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <Link
-            href="/"
-            className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ExternalLink className="h-4 w-4 shrink-0" />
-            <span>{t('sidebar.viewPublicSite')}</span>
-          </Link>
-        )}
-      </div>
     </aside>
   );
 }

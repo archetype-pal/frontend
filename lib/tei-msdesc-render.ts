@@ -146,6 +146,43 @@ export function renderMsDescArea(
   return `<div class="msdesc-area msdesc-area-${area}">${heading}${body}</div>`;
 }
 
+/**
+ * Render a bare TEI `<p>`-sequence — a linked catalogue description
+ * (docs/tei.md §4.5) — with inline entities and `<ref>` anchors, but none of the
+ * area/section chrome `renderMsDescArea` adds.
+ *
+ * Deliberately does NOT route through `renderBlockNodes`: that dispatch ends at
+ * `renderField`, so a root-level `<note>` or `<seg>` in prose would silently
+ * acquire a `Label: value` field row. Prose has no fields — anything that is not
+ * a paragraph or a line break renders inline.
+ *
+ * Like `renderMsDescArea` this is **not** a sanitizer; callers pass the result
+ * through `sanitizeHtml(html, { allowDataAttr: true })`.
+ */
+export function renderTeiProse(fragment: string, options: RenderTeiProseOptions = {}): string {
+  const t = options.t ?? defaultTranslate;
+  return parseXmlFragment(fragment)
+    .map((node) => renderProseNode(node, t))
+    .join('');
+}
+
+export interface RenderTeiProseOptions {
+  t?: MsDescTranslate;
+}
+
+function renderProseNode(node: XmlNode, t: MsDescTranslate): string {
+  if (node.kind === 'text') {
+    const text = emitText(node.raw).trim();
+    return text ? `<p>${text}</p>` : '';
+  }
+  if (node.name === 'p') return renderParagraph(node, t);
+  if (node.name === 'lb') return '<br>';
+  // Not a block — render it as the inline entity it is, wrapped so it still
+  // occupies a paragraph of its own at the root of a prose sequence.
+  const inline = renderInlineNode(node, t).trim();
+  return inline ? `<p>${inline}</p>` : '';
+}
+
 // ── Label keys ──────────────────────────────────────────────────────────
 
 const fieldKey = (name: string): string => `msdesc.render.fields.${name}`;
@@ -165,6 +202,10 @@ const SECTION_ELEMENTS = new Set([
   'handDesc',
   'decoDesc',
   'bindingDesc',
+  'sealDesc',
+  // A section rather than a container so each seal gets its own heading, and
+  // so `@n` renders as part of it ("Seal 1", "Seal 2").
+  'seal',
   'additions',
   'origin',
   'msItem',
@@ -186,7 +227,7 @@ const CONTAINER_ELEMENTS = new Set([
 ]);
 
 /** Elements whose `@notBefore`/`@notAfter`/`@when` render as a Date row. */
-const DATE_RANGE_ELEMENTS = new Set(['binding']);
+const DATE_RANGE_ELEMENTS = new Set(['binding', 'provenance', 'acquisition']);
 
 /**
  * Known leaf fields — rendered as a labelled row (or a labelled block when
@@ -253,6 +294,10 @@ const ATTR_FIELD_SPECS: Record<string, AttrFieldSpec[]> = {
     { attr: 'medium', labelKey: fieldKey('medium') },
   ],
   decoNote: [{ attr: 'type', labelKey: fieldKey('type'), vocab: 'decoType' }],
+  seal: [
+    { attr: 'type', labelKey: fieldKey('type'), vocab: 'sealType' },
+    { attr: 'contemporary', labelKey: fieldKey('contemporary') },
+  ],
   availability: [{ attr: 'status', labelKey: fieldKey('status'), vocab: 'availabilityStatus' }],
 };
 
@@ -372,9 +417,14 @@ function renderField(el: XmlElementNode, t: MsDescTranslate): string {
   const known = FIELD_ELEMENTS.has(el.name);
   const label = known ? escapeHtml(t(fieldLabelKey(el))) : escapeHtml(el.name);
   const unknownClass = known ? '' : ' msdesc-field-unknown';
+  // `provenance`/`acquisition` hold their date in attributes rather than text,
+  // and `renderAttrRows` runs only for sections and containers — so a field's
+  // Date row has to be emitted here or it never renders at all.
+  const date = DATE_RANGE_ELEMENTS.has(el.name) ? dateRangeText(el.attrs) : '';
 
   if (hasBlockContent(el)) {
-    const body = renderBlockNodes(el.children, t);
+    const dateRow = date ? fieldRow(escapeHtml(t(fieldKey('date'))), escapeHtml(date)) : '';
+    const body = dateRow + renderBlockNodes(el.children, t);
     // `<collation><p/></collation>` and friends: block-shaped but empty. The
     // seeded skeleton is full of these, and a bare "Collation:" with nothing
     // after it is scaffolding leaking onto the public page.
@@ -402,6 +452,8 @@ function renderField(el: XmlElementNode, t: MsDescTranslate): string {
 
   let value = renderFieldValue(el, t);
   if (!hasRenderedText(value)) value = escapeHtml(fieldFallbackText(el));
+  // Attribute-only `<acquisition when="1900"/>`: the date is the value.
+  if (!hasRenderedText(value)) value = escapeHtml(date);
   if (!hasRenderedText(value)) return '';
   return fieldRow(label, value, unknownClass);
 }
@@ -545,7 +597,10 @@ function renderInlineNode(node: XmlNode, t: MsDescTranslate): string {
 }
 
 function renderInlineElement(node: XmlElementNode, t: MsDescTranslate): string {
-  if (node.name === 'hi') {
+  // Link-bearing FIRST. A `<hi rend="italic" target="/scribes/1">` is both
+  // emphasis and a link; returning the `<em>` early would silently drop the
+  // href, and hand-authored Source-mode markup can produce exactly that.
+  if (!isLinkBearing(node) && node.name === 'hi') {
     const tag = HI_REND_TAGS[node.attrs['rend'] ?? ''];
     if (tag) return `<${tag}>${renderInlineNodes(node.children, t)}</${tag}>`;
   }
@@ -598,6 +653,34 @@ function withAnchorScope<T>(active: boolean, render: () => T): T {
   }
 }
 
+/**
+ * The ref's identity, echoed onto the anchor as data attributes.
+ *
+ * Emitted so an entity hover card (docs/tei.md §4.5 phase 5) is later a purely
+ * client-side addition — it can read kind and key off the DOM instead of the
+ * corpus needing a re-render. Nothing consumes these today.
+ */
+/**
+ * Entity elements whose NAME implies the ref kind. A stamped
+ * `<persName key="person_42" target="…">` carries no `@type` — deliberately, or
+ * the hover pill would caption every person "name" — so the kind is recovered
+ * from the element instead, and a consumer sees one uniform contract whether the
+ * link was stamped or wrapped in a `<ref>`.
+ */
+const ENTITY_REF_KIND: Record<string, string> = {
+  persname: 'person',
+  placename: 'place',
+};
+
+function refDataAttrs(el: XmlElementNode): string {
+  const kind = el.attrs['type'] ?? ENTITY_REF_KIND[el.name.toLowerCase()];
+  const key = el.attrs['key'];
+  return (
+    (kind ? ` data-ref-kind="${escapeHtml(kind)}"` : '') +
+    (key ? ` data-ref-key="${escapeHtml(key)}"` : '')
+  );
+}
+
 function renderLinkEl(
   el: XmlElementNode,
   innerHtml: string,
@@ -611,7 +694,7 @@ function renderLinkEl(
   if (href && anchor) {
     const external = /^https?:/i.test(href);
     const externalAttrs = external ? ' target="_blank" rel="noopener noreferrer"' : '';
-    return `<a href="${escapeHtml(href)}" class="${baseClass}" ${labelAttr}${externalAttrs}>${innerHtml}</a>`;
+    return `<a href="${escapeHtml(href)}" class="${baseClass}" ${labelAttr}${refDataAttrs(el)}${externalAttrs}>${innerHtml}</a>`;
   }
   // Resolvable but nested inside an ancestor anchor: keep the entity styling,
   // drop the (illegal) inner `<a>`. The ancestor's href still covers the text.

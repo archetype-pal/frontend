@@ -30,7 +30,6 @@ import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { normalizeSectionOrder, type SectionKey } from '@/lib/site-features';
 import { resolvePageText, type PageListItem, type PageLocale } from '@/lib/pages';
-import { useLocaleStore } from '@/stores/locale-store';
 import { ChevronDown } from 'lucide-react';
 import {
   addSearchHistory,
@@ -41,14 +40,16 @@ import {
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { coerceLocale } from '@/lib/locale';
+import { searchHref, searchHrefForKeyword } from '@/lib/search-routing';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 
 export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[] }) {
   const t = useTranslations('nav');
   const tCommon = useTranslations('common');
-  const locale = useLocaleStore((state) => state.locale);
+  const locale = coerceLocale(useLocale());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
   const headerRef = useRef<HTMLElement>(null);
@@ -69,8 +70,10 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
   const { items, activeCollection } = useCollection();
   const { getLabel } = useModelLabels();
   const { token, user, logout } = useAuth();
-  const { config, isSectionEnabled } = useSiteFeatures();
+  const { config, isSectionEnabled, enabledCategories } = useSiteFeatures();
   const pathname = usePathname();
+  const defaultSearchType = enabledCategories[0] ?? null;
+  const defaultSearchHref = defaultSearchType ? searchHref(defaultSearchType) : '/not-found';
 
   useEffect(() => {
     const stored = localStorage.getItem(BANNER_VISIBLE_KEY);
@@ -96,9 +99,12 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
   const localSuggestions = useKeywordSuggestions(headerSearchValue, suggestionsPool);
   const deferredHeaderKeyword = useDeferredValue(headerSearchValue);
   const serverSuggestionsQuery = useQuery({
-    queryKey: ['header-suggestions', deferredHeaderKeyword],
-    queryFn: () => getServerSuggestions(deferredHeaderKeyword),
-    enabled: deferredHeaderKeyword.trim().length >= 2,
+    queryKey: ['header-suggestions', deferredHeaderKeyword, enabledCategories],
+    queryFn: () => getServerSuggestions(deferredHeaderKeyword, enabledCategories),
+    enabled:
+      isSectionEnabled('search') &&
+      defaultSearchType !== null &&
+      deferredHeaderKeyword.trim().length >= 2,
     staleTime: 30_000,
     retry: false,
   });
@@ -114,15 +120,15 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
   }, [isOnSearchPage, loadGlobalSuggestions]);
 
   const handleTriggerSearch = (kw: string) => {
+    if (!defaultSearchType) return;
     setHeaderKeyword(kw);
     const normalized = kw.trim();
     if (normalized) {
-      addSearchHistory(normalized, 'manuscripts');
+      addSearchHistory(normalized, defaultSearchType);
       setHistoryItems(getSearchHistory());
     }
     if (!isOnSearchPage) {
-      const query = normalized ? `?keyword=${encodeURIComponent(normalized)}` : '';
-      router.push(`/search/manuscripts${query}`);
+      router.push(searchHrefForKeyword(defaultSearchType, normalized));
     }
   };
 
@@ -139,11 +145,11 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
     // Scoped: keep the user's typed query (not the suggestion's label) so the
     // term they searched stays highlighted in that tab — e.g. "william" stays
     // marked in the Texts passages rather than being replaced by a shelfmark.
+    if (!enabledCategories.includes(target.resultType)) return false;
     const keyword = (headerSearchValue || item.value).trim();
     addSearchHistory(keyword, target.resultType);
     setHistoryItems(getSearchHistory());
-    const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
-    router.push(`/search/${target.resultType}${query}`);
+    router.push(searchHrefForKeyword(target.resultType, keyword));
     return true;
   };
 
@@ -182,6 +188,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
 
     switch (sectionKey) {
       case 'search':
+        if (!defaultSearchType) return null;
         return (
           <li key={sectionKey}>
             <Button
@@ -190,7 +197,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
               size="sm"
               className={cn('group', navLinkClass(!!isActive('/search')))}
             >
-              <Link href="/search/manuscripts">
+              <Link href={defaultSearchHref}>
                 <Compass className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
                 Explore
               </Link>
@@ -364,7 +371,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
               {orderedSections.map((sectionKey) => renderSectionButton(sectionKey))}
             </ul>
             <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
-              {isSectionEnabled('search') && (
+              {isSectionEnabled('search') && defaultSearchType && (
                 <div
                   className={cn(
                     'relative w-full md:w-72 lg:w-80',

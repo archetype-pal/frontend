@@ -40,6 +40,8 @@ export function useSearchUrlSync(opts: {
 
   const searchParams = useSearchParams();
   const isInternalUrlUpdate = React.useRef(false);
+  const pendingUrlViewMode = React.useRef<ViewMode | null>(null);
+  const preserveExplicitViewParam = React.useRef(false);
 
   // Read the latest resultType inside the URL→state effect WITHOUT depending on
   // it. A client-side type switch (handleResultTypeChange) changes resultType but
@@ -69,6 +71,8 @@ export function useSearchUrlSync(opts: {
     const rangeMaxEntry =
       Array.from(searchParams.entries()).find(([key]) => key.endsWith('__max')) ?? null;
     const viewFromUrl = parseViewModeParam(searchParams.get('view'), resultTypeRef.current);
+    pendingUrlViewMode.current = viewFromUrl;
+    preserveExplicitViewParam.current = viewFromUrl !== null;
     if (viewFromUrl) setViewMode(viewFromUrl);
     setAdvancedSearch((prev) => ({
       ...prev,
@@ -103,11 +107,15 @@ export function useSearchUrlSync(opts: {
 
   // Sync from state to URL (internal state changes)
   React.useEffect(() => {
+    const pendingViewMode = pendingUrlViewMode.current;
+    if (pendingViewMode && pendingViewMode !== viewMode) return;
+    if (pendingViewMode === viewMode) pendingUrlViewMode.current = null;
+
     const qs = buildQueryString(queryState);
     const params = new URLSearchParams(qs);
     if (submittedKeyword) params.set('keyword', submittedKeyword);
     if (advancedSearchEnabled) params.set('advanced', 'true');
-    if (viewMode !== 'table') {
+    if (viewMode !== 'table' || preserveExplicitViewParam.current) {
       params.set('view', viewMode);
     }
     const path = '/search/' + resultType + (params.toString() ? '?' + params.toString() : '');

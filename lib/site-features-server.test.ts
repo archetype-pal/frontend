@@ -9,9 +9,10 @@ const { apiFetch, authFetch } = vi.hoisted(() => ({
 
 vi.mock('./api-fetch', () => ({ apiFetch, authFetch }));
 
-// Imported after the mock so `readSiteFeatures`/`writeSiteFeatures` pick up
-// the mocked `apiFetch`/`authFetch` rather than issuing real network calls.
-const { readSiteFeatures, writeSiteFeatures } = await import('./site-features-server');
+// Re-imported per test (after the api-fetch mock, and after `vi.resetModules`)
+// so the module-scope last-known-good starts empty each time.
+let readSiteFeatures: typeof import('./site-features-server').readSiteFeatures;
+let writeSiteFeatures: typeof import('./site-features-server').writeSiteFeatures;
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -26,9 +27,11 @@ function legacyResponseBody() {
   return { sections, sectionOrder, searchCategories };
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   apiFetch.mockReset();
   authFetch.mockReset();
+  vi.resetModules();
+  ({ readSiteFeatures, writeSiteFeatures } = await import('./site-features-server'));
 });
 
 afterEach(() => {
@@ -42,7 +45,9 @@ describe('readSiteFeatures', () => {
     );
     const config = await readSiteFeatures();
     expect(config.features.manuscriptDescriptions).toBe(false);
-    expect(apiFetch).toHaveBeenCalledWith('/api/v1/site-features/');
+    expect(apiFetch).toHaveBeenCalledWith('/api/v1/app-settings/', {
+      next: { revalidate: 60, tags: ['site-features'] },
+    });
   });
 
   it('defaults every flag to enabled when the backend response has no `features` key', async () => {
@@ -68,33 +73,42 @@ describe('readSiteFeatures', () => {
     expect(config.searchCategories).not.toBe(defaults.searchCategories);
   });
 
-  it('falls back to defaults when the response is not ok', async () => {
+  it('flags the fallback as degraded rather than passing it off as a real config', async () => {
+    const failures: unknown[] = [
+      jsonResponse({ error: 'nope' }, 500),
+      ...[null, [], 'oops', 7].map((junk) => jsonResponse(junk)),
+      { ok: true, json: () => Promise.reject(new Error('bad json')) },
+    ];
+    for (const failure of failures) {
+      apiFetch.mockResolvedValueOnce(failure as Response);
+      expect(await readSiteFeatures()).toEqual({ ...getDefaultConfig(), degraded: true });
+    }
+    apiFetch.mockRejectedValueOnce(new Error('network down'));
+    expect(await readSiteFeatures()).toEqual({ ...getDefaultConfig(), degraded: true });
+  });
+
+  it('serves the last successful config when a later read fails', async () => {
+    const stored = getDefaultConfig();
+    stored.sections.lightbox = false;
+    stored.features.manuscriptDescriptions = false;
+    apiFetch.mockResolvedValueOnce(jsonResponse(stored));
+    await readSiteFeatures();
+
     apiFetch.mockResolvedValueOnce(jsonResponse({ error: 'nope' }, 500));
     const config = await readSiteFeatures();
-    expect(config).toEqual(getDefaultConfig());
+    expect(config.sections.lightbox).toBe(false);
+    expect(config.features.manuscriptDescriptions).toBe(false);
+    expect(config.degraded).toBe(true);
   });
 
-  it('falls back to defaults when the fetch throws (network error)', async () => {
+  it('hands out copies, so a consumer mutation cannot corrupt the remembered config', async () => {
+    const stored = getDefaultConfig();
+    stored.sections.lightbox = false;
+    apiFetch.mockResolvedValueOnce(jsonResponse(stored));
+    (await readSiteFeatures()).sections.lightbox = true;
+
     apiFetch.mockRejectedValueOnce(new Error('network down'));
-    const config = await readSiteFeatures();
-    expect(config).toEqual(getDefaultConfig());
-  });
-
-  it('falls back to defaults when the response body is not a plain object', async () => {
-    for (const junk of [null, [], 'oops', 7]) {
-      apiFetch.mockResolvedValueOnce(jsonResponse(junk));
-      const config = await readSiteFeatures();
-      expect(config).toEqual(getDefaultConfig());
-    }
-  });
-
-  it('falls back to defaults when response.json() throws (malformed JSON)', async () => {
-    apiFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.reject(new Error('bad json')),
-    } as unknown as Response);
-    const config = await readSiteFeatures();
-    expect(config).toEqual(getDefaultConfig());
+    expect((await readSiteFeatures()).sections.lightbox).toBe(false);
   });
 
   it('ignores unknown flag keys and non-boolean values from the backend', async () => {
@@ -120,7 +134,7 @@ describe('writeSiteFeatures', () => {
     expect(normalized.features.manuscriptDescriptions).toBe(false);
     expect(authFetch).toHaveBeenCalledTimes(1);
     const [path, token, init] = authFetch.mock.calls[0];
-    expect(path).toBe('/api/v1/site-features/');
+    expect(path).toBe('/api/v1/app-settings/');
     expect(token).toBe('staff-token');
     expect(init).toMatchObject({
       method: 'PUT',
@@ -137,6 +151,19 @@ describe('writeSiteFeatures', () => {
 
     const normalized = await writeSiteFeatures(config, 'staff-token');
     expect(normalized.features).toEqual({ manuscriptDescriptions: true });
+  });
+
+  it('becomes the last-known-good, so a read failing right after a save keeps it', async () => {
+    apiFetch.mockResolvedValueOnce(jsonResponse(getDefaultConfig()));
+    await readSiteFeatures();
+
+    const saved = getDefaultConfig();
+    saved.sections.lightbox = false;
+    authFetch.mockResolvedValueOnce(jsonResponse({ ok: true }));
+    await writeSiteFeatures(saved, 'staff-token');
+
+    apiFetch.mockRejectedValueOnce(new Error('network down'));
+    expect((await readSiteFeatures()).sections.lightbox).toBe(false);
   });
 
   it('throws when the backend responds with a non-ok status', async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { SEARCH_RESULT_TYPES, getFacetOrder } from '@/lib/search-types';
+import { getDefaultConfig } from '@/lib/site-features';
 import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
 import siteFeatures from './site-features.json';
 
@@ -15,6 +16,12 @@ describe('site-features.json', () => {
     string,
     { visibleColumns: string[]; visibleFacets: string[] }
   >;
+
+  // A degraded read serves `getDefaultConfig()`, so its nav order has to be the
+  // seeded one or a backend blip silently reshuffles the public nav.
+  it('agrees with the hardcoded default section order', () => {
+    expect(getDefaultConfig().sectionOrder).toEqual(siteFeatures.sectionOrder);
+  });
 
   it('covers every search result type', () => {
     expect(Object.keys(categories).sort()).toEqual([...SEARCH_RESULT_TYPES].sort());

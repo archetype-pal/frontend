@@ -5,6 +5,8 @@ import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 import { getPublishedPages } from '@/lib/pages-server';
 import { resolvePageText, type PageLocale } from '@/lib/pages';
+import { fetchPartners, getCarouselImageUrl } from '@/utils/api';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // lucide-react dropped brand marks (incl. GitHub) in v1, so the GitHub logo is
 // rendered as an inline SVG. Uses currentColor to match the adjacent icons.
@@ -22,42 +24,16 @@ function GithubIcon({ className }: { className?: string }) {
   );
 }
 
-const partners = [
-  {
-    name: 'Arts & Humanities Research Council',
-    logo: '/models_of_authority/Logos/ahrc_logo_small.png',
-  },
-  {
-    name: 'University of Glasgow',
-    logo: '/models_of_authority/Logos/uni_glasgow_logo_small.png',
-  },
-  {
-    name: "King's College London",
-    logo: '/models_of_authority/Logos/ddh_no_strapline_small.png',
-  },
-  {
-    name: 'University of Cambridge',
-    logo: '/models_of_authority/Logos/university_of_cambridge_logo_small.png',
-  },
-  {
-    name: 'National Records of Scotland',
-    logo: '/models_of_authority/Logos/nrs-logo_small.png',
-  },
-  {
-    name: 'The National Archives',
-    logo: '/models_of_authority/Logos/the-national-archives_logo_small.png',
-  },
-];
-
 export default async function Footer() {
-  const [t, rawLocale, modelLabels, pages] = await Promise.all([
+  const [t, rawLocale, modelLabels, pages, partners] = await Promise.all([
     getTranslations('nav.footer'),
     getLocale(),
     readModelLabels(),
     getPublishedPages(),
+    fetchPartners().catch(() => []),
   ]);
   const locale = rawLocale as ModelLabelLocale;
-  const getLabel = (key: 'siteTitle' | 'footerFunded' | 'footerCopyright') =>
+  const getLabel = (key: 'siteTitle' | 'footerLine1' | 'footerLine2' | 'footerBottomLine') =>
     resolveModelLabel(modelLabels.labels[key], locale);
   const quickLinkPages = pages
     .filter((page) => page.include_in_quick_link)
@@ -76,8 +52,8 @@ export default async function Footer() {
             <h2 className="font-serif text-lg font-semibold tracking-tight">
               {getLabel('siteTitle')}
             </h2>
-            <p className="text-sm text-primary-foreground/85 leading-relaxed">{t('about')}</p>
-            <p className="text-sm text-primary-foreground/85">{getLabel('footerFunded')}</p>
+            <p className="text-sm text-primary-foreground/85">{getLabel('footerLine1')}</p>
+            <p className="text-sm text-primary-foreground/85">{getLabel('footerLine2')}</p>
           </div>
 
           {/* Links column */}
@@ -108,30 +84,47 @@ export default async function Footer() {
           {/* Partners column */}
           <div className="space-y-3">
             <h2 className="font-serif text-lg font-semibold tracking-tight">{t('partners')}</h2>
-            <div className="flex flex-wrap gap-4">
-              {partners.map((partner) => (
-                <div
-                  key={partner.name}
-                  className="bg-white/90 rounded-md p-2 flex items-center justify-center"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={partner.logo}
-                    alt={partner.name}
-                    width={80}
-                    height={40}
-                    loading="lazy"
-                  />
-                </div>
-              ))}
-            </div>
+            <TooltipProvider delayDuration={150}>
+              <div className="flex flex-wrap gap-4">
+                {partners.map((partner) => {
+                  const logoCard = (
+                    <div className="bg-white/90 rounded-md p-2 flex items-center justify-center w-24 h-12">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getCarouselImageUrl(partner.logo)}
+                        alt={partner.name}
+                        width={80}
+                        height={40}
+                        loading="lazy"
+                        className="max-w-full max-h-full w-auto h-auto object-contain"
+                      />
+                    </div>
+                  );
+                  const trigger = partner.url ? (
+                    <Link href={partner.url} target="_blank" rel="noopener noreferrer">
+                      {logoCard}
+                    </Link>
+                  ) : (
+                    <div>{logoCard}</div>
+                  );
+                  return (
+                    <Tooltip key={partner.id}>
+                      <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+                      <TooltipContent className="bg-white text-primary">
+                        {partner.name}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
           </div>
         </div>
 
         {/* Bottom bar */}
         <div className="border-t border-primary-foreground/20 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-primary-foreground/85 text-center md:text-left max-w-2xl">
-            {getLabel('footerCopyright')}
+            {getLabel('footerBottomLine')}
           </p>
           <div className="flex items-center gap-3">
             <Link

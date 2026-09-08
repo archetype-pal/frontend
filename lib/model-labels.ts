@@ -22,14 +22,16 @@ export type ModelLabelKey =
   // General site branding, shown in the header and footer.
   | 'siteTitle'
   | 'siteTagline'
-  | 'footerFunded'
-  | 'footerCopyright';
+  | 'footerLine1'
+  | 'footerLine2'
+  | 'footerBottomLine';
 
-export type ModelLabelLocale = 'en' | 'fr';
+export type ModelLabelLocale = 'en' | 'fr' | 'de';
 
 export type LocalizedLabel = {
   en: string;
   fr: string;
+  de: string;
 };
 
 export type ModelLabelsConfig = {
@@ -37,45 +39,53 @@ export type ModelLabelsConfig = {
 };
 
 export const DEFAULT_MODEL_LABELS: Record<ModelLabelKey, LocalizedLabel> = {
-  historicalItem: { en: 'Historical Item', fr: 'Objet historique' },
-  catalogueNumber: { en: 'Catalogue Number', fr: 'Numéro de catalogue' },
-  position: { en: 'Position', fr: 'Position' },
-  date: { en: 'Date', fr: 'Date' },
-  appManuscripts: { en: 'Manuscripts', fr: 'Manuscrits' },
-  fieldHairType: { en: 'Hair Type', fr: 'Type de poil' },
-  fieldShelfmark: { en: 'Shelfmark', fr: 'Cote' },
-  fieldDateMinWeight: { en: 'Minimum weight', fr: 'Poids minimum' },
-  fieldDateMaxWeight: { en: 'Maximum weight', fr: 'Poids maximum' },
-  searchCategoryImages: { en: 'Images', fr: 'Images' },
-  searchCategoryScribes: { en: 'Scribes', fr: 'Copistes' },
-  searchCategoryHands: { en: 'Hands', fr: 'Mains' },
-  searchCategoryGraphs: { en: 'Graphs', fr: 'Graphes' },
-  searchCategoryTexts: { en: 'Texts', fr: 'Textes' },
-  searchCategoryClauses: { en: 'Clauses', fr: 'Clauses' },
-  searchCategoryPeople: { en: 'People', fr: 'Personnes' },
-  searchCategoryPlaces: { en: 'Places', fr: 'Lieux' },
-  siteTitle: { en: 'Archetype', fr: 'Archetype' },
+  historicalItem: { en: 'Historical Item', fr: 'Objet historique', de: 'Historisches Objekt' },
+  catalogueNumber: { en: 'Catalogue Number', fr: 'Numéro de catalogue', de: 'Katalognummer' },
+  position: { en: 'Position', fr: 'Position', de: 'Position' },
+  date: { en: 'Date', fr: 'Date', de: 'Datum' },
+  appManuscripts: { en: 'Manuscripts', fr: 'Manuscrits', de: 'Manuskripte' },
+  fieldHairType: { en: 'Hair Type', fr: 'Type de poil', de: 'Haartyp' },
+  fieldShelfmark: { en: 'Shelfmark', fr: 'Cote', de: 'Signatur' },
+  fieldDateMinWeight: { en: 'Minimum weight', fr: 'Poids minimum', de: 'Mindestgewicht' },
+  fieldDateMaxWeight: { en: 'Maximum weight', fr: 'Poids maximum', de: 'Höchstgewicht' },
+  searchCategoryImages: { en: 'Images', fr: 'Images', de: 'Bilder' },
+  searchCategoryScribes: { en: 'Scribes', fr: 'Copistes', de: 'Schreiber' },
+  searchCategoryHands: { en: 'Hands', fr: 'Mains', de: 'Hände' },
+  searchCategoryGraphs: { en: 'Graphs', fr: 'Graphes', de: 'Grapheme' },
+  searchCategoryTexts: { en: 'Texts', fr: 'Textes', de: 'Texte' },
+  searchCategoryClauses: { en: 'Clauses', fr: 'Clauses', de: 'Klauseln' },
+  searchCategoryPeople: { en: 'People', fr: 'Personnes', de: 'Personen' },
+  searchCategoryPlaces: { en: 'Places', fr: 'Lieux', de: 'Orte' },
+  siteTitle: { en: 'Archetype', fr: 'Archetype', de: 'Archetype' },
   siteTagline: {
     en: 'Archetype tagline',
     fr: 'Archetype tagline',
+    de: 'Archetype tagline',
   },
-  footerFunded: {
-    en: 'Archetype funding text.',
-    fr: "Texte de financement d'Archetype.",
+  footerLine1: {
+    en: 'Footer first section',
+    fr: 'Pied de page, première section',
+    de: 'Fußzeile, erster Abschnitt',
   },
-  footerCopyright: {
-    en: 'Archetype copyright',
-    fr: "Droits d'auteur d'Archetype",
+  footerLine2: {
+    en: 'Footer second section',
+    fr: 'Pied de page, deuxième section',
+    de: 'Fußzeile, zweiter Abschnitt',
+  },
+  footerBottomLine: {
+    en: 'Built with Archetype.',
+    fr: 'Construit avec Archetype.',
+    de: 'Erstellt mit Archetype.',
   },
 };
 
-function normalizeLocalizedValue(value: unknown, fallback: LocalizedLabel): LocalizedLabel {
+export function normalizeLocalizedValue(value: unknown, fallback: LocalizedLabel): LocalizedLabel {
   // Pre-i18n config files stored a single string shown to every locale. Seed
   // both languages from it so an existing customization survives the upgrade
   // instead of reverting to the English default for French visitors.
   if (typeof value === 'string') {
     const trimmed = value.trim();
-    return trimmed ? { en: trimmed, fr: trimmed } : fallback;
+    return trimmed ? { en: trimmed, fr: trimmed, de: trimmed } : fallback;
   }
 
   if (!value || typeof value !== 'object') return fallback;
@@ -83,7 +93,8 @@ function normalizeLocalizedValue(value: unknown, fallback: LocalizedLabel): Loca
   const partial = value as Partial<Record<ModelLabelLocale, unknown>>;
   const en = typeof partial.en === 'string' && partial.en.trim() ? partial.en.trim() : fallback.en;
   const fr = typeof partial.fr === 'string' && partial.fr.trim() ? partial.fr.trim() : fallback.fr;
-  return { en, fr };
+  const de = typeof partial.de === 'string' && partial.de.trim() ? partial.de.trim() : fallback.de;
+  return { en, fr, de };
 }
 
 export function normalizeModelLabels(

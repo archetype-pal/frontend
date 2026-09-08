@@ -110,6 +110,23 @@ export const DECO_NOTE_TYPES = [
 
 export type DecoNoteType = (typeof DECO_NOTE_TYPES)[number];
 
+/**
+ * `seal/@type`. Not from the ODD — `msdesc-minimal` is derived from a
+ * book/codex schema and models no seals at all. This list covers the kinds a
+ * royal-charter cataloguer distinguishes; `other` is the escape hatch, with the
+ * particulars going in the seal's prose.
+ */
+export const SEAL_TYPES = [
+  'greatSeal',
+  'privySeal',
+  'secretum',
+  'signet',
+  'counterseal',
+  'other',
+] as const;
+
+export type SealType = (typeof SEAL_TYPES)[number];
+
 /** `availability/@status` (semi-open list). */
 export const AVAILABILITY_STATUSES = [
   'free',
@@ -151,6 +168,7 @@ export const MSDESC_VOCABS = {
   script: HAND_SCRIPTS,
   execution: HAND_EXECUTIONS,
   decoType: DECO_NOTE_TYPES,
+  sealType: SEAL_TYPES,
   availabilityStatus: AVAILABILITY_STATUSES,
   topLine: LAYOUT_TOP_LINES,
   rulingMedium: RULING_MEDIA,
@@ -176,7 +194,14 @@ export function msdescVocabLabelKey<V extends MsDescVocabId>(
  * (the form/section layer owns the container element itself; `summary` is
  * specialPara content authored as prose).
  */
-export const MSDESC_PROSE_LEAVES = ['provenance', 'decoNote', 'layout', 'summary', 'note'] as const;
+export const MSDESC_PROSE_LEAVES = [
+  'provenance',
+  'decoNote',
+  'layout',
+  'summary',
+  'note',
+  'seal',
+] as const;
 
 export type MsDescProseLeaf = (typeof MSDESC_PROSE_LEAVES)[number];
 
@@ -247,6 +272,8 @@ export const MSDESC_AREA_PALETTES = {
     'additions',
     'bindingDesc',
     'binding',
+    'sealDesc',
+    'seal',
     'accMat',
     'p',
   ],

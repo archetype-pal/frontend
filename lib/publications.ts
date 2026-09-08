@@ -9,6 +9,16 @@ export type PublicationKindConfig = {
   sectionKey: 'news' | 'blogs' | 'featureArticles';
 };
 
+export type PublicationChannelFlags = Pick<
+  PublicationParams,
+  'is_news' | 'is_featured' | 'is_blog_post'
+>;
+
+export type PublicationRoute = {
+  kind: PublicationKind;
+  href: string;
+};
+
 // Note: display strings (section title, summary label) live in the
 // `content.publicationKinds.<kind>` translation namespace rather than here,
 // since this config is a plain object with no access to translations —
@@ -33,4 +43,26 @@ export const PUBLICATION_KIND_CONFIG: Record<PublicationKind, PublicationKindCon
 
 export function isPublicationKind(value: string): value is PublicationKind {
   return (PUBLICATION_KINDS as readonly string[]).includes(value);
+}
+
+export function publicationMatchesKind(
+  publication: PublicationChannelFlags,
+  kind: PublicationKind
+): boolean {
+  return publication[PUBLICATION_KIND_CONFIG[kind].queryFlag] === true;
+}
+
+export function getPublicationRoutes(
+  publication: PublicationChannelFlags,
+  slug: string
+): PublicationRoute[] {
+  const cleanSlug = slug.trim();
+  if (!cleanSlug) return [];
+
+  return PUBLICATION_KINDS.filter((kind) => publicationMatchesKind(publication, kind)).map(
+    (kind) => ({
+      kind,
+      href: `${PUBLICATION_KIND_CONFIG[kind].routeBase}/${cleanSlug}`,
+    })
+  );
 }

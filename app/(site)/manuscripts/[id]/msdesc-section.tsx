@@ -3,6 +3,8 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 
+import { LinkedProse } from '@/components/manuscript/linked-prose';
+
 import type { RenderedMsDescArea } from '@/lib/msdesc-public';
 import { SectionHeading } from './section-heading';
 
@@ -41,9 +43,13 @@ export function MsDescSection({ areas }: MsDescSectionProps) {
   return (
     <section id={MSDESC_SECTION_ID} className="mt-20 scroll-mt-24">
       <SectionHeading title={t('sections.msDesc')} />
-      <div
+      {/* Glossed like the catalogue descriptions: the structured description
+          already carries `<ref key="person_…">` links (the recorded hand, for
+          one), and a hover card is worth having wherever an entity link is. */}
+      <LinkedProse
+        html={html}
+        gloss
         className="msdesc-preview max-w-3xl font-serif text-foreground"
-        dangerouslySetInnerHTML={{ __html: html }}
       />
     </section>
   );
