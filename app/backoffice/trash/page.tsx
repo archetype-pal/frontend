@@ -117,7 +117,7 @@ export default function TrashPage() {
   const restoreMut = useMutation({
     mutationFn: (id: number) => restoreGraph(token!, id),
     onSuccess: () => {
-      toast.success(t('trash.toastRestored'), { description: t('trash.reindexHint') });
+      toast.success(t('trash.toastRestored'));
       invalidateGraphs();
       setTableEpoch((n) => n + 1);
     },
@@ -128,7 +128,7 @@ export default function TrashPage() {
   const purgeMut = useMutation({
     mutationFn: (id: number) => purgeGraph(token!, id),
     onSuccess: () => {
-      toast.success(t('trash.toastPurged'), { description: t('trash.reindexHint') });
+      toast.success(t('trash.toastPurged'));
       invalidateGraphs();
       setPurgeTarget(null);
       setTableEpoch((n) => n + 1);
