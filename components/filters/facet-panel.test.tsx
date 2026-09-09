@@ -143,3 +143,28 @@ describe('FacetPanel excluded-values strip', () => {
     cleanup();
   });
 });
+
+describe('FacetPanel readable labels', () => {
+  it('lets long facet labels wrap instead of relying on hover-only truncation', () => {
+    const longLabel = 'MoA Repository with a very long distinguishable repository label';
+    const { container, cleanup } = mount(
+      <FacetPanel
+        id="repository_name"
+        title="Repository"
+        items={[{ label: longLabel, value: longLabel, count: 12, href: '' }]}
+        baseFacetURL={BASE_URL}
+        selectedValue={null}
+        onSelect={vi.fn()}
+      />
+    );
+
+    const option = container.querySelector(`button[aria-label="${longLabel}, 12"]`);
+    const label = option?.querySelector(`span[title="${longLabel}"]`);
+
+    expect(label?.className).toContain('whitespace-normal');
+    expect(label?.className).not.toContain('truncate');
+    expect(option?.innerHTML).not.toContain('w-12');
+
+    cleanup();
+  });
+});

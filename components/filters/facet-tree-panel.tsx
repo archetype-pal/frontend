@@ -71,16 +71,6 @@ export function FacetTreePanel({
       .filter((node): node is FacetTreeNode => node != null);
   }, [tree, searchTerm]);
   const selectedCount = selectedValues.length;
-  const maxCount = React.useMemo(() => {
-    let max = 0;
-    for (const node of filteredTree) {
-      for (const child of node.children) {
-        max = Math.max(max, child.count);
-      }
-    }
-    return max;
-  }, [filteredTree]);
-  const showSparklines = filteredTree.length >= 1 && maxCount > 0;
 
   return (
     <div
@@ -146,14 +136,17 @@ export function FacetTreePanel({
                     setExpandedNodes((prev) => ({ ...prev, [node.component]: !nodeExpanded }))
                   }
                 >
-                  <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="flex min-w-0 flex-1 items-start gap-1.5">
                     <ChevronDown
                       className={cn(
-                        'h-3 w-3 shrink-0 text-muted-foreground transition-transform duration-200',
+                        'mt-0.5 h-3 w-3 shrink-0 text-muted-foreground transition-transform duration-200',
                         nodeExpanded ? 'rotate-0' : '-rotate-90'
                       )}
                     />
-                    <span title={node.component} className="truncate">
+                    <span
+                      title={node.component}
+                      className="min-w-0 flex-1 whitespace-normal break-words leading-snug"
+                    >
                       {node.component}
                     </span>
                   </span>
@@ -169,33 +162,21 @@ export function FacetTreePanel({
                             type="button"
                             aria-pressed={isSelected}
                             className={cn(
-                              'relative flex w-full items-center justify-between gap-2 px-3 py-1 text-left text-xs transition-colors',
+                              'relative flex w-full items-start justify-between gap-2 px-3 py-1.5 text-left text-xs transition-colors',
                               isSelected
                                 ? 'bg-accent/10 font-semibold text-foreground before:absolute before:inset-y-0.5 before:left-0 before:w-0.5 before:rounded-full before:bg-accent'
                                 : 'hover:bg-muted/60'
                             )}
                             onClick={() => onSelect(child.value, isSelected)}
                           >
-                            <span title={child.label} className="truncate">
+                            <span
+                              title={child.label}
+                              className="min-w-0 flex-1 whitespace-normal break-words leading-snug"
+                            >
                               {child.label}
                             </span>
-                            <span className="inline-flex shrink-0 items-center gap-2">
-                              <span className="tabular-nums text-muted-foreground">
-                                {child.count}
-                              </span>
-                              {showSparklines && (
-                                <span className="h-1 w-12 overflow-hidden rounded-full bg-foreground/10">
-                                  <span
-                                    className={cn(
-                                      'block h-full rounded-full',
-                                      isSelected ? 'bg-accent' : 'bg-primary/40'
-                                    )}
-                                    style={{
-                                      width: `${Math.max(5, Math.round((child.count / maxCount) * 100))}%`,
-                                    }}
-                                  />
-                                </span>
-                              )}
+                            <span className="mt-0.5 shrink-0 tabular-nums text-muted-foreground">
+                              {child.count}
                             </span>
                           </button>
                         </li>
