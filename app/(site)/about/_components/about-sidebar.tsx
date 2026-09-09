@@ -2,13 +2,18 @@ import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { getPublishedPages } from '@/lib/pages-server';
 import { resolvePageText, type PageLocale } from '@/lib/pages';
+import { readSiteFeatures } from '@/lib/site-features-server';
+import { getDefaultSearchCategory } from '@/lib/site-features';
+import { searchHref } from '@/lib/search-routing';
 
 export async function AboutSidebar() {
-  const [locale, t, pages] = await Promise.all([
+  const [locale, t, pages, siteFeatures] = await Promise.all([
     getLocale(),
     getTranslations('about'),
     getPublishedPages(),
+    readSiteFeatures(),
   ]);
+  const defaultSearchType = getDefaultSearchCategory(siteFeatures);
   // All about pages (including the 3 former built-in ones — About the
   // Project, Historical Context, Accessibility Statement) are now DB-backed
   // Pages, ordered by their `order` field. "Search" is the one genuine
@@ -18,7 +23,9 @@ export async function AboutSidebar() {
       href: `/about/${page.slug}`,
       label: resolvePageText(page.title, locale as PageLocale) || page.slug,
     })),
-    { href: '/search/manuscripts', label: t('search') },
+    ...(siteFeatures.sections.search !== false && defaultSearchType
+      ? [{ href: searchHref(defaultSearchType), label: t('search') }]
+      : []),
   ];
 
   return (

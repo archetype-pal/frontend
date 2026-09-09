@@ -4,10 +4,16 @@
 # Security overrides (CVE pins). pnpm 11 reads `overrides` from this file,
 # not from package.json.
 overrides:
-  qs: ^6.15.2
+  qs: ^6.16.0
   vite: 7.3.5
   esbuild: ^0.28.1
   postcss: ^8.5.17
+  tmp: ^0.2.7
+  # uuid is scoped per-consumer on purpose: @annotorious/* v3 already ships a
+  # newer uuid than these advisories need, and a blanket override would drag
+  # the annotation editor's runtime back down to 11.x.
+  '@recogito/recogito-client-core>uuid': ^11.1.1
+  '@lhci/cli>uuid': ^11.1.1
 
 # Build-script approval. pnpm 11 replaced the `onlyBuiltDependencies` list with
 # this map and errors (rather than warns) until every package that ships an

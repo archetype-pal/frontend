@@ -201,6 +201,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 resultType={s.resultType}
                 visibleColumns={s.visibility.visibleColumns}
                 visibleFacets={s.visibility.visibleFacets}
+                availableColumns={s.visibility.availableColumns}
+                availableFacets={s.visibility.availableFacets}
                 onColumnsChange={s.visibility.setVisibleColumns}
                 onFacetsChange={s.visibility.setVisibleFacets}
                 onReset={s.visibility.resetToDefault}

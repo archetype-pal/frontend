@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { TooltipProvider } from '@/components/ui/tooltip';
+
 import { BackofficeHeader } from './backoffice-header';
 
 const order: string[] = [];
@@ -62,9 +64,25 @@ beforeEach(() => {
   activeCount = 0;
 });
 
+// The header's controls are tooltip-wrapped, so it needs the TooltipProvider
+// that BackofficeShell supplies around it in the app. The palette/shortcuts
+// callbacks are required props but irrelevant here — these tests are about
+// sign-out.
+const renderHeader = () =>
+  render(
+    <TooltipProvider>
+      <BackofficeHeader
+        collapsed={false}
+        onToggleSidebar={vi.fn()}
+        onOpenCommandPalette={vi.fn()}
+        onOpenKeyboardShortcuts={vi.fn()}
+      />
+    </TooltipProvider>
+  );
+
 describe('signing out with uploads in flight', () => {
   it('signs out immediately when nothing is uploading', () => {
-    render(<BackofficeHeader collapsed={false} onToggleSidebar={vi.fn()} />);
+    renderHeader();
     fireEvent.click(screen.getByText('header.signOut'));
     expect(logout).toHaveBeenCalledTimes(1);
   });
@@ -74,7 +92,7 @@ describe('signing out with uploads in flight', () => {
     // lands afterwards 401s and the session keeps its filename reserved
     // against other editors until stale-cleanup is run by hand.
     activeCount = 1;
-    render(<BackofficeHeader collapsed={false} onToggleSidebar={vi.fn()} />);
+    renderHeader();
 
     fireEvent.click(screen.getByText('header.signOut'));
     await waitFor(() => screen.getByText('uploads.signOutConfirm'));
@@ -89,7 +107,7 @@ describe('signing out with uploads in flight', () => {
     // session they asked to leave.
     activeCount = 1;
     cancelAll.mockRejectedValueOnce(new Error('offline'));
-    render(<BackofficeHeader collapsed={false} onToggleSidebar={vi.fn()} />);
+    renderHeader();
 
     fireEvent.click(screen.getByText('header.signOut'));
     await waitFor(() => screen.getByText('uploads.signOutConfirm'));
@@ -100,7 +118,7 @@ describe('signing out with uploads in flight', () => {
 
   it('asks first when an upload is running, and only signs out on confirm', async () => {
     activeCount = 2;
-    render(<BackofficeHeader collapsed={false} onToggleSidebar={vi.fn()} />);
+    renderHeader();
 
     fireEvent.click(screen.getByText('header.signOut'));
 

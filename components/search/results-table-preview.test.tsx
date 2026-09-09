@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { hasTablePreview, ResultsTable } from './results-table';
-import type { ClauseListItem } from '@/types/search';
+import type { ClauseListItem, HandListItem } from '@/types/search';
 
 vi.mock('@/contexts/model-labels-context', () => ({
   useModelLabels: () => ({ getLabel: (key: string) => key }),
@@ -42,6 +42,19 @@ const clause: ClauseListItem = {
   content: 'Sciant presentes et futuri...',
 };
 
+const hand: HandListItem = {
+  id: 8,
+  name: 'Main Hand',
+  repository_city: 'London',
+  repository_name: 'British Library',
+  shelfmark: 'Cotton Ch. xviii.13',
+  catalogue_numbers: 'PoMS Document 1/6/153',
+  place: '',
+  date: null,
+  description:
+    '<p>a. <span data-dpt="record" data-dpt-model="graph">#1</span>&nbsp;</p>\r\n<p>e. <span data-dpt="record" data-dpt-model="graph">#6</span> <span data-dpt="record" data-dpt-model="graph">#7</span></p>',
+};
+
 describe('ResultsTable thumbnail row (frontend#74)', () => {
   it('shows the cropped region preview when thumbnails are on', () => {
     render(<ResultsTable resultType="clauses" results={[clause]} />);
@@ -74,6 +87,16 @@ describe('ResultsTable thumbnail row (frontend#74)', () => {
 
     expect(screen.queryByRole('img')).toBeNull();
     expect(screen.getByRole('button', { name: 'Add to collection' })).toBeTruthy();
+  });
+});
+
+describe('ResultsTable hands description', () => {
+  it('shows legacy DigiPal description markup as a plain-text preview', () => {
+    render(<ResultsTable resultType="hands" results={[hand]} visibleColumns={['Description']} />);
+
+    expect(screen.getByText('a. #1 e. #6 #7')).toBeTruthy();
+    expect(screen.queryByText(/data-dpt-model/)).toBeNull();
+    expect(screen.queryByText(/<span/)).toBeNull();
   });
 });
 

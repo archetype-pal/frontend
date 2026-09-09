@@ -18,6 +18,8 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
   const { token, user } = useAuth();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   // Auth guard — redirect non-authenticated visitors to login
   useEffect(() => {
@@ -59,13 +61,15 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
             <BackofficeHeader
               collapsed={collapsed}
               onToggleSidebar={() => setCollapsed((c) => !c)}
+              onOpenCommandPalette={() => setCommandOpen(true)}
+              onOpenKeyboardShortcuts={() => setShortcutsOpen(true)}
             />
             <main className="flex-1 overflow-y-auto">
               <div className="p-6">{children}</div>
             </main>
           </div>
-          <SearchCommand />
-          <KeyboardShortcutsDialog />
+          <SearchCommand open={commandOpen} onOpenChange={setCommandOpen} />
+          <KeyboardShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
           <UploadTray />
         </div>
       </UploadManagerProvider>
