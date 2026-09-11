@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/auth-context';
 
 import { getIiifBaseUrl } from '@/utils/iiif';
 import { cn } from '@/lib/utils';
+import { getSavedImageAllographIds } from '@/lib/manuscript-viewer-data';
 import { useResizable } from '@/hooks/use-resizable';
 import { AnnotationFilterPanel } from './annotation-filter-panel';
 import { AnnotationSettingsPanel } from './annotation-settings-panel';
@@ -112,6 +113,7 @@ export default function ManuscriptViewer({
     manuscript,
     allographs,
     imageAllographIds,
+    imageAllographIdsLoaded,
     hands,
     handsLoaded,
     imageHeight,
@@ -119,6 +121,7 @@ export default function ManuscriptViewer({
     error,
     setHands,
     setHandsLoaded,
+    setImageAllographIds,
   } = useViewerBaseData(imageId);
 
   const viewerApiRef = React.useRef<ViewerApi | null>(null);
@@ -448,13 +451,29 @@ export default function ManuscriptViewer({
     return allographs.filter((a) => idSet.has(a.id));
   }, [allographs, imageAllographIds]);
 
+  const headerAllographsForThisImage = React.useMemo(() => {
+    if (!imageAllographIdsLoaded || !allographs.length || !imageAllographIds.length) return [];
+
+    const idSet = new Set(imageAllographIds);
+    return allographs.filter((a) => idSet.has(a.id));
+  }, [allographs, imageAllographIds, imageAllographIdsLoaded]);
+
   React.useEffect(() => {
     if (!filteredAllograph) return;
-    if (allographsForThisImage.some((allograph) => allograph.id === filteredAllograph.id)) return;
+    if (!imageAllographIdsLoaded) return;
+    if (headerAllographsForThisImage.some((allograph) => allograph.id === filteredAllograph.id)) {
+      return;
+    }
 
     setFilteredAllograph(undefined);
     setHoveredAllograph(undefined);
-  }, [allographsForThisImage, filteredAllograph, setFilteredAllograph, setHoveredAllograph]);
+  }, [
+    headerAllographsForThisImage,
+    filteredAllograph,
+    imageAllographIdsLoaded,
+    setFilteredAllograph,
+    setHoveredAllograph,
+  ]);
 
   const availableAllographFilterIds = React.useMemo(
     () => allographsForThisImage.map((allograph) => allograph.id),
@@ -745,7 +764,9 @@ export default function ManuscriptViewer({
     if (committed && 'seed' in outcome) {
       viewerApiRef.current?.clearSelection?.();
       clearPopupCollection();
+      viewerApiRef.current?.replaceAnnotations(outcome.seed);
       setInitialA9sAnnots(outcome.seed);
+      setImageAllographIds(getSavedImageAllographIds(outcome.seed));
     }
 
     if (notice) showActionNotification(notice);
@@ -755,6 +776,7 @@ export default function ManuscriptViewer({
     editorState,
     clearPopupCollection,
     setInitialA9sAnnots,
+    setImageAllographIds,
   ]);
 
   const handleAllographDialogOpenChange = React.useCallback(
@@ -878,7 +900,7 @@ export default function ManuscriptViewer({
         selectedHand === undefined ? (defaultHand?.id ?? null) : (selectedHand?.id ?? null)
       }
       onHandSelect={setSelectedHand}
-      allographs={allographsForThisImage}
+      allographs={headerAllographsForThisImage}
       selectedAllographId={dropdownAllograph?.id ?? null}
       onAllographSelect={setFilteredAllograph}
       onAllographHover={setHoveredAllograph}

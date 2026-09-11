@@ -3,13 +3,28 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Allograph } from '@/types/allographs';
+import type { BackendGraph } from '@/services/annotations';
 
 // The OpenSeadragon viewer is loaded via next/dynamic(ssr:false); stub it so the
 // test doesn't pull in the real (canvas-heavy) annotorious module — but capture
 // the props the viewer hands it, so tests can drive its events (exposeApi /
 // onSelect / onCreate …) and exercise the viewer's wiring.
-const { annotoriousPropsRef } = vi.hoisted(() => ({
+const { annotoriousPropsRef, authTokenRef, annotationServiceMocks } = vi.hoisted(() => ({
   annotoriousPropsRef: { current: null as Record<string, (...args: unknown[]) => unknown> | null },
+  authTokenRef: { current: null as string | null },
+  annotationServiceMocks: {
+    fetchAnnotationsForImage: vi.fn(
+      async (
+        _imageId?: string,
+        _allographId?: string,
+        _annotationType?: string | null,
+        _token?: string | null
+      ): Promise<BackendGraph[]> => []
+    ),
+    createViewerAnnotation: vi.fn(async () => ({})),
+    updateViewerAnnotation: vi.fn(async () => ({})),
+    deleteViewerAnnotation: vi.fn(async () => undefined),
+  },
 }));
 
 vi.mock('next/dynamic', () => ({
@@ -25,7 +40,13 @@ vi.mock('next/dynamic', () => ({
 const mockViewerApi = new Proxy({}, { get: () => () => undefined });
 
 vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ token: null, user: null, isReady: true, setToken: vi.fn(), logout: vi.fn() }),
+  useAuth: () => ({
+    token: authTokenRef.current,
+    user: null,
+    isReady: true,
+    setToken: vi.fn(),
+    logout: vi.fn(),
+  }),
 }));
 
 vi.mock('@/contexts/model-labels-context', () => ({
@@ -70,10 +91,15 @@ const fetchBaseData = vi.fn(async () => ({
 }));
 const fetchImageAllographIds = vi.fn(async () => [] as number[]);
 
-vi.mock('@/lib/manuscript-viewer-data', () => ({
-  fetchManuscriptViewerBaseData: (...args: unknown[]) => fetchBaseData(...(args as [])),
-  fetchImageAllographIds: (...args: unknown[]) => fetchImageAllographIds(...(args as [])),
-}));
+vi.mock('@/lib/manuscript-viewer-data', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/manuscript-viewer-data')>();
+
+  return {
+    ...actual,
+    fetchManuscriptViewerBaseData: (...args: unknown[]) => fetchBaseData(...(args as [])),
+    fetchImageAllographIds: (...args: unknown[]) => fetchImageAllographIds(...(args as [])),
+  };
+});
 
 vi.mock('@/lib/manuscript-viewer-annotations', () => ({
   buildInitialViewerAnnotations: vi.fn(async () => []),
@@ -83,6 +109,8 @@ vi.mock('@/services/manuscripts', () => ({
   // fetchHands returns a paginated envelope; the viewer reads `.results`.
   fetchHands: vi.fn(async () => ({ results: [] })),
 }));
+
+vi.mock('@/services/annotations', () => annotationServiceMocks);
 
 vi.mock('@/services/image-texts', () => ({
   fetchImageTextsForImage: vi.fn(async () => []),
@@ -128,9 +156,44 @@ const allographB = {
   positions: [],
 };
 
+function backendGraph(id: number, allographId: number): BackendGraph {
+  return {
+    id,
+    item_image: fakeImage.id,
+    annotation_type: 'image',
+    allograph: allographId,
+    hand: 10,
+    annotation: {
+      type: 'Feature' as const,
+      geometry: {
+        type: 'Polygon' as const,
+        coordinates: [
+          [
+            [0, 1990],
+            [0, 2000],
+            [10, 2000],
+            [10, 1990],
+            [0, 1990],
+          ],
+        ],
+      },
+      properties: {},
+    },
+    graphcomponent_set: [],
+    positions: [],
+    note: '',
+    internal_note: '',
+  };
+}
+
 describe('ManuscriptViewer smoke test', () => {
   afterEach(() => {
     vi.clearAllMocks();
+    authTokenRef.current = null;
+    annotationServiceMocks.fetchAnnotationsForImage.mockResolvedValue([]);
+    annotationServiceMocks.createViewerAnnotation.mockResolvedValue({});
+    annotationServiceMocks.updateViewerAnnotation.mockResolvedValue({});
+    annotationServiceMocks.deleteViewerAnnotation.mockResolvedValue(undefined);
   });
 
   it('mounts past the loading state and renders the image-tools header control', async () => {
@@ -305,6 +368,107 @@ describe('ManuscriptViewer smoke test', () => {
 
     expect(await screen.findByRole('dialog')).toBeTruthy();
     expect(screen.getByText('Allograph: a, Caroline')).toBeTruthy();
+  });
+
+  it('keeps the header allograph picker empty without filtering annotations when image ids are empty', async () => {
+    const imageAnnotation = {
+      id: 'db:image-a',
+      target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:0,0,10,10' } },
+      _meta: { annotationType: 'image', allographId: allographA.id },
+    };
+
+    fetchBaseData.mockResolvedValueOnce({
+      image: fakeImage,
+      manuscript: fakeManuscript,
+      allographs: [allographA, allographB],
+      imageHeight: 2000,
+    });
+    fetchImageAllographIds.mockResolvedValueOnce([]);
+    vi.mocked(buildInitialViewerAnnotations).mockResolvedValueOnce([imageAnnotation] as never);
+
+    render(<ManuscriptViewer imageId="4432" mode="public" />);
+    await screen.findByRole('button', { name: 'Image tools' });
+    await waitFor(() => expect(fetchImageAllographIds).toHaveBeenCalledWith('4432'));
+
+    expect(screen.queryByRole('combobox')).toBeNull();
+
+    const props = annotoriousPropsRef.current;
+    const annotationFilter = props?.annotationFilter as
+      ((annotation: typeof imageAnnotation) => boolean) | undefined;
+    expect(annotationFilter?.(imageAnnotation)).toBe(true);
+  });
+
+  it('adds a newly saved annotation allograph to the image-scoped header dropdown without reload', async () => {
+    authTokenRef.current = 'token';
+    fetchBaseData.mockResolvedValueOnce({
+      image: fakeImage,
+      manuscript: fakeManuscript,
+      allographs: [allographA, allographB],
+      imageHeight: 2000,
+    });
+    fetchImageAllographIds.mockResolvedValueOnce([allographA.id]);
+    annotationServiceMocks.fetchAnnotationsForImage.mockImplementation(
+      async (_imageId, _allograph, type) =>
+        type === 'image' ? [backendGraph(101, allographA.id), backendGraph(102, allographB.id)] : []
+    );
+
+    render(<ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />);
+    await screen.findByRole('button', { name: 'Image tools' });
+
+    fireEvent.click(screen.getByRole('combobox'));
+    expect(await screen.findByText('a, Caroline')).toBeTruthy();
+    expect(screen.queryByText('b, Anglicana')).toBeNull();
+
+    const props = annotoriousPropsRef.current;
+    expect(props).toBeTruthy();
+
+    const replaceAnnotations = vi.fn();
+    const api = new Proxy(
+      { replaceAnnotations },
+      {
+        get: (target, prop) =>
+          prop in target ? target[prop as keyof typeof target] : () => undefined,
+      }
+    );
+    act(() => {
+      props!.exposeApi?.(api);
+    });
+
+    await act(async () => {
+      props!.onCreate?.({
+        ...draftAnnotation('draft-created-b'),
+        _meta: {
+          annotationType: 'public',
+          allographId: allographB.id,
+          handId: 10,
+        },
+      });
+    });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Save (s)' }));
+
+    await waitFor(() =>
+      expect(annotationServiceMocks.createViewerAnnotation).toHaveBeenCalledWith(
+        'token',
+        expect.objectContaining({
+          allograph: allographB.id,
+          hand: 10,
+          item_image: fakeImage.id,
+        })
+      )
+    );
+
+    expect(await screen.findByText('b, Anglicana')).toBeTruthy();
+    expect(replaceAnnotations).toHaveBeenCalledWith([
+      expect.objectContaining({
+        id: 'db:101',
+        _meta: expect.objectContaining({ allographId: allographA.id }),
+      }),
+      expect.objectContaining({
+        id: 'db:102',
+        _meta: expect.objectContaining({ allographId: allographB.id }),
+      }),
+    ]);
   });
 
   it('clears the allograph eye context when the dropdown returns to any allograph', async () => {
