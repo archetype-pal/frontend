@@ -91,6 +91,11 @@ export function FacetPanel({
   const INITIAL_VISIBLE_COUNT = 10;
   const hasOverflow = filteredItems.length > INITIAL_VISIBLE_COUNT;
   const visibleItems = expandedList ? filteredItems : filteredItems.slice(0, INITIAL_VISIBLE_COUNT);
+  const maxCount = React.useMemo(
+    () => filteredItems.reduce((max, item) => Math.max(max, item.count), 0),
+    [filteredItems]
+  );
+  const showProportionBars = filteredItems.length >= 3 && maxCount > 0;
 
   const handleSelect = (item: FacetListItem) => {
     const nextValue = selectedValue === item.value ? null : item.value;
@@ -208,13 +213,29 @@ export function FacetPanel({
                   >
                     <span
                       title={item.label}
-                      className="min-w-0 flex-1 whitespace-normal break-words leading-snug"
+                      className="relative z-10 min-w-0 flex-1 whitespace-normal break-words leading-snug"
                     >
                       {item.label}
                     </span>
-                    <span className="mt-0.5 shrink-0 tabular-nums text-muted-foreground">
+                    <span className="relative z-10 mt-0.5 shrink-0 tabular-nums text-muted-foreground">
                       {item.count}
                     </span>
+                    {showProportionBars && (
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-x-2 bottom-1 h-0.5 overflow-hidden rounded-full bg-foreground/15"
+                      >
+                        <span
+                          className={cn(
+                            'block h-full rounded-full',
+                            isSelected ? 'bg-accent' : 'bg-primary/65'
+                          )}
+                          style={{
+                            width: `${Math.max(5, Math.round((item.count / maxCount) * 100))}%`,
+                          }}
+                        />
+                      </span>
+                    )}
                   </button>
                   {isSelected ? (
                     // Once a value is included, the only sensible trailing action

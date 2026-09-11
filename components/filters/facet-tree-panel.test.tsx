@@ -41,12 +41,16 @@ describe('FacetTreePanel readable labels', () => {
 
     const componentLabel = container.querySelector(`span[title="${component}"]`);
     const featureLabel = container.querySelector(`span[title="${feature}"]`);
+    const option = featureLabel?.closest('button');
+    const proportionBar = option?.querySelector('span[aria-hidden="true"]');
 
     expect(componentLabel?.className).toContain('whitespace-normal');
     expect(componentLabel?.className).not.toContain('truncate');
     expect(featureLabel?.className).toContain('whitespace-normal');
     expect(featureLabel?.className).not.toContain('truncate');
     expect(container.innerHTML).not.toContain('w-12');
+    expect(proportionBar?.className).toContain('absolute');
+    expect(proportionBar?.className).toContain('bottom-1');
 
     cleanup();
   });

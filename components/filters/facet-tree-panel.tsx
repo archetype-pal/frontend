@@ -71,6 +71,16 @@ export function FacetTreePanel({
       .filter((node): node is FacetTreeNode => node != null);
   }, [tree, searchTerm]);
   const selectedCount = selectedValues.length;
+  const maxCount = React.useMemo(() => {
+    let max = 0;
+    for (const node of filteredTree) {
+      for (const child of node.children) {
+        max = Math.max(max, child.count);
+      }
+    }
+    return max;
+  }, [filteredTree]);
+  const showProportionBars = filteredTree.length >= 1 && maxCount > 0;
 
   return (
     <div
@@ -171,13 +181,29 @@ export function FacetTreePanel({
                           >
                             <span
                               title={child.label}
-                              className="min-w-0 flex-1 whitespace-normal break-words leading-snug"
+                              className="relative z-10 min-w-0 flex-1 whitespace-normal break-words leading-snug"
                             >
                               {child.label}
                             </span>
-                            <span className="mt-0.5 shrink-0 tabular-nums text-muted-foreground">
+                            <span className="relative z-10 mt-0.5 shrink-0 tabular-nums text-muted-foreground">
                               {child.count}
                             </span>
+                            {showProportionBars && (
+                              <span
+                                aria-hidden="true"
+                                className="pointer-events-none absolute inset-x-3 bottom-1 h-0.5 overflow-hidden rounded-full bg-foreground/15"
+                              >
+                                <span
+                                  className={cn(
+                                    'block h-full rounded-full',
+                                    isSelected ? 'bg-accent' : 'bg-primary/65'
+                                  )}
+                                  style={{
+                                    width: `${Math.max(5, Math.round((child.count / maxCount) * 100))}%`,
+                                  }}
+                                />
+                              </span>
+                            )}
                           </button>
                         </li>
                       );
