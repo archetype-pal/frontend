@@ -690,6 +690,91 @@ describe('cancelAll', () => {
     expect(mockedAbort).toHaveBeenCalledWith('tok', 's-refused');
     expect(listUploadBreadcrumbs().map((c) => c.sessionId)).toEqual(['s-refused']);
   });
+
+  it('keeps the crumb when the server refuses the abort, even though the transfer aborts first', async () => {
+    // The real uploadImageFile rejects with AbortError the moment the
+    // controller fires — before the DELETE has settled. drain's abort branch
+    // must not drop the crumb that cancelAll is still deciding about.
+    mockedAbort.mockRejectedValue(new BackofficeApiError(409, { detail: 'assembled' }));
+    mockedUpload.mockImplementation((_t, _f, _m, options) => {
+      options?.onProgress?.({
+        phase: 'uploading',
+        sentBytes: 1,
+        totalBytes: 4,
+        session: session({ id: 's-refused' }),
+      });
+      return new Promise((_res, rej) =>
+        options?.signal?.addEventListener('abort', () =>
+          rej(new DOMException('aborted', 'AbortError'))
+        )
+      );
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue one'));
+    await waitFor(() =>
+      expect(screen.getByTestId('items').textContent).toContain('new.tif:uploading')
+    );
+
+    fireEvent.click(screen.getByText('cancel all'));
+    await waitFor(() => expect(screen.getByTestId('cancelAllDone').textContent).toBe('yes'));
+
+    expect(screen.getByTestId('items').textContent).toContain('new.tif:canceled');
+    expect(listUploadBreadcrumbs().map((c) => c.sessionId)).toEqual(['s-refused']);
+  });
+});
+
+describe('retry after the watch gave up', () => {
+  it('re-attaches to a conversion the server is still running instead of re-creating it', async () => {
+    // A poll outage or the process timeout marks the item failed while Celery
+    // is still converting. Re-running uploadImageFile would create-or-resume
+    // → 409 session_active for an upload that is succeeding.
+    mockedUpload.mockImplementation((_t, _f, _m, options) => {
+      options?.onProgress?.({
+        phase: 'processing',
+        sentBytes: 4,
+        totalBytes: 4,
+        session: session({ id: 's-slow', status: 'processing' }),
+      });
+      return Promise.reject(new Error('timed out'));
+    });
+    mockedGetSession.mockResolvedValue(session({ id: 's-slow', status: 'processing' }));
+    mockedWatch.mockResolvedValue(session({ id: 's-slow', status: 'complete', item_image: 9 }));
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue one'));
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('new.tif:error'));
+
+    fireEvent.click(screen.getByText('retry first'));
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toBe('new.tif:done'));
+
+    expect(mockedGetSession).toHaveBeenCalledWith('tok', 's-slow');
+    expect(mockedUpload).toHaveBeenCalledTimes(1);
+    expect(listUploadBreadcrumbs()).toEqual([]);
+  });
+
+  it('uploads afresh when the server no longer knows the session', async () => {
+    mockedUpload
+      .mockImplementationOnce((_t, _f, _m, options) => {
+        options?.onProgress?.({
+          phase: 'uploading',
+          sentBytes: 1,
+          totalBytes: 4,
+          session: session({ id: 's-gone' }),
+        });
+        return Promise.reject(new Error('network'));
+      })
+      .mockResolvedValueOnce(session({ status: 'complete', item_image: 2 }));
+    mockedGetSession.mockRejectedValue(new BackofficeApiError(404, { detail: 'no' }));
+    renderHarness();
+
+    fireEvent.click(screen.getByText('enqueue one'));
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('new.tif:error'));
+
+    fireEvent.click(screen.getByText('retry first'));
+    await waitFor(() => expect(screen.getByTestId('items').textContent).toBe('new.tif:done'));
+    expect(mockedUpload).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('signing out mid-upload', () => {

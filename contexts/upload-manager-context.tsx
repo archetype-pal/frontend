@@ -102,7 +102,7 @@ interface UploadManagerValue {
   /** Re-run a failed/canceled item. Works only while the tab is open (the
    *  File is still in memory); the server resume then re-sends just the
    *  chunks it hasn't already received. */
-  retry: (id: string) => void;
+  retry: (id: string) => Promise<void>;
   dismiss: (id: string) => void;
   clearFinished: () => void;
   /** Pair re-selected files with interrupted uploads by (name, size) and
@@ -242,9 +242,14 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...partial } : it)));
   }, []);
 
+  /** Upsert by id: a retry re-attaching to a live session replaces its own row. */
   const addItem = useCallback((item: UploadItem) => {
     itemsRef.current.set(item.id, item);
-    setItems((prev) => [...prev, item]);
+    setItems((prev) =>
+      prev.some((it) => it.id === item.id)
+        ? prev.map((it) => (it.id === item.id ? item : it))
+        : [...prev, item]
+    );
   }, []);
 
   const invalidateManuscript = useCallback(
@@ -397,8 +402,13 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
               patch(id, { status: 'busy', error: tRef.current(BUSY_IN_OTHER_TAB_KEY) });
               removeUploadBreadcrumbs([id]);
             } else {
+              // `cancelAll` marks the item canceled BEFORE aborting, and owns
+              // the crumb from then on: it is removed only once the server has
+              // confirmed the abort, so a refused DELETE leaves it for the next
+              // sign-in to settle.
+              const byCancelAll = itemsRef.current.get(id)?.status === 'canceled';
               patch(id, { status: 'canceled' });
-              removeUploadBreadcrumbs([id]);
+              if (!byCancelAll) removeUploadBreadcrumbs([id]);
             }
           } else if (isConflictError(err)) {
             // A duplicate proves the image already exists server-side — refresh
@@ -561,7 +571,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     const settled = await Promise.all(
       abandonable.map(async (it) => {
         const sessionId = crumbs.find((c) => c.id === it.id)?.sessionId;
-        if (!sessionId) return { id: it.id, freed: false };
+        if (!sessionId) return { id: it.id, freed: true }; // never reached the server
         try {
           await abortUploadSession(authToken, sessionId);
           return { id: it.id, freed: true };
@@ -574,20 +584,6 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     // still live server-side keeps its crumb so the next sign-in can settle it.
     removeUploadBreadcrumbs(settled.filter((r) => r.freed).map((r) => r.id));
   }, [patch]);
-
-  const retry = useCallback(
-    (id: string) => {
-      const item = itemsRef.current.get(id);
-      // Only failed/canceled items whose File is still in memory can be
-      // retried; a recovered watch item has no File — nothing to resend.
-      if (!item || !item.file || !RETRYABLE_STATUSES.includes(item.status)) return;
-      patch(id, { status: 'pending', phase: null, sentBytes: 0, message: '', error: '' });
-      // Upsert, not update: the crumb may have been evicted meanwhile.
-      saveUploadBreadcrumb(crumbFromItem(item, getUploadTabId(), Date.now()));
-      queueForDrain([id]);
-    },
-    [patch, queueForDrain]
-  );
 
   const dismiss = useCallback((id: string) => {
     // Dismissing a `processing` row means "stop tracking": the server-side
@@ -684,17 +680,8 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
    *  'prompt' → chunks are missing, only the user can supply the File again.
    *  Any lookup failure degrades to 'prompt' — re-selecting is safe in every
    *  state, because the server's create-or-resume sorts it out. */
-  const routeSessionCrumb = useCallback(
-    async (
-      authToken: string,
-      crumb: UploadBreadcrumb
-    ): Promise<'handled' | 'complete' | 'prompt'> => {
-      let session: UploadSession;
-      try {
-        session = await getUploadSession(authToken, crumb.sessionId);
-      } catch {
-        return 'prompt';
-      }
+  const settleSession = useCallback(
+    (crumb: UploadBreadcrumb, session: UploadSession): 'handled' | 'complete' | 'prompt' => {
       if (session.status === 'complete') {
         removeUploadBreadcrumbs([crumb.id]);
         addItem(
@@ -725,6 +712,59 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       return 'prompt'; // pending | uploading — chunks incomplete
     },
     [addItem, invalidateManuscript, startWatch]
+  );
+
+  const routeSessionCrumb = useCallback(
+    async (
+      authToken: string,
+      crumb: UploadBreadcrumb
+    ): Promise<'handled' | 'complete' | 'prompt'> => {
+      let session: UploadSession;
+      try {
+        session = await getUploadSession(authToken, crumb.sessionId);
+      } catch {
+        return 'prompt';
+      }
+      return settleSession(crumb, session);
+    },
+    [settleSession]
+  );
+
+  const retry = useCallback(
+    async (id: string) => {
+      const item = itemsRef.current.get(id);
+      if (!item || !RETRYABLE_STATUSES.includes(item.status)) return;
+      // The watch may have given up (poll outage, process timeout) on a
+      // conversion the server is still running or has finished. Re-creating
+      // the session would 409 with `session_active` — re-attach instead.
+      const crumb = listUploadBreadcrumbs().find((c) => c.id === id);
+      const authToken = getAuthTokenCookie();
+      if (crumb?.sessionId && authToken) {
+        let live: UploadSession | null = null;
+        try {
+          live = await getUploadSession(authToken, crumb.sessionId);
+        } catch {
+          // Unknown server-side: fall through to a fresh upload.
+        }
+        if (
+          live &&
+          (live.status === 'complete' ||
+            live.status === 'processing' ||
+            live.status === 'assembled')
+        ) {
+          settleSession(crumb, live);
+          return;
+        }
+      }
+      // Only items whose File is still in memory can be re-sent; a recovered
+      // watch item has none.
+      if (!item.file) return;
+      patch(id, { status: 'pending', phase: null, sentBytes: 0, message: '', error: '' });
+      // Upsert, not update: the crumb may have been evicted meanwhile.
+      saveUploadBreadcrumb(crumbFromItem(item, getUploadTabId(), Date.now()));
+      queueForDrain([id]);
+    },
+    [patch, queueForDrain, settleSession]
   );
 
   /** Recover breadcrumbs after a reload (or from a dead sibling tab): route
