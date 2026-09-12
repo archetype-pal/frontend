@@ -9,6 +9,7 @@ import {
   createViewerAnnotation,
   deleteViewerAnnotation,
   fetchAnnotationsForImage,
+  fetchGraphsByIds,
   updateViewerAnnotation,
   type BackendGraph,
 } from './annotations';
@@ -126,5 +127,48 @@ describe('deleteViewerAnnotation', () => {
   it('throws with the status + body on a non-OK response', async () => {
     authFetchMock.mockResolvedValueOnce(textResponse(404, 'gone'));
     await expect(deleteViewerAnnotation('tok', 5)).rejects.toThrow('DELETE failed: 404 gone');
+  });
+});
+
+describe('fetchGraphsByIds', () => {
+  it('returns empty array when given no IDs', async () => {
+    const result = await fetchGraphsByIds([]);
+    expect(result).toEqual([]);
+    expect(authFetchMock).not.toHaveBeenCalled();
+  });
+
+  it('fetches graphs with comma-separated id__in parameter', async () => {
+    const mockGraphs = [{ id: 10 }, { id: 20 }] as BackendGraph[];
+    authFetchMock.mockResolvedValueOnce(jsonResponse(200, mockGraphs));
+
+    const result = await fetchGraphsByIds([10, 20], 'tok');
+    expect(result).toEqual(mockGraphs);
+    expect(authFetchMock).toHaveBeenCalledTimes(1);
+
+    const [path, token, init] = authFetchMock.mock.calls[0]!;
+    expect(path).toBe('/api/v1/manuscripts/graphs/?id__in=10%2C20');
+    expect(token).toBe('tok');
+    expect((init as RequestInit)?.cache).toBe('no-store');
+  });
+
+  it('chunks requests exceeding 300 IDs', async () => {
+    const ids = Array.from({ length: 650 }, (_, i) => i + 1);
+    const chunk1 = ids.slice(0, 300).map((id) => ({ id })) as BackendGraph[];
+    const chunk2 = ids.slice(300, 600).map((id) => ({ id })) as BackendGraph[];
+    const chunk3 = ids.slice(600).map((id) => ({ id })) as BackendGraph[];
+
+    authFetchMock
+      .mockResolvedValueOnce(jsonResponse(200, chunk1))
+      .mockResolvedValueOnce(jsonResponse(200, chunk2))
+      .mockResolvedValueOnce(jsonResponse(200, chunk3));
+
+    const result = await fetchGraphsByIds(ids, 'tok');
+    expect(result.length).toBe(650);
+    expect(authFetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('throws when the API request fails', async () => {
+    authFetchMock.mockResolvedValueOnce(textResponse(500, 'Server Error'));
+    await expect(fetchGraphsByIds([1, 2])).rejects.toThrow('Failed to load graphs: 500');
   });
 });
