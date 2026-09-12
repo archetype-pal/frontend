@@ -10,6 +10,11 @@ const ITEMS: FacetListItem[] = [
   { label: 'St Andrews', value: 'St Andrews', count: 7, href: '' },
 ];
 
+const ITEMS_WITH_PROPORTIONS: FacetListItem[] = [
+  ...ITEMS,
+  { label: 'British Library', value: 'British Library', count: 3, href: '' },
+];
+
 const BASE_URL = 'http://localhost:8000/api/v1/search/item-parts/facets';
 
 function mount(ui: React.ReactElement) {
@@ -139,6 +144,36 @@ describe('FacetPanel excluded-values strip', () => {
     expect(container.querySelector('button[aria-label="Stop excluding Durham"]')).not.toBeNull();
     // A non-excluded value still offers Exclude.
     expect(container.querySelector('button[aria-label="Exclude St Andrews"]')).not.toBeNull();
+
+    cleanup();
+  });
+});
+
+describe('FacetPanel readable labels', () => {
+  it('lets long facet labels wrap instead of relying on hover-only truncation', () => {
+    const longLabel = 'MoA Repository with a very long distinguishable repository label';
+    const { container, cleanup } = mount(
+      <FacetPanel
+        id="repository_name"
+        title="Repository"
+        items={ITEMS_WITH_PROPORTIONS.map((item, index) =>
+          index === 0 ? { ...item, label: longLabel, value: longLabel } : item
+        )}
+        baseFacetURL={BASE_URL}
+        selectedValue={null}
+        onSelect={vi.fn()}
+      />
+    );
+
+    const option = container.querySelector(`button[aria-label="${longLabel}, 12"]`);
+    const label = option?.querySelector(`span[title="${longLabel}"]`);
+    const proportionBar = option?.querySelector('span[aria-hidden="true"]');
+
+    expect(label?.className).toContain('whitespace-normal');
+    expect(label?.className).not.toContain('truncate');
+    expect(option?.innerHTML).not.toContain('w-12');
+    expect(proportionBar?.className).toContain('absolute');
+    expect(proportionBar?.className).toContain('bottom-1');
 
     cleanup();
   });

@@ -95,4 +95,16 @@ describe('SearchGrid text-only mode (frontend#74)', () => {
     expect(screen.getByRole('button', { name: 'Add to collection' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Open in Lightbox' })).toBeTruthy();
   });
+
+  it('keeps thumbnail hover actions as distinct row buttons', () => {
+    render(<SearchGrid results={[graph]} resultType="graphs" />);
+
+    const lightboxButton = screen.getByRole('button', { name: 'Open in Lightbox' });
+    const collectionButton = screen.getByRole('button', { name: 'Add to collection' });
+
+    expect(lightboxButton.className).toContain('static');
+    expect(collectionButton.className).toContain('static');
+    expect(collectionButton.className).toContain('bg-amber-100/95');
+    expect(collectionButton.className).not.toContain('absolute');
+  });
 });

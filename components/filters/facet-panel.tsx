@@ -95,7 +95,7 @@ export function FacetPanel({
     () => filteredItems.reduce((max, item) => Math.max(max, item.count), 0),
     [filteredItems]
   );
-  const showSparklines = filteredItems.length >= 3 && maxCount > 0;
+  const showProportionBars = filteredItems.length >= 3 && maxCount > 0;
 
   const handleSelect = (item: FacetListItem) => {
     const nextValue = selectedValue === item.value ? null : item.value;
@@ -172,7 +172,7 @@ export function FacetPanel({
                   <Ban className="h-3 w-3 shrink-0 text-destructive/70" />
                   <span
                     title={value}
-                    className="min-w-0 flex-1 truncate text-muted-foreground line-through decoration-destructive/50"
+                    className="min-w-0 flex-1 whitespace-normal break-words leading-snug text-muted-foreground line-through decoration-destructive/50"
                   >
                     {value}
                   </span>
@@ -205,31 +205,37 @@ export function FacetPanel({
                     aria-label={`${item.label}, ${item.count}`}
                     aria-pressed={isSelected}
                     className={cn(
-                      'group relative flex min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-2 py-1 text-left transition-colors',
+                      'group relative flex min-w-0 flex-1 items-start justify-between gap-2 rounded-md px-2 py-1.5 text-left transition-colors',
                       isSelected
                         ? 'bg-accent/10 font-semibold text-foreground before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:rounded-full before:bg-accent'
                         : 'hover:bg-muted/60'
                     )}
                   >
-                    <span title={item.label} className="min-w-0 flex-1 truncate">
+                    <span
+                      title={item.label}
+                      className="relative z-10 min-w-0 flex-1 whitespace-normal break-words leading-snug"
+                    >
                       {item.label}
                     </span>
-                    <span className="inline-flex shrink-0 items-center gap-2">
-                      <span className="tabular-nums text-muted-foreground">{item.count}</span>
-                      {showSparklines && (
-                        <span className="h-1 w-12 overflow-hidden rounded-full bg-foreground/10">
-                          <span
-                            className={cn(
-                              'block h-full rounded-full',
-                              isSelected ? 'bg-accent' : 'bg-primary/40'
-                            )}
-                            style={{
-                              width: `${Math.max(5, Math.round((item.count / maxCount) * 100))}%`,
-                            }}
-                          />
-                        </span>
-                      )}
+                    <span className="relative z-10 mt-0.5 shrink-0 tabular-nums text-muted-foreground">
+                      {item.count}
                     </span>
+                    {showProportionBars && (
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-x-2 bottom-1 h-0.5 overflow-hidden rounded-full bg-foreground/15"
+                      >
+                        <span
+                          className={cn(
+                            'block h-full rounded-full',
+                            isSelected ? 'bg-accent' : 'bg-primary/65'
+                          )}
+                          style={{
+                            width: `${Math.max(5, Math.round((item.count / maxCount) * 100))}%`,
+                          }}
+                        />
+                      </span>
+                    )}
                   </button>
                   {isSelected ? (
                     // Once a value is included, the only sensible trailing action

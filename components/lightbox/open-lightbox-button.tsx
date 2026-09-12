@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { GalleryHorizontal, ExternalLink } from 'lucide-react';
+import { Images } from 'lucide-react';
 import {
   getLightboxGraphUrl,
   getLightboxImageUrl,
@@ -53,11 +53,7 @@ export function OpenLightboxButton({
   }
 
   const icon =
-    size === 'icon' ? (
-      <GalleryHorizontal className="h-4 w-4" />
-    ) : (
-      <ExternalLink className="h-4 w-4 mr-2" />
-    );
+    size === 'icon' ? <Images className="h-4 w-4" /> : <Images className="h-4 w-4 mr-2" />;
   const visibleLabel = size !== 'icon' ? resolvedLabel : undefined;
 
   return (

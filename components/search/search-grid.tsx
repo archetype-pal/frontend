@@ -105,6 +105,8 @@ type MediaGridCardProps = {
 };
 
 const SEARCH_EAGER_THUMBNAIL_COUNT = 6;
+const GRID_CARD_ACTION_CLASS =
+  'static h-7 w-7 rounded-md border border-border/80 bg-card/95 text-foreground opacity-100 scale-100 shadow-sm backdrop-blur-sm hover:bg-accent hover:text-accent-foreground hover:scale-100';
 
 type CardLabelPart = { plain?: string | null; formatted?: string };
 
@@ -241,14 +243,15 @@ const MediaGridCard = React.memo(function MediaGridCard({
         item={item}
         variant="ghost"
         size="icon"
-        className="h-7 w-7 bg-card/90 shadow-sm hover:bg-card"
+        className={GRID_CARD_ACTION_CLASS}
       />
       {collectable && (
         <CollectionStar
           itemId={item.id}
           itemType={itemType}
           item={item}
-          className={showThumbnail ? undefined : 'static'}
+          appearance="surface"
+          size={18}
         />
       )}
     </>
@@ -478,13 +481,14 @@ const ClauseGridCard = React.memo(function ClauseGridCard({
         item={collectionItem}
         variant="ghost"
         size="icon"
-        className="h-7 w-7 bg-card/90 shadow-sm hover:bg-card"
+        className={GRID_CARD_ACTION_CLASS}
       />
       <CollectionStar
         itemId={collectionItem.id}
         itemType="graph"
         item={collectionItem}
-        className={showThumbnail ? undefined : 'static'}
+        appearance="surface"
+        size={18}
       />
     </>
   );

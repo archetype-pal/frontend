@@ -90,7 +90,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
 
   return (
     <div className="flex min-h-[calc(100dvh-var(--site-header-h,0px))] flex-col bg-background">
-      <header className="relative z-10 flex shrink-0 flex-col gap-2.5 border-b border-border bg-card px-3 py-2.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-transparent after:via-accent/50 after:to-transparent sm:px-5">
+      {/* Keep this above the sticky table header (z-10) so search dropdowns can overlap results. */}
+      <header className="relative z-20 flex shrink-0 flex-col gap-2.5 border-b border-border bg-card px-3 py-2.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-transparent after:via-accent/50 after:to-transparent sm:px-5">
         <h1 className="sr-only">{t('srHeading', { typeLabel, count: s.resultCount })}</h1>
         {/* Row 1: result count · the single keyword search · view / sort / actions */}
         <div className="flex items-center gap-3 sm:gap-4">
