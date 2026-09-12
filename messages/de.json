@@ -2747,6 +2747,7 @@
       "addImages": "Bilder hinzufügen",
       "description": "Laden Sie Manuskript-Scans zu <strong>{part}</strong> hoch. Jede Datei wird verlustfrei in JP2 konvertiert und über IIIF bereitgestellt. Das Hochladen läuft im Hintergrund, sodass Sie während der Übertragung großer Dateien weiterarbeiten können.",
       "dropzone": "Scans hier ablegen oder klicken, um zu durchsuchen",
+      "folder": "Ordner unter uploads/",
       "locus": "Locus",
       "locusPlaceholder": "z. B. f.1r",
       "tags": "Tags",

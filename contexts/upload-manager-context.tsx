@@ -60,6 +60,7 @@ export interface UploadItem {
   historicalItemId: number;
   locus: string;
   tags: string;
+  subfolder?: string;
   status: UploadItemStatus;
   phase: UploadPhase | null;
   sentBytes: number;
@@ -78,6 +79,7 @@ export interface EnqueueTarget {
   itemPartId: number;
   itemPartLabel: string;
   historicalItemId: number;
+  subfolder?: string;
 }
 
 export interface ResumeResult {
@@ -147,6 +149,7 @@ function crumbFromItem(item: UploadItem, tabId: string, now: number): UploadBrea
     historicalItemId: item.historicalItemId,
     locus: item.locus,
     tags: item.tags,
+    subfolder: item.subfolder,
     sessionId: '',
     status: 'pending',
     tabId,
@@ -165,6 +168,7 @@ function itemFromCrumb(crumb: UploadBreadcrumb, over: Partial<UploadItem>): Uplo
     historicalItemId: crumb.historicalItemId,
     locus: crumb.locus,
     tags: crumb.tags,
+    subfolder: crumb.subfolder,
     status: 'pending',
     phase: null,
     sentBytes: 0,
@@ -366,7 +370,12 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           await uploadImageFile(
             authToken,
             item.file,
-            { item_part: item.itemPartId, locus: item.locus.trim(), tags: item.tags.trim() },
+            {
+              item_part: item.itemPartId,
+              locus: item.locus.trim(),
+              tags: item.tags.trim(),
+              subfolder: item.subfolder,
+            },
             {
               signal: controller.signal,
               onProgress: (p) => {
@@ -498,6 +507,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
         historicalItemId: target.historicalItemId,
         locus: f.locus,
         tags: f.tags,
+        subfolder: target.subfolder,
         status: 'pending',
         phase: null,
         sentBytes: 0,

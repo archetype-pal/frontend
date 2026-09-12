@@ -49,6 +49,7 @@ export interface CreateUploadSessionInput {
   size: number;
   locus?: string;
   tags?: string;
+  subfolder?: string;
 }
 
 const BASE = '/api/v1/uploads/sessions/';
@@ -348,7 +349,7 @@ export async function watchUploadSession(
 export async function uploadImageFile(
   token: string,
   file: File,
-  meta: { item_part: number; locus?: string; tags?: string },
+  meta: { item_part: number; locus?: string; tags?: string; subfolder?: string },
   options: UploadImageOptions = {}
 ): Promise<UploadSession> {
   const { onProgress, signal, pollIntervalMs = 2000, processTimeoutMs = 30 * 60 * 1000 } = options;
@@ -363,6 +364,7 @@ export async function uploadImageFile(
     size: file.size,
     locus: meta.locus,
     tags: meta.tags,
+    subfolder: meta.subfolder,
   });
 
   const plan = planChunks(total, session.chunk_size);
