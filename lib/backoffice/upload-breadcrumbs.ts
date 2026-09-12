@@ -35,6 +35,7 @@ export interface UploadBreadcrumb {
   historicalItemId: number;
   locus: string;
   tags: string;
+  subfolder?: string;
   /** Server UploadSession id, '' until the session exists. With it, recovery
    *  can ask the server for the true state instead of guessing. */
   sessionId: string;
@@ -89,6 +90,7 @@ function isValidBreadcrumb(x: unknown): x is UploadBreadcrumb {
     typeof c.historicalItemId === 'number' &&
     typeof c.locus === 'string' &&
     typeof c.tags === 'string' &&
+    (c.subfolder === undefined || typeof c.subfolder === 'string') &&
     typeof c.sessionId === 'string' &&
     typeof c.status === 'string' &&
     STATUSES.includes(c.status) &&

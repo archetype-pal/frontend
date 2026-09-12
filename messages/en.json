@@ -2747,6 +2747,7 @@
       "addImages": "Add images",
       "description": "Upload manuscript scans to <strong>{part}</strong>. Each file is converted to a lossless JP2 and served through IIIF. Uploading runs in the background, so you can keep working while large files transfer.",
       "dropzone": "Drop scans here or click to browse",
+      "folder": "Folder under uploads/",
       "locus": "Locus",
       "locusPlaceholder": "e.g. f.1r",
       "tags": "Tags",

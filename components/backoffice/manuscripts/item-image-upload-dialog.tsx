@@ -65,6 +65,7 @@ export function ItemImageUploadDialog({
   const { enqueue } = useUploadManager();
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<StagedFile[]>([]);
+  const [folder, setFolder] = useState('');
   const [dragOver, setDragOver] = useState(false);
 
   const addFiles = useCallback(
@@ -114,14 +115,17 @@ export function ItemImageUploadDialog({
   );
 
   const close = (next: boolean) => {
-    if (!next) setFiles([]);
+    if (!next) {
+      setFiles([]);
+      setFolder('');
+    }
     onOpenChange(next);
   };
 
   const startUpload = () => {
     enqueue(
       files.map((f) => ({ file: f.file, locus: f.locus.trim(), tags: f.tags.trim() })),
-      { itemPartId, itemPartLabel, historicalItemId }
+      { itemPartId, itemPartLabel, historicalItemId, subfolder: folder.trim() || undefined }
     );
     const count = files.length;
     toast.success(t('uploads.toast.queued', { count }), {
@@ -183,6 +187,19 @@ export function ItemImageUploadDialog({
                 if (e.target.files?.length) addFiles(e.target.files);
                 if (inputRef.current) inputRef.current.value = '';
               }}
+            />
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Label htmlFor="upload-folder" className="shrink-0 text-xs text-muted-foreground">
+              {t('uploads.folder')}
+            </Label>
+            <Input
+              id="upload-folder"
+              value={folder}
+              onChange={(e) => setFolder(e.target.value)}
+              placeholder={`item-part-${itemPartId}`}
+              className="h-7 text-xs"
             />
           </div>
 

@@ -2747,6 +2747,7 @@
       "addImages": "Ajouter des images",
       "description": "Téléversez des numérisations de manuscrit vers <strong>{part}</strong>. Chaque fichier est converti en JP2 sans perte et diffusé via IIIF. Le téléversement se poursuit en arrière-plan : vous pouvez continuer à travailler pendant le transfert de fichiers volumineux.",
       "dropzone": "Déposez les numérisations ici ou cliquez pour parcourir",
+      "folder": "Dossier sous uploads/",
       "locus": "Locus",
       "locusPlaceholder": "ex. f.1r",
       "tags": "Étiquettes",
