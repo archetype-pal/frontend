@@ -30,6 +30,7 @@ import type { CollectionItem } from '@/lib/collection-storage';
 import { getImageDetailUrl, getGraphDetailUrl } from '@/lib/media-url';
 import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
+import { stripHtmlToPlainText } from '@/lib/sanitize-html';
 
 export type Column<T> = {
   /** Stable identifier — used for visibleColumns matching and as fallback display text. */
@@ -86,6 +87,11 @@ const shelfmarkColumn = <T extends { shelfmark: string }>(): Column<T> =>
     undefined,
     'fieldShelfmark'
   );
+
+function handDescriptionPreview(description: string | undefined): string {
+  const preview = stripHtmlToPlainText(description ?? '');
+  return preview || '—';
+}
 
 const documentTypeColumn = <T extends { type: string }>(): Column<T> =>
   makeColumn('Document Type', (item) => item.type, 'type_exact');
@@ -258,7 +264,7 @@ export const COLUMNS = {
       accessor: (h) => h.catalogue_numbers,
       sortKey: 'catalogue_numbers_exact',
     },
-    makeColumn('Description', (h: HandListItem) => h.description ?? '—'),
+    makeColumn('Description', (h: HandListItem) => handDescriptionPreview(h.description)),
   ],
 
   graphs: [

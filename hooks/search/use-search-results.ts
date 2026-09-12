@@ -5,32 +5,27 @@ import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-quer
 import type { ResultType } from '@/lib/search-types';
 import { type QueryState, withOffset } from '@/lib/search-query';
 import {
-  buildSearchRequestUrl,
   EMPTY_SEARCH_RESULT,
-  fetchFacetsAndResults,
   getSearchBaseFacetUrl,
-  searchKeys,
+  getSearchResultsQueryOptions,
   type SearchResult,
 } from '@/utils/fetch-facets';
 
 export function useSearchResults(resultType: ResultType, queryState: QueryState, keyword: string) {
   const baseFacetURL = useMemo(() => getSearchBaseFacetUrl(resultType), [resultType]);
 
-  const apiUrl = useMemo(
-    () => buildSearchRequestUrl(resultType, queryState, keyword),
+  const searchQuery = useMemo(
+    () => getSearchResultsQueryOptions(resultType, queryState, keyword),
     [resultType, queryState, keyword]
   );
 
   const queryClient = useQueryClient();
 
   const query = useQuery<SearchResult>({
-    queryKey: searchKeys.facets(resultType, apiUrl),
-    queryFn: async ({ signal }) => {
-      const response = await fetchFacetsAndResults(resultType, apiUrl, signal);
-      return response ?? EMPTY_SEARCH_RESULT;
-    },
-    enabled: !!apiUrl,
-    staleTime: 10_000,
+    queryKey: searchQuery.queryKey,
+    queryFn: searchQuery.queryFn,
+    enabled: !!searchQuery.apiUrl,
+    staleTime: searchQuery.staleTime,
     refetchOnWindowFocus: false,
     placeholderData: keepPreviousData,
   });
@@ -52,21 +47,17 @@ export function useSearchResults(resultType: ResultType, queryState: QueryState,
     if (!hasNextPage || !data) return;
     const nextOffset = data.offset + data.limit;
     const nextState = withOffset(queryState, nextOffset);
-    const nextUrl = buildSearchRequestUrl(resultType, nextState, keyword);
-    const nextKey = searchKeys.facets(resultType, nextUrl);
+    const nextQuery = getSearchResultsQueryOptions(resultType, nextState, keyword);
     queryClient.prefetchQuery({
-      queryKey: nextKey,
-      queryFn: async ({ signal }) => {
-        const response = await fetchFacetsAndResults(resultType, nextUrl, signal);
-        return response ?? EMPTY_SEARCH_RESULT;
-      },
-      staleTime: 10_000,
+      queryKey: nextQuery.queryKey,
+      queryFn: nextQuery.queryFn,
+      staleTime: nextQuery.staleTime,
     });
   }, [hasNextPage, data, queryState, resultType, keyword, queryClient]);
 
   return {
     baseFacetURL,
-    apiUrl,
+    apiUrl: searchQuery.apiUrl,
     data: data ?? EMPTY_SEARCH_RESULT,
     dataResultType,
     isFetching: query.isFetching,

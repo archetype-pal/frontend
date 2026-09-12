@@ -1,12 +1,13 @@
 import { getIiifBaseUrl } from '@/utils/iiif';
 import { fetchAllographs, fetchManuscript, fetchManuscriptImage } from '@/services/manuscripts';
 import { fetchAnnotationsForImage } from '@/services/annotations';
+import { browserSafeIiifUrl, isDbId } from '@/lib/annotation-popup-utils';
 
+import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
 import type { Allograph } from '@/types/allographs';
+import type { A9sWithMeta } from '@/types/annotation-viewer';
 import type { Manuscript } from '@/types/manuscript';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
-
-import { browserSafeIiifUrl } from '@/lib/annotation-popup-utils';
 
 export async function fetchIiifImageHeight(iiifImage: string): Promise<number> {
   const baseUrl = browserSafeIiifUrl(getIiifBaseUrl(iiifImage));
@@ -31,6 +32,22 @@ export async function fetchImageAllographIds(itemImageId: string): Promise<numbe
       graphs.map((graph) => graph.allograph).filter((id): id is number => typeof id === 'number')
     )
   );
+}
+
+export function getSavedImageAllographIds(annotations: A9sAnnotation[]): number[] {
+  const ids = new Set<number>();
+
+  for (const annotation of annotations) {
+    if (!isDbId(annotation.id)) continue;
+
+    const meta = (annotation as A9sWithMeta)._meta;
+    if (meta?.annotationType === 'editorial' || meta?.annotationType === 'text') continue;
+    if (typeof meta?.allographId !== 'number') continue;
+
+    ids.add(meta.allographId);
+  }
+
+  return Array.from(ids);
 }
 
 export async function fetchManuscriptViewerBaseData(imageId: string): Promise<{

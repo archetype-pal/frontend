@@ -91,6 +91,7 @@ export type ViewerApi = {
   enableDelete: () => void;
   toggleAnnotations: (visible: boolean) => void;
   getAnnotations: () => Annotation[];
+  replaceAnnotations: (annotations: Annotation[]) => void;
   getSelectedAnnotationIds?: () => string[];
   clearSelectedAnnotationIds?: () => void;
   centerOnAnnotation?: (id: string) => void;
@@ -1291,6 +1292,18 @@ export default function ManuscriptAnnotorious({
             },
 
             getAnnotations: () => annoRef.current?.getAnnotations?.() ?? [],
+
+            replaceAnnotations: (annotations: Annotation[]) => {
+              const anno = annoRef.current;
+              if (!anno) return;
+
+              selectedDisplayIdRef.current = null;
+              multiSelectedIdsRef.current.clear();
+              emitSelectionIdsChange();
+              anno.setAnnotations(annotations);
+              queueSyncAnnotationClasses();
+              onSelectRef.current?.(null);
+            },
 
             getSelectedAnnotationIds: () => Array.from(multiSelectedIdsRef.current),
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { getFacetOrder, type ResultType } from '@/lib/search-types';
@@ -21,6 +21,26 @@ function allFieldsFor(type: ResultType): FieldVisibility {
   return {
     visibleColumns: [...COLUMN_HEADERS_BY_TYPE[type]],
     visibleFacets: [...getFacetOrder(type)],
+  };
+}
+
+function filterAllowed(values: string[], allowed: string[]): string[] {
+  const allowedSet = new Set(allowed);
+  return values.filter((value) => allowedSet.has(value));
+}
+
+function normalizeConfigFields(type: ResultType, value: FieldVisibility): FieldVisibility {
+  const all = allFieldsFor(type);
+  return {
+    visibleColumns: filterAllowed(value.visibleColumns, all.visibleColumns),
+    visibleFacets: filterAllowed(value.visibleFacets, all.visibleFacets),
+  };
+}
+
+function constrainFields(value: FieldVisibility, allowed: FieldVisibility): FieldVisibility {
+  return {
+    visibleColumns: filterAllowed(value.visibleColumns, allowed.visibleColumns),
+    visibleFacets: filterAllowed(value.visibleFacets, allowed.visibleFacets),
   };
 }
 
@@ -53,9 +73,14 @@ export function useSearchVisibility(type: ResultType) {
   const { token } = useAuth();
   const siteFeatures = useSiteFeatures();
   const isResearcher = Boolean(token);
+  const categoryConfig = siteFeatures.getCategoryConfig(type);
+  const allowed = useMemo(
+    () => normalizeConfigFields(type, categoryConfig),
+    [categoryConfig, type]
+  );
 
-  const [researcherValue, setResearcherValue] = useState<FieldVisibility>(() =>
-    isResearcher ? (readStored(type) ?? allFieldsFor(type)) : allFieldsFor(type)
+  const [researcherValue, setResearcherValue] = useState<FieldVisibility | null>(() =>
+    isResearcher ? readStored(type) : null
   );
 
   // Re-sync when auth state or result type changes (e.g. switching tabs, login/logout),
@@ -64,45 +89,48 @@ export function useSearchVisibility(type: ResultType) {
   const currentKey = `${isResearcher}:${type}`;
   if (prevKey !== currentKey) {
     setPrevKey(currentKey);
-    setResearcherValue(
-      isResearcher ? (readStored(type) ?? allFieldsFor(type)) : allFieldsFor(type)
-    );
+    setResearcherValue(isResearcher ? readStored(type) : null);
   }
+
+  const visible = researcherValue ? constrainFields(researcherValue, allowed) : allowed;
 
   const setVisibleColumns = useCallback(
     (next: string[]) => {
       setResearcherValue((prev) => {
-        const updated = { ...prev, visibleColumns: next };
+        const current = prev ? constrainFields(prev, allowed) : allowed;
+        const updated = { ...current, visibleColumns: filterAllowed(next, allowed.visibleColumns) };
         writeStored(type, updated);
         return updated;
       });
     },
-    [type]
+    [allowed, type]
   );
 
   const setVisibleFacets = useCallback(
     (next: string[]) => {
       setResearcherValue((prev) => {
-        const updated = { ...prev, visibleFacets: next };
+        const current = prev ? constrainFields(prev, allowed) : allowed;
+        const updated = { ...current, visibleFacets: filterAllowed(next, allowed.visibleFacets) };
         writeStored(type, updated);
         return updated;
       });
     },
-    [type]
+    [allowed, type]
   );
 
   const resetToDefault = useCallback(() => {
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(storageKey(type));
     }
-    setResearcherValue(allFieldsFor(type));
+    setResearcherValue(null);
   }, [type]);
 
   if (!isResearcher) {
-    const guest = siteFeatures.getCategoryConfig(type);
     return {
-      visibleColumns: guest.visibleColumns,
-      visibleFacets: guest.visibleFacets,
+      visibleColumns: allowed.visibleColumns,
+      visibleFacets: allowed.visibleFacets,
+      availableColumns: allowed.visibleColumns,
+      availableFacets: allowed.visibleFacets,
       setVisibleColumns,
       setVisibleFacets,
       resetToDefault,
@@ -111,8 +139,10 @@ export function useSearchVisibility(type: ResultType) {
   }
 
   return {
-    visibleColumns: researcherValue.visibleColumns,
-    visibleFacets: researcherValue.visibleFacets,
+    visibleColumns: visible.visibleColumns,
+    visibleFacets: visible.visibleFacets,
+    availableColumns: allowed.visibleColumns,
+    availableFacets: allowed.visibleFacets,
     setVisibleColumns,
     setVisibleFacets,
     resetToDefault,

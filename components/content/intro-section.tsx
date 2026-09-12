@@ -9,6 +9,8 @@ import { useTranslations } from 'next-intl';
 import type { CarouselItem } from '@/types/backoffice';
 import { fetchCarouselItems, getCarouselImageUrl } from '@/utils/api';
 import { sanitizeHtml, stripHtml } from '@/lib/sanitize-html';
+import { useSiteFeatures } from '@/contexts/site-features-context';
+import { searchHref } from '@/lib/search-routing';
 
 const ABOUT_MODELS_OF_AUTHORITY_PATH = '/about/about-models-of-authority';
 
@@ -19,6 +21,10 @@ function normalizeCarouselLink(url: string | null | undefined): string | null {
 
 export default function IntroSection() {
   const t = useTranslations('content');
+  const { enabledCategories, isSectionEnabled } = useSiteFeatures();
+  const defaultSearchType = enabledCategories[0] ?? null;
+  const defaultSearchHref = defaultSearchType ? searchHref(defaultSearchType) : '/not-found';
+  const searchAvailable = isSectionEnabled('search') && defaultSearchType !== null;
   const [currentImage, setCurrentImage] = useState(0);
   const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);
   const hasLoadedRef = useRef(false);
@@ -87,6 +93,37 @@ export default function IntroSection() {
   const hasImages = !error && carouselItems.length > 0;
   const currentItem = hasImages ? carouselItems[currentImage] : null;
   const currentItemUrl = normalizeCarouselLink(currentItem?.url);
+  const exploreCards = [
+    searchAvailable &&
+      enabledCategories.includes('manuscripts') && {
+        title: t('intro.charterManuscripts'),
+        desc: t('intro.charterManuscriptsDesc'),
+        href: searchHref('manuscripts'),
+        delay: 'delay-100',
+        accent: 'var(--primary)',
+      },
+    searchAvailable &&
+      enabledCategories.includes('hands') && {
+        title: t('intro.scribalHands'),
+        desc: t('intro.scribalHandsDesc'),
+        href: searchHref('hands'),
+        delay: 'delay-200',
+        accent: 'hsl(38 92% 50%)',
+      },
+    {
+      title: t('intro.historicalContext'),
+      desc: t('intro.historicalContextDesc'),
+      href: '/about/historical-context',
+      delay: 'delay-300',
+      accent: 'hsl(25 15% 15%)',
+    },
+  ].filter(Boolean) as Array<{
+    title: string;
+    desc: string;
+    href: string;
+    delay: string;
+    accent: string;
+  }>;
 
   return (
     <div>
@@ -123,16 +160,18 @@ export default function IntroSection() {
 
                 {/* CTAs */}
                 <div className="animate-fade-up delay-400 flex flex-col sm:flex-row gap-3 mt-8">
-                  <Button
-                    size="lg"
-                    className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold px-7 h-11 shadow-lg shadow-accent/20"
-                    asChild
-                  >
-                    <Link href="/search/manuscripts">
-                      <Search className="h-4 w-4 mr-2" />
-                      {t('intro.searchCollection')}
-                    </Link>
-                  </Button>
+                  {searchAvailable && (
+                    <Button
+                      size="lg"
+                      className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold px-7 h-11 shadow-lg shadow-accent/20"
+                      asChild
+                    >
+                      <Link href={defaultSearchHref}>
+                        <Search className="h-4 w-4 mr-2" />
+                        {t('intro.searchCollection')}
+                      </Link>
+                    </Button>
+                  )}
                   <Button
                     size="lg"
                     asChild
@@ -325,29 +364,7 @@ export default function IntroSection() {
             {t('intro.discoverCollection')}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                title: t('intro.charterManuscripts'),
-                desc: t('intro.charterManuscriptsDesc'),
-                href: '/search/manuscripts',
-                delay: 'delay-100',
-                accent: 'var(--primary)',
-              },
-              {
-                title: t('intro.scribalHands'),
-                desc: t('intro.scribalHandsDesc'),
-                href: '/search/hands',
-                delay: 'delay-200',
-                accent: 'hsl(38 92% 50%)',
-              },
-              {
-                title: t('intro.historicalContext'),
-                desc: t('intro.historicalContextDesc'),
-                href: '/about/historical-context',
-                delay: 'delay-300',
-                accent: 'hsl(25 15% 15%)',
-              },
-            ].map((card) => (
+            {exploreCards.map((card) => (
               <Link
                 key={card.href}
                 href={card.href}
