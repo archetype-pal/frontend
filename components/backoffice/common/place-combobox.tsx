@@ -54,7 +54,7 @@ export function PlaceCombobox({ value, onChange, selectedLabel, className }: Pla
 
   const places: BackofficePlace[] = placesData ?? [];
   const selected = places.find((p) => p.id === value);
-  const displayValue = value != null ? selectedLabel ?? selected?.name ?? null : null;
+  const displayValue = value != null ? (selectedLabel ?? selected?.name ?? null) : null;
 
   const createMut = useMutation({
     mutationFn: () => createPlace(token!, { name: newName.trim() }),
@@ -87,7 +87,9 @@ export function PlaceCombobox({ value, onChange, selectedLabel, className }: Pla
             className
           )}
         >
-          <span className="truncate">{displayValue ?? t('handsDetail.selectPlacePlaceholder')}</span>
+          <span className="truncate">
+            {displayValue ?? t('handsDetail.selectPlacePlaceholder')}
+          </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -135,7 +137,9 @@ export function PlaceCombobox({ value, onChange, selectedLabel, className }: Pla
                     setOpen(false);
                   }}
                 >
-                  <Check className={cn('mr-2 h-4 w-4', value == null ? 'opacity-100' : 'opacity-0')} />
+                  <Check
+                    className={cn('mr-2 h-4 w-4', value == null ? 'opacity-100' : 'opacity-0')}
+                  />
                   <span className="text-muted-foreground">{t('handsDetail.selectNoPlace')}</span>
                 </CommandItem>
                 {places.map((p) => (

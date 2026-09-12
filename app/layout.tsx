@@ -92,11 +92,7 @@ export default async function RootLayout({
   const siteThemeVars = getSiteThemeVars();
 
   return (
-    <html
-      lang={locale}
-      suppressHydrationWarning
-      style={siteThemeVars as React.CSSProperties}
-    >
+    <html lang={locale} suppressHydrationWarning style={siteThemeVars as React.CSSProperties}>
       <body
         data-csp-nonce={nonce}
         className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${cormorant.variable} ${junicode.variable} antialiased`}
