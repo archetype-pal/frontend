@@ -63,12 +63,22 @@ export function ItemImageEditDialog({
     });
 
   const saveMut = useMutation({
-    mutationFn: () =>
-      updateItemImage(token!, image.id, {
-        locus,
-        tags,
-        image: imagePath || null,
-      }),
+    mutationFn: () => {
+      // The backend `image` field is path-string-only and non-nullable (raw
+      // bytes must go through the upload pipeline), so clearing it is not a
+      // supported operation. Say so instead of dropping it from the payload
+      // and reporting success for a change that never happened — the editor
+      // watches the preview blank and would believe the row was unlinked.
+      const trimmed = imagePath.trim();
+      if (!trimmed && (image.image ?? '')) {
+        return Promise.reject(new Error(t('manuscriptsDetail.imagePathRequired')));
+      }
+      const payload: { locus: string; tags: string; image?: string } = { locus, tags };
+      // Send `image` only when actually repointed; omitting it keeps
+      // locus/tags-only edits valid.
+      if (trimmed && trimmed !== (image.image ?? '')) payload.image = trimmed;
+      return updateItemImage(token!, image.id, payload);
+    },
     onSuccess: () => {
       toast.success(t('manuscriptsDetail.imageUpdated'));
       invalidate();
