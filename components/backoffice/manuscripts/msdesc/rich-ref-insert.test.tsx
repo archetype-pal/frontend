@@ -5,9 +5,21 @@ import StarterKit from '@tiptap/starter-kit';
 
 import { docToTei, teiToDoc, type PMDoc } from '@/lib/tei-prosemirror';
 import { teiEditorExtensions, wrapTei } from '@/lib/tei-tiptap';
-import { externalRef, personRefFromScribe, refAttrs } from '@/lib/tei-ref-picker';
+import {
+  externalRef,
+  manuscriptRefFromItemPart,
+  personRefFromScribe,
+  placeRef,
+  refAttrs,
+} from '@/lib/tei-ref-picker';
 import type { ResourceRef } from '@/lib/tei-ref';
-import { insertRefIntoLeaf, leafIsRichRepresentable, refIsInnermost } from './msdesc-leaf-editor';
+import {
+  canUnlinkHere,
+  insertRefIntoLeaf,
+  leafIsRichRepresentable,
+  refIsInnermost,
+  removeLinkAtCaret,
+} from './msdesc-leaf-editor';
 
 /**
  * The Rich-mode `<ref>` insertion contract (roadmap 4.3): `insertRefIntoLeaf` —
@@ -62,6 +74,8 @@ function makeEditor(tei: string): Editor {
 const tei = (editor: Editor): string => docToTei(editor.getJSON() as unknown as PMDoc);
 const JOHN = personRefFromScribe({ id: 1, name: 'John' });
 const JOHN_OPEN = '<ref type="person" key="person_1" target="/scribes/1">';
+const COTTON = manuscriptRefFromItemPart({ id: 228, display_label: 'Cotton' });
+const COTTON_OPEN = '<ref type="manuscript" target="/manuscripts/228">';
 
 describe('Rich-mode <ref> insertion via wrapTei', () => {
   it('wraps the selection in a <ref> that round-trips through the leaf gate', () => {
@@ -162,13 +176,76 @@ describe('insertRefIntoLeaf — the leaf editor handlePick contract', () => {
 
   it('keeps a label inserted inside an element inside that element', () => {
     // `tr.insertText` inherits the marks at the caret; an unmarked node would
-    // split <persName> into two runs around the inserted text.
+    // split <persName> into two runs around the inserted text. Uses a MANUSCRIPT
+    // ref so the kinds disagree and this takes the wrapping path — a person ref
+    // here would be stamped onto the <persName> instead (see below).
     const editor = makeEditor('<p>Granted by <persName>John</persName>.</p>');
     editor.commands.setTextSelection({ from: 14, to: 14 }); // inside "John"
-    expect(insertRefIntoLeaf(editor, { ...JOHN, label: 'X' })).toBe('ok');
+    expect(insertRefIntoLeaf(editor, { ...COTTON, label: 'X' })).toBe('ok');
     const out = tei(editor);
     expect(out.match(/<persName>/g)?.length ?? 0).toBe(1);
-    expect(out).toBe(`<p>Granted by <persName>Jo${JOHN_OPEN}X</ref>hn</persName>.</p>`);
+    expect(out).toBe(`<p>Granted by <persName>Jo${COTTON_OPEN}X</ref>hn</persName>.</p>`);
+    editor.destroy();
+  });
+
+  it('stamps a person link ONTO a persName rather than nesting a ref in it', () => {
+    // docs/tei.md §3.4: where the phrase already IS the named entity, the link
+    // belongs on it. One <a> at render time instead of a degraded inner anchor.
+    const editor = makeEditor('<p>Granted by <persName>John</persName>.</p>');
+    editor.commands.setTextSelection({ from: 14, to: 14 });
+    expect(insertRefIntoLeaf(editor, JOHN)).toBe('ok');
+    expect(tei(editor)).toBe(
+      '<p>Granted by <persName key="person_1" target="/scribes/1">John</persName>.</p>'
+    );
+    editor.destroy();
+  });
+
+  it('stamps a place link onto a placeName', () => {
+    const editor = makeEditor('<p>at <placeName>Melrose</placeName>.</p>');
+    editor.commands.setTextSelection({ from: 6, to: 6 });
+    expect(insertRefIntoLeaf(editor, placeRef('Melrose'))).toBe('ok');
+    expect(tei(editor)).toContain('<placeName target="/search/');
+    expect(tei(editor)).not.toContain('<ref');
+    editor.destroy();
+  });
+
+  it('does NOT stamp when the kinds disagree — a person is not a manuscript', () => {
+    const editor = makeEditor('<p>Granted by <persName>John</persName>.</p>');
+    // "John" spans 12..16; 14..18 would straddle the element and be refused.
+    expect(editor.state.doc.textBetween(12, 16)).toBe('John');
+    editor.commands.setTextSelection({ from: 12, to: 16 });
+    expect(insertRefIntoLeaf(editor, COTTON)).toBe('ok');
+    const out = tei(editor);
+    expect(out).toContain('<persName>');
+    expect(out).toContain('<ref type="manuscript"');
+    editor.destroy();
+  });
+
+  it('unlink strips a stamp and KEEPS the entity', () => {
+    const editor = makeEditor(
+      '<p>Granted by <persName key="person_1" target="/scribes/1">John</persName>.</p>'
+    );
+    editor.commands.setTextSelection({ from: 14, to: 14 });
+    expect(canUnlinkHere(editor)).toBe(true);
+    removeLinkAtCaret(editor);
+    // unwrapTei would have deleted the <persName> along with the link.
+    expect(tei(editor)).toBe('<p>Granted by <persName>John</persName>.</p>');
+    editor.destroy();
+  });
+
+  it('unlink still unwraps a real <ref>', () => {
+    const editor = makeEditor(`<p>see ${JOHN_OPEN}John</ref>.</p>`);
+    editor.commands.setTextSelection({ from: 6, to: 6 });
+    expect(canUnlinkHere(editor)).toBe(true);
+    removeLinkAtCaret(editor);
+    expect(tei(editor)).toBe('<p>see John.</p>');
+    editor.destroy();
+  });
+
+  it('offers no unlink on plain prose', () => {
+    const editor = makeEditor('<p>plain</p>');
+    editor.commands.setTextSelection({ from: 3, to: 3 });
+    expect(canUnlinkHere(editor)).toBe(false);
     editor.destroy();
   });
 

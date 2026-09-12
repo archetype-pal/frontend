@@ -3,9 +3,11 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { PanelLeftClose, PanelLeft, LogOut, User, Keyboard } from 'lucide-react';
+import { PanelLeftClose, PanelLeft, LogOut, User, Keyboard, ExternalLink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
+import { useUploadManager } from '@/contexts/upload-manager-context';
+import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Breadcrumb,
@@ -22,12 +24,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
 import { useModelLabels } from '@/contexts/model-labels-context';
 
 interface BackofficeHeaderProps {
   collapsed: boolean;
   onToggleSidebar: () => void;
+  onOpenCommandPalette: () => void;
+  onOpenKeyboardShortcuts: () => void;
 }
 
 function useBreadcrumbs(segmentLabels: Record<string, string>) {
@@ -66,9 +71,42 @@ function useBreadcrumbs(segmentLabels: Record<string, string>) {
   });
 }
 
-export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeaderProps) {
+export function BackofficeHeader({
+  collapsed,
+  onToggleSidebar,
+  onOpenCommandPalette,
+  onOpenKeyboardShortcuts,
+}: BackofficeHeaderProps) {
   const t = useTranslations('backoffice');
   const { user, logout } = useAuth();
+  // Signing out kills the token, and the server-side session of anything still
+  // transferring is left to stale-cleanup. Warn rather than lose work silently.
+  // This header lives inside UploadManagerProvider, so it can ask directly —
+  // no need to teach the auth context about uploads.
+  const { activeCount, cancelAll } = useUploadManager();
+  const [confirmSignOut, setConfirmSignOut] = React.useState(false);
+  const [signingOut, setSigningOut] = React.useState(false);
+  const requestSignOut = React.useCallback(() => {
+    if (activeCount > 0) setConfirmSignOut(true);
+    else logout();
+  }, [activeCount, logout]);
+  // Free the server sessions BEFORE signing out. Logout revokes the token, so
+  // afterwards the DELETEs would 401 and each abandoned session would keep its
+  // filename reserved against other editors until stale-cleanup is run by hand.
+  const signOutAfterFreeingSessions = React.useCallback(async () => {
+    setSigningOut(true);
+    try {
+      await cancelAll();
+    } catch {
+      // Best-effort tidying. Swallowed rather than rethrown: ConfirmDialog
+      // calls onConfirm without awaiting it, so a rejection here would escape
+      // as an unhandled promise rejection — and a failure to free the sessions
+      // must not trap the editor in a session they asked to leave.
+    } finally {
+      setSigningOut(false);
+      logout();
+    }
+  }, [cancelAll, logout]);
   const { getLabel, getPluralLabel } = useModelLabels();
   const segmentLabels: Record<string, string> = React.useMemo(
     () => ({
@@ -124,16 +162,45 @@ export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeade
         </BreadcrumbList>
       </Breadcrumb>
 
-      {/* Keyboard shortcut hints */}
       <div className="hidden sm:flex items-center gap-1.5">
-        <kbd className="inline-flex items-center gap-1 rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-          <Keyboard className="h-3 w-3" />
-          <span>Ctrl+K</span>
-        </kbd>
-        <kbd className="inline-flex items-center rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-          ?
-        </kbd>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-label={t('keyboardShortcuts.openCommandPaletteHint')}
+              onClick={onOpenCommandPalette}
+              className="inline-flex items-center gap-1 rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:border-accent hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <Keyboard className="h-3 w-3" aria-hidden="true" />
+              <span>Ctrl+K</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            {t('keyboardShortcuts.openCommandPaletteHint')}
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-label={t('keyboardShortcuts.showShortcutsHint')}
+              onClick={onOpenKeyboardShortcuts}
+              className="inline-flex items-center rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:border-accent hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              ?
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{t('keyboardShortcuts.showShortcutsHint')}</TooltipContent>
+        </Tooltip>
       </div>
+
+      <Button asChild variant="ghost" size="sm" className="gap-2 text-xs">
+        <Link href="/" aria-label={t('header.viewPublicSite')} title={t('header.viewPublicSite')}>
+          <ExternalLink className="h-4 w-4" />
+          <span className="hidden md:inline">{t('header.viewPublicSite')}</span>
+        </Link>
+      </Button>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -149,12 +216,22 @@ export function BackofficeHeader({ collapsed, onToggleSidebar }: BackofficeHeade
             {user?.email}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={logout} className="text-destructive">
+          <DropdownMenuItem onClick={requestSignOut} className="text-destructive">
             <LogOut className="mr-2 h-4 w-4" />
             {t('header.signOut')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ConfirmDialog
+        open={confirmSignOut}
+        onOpenChange={setConfirmSignOut}
+        title={t('uploads.signOutTitle', { count: activeCount })}
+        description={t('uploads.signOutDescription')}
+        confirmLabel={t('uploads.signOutConfirm')}
+        loading={signingOut}
+        onConfirm={signOutAfterFreeingSessions}
+      />
     </header>
   );
 }

@@ -127,6 +127,7 @@ export default function PaginatedPublications({
                       date={article.published_at ?? ''}
                       excerpt={article.preview}
                       slug={`${basePath}/${article.slug}`}
+                      keywords={article.keywords}
                       commentsCount={article.number_of_comments}
                       showShareBtns={false}
                       showReadMoreBtn={true}

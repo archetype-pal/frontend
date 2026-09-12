@@ -241,3 +241,30 @@ export function sanitizeHtml(dirty: string, options: SanitizeOptions = {}): stri
     DOMPurify.removeHook('afterSanitizeAttributes', iframeHook);
   }
 }
+
+/**
+ * Strip all HTML tags, returning plain text.
+ * Useful for alt attributes, tooltips, or plain text contexts.
+ */
+export function stripHtml(dirty: string): string {
+  if (!dirty) return '';
+  return DOMPurify.sanitize(dirty, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }).trim();
+}
+
+/**
+ * Strip all HTML tags and return decoded, whitespace-normalized plain text.
+ * Use this for visible text previews where entities like &nbsp; should not show.
+ */
+export function stripHtmlToPlainText(dirty: string): string {
+  if (!dirty) return '';
+  const sanitized = DOMPurify.sanitize(dirty, {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+    RETURN_DOM_FRAGMENT: true,
+  }) as unknown;
+  const text =
+    typeof sanitized === 'string'
+      ? sanitized
+      : ((sanitized as { textContent?: string | null }).textContent ?? '');
+  return text.replace(/\s+/g, ' ').trim();
+}

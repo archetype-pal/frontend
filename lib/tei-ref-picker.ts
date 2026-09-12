@@ -27,15 +27,16 @@ import {
   type ResourceRef,
 } from '@/lib/tei-ref';
 import type { SavedSearch } from '@/lib/saved-searches';
-import type { ItemPartHit, PlaceHit, ScribeHit } from '@/services/tei-ref-search';
+import type { ItemImageHit, ItemPartHit, PlaceHit, ScribeHit } from '@/services/tei-ref-search';
 
 /** The resource kinds backed by a public search index (the picker's query tabs). */
-export type SearchableRefKind = 'person' | 'place' | 'manuscript';
+export type SearchableRefKind = 'person' | 'place' | 'manuscript' | 'image';
 
 /** The public search-index segment backing a searchable resource kind. */
 export const REF_INDEX_SEGMENT: Record<SearchableRefKind, string> = {
   person: 'scribes',
   manuscript: 'item-parts',
+  image: 'item-images',
   place: 'places',
 };
 
@@ -44,20 +45,20 @@ export function isSearchableRefKind(kind: ResourceKind): kind is SearchableRefKi
   return Object.hasOwn(REF_INDEX_SEGMENT, kind);
 }
 
-/** The five v1 resource tabs, in display order (no Work — deferred to v2). */
+/** The resource tabs, in display order (no Work — deferred to v2). */
 export const REF_PICKER_KINDS: readonly ResourceKind[] = [
   'person',
   'place',
   'manuscript',
+  'image',
   'search',
   'external',
 ];
 
 /**
- * The result tab a place link lands on. The site has NO bare `/search/` route
- * (`app/(site)/search/` holds only `[type]/page.tsx`), so the type segment is
- * mandatory; `manuscripts` is the default landing tab used by the header search
- * and the not-found page.
+ * The legacy result tab a persisted place link lands on. Current generic search
+ * entry points choose the first enabled category, and the search route/proxy
+ * redirect this link if the Manuscripts category is disabled.
  */
 export const PLACE_SEARCH_RESULT_TYPE = 'manuscripts';
 
@@ -65,9 +66,8 @@ export const PLACE_SEARCH_RESULT_TYPE = 'manuscripts';
  * A `@target`-only site-search link for a place name (`§8.3`: Place has no
  * model, so it links to a keyword search, not a detail route).
  *
- * The shape must match the site's own search URLs — `/search/{type}?keyword=…`
- * (`components/layout/header.tsx`, `components/search/search-keyword-bar.tsx`).
- * The search page reads `keyword`, never `q`, and a bare `/search/` 404s.
+ * The shape must match the site's typed search URLs —
+ * `/search/{type}?keyword=…`. The search page reads `keyword`, never `q`.
  */
 export function placeSearchTarget(query: string): string {
   return `/search/${PLACE_SEARCH_RESULT_TYPE}?keyword=${encodeURIComponent(query.trim())}`;
@@ -89,6 +89,37 @@ export function personRefFromScribe(hit: ScribeHit): ResourceRef {
 export function manuscriptRefFromItemPart(hit: ItemPartHit): ResourceRef {
   const label = (hit.display_label ?? hit.shelfmark ?? '').trim() || `#${hit.id}`;
   return { kind: 'manuscript', id: hit.id, target: `/manuscripts/${hit.id}`, label };
+}
+
+/**
+ * Item-image hits → Image refs (`/manuscripts/{part}/images/{image}`).
+ *
+ * `@target`-only, deliberately: an image needs TWO ids to address, and a bare
+ * `@key` has room for one — an `image_{id}` key could never resolve, so it would
+ * render as unresolved plain text. Hits without an `item_part` are dropped
+ * rather than linked to a guessed path.
+ *
+ * The label combines the part's label with the folio because `display_label` is
+ * the ITEM PART's, shared by every image of a manuscript — without the locus the
+ * picker shows N identical rows.
+ */
+export function imageRefsFromHits(hits: ItemImageHit[]): ResourceRef[] {
+  const refs: ResourceRef[] = [];
+  for (const hit of hits) {
+    if (hit.item_part === undefined || hit.item_part === null) continue;
+    const base = (hit.display_label ?? hit.shelfmark ?? '').trim();
+    const locus = (hit.locus ?? '').trim();
+    const label = [base, locus].filter(Boolean).join(', ') || `#${hit.id}`;
+    refs.push({
+      kind: 'image',
+      // The IMAGE id: the picker keys its rows by `kind:id`, so the part id
+      // would collapse every folio of one manuscript into a single row.
+      id: hit.id,
+      target: `/manuscripts/${hit.item_part}/images/${hit.id}`,
+      label,
+    });
+  }
+  return refs;
 }
 
 /** A place name → a Place ref (search-link target, no `@key`). */

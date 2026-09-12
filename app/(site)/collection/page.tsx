@@ -35,7 +35,7 @@ import { useCollectionItemSelection } from '@/hooks/collection/use-collection-it
 import { getImageDetailUrl as buildImageDetailUrl } from '@/lib/media-url';
 import { cn } from '@/lib/utils';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
-import { getCollectionAllographLabel } from '@/lib/collection-display';
+import { getCollectionGridCardLabels } from '@/lib/collection-display';
 import {
   COLLECTION_SHARE_QUERY_PARAM,
   parseAnonymousCollectionShareParam,
@@ -53,6 +53,9 @@ import {
 } from '@/hooks/collection/use-collection-view-state';
 import { getWorkset } from '@/services/worksets';
 import { getAvailableCollectionName } from '@/lib/collection-storage';
+import { useSiteFeatures } from '@/contexts/site-features-context';
+import { isSearchCategoryEnabled } from '@/lib/site-features';
+import { searchHref } from '@/lib/search-routing';
 
 type SharedCollectionState =
   | { status: 'idle' }
@@ -121,15 +124,6 @@ function getImageItemThumbnailUrl(item: CollectionItem): string | null {
   return getIiifImageUrl(infoUrl, { thumbnail: true });
 }
 
-function getItemTitle(item: CollectionItem, untitledLabel: string): string {
-  const locus = 'locus' in item ? item.locus : undefined;
-  return String(locus ?? item.shelfmark ?? untitledLabel);
-}
-
-function getAnnotationCardTitle(item: CollectionItem): string {
-  return getCollectionAllographLabel(item);
-}
-
 function getImageDetailUrl(item: CollectionItem): string {
   return buildImageDetailUrl(item) ?? '#';
 }
@@ -142,6 +136,7 @@ function isEditorialAnnotation(item: CollectionItem): boolean {
 function CollectionGraphCard({
   item,
   title,
+  subtitle,
   isSelected,
   onToggleSelection,
   readOnly,
@@ -149,6 +144,7 @@ function CollectionGraphCard({
 }: {
   item: CollectionItem;
   title: string;
+  subtitle?: string;
   isSelected: boolean;
   onToggleSelection: (item: CollectionItem) => void;
   readOnly: boolean;
@@ -158,6 +154,7 @@ function CollectionGraphCard({
   const infoUrl = (item.image_iiif || '').trim();
   const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined);
   const isEditorial = isEditorialAnnotation(item);
+  const accessibleTitle = subtitle ? `${title} · ${subtitle}` : title;
 
   return (
     <div
@@ -172,7 +169,7 @@ function CollectionGraphCard({
             <GraphDetailLink graph={item} className="relative block h-full w-full">
               <Image
                 src={imageUrl}
-                alt={title}
+                alt={accessibleTitle}
                 fill
                 className="object-contain transition-transform duration-300 group-hover:scale-110"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw"
@@ -201,7 +198,7 @@ function CollectionGraphCard({
               <Checkbox
                 checked={isSelected}
                 onCheckedChange={() => onToggleSelection(item)}
-                aria-label={t('page.selectGraph', { title })}
+                aria-label={t('page.selectGraph', { title: accessibleTitle })}
               />
             </div>
             <CollectionStar itemId={item.id} itemType="graph" item={item} />
@@ -212,6 +209,11 @@ function CollectionGraphCard({
         <div className="font-medium text-foreground truncate text-xs sm:text-sm" title={title}>
           {title}
         </div>
+        {subtitle && (
+          <div className="text-xs text-muted-foreground truncate" title={subtitle}>
+            {subtitle}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -221,6 +223,11 @@ function CollectionPageContent() {
   const t = useTranslations('collection');
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { config: siteFeatures, isSectionEnabled } = useSiteFeatures();
+  const imagesSearchEnabled =
+    isSectionEnabled('search') && isSearchCategoryEnabled(siteFeatures, 'images');
+  const graphsSearchEnabled =
+    isSectionEnabled('search') && isSearchCategoryEnabled(siteFeatures, 'graphs');
   const shareId = searchParams.get('share')?.trim() ?? '';
   const anonymousShareHashPayload = useAnonymousShareHashPayload();
   const anonymousSharePayload =
@@ -467,18 +474,22 @@ function CollectionPageContent() {
           <p className="text-muted-foreground text-lg mb-10 leading-relaxed max-w-md mx-auto">
             {isSharedView ? t('page.emptySharedDesc') : t('page.emptyLocalDesc')}
           </p>
-          {!isSharedView && (
+          {!isSharedView && (imagesSearchEnabled || graphsSearchEnabled) && (
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/search/images">
-                <Button size="lg" className="w-full sm:w-auto">
-                  {t('page.browseImages')}
-                </Button>
-              </Link>
-              <Link href="/search/graphs">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  {t('page.browseGraphs')}
-                </Button>
-              </Link>
+              {imagesSearchEnabled && (
+                <Link href={searchHref('images')}>
+                  <Button size="lg" className="w-full sm:w-auto">
+                    {t('page.browseImages')}
+                  </Button>
+                </Link>
+              )}
+              {graphsSearchEnabled && (
+                <Link href={searchHref('graphs')}>
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                    {t('page.browseGraphs')}
+                  </Button>
+                </Link>
+              )}
             </div>
           )}
         </div>
@@ -491,13 +502,14 @@ function CollectionPageContent() {
     const eager = eagerThumbnailKeys.has(getCollectionItemKey(item));
 
     if (type === 'graph') {
-      const title = getAnnotationCardTitle(item);
+      const { title, subtitle } = getCollectionGridCardLabels(item, t('page.untitled'));
 
       return (
         <CollectionGraphCard
           key={`graph-${item.id}`}
           item={item}
           title={title}
+          subtitle={subtitle}
           isSelected={isSelected}
           onToggleSelection={toggleItem}
           readOnly={isSharedView}
@@ -506,7 +518,7 @@ function CollectionPageContent() {
       );
     }
 
-    const title = getItemTitle(item, t('page.untitled'));
+    const { title } = getCollectionGridCardLabels(item, t('page.untitled'));
     const imageUrl = getImageItemThumbnailUrl(item);
 
     return (

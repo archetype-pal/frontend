@@ -1,7 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
 import { Check, ChevronsUpDown } from 'lucide-react';
+import { RemoveScroll } from 'react-remove-scroll';
 
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -116,54 +118,64 @@ export const SearchableSelect = React.forwardRef<SearchableSelectHandle, Searcha
         </PopoverTrigger>
 
         <PopoverContent align="start" className={`w-[320px] p-0 ${contentClassName ?? ''}`}>
-          <Command shouldFilter={false}>
-            <CommandInput
-              ref={inputRef}
-              value={search}
-              onValueChange={setSearch}
-              placeholder={searchPlaceholder}
-            />
-            <CommandList>
-              <CommandGroup>
-                {!hasSearch ? (
-                  <CommandItem
-                    value="__clear__"
-                    onSelect={() => {
-                      selectAndClose(null);
-                    }}
-                    onMouseEnter={() => onOptionHover?.(null)}
-                    onFocus={() => onOptionHover?.(null)}
-                  >
-                    <Check
-                      className={`mr-2 h-4 w-4 ${value == null ? 'opacity-100' : 'opacity-0'}`}
-                    />
-                    <span className="text-muted-foreground">{clearLabel}</span>
-                  </CommandItem>
-                ) : null}
+          {/* PopoverContent renders through its own Portal, outside a parent
+              Dialog/Sheet's DOM subtree — Radix's Dialog locks background
+              scroll via react-remove-scroll and only exempts its own content
+              ref, so without this the mouse wheel can't scroll this list
+              (dragging the scrollbar thumb still works, since that's a
+              mousedown/mousemove interaction the lock never touches). This
+              claims the top of react-remove-scroll's shared lock stack while
+              open, the same way Radix's own Select avoids the same issue. */}
+          <RemoveScroll as={Slot} enabled={open} allowPinchZoom>
+            <Command shouldFilter={false}>
+              <CommandInput
+                ref={inputRef}
+                value={search}
+                onValueChange={setSearch}
+                placeholder={searchPlaceholder}
+              />
+              <CommandList>
+                <CommandGroup>
+                  {!hasSearch ? (
+                    <CommandItem
+                      value="__clear__"
+                      onSelect={() => {
+                        selectAndClose(null);
+                      }}
+                      onMouseEnter={() => onOptionHover?.(null)}
+                      onFocus={() => onOptionHover?.(null)}
+                    >
+                      <Check
+                        className={`mr-2 h-4 w-4 ${value == null ? 'opacity-100' : 'opacity-0'}`}
+                      />
+                      <span className="text-muted-foreground">{clearLabel}</span>
+                    </CommandItem>
+                  ) : null}
 
-                {rankedOptions.length === 0 ? (
-                  <div className="py-6 text-center text-sm">{emptyText}</div>
-                ) : null}
+                  {rankedOptions.length === 0 ? (
+                    <div className="py-6 text-center text-sm">{emptyText}</div>
+                  ) : null}
 
-                {rankedOptions.map((option) => (
-                  <CommandItem
-                    key={option.value}
-                    value={option.value}
-                    onSelect={() => {
-                      selectAndClose(option.value);
-                    }}
-                    onMouseEnter={() => onOptionHover?.(option.value)}
-                    onFocus={() => onOptionHover?.(option.value)}
-                  >
-                    <Check
-                      className={`mr-2 h-4 w-4 ${value === option.value ? 'opacity-100' : 'opacity-0'}`}
-                    />
-                    <span>{option.label}</span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
+                  {rankedOptions.map((option) => (
+                    <CommandItem
+                      key={option.value}
+                      value={option.value}
+                      onSelect={() => {
+                        selectAndClose(option.value);
+                      }}
+                      onMouseEnter={() => onOptionHover?.(option.value)}
+                      onFocus={() => onOptionHover?.(option.value)}
+                    >
+                      <Check
+                        className={`mr-2 h-4 w-4 ${value === option.value ? 'opacity-100' : 'opacity-0'}`}
+                      />
+                      <span>{option.label}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </RemoveScroll>
         </PopoverContent>
       </Popover>
     );

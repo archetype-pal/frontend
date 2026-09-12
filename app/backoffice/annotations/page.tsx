@@ -182,12 +182,12 @@ export default function AnnotationsPage() {
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteGraph(token!, id),
     onSuccess: () => {
-      toast.success('Graph annotation deleted');
+      toast.success(t('annotations.toastMovedToTrash'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.graphs.all() });
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error('Failed to delete annotation', {
+      toast.error(t('annotations.toastFailedDelete'), {
         description: formatApiError(err),
       });
     },
@@ -207,8 +207,11 @@ export default function AnnotationsPage() {
           action: (id) => deleteGraph(token!, Number(id)),
           invalidate: () =>
             queryClient.invalidateQueries({ queryKey: backofficeKeys.graphs.all() }),
-          pastTense: 'deleted',
-          noun: 'annotation',
+          messages: {
+            success: (count) => t('annotations.bulkTrashed', { count }),
+            allFailed: () => t('annotations.bulkTrashFailed'),
+            partial: (succeeded, failed) => t('annotations.bulkPartial', { succeeded, failed }),
+          },
         });
       },
     },
@@ -326,7 +329,7 @@ export default function AnnotationsPage() {
           deleteTarget
             ? t('annotations.deleteDesc', {
                 id: deleteTarget.id,
-                allograph: deleteTarget.allograph_name,
+                allograph: deleteTarget.allograph_name ?? '—',
               })
             : ''
         }

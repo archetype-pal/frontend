@@ -15,7 +15,8 @@ import { AppQueryProvider } from '@/components/providers/query-provider';
 import { env } from '@/lib/env';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import { readModelLabels } from '@/lib/model-labels-server';
-import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
+import { resolveModelLabel } from '@/lib/model-labels';
+import { coerceLocale } from '@/lib/locale';
 import { getSiteThemeVars } from '@/lib/site-theme';
 
 const geistSans = localFont({
@@ -55,8 +56,9 @@ const junicode = localFont({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [locale, modelLabels] = await Promise.all([getLocale(), readModelLabels()]);
-  const siteTitle = resolveModelLabel(modelLabels.labels.siteTitle, locale as ModelLabelLocale);
+  const [rawLocale, modelLabels] = await Promise.all([getLocale(), readModelLabels()]);
+  const locale = coerceLocale(rawLocale);
+  const siteTitle = resolveModelLabel(modelLabels.labels.siteTitle, locale);
 
   return {
     title: {
@@ -83,8 +85,9 @@ export default async function RootLayout({
   const nonce = requestHeaders.get('x-nonce') ?? undefined;
   // `degraded` is dropped here: it would otherwise be serialized into the RSC
   // payload of the client provider below and advertise backend health publicly.
-  const [{ degraded: _degraded, ...siteFeaturesConfig }, modelLabelsConfig, locale, messages] =
+  const [{ degraded: _degraded, ...siteFeaturesConfig }, modelLabelsConfig, rawLocale, messages] =
     await Promise.all([readSiteFeatures(), readModelLabels(), getLocale(), getMessages()]);
+  const locale = coerceLocale(rawLocale);
 
   const siteThemeVars = getSiteThemeVars();
 
@@ -101,7 +104,7 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>
             <SiteFeaturesProvider initialConfig={siteFeaturesConfig}>
-              <ModelLabelsProvider initialConfig={modelLabelsConfig}>
+              <ModelLabelsProvider initialConfig={modelLabelsConfig} locale={locale}>
                 <AppQueryProvider>
                   <CollectionProvider>
                     <SearchProvider>{children}</SearchProvider>

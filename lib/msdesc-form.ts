@@ -48,6 +48,7 @@ import type {
   LayoutTopLine,
   MsDescAreaId,
   ObjectDescForm,
+  SealType,
   SupportMaterial,
 } from '@/lib/msdesc-vocab';
 import {
@@ -56,6 +57,7 @@ import {
   HAND_SCRIPTS,
   LAYOUT_TOP_LINES,
   OBJECT_DESC_FORMS,
+  SEAL_TYPES,
   SUPPORT_MATERIALS,
 } from '@/lib/msdesc-vocab';
 
@@ -197,6 +199,16 @@ export interface MsBinding {
   innerXml: string;
 }
 
+/** One `<seal>` entry; `innerXml` is its `<p>` prose. */
+export interface MsSeal {
+  n?: string;
+  type?: SealType;
+  contemporary?: string;
+  materialText?: string;
+  conditionText?: string;
+  innerXml: string;
+}
+
 export interface PhysDescState {
   objectDesc: MsObjectDesc;
   handDesc?: MsHandDesc;
@@ -204,6 +216,8 @@ export interface PhysDescState {
   additionsInnerXml?: string;
   /** Serialized inside a `<bindingDesc>` wrapper. */
   binding?: MsBinding;
+  /** Serialized inside a `<sealDesc>` wrapper, after `bindingDesc`. */
+  seals?: MsSeal[];
   accMatInnerXml?: string;
 }
 
@@ -344,6 +358,16 @@ const PHYS_DESC_SHAPE: ElementShape = {
         binding: { content: 'inner-xml', attrs: ['notBefore', 'notAfter', 'contemporary'] },
       },
     },
+    sealDesc: {
+      content: 'elements',
+      children: {
+        seal: {
+          content: 'elements',
+          attrs: ['n', 'type', 'contemporary'],
+          children: { material: TEXT, condition: TEXT, p: { content: 'inner-xml' } },
+        },
+      },
+    },
     accMat: { content: 'inner-xml' },
   },
 };
@@ -397,6 +421,10 @@ function textOf(element: XmlElementNode): string {
   const value = elementText(element);
   if (value === null) fail(`<${element.name}> contains unexpected child elements`);
   return value.trim();
+}
+
+function textOfOptional(element: XmlElementNode | undefined): string | undefined {
+  return element ? textOf(element) : undefined;
 }
 
 /** A closed-vocabulary attribute; out-of-vocabulary values are rejections. */
@@ -664,6 +692,7 @@ export function physDescFromFragment(fragment: string): FromFragmentResult<PhysD
     const additions = single(root, 'additions');
     const bindingDesc = single(root, 'bindingDesc');
     const binding = bindingDesc ? single(bindingDesc, 'binding') : undefined;
+    const sealDesc = single(root, 'sealDesc');
     const accMat = single(root, 'accMat');
     return {
       objectDesc: {
@@ -713,9 +742,39 @@ export function physDescFromFragment(fragment: string): FromFragmentResult<PhysD
             innerXml: innerXml(source, binding),
           }
         : undefined,
+      seals: sealDesc
+        ? list(sealDesc, 'seal').map((seal) => {
+            const prose = single(seal, 'p');
+            return {
+              n: attrValue(seal, 'n'),
+              type: vocabAttr(seal, 'type', SEAL_TYPES),
+              contemporary: attrValue(seal, 'contemporary'),
+              materialText: textOfOptional(single(seal, 'material')),
+              conditionText: textOfOptional(single(seal, 'condition')),
+              innerXml: prose ? innerXml(source, prose) : '',
+            };
+          })
+        : undefined,
       accMatInnerXml: accMat ? innerXml(source, accMat) : undefined,
     };
   });
+}
+
+function buildSeal(seal: MsSeal): BuildNode {
+  const children: BuildNode[] = [];
+  if (seal.materialText !== undefined) children.push(textLeaf('material', [], seal.materialText));
+  if (seal.conditionText !== undefined)
+    children.push(textLeaf('condition', [], seal.conditionText));
+  if (seal.innerXml !== '') children.push(proseLeaf('p', [], seal.innerXml));
+  return el(
+    'seal',
+    [
+      ['n', seal.n],
+      ['type', seal.type],
+      ['contemporary', seal.contemporary],
+    ],
+    children
+  );
 }
 
 function buildSupportDesc(supportDesc: MsSupportDesc): BuildNode {
@@ -857,6 +916,10 @@ export function physDescToFragment(state: PhysDescState): string {
         ]
       )
     );
+  }
+  // TEI orders physDesc children ... bindingDesc, sealDesc, accMat.
+  if (state.seals !== undefined) {
+    children.push(el('sealDesc', [], state.seals.map(buildSeal)));
   }
   if (state.accMatInnerXml !== undefined) {
     children.push(proseLeaf('accMat', [], state.accMatInnerXml));

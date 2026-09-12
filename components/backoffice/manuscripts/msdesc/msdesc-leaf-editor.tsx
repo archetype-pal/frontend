@@ -7,16 +7,17 @@ import StarterKit from '@tiptap/starter-kit';
 import { toast } from 'sonner';
 import { Link2, Unlink } from 'lucide-react';
 
-import { docToTei, teiToDoc, type PMDoc } from '@/lib/tei-prosemirror';
+import { docToTei, teiToDoc, type PMDoc, type StackEntry } from '@/lib/tei-prosemirror';
 import {
   currentElement,
   currentStack,
+  setTeiAttrs,
   teiEditorExtensions,
   unwrapTei,
   wrapTei,
 } from '@/lib/tei-tiptap';
 import { refAttrs } from '@/lib/tei-ref-picker';
-import type { ResourceRef } from '@/lib/tei-ref';
+import type { ResourceKind, ResourceRef } from '@/lib/tei-ref';
 import { TeiRefPicker } from '@/components/backoffice/tei-ref-picker';
 import { cn } from '@/lib/utils';
 import { MsProseTextarea } from './fields';
@@ -97,6 +98,61 @@ export function refIsInnermost(editor: Editor): boolean {
   return element !== null && element.el.toLowerCase() === 'ref';
 }
 
+/**
+ * Named-entity elements a link can be stamped ONTO, mapped to the ref kind whose
+ * target belongs there.
+ *
+ * The mapping is deliberately not "any entity takes any link". Stamping a
+ * manuscript target onto a `<persName>` would assert that the person IS that
+ * manuscript; the kinds have to agree, and when they do not the link nests as a
+ * `<ref>` instead — which is what already happens today.
+ */
+const STAMPABLE: Record<string, ResourceKind> = {
+  persname: 'person',
+  placename: 'place',
+};
+
+/**
+ * The entity under the caret that this ref should be stamped onto, or null when
+ * the link should wrap a `<ref>` instead.
+ */
+function stampTarget(editor: Editor, ref: ResourceRef): StackEntry | null {
+  const element = currentElement(editor);
+  if (!element) return null;
+  return STAMPABLE[element.el.toLowerCase()] === ref.kind ? element : null;
+}
+
+/**
+ * True when the innermost element carries a link as attributes rather than as a
+ * `<ref>` wrapper — the state {@link insertRefIntoLeaf} produces when it stamps.
+ */
+export function linkIsStamped(editor: Editor): boolean {
+  const element = currentElement(editor);
+  if (!element) return false;
+  if (element.el.toLowerCase() === 'ref') return false;
+  return Boolean(element.attrs['target'] ?? element.attrs['key']);
+}
+
+/** Whether the unlink control can act: a `<ref>` to unwrap, or a stamp to strip. */
+export function canUnlinkHere(editor: Editor): boolean {
+  return refIsInnermost(editor) || linkIsStamped(editor);
+}
+
+/**
+ * Remove the link under the caret.
+ *
+ * A stamped entity loses its attributes and KEEPS the element — `unwrapTei`
+ * would delete the `<persName>` itself, silently discarding the cataloguer's
+ * entity tagging along with the link they asked to remove.
+ */
+export function removeLinkAtCaret(editor: Editor): void {
+  if (linkIsStamped(editor)) {
+    setTeiAttrs(editor, { key: null, target: null, type: null });
+    return;
+  }
+  if (refIsInnermost(editor)) unwrapTei(editor);
+}
+
 /** Outcome of {@link insertRefIntoLeaf} — the caller maps it to a hint. */
 export type RefInsertResult = 'ok' | 'nested' | 'refused';
 
@@ -114,6 +170,23 @@ export type RefInsertResult = 'ok' | 'nested' | 'refused';
  */
 export function insertRefIntoLeaf(editor: Editor, ref: ResourceRef): RefInsertResult {
   if (isInsideRef(editor)) return 'nested';
+
+  // Where the phrase already IS the named entity, stamp the link onto it rather
+  // than nesting a <ref> inside it (docs/tei.md §3.4). `<persName key="person_42"
+  // target="/scribes/42">` is both better TEI and better HTML: the renderer's
+  // isLinkBearing check turns it into a single <a>, where the nested form has to
+  // degrade an inner anchor to a span.
+  const stamp = stampTarget(editor, ref);
+  if (stamp) {
+    const attrs = refAttrs(ref);
+    return setTeiAttrs(editor, {
+      key: attrs['key'] ?? null,
+      target: attrs['target'] ?? null,
+    })
+      ? 'ok'
+      : 'refused';
+  }
+
   const { from, to } = editor.state.selection;
   if (from === to) {
     if (ref.label === '') return 'refused';
@@ -142,6 +215,21 @@ function toLeafContent(value: string): Record<string, unknown> {
   return (doc.content.length > 0 ? doc : EMPTY_DOC) as unknown as Record<string, unknown>;
 }
 
+/**
+ * One entity button. The caller supplies already-translated strings, so this
+ * component stays i18n-agnostic about a palette it does not own.
+ *
+ * `attrs` is usually empty. Do NOT stamp `type="name"` the way the charter
+ * toolbar does: the renderer's hover pill reads `attrs['type'] ?? name`
+ * (`tei-msdesc-render.ts`), so every person would be labelled "name".
+ */
+export interface TeiEntityTool {
+  el: string;
+  attrs?: Record<string, string>;
+  label: string;
+  title: string;
+}
+
 interface MsDescLeafEditorProps {
   label: string;
   value: string;
@@ -149,6 +237,12 @@ interface MsDescLeafEditorProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  /**
+   * Entity buttons to offer beside Link/Unlink. Omitted by the msDesc area
+   * panels, which deliberately keep prose leaves to linking only; supplied by
+   * the catalogue-description editor, whose palette is fixed by the project ODD.
+   */
+  entityTools?: readonly TeiEntityTool[];
 }
 
 /**
@@ -176,7 +270,14 @@ export function MsDescLeafEditor(props: MsDescLeafEditorProps) {
   return <RichLeaf {...props} />;
 }
 
-function RichLeaf({ label, value, onChange, disabled, className }: MsDescLeafEditorProps) {
+function RichLeaf({
+  label,
+  value,
+  onChange,
+  disabled,
+  className,
+  entityTools,
+}: MsDescLeafEditorProps) {
   const t = useTranslations('backoffice');
   // Guard the controlled-value effect against the editor's own emits so
   // reflecting `value` back never steals the caret (mirrors tei-rich-editor).
@@ -262,7 +363,7 @@ function RichLeaf({ label, value, onChange, disabled, className }: MsDescLeafEdi
   // Re-render when the caret moves so the unlink control tracks the selection.
   const canUnlink = useEditorState({
     editor,
-    selector: ({ editor }) => (editor ? refIsInnermost(editor) : false),
+    selector: ({ editor }) => (editor ? canUnlinkHere(editor) : false),
   });
 
   const openPicker = () => {
@@ -287,6 +388,21 @@ function RichLeaf({ label, value, onChange, disabled, className }: MsDescLeafEdi
       <div className="flex items-center justify-between gap-2">
         <label className="block text-xs font-medium text-muted-foreground">{label}</label>
         <div className="flex items-center gap-0.5">
+          {entityTools?.map((tool) => (
+            <button
+              key={tool.el}
+              type="button"
+              onClick={() => editor && wrapTei(editor, tool.el, tool.attrs ?? {})}
+              disabled={disabled || !editor}
+              title={tool.title}
+              className="inline-flex h-6 items-center justify-center rounded px-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {tool.label}
+            </button>
+          ))}
+          {entityTools?.length ? (
+            <span className="mx-0.5 h-4 w-px shrink-0 self-center bg-border" aria-hidden />
+          ) : null}
           <button
             type="button"
             onClick={openPicker}
@@ -299,7 +415,7 @@ function RichLeaf({ label, value, onChange, disabled, className }: MsDescLeafEdi
           </button>
           <button
             type="button"
-            onClick={() => editor && unwrapTei(editor)}
+            onClick={() => editor && removeLinkAtCaret(editor)}
             disabled={disabled || !canUnlink}
             aria-label={t('msdesc.editor.unlinkResource')}
             title={t('msdesc.editor.unlinkResource')}

@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { Manuscript } from '@/types/manuscript';
 import type { HandType } from '@/types/hands';
+import { SiteFeaturesProvider } from '@/contexts/site-features-context';
+import { getDefaultConfig } from '@/lib/site-features';
 import { ManuscriptViewer } from './manuscript-viewer';
 
 // The viewer only needs these for chrome around the section under test.
@@ -46,14 +48,20 @@ const MANUSCRIPT = {
   ],
 } as Manuscript;
 
-function renderViewer(msDescEnabled: boolean, hands: HandType[] = []) {
+function renderViewer(
+  msDescEnabled: boolean,
+  hands: HandType[] = [],
+  manuscript: Manuscript = MANUSCRIPT
+) {
   return render(
-    <ManuscriptViewer
-      manuscript={MANUSCRIPT}
-      images={[]}
-      hands={hands}
-      msDescEnabled={msDescEnabled}
-    />
+    <SiteFeaturesProvider initialConfig={getDefaultConfig()}>
+      <ManuscriptViewer
+        manuscript={manuscript}
+        images={[]}
+        hands={hands}
+        msDescEnabled={msDescEnabled}
+      />
+    </SiteFeaturesProvider>
   );
 }
 
@@ -76,6 +84,37 @@ describe('ManuscriptViewer — Hands section', () => {
     const { container } = renderViewer(false, []);
     expect(container.querySelector('section#hands')).toBeNull();
     expect(container.querySelector('a[href="#hands"]')).toBeNull();
+  });
+});
+
+describe('ManuscriptViewer — catalogue descriptions', () => {
+  it('renders legacy HTML descriptions as HTML instead of escaped text', () => {
+    const manuscript = {
+      ...MANUSCRIPT,
+      historical_item: {
+        ...MANUSCRIPT.historical_item,
+        descriptions: [
+          {
+            source: {
+              name: 'Melrose catalogue',
+              label: '',
+              location: '',
+              url: '',
+            },
+            content: '<p><b>Melrose, Liber Sancte Marie</b>, no. 175.</p><script>alert(1)</script>',
+          },
+        ],
+      },
+    } as Manuscript;
+
+    const { container } = renderViewer(false, [], manuscript);
+    const section = container.querySelector('section#description');
+
+    expect(section).not.toBeNull();
+    expect(section?.querySelector('b')?.textContent).toBe('Melrose, Liber Sancte Marie');
+    expect(section?.textContent).toContain('Melrose, Liber Sancte Marie, no. 175.');
+    expect(section?.textContent).not.toContain('<b>');
+    expect(section?.innerHTML).not.toContain('<script');
   });
 });
 

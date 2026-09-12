@@ -46,6 +46,11 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ARG DOCKER_IMAGE_HASH
+# Stamp the build so /version can report what is deployed. Set here rather than
+# in the builder stage: `next build` has already run, so the route reads these
+# at request time (hence its force-dynamic).
+ARG APP_VERSION=dev
+ENV APP_VERSION=${APP_VERSION} APP_COMMIT=${DOCKER_IMAGE_HASH}
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -58,7 +63,6 @@ COPY --from=builder /app/public ./public
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-RUN echo "${DOCKER_IMAGE_HASH}" > /app/.docker-image-hash && chmod 444 /app/.docker-image-hash
 
 USER nextjs
 

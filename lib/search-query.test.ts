@@ -275,6 +275,8 @@ describe('resolveFacetClick', () => {
     expect(formatFacetTitle('material', 'manuscripts')).toBe('Support Material');
     expect(formatFacetTitle('deco_type', 'manuscripts')).toBe('Decoration');
     expect(formatFacetTitle('origin_place', 'manuscripts')).toBe('Place of Origin');
+    expect(formatFacetTitle('seal_type', 'manuscripts')).toBe('Seal');
+    expect(formatFacetTitle('seal_material', 'manuscripts')).toBe('Seal Material');
   });
 
   it('returns noop for URL arg without facet options', () => {

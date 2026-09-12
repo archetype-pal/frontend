@@ -1558,6 +1558,47 @@ g.a9s-annotation.a9s-text:hover .a9s-outer {
    with the consumer (the backoffice preview is `text-sm`, the public page
    serif body copy); this block only owns rhythm, labels and rules. */
 
+/* ── Linked catalogue descriptions (docs/tei.md §4.5) ──────────────────────
+   TEI prose whose entities link into the corpus. A description can carry a
+   dozen of these, so they are underlined rather than coloured — the paragraph
+   has to keep reading as prose, not as a list of links. The underline colour
+   distinguishes what the link goes to; an unresolved key gets a dotted rule so
+   it is visibly not clickable. */
+
+.tei-linked-prose a.tei-el {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1.5px solid var(--primary);
+  padding-bottom: 0.5px;
+}
+
+.tei-linked-prose a.tei-el-placeName,
+.tei-linked-prose a[data-ref-kind='place'] {
+  border-bottom-color: color-mix(in oklch, var(--primary) 55%, var(--muted-foreground));
+}
+
+.tei-linked-prose a[data-ref-kind='manuscript'],
+.tei-linked-prose a[data-ref-kind='image'] {
+  border-bottom-style: dashed;
+}
+
+.tei-linked-prose a.tei-el:hover {
+  background: color-mix(in oklch, var(--primary) 12%, transparent);
+}
+
+/* An entity the cataloguer tagged but did not link. Without this it renders as
+   an unstyled span — visually plain text — so the tagging is invisible to a
+   reader and, worse, invisible to the cataloguer checking their own work. Kept
+   deliberately quieter than a link: it carries meaning, not a destination. */
+.tei-linked-prose .tei-el-persName:not(a),
+.tei-linked-prose .tei-el-placeName:not(a) {
+  border-bottom: 1px dotted color-mix(in oklch, var(--muted-foreground) 70%, transparent);
+}
+
+.tei-linked-prose .msdesc-unresolved {
+  border-bottom: 1px dotted var(--muted-foreground);
+}
+
 .msdesc-preview .msdesc-area + .msdesc-area {
   margin-top: 2rem;
   border-top: 1px solid var(--border);

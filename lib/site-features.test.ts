@@ -9,13 +9,18 @@ import {
   ALL_SECTION_KEYS,
   FEATURE_DESCRIPTIONS,
   FEATURE_LABELS,
+  getDefaultSearchCategory,
+  getEnabledSearchCategories,
   getDefaultConfig,
   getDefaultFeatures,
+  hasEnabledSearchCategory,
+  isSearchCategoryEnabled,
   mergeFeatureFlags,
   normalizeSectionOrder,
   type FeatureKey,
   type SectionKey,
 } from './site-features';
+import { SEARCH_RESULT_TYPES } from './search-types';
 
 describe('normalizeSectionOrder', () => {
   it('returns the canonical order when input is undefined', () => {
@@ -115,6 +120,33 @@ describe('getDefaultConfig', () => {
     expect(a.searchCategories[firstCat as keyof typeof a.searchCategories].visibleColumns).not.toBe(
       b.searchCategories[firstCat as keyof typeof b.searchCategories].visibleColumns
     );
+  });
+});
+
+describe('search category helpers', () => {
+  it('returns enabled categories in the canonical search order', () => {
+    const cfg = getDefaultConfig();
+    cfg.searchCategories.images.enabled = false;
+    cfg.searchCategories.graphs.enabled = false;
+
+    expect(getEnabledSearchCategories(cfg)).toEqual(
+      SEARCH_RESULT_TYPES.filter((type) => type !== 'images' && type !== 'graphs')
+    );
+    expect(getDefaultSearchCategory(cfg)).toBe('manuscripts');
+    expect(isSearchCategoryEnabled(cfg, 'images')).toBe(false);
+    expect(isSearchCategoryEnabled(cfg, 'manuscripts')).toBe(true);
+    expect(hasEnabledSearchCategory(cfg)).toBe(true);
+  });
+
+  it('detects when every search category is disabled', () => {
+    const cfg = getDefaultConfig();
+    for (const type of SEARCH_RESULT_TYPES) {
+      cfg.searchCategories[type].enabled = false;
+    }
+
+    expect(getEnabledSearchCategories(cfg)).toEqual([]);
+    expect(getDefaultSearchCategory(cfg)).toBeNull();
+    expect(hasEnabledSearchCategory(cfg)).toBe(false);
   });
 });
 

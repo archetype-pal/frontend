@@ -31,6 +31,8 @@ import {
 import { apiFetch } from '@/lib/api-fetch';
 import { sanitizeHtml } from '@/lib/sanitize-html';
 import { BackofficeLink } from '@/components/common/backoffice-link';
+import { useSiteFeatures } from '@/contexts/site-features-context';
+import { isSearchCategoryEnabled } from '@/lib/site-features';
 
 const TAB_VALUES = ['information', 'description', 'images', 'graphs'] as const;
 const DEFAULT_TAB = 'information';
@@ -136,6 +138,9 @@ function useHandGraphs(handId: number, images: HandImage[], enabled: boolean): G
 export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps) {
   const t = useTranslations('hand');
   const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB);
+  const { config: siteFeatures, isSectionEnabled } = useSiteFeatures();
+  const handsSearchEnabled =
+    isSectionEnabled('search') && isSearchCategoryEnabled(siteFeatures, 'hands');
 
   const manuscriptLabel =
     manuscript?.display_label ?? manuscript?.current_item?.shelfmark ?? (hand.shelfmark || null);
@@ -180,9 +185,13 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
       {/* Header */}
       <div className="mb-6">
         <p className="text-sm text-muted-foreground mb-1">
-          <Link href="/search/hands" className="hover:underline">
-            {t('breadcrumb')}
-          </Link>
+          {handsSearchEnabled ? (
+            <Link href="/search/hands" className="hover:underline">
+              {t('breadcrumb')}
+            </Link>
+          ) : (
+            t('breadcrumb')
+          )}
           {manuscriptLabel && (
             <>
               {' / '}
