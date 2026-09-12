@@ -13,6 +13,7 @@ import type {
   HistoricalItemDescription,
   MsDescArea,
   BackofficeDate,
+  BackofficePlace,
   CurrentItemOption,
   ItemPartNested,
 } from '@/types/backoffice';
@@ -197,3 +198,15 @@ export function getDates(token: string) {
 export const createDate = datesCrud.create;
 export const updateDate = datesCrud.update;
 export const deleteDate = datesCrud.remove;
+
+// ── Places ──────────────────────────────────────────────────────────────
+
+const placesCrud = createCrudService<BackofficePlace>('/api/v1/management/common/places/');
+
+export function getPlaces(token: string) {
+  return backofficeGet<BackofficePlace[]>('/api/v1/management/common/places/', token);
+}
+
+export const createPlace = placesCrud.create;
+export const updatePlace = placesCrud.update;
+export const deletePlace = placesCrud.remove;

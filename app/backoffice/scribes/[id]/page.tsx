@@ -144,10 +144,10 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
                         {hand.date_display}
                       </span>
                     )}
-                    {hand.place && (
+                    {hand.place_display && (
                       <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {hand.place}
+                        {hand.place_display}
                       </span>
                     )}
                     {hand.item_part_images?.length > 0 && (
