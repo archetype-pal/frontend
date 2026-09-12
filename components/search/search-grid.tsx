@@ -424,6 +424,50 @@ const GraphGridCard = React.memo(function GraphGridCard({
 
   const collectable = !!item.image_iiif?.trim();
 
+  // Rendered over the thumbnail when there is one, in the footer when there
+  // isn't (mirrors MediaGridCard): hiding thumbnails is a display preference,
+  // not a way to give up collecting and lightboxing results.
+  const actions = (
+    <>
+      <OpenLightboxButton
+        item={item}
+        variant="ghost"
+        size="icon"
+        className={GRID_CARD_ACTION_CLASS}
+      />
+      {collectable && (
+        <CollectionStar
+          itemId={item.id}
+          itemType="graph"
+          item={item}
+          appearance="surface"
+          size={18}
+        />
+      )}
+    </>
+  );
+
+  const selectToggle = annotatingMode && (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggleSelect?.(e.shiftKey);
+      }}
+      aria-pressed={isSelected}
+      aria-label={isSelected ? 'Unselect graph' : 'Select graph'}
+      className={cn(
+        'flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-xs shadow-sm transition',
+        showThumbnail && 'absolute left-2 top-2 z-30',
+        isSelected
+          ? 'border-primary bg-primary text-primary-foreground'
+          : 'border-foreground/30 bg-background/95 text-transparent hover:border-primary hover:text-primary group-hover:text-muted-foreground'
+      )}
+    >
+      ✓
+    </button>
+  );
+
   return (
     <div
       className={cn(
@@ -434,65 +478,48 @@ const GraphGridCard = React.memo(function GraphGridCard({
         isSelected && 'ring-2 ring-primary ring-offset-2'
       )}
     >
-      <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
-        {recentlyEdited && <RecentlyEditedBadge />}
-        {annotatingMode && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleSelect?.(e.shiftKey);
-            }}
-            aria-pressed={isSelected}
-            aria-label={isSelected ? 'Unselect graph' : 'Select graph'}
-            className={cn(
-              'absolute left-2 top-2 z-30 flex h-6 w-6 items-center justify-center rounded-md border text-xs shadow-sm transition',
-              isSelected
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-foreground/30 bg-background/95 text-transparent hover:border-primary hover:text-primary group-hover:text-muted-foreground'
-            )}
-          >
-            ✓
-          </button>
-        )}
-
-        {imageUrl ? (
-          <>
-            {renderLink(image, 'relative block h-full w-full')}
-            <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
-          </>
-        ) : (
-          renderLink(
-            <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-              {infoUrl ? '…' : 'No Image'}
-            </span>,
-            'block h-full w-full'
-          )
-        )}
-        <div className="absolute right-2 top-2 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-          <OpenLightboxButton
-            item={item}
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 bg-card/90 shadow-sm hover:bg-card"
-          />
-          {collectable && <CollectionStar itemId={item.id} itemType="graph" item={item} />}
+      {showThumbnail && (
+        <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
+          {recentlyEdited && <RecentlyEditedBadge />}
+          {selectToggle}
+          {imageUrl ? (
+            <>
+              {renderLink(image, 'relative block h-full w-full')}
+              <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
+            </>
+          ) : (
+            renderLink(
+              <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                {infoUrl ? '…' : 'No Image'}
+              </span>,
+              'block h-full w-full'
+            )
+          )}
+          <div className="absolute right-2 top-2 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            {actions}
+          </div>
         </div>
-      </div>
-      <div className="border-t border-border/70 px-2.5 py-1.5">
-        {renderLink(
-          <span
-            title={displayText}
-            className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary"
-          >
-            <Highlight
-              text={displayText}
-              keyword={highlightKeyword}
-              formattedText={formattedDisplayText}
-            />
-          </span>,
-          'block'
-        )}
+      )}
+      <div className={cn('px-2.5 py-1.5', showThumbnail && 'border-t border-border/70')}>
+        <div className="flex items-center gap-2">
+          {!showThumbnail && selectToggle}
+          <div className="min-w-0 flex-1">
+            {renderLink(
+              <span
+                title={displayText}
+                className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary"
+              >
+                <Highlight
+                  text={displayText}
+                  keyword={highlightKeyword}
+                  formattedText={formattedDisplayText}
+                />
+              </span>,
+              'block'
+            )}
+          </div>
+          {!showThumbnail && <div className="flex shrink-0 items-center gap-1">{actions}</div>}
+        </div>
         {annotatingMode && onEdit && onDelete && (
           <div className="mt-2 flex gap-1.5 border-t border-border/60 pt-1.5">
             <Button
