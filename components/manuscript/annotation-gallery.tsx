@@ -1357,7 +1357,10 @@ function GraphThumb({
           )}
         </TooltipTrigger>
         {/* Hover peek (G6.5): richer context without entering annotating mode. */}
-        <TooltipContent side="top" className="max-w-xs">
+        <TooltipContent
+          side="top"
+          className="max-w-xs border border-border bg-popover px-3 py-2 text-popover-foreground shadow-lg"
+        >
           <GraphPeek
             graph={graph}
             allographName={allographName}

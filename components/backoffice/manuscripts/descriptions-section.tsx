@@ -63,7 +63,7 @@ interface DescriptionsSectionProps {
 /**
  * `HistoricalItemDescription` editor — the SECONDARY, non-TEI description
  * surface since the structured msDesc editor shipped (TEI descriptions roadmap
- * 8.2): free HTML prose attributed to a catalogue source, not TEI, and not
+ * 8.2): free HTML prose attributed to a bibliographic reference, not TEI, and not
  * gaining TEI power. Its heading is the single relabel point —
  * `backoffice.manuscriptsDetail.descriptions` ("Catalogue descriptions /
  * citations"); the wording is still pending PO confirmation (roadmap 0.1), so
@@ -263,6 +263,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
                           variant="ghost"
                           size="sm"
                           className="h-6 px-2 text-[11px] text-muted-foreground"
+                          title={t('manuscriptsDetail.descriptionConvertToTeiHint')}
                           onClick={() => {
                             setEditingId(desc.id);
                             setEditFormat('tei');

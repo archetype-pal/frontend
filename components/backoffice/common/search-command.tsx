@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { type Dispatch, type SetStateAction, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
@@ -158,8 +158,12 @@ function getQuickActions(historicalItemLabel: string, t: (key: string) => string
   ];
 }
 
-export function SearchCommand() {
-  const [open, setOpen] = useState(false);
+interface SearchCommandProps {
+  open: boolean;
+  onOpenChange: Dispatch<SetStateAction<boolean>>;
+}
+
+export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
   const router = useRouter();
   const { entities: recentEntities } = useRecentEntities();
   const { getLabel, getPluralLabel } = useModelLabels();
@@ -178,12 +182,12 @@ export function SearchCommand() {
       // caps-locked users.
       if (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen((prev) => !prev);
+        onOpenChange((prev) => !prev);
       }
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [onOpenChange]);
 
   const groups = useMemo(() => {
     const map = new Map<string, NavEntry[]>();
@@ -196,12 +200,12 @@ export function SearchCommand() {
   }, [entries]);
 
   function navigate(href: string) {
-    setOpen(false);
+    onOpenChange(false);
     router.push(href);
   }
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput placeholder={t('search.inputPlaceholder')} />
       <CommandList>
         <CommandEmpty>{t('search.noResults')}</CommandEmpty>

@@ -333,7 +333,7 @@ export default function BackofficeDashboardPage() {
         </div>
       </div>
 
-      {/* Search Engine Health */}
+      {/* Indexing health */}
       {searchStats.data && (
         <div className="rounded-lg border bg-card">
           <div className="flex items-center gap-2 border-b px-5 py-3">
