@@ -17,6 +17,17 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  /*
+   * The header's two rows — title/tagline and navigation — repaintable
+   * independently of `--primary` (which also drives buttons and active-nav
+   * state elsewhere on the site). Default to `--primary`/`--primary-foreground`
+   * in :root below; `app/layout.tsx` overrides both pairs from the admin's
+   * saved (or per-deployment default) `ThemeColors` (archetype-pal/frontend#103).
+   */
+  --color-title-bar: var(--title-bar-bg);
+  --color-title-bar-foreground: var(--title-bar-fg);
+  --color-nav-bar: var(--nav-bar-bg);
+  --color-nav-bar-foreground: var(--nav-bar-fg);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -110,6 +121,10 @@
     --popover-foreground: hsl(25 15% 15%);
     --primary: hsl(201 90% 27%);
     --primary-foreground: hsl(40 30% 97%);
+    --title-bar-bg: var(--primary);
+    --title-bar-fg: var(--primary-foreground);
+    --nav-bar-bg: var(--primary);
+    --nav-bar-fg: var(--primary-foreground);
     --secondary: hsl(35 25% 91%);
     --secondary-foreground: hsl(25 15% 15%);
     --muted: hsl(35 20% 93%);
