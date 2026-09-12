@@ -2,14 +2,14 @@
 
 import * as React from 'react';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 
 import { useAuth } from '@/contexts/auth-context';
 
 import { getIiifBaseUrl } from '@/utils/iiif';
 import { cn } from '@/lib/utils';
+import { getSavedImageAllographIds } from '@/lib/manuscript-viewer-data';
 import { useResizable } from '@/hooks/use-resizable';
-import { useResizableTextPanel } from '@/hooks/use-resizable-text-panel';
-import { useMediaQuery } from '@/hooks/use-media-query';
 import { AnnotationFilterPanel } from './annotation-filter-panel';
 import { AnnotationSettingsPanel } from './annotation-settings-panel';
 import { AllographGalleryDialog } from './allograph-gallery-dialog';
@@ -31,7 +31,6 @@ import {
 
 import type { ViewerApi, Annotation as A9sAnnotation } from './manuscript-annotorious';
 import type {
-  A9sWithMeta,
   ViewerCapabilities,
   ViewerMode,
   AnnotationCreationKind,
@@ -39,17 +38,10 @@ import type {
 
 import { browserSafeIiifUrl, isDbId } from '@/lib/annotation-popup-utils';
 
-import {
-  getPopupCardViewData,
-  hasPopupAnnotationChanges,
-} from '@/lib/manuscript-viewer-popup-utils';
+import { getPopupCardViewData } from '@/lib/manuscript-viewer-popup-utils';
 
 import { dbIdFromA9s } from '@/lib/anno-mapping';
-import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
-import {
-  isGlyphAnnotation,
-  isTextRegionAnnotation,
-} from '@/lib/manuscript-viewer-annotation-types';
+import { useViewerAnnotationLoader } from '@/hooks/manuscript/use-viewer-annotation-loader';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { getDefaultHand, sortHandsByPriority } from '@/lib/hand-ordering';
 
@@ -61,8 +53,10 @@ import { useManuscriptPopups } from '@/hooks/use-manuscript-popups';
 import { useAnnotationVisibilityToggle } from '@/hooks/manuscript/use-annotation-visibility-toggle';
 import { useCollectionActions } from '@/hooks/manuscript/use-collection-actions';
 import { useViewerBaseData } from '@/hooks/manuscript/use-viewer-base-data';
+import { useViewerTextMode } from '@/hooks/manuscript/use-viewer-text-mode';
+import { useViewerHighlights } from '@/hooks/manuscript/use-viewer-highlights';
 import { useAnnotationVisibilityFilters } from '@/hooks/manuscript/use-annotation-visibility-filters';
-import { describeSaveOutcome } from '@/lib/manuscript-viewer-save';
+import { describeSaveOutcome, standardSaveValidationError } from '@/lib/manuscript-viewer-save';
 import { usePopupSelection } from '@/hooks/manuscript/use-popup-selection';
 import { useAnnotationDeletion } from '@/hooks/manuscript/use-annotation-deletion';
 import { useImageTextLinking } from '@/hooks/manuscript/use-image-text-linking';
@@ -76,11 +70,10 @@ import {
   type ImageAdjustmentKey,
 } from '@/hooks/use-viewer-image-adjustments';
 import { useViewerChromeState } from '@/hooks/use-viewer-chrome-state';
-import { useHotkeys, type HotkeyDefinition } from '@/hooks/use-hotkeys';
+import { useViewerShortcuts } from '@/hooks/manuscript/use-viewer-shortcuts';
 
 const ManuscriptAnnotorious = dynamic(() => import('./manuscript-annotorious'), { ssr: false });
 const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
-const LEGACY_SHORTCUT_PAN_STEP = 60;
 
 interface ManuscriptViewerProps {
   imageId: string;
@@ -99,6 +92,7 @@ export default function ManuscriptViewer({
   );
 
   const { token } = useAuth();
+  const tManuscript = useTranslations('manuscript');
 
   const isPublicDemoMode = mode === 'public';
 
@@ -119,6 +113,7 @@ export default function ManuscriptViewer({
     manuscript,
     allographs,
     imageAllographIds,
+    imageAllographIdsLoaded,
     hands,
     handsLoaded,
     imageHeight,
@@ -126,12 +121,12 @@ export default function ManuscriptViewer({
     error,
     setHands,
     setHandsLoaded,
+    setImageAllographIds,
   } = useViewerBaseData(imageId);
 
   const viewerApiRef = React.useRef<ViewerApi | null>(null);
   const [osdReady, setOsdReady] = React.useState(false);
 
-  const [initialA9sAnnots, setInitialA9sAnnots] = React.useState<A9sAnnotation[]>([]);
   const [selectedAnnotationIds, setSelectedAnnotationIds] = React.useState<string[]>([]);
 
   // Image tile controls: rotation + brightness/contrast/saturation. The OSD
@@ -275,6 +270,19 @@ export default function ManuscriptViewer({
 
   const unsavedChanges = editorState.dirtyCount;
 
+  const { initialA9sAnnots, setInitialA9sAnnots, annotationsLoadedFor, reloadAnnotations } =
+    useViewerAnnotationLoader({
+      imageId,
+      manuscriptImage,
+      imageHeight,
+      allographNameById,
+      isPublicDemoMode,
+      canViewEditorialControls,
+      token,
+      resetEditorFrom,
+      viewerApiRef,
+    });
+
   const {
     isInCollection,
     pageCollectionItem,
@@ -308,7 +316,7 @@ export default function ManuscriptViewer({
     setSelectedRegionGraphId,
     hoveredRegionGraphId,
     setHoveredRegionGraphId,
-    unlinkSelectedRegion,
+    trashSelectedRegion,
     unlinkElementFromRegion,
     linkExistingRegionToElement,
     persistRegionGeometry,
@@ -337,72 +345,38 @@ export default function ManuscriptViewer({
     return [...withoutPending, pendingLinkRegion];
   }, [initialA9sAnnots, pendingLinkRegion]);
 
-  // ---- View mode (Allograph / Text / Both) ----
-  // viewMode is the single source of truth; the text panel and the text-region
-  // annotation layer are both derived from it. An image with no texts can never
-  // enter a text view, so we clamp to 'allograph' to avoid a blank canvas.
-  const hasTexts = imageTexts.length > 0;
-  // The Transcription/Translation/Both chooser lives in the Settings panel; it is
-  // only offered when both kinds exist (otherwise there is nothing to choose).
-  const hasTranscription = React.useMemo(
-    () => imageTexts.some((t) => t.type.toLowerCase() === 'transcription'),
-    [imageTexts]
+  // Graph ids on the image, for the text panel's dangling-link check. Built from
+  // initialA9sAnnots, not a9sSnapshot — the latter excludes text regions.
+  //
+  // null until loaded: an empty Set claims "nothing is live" and would strip every
+  // text link for the duration of the fetch, permanently if the fetch failed.
+  const liveGraphIds = React.useMemo(
+    () =>
+      annotationsLoadedFor === imageId
+        ? new Set(
+            initialA9sAnnots
+              .map((annotation) => dbIdFromA9s(annotation))
+              .filter((id): id is number => id != null)
+          )
+        : null,
+    [annotationsLoadedFor, imageId, initialA9sAnnots]
   );
-  const hasTranslation = React.useMemo(
-    () => imageTexts.some((t) => t.type.toLowerCase() === 'translation'),
-    [imageTexts]
-  );
-  const showTextDisplay = hasTranscription && hasTranslation;
-  // Arriving from a text search hit (…/images/{id}?q=william) should reveal the
-  // transcription so the highlighted passage is visible — but transiently, never
-  // persisting a view-mode preference (that lives in localStorage). Re-evaluated
-  // per image; cleared the moment the reader uses the mode toggle themselves.
-  const [searchForcesText, setSearchForcesText] = React.useState(false);
-  // Re-derive from the URL whenever the image (or its has-texts status) changes,
-  // using the React "store info from previous renders" pattern instead of an
-  // effect. The window guard keeps the first (SSR/hydration) render at `false`,
-  // so there is no hydration mismatch; the re-derive fires only on client-side
-  // image transitions, exactly when the old effect did. Handlers may still set
-  // this to `false` directly (a deliberate mode toggle), which sticks until the
-  // next image change re-arms the previous-key tracker below.
-  const prevSearchForcesKeyRef = React.useRef<string | null>(null);
-  const searchForcesKey = `${imageId}|${hasTexts}`;
-  if (prevSearchForcesKeyRef.current !== searchForcesKey) {
-    prevSearchForcesKeyRef.current = searchForcesKey;
-    if (typeof window !== 'undefined') {
-      setSearchForcesText(
-        hasTexts && Boolean(new URLSearchParams(window.location.search).get('q'))
-      );
-    }
-  }
-  const effectiveViewMode = !hasTexts
-    ? 'allograph'
-    : searchForcesText && viewerSettings.viewMode === 'allograph'
-      ? 'text'
-      : viewerSettings.viewMode;
-  // The search term may live in either the Latin transcription or the English
-  // translation, so a deep-link shows both (when both exist) so the match is
-  // visible to highlight. Transient — does not change the saved preference.
-  const effectiveTextDisplayMode =
-    searchForcesText && showTextDisplay ? 'both' : viewerSettings.textDisplayMode;
-  // Pure text view: drawing a region links it to a phrase (no glyph/allograph).
-  const textLinkingActive = effectiveViewMode === 'text';
-  const isTextPanelOpen = effectiveViewMode !== 'allograph';
-  const showTextPanel = isTextPanelOpen && hasTexts;
-  const textPanelPosition = viewerSettings.textPanelPosition;
-  const isBottomDock = textPanelPosition === 'bottom';
-  // Splitter sizing only applies on the md+ docked layout; on mobile the panel
-  // stacks at a percentage height and the splitter is hidden.
-  const isMdUp = useMediaQuery('(min-width: 768px)');
-  const textPanelResize = useResizableTextPanel(textPanelPosition, {
-    storageKey: 'viewerTextPanelSize',
-    defaultWidth: 544, // md:w-[34rem]
-    defaultHeight: 320, // ≈ h-[40%]
-    minWidth: 320,
-    maxWidth: 900,
-    minHeight: 160,
-    maxHeight: 900,
-  });
+
+  const {
+    hasTexts,
+    hasTranscription,
+    hasTranslation,
+    showTextDisplay,
+    setSearchForcesText,
+    effectiveViewMode,
+    effectiveTextDisplayMode,
+    textLinkingActive,
+    showTextPanel,
+    textPanelPosition,
+    isBottomDock,
+    isMdUp,
+    textPanelResize,
+  } = useViewerTextMode({ imageId, imageTexts, viewerSettings });
 
   const positionNameById = React.useMemo(() => {
     const entries = allographs.flatMap((allograph) =>
@@ -456,85 +430,17 @@ export default function ManuscriptViewer({
     }
   }, [handsForThisImage, selectedHand, setSelectedHand]);
 
-  const displayAllograph = hoveredAllograph ?? filteredAllograph ?? undefined;
-
-  const activeAllographLabel = displayAllograph
-    ? formatAllographLabel(displayAllograph)
-    : undefined;
-
-  const countAllographId = displayAllograph?.id ?? null;
-
-  const highlightAllographId = hoveredAllograph?.id ?? filteredAllograph?.id ?? null;
-
-  const filteredA9s = React.useMemo(() => {
-    if (countAllographId == null) return [];
-    return a9sSnapshot.filter(
-      (a) => isGlyphAnnotation(a) && (a as A9sWithMeta)._meta?.allographId === countAllographId
-    );
-  }, [a9sSnapshot, countAllographId]);
-
-  const highlightedIds = React.useMemo(() => {
-    if (highlightAllographId != null) {
-      return a9sSnapshot
-        .filter(
-          (a) =>
-            isGlyphAnnotation(a) &&
-            (a as A9sWithMeta)._meta?.allographId === highlightAllographId &&
-            a.id !== popupAnnotation?.id
-        )
-        .map((a) => a.id);
-    }
-
-    if (selectedHand?.id != null) {
-      return a9sSnapshot
-        .filter(
-          (a) =>
-            isGlyphAnnotation(a) &&
-            (a as A9sWithMeta)._meta?.handId === selectedHand.id &&
-            a.id !== popupAnnotation?.id
-        )
-        .map((a) => a.id);
-    }
-
-    return [];
-  }, [a9sSnapshot, highlightAllographId, popupAnnotation?.id, selectedHand?.id]);
-
-  // Push the derived highlight state into the OSD viewer. (Kept inline rather
-  // than a one-effect/zero-state hook — it reads the derived values computed
-  // directly above.)
-  React.useEffect(() => {
-    if (!osdReady) return;
-
-    // A region clicked on the image stays highlighted until it's deselected, so
-    // its link (in the Link bar) has a persistent visual anchor. Hover and the
-    // allograph-filter layer their transient highlights on top of it.
-    const selectedRegionId = selectedRegionGraphId != null ? `db:${selectedRegionGraphId}` : null;
-    const withSelectedRegion = (ids: string[]) =>
-      selectedRegionId ? Array.from(new Set([selectedRegionId, ...ids])) : ids;
-
-    if (hoveredAnnotationId) {
-      viewerApiRef.current?.highlightAnnotations?.(withSelectedRegion([hoveredAnnotationId]));
-      return;
-    }
-
-    if (highlightAllographId == null) {
-      if (selectedRegionId) {
-        viewerApiRef.current?.highlightAnnotations?.([selectedRegionId]);
-      } else {
-        viewerApiRef.current?.clearHighlights?.();
-      }
-      return;
-    }
-
-    viewerApiRef.current?.highlightAnnotations?.(withSelectedRegion(highlightedIds));
-  }, [
-    osdReady,
+  const { activeAllographLabel, filteredA9s } = useViewerHighlights({
+    a9sSnapshot,
+    filteredAllograph,
+    hoveredAllograph,
+    selectedHand,
+    popupAnnotationId: popupAnnotation?.id,
     hoveredAnnotationId,
-    highlightAllographId,
-    highlightedIds,
     selectedRegionGraphId,
+    osdReady,
     viewerApiRef,
-  ]);
+  });
 
   const allographsForThisImage = React.useMemo(() => {
     if (!allographs.length) return [];
@@ -545,13 +451,29 @@ export default function ManuscriptViewer({
     return allographs.filter((a) => idSet.has(a.id));
   }, [allographs, imageAllographIds]);
 
+  const headerAllographsForThisImage = React.useMemo(() => {
+    if (!imageAllographIdsLoaded || !allographs.length || !imageAllographIds.length) return [];
+
+    const idSet = new Set(imageAllographIds);
+    return allographs.filter((a) => idSet.has(a.id));
+  }, [allographs, imageAllographIds, imageAllographIdsLoaded]);
+
   React.useEffect(() => {
     if (!filteredAllograph) return;
-    if (allographsForThisImage.some((allograph) => allograph.id === filteredAllograph.id)) return;
+    if (!imageAllographIdsLoaded) return;
+    if (headerAllographsForThisImage.some((allograph) => allograph.id === filteredAllograph.id)) {
+      return;
+    }
 
     setFilteredAllograph(undefined);
     setHoveredAllograph(undefined);
-  }, [allographsForThisImage, filteredAllograph, setFilteredAllograph, setHoveredAllograph]);
+  }, [
+    headerAllographsForThisImage,
+    filteredAllograph,
+    imageAllographIdsLoaded,
+    setFilteredAllograph,
+    setHoveredAllograph,
+  ]);
 
   const availableAllographFilterIds = React.useMemo(
     () => allographsForThisImage.map((allograph) => allograph.id),
@@ -595,30 +517,8 @@ export default function ManuscriptViewer({
   );
 
   const getStandardSaveValidationError = React.useCallback(
-    (annotation: A9sAnnotation): string | null => {
-      if (isTextRegionAnnotation(annotation)) {
-        return null;
-      }
-
-      const kind = getAnnotationKind(annotation);
-
-      if (kind === 'editorial') {
-        return null;
-      }
-
-      const allographId = annotation._meta?.allographId;
-      const handId = annotation._meta?.handId;
-
-      if (typeof allographId !== 'number' || allographId <= 0) {
-        return 'Choose an allograph from the dropdown before saving a new annotation.';
-      }
-
-      if (typeof handId !== 'number' || handId <= 0) {
-        return 'Choose a hand from the dropdown before saving a new annotation.';
-      }
-
-      return null;
-    },
+    (annotation: A9sAnnotation) =>
+      standardSaveValidationError(annotation, getAnnotationKind(annotation)),
     [getAnnotationKind]
   );
 
@@ -771,24 +671,8 @@ export default function ManuscriptViewer({
     setSelectedAnnotationIds([]);
     dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
 
-    if (!manuscriptImage || !imageHeight) return;
-
     try {
-      const refreshed = await buildInitialViewerAnnotations({
-        itemImageId: String(manuscriptImage.id),
-        iiifImage: manuscriptImage.iiif_image,
-        imageHeight,
-        allographNameById,
-        isPublicDemoMode,
-        includeEditorial: canViewEditorialControls,
-        includeText: true,
-        token,
-        currentViewerAnnotations: [],
-        currentUrl: '',
-      });
-
-      setInitialA9sAnnots(refreshed);
-      editorState.resetFrom(refreshed);
+      await reloadAnnotations();
     } catch {
       showActionNotification({
         kind: 'error',
@@ -796,16 +680,7 @@ export default function ManuscriptViewer({
         description: 'Could not reload the saved annotations for this image.',
       });
     }
-  }, [
-    allographNameById,
-    canViewEditorialControls,
-    clearPopupCollection,
-    imageHeight,
-    isPublicDemoMode,
-    manuscriptImage,
-    token,
-    editorState,
-  ]);
+  }, [clearPopupCollection, reloadAnnotations]);
 
   const handleMoveTool = React.useCallback(() => {
     viewerApiRef.current?.enablePan();
@@ -823,7 +698,7 @@ export default function ManuscriptViewer({
       handleSetViewMode(mode);
       handleMoveTool();
     },
-    [handleSetViewMode, handleMoveTool]
+    [handleSetViewMode, handleMoveTool, setSearchForcesText]
   );
 
   const handleModifyTool = React.useCallback(() => {
@@ -889,11 +764,20 @@ export default function ManuscriptViewer({
     if (committed && 'seed' in outcome) {
       viewerApiRef.current?.clearSelection?.();
       clearPopupCollection();
+      viewerApiRef.current?.replaceAnnotations(outcome.seed);
       setInitialA9sAnnots(outcome.seed);
+      setImageAllographIds(getSavedImageAllographIds(outcome.seed));
     }
 
     if (notice) showActionNotification(notice);
-  }, [editorRecords, getStandardSaveValidationError, editorState, clearPopupCollection]);
+  }, [
+    editorRecords,
+    getStandardSaveValidationError,
+    editorState,
+    clearPopupCollection,
+    setInitialA9sAnnots,
+    setImageAllographIds,
+  ]);
 
   const handleAllographDialogOpenChange = React.useCallback(
     (open: boolean) => {
@@ -950,193 +834,25 @@ export default function ManuscriptViewer({
     }
   }, [activePopupRecord, allographNameById, canViewEditorialControls, handlePopupTabChange]);
 
-  // load annotations for current image / allograph filter
-  React.useEffect(() => {
-    if (!manuscriptImage || !imageHeight) return;
-
-    let isMounted = true;
-
-    const load = async () => {
-      try {
-        const merged = await buildInitialViewerAnnotations({
-          itemImageId: String(manuscriptImage.id),
-          iiifImage: manuscriptImage.iiif_image,
-          imageHeight,
-          allographNameById,
-          isPublicDemoMode,
-          includeEditorial: canViewEditorialControls,
-          includeText: true,
-          token,
-          currentViewerAnnotations: viewerApiRef.current?.getAnnotations?.() ?? [],
-        });
-
-        if (isMounted) {
-          setInitialA9sAnnots(merged);
-          resetEditorFrom(merged);
-        }
-      } catch {
-        if (isMounted) {
-          setInitialA9sAnnots([]);
-          resetEditorFrom([]);
-        }
-      }
-    };
-
-    void load();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    manuscriptImage,
-    imageHeight,
-    allographNameById,
-    isPublicDemoMode,
-    canViewEditorialControls,
-    token,
-    resetEditorFrom,
-  ]);
-
-  // Legacy DigiPal toolbar shortcuts, adapted to the current viewer tools.
-  // Single useHotkeys subscription; each entry knows whether it should fire
-  // inside text inputs (only Cmd/Ctrl+S — the rest skip when typing).
-  const [isShortcutsOpen, setIsShortcutsOpen] = React.useState(false);
-  const canSaveNow = canPersistAnyAnnotations && !isPublicDemoMode && unsavedChanges > 0;
-  const [pendingPopupSaveRequest, setPendingPopupSaveRequest] = React.useState(0);
-  const handledPendingPopupSaveRef = React.useRef(0);
-  const handleSavePopupAnnotation = React.useCallback(
-    async (popupId: string) => {
-      if (!canPersistAnyAnnotations || isPublicDemoMode) return;
-      const popup = getPopupById(popupId);
-      if (!popup) return;
-      if (isDbId(popup.annotation.id) && !hasPopupAnnotationChanges(popup)) return;
-
-      await handleConfirmDraftAnnotation(popupId);
-      setPendingPopupSaveRequest((prev) => prev + 1);
-    },
-    [canPersistAnyAnnotations, getPopupById, handleConfirmDraftAnnotation, isPublicDemoMode]
-  );
-
-  React.useEffect(() => {
-    if (pendingPopupSaveRequest === 0) return;
-    if (handledPendingPopupSaveRef.current === pendingPopupSaveRequest) return;
-    if (!canSaveNow) return;
-
-    handledPendingPopupSaveRef.current = pendingPopupSaveRequest;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- deferred save: the popup-save handler bumps a counter, then this waits for canSaveNow (derived from unsavedChanges) to recompute after the confirmed draft commits before firing the async handleSave; running it in the handler would save before that state propagates. handleSave only sets state after its awaits.
-    void handleSave();
-  }, [canSaveNow, handleSave, pendingPopupSaveRequest]);
-
-  const zoomIn = React.useCallback(() => viewerApiRef.current?.zoomIn(), []);
-  const zoomOut = React.useCallback(() => viewerApiRef.current?.zoomOut(), []);
-  const panBy = React.useCallback((dx: number, dy: number) => {
-    viewerApiRef.current?.panByPixels(dx, dy);
-  }, []);
-  const viewerHotkeys = React.useMemo<HotkeyDefinition[]>(() => {
-    const accept = (handler: () => void) => (event: KeyboardEvent) => {
-      event.preventDefault();
-      handler();
-    };
-    const saveIfDirty = (event: KeyboardEvent) => {
-      if (!canPersistAnyAnnotations || isPublicDemoMode) return;
-      event.preventDefault();
-      if (canSaveNow) void handleSave();
-    };
-    const saveActivePopupOrToolbar = (event: KeyboardEvent) => {
-      if (!canPersistAnyAnnotations || isPublicDemoMode) return;
-      event.preventDefault();
-
-      const hasSavableActivePopup =
-        activePopupRecord &&
-        (!isDbId(activePopupRecord.annotation.id) || hasPopupAnnotationChanges(activePopupRecord));
-
-      if (hasSavableActivePopup) {
-        void handleSavePopupAnnotation(activePopupRecord.id);
-        return;
-      }
-
-      if (canSaveNow) void handleSave();
-    };
-    const defs: HotkeyDefinition[] = [
-      // Cmd/Ctrl+S — only shortcut that's allowed inside text inputs.
-      { key: 's', metaKey: true, allowInEditable: true, handler: saveIfDirty },
-      { key: 's', ctrlKey: true, allowInEditable: true, handler: saveIfDirty },
-      // Plain S saves the active popup first; without a popup it saves the toolbar state.
-      { key: 's', handler: saveActivePopupOrToolbar },
-
-      { key: 'Home', handler: accept(() => void handleDefaultZoom()) },
-      { key: 'f', handler: accept(handleToggleFullScreen) },
-      { key: 'g', handler: accept(handleMoveTool) },
-      { key: 'm', handler: accept(handleModifyTool) },
-      { key: 'd', handler: accept(() => handleCreateAnnotation()) },
-      { key: 'r', handler: accept(() => handleCreateAnnotation()) },
-      { key: ' ', handler: accept(handleToggleMoveDrawTool) },
-      { key: '?', shiftKey: true, handler: accept(() => setIsShortcutsOpen(true)) },
-
-      // Zoom in: Z, +, =
-      { key: 'z', handler: accept(zoomIn) },
-      { key: '+', handler: accept(zoomIn) },
-      { key: '=', handler: accept(zoomIn) },
-      // Zoom out: -, _
-      { key: '-', handler: accept(zoomOut) },
-      { key: '_', handler: accept(zoomOut) },
-
-      // Shift-Arrow pan (Shift required so plain arrow keys still belong to OSD)
-      {
-        key: 'ArrowUp',
-        shiftKey: true,
-        handler: accept(() => panBy(0, -LEGACY_SHORTCUT_PAN_STEP)),
-      },
-      {
-        key: 'ArrowDown',
-        shiftKey: true,
-        handler: accept(() => panBy(0, LEGACY_SHORTCUT_PAN_STEP)),
-      },
-      {
-        key: 'ArrowLeft',
-        shiftKey: true,
-        handler: accept(() => panBy(-LEGACY_SHORTCUT_PAN_STEP, 0)),
-      },
-      {
-        key: 'ArrowRight',
-        shiftKey: true,
-        handler: accept(() => panBy(LEGACY_SHORTCUT_PAN_STEP, 0)),
-      },
-    ];
-
-    if (canCreateEditorialAnnotations) {
-      defs.push({ key: 'e', handler: accept(() => handleCreateAnnotation('editorial')) });
-    }
-
-    if (canDeleteAnnotations) {
-      const del = accept(handleDeleteTool);
-      defs.push({ key: 'x', handler: del });
-      defs.push({ key: 'Delete', handler: del });
-      defs.push({ key: 'Backspace', shiftKey: true, handler: del });
-    }
-
-    return defs;
-  }, [
+  const { isShortcutsOpen, setIsShortcutsOpen, handleSavePopupAnnotation } = useViewerShortcuts({
+    viewerApiRef,
+    activePopupRecord,
+    getPopupById,
     canCreateEditorialAnnotations,
     canDeleteAnnotations,
     canPersistAnyAnnotations,
-    canSaveNow,
-    activePopupRecord,
+    isPublicDemoMode,
+    unsavedChanges,
+    handleConfirmDraftAnnotation,
     handleCreateAnnotation,
     handleDefaultZoom,
     handleDeleteTool,
     handleModifyTool,
     handleMoveTool,
     handleSave,
-    handleSavePopupAnnotation,
     handleToggleFullScreen,
     handleToggleMoveDrawTool,
-    isPublicDemoMode,
-    panBy,
-    zoomIn,
-    zoomOut,
-  ]);
-  useHotkeys(viewerHotkeys);
+  });
 
   // ---- Early returns ----
   if (loading) {
@@ -1184,7 +900,7 @@ export default function ManuscriptViewer({
         selectedHand === undefined ? (defaultHand?.id ?? null) : (selectedHand?.id ?? null)
       }
       onHandSelect={setSelectedHand}
-      allographs={allographsForThisImage}
+      allographs={headerAllographsForThisImage}
       selectedAllographId={dropdownAllograph?.id ?? null}
       onAllographSelect={setFilteredAllograph}
       onAllographHover={setHoveredAllograph}
@@ -1364,13 +1080,8 @@ export default function ManuscriptViewer({
               onDeleteMany={handleViewerDeleteMany}
               onDeleteTextRegion={(annotation) => {
                 const graphId = dbIdFromA9s(annotation);
-                if (
-                  graphId != null &&
-                  window.confirm(
-                    'Delete this linked region?\n\nIt will be removed from the image and unlinked from the transcription.'
-                  )
-                ) {
-                  unlinkSelectedRegion(graphId);
+                if (graphId != null && window.confirm(tManuscript('delete.regionConfirm'))) {
+                  trashSelectedRegion(graphId);
                 }
               }}
               confirmDelete={handleConfirmDelete}
@@ -1452,6 +1163,7 @@ export default function ManuscriptViewer({
                   onTextSaved={() => void reloadTextsAndAnnotations()}
                   linkedGraphId={linkedGraphId}
                   hoveredGraphId={hoveredRegionGraphId}
+                  liveGraphIds={liveGraphIds}
                   onSpanHover={(graphId) =>
                     setHoveredAnnotationId(graphId != null ? `db:${graphId}` : null)
                   }
@@ -1483,7 +1195,7 @@ export default function ManuscriptViewer({
                     rearmCreateTool();
                   }}
                   selectedRegionGraphId={selectedRegionGraphId}
-                  onDeleteRegion={(graphId) => unlinkSelectedRegion(graphId)}
+                  onDeleteRegion={(graphId) => trashSelectedRegion(graphId)}
                   onUnlinkElement={(textId, elementIndex, graphId) =>
                     unlinkElementFromRegion(textId, elementIndex, graphId)
                   }

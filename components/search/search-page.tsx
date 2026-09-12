@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { PanelLeftClose, PanelLeftOpen, SearchX } from 'lucide-react';
-import { ResultsTable } from '@/components/search/results-table';
+import { hasTablePreview, ResultsTable } from '@/components/search/results-table';
 import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';
 import { ActiveFacetTags } from '@/components/filters/active-facet-tags';
@@ -42,6 +42,8 @@ const SearchMapView = React.lazy(() =>
 );
 import { cn } from '@/lib/utils';
 import { useSearchPageState } from '@/hooks/search/use-search-page-state';
+import { useShowThumbnails } from '@/hooks/search/use-show-thumbnails';
+import { ThumbnailToggle } from '@/components/search/thumbnail-toggle';
 import { useTranslations } from 'next-intl';
 
 type ResultListItem = ResultMap[ResultType];
@@ -50,12 +52,14 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const t = useTranslations('search');
   const s = useSearchPageState(initialType);
   const [thumbnailSize, setThumbnailSize] = useThumbnailSize();
+  const [showThumbnails, setShowThumbnails] = useShowThumbnails();
   const { getLabel } = useModelLabels();
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
 
   return (
     <div className="flex min-h-[calc(100dvh-var(--site-header-h,0px))] flex-col bg-background">
-      <header className="relative z-10 flex shrink-0 flex-col gap-2.5 border-b border-border bg-card px-3 py-2.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-transparent after:via-accent/50 after:to-transparent sm:px-5">
+      {/* Keep this above the sticky table header (z-10) so search dropdowns can overlap results. */}
+      <header className="relative z-20 flex shrink-0 flex-col gap-2.5 border-b border-border bg-card px-3 py-2.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-transparent after:via-accent/50 after:to-transparent sm:px-5">
         <h1 className="sr-only">{t('srHeading', { typeLabel, count: s.resultCount })}</h1>
         {/* Row 1: result count · the single keyword search · view / sort / actions */}
         <div className="flex items-center gap-3 sm:gap-4">
@@ -198,6 +202,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 resultType={s.resultType}
                 visibleColumns={s.visibility.visibleColumns}
                 visibleFacets={s.visibility.visibleFacets}
+                availableColumns={s.visibility.availableColumns}
+                availableFacets={s.visibility.availableFacets}
                 onColumnsChange={s.visibility.setVisibleColumns}
                 onFacetsChange={s.visibility.setVisibleFacets}
                 onReset={s.visibility.resetToDefault}
@@ -231,8 +237,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             />
           </div>
         </div>
-        {/* Row 2: the result-type tabs, with the grid thumbnail-size control
-            right-aligned on the same line (grid view only). */}
+        {/* Row 2: the result-type tabs, with the thumbnail-size control
+            right-aligned on the same line. */}
         <div className="flex min-w-0 items-center gap-3">
           <div className="min-w-0 flex-1">
             <ResultTypeToggle
@@ -242,13 +248,29 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               counts={s.countsByType}
             />
           </div>
-          {s.viewMode === 'grid' && (
-            <ThumbnailSizeControl
-              size={thumbnailSize}
-              onChange={setThumbnailSize}
-              className="hidden shrink-0 sm:inline-flex"
-            />
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Sizes whatever thumbnail the current view draws: the grid's
+                cards, and the region crop the table renders under each row. */}
+            {showThumbnails &&
+              (s.viewMode === 'grid' ||
+                (s.viewMode === 'table' && hasTablePreview(s.resultType))) && (
+                <ThumbnailSizeControl
+                  size={thumbnailSize}
+                  onChange={setThumbnailSize}
+                  className="hidden shrink-0 sm:inline-flex"
+                />
+              )}
+            {/* Only grid view, and the table views that actually render a
+                thumbnail row, have anything for this to hide. */}
+            {(s.viewMode === 'grid' ||
+              (s.viewMode === 'table' && hasTablePreview(s.resultType))) && (
+              <ThumbnailToggle
+                showThumbnails={showThumbnails}
+                onChange={setShowThumbnails}
+                className="hidden shrink-0 sm:inline-flex"
+              />
+            )}
+          </div>
         </div>
       </header>
 
@@ -338,6 +360,8 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     highlightKeyword={s.submittedKeyword}
                     visibleColumns={s.categoryConfig.visibleColumns}
                     isFetching={s.isFetching}
+                    showThumbnails={showThumbnails}
+                    thumbnailSize={thumbnailSize}
                   />
                 ) : s.viewMode === 'timeline' ? (
                   <React.Suspense
@@ -411,6 +435,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     highlightKeyword={s.submittedKeyword}
                     isFetching={s.isFetching}
                     thumbnailSize={thumbnailSize}
+                    showThumbnails={showThumbnails}
                   />
                 )
               ) : s.data.count > 0 && s.queryState.offset >= s.data.count ? (

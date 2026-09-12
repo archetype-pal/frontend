@@ -11,7 +11,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const stored = getDefaultModelLabelsConfig();
-stored.labels.appManuscripts = { en: 'Corpus', fr: 'Corpus' };
+stored.labels.appManuscripts = { en: 'Corpus', fr: 'Corpus', de: 'Corpus' };
 
 let getStatus: number;
 const fetchMock = vi.fn();

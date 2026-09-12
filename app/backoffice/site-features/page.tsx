@@ -21,6 +21,7 @@ import { ThemeCustomization } from '@/components/backoffice/site-features/theme-
 import { BrandingCustomization } from '@/components/backoffice/site-features/branding-customization';
 import {
   getDefaultConfig,
+  hasEnabledSearchCategory,
   normalizeSectionOrder,
   type SiteFeaturesConfig,
   type SectionKey,
@@ -99,8 +100,12 @@ export default function SiteFeaturesPage() {
 
   const handleSave = useCallback(() => {
     if (!dirty || !token || saveMut.isPending) return;
+    if (!hasEnabledSearchCategory(config)) {
+      toast.error(t('siteFeatures.searchCategoriesRequired'));
+      return;
+    }
     saveMut.mutate();
-  }, [dirty, token, saveMut]);
+  }, [config, dirty, token, saveMut, t]);
 
   useKeyboardShortcut('mod+s', handleSave);
 
@@ -136,10 +141,15 @@ export default function SiteFeaturesPage() {
   };
 
   const handleCategoryChange = (type: ResultType, catConfig: SearchCategoryConfig) => {
-    setConfig((prev) => ({
-      ...prev,
-      searchCategories: { ...prev.searchCategories, [type]: catConfig },
-    }));
+    const nextConfig = {
+      ...config,
+      searchCategories: { ...config.searchCategories, [type]: catConfig },
+    };
+    if (!hasEnabledSearchCategory(nextConfig)) {
+      toast.error(t('siteFeatures.searchCategoriesRequired'));
+      return;
+    }
+    setConfig(nextConfig);
     setDirty(true);
   };
 

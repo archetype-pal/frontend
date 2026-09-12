@@ -6,9 +6,9 @@ import {
   pluralizeLabel,
   resolveModelLabel,
   type ModelLabelKey,
+  type ModelLabelLocale,
   type ModelLabelsConfig,
 } from '@/lib/model-labels';
-import { useLocaleStore } from '@/stores/locale-store';
 
 type ModelLabelsContextValue = {
   config: ModelLabelsConfig;
@@ -21,9 +21,11 @@ const ModelLabelsContext = createContext<ModelLabelsContextValue | null>(null);
 export function ModelLabelsProvider({
   children,
   initialConfig,
+  locale = 'en',
 }: {
   children: ReactNode;
   initialConfig?: ModelLabelsConfig;
+  locale?: ModelLabelLocale;
 }) {
   const defaults = useMemo(() => getDefaultModelLabelsConfig(), []);
   // Config is provided by the server (SSR) in production; the bare-provider
@@ -36,8 +38,6 @@ export function ModelLabelsProvider({
     setPrevInitialConfig(initialConfig);
     setConfig(initialConfig);
   }
-
-  const locale = useLocaleStore((state) => state.locale);
 
   const getLabel = useCallback(
     (key: ModelLabelKey) => resolveModelLabel(config.labels[key] ?? defaults.labels[key], locale),

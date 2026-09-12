@@ -459,6 +459,8 @@ const FACET_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
     // Type" / "Origin Place", which read poorly next to the catalogue facets.
     material: 'Support Material',
     deco_type: 'Decoration',
+    seal_type: 'Seal',
+    seal_material: 'Seal Material',
     origin_place: 'Place of Origin',
   },
 };

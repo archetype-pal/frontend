@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Link2, Trash2, Unlink } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -39,7 +40,8 @@ export interface ViewerLinkBarProps {
   ) => void;
   /** Remove just this element's link to the region. */
   onUnlinkElement: (textId: number, elementIndex: number, graphId: number) => void;
-  /** Remove the whole region (deletes it + all its links). */
+  /** Move the whole region to the trash. Its links are kept, not stripped — that
+   *  is what lets an admin restore the region and its text links together. */
   onRemoveRegion: (graphId: number) => void;
   /** Discard a drawn-but-unlinked region. */
   onDiscardDrawnRegion: () => void;
@@ -54,6 +56,7 @@ const HINT = 'text-[11px] leading-relaxed text-muted-foreground';
  * until then. Also hosts per-link unlink and whole-region removal.
  */
 export function ViewerLinkBar(props: ViewerLinkBarProps) {
+  const t = useTranslations('manuscript');
   const {
     canLink,
     textId,
@@ -190,17 +193,15 @@ export function ViewerLinkBar(props: ViewerLinkBarProps) {
             className="h-7 gap-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
             disabled={busy}
             onClick={() => {
-              if (
-                window.confirm(
-                  'Remove this region?\n\nIt will be deleted from the image and unlinked from every phrase.'
-                )
-              ) {
+              // Same key as the canvas bin tool — both are entry points to the one
+              // action, so they must promise the same thing.
+              if (window.confirm(t('delete.regionConfirm'))) {
                 onRemoveRegion(activeRegion.graphId);
               }
             }}
           >
             <Trash2 className="h-3.5 w-3.5" />
-            Remove region
+            {t('delete.removeRegion')}
           </Button>
         ) : null}
       </div>

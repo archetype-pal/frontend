@@ -10,12 +10,16 @@ import { BackofficeSidebar } from './backoffice-sidebar';
 import { BackofficeHeader } from './backoffice-header';
 import { SearchCommand } from '@/components/backoffice/common/search-command';
 import { KeyboardShortcutsDialog } from '@/components/backoffice/common/keyboard-shortcuts-dialog';
+import { UploadManagerProvider } from '@/contexts/upload-manager-context';
+import { UploadTray } from '@/components/backoffice/uploads/upload-tray';
 
 export function BackofficeShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations('backoffice');
   const { token, user } = useAuth();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   // Auth guard — redirect non-authenticated visitors to login
   useEffect(() => {
@@ -48,17 +52,27 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
 
   return (
     <TooltipProvider>
-      <div className="backoffice-shell fixed inset-0 z-50 flex bg-background">
-        <BackofficeSidebar collapsed={collapsed} />
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <BackofficeHeader collapsed={collapsed} onToggleSidebar={() => setCollapsed((c) => !c)} />
-          <main className="flex-1 overflow-y-auto">
-            <div className="p-6">{children}</div>
-          </main>
+      {/* Uploads are owned here, above the page content, so they survive
+          navigation between backoffice routes and stay visible in the tray. */}
+      <UploadManagerProvider>
+        <div className="backoffice-shell fixed inset-0 z-50 flex bg-background">
+          <BackofficeSidebar collapsed={collapsed} />
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <BackofficeHeader
+              collapsed={collapsed}
+              onToggleSidebar={() => setCollapsed((c) => !c)}
+              onOpenCommandPalette={() => setCommandOpen(true)}
+              onOpenKeyboardShortcuts={() => setShortcutsOpen(true)}
+            />
+            <main className="flex-1 overflow-y-auto">
+              <div className="p-6">{children}</div>
+            </main>
+          </div>
+          <SearchCommand open={commandOpen} onOpenChange={setCommandOpen} />
+          <KeyboardShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+          <UploadTray />
         </div>
-        <SearchCommand />
-        <KeyboardShortcutsDialog />
-      </div>
+      </UploadManagerProvider>
     </TooltipProvider>
   );
 }

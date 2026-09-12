@@ -53,8 +53,8 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
 
   const [pageSlug, setPageSlug] = useState('');
   const [slugLocked, setSlugLocked] = useState(true);
-  const [title, setTitle] = useState<LocalizedText>({ en: '', fr: '' });
-  const [content, setContent] = useState<LocalizedText>({ en: '', fr: '' });
+  const [title, setTitle] = useState<LocalizedText>({ en: '', fr: '', de: '' });
+  const [content, setContent] = useState<LocalizedText>({ en: '', fr: '', de: '' });
   const [status, setStatus] = useState<PageStatus>('Draft');
   const [order, setOrder] = useState(0);
   const [includeInQuickLink, setIncludeInQuickLink] = useState(false);
@@ -328,9 +328,12 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
             <TabsTrigger value="fr" className="text-xs">
               {t('pagesDetail.tabFrench')}
             </TabsTrigger>
+            <TabsTrigger value="de" className="text-xs">
+              {t('pagesDetail.tabGerman')}
+            </TabsTrigger>
           </TabsList>
 
-          {(['en', 'fr'] as const).map((locale) => (
+          {(['en', 'fr', 'de'] as const).map((locale) => (
             <TabsContent key={locale} value={locale} className="mt-4 space-y-4">
               <div className="space-y-1.5">
                 <Label>{t('pagesDetail.fieldPageTitle')}</Label>

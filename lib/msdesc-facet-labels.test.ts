@@ -21,6 +21,7 @@ describe('formatMsDescFacetValue', () => {
     expect(formatMsDescFacetValue('script', 'textualisNorthern', t)).toBe(
       'Gothic textualis (Northern)'
     );
+    expect(formatMsDescFacetValue('seal_type', 'greatSeal', t)).toBe('Great seal');
     expect(formatMsDescFacetValue('deco_type', 'flourInit', t)).toBe(
       'Flourished (penwork) initial'
     );
@@ -38,6 +39,8 @@ describe('formatMsDescFacetValue', () => {
     // Authored place names are already human-readable; repository/type facets
     // are not msDesc-derived at all.
     expect(formatMsDescFacetValue('origin_place', 'Kelso', t)).toBe('Kelso');
+    // seal_material is authored free text, not a vocabulary — passes through.
+    expect(formatMsDescFacetValue('seal_material', 'green wax', t)).toBe('green wax');
     expect(formatMsDescFacetValue('repository_name', 'perg', t)).toBe('perg');
   });
 });

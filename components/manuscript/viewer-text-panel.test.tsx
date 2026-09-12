@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ViewerTextPanel } from './viewer-text-panel';
@@ -68,5 +68,100 @@ describe('ViewerTextPanel — region hover → text highlight', () => {
     // A rule is written for the hovered id, but it does not match the id-5 span.
     expect(hoverStyle()).toContain('[data-graph-id="999"]');
     expect(hoverStyle()).not.toContain('[data-graph-id="5"]');
+  });
+});
+
+// Dangling spans are neutralised by a second injected stylesheet, for the same
+// reason as the hover one: the ProseMirror editor reverts attribute mutations.
+const danglingStyle = () =>
+  document.head.querySelector<HTMLStyleElement>('style[data-viewer-dangling-links]')?.textContent ??
+  '';
+
+describe('ViewerTextPanel — dangling links (trashed regions)', () => {
+  // A trashed region keeps its corresp in the TEI so a restore is lossless, so a
+  // span can point at a region that is no longer on the image. Those must read
+  // as plain prose: not interactive, and not styled as a link.
+  const twoSpans = () =>
+    makeText({
+      content:
+        '<p>Charter of <seg corresp="#gid-5">William</seg> and <seg corresp="#gid-9">Malcolm</seg></p>',
+    });
+
+  it('leaves a span alone while its region is still on the image', () => {
+    const onSpanActivate = vi.fn();
+    const { container } = render(
+      <ViewerTextPanel
+        texts={[makeText()]}
+        liveGraphIds={new Set([5])}
+        {...baseProps}
+        onSpanActivate={onSpanActivate}
+      />
+    );
+    expect(danglingStyle()).toBe('');
+
+    fireEvent.click(container.querySelector('[data-graph-id="5"]')!);
+    expect(onSpanActivate).toHaveBeenCalledWith(5);
+  });
+
+  it('neutralises a span once its region is gone, and stops it activating', () => {
+    const onSpanActivate = vi.fn();
+    const onSpanHover = vi.fn();
+    const { container } = render(
+      <ViewerTextPanel
+        texts={[makeText()]}
+        liveGraphIds={new Set([99])}
+        {...baseProps}
+        onSpanActivate={onSpanActivate}
+        onSpanHover={onSpanHover}
+      />
+    );
+    expect(danglingStyle()).toContain('[data-graph-id="5"]');
+    expect(danglingStyle()).toContain('cursor:auto');
+    // Must also cancel the :hover rule. globals.css hovers `[data-graph-id]:hover`
+    // at (0,3,0); a bare attribute selector is (0,2,0) and loses the cascade, so
+    // the phrase would keep highlighting on hover even though it links nowhere.
+    expect(danglingStyle()).toContain('[data-graph-id="5"]:hover');
+
+    const span = container.querySelector('[data-graph-id="5"]')!;
+    fireEvent.click(span);
+    expect(onSpanActivate).not.toHaveBeenCalled();
+
+    fireEvent.mouseOver(span);
+    expect(onSpanHover).toHaveBeenCalledWith(null);
+  });
+
+  it('does not gate anything while liveGraphIds is null (loading, or load failed)', () => {
+    // The regression guard: an empty Set claims "nothing is live" and would strip
+    // every link. Before the fetch resolves we do not know, so we must not claim.
+    const onSpanActivate = vi.fn();
+    const { container } = render(
+      <ViewerTextPanel
+        texts={[makeText()]}
+        liveGraphIds={null}
+        {...baseProps}
+        onSpanActivate={onSpanActivate}
+      />
+    );
+    expect(danglingStyle()).toBe('');
+
+    fireEvent.click(container.querySelector('[data-graph-id="5"]')!);
+    expect(onSpanActivate).toHaveBeenCalledWith(5);
+  });
+
+  it('neutralises only the span whose region is gone', () => {
+    const onSpanActivate = vi.fn();
+    const { container } = render(
+      <ViewerTextPanel
+        texts={[twoSpans()]}
+        liveGraphIds={new Set([9])}
+        {...baseProps}
+        onSpanActivate={onSpanActivate}
+      />
+    );
+    expect(danglingStyle()).toContain('[data-graph-id="5"]');
+    expect(danglingStyle()).not.toContain('[data-graph-id="9"]');
+
+    fireEvent.click(container.querySelector('[data-graph-id="9"]')!);
+    expect(onSpanActivate).toHaveBeenCalledWith(9);
   });
 });

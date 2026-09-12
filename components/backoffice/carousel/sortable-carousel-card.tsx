@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { getCarouselImageUrl } from '@/utils/api';
+import { sanitizeHtml, stripHtml } from '@/lib/sanitize-html';
 import type { CarouselItem } from '@/types/backoffice';
 
 interface SortableCarouselCardProps {
@@ -68,14 +69,17 @@ export function SortableCarouselCard({
       <div className="h-12 w-20 shrink-0 rounded overflow-hidden bg-muted flex items-center justify-center">
         {hasImage ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={imageUrl} alt={item.title} className="h-full w-full object-cover" />
+          <img src={imageUrl} alt={stripHtml(item.title)} className="h-full w-full object-cover" />
         ) : (
           <ImageIcon className="h-5 w-5 text-muted-foreground/50" />
         )}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{item.title}</p>
+        <p
+          className="text-sm font-medium truncate"
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.title) }}
+        />
         {item.url && <p className="text-xs text-muted-foreground truncate">{item.url}</p>}
       </div>
 
