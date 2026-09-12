@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   Select,
@@ -64,7 +64,16 @@ export function SortControl({ ordering, value, onChange, className }: SortContro
   const directionLabel = descending ? t('sortDescending') : t('sortAscending');
 
   return (
-    <div className={cn('items-center gap-1', className)}>
+    <div
+      className={cn(
+        'items-center gap-1.5 rounded-md border border-border/70 bg-muted/35 px-1.5 py-1',
+        className
+      )}
+    >
+      <span className="inline-flex shrink-0 items-center gap-1 px-1 text-[11px] font-medium text-muted-foreground">
+        <ArrowUpDown className="h-3.5 w-3.5" aria-hidden="true" />
+        <span>{t('sortBy')}</span>
+      </span>
       <Select
         value={selected ?? DEFAULT_VALUE}
         onValueChange={(next) =>
@@ -76,11 +85,11 @@ export function SortControl({ ordering, value, onChange, className }: SortContro
         }
       >
         <SelectTrigger
-          className="h-8 w-[150px] bg-background text-xs"
+          className="h-8 w-[150px] border-border/80 bg-background text-xs"
           aria-label={t('sortByLabel')}
           title={t('sortByLabel')}
         >
-          <SelectValue placeholder={t('sortBy')} />
+          <SelectValue placeholder={t('sortDefault')} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={DEFAULT_VALUE} className="text-xs">

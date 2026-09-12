@@ -77,14 +77,37 @@ export function getCollectionDisplayShelfmark(item: CollectionDisplayInput): str
   return `${shorthand} ${shelfmark}`;
 }
 
-export function getCollectionManuscriptLabel(item: CollectionDisplayInput): string {
+export function getCollectionManuscriptLabel(
+  item: CollectionDisplayInput,
+  untitledLabel = 'Untitled'
+): string {
   const shelfmark = getCollectionDisplayShelfmark(item);
   const locus = clean(item.locus);
 
   if (shelfmark && locus) return `${shelfmark}: ${locus}`;
   if (shelfmark) return shelfmark;
   if (locus) return locus;
-  return 'Untitled';
+  return untitledLabel;
+}
+
+export function getCollectionGridCardLabels(
+  item: CollectionDisplayInput,
+  untitledLabel = 'Untitled'
+): {
+  title: string;
+  subtitle?: string;
+} {
+  const title = getCollectionManuscriptLabel(item, untitledLabel);
+
+  if (item.type !== 'graph' || isCollectionEditorialAnnotation(item)) {
+    return { title };
+  }
+
+  const subtitle = [getCollectionAllographLabel(item), getCollectionHandLabel(item)]
+    .filter(Boolean)
+    .join(' · ');
+
+  return subtitle ? { title, subtitle } : { title };
 }
 
 export function getCollectionAllographLabel(item: CollectionDisplayInput): string {

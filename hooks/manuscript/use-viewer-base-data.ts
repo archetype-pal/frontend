@@ -25,7 +25,12 @@ export function useViewerBaseData(imageId: string) {
   const [error, setError] = React.useState<string | null>(null);
 
   const [allographs, setAllographs] = React.useState<Allograph[]>([]);
-  const [imageAllographIds, setImageAllographIds] = React.useState<number[]>([]);
+  const [imageAllographIds, setRawImageAllographIds] = React.useState<number[]>([]);
+  const [imageAllographIdsLoaded, setImageAllographIdsLoaded] = React.useState(false);
+  const setImageAllographIds = React.useCallback((ids: number[]) => {
+    setRawImageAllographIds(ids);
+    setImageAllographIdsLoaded(true);
+  }, []);
 
   const [hands, setHands] = React.useState<HandType[]>([]);
   const [handsLoaded, setHandsLoaded] = React.useState(false);
@@ -58,6 +63,8 @@ export function useViewerBaseData(imageId: string) {
     const loadData = async () => {
       try {
         setLoading(true);
+        setRawImageAllographIds([]);
+        setImageAllographIdsLoaded(false);
 
         const { image, manuscript, allographs, imageHeight } =
           await fetchManuscriptViewerBaseData(imageId);
@@ -124,7 +131,9 @@ export function useViewerBaseData(imageId: string) {
 
         setImageAllographIds(ids);
       } catch {
-        if (isMounted) setImageAllographIds([]);
+        if (isMounted) {
+          setImageAllographIds([]);
+        }
       }
     };
 
@@ -133,13 +142,14 @@ export function useViewerBaseData(imageId: string) {
     return () => {
       isMounted = false;
     };
-  }, [manuscriptImage]);
+  }, [manuscriptImage, setImageAllographIds]);
 
   return {
     manuscriptImage,
     manuscript,
     allographs,
     imageAllographIds,
+    imageAllographIdsLoaded,
     hands,
     handsLoaded,
     imageHeight,
@@ -147,5 +157,6 @@ export function useViewerBaseData(imageId: string) {
     error,
     setHands,
     setHandsLoaded,
+    setImageAllographIds,
   };
 }
