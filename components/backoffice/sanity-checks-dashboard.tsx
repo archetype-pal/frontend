@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   HeartPulse,
   Loader2,
+  MinusCircle,
   RefreshCcw,
   Send,
   XCircle,
@@ -36,18 +37,29 @@ function extractErrorDetail(err: unknown): string | undefined {
   return undefined;
 }
 
-function StatusRow({ ok, label, detail }: { ok: boolean; label: string; detail: string | null }) {
+/** `ok: null` is "not applicable", e.g. no log file to check. */
+function StatusRow({
+  ok,
+  label,
+  detail,
+}: {
+  ok: boolean | null;
+  label: string;
+  detail: string | null;
+}) {
   return (
     <div className="flex items-start justify-between gap-3 py-1.5">
       <div className="flex items-center gap-2">
-        {ok ? (
+        {ok === null ? (
+          <MinusCircle className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+        ) : ok ? (
           <CheckCircle2 className="h-4 w-4 shrink-0 text-severity-success" aria-hidden />
         ) : (
           <XCircle className="h-4 w-4 shrink-0 text-severity-overdue" aria-hidden />
         )}
         <span className="text-sm">{label}</span>
       </div>
-      {!ok && detail && (
+      {ok !== true && detail && (
         <span className="max-w-[60%] text-right text-xs text-muted-foreground">{detail}</span>
       )}
     </div>
@@ -98,11 +110,18 @@ export function SanityChecksDashboard() {
           label: t('sanityChecks.services.celeryBroker'),
           check: data.services.celery_broker,
         },
+        {
+          key: 'celery_workers',
+          label: t('sanityChecks.services.celeryWorkers', {
+            count: data.services.celery_workers.workers,
+          }),
+          check: data.services.celery_workers,
+        },
       ]
     : [];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <HeartPulse className="h-6 w-6 text-primary" />
@@ -140,7 +159,9 @@ export function SanityChecksDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-base">
                 <span>{t('sanityChecks.migrations.title')}</span>
-                {data.migrations.has_pending ? (
+                {data.migrations.has_pending === null ? (
+                  <Badge variant="outline">{t('sanityChecks.migrations.unknown')}</Badge>
+                ) : data.migrations.has_pending ? (
                   <Badge variant="destructive">
                     {data.migrations.pending.length} {t('sanityChecks.migrations.pendingLabel')}
                   </Badge>
@@ -149,6 +170,11 @@ export function SanityChecksDashboard() {
                 )}
               </CardTitle>
             </CardHeader>
+            {data.migrations.detail && (
+              <CardContent>
+                <p className="text-xs text-muted-foreground">{data.migrations.detail}</p>
+              </CardContent>
+            )}
             {data.migrations.has_pending && (
               <CardContent>
                 <ul className="space-y-1 text-sm">
@@ -181,9 +207,9 @@ export function SanityChecksDashboard() {
               <div className="flex items-center justify-between text-sm">
                 <span>{t('sanityChecks.storage.databaseSize')}</span>
                 <span className="font-mono text-xs">
-                  {data.database_size_bytes === null
+                  {data.database.size_bytes === null
                     ? t('sanityChecks.storage.unavailable')
-                    : formatBytes(data.database_size_bytes)}
+                    : formatBytes(data.database.size_bytes)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
@@ -207,9 +233,11 @@ export function SanityChecksDashboard() {
                 detail={null}
               />
               <StatusRow
-                ok={data.logs.writable}
+                ok={data.logs.configured ? data.logs.writable : null}
                 label={t('sanityChecks.permissions.logsWritable')}
-                detail={null}
+                detail={
+                  data.logs.configured ? null : t('sanityChecks.permissions.logsNotConfigured')
+                }
               />
             </CardContent>
           </Card>
@@ -251,6 +279,9 @@ export function SanityChecksDashboard() {
                   </AlertDescription>
                 </Alert>
               )}
+              <p className="mt-3 font-mono text-xs text-muted-foreground">
+                {t('sanityChecks.smtp.backend', { backend: data.email.backend })}
+              </p>
             </CardContent>
           </Card>
         </div>

@@ -2410,14 +2410,16 @@
       "migrations": {
         "title": "Ausstehende Migrationen",
         "upToDate": "Aktuell",
-        "pendingLabel": "ausstehend"
+        "pendingLabel": "ausstehend",
+        "unknown": "Unbekannt"
       },
       "services": {
         "title": "Abhängige Dienste",
         "database": "Datenbank",
         "redis": "Redis",
         "meilisearch": "Meilisearch",
-        "celeryBroker": "Celery-Broker"
+        "celeryBroker": "Celery-Broker",
+        "celeryWorkers": "Celery-Worker ({count})"
       },
       "storage": {
         "title": "Speicher",
@@ -2429,7 +2431,8 @@
       "permissions": {
         "title": "Dateisystemberechtigungen",
         "mediaWritable": "Medienverzeichnis beschreibbar",
-        "logsWritable": "Protokollverzeichnis beschreibbar"
+        "logsWritable": "Protokollverzeichnis beschreibbar",
+        "logsNotConfigured": "Keine Protokolldatei konfiguriert, Protokolle gehen an stdout"
       },
       "smtp": {
         "title": "E-Mail (SMTP)",
@@ -2441,7 +2444,8 @@
         "send": "Test-E-Mail senden",
         "sending": "Wird gesendet …",
         "toastSuccess": "Test-E-Mail gesendet",
-        "toastError": "Test-E-Mail konnte nicht gesendet werden"
+        "toastError": "Test-E-Mail konnte nicht gesendet werden",
+        "backend": "Mail-Backend: {backend}"
       }
     },
     "reviewAge": {

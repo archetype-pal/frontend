@@ -2410,14 +2410,16 @@
       "migrations": {
         "title": "Migrations en attente",
         "upToDate": "À jour",
-        "pendingLabel": "en attente"
+        "pendingLabel": "en attente",
+        "unknown": "Inconnu"
       },
       "services": {
         "title": "Services dépendants",
         "database": "Base de données",
         "redis": "Redis",
         "meilisearch": "Meilisearch",
-        "celeryBroker": "Broker Celery"
+        "celeryBroker": "Broker Celery",
+        "celeryWorkers": "Workers Celery ({count})"
       },
       "storage": {
         "title": "Stockage",
@@ -2429,7 +2431,8 @@
       "permissions": {
         "title": "Permissions du système de fichiers",
         "mediaWritable": "Répertoire média accessible en écriture",
-        "logsWritable": "Répertoire de logs accessible en écriture"
+        "logsWritable": "Répertoire de logs accessible en écriture",
+        "logsNotConfigured": "Aucun fichier de logs configuré, les logs vont sur la sortie standard"
       },
       "smtp": {
         "title": "E-mail (SMTP)",
@@ -2441,7 +2444,8 @@
         "send": "Envoyer un e-mail de test",
         "sending": "Envoi…",
         "toastSuccess": "E-mail de test envoyé",
-        "toastError": "Échec de l'envoi de l'e-mail de test"
+        "toastError": "Échec de l'envoi de l'e-mail de test",
+        "backend": "Backend d'e-mail : {backend}"
       }
     },
     "reviewAge": {

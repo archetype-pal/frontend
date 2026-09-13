@@ -2,13 +2,9 @@ import { z } from 'zod';
 
 import { backofficeGet, backofficePost } from './api-client';
 
-// Response shape confirmed against the backend's actual implementation
-// (apps.common.services.sanity_checks.run_sanity_checks and
-// apps.common.views.SanityCheckTestEmailView) rather than assumed — the
-// field names/nesting here differ from an earlier sketch of the contract
-// (e.g. "migrations.pending" not "pending_migrations", "email.smtp_configured"
-// not a top-level "smtp_configured", "media.size_bytes"/"media.writable" and
-// "logs.writable" not a top-level "permissions" object).
+// Mirrors apps.common.services.sanity_checks.run_sanity_checks. Keep the two in
+// step: a field this schema requires but the backend no longer sends fails the
+// whole report, not just the card that shows it.
 
 const SERVICE_ENDPOINT = '/api/v1/management/common/sanity-checks/';
 const TEST_EMAIL_ENDPOINT = '/api/v1/management/common/sanity-checks/test-email/';
@@ -20,28 +16,37 @@ const ServiceCheckSchema = z.object({
 
 export const SanityChecksSchema = z.object({
   migrations: z.object({
-    has_pending: z.boolean(),
+    ok: z.boolean(),
+    // null when the migration graph itself cannot be read; `detail` says why.
+    has_pending: z.boolean().nullable(),
     pending: z.array(z.string()),
+    detail: z.string().nullable(),
   }),
   services: z.object({
     database: ServiceCheckSchema,
     redis: ServiceCheckSchema,
     meilisearch: ServiceCheckSchema,
     celery_broker: ServiceCheckSchema,
+    celery_workers: ServiceCheckSchema.extend({ workers: z.number() }),
   }),
   email: z.object({
+    backend: z.string(),
     smtp_configured: z.boolean(),
   }),
-  // Postgres-only: null on other backends (e.g. sqlite in tests/dev).
-  database_size_bytes: z.number().nullable(),
+  database: z.object({
+    // Postgres-only: null on other backends (e.g. sqlite in tests).
+    size_bytes: z.number().nullable(),
+  }),
   media: z.object({
     path: z.string(),
     size_bytes: z.number(),
     writable: z.boolean(),
   }),
+  // The project logs to stdout, so normally there is no log file to check.
   logs: z.object({
-    path: z.string(),
-    writable: z.boolean(),
+    configured: z.boolean(),
+    path: z.string().nullable(),
+    writable: z.boolean().nullable(),
   }),
 });
 

@@ -2410,14 +2410,16 @@
       "migrations": {
         "title": "Pending Migrations",
         "upToDate": "Up to date",
-        "pendingLabel": "pending"
+        "pendingLabel": "pending",
+        "unknown": "Unknown"
       },
       "services": {
         "title": "Dependent Services",
         "database": "Database",
         "redis": "Redis",
         "meilisearch": "Meilisearch",
-        "celeryBroker": "Celery Broker"
+        "celeryBroker": "Celery Broker",
+        "celeryWorkers": "Celery workers ({count})"
       },
       "storage": {
         "title": "Storage",
@@ -2429,7 +2431,8 @@
       "permissions": {
         "title": "Filesystem Permissions",
         "mediaWritable": "Media directory writable",
-        "logsWritable": "Log directory writable"
+        "logsWritable": "Log directory writable",
+        "logsNotConfigured": "No log file configured, logs go to stdout"
       },
       "smtp": {
         "title": "Email (SMTP)",
@@ -2441,7 +2444,8 @@
         "send": "Send test email",
         "sending": "Sending…",
         "toastSuccess": "Test email sent",
-        "toastError": "Failed to send test email"
+        "toastError": "Failed to send test email",
+        "backend": "Mail backend: {backend}"
       }
     },
     "reviewAge": {
