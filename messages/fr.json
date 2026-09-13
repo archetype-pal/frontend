@@ -976,7 +976,11 @@
         "new": "Nouveau"
       },
       "apiVersion": "Version de l'API {version}",
-      "apiVersionTooltip": "Version de l'API · commit {commit}"
+      "apiLabel": "API",
+      "apiRelease": "Version de l'API",
+      "apiBuilt": "Compilée le {date}",
+      "apiDevBuild": "Build de développement, pas une version publiée",
+      "apiCommit": "Commit {commit}"
     },
     "sidebar": {
       "brand": "Administration",

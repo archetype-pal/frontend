@@ -4,11 +4,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
 
-import { ApiVersion } from './api-version';
+import { ApiVersion, formatReleaseDate } from './api-version';
 
 const { apiFetch } = vi.hoisted(() => ({ apiFetch: vi.fn() }));
 vi.mock('@/lib/api-fetch', () => ({ apiFetch }));
-vi.mock('next-intl', () => ({ useTranslations: () => (k: string) => k }));
+vi.mock('next-intl', () => ({
+  useTranslations: () => (k: string) => k,
+  useLocale: () => 'en',
+}));
 
 function renderVersion() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -21,6 +24,18 @@ function renderVersion() {
   );
 }
 
+describe('formatReleaseDate', () => {
+  it('reads a release stamp as a UTC build time', () => {
+    // Month abbreviations vary between ICU versions, so pin only the stable parts.
+    const formatted = formatReleaseDate('2026.09.12.2205', 'en-GB');
+    expect(formatted).toMatch(/^12 Sept? 2026, 22:05 UTC$/);
+  });
+
+  it('returns null for a build that is not a release', () => {
+    expect(formatReleaseDate('dev', 'en')).toBeNull();
+  });
+});
+
 describe('ApiVersion', () => {
   it('shows the API release', async () => {
     apiFetch.mockResolvedValue(Response.json({ version: '2026.09.12.2205', commit: 'abc1234def' }));
@@ -28,6 +43,7 @@ describe('ApiVersion', () => {
     renderVersion();
 
     expect(await screen.findByText('2026.09.12.2205')).toBeTruthy();
+    expect(screen.getByText('header.apiLabel')).toBeTruthy();
     expect(apiFetch).toHaveBeenCalledWith('/api/v1/version/');
   });
 
