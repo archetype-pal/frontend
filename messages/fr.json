@@ -1004,7 +1004,11 @@
       "trash": "Corbeille",
       "sanityChecks": "Vérifications système",
       "subGroupExpand": "Développer {label}",
-      "subGroupCollapse": "Réduire {label}"
+      "subGroupCollapse": "Réduire {label}",
+      "version": "Version",
+      "versionFrontend": "Interface",
+      "versionApi": "API",
+      "versionUnavailable": "indisponible"
     },
     "confirmDialog": {
       "confirm": "Confirmer",

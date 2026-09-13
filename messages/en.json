@@ -1004,7 +1004,11 @@
       "trash": "Trash",
       "sanityChecks": "Sanity Checks",
       "subGroupExpand": "Expand {label}",
-      "subGroupCollapse": "Collapse {label}"
+      "subGroupCollapse": "Collapse {label}",
+      "version": "Version",
+      "versionFrontend": "Frontend",
+      "versionApi": "API",
+      "versionUnavailable": "unavailable"
     },
     "confirmDialog": {
       "confirm": "Confirm",

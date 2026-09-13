@@ -1004,7 +1004,11 @@
       "trash": "Papierkorb",
       "sanityChecks": "Plausibilitätsprüfungen",
       "subGroupExpand": "{label} erweitern",
-      "subGroupCollapse": "{label} einklappen"
+      "subGroupCollapse": "{label} einklappen",
+      "version": "Version",
+      "versionFrontend": "Frontend",
+      "versionApi": "API",
+      "versionUnavailable": "nicht verfügbar"
     },
     "confirmDialog": {
       "confirm": "Bestätigen",
