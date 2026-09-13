@@ -43,7 +43,7 @@ describe('ApiVersion', () => {
     renderVersion();
 
     expect(await screen.findByText('2026.09.12.2205')).toBeTruthy();
-    expect(screen.getByText('header.apiLabel')).toBeTruthy();
+    expect(screen.getByText('header.versionLabel')).toBeTruthy();
     expect(apiFetch).toHaveBeenCalledWith('/api/v1/version/');
   });
 

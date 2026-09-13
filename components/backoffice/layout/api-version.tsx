@@ -65,7 +65,7 @@ export function ApiVersion() {
                 builtAt ? 'bg-emerald-500' : 'bg-amber-500'
               )}
             />
-            <span className="font-medium">{t('header.apiLabel')}</span>
+            <span className="font-medium">{t('header.versionLabel')}</span>
             <span className="font-mono text-foreground">{data.version}</span>
           </span>
         </TooltipTrigger>

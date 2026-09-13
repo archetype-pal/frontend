@@ -976,11 +976,11 @@
         "new": "New"
       },
       "apiVersion": "API version {version}",
-      "apiLabel": "API",
       "apiRelease": "API release",
       "apiBuilt": "Built {date}",
       "apiDevBuild": "Development build, not a published release",
-      "apiCommit": "Commit {commit}"
+      "apiCommit": "Commit {commit}",
+      "versionLabel": "Version:"
     },
     "sidebar": {
       "brand": "Backoffice",

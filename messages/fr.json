@@ -976,11 +976,11 @@
         "new": "Nouveau"
       },
       "apiVersion": "Version de l'API {version}",
-      "apiLabel": "API",
       "apiRelease": "Version de l'API",
       "apiBuilt": "Compilée le {date}",
       "apiDevBuild": "Build de développement, pas une version publiée",
-      "apiCommit": "Commit {commit}"
+      "apiCommit": "Commit {commit}",
+      "versionLabel": "Version :"
     },
     "sidebar": {
       "brand": "Administration",
