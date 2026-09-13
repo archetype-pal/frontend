@@ -8,7 +8,7 @@ import * as manuscriptsService from '@/services/manuscripts';
 vi.mock('@/contexts/auth-context', () => ({
   useAuth: () => ({
     token: 'test-token',
-    user: { id: 1, is_staff: true },
+    user: { id: 1, is_staff: true, is_superuser: false },
   }),
 }));
 
@@ -60,6 +60,65 @@ describe('useGraphEditFlow', () => {
     expect(result.current.handDisabled).toBe(false);
     expect(result.current.hands).toHaveLength(1);
     expect(result.current.hands[0].name).toBe('Hand 1');
+  });
+
+  it('leaves editorial graphs out of the edit for a non-superuser', async () => {
+    vi.spyOn(annotationsService, 'fetchGraphsByIds').mockResolvedValue([
+      {
+        id: 101,
+        item_part: 1,
+        annotation_type: 'image',
+        allograph: 5,
+        positions: [],
+        graphcomponent_set: [],
+      },
+      {
+        id: 102,
+        item_part: 1,
+        annotation_type: 'editorial',
+        allograph: 5,
+        positions: [],
+        graphcomponent_set: [],
+      },
+    ] as never);
+    vi.spyOn(manuscriptsService, 'fetchAllographs').mockResolvedValue([
+      { id: 5, name: 'a', components: [], positions: [] },
+    ] as never);
+    vi.spyOn(manuscriptsService, 'fetchHands').mockResolvedValue({
+      count: 0,
+      next: null,
+      previous: null,
+      results: [],
+    } as never);
+
+    const { result } = renderHook(() => useGraphEditFlow());
+    await act(async () => {
+      await result.current.startEdit([101, 102]);
+    });
+
+    expect(result.current.dialogOpen).toBe(true);
+    expect(result.current.editingGraphs.map((g) => g.id)).toEqual([101]);
+  });
+
+  it('does not open the dialog when a non-superuser selected only editorial graphs', async () => {
+    vi.spyOn(annotationsService, 'fetchGraphsByIds').mockResolvedValue([
+      {
+        id: 102,
+        item_part: 1,
+        annotation_type: 'editorial',
+        allograph: 5,
+        positions: [],
+        graphcomponent_set: [],
+      },
+    ] as never);
+
+    const { result } = renderHook(() => useGraphEditFlow());
+    await act(async () => {
+      await result.current.startEdit([102]);
+    });
+
+    expect(result.current.dialogOpen).toBe(false);
+    expect(result.current.editingGraphs).toEqual([]);
   });
 
   it('disables hand selection when edited graphs span multiple manuscripts', async () => {

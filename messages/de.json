@@ -230,7 +230,23 @@
       "matchLenient": "Nachsichtig (lässt nachfolgende Wörter weg, bis Treffer gefunden werden)",
       "matchingStrategyHint": "Strikter Abgleich (`all`) erfordert jedes Wort; nachsichtiger Abgleich (`last`) lässt nachfolgende Wörter weg, bis Ergebnisse erscheinen.",
       "queryBuilderHeading": "Abfrage-Editor"
-    }
+    },
+    "mixedAllographsNotice": "Die ausgewählten Graphen verwenden unterschiedliche Allographen. Wählen Sie einen für alle aus, oder schließen Sie den Dialog und verfeinern Sie die Auswahl.",
+    "mixedPickOne": "Gemischt — bitte einen wählen",
+    "mixedAcrossManuscripts": "Gemischt über mehrere Handschriften",
+    "handDisabled": "Hand deaktiviert",
+    "searchAllographs": "Allographen suchen…",
+    "noAllographs": "Keine Allographen",
+    "searchHands": "Hände suchen…",
+    "noHands": "Keine Hände",
+    "noHand": "Keine Hand",
+    "graphsFailedToSave": "{failed} von {total} Graphen konnten nicht gespeichert werden",
+    "graphsSaved": "{count, plural, =0 {Gespeichert} one {Gespeichert} other {# Graphen gespeichert}}",
+    "selectGraph": "Graph auswählen",
+    "unselectGraph": "Graph abwählen",
+    "deleteGraphLabel": "Graph Nr. {id} löschen",
+    "editorialGraphsSkipped": "{count, plural, one {# editorischer Graph wurde ausgelassen} other {# editorische Graphen wurden ausgelassen}}: Nur Superuser können sie bearbeiten.",
+    "editorialGraphsOnlySuperusers": "Nur Superuser können editorische Graphen bearbeiten."
   },
   "filters": {
     "activeTitle": "Aktive Filter",

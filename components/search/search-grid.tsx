@@ -393,6 +393,7 @@ const GraphGridCard = React.memo(function GraphGridCard({
     item.coordinates,
     CROP_PIXELS[thumbnailSize]
   );
+  const t = useTranslations('search');
   const tCommon = useTranslations('common');
 
   const renderLink = (children: React.ReactNode, className: string) =>
@@ -401,7 +402,7 @@ const GraphGridCard = React.memo(function GraphGridCard({
         type="button"
         onClick={(e) => onToggleSelect?.(e.shiftKey)}
         className={className}
-        aria-label={isSelected ? 'Unselect graph' : 'Select graph'}
+        aria-label={isSelected ? t('unselectGraph') : t('selectGraph')}
       >
         {children}
       </button>
@@ -455,7 +456,7 @@ const GraphGridCard = React.memo(function GraphGridCard({
         onToggleSelect?.(e.shiftKey);
       }}
       aria-pressed={isSelected}
-      aria-label={isSelected ? 'Unselect graph' : 'Select graph'}
+      aria-label={isSelected ? t('unselectGraph') : t('selectGraph')}
       className={cn(
         'flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-xs shadow-sm transition',
         showThumbnail && 'absolute left-2 top-2 z-30',
@@ -542,7 +543,7 @@ const GraphGridCard = React.memo(function GraphGridCard({
                 e.stopPropagation();
                 onDelete();
               }}
-              aria-label={`Delete graph #${item.id}`}
+              aria-label={t('deleteGraphLabel', { id: item.id })}
             >
               <Trash2 className="h-3 w-3" />
             </Button>

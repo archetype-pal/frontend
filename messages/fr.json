@@ -230,7 +230,23 @@
       "matchLenient": "Tolérante (retire les derniers mots jusqu'à trouver des résultats)",
       "matchingStrategyHint": "La correspondance stricte (`all`) exige chaque mot ; la tolérante (`last`) retire les derniers mots jusqu'à ce que des résultats apparaissent.",
       "queryBuilderHeading": "Constructeur de requête"
-    }
+    },
+    "mixedAllographsNotice": "Les graphèmes sélectionnés utilisent des allographes différents. Choisissez-en un à appliquer à tous, ou fermez et affinez la sélection.",
+    "mixedPickOne": "Mixte — choisissez-en un",
+    "mixedAcrossManuscripts": "Mixte entre plusieurs manuscrits",
+    "handDisabled": "Main désactivée",
+    "searchAllographs": "Rechercher des allographes…",
+    "noAllographs": "Aucun allographe",
+    "searchHands": "Rechercher des mains…",
+    "noHands": "Aucune main",
+    "noHand": "Aucune main",
+    "graphsFailedToSave": "Échec de l'enregistrement de {failed} graphème(s) sur {total}",
+    "graphsSaved": "{count, plural, =0 {Enregistré} one {Enregistré} other {# graphèmes enregistrés}}",
+    "selectGraph": "Sélectionner le graphème",
+    "unselectGraph": "Désélectionner le graphème",
+    "deleteGraphLabel": "Supprimer le graphème n° {id}",
+    "editorialGraphsSkipped": "{count, plural, one {# graphème éditorial a été exclu} other {# graphèmes éditoriaux ont été exclus}} : seuls les superutilisateurs peuvent les modifier.",
+    "editorialGraphsOnlySuperusers": "Seuls les superutilisateurs peuvent modifier les graphèmes éditoriaux."
   },
   "filters": {
     "activeTitle": "Filtres actifs",

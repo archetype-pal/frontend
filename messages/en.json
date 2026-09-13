@@ -230,7 +230,23 @@
       "matchLenient": "Lenient (drops trailing words until matches found)",
       "matchingStrategyHint": "Strict matching (`all`) requires every word; lenient (`last`) drops trailing words until results appear.",
       "queryBuilderHeading": "Query builder"
-    }
+    },
+    "mixedAllographsNotice": "Selected graphs use different allographs. Choose one to set on all of them, or close and refine the selection.",
+    "mixedPickOne": "Mixed — pick one",
+    "mixedAcrossManuscripts": "Mixed across manuscripts",
+    "handDisabled": "Hand disabled",
+    "searchAllographs": "Search allographs…",
+    "noAllographs": "No allographs",
+    "searchHands": "Search hands…",
+    "noHands": "No hands",
+    "noHand": "No hand",
+    "graphsFailedToSave": "{failed} of {total} graphs failed to save",
+    "graphsSaved": "{count, plural, =0 {Saved} one {Saved} other {Saved # graphs}}",
+    "selectGraph": "Select graph",
+    "unselectGraph": "Unselect graph",
+    "deleteGraphLabel": "Delete graph #{id}",
+    "editorialGraphsSkipped": "{count, plural, one {# editorial graph was left out} other {# editorial graphs were left out}}: only superusers can edit them.",
+    "editorialGraphsOnlySuperusers": "Only superusers can edit editorial graphs."
   },
   "filters": {
     "activeTitle": "Active filters",

@@ -91,7 +91,14 @@ export async function fetchGraphsByIds(
     })
   );
 
-  return responses.flat();
+  const graphs = responses.flat();
+  // A backend without the id__in filter ignores it and returns every graph.
+  // Refuse that rather than open the whole table for editing.
+  const wanted = new Set(ids);
+  if (graphs.some((g) => !wanted.has(g.id))) {
+    throw new Error('Graph lookup returned graphs that were not requested');
+  }
+  return graphs;
 }
 
 type ViewerAnnotationWritePayload = {

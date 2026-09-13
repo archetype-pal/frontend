@@ -172,10 +172,10 @@ describe('AnnotationEditDialog — allograph-switch save correctness', () => {
     expect(patch.graphcomponent_set).toBeUndefined();
   });
 
-  it('prunes an existing component that no longer belongs to the current allograph when saving any other edit', async () => {
-    // Simulates a graph that already accumulated a stale component from a
-    // prior allograph switch (or a pre-fix save) — allograph is A, but it
-    // still carries a component from B's schema.
+  it('keeps components outside the schema when the allograph does not change', async () => {
+    // A legacy graph can carry a component its current allograph's schema
+    // doesn't define. The dialog never shows that row, so an unrelated edit
+    // must not delete it.
     const graph = makeGraph({
       allograph: 1,
       graphcomponent_set: [{ component: 20, features: [200] }],
@@ -191,22 +191,47 @@ describe('AnnotationEditDialog — allograph-switch save correctness', () => {
       />
     );
 
-    // Make an unrelated real edit under the graph's current allograph (A)
-    // so Save is enabled — the prune itself doesn't gate the button.
     fireEvent.click(screen.getByRole('radio', { name: 'Set curved on all selected' }));
-
     fireEvent.click(screen.getByRole('button', { name: /^Save/ }));
 
     await waitFor(() => expect(updateViewerAnnotationMock).toHaveBeenCalledTimes(1));
     const [, , patch] = updateViewerAnnotationMock.mock.calls[0];
 
-    expect(patch.graphcomponent_set).toEqual([{ component: 10, features: [100] }]);
-    // Component 20 (from allograph B's schema, not A's) must be dropped,
-    // not carried forward alongside the new edit.
-    const componentIds = (patch.graphcomponent_set as { component: number }[]).map(
-      (c) => c.component
+    expect(patch.allograph).toBeUndefined();
+    expect(patch.graphcomponent_set).toEqual([
+      { component: 20, features: [200] },
+      { component: 10, features: [100] },
+    ]);
+  });
+
+  it('sends only the hand when that is the only edit, even with rows outside the schema', async () => {
+    const graph = makeGraph({
+      allograph: 1,
+      hand: null,
+      graphcomponent_set: [{ component: 20, features: [200] }],
+      positions: [2000],
+    });
+
+    render(
+      <AnnotationEditDialog
+        open
+        onOpenChange={vi.fn()}
+        graphs={[graph]}
+        allographs={[ALLOGRAPH_A, ALLOGRAPH_B]}
+        hands={[HAND]}
+      />
     );
-    expect(componentIds).not.toContain(20);
+
+    fireEvent.click(screen.getAllByRole('combobox')[1]);
+    const search = await screen.findByPlaceholderText('Search hands…');
+    fireEvent.change(search, { target: { value: 'Main Hand' } });
+    fireEvent.click(await screen.findByRole('option', { name: 'Main Hand' }));
+
+    fireEvent.click(screen.getByRole('button', { name: /^Save/ }));
+
+    await waitFor(() => expect(updateViewerAnnotationMock).toHaveBeenCalledTimes(1));
+    const [, , patch] = updateViewerAnnotationMock.mock.calls[0];
+    expect(patch).toEqual({ hand: 5 });
   });
 
   it('prunes each graph to the bulk-assigned allograph when the original selection was mixed', async () => {

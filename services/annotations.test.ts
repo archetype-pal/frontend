@@ -167,6 +167,11 @@ describe('fetchGraphsByIds', () => {
     expect(authFetchMock).toHaveBeenCalledTimes(3);
   });
 
+  it('throws when the API returns graphs that were not requested', async () => {
+    authFetchMock.mockResolvedValueOnce(jsonResponse(200, [{ id: 10 }, { id: 99 }]));
+    await expect(fetchGraphsByIds([10], 'tok')).rejects.toThrow('not requested');
+  });
+
   it('throws when the API request fails', async () => {
     authFetchMock.mockResolvedValueOnce(textResponse(500, 'Server Error'));
     await expect(fetchGraphsByIds([1, 2])).rejects.toThrow('Failed to load graphs: 500');

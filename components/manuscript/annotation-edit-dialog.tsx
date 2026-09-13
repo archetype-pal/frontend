@@ -352,24 +352,22 @@ function DialogBody({
       positions?: number[];
     } = {};
 
-    if (allographId != null && allographId !== graph.allograph) {
+    const allographChanged = allographId != null && allographId !== graph.allograph;
+    if (allographChanged) {
       patch.allograph = allographId;
     }
     if (!handDisabled && hand !== MIXED && hand !== (graph.hand ?? null)) {
       patch.hand = hand;
     }
 
-    // A component/position only stays valid for as long as it belongs to the
-    // currently-selected allograph's schema. `applyFeatureEdits`/
-    // `applyPositionEdits` only ever touch keys explicitly present in the
-    // tri-state edits, so anything left out of the schema — a component from
-    // an allograph the graph (or a past save) has since moved on from —
-    // would otherwise pass through untouched and accumulate indefinitely.
-    // Pruning the base to the current schema before applying edits also
-    // self-heals a graph that already accumulated stale rows from before
-    // this fix, the next time it's saved.
-    const validComponentIds = schemaAllograph
-      ? new Set(schemaAllograph.components.map((c) => c.component_id))
+    // Components and positions belong to an allograph's schema. When this save
+    // moves the graph to another allograph, drop the ones the new schema
+    // doesn't define. Otherwise leave them alone: the dialog only shows rows in
+    // the current schema, so pruning on any other edit (a hand change, say)
+    // would silently delete legacy rows the editor never saw.
+    const pruneSchema = allographChanged ? schemaAllograph : null;
+    const validComponentIds = pruneSchema
+      ? new Set(pruneSchema.components.map((c) => c.component_id))
       : null;
     const currentComponents = graph.graphcomponent_set ?? [];
     const baseComponents = validComponentIds
@@ -379,9 +377,7 @@ function DialogBody({
       patch.graphcomponent_set = applyFeatureEdits(baseComponents, featureMap.edits);
     }
 
-    const validPositionIds = schemaAllograph
-      ? new Set(schemaAllograph.positions.map((p) => p.id))
-      : null;
+    const validPositionIds = pruneSchema ? new Set(pruneSchema.positions.map((p) => p.id)) : null;
     const currentPositions = graph.positions ?? [];
     const basePositions = validPositionIds
       ? currentPositions.filter((id) => validPositionIds.has(id))
@@ -394,7 +390,7 @@ function DialogBody({
 
   const runSave = async (targets: BackendGraph[]) => {
     if (!token) {
-      setError('Not authenticated.');
+      setError(t('notAuthenticated'));
       return;
     }
     setSaving(true);
@@ -436,10 +432,11 @@ function DialogBody({
     if (failed.length > 0) {
       // Keep the dialog open and surface the inline notice; also toast so the
       // user sees the failure if the dialog is scrolled past it.
-      setError(`${failed.length} of ${targets.length} failed to save.`);
-      toast.error(`${failed.length} of ${targets.length} graphs failed to save`);
+      const message = t('graphsFailedToSave', { failed: failed.length, total: targets.length });
+      setError(message);
+      toast.error(message);
     } else {
-      toast.success(savedCount > 1 ? `Saved ${savedCount} graphs` : 'Saved');
+      toast.success(t('graphsSaved', { count: savedCount }));
       onOpenChange(false);
     }
   };
@@ -494,8 +491,7 @@ function DialogBody({
           <GraphPreviewStrip graphs={graphs} fallbackIiifImage={iiifImage} />
           {isMulti && initialAllograph === MIXED && allographId == null && (
             <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
-              Selected graphs use different allographs. Choose one to set on all of them, or close
-              and refine the selection.
+              {t('mixedAllographsNotice')}
             </p>
           )}
 
@@ -507,10 +503,10 @@ function DialogBody({
                 value={allographId != null ? String(allographId) : null}
                 onValueChange={(v) => setAllographId(v ? Number(v) : null)}
                 placeholder={
-                  isMulti && initialAllograph === MIXED ? 'Mixed — pick one' : 'Allograph'
+                  isMulti && initialAllograph === MIXED ? t('mixedPickOne') : 'Allograph'
                 }
-                searchPlaceholder="Search allographs…"
-                emptyText="No allographs"
+                searchPlaceholder={t('searchAllographs')}
+                emptyText={t('noAllographs')}
                 triggerClassName="h-9 w-full text-sm"
               />
             </div>
@@ -524,10 +520,7 @@ function DialogBody({
                         tabIndex={0}
                         role="group"
                         aria-disabled="true"
-                        aria-label={
-                          handDisabledReason ??
-                          'A hand belongs to a single manuscript — this selection spans several.'
-                        }
+                        aria-label={handDisabledReason ?? t('handDisabledTooltip')}
                         className="cursor-not-allowed rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <SearchableSelect
@@ -536,17 +529,16 @@ function DialogBody({
                           onValueChange={() => {}}
                           disabled
                           placeholder={
-                            hand === MIXED ? 'Mixed across manuscripts' : 'Hand disabled'
+                            hand === MIXED ? t('mixedAcrossManuscripts') : t('handDisabled')
                           }
-                          searchPlaceholder="Search hands…"
-                          emptyText="No hands"
+                          searchPlaceholder={t('searchHands')}
+                          emptyText={t('noHands')}
                           triggerClassName="h-9 w-full text-sm pointer-events-none opacity-60"
                         />
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs text-xs">
-                      {handDisabledReason ??
-                        'A hand belongs to a single manuscript — this selection spans several.'}
+                      {handDisabledReason ?? t('handDisabledTooltip')}
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -555,10 +547,10 @@ function DialogBody({
                   options={handOptions}
                   value={hand === MIXED || hand == null ? null : String(hand)}
                   onValueChange={(v) => setHand(v ? Number(v) : null)}
-                  placeholder={hand === MIXED ? 'Mixed — pick one' : 'Hand'}
-                  searchPlaceholder="Search hands…"
-                  emptyText="No hands"
-                  clearLabel="No hand"
+                  placeholder={hand === MIXED ? t('mixedPickOne') : 'Hand'}
+                  searchPlaceholder={t('searchHands')}
+                  emptyText={t('noHands')}
+                  clearLabel={t('noHand')}
                   triggerClassName="h-9 w-full text-sm"
                 />
               )}

@@ -19,7 +19,8 @@ export interface UseGraphEditFlowOpts {
 }
 
 export function useGraphEditFlow({ onGraphDeleted }: UseGraphEditFlowOpts = {}) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const isSuperuser = Boolean(user?.is_superuser);
   const t = useTranslations('search');
 
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -37,10 +38,23 @@ export function useGraphEditFlow({ onGraphDeleted }: UseGraphEditFlowOpts = {}) 
 
       try {
         // 1. Fetch full graphs
-        const graphs = await fetchGraphsByIds(ids, token);
-        if (graphs.length === 0) {
+        const fetched = await fetchGraphsByIds(ids, token);
+        if (fetched.length === 0) {
           toast.error(t('noGraphData', { defaultValue: 'No graph data found for selected items' }));
           return;
+        }
+
+        // The write API hides editorial graphs from non-superusers, so every
+        // save of one would 404. Leave them out of the edit instead.
+        const graphs = isSuperuser
+          ? fetched
+          : fetched.filter((g) => g.annotation_type !== 'editorial');
+        if (graphs.length === 0) {
+          toast.error(t('editorialGraphsOnlySuperusers'));
+          return;
+        }
+        if (graphs.length < fetched.length) {
+          toast.warning(t('editorialGraphsSkipped', { count: fetched.length - graphs.length }));
         }
 
         // 2. Fetch full allographs if not cached
@@ -95,7 +109,7 @@ export function useGraphEditFlow({ onGraphDeleted }: UseGraphEditFlowOpts = {}) 
         setIsHydrating(false);
       }
     },
-    [allographs, t, token]
+    [allographs, isSuperuser, t, token]
   );
 
   const deleteOne = React.useCallback(
