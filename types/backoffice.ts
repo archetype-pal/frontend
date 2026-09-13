@@ -147,8 +147,9 @@ export interface MsDescArea {
 export interface ItemPartImage {
   id: number;
   image: string | null;
+  image_path: string | null;
   locus: string;
-  tags: string;
+  tags: string[];
   text_count: number;
 }
 
