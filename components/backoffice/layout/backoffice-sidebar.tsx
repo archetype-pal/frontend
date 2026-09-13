@@ -40,7 +40,6 @@ import { getComments } from '@/services/backoffice/publications';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useTranslations } from 'next-intl';
 import { useModelLabels } from '@/contexts/model-labels-context';
-import { VersionFooter } from './version-footer';
 
 interface NavItem {
   label: string;
@@ -192,8 +191,6 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
           />
         ))}
       </nav>
-
-      <VersionFooter collapsed={collapsed} />
     </aside>
   );
 }

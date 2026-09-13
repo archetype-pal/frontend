@@ -27,6 +27,7 @@ vi.mock('@/hooks/backoffice/use-recent-entities', () => ({
   useRecentEntities: () => ({ recent: [], addRecent: vi.fn(), clearRecent: vi.fn() }),
 }));
 vi.mock('next/navigation', () => ({ usePathname: () => '/backoffice/manuscripts' }));
+vi.mock('./api-version', () => ({ ApiVersion: () => null }));
 vi.mock('next-intl', () => ({
   // Render keys so assertions do not depend on the copy.
   useTranslations: () => Object.assign((k: string) => k, { rich: (k: string) => k }),

@@ -974,7 +974,9 @@
         "translations": "Übersetzungen",
         "siteFeatures": "Website anpassen",
         "new": "Neu"
-      }
+      },
+      "apiVersion": "API-Version {version}",
+      "apiVersionTooltip": "API-Release · Commit {commit}"
     },
     "sidebar": {
       "brand": "Backoffice",
@@ -1004,11 +1006,7 @@
       "trash": "Papierkorb",
       "sanityChecks": "Plausibilitätsprüfungen",
       "subGroupExpand": "{label} erweitern",
-      "subGroupCollapse": "{label} einklappen",
-      "version": "Version",
-      "versionFrontend": "Frontend",
-      "versionApi": "API",
-      "versionUnavailable": "nicht verfügbar"
+      "subGroupCollapse": "{label} einklappen"
     },
     "confirmDialog": {
       "confirm": "Bestätigen",

@@ -974,7 +974,9 @@
         "translations": "Traductions",
         "siteFeatures": "Personnaliser le site",
         "new": "Nouveau"
-      }
+      },
+      "apiVersion": "Version de l'API {version}",
+      "apiVersionTooltip": "Version de l'API · commit {commit}"
     },
     "sidebar": {
       "brand": "Administration",
@@ -1004,11 +1006,7 @@
       "trash": "Corbeille",
       "sanityChecks": "Vérifications système",
       "subGroupExpand": "Développer {label}",
-      "subGroupCollapse": "Réduire {label}",
-      "version": "Version",
-      "versionFrontend": "Interface",
-      "versionApi": "API",
-      "versionUnavailable": "indisponible"
+      "subGroupCollapse": "Réduire {label}"
     },
     "confirmDialog": {
       "confirm": "Confirmer",
