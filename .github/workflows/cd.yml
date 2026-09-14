@@ -92,7 +92,7 @@ jobs:
           file: Dockerfile
           build-args: |
             NEXT_PUBLIC_API_URL=https://archetype.elghareeb.space
-            NEXT_PUBLIC_IIIF_UPSTREAM=https://archetype.elghareeb.space/sipi
+            NEXT_PUBLIC_IIIF_UPSTREAM=https://archetype.elghareeb.space
             NEXT_PUBLIC_SITE_URL=https://archetype.elghareeb.space
             CORS_ALLOWED_ORIGINS=https://archetype.elghareeb.space
             DOCKER_IMAGE_HASH=${{ github.sha }}
