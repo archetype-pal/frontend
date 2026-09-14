@@ -43,8 +43,6 @@ jobs:
             CORS_ALLOWED_ORIGINS=https://betaarchetype.gla.ac.uk,130.209.34.75
             DOCKER_IMAGE_HASH=${{ github.sha }}
             APP_VERSION=${{ env.APP_VERSION }}
-            MEILI_MASTER_KEY=k-CFiSgz7lyXHPSTw_rhyTw0AKgNV7_y78k0NQR2fx4
-            MEILISEARCH_API_KEY=k-CFiSgz7lyXHPSTw_rhyTw0AKgNV7_y78k0NQR2fx4
           push: true
           tags: |
             ghcr.io/archetype-pal/frontend:latest
@@ -63,8 +61,6 @@ jobs:
             CORS_ALLOWED_ORIGINS=https://archetype.gla.ac.uk,130.209.34.75
             DOCKER_IMAGE_HASH=${{ github.sha }}
             APP_VERSION=${{ env.APP_VERSION }}
-            MEILI_MASTER_KEY=k-CFiSgz7lyXHPSTw_rhyTw0AKgNV7_y78k0NQR2fx4
-            MEILISEARCH_API_KEY=k-CFiSgz7lyXHPSTw_rhyTw0AKgNV7_y78k0NQR2fx4
           push: true
           tags: |
             ghcr.io/archetype-pal/frontend:staging-source
@@ -83,11 +79,27 @@ jobs:
             CORS_ALLOWED_ORIGINS=https://ker.arts.gla.ac.uk,130.209.34.75
             DOCKER_IMAGE_HASH=${{ github.sha }}
             APP_VERSION=${{ env.APP_VERSION }}
-            MEILI_MASTER_KEY=k-CFiSgz7lyXHPSTw_rhyTw0AKgNV7_y78k0NQR2fx4
-            MEILISEARCH_API_KEY=k-CFiSgz7lyXHPSTw_rhyTw0AKgNV7_y78k0NQR2fx4
           push: true
           tags: |
             ghcr.io/archetype-pal/frontend:ker
             ghcr.io/archetype-pal/frontend:ker-sha-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build and push elghareeb image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://archetype.elghareeb.space
+            NEXT_PUBLIC_IIIF_UPSTREAM=https://archetype.elghareeb.space/sipi
+            NEXT_PUBLIC_SITE_URL=https://archetype.elghareeb.space
+            CORS_ALLOWED_ORIGINS=https://archetype.elghareeb.space
+            DOCKER_IMAGE_HASH=${{ github.sha }}
+            APP_VERSION=${{ env.APP_VERSION }}
+          push: true
+          tags: |
+            ghcr.io/archetype-pal/frontend:elghareeb
+            ghcr.io/archetype-pal/frontend:elghareeb-sha-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
