@@ -751,6 +751,8 @@ function GalleryToolbar({
   onExportSelected,
   isScrolled,
 }: GalleryToolbarProps) {
+  const t = useTranslations('manuscript');
+  const tCommon = useTranslations('common');
   const isFiltering = filters.allograph.trim().length > 0;
   return (
     // Sticky so the filter and selection actions stay reachable when scrolling
@@ -814,13 +816,13 @@ function GalleryToolbar({
                 <Switch
                   checked={annotatingMode}
                   onCheckedChange={onAnnotatingModeChange}
-                  aria-label="Annotating mode"
+                  aria-label={tCommon('editingMode')}
                 />
-                Annotating mode
+                {tCommon('editingMode')}
                 <Kbd>A</Kbd>
               </label>
             </TooltipTrigger>
-            <TooltipContent side="bottom">Toggle inline graph editing (press A)</TooltipContent>
+            <TooltipContent side="bottom">{t('gallery.editingModeTooltip')}</TooltipContent>
           </Tooltip>
         )}
       </div>

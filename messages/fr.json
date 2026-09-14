@@ -6,6 +6,7 @@
     "cancel": "Annuler",
     "delete": "Supprimer",
     "edit": "Modifier",
+    "editingMode": "Mode édition",
     "close": "Fermer",
     "search": "Rechercher",
     "confirm": "Confirmer",
@@ -164,8 +165,7 @@
     "keywordRecent": "Récent",
     "keywordClearHistory": "Effacer l'historique",
     "keywordLoading": "Chargement des suggestions…",
-    "annotatingMode": "Mode annotation",
-    "annotatingModeHint": "Activer la sélection et l'édition en bloc des graphèmes",
+    "editingModeHint": "Activer la sélection et l'édition en bloc des graphèmes",
     "selectedCount": "{count} sélectionné(s)",
     "selectAllOnPage": "Sélectionner les {count} de la page",
     "unselectAllOnPage": "Désélectionner les {count} de la page",
@@ -347,7 +347,8 @@
     "gallery": {
       "deleteConfirm": "Supprimer le graphe n°{id} ? Il est déplacé dans la corbeille ; un administrateur peut le restaurer.",
       "deleteSuccess": "Graphe n°{id} déplacé dans la corbeille ; un administrateur peut le restaurer",
-      "deleteFailed": "Échec de la suppression du graphe n°{id}"
+      "deleteFailed": "Échec de la suppression du graphe n°{id}",
+      "editingModeTooltip": "Activer ou désactiver l'édition des graphèmes sur place (touche A)"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Supprimer ce brouillon d'annotation éditoriale ?} other {Supprimer ce brouillon d'annotation publique ?}}\n\nIl sera abandonné localement.",

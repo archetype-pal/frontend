@@ -58,6 +58,7 @@ type ResultListItem = ResultMap[ResultType];
 
 export function SearchPage({ resultType: initialType }: { resultType?: ResultType } = {}) {
   const t = useTranslations('search');
+  const tCommon = useTranslations('common');
   const s = useSearchPageState(initialType);
   const [thumbnailSize, setThumbnailSize] = useThumbnailSize();
   const [showThumbnails, setShowThumbnails] = useShowThumbnails();
@@ -371,13 +372,13 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 htmlFor="annotating-mode-toggle"
                 className="cursor-pointer select-none text-xs font-medium text-muted-foreground hover:text-foreground"
               >
-                {t('annotatingMode')}
+                {tCommon('editingMode')}
               </Label>
               <Switch
                 id="annotating-mode-toggle"
                 checked={s.annotatingMode}
                 onCheckedChange={s.setAnnotatingMode}
-                aria-label={t('annotatingModeHint')}
+                title={t('editingModeHint')}
               />
             </div>
           )}
