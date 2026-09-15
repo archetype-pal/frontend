@@ -16,6 +16,19 @@ import type { BackendGraph } from '@/services/annotations';
 // these drive the real dialog UI and assert on the PATCH payload sent to
 // `updateViewerAnnotation`.
 
+// The dialog labels its Positions tab with the site-editable model label, and
+// useModelLabels throws outside its provider. The suffixes are deliberate: a
+// bare key would match an assertion whichever getter the component called, or
+// none at all.
+vi.mock('@/contexts/model-labels-context', () => ({
+  useModelLabels: () => ({
+    config: {},
+    loading: false,
+    getLabel: (key: string) => `${key}-label`,
+    getPluralLabel: (key: string) => `${key}-plural`,
+  }),
+}));
+
 vi.mock('@/contexts/auth-context', () => ({
   useAuth: () => ({
     token: 'test-token',
@@ -88,6 +101,23 @@ const ALLOGRAPH_C: Allograph = {
       features: [{ id: 300, name: 'open', set_by_default: false }],
     },
   ],
+  positions: [],
+};
+
+// Declares positions but no components, so the Components tab is the disabled
+// one — the mirror of ALLOGRAPH_C, which has components but no positions.
+const ALLOGRAPH_D: Allograph = {
+  id: 4,
+  name: 'd-shape',
+  components: [],
+  positions: [{ id: 4000, name: 'final' }],
+};
+
+// The most common shape in the corpus: an allograph that declares neither.
+const ALLOGRAPH_E: Allograph = {
+  id: 5,
+  name: 'e-shape',
+  components: [],
   positions: [],
 };
 
@@ -283,5 +313,96 @@ describe('AnnotationEditDialog — allograph-switch save correctness', () => {
     // "stem" (A) nor "bowl" (B) belongs to "loop" (C)'s schema.
     expect(patchByGraphId.get(39)).toEqual({ allograph: 3, graphcomponent_set: [] });
     expect(patchByGraphId.get(41)).toEqual({ allograph: 3, graphcomponent_set: [] });
+  });
+});
+
+describe('AnnotationEditDialog — component/position tabs', () => {
+  beforeEach(() => {
+    updateViewerAnnotationMock.mockReset();
+    updateViewerAnnotationMock.mockResolvedValue(makeGraph());
+  });
+
+  function renderWith(allograph: Allograph, allographId: number) {
+    render(
+      <AnnotationEditDialog
+        open
+        onOpenChange={vi.fn()}
+        graphs={[makeGraph({ allograph: allographId })]}
+        allographs={[allograph]}
+        hands={[HAND]}
+      />
+    );
+  }
+
+  it('disables the positions tab when the allograph declares none', () => {
+    renderWith(ALLOGRAPH_C, 3);
+
+    const positions = screen.getByRole('tab', { name: 'position-plural' }) as HTMLButtonElement;
+    expect(positions.disabled).toBe(true);
+    expect(positions.title).toBe('No position-plural are defined for this allograph.');
+
+    // The group that does have content is the one showing.
+    expect(screen.getByRole('radio', { name: 'Set open on all selected' })).toBeDefined();
+  });
+
+  it('disables the components tab and falls back to positions when there are no components', () => {
+    renderWith(ALLOGRAPH_D, 4);
+
+    const components = screen.getByRole('tab', { name: /components/i }) as HTMLButtonElement;
+    expect(components.disabled).toBe(true);
+    expect(components.title).toBe('No components are defined for this allograph.');
+
+    // Nothing to show under components, so the positions rows are what renders.
+    expect(screen.getByRole('radio', { name: 'Set final on all selected' })).toBeDefined();
+  });
+
+  it('disables both tabs and gives both reasons when the allograph declares neither', () => {
+    renderWith(ALLOGRAPH_E, 5);
+
+    expect((screen.getByRole('tab', { name: /components/i }) as HTMLButtonElement).disabled).toBe(
+      true
+    );
+    expect(
+      (screen.getByRole('tab', { name: 'position-plural' }) as HTMLButtonElement).disabled
+    ).toBe(true);
+
+    expect(screen.getByText('No components are defined for this allograph.')).toBeDefined();
+    expect(screen.getByText('No position-plural are defined for this allograph.')).toBeDefined();
+  });
+
+  it('shows one tab per component and only the active component rows', () => {
+    const twoComponents: Allograph = {
+      id: 5,
+      name: 'e-shape',
+      components: [
+        {
+          component_id: 50,
+          component_name: 'stem',
+          features: [{ id: 500, name: 'curved', set_by_default: false }],
+        },
+        {
+          component_id: 60,
+          component_name: 'bowl',
+          features: [{ id: 600, name: 'closed', set_by_default: false }],
+        },
+      ],
+      positions: [],
+    };
+    renderWith(twoComponents, 5);
+
+    expect(screen.getByRole('tab', { name: /stem/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /bowl/ })).toBeDefined();
+
+    // First component is active; the second component's rows stay unmounted
+    // until its tab is chosen.
+    expect(screen.getByRole('radio', { name: 'Set curved on all selected' })).toBeDefined();
+    expect(screen.queryByRole('radio', { name: 'Set closed on all selected' })).toBeNull();
+
+    // Radix activates a tab on mouseDown, not click.
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /bowl/ }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    expect(screen.getByRole('radio', { name: 'Set closed on all selected' })).toBeDefined();
   });
 });

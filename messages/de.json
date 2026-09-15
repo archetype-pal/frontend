@@ -239,6 +239,8 @@
     "noAllographs": "Keine Allographen",
     "searchHands": "Hände suchen…",
     "noHands": "Keine Hände",
+    "componentsTab": "Komponenten und Merkmale",
+    "setAllComponentHint": "(All wählen, um eine Komponente zu allen ausgewählten Graphen hinzuzufügen)",
     "noHand": "Keine Hand",
     "graphsFailedToSave": "{failed} von {total} Graphen konnten nicht gespeichert werden",
     "graphsSaved": "{count, plural, =0 {Gespeichert} one {Gespeichert} other {# Graphen gespeichert}}",
