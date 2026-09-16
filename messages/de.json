@@ -352,9 +352,7 @@
     "delete": {
       "draftConfirm": "{kind, select, editorial {Diesen editorischen Entwurf löschen?} other {Diesen öffentlichen Entwurf löschen?}}\n\nEr wird lokal verworfen.",
       "savedConfirm": "{kind, select, editorial {Diese gespeicherte editorische Annotation löschen?} other {Diese gespeicherte öffentliche Annotation löschen?}}\n\nDrücken Sie Speichern, um sie in den Papierkorb zu verschieben, wo ein Administrator sie wiederherstellen kann.",
-      "bulkMixed": "{total} ausgewählte Annotationen löschen?\n\nDadurch werden {draftCount, plural, =1 {# Entwurfsannotation} other {# Entwurfsannotationen}} lokal verworfen und {savedCount, plural, =1 {# gespeicherte Annotation} other {# gespeicherte Annotationen}} zum Löschen markiert.\nDrücken Sie Speichern, um die gespeicherten in den Papierkorb zu verschieben, wo ein Administrator sie wiederherstellen kann.",
       "bulkDrafts": "{total} ausgewählte Annotationen löschen?\n\nDadurch werden {draftCount, plural, =1 {# Entwurfsannotation} other {# Entwurfsannotationen}} lokal verworfen.",
-      "bulkSaved": "{total} ausgewählte Annotationen löschen?\n\nDadurch werden {savedCount, plural, =1 {# gespeicherte Annotation} other {# gespeicherte Annotationen}} zum Löschen markiert.\nDrücken Sie Speichern, um sie in den Papierkorb zu verschieben, wo ein Administrator sie wiederherstellen kann.",
       "regionConfirm": "Diese verknüpfte Region löschen?\n\nSie wird in den Papierkorb verschoben und verschwindet aus dem Bild. Ihre Verknüpfung mit der Transkription bleibt erhalten, sodass ein Administrator beides wiederherstellen kann.",
       "removeRegion": "Region entfernen",
       "regionTrashedTitle": "Region in den Papierkorb verschoben",

@@ -652,6 +652,13 @@ export default function ManuscriptAnnotorious({
             }, 50);
           };
 
+          const clearMultiSelection = () => {
+            if (multiSelectedIdsRef.current.size === 0) return;
+
+            multiSelectedIdsRef.current = new Set();
+            emitSelectionIdsChange();
+          };
+
           const shouldAutoCommitDrawSelection = () =>
             allowMultipleSelectionRef.current &&
             autoCommitDrawSelectionsRef.current &&
@@ -856,7 +863,16 @@ export default function ManuscriptAnnotorious({
               currentMode === 'pan' &&
               !isTextRegionAnnotation(a)
             ) {
-              toggleMultiSelectedIdFromClick(a.id);
+              // Only drafts take part in a multi-selection. The shared popup edit
+              // applies to drafts alone, so a saved annotation joining the set would
+              // show a count its own edit cannot honour. Clicking one starts a fresh
+              // single selection instead.
+              if (isDraftAnnotation(a)) {
+                toggleMultiSelectedIdFromClick(a.id);
+              } else {
+                clearMultiSelection();
+              }
+
               queueSyncAnnotationClasses();
             }
 
@@ -959,7 +975,12 @@ export default function ManuscriptAnnotorious({
               a &&
               !isTextRegionAnnotation(a)
             ) {
-              if (multiSelectionHandledByClickIdRef.current === a.id) {
+              if (!isDraftAnnotation(a)) {
+                // Mirrors the clickAnnotation rule above. Both handlers fire for a
+                // single click, and the saved branch there leaves the baton unset,
+                // so without this the toggle below re-adds the id it just cleared.
+                clearMultiSelection();
+              } else if (multiSelectionHandledByClickIdRef.current === a.id) {
                 multiSelectionHandledByClickIdRef.current = null;
               } else {
                 const next = new Set(multiSelectedIdsRef.current);
@@ -1360,7 +1381,7 @@ export default function ManuscriptAnnotorious({
 
               if (
                 allowMultipleSelectionRef.current &&
-                selected &&
+                isDraftAnnotation(selected) &&
                 !isTextRegionAnnotation(selected)
               ) {
                 const next = new Set(multiSelectedIdsRef.current);
