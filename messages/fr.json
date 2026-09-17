@@ -2000,12 +2000,12 @@
       "branding": {
         "title": "Logo",
         "description": "Définissez le logo affiché en haut du bandeau de titre de l'en-tête.",
+        "uploadLabel": "Image du logo",
+        "uploadFailed": "Échec de l'envoi du logo",
         "logoUrlLabel": "URL du logo",
         "logoUrlPlaceholder": "https://exemple.org/logo.png",
-        "logoUrlDescription": "URL d'une image déjà hébergée. Laissez vide pour n'afficher que le titre du site.",
-        "clearButton": "Effacer",
-        "previewAlt": "Aperçu du logo",
-        "previewLabel": "Aperçu"
+        "logoUrlDescription": "URL d'une image déjà hébergée, ou le chemin d'un fichier envoyé ci-dessus. Laissez vide pour n'afficher que le titre du site.",
+        "clearButton": "Effacer"
       },
       "searchCategoriesTitle": "Catégories de recherche",
       "searchCategoriesDescription": "Activez ou désactivez les catégories et configurez les colonnes et facettes visibles. Glissez pour réorganiser.",

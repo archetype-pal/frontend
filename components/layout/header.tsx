@@ -43,6 +43,7 @@ import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { useLocale, useTranslations } from 'next-intl';
 import { coerceLocale } from '@/lib/locale';
 import { searchHref, searchHrefForKeyword } from '@/lib/search-routing';
+import { getCarouselImageUrl } from '@/utils/api';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 
@@ -318,7 +319,10 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
     }
   };
 
-  const logoUrl = config.branding?.logoUrl;
+  // Backend-relative (an uploaded file, e.g. "/media/branding/x.png") and
+  // fully external (a pasted URL) logos both need to resolve to something the
+  // browser can load — same helper the Partners logo/carousel images use.
+  const logoUrl = config.branding?.logoUrl ? getCarouselImageUrl(config.branding.logoUrl) : null;
 
   return (
     <header ref={headerRef} className="sticky top-0 z-50 shadow-md">

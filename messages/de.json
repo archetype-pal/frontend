@@ -2001,12 +2001,12 @@
       "branding": {
         "title": "Logo",
         "description": "Set the logo shown at the top of the header's title row.",
+        "uploadLabel": "Logo image",
+        "uploadFailed": "Failed to upload logo",
         "logoUrlLabel": "Logo URL",
         "logoUrlPlaceholder": "https://example.org/logo.png",
-        "logoUrlDescription": "URL of an already-hosted image. Leave empty to show the site title alone.",
-        "clearButton": "Clear",
-        "previewAlt": "Logo preview",
-        "previewLabel": "Preview"
+        "logoUrlDescription": "URL of an already-hosted image, or the path of an uploaded file above. Leave empty to show the site title alone.",
+        "clearButton": "Clear"
       },
       "searchCategoriesTitle": "Suchkategorien",
       "searchCategoriesDescription": "Kategorien umschalten und sichtbare Spalten und Facetten konfigurieren. Zum Neuordnen ziehen.",

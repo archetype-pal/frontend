@@ -193,7 +193,11 @@ export default function SiteFeaturesPage() {
         onOrderChange={handleSectionOrderChange}
       />
       <FeatureToggles features={config.features} onChange={handleFeatureChange} />
-      <BrandingCustomization branding={config.branding} onChange={handleBrandingChange} />
+      <BrandingCustomization
+        branding={config.branding}
+        token={token}
+        onChange={handleBrandingChange}
+      />
       <ThemeCustomization
         theme={config.theme}
         defaults={defaults.theme}
