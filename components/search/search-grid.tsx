@@ -1,10 +1,7 @@
 import * as React from 'react';
-import { useTranslations } from 'next-intl';
-import { IiifImage } from '@/components/ui/iiif-image';
 import Link from 'next/link';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-
 import { IiifImage } from '@/components/ui/iiif-image';
 import { Button } from '@/components/ui/button';
 import type {

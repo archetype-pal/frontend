@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { GitCompare, PanelLeftClose, PanelLeftOpen, SearchX } from 'lucide-react';
 import { hasTablePreview, ResultsTable } from '@/components/search/results-table';
