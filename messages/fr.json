@@ -355,9 +355,7 @@
     "delete": {
       "draftConfirm": "{kind, select, editorial {Supprimer ce brouillon d'annotation éditoriale ?} other {Supprimer ce brouillon d'annotation publique ?}}\n\nIl sera abandonné localement.",
       "savedConfirm": "{kind, select, editorial {Supprimer cette annotation éditoriale enregistrée ?} other {Supprimer cette annotation publique enregistrée ?}}\n\nAppuyez sur Enregistrer pour la déplacer dans la corbeille, où un administrateur peut la restaurer.",
-      "bulkMixed": "Supprimer les {total} annotations sélectionnées ?\n\n{draftCount, plural, =1 {# brouillon sera abandonné} other {# brouillons seront abandonnés}} localement et {savedCount, plural, =1 {# annotation enregistrée sera marquée} other {# annotations enregistrées seront marquées}} pour suppression.\nAppuyez sur Enregistrer pour déplacer les annotations enregistrées dans la corbeille, où un administrateur peut les restaurer.",
       "bulkDrafts": "Supprimer les {total} annotations sélectionnées ?\n\n{draftCount, plural, =1 {# brouillon sera abandonné} other {# brouillons seront abandonnés}} localement.",
-      "bulkSaved": "Supprimer les {total} annotations sélectionnées ?\n\n{savedCount, plural, =1 {# annotation enregistrée sera marquée} other {# annotations enregistrées seront marquées}} pour suppression.\nAppuyez sur Enregistrer pour les déplacer dans la corbeille, où un administrateur peut les restaurer.",
       "regionConfirm": "Supprimer cette région liée ?\n\nElle est déplacée dans la corbeille et disparaît de l'image. Son lien avec la transcription est conservé, afin qu'un administrateur puisse restaurer les deux.",
       "removeRegion": "Supprimer la région",
       "regionTrashedTitle": "Région déplacée dans la corbeille",
