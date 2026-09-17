@@ -549,8 +549,9 @@ describe('ManuscriptViewer smoke test', () => {
 
     render(<ManuscriptViewer imageId="4432" mode="public" />);
     await screen.findByRole('button', { name: 'Image tools' });
+    await waitFor(() => expect(fetchImageAllographIds).toHaveBeenCalledWith('4432'));
 
-    fireEvent.click(screen.getByRole('combobox'));
+    fireEvent.click(await screen.findByRole('combobox'));
     fireEvent.click(await screen.findByText('a, Caroline'));
 
     const eyeButton = await screen.findByRole('button', {
