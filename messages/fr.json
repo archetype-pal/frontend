@@ -171,6 +171,25 @@
     "keywordRecent": "Récent",
     "keywordClearHistory": "Effacer l'historique",
     "keywordLoading": "Chargement des suggestions…",
+    "annotatingMode": "Mode annotation",
+    "annotatingModeHint": "Activer la sélection et l'édition en bloc des graphèmes",
+    "selectedCount": "{count} sélectionné(s)",
+    "selectAllOnPage": "Sélectionner les {count} de la page",
+    "unselectAllOnPage": "Désélectionner les {count} de la page",
+    "selectionCapReached": "Vous pouvez modifier jusqu'à {max} graphèmes à la fois",
+    "editSelected": "Modifier la sélection",
+    "clearSelection": "Effacer",
+    "handDisabledTooltip": "Une main appartient à un seul manuscrit — cette sélection en contient plusieurs.",
+    "confirmDeleteGraph": "Supprimer cette annotation de graphème ?",
+    "discardUnsavedChanges": "Abandonner les modifications non enregistrées ?",
+    "graphDeleted": "Graphème supprimé",
+    "deleteFailed": "Échec de la suppression du graphème",
+    "noGraphData": "Aucune donnée trouvée pour les graphèmes sélectionnés",
+    "failedToLoadGraphs": "Échec du chargement des graphèmes sélectionnés pour modification",
+    "notAuthenticated": "Non authentifié.",
+    "failedToLoadHands": "Impossible de charger les mains pour ce manuscrit.",
+    "recentlyEditedBadge": "Modifié",
+    "recentlyEditedTooltip": "Récemment modifié",
     "queryBuilder": {
       "opIs": "est",
       "opIsNot": "n'est pas",
@@ -218,7 +237,23 @@
       "matchLenient": "Tolérante (retire les derniers mots jusqu'à trouver des résultats)",
       "matchingStrategyHint": "La correspondance stricte (`all`) exige chaque mot ; la tolérante (`last`) retire les derniers mots jusqu'à ce que des résultats apparaissent.",
       "queryBuilderHeading": "Constructeur de requête"
-    }
+    },
+    "mixedAllographsNotice": "Les graphèmes sélectionnés utilisent des allographes différents. Choisissez-en un à appliquer à tous, ou fermez et affinez la sélection.",
+    "mixedPickOne": "Mixte — choisissez-en un",
+    "mixedAcrossManuscripts": "Mixte entre plusieurs manuscrits",
+    "handDisabled": "Main désactivée",
+    "searchAllographs": "Rechercher des allographes…",
+    "noAllographs": "Aucun allographe",
+    "searchHands": "Rechercher des mains…",
+    "noHands": "Aucune main",
+    "noHand": "Aucune main",
+    "graphsFailedToSave": "Échec de l'enregistrement de {failed} graphème(s) sur {total}",
+    "graphsSaved": "{count, plural, =0 {Enregistré} one {Enregistré} other {# graphèmes enregistrés}}",
+    "selectGraph": "Sélectionner le graphème",
+    "unselectGraph": "Désélectionner le graphème",
+    "deleteGraphLabel": "Supprimer le graphème n° {id}",
+    "editorialGraphsSkipped": "{count, plural, one {# graphème éditorial a été exclu} other {# graphèmes éditoriaux ont été exclus}} : seuls les superutilisateurs peuvent les modifier.",
+    "editorialGraphsOnlySuperusers": "Seuls les superutilisateurs peuvent modifier les graphèmes éditoriaux."
   },
   "filters": {
     "activeTitle": "Filtres actifs",
@@ -967,7 +1002,13 @@
         "translations": "Traductions",
         "siteFeatures": "Personnaliser le site",
         "new": "Nouveau"
-      }
+      },
+      "apiVersion": "Version de l'API {version}",
+      "apiRelease": "Version de l'API",
+      "apiBuilt": "Compilée le {date}",
+      "apiDevBuild": "Build de développement, pas une version publiée",
+      "apiCommit": "Commit {commit}",
+      "versionLabel": "Version :"
     },
     "sidebar": {
       "brand": "Administration",
@@ -2398,14 +2439,16 @@
       "migrations": {
         "title": "Migrations en attente",
         "upToDate": "À jour",
-        "pendingLabel": "en attente"
+        "pendingLabel": "en attente",
+        "unknown": "Inconnu"
       },
       "services": {
         "title": "Services dépendants",
         "database": "Base de données",
         "redis": "Redis",
         "meilisearch": "Meilisearch",
-        "celeryBroker": "Broker Celery"
+        "celeryBroker": "Broker Celery",
+        "celeryWorkers": "Workers Celery ({count})"
       },
       "storage": {
         "title": "Stockage",
@@ -2417,7 +2460,8 @@
       "permissions": {
         "title": "Permissions du système de fichiers",
         "mediaWritable": "Répertoire média accessible en écriture",
-        "logsWritable": "Répertoire de logs accessible en écriture"
+        "logsWritable": "Répertoire de logs accessible en écriture",
+        "logsNotConfigured": "Aucun fichier de logs configuré, les logs vont sur la sortie standard"
       },
       "smtp": {
         "title": "E-mail (SMTP)",
@@ -2429,7 +2473,8 @@
         "send": "Envoyer un e-mail de test",
         "sending": "Envoi…",
         "toastSuccess": "E-mail de test envoyé",
-        "toastError": "Échec de l'envoi de l'e-mail de test"
+        "toastError": "Échec de l'envoi de l'e-mail de test",
+        "backend": "Backend d'e-mail : {backend}"
       }
     },
     "reviewAge": {
@@ -2507,10 +2552,8 @@
       "imageRemoved": "Image supprimée",
       "imageRemoveFailed": "Échec de la suppression de l'image",
       "editImage": "Modifier l'image",
-      "editImageDescription": "Mettez à jour le feuillet (locus) ou remplacez l'image IIIF sous-jacente.",
+      "editImageDescription": "Mettez à jour le feuillet (locus) ou les étiquettes de cette image.",
       "iiifImagePath": "Chemin de l'image IIIF",
-      "iiifImagePathPlaceholder": "historical_items/...",
-      "browseMedia": "Parcourir les médias",
       "tags": "Étiquettes",
       "tagsPlaceholder": "p. ex. endommagé, enluminé",
       "deleteImageConfirmTitle": "Supprimer cette image ?",

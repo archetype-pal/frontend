@@ -1,9 +1,12 @@
-'use client';
-
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { IiifImage } from '@/components/ui/iiif-image';
 import Link from 'next/link';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+
+import { IiifImage } from '@/components/ui/iiif-image';
+import { Button } from '@/components/ui/button';
 import type {
   ClauseListItem,
   GraphListItem,
@@ -22,6 +25,7 @@ import { GraphDetailLink } from '@/components/search/graph-detail-link';
 import { clauseToGraphCollectionItem } from '@/lib/collection-item';
 import { cn } from '@/lib/utils';
 import type { ThumbnailSize } from '@/components/search/thumbnail-size-control';
+import type { BackendGraph } from '@/services/annotations';
 import type { ManuscriptCompareSelection } from '@/hooks/search/use-manuscript-compare-selection';
 
 type GridItem = ImageListItem | GraphListItem | ManuscriptListItem | ClauseListItem;
@@ -32,6 +36,13 @@ export interface SearchGridProps {
   highlightKeyword?: string;
   isFetching?: boolean;
   thumbnailSize?: ThumbnailSize;
+  annotatingMode?: boolean;
+  selectedIds?: Set<number>;
+  onToggleSelect?: (id: number, shiftKey: boolean) => void;
+  onSelectMany?: (ids: number[]) => void;
+  onEditOne?: (id: number) => void;
+  onDeleteOne?: (id: number) => void;
+  graphOverrides?: Record<number, BackendGraph>;
   /** Only meaningful (and only passed) when `resultType === 'manuscripts'`. */
   manuscriptSelection?: ManuscriptCompareSelection;
   showThumbnails?: boolean;
@@ -70,6 +81,7 @@ type GridCard =
       detailUrl: string | null;
       displayText: string;
       formattedDisplayText?: string;
+      recentlyEdited?: boolean;
     }
   | {
       kind: 'manuscript';
@@ -102,6 +114,7 @@ type MediaGridCardProps = {
   itemType: 'image' | 'graph';
   showThumbnail?: boolean;
   eager?: boolean;
+  recentlyEdited?: boolean;
 };
 
 const SEARCH_EAGER_THUMBNAIL_COUNT = 6;
@@ -124,7 +137,11 @@ function composeCardLabel(parts: CardLabelPart[]): { text: string; formattedText
   };
 }
 
-export function toGridCard(resultType: ResultType, item: GridItem): GridCard | null {
+export function toGridCard(
+  resultType: ResultType,
+  item: GridItem,
+  graphOverrides?: Record<number, BackendGraph>
+): GridCard | null {
   const formatted = (item as { _formatted?: Record<string, string | undefined> })._formatted ?? {};
   if (resultType === 'manuscripts') {
     const ms = item as ManuscriptListItem;
@@ -160,6 +177,12 @@ export function toGridCard(resultType: ResultType, item: GridItem): GridCard | n
   }
   if (resultType === 'graphs') {
     const graph = item as GraphListItem;
+    const override = graphOverrides?.[graph.id];
+    // Shelfmark/display_label is the identifying label and is never touched by
+    // an edit — an allograph/hand/feature change doesn't invalidate its
+    // keyword highlight. A just-saved edit is surfaced on the card itself
+    // (amber tint + badge, see GraphGridCard/MediaGridCard) instead of
+    // altering the label text.
     const label = composeCardLabel([
       graph.display_label
         ? { plain: graph.display_label, formatted: formatted.display_label }
@@ -171,6 +194,7 @@ export function toGridCard(resultType: ResultType, item: GridItem): GridCard | n
       detailUrl: null,
       displayText: label.text || 'Untitled',
       formattedDisplayText: label.formattedText,
+      recentlyEdited: Boolean(override),
     };
   }
   if (resultType === 'clauses') {
@@ -193,6 +217,23 @@ export function toGridCard(resultType: ResultType, item: GridItem): GridCard | n
   return null;
 }
 
+// Amber is this app's existing "attention/out-of-sync" color (the mixed-
+// allograph notice in AnnotationEditDialog, the search-engine reindex-drift
+// row tint) — reused here rather than a new color, for "just edited, search
+// index not yet caught up." Text-based, not color-only, so the meaning still
+// lands for anyone who can't distinguish the tint.
+function RecentlyEditedBadge() {
+  const t = useTranslations('search');
+  return (
+    <span
+      title={t('recentlyEditedTooltip')}
+      className="absolute bottom-1.5 left-1.5 z-20 rounded-full border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 shadow-sm dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+    >
+      {t('recentlyEditedBadge')}
+    </span>
+  );
+}
+
 const MediaGridCard = React.memo(function MediaGridCard({
   imageUrl,
   detailUrl,
@@ -206,6 +247,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
   itemType,
   showThumbnail = true,
   eager = false,
+  recentlyEdited = false,
 }: MediaGridCardProps) {
   const renderLink = (children: React.ReactNode, className: string) =>
     graphItem ? (
@@ -258,7 +300,14 @@ const MediaGridCard = React.memo(function MediaGridCard({
   );
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
+    <div
+      className={cn(
+        'group relative flex flex-col overflow-hidden rounded-lg border shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-md focus-within:border-accent/60',
+        recentlyEdited
+          ? 'border-amber-300 bg-amber-50/60 hover:border-amber-400 dark:border-amber-800 dark:bg-amber-950/20'
+          : 'border-border bg-card hover:border-accent/40'
+      )}
+    >
       {showThumbnail && (
         <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
           {imageUrl ? (
@@ -274,6 +323,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
               'block h-full w-full'
             )
           )}
+          {recentlyEdited && <RecentlyEditedBadge />}
           <div className="absolute right-2 top-2 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             {actions}
           </div>
@@ -318,6 +368,12 @@ const GraphGridCard = React.memo(function GraphGridCard({
   highlightKeyword,
   showThumbnail = true,
   eager,
+  isSelected = false,
+  annotatingMode = false,
+  onToggleSelect,
+  onEdit,
+  onDelete,
+  recentlyEdited = false,
   thumbnailSize,
 }: {
   item: GraphListItem;
@@ -326,6 +382,12 @@ const GraphGridCard = React.memo(function GraphGridCard({
   highlightKeyword: string;
   showThumbnail?: boolean;
   eager: boolean;
+  isSelected?: boolean;
+  annotatingMode?: boolean;
+  onToggleSelect?: (shiftKey: boolean) => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  recentlyEdited?: boolean;
   thumbnailSize: ThumbnailSize;
 }) {
   const infoUrl = (item.image_iiif || '').trim();
@@ -337,20 +399,164 @@ const GraphGridCard = React.memo(function GraphGridCard({
     item.coordinates,
     CROP_PIXELS[thumbnailSize]
   );
+  const t = useTranslations('search');
+  const tCommon = useTranslations('common');
+
+  const renderLink = (children: React.ReactNode, className: string) =>
+    annotatingMode ? (
+      <button
+        type="button"
+        onClick={(e) => onToggleSelect?.(e.shiftKey)}
+        className={className}
+        aria-label={isSelected ? t('unselectGraph') : t('selectGraph')}
+      >
+        {children}
+      </button>
+    ) : (
+      <GraphDetailLink graph={item} className={className}>
+        {children}
+      </GraphDetailLink>
+    );
+
+  const image = (
+    <IiifImage
+      src={imageUrl ?? ''}
+      alt={displayText}
+      fill
+      className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
+      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+      loading={eager ? 'eager' : 'lazy'}
+    />
+  );
+
+  const collectable = !!item.image_iiif?.trim();
+
+  // Rendered over the thumbnail when there is one, in the footer when there
+  // isn't (mirrors MediaGridCard): hiding thumbnails is a display preference,
+  // not a way to give up collecting and lightboxing results.
+  const actions = (
+    <>
+      <OpenLightboxButton
+        item={item}
+        variant="ghost"
+        size="icon"
+        className={GRID_CARD_ACTION_CLASS}
+      />
+      {collectable && (
+        <CollectionStar
+          itemId={item.id}
+          itemType="graph"
+          item={item}
+          appearance="surface"
+          size={18}
+        />
+      )}
+    </>
+  );
+
+  const selectToggle = annotatingMode && (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggleSelect?.(e.shiftKey);
+      }}
+      aria-pressed={isSelected}
+      aria-label={isSelected ? t('unselectGraph') : t('selectGraph')}
+      className={cn(
+        'flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-xs shadow-sm transition',
+        showThumbnail && 'absolute left-2 top-2 z-30',
+        isSelected
+          ? 'border-primary bg-primary text-primary-foreground'
+          : 'border-foreground/30 bg-background/95 text-transparent hover:border-primary hover:text-primary group-hover:text-muted-foreground'
+      )}
+    >
+      ✓
+    </button>
+  );
 
   return (
-    <MediaGridCard
-      imageUrl={imageUrl}
-      displayText={displayText}
-      formattedDisplayText={formattedDisplayText}
-      highlightKeyword={highlightKeyword}
-      graphItem={item}
-      loadingFallback={infoUrl ? '…' : 'No Image'}
-      item={item}
-      itemType="graph"
-      showThumbnail={showThumbnail}
-      eager={eager}
-    />
+    <div
+      className={cn(
+        'group relative flex flex-col overflow-hidden rounded-lg border shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-md focus-within:border-accent/60',
+        recentlyEdited
+          ? 'border-amber-300 bg-amber-50/60 hover:border-amber-400 dark:border-amber-800 dark:bg-amber-950/20'
+          : 'border-border bg-card hover:border-accent/40',
+        isSelected && 'ring-2 ring-primary ring-offset-2'
+      )}
+    >
+      {showThumbnail && (
+        <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
+          {recentlyEdited && <RecentlyEditedBadge />}
+          {selectToggle}
+          {imageUrl ? (
+            <>
+              {renderLink(image, 'relative block h-full w-full')}
+              <div className="pointer-events-none absolute inset-0 bg-foreground/0 transition-colors duration-200 group-hover:bg-foreground/[0.05]" />
+            </>
+          ) : (
+            renderLink(
+              <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                {infoUrl ? '…' : 'No Image'}
+              </span>,
+              'block h-full w-full'
+            )
+          )}
+          <div className="absolute right-2 top-2 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            {actions}
+          </div>
+        </div>
+      )}
+      <div className={cn('px-2.5 py-1.5', showThumbnail && 'border-t border-border/70')}>
+        <div className="flex items-center gap-2">
+          {!showThumbnail && selectToggle}
+          <div className="min-w-0 flex-1">
+            {renderLink(
+              <span
+                title={displayText}
+                className="block truncate font-serif text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary"
+              >
+                <Highlight
+                  text={displayText}
+                  keyword={highlightKeyword}
+                  formattedText={formattedDisplayText}
+                />
+              </span>,
+              'block'
+            )}
+          </div>
+          {!showThumbnail && <div className="flex shrink-0 items-center gap-1">{actions}</div>}
+        </div>
+        {annotatingMode && onEdit && onDelete && (
+          <div className="mt-2 flex gap-1.5 border-t border-border/60 pt-1.5">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 flex-1 gap-1 px-2 text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+            >
+              <Pencil className="h-3 w-3" />
+              {tCommon('edit')}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              aria-label={t('deleteGraphLabel', { id: item.id })}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 });
 
@@ -565,12 +771,55 @@ function SearchGridComponent({
   highlightKeyword = '',
   isFetching = false,
   thumbnailSize = 'medium',
+  annotatingMode = false,
+  selectedIds,
+  onToggleSelect,
+  onSelectMany,
+  onEditOne,
+  onDeleteOne,
+  graphOverrides,
   manuscriptSelection,
   showThumbnails = true,
 }: SearchGridProps) {
   const cards = React.useMemo(
-    () => results.map((item) => ({ card: toGridCard(resultType, item) })),
-    [results, resultType]
+    () => results.map((item) => ({ card: toGridCard(resultType, item, graphOverrides) })),
+    [results, resultType, graphOverrides]
+  );
+
+  const flatCards = React.useMemo(
+    () => cards.map(({ card }) => card).filter((card): card is GridCard => card != null),
+    [cards]
+  );
+
+  // Range selection anchor for shift-clicks across current page
+  const lastSelectedIdRef = React.useRef<number | null>(null);
+
+  const handleThumbSelect = React.useCallback(
+    (graphId: number, shiftKey: boolean) => {
+      if (shiftKey && lastSelectedIdRef.current != null) {
+        const graphIds = flatCards
+          .filter((c) => c.kind === 'graph')
+          .map((c) => (c.item as GraphListItem).id);
+        const from = graphIds.indexOf(lastSelectedIdRef.current);
+        const to = graphIds.indexOf(graphId);
+        if (from !== -1 && to !== -1) {
+          const [lo, hi] = from < to ? [from, to] : [to, from];
+          const slice = graphIds.slice(lo, hi + 1);
+          if (onSelectMany) {
+            onSelectMany(slice);
+          } else if (onToggleSelect) {
+            for (const id of slice) {
+              onToggleSelect(id, false);
+            }
+          }
+          lastSelectedIdRef.current = graphId;
+          return;
+        }
+      }
+      onToggleSelect?.(graphId, shiftKey);
+      lastSelectedIdRef.current = graphId;
+    },
+    [flatCards, onSelectMany, onToggleSelect]
   );
 
   const renderCard = React.useCallback(
@@ -612,7 +861,8 @@ function SearchGridComponent({
         );
       }
 
-      if (card.kind === 'graph' && card.item.image_iiif) {
+      if (card.kind === 'graph') {
+        const isSelected = selectedIds ? selectedIds.has(card.item.id) : false;
         return (
           <GraphGridCard
             key={card.item.id}
@@ -622,6 +872,12 @@ function SearchGridComponent({
             highlightKeyword={highlightKeyword}
             showThumbnail={showThumbnails}
             eager={eager}
+            isSelected={isSelected}
+            annotatingMode={annotatingMode}
+            onToggleSelect={(shiftKey) => handleThumbSelect(card.item.id, shiftKey)}
+            onEdit={onEditOne ? () => onEditOne(card.item.id) : undefined}
+            onDelete={onDeleteOne ? () => onDeleteOne(card.item.id) : undefined}
+            recentlyEdited={card.recentlyEdited}
             thumbnailSize={thumbnailSize}
           />
         );
@@ -635,7 +891,6 @@ function SearchGridComponent({
           displayText={card.displayText}
           formattedDisplayText={card.formattedDisplayText}
           highlightKeyword={highlightKeyword}
-          graphItem={card.kind === 'graph' ? card.item : undefined}
           annotationCount={card.kind === 'image' ? card.item.number_of_annotations : null}
           item={card.item}
           itemType={card.kind}
@@ -644,14 +899,22 @@ function SearchGridComponent({
         />
       );
     },
-    [highlightKeyword, showThumbnails, manuscriptSelection, thumbnailSize]
+    [
+      annotatingMode,
+      handleThumbSelect,
+      highlightKeyword,
+      manuscriptSelection,
+      onDeleteOne,
+      onEditOne,
+      selectedIds,
+      showThumbnails,
+      thumbnailSize,
+    ]
   );
 
   if (!results.length) {
     return <div className="py-10 text-center text-muted-foreground">No results to display.</div>;
   }
-
-  const flatCards = cards.map(({ card }) => card).filter((card): card is GridCard => card != null);
 
   return (
     <section

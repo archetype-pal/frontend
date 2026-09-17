@@ -171,6 +171,25 @@
     "keywordRecent": "Kürzlich verwendet",
     "keywordClearHistory": "Verlauf löschen",
     "keywordLoading": "Vorschläge werden geladen…",
+    "annotatingMode": "Annotationsmodus",
+    "annotatingModeHint": "Auswahl und Massenbearbeitung von Graphen aktivieren",
+    "selectedCount": "{count} ausgewählt",
+    "selectAllOnPage": "Alle {count} auf der Seite auswählen",
+    "unselectAllOnPage": "Alle {count} auf der Seite abwählen",
+    "selectionCapReached": "Sie können bis zu {max} Graphen gleichzeitig bearbeiten",
+    "editSelected": "Auswahl bearbeiten",
+    "clearSelection": "Auswahl aufheben",
+    "handDisabledTooltip": "Eine Hand gehört zu einer einzigen Handschrift — diese Auswahl umfasst mehrere.",
+    "confirmDeleteGraph": "Diese Graph-Annotation löschen?",
+    "discardUnsavedChanges": "Nicht gespeicherte Änderungen verwerfen?",
+    "graphDeleted": "Graph gelöscht",
+    "deleteFailed": "Löschen des Graphen fehlgeschlagen",
+    "noGraphData": "Keine Graphdaten für die ausgewählten Elemente gefunden",
+    "failedToLoadGraphs": "Laden der ausgewählten Graphen zur Bearbeitung fehlgeschlagen",
+    "notAuthenticated": "Nicht authentifiziert.",
+    "failedToLoadHands": "Laden der Hände für diese Handschrift fehlgeschlagen.",
+    "recentlyEditedBadge": "Bearbeitet",
+    "recentlyEditedTooltip": "Kürzlich bearbeitet",
     "queryBuilder": {
       "opIs": "ist",
       "opIsNot": "ist nicht",
@@ -218,7 +237,23 @@
       "matchLenient": "Nachsichtig (lässt nachfolgende Wörter weg, bis Treffer gefunden werden)",
       "matchingStrategyHint": "Strikter Abgleich (`all`) erfordert jedes Wort; nachsichtiger Abgleich (`last`) lässt nachfolgende Wörter weg, bis Ergebnisse erscheinen.",
       "queryBuilderHeading": "Abfrage-Editor"
-    }
+    },
+    "mixedAllographsNotice": "Die ausgewählten Graphen verwenden unterschiedliche Allographen. Wählen Sie einen für alle aus, oder schließen Sie den Dialog und verfeinern Sie die Auswahl.",
+    "mixedPickOne": "Gemischt — bitte einen wählen",
+    "mixedAcrossManuscripts": "Gemischt über mehrere Handschriften",
+    "handDisabled": "Hand deaktiviert",
+    "searchAllographs": "Allographen suchen…",
+    "noAllographs": "Keine Allographen",
+    "searchHands": "Hände suchen…",
+    "noHands": "Keine Hände",
+    "noHand": "Keine Hand",
+    "graphsFailedToSave": "{failed} von {total} Graphen konnten nicht gespeichert werden",
+    "graphsSaved": "{count, plural, =0 {Gespeichert} one {Gespeichert} other {# Graphen gespeichert}}",
+    "selectGraph": "Graph auswählen",
+    "unselectGraph": "Graph abwählen",
+    "deleteGraphLabel": "Graph Nr. {id} löschen",
+    "editorialGraphsSkipped": "{count, plural, one {# editorischer Graph wurde ausgelassen} other {# editorische Graphen wurden ausgelassen}}: Nur Superuser können sie bearbeiten.",
+    "editorialGraphsOnlySuperusers": "Nur Superuser können editorische Graphen bearbeiten."
   },
   "filters": {
     "activeTitle": "Aktive Filter",
@@ -967,7 +1002,13 @@
         "translations": "Übersetzungen",
         "siteFeatures": "Website anpassen",
         "new": "Neu"
-      }
+      },
+      "apiVersion": "API-Version {version}",
+      "apiRelease": "API-Release",
+      "apiBuilt": "Erstellt am {date}",
+      "apiDevBuild": "Entwicklungs-Build, keine veröffentlichte Version",
+      "apiCommit": "Commit {commit}",
+      "versionLabel": "Version:"
     },
     "sidebar": {
       "brand": "Backoffice",
@@ -2398,14 +2439,16 @@
       "migrations": {
         "title": "Ausstehende Migrationen",
         "upToDate": "Aktuell",
-        "pendingLabel": "ausstehend"
+        "pendingLabel": "ausstehend",
+        "unknown": "Unbekannt"
       },
       "services": {
         "title": "Abhängige Dienste",
         "database": "Datenbank",
         "redis": "Redis",
         "meilisearch": "Meilisearch",
-        "celeryBroker": "Celery-Broker"
+        "celeryBroker": "Celery-Broker",
+        "celeryWorkers": "Celery-Worker ({count})"
       },
       "storage": {
         "title": "Speicher",
@@ -2417,7 +2460,8 @@
       "permissions": {
         "title": "Dateisystemberechtigungen",
         "mediaWritable": "Medienverzeichnis beschreibbar",
-        "logsWritable": "Protokollverzeichnis beschreibbar"
+        "logsWritable": "Protokollverzeichnis beschreibbar",
+        "logsNotConfigured": "Keine Protokolldatei konfiguriert, Protokolle gehen an stdout"
       },
       "smtp": {
         "title": "E-Mail (SMTP)",
@@ -2429,7 +2473,8 @@
         "send": "Test-E-Mail senden",
         "sending": "Wird gesendet …",
         "toastSuccess": "Test-E-Mail gesendet",
-        "toastError": "Test-E-Mail konnte nicht gesendet werden"
+        "toastError": "Test-E-Mail konnte nicht gesendet werden",
+        "backend": "Mail-Backend: {backend}"
       }
     },
     "reviewAge": {
@@ -2507,10 +2552,8 @@
       "imageRemoved": "Bild entfernt",
       "imageRemoveFailed": "Bild konnte nicht entfernt werden",
       "editImage": "Bild bearbeiten",
-      "editImageDescription": "Aktualisieren Sie den Locus oder ersetzen Sie das zugrunde liegende IIIF-Bild.",
+      "editImageDescription": "Aktualisieren Sie den Locus oder die Tags für dieses Bild.",
       "iiifImagePath": "IIIF-Bildpfad",
-      "iiifImagePathPlaceholder": "historical_items/...",
-      "browseMedia": "Medien durchsuchen",
       "tags": "Tags",
       "tagsPlaceholder": "z. B. beschädigt, illuminiert",
       "deleteImageConfirmTitle": "Dieses Bild löschen?",

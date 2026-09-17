@@ -27,6 +27,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { ApiVersion } from './api-version';
 
 interface BackofficeHeaderProps {
   collapsed: boolean;
@@ -161,6 +162,8 @@ export function BackofficeHeader({
           ))}
         </BreadcrumbList>
       </Breadcrumb>
+
+      <ApiVersion />
 
       <div className="hidden sm:flex items-center gap-1.5">
         <Tooltip>

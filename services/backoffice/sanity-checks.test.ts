@@ -17,18 +17,20 @@ function jsonResponse(status: number, body: unknown) {
   });
 }
 
+// Captured from a local backend, so a contract drift fails here first.
 const FULL_RESPONSE = {
-  migrations: { has_pending: false, pending: [] },
+  migrations: { ok: true, has_pending: false, pending: [], detail: null },
   services: {
     database: { ok: true, detail: null },
     redis: { ok: true, detail: null },
     meilisearch: { ok: true, detail: null },
     celery_broker: { ok: true, detail: null },
+    celery_workers: { ok: true, workers: 1, detail: null },
   },
-  email: { smtp_configured: true },
-  database_size_bytes: 123456789,
-  media: { path: '/srv/app/storage/media', size_bytes: 987654321, writable: true },
-  logs: { path: '/srv/app', writable: true },
+  email: { backend: 'django.core.mail.backends.console.EmailBackend', smtp_configured: false },
+  database: { size_bytes: 40400575 },
+  media: { path: '/app/storage/media', size_bytes: 32196193372, writable: true },
+  logs: { configured: false, path: null, writable: null },
 };
 
 beforeEach(() => {
@@ -46,19 +48,31 @@ describe('getSanityChecks', () => {
     expect((init as RequestInit)?.cache).toBe('no-store');
   });
 
-  it('accepts a null database_size_bytes (non-Postgres backend)', async () => {
+  it('accepts a null database size (non-Postgres backend)', async () => {
     authFetchMock.mockResolvedValueOnce(
-      jsonResponse(200, { ...FULL_RESPONSE, database_size_bytes: null })
+      jsonResponse(200, { ...FULL_RESPONSE, database: { size_bytes: null } })
     );
     const result = await getSanityChecks('tok');
-    expect(result.database_size_bytes).toBeNull();
+    expect(result.database.size_bytes).toBeNull();
+  });
+
+  it('accepts an unreadable migration graph', async () => {
+    const migrations = {
+      ok: false,
+      has_pending: null,
+      pending: [],
+      detail: 'Conflicting migrations',
+    };
+    authFetchMock.mockResolvedValueOnce(jsonResponse(200, { ...FULL_RESPONSE, migrations }));
+    const result = await getSanityChecks('tok');
+    expect(result.migrations).toEqual(migrations);
   });
 
   it('accepts pending migrations and a down service with a detail message', async () => {
     authFetchMock.mockResolvedValueOnce(
       jsonResponse(200, {
         ...FULL_RESPONSE,
-        migrations: { has_pending: true, pending: ['app.0002_x'] },
+        migrations: { ok: true, has_pending: true, pending: ['app.0002_x'], detail: null },
         services: {
           ...FULL_RESPONSE.services,
           redis: { ok: false, detail: 'Connection refused' },
@@ -66,13 +80,26 @@ describe('getSanityChecks', () => {
       })
     );
     const result = await getSanityChecks('tok');
-    expect(result.migrations).toEqual({ has_pending: true, pending: ['app.0002_x'] });
+    expect(result.migrations).toEqual({
+      ok: true,
+      has_pending: true,
+      pending: ['app.0002_x'],
+      detail: null,
+    });
     expect(result.services.redis).toEqual({ ok: false, detail: 'Connection refused' });
   });
 
   it('throws BackofficeApiError on a 403 (non-superuser)', async () => {
     authFetchMock.mockResolvedValueOnce(jsonResponse(403, { detail: 'Forbidden' }));
     await expect(getSanityChecks('tok')).rejects.toBeInstanceOf(BackofficeApiError);
+  });
+
+  it('rejects the old top-level database_size_bytes shape', async () => {
+    const { database: _database, ...rest } = FULL_RESPONSE;
+    authFetchMock.mockResolvedValueOnce(
+      jsonResponse(200, { ...rest, database_size_bytes: 40400575 })
+    );
+    await expect(getSanityChecks('tok')).rejects.toThrow();
   });
 
   it('rejects a malformed response that does not match the contract', async () => {
