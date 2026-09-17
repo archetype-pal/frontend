@@ -64,6 +64,10 @@ export function BrandingCustomization({ branding, token, onChange }: Props) {
             currentImageUrl={logoUrl ? getCarouselImageUrl(logoUrl) : null}
             onFileSelect={handleFileSelect}
             loading={uploading}
+            // A logo is small and usually wide-and-short, unlike the
+            // carousel/partner images this zone was built for — cap the
+            // width so it doesn't stretch across a wide backoffice page.
+            className="max-w-xs"
           />
         </div>
         <div className="space-y-2">

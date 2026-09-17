@@ -176,7 +176,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
 
   const navLinkClass = (active: boolean) =>
     cn(
-      'transition-colors w-full md:w-auto justify-start',
+      'transition-colors w-full lg:w-auto justify-start',
       active
         ? 'text-white font-semibold border-b-2 border-accent rounded-none'
         : 'text-nav-bar-foreground/80 hover:text-white hover:bg-nav-bar-foreground/10'
@@ -346,7 +346,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
       )}
       <nav className="bg-nav-bar text-nav-bar-foreground border-t border-nav-bar-foreground/15 px-2 py-1.5">
         <div className="container mx-auto">
-          <div className="flex items-center justify-between md:hidden mb-2">
+          <div className="flex items-center justify-between lg:hidden mb-2">
             <span className="text-sm font-medium text-nav-bar-foreground">{t('menu')}</span>
             <Button
               variant="ghost"
@@ -359,11 +359,11 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
             </Button>
           </div>
           <div
-            className={`flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-2 ${
-              isMenuOpen ? 'flex' : 'hidden md:flex'
+            className={`flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-2 ${
+              isMenuOpen ? 'flex' : 'hidden lg:flex'
             }`}
           >
-            <ul className="flex flex-col md:flex-row md:items-center gap-2 md:gap-1 mr-0 md:mr-2">
+            <ul className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-1 mr-0 lg:mr-2">
               <li>
                 <Button
                   asChild
@@ -379,15 +379,15 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
               </li>
               {orderedSections.map((sectionKey) => renderSectionButton(sectionKey))}
             </ul>
-            <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-col lg:flex-row items-center gap-3 w-full lg:w-auto">
               {isSectionEnabled('search') && defaultSearchType && (
                 <div
                   className={cn(
-                    'relative w-full md:w-72 lg:w-80',
+                    'relative w-full lg:w-72 xl:w-80',
                     // On the search page the page itself owns a prominent search
                     // field, so the desktop nav search would be a confusing
                     // second box. Keep it on mobile, where the page header has none.
-                    isOnSearchPage && 'md:hidden'
+                    isOnSearchPage && 'lg:hidden'
                   )}
                 >
                   <KeywordSearchInput
