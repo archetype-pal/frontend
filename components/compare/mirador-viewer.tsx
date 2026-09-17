@@ -49,19 +49,6 @@ export function MiradorViewer({ manifestUrls, className }: MiradorViewerProps) {
   }, [containerId, manifestUrlsKey]);
 
   return (
-    // Two separate escapes to plug, both because Mirador (a MUI app) assumes
-    // it owns the page:
-    // 1. Its root workspace is `position: absolute; inset: 0`, which sizes
-    //    itself against the nearest *positioned* ancestor — `overflow-hidden`
-    //    alone doesn't give it one, so without `contain: layout` that
-    //    ancestor is the page itself and Mirador covers the whole viewport.
-    // 2. Its AppBar-based toolbar carries MUI's default z-index (1100+, for
-    //    sitting above typical app content). With no stacking context of our
-    //    own, that value competes directly against the site header's — and
-    //    wins — once the page scrolls the two into overlapping. `contain:
-    //    layout` establishes both a containing block *and* a new stacking
-    //    context for this subtree, so nothing inside Mirador can size or
-    //    stack itself against anything outside this div.
     <div
       id={containerId}
       className={cn('overflow-hidden', className)}
