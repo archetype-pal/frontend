@@ -6,6 +6,7 @@
     "cancel": "Abbrechen",
     "delete": "Löschen",
     "edit": "Bearbeiten",
+    "editingMode": "Bearbeitungsmodus",
     "close": "Schließen",
     "search": "Suchen",
     "confirm": "Bestätigen",
@@ -164,8 +165,7 @@
     "keywordRecent": "Kürzlich verwendet",
     "keywordClearHistory": "Verlauf löschen",
     "keywordLoading": "Vorschläge werden geladen…",
-    "annotatingMode": "Annotationsmodus",
-    "annotatingModeHint": "Auswahl und Massenbearbeitung von Graphen aktivieren",
+    "editingModeHint": "Auswahl und Massenbearbeitung von Graphen aktivieren",
     "selectedCount": "{count} ausgewählt",
     "selectAllOnPage": "Alle {count} auf der Seite auswählen",
     "unselectAllOnPage": "Alle {count} auf der Seite abwählen",
@@ -347,7 +347,8 @@
     "gallery": {
       "deleteConfirm": "Graph #{id} löschen? Er wird in den Papierkorb verschoben; ein Administrator kann ihn wiederherstellen.",
       "deleteSuccess": "Graph #{id} in den Papierkorb verschoben; ein Administrator kann ihn wiederherstellen",
-      "deleteFailed": "Graph #{id} konnte nicht gelöscht werden"
+      "deleteFailed": "Graph #{id} konnte nicht gelöscht werden",
+      "editingModeTooltip": "Grapheme direkt bearbeiten ein-/ausschalten (Taste A)"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Diesen editorischen Entwurf löschen?} other {Diesen öffentlichen Entwurf löschen?}}\n\nEr wird lokal verworfen.",

@@ -6,6 +6,7 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
+    "editingMode": "Editing mode",
     "close": "Close",
     "search": "Search",
     "confirm": "Confirm",
@@ -164,8 +165,7 @@
     "keywordRecent": "Recent",
     "keywordClearHistory": "Clear history",
     "keywordLoading": "Loading suggestions…",
-    "annotatingMode": "Annotating mode",
-    "annotatingModeHint": "Enable selection and bulk editing of graphs",
+    "editingModeHint": "Enable selection and bulk editing of graphs",
     "selectedCount": "{count} selected",
     "selectAllOnPage": "Select all {count} on page",
     "unselectAllOnPage": "Unselect all {count} on page",
@@ -347,7 +347,8 @@
     "gallery": {
       "deleteConfirm": "Delete graph #{id}? It moves to the trash; an admin can restore it.",
       "deleteSuccess": "Graph #{id} moved to trash; an admin can restore it",
-      "deleteFailed": "Failed to delete graph #{id}"
+      "deleteFailed": "Failed to delete graph #{id}",
+      "editingModeTooltip": "Toggle inline graph editing (press A)"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Delete this editorial draft annotation?} other {Delete this public draft annotation?}}\n\nThis will discard it locally.",
