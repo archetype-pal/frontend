@@ -259,7 +259,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
       src={imageUrl ?? ''}
       alt={displayText}
       fill
-      className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
+      className="object-contain"
       sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
       loading={eager ? 'eager' : 'lazy'}
     />
@@ -296,7 +296,7 @@ const MediaGridCard = React.memo(function MediaGridCard({
   return (
     <div
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-lg border shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-md focus-within:border-accent/60',
+        'group relative flex flex-col overflow-hidden rounded-lg border shadow-sm transition-[box-shadow,border-color] duration-200 hover:shadow-md focus-within:border-accent/60',
         recentlyEdited
           ? 'border-amber-300 bg-amber-50/60 hover:border-amber-400 dark:border-amber-800 dark:bg-amber-950/20'
           : 'border-border bg-card hover:border-accent/40'
@@ -417,7 +417,7 @@ const GraphGridCard = React.memo(function GraphGridCard({
       src={imageUrl ?? ''}
       alt={displayText}
       fill
-      className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
+      className="object-contain"
       sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
       loading={eager ? 'eager' : 'lazy'}
     />
@@ -472,7 +472,7 @@ const GraphGridCard = React.memo(function GraphGridCard({
   return (
     <div
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-lg border shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-md focus-within:border-accent/60',
+        'group relative flex flex-col overflow-hidden rounded-lg border shadow-sm transition-[box-shadow,border-color] duration-200 hover:shadow-md focus-within:border-accent/60',
         recentlyEdited
           ? 'border-amber-300 bg-amber-50/60 hover:border-amber-400 dark:border-amber-800 dark:bg-amber-950/20'
           : 'border-border bg-card hover:border-accent/40',
@@ -575,7 +575,7 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
 }) {
   const meta = [item.type, item.date].filter(Boolean).join(' · ');
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
+    <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
       {showThumbnail && (
         <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
           <Link href={detailUrl} className="relative block h-full w-full">
@@ -584,7 +584,7 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
                 src={imageUrl}
                 alt={displayText}
                 fill
-                className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
+                className="object-contain"
                 sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
                 loading={eager ? 'eager' : 'lazy'}
               />
@@ -674,7 +674,7 @@ const ClauseGridCard = React.memo(function ClauseGridCard({
   );
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
+    <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
       {showThumbnail && (
         <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
           {imageUrl ? (
@@ -683,7 +683,7 @@ const ClauseGridCard = React.memo(function ClauseGridCard({
                 src={imageUrl}
                 alt={displayText}
                 fill
-                className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
+                className="object-contain"
                 sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
                 loading={eager ? 'eager' : 'lazy'}
               />
