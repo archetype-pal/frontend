@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/contexts/auth-context';
+import { useModelLabels } from '@/contexts/model-labels-context';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import {
   updateViewerAnnotation,
@@ -21,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { SearchableOption } from '@/lib/searchable-option-ranking';
 import { cn } from '@/lib/utils';
@@ -29,6 +31,18 @@ import { cn } from '@/lib/utils';
 // on every selected graph), 'none' (set on none), or 'mixed' (some have it).
 // Cycle is mixed → all → none → mixed. Only all/none commit on save; mixed
 // means "leave each graph alone." In single-graph mode mixed is unreachable.
+
+type EditGroup = 'components' | 'positions';
+
+// Both tab strips wrap rather than scroll: the worst real allograph has six
+// components and the names are short, so a wrapped row beats a scroll
+// affordance. The active tab is filled the same way the All/None/Mixed buttons
+// below are, so one selected-state colour runs through the whole dialog.
+const GROUP_TABS_LIST_CLASS = 'h-auto flex-wrap justify-start gap-2 bg-transparent p-0';
+const TAB_TRIGGER_CLASS =
+  'rounded-md border px-3 py-1.5 text-xs data-[state=active]:bg-primary ' +
+  'data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm ' +
+  'disabled:pointer-events-auto disabled:cursor-not-allowed';
 
 type TriState = 'all' | 'none' | 'mixed';
 const MIXED = 'mixed' as const;
@@ -62,18 +76,6 @@ function graphHasFeature(graph: BackendGraph, componentId: number, featureId: nu
 }
 function graphHasPosition(graph: BackendGraph, positionId: number) {
   return (graph.positions ?? []).includes(positionId);
-}
-
-// All components the allograph defines are editable (G3.3) — including ones
-// not yet present on every selected graph, so an editor can bulk-*add* a
-// component. `sharedComponentIds` flags which are already on every graph so the
-// UI can mark the rest as "not on all selected".
-function sharedComponentIds(graphs: BackendGraph[], allograph: Allograph): Set<number> {
-  const shared = new Set<number>();
-  for (const c of allograph.components) {
-    if (graphs.every((g) => Boolean(findComponent(g, c.component_id)))) shared.add(c.component_id);
-  }
-  return shared;
 }
 
 // Single hook used by both the features and positions sections: a pending
@@ -200,6 +202,11 @@ function DialogBody({
 }: AnnotationEditDialogProps) {
   const { token } = useAuth();
   const t = useTranslations('search');
+  // The two "nothing defined for this allograph" sentences are the same ones the
+  // annotation popup shows for the same condition, already translated — reuse them
+  // rather than keeping a second copy that can drift out of step.
+  const tAnnotation = useTranslations('annotation');
+  const { getPluralLabel } = useModelLabels();
   const isMulti = graphs.length > 1;
 
   const allographOptions = React.useMemo<SearchableOption[]>(
@@ -274,10 +281,42 @@ function DialogBody({
     () => schemaAllograph?.components ?? [],
     [schemaAllograph]
   );
-  const sharedIds = React.useMemo(
-    () => (schemaAllograph ? sharedComponentIds(graphs, schemaAllograph) : new Set<number>()),
-    [graphs, schemaAllograph]
-  );
+
+  // ---- Which tab is showing ------------------------------------------------
+  // Both of these are the user's *intent*, not the rendered value. Changing the
+  // Allograph mid-edit swaps the whole schema — the new allograph's components
+  // have different IDs, and it may declare no components or no positions at all
+  // — so a stored tab value goes stale the moment it changes. Deriving what is
+  // actually shown from the current schema means a stale tab can never render,
+  // and neither reset guard below needs to know these exist.
+  const [group, setGroup] = React.useState<EditGroup | null>(null);
+  const [componentId, setComponentId] = React.useState<number | null>(null);
+
+  const hasComponents = components.length > 0;
+  const hasPositions = (schemaAllograph?.positions.length ?? 0) > 0;
+
+  // Falls back to whichever group has something to edit; null when neither does,
+  // which is a third of the corpus — those allographs get both sentences below
+  // instead of a tab strip that cannot be opened at all.
+  const activeGroup: EditGroup | null =
+    (group === 'components' && hasComponents) || (group === 'positions' && hasPositions)
+      ? group
+      : hasComponents
+        ? 'components'
+        : hasPositions
+          ? 'positions'
+          : null;
+
+  const activeComponentId = components.some((c) => c.component_id === componentId)
+    ? componentId
+    : (components[0]?.component_id ?? null);
+
+  // Shown on hover of a disabled tab, and both together when neither group has
+  // anything to edit.
+  const noComponentsReason = tAnnotation('popup.editor.noComponentsDefined');
+  const noPositionsReason = tAnnotation('popup.editor.noPositionsDefined', {
+    positions: getPluralLabel('position').toLowerCase(),
+  });
 
   // ---- Tri-state maps for features and positions --------------------------
   const featureMap = useTriStateMap<string>(
@@ -568,44 +607,72 @@ function DialogBody({
                 </p>
               )}
 
-              <section>
-                <h3 className="mb-3 text-sm font-semibold text-foreground">
-                  Components &amp; features
-                  {isMulti && (
-                    <span className="ml-2 font-normal text-muted-foreground/80">
-                      (set All to add a component to every selected graph)
-                    </span>
-                  )}
-                </h3>
-                {components.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    This allograph has no defined components.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {components.map((c) => (
-                      <ComponentBlock
-                        key={c.component_id}
-                        component={c}
-                        isMulti={isMulti}
-                        notOnAll={isMulti && !sharedIds.has(c.component_id)}
-                        getFeatureState={(fId) => featureMap.get(featureKey(c.component_id, fId))}
-                        onSetFeatureState={(fId, s) =>
-                          featureMap.set(featureKey(c.component_id, fId), s)
-                        }
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
+              {/* One tab per component, so a long allograph (a few dozen rows across
+                  its components and positions) shows one component's rows at a time
+                  instead of all of them stacked in the sheet's single scroll.
+                  Positions sit alongside as their own group rather than below
+                  everything else. A group the allograph doesn't define is disabled,
+                  so it reads as empty without being opened, and names what is
+                  missing on hover. */}
+              <Tabs value={activeGroup ?? ''} onValueChange={(v) => setGroup(v as EditGroup)}>
+                <TabsList className={GROUP_TABS_LIST_CLASS}>
+                  <TabsTrigger
+                    value="components"
+                    disabled={!hasComponents}
+                    title={hasComponents ? undefined : noComponentsReason}
+                    className={TAB_TRIGGER_CLASS}
+                  >
+                    {t('componentsTab')}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="positions"
+                    disabled={!hasPositions}
+                    title={hasPositions ? undefined : noPositionsReason}
+                    className={TAB_TRIGGER_CLASS}
+                  >
+                    {getPluralLabel('position')}
+                  </TabsTrigger>
+                </TabsList>
 
-              <section>
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Positions</h3>
-                {schemaAllograph.positions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    This allograph has no defined positions.
-                  </p>
-                ) : (
+                <TabsContent value="components" className="mt-3 space-y-3">
+                  {isMulti && (
+                    <p className="text-xs text-muted-foreground/80">{t('setAllComponentHint')}</p>
+                  )}
+                  <Tabs
+                    value={activeComponentId != null ? String(activeComponentId) : ''}
+                    onValueChange={(v) => setComponentId(Number(v))}
+                  >
+                    <TabsList className={GROUP_TABS_LIST_CLASS}>
+                      {components.map((c) => (
+                        <TabsTrigger
+                          key={c.component_id}
+                          value={String(c.component_id)}
+                          className={TAB_TRIGGER_CLASS}
+                        >
+                          {c.component_name}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                    {components.map((c) => (
+                      <TabsContent
+                        key={c.component_id}
+                        value={String(c.component_id)}
+                        className="mt-3"
+                      >
+                        <ComponentBlock
+                          component={c}
+                          isMulti={isMulti}
+                          getFeatureState={(fId) => featureMap.get(featureKey(c.component_id, fId))}
+                          onSetFeatureState={(fId, s) =>
+                            featureMap.set(featureKey(c.component_id, fId), s)
+                          }
+                        />
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                </TabsContent>
+
+                <TabsContent value="positions" className="mt-3">
                   <div className="space-y-1">
                     {schemaAllograph.positions.map((p) => (
                       <TriRow
@@ -617,8 +684,15 @@ function DialogBody({
                       />
                     ))}
                   </div>
-                )}
-              </section>
+                </TabsContent>
+              </Tabs>
+
+              {activeGroup === null && (
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  <p>{noComponentsReason}</p>
+                  <p>{noPositionsReason}</p>
+                </div>
+              )}
             </>
           ) : (
             <p className="text-xs text-muted-foreground">
@@ -727,7 +801,6 @@ function GraphPreviewThumb({ graph, iiifImage }: { graph: BackendGraph; iiifImag
 interface ComponentBlockProps {
   component: Component;
   isMulti: boolean;
-  notOnAll?: boolean;
   getFeatureState: (featureId: number) => TriState;
   onSetFeatureState: (featureId: number, state: TriState) => void;
 }
@@ -735,7 +808,6 @@ interface ComponentBlockProps {
 function ComponentBlock({
   component,
   isMulti,
-  notOnAll,
   getFeatureState,
   onSetFeatureState,
 }: ComponentBlockProps) {
@@ -743,11 +815,6 @@ function ComponentBlock({
     <div className="rounded-md border bg-card p-3.5 shadow-sm">
       <div className="mb-2.5 flex items-center gap-2 text-sm font-semibold text-foreground">
         {component.component_name}
-        {notOnAll && (
-          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
-            not on all selected
-          </span>
-        )}
       </div>
       {component.features.length === 0 ? (
         <p className="text-sm italic text-muted-foreground">No features.</p>

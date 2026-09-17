@@ -239,6 +239,8 @@
     "noAllographs": "Aucun allographe",
     "searchHands": "Rechercher des mains…",
     "noHands": "Aucune main",
+    "componentsTab": "Composants et caractéristiques",
+    "setAllComponentHint": "(choisissez All pour ajouter un composant à tous les graphèmes sélectionnés)",
     "noHand": "Aucune main",
     "graphsFailedToSave": "Échec de l'enregistrement de {failed} graphème(s) sur {total}",
     "graphsSaved": "{count, plural, =0 {Enregistré} one {Enregistré} other {# graphèmes enregistrés}}",

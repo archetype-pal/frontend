@@ -239,6 +239,8 @@
     "noAllographs": "No allographs",
     "searchHands": "Search hands…",
     "noHands": "No hands",
+    "componentsTab": "Components & features",
+    "setAllComponentHint": "(set All to add a component to every selected graph)",
     "noHand": "No hand",
     "graphsFailedToSave": "{failed} of {total} graphs failed to save",
     "graphsSaved": "{count, plural, =0 {Saved} one {Saved} other {Saved # graphs}}",
