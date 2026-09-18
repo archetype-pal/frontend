@@ -32,11 +32,37 @@ export type SearchCategoryConfig = {
   visibleFacets: string[];
 };
 
+/**
+ * The brand colours a super admin can repaint from `UI customization`: the
+ * main brand colour (buttons, active nav — CSS `--primary` / `--ring`), the
+ * colour drawn on top of it (`--primary-foreground`), the secondary/highlight
+ * colour (`--accent`, used for badges and call-outs), and the two rows of the
+ * site header — the title/tagline row and the navigation row below it — each
+ * with its own background and text colour so a deployment can, e.g., run a
+ * light title row over a dark nav row (see archetype-pal/frontend#103).
+ */
+export type ThemeColors = {
+  primaryColor: string;
+  primaryForegroundColor: string;
+  accentColor: string;
+  titleBarBackgroundColor: string;
+  titleBarTextColor: string;
+  navBarBackgroundColor: string;
+  navBarTextColor: string;
+};
+
+/** The instance logo shown at the top of the header's title row. */
+export type BrandingConfig = {
+  logoUrl: string;
+};
+
 export type SiteFeaturesConfig = {
   sections: Record<SectionKey, boolean>;
   sectionOrder: SectionKey[];
   features: Record<FeatureKey, boolean>;
   searchCategories: Record<ResultType, SearchCategoryConfig>;
+  theme: ThemeColors;
+  branding: BrandingConfig;
 };
 
 export type SearchCategoryFlags = Partial<Record<ResultType, { enabled?: boolean }>>;
@@ -123,6 +149,79 @@ export function getDefaultFeatures(): Record<FeatureKey, boolean> {
   return Object.fromEntries(ALL_FEATURE_KEYS.map((k) => [k, true])) as Record<FeatureKey, boolean>;
 }
 
+const THEME_COLOR_KEYS: (keyof ThemeColors)[] = [
+  'primaryColor',
+  'primaryForegroundColor',
+  'accentColor',
+  'titleBarBackgroundColor',
+  'titleBarTextColor',
+  'navBarBackgroundColor',
+  'navBarTextColor',
+];
+
+const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i;
+
+// The hardcoded `:root` values in globals.css — the MoA look this app shipped
+// with before any deployment or admin could change it. The two header rows
+// default to the same primary/foreground pair, matching the single-colour
+// header this app rendered before the rows could be repainted separately.
+const ROOT_THEME_COLORS: ThemeColors = {
+  primaryColor: '#075783',
+  primaryForegroundColor: '#faf8f5',
+  accentColor: '#f59f0a',
+  titleBarBackgroundColor: '#075783',
+  titleBarTextColor: '#faf8f5',
+  navBarBackgroundColor: '#075783',
+  navBarTextColor: '#faf8f5',
+};
+
+/**
+ * The theme an admin sees the first time they open `UI customization` — before
+ * they've saved anything, or on a deployment whose backend predates this
+ * field. It reproduces the hardcoded globals.css colours exactly (same
+ * backward-compat rule as `getDefaultFeatures`), which is also what the
+ * backend seeds for every deployment. Once an admin saves a theme, the
+ * persisted value always wins; "Reset" brings the site back to this palette.
+ */
+export function getDefaultThemeColors(): ThemeColors {
+  return { ...ROOT_THEME_COLORS };
+}
+
+/**
+ * Fold an untrusted `theme` object onto a base palette: only known keys with a
+ * valid `#rrggbb` value are applied, mirroring `mergeFeatureFlags` — an
+ * omitted or malformed value keeps `base` untouched instead of turning a
+ * brand colour into `undefined` or an unparsable string.
+ */
+export function mergeThemeColors(base: ThemeColors, incoming: unknown): ThemeColors {
+  const merged = { ...base };
+  if (incoming == null || typeof incoming !== 'object' || Array.isArray(incoming)) return merged;
+  const source = incoming as Record<string, unknown>;
+  for (const key of THEME_COLOR_KEYS) {
+    const value = source[key];
+    if (typeof value === 'string' && HEX_COLOR_RE.test(value)) merged[key] = value;
+  }
+  return merged;
+}
+
+/** No logo until an admin sets one — the header renders the site title alone, same as today. */
+export function getDefaultBranding(): BrandingConfig {
+  return { logoUrl: '' };
+}
+
+/**
+ * Fold an untrusted `branding` object onto a base value, mirroring
+ * `mergeThemeColors`: only a string `logoUrl` is applied, so an omitted or
+ * malformed value keeps `base` untouched rather than clearing the logo.
+ */
+export function mergeBranding(base: BrandingConfig, incoming: unknown): BrandingConfig {
+  const merged = { ...base };
+  if (incoming == null || typeof incoming !== 'object' || Array.isArray(incoming)) return merged;
+  const source = incoming as Record<string, unknown>;
+  if (typeof source.logoUrl === 'string') merged.logoUrl = source.logoUrl.trim();
+  return merged;
+}
+
 export function getEnabledSearchCategories(config: SearchCategoryConfigOwner): ResultType[] {
   return SEARCH_RESULT_TYPES.filter((type) => config.searchCategories[type]?.enabled !== false);
 }
@@ -190,5 +289,7 @@ export function getDefaultConfig(): SiteFeaturesConfig {
     sectionOrder: [...ALL_SECTION_KEYS],
     features: getDefaultFeatures(),
     searchCategories,
+    theme: getDefaultThemeColors(),
+    branding: getDefaultBranding(),
   };
 }

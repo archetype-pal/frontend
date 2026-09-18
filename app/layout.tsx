@@ -89,8 +89,31 @@ export default async function RootLayout({
     await Promise.all([readSiteFeatures(), readModelLabels(), getLocale(), getMessages()]);
   const locale = coerceLocale(rawLocale);
 
+  // `readSiteFeatures` folds the admin-saved theme over `getDefaultThemeColors()`
+  // into `siteFeaturesConfig.theme`, so this is the one place brand colours
+  // need to be read from.
+  const {
+    primaryColor,
+    primaryForegroundColor,
+    accentColor,
+    titleBarBackgroundColor,
+    titleBarTextColor,
+    navBarBackgroundColor,
+    navBarTextColor,
+  } = siteFeaturesConfig.theme;
+  const siteThemeVars = {
+    '--primary': primaryColor,
+    '--ring': primaryColor,
+    '--primary-foreground': primaryForegroundColor,
+    '--accent': accentColor,
+    '--title-bar-bg': titleBarBackgroundColor,
+    '--title-bar-fg': titleBarTextColor,
+    '--nav-bar-bg': navBarBackgroundColor,
+    '--nav-bar-fg': navBarTextColor,
+  };
+
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning style={siteThemeVars as React.CSSProperties}>
       <body
         data-csp-nonce={nonce}
         className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${cormorant.variable} ${junicode.variable} antialiased`}

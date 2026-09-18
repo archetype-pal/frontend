@@ -13,9 +13,11 @@ import {
   getEnabledSearchCategories,
   getDefaultConfig,
   getDefaultFeatures,
+  getDefaultThemeColors,
   hasEnabledSearchCategory,
   isSearchCategoryEnabled,
   mergeFeatureFlags,
+  mergeThemeColors,
   normalizeSectionOrder,
   type FeatureKey,
   type SectionKey,
@@ -194,6 +196,72 @@ describe('mergeFeatureFlags', () => {
     const base = getDefaultFeatures();
     mergeFeatureFlags(base, { manuscriptDescriptions: false });
     expect(base.manuscriptDescriptions).toBe(true);
+  });
+});
+
+describe('getDefaultThemeColors', () => {
+  it('reproduces the hardcoded globals.css colours', () => {
+    expect(getDefaultThemeColors()).toEqual({
+      primaryColor: '#075783',
+      primaryForegroundColor: '#faf8f5',
+      accentColor: '#f59f0a',
+      titleBarBackgroundColor: '#075783',
+      titleBarTextColor: '#faf8f5',
+      navBarBackgroundColor: '#075783',
+      navBarTextColor: '#faf8f5',
+    });
+  });
+
+  it('returns a fresh object so callers can mutate without affecting defaults', () => {
+    const a = getDefaultThemeColors();
+    a.primaryColor = '#000000';
+    expect(getDefaultThemeColors().primaryColor).toBe('#075783');
+  });
+
+  it('included in getDefaultConfig()', () => {
+    expect(getDefaultConfig().theme).toEqual(getDefaultThemeColors());
+  });
+});
+
+describe('mergeThemeColors', () => {
+  it('returns the base palette when the payload omits `theme` entirely', () => {
+    const base = { ...getDefaultThemeColors(), accentColor: '#123456' };
+    expect(mergeThemeColors(base, undefined)).toEqual(base);
+    expect(mergeThemeColors(base, null)).toEqual(base);
+  });
+
+  it('applies valid hex overrides key by key', () => {
+    const base = getDefaultThemeColors();
+    expect(mergeThemeColors(base, { accentColor: '#abcdef' })).toEqual({
+      ...base,
+      accentColor: '#abcdef',
+    });
+  });
+
+  it('ignores non-plain-object payloads instead of spreading them into index keys', () => {
+    const base = getDefaultThemeColors();
+    for (const junk of ['nope', 42, true, ['primaryColor']]) {
+      expect(mergeThemeColors(base, junk)).toEqual(base);
+    }
+  });
+
+  it('ignores malformed hex values, keeping the base colour', () => {
+    const base = getDefaultThemeColors();
+    for (const junk of ['blue', '#fff', '#gggggg', 'rgb(0,0,0)', '']) {
+      expect(mergeThemeColors(base, { primaryColor: junk }).primaryColor).toBe(base.primaryColor);
+    }
+  });
+
+  it('drops unknown keys so garbage never reaches disk', () => {
+    const base = getDefaultThemeColors();
+    const merged = mergeThemeColors(base, { somethingBogus: '#123456' });
+    expect(merged).toEqual(base);
+  });
+
+  it('never mutates the base palette', () => {
+    const base = getDefaultThemeColors();
+    mergeThemeColors(base, { primaryColor: '#123456' });
+    expect(base).toEqual(getDefaultThemeColors());
   });
 });
 
