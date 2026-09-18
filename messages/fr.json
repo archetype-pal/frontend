@@ -95,6 +95,7 @@
     "compareAction": {
       "button": "Comparer ({count})",
       "selectAriaLabel": "Sélectionner {label} pour comparer",
+      "alreadyStaged": "{count, plural, one {# manuscrit sélectionné est déjà} other {# manuscrits sélectionnés sont déjà}} dans Comparer",
       "atCapTitle": "Comparer est plein",
       "atCapDescription": "Vous pouvez comparer jusqu'à {max} manuscrits à la fois. Retirez-en un de la page Comparer d'abord."
     },

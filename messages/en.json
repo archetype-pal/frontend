@@ -95,6 +95,7 @@
     "compareAction": {
       "button": "Compare ({count})",
       "selectAriaLabel": "Select {label} to compare",
+      "alreadyStaged": "{count, plural, one {# selected manuscript is} other {# selected manuscripts are}} already in Compare",
       "atCapTitle": "Compare is full",
       "atCapDescription": "You can compare up to {max} manuscripts at once. Remove one from the Compare page first."
     },

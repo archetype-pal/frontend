@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { useSiteFeatures } from '@/contexts/site-features-context';
 import { useCompareStore, MAX_COMPARE_ITEMS, type CompareItem } from '@/stores/compare-store';
 
 export function CompareToggleButton({ item }: { item: CompareItem }) {
@@ -15,6 +16,9 @@ export function CompareToggleButton({ item }: { item: CompareItem }) {
   );
   const addItem = useCompareStore((state) => state.addItem);
   const removeItem = useCompareStore((state) => state.removeItem);
+  const { isSectionEnabled } = useSiteFeatures();
+
+  if (!isSectionEnabled('compare')) return null;
 
   const handleClick = () => {
     if (isInCompare) {

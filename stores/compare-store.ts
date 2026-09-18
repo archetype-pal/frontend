@@ -53,6 +53,12 @@ export const useCompareStore = create<CompareState>()(
       // Collections (lib/collection-storage.ts) — closing the tab clears it.
       name: 'compare-selection',
       storage: createJSONStorage(() => sessionStorage),
+      // Don't read sessionStorage at import time: the server renders an empty
+      // selection and the client's first render must match it, or every page
+      // with the header logs a hydration mismatch. `CompareStoreHydrator`
+      // (mounted once in app/layout.tsx) rehydrates after mount, the same
+      // way collection-context.tsx loads its localStorage state.
+      skipHydration: true,
     }
   )
 );

@@ -44,6 +44,7 @@ const SearchMapView = React.lazy(() =>
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/auth-context';
+import { useSiteFeatures } from '@/contexts/site-features-context';
 import { toast } from 'sonner';
 import { GraphSelectionToolbar } from '@/components/search/graph-selection-toolbar';
 import { useGraphEditFlow } from '@/hooks/search/use-graph-edit-flow';
@@ -71,27 +72,39 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const isStaff = Boolean(user?.is_staff);
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
   const router = useRouter();
+  const { isSectionEnabled } = useSiteFeatures();
   const addToCompare = useCompareStore((state) => state.addItem);
+  const isInCompare = useCompareStore((state) => state.isInCompare);
   const manuscriptSelectionResetKey = `${s.resultType}|${s.submittedKeyword}|${JSON.stringify(
     s.queryState.selected_facets
   )}|${s.queryState.offset}`;
   const manuscriptSelection = useManuscriptCompareSelection(manuscriptSelectionResetKey);
-  const isManuscripts = s.resultType === 'manuscripts';
+  const compareEnabled = s.resultType === 'manuscripts' && isSectionEnabled('compare');
 
   const handleCompareSelected = () => {
     const selected = (s.filtered as ManuscriptListItem[]).filter((item) =>
       manuscriptSelection.isSelected(item.id)
     );
+    // addItem() returns false both for a duplicate and for a full store; tell
+    // them apart so an already-staged pick doesn't read as "Compare is full".
     let added = 0;
+    let alreadyStaged = 0;
     for (const item of selected) {
-      if (addToCompare(manuscriptToCompareItem(item))) added += 1;
+      if (isInCompare(item.id)) {
+        alreadyStaged += 1;
+      } else if (addToCompare(manuscriptToCompareItem(item))) {
+        added += 1;
+      }
     }
-    if (added < selected.length) {
+    const rejected = selected.length - added - alreadyStaged;
+    if (rejected > 0) {
       toast.error(t('compareAction.atCapTitle'), {
         description: t('compareAction.atCapDescription', { max: MAX_COMPARE_ITEMS }),
       });
+    } else if (alreadyStaged > 0) {
+      toast.info(t('compareAction.alreadyStaged', { count: alreadyStaged }));
     }
-    if (added > 0) {
+    if (added + alreadyStaged > 0) {
       manuscriptSelection.clear();
       router.push('/compare');
     }
@@ -344,7 +357,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 />
               </MobileFilterSheet>
             </div>
-            {isManuscripts && (
+            {compareEnabled && (
               <Button
                 type="button"
                 variant="outline"
@@ -549,7 +562,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     highlightKeyword={s.submittedKeyword}
                     visibleColumns={s.categoryConfig.visibleColumns}
                     isFetching={s.isFetching}
-                    manuscriptSelection={isManuscripts ? manuscriptSelection : undefined}
+                    manuscriptSelection={compareEnabled ? manuscriptSelection : undefined}
                     showThumbnails={showThumbnails}
                     thumbnailSize={thumbnailSize}
                   />
@@ -632,7 +645,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     onEditOne={(id) => editFlow.startEdit([id])}
                     onDeleteOne={editFlow.deleteOne}
                     graphOverrides={graphOverrides}
-                    manuscriptSelection={isManuscripts ? manuscriptSelection : undefined}
+                    manuscriptSelection={compareEnabled ? manuscriptSelection : undefined}
                     showThumbnails={showThumbnails}
                   />
                 )

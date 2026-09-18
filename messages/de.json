@@ -95,6 +95,7 @@
     "compareAction": {
       "button": "Vergleich ({count})",
       "selectAriaLabel": "{label} zum Vergleich auswählen",
+      "alreadyStaged": "{count, plural, one {# ausgewählte Handschrift ist} other {# ausgewählte Handschriften sind}} bereits im Vergleich",
       "atCapTitle": "Vergleich ist voll",
       "atCapDescription": "Sie können bis zu {max} Handschriften gleichzeitig vergleichen. Entfernen Sie zuerst eine auf der Vergleichsseite."
     },

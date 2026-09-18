@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useCompareStore, MAX_COMPARE_ITEMS, type CompareItem } from './compare-store';
 
@@ -51,5 +51,23 @@ describe('useCompareStore', () => {
     useCompareStore.getState().addItem(item(2));
     useCompareStore.getState().clear();
     expect(useCompareStore.getState().items).toEqual([]);
+  });
+});
+
+describe('useCompareStore hydration', () => {
+  it('does not read sessionStorage at import time, only on explicit rehydrate()', async () => {
+    sessionStorage.setItem(
+      'compare-selection',
+      JSON.stringify({ state: { items: [item(7)] }, version: 0 })
+    );
+    vi.resetModules();
+    const fresh = await import('./compare-store');
+
+    // Server markup is rendered from an empty store; the client's first render
+    // has to match it (see CompareStoreHydrator).
+    expect(fresh.useCompareStore.getState().items).toEqual([]);
+
+    await fresh.useCompareStore.persist.rehydrate();
+    expect(fresh.useCompareStore.getState().items.map((i) => i.itemPartId)).toEqual([7]);
   });
 });
