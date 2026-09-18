@@ -589,10 +589,9 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
             <Checkbox
               checked={isChecked}
               disabled={selection.isDisabled(item.id)}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
+              // Only stop the click reaching the card; preventDefault() would
+              // make Radix skip its own toggle and onCheckedChange never fires.
+              onClick={(e) => e.stopPropagation()}
               onCheckedChange={() => selection.toggle(item.id)}
               aria-label={t('compareAction.selectAriaLabel', { label: displayText })}
               className={cn(
