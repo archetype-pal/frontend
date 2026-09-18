@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
 import { getDefaultConfig, type SiteFeaturesConfig } from '@/lib/site-features';
 import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
+import { toast } from 'sonner';
 import SiteFeaturesPage from './page';
 
 vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ token: 'tok' }) }));
@@ -74,6 +75,20 @@ describe('<SiteFeaturesPage>', () => {
 
     expect((manuscriptsSwitch as HTMLButtonElement).disabled).toBe(true);
     expect((imagesSwitch as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('blocks Save on an invalid theme colour instead of silently dropping it', async () => {
+    renderPage();
+    await screen.findByText('UI Customization');
+
+    const backgroundColorInput = screen.getByRole('textbox', { name: 'Main background color' });
+    fireEvent.change(backgroundColorInput, { target: { value: '#fff' } });
+
+    expect(await screen.findByText('Enter a valid hex color, e.g. #075783.')).toBeTruthy();
+
+    const saveButton = screen.getByRole('button', { name: 'Save changes' });
+    expect((saveButton as HTMLButtonElement).disabled).toBe(true);
+    expect(toast.error).not.toHaveBeenCalled();
   });
 
   it('offers every implemented table column for search category configuration', async () => {

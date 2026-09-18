@@ -2025,7 +2025,9 @@
         "navBarBackgroundColorDescription": "Couleur de fond du bandeau affichant les liens de navigation et la recherche.",
         "navBarTextColor": "Texte du bandeau de navigation",
         "navBarTextColorDescription": "Couleur du texte et des icônes affichés sur le fond du bandeau de navigation.",
-        "reset": "Réinitialiser"
+        "reset": "Réinitialiser",
+        "invalidColor": "Entrez une couleur hexadécimale valide, par ex. #075783.",
+        "invalidColorError": "Corrigez la ou les couleurs invalides avant d'enregistrer."
       },
       "branding": {
         "title": "Logo",

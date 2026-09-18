@@ -6,9 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import type { ThemeColors } from '@/lib/site-features';
-
-const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i;
+import { isValidHexColor, type ThemeColors } from '@/lib/site-features';
 
 const THEME_FIELDS: { key: keyof ThemeColors; labelKey: string; descriptionKey: string }[] = [
   {
@@ -78,7 +76,7 @@ export function ThemeCustomization({ theme, defaults, onChange }: Props) {
     descriptionKey: string;
   }) => {
     const value = theme[key];
-    const isValid = HEX_COLOR_RE.test(value);
+    const isValid = isValidHexColor(value);
     const isDefault = value.toLowerCase() === defaults[key].toLowerCase();
 
     return (
@@ -105,6 +103,9 @@ export function ThemeCustomization({ theme, defaults, onChange }: Props) {
             className="mt-2 h-8 max-w-32 font-mono text-xs"
             aria-invalid={!isValid}
           />
+          {!isValid && (
+            <p className="mt-1 text-xs text-destructive">{t('siteFeatures.theme.invalidColor')}</p>
+          )}
         </div>
         <Button
           type="button"

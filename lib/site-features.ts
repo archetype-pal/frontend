@@ -159,7 +159,11 @@ const THEME_COLOR_KEYS: (keyof ThemeColors)[] = [
   'navBarTextColor',
 ];
 
-const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i;
+export const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i;
+
+export function isValidHexColor(value: string): boolean {
+  return HEX_COLOR_RE.test(value);
+}
 
 // The hardcoded `:root` values in globals.css — the MoA look this app shipped
 // with before any deployment or admin could change it. The two header rows
@@ -202,6 +206,12 @@ export function mergeThemeColors(base: ThemeColors, incoming: unknown): ThemeCol
     if (typeof value === 'string' && HEX_COLOR_RE.test(value)) merged[key] = value;
   }
   return merged;
+}
+
+/** Whether any field of a draft `ThemeColors` fails the hex format — used to
+ *  block Save rather than let the PUT route silently drop it. */
+export function hasInvalidThemeColor(theme: ThemeColors): boolean {
+  return THEME_COLOR_KEYS.some((key) => !isValidHexColor(theme[key]));
 }
 
 /** No logo until an admin sets one — the header renders the site title alone, same as today. */
