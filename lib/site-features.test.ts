@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   ALL_FEATURE_KEYS,
@@ -200,14 +200,7 @@ describe('mergeFeatureFlags', () => {
 });
 
 describe('getDefaultThemeColors', () => {
-  const ORIGINAL_SITE_THEME = process.env.NEXT_PUBLIC_SITE_THEME;
-
-  afterEach(() => {
-    process.env.NEXT_PUBLIC_SITE_THEME = ORIGINAL_SITE_THEME;
-  });
-
-  it('reproduces the hardcoded globals.css colours for the moa deployment', () => {
-    process.env.NEXT_PUBLIC_SITE_THEME = 'moa';
+  it('reproduces the hardcoded globals.css colours', () => {
     expect(getDefaultThemeColors()).toEqual({
       primaryColor: '#075783',
       primaryForegroundColor: '#faf8f5',
@@ -219,17 +212,13 @@ describe('getDefaultThemeColors', () => {
     });
   });
 
-  it('reproduces the build-time preset for a non-moa deployment, not MoA blue', () => {
-    process.env.NEXT_PUBLIC_SITE_THEME = 'digipal';
-    const theme = getDefaultThemeColors();
-    expect(theme.primaryColor).not.toBe('#075783');
-    expect(theme.accentColor).not.toBe('#075783');
-    // No preset overrides the foreground colour drawn on top of --primary.
-    expect(theme.primaryForegroundColor).toBe('#faf8f5');
+  it('returns a fresh object so callers can mutate without affecting defaults', () => {
+    const a = getDefaultThemeColors();
+    a.primaryColor = '#000000';
+    expect(getDefaultThemeColors().primaryColor).toBe('#075783');
   });
 
   it('included in getDefaultConfig()', () => {
-    process.env.NEXT_PUBLIC_SITE_THEME = 'moa';
     expect(getDefaultConfig().theme).toEqual(getDefaultThemeColors());
   });
 });

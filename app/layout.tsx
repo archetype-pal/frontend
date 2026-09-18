@@ -88,11 +88,9 @@ export default async function RootLayout({
     await Promise.all([readSiteFeatures(), readModelLabels(), getLocale(), getMessages()]);
   const locale = coerceLocale(rawLocale);
 
-  // `getDefaultThemeColors()` (baked into `siteFeaturesConfig.theme` by
-  // `readSiteFeatures`) already resolves to this deployment's build-time
-  // `NEXT_PUBLIC_SITE_THEME` preset when no admin override is stored, so this
-  // is the one place brand colours need to be read from — no separate
-  // `lib/site-theme.ts` lookup here.
+  // `readSiteFeatures` folds the admin-saved theme over `getDefaultThemeColors()`
+  // into `siteFeaturesConfig.theme`, so this is the one place brand colours
+  // need to be read from.
   const {
     primaryColor,
     primaryForegroundColor,

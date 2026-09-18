@@ -4,7 +4,6 @@ import {
   SEARCH_RESULT_TYPES,
   type ResultType,
 } from './search-types';
-import { getSiteThemeVars, siteThemeVarToHex } from './site-theme';
 
 export type SectionKey =
   'search' | 'collection' | 'lightbox' | 'news' | 'blogs' | 'featureArticles' | 'events' | 'about';
@@ -169,34 +168,13 @@ const ROOT_THEME_COLORS: ThemeColors = {
 /**
  * The theme an admin sees the first time they open `UI customization` — before
  * they've saved anything, or on a deployment whose backend predates this
- * field. It has to reproduce today's rendered colours exactly (same
- * backward-compat rule as `getDefaultFeatures`), which for a non-`moa`
- * deployment means the build-time `NEXT_PUBLIC_SITE_THEME` preset it already
- * renders with (`lib/site-theme.ts`), not the MoA blue. Once an admin saves a
- * theme here, this per-deployment default no longer matters for that
- * deployment: the persisted value always wins.
+ * field. It reproduces the hardcoded globals.css colours exactly (same
+ * backward-compat rule as `getDefaultFeatures`), which is also what the
+ * backend seeds for every deployment. Once an admin saves a theme, the
+ * persisted value always wins; "Reset" brings the site back to this palette.
  */
 export function getDefaultThemeColors(): ThemeColors {
-  const overrides = getSiteThemeVars();
-  const fromOverride = (cssVar: string, fallback: string) => {
-    const raw = overrides[cssVar];
-    return (raw && siteThemeVarToHex(raw)) || fallback;
-  };
-  const primaryColor = fromOverride('--primary', ROOT_THEME_COLORS.primaryColor);
-  // No preset overrides the foreground colour drawn on top of --primary.
-  const primaryForegroundColor = ROOT_THEME_COLORS.primaryForegroundColor;
-  return {
-    primaryColor,
-    primaryForegroundColor,
-    accentColor: fromOverride('--accent', ROOT_THEME_COLORS.accentColor),
-    // Both header rows default to the deployment's brand primary/foreground —
-    // the single-colour look this app rendered before the rows could be
-    // repainted independently (archetype-pal/frontend#103).
-    titleBarBackgroundColor: primaryColor,
-    titleBarTextColor: primaryForegroundColor,
-    navBarBackgroundColor: primaryColor,
-    navBarTextColor: primaryForegroundColor,
-  };
+  return { ...ROOT_THEME_COLORS };
 }
 
 /**

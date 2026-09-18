@@ -62,10 +62,8 @@ type Props = {
 };
 
 /**
- * Lets a super admin repaint the site's 3 brand colours — the same ones
- * `lib/site-theme.ts` previously only let a deployer pick at build time via
- * `NEXT_PUBLIC_SITE_THEME`. Saved values override that build-time preset;
- * "Reset" restores whatever this deployment already renders with today.
+ * Lets a super admin repaint the site's brand colours. Saved values override
+ * the hardcoded globals.css palette; "Reset" restores that palette.
  */
 export function ThemeCustomization({ theme, defaults, onChange }: Props) {
   const t = useTranslations('backoffice');
