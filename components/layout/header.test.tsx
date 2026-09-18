@@ -106,10 +106,14 @@ describe('<Header> search entry points', () => {
     expect(mockState.push).toHaveBeenCalledWith('/search/images?keyword=Kelso');
   });
 
-  // A hardcoded `text-white` on the active nav link or search input goes
-  // invisible against a light `navBarBackgroundColor` — the whole point of
-  // `--nav-bar-foreground` is to track that background's contrast instead.
-  it('never hardcodes text-white, so a light nav bar stays readable', () => {
+  // Regression guard for a literal `text-white`/`hover:text-white` class,
+  // which goes invisible against a light `navBarBackgroundColor` (the actual
+  // color `--nav-bar-foreground` resolves to is set on <html> by
+  // app/layout.tsx from the admin's saved theme, outside this render tree —
+  // and there's no stylesheet loaded in jsdom — so this can't and doesn't
+  // assert anything about real contrast, only that the token, not a literal
+  // white, is what's used).
+  it('never hardcodes a literal text-white class', () => {
     const { container } = renderHeader();
     expect(container.querySelectorAll('[class*="text-white"]')).toHaveLength(0);
 
