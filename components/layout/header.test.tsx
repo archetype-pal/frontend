@@ -57,6 +57,13 @@ vi.mock('@/contexts/site-features-context', () => ({
   }),
 }));
 
+// Its own hardcoded `hover:text-white` is a pre-existing, separate issue
+// (not part of the header row colours this PR adds) — stub it out so this
+// suite's contrast assertion covers only markup this file owns.
+vi.mock('@/components/layout/language-switcher', () => ({
+  LanguageSwitcher: () => null,
+}));
+
 vi.mock('@/contexts/search-context', () => ({
   useSearchContext: () => ({
     suggestionsPool: [],
@@ -97,5 +104,19 @@ describe('<Header> search entry points', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(mockState.push).toHaveBeenCalledWith('/search/images?keyword=Kelso');
+  });
+
+  // A hardcoded `text-white` on the active nav link or search input goes
+  // invisible against a light `navBarBackgroundColor` — the whole point of
+  // `--nav-bar-foreground` is to track that background's contrast instead.
+  it('never hardcodes text-white, so a light nav bar stays readable', () => {
+    const { container } = renderHeader();
+    expect(container.querySelectorAll('[class*="text-white"]')).toHaveLength(0);
+
+    const activeLink = screen.getByRole('link', { name: /Explore/ });
+    expect(activeLink.className).toContain('text-nav-bar-foreground');
+
+    const input = screen.getByRole('combobox');
+    expect(input.className).toContain('text-nav-bar-foreground');
   });
 });

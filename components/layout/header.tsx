@@ -178,8 +178,8 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
     cn(
       'transition-colors w-full lg:w-auto justify-start',
       active
-        ? 'text-white font-semibold border-b-2 border-accent rounded-none'
-        : 'text-nav-bar-foreground/80 hover:text-white hover:bg-nav-bar-foreground/10'
+        ? 'text-nav-bar-foreground font-semibold border-b-2 border-accent rounded-none'
+        : 'text-nav-bar-foreground/80 hover:text-nav-bar-foreground hover:bg-nav-bar-foreground/10'
     );
 
   const renderSectionButton = (sectionKey: SectionKey) => {
@@ -398,7 +398,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                     suggestions={effectiveSuggestions}
                     placeholder={t('searchPlaceholder')}
                     className="w-full"
-                    inputClassName="h-10 w-full rounded-full border border-nav-bar-foreground/25 bg-nav-bar-foreground/15 text-[0.95rem] text-white shadow-none placeholder:text-nav-bar-foreground/60 hover:bg-nav-bar-foreground/20 focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/70"
+                    inputClassName="h-10 w-full rounded-full border border-nav-bar-foreground/25 bg-nav-bar-foreground/15 text-[0.95rem] text-nav-bar-foreground shadow-none placeholder:text-nav-bar-foreground/60 hover:bg-nav-bar-foreground/20 focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/70"
                     iconClassName="text-nav-bar-foreground/65"
                     clearOnFocus
                     onFocus={handleHeaderSearchFocus}
@@ -426,7 +426,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                         asChild
                         variant="ghost"
                         size="sm"
-                        className="text-nav-bar-foreground/80 hover:text-white hover:bg-nav-bar-foreground/10"
+                        className="text-nav-bar-foreground/80 hover:text-nav-bar-foreground hover:bg-nav-bar-foreground/10"
                       >
                         <Link href="/backoffice">
                           <Shield className="h-4 w-4 mr-1" />
@@ -437,7 +437,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-nav-bar-foreground/80 hover:text-white hover:bg-nav-bar-foreground/10"
+                      className="h-8 w-8 text-nav-bar-foreground/80 hover:text-nav-bar-foreground hover:bg-nav-bar-foreground/10"
                       onClick={logout}
                       title={tCommon('signOut')}
                     >
@@ -449,7 +449,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                     asChild
                     variant="ghost"
                     size="sm"
-                    className="text-nav-bar-foreground/80 hover:text-white hover:bg-nav-bar-foreground/10"
+                    className="text-nav-bar-foreground/80 hover:text-nav-bar-foreground hover:bg-nav-bar-foreground/10"
                   >
                     <Link href="/login">
                       <LogIn className="h-4 w-4 mr-1" />
@@ -460,7 +460,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-nav-bar-foreground/80 hover:text-white hover:bg-nav-bar-foreground/10"
+                  className="h-8 w-8 text-nav-bar-foreground/80 hover:text-nav-bar-foreground hover:bg-nav-bar-foreground/10"
                   onClick={toggleBanner}
                   aria-label={isBannerVisible ? t('bannerHide') : t('bannerShow')}
                   title={isBannerVisible ? t('bannerHide') : t('bannerShow')}

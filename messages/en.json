@@ -1995,7 +1995,9 @@
         "navBarBackgroundColorDescription": "Background colour of the row showing the navigation links and search box.",
         "navBarTextColor": "Navigation row text",
         "navBarTextColorDescription": "Text and icon colour drawn on top of the navigation row background.",
-        "reset": "Reset"
+        "reset": "Reset",
+        "invalidColor": "Enter a valid hex color, e.g. #075783.",
+        "invalidColorError": "Fix the invalid color(s) before saving."
       },
       "branding": {
         "title": "Logo",

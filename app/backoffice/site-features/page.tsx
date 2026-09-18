@@ -22,6 +22,7 @@ import { BrandingCustomization } from '@/components/backoffice/site-features/bra
 import {
   getDefaultConfig,
   hasEnabledSearchCategory,
+  hasInvalidThemeColor,
   normalizeSectionOrder,
   type SiteFeaturesConfig,
   type SectionKey,
@@ -98,10 +99,16 @@ export default function SiteFeaturesPage() {
     },
   });
 
+  const themeInvalid = hasInvalidThemeColor(config.theme);
+
   const handleSave = useCallback(() => {
     if (!dirty || !token || saveMut.isPending) return;
     if (!hasEnabledSearchCategory(config)) {
       toast.error(t('siteFeatures.searchCategoriesRequired'));
+      return;
+    }
+    if (hasInvalidThemeColor(config.theme)) {
+      toast.error(t('siteFeatures.theme.invalidColorError'));
       return;
     }
     saveMut.mutate();
@@ -213,6 +220,7 @@ export default function SiteFeaturesPage() {
         onSave={handleSave}
         onDiscard={handleDiscard}
         saving={saveMut.isPending}
+        saveDisabled={themeInvalid}
       />
     </div>
   );
