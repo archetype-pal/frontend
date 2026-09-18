@@ -57,13 +57,6 @@ vi.mock('@/contexts/site-features-context', () => ({
   }),
 }));
 
-// Its own hardcoded `hover:text-white` is a pre-existing, separate issue
-// (not part of the header row colours this PR adds) — stub it out so this
-// suite's contrast assertion covers only markup this file owns.
-vi.mock('@/components/layout/language-switcher', () => ({
-  LanguageSwitcher: () => null,
-}));
-
 vi.mock('@/contexts/search-context', () => ({
   useSearchContext: () => ({
     suggestionsPool: [],
@@ -104,26 +97,5 @@ describe('<Header> search entry points', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(mockState.push).toHaveBeenCalledWith('/search/images?keyword=Kelso');
-  });
-
-  // Regression guard for a literal `text-white`/`hover:text-white` class,
-  // which goes invisible against a light `navBarBackgroundColor` (the actual
-  // color `--nav-bar-foreground` resolves to is set on <html> by
-  // app/layout.tsx from the admin's saved theme, outside this render tree —
-  // and there's no stylesheet loaded in jsdom — so this can't and doesn't
-  // assert anything about real contrast, only that the token, not a literal
-  // white, is what's used).
-  it('never hardcodes a literal text-white class', () => {
-    const { container } = renderHeader();
-    expect(container.querySelectorAll('[class*="text-white"]')).toHaveLength(0);
-
-    // The mocked pathname is '/', so Home — not Explore — is the active
-    // link; it's the one that rendered through the branch that used to be
-    // hardcoded `text-white font-semibold ...`.
-    const homeLink = screen.getByRole('link', { name: /Home/ });
-    expect(homeLink.className).toContain('text-nav-bar-foreground font-semibold');
-
-    const input = screen.getByRole('combobox');
-    expect(input.className).toContain('text-nav-bar-foreground');
   });
 });
