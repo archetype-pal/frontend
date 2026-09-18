@@ -1,3 +1,9 @@
+export interface HandDescriptionPublic {
+  id: number;
+  source_label: string | null;
+  content: string;
+}
+
 export interface HandDetail {
   id: number;
   name: string;
@@ -5,7 +11,7 @@ export interface HandDetail {
   item_part: number | null;
   date: string | null;
   place: string | null;
-  description: string | null;
+  descriptions: HandDescriptionPublic[];
   num?: number | null;
   order?: number | null;
   ordering?: number | null;

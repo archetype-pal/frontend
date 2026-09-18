@@ -52,6 +52,9 @@ export const backofficeKeys = {
   dates: {
     all: () => [...backofficeKeys.all, 'dates'] as const,
   },
+  places: {
+    all: () => [...backofficeKeys.all, 'places'] as const,
+  },
 
   // ── Publications ───────────────────────────────────────────
   publications: {
