@@ -8,6 +8,7 @@ import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import { AuthProvider } from '@/contexts/auth-context';
 import { CollectionProvider } from '@/contexts/collection-context';
+import { CompareStoreHydrator } from '@/components/compare/compare-store-hydrator';
 import { SearchProvider } from '@/contexts/search-context';
 import { SiteFeaturesProvider } from '@/contexts/site-features-context';
 import { ModelLabelsProvider } from '@/contexts/model-labels-context';
@@ -100,6 +101,7 @@ export default async function RootLayout({
               <ModelLabelsProvider initialConfig={modelLabelsConfig} locale={locale}>
                 <AppQueryProvider>
                   <CollectionProvider>
+                    <CompareStoreHydrator />
                     <SearchProvider>{children}</SearchProvider>
                   </CollectionProvider>
                 </AppQueryProvider>

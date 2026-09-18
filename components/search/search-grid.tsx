@@ -2,7 +2,6 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-
 import { IiifImage } from '@/components/ui/iiif-image';
 import { Button } from '@/components/ui/button';
 import type {
@@ -16,6 +15,7 @@ import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { Highlight } from './highlight';
 import { CollectionStar } from '@/components/collection/collection-star';
+import { Checkbox } from '@/components/ui/checkbox';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
 import { getImageDetailUrl } from '@/lib/media-url';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
@@ -23,6 +23,7 @@ import { clauseToGraphCollectionItem } from '@/lib/collection-item';
 import { cn } from '@/lib/utils';
 import type { ThumbnailSize } from '@/components/search/thumbnail-size-control';
 import type { BackendGraph } from '@/services/annotations';
+import type { ManuscriptCompareSelection } from '@/hooks/search/use-manuscript-compare-selection';
 
 type GridItem = ImageListItem | GraphListItem | ManuscriptListItem | ClauseListItem;
 
@@ -39,6 +40,8 @@ export interface SearchGridProps {
   onEditOne?: (id: number) => void;
   onDeleteOne?: (id: number) => void;
   graphOverrides?: Record<number, BackendGraph>;
+  /** Only meaningful (and only passed) when `resultType === 'manuscripts'`. */
+  manuscriptSelection?: ManuscriptCompareSelection;
   showThumbnails?: boolean;
 }
 
@@ -563,6 +566,7 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   highlightKeyword,
   showThumbnail = true,
   eager,
+  selection,
 }: {
   item: ManuscriptListItem;
   detailUrl: string;
@@ -572,12 +576,30 @@ const ManuscriptGridCard = React.memo(function ManuscriptGridCard({
   highlightKeyword: string;
   showThumbnail?: boolean;
   eager: boolean;
+  selection?: ManuscriptCompareSelection;
 }) {
+  const t = useTranslations('search');
   const meta = [item.type, item.date].filter(Boolean).join(' · ');
+  const isChecked = selection?.isSelected(item.id) ?? false;
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-accent/40 hover:shadow-md focus-within:border-accent/60">
       {showThumbnail && (
         <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
+          {selection && (
+            <Checkbox
+              checked={isChecked}
+              disabled={selection.isDisabled(item.id)}
+              // Only stop the click reaching the card; preventDefault() would
+              // make Radix skip its own toggle and onCheckedChange never fires.
+              onClick={(e) => e.stopPropagation()}
+              onCheckedChange={() => selection.toggle(item.id)}
+              aria-label={t('compareAction.selectAriaLabel', { label: displayText })}
+              className={cn(
+                'absolute left-2 top-2 z-20 border-border bg-background/90 shadow-sm transition-opacity duration-200',
+                isChecked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              )}
+            />
+          )}
           <Link href={detailUrl} className="relative block h-full w-full">
             {imageUrl ? (
               <IiifImage
@@ -752,6 +774,7 @@ function SearchGridComponent({
   onEditOne,
   onDeleteOne,
   graphOverrides,
+  manuscriptSelection,
   showThumbnails = true,
 }: SearchGridProps) {
   const cards = React.useMemo(
@@ -822,6 +845,7 @@ function SearchGridComponent({
           <ManuscriptGridCard
             key={card.item.id}
             item={card.item}
+            selection={manuscriptSelection}
             detailUrl={card.detailUrl}
             imageUrl={card.imageUrl}
             displayText={card.displayText}
@@ -875,6 +899,7 @@ function SearchGridComponent({
       annotatingMode,
       handleThumbSelect,
       highlightKeyword,
+      manuscriptSelection,
       onDeleteOne,
       onEditOne,
       selectedIds,

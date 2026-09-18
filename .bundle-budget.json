@@ -1,16 +1,16 @@
 {
   "note": "Bundle-size guardrail. Regenerate with `pnpm bundle-budget:update` whenever an intentional growth lands.",
-  "generated_at": "2026-08-16T14:56:15.421Z",
-  "git_sha": "ff631bf",
+  "generated_at": "2026-09-17T08:58:59.851Z",
+  "git_sha": "3cedc44",
   "headroom_multiplier": 1.1,
   "budgets": {
-    "total_gzip_bytes": 2216530,
-    "largest_chunk_gzip_bytes": 152568
+    "total_gzip_bytes": 2784506,
+    "largest_chunk_gzip_bytes": 222217
   },
   "last_measured": {
-    "total_gzip_bytes": 2015027,
-    "largest_chunk_gzip_bytes": 138698,
-    "largest_chunk_gzip_file": "10cjse8cuafef.js",
-    "chunk_count": 116
+    "total_gzip_bytes": 2531369,
+    "largest_chunk_gzip_bytes": 202015,
+    "largest_chunk_gzip_file": "0juja31td5__j.js",
+    "chunk_count": 148
   }
 }

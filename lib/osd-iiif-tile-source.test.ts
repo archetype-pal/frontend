@@ -120,6 +120,36 @@ describe('buildOpenSeadragonTileSource', () => {
     expect(source.tiles).toEqual([{ width: 512, scaleFactors: [1, 2, 4] }]);
   });
 
+  it('falls back to a full-image pyramid when scaleFactors are not powers of two', () => {
+    // Matches SIPI v6.3.1's actual info.json shape for these images: a single
+    // tiles descriptor advertising scaleFactors [1, 2, 3]. OpenSeadragon's
+    // IIIFTileSource only tiles correctly when every scaleFactor is a power of
+    // two (it derives level geometry as 2^(maxLevel - level)), so 3 breaks its
+    // tile-pyramid math and it only ever paints part of the canvas.
+    const source = buildOpenSeadragonTileSource(
+      {
+        ...SIPI_V5_INFO,
+        tiles: [{ width: 512, height: 512, scaleFactors: [1, 2, 3] }],
+      },
+      PROXIED_BASE_URL
+    );
+
+    expect(source.type).toBe('legacy-image-pyramid');
+    expect(source.tiles).toBeUndefined();
+  });
+
+  it('preserves tile descriptors whose scaleFactors are all powers of two', () => {
+    const source = buildOpenSeadragonTileSource(
+      {
+        ...SIPI_V5_INFO,
+        tiles: [{ width: 512, scaleFactors: [1, 2, 4, 8] }],
+      },
+      PROXIED_BASE_URL
+    );
+
+    expect(source.tiles).toEqual([{ width: 512, scaleFactors: [1, 2, 4, 8] }]);
+  });
+
   it('does not add IIIF 3 fallback tiles to non-IIIF-3 descriptors', () => {
     const source = buildOpenSeadragonTileSource(
       {

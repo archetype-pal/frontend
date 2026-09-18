@@ -1,8 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { PanelLeftClose, PanelLeftOpen, SearchX } from 'lucide-react';
+import { GitCompare, PanelLeftClose, PanelLeftOpen, SearchX } from 'lucide-react';
 import { hasTablePreview, ResultsTable } from '@/components/search/results-table';
 import { SearchGrid } from '@/components/search/search-grid';
 import { DynamicFacets } from '@/components/filters/dynamic-facets';
@@ -43,6 +44,7 @@ const SearchMapView = React.lazy(() =>
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/auth-context';
+import { useSiteFeatures } from '@/contexts/site-features-context';
 import { toast } from 'sonner';
 import { GraphSelectionToolbar } from '@/components/search/graph-selection-toolbar';
 import { useGraphEditFlow } from '@/hooks/search/use-graph-edit-flow';
@@ -50,6 +52,10 @@ import { AnnotationEditDialog } from '@/components/manuscript/annotation-edit-di
 import type { BackendGraph } from '@/services/annotations';
 import { cn } from '@/lib/utils';
 import { useSearchPageState } from '@/hooks/search/use-search-page-state';
+import { useManuscriptCompareSelection } from '@/hooks/search/use-manuscript-compare-selection';
+import { manuscriptToCompareItem } from '@/lib/manuscript-compare';
+import { useCompareStore, MAX_COMPARE_ITEMS } from '@/stores/compare-store';
+import type { ManuscriptListItem } from '@/types/search';
 import { useShowThumbnails } from '@/hooks/search/use-show-thumbnails';
 import { ThumbnailToggle } from '@/components/search/thumbnail-toggle';
 import { useTranslations } from 'next-intl';
@@ -66,6 +72,44 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const { user } = useAuth();
   const isStaff = Boolean(user?.is_staff);
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
+  const router = useRouter();
+  const { isSectionEnabled } = useSiteFeatures();
+  const addToCompare = useCompareStore((state) => state.addItem);
+  const isInCompare = useCompareStore((state) => state.isInCompare);
+  const manuscriptSelectionResetKey = `${s.resultType}|${s.submittedKeyword}|${JSON.stringify(
+    s.queryState.selected_facets
+  )}|${s.queryState.offset}`;
+  const manuscriptSelection = useManuscriptCompareSelection(manuscriptSelectionResetKey);
+  const compareEnabled = s.resultType === 'manuscripts' && isSectionEnabled('compare');
+
+  const handleCompareSelected = () => {
+    const selected = (s.filtered as ManuscriptListItem[]).filter((item) =>
+      manuscriptSelection.isSelected(item.id)
+    );
+    // addItem() returns false both for a duplicate and for a full store; tell
+    // them apart so an already-staged pick doesn't read as "Compare is full".
+    let added = 0;
+    let alreadyStaged = 0;
+    for (const item of selected) {
+      if (isInCompare(item.id)) {
+        alreadyStaged += 1;
+      } else if (addToCompare(manuscriptToCompareItem(item))) {
+        added += 1;
+      }
+    }
+    const rejected = selected.length - added - alreadyStaged;
+    if (rejected > 0) {
+      toast.error(t('compareAction.atCapTitle'), {
+        description: t('compareAction.atCapDescription', { max: MAX_COMPARE_ITEMS }),
+      });
+    } else if (alreadyStaged > 0) {
+      toast.info(t('compareAction.alreadyStaged', { count: alreadyStaged }));
+    }
+    if (added + alreadyStaged > 0) {
+      manuscriptSelection.clear();
+      router.push('/compare');
+    }
+  };
 
   const [graphOverrides, setGraphOverrides] = React.useState<Record<number, BackendGraph>>({});
   const [deletedGraphIds, setDeletedGraphIds] = React.useState<Set<number>>(() => new Set());
@@ -314,6 +358,19 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 />
               </MobileFilterSheet>
             </div>
+            {compareEnabled && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                disabled={manuscriptSelection.count === 0}
+                onClick={handleCompareSelected}
+              >
+                <GitCompare className="mr-1.5 h-4 w-4" />
+                {t('compareAction.button', { count: manuscriptSelection.count })}
+              </Button>
+            )}
             {s.visibility.isResearcher && (
               <FieldVisibilityMenu
                 resultType={s.resultType}
@@ -506,6 +563,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     highlightKeyword={s.submittedKeyword}
                     visibleColumns={s.categoryConfig.visibleColumns}
                     isFetching={s.isFetching}
+                    manuscriptSelection={compareEnabled ? manuscriptSelection : undefined}
                     showThumbnails={showThumbnails}
                     thumbnailSize={thumbnailSize}
                   />
@@ -588,6 +646,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     onEditOne={(id) => editFlow.startEdit([id])}
                     onDeleteOne={editFlow.deleteOne}
                     graphOverrides={graphOverrides}
+                    manuscriptSelection={compareEnabled ? manuscriptSelection : undefined}
                     showThumbnails={showThumbnails}
                   />
                 )
