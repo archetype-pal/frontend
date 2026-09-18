@@ -113,8 +113,11 @@ describe('<Header> search entry points', () => {
     const { container } = renderHeader();
     expect(container.querySelectorAll('[class*="text-white"]')).toHaveLength(0);
 
-    const activeLink = screen.getByRole('link', { name: /Explore/ });
-    expect(activeLink.className).toContain('text-nav-bar-foreground');
+    // The mocked pathname is '/', so Home — not Explore — is the active
+    // link; it's the one that rendered through the branch that used to be
+    // hardcoded `text-white font-semibold ...`.
+    const homeLink = screen.getByRole('link', { name: /Home/ });
+    expect(homeLink.className).toContain('text-nav-bar-foreground font-semibold');
 
     const input = screen.getByRole('combobox');
     expect(input.className).toContain('text-nav-bar-foreground');
