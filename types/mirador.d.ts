@@ -5,6 +5,8 @@ declare module 'mirador' {
 
   export interface MiradorConfig {
     id: string;
+    /** UI language (a key of Mirador's bundled locales, e.g. 'en' | 'fr' | 'de'). */
+    language?: string;
     windows: MiradorWindowConfig[];
     workspace?: { type?: string; showZoomControls?: boolean };
     window?: {
@@ -17,6 +19,8 @@ declare module 'mirador' {
 
   export interface MiradorInstance {
     store: unknown;
+    /** Unmounts Mirador's React root from the container (see src/lib/MiradorViewer.jsx). */
+    unmount(): void;
   }
 
   const Mirador: {

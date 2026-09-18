@@ -3,15 +3,17 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { GitCompare, X } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { MiradorViewer } from '@/components/compare/mirador-viewer';
 import { getManifestUrl } from '@/lib/iiif-manifest';
+import { coerceLocale } from '@/lib/locale';
 import { useCompareStore } from '@/stores/compare-store';
 
 export default function ComparePage() {
   const t = useTranslations('compare.page');
+  const locale = coerceLocale(useLocale());
   const items = useCompareStore((state) => state.items);
   const removeItem = useCompareStore((state) => state.removeItem);
   const clear = useCompareStore((state) => state.clear);
@@ -73,7 +75,11 @@ export default function ComparePage() {
         </Button>
       </div>
 
-      <MiradorViewer manifestUrls={manifestUrls} className="h-[75vh] w-full rounded-lg border" />
+      <MiradorViewer
+        manifestUrls={manifestUrls}
+        language={locale}
+        className="h-[75vh] w-full rounded-lg border"
+      />
     </div>
   );
 }
