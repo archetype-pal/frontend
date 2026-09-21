@@ -13,6 +13,8 @@ interface UnsavedChangesBarProps {
   onDiscard: () => void;
   /** Whether the save operation is in progress */
   saving?: boolean;
+  /** Whether Save should be disabled, e.g. because a field currently fails validation */
+  saveDisabled?: boolean;
 }
 
 /**
@@ -34,6 +36,7 @@ export function UnsavedChangesBar({
   onSave,
   onDiscard,
   saving = false,
+  saveDisabled = false,
 }: UnsavedChangesBarProps) {
   const t = useTranslations('backoffice');
   if (!visible) return null;
@@ -49,7 +52,7 @@ export function UnsavedChangesBar({
           <Button variant="ghost" size="sm" onClick={onDiscard} disabled={saving}>
             {t('unsavedBar.discard')}
           </Button>
-          <Button size="sm" onClick={onSave} disabled={saving}>
+          <Button size="sm" onClick={onSave} disabled={saving || saveDisabled}>
             {saving ? t('unsavedBar.saving') : t('unsavedBar.saveChanges')}
           </Button>
         </div>

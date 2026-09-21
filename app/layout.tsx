@@ -8,6 +8,7 @@ import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import { AuthProvider } from '@/contexts/auth-context';
 import { CollectionProvider } from '@/contexts/collection-context';
+import { CompareStoreHydrator } from '@/components/compare/compare-store-hydrator';
 import { SearchProvider } from '@/contexts/search-context';
 import { SiteFeaturesProvider } from '@/contexts/site-features-context';
 import { ModelLabelsProvider } from '@/contexts/model-labels-context';
@@ -17,7 +18,6 @@ import { readSiteFeatures } from '@/lib/site-features-server';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel } from '@/lib/model-labels';
 import { coerceLocale } from '@/lib/locale';
-import { getSiteThemeVars } from '@/lib/site-theme';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -89,7 +89,28 @@ export default async function RootLayout({
     await Promise.all([readSiteFeatures(), readModelLabels(), getLocale(), getMessages()]);
   const locale = coerceLocale(rawLocale);
 
-  const siteThemeVars = getSiteThemeVars();
+  // `readSiteFeatures` folds the admin-saved theme over `getDefaultThemeColors()`
+  // into `siteFeaturesConfig.theme`, so this is the one place brand colours
+  // need to be read from.
+  const {
+    primaryColor,
+    primaryForegroundColor,
+    accentColor,
+    titleBarBackgroundColor,
+    titleBarTextColor,
+    navBarBackgroundColor,
+    navBarTextColor,
+  } = siteFeaturesConfig.theme;
+  const siteThemeVars = {
+    '--primary': primaryColor,
+    '--ring': primaryColor,
+    '--primary-foreground': primaryForegroundColor,
+    '--accent': accentColor,
+    '--title-bar-bg': titleBarBackgroundColor,
+    '--title-bar-fg': titleBarTextColor,
+    '--nav-bar-bg': navBarBackgroundColor,
+    '--nav-bar-fg': navBarTextColor,
+  };
 
   return (
     <html lang={locale} suppressHydrationWarning style={siteThemeVars as React.CSSProperties}>
@@ -103,6 +124,7 @@ export default async function RootLayout({
               <ModelLabelsProvider initialConfig={modelLabelsConfig} locale={locale}>
                 <AppQueryProvider>
                   <CollectionProvider>
+                    <CompareStoreHydrator />
                     <SearchProvider>{children}</SearchProvider>
                   </CollectionProvider>
                 </AppQueryProvider>

@@ -19,6 +19,7 @@ import {
   Menu,
   X,
   FolderOpen,
+  GitCompare,
   PanelTopClose,
   PanelTopOpen,
   LogIn,
@@ -26,6 +27,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useCollection } from '@/contexts/collection-context';
+import { useCompareStore } from '@/stores/compare-store';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { normalizeSectionOrder, type SectionKey } from '@/lib/site-features';
@@ -43,6 +45,7 @@ import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { useLocale, useTranslations } from 'next-intl';
 import { coerceLocale } from '@/lib/locale';
 import { searchHref, searchHrefForKeyword } from '@/lib/search-routing';
+import { getCarouselImageUrl } from '@/utils/api';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 
@@ -68,6 +71,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
     return () => observer.disconnect();
   }, []);
   const { items, activeCollection } = useCollection();
+  const compareItems = useCompareStore((state) => state.items);
   const { getLabel } = useModelLabels();
   const { token, user, logout } = useAuth();
   const { config, isSectionEnabled, enabledCategories } = useSiteFeatures();
@@ -175,10 +179,10 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
 
   const navLinkClass = (active: boolean) =>
     cn(
-      'transition-colors w-full md:w-auto justify-start',
+      'transition-colors w-full lg:w-auto justify-start',
       active
-        ? 'text-white font-semibold border-b-2 border-accent rounded-none'
-        : 'text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10'
+        ? 'text-nav-bar-foreground font-semibold border-b-2 border-accent rounded-none'
+        : 'text-nav-bar-foreground/80 hover:text-nav-bar-foreground hover:bg-nav-bar-foreground/10'
     );
 
   const renderSectionButton = (sectionKey: SectionKey) => {
@@ -230,6 +234,22 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
               className={cn('group', navLinkClass(!!isActive('/lightbox', true)))}
             >
               <Link href="/lightbox">{t('lightbox')}</Link>
+            </Button>
+          </li>
+        );
+      case 'compare':
+        return (
+          <li key={sectionKey}>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className={cn('group', navLinkClass(!!isActive('/compare', true)))}
+            >
+              <Link href="/compare">
+                <GitCompare className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
+                {t('compare', { count: compareItems.length })}
+              </Link>
             </Button>
           </li>
         );
@@ -318,31 +338,39 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
     }
   };
 
+  // Backend-relative (an uploaded file, e.g. "/media/branding/x.png") and
+  // fully external (a pasted URL) logos both need to resolve to something the
+  // browser can load — same helper the Partners logo/carousel images use.
+  const logoUrl = config.branding?.logoUrl ? getCarouselImageUrl(config.branding.logoUrl) : null;
+
   return (
-    <header
-      ref={headerRef}
-      className="sticky top-0 z-50 bg-primary text-primary-foreground shadow-md"
-    >
+    <header ref={headerRef} className="sticky top-0 z-50 shadow-md">
       {isBannerVisible && (
-        <div className="container mx-auto px-4 py-4 md:py-5">
-          <div className="flex items-end gap-6">
-            <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight text-primary-foreground leading-tight">
-              {getLabel('siteTitle')}
-            </h1>
-            <p className="hidden md:block text-sm text-primary-foreground/85 max-w-xs pb-0.5">
-              {getLabel('siteTagline')}
-            </p>
+        <div className="bg-title-bar text-title-bar-foreground">
+          <div className="container mx-auto px-4 py-4 md:py-5">
+            <div className="flex items-end gap-6">
+              {logoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt="" className="h-10 w-auto shrink-0 object-contain md:h-12" />
+              )}
+              <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight text-title-bar-foreground leading-tight">
+                {getLabel('siteTitle')}
+              </h1>
+              <p className="hidden md:block text-sm text-title-bar-foreground/85 max-w-xs pb-0.5">
+                {getLabel('siteTagline')}
+              </p>
+            </div>
           </div>
         </div>
       )}
-      <nav className="border-t border-primary-foreground/15 px-2 py-1.5">
+      <nav className="bg-nav-bar text-nav-bar-foreground border-t border-nav-bar-foreground/15 px-2 py-1.5">
         <div className="container mx-auto">
-          <div className="flex items-center justify-between md:hidden mb-2">
-            <span className="text-sm font-medium text-primary-foreground">{t('menu')}</span>
+          <div className="flex items-center justify-between lg:hidden mb-2">
+            <span className="text-sm font-medium text-nav-bar-foreground">{t('menu')}</span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/10"
+              className="h-8 w-8 text-nav-bar-foreground hover:bg-nav-bar-foreground/10"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label={isMenuOpen ? t('closeMenu') : t('openMenu')}
             >
@@ -350,11 +378,11 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
             </Button>
           </div>
           <div
-            className={`flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-2 ${
-              isMenuOpen ? 'flex' : 'hidden md:flex'
+            className={`flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-2 ${
+              isMenuOpen ? 'flex' : 'hidden lg:flex'
             }`}
           >
-            <ul className="flex flex-col md:flex-row md:items-center gap-2 md:gap-1 mr-0 md:mr-2">
+            <ul className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-1 mr-0 lg:mr-2">
               <li>
                 <Button
                   asChild
@@ -370,15 +398,15 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
               </li>
               {orderedSections.map((sectionKey) => renderSectionButton(sectionKey))}
             </ul>
-            <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-col lg:flex-row items-center gap-3 w-full lg:w-auto">
               {isSectionEnabled('search') && defaultSearchType && (
                 <div
                   className={cn(
-                    'relative w-full md:w-72 lg:w-80',
+                    'relative w-full lg:w-72 xl:w-80',
                     // On the search page the page itself owns a prominent search
                     // field, so the desktop nav search would be a confusing
                     // second box. Keep it on mobile, where the page header has none.
-                    isOnSearchPage && 'md:hidden'
+                    isOnSearchPage && 'lg:hidden'
                   )}
                 >
                   <KeywordSearchInput
@@ -389,8 +417,8 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                     suggestions={effectiveSuggestions}
                     placeholder={t('searchPlaceholder')}
                     className="w-full"
-                    inputClassName="h-10 w-full rounded-full border border-primary-foreground/25 bg-primary-foreground/15 text-[0.95rem] text-white shadow-none placeholder:text-primary-foreground/60 hover:bg-primary-foreground/20 focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/70"
-                    iconClassName="text-primary-foreground/65"
+                    inputClassName="h-10 w-full rounded-full border border-nav-bar-foreground/25 bg-nav-bar-foreground/15 text-[0.95rem] text-nav-bar-foreground shadow-none placeholder:text-nav-bar-foreground/60 hover:bg-nav-bar-foreground/20 focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/70"
+                    iconClassName="text-nav-bar-foreground/65"
                     clearOnFocus
                     onFocus={handleHeaderSearchFocus}
                     suggestionsLoading={serverSuggestionsQuery.isFetching}
@@ -417,7 +445,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                         asChild
                         variant="ghost"
                         size="sm"
-                        className="text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
+                        className="text-nav-bar-foreground/80 hover:text-nav-bar-foreground hover:bg-nav-bar-foreground/10"
                       >
                         <Link href="/backoffice">
                           <Shield className="h-4 w-4 mr-1" />
@@ -428,7 +456,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
+                      className="h-8 w-8 text-nav-bar-foreground/80 hover:text-nav-bar-foreground hover:bg-nav-bar-foreground/10"
                       onClick={logout}
                       title={tCommon('signOut')}
                     >
@@ -440,7 +468,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                     asChild
                     variant="ghost"
                     size="sm"
-                    className="text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
+                    className="text-nav-bar-foreground/80 hover:text-nav-bar-foreground hover:bg-nav-bar-foreground/10"
                   >
                     <Link href="/login">
                       <LogIn className="h-4 w-4 mr-1" />
@@ -451,7 +479,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
+                  className="h-8 w-8 text-nav-bar-foreground/80 hover:text-nav-bar-foreground hover:bg-nav-bar-foreground/10"
                   onClick={toggleBanner}
                   aria-label={isBannerVisible ? t('bannerHide') : t('bannerShow')}
                   title={isBannerVisible ? t('bannerHide') : t('bannerShow')}

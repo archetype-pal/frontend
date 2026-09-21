@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchGrid } from './search-grid';
-import type { ClauseListItem, GraphListItem } from '@/types/search';
+import type { ClauseListItem, GraphListItem, ManuscriptListItem } from '@/types/search';
+import type { ManuscriptCompareSelection } from '@/hooks/search/use-manuscript-compare-selection';
 
 const { thumbnailUrlSpy } = vi.hoisted(() => ({ thumbnailUrlSpy: vi.fn() }));
 
@@ -106,5 +107,51 @@ describe('SearchGrid text-only mode (frontend#74)', () => {
     expect(collectionButton.className).toContain('static');
     expect(collectionButton.className).toContain('bg-amber-100/95');
     expect(collectionButton.className).not.toContain('absolute');
+  });
+});
+
+describe('SearchGrid manuscript compare selection (frontend#110)', () => {
+  const manuscript: ManuscriptListItem = {
+    id: 5,
+    display_label: 'BL Additional Ch. 19795',
+    repository_name: 'British Library',
+    repository_city: 'London',
+    shelfmark: 'Add. Ch. 19795',
+    catalogue_numbers: [],
+    date: '1160',
+    type: 'Charter',
+    number_of_images: 2,
+    issuer_name: '',
+    named_beneficiary: '',
+  };
+
+  function selection(
+    overrides: Partial<ManuscriptCompareSelection> = {}
+  ): ManuscriptCompareSelection {
+    return {
+      selectedIds: new Set<number>(),
+      isSelected: () => false,
+      isDisabled: () => false,
+      toggle: vi.fn(),
+      clear: vi.fn(),
+      count: 0,
+      ...overrides,
+    };
+  }
+
+  it('toggles the manuscript when its card checkbox is clicked', () => {
+    const sel = selection();
+    render(
+      <SearchGrid results={[manuscript]} resultType="manuscripts" manuscriptSelection={sel} />
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Select .* to compare/ }));
+
+    expect(sel.toggle).toHaveBeenCalledWith(5);
+  });
+
+  it('renders no checkbox without a selection', () => {
+    render(<SearchGrid results={[manuscript]} resultType="manuscripts" />);
+    expect(screen.queryByRole('checkbox')).toBeNull();
   });
 });

@@ -3,8 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
 import { readSiteFeatures, writeSiteFeatures, SITE_FEATURES_TAG } from '@/lib/site-features-server';
 import {
-  hasEnabledSearchCategory,
+  mergeBranding,
   mergeFeatureFlags,
+  mergeThemeColors,
+  hasEnabledSearchCategory,
   type SiteFeaturesConfig,
 } from '@/lib/site-features';
 
@@ -90,6 +92,8 @@ export async function PUT(request: NextRequest) {
       {
         ...payload,
         features: mergeFeatureFlags(current.features, (payload as { features?: unknown }).features),
+        theme: mergeThemeColors(current.theme, (payload as { theme?: unknown }).theme),
+        branding: mergeBranding(current.branding, (payload as { branding?: unknown }).branding),
       },
       token
     );

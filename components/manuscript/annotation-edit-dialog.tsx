@@ -2,9 +2,11 @@
 
 import * as React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/contexts/auth-context';
+import { useModelLabels } from '@/contexts/model-labels-context';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import {
   updateViewerAnnotation,
@@ -20,6 +22,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { SearchableOption } from '@/lib/searchable-option-ranking';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +31,18 @@ import { cn } from '@/lib/utils';
 // on every selected graph), 'none' (set on none), or 'mixed' (some have it).
 // Cycle is mixed → all → none → mixed. Only all/none commit on save; mixed
 // means "leave each graph alone." In single-graph mode mixed is unreachable.
+
+type EditGroup = 'components' | 'positions';
+
+// Both tab strips wrap rather than scroll: the worst real allograph has six
+// components and the names are short, so a wrapped row beats a scroll
+// affordance. The active tab is filled the same way the All/None/Mixed buttons
+// below are, so one selected-state colour runs through the whole dialog.
+const GROUP_TABS_LIST_CLASS = 'h-auto flex-wrap justify-start gap-2 bg-transparent p-0';
+const TAB_TRIGGER_CLASS =
+  'rounded-md border px-3 py-1.5 text-xs data-[state=active]:bg-primary ' +
+  'data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm ' +
+  'disabled:pointer-events-auto disabled:cursor-not-allowed';
 
 type TriState = 'all' | 'none' | 'mixed';
 const MIXED = 'mixed' as const;
@@ -62,18 +78,6 @@ function graphHasPosition(graph: BackendGraph, positionId: number) {
   return (graph.positions ?? []).includes(positionId);
 }
 
-// All components the allograph defines are editable (G3.3) — including ones
-// not yet present on every selected graph, so an editor can bulk-*add* a
-// component. `sharedComponentIds` flags which are already on every graph so the
-// UI can mark the rest as "not on all selected".
-function sharedComponentIds(graphs: BackendGraph[], allograph: Allograph): Set<number> {
-  const shared = new Set<number>();
-  for (const c of allograph.components) {
-    if (graphs.every((g) => Boolean(findComponent(g, c.component_id)))) shared.add(c.component_id);
-  }
-  return shared;
-}
-
 // Single hook used by both the features and positions sections: a pending
 // per-key tri-state map that shadows a baseline derived from the graphs.
 interface TriStateMap<K extends string | number> {
@@ -89,7 +93,21 @@ function useTriStateMap<K extends string | number>(baseline: (key: K) => TriStat
   return {
     edits,
     get: (key) => edits[key] ?? baseline(key),
-    set: (key, state) => setEdits((prev) => ({ ...prev, [key]: state })),
+    // Cycling a control back to its original value (e.g. None -> All -> None)
+    // must drop the entry entirely, not just overwrite it with the same value
+    // as the baseline — otherwise hasMeaningfulEdits keeps counting a no-op as
+    // a pending change, unlike the Allograph/Hand fields, which already
+    // compare against their initial value rather than "was anything touched."
+    set: (key, state) =>
+      setEdits((prev) => {
+        const next = { ...prev };
+        if (state === baseline(key)) {
+          delete next[key];
+        } else {
+          next[key] = state;
+        }
+        return next;
+      }),
     reset: () => setEdits({}),
     hasMeaningfulEdits: Object.values(edits).some((s) => s !== MIXED),
   };
@@ -152,6 +170,9 @@ export interface AnnotationEditDialogProps {
   /** IIIF info URL for the parent image, used to render a crop preview of the
    *  graph(s) under edit. */
   iiifImage?: string;
+  /** When true, disables the Hand control with an explanatory tooltip (e.g. cross-manuscript bulk edits). */
+  handDisabled?: boolean;
+  handDisabledReason?: string;
   /** Called for every successful per-graph PATCH so the parent can apply an
    *  optimistic override immediately. */
   onGraphSaved?: (graph: BackendGraph) => void;
@@ -174,10 +195,18 @@ function DialogBody({
   allographs,
   hands,
   iiifImage,
+  handDisabled,
+  handDisabledReason,
   onGraphSaved,
   onComplete,
 }: AnnotationEditDialogProps) {
   const { token } = useAuth();
+  const t = useTranslations('search');
+  // The two "nothing defined for this allograph" sentences are the same ones the
+  // annotation popup shows for the same condition, already translated — reuse them
+  // rather than keeping a second copy that can drift out of step.
+  const tAnnotation = useTranslations('annotation');
+  const { getPluralLabel } = useModelLabels();
   const isMulti = graphs.length > 1;
 
   const allographOptions = React.useMemo<SearchableOption[]>(
@@ -235,20 +264,59 @@ function DialogBody({
     [allographs, allographId]
   );
 
-  // The schema source for editable components/positions. In multi-mode we
-  // only have one when every selected graph already agrees on its allograph
-  // — otherwise we hide those sections and prompt the user to pick one.
-  const schemaAllograph: Allograph | null =
-    isMulti && initialAllograph === MIXED ? null : selectedAllograph;
+  // The schema source for editable components/positions: whatever allograph
+  // is currently selected, regardless of whether the selection started out
+  // mixed. `selectedAllograph` is already null until the user picks one, so
+  // this doesn't need its own "mixed and unpicked" guard — and must not gate
+  // on `initialAllograph` (fixed from a bug in that: `initialAllograph` is
+  // derived from `graphs`, which doesn't change while the dialog is open, so
+  // gating on it kept this permanently null even after picking an allograph
+  // for a mixed selection — hiding components/positions from editing, and
+  // in buildPatchForGraph silently skipping the schema-prune, so each
+  // graph's *existing* components/positions from its original allograph
+  // survived the save untouched under the new allograph_id).
+  const schemaAllograph: Allograph | null = selectedAllograph;
 
   const components = React.useMemo<Component[]>(
     () => schemaAllograph?.components ?? [],
     [schemaAllograph]
   );
-  const sharedIds = React.useMemo(
-    () => (schemaAllograph ? sharedComponentIds(graphs, schemaAllograph) : new Set<number>()),
-    [graphs, schemaAllograph]
-  );
+
+  // ---- Which tab is showing ------------------------------------------------
+  // Both of these are the user's *intent*, not the rendered value. Changing the
+  // Allograph mid-edit swaps the whole schema — the new allograph's components
+  // have different IDs, and it may declare no components or no positions at all
+  // — so a stored tab value goes stale the moment it changes. Deriving what is
+  // actually shown from the current schema means a stale tab can never render,
+  // and neither reset guard below needs to know these exist.
+  const [group, setGroup] = React.useState<EditGroup | null>(null);
+  const [componentId, setComponentId] = React.useState<number | null>(null);
+
+  const hasComponents = components.length > 0;
+  const hasPositions = (schemaAllograph?.positions.length ?? 0) > 0;
+
+  // Falls back to whichever group has something to edit; null when neither does,
+  // which is a third of the corpus — those allographs get both sentences below
+  // instead of a tab strip that cannot be opened at all.
+  const activeGroup: EditGroup | null =
+    (group === 'components' && hasComponents) || (group === 'positions' && hasPositions)
+      ? group
+      : hasComponents
+        ? 'components'
+        : hasPositions
+          ? 'positions'
+          : null;
+
+  const activeComponentId = components.some((c) => c.component_id === componentId)
+    ? componentId
+    : (components[0]?.component_id ?? null);
+
+  // Shown on hover of a disabled tab, and both together when neither group has
+  // anything to edit.
+  const noComponentsReason = tAnnotation('popup.editor.noComponentsDefined');
+  const noPositionsReason = tAnnotation('popup.editor.noPositionsDefined', {
+    positions: getPluralLabel('position').toLowerCase(),
+  });
 
   // ---- Tri-state maps for features and positions --------------------------
   const featureMap = useTriStateMap<string>(
@@ -269,7 +337,7 @@ function DialogBody({
   const hasPendingChanges =
     (allographId != null &&
       allographId !== (initialAllograph === MIXED ? null : initialAllograph)) ||
-    (hand !== MIXED && !Object.is(hand, initialHand)) ||
+    (!handDisabled && hand !== MIXED && !Object.is(hand, initialHand)) ||
     featureMap.hasMeaningfulEdits ||
     positionMap.hasMeaningfulEdits;
 
@@ -285,6 +353,20 @@ function DialogBody({
     setFailedIds([]);
   }
 
+  // Also reset them when the Allograph changes. A feature/position edit is
+  // keyed by component/position IDs that belong to a specific allograph's
+  // schema — after switching allograph, those keys are stale. Left alone,
+  // they don't disappear from the UI (the rendered rows now come from the
+  // new allograph's schema) but `buildPatchForGraph` still applies them on
+  // save, silently attaching a component from the old allograph's schema to
+  // a graph now being set to a different one.
+  const [prevAllographId, setPrevAllographId] = React.useState(allographId);
+  if (!Object.is(prevAllographId, allographId)) {
+    setPrevAllographId(allographId);
+    featureMap.reset();
+    positionMap.reset();
+  }
+
   // Guard every close path (Cancel, Escape, overlay click) against discarding
   // unsaved edits. The Sheet's `open` is controlled by the parent, so simply
   // not calling `onOpenChange(false)` keeps it open when the user backs out.
@@ -292,12 +374,12 @@ function DialogBody({
     if (
       hasPendingChanges &&
       typeof window !== 'undefined' &&
-      !window.confirm('Discard unsaved changes?')
+      !window.confirm(t('discardUnsavedChanges'))
     ) {
       return;
     }
     onOpenChange(false);
-  }, [hasPendingChanges, onOpenChange]);
+  }, [hasPendingChanges, onOpenChange, t]);
 
   // ---- Save ---------------------------------------------------------------
 
@@ -309,27 +391,45 @@ function DialogBody({
       positions?: number[];
     } = {};
 
-    if (allographId != null && allographId !== graph.allograph) {
+    const allographChanged = allographId != null && allographId !== graph.allograph;
+    if (allographChanged) {
       patch.allograph = allographId;
     }
-    if (hand !== MIXED && hand !== (graph.hand ?? null)) {
+    if (!handDisabled && hand !== MIXED && hand !== (graph.hand ?? null)) {
       patch.hand = hand;
     }
-    if (featureMap.hasMeaningfulEdits) {
-      patch.graphcomponent_set = applyFeatureEdits(
-        graph.graphcomponent_set ?? [],
-        featureMap.edits
-      );
+
+    // Components and positions belong to an allograph's schema. When this save
+    // moves the graph to another allograph, drop the ones the new schema
+    // doesn't define. Otherwise leave them alone: the dialog only shows rows in
+    // the current schema, so pruning on any other edit (a hand change, say)
+    // would silently delete legacy rows the editor never saw.
+    const pruneSchema = allographChanged ? schemaAllograph : null;
+    const validComponentIds = pruneSchema
+      ? new Set(pruneSchema.components.map((c) => c.component_id))
+      : null;
+    const currentComponents = graph.graphcomponent_set ?? [];
+    const baseComponents = validComponentIds
+      ? currentComponents.filter((c) => validComponentIds.has(c.component))
+      : currentComponents;
+    if (featureMap.hasMeaningfulEdits || baseComponents.length !== currentComponents.length) {
+      patch.graphcomponent_set = applyFeatureEdits(baseComponents, featureMap.edits);
     }
-    if (positionMap.hasMeaningfulEdits) {
-      patch.positions = applyPositionEdits(graph.positions ?? [], positionMap.edits);
+
+    const validPositionIds = pruneSchema ? new Set(pruneSchema.positions.map((p) => p.id)) : null;
+    const currentPositions = graph.positions ?? [];
+    const basePositions = validPositionIds
+      ? currentPositions.filter((id) => validPositionIds.has(id))
+      : currentPositions;
+    if (positionMap.hasMeaningfulEdits || basePositions.length !== currentPositions.length) {
+      patch.positions = applyPositionEdits(basePositions, positionMap.edits);
     }
     return patch;
   }
 
   const runSave = async (targets: BackendGraph[]) => {
     if (!token) {
-      setError('Not authenticated.');
+      setError(t('notAuthenticated'));
       return;
     }
     setSaving(true);
@@ -338,24 +438,31 @@ function DialogBody({
     let savedCount = 0;
     const failed: number[] = [];
 
-    await Promise.all(
-      targets.map(async (graph) => {
-        const patch = buildPatchForGraph(graph);
-        if (Object.keys(patch).length === 0) {
-          // Nothing to do for this graph (e.g. multi-mode where only 'mixed'
-          // states stayed mixed) — count as success and skip the round trip.
-          savedCount += 1;
-          return;
-        }
-        try {
-          const updated = await updateViewerAnnotation(token, graph.id, patch);
-          onGraphSaved?.(updated);
-          savedCount += 1;
-        } catch {
-          failed.push(graph.id);
-        }
-      })
-    );
+    const saveOne = async (graph: BackendGraph) => {
+      const patch = buildPatchForGraph(graph);
+      if (Object.keys(patch).length === 0) {
+        // Nothing to do for this graph (e.g. multi-mode where only 'mixed'
+        // states stayed mixed) — count as success and skip the round trip.
+        savedCount += 1;
+        return;
+      }
+      try {
+        const updated = await updateViewerAnnotation(token, graph.id, patch);
+        onGraphSaved?.(updated);
+        savedCount += 1;
+      } catch {
+        failed.push(graph.id);
+      }
+    };
+
+    // Selection can hold up to MAX_SELECTION (search-page.tsx) graphs; firing
+    // one PATCH per graph unbounded would open hundreds-to-thousands of
+    // simultaneous requests. Save in bounded batches instead, mirroring the
+    // chunking fetchGraphsByIds already does for the read side.
+    const SAVE_CONCURRENCY = 20;
+    for (let i = 0; i < targets.length; i += SAVE_CONCURRENCY) {
+      await Promise.all(targets.slice(i, i + SAVE_CONCURRENCY).map(saveOne));
+    }
 
     setSaving(false);
     setFailedIds(failed);
@@ -364,10 +471,11 @@ function DialogBody({
     if (failed.length > 0) {
       // Keep the dialog open and surface the inline notice; also toast so the
       // user sees the failure if the dialog is scrolled past it.
-      setError(`${failed.length} of ${targets.length} failed to save.`);
-      toast.error(`${failed.length} of ${targets.length} graphs failed to save`);
+      const message = t('graphsFailedToSave', { failed: failed.length, total: targets.length });
+      setError(message);
+      toast.error(message);
     } else {
-      toast.success(savedCount > 1 ? `Saved ${savedCount} graphs` : 'Saved');
+      toast.success(t('graphsSaved', { count: savedCount }));
       onOpenChange(false);
     }
   };
@@ -419,11 +527,10 @@ function DialogBody({
         </SheetHeader>
 
         <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
-          {iiifImage && <GraphPreviewStrip graphs={graphs} iiifImage={iiifImage} />}
-          {isMulti && initialAllograph === MIXED && (
+          <GraphPreviewStrip graphs={graphs} fallbackIiifImage={iiifImage} />
+          {isMulti && initialAllograph === MIXED && allographId == null && (
             <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
-              Selected graphs use different allographs. Choose one to set on all of them, or close
-              and refine the selection.
+              {t('mixedAllographsNotice')}
             </p>
           )}
 
@@ -435,25 +542,57 @@ function DialogBody({
                 value={allographId != null ? String(allographId) : null}
                 onValueChange={(v) => setAllographId(v ? Number(v) : null)}
                 placeholder={
-                  isMulti && initialAllograph === MIXED ? 'Mixed — pick one' : 'Allograph'
+                  isMulti && initialAllograph === MIXED ? t('mixedPickOne') : 'Allograph'
                 }
-                searchPlaceholder="Search allographs…"
-                emptyText="No allographs"
+                searchPlaceholder={t('searchAllographs')}
+                emptyText={t('noAllographs')}
                 triggerClassName="h-9 w-full text-sm"
               />
             </div>
             <div>
               <Label className="mb-1.5 block text-sm font-medium">Hand</Label>
-              <SearchableSelect
-                options={handOptions}
-                value={hand === MIXED || hand == null ? null : String(hand)}
-                onValueChange={(v) => setHand(v ? Number(v) : null)}
-                placeholder={hand === MIXED ? 'Mixed — pick one' : 'Hand'}
-                searchPlaceholder="Search hands…"
-                emptyText="No hands"
-                clearLabel="No hand"
-                triggerClassName="h-9 w-full text-sm"
-              />
+              {handDisabled ? (
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        tabIndex={0}
+                        role="group"
+                        aria-disabled="true"
+                        aria-label={handDisabledReason ?? t('handDisabledTooltip')}
+                        className="cursor-not-allowed rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <SearchableSelect
+                          options={handOptions}
+                          value={hand === MIXED || hand == null ? null : String(hand)}
+                          onValueChange={() => {}}
+                          disabled
+                          placeholder={
+                            hand === MIXED ? t('mixedAcrossManuscripts') : t('handDisabled')
+                          }
+                          searchPlaceholder={t('searchHands')}
+                          emptyText={t('noHands')}
+                          triggerClassName="h-9 w-full text-sm pointer-events-none opacity-60"
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-xs">
+                      {handDisabledReason ?? t('handDisabledTooltip')}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <SearchableSelect
+                  options={handOptions}
+                  value={hand === MIXED || hand == null ? null : String(hand)}
+                  onValueChange={(v) => setHand(v ? Number(v) : null)}
+                  placeholder={hand === MIXED ? t('mixedPickOne') : 'Hand'}
+                  searchPlaceholder={t('searchHands')}
+                  emptyText={t('noHands')}
+                  clearLabel={t('noHand')}
+                  triggerClassName="h-9 w-full text-sm"
+                />
+              )}
             </div>
           </div>
 
@@ -468,44 +607,72 @@ function DialogBody({
                 </p>
               )}
 
-              <section>
-                <h3 className="mb-3 text-sm font-semibold text-foreground">
-                  Components &amp; features
-                  {isMulti && (
-                    <span className="ml-2 font-normal text-muted-foreground/80">
-                      (set All to add a component to every selected graph)
-                    </span>
-                  )}
-                </h3>
-                {components.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    This allograph has no defined components.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {components.map((c) => (
-                      <ComponentBlock
-                        key={c.component_id}
-                        component={c}
-                        isMulti={isMulti}
-                        notOnAll={isMulti && !sharedIds.has(c.component_id)}
-                        getFeatureState={(fId) => featureMap.get(featureKey(c.component_id, fId))}
-                        onSetFeatureState={(fId, s) =>
-                          featureMap.set(featureKey(c.component_id, fId), s)
-                        }
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
+              {/* One tab per component, so a long allograph (a few dozen rows across
+                  its components and positions) shows one component's rows at a time
+                  instead of all of them stacked in the sheet's single scroll.
+                  Positions sit alongside as their own group rather than below
+                  everything else. A group the allograph doesn't define is disabled,
+                  so it reads as empty without being opened, and names what is
+                  missing on hover. */}
+              <Tabs value={activeGroup ?? ''} onValueChange={(v) => setGroup(v as EditGroup)}>
+                <TabsList className={GROUP_TABS_LIST_CLASS}>
+                  <TabsTrigger
+                    value="components"
+                    disabled={!hasComponents}
+                    title={hasComponents ? undefined : noComponentsReason}
+                    className={TAB_TRIGGER_CLASS}
+                  >
+                    {t('componentsTab')}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="positions"
+                    disabled={!hasPositions}
+                    title={hasPositions ? undefined : noPositionsReason}
+                    className={TAB_TRIGGER_CLASS}
+                  >
+                    {getPluralLabel('position')}
+                  </TabsTrigger>
+                </TabsList>
 
-              <section>
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Positions</h3>
-                {schemaAllograph.positions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    This allograph has no defined positions.
-                  </p>
-                ) : (
+                <TabsContent value="components" className="mt-3 space-y-3">
+                  {isMulti && (
+                    <p className="text-xs text-muted-foreground/80">{t('setAllComponentHint')}</p>
+                  )}
+                  <Tabs
+                    value={activeComponentId != null ? String(activeComponentId) : ''}
+                    onValueChange={(v) => setComponentId(Number(v))}
+                  >
+                    <TabsList className={GROUP_TABS_LIST_CLASS}>
+                      {components.map((c) => (
+                        <TabsTrigger
+                          key={c.component_id}
+                          value={String(c.component_id)}
+                          className={TAB_TRIGGER_CLASS}
+                        >
+                          {c.component_name}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                    {components.map((c) => (
+                      <TabsContent
+                        key={c.component_id}
+                        value={String(c.component_id)}
+                        className="mt-3"
+                      >
+                        <ComponentBlock
+                          component={c}
+                          isMulti={isMulti}
+                          getFeatureState={(fId) => featureMap.get(featureKey(c.component_id, fId))}
+                          onSetFeatureState={(fId, s) =>
+                            featureMap.set(featureKey(c.component_id, fId), s)
+                          }
+                        />
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                </TabsContent>
+
+                <TabsContent value="positions" className="mt-3">
                   <div className="space-y-1">
                     {schemaAllograph.positions.map((p) => (
                       <TriRow
@@ -517,8 +684,15 @@ function DialogBody({
                       />
                     ))}
                   </div>
-                )}
-              </section>
+                </TabsContent>
+              </Tabs>
+
+              {activeGroup === null && (
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  <p>{noComponentsReason}</p>
+                  <p>{noPositionsReason}</p>
+                </div>
+              )}
             </>
           ) : (
             <p className="text-xs text-muted-foreground">
@@ -572,13 +746,28 @@ function DialogBody({
 // they're changing instead of trusting that they clicked the right thumb.
 const PREVIEW_LIMIT = 8;
 
-function GraphPreviewStrip({ graphs, iiifImage }: { graphs: BackendGraph[]; iiifImage: string }) {
+function GraphPreviewStrip({
+  graphs,
+  fallbackIiifImage,
+}: {
+  graphs: BackendGraph[];
+  /** Only relevant for single-image callers (the per-image gallery) that don't
+   *  populate each graph's own `image_iiif`. A cross-manuscript selection has
+   *  no single image to fall back to, so every graph must resolve its own —
+   *  using one shared image for all of them crops the wrong region (or fails
+   *  outright) for every graph that isn't from that one image. */
+  fallbackIiifImage?: string;
+}) {
   const shown = graphs.slice(0, PREVIEW_LIMIT);
   const overflow = graphs.length - shown.length;
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 p-3">
       {shown.map((g) => (
-        <GraphPreviewThumb key={g.id} graph={g} iiifImage={iiifImage} />
+        <GraphPreviewThumb
+          key={g.id}
+          graph={g}
+          iiifImage={g.image_iiif ?? fallbackIiifImage ?? ''}
+        />
       ))}
       {overflow > 0 && (
         <span className="flex h-16 w-16 items-center justify-center rounded border bg-background text-xs font-medium text-muted-foreground">
@@ -612,7 +801,6 @@ function GraphPreviewThumb({ graph, iiifImage }: { graph: BackendGraph; iiifImag
 interface ComponentBlockProps {
   component: Component;
   isMulti: boolean;
-  notOnAll?: boolean;
   getFeatureState: (featureId: number) => TriState;
   onSetFeatureState: (featureId: number, state: TriState) => void;
 }
@@ -620,7 +808,6 @@ interface ComponentBlockProps {
 function ComponentBlock({
   component,
   isMulti,
-  notOnAll,
   getFeatureState,
   onSetFeatureState,
 }: ComponentBlockProps) {
@@ -628,11 +815,6 @@ function ComponentBlock({
     <div className="rounded-md border bg-card p-3.5 shadow-sm">
       <div className="mb-2.5 flex items-center gap-2 text-sm font-semibold text-foreground">
         {component.component_name}
-        {notOnAll && (
-          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
-            not on all selected
-          </span>
-        )}
       </div>
       {component.features.length === 0 ? (
         <p className="text-sm italic text-muted-foreground">No features.</p>

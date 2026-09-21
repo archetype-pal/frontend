@@ -6,6 +6,7 @@
     "cancel": "Abbrechen",
     "delete": "Löschen",
     "edit": "Bearbeiten",
+    "editingMode": "Bearbeitungsmodus",
     "close": "Schließen",
     "search": "Suchen",
     "confirm": "Bestätigen",
@@ -47,6 +48,7 @@
     "search": "Suche",
     "collection": "{name} ({count})",
     "lightbox": "Lightbox",
+    "compare": "Vergleich ({count})",
     "news": "Neuigkeiten",
     "blogs": "Blogs",
     "featureArticles": "Beiträge",
@@ -91,6 +93,13 @@
     "noResultsFilters": "Keine {typeLabel} entsprachen den aktuellen Filtern.",
     "clearAllFilters": "Alle Filter löschen",
     "clearKeyword": "Suchbegriff löschen",
+    "compareAction": {
+      "button": "Vergleich ({count})",
+      "selectAriaLabel": "{label} zum Vergleich auswählen",
+      "alreadyStaged": "{count, plural, one {# ausgewählte Handschrift ist} other {# ausgewählte Handschriften sind}} bereits im Vergleich",
+      "atCapTitle": "Vergleich ist voll",
+      "atCapDescription": "Sie können bis zu {max} Handschriften gleichzeitig vergleichen. Entfernen Sie zuerst eine auf der Vergleichsseite."
+    },
     "actions": "Aktionen",
     "actionsTitle": "Suchaktionen — gespeicherte Suchen, Ansicht und Export",
     "actionsLabel": "Suchaktionen",
@@ -164,6 +173,24 @@
     "keywordRecent": "Kürzlich verwendet",
     "keywordClearHistory": "Verlauf löschen",
     "keywordLoading": "Vorschläge werden geladen…",
+    "editingModeHint": "Auswahl und Massenbearbeitung von Graphen aktivieren",
+    "selectedCount": "{count} ausgewählt",
+    "selectAllOnPage": "Alle {count} auf der Seite auswählen",
+    "unselectAllOnPage": "Alle {count} auf der Seite abwählen",
+    "selectionCapReached": "Sie können bis zu {max} Graphen gleichzeitig bearbeiten",
+    "editSelected": "Auswahl bearbeiten",
+    "clearSelection": "Auswahl aufheben",
+    "handDisabledTooltip": "Eine Hand gehört zu einer einzigen Handschrift — diese Auswahl umfasst mehrere.",
+    "confirmDeleteGraph": "Diese Graph-Annotation löschen?",
+    "discardUnsavedChanges": "Nicht gespeicherte Änderungen verwerfen?",
+    "graphDeleted": "Graph gelöscht",
+    "deleteFailed": "Löschen des Graphen fehlgeschlagen",
+    "noGraphData": "Keine Graphdaten für die ausgewählten Elemente gefunden",
+    "failedToLoadGraphs": "Laden der ausgewählten Graphen zur Bearbeitung fehlgeschlagen",
+    "notAuthenticated": "Nicht authentifiziert.",
+    "failedToLoadHands": "Laden der Hände für diese Handschrift fehlgeschlagen.",
+    "recentlyEditedBadge": "Bearbeitet",
+    "recentlyEditedTooltip": "Kürzlich bearbeitet",
     "queryBuilder": {
       "opIs": "ist",
       "opIsNot": "ist nicht",
@@ -211,7 +238,25 @@
       "matchLenient": "Nachsichtig (lässt nachfolgende Wörter weg, bis Treffer gefunden werden)",
       "matchingStrategyHint": "Strikter Abgleich (`all`) erfordert jedes Wort; nachsichtiger Abgleich (`last`) lässt nachfolgende Wörter weg, bis Ergebnisse erscheinen.",
       "queryBuilderHeading": "Abfrage-Editor"
-    }
+    },
+    "mixedAllographsNotice": "Die ausgewählten Graphen verwenden unterschiedliche Allographen. Wählen Sie einen für alle aus, oder schließen Sie den Dialog und verfeinern Sie die Auswahl.",
+    "mixedPickOne": "Gemischt — bitte einen wählen",
+    "mixedAcrossManuscripts": "Gemischt über mehrere Handschriften",
+    "handDisabled": "Hand deaktiviert",
+    "searchAllographs": "Allographen suchen…",
+    "noAllographs": "Keine Allographen",
+    "searchHands": "Hände suchen…",
+    "noHands": "Keine Hände",
+    "componentsTab": "Komponenten und Merkmale",
+    "setAllComponentHint": "(All wählen, um eine Komponente zu allen ausgewählten Graphen hinzuzufügen)",
+    "noHand": "Keine Hand",
+    "graphsFailedToSave": "{failed} von {total} Graphen konnten nicht gespeichert werden",
+    "graphsSaved": "{count, plural, =0 {Gespeichert} one {Gespeichert} other {# Graphen gespeichert}}",
+    "selectGraph": "Graph auswählen",
+    "unselectGraph": "Graph abwählen",
+    "deleteGraphLabel": "Graph Nr. {id} löschen",
+    "editorialGraphsSkipped": "{count, plural, one {# editorischer Graph wurde ausgelassen} other {# editorische Graphen wurden ausgelassen}}: Nur Superuser können sie bearbeiten.",
+    "editorialGraphsOnlySuperusers": "Nur Superuser können editorische Graphen bearbeiten."
   },
   "filters": {
     "activeTitle": "Aktive Filter",
@@ -303,6 +348,11 @@
       "numberedFallbackTitle": "Manuskript Nr. {id}",
       "description": "Manuskript {label} ansehen – {siteTitle}"
     },
+    "iiifManifest": {
+      "copyButton": "IIIF-Manifest-URL kopieren",
+      "toastCopied": "Manifest-URL kopiert",
+      "toastCopyFailed": "Manifest-URL konnte nicht kopiert werden"
+    },
     "loadError": {
       "title": "Manuskript kann nicht geladen werden",
       "description": "Der Manuskriptdienst ist derzeit nicht verfügbar. Bitte versuchen Sie es in Kürze erneut.",
@@ -312,14 +362,13 @@
     "gallery": {
       "deleteConfirm": "Graph #{id} löschen? Er wird in den Papierkorb verschoben; ein Administrator kann ihn wiederherstellen.",
       "deleteSuccess": "Graph #{id} in den Papierkorb verschoben; ein Administrator kann ihn wiederherstellen",
-      "deleteFailed": "Graph #{id} konnte nicht gelöscht werden"
+      "deleteFailed": "Graph #{id} konnte nicht gelöscht werden",
+      "editingModeTooltip": "Grapheme direkt bearbeiten ein-/ausschalten (Taste A)"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Diesen editorischen Entwurf löschen?} other {Diesen öffentlichen Entwurf löschen?}}\n\nEr wird lokal verworfen.",
       "savedConfirm": "{kind, select, editorial {Diese gespeicherte editorische Annotation löschen?} other {Diese gespeicherte öffentliche Annotation löschen?}}\n\nDrücken Sie Speichern, um sie in den Papierkorb zu verschieben, wo ein Administrator sie wiederherstellen kann.",
-      "bulkMixed": "{total} ausgewählte Annotationen löschen?\n\nDadurch werden {draftCount, plural, =1 {# Entwurfsannotation} other {# Entwurfsannotationen}} lokal verworfen und {savedCount, plural, =1 {# gespeicherte Annotation} other {# gespeicherte Annotationen}} zum Löschen markiert.\nDrücken Sie Speichern, um die gespeicherten in den Papierkorb zu verschieben, wo ein Administrator sie wiederherstellen kann.",
       "bulkDrafts": "{total} ausgewählte Annotationen löschen?\n\nDadurch werden {draftCount, plural, =1 {# Entwurfsannotation} other {# Entwurfsannotationen}} lokal verworfen.",
-      "bulkSaved": "{total} ausgewählte Annotationen löschen?\n\nDadurch werden {savedCount, plural, =1 {# gespeicherte Annotation} other {# gespeicherte Annotationen}} zum Löschen markiert.\nDrücken Sie Speichern, um sie in den Papierkorb zu verschieben, wo ein Administrator sie wiederherstellen kann.",
       "regionConfirm": "Diese verknüpfte Region löschen?\n\nSie wird in den Papierkorb verschoben und verschwindet aus dem Bild. Ihre Verknüpfung mit der Transkription bleibt erhalten, sodass ein Administrator beides wiederherstellen kann.",
       "removeRegion": "Region entfernen",
       "regionTrashedTitle": "Region in den Papierkorb verschoben",
@@ -634,6 +683,22 @@
       "untitled": "Ohne Titel"
     }
   },
+  "compare": {
+    "toggle": {
+      "add": "Zum Vergleich hinzufügen",
+      "remove": "Aus dem Vergleich entfernen",
+      "atCapTitle": "Vergleich ist voll",
+      "atCapDescription": "Sie können bis zu {max} Handschriften gleichzeitig vergleichen. Entfernen Sie zuerst eine auf der Vergleichsseite."
+    },
+    "page": {
+      "title": "Vergleich",
+      "emptyTitle": "Noch nichts zum Vergleichen",
+      "emptyDescription": "Fügen Sie Handschriften über deren Handschriftenseite zum Vergleich hinzu und kehren Sie dann hierher zurück, um sie nebeneinander anzuzeigen.",
+      "browseManuscripts": "Handschriften durchsuchen",
+      "clearButton": "Alle entfernen",
+      "removeItem": "{label} aus dem Vergleich entfernen"
+    }
+  },
   "about": {
     "heading": "Über",
     "historicalContext": "Historischer Kontext",
@@ -939,7 +1004,13 @@
         "translations": "Übersetzungen",
         "siteFeatures": "Website anpassen",
         "new": "Neu"
-      }
+      },
+      "apiVersion": "API-Version {version}",
+      "apiRelease": "API-Release",
+      "apiBuilt": "Erstellt am {date}",
+      "apiDevBuild": "Entwicklungs-Build, keine veröffentlichte Version",
+      "apiCommit": "Commit {commit}",
+      "versionLabel": "Version:"
     },
     "sidebar": {
       "brand": "Backoffice",
@@ -1938,6 +2009,7 @@
         "search": "Entdecken",
         "collection": "Meine Sammlung",
         "lightbox": "Lightbox",
+        "compare": "Vergleich",
         "news": "News",
         "blogs": "Blogs",
         "featureArticles": "Themenartikel",
@@ -1951,6 +2023,39 @@
       },
       "featureDescriptions": {
         "manuscriptDescriptions": "Strukturierte TEI-Beschreibungen: der Beschreibungsabschnitt auf öffentlichen Handschriftenseiten sowie der msDesc-Editor im Handschriften-Arbeitsbereich. Es wird nichts gelöscht — das erneute Aktivieren stellt alles wieder her. Suchfacetten werden separat unter „Suchkategorien“ konfiguriert."
+      },
+      "theme": {
+        "title": "Oberflächenanpassung",
+        "description": "Passen Sie die Markenfarben der Website an Ihre Organisation an.",
+        "backgroundColor": "Haupt-Hintergrundfarbe",
+        "backgroundColorDescription": "Die Markenfarbe für primäre Schaltflächen und die aktive Navigation sowie für die Kopfzeilen unten, sofern diese nicht abweichend festgelegt sind.",
+        "frontColor": "Primäre Vordergrundfarbe",
+        "frontColorDescription": "Die Text- und Symbolfarbe, die auf der Haupt-Hintergrundfarbe angezeigt wird.",
+        "secondaryColor": "Sekundärfarbe",
+        "secondaryColorDescription": "Die Akzentfarbe für Hervorhebungen, Abzeichen und Hinweiskästen.",
+        "headerRowsTitle": "Kopfzeilen",
+        "headerRowsDescription": "Die Kopfzeile der Website besteht aus zwei Zeilen — der Titel-/Slogan-Zeile und der darunterliegenden Navigationszeile. Passen Sie beide unabhängig voneinander an, oder lassen Sie sie der Haupt-Hintergrundfarbe oben entsprechen.",
+        "titleBarBackgroundColor": "Hintergrund der Titelzeile",
+        "titleBarBackgroundColorDescription": "Hintergrundfarbe der Zeile mit dem Website-Titel und dem Slogan.",
+        "titleBarTextColor": "Text der Titelzeile",
+        "titleBarTextColorDescription": "Text- und Symbolfarbe, die auf dem Hintergrund der Titelzeile angezeigt wird.",
+        "navBarBackgroundColor": "Hintergrund der Navigationszeile",
+        "navBarBackgroundColorDescription": "Hintergrundfarbe der Zeile mit den Navigationslinks und dem Suchfeld.",
+        "navBarTextColor": "Text der Navigationszeile",
+        "navBarTextColorDescription": "Text- und Symbolfarbe, die auf dem Hintergrund der Navigationszeile angezeigt wird.",
+        "reset": "Zurücksetzen",
+        "invalidColor": "Geben Sie einen gültigen Hex-Farbwert ein, z. B. #075783.",
+        "invalidColorError": "Beheben Sie die ungültige(n) Farbe(n), bevor Sie speichern."
+      },
+      "branding": {
+        "title": "Logo",
+        "description": "Legen Sie das Logo fest, das oben in der Titelzeile der Kopfzeile angezeigt wird.",
+        "uploadLabel": "Logo-Bild",
+        "uploadFailed": "Logo konnte nicht hochgeladen werden",
+        "logoUrlLabel": "Logo-URL",
+        "logoUrlPlaceholder": "https://beispiel.org/logo.png",
+        "logoUrlDescription": "URL eines bereits gehosteten Bildes oder der Pfad einer oben hochgeladenen Datei. Leer lassen, um nur den Website-Titel anzuzeigen.",
+        "clearButton": "Entfernen"
       },
       "searchCategoriesTitle": "Suchkategorien",
       "searchCategoriesDescription": "Kategorien umschalten und sichtbare Spalten und Facetten konfigurieren. Zum Neuordnen ziehen.",
@@ -2387,14 +2492,16 @@
       "migrations": {
         "title": "Ausstehende Migrationen",
         "upToDate": "Aktuell",
-        "pendingLabel": "ausstehend"
+        "pendingLabel": "ausstehend",
+        "unknown": "Unbekannt"
       },
       "services": {
         "title": "Abhängige Dienste",
         "database": "Datenbank",
         "redis": "Redis",
         "meilisearch": "Meilisearch",
-        "celeryBroker": "Celery-Broker"
+        "celeryBroker": "Celery-Broker",
+        "celeryWorkers": "Celery-Worker ({count})"
       },
       "storage": {
         "title": "Speicher",
@@ -2406,7 +2513,8 @@
       "permissions": {
         "title": "Dateisystemberechtigungen",
         "mediaWritable": "Medienverzeichnis beschreibbar",
-        "logsWritable": "Protokollverzeichnis beschreibbar"
+        "logsWritable": "Protokollverzeichnis beschreibbar",
+        "logsNotConfigured": "Keine Protokolldatei konfiguriert, Protokolle gehen an stdout"
       },
       "smtp": {
         "title": "E-Mail (SMTP)",
@@ -2418,7 +2526,8 @@
         "send": "Test-E-Mail senden",
         "sending": "Wird gesendet …",
         "toastSuccess": "Test-E-Mail gesendet",
-        "toastError": "Test-E-Mail konnte nicht gesendet werden"
+        "toastError": "Test-E-Mail konnte nicht gesendet werden",
+        "backend": "Mail-Backend: {backend}"
       }
     },
     "reviewAge": {
@@ -2496,10 +2605,8 @@
       "imageRemoved": "Bild entfernt",
       "imageRemoveFailed": "Bild konnte nicht entfernt werden",
       "editImage": "Bild bearbeiten",
-      "editImageDescription": "Aktualisieren Sie den Locus oder ersetzen Sie das zugrunde liegende IIIF-Bild.",
+      "editImageDescription": "Aktualisieren Sie den Locus oder die Tags für dieses Bild.",
       "iiifImagePath": "IIIF-Bildpfad",
-      "iiifImagePathPlaceholder": "historical_items/...",
-      "browseMedia": "Medien durchsuchen",
       "tags": "Tags",
       "tagsPlaceholder": "z. B. beschädigt, illuminiert",
       "deleteImageConfirmTitle": "Dieses Bild löschen?",
@@ -2859,7 +2966,7 @@
     "emptyStates": {
       "description": "Keine Beschreibung mit diesem Datensatz verknüpft."
     },
-    "sourceLabel": "Source: {label}",
+    "sourceLabel": "Quelle: {label}",
     "imageAltFallback": "Manuskriptbild",
     "annotationCount": "{count, plural, one {# Annotation} other {# Annotationen}}",
     "metadata": {

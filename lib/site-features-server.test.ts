@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getDefaultConfig } from './site-features';
+import { getDefaultConfig, getDefaultThemeColors } from './site-features';
 
 const { apiFetch, authFetch } = vi.hoisted(() => ({
   apiFetch: vi.fn(),
@@ -121,6 +121,28 @@ describe('readSiteFeatures', () => {
     const config = await readSiteFeatures();
     expect(config.features).toEqual({ manuscriptDescriptions: true });
   });
+
+  it('defaults every colour when the backend response has no `theme` key', async () => {
+    apiFetch.mockResolvedValueOnce(jsonResponse(legacyResponseBody()));
+    const config = await readSiteFeatures();
+    expect(config.theme).toEqual(getDefaultThemeColors());
+  });
+
+  it('merges a partial theme override over the defaults', async () => {
+    apiFetch.mockResolvedValueOnce(
+      jsonResponse({ ...legacyResponseBody(), theme: { accentColor: '#abcdef' } })
+    );
+    const config = await readSiteFeatures();
+    expect(config.theme).toEqual({ ...getDefaultThemeColors(), accentColor: '#abcdef' });
+  });
+
+  it('ignores malformed theme values from the backend', async () => {
+    apiFetch.mockResolvedValueOnce(
+      jsonResponse({ ...legacyResponseBody(), theme: { primaryColor: 'not-a-colour' } })
+    );
+    const config = await readSiteFeatures();
+    expect(config.theme).toEqual(getDefaultThemeColors());
+  });
 });
 
 describe('writeSiteFeatures', () => {
@@ -176,5 +198,24 @@ describe('writeSiteFeatures', () => {
     await expect(writeSiteFeatures(getDefaultConfig(), 'staff-token')).rejects.toThrow(
       'network down'
     );
+  });
+
+  it('persists a complete, validated theme even if the caller hands over a partial one', async () => {
+    authFetch.mockResolvedValueOnce(jsonResponse({ ok: true }));
+    const config = getDefaultConfig();
+    // @ts-expect-error — a hand-rolled/older payload without the theme
+    delete config.theme;
+
+    const normalized = await writeSiteFeatures(config, 'staff-token');
+    expect(normalized.theme).toEqual(getDefaultThemeColors());
+  });
+
+  it('drops a malformed theme colour rather than persisting it', async () => {
+    authFetch.mockResolvedValueOnce(jsonResponse({ ok: true }));
+    const config = getDefaultConfig();
+    config.theme = { ...config.theme, primaryColor: 'not-a-colour' };
+
+    const normalized = await writeSiteFeatures(config, 'staff-token');
+    expect(normalized.theme.primaryColor).toBe(getDefaultThemeColors().primaryColor);
   });
 });

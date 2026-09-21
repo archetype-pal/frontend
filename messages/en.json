@@ -6,6 +6,7 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
+    "editingMode": "Editing mode",
     "close": "Close",
     "search": "Search",
     "confirm": "Confirm",
@@ -47,6 +48,7 @@
     "search": "Search",
     "collection": "{name} ({count})",
     "lightbox": "Lightbox",
+    "compare": "Compare ({count})",
     "news": "News",
     "blogs": "Blogs",
     "featureArticles": "Feature Articles",
@@ -91,6 +93,13 @@
     "noResultsFilters": "No {typeLabel} matched the current filters.",
     "clearAllFilters": "Clear all filters",
     "clearKeyword": "Clear keyword",
+    "compareAction": {
+      "button": "Compare ({count})",
+      "selectAriaLabel": "Select {label} to compare",
+      "alreadyStaged": "{count, plural, one {# selected manuscript is} other {# selected manuscripts are}} already in Compare",
+      "atCapTitle": "Compare is full",
+      "atCapDescription": "You can compare up to {max} manuscripts at once. Remove one from the Compare page first."
+    },
     "actions": "Actions",
     "actionsTitle": "Search actions — saved searches, view, and export",
     "actionsLabel": "Search actions",
@@ -164,6 +173,24 @@
     "keywordRecent": "Recent",
     "keywordClearHistory": "Clear history",
     "keywordLoading": "Loading suggestions…",
+    "editingModeHint": "Enable selection and bulk editing of graphs",
+    "selectedCount": "{count} selected",
+    "selectAllOnPage": "Select all {count} on page",
+    "unselectAllOnPage": "Unselect all {count} on page",
+    "selectionCapReached": "You can edit up to {max} graphs at a time",
+    "editSelected": "Edit selected",
+    "clearSelection": "Clear",
+    "handDisabledTooltip": "A hand belongs to a single manuscript — this selection spans several.",
+    "confirmDeleteGraph": "Delete this graph annotation?",
+    "discardUnsavedChanges": "Discard unsaved changes?",
+    "graphDeleted": "Graph deleted",
+    "deleteFailed": "Failed to delete graph",
+    "noGraphData": "No graph data found for selected items",
+    "failedToLoadGraphs": "Failed to load selected graphs for editing",
+    "notAuthenticated": "Not authenticated.",
+    "failedToLoadHands": "Failed to load hands for this manuscript.",
+    "recentlyEditedBadge": "Edited",
+    "recentlyEditedTooltip": "Recently edited",
     "queryBuilder": {
       "opIs": "is",
       "opIsNot": "is not",
@@ -211,7 +238,25 @@
       "matchLenient": "Lenient (drops trailing words until matches found)",
       "matchingStrategyHint": "Strict matching (`all`) requires every word; lenient (`last`) drops trailing words until results appear.",
       "queryBuilderHeading": "Query builder"
-    }
+    },
+    "mixedAllographsNotice": "Selected graphs use different allographs. Choose one to set on all of them, or close and refine the selection.",
+    "mixedPickOne": "Mixed — pick one",
+    "mixedAcrossManuscripts": "Mixed across manuscripts",
+    "handDisabled": "Hand disabled",
+    "searchAllographs": "Search allographs…",
+    "noAllographs": "No allographs",
+    "searchHands": "Search hands…",
+    "noHands": "No hands",
+    "componentsTab": "Components & features",
+    "setAllComponentHint": "(set All to add a component to every selected graph)",
+    "noHand": "No hand",
+    "graphsFailedToSave": "{failed} of {total} graphs failed to save",
+    "graphsSaved": "{count, plural, =0 {Saved} one {Saved} other {Saved # graphs}}",
+    "selectGraph": "Select graph",
+    "unselectGraph": "Unselect graph",
+    "deleteGraphLabel": "Delete graph #{id}",
+    "editorialGraphsSkipped": "{count, plural, one {# editorial graph was left out} other {# editorial graphs were left out}}: only superusers can edit them.",
+    "editorialGraphsOnlySuperusers": "Only superusers can edit editorial graphs."
   },
   "filters": {
     "activeTitle": "Active filters",
@@ -303,6 +348,11 @@
       "numberedFallbackTitle": "Manuscript #{id}",
       "description": "View manuscript {label} – {siteTitle}"
     },
+    "iiifManifest": {
+      "copyButton": "Copy IIIF manifest URL",
+      "toastCopied": "Manifest URL copied",
+      "toastCopyFailed": "Couldn't copy the manifest URL"
+    },
     "loadError": {
       "title": "Unable to load manuscript",
       "description": "The manuscript service is currently unavailable. Please try again shortly.",
@@ -312,14 +362,13 @@
     "gallery": {
       "deleteConfirm": "Delete graph #{id}? It moves to the trash; an admin can restore it.",
       "deleteSuccess": "Graph #{id} moved to trash; an admin can restore it",
-      "deleteFailed": "Failed to delete graph #{id}"
+      "deleteFailed": "Failed to delete graph #{id}",
+      "editingModeTooltip": "Toggle inline graph editing (press A)"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Delete this editorial draft annotation?} other {Delete this public draft annotation?}}\n\nThis will discard it locally.",
       "savedConfirm": "{kind, select, editorial {Delete this saved editorial annotation?} other {Delete this saved public annotation?}}\n\nPress Save to move it to the trash, where an admin can restore it.",
-      "bulkMixed": "Delete {total} selected annotations?\n\nThis will discard {draftCount, plural, =1 {# draft annotation} other {# draft annotations}} locally and mark {savedCount, plural, =1 {# saved annotation} other {# saved annotations}} for deletion.\nPress Save to move the saved ones to the trash, where an admin can restore them.",
       "bulkDrafts": "Delete {total} selected annotations?\n\nThis will discard {draftCount, plural, =1 {# draft annotation} other {# draft annotations}} locally.",
-      "bulkSaved": "Delete {total} selected annotations?\n\nThis will mark {savedCount, plural, =1 {# saved annotation} other {# saved annotations}} for deletion.\nPress Save to move them to the trash, where an admin can restore them.",
       "regionConfirm": "Delete this linked region?\n\nIt moves to the trash and disappears from the image. Its link to the transcription is kept, so an admin can restore both.",
       "removeRegion": "Remove region",
       "regionTrashedTitle": "Region moved to trash",
@@ -634,6 +683,22 @@
       "untitled": "Untitled"
     }
   },
+  "compare": {
+    "toggle": {
+      "add": "Add to Compare",
+      "remove": "Remove from Compare",
+      "atCapTitle": "Compare is full",
+      "atCapDescription": "You can compare up to {max} manuscripts at once. Remove one from the Compare page first."
+    },
+    "page": {
+      "title": "Compare",
+      "emptyTitle": "Nothing to compare yet",
+      "emptyDescription": "Add manuscripts to Compare from their manuscript page, then come back here to view them side by side.",
+      "browseManuscripts": "Browse manuscripts",
+      "clearButton": "Clear all",
+      "removeItem": "Remove {label} from Compare"
+    }
+  },
   "about": {
     "heading": "About",
     "historicalContext": "Historical Context",
@@ -939,7 +1004,13 @@
         "translations": "Translations",
         "siteFeatures": "Customise site",
         "new": "New"
-      }
+      },
+      "apiVersion": "API version {version}",
+      "apiRelease": "API release",
+      "apiBuilt": "Built {date}",
+      "apiDevBuild": "Development build, not a published release",
+      "apiCommit": "Commit {commit}",
+      "versionLabel": "Version:"
     },
     "sidebar": {
       "brand": "Backoffice",
@@ -1938,6 +2009,7 @@
         "search": "Explore",
         "collection": "My Collection",
         "lightbox": "Lightbox",
+        "compare": "Compare",
         "news": "News",
         "blogs": "Blogs",
         "featureArticles": "Feature Articles",
@@ -1951,6 +2023,39 @@
       },
       "featureDescriptions": {
         "manuscriptDescriptions": "Structured TEI descriptions: the description section on public manuscript pages and the msDesc editor in the manuscript workspace. Nothing is deleted — turning this back on restores everything. Search facets are configured separately under Search Categories."
+      },
+      "theme": {
+        "title": "UI Customization",
+        "description": "Repaint the site's brand colours to match your organization.",
+        "backgroundColor": "Main background color",
+        "backgroundColorDescription": "The brand colour used for primary buttons and active navigation, and for the header rows below unless overridden.",
+        "frontColor": "Primary front color",
+        "frontColorDescription": "The text and icon colour drawn on top of the main background colour.",
+        "secondaryColor": "Secondary color",
+        "secondaryColorDescription": "The accent colour used for highlights, badges, and call-outs.",
+        "headerRowsTitle": "Header rows",
+        "headerRowsDescription": "The site header has two rows — the title/tagline row and the navigation row below it. Repaint each independently, or leave them matching the main background above.",
+        "titleBarBackgroundColor": "Title row background",
+        "titleBarBackgroundColorDescription": "Background colour of the row showing the site title and tagline.",
+        "titleBarTextColor": "Title row text",
+        "titleBarTextColorDescription": "Text and icon colour drawn on top of the title row background.",
+        "navBarBackgroundColor": "Navigation row background",
+        "navBarBackgroundColorDescription": "Background colour of the row showing the navigation links and search box.",
+        "navBarTextColor": "Navigation row text",
+        "navBarTextColorDescription": "Text and icon colour drawn on top of the navigation row background.",
+        "reset": "Reset",
+        "invalidColor": "Enter a valid hex color, e.g. #075783.",
+        "invalidColorError": "Fix the invalid color(s) before saving."
+      },
+      "branding": {
+        "title": "Logo",
+        "description": "Set the logo shown at the top of the header's title row.",
+        "uploadLabel": "Logo image",
+        "uploadFailed": "Failed to upload logo",
+        "logoUrlLabel": "Logo URL",
+        "logoUrlPlaceholder": "https://example.org/logo.png",
+        "logoUrlDescription": "URL of an already-hosted image, or the path of an uploaded file above. Leave empty to show the site title alone.",
+        "clearButton": "Clear"
       },
       "searchCategoriesTitle": "Search Categories",
       "searchCategoriesDescription": "Toggle categories and configure visible columns and facets. Drag to reorder.",
@@ -2387,14 +2492,16 @@
       "migrations": {
         "title": "Pending Migrations",
         "upToDate": "Up to date",
-        "pendingLabel": "pending"
+        "pendingLabel": "pending",
+        "unknown": "Unknown"
       },
       "services": {
         "title": "Dependent Services",
         "database": "Database",
         "redis": "Redis",
         "meilisearch": "Meilisearch",
-        "celeryBroker": "Celery Broker"
+        "celeryBroker": "Celery Broker",
+        "celeryWorkers": "Celery workers ({count})"
       },
       "storage": {
         "title": "Storage",
@@ -2406,7 +2513,8 @@
       "permissions": {
         "title": "Filesystem Permissions",
         "mediaWritable": "Media directory writable",
-        "logsWritable": "Log directory writable"
+        "logsWritable": "Log directory writable",
+        "logsNotConfigured": "No log file configured, logs go to stdout"
       },
       "smtp": {
         "title": "Email (SMTP)",
@@ -2418,7 +2526,8 @@
         "send": "Send test email",
         "sending": "Sending…",
         "toastSuccess": "Test email sent",
-        "toastError": "Failed to send test email"
+        "toastError": "Failed to send test email",
+        "backend": "Mail backend: {backend}"
       }
     },
     "reviewAge": {
@@ -2496,10 +2605,8 @@
       "imageRemoved": "Image removed",
       "imageRemoveFailed": "Failed to remove image",
       "editImage": "Edit image",
-      "editImageDescription": "Update the locus or replace the underlying IIIF image.",
+      "editImageDescription": "Update the locus or tags for this image.",
       "iiifImagePath": "IIIF image path",
-      "iiifImagePathPlaceholder": "historical_items/...",
-      "browseMedia": "Browse media",
       "tags": "Tags",
       "tagsPlaceholder": "e.g. damaged, illuminated",
       "deleteImageConfirmTitle": "Delete this image?",

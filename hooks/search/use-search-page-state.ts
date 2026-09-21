@@ -29,6 +29,7 @@ import { useSearchExport } from '@/hooks/search/use-search-export';
 import { useSearchUrlSync } from '@/hooks/search/use-search-url-sync';
 import { useSearchHotkeys } from '@/hooks/search/use-search-hotkeys';
 import { useSearchData } from '@/hooks/search/use-search-data';
+import { useSelectionSet } from '@/hooks/use-selection-set';
 
 export function useSearchPageState(initialType?: ResultType) {
   const searchParams = useSearchParams();
@@ -204,6 +205,26 @@ export function useSearchPageState(initialType?: ResultType) {
     setViewMode,
   });
 
+  // --- Annotating Mode & Selection (Graphs only) ---
+  const [annotatingMode, setAnnotatingModeState] = React.useState(false);
+  const selection = useSelectionSet<number>();
+
+  const setAnnotatingMode = React.useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      setAnnotatingModeState((prev) => {
+        const val = typeof next === 'function' ? next(prev) : next;
+        if (val && viewMode !== 'grid') {
+          setViewMode('grid');
+        }
+        if (!val) {
+          selection.clear();
+        }
+        return val;
+      });
+    },
+    [viewMode, setViewMode, selection]
+  );
+
   // --- Scroll to top on navigation ---
   // The page now flows in the document (no internal scroll container), so a
   // page change / type switch scrolls the window back to the top.
@@ -217,6 +238,10 @@ export function useSearchPageState(initialType?: ResultType) {
   const handleResultTypeChange = React.useCallback(
     (next: ResultType) => {
       setResultType(next);
+      if (next !== 'graphs') {
+        setAnnotatingModeState(false);
+        selection.clear();
+      }
       // Full clean slate: facets, date, exclusions, sort ordering, and page offset
       // are all per-type — carrying them into the next type lands on an
       // out-of-range page or applies a stale sort. (Keyword is kept: the per-type
@@ -225,7 +250,7 @@ export function useSearchPageState(initialType?: ResultType) {
       setAdvancedSearch(DEFAULT_ADVANCED_SEARCH_STATE);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stable refs from sub-hooks
-    [queryHook.setQueryState]
+    [queryHook.setQueryState, selection]
   );
 
   // --- Computed values ---
@@ -254,6 +279,9 @@ export function useSearchPageState(initialType?: ResultType) {
     viewMode,
     setViewMode,
     resultType,
+    annotatingMode,
+    setAnnotatingMode,
+    selection,
     queryState: queryHook.queryState,
     setQueryState: queryHook.setQueryState,
     draftKeyword,

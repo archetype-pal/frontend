@@ -29,17 +29,18 @@ import { BackofficeApiError } from '@/services/backoffice/api-client';
 import { SanityChecksDashboard } from './sanity-checks-dashboard';
 
 const REPORT = {
-  migrations: { has_pending: false, pending: [] },
+  migrations: { ok: true, has_pending: false, pending: [], detail: null },
   services: {
     database: { ok: true, detail: null },
     redis: { ok: true, detail: null },
     meilisearch: { ok: true, detail: null },
     celery_broker: { ok: true, detail: null },
+    celery_workers: { ok: true, workers: 1, detail: null },
   },
-  email: { smtp_configured: true },
-  database_size_bytes: 123456789,
+  email: { backend: 'django.core.mail.backends.smtp.EmailBackend', smtp_configured: true },
+  database: { size_bytes: 123456789 },
   media: { path: '/srv/app/storage/media', size_bytes: 987654321, writable: true },
-  logs: { path: '/srv/app', writable: true },
+  logs: { configured: true, path: '/srv/app/logs/app.log', writable: true },
 };
 
 function renderDashboard() {
@@ -74,12 +75,18 @@ describe('SanityChecksDashboard', () => {
     expect(screen.getByText('Redis')).toBeTruthy();
     expect(screen.getByText('Meilisearch')).toBeTruthy();
     expect(screen.getByText('Celery Broker')).toBeTruthy();
+    expect(screen.getByText('Celery workers (1)')).toBeTruthy();
   });
 
   it('renders pending migrations and a failing service with its detail', async () => {
     getSanityChecksMock.mockResolvedValueOnce({
       ...REPORT,
-      migrations: { has_pending: true, pending: ['app.0002_x', 'app.0003_y'] },
+      migrations: {
+        ok: true,
+        has_pending: true,
+        pending: ['app.0002_x', 'app.0003_y'],
+        detail: null,
+      },
       services: {
         ...REPORT.services,
         redis: { ok: false, detail: 'Connection refused' },
@@ -102,7 +109,7 @@ describe('SanityChecksDashboard', () => {
   });
 
   it('shows "Unavailable" for a null database size (non-Postgres backend)', async () => {
-    getSanityChecksMock.mockResolvedValueOnce({ ...REPORT, database_size_bytes: null });
+    getSanityChecksMock.mockResolvedValueOnce({ ...REPORT, database: { size_bytes: null } });
     renderDashboard();
 
     expect(await screen.findByText('Unavailable (non-PostgreSQL backend)')).toBeTruthy();
@@ -137,13 +144,34 @@ describe('SanityChecksDashboard', () => {
   it('hides the send-test-email button and explains why when SMTP is not configured', async () => {
     getSanityChecksMock.mockResolvedValueOnce({
       ...REPORT,
-      email: { smtp_configured: false },
+      email: { backend: 'django.core.mail.backends.console.EmailBackend', smtp_configured: false },
     });
     renderDashboard();
 
     expect(await screen.findByText('SMTP is not configured')).toBeTruthy();
     expect(screen.getByText('Test email unavailable')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /send test email/i })).toBeNull();
+  });
+
+  it('marks migrations unknown, with the reason, when the graph cannot be read', async () => {
+    getSanityChecksMock.mockResolvedValueOnce({
+      ...REPORT,
+      migrations: { ok: false, has_pending: null, pending: [], detail: 'Conflicting migrations' },
+    });
+    renderDashboard();
+
+    expect(await screen.findByText('Unknown')).toBeTruthy();
+    expect(screen.getByText('Conflicting migrations')).toBeTruthy();
+  });
+
+  it('says there is no log file rather than failing the check', async () => {
+    getSanityChecksMock.mockResolvedValueOnce({
+      ...REPORT,
+      logs: { configured: false, path: null, writable: null },
+    });
+    renderDashboard();
+
+    expect(await screen.findByText('No log file configured, logs go to stdout')).toBeTruthy();
   });
 
   it('shows an error message when the report fails to load', async () => {

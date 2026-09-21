@@ -67,21 +67,13 @@ export function useAnnotationDeletion({
       const canonical = annotations.map((annotation) => getCanonicalAnnotation(annotation));
       if (canonical.some(isTextRegionAnnotation)) return false;
 
-      const draftCount = canonical.filter((annotation) => !isDbId(annotation.id)).length;
-      const savedCount = canonical.length - draftCount;
-      const counts = { total: canonical.length, draftCount, savedCount };
-
+      // Only drafts can be multi-selected, so a bulk delete is always drafts.
       // Pluralisation lives in the ICU message, not here: French does not
       // pluralise on the same boundaries as English, so an `=== 1 ? '' : 's'`
       // built in TS cannot be translated correctly.
-      const message =
-        draftCount > 0 && savedCount > 0
-          ? t('delete.bulkMixed', counts)
-          : draftCount > 0
-            ? t('delete.bulkDrafts', counts)
-            : t('delete.bulkSaved', counts);
+      const counts = { total: canonical.length, draftCount: canonical.length };
 
-      return window.confirm(message);
+      return window.confirm(t('delete.bulkDrafts', counts));
     },
     [getCanonicalAnnotation, t]
   );

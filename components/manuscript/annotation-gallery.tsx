@@ -19,6 +19,7 @@ import {
 
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { useInView } from '@/hooks/use-in-view';
+import { useSelectionSet, type SelectionSet } from '@/hooks/use-selection-set';
 import { useAuth } from '@/contexts/auth-context';
 import { useCollection, type CollectionItem } from '@/contexts/collection-context';
 import type { Allograph, AllographSummary } from '@/types/allographs';
@@ -118,53 +119,6 @@ function groupAnnotations(
 }
 
 const handAnchorId = (handId: number | null) => `hand-${handId ?? 'unattributed'}`;
-
-// ---------------------------------------------------------------------------
-// Selection-set hook
-// ---------------------------------------------------------------------------
-//
-// Encapsulates the four near-identical Set<id> mutators previously inlined
-// in the gallery. Returns stable methods plus the live Set so callers can
-// query membership without closing over individual ids.
-
-interface SelectionSet<T> {
-  selected: Set<T>;
-  toggle: (id: T) => void;
-  addMany: (ids: Iterable<T>) => void;
-  removeMany: (ids: Iterable<T>) => void;
-  clear: () => void;
-}
-
-function useSelectionSet<T>(): SelectionSet<T> {
-  const [selected, setSelected] = React.useState<Set<T>>(() => new Set());
-
-  return React.useMemo<SelectionSet<T>>(
-    () => ({
-      selected,
-      toggle: (id) =>
-        setSelected((prev) => {
-          const next = new Set(prev);
-          if (next.has(id)) next.delete(id);
-          else next.add(id);
-          return next;
-        }),
-      addMany: (ids) =>
-        setSelected((prev) => {
-          const next = new Set(prev);
-          for (const id of ids) next.add(id);
-          return next;
-        }),
-      removeMany: (ids) =>
-        setSelected((prev) => {
-          const next = new Set(prev);
-          for (const id of ids) next.delete(id);
-          return next;
-        }),
-      clear: () => setSelected(new Set()),
-    }),
-    [selected]
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Top-level component
@@ -797,6 +751,8 @@ function GalleryToolbar({
   onExportSelected,
   isScrolled,
 }: GalleryToolbarProps) {
+  const t = useTranslations('manuscript');
+  const tCommon = useTranslations('common');
   const isFiltering = filters.allograph.trim().length > 0;
   return (
     // Sticky so the filter and selection actions stay reachable when scrolling
@@ -860,13 +816,13 @@ function GalleryToolbar({
                 <Switch
                   checked={annotatingMode}
                   onCheckedChange={onAnnotatingModeChange}
-                  aria-label="Annotating mode"
+                  aria-label={tCommon('editingMode')}
                 />
-                Annotating mode
+                {tCommon('editingMode')}
                 <Kbd>A</Kbd>
               </label>
             </TooltipTrigger>
-            <TooltipContent side="bottom">Toggle inline graph editing (press A)</TooltipContent>
+            <TooltipContent side="bottom">{t('gallery.editingModeTooltip')}</TooltipContent>
           </Tooltip>
         )}
       </div>

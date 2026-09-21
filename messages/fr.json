@@ -6,6 +6,7 @@
     "cancel": "Annuler",
     "delete": "Supprimer",
     "edit": "Modifier",
+    "editingMode": "Mode édition",
     "close": "Fermer",
     "search": "Rechercher",
     "confirm": "Confirmer",
@@ -47,6 +48,7 @@
     "search": "Rechercher",
     "collection": "{name} ({count})",
     "lightbox": "Visionneuse",
+    "compare": "Comparer ({count})",
     "news": "Actualités",
     "blogs": "Blogs",
     "featureArticles": "Articles de fond",
@@ -91,6 +93,13 @@
     "noResultsFilters": "Aucun {typeLabel} ne correspond aux filtres actuels.",
     "clearAllFilters": "Effacer tous les filtres",
     "clearKeyword": "Effacer le mot-clé",
+    "compareAction": {
+      "button": "Comparer ({count})",
+      "selectAriaLabel": "Sélectionner {label} pour comparer",
+      "alreadyStaged": "{count, plural, one {# manuscrit sélectionné est déjà} other {# manuscrits sélectionnés sont déjà}} dans Comparer",
+      "atCapTitle": "Comparer est plein",
+      "atCapDescription": "Vous pouvez comparer jusqu'à {max} manuscrits à la fois. Retirez-en un de la page Comparer d'abord."
+    },
     "actions": "Actions",
     "actionsTitle": "Actions de recherche — recherches sauvegardées, vue et export",
     "actionsLabel": "Actions de recherche",
@@ -164,6 +173,24 @@
     "keywordRecent": "Récent",
     "keywordClearHistory": "Effacer l'historique",
     "keywordLoading": "Chargement des suggestions…",
+    "editingModeHint": "Activer la sélection et l'édition en bloc des graphèmes",
+    "selectedCount": "{count} sélectionné(s)",
+    "selectAllOnPage": "Sélectionner les {count} de la page",
+    "unselectAllOnPage": "Désélectionner les {count} de la page",
+    "selectionCapReached": "Vous pouvez modifier jusqu'à {max} graphèmes à la fois",
+    "editSelected": "Modifier la sélection",
+    "clearSelection": "Effacer",
+    "handDisabledTooltip": "Une main appartient à un seul manuscrit — cette sélection en contient plusieurs.",
+    "confirmDeleteGraph": "Supprimer cette annotation de graphème ?",
+    "discardUnsavedChanges": "Abandonner les modifications non enregistrées ?",
+    "graphDeleted": "Graphème supprimé",
+    "deleteFailed": "Échec de la suppression du graphème",
+    "noGraphData": "Aucune donnée trouvée pour les graphèmes sélectionnés",
+    "failedToLoadGraphs": "Échec du chargement des graphèmes sélectionnés pour modification",
+    "notAuthenticated": "Non authentifié.",
+    "failedToLoadHands": "Impossible de charger les mains pour ce manuscrit.",
+    "recentlyEditedBadge": "Modifié",
+    "recentlyEditedTooltip": "Récemment modifié",
     "queryBuilder": {
       "opIs": "est",
       "opIsNot": "n'est pas",
@@ -211,7 +238,25 @@
       "matchLenient": "Tolérante (retire les derniers mots jusqu'à trouver des résultats)",
       "matchingStrategyHint": "La correspondance stricte (`all`) exige chaque mot ; la tolérante (`last`) retire les derniers mots jusqu'à ce que des résultats apparaissent.",
       "queryBuilderHeading": "Constructeur de requête"
-    }
+    },
+    "mixedAllographsNotice": "Les graphèmes sélectionnés utilisent des allographes différents. Choisissez-en un à appliquer à tous, ou fermez et affinez la sélection.",
+    "mixedPickOne": "Mixte — choisissez-en un",
+    "mixedAcrossManuscripts": "Mixte entre plusieurs manuscrits",
+    "handDisabled": "Main désactivée",
+    "searchAllographs": "Rechercher des allographes…",
+    "noAllographs": "Aucun allographe",
+    "searchHands": "Rechercher des mains…",
+    "noHands": "Aucune main",
+    "componentsTab": "Composants et caractéristiques",
+    "setAllComponentHint": "(choisissez All pour ajouter un composant à tous les graphèmes sélectionnés)",
+    "noHand": "Aucune main",
+    "graphsFailedToSave": "Échec de l'enregistrement de {failed} graphème(s) sur {total}",
+    "graphsSaved": "{count, plural, =0 {Enregistré} one {Enregistré} other {# graphèmes enregistrés}}",
+    "selectGraph": "Sélectionner le graphème",
+    "unselectGraph": "Désélectionner le graphème",
+    "deleteGraphLabel": "Supprimer le graphème n° {id}",
+    "editorialGraphsSkipped": "{count, plural, one {# graphème éditorial a été exclu} other {# graphèmes éditoriaux ont été exclus}} : seuls les superutilisateurs peuvent les modifier.",
+    "editorialGraphsOnlySuperusers": "Seuls les superutilisateurs peuvent modifier les graphèmes éditoriaux."
   },
   "filters": {
     "activeTitle": "Filtres actifs",
@@ -303,6 +348,11 @@
       "numberedFallbackTitle": "Manuscrit n°{id}",
       "description": "Consulter le manuscrit {label} – {siteTitle}"
     },
+    "iiifManifest": {
+      "copyButton": "Copier l'URL du manifeste IIIF",
+      "toastCopied": "URL du manifeste copiée",
+      "toastCopyFailed": "Impossible de copier l'URL du manifeste"
+    },
     "loadError": {
       "title": "Impossible de charger le manuscrit",
       "description": "Le service des manuscrits est actuellement indisponible. Veuillez réessayer sous peu.",
@@ -312,14 +362,13 @@
     "gallery": {
       "deleteConfirm": "Supprimer le graphe n°{id} ? Il est déplacé dans la corbeille ; un administrateur peut le restaurer.",
       "deleteSuccess": "Graphe n°{id} déplacé dans la corbeille ; un administrateur peut le restaurer",
-      "deleteFailed": "Échec de la suppression du graphe n°{id}"
+      "deleteFailed": "Échec de la suppression du graphe n°{id}",
+      "editingModeTooltip": "Activer ou désactiver l'édition des graphèmes sur place (touche A)"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Supprimer ce brouillon d'annotation éditoriale ?} other {Supprimer ce brouillon d'annotation publique ?}}\n\nIl sera abandonné localement.",
       "savedConfirm": "{kind, select, editorial {Supprimer cette annotation éditoriale enregistrée ?} other {Supprimer cette annotation publique enregistrée ?}}\n\nAppuyez sur Enregistrer pour la déplacer dans la corbeille, où un administrateur peut la restaurer.",
-      "bulkMixed": "Supprimer les {total} annotations sélectionnées ?\n\n{draftCount, plural, =1 {# brouillon sera abandonné} other {# brouillons seront abandonnés}} localement et {savedCount, plural, =1 {# annotation enregistrée sera marquée} other {# annotations enregistrées seront marquées}} pour suppression.\nAppuyez sur Enregistrer pour déplacer les annotations enregistrées dans la corbeille, où un administrateur peut les restaurer.",
       "bulkDrafts": "Supprimer les {total} annotations sélectionnées ?\n\n{draftCount, plural, =1 {# brouillon sera abandonné} other {# brouillons seront abandonnés}} localement.",
-      "bulkSaved": "Supprimer les {total} annotations sélectionnées ?\n\n{savedCount, plural, =1 {# annotation enregistrée sera marquée} other {# annotations enregistrées seront marquées}} pour suppression.\nAppuyez sur Enregistrer pour les déplacer dans la corbeille, où un administrateur peut les restaurer.",
       "regionConfirm": "Supprimer cette région liée ?\n\nElle est déplacée dans la corbeille et disparaît de l'image. Son lien avec la transcription est conservé, afin qu'un administrateur puisse restaurer les deux.",
       "removeRegion": "Supprimer la région",
       "regionTrashedTitle": "Région déplacée dans la corbeille",
@@ -634,6 +683,22 @@
       "untitled": "Sans titre"
     }
   },
+  "compare": {
+    "toggle": {
+      "add": "Ajouter à Comparer",
+      "remove": "Retirer de Comparer",
+      "atCapTitle": "Comparer est plein",
+      "atCapDescription": "Vous pouvez comparer jusqu'à {max} manuscrits à la fois. Retirez-en un de la page Comparer d'abord."
+    },
+    "page": {
+      "title": "Comparer",
+      "emptyTitle": "Rien à comparer pour l'instant",
+      "emptyDescription": "Ajoutez des manuscrits à Comparer depuis leur page manuscrit, puis revenez ici pour les visualiser côte à côte.",
+      "browseManuscripts": "Parcourir les manuscrits",
+      "clearButton": "Tout effacer",
+      "removeItem": "Retirer {label} de Comparer"
+    }
+  },
   "about": {
     "heading": "À propos",
     "historicalContext": "Contexte historique",
@@ -939,7 +1004,13 @@
         "translations": "Traductions",
         "siteFeatures": "Personnaliser le site",
         "new": "Nouveau"
-      }
+      },
+      "apiVersion": "Version de l'API {version}",
+      "apiRelease": "Version de l'API",
+      "apiBuilt": "Compilée le {date}",
+      "apiDevBuild": "Build de développement, pas une version publiée",
+      "apiCommit": "Commit {commit}",
+      "versionLabel": "Version :"
     },
     "sidebar": {
       "brand": "Administration",
@@ -1938,6 +2009,7 @@
         "search": "Explorer",
         "collection": "Ma collection",
         "lightbox": "Lightbox",
+        "compare": "Comparer",
         "news": "Actualités",
         "blogs": "Blogs",
         "featureArticles": "Articles de fond",
@@ -1951,6 +2023,39 @@
       },
       "featureDescriptions": {
         "manuscriptDescriptions": "Descriptions TEI structurées : la section de description sur les pages publiques de manuscrits et l'éditeur msDesc dans l'espace de travail des manuscrits. Rien n'est supprimé — la réactiver restaure tout. Les facettes de recherche se configurent séparément sous Catégories de recherche."
+      },
+      "theme": {
+        "title": "Personnalisation de l'interface",
+        "description": "Adaptez les couleurs de la charte graphique du site à votre organisation.",
+        "backgroundColor": "Couleur de fond principale",
+        "backgroundColorDescription": "La couleur de marque utilisée pour les boutons principaux et la navigation active, ainsi que pour les bandeaux d'en-tête ci-dessous sauf si vous les personnalisez.",
+        "frontColor": "Couleur de premier plan principale",
+        "frontColorDescription": "La couleur du texte et des icônes affichés sur la couleur de fond principale.",
+        "secondaryColor": "Couleur secondaire",
+        "secondaryColorDescription": "La couleur d'accent utilisée pour les mises en évidence, badges et encarts.",
+        "headerRowsTitle": "Bandeaux d'en-tête",
+        "headerRowsDescription": "L'en-tête du site comporte deux bandeaux : le titre/l'accroche, et la navigation en dessous. Personnalisez chacun indépendamment, ou laissez-les reprendre la couleur de fond principale ci-dessus.",
+        "titleBarBackgroundColor": "Fond du bandeau de titre",
+        "titleBarBackgroundColorDescription": "Couleur de fond du bandeau affichant le titre et l'accroche du site.",
+        "titleBarTextColor": "Texte du bandeau de titre",
+        "titleBarTextColorDescription": "Couleur du texte et des icônes affichés sur le fond du bandeau de titre.",
+        "navBarBackgroundColor": "Fond du bandeau de navigation",
+        "navBarBackgroundColorDescription": "Couleur de fond du bandeau affichant les liens de navigation et la recherche.",
+        "navBarTextColor": "Texte du bandeau de navigation",
+        "navBarTextColorDescription": "Couleur du texte et des icônes affichés sur le fond du bandeau de navigation.",
+        "reset": "Réinitialiser",
+        "invalidColor": "Entrez une couleur hexadécimale valide, par ex. #075783.",
+        "invalidColorError": "Corrigez la ou les couleurs invalides avant d'enregistrer."
+      },
+      "branding": {
+        "title": "Logo",
+        "description": "Définissez le logo affiché en haut du bandeau de titre de l'en-tête.",
+        "uploadLabel": "Image du logo",
+        "uploadFailed": "Échec de l'envoi du logo",
+        "logoUrlLabel": "URL du logo",
+        "logoUrlPlaceholder": "https://exemple.org/logo.png",
+        "logoUrlDescription": "URL d'une image déjà hébergée, ou le chemin d'un fichier envoyé ci-dessus. Laissez vide pour n'afficher que le titre du site.",
+        "clearButton": "Effacer"
       },
       "searchCategoriesTitle": "Catégories de recherche",
       "searchCategoriesDescription": "Activez ou désactivez les catégories et configurez les colonnes et facettes visibles. Glissez pour réorganiser.",
@@ -2387,14 +2492,16 @@
       "migrations": {
         "title": "Migrations en attente",
         "upToDate": "À jour",
-        "pendingLabel": "en attente"
+        "pendingLabel": "en attente",
+        "unknown": "Inconnu"
       },
       "services": {
         "title": "Services dépendants",
         "database": "Base de données",
         "redis": "Redis",
         "meilisearch": "Meilisearch",
-        "celeryBroker": "Broker Celery"
+        "celeryBroker": "Broker Celery",
+        "celeryWorkers": "Workers Celery ({count})"
       },
       "storage": {
         "title": "Stockage",
@@ -2406,7 +2513,8 @@
       "permissions": {
         "title": "Permissions du système de fichiers",
         "mediaWritable": "Répertoire média accessible en écriture",
-        "logsWritable": "Répertoire de logs accessible en écriture"
+        "logsWritable": "Répertoire de logs accessible en écriture",
+        "logsNotConfigured": "Aucun fichier de logs configuré, les logs vont sur la sortie standard"
       },
       "smtp": {
         "title": "E-mail (SMTP)",
@@ -2418,7 +2526,8 @@
         "send": "Envoyer un e-mail de test",
         "sending": "Envoi…",
         "toastSuccess": "E-mail de test envoyé",
-        "toastError": "Échec de l'envoi de l'e-mail de test"
+        "toastError": "Échec de l'envoi de l'e-mail de test",
+        "backend": "Backend d'e-mail : {backend}"
       }
     },
     "reviewAge": {
@@ -2496,10 +2605,8 @@
       "imageRemoved": "Image supprimée",
       "imageRemoveFailed": "Échec de la suppression de l'image",
       "editImage": "Modifier l'image",
-      "editImageDescription": "Mettez à jour le feuillet (locus) ou remplacez l'image IIIF sous-jacente.",
+      "editImageDescription": "Mettez à jour le feuillet (locus) ou les étiquettes de cette image.",
       "iiifImagePath": "Chemin de l'image IIIF",
-      "iiifImagePathPlaceholder": "historical_items/...",
-      "browseMedia": "Parcourir les médias",
       "tags": "Étiquettes",
       "tagsPlaceholder": "p. ex. endommagé, enluminé",
       "deleteImageConfirmTitle": "Supprimer cette image ?",

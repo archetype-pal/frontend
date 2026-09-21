@@ -9,6 +9,7 @@ const SECTION_ROUTE_MAP: Partial<Record<SectionKey, string>> = {
   search: '/search',
   collection: '/collection',
   lightbox: '/lightbox',
+  compare: '/compare',
   news: '/publications/news',
   blogs: '/publications/blogs',
   featureArticles: '/publications/feature',
