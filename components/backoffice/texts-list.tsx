@@ -204,7 +204,7 @@ export function TextsList() {
 
   const { data, isFetching, error } = useQuery({
     queryKey: ['backoffice', 'image-texts', 'list', apiParams],
-    queryFn: () => fetchImageTextList(token!, apiParams),
+    queryFn: () => fetchImageTextList(apiParams),
     enabled: !!token,
     placeholderData: (prev) => prev,
   });
@@ -262,7 +262,7 @@ export function TextsList() {
   }
 
   const bulkDelete = useMutation({
-    mutationFn: () => bulkActionImageTexts(token!, { ids: Array.from(selected), action: 'delete' }),
+    mutationFn: () => bulkActionImageTexts({ ids: Array.from(selected), action: 'delete' }),
     onSuccess: ({ affected }) => {
       toast.success(t('textsList.toastBulkDeleted', { count: affected }));
       setSelected(new Set());
@@ -282,7 +282,7 @@ export function TextsList() {
     const url = `${API_BASE_URL}/api/v1/manuscripts/management/image-texts/export/?${qs}`;
     const toastId = toast.loading(t('textsList.toastPreparingExport'));
     try {
-      const res = await fetch(url, { headers: { Authorization: `Token ${token}` } });
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const filename = `image-texts.${format}`;
@@ -406,7 +406,6 @@ export function TextsList() {
           {selectedCount > 0 && (
             <BulkActionBar
               ids={Array.from(selected)}
-              token={token!}
               onCleared={() => setSelected(new Set())}
               onInvalidated={invalidate}
               onAskDelete={() => setConfirmBulkDelete(true)}
@@ -459,7 +458,6 @@ export function TextsList() {
                       selected={selected.has(row.id)}
                       onToggle={() => toggleOne(row.id)}
                       onTransitioned={invalidate}
-                      token={token!}
                     />
                   ))
                 )}
@@ -534,13 +532,11 @@ function FilterSelect({
 
 function BulkActionBar({
   ids,
-  token,
   onCleared,
   onInvalidated,
   onAskDelete,
 }: {
   ids: number[];
-  token: string;
   onCleared: () => void;
   onInvalidated: () => void;
   onAskDelete: () => void;
@@ -554,7 +550,7 @@ function BulkActionBar({
 
   const transitionMut = useMutation({
     mutationFn: () =>
-      bulkActionImageTexts(token, {
+      bulkActionImageTexts({
         ids,
         action: 'transition',
         payload: { to_status: toStatus, note: note.trim() || undefined },
@@ -572,7 +568,7 @@ function BulkActionBar({
 
   const languageMut = useMutation({
     mutationFn: () =>
-      bulkActionImageTexts(token, {
+      bulkActionImageTexts({
         ids,
         action: 'set_language',
         payload: { language },
@@ -709,13 +705,11 @@ function ListRow({
   selected,
   onToggle,
   onTransitioned,
-  token,
 }: {
   row: ImageTextListRow;
   selected: boolean;
   onToggle: () => void;
   onTransitioned: () => void;
-  token: string;
 }) {
   const t = useTranslations('backoffice');
   const editorLink = `/backoffice/image-texts/${row.id}`;
@@ -790,7 +784,7 @@ function ListRow({
       </TableCell>
       <TableCell>
         <div className="flex items-center justify-end gap-1">
-          <TransitionPopover row={row} token={token} onTransitioned={onTransitioned} />
+          <TransitionPopover row={row} onTransitioned={onTransitioned} />
           <Link
             href={editorLink}
             className="flex h-7 items-center rounded-md border px-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -819,11 +813,9 @@ function ListRow({
 
 function TransitionPopover({
   row,
-  token,
   onTransitioned,
 }: {
   row: ImageTextListRow;
-  token: string;
   onTransitioned: () => void;
 }) {
   const t = useTranslations('backoffice');
@@ -841,7 +833,7 @@ function TransitionPopover({
 
   const transition = useMutation({
     mutationFn: () =>
-      transitionImageText(token, row.id, {
+      transitionImageText(row.id, {
         to_status: target,
         note: note.trim() || undefined,
       }),

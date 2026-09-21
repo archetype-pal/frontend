@@ -28,7 +28,6 @@ export interface PaginatedUncovered {
 export type UncoveredMode = 'either' | 'transcription' | 'translation';
 
 export function fetchUncoveredImages(
-  token: string,
   mode: UncoveredMode = 'either',
   page = 0,
   pageSize = 25
@@ -39,7 +38,6 @@ export function fetchUncoveredImages(
   if (mode === 'translation') qs.set('has_translation', 'false');
   return backofficeGet<PaginatedUncovered>(
     `/api/v1/manuscripts/management/item-images/?${qs.toString()}`,
-    token,
     { cache: 'no-store' }
   );
 }

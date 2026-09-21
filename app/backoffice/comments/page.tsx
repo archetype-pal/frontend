@@ -16,7 +16,7 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { authFetch } from '@/lib/api-fetch';
+import { proxyFetch } from '@/lib/api-fetch';
 import type { CommentItem } from '@/types/backoffice';
 
 export default function CommentsPage() {
@@ -40,7 +40,7 @@ export default function CommentsPage() {
       if (filter !== 'all') params.set('is_approved', String(filter === 'approved'));
       return walkPaginated<CommentItem>(
         `/api/v1/media/management/comments/?${params.toString()}`,
-        (path) => authFetch(path, token!)
+        (path) => proxyFetch(path)
       );
     },
     enabled: !!token,
@@ -52,7 +52,7 @@ export default function CommentsPage() {
   };
 
   const approveMut = useMutation({
-    mutationFn: (id: number) => approveComment(token!, id),
+    mutationFn: (id: number) => approveComment(id),
     onSuccess: () => {
       toast.success(t('comments.toastApproved'));
       invalidate();
@@ -65,7 +65,7 @@ export default function CommentsPage() {
   });
 
   const rejectMut = useMutation({
-    mutationFn: (id: number) => rejectComment(token!, id),
+    mutationFn: (id: number) => rejectComment(id),
     onSuccess: () => {
       toast.success(t('comments.toastRejected'));
       invalidate();
@@ -78,7 +78,7 @@ export default function CommentsPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => deleteComment(token!, id),
+    mutationFn: (id: number) => deleteComment(id),
     onSuccess: () => {
       toast.success(t('comments.toastDeleted'));
       invalidate();
@@ -114,9 +114,9 @@ export default function CommentsPage() {
     if (!bulkAction || selected.size === 0) return;
     const ids = Array.from(selected);
     const opts = {
-      approve: { action: (id: number) => approveComment(token!, id), pastTense: 'approved' },
-      reject: { action: (id: number) => rejectComment(token!, id), pastTense: 'rejected' },
-      delete: { action: (id: number) => deleteComment(token!, id), pastTense: 'deleted' },
+      approve: { action: (id: number) => approveComment(id), pastTense: 'approved' },
+      reject: { action: (id: number) => rejectComment(id), pastTense: 'rejected' },
+      delete: { action: (id: number) => deleteComment(id), pastTense: 'deleted' },
     }[bulkAction];
     await runBulkAction({
       ids,

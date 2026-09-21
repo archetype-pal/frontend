@@ -12,6 +12,9 @@ const { apiFetch, authFetch } = vi.hoisted(() => ({
 
 vi.mock('@/lib/api-fetch', () => ({ apiFetch, authFetch }));
 
+const { getServerAuthToken } = vi.hoisted(() => ({ getServerAuthToken: vi.fn() }));
+vi.mock('@/lib/auth-token-server', () => ({ getServerAuthToken }));
+
 import type { NextRequest } from 'next/server';
 import { GET, PUT } from './route';
 
@@ -30,6 +33,8 @@ beforeEach(() => {
   apiFetch.mockReset();
   authFetch.mockReset();
   revalidateTag.mockReset();
+  getServerAuthToken.mockReset();
+  getServerAuthToken.mockResolvedValue('su-token');
   vi.spyOn(console, 'error').mockImplementation(() => {});
 
   apiFetch.mockImplementation(async () => jsonResponse(stored));
@@ -43,7 +48,6 @@ beforeEach(() => {
 
 function putRequest(body: unknown): NextRequest {
   return {
-    headers: new Headers({ Authorization: 'Token su-token' }),
     json: async () => body,
   } as unknown as NextRequest;
 }

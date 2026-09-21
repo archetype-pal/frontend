@@ -250,7 +250,7 @@ describe('recovery scan', () => {
     const { invalidateSpy } = renderHarness();
 
     await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('f12r.tif:done'));
-    expect(mockedGetSession).toHaveBeenCalledWith('tok', 's1');
+    expect(mockedGetSession).toHaveBeenCalledWith('s1');
     expect(screen.getByTestId('interrupted').textContent).toBe('');
     expect(listUploadBreadcrumbs()).toEqual([]);
     expect(invalidateSpy).toHaveBeenCalled();
@@ -301,7 +301,6 @@ describe('resume & dismiss', () => {
       expect(screen.getByTestId('items').textContent).toContain('f12r.tif:uploading')
     );
     expect(mockedUpload).toHaveBeenCalledWith(
-      'tok',
       expect.objectContaining({ name: 'f12r.tif' }),
       { item_part: 3, locus: 'f.3r', tags: 'recto' },
       expect.anything()
@@ -336,7 +335,7 @@ describe('resume & dismiss', () => {
     fireEvent.click(screen.getByText('dismiss interrupted'));
     await waitFor(() => expect(screen.getByTestId('interrupted').textContent).toBe(''));
     // Discarding the last handle on a session must free its chunks too.
-    expect(mockedAbort).toHaveBeenCalledWith('tok', 's1');
+    expect(mockedAbort).toHaveBeenCalledWith('s1');
     expect(listUploadBreadcrumbs()).toEqual([]);
   });
 });
@@ -349,7 +348,7 @@ describe('reindex nudge', () => {
     // 2 uploads announced as 1 — so the recovery paths say nothing at all.
     seedCrumb({ id: 'crumb-A', sessionId: 'sA', fileName: 'a.tif' });
     seedCrumb({ id: 'crumb-B', sessionId: 'sB', fileName: 'b.tif' });
-    mockedGetSession.mockImplementation((_t, id) =>
+    mockedGetSession.mockImplementation((id) =>
       Promise.resolve(
         session(id === 'sA' ? { status: 'complete', item_image: 1 } : { status: 'processing' })
       )
@@ -463,7 +462,7 @@ describe('multi-tab ownership', () => {
       fileName: 'other-name.tif',
       sessionId: 's-new',
     });
-    mockedUpload.mockImplementation((_token, _file, _meta, options) => {
+    mockedUpload.mockImplementation((_file, _meta, options) => {
       options?.onProgress?.({
         phase: 'uploading',
         sentBytes: 1,
@@ -486,7 +485,7 @@ describe('multi-tab ownership', () => {
 
 describe('cancel', () => {
   it('discards the server session and the breadcrumb with it', async () => {
-    mockedUpload.mockImplementation((_token, _file, _meta, options) => {
+    mockedUpload.mockImplementation((_file, _meta, options) => {
       options?.onProgress?.({
         phase: 'uploading',
         sentBytes: 1,
@@ -512,7 +511,7 @@ describe('cancel', () => {
     );
     // Without the DELETE the half-uploaded chunks stay on disk and the session
     // keeps the destination reserved against every other editor.
-    expect(mockedAbort).toHaveBeenCalledWith('tok', 's-new');
+    expect(mockedAbort).toHaveBeenCalledWith('s-new');
     // Keeping the crumb (as 'canceled') would have a reload re-offer the
     // upload the editor just stopped as "interrupted by a reload".
     expect(listUploadBreadcrumbs()).toEqual([]);
@@ -564,7 +563,7 @@ describe('queue integrity', () => {
     // `retry` used to push a SECOND entry, and the runner uploaded the same
     // file twice, the second attempt colliding with the row the first created.
     let releaseFirst!: (s: UploadSession) => void;
-    mockedUpload.mockImplementation((_t, file) => {
+    mockedUpload.mockImplementation((file) => {
       if ((file as File).name === 'a.tif') {
         return new Promise<UploadSession>((res) => {
           releaseFirst = res;
@@ -590,7 +589,7 @@ describe('queue integrity', () => {
     releaseFirst(session({ status: 'complete', item_image: 1 }));
     await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('b.tif:done'));
 
-    const bCalls = mockedUpload.mock.calls.filter((c) => (c[1] as File).name === 'b.tif').length;
+    const bCalls = mockedUpload.mock.calls.filter((c) => (c[0] as File).name === 'b.tif').length;
     expect(bCalls).toBe(1);
   });
 });
@@ -607,7 +606,7 @@ describe('cancelAll', () => {
           releaseAbort = res;
         })
     );
-    mockedUpload.mockImplementation((_t, _f, _m, options) => {
+    mockedUpload.mockImplementation((_f, _m, options) => {
       options?.onProgress?.({
         phase: 'uploading',
         sentBytes: 1,
@@ -624,7 +623,7 @@ describe('cancelAll', () => {
     );
 
     fireEvent.click(screen.getByText('cancel all'));
-    await waitFor(() => expect(mockedAbort).toHaveBeenCalledWith('tok', 's-live'));
+    await waitFor(() => expect(mockedAbort).toHaveBeenCalledWith('s-live'));
     // Requested but unconfirmed: must still be pending.
     expect(screen.getByTestId('cancelAllDone').textContent).toBe('no');
 
@@ -640,7 +639,7 @@ describe('cancelAll', () => {
     // will publish the image. Cancelling it locally would mark a succeeding
     // upload 'canceled' and delete the crumb that re-attaches it on the next
     // sign-in, which is what the sign-out dialog promises.
-    mockedUpload.mockImplementation((_t, _f, _m, options) => {
+    mockedUpload.mockImplementation((_f, _m, options) => {
       options?.onProgress?.({
         phase: 'processing',
         sentBytes: 4,
@@ -668,7 +667,7 @@ describe('cancelAll', () => {
     // A refused DELETE means the session is still live server-side, so the
     // crumb is the only thing that can settle it later.
     mockedAbort.mockRejectedValue(new BackofficeApiError(409, { detail: 'assembled' }));
-    mockedUpload.mockImplementation((_t, _f, _m, options) => {
+    mockedUpload.mockImplementation((_f, _m, options) => {
       options?.onProgress?.({
         phase: 'uploading',
         sentBytes: 1,
@@ -687,7 +686,7 @@ describe('cancelAll', () => {
     fireEvent.click(screen.getByText('cancel all'));
     await waitFor(() => expect(screen.getByTestId('cancelAllDone').textContent).toBe('yes'));
 
-    expect(mockedAbort).toHaveBeenCalledWith('tok', 's-refused');
+    expect(mockedAbort).toHaveBeenCalledWith('s-refused');
     expect(listUploadBreadcrumbs().map((c) => c.sessionId)).toEqual(['s-refused']);
   });
 
@@ -696,7 +695,7 @@ describe('cancelAll', () => {
     // controller fires — before the DELETE has settled. drain's abort branch
     // must not drop the crumb that cancelAll is still deciding about.
     mockedAbort.mockRejectedValue(new BackofficeApiError(409, { detail: 'assembled' }));
-    mockedUpload.mockImplementation((_t, _f, _m, options) => {
+    mockedUpload.mockImplementation((_f, _m, options) => {
       options?.onProgress?.({
         phase: 'uploading',
         sentBytes: 1,
@@ -729,7 +728,7 @@ describe('retry after the watch gave up', () => {
     // A poll outage or the process timeout marks the item failed while Celery
     // is still converting. Re-running uploadImageFile would create-or-resume
     // → 409 session_active for an upload that is succeeding.
-    mockedUpload.mockImplementation((_t, _f, _m, options) => {
+    mockedUpload.mockImplementation((_f, _m, options) => {
       options?.onProgress?.({
         phase: 'processing',
         sentBytes: 4,
@@ -748,14 +747,14 @@ describe('retry after the watch gave up', () => {
     fireEvent.click(screen.getByText('retry first'));
     await waitFor(() => expect(screen.getByTestId('items').textContent).toBe('new.tif:done'));
 
-    expect(mockedGetSession).toHaveBeenCalledWith('tok', 's-slow');
+    expect(mockedGetSession).toHaveBeenCalledWith('s-slow');
     expect(mockedUpload).toHaveBeenCalledTimes(1);
     expect(listUploadBreadcrumbs()).toEqual([]);
   });
 
   it('uploads afresh when the server no longer knows the session', async () => {
     mockedUpload
-      .mockImplementationOnce((_t, _f, _m, options) => {
+      .mockImplementationOnce((_f, _m, options) => {
         options?.onProgress?.({
           phase: 'uploading',
           sentBytes: 1,
@@ -780,11 +779,15 @@ describe('retry after the watch gave up', () => {
 describe('signing out mid-upload', () => {
   it('does not hand the rest of the queue to whoever signs in next', async () => {
     // The server takes owner=request.user, so continuing under a new token puts
-    // someone else's name on files this user chose.
-    const tokens: string[] = [];
-    mockedUpload.mockImplementation((token: string) => {
-      tokens.push(token);
-      if (tokens.length === 1) {
+    // someone else's name on files this user chose. `uploadImageFile` no longer
+    // receives the token directly (it flows through the auth cookie via the
+    // proxy instead), so the guard is observed here by call count: the runner
+    // must stop calling it at all once the cookie no longer matches what the
+    // batch was queued under, rather than by inspecting an argument.
+    let calls = 0;
+    mockedUpload.mockImplementation(() => {
+      calls += 1;
+      if (calls === 1) {
         document.cookie = 'archetype_auth_token=; Path=/; Max-Age=0';
         document.cookie = 'archetype_auth_token=tok_other_user; Path=/';
         return Promise.reject(new BackofficeApiError(401, { detail: 'Invalid token.' }));
@@ -797,7 +800,7 @@ describe('signing out mid-upload', () => {
 
     await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('c.tif:error'));
     // Only the file that was already in flight ever ran.
-    expect(tokens).toEqual(['tok']);
+    expect(calls).toBe(1);
   });
 
   it('does not hand a RESUMED batch to whoever signs in next either', async () => {
@@ -807,10 +810,10 @@ describe('signing out mid-upload', () => {
     // and the server records owner=request.user.
     seedCrumb({ id: 'c-a', sessionId: '', fileName: 'a.tif', fileSize: 4 });
     seedCrumb({ id: 'c-b', sessionId: '', fileName: 'b.tif', fileSize: 4 });
-    const tokens: string[] = [];
-    mockedUpload.mockImplementation((token: string) => {
-      tokens.push(token);
-      if (tokens.length === 1) {
+    let calls = 0;
+    mockedUpload.mockImplementation(() => {
+      calls += 1;
+      if (calls === 1) {
         document.cookie = 'archetype_auth_token=; Path=/; Max-Age=0';
         document.cookie = 'archetype_auth_token=tok_other_user; Path=/';
         return Promise.reject(new BackofficeApiError(401, { detail: 'Invalid token.' }));
@@ -822,10 +825,10 @@ describe('signing out mid-upload', () => {
     await waitFor(() => expect(screen.getByTestId('interrupted').textContent).toContain('a.tif'));
     fireEvent.click(screen.getByText('resume both'));
 
-    await waitFor(() => expect(tokens.length).toBeGreaterThan(0));
+    await waitFor(() => expect(calls).toBeGreaterThan(0));
     await waitFor(() => expect(screen.getByTestId('items').textContent).toContain('b.tif:error'));
     // Only the file already in flight ever ran; the second never used the new token.
-    expect(tokens).toEqual(['tok']);
+    expect(calls).toBe(1);
   });
 
   it('reports a signed-out transfer as resumable, not failed, and stays quiet', async () => {
@@ -844,7 +847,7 @@ describe('signing out mid-upload', () => {
   it('does not call a finished conversion a failure', async () => {
     // Bytes are all in and Celery is converting; the poll 401s but the server
     // completes regardless, so this must not read as a failed upload.
-    mockedUpload.mockImplementation((_token, _file, _meta, options) => {
+    mockedUpload.mockImplementation((_file, _meta, options) => {
       options?.onProgress?.({
         phase: 'processing',
         sentBytes: 4,
@@ -866,7 +869,7 @@ describe('signing out mid-upload', () => {
 describe('enqueue write-through', () => {
   it('leaves a breadcrumb while uploading, records the session id, and clears on done', async () => {
     let finishUpload!: (s: UploadSession) => void;
-    mockedUpload.mockImplementation((_token, _file, _meta, options) => {
+    mockedUpload.mockImplementation((_file, _meta, options) => {
       // Simulate the orchestrator reporting once the server session exists.
       options?.onProgress?.({
         phase: 'uploading',

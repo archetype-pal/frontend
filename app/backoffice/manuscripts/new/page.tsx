@@ -29,7 +29,7 @@ import {
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { authFetch } from '@/lib/api-fetch';
+import { proxyFetch } from '@/lib/api-fetch';
 import { toast } from 'sonner';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -63,13 +63,13 @@ export default function NewManuscriptPage() {
 
   const { data: repositoriesData } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
-    queryFn: () => getRepositories(token!),
+    queryFn: () => getRepositories(),
     enabled: !!token,
   });
 
   const { data: datesData } = useQuery({
     queryKey: backofficeKeys.dates.all(),
-    queryFn: () => getDates(token!),
+    queryFn: () => getDates(),
     enabled: !!token,
   });
 
@@ -94,7 +94,7 @@ export default function NewManuscriptPage() {
         if (repository && shelfmark.trim()) {
           const existing = await walkPaginated<CurrentItemOption>(
             `/api/v1/manuscripts/management/current-items/?repository=${Number(repository)}&limit=100`,
-            (path) => authFetch(path, token)
+            (path) => proxyFetch(path)
           );
           const match = existing.find(
             (ci) => ci.shelfmark.toLowerCase() === shelfmark.trim().toLowerCase()
@@ -102,7 +102,7 @@ export default function NewManuscriptPage() {
           if (match) {
             currentItemId = match.id;
           } else {
-            const newCi = await createCurrentItem(token, {
+            const newCi = await createCurrentItem({
               repository: Number(repository),
               shelfmark: shelfmark.trim(),
             });
@@ -114,7 +114,7 @@ export default function NewManuscriptPage() {
         // Step 2: Create HistoricalItem
         const normalizedProbableTextDate = probableTextDate.trim();
         const normalizedDatingNotes = datingNotes.trim();
-        const historicalItem = await createHistoricalItem(token, {
+        const historicalItem = await createHistoricalItem({
           type,
           language: language || undefined,
           date: date ? Number(date) : undefined,
@@ -125,7 +125,7 @@ export default function NewManuscriptPage() {
 
         // Step 3: Create ItemPart linking them
         if (currentItemId != null) {
-          await createItemPart(token, {
+          await createItemPart({
             historical_item: historicalItem.id,
             current_item: currentItemId,
             current_item_locus: locus.trim() || '',
@@ -138,7 +138,7 @@ export default function NewManuscriptPage() {
 
         if (createdHistoricalItemId != null) {
           try {
-            await deleteHistoricalItem(token, createdHistoricalItemId);
+            await deleteHistoricalItem(createdHistoricalItemId);
           } catch {
             cleanupFailures.push(historicalItemLabel.toLowerCase());
           }
@@ -146,7 +146,7 @@ export default function NewManuscriptPage() {
 
         if (createdCurrentItemId != null) {
           try {
-            await deleteCurrentItem(token, createdCurrentItemId);
+            await deleteCurrentItem(createdCurrentItemId);
           } catch {
             cleanupFailures.push('item');
           }

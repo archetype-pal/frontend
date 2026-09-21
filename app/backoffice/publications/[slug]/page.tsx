@@ -56,7 +56,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
 
   const { data: pub, isLoading } = useQuery({
     queryKey: backofficeKeys.publications.detail(slug),
-    queryFn: () => getPublication(token!, slug),
+    queryFn: () => getPublication(slug),
     enabled: !!token,
   });
 
@@ -156,7 +156,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
 
   const saveMut = useMutation({
     mutationFn: () =>
-      updatePublication(token!, slug, {
+      updatePublication(slug, {
         title,
         slug: pubSlug,
         content,
@@ -197,7 +197,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
   );
 
   const deleteMut = useMutation({
-    mutationFn: () => deletePublication(token!, slug),
+    mutationFn: () => deletePublication(slug),
     onSuccess: () => {
       toast.success(t('publicationsDetail.toastDeleted'));
       discardDraft();

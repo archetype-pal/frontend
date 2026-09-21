@@ -1,5 +1,4 @@
 import { backofficeDelete, backofficeGet, backofficePost, BackofficeApiError } from './api-client';
-import { API_BASE_URL } from '@/lib/api-fetch';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { planChunks } from '@/lib/backoffice/upload-helpers';
 
@@ -58,25 +57,22 @@ const BASE = '/api/v1/uploads/sessions/';
 /*  Session endpoints                                                  */
 /* ------------------------------------------------------------------ */
 
-export function createUploadSession(
-  token: string,
-  input: CreateUploadSessionInput
-): Promise<UploadSession> {
-  return backofficePost<UploadSession>(BASE, token, input);
+export function createUploadSession(input: CreateUploadSessionInput): Promise<UploadSession> {
+  return backofficePost<UploadSession>(BASE, input);
 }
 
-export function getUploadSession(token: string, id: string): Promise<UploadSession> {
+export function getUploadSession(id: string): Promise<UploadSession> {
   // no-store: polling must see the worker's latest status, never a cached body.
-  return backofficeGet<UploadSession>(`${BASE}${id}/`, token, { cache: 'no-store' });
+  return backofficeGet<UploadSession>(`${BASE}${id}/`, { cache: 'no-store' });
 }
 
-export function finalizeUploadSession(token: string, id: string): Promise<UploadSession> {
-  return backofficePost<UploadSession>(`${BASE}${id}/finalize/`, token, {});
+export function finalizeUploadSession(id: string): Promise<UploadSession> {
+  return backofficePost<UploadSession>(`${BASE}${id}/finalize/`, {});
 }
 
 /** Discard a session server-side, freeing its destination and chunk files. */
-export function abortUploadSession(token: string, id: string): Promise<void> {
-  return backofficeDelete(`${BASE}${id}/`, token);
+export function abortUploadSession(id: string): Promise<void> {
+  return backofficeDelete(`${BASE}${id}/`);
 }
 
 /* ------------------------------------------------------------------ */
@@ -137,7 +133,6 @@ export function chunkErrorCode(responseText: string): UploadMessageCode | null {
 }
 
 function putChunk(
-  token: string,
   sessionId: string,
   index: number,
   blob: Blob,
@@ -150,8 +145,9 @@ function putChunk(
       return;
     }
     const xhr = new XMLHttpRequest();
-    xhr.open('PUT', `${API_BASE_URL}${BASE}${sessionId}/chunks/${index}/`);
-    xhr.setRequestHeader('Authorization', `Token ${token}`);
+    // Same-origin `/api/proxy` — the browser attaches the auth cookie
+    // automatically; it never needs the raw token (see `proxyFetch`).
+    xhr.open('PUT', `/api/proxy${BASE}${sessionId}/chunks/${index}/`);
     xhr.setRequestHeader('Content-Type', 'application/octet-stream');
 
     const onAbort = () => xhr.abort();
@@ -287,7 +283,6 @@ const MAX_POLL_FAILURES = 5;
  * `DOMException('AbortError')` if cancelled.
  */
 export async function watchUploadSession(
-  token: string,
   initial: UploadSession,
   options: UploadImageOptions = {}
 ): Promise<UploadSession> {
@@ -310,7 +305,7 @@ export async function watchUploadSession(
     }
     await sleep(pollIntervalMs);
     try {
-      session = await getUploadSession(token, session.id);
+      session = await getUploadSession(session.id);
       failures = 0;
     } catch (err) {
       // A conversion runs for minutes; one unreadable status is not a verdict.
@@ -347,7 +342,6 @@ export async function watchUploadSession(
  * session failed, `DOMException('AbortError')` if cancelled.
  */
 export async function uploadImageFile(
-  token: string,
   file: File,
   meta: { item_part: number; locus?: string; tags?: string; subfolder?: string },
   options: UploadImageOptions = {}
@@ -358,7 +352,7 @@ export async function uploadImageFile(
     onProgress?.({ totalBytes: total, ...progress });
 
   report({ phase: 'creating', sentBytes: 0 });
-  let session = await createUploadSession(token, {
+  let session = await createUploadSession({
     item_part: meta.item_part,
     filename: file.name,
     size: file.size,
@@ -385,7 +379,6 @@ export async function uploadImageFile(
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     const base = sentBytes;
     await putChunk(
-      token,
       session.id,
       chunk.index,
       file.slice(chunk.start, chunk.end),
@@ -397,9 +390,9 @@ export async function uploadImageFile(
   }
 
   report({ phase: 'finalizing', sentBytes: total, session });
-  session = await finalizeUploadSession(token, session.id);
+  session = await finalizeUploadSession(session.id);
 
-  return watchUploadSession(token, session, {
+  return watchUploadSession(session, {
     onProgress,
     signal,
     pollIntervalMs,

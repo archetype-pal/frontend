@@ -14,7 +14,7 @@ export function QualityDashboard() {
   const { token } = useAuth();
   const { data, isFetching, error, refetch } = useQuery({
     queryKey: ['backoffice', 'quality-dashboard'],
-    queryFn: () => fetchQualityDashboard(token!),
+    queryFn: () => fetchQualityDashboard(),
     enabled: !!token,
     staleTime: 30_000,
   });

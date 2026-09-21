@@ -80,7 +80,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
 
   const { data: history } = useQuery({
     queryKey: backofficeKeys.imageTexts.history(textId),
-    queryFn: () => fetchImageTextHistory(token!, textId),
+    queryFn: () => fetchImageTextHistory(textId),
     enabled: !!token && Number.isFinite(textId),
   });
 
@@ -121,7 +121,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
   });
 
   const transitionMut = useMutation({
-    mutationFn: (payload: TransitionPayload) => transitionImageText(token!, textId, payload),
+    mutationFn: (payload: TransitionPayload) => transitionImageText(textId, payload),
     onSuccess: (saved) => {
       toast.success(t('imageTexts.toastTransitioned', { status: saved.status }));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.detail(textId) });

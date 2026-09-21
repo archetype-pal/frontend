@@ -60,7 +60,6 @@ export interface ImageTextListParams {
 const PAGE_SIZE = 25;
 
 export function fetchImageTextList(
-  token: string,
   params: ImageTextListParams = {}
 ): Promise<PaginatedImageTextList> {
   const qs = new URLSearchParams();
@@ -77,7 +76,6 @@ export function fetchImageTextList(
 
   return backofficeGet<PaginatedImageTextList>(
     `/api/v1/manuscripts/management/image-texts/?${qs.toString()}`,
-    token,
     { cache: 'no-store' }
   );
 }

@@ -20,17 +20,17 @@ export default function DatesPage() {
   return (
     <SimpleCrudPage<BackofficeDate>
       queryKey={backofficeKeys.dates.all()}
-      queryFn={(token) => getDates(token)}
+      queryFn={() => getDates()}
       getRows={(data) => (Array.isArray(data) ? (data as BackofficeDate[]) : [])}
-      createFn={(token, payload) =>
-        createDate(token, {
+      createFn={(payload) =>
+        createDate({
           date: String(payload.date ?? ''),
           min_weight: Number(payload.min_weight) || 0,
           max_weight: Number(payload.max_weight) || 0,
         })
       }
-      updateFn={(token, id, payload) => updateDate(token, id, payload as Partial<BackofficeDate>)}
-      deleteFn={(token, id) => deleteDate(token, id)}
+      updateFn={(id, payload) => updateDate(id, payload as Partial<BackofficeDate>)}
+      deleteFn={(id) => deleteDate(id)}
       icon={CalendarDays}
       title={dateLabelPlural}
       description={t('dates.description', {

@@ -17,13 +17,11 @@ export default function SourcesPage() {
   return (
     <SimpleCrudPage<BibliographicSource>
       queryKey={backofficeKeys.sources.all()}
-      queryFn={(token) => getSources(token)}
+      queryFn={() => getSources()}
       getRows={(data) => (Array.isArray(data) ? (data as BibliographicSource[]) : [])}
-      createFn={(token, payload) => createSource(token, payload as Partial<BibliographicSource>)}
-      updateFn={(token, id, payload) =>
-        updateSource(token, id, payload as Partial<BibliographicSource>)
-      }
-      deleteFn={(token, id) => deleteSource(token, id)}
+      createFn={(payload) => createSource(payload as Partial<BibliographicSource>)}
+      updateFn={(id, payload) => updateSource(id, payload as Partial<BibliographicSource>)}
+      deleteFn={(id) => deleteSource(id)}
       icon={BookMarked}
       title={t('sources.title')}
       description={t('sources.description')}

@@ -57,7 +57,7 @@ export default function CarouselPage() {
     refetch,
   } = useQuery({
     queryKey: backofficeKeys.carousel.all(),
-    queryFn: () => getCarouselItems(token!),
+    queryFn: () => getCarouselItems(),
     enabled: !!token,
   });
 
@@ -85,7 +85,7 @@ export default function CarouselPage() {
 
   const createMut = useMutation({
     mutationFn: (data: { title: string; url: string; image?: File | string }) =>
-      createCarouselItem(token!, {
+      createCarouselItem({
         title: data.title,
         url: data.url,
         ordering: (items?.length ?? 0) + 1,
@@ -110,7 +110,7 @@ export default function CarouselPage() {
     }: {
       id: number;
       data: { title: string; url: string; image?: File | string };
-    }) => updateCarouselItem(token!, id, data),
+    }) => updateCarouselItem(id, data),
     onSuccess: (updated) => {
       toast.success(t('carousel.toastUpdated'));
       invalidate();
@@ -124,7 +124,7 @@ export default function CarouselPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => deleteCarouselItem(token!, id),
+    mutationFn: (id: number) => deleteCarouselItem(id),
     onSuccess: () => {
       toast.success(t('carousel.toastDeleted'));
       invalidate();
@@ -179,7 +179,7 @@ export default function CarouselPage() {
       );
       Promise.allSettled(
         updates.map((item) =>
-          updateCarouselItemJson(token!, item.id, {
+          updateCarouselItemJson(item.id, {
             ordering: item.ordering,
           })
         )
@@ -195,7 +195,7 @@ export default function CarouselPage() {
         }
       });
     },
-    [items, token, queryClient, invalidate, t]
+    [items, queryClient, invalidate, t]
   );
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────

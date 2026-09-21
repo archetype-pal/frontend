@@ -95,7 +95,7 @@ export default function SearchEnginePage() {
     refetch: refetchStats,
   } = useQuery({
     queryKey: backofficeKeys.searchEngine.stats(),
-    queryFn: () => getSearchEngineStats(token!),
+    queryFn: () => getSearchEngineStats(),
     enabled: !!token,
     refetchInterval: hasActiveTasks ? 5000 : false,
   });
@@ -109,7 +109,7 @@ export default function SearchEnginePage() {
       action: TaskAction;
       indexType?: string;
       label: string;
-    }) => dispatchSearchAction(token!, action, indexType),
+    }) => dispatchSearchAction(action, indexType),
     onSuccess: (data, variables) => {
       const taskIds = data.task_id ? [data.task_id] : (data.task_ids ?? []);
       const newTasks: TrackedTask[] = taskIds.map((id, i) => ({
@@ -142,7 +142,7 @@ export default function SearchEnginePage() {
     if (!token || activeTaskIds.length === 0) return;
 
     const interval = setInterval(async () => {
-      const updates = await Promise.allSettled(activeTaskIds.map((id) => getTaskStatus(token, id)));
+      const updates = await Promise.allSettled(activeTaskIds.map((id) => getTaskStatus(id)));
 
       setTrackedTasks((prev) =>
         prev.map((task) => {

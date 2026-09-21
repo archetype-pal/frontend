@@ -123,7 +123,7 @@ export default function PagesPage() {
 
   const { data, isError, refetch } = useQuery({
     queryKey: backofficeKeys.pages.list(),
-    queryFn: () => getPages(token!),
+    queryFn: () => getPages(),
     enabled: !!token,
   });
 
@@ -148,7 +148,7 @@ export default function PagesPage() {
       action: async (slugs) => {
         await runBulkAction({
           ids: slugs,
-          action: (slug) => updatePage(token!, slug, { status: 'Published' }),
+          action: (slug) => updatePage(slug, { status: 'Published' }),
           invalidate: invalidatePages,
           pastTense: 'published',
           noun: 'page',
@@ -165,7 +165,7 @@ export default function PagesPage() {
           execute: async (s) => {
             await runBulkAction({
               ids: s,
-              action: (slug) => updatePage(token!, slug, { status: 'Draft' }),
+              action: (slug) => updatePage(slug, { status: 'Draft' }),
               invalidate: invalidatePages,
               pastTense: 'unpublished',
               noun: 'page',
@@ -186,7 +186,7 @@ export default function PagesPage() {
           execute: async (s) => {
             await runBulkAction({
               ids: s,
-              action: (slug) => deletePage(token!, slug),
+              action: (slug) => deletePage(slug),
               invalidate: invalidatePages,
               pastTense: 'deleted',
               noun: 'page',

@@ -116,7 +116,7 @@ export default function ManuscriptsPage() {
 
   const { data, isError, refetch } = useQuery({
     queryKey: backofficeKeys.manuscripts.list(queryParams),
-    queryFn: () => getHistoricalItems(token!, queryParams),
+    queryFn: () => getHistoricalItems(queryParams),
     enabled: !!token,
   });
 

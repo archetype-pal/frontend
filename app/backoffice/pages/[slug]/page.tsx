@@ -47,7 +47,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
 
   const { data: page, isLoading } = useQuery({
     queryKey: backofficeKeys.pages.detail(slug),
-    queryFn: () => getPage(token!, slug),
+    queryFn: () => getPage(slug),
     enabled: !!token,
   });
 
@@ -120,7 +120,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
 
   const saveMut = useMutation({
     mutationFn: () =>
-      updatePage(token!, slug, {
+      updatePage(slug, {
         slug: pageSlug,
         title,
         content,
@@ -152,7 +152,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
   );
 
   const deleteMut = useMutation({
-    mutationFn: () => deletePage(token!, slug),
+    mutationFn: () => deletePage(slug),
     onSuccess: () => {
       toast.success(t('pagesDetail.toastDeleted'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.pages.all() });

@@ -11,13 +11,9 @@ export interface StatusTransitionRow {
   created: string;
 }
 
-export function fetchImageTextHistory(
-  token: string,
-  textId: number
-): Promise<StatusTransitionRow[]> {
+export function fetchImageTextHistory(textId: number): Promise<StatusTransitionRow[]> {
   return backofficeGet<StatusTransitionRow[]>(
     `/api/v1/manuscripts/management/image-texts/${textId}/history/`,
-    token,
     { cache: 'no-store' }
   );
 }

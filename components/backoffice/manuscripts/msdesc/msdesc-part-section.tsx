@@ -51,9 +51,7 @@ export function MsDescPartSection({
   // 2.5 — seed all four areas from the canonical template skeletons.
   const seedMut = useMutation({
     mutationFn: () =>
-      Promise.all(
-        buildMsDescSeedPayloads(part.id).map((payload) => createMsDescArea(token!, payload))
-      ),
+      Promise.all(buildMsDescSeedPayloads(part.id).map((payload) => createMsDescArea(payload))),
     onSuccess: () => {
       toast.success(t('msdesc.section.toastSeeded'));
       invalidate();
@@ -66,8 +64,7 @@ export function MsDescPartSection({
   // Recovery path for a partially-seeded part (e.g. an interrupted seed or
   // API-created rows): create one missing area from its template.
   const seedAreaMut = useMutation({
-    mutationFn: (area: MsDescAreaId) =>
-      createMsDescArea(token!, buildMsDescSeedPayload(part.id, area)),
+    mutationFn: (area: MsDescAreaId) => createMsDescArea(buildMsDescSeedPayload(part.id, area)),
     onSuccess: () => {
       toast.success(t('msdesc.section.toastSeeded'));
       invalidate();

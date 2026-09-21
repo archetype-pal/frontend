@@ -75,7 +75,7 @@ export function CharacterDetail({
 
   const { data: character, isLoading } = useQuery({
     queryKey: backofficeKeys.characters.detail(characterId),
-    queryFn: () => getCharacter(token!, characterId),
+    queryFn: () => getCharacter(characterId),
     enabled: !!token,
   });
 
@@ -111,7 +111,7 @@ export function CharacterDetail({
   // Save mutation
   const saveMutation = useMutation({
     mutationFn: (payload: CharacterStructurePayload) =>
-      updateCharacterStructure(token!, characterId, payload),
+      updateCharacterStructure(characterId, payload),
     onSuccess: (data) => {
       toast.success(t('symbols.toastCharacterSaved'));
       queryClient.setQueryData(backofficeKeys.characters.detail(characterId), data);
@@ -127,7 +127,7 @@ export function CharacterDetail({
 
   // Delete mutation
   const deleteMutation = useMutation({
-    mutationFn: () => deleteCharacter(token!, characterId),
+    mutationFn: () => deleteCharacter(characterId),
     onSuccess: () => {
       toast.success(t('symbols.toastCharacterDeleted'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.characters.all() });

@@ -58,8 +58,8 @@ export type SanityChecks = z.infer<typeof SanityChecksSchema>;
  * dependent-service reachability, SMTP configuration, storage usage, and
  * filesystem writability.
  */
-export async function getSanityChecks(token: string): Promise<SanityChecks> {
-  const data = await backofficeGet<unknown>(SERVICE_ENDPOINT, token, { cache: 'no-store' });
+export async function getSanityChecks(): Promise<SanityChecks> {
+  const data = await backofficeGet<unknown>(SERVICE_ENDPOINT, { cache: 'no-store' });
   return SanityChecksSchema.parse(data);
 }
 
@@ -78,7 +78,7 @@ export type TestEmailResult = z.infer<typeof TestEmailResultSchema>;
  * isn't configured (short-circuits without attempting delivery), and a 502
  * when delivery itself fails. Both bodies are `{sent: false, detail}`.
  */
-export async function sendTestEmail(token: string): Promise<TestEmailResult> {
-  const data = await backofficePost<unknown>(TEST_EMAIL_ENDPOINT, token, {});
+export async function sendTestEmail(): Promise<TestEmailResult> {
+  const data = await backofficePost<unknown>(TEST_EMAIL_ENDPOINT, {});
   return TestEmailResultSchema.parse(data);
 }

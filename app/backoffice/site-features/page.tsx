@@ -38,15 +38,11 @@ async function fetchSiteFeatures(): Promise<SiteFeaturesConfig> {
   return res.json();
 }
 
-async function saveSiteFeatures(
-  token: string,
-  config: SiteFeaturesConfig
-): Promise<SiteFeaturesConfig> {
+async function saveSiteFeatures(config: SiteFeaturesConfig): Promise<SiteFeaturesConfig> {
   const res = await fetch('/api/app-settings', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Token ${token}`,
     },
     body: JSON.stringify(config),
   });
@@ -87,7 +83,7 @@ export default function SiteFeaturesPage() {
   useUnsavedGuard(dirty);
 
   const saveMut = useMutation({
-    mutationFn: () => saveSiteFeatures(token!, config),
+    mutationFn: () => saveSiteFeatures(config),
     onSuccess: (saved) => {
       toast.success(t('siteFeatures.toastSaved'));
       queryClient.setQueryData(['site-features'], saved);

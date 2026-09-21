@@ -29,7 +29,7 @@ import { getHand, updateHand, deleteHand } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { authFetch } from '@/lib/api-fetch';
+import { proxyFetch } from '@/lib/api-fetch';
 import type { AdminItemImage } from '@/services/backoffice/manuscripts';
 
 export default function HandDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -50,7 +50,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
       description: h.description,
       item_part_images: h.item_part_images ?? [],
     }),
-    saveFn: (t, hid, form) => updateHand(t, hid, form),
+    saveFn: (hid, form) => updateHand(hid, form),
     deleteFn: deleteHand,
     listRoute: '/backoffice/hands',
     label: 'Hand',
@@ -65,7 +65,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
     queryFn: () =>
       walkPaginated<AdminItemImage>(
         `/api/v1/manuscripts/management/item-images/?item_part=${itemPart}&limit=100`,
-        (path) => authFetch(path, token!)
+        (path) => proxyFetch(path)
       ),
     enabled: !!token && !!itemPart,
   });

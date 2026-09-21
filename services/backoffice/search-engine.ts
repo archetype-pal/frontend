@@ -52,20 +52,19 @@ export interface TaskStatus {
 /*  API functions                                                      */
 /* ------------------------------------------------------------------ */
 
-export function getSearchEngineStats(token: string): Promise<SearchEngineStats> {
-  return backofficeGet<SearchEngineStats>('/api/v1/search/management/stats/', token);
+export function getSearchEngineStats(): Promise<SearchEngineStats> {
+  return backofficeGet<SearchEngineStats>('/api/v1/search/management/stats/');
 }
 
 export function dispatchSearchAction(
-  token: string,
   action: TaskAction,
   indexType?: string
 ): Promise<TaskActionResponse> {
   const body: Record<string, string> = { action };
   if (indexType) body.index_type = indexType;
-  return backofficePost<TaskActionResponse>('/api/v1/search/management/actions/', token, body);
+  return backofficePost<TaskActionResponse>('/api/v1/search/management/actions/', body);
 }
 
-export function getTaskStatus(token: string, taskId: string): Promise<TaskStatus> {
-  return backofficeGet<TaskStatus>(`/api/v1/search/management/tasks/${taskId}/`, token);
+export function getTaskStatus(taskId: string): Promise<TaskStatus> {
+  return backofficeGet<TaskStatus>(`/api/v1/search/management/tasks/${taskId}/`);
 }

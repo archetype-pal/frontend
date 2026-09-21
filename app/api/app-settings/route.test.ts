@@ -13,6 +13,9 @@ const { apiFetch, authFetch } = vi.hoisted(() => ({
 
 vi.mock('@/lib/api-fetch', () => ({ apiFetch, authFetch }));
 
+const { getServerAuthToken } = vi.hoisted(() => ({ getServerAuthToken: vi.fn() }));
+vi.mock('@/lib/auth-token-server', () => ({ getServerAuthToken }));
+
 import { revalidateTag } from 'next/cache';
 import type { NextRequest } from 'next/server';
 import { GET, PUT } from './route';
@@ -40,6 +43,8 @@ beforeEach(() => {
 
   apiFetch.mockReset();
   authFetch.mockReset();
+  getServerAuthToken.mockReset();
+  getServerAuthToken.mockResolvedValue('staff-token');
 
   apiFetch.mockImplementation(async () => jsonResponse(stored));
   authFetch.mockImplementation(async (path: string, _token: string, init?: RequestInit) => {
@@ -56,10 +61,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** Minimal duck-typed request: the handler only reads the header and the body. */
+/** Minimal duck-typed request: the handler only reads the body — auth comes
+ *  from the mocked `getServerAuthToken`, not a client-supplied header. */
 function putRequest(body: unknown): NextRequest {
   return {
-    headers: new Headers({ Authorization: 'Token staff-token' }),
     json: async () => body,
   } as unknown as NextRequest;
 }
@@ -172,18 +177,11 @@ describe('PUT /api/app-settings — theme', () => {
 });
 
 describe('PUT /api/app-settings — the superuser gate protecting the flags', () => {
-  /** Same duck-typed request, but with caller-controlled auth headers. */
-  function requestWithAuth(body: unknown, authorization?: string): NextRequest {
-    return {
-      headers: new Headers(authorization ? { Authorization: authorization } : {}),
-      json: async () => body,
-    } as unknown as NextRequest;
-  }
-
   it('rejects an unauthenticated caller before touching the config', async () => {
+    getServerAuthToken.mockResolvedValueOnce(null);
     const before = await readSiteFeatures();
     const res = await PUT(
-      requestWithAuth({ ...getDefaultConfig(), features: { manuscriptDescriptions: false } })
+      putRequest({ ...getDefaultConfig(), features: { manuscriptDescriptions: false } })
     );
     expect(res.status).toBe(401);
     expect((await readSiteFeatures()).features).toEqual(before.features);
@@ -191,12 +189,10 @@ describe('PUT /api/app-settings — the superuser gate protecting the flags', ()
 
   it('rejects a non-superuser caller before touching the config', async () => {
     isSuperuser = false;
+    getServerAuthToken.mockResolvedValueOnce('not-staff');
     const before = await readSiteFeatures();
     const res = await PUT(
-      requestWithAuth(
-        { ...getDefaultConfig(), features: { manuscriptDescriptions: false } },
-        'Token not-staff'
-      )
+      putRequest({ ...getDefaultConfig(), features: { manuscriptDescriptions: false } })
     );
     expect(res.status).toBe(403);
     expect((await readSiteFeatures()).features).toEqual(before.features);

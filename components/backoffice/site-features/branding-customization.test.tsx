@@ -37,7 +37,7 @@ describe('BrandingCustomization', () => {
     selectFile(file);
 
     await waitFor(() => expect(onChange).toHaveBeenCalledWith('/media/branding/logo.png'));
-    expect(uploadBrandingLogo).toHaveBeenCalledWith('tok', file);
+    expect(uploadBrandingLogo).toHaveBeenCalledWith(file);
   });
 
   it('shows an error toast and leaves the config untouched when the upload fails', async () => {

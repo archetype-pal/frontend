@@ -69,7 +69,7 @@ export function CurrentItemCombobox({
       repositoryId ? { repository: repositoryId } : undefined
     ),
     queryFn: () =>
-      getCurrentItems(token!, {
+      getCurrentItems({
         repository: repositoryId,
         limit: 500,
       }),
@@ -78,7 +78,7 @@ export function CurrentItemCombobox({
 
   const { data: repositoriesData } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
-    queryFn: () => getRepositories(token!),
+    queryFn: () => getRepositories(),
     enabled: !!token && creating,
   });
 
@@ -94,7 +94,7 @@ export function CurrentItemCombobox({
 
   const createMut = useMutation({
     mutationFn: () =>
-      createCurrentItem(token!, {
+      createCurrentItem({
         repository: Number(newRepo),
         shelfmark: newShelfmark,
       }),

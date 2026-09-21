@@ -6,7 +6,7 @@
  * staff-only; the actions assume the caller is a reviewer.
  */
 
-import { authFetch } from '@/lib/api-fetch';
+import { proxyFetch } from '@/lib/api-fetch';
 
 export type ImageTextStatus = 'Draft' | 'Review' | 'Live' | 'Reviewed';
 
@@ -31,8 +31,8 @@ export interface QueueEntry {
   modified: string;
 }
 
-export async function fetchReviewQueue(token: string): Promise<QueueEntry[]> {
-  const r = await authFetch('/api/v1/manuscripts/management/review-queue/', token, {
+export async function fetchReviewQueue(): Promise<QueueEntry[]> {
+  const r = await proxyFetch('/api/v1/manuscripts/management/review-queue/', {
     cache: 'no-store',
   });
   // Throw on non-OK so TanStack Query surfaces `isError` (retry/error UI)
@@ -52,11 +52,10 @@ export interface TransitionPayload {
 }
 
 export async function transitionImageText(
-  token: string,
   id: number,
   payload: TransitionPayload
 ): Promise<QueueEntry> {
-  const r = await authFetch(`/api/v1/manuscripts/management/image-texts/${id}/transition/`, token, {
+  const r = await proxyFetch(`/api/v1/manuscripts/management/image-texts/${id}/transition/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

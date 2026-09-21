@@ -368,7 +368,6 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
 
         try {
           await uploadImageFile(
-            authToken,
             item.file,
             {
               item_part: item.itemPartId,
@@ -528,7 +527,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
   /** Fire-and-forget: a failed abort leaves nothing the user could act on. */
   const abortSession = useCallback((sessionId: string) => {
     const authToken = tokenRef.current;
-    if (sessionId && authToken) void abortUploadSession(authToken, sessionId).catch(() => {});
+    if (sessionId && authToken) void abortUploadSession(sessionId).catch(() => {});
   }, []);
 
   const cancel = useCallback(
@@ -583,7 +582,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
         const sessionId = crumbs.find((c) => c.id === it.id)?.sessionId;
         if (!sessionId) return { id: it.id, freed: true }; // never reached the server
         try {
-          await abortUploadSession(authToken, sessionId);
+          await abortUploadSession(sessionId);
           return { id: it.id, freed: true };
         } catch {
           return { id: it.id, freed: false };
@@ -637,10 +636,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       watchStatsRef.current.outstanding++;
       void (async () => {
         try {
-          // The cookie, not `tokenRef`: the ref goes STALE rather than null on
-          // sign-out (see the note in `drain`), so a watch that outlives a
-          // sign-out would keep polling with a revoked token.
-          await watchUploadSession(getAuthTokenCookie() ?? '', session, {
+          await watchUploadSession(session, {
             signal: controller.signal,
             onProgress: (p) => patch(crumb.id, { message: p.message ?? '' }),
           });
@@ -725,13 +721,10 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
   );
 
   const routeSessionCrumb = useCallback(
-    async (
-      authToken: string,
-      crumb: UploadBreadcrumb
-    ): Promise<'handled' | 'complete' | 'prompt'> => {
+    async (crumb: UploadBreadcrumb): Promise<'handled' | 'complete' | 'prompt'> => {
       let session: UploadSession;
       try {
-        session = await getUploadSession(authToken, crumb.sessionId);
+        session = await getUploadSession(crumb.sessionId);
       } catch {
         return 'prompt';
       }
@@ -752,7 +745,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       if (crumb?.sessionId && authToken) {
         let live: UploadSession | null = null;
         try {
-          live = await getUploadSession(authToken, crumb.sessionId);
+          live = await getUploadSession(crumb.sessionId);
         } catch {
           // Unknown server-side: fall through to a fresh upload.
         }
@@ -801,7 +794,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           prompts.push(crumb);
           continue;
         }
-        const outcome = await routeSessionCrumb(authToken, crumb);
+        const outcome = await routeSessionCrumb(crumb);
         if (outcome === 'prompt') {
           promptOnlyRef.current.add(crumb.id);
           prompts.push(crumb);

@@ -15,10 +15,9 @@ const charactersCrud = createCrudService<CharacterListItem, CharacterDetail>(
   '/api/v1/symbols_structure/management/symbols/characters/'
 );
 
-export function getCharacters(token: string) {
+export function getCharacters() {
   return backofficeGet<CharacterListItem[]>(
-    '/api/v1/symbols_structure/management/symbols/characters/',
-    token
+    '/api/v1/symbols_structure/management/symbols/characters/'
   );
 }
 
@@ -27,14 +26,9 @@ export const createCharacter = charactersCrud.create;
 export const updateCharacter = charactersCrud.update;
 export const deleteCharacter = charactersCrud.remove;
 
-export function updateCharacterStructure(
-  token: string,
-  id: number,
-  data: CharacterStructurePayload
-) {
+export function updateCharacterStructure(id: number, data: CharacterStructurePayload) {
   return backofficePost<CharacterDetail>(
     `/api/v1/symbols_structure/management/symbols/characters/${id}/update-structure/`,
-    token,
     data
   );
 }
@@ -45,11 +39,8 @@ const componentsCrud = createCrudService<Component>(
   '/api/v1/symbols_structure/management/symbols/components/'
 );
 
-export function getComponents(token: string) {
-  return backofficeGet<Component[]>(
-    '/api/v1/symbols_structure/management/symbols/components/',
-    token
-  );
+export function getComponents() {
+  return backofficeGet<Component[]>('/api/v1/symbols_structure/management/symbols/components/');
 }
 
 export const createComponent = componentsCrud.create;
@@ -62,8 +53,8 @@ const featuresCrud = createCrudService<Feature>(
   '/api/v1/symbols_structure/management/symbols/features/'
 );
 
-export function getFeatures(token: string) {
-  return backofficeGet<Feature[]>('/api/v1/symbols_structure/management/symbols/features/', token);
+export function getFeatures() {
+  return backofficeGet<Feature[]>('/api/v1/symbols_structure/management/symbols/features/');
 }
 
 export const createFeature = featuresCrud.create;
@@ -76,11 +67,8 @@ const positionsCrud = createCrudService<Position>(
   '/api/v1/symbols_structure/management/symbols/positions/'
 );
 
-export function getPositions(token: string) {
-  return backofficeGet<Position[]>(
-    '/api/v1/symbols_structure/management/symbols/positions/',
-    token
-  );
+export function getPositions() {
+  return backofficeGet<Position[]>('/api/v1/symbols_structure/management/symbols/positions/');
 }
 
 export const createPosition = positionsCrud.create;
