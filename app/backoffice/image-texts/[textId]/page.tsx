@@ -108,7 +108,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
     // edits (content, language, type). Status changes go through
     // `transitionMut` below so every Draft → Review → Live step lands in
     // `StatusTransition`.
-    mutationFn: () => updateImageText(token!, textId, { content, type, language }),
+    mutationFn: () => updateImageText(textId, { content, type, language }),
     onSuccess: (saved) => {
       toast.success(t('imageTexts.toastSaved'));
       queryClient.setQueryData(backofficeKeys.imageTexts.detail(textId), saved);
@@ -136,7 +136,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
   });
 
   const deleteMut = useMutation({
-    mutationFn: () => deleteImageText(token!, textId),
+    mutationFn: () => deleteImageText(textId),
     onSuccess: () => {
       toast.success(t('imageTexts.toastDeleted', { id: textId }));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.list() });

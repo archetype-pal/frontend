@@ -1,4 +1,4 @@
-import { authFetch } from '@/lib/api-fetch';
+import { authFetch, proxyFetch } from '@/lib/api-fetch';
 
 export type ImageTextStatus = 'Draft' | 'Review' | 'Live' | 'Reviewed';
 
@@ -47,11 +47,10 @@ export async function fetchImageText(
 }
 
 export async function updateImageText(
-  token: string,
   textId: number,
   payload: Partial<Pick<ImageTextDetail, 'content' | 'status' | 'language' | 'type'>>
 ): Promise<ImageTextDetail> {
-  const response = await authFetch(`/api/v1/manuscripts/management/image-texts/${textId}/`, token, {
+  const response = await proxyFetch(`/api/v1/manuscripts/management/image-texts/${textId}/`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -180,10 +179,9 @@ export interface CreateImageTextPayload {
 }
 
 export async function createImageText(
-  token: string,
   payload: CreateImageTextPayload
 ): Promise<ImageTextDetail> {
-  const response = await authFetch(`/api/v1/manuscripts/management/image-texts/`, token, {
+  const response = await proxyFetch(`/api/v1/manuscripts/management/image-texts/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -200,8 +198,8 @@ export async function createImageText(
   return response.json();
 }
 
-export async function deleteImageText(token: string, textId: number): Promise<void> {
-  const response = await authFetch(`/api/v1/manuscripts/management/image-texts/${textId}/`, token, {
+export async function deleteImageText(textId: number): Promise<void> {
+  const response = await proxyFetch(`/api/v1/manuscripts/management/image-texts/${textId}/`, {
     method: 'DELETE',
   });
   if (!response.ok && response.status !== 204) {

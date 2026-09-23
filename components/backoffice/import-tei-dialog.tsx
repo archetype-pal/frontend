@@ -78,7 +78,7 @@ export function ImportTeiDialog({
 
   const createMut = useMutation({
     mutationFn: () =>
-      createImageText(token!, {
+      createImageText({
         item_image: Number(itemImage),
         type,
         language,
@@ -113,7 +113,6 @@ export function ImportTeiDialog({
   const itemImageNumber = Number(itemImage);
   const teiValid = errors !== null && errors.length === 0;
   const canSubmit =
-    !!token &&
     Number.isFinite(itemImageNumber) &&
     itemImageNumber > 0 &&
     !!content &&
