@@ -67,7 +67,7 @@ export function ImportTeiDialog({
     setValidating(true);
     setErrors(null);
     try {
-      const result = await validateTei(text, token);
+      const result = await validateTei(text);
       setErrors(result.errors);
     } catch {
       setErrors([{ line: 0, col: 0, message: t('importTei.validatorUnreachable') }]);

@@ -105,7 +105,7 @@ describe('useMsDescArea — validation gating (6.1)', () => {
 
     await flushDebounce();
     expect(validate).toHaveBeenCalledTimes(1);
-    expect(validate).toHaveBeenCalledWith(result.current.content, 'tok');
+    expect(validate).toHaveBeenCalledWith(result.current.content);
     expect(result.current.validation.status).toBe('valid');
     expect(result.current.canSave).toBe(true);
   });
@@ -119,7 +119,7 @@ describe('useMsDescArea — validation gating (6.1)', () => {
     act(() => result.current.applySource('<msIdentifier>abc</msIdentifier>'));
     await flushDebounce(400);
     expect(validate).toHaveBeenCalledTimes(1);
-    expect(validate).toHaveBeenCalledWith('<msIdentifier>abc</msIdentifier>', 'tok');
+    expect(validate).toHaveBeenCalledWith('<msIdentifier>abc</msIdentifier>');
   });
 
   it('invalid TEI keeps save disabled and exposes line/col errors', async () => {

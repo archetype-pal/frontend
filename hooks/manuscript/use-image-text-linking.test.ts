@@ -80,7 +80,7 @@ describe('useImageTextLinking — live link paths', () => {
       result.current.linkExistingRegionToElement(7, 3, 23041, 'β');
     });
 
-    expect(linkRegionToElement).toHaveBeenCalledWith('test-token', 7, 3, undefined, 23041);
+    expect(linkRegionToElement).toHaveBeenCalledWith(7, 3, undefined, 23041);
 
     await act(async () => {
       await Promise.resolve();
@@ -101,7 +101,6 @@ describe('useImageTextLinking — live link paths', () => {
     });
 
     expect(linkRegionToElement).toHaveBeenCalledWith(
-      'test-token',
       7,
       3,
       expect.objectContaining({ type: 'Feature' })
