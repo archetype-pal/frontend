@@ -52,7 +52,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuth } from '@/contexts/auth-context';
-import { API_BASE_URL } from '@/lib/api-fetch';
+import { proxyFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import {
   IMAGE_TEXT_PAGE_SIZE,
@@ -275,14 +275,14 @@ export function TextsList() {
 
   async function exportTo(format: 'csv' | 'json') {
     if (!token) return;
-    // Authenticated download path: fetch with the token, then synthesize an
-    // <a download> link from the blob. Direct navigation to the URL would
-    // skip the Authorization header and 401.
+    // Authenticated download path: fetch through the auth proxy, then
+    // synthesize an <a download> link from the blob. Direct navigation to the
+    // backend URL would carry no Authorization header and 401.
     const qs = buildExportQuery(filters, format);
-    const url = `${API_BASE_URL}/api/v1/manuscripts/management/image-texts/export/?${qs}`;
+    const path = `/api/v1/manuscripts/management/image-texts/export/?${qs}`;
     const toastId = toast.loading(t('textsList.toastPreparingExport'));
     try {
-      const res = await fetch(url);
+      const res = await proxyFetch(path);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const filename = `image-texts.${format}`;

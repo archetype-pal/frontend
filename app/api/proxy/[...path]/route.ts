@@ -19,7 +19,11 @@ async function handle(request: NextRequest, { params }: RouteParams) {
   const { path } = await params;
   const token = await getServerAuthToken();
 
-  const targetUrl = `${env.serverApiUrl}/${path.join('/')}${request.nextUrl.search}`;
+  // Next strips the trailing slash before this handler runs (a 308 from
+  // `/…/7/` to `/…/7`), but every Django route ends in one (`DefaultRouter`).
+  // Forwarding without it makes Django answer with an APPEND_SLASH 301, which
+  // `fetch` can't follow for a streamed PATCH/POST/DELETE body — so restore it.
+  const targetUrl = `${env.serverApiUrl}/${path.join('/')}/${request.nextUrl.search}`;
 
   const headers = new Headers();
   const contentType = request.headers.get('content-type');
