@@ -6,7 +6,7 @@ const { getServerAuthToken } = vi.hoisted(() => ({ getServerAuthToken: vi.fn() }
 vi.mock('@/lib/auth-token-server', () => ({ getServerAuthToken }));
 
 import { NextRequest } from 'next/server';
-import { GET, PATCH } from './route';
+import { DELETE, GET, PATCH } from './route';
 
 const fetchMock = vi.fn();
 
@@ -43,6 +43,29 @@ describe('/api/proxy', () => {
     expect(url).toBe('http://api.test/api/v1/x/7/');
     expect(init.method).toBe('PATCH');
     expect(new Headers(init.headers).get('Authorization')).toBe('Token tok');
+  });
+
+  it('forwards a buffered body (not a stream), so the backend gets a Content-Length', async () => {
+    const request = new NextRequest('http://site.test/api/proxy/api/v1/x/7', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: '{"a":1}',
+    });
+
+    await PATCH(request, params('api', 'v1', 'x', '7'));
+
+    const init = fetchMock.mock.calls[0][1];
+    expect(init.body).toBeInstanceOf(ArrayBuffer);
+    expect(new TextDecoder().decode(init.body)).toBe('{"a":1}');
+    expect(init).not.toHaveProperty('duplex');
+  });
+
+  it('sends no body for a body-less write such as DELETE', async () => {
+    const request = new NextRequest('http://site.test/api/proxy/api/v1/x/7', { method: 'DELETE' });
+
+    await DELETE(request, params('api', 'v1', 'x', '7'));
+
+    expect(fetchMock.mock.calls[0][1].body).toBeUndefined();
   });
 
   it('keeps the query string after the restored slash', async () => {
