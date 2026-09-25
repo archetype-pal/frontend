@@ -91,7 +91,7 @@ export default function ScribesPage() {
   // header showed `data.count`, leaving admins with "150 scribes" + 20
   // visible rows and no pagination control.
   const { data, isError, refetch } = useQuery({
-    queryKey: backofficeKeys.scribes.all(),
+    queryKey: backofficeKeys.scribes.list(),
     queryFn: () =>
       walkPaginated<AdminScribeListItem>('/api/v1/management/scribes/scribes/?limit=100', (path) =>
         authFetch(path, token!)

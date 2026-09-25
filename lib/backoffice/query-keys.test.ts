@@ -74,6 +74,15 @@ describe('backofficeKeys structure', () => {
     expect(detail.slice(0, lists.length)).not.toEqual([...lists]);
   });
 
+  it('keeps the comments page key distinct from the pending-count key', () => {
+    const all = backofficeKeys.comments.all();
+    const pendingCount = backofficeKeys.comments.list('pending');
+    const pendingPage = backofficeKeys.comments.allPages('pending');
+
+    expect(pendingPage).not.toEqual(pendingCount);
+    expect(pendingPage.slice(0, all.length)).toEqual([...all]);
+  });
+
   it('produces distinct keys for different filter objects (cache isolation)', () => {
     const a = backofficeKeys.manuscripts.list({ offset: 0 });
     const b = backofficeKeys.manuscripts.list({ offset: 20 });
