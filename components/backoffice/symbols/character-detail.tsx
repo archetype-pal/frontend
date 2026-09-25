@@ -21,6 +21,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AllographTabPanel } from './allograph-tab-panel';
 import { ComparisonMatrix } from './comparison-matrix';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import {
   getCharacter,
   updateCharacterStructure,
@@ -73,7 +74,12 @@ export function CharacterDetail({
     return key ? t(key) : type;
   };
 
-  const { data: character, isLoading } = useQuery({
+  const {
+    data: character,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: backofficeKeys.characters.detail(characterId),
     queryFn: () => getCharacter(token!, characterId),
     enabled: !!token,
@@ -214,6 +220,9 @@ export function CharacterDetail({
     };
   }, [draft]);
 
+  if (isError && !character) {
+    return <BackofficeErrorState message={t('symbols.failedLoad')} onRetry={() => refetch()} />;
+  }
   if (isLoading || !draft) {
     return (
       <div className="flex items-center justify-center h-64">

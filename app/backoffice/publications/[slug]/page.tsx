@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import {
   getPublication,
   updatePublication,
@@ -54,7 +55,12 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
   const t = useTranslations('backoffice');
   const tContent = useTranslations('content');
 
-  const { data: pub, isLoading } = useQuery({
+  const {
+    data: pub,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: backofficeKeys.publications.detail(slug),
     queryFn: () => getPublication(token!, slug),
     enabled: !!token,
@@ -211,6 +217,14 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
     },
   });
 
+  if (isError && !pub) {
+    return (
+      <BackofficeErrorState
+        message={t('publicationsDetail.failedLoad')}
+        onRetry={() => refetch()}
+      />
+    );
+  }
   if (isLoading || !pub) {
     return (
       <div className="flex items-center justify-center h-64">

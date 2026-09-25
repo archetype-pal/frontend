@@ -1634,6 +1634,7 @@
       "deleteConfirm": "Löschen",
       "toastSaved": "Beitrag gespeichert",
       "toastFailedSave": "Speichern des Beitrags fehlgeschlagen",
+      "failedLoad": "Laden des Beitrags fehlgeschlagen",
       "toastDeleted": "Beitrag gelöscht",
       "toastFailedDelete": "Löschen des Beitrags fehlgeschlagen"
     },
@@ -1704,6 +1705,7 @@
       "deleteConfirm": "Löschen",
       "toastSaved": "Seite gespeichert",
       "toastFailedSave": "Speichern der Seite fehlgeschlagen",
+      "failedLoad": "Laden der Seite fehlgeschlagen",
       "toastDeleted": "Seite gelöscht",
       "toastFailedDelete": "Löschen der Seite fehlgeschlagen"
     },
@@ -2242,6 +2244,7 @@
       "componentCount": "{count, plural, =1 {1 Komponente} other {{count} Komponenten}}",
       "toastCharacterSaved": "Zeichen gespeichert",
       "toastFailedSave": "Zeichen konnte nicht gespeichert werden",
+      "failedLoad": "Zeichen konnte nicht geladen werden",
       "toastCharacterDeleted": "Zeichen gelöscht",
       "toastFailedDelete": "Zeichen konnte nicht gelöscht werden",
       "characterHeading": "Zeichen: {name}",
@@ -2765,6 +2768,7 @@
       "typeLetter": "Brief",
       "toastSaved": "{label} gespeichert",
       "toastFailedSave": "{label} konnte nicht gespeichert werden",
+      "failedLoad": "{label} konnte nicht geladen werden",
       "toastDeleted": "{label} gelöscht",
       "toastFailedDelete": "{label} konnte nicht gelöscht werden",
       "deleteButton": "Löschen",

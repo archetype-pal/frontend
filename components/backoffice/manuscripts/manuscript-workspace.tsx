@@ -23,6 +23,7 @@ import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
 import { CompletenessChecklist } from '@/components/backoffice/common/completeness-checklist';
 import { UnsavedChangesBar } from '@/components/backoffice/common/unsaved-changes-bar';
+import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import { CatalogueNumbersSection } from './catalogue-numbers-section';
 import { DescriptionsSection } from './descriptions-section';
 import { MsDescSection } from './msdesc-section';
@@ -73,7 +74,12 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   const dateLabel = getLabel('date');
   const hairTypeLabel = getLabel('fieldHairType');
 
-  const { data: item, isLoading } = useQuery({
+  const {
+    data: item,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: backofficeKeys.manuscripts.detail(itemId),
     queryFn: () => getHistoricalItem(token!, itemId),
     enabled: !!token,
@@ -178,6 +184,14 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
     },
   });
 
+  if (isError && !item) {
+    return (
+      <BackofficeErrorState
+        message={t('manuscriptWorkspace.failedLoad', { label: historicalItemLabel.toLowerCase() })}
+        onRetry={() => refetch()}
+      />
+    );
+  }
   if (isLoading || !item) {
     return (
       <div className="flex items-center justify-center h-64">

@@ -157,16 +157,17 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
     dirty
   );
 
-  if (isError) {
-    // The service throws on non-404 errors so a transient outage doesn't
-    // get hidden behind a perpetual spinner. Surface the error message so
-    // the user knows to retry rather than wait indefinitely.
+  // fetchImageText resolves to null on any non-OK response and only throws
+  // when the request itself fails.
+  if (isError || text === null) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
         <p>{t('imageTexts.failedLoad')}</p>
-        <p className="text-xs">
-          {fetchError instanceof Error ? fetchError.message : String(fetchError)}
-        </p>
+        {fetchError && (
+          <p className="text-xs">
+            {fetchError instanceof Error ? fetchError.message : String(fetchError)}
+          </p>
+        )}
       </div>
     );
   }
