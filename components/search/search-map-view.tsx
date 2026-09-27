@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -32,6 +31,24 @@ function markerIcon(count: number, maxCount: number) {
   });
 }
 
+function popupContent(city: string, count: number, onSelect: () => void): HTMLElement {
+  const root = document.createElement('div');
+  root.className = 'space-y-2';
+  const title = document.createElement('p');
+  title.className = 'font-medium';
+  title.textContent = city;
+  const total = document.createElement('p');
+  total.className = 'text-xs text-muted-foreground';
+  total.textContent = `${count.toLocaleString()} results`;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'text-xs text-primary hover:underline';
+  button.textContent = 'Filter to this city';
+  button.addEventListener('click', onSelect);
+  root.append(title, total, button);
+  return root;
+}
+
 export function SearchMapView({ cityDistribution = {}, onSelectCity }: SearchMapViewProps) {
   const entries = React.useMemo(
     () =>
@@ -44,6 +61,43 @@ export function SearchMapView({ cityDistribution = {}, onSelectCity }: SearchMap
     () => entries.reduce((max, [, count]) => Math.max(max, count), 0),
     [entries]
   );
+
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const markersRef = React.useRef<L.LayerGroup | null>(null);
+  const onSelectCityRef = React.useRef(onSelectCity);
+  React.useEffect(() => {
+    onSelectCityRef.current = onSelectCity;
+  }, [onSelectCity]);
+
+  const hasEntries = entries.length > 0;
+
+  React.useEffect(() => {
+    if (!hasEntries || !containerRef.current) return;
+    const map = L.map(containerRef.current, {
+      center: [54.8, -2.0],
+      zoom: 6,
+      scrollWheelZoom: true,
+    });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+    markersRef.current = L.layerGroup().addTo(map);
+    return () => {
+      markersRef.current = null;
+      map.remove();
+    };
+  }, [hasEntries]);
+
+  React.useEffect(() => {
+    const markers = markersRef.current;
+    if (!markers) return;
+    markers.clearLayers();
+    for (const [city, count] of entries) {
+      L.marker(CITY_COORDS[city], { icon: markerIcon(count, maxCount) })
+        .bindPopup(popupContent(city, count, () => onSelectCityRef.current(city)))
+        .addTo(markers);
+    }
+  }, [entries, maxCount, hasEntries]);
 
   if (entries.length === 0) {
     return (
@@ -59,31 +113,7 @@ export function SearchMapView({ cityDistribution = {}, onSelectCity }: SearchMap
   return (
     <section className="rounded-lg border bg-card p-3 md:p-4">
       <h3 className="text-sm font-semibold mb-3">Repository Map</h3>
-      <div className="h-[340px] w-full overflow-hidden rounded-md border">
-        <MapContainer center={[54.8, -2.0]} zoom={6} scrollWheelZoom className="h-full w-full">
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {entries.map(([city, count]) => (
-            <Marker key={city} position={CITY_COORDS[city]} icon={markerIcon(count, maxCount)}>
-              <Popup>
-                <div className="space-y-2">
-                  <p className="font-medium">{city}</p>
-                  <p className="text-xs text-muted-foreground">{count.toLocaleString()} results</p>
-                  <button
-                    type="button"
-                    className="text-xs text-primary hover:underline"
-                    onClick={() => onSelectCity(city)}
-                  >
-                    Filter to this city
-                  </button>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
-      </div>
+      <div ref={containerRef} className="h-[340px] w-full overflow-hidden rounded-md border" />
       <div className="mt-3 flex flex-wrap gap-2">
         {entries.map(([city, count]) => (
           <button
