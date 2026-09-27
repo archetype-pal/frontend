@@ -40,3 +40,19 @@ describe('apiFetch logging', () => {
     expect(console.error).not.toHaveBeenCalled();
   });
 });
+
+describe('proxyFetch', () => {
+  it('drops the trailing slash so Next does not 308 the request', async () => {
+    const { proxyFetch } = await import('./api-fetch');
+    const fetchMock = vi.fn(async (_url: string) => new Response('{}'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await proxyFetch('/api/v1/x/7/');
+    await proxyFetch('/api/v1/x/?page=2');
+
+    expect(fetchMock.mock.calls.map((c) => c[0])).toEqual([
+      '/api/proxy/api/v1/x/7',
+      '/api/proxy/api/v1/x?page=2',
+    ]);
+  });
+});

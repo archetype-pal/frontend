@@ -19,10 +19,9 @@ async function handle(request: NextRequest, { params }: RouteParams) {
   const { path } = await params;
   const token = await getServerAuthToken();
 
-  // Next strips the trailing slash before this handler runs (a 308 from
-  // `/…/7/` to `/…/7`), but every Django route ends in one (`DefaultRouter`).
-  // Forwarding without it makes Django answer with an APPEND_SLASH 301, which
-  // `fetch` can't follow for a streamed PATCH/POST/DELETE body — so restore it.
+  // Callers drop the trailing slash (see `proxyFetch`) so Next doesn't 308 them,
+  // but every route proxied here ends in one (`DefaultRouter`). Forwarding
+  // without it makes Django answer with an APPEND_SLASH 301 — so restore it.
   const targetUrl = `${env.serverApiUrl}/${path.join('/')}/${request.nextUrl.search}`;
 
   const headers = new Headers();
@@ -36,6 +35,14 @@ async function handle(request: NextRequest, { params }: RouteParams) {
   // changed nothing. A buffered body also stays replayable across a redirect.
   // Costs memory up to one upload chunk (UPLOADS_CHUNK_SIZE) per request.
   const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
+  // Refuse an anonymous write before buffering it, so a client without a
+  // cookie can't make this server hold an upload-sized body in memory.
+  if (hasBody && !token) {
+    return NextResponse.json(
+      { detail: 'Authentication credentials were not provided.' },
+      { status: 401 }
+    );
+  }
   const buffered = hasBody ? await request.arrayBuffer() : null;
   const body = buffered && buffered.byteLength > 0 ? buffered : undefined;
 
