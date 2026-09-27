@@ -64,6 +64,7 @@ export const backofficeKeys = {
   comments: {
     all: () => [...backofficeKeys.all, 'comments'] as const,
     list: (filter?: string) => [...backofficeKeys.comments.all(), 'list', filter] as const,
+    allPages: (filter: string) => [...backofficeKeys.comments.all(), 'all-pages', filter] as const,
   },
   carousel: {
     all: () => [...backofficeKeys.all, 'carousel'] as const,

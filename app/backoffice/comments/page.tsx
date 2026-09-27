@@ -34,7 +34,7 @@ export default function CommentsPage() {
   // (20), and the page has no pagination control — pending comments past
   // the 20th would be invisible to moderators until earlier ones cleared.
   const { data, isError, refetch } = useQuery({
-    queryKey: backofficeKeys.comments.list(filter),
+    queryKey: backofficeKeys.comments.allPages(filter),
     queryFn: () => {
       const params = new URLSearchParams({ limit: '100' });
       if (filter !== 'all') params.set('is_approved', String(filter === 'approved'));
