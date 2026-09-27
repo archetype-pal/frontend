@@ -19,24 +19,29 @@ async function handle(request: NextRequest, { params }: RouteParams) {
   const { path } = await params;
   const token = await getServerAuthToken();
 
-  const targetUrl = `${env.serverApiUrl}/${path.join('/')}${request.nextUrl.search}`;
+  // Next strips the trailing slash before this handler runs (a 308 from
+  // `/…/7/` to `/…/7`), but every Django route ends in one (`DefaultRouter`).
+  // Forwarding without it makes Django answer with an APPEND_SLASH 301, which
+  // `fetch` can't follow for a streamed PATCH/POST/DELETE body — so restore it.
+  const targetUrl = `${env.serverApiUrl}/${path.join('/')}/${request.nextUrl.search}`;
 
   const headers = new Headers();
   const contentType = request.headers.get('content-type');
   if (contentType) headers.set('content-type', contentType);
   if (token) headers.set('Authorization', `Token ${token}`);
 
+  // Buffer rather than stream the body: a streamed body goes out chunked with
+  // no Content-Length, and Django under WSGI (`manage.py runserver`, the dev
+  // compose) reads that as an EMPTY body — a PATCH then "succeeds" having
+  // changed nothing. A buffered body also stays replayable across a redirect.
+  // Costs memory up to one upload chunk (UPLOADS_CHUNK_SIZE) per request.
   const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
+  const buffered = hasBody ? await request.arrayBuffer() : null;
+  const body = buffered && buffered.byteLength > 0 ? buffered : undefined;
 
   let upstream: Response;
   try {
-    upstream = await fetch(targetUrl, {
-      method: request.method,
-      headers,
-      body: hasBody ? request.body : undefined,
-      // Required by undici when streaming a ReadableStream request body.
-      ...(hasBody ? { duplex: 'half' } : {}),
-    } as RequestInit);
+    upstream = await fetch(targetUrl, { method: request.method, headers, body });
   } catch (err) {
     console.error(`[proxy] ${request.method} ${targetUrl} failed`, err);
     return NextResponse.json({ error: 'Upstream request failed' }, { status: 502 });
