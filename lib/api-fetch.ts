@@ -85,5 +85,7 @@ export async function proxyFetch(path: string, init?: RequestInit): Promise<Resp
   if (typeof window === 'undefined') {
     throw new Error('proxyFetch is for browser code only — use authFetch on the server');
   }
-  return fetch(`/api/proxy${path}`, init);
+  // Drop the trailing slash: Next would 308 `/api/proxy/…/7/` to `…/7`, and the
+  // browser re-sends the whole body. The proxy route restores it for Django.
+  return fetch(`/api/proxy${path.replace(/\/(?=[?#]|$)/, '')}`, init);
 }

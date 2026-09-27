@@ -84,4 +84,17 @@ describe('/api/proxy', () => {
 
     expect(new Headers(fetchMock.mock.calls[0][1].headers).has('Authorization')).toBe(false);
   });
+
+  it('refuses an anonymous write without forwarding it', async () => {
+    getServerAuthToken.mockResolvedValue(null);
+    const request = new NextRequest('http://site.test/api/proxy/api/v1/x/7', {
+      method: 'PATCH',
+      body: '{"a":1}',
+    });
+
+    const response = await PATCH(request, params('api', 'v1', 'x', '7'));
+
+    expect(response.status).toBe(401);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

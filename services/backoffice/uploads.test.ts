@@ -222,7 +222,7 @@ describe('uploadImageFile chunk selection', () => {
       onerror?: () => void;
       onabort?: () => void;
       open(_method: string, url: string) {
-        sent.push(Number(/chunks\/(\d+)\//.exec(url)![1]));
+        sent.push(Number(/chunks\/(\d+)$/.exec(url)![1]));
       }
       setRequestHeader() {}
       send() {

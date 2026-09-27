@@ -146,8 +146,9 @@ function putChunk(
     }
     const xhr = new XMLHttpRequest();
     // Same-origin `/api/proxy` — the browser attaches the auth cookie
-    // automatically; it never needs the raw token (see `proxyFetch`).
-    xhr.open('PUT', `/api/proxy${BASE}${sessionId}/chunks/${index}/`);
+    // automatically; it never needs the raw token. No trailing slash, for the
+    // same reason as in `proxyFetch`.
+    xhr.open('PUT', `/api/proxy${BASE}${sessionId}/chunks/${index}`);
     xhr.setRequestHeader('Content-Type', 'application/octet-stream');
 
     const onAbort = () => xhr.abort();
