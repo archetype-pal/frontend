@@ -29,6 +29,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { TeiTextEditor } from '@/components/backoffice/tei-text-editor';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import { PreviewAsPublicDialog } from '@/components/backoffice/preview-as-public-dialog';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
@@ -61,10 +62,14 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
     data: text,
     isLoading,
     isError,
-    error: fetchError,
-  } = useQuery<ImageTextDetail | null>({
+    refetch,
+  } = useQuery<ImageTextDetail>({
     queryKey: backofficeKeys.imageTexts.detail(textId),
-    queryFn: () => fetchImageText(textId, token!),
+    queryFn: async () => {
+      const record = await fetchImageText(textId, token!);
+      if (!record) throw new Error('Failed to load text');
+      return record;
+    },
     enabled: !!token && Number.isFinite(textId),
   });
 
@@ -157,19 +162,8 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
     dirty
   );
 
-  // fetchImageText resolves to null on any non-OK response and only throws
-  // when the request itself fails.
-  if (isError || text === null) {
-    return (
-      <div className="flex h-64 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-        <p>{t('imageTexts.failedLoad')}</p>
-        {fetchError && (
-          <p className="text-xs">
-            {fetchError instanceof Error ? fetchError.message : String(fetchError)}
-          </p>
-        )}
-      </div>
-    );
+  if (isError && !text) {
+    return <BackofficeErrorState message={t('imageTexts.failedLoad')} onRetry={() => refetch()} />;
   }
   if (isLoading || !text) {
     return (
