@@ -1,4 +1,4 @@
-import { authFetch } from '@/lib/api-fetch';
+import { proxyFetch } from '@/lib/api-fetch';
 import type { ImageTextStatus } from './review-queue';
 
 export type BulkAction =
@@ -6,11 +6,8 @@ export type BulkAction =
   | { ids: number[]; action: 'set_language'; payload: { language: string } }
   | { ids: number[]; action: 'delete' };
 
-export async function bulkActionImageTexts(
-  token: string,
-  body: BulkAction
-): Promise<{ affected: number }> {
-  const r = await authFetch(`/api/v1/manuscripts/management/image-texts/bulk_action/`, token, {
+export async function bulkActionImageTexts(body: BulkAction): Promise<{ affected: number }> {
+  const r = await proxyFetch(`/api/v1/manuscripts/management/image-texts/bulk_action/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

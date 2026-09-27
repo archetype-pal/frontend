@@ -44,7 +44,7 @@ export function CarouselImagePickerDialog({
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: backofficeKeys.carousel.mediaPicker(currentPath),
-    queryFn: () => getMediaPickerContent(token!, currentPath),
+    queryFn: () => getMediaPickerContent(currentPath),
     enabled: !!token && open,
   });
 

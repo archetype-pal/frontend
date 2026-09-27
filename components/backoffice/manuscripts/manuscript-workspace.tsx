@@ -75,19 +75,19 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
 
   const { data: item, isLoading } = useQuery({
     queryKey: backofficeKeys.manuscripts.detail(itemId),
-    queryFn: () => getHistoricalItem(token!, itemId),
+    queryFn: () => getHistoricalItem(itemId),
     enabled: !!token,
   });
 
   const { data: formats } = useQuery({
     queryKey: backofficeKeys.formats.all(),
-    queryFn: () => getFormats(token!),
+    queryFn: () => getFormats(),
     enabled: !!token,
   });
 
   const { data: dates } = useQuery({
     queryKey: backofficeKeys.dates.all(),
-    queryFn: () => getDates(token!),
+    queryFn: () => getDates(),
     enabled: !!token,
   });
 
@@ -129,7 +129,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   useUnsavedGuard(dirty);
 
   const saveMut = useMutation({
-    mutationFn: () => updateHistoricalItem(token!, itemId, draft),
+    mutationFn: () => updateHistoricalItem(itemId, draft),
     onSuccess: () => {
       toast.success(t('manuscriptWorkspace.toastSaved', { label: historicalItemLabel }));
       queryClient.invalidateQueries({
@@ -160,7 +160,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   );
 
   const deleteMut = useMutation({
-    mutationFn: () => deleteHistoricalItem(token!, itemId),
+    mutationFn: () => deleteHistoricalItem(itemId),
     onSuccess: () => {
       toast.success(t('manuscriptWorkspace.toastDeleted', { label: historicalItemLabel }));
       queryClient.invalidateQueries({

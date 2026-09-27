@@ -72,13 +72,13 @@ export function SanityChecksDashboard() {
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['backoffice', 'sanity-checks'],
-    queryFn: () => getSanityChecks(token!),
+    queryFn: () => getSanityChecks(),
     enabled: !!token,
     staleTime: 30_000,
   });
 
   const testEmailMutation = useMutation({
-    mutationFn: () => sendTestEmail(token!),
+    mutationFn: () => sendTestEmail(),
     onSuccess: (result) => {
       toast.success(t('sanityChecks.smtp.toastSuccess'), { description: result.detail });
     },

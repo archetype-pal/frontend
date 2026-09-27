@@ -39,7 +39,7 @@ export function BrandingCustomization({ branding, token, onChange }: Props) {
     if (!token) return;
     setUploading(true);
     try {
-      const url = await uploadBrandingLogo(token, file);
+      const url = await uploadBrandingLogo(file);
       onChange(url);
     } catch (err) {
       toast.error(t('siteFeatures.branding.uploadFailed'), { description: formatApiError(err) });

@@ -34,7 +34,7 @@ export default function ReviewQueuePage() {
 
   const { data: queue = [], isLoading } = useQuery<QueueEntry[]>({
     queryKey: ['review-queue'],
-    queryFn: () => fetchReviewQueue(token!),
+    queryFn: () => fetchReviewQueue(),
     enabled: !!token,
     refetchInterval: 60_000,
   });
@@ -73,7 +73,6 @@ export default function ReviewQueuePage() {
             key={row.id}
             row={row}
             onTransitioned={() => queryClient.invalidateQueries({ queryKey: ['review-queue'] })}
-            token={token}
           />
         ))}
       </ul>
@@ -81,19 +80,11 @@ export default function ReviewQueuePage() {
   );
 }
 
-function ReviewRow({
-  row,
-  token,
-  onTransitioned,
-}: {
-  row: QueueEntry;
-  token: string;
-  onTransitioned: () => void;
-}) {
+function ReviewRow({ row, onTransitioned }: { row: QueueEntry; onTransitioned: () => void }) {
   const [note, setNote] = useState('');
   const t = useTranslations('backoffice');
   const approve = useMutation({
-    mutationFn: () => transitionImageText(token, row.id, { to_status: 'Live' }),
+    mutationFn: () => transitionImageText(row.id, { to_status: 'Live' }),
     onSuccess: () => {
       toast.success(t('reviewQueue.toastApproved'));
       onTransitioned();
@@ -106,7 +97,7 @@ function ReviewRow({
       if (!note.trim()) {
         return Promise.reject(new Error('Add a note explaining what needs changing.'));
       }
-      return transitionImageText(token, row.id, { to_status: 'Draft', note });
+      return transitionImageText(row.id, { to_status: 'Draft', note });
     },
     onSuccess: () => {
       toast.success(t('reviewQueue.toastSentBack'));

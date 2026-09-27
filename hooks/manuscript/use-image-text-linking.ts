@@ -202,7 +202,7 @@ export function useImageTextLinking({
       const geometry = a9sToBackendFeature(region, imageHeight);
       void (async () => {
         try {
-          await linkRegionToElement(token, textId, elementIndex, geometry);
+          await linkRegionToElement(textId, elementIndex, geometry);
           viewerApiRef.current?.removeAnnotationById?.(region.id);
           pendingLinkRegionRef.current = null;
           setPendingLinkRegion(null);
@@ -249,7 +249,7 @@ export function useImageTextLinking({
       if (!token) return;
       void (async () => {
         try {
-          await linkRegionToElement(token, textId, elementIndex, undefined, graphId);
+          await linkRegionToElement(textId, elementIndex, undefined, graphId);
           await reloadTextsAndAnnotations();
           showActionNotification({
             kind: 'saved',
@@ -319,7 +319,7 @@ export function useImageTextLinking({
       if (!token) return;
       void (async () => {
         try {
-          await unlinkElement(token, textId, elementIndex, graphId);
+          await unlinkElement(textId, elementIndex, graphId);
           await reloadTextsAndAnnotations();
           showActionNotification({
             kind: 'deleted',

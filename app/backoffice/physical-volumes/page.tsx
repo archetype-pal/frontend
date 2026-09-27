@@ -102,7 +102,7 @@ export default function PhysicalVolumesPage() {
 
   const { data: repositoriesData } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
-    queryFn: () => getRepositories(token!),
+    queryFn: () => getRepositories(),
     enabled: !!token,
   });
 
@@ -117,12 +117,12 @@ export default function PhysicalVolumesPage() {
 
   const { data, isError, refetch } = useQuery({
     queryKey: backofficeKeys.currentItems.list(filterParams),
-    queryFn: () => getCurrentItems(token!, filterParams),
+    queryFn: () => getCurrentItems(filterParams),
     enabled: !!token,
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => deleteCurrentItem(token!, id),
+    mutationFn: (id: number) => deleteCurrentItem(id),
     onSuccess: () => {
       toast.success(t('physicalVolumes.toastDeleted'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.currentItems.all() });

@@ -20,7 +20,7 @@ import { getScribe, updateScribe, deleteScribe } from '@/services/backoffice/scr
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { authFetch } from '@/lib/api-fetch';
+import { proxyFetch } from '@/lib/api-fetch';
 import type { AdminHandListItem } from '@/types/backoffice';
 
 export default function ScribeDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -36,7 +36,7 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
     invalidateKeys: [backofficeKeys.scribes.detail(id), backofficeKeys.scribes.all()],
     fetchFn: getScribe,
     toForm: (s) => ({ name: s.name, scriptorium: s.scriptorium }),
-    saveFn: (t, sid, form) => updateScribe(t, sid, form),
+    saveFn: (sid, form) => updateScribe(sid, form),
     deleteFn: deleteScribe,
     listRoute: '/backoffice/scribes',
     label: 'Scribe',
@@ -50,7 +50,7 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
     queryFn: () =>
       walkPaginated<AdminHandListItem>(
         `/api/v1/management/scribes/hands/?scribe=${id}&limit=100`,
-        (path) => authFetch(path, token!)
+        (path) => proxyFetch(path)
       ),
     enabled: !!token,
   });

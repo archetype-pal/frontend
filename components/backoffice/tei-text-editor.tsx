@@ -57,7 +57,7 @@ const TeiRichEditor = dynamic(() => import('./tei-rich-editor'), {
 interface TeiTextEditorProps {
   value: string;
   onChange: (value: string) => void;
-  /** Auth token for the validation endpoint. */
+  /** Signed-in guard: validation/formatting only run when set (the request itself goes via the auth proxy). */
   token: string | null;
   /** Reports TEI well-formedness so the parent can gate saving. */
   onValidityChange?: (valid: boolean) => void;
@@ -162,7 +162,7 @@ export function TeiTextEditor({
     let cancelled = false;
     const handle = setTimeout(async () => {
       try {
-        const result = await validateTei(value, token);
+        const result = await validateTei(value);
         if (cancelled) return;
         setErrors(result.errors);
         setChecked(true);
@@ -231,7 +231,7 @@ export function TeiTextEditor({
     if (!token || formatting) return;
     setFormatting(true);
     try {
-      const formatted = await formatTei(value, token);
+      const formatted = await formatTei(value);
       if (formatted !== value) onChange(formatted);
     } catch {
       // The validity badge already reports why; leave the text as it is.

@@ -35,11 +35,11 @@ type CrudFieldConfig<T> = {
 
 type SimpleCrudPageProps<T extends { id: number }> = {
   queryKey: readonly unknown[];
-  queryFn: (token: string) => Promise<unknown>;
+  queryFn: () => Promise<unknown>;
   getRows: (data: unknown) => T[];
-  createFn: (token: string, payload: Record<string, unknown>) => Promise<unknown>;
-  updateFn: (token: string, id: number, payload: Record<string, unknown>) => Promise<unknown>;
-  deleteFn: (token: string, id: number) => Promise<unknown>;
+  createFn: (payload: Record<string, unknown>) => Promise<unknown>;
+  updateFn: (id: number, payload: Record<string, unknown>) => Promise<unknown>;
+  deleteFn: (id: number) => Promise<unknown>;
   icon: LucideIcon;
   title: string;
   description: string;
@@ -82,7 +82,7 @@ export function SimpleCrudPage<T extends { id: number }>({
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey,
-    queryFn: () => queryFn(token!),
+    queryFn: () => queryFn(),
     enabled: !!token,
   });
 
@@ -106,7 +106,7 @@ export function SimpleCrudPage<T extends { id: number }>({
           return [String(field.key), field.parse ? field.parse(raw) : raw];
         })
       );
-      return createFn(token!, payload);
+      return createFn(payload);
     },
     onSuccess: () => {
       toast.success(t('simpleCrud.created', { label: singularLabel }));
@@ -123,7 +123,7 @@ export function SimpleCrudPage<T extends { id: number }>({
 
   const updateMut = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Record<string, unknown> }) =>
-      updateFn(token!, id, payload),
+      updateFn(id, payload),
     onSuccess: invalidate,
     onError: (err) => {
       toast.error(t('simpleCrud.failedUpdate', { label: singularLabel.toLowerCase() }), {
@@ -133,7 +133,7 @@ export function SimpleCrudPage<T extends { id: number }>({
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => deleteFn(token!, id),
+    mutationFn: (id: number) => deleteFn(id),
     onSuccess: () => {
       toast.success(t('simpleCrud.deleted', { label: singularLabel }));
       invalidate();

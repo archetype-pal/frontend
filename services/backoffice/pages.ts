@@ -13,42 +13,39 @@ async function parseOrThrow<T>(res: Response): Promise<T> {
   return data as T;
 }
 
-export function getPages(token: string): Promise<PageListItem[]> {
-  return fetch(PAGES_API_PATH, { headers: { Authorization: `Token ${token}` } }).then((res) =>
-    parseOrThrow<PageListItem[]>(res)
-  );
+export function getPages(): Promise<PageListItem[]> {
+  return fetch(PAGES_API_PATH).then((res) => parseOrThrow<PageListItem[]>(res));
 }
 
-export function getPage(token: string, slug: string): Promise<Page> {
-  return fetch(`${PAGES_API_PATH}/${encodeURIComponent(slug)}`, {
-    headers: { Authorization: `Token ${token}` },
-  }).then((res) => parseOrThrow<Page>(res));
+export function getPage(slug: string): Promise<Page> {
+  return fetch(`${PAGES_API_PATH}/${encodeURIComponent(slug)}`).then((res) =>
+    parseOrThrow<Page>(res)
+  );
 }
 
 export type PageWritePayload = Partial<
   Pick<Page, 'slug' | 'title' | 'content' | 'status' | 'order' | 'include_in_quick_link'>
 >;
 
-export function createPage(token: string, data: PageWritePayload): Promise<Page> {
+export function createPage(data: PageWritePayload): Promise<Page> {
   return fetch(PAGES_API_PATH, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Token ${token}` },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   }).then((res) => parseOrThrow<Page>(res));
 }
 
-export function updatePage(token: string, slug: string, data: PageWritePayload): Promise<Page> {
+export function updatePage(slug: string, data: PageWritePayload): Promise<Page> {
   return fetch(`${PAGES_API_PATH}/${encodeURIComponent(slug)}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', Authorization: `Token ${token}` },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   }).then((res) => parseOrThrow<Page>(res));
 }
 
-export async function deletePage(token: string, slug: string): Promise<void> {
+export async function deletePage(slug: string): Promise<void> {
   const res = await fetch(`${PAGES_API_PATH}/${encodeURIComponent(slug)}`, {
     method: 'DELETE',
-    headers: { Authorization: `Token ${token}` },
   });
   if (res.status === 204) return;
   await parseOrThrow<void>(res);

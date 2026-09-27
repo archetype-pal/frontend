@@ -23,7 +23,7 @@ import { createScribe } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { authFetch } from '@/lib/api-fetch';
+import { proxyFetch } from '@/lib/api-fetch';
 import { toast } from 'sonner';
 import type { AdminScribeListItem } from '@/types/backoffice';
 
@@ -94,13 +94,13 @@ export default function ScribesPage() {
     queryKey: backofficeKeys.scribes.all(),
     queryFn: () =>
       walkPaginated<AdminScribeListItem>('/api/v1/management/scribes/scribes/?limit=100', (path) =>
-        authFetch(path, token!)
+        proxyFetch(path)
       ),
     enabled: !!token,
   });
 
   const createMut = useMutation({
-    mutationFn: () => createScribe(token!, { name: newName }),
+    mutationFn: () => createScribe({ name: newName }),
     onSuccess: () => {
       toast.success(t('scribes.toastCreated'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.scribes.all() });

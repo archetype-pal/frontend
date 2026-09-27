@@ -17,18 +17,15 @@ const publicationsCrud = createCrudService<
   string
 >('/api/v1/media/management/publications/');
 
-export function getPublications(
-  token: string,
-  params?: {
-    limit?: number;
-    offset?: number;
-    status?: string;
-    is_blog_post?: boolean;
-    is_news?: boolean;
-    is_featured?: boolean;
-  }
-) {
-  return publicationsCrud.list(token, params);
+export function getPublications(params?: {
+  limit?: number;
+  offset?: number;
+  status?: string;
+  is_blog_post?: boolean;
+  is_news?: boolean;
+  is_featured?: boolean;
+}) {
+  return publicationsCrud.list(params);
 }
 
 export const getPublication = publicationsCrud.get;
@@ -42,16 +39,16 @@ const commentsCrud = createCrudService<PaginatedResponse<CommentItem>, CommentIt
   '/api/v1/media/management/comments/'
 );
 
-export function getComments(token: string, params?: { is_approved?: boolean; post?: number }) {
-  return commentsCrud.list(token, params);
+export function getComments(params?: { is_approved?: boolean; post?: number }) {
+  return commentsCrud.list(params);
 }
 
-export function approveComment(token: string, id: number) {
-  return backofficePost<CommentItem>(`/api/v1/media/management/comments/${id}/approve/`, token, {});
+export function approveComment(id: number) {
+  return backofficePost<CommentItem>(`/api/v1/media/management/comments/${id}/approve/`, {});
 }
 
-export function rejectComment(token: string, id: number) {
-  return backofficePost<CommentItem>(`/api/v1/media/management/comments/${id}/reject/`, token, {});
+export function rejectComment(id: number) {
+  return backofficePost<CommentItem>(`/api/v1/media/management/comments/${id}/reject/`, {});
 }
 
 export const deleteComment = commentsCrud.remove;
@@ -62,7 +59,7 @@ const CAROUSEL_PATH = '/api/v1/media/management/carousel-items/';
 
 const carouselCrud = createCrudService<CarouselItem[], CarouselItem>(CAROUSEL_PATH);
 
-export const getCarouselItems = (token: string) => carouselCrud.list(token);
+export const getCarouselItems = () => carouselCrud.list();
 export const deleteCarouselItem = carouselCrud.remove;
 
 /** Plain JSON update (e.g. reordering). */
@@ -89,22 +86,17 @@ function buildCarouselFormData(data: Partial<CarouselItemPayload>): FormData {
 }
 
 /** Create a carousel item. Uses multipart when an image File is provided. */
-export function createCarouselItem(
-  token: string,
-  data: CarouselItemPayload
-): Promise<CarouselItem> {
-  return backofficePostFormData<CarouselItem>(CAROUSEL_PATH, token, buildCarouselFormData(data));
+export function createCarouselItem(data: CarouselItemPayload): Promise<CarouselItem> {
+  return backofficePostFormData<CarouselItem>(CAROUSEL_PATH, buildCarouselFormData(data));
 }
 
 /** Update a carousel item. Uses multipart when an image File is provided. */
 export function updateCarouselItem(
-  token: string,
   id: number,
   data: Partial<CarouselItemPayload>
 ): Promise<CarouselItem> {
   return backofficePatchFormData<CarouselItem>(
     `${CAROUSEL_PATH}${id}/`,
-    token,
     buildCarouselFormData(data)
   );
 }

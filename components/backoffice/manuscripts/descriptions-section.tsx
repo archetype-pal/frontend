@@ -89,7 +89,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
 
   const { data: sources } = useQuery({
     queryKey: backofficeKeys.sources.all(),
-    queryFn: () => getSources(token!),
+    queryFn: () => getSources(),
     enabled: !!token,
   });
 
@@ -100,7 +100,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
 
   const createMut = useMutation({
     mutationFn: () =>
-      createDescription(token!, {
+      createDescription({
         historical_item: historicalItemId,
         source: Number(newSource),
         content: newContent,
@@ -121,7 +121,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
 
   const updateMut = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
-      updateDescription(token!, id, data),
+      updateDescription(id, data),
     onSuccess: () => {
       toast.success(t('manuscriptsDetail.descriptionUpdated'));
       invalidate();
@@ -136,7 +136,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => deleteDescription(token!, id),
+    mutationFn: (id: number) => deleteDescription(id),
     onSuccess: () => {
       toast.success(t('manuscriptsDetail.descriptionRemoved'));
       invalidate();

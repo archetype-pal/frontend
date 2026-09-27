@@ -175,12 +175,12 @@ export default function AnnotationsPage() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list(filters),
-    queryFn: () => getGraphs(token!, filters),
+    queryFn: () => getGraphs(filters),
     enabled: !!token,
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => deleteGraph(token!, id),
+    mutationFn: (id: number) => deleteGraph(id),
     onSuccess: () => {
       toast.success(t('annotations.toastMovedToTrash'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.graphs.all() });
@@ -204,7 +204,7 @@ export default function AnnotationsPage() {
       action: async (ids) => {
         await runBulkAction({
           ids,
-          action: (id) => deleteGraph(token!, Number(id)),
+          action: (id) => deleteGraph(Number(id)),
           invalidate: () =>
             queryClient.invalidateQueries({ queryKey: backofficeKeys.graphs.all() }),
           messages: {

@@ -196,10 +196,9 @@ function TextEditor({
   const dirty = value !== text.content;
 
   const handleSave = React.useCallback(async () => {
-    if (!token) return;
     setSaving(true);
     try {
-      await updateImageText(token, text.id, { content: value });
+      await updateImageText(text.id, { content: value });
       showActionNotification({
         kind: 'created',
         title: t('text.savedTitle'),
@@ -217,7 +216,7 @@ function TextEditor({
     } finally {
       setSaving(false);
     }
-  }, [token, text.id, text.type, value, onSaved, t]);
+  }, [text.id, text.type, value, onSaved, t]);
 
   React.useEffect(() => {
     onEditorState?.({ mode, richAvailable, linkTarget, dirty, save: handleSave });

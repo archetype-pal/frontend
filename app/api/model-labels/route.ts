@@ -1,6 +1,7 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
+import { getServerAuthToken } from '@/lib/auth-token-server';
 import { readModelLabels, writeModelLabels, SITE_LABELS_TAG } from '@/lib/model-labels-server';
 import {
   DEFAULT_MODEL_LABELS,
@@ -29,8 +30,7 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
-  const authHeader = request.headers.get('Authorization');
-  const token = authHeader?.replace(/^Token\s+/i, '');
+  const token = await getServerAuthToken();
   if (!token) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
   }

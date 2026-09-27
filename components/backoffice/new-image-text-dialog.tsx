@@ -38,7 +38,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAuth } from '@/contexts/auth-context';
 import { createImageText } from '@/services/image-texts';
 
 export type NewTextKind = 'Transcription' | 'Translation';
@@ -65,7 +64,6 @@ export function NewImageTextDialog({
 }: NewImageTextDialogProps) {
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
-  const { token } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -93,7 +91,7 @@ export function NewImageTextDialog({
 
   const createMut = useMutation({
     mutationFn: () =>
-      createImageText(token!, {
+      createImageText({
         item_image: Number(itemImage),
         type,
         language,
@@ -116,11 +114,7 @@ export function NewImageTextDialog({
 
   const itemImageNumber = Number(itemImage);
   const canSubmit =
-    !!token &&
-    Number.isFinite(itemImageNumber) &&
-    itemImageNumber > 0 &&
-    !!type &&
-    !createMut.isPending;
+    Number.isFinite(itemImageNumber) && itemImageNumber > 0 && !!type && !createMut.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

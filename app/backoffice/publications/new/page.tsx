@@ -45,7 +45,7 @@ export default function NewPublicationPage() {
     mutationFn: () => {
       if (!token) throw new Error('Missing auth token');
 
-      return createPublication(token, {
+      return createPublication({
         title,
         slug: slug || generateSlug(title),
         is_blog_post: isBlog,

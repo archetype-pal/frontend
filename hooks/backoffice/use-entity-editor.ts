@@ -15,11 +15,11 @@ interface EntityEditorConfig<TDetail, TForm extends object> {
   queryKey: QueryKey;
   /** Keys to invalidate after save/delete (typically [detail, list]). */
   invalidateKeys: QueryKey[];
-  fetchFn: (token: string, id: number) => Promise<TDetail>;
+  fetchFn: (id: number) => Promise<TDetail>;
   /** Derive the editable form from the fetched entity. */
   toForm: (entity: TDetail) => TForm;
-  saveFn: (token: string, id: number, form: TForm) => Promise<unknown>;
-  deleteFn: (token: string, id: number) => Promise<void>;
+  saveFn: (id: number, form: TForm) => Promise<unknown>;
+  deleteFn: (id: number) => Promise<void>;
   /** Where to navigate after a successful delete. */
   listRoute: string;
   /** Entity label for toasts, e.g. "Scribe". */
@@ -50,7 +50,7 @@ export function useEntityEditor<TDetail, TForm extends object>(
     refetch,
   } = useQuery({
     queryKey: config.queryKey,
-    queryFn: () => config.fetchFn(token!, config.id),
+    queryFn: () => config.fetchFn(config.id),
     enabled: !!token,
   });
 
@@ -88,7 +88,7 @@ export function useEntityEditor<TDetail, TForm extends object>(
   };
 
   const saveMut = useMutation({
-    mutationFn: () => config.saveFn(token!, config.id, form as TForm),
+    mutationFn: () => config.saveFn(config.id, form as TForm),
     onSuccess: () => {
       toast.success(`${config.label} saved`);
       invalidate();
@@ -110,7 +110,7 @@ export function useEntityEditor<TDetail, TForm extends object>(
   );
 
   const deleteMut = useMutation({
-    mutationFn: () => config.deleteFn(token!, config.id),
+    mutationFn: () => config.deleteFn(config.id),
     onSuccess: () => {
       toast.success(`${config.label} deleted`);
       invalidate();

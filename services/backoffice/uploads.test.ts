@@ -135,7 +135,7 @@ describe('watchUploadSession', () => {
       .mockResolvedValueOnce(session({ status: 'complete', item_image: 9 }));
 
     const phases: string[] = [];
-    const result = await watchUploadSession('tok', session({ status: 'assembled' }), {
+    const result = await watchUploadSession(session({ status: 'assembled' }), {
       pollIntervalMs: 0,
       onProgress: (p) => phases.push(p.phase),
     });
@@ -147,14 +147,14 @@ describe('watchUploadSession', () => {
   });
 
   it('returns without polling when the session is already terminal', async () => {
-    const result = await watchUploadSession('tok', session({ status: 'complete' }));
+    const result = await watchUploadSession(session({ status: 'complete' }));
     expect(result.status).toBe('complete');
     expect(mockedGet).not.toHaveBeenCalled();
   });
 
   it("throws UploadFailedError carrying the server's reason on failure", async () => {
     mockedGet.mockResolvedValueOnce(session({ status: 'failed', error: 'tile smoke test failed' }));
-    await expect(watchUploadSession('tok', session(), { pollIntervalMs: 0 })).rejects.toThrow(
+    await expect(watchUploadSession(session(), { pollIntervalMs: 0 })).rejects.toThrow(
       'tile smoke test failed'
     );
   });
@@ -166,15 +166,13 @@ describe('watchUploadSession', () => {
       .mockRejectedValueOnce(new Error('API restarting'))
       .mockResolvedValueOnce(session({ status: 'complete', item_image: 9 }));
 
-    const result = await watchUploadSession('tok', session(), { pollIntervalMs: 0 });
+    const result = await watchUploadSession(session(), { pollIntervalMs: 0 });
     expect(result.status).toBe('complete');
   });
 
   it('gives up on the sixth consecutive failure, not the first', async () => {
     mockedGet.mockRejectedValue(new Error('API gone'));
-    await expect(watchUploadSession('tok', session(), { pollIntervalMs: 0 })).rejects.toThrow(
-      'API gone'
-    );
+    await expect(watchUploadSession(session(), { pollIntervalMs: 0 })).rejects.toThrow('API gone');
     expect(mockedGet).toHaveBeenCalledTimes(6); // MAX_POLL_FAILURES + 1
   });
 
@@ -182,7 +180,7 @@ describe('watchUploadSession', () => {
     const controller = new AbortController();
     controller.abort();
     await expect(
-      watchUploadSession('tok', session(), { signal: controller.signal })
+      watchUploadSession(session(), { signal: controller.signal })
     ).rejects.toMatchObject({ name: 'AbortError' });
     expect(mockedGet).not.toHaveBeenCalled();
   });
@@ -248,7 +246,6 @@ describe('uploadImageFile chunk selection', () => {
     );
 
     await uploadImageFile(
-      'tok',
       new File(['x'.repeat(40)], 'f12r.tif'),
       { item_part: 1 },
       { pollIntervalMs: 0 }
@@ -274,7 +271,6 @@ describe('uploadImageFile chunk selection', () => {
 
     const withSession: string[] = [];
     await uploadImageFile(
-      'tok',
       new File(['x'.repeat(40)], 'f12r.tif'),
       { item_part: 1 },
       {
@@ -299,7 +295,6 @@ describe('uploadImageFile chunk selection', () => {
 
     const uploading: number[] = [];
     await uploadImageFile(
-      'tok',
       new File(['x'.repeat(40)], 'f12r.tif'),
       { item_part: 1 },
       {

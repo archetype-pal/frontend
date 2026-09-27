@@ -27,30 +27,30 @@ export default function SymbolsPage() {
 
   const characters = useQuery({
     queryKey: backofficeKeys.characters.all(),
-    queryFn: () => getCharacters(token!),
+    queryFn: () => getCharacters(),
     enabled: !!token,
   });
 
   const components = useQuery({
     queryKey: backofficeKeys.components.all(),
-    queryFn: () => getComponents(token!),
+    queryFn: () => getComponents(),
     enabled: !!token,
   });
 
   const features = useQuery({
     queryKey: backofficeKeys.features.all(),
-    queryFn: () => getFeatures(token!),
+    queryFn: () => getFeatures(),
     enabled: !!token,
   });
 
   const positions = useQuery({
     queryKey: backofficeKeys.positions.all(),
-    queryFn: () => getPositions(token!),
+    queryFn: () => getPositions(),
     enabled: !!token,
   });
 
   const createMut = useMutation({
-    mutationFn: (data: { name: string; type: string | null }) => createCharacter(token!, data),
+    mutationFn: (data: { name: string; type: string | null }) => createCharacter(data),
     onSuccess: (newChar) => {
       toast.success(t('symbols.toastCharacterCreated'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.characters.all() });
