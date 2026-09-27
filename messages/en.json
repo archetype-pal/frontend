@@ -1634,6 +1634,7 @@
       "deleteConfirm": "Delete",
       "toastSaved": "Post saved",
       "toastFailedSave": "Failed to save post",
+      "failedLoad": "Failed to load post",
       "toastDeleted": "Post deleted",
       "toastFailedDelete": "Failed to delete post"
     },
@@ -1704,6 +1705,7 @@
       "deleteConfirm": "Delete",
       "toastSaved": "Page saved",
       "toastFailedSave": "Failed to save page",
+      "failedLoad": "Failed to load page",
       "toastDeleted": "Page deleted",
       "toastFailedDelete": "Failed to delete page"
     },
@@ -2242,6 +2244,7 @@
       "componentCount": "{count, plural, =1 {1 component} other {{count} components}}",
       "toastCharacterSaved": "Character saved",
       "toastFailedSave": "Failed to save character",
+      "failedLoad": "Failed to load character",
       "toastCharacterDeleted": "Character deleted",
       "toastFailedDelete": "Failed to delete character",
       "characterHeading": "Character: {name}",
@@ -2765,6 +2768,7 @@
       "typeLetter": "Letter",
       "toastSaved": "{label} saved",
       "toastFailedSave": "Failed to save {label}",
+      "failedLoad": "Failed to load {label}",
       "toastDeleted": "{label} deleted",
       "toastFailedDelete": "Failed to delete {label}",
       "deleteButton": "Delete",

@@ -1634,6 +1634,7 @@
       "deleteConfirm": "Supprimer",
       "toastSaved": "Article enregistré",
       "toastFailedSave": "Échec de l'enregistrement de l'article",
+      "failedLoad": "Échec du chargement de l'article",
       "toastDeleted": "Article supprimé",
       "toastFailedDelete": "Échec de la suppression de l'article"
     },
@@ -1704,6 +1705,7 @@
       "deleteConfirm": "Supprimer",
       "toastSaved": "Page enregistrée",
       "toastFailedSave": "Échec de l'enregistrement de la page",
+      "failedLoad": "Échec du chargement de la page",
       "toastDeleted": "Page supprimée",
       "toastFailedDelete": "Échec de la suppression de la page"
     },
@@ -2242,6 +2244,7 @@
       "componentCount": "{count, plural, =1 {1 composant} other {{count} composants}}",
       "toastCharacterSaved": "Caractère enregistré",
       "toastFailedSave": "Échec de l'enregistrement du caractère",
+      "failedLoad": "Échec du chargement du caractère",
       "toastCharacterDeleted": "Caractère supprimé",
       "toastFailedDelete": "Échec de la suppression du caractère",
       "characterHeading": "Caractère : {name}",
@@ -2765,6 +2768,7 @@
       "typeLetter": "Lettre",
       "toastSaved": "{label} enregistré",
       "toastFailedSave": "Échec de l'enregistrement : {label}",
+      "failedLoad": "Échec du chargement : {label}",
       "toastDeleted": "{label} supprimé",
       "toastFailedDelete": "Échec de la suppression : {label}",
       "deleteButton": "Supprimer",
