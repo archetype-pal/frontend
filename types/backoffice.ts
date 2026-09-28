@@ -105,6 +105,7 @@ export interface Repository {
   place: string;
   url: string | null;
   type: string | null;
+  current_item_count?: number;
 }
 
 export interface BibliographicSource {

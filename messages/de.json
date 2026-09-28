@@ -2321,7 +2321,8 @@
       "fieldLabelPlaceholder": "BL",
       "fieldPlace": "Ort",
       "fieldPlacePlaceholder": "London",
-      "deleteDescription": "Dies kann sich auf historische Objekte auswirken, die auf diesen Verwahrort verweisen."
+      "deleteDescription": "Dieser Verwahrort enthält keine Elemente.",
+      "heldItems": "Enthält {count, plural, one {# Element} other {# Elemente}}"
     },
     "dataTable": {
       "searchPlaceholder": "Suchen …",

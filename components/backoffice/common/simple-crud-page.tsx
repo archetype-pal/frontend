@@ -49,6 +49,8 @@ type SimpleCrudPageProps<T extends { id: number }> = {
   fields: CrudFieldConfig<T>[];
   showIdColumn?: boolean;
   deleteDescription: string;
+  /** Returns why a row cannot be deleted (shown in place of the delete button), or null. */
+  deleteBlockedReason?: (row: T) => string | null;
 };
 
 function toEditableString(value: unknown): string {
@@ -72,6 +74,7 @@ export function SimpleCrudPage<T extends { id: number }>({
   fields,
   showIdColumn = false,
   deleteDescription,
+  deleteBlockedReason,
 }: SimpleCrudPageProps<T>) {
   const t = useTranslations('backoffice');
   const { token } = useAuth();
@@ -183,22 +186,28 @@ export function SimpleCrudPage<T extends { id: number }>({
 
     generated.push({
       id: 'actions',
-      cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-          onClick={() => setDeleteTarget(row.original)}
-          aria-label={t('simpleCrud.deleteLabel', { label: singularLabel.toLowerCase() })}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      ),
-      size: 50,
+      cell: ({ row }) => {
+        const blockedReason = deleteBlockedReason?.(row.original);
+        if (blockedReason) {
+          return <span className="text-xs text-muted-foreground">{blockedReason}</span>;
+        }
+        return (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+            onClick={() => setDeleteTarget(row.original)}
+            aria-label={t('simpleCrud.deleteLabel', { label: singularLabel.toLowerCase() })}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        );
+      },
+      size: deleteBlockedReason ? 120 : 50,
     });
 
     return generated;
-  }, [fields, showIdColumn, updateMut, singularLabel, t]);
+  }, [fields, showIdColumn, updateMut, singularLabel, t, deleteBlockedReason]);
 
   if (isLoading) {
     return (

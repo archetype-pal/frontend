@@ -2321,7 +2321,8 @@
       "fieldLabelPlaceholder": "BL",
       "fieldPlace": "Place",
       "fieldPlacePlaceholder": "London",
-      "deleteDescription": "This may affect historical items that reference this repository."
+      "deleteDescription": "This repository holds no items.",
+      "heldItems": "Holds {count, plural, one {# item} other {# items}}"
     },
     "dataTable": {
       "searchPlaceholder": "Search...",
