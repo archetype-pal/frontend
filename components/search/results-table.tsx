@@ -19,7 +19,7 @@ import type {
   ScribeListItem,
   TextListItem,
 } from '@/types/search';
-import { getIiifImageUrl } from '@/utils/iiif';
+import { coordinatesFromGeoJson, getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import type { ThumbnailSize } from '@/components/search/thumbnail-size-control';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -166,17 +166,33 @@ function AnnotationInlinePreview({
   const { px, className } = PREVIEW_SIZES[size];
   const src = useIiifThumbnailUrl(infoUrl, coordinates, px);
 
-  if (!infoUrl || !src) return null;
+  if (!infoUrl) return null;
+
+  // The crop's shape is known from its coordinates before any request, so the
+  // row reserves the preview's final size up front instead of growing once when
+  // the crop URL resolves and again when the image arrives.
+  const region = coordinatesFromGeoJson(coordinates);
+  const aspectRatio =
+    region && region.w > 0 && region.h > 0 ? `${region.w} / ${region.h}` : '5 / 2';
 
   return (
-    <IiifImage
-      src={src}
-      alt={alt}
-      width={px}
-      height={Math.round(px * 0.4)}
-      sizes={`(max-width: 768px) 100vw, ${px}px`}
-      className={`block h-auto w-full object-contain ${className}`}
-    />
+    // An explicit width, like the image's own `width`: the preview sits in a
+    // shrink-to-fit inline-block, where a percentage width collapses to 0.
+    <div
+      className={`${src ? '' : 'bg-muted/30'} ${className}`}
+      style={{ aspectRatio, width: px, maxWidth: '100%' }}
+    >
+      {src && (
+        <IiifImage
+          src={src}
+          alt={alt}
+          width={px}
+          height={Math.round(px * 0.4)}
+          sizes={`(max-width: 768px) 100vw, ${px}px`}
+          className="block h-full w-full object-contain"
+        />
+      )}
+    </div>
   );
 }
 
