@@ -630,7 +630,6 @@
     },
     "page": {
       "loading": "Wird geladen…",
-      "loadingSharedCollection": "Geteilte Sammlung wird geladen…",
       "sharedCollectionNotFoundTitle": "Geteilte Sammlung nicht gefunden",
       "sharedCollectionNotFoundDesc": "Dieser öffentliche Sammlungslink ist ungültig oder unvollständig.",
       "sharedCollectionMissingDesc": "Dieser öffentliche Link ist nicht verfügbar oder enthält keine Sammlungs-Momentaufnahme mehr.",

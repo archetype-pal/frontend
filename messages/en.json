@@ -630,7 +630,6 @@
     },
     "page": {
       "loading": "Loading...",
-      "loadingSharedCollection": "Loading shared collection...",
       "sharedCollectionNotFoundTitle": "Shared collection not found",
       "sharedCollectionNotFoundDesc": "This public collection link is invalid or incomplete.",
       "sharedCollectionMissingDesc": "This public link is unavailable or no longer contains a collection snapshot.",
