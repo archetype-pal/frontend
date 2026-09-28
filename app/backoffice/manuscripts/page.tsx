@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
@@ -114,10 +114,12 @@ export default function ManuscriptsPage() {
     ...(search ? { search } : {}),
   };
 
-  const { data, isError, refetch } = useQuery({
+  const { data, isLoading, isPlaceholderData, isError, refetch } = useQuery({
     queryKey: backofficeKeys.manuscripts.list(queryParams),
     queryFn: () => getHistoricalItems(queryParams),
     enabled: !!token,
+    // Keep the current page on screen while the next page or search loads.
+    placeholderData: keepPreviousData,
   });
 
   return (
@@ -143,6 +145,7 @@ export default function ManuscriptsPage() {
 
       <DataTable
         isError={isError}
+        isLoading={isLoading}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}
@@ -160,7 +163,7 @@ export default function ManuscriptsPage() {
           total={data.count}
           pageSize={50}
           page={page}
-          hasNext={!!data.next}
+          hasNext={!!data.next && !isPlaceholderData}
           onPageChange={setPage}
         />
       )}

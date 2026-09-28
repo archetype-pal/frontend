@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
@@ -173,10 +173,12 @@ export default function AnnotationsPage() {
     return params;
   }, [page, annotationType, handFilter, allographFilter]);
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isPlaceholderData, isError, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list(filters),
     queryFn: () => getGraphs(filters),
     enabled: !!token,
+    // Keep the current page on screen while the next page or search loads.
+    placeholderData: keepPreviousData,
   });
 
   const deleteMut = useMutation({
@@ -302,6 +304,7 @@ export default function AnnotationsPage() {
       {/* Data Table */}
       <DataTable
         isError={isError}
+        isLoading={isLoading}
         onRetry={() => refetch()}
         columns={columns}
         data={graphs}
@@ -317,7 +320,7 @@ export default function AnnotationsPage() {
         total={totalCount}
         pageSize={PAGE_SIZE}
         page={page}
-        hasNext={Boolean(data?.next)}
+        hasNext={Boolean(data?.next) && !isPlaceholderData}
         onPageChange={setPage}
       />
 

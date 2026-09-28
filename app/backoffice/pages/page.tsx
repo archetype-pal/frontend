@@ -121,7 +121,7 @@ export default function PagesPage() {
     execute: (slugs: string[]) => Promise<void>;
   } | null>(null);
 
-  const { data, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.pages.list(),
     queryFn: () => getPages(),
     enabled: !!token,
@@ -206,7 +206,7 @@ export default function PagesPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">{t('pages.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              {t('pages.subtitle', { count: data?.length ?? 0 })}
+              {isLoading ? '...' : t('pages.subtitle', { count: data?.length ?? 0 })}
             </p>
           </div>
         </div>
@@ -218,6 +218,7 @@ export default function PagesPage() {
 
       <DataTable
         isError={isError}
+        isLoading={isLoading}
         onRetry={() => refetch()}
         columns={columns}
         data={filtered}
