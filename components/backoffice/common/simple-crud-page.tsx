@@ -13,6 +13,7 @@ import { DataTable, sortableHeader } from '@/components/backoffice/common/data-t
 import { InlineEdit } from '@/components/backoffice/common/inline-edit';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -49,7 +50,7 @@ type SimpleCrudPageProps<T extends { id: number }> = {
   fields: CrudFieldConfig<T>[];
   showIdColumn?: boolean;
   deleteDescription: string;
-  /** Returns why a row cannot be deleted (shown in place of the delete button), or null. */
+  /** Returns why a row cannot be deleted (disables its delete button, shown as a tooltip), or null. */
   deleteBlockedReason?: (row: T) => string | null;
 };
 
@@ -189,7 +190,25 @@ export function SimpleCrudPage<T extends { id: number }>({
       cell: ({ row }) => {
         const blockedReason = deleteBlockedReason?.(row.original);
         if (blockedReason) {
-          return <span className="text-xs text-muted-foreground">{blockedReason}</span>;
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {/* A disabled button fires no pointer events, so the span carries the tooltip. */}
+                <span tabIndex={0} className="inline-flex">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground"
+                    disabled
+                    aria-label={blockedReason}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{blockedReason}</TooltipContent>
+            </Tooltip>
+          );
         }
         return (
           <Button
@@ -203,7 +222,7 @@ export function SimpleCrudPage<T extends { id: number }>({
           </Button>
         );
       },
-      size: deleteBlockedReason ? 120 : 50,
+      size: 50,
     });
 
     return generated;

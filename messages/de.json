@@ -2322,7 +2322,7 @@
       "fieldPlace": "Ort",
       "fieldPlacePlaceholder": "London",
       "deleteDescription": "Dieser Verwahrort enthält keine Elemente.",
-      "heldItems": "Enthält {count, plural, one {# Element} other {# Elemente}}"
+      "deleteBlocked": "Löschen nicht möglich: Dieser Verwahrort hat {count, plural, one {# verknüpftes Element} other {# verknüpfte Elemente}}. Verschieben oder löschen Sie diese zuerst."
     },
     "dataTable": {
       "searchPlaceholder": "Suchen …",

@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { TooltipProvider } from '@/components/ui/tooltip';
+
 import RepositoriesPage from './page';
 
 vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ token: 'tok' }) }));
@@ -34,15 +36,21 @@ vi.mock('@/services/backoffice/manuscripts', () => ({
 }));
 
 describe('<RepositoriesPage>', () => {
-  it('offers delete only for repositories that hold no items', async () => {
+  it('disables delete, with the reason, on repositories that have linked items', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
-        <RepositoriesPage />
+        <TooltipProvider>
+          <RepositoriesPage />
+        </TooltipProvider>
       </QueryClientProvider>
     );
 
-    expect(await screen.findByText('Holds 2 items')).toBeTruthy();
-    expect(screen.getAllByRole('button', { name: 'Delete repository' })).toHaveLength(1);
+    const blocked = await screen.findByRole('button', {
+      name: "Can't delete: this repository has 2 linked items. Move or delete them first.",
+    });
+    expect((blocked as HTMLButtonElement).disabled).toBe(true);
+    const allowed = screen.getByRole('button', { name: 'Delete repository' });
+    expect((allowed as HTMLButtonElement).disabled).toBe(false);
   });
 });

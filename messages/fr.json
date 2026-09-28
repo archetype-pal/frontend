@@ -2322,7 +2322,7 @@
       "fieldPlace": "Lieu",
       "fieldPlacePlaceholder": "Londres",
       "deleteDescription": "Ce dépôt ne contient aucun élément.",
-      "heldItems": "Contient {count, plural, one {# élément} other {# éléments}}"
+      "deleteBlocked": "Suppression impossible : ce dépôt a {count, plural, one {# élément lié} other {# éléments liés}}. Déplacez-les ou supprimez-les d'abord."
     },
     "dataTable": {
       "searchPlaceholder": "Rechercher...",

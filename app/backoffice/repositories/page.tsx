@@ -56,7 +56,7 @@ export default function RepositoriesPage() {
       deleteDescription={t('repositories.deleteDescription')}
       deleteBlockedReason={(row) =>
         row.current_item_count
-          ? t('repositories.heldItems', { count: row.current_item_count })
+          ? t('repositories.deleteBlocked', { count: row.current_item_count })
           : null
       }
     />

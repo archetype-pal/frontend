@@ -2322,7 +2322,7 @@
       "fieldPlace": "Place",
       "fieldPlacePlaceholder": "London",
       "deleteDescription": "This repository holds no items.",
-      "heldItems": "Holds {count, plural, one {# item} other {# items}}"
+      "deleteBlocked": "Can't delete: this repository has {count, plural, one {# linked item} other {# linked items}}. Move or delete them first."
     },
     "dataTable": {
       "searchPlaceholder": "Search...",
