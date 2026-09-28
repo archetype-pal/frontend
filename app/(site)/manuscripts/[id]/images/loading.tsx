@@ -1,5 +1,9 @@
 import { Skeleton } from '@/components/ui/skeleton';
+import { ViewerLoadingState } from '@/components/manuscript/viewer-status-screen';
 
+// Shown while [imageId]/layout.tsx awaits the image, its manuscript and the tab
+// counts. Without it the nearest fallback is the manuscript overview's skeleton,
+// a different page's shape. Mirrors the layout's header, then the viewer body.
 export default function Loading() {
   return (
     <div className="flex min-h-screen flex-col">
@@ -13,8 +17,8 @@ export default function Loading() {
           ))}
         </div>
       </header>
-      <div className="flex-1 p-4 sm:p-6">
-        <Skeleton className="h-[70vh] w-full rounded-lg" />
+      <div className="flex-1">
+        <ViewerLoadingState />
       </div>
     </div>
   );
