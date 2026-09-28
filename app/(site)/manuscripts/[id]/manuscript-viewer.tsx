@@ -67,8 +67,12 @@ function annotationCount(image: ManuscriptImage): number {
   return image.number_of_image_annotations ?? image.number_of_annotations ?? 0;
 }
 
+function textEntry(image: ManuscriptImage, type: string) {
+  return image.texts?.find((t) => t.type?.toLowerCase() === type && t.content?.trim());
+}
+
 function textOfType(image: ManuscriptImage, type: string): string | undefined {
-  return image.texts?.find((t) => t.type?.toLowerCase() === type && t.content?.trim())?.content;
+  return textEntry(image, type)?.content;
 }
 
 // Order the plates the way a charter is read: face, then dorse, then seals.
@@ -201,12 +205,19 @@ export function ManuscriptViewer({
       orderedImages
         .map((img) => ({
           image: img,
-          transcription: textOfType(img, 'transcription'),
-          translation: textOfType(img, 'translation'),
+          transcription: textEntry(img, 'transcription'),
+          translation: textEntry(img, 'translation'),
         }))
         .filter((e) => e.transcription || e.translation),
     [orderedImages]
   );
+
+  // The languages the editors set on the texts, e.g. "Latin & English".
+  const editionLanguages = [
+    ...new Set(
+      editions.flatMap((e) => [e.transcription?.language, e.translation?.language]).filter(nonEmpty)
+    ),
+  ].join(' & ');
 
   // Memoised: a fresh `[]` from the `??` on every render would re-run the
   // description render below for every row.
@@ -437,7 +448,7 @@ export function ManuscriptViewer({
       {/* ── Text: facing-page edition ─────────────────────────────────── */}
       {editions.length > 0 ? (
         <section id="text" className="mt-20 scroll-mt-24">
-          <SectionHeading title={t('sections.text')} aside={t('sections.textAside')} />
+          <SectionHeading title={t('sections.text')} aside={editionLanguages} />
           <div className="space-y-14">
             {editions.map((edition) => {
               const hasBoth = Boolean(edition.transcription && edition.translation);
@@ -453,12 +464,14 @@ export function ManuscriptViewer({
                       <div>
                         <h3 className="mb-4 flex items-baseline gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Transcription
-                          <span className="font-normal normal-case tracking-normal text-muted-foreground/70">
-                            Latin
-                          </span>
+                          {nonEmpty(edition.transcription.language) ? (
+                            <span className="font-normal normal-case tracking-normal text-muted-foreground/70">
+                              {edition.transcription.language}
+                            </span>
+                          ) : null}
                         </h3>
                         <ImageTextViewer
-                          html={edition.transcription}
+                          html={edition.transcription.content}
                           className="prose prose-sm max-w-none leading-loose text-foreground [&_p]:my-0"
                         />
                       </div>
@@ -467,12 +480,14 @@ export function ManuscriptViewer({
                       <div className={cn(hasBoth && 'lg:border-l lg:border-border lg:pl-14')}>
                         <h3 className="mb-4 flex items-baseline gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Translation
-                          <span className="font-normal normal-case tracking-normal text-muted-foreground/70">
-                            English
-                          </span>
+                          {nonEmpty(edition.translation.language) ? (
+                            <span className="font-normal normal-case tracking-normal text-muted-foreground/70">
+                              {edition.translation.language}
+                            </span>
+                          ) : null}
                         </h3>
                         <ImageTextViewer
-                          html={edition.translation}
+                          html={edition.translation.content}
                           className="prose prose-sm max-w-none leading-loose text-foreground/90 [&_p]:my-0"
                         />
                       </div>
