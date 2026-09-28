@@ -2321,7 +2321,8 @@
       "fieldLabelPlaceholder": "BL",
       "fieldPlace": "Lieu",
       "fieldPlacePlaceholder": "Londres",
-      "deleteDescription": "Cela peut affecter les documents historiques qui référencent ce dépôt."
+      "deleteDescription": "Ce dépôt ne contient aucun élément.",
+      "deleteBlocked": "Suppression impossible : ce dépôt a {count, plural, one {# élément lié} other {# éléments liés}}. Déplacez-les ou supprimez-les d'abord."
     },
     "dataTable": {
       "searchPlaceholder": "Rechercher...",
