@@ -8,9 +8,9 @@
  *   - the uncovered-images drilldown ("+ Transcription" / "+ Translation"
  *     buttons that pre-fill item_image and type)
  *
- * The (item_image, type) uniqueness constraint is enforced in the DB;
- * any 4xx response is surfaced verbatim instead of being swallowed so
- * the editor sees "already exists" cleanly.
+ * An image holds at most one text of each type (enforced in the DB), so
+ * the dialog checks the image's texts as the id is typed and blocks a type
+ * that already exists.
  */
 
 import { useEffect, useState } from 'react';
@@ -39,6 +39,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { createImageText } from '@/services/image-texts';
+import {
+  describeCreateError,
+  ExistingTextNotice,
+  useExistingImageText,
+} from '@/components/backoffice/image-text-create-guards';
 
 export type NewTextKind = 'Transcription' | 'Translation';
 
@@ -76,6 +81,8 @@ export function NewImageTextDialog({
     language: '',
   });
   const { itemImage, type, language } = form;
+  const itemImageNumber = Number(itemImage);
+  const existing = useExistingImageText(itemImageNumber, type);
 
   // Re-prime fields each time the dialog reopens — without this, opening
   // it twice in a row would carry over the previous attempt's input.
@@ -98,23 +105,25 @@ export function NewImageTextDialog({
       }),
     onSuccess: (saved) => {
       toast.success(t('imageTexts.toastCreated', { type: saved.type.toLowerCase(), id: saved.id }));
-      queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts'] });
       queryClient.invalidateQueries({ queryKey: ['backoffice', 'texts-monitor', 'overview'] });
       queryClient.invalidateQueries({ queryKey: ['backoffice', 'uncovered-images'] });
       onOpenChange(false);
       router.push(`/backoffice/image-texts/${saved.id}`);
     },
-    onError: (err: Error) => {
-      // Surface the API message (item_image FK error, uniqueness
-      // constraint, etc.) so the editor knows what to fix without
-      // diving into devtools.
-      toast.error(t('imageTexts.toastCreateFailed'), { description: err.message.slice(0, 240) });
+    onError: (err) => {
+      toast.error(t('imageTexts.toastCreateFailed'), {
+        description: describeCreateError(err, t, itemImageNumber, type),
+      });
     },
   });
 
-  const itemImageNumber = Number(itemImage);
   const canSubmit =
-    Number.isFinite(itemImageNumber) && itemImageNumber > 0 && !!type && !createMut.isPending;
+    Number.isFinite(itemImageNumber) &&
+    itemImageNumber > 0 &&
+    !!type &&
+    !existing &&
+    !createMut.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -123,7 +132,7 @@ export function NewImageTextDialog({
           <DialogTitle>{t('imageTexts.newDialogTitle')}</DialogTitle>
           <DialogDescription>{t('imageTexts.newDialogDescription')}</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 px-5 py-2">
           <div className="space-y-1.5">
             <Label htmlFor="new-text-image">{t('imageTexts.newItemImageLabel')}</Label>
             <Input
@@ -165,6 +174,7 @@ export function NewImageTextDialog({
               />
             </div>
           </div>
+          {existing ? <ExistingTextNotice text={existing} /> : null}
         </div>
         <DialogFooter>
           <Button
