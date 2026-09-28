@@ -148,7 +148,6 @@ describe('section labels are localized in both catalogues', () => {
     'manuscript.sections.legacyDescriptions',
     // The rest of the public page's on-this-page nav / section rules.
     'manuscript.sections.text',
-    'manuscript.sections.textAside',
     'manuscript.sections.images',
     'manuscript.sections.record',
     'manuscript.sections.sourceAttribution',

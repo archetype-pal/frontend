@@ -8,5 +8,6 @@ export interface ManuscriptImage {
   texts: Array<{
     type: string;
     content: string;
+    language?: string;
   }>;
 }

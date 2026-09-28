@@ -80,5 +80,6 @@ export interface ManuscriptImage {
   texts: {
     type: string;
     content: string;
+    language?: string;
   }[];
 }
