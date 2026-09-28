@@ -36,6 +36,11 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/auth-context';
 import { createImageText, validateTei, type TeiValidationError } from '@/services/image-texts';
+import {
+  describeCreateError,
+  ExistingTextNotice,
+  useExistingImageText,
+} from '@/components/backoffice/image-text-create-guards';
 
 type Kind = 'Transcription' | 'Translation';
 
@@ -54,6 +59,8 @@ export function ImportTeiDialog({
   const [itemImage, setItemImage] = useState('');
   const [type, setType] = useState<Kind>('Transcription');
   const [language, setLanguage] = useState('');
+  const itemImageNumber = Number(itemImage);
+  const existing = useExistingImageText(itemImageNumber, type);
   const [fileName, setFileName] = useState<string | null>(null);
   const [content, setContent] = useState<string | null>(null);
   const [errors, setErrors] = useState<TeiValidationError[] | null>(null);
@@ -86,13 +93,15 @@ export function ImportTeiDialog({
       }),
     onSuccess: (saved) => {
       toast.success(t('importTei.toastImported', { type: saved.type.toLowerCase(), id: saved.id }));
-      queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts'] });
       queryClient.invalidateQueries({ queryKey: ['backoffice', 'texts-monitor', 'overview'] });
       onOpenChange(false);
       router.push(`/backoffice/image-texts/${saved.id}`);
     },
-    onError: (err: Error) =>
-      toast.error(t('importTei.toastImportFailed'), { description: err.message.slice(0, 240) }),
+    onError: (err) =>
+      toast.error(t('importTei.toastImportFailed'), {
+        description: describeCreateError(err, t, itemImageNumber, type),
+      }),
   });
 
   // Clear the previous attempt's file/validation state on close so reopening
@@ -110,11 +119,11 @@ export function ImportTeiDialog({
     onOpenChange(next);
   }
 
-  const itemImageNumber = Number(itemImage);
   const teiValid = errors !== null && errors.length === 0;
   const canSubmit =
     Number.isFinite(itemImageNumber) &&
     itemImageNumber > 0 &&
+    !existing &&
     !!content &&
     teiValid &&
     !validating &&
@@ -127,7 +136,7 @@ export function ImportTeiDialog({
           <DialogTitle>{t('importTei.title')}</DialogTitle>
           <DialogDescription>{t('importTei.description')}</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 px-5 py-2">
           <div className="space-y-1.5">
             <Label htmlFor="import-tei-image">{t('importTei.itemImageLabel')}</Label>
             <Input
@@ -161,6 +170,7 @@ export function ImportTeiDialog({
               />
             </div>
           </div>
+          {existing ? <ExistingTextNotice text={existing} /> : null}
           <div className="space-y-1.5">
             <Label htmlFor="import-tei-file">{t('importTei.fileLabel')}</Label>
             <Input

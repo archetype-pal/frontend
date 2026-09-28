@@ -1,4 +1,5 @@
 import { authFetch, proxyFetch } from '@/lib/api-fetch';
+import { BackofficeApiError } from '@/services/backoffice/api-client';
 
 export type ImageTextStatus = 'Draft' | 'Review' | 'Live' | 'Reviewed';
 
@@ -186,8 +187,8 @@ export async function createImageText(payload: CreateImageTextPayload): Promise<
     }),
   });
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Failed to create image text: ${response.status}`);
+    const body = await response.json().catch(() => ({}));
+    throw new BackofficeApiError(response.status, body as Record<string, unknown>);
   }
   return response.json();
 }
