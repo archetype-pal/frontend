@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import {
@@ -36,12 +35,11 @@ interface ItemPartsTabProps {
 }
 
 export function ItemPartsTab({ historicalItemId, itemParts }: ItemPartsTabProps) {
-  const { token } = useAuth();
   const t = useTranslations('backoffice');
   const queryClient = useQueryClient();
 
   const createMut = useMutation({
-    mutationFn: () => createItemPart(token!, { historical_item: historicalItemId }),
+    mutationFn: () => createItemPart({ historical_item: historicalItemId }),
     onSuccess: () => {
       toast.success(t('manuscriptsDetail.partAdded'));
       queryClient.invalidateQueries({
@@ -99,7 +97,6 @@ function ItemPartCard({
   part: ItemPartNested;
   historicalItemId: number;
 }) {
-  const { token } = useAuth();
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
@@ -118,7 +115,7 @@ function ItemPartCard({
 
   const saveMut = useMutation({
     mutationFn: () =>
-      updateItemPart(token!, part.id, {
+      updateItemPart(part.id, {
         current_item: currentItemId,
         current_item_locus: locus,
         custom_label: customLabel,
@@ -136,7 +133,7 @@ function ItemPartCard({
   });
 
   const deleteMut = useMutation({
-    mutationFn: () => deleteItemPart(token!, part.id),
+    mutationFn: () => deleteItemPart(part.id),
     onSuccess: () => {
       toast.success(t('manuscriptsDetail.partRemoved'));
       invalidate();

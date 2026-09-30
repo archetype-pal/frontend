@@ -5,7 +5,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { Loader2, Trash2 } from 'lucide-react';
-import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -37,7 +36,6 @@ export function ItemImageEditDialog({
   image,
   historicalItemId,
 }: ItemImageEditDialogProps) {
-  const { token } = useAuth();
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
@@ -65,7 +63,7 @@ export function ItemImageEditDialog({
 
   const saveMut = useMutation({
     mutationFn: () =>
-      updateItemImage(token!, image.id, {
+      updateItemImage(image.id, {
         locus,
         tags: tags
           .split(',')
@@ -83,7 +81,7 @@ export function ItemImageEditDialog({
   });
 
   const deleteMut = useMutation({
-    mutationFn: () => deleteItemImage(token!, image.id),
+    mutationFn: () => deleteItemImage(image.id),
     onSuccess: () => {
       toast.success(t('manuscriptsDetail.imageRemoved'));
       invalidate();

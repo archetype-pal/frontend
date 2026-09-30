@@ -5,12 +5,12 @@ import { describe, expect, it, vi } from 'vitest';
 // arguments it was called with — that's enough to verify the contract.
 vi.mock('./api-client', () => {
   const get = vi.fn(async (path: string) => ({ kind: 'get', path }));
-  const post = vi.fn(async (path: string, _token: string, data: unknown) => ({
+  const post = vi.fn(async (path: string, data: unknown) => ({
     kind: 'post',
     path,
     data,
   }));
-  const patch = vi.fn(async (path: string, _token: string, data: unknown) => ({
+  const patch = vi.fn(async (path: string, data: unknown) => ({
     kind: 'patch',
     path,
     data,
@@ -31,17 +31,17 @@ const service = createCrudService<{ id: number; name: string }>(BASE);
 
 describe('createCrudService.list', () => {
   it('returns the bare base path when no params are supplied', async () => {
-    const res = (await service.list('tok')) as unknown as { path: string };
+    const res = (await service.list()) as unknown as { path: string };
     expect(res.path).toBe(BASE);
   });
 
   it('appends ?key=value query parameters', async () => {
-    const res = (await service.list('tok', { search: 'magna' })) as unknown as { path: string };
+    const res = (await service.list({ search: 'magna' })) as unknown as { path: string };
     expect(res.path).toBe(`${BASE}?search=magna`);
   });
 
   it('coerces number / boolean params to their string form', async () => {
-    const res = (await service.list('tok', {
+    const res = (await service.list({
       limit: 20,
       offset: 0,
       published: true,
@@ -53,7 +53,7 @@ describe('createCrudService.list', () => {
   });
 
   it('skips undefined / null values entirely (not stringified as "undefined")', async () => {
-    const res = (await service.list('tok', {
+    const res = (await service.list({
       search: 'magna',
       // common pattern when the form hasn't been touched:
       orderBy: undefined,
@@ -66,7 +66,7 @@ describe('createCrudService.list', () => {
   });
 
   it('keeps the base path unchanged when every param is null/undefined', async () => {
-    const res = (await service.list('tok', {
+    const res = (await service.list({
       orderBy: undefined,
       filter: null,
     })) as unknown as { path: string };
@@ -76,12 +76,12 @@ describe('createCrudService.list', () => {
 
 describe('createCrudService item operations', () => {
   it('get builds `${base}${id}/`', async () => {
-    const res = (await service.get('tok', 42)) as unknown as { path: string };
+    const res = (await service.get(42)) as unknown as { path: string };
     expect(res.path).toBe(`${BASE}42/`);
   });
 
   it('create posts to the base path', async () => {
-    const res = (await service.create('tok', { name: 'Foo' })) as unknown as {
+    const res = (await service.create({ name: 'Foo' })) as unknown as {
       path: string;
       data: unknown;
     };
@@ -90,7 +90,7 @@ describe('createCrudService item operations', () => {
   });
 
   it('update patches `${base}${id}/`', async () => {
-    const res = (await service.update('tok', 7, { name: 'Bar' })) as unknown as {
+    const res = (await service.update(7, { name: 'Bar' })) as unknown as {
       path: string;
       data: unknown;
     };
@@ -99,7 +99,7 @@ describe('createCrudService item operations', () => {
   });
 
   it('remove deletes `${base}${id}/`', async () => {
-    const res = (await service.remove('tok', 7)) as unknown as { path: string };
+    const res = (await service.remove(7)) as unknown as { path: string };
     expect(res.path).toBe(`${BASE}7/`);
   });
 
@@ -107,7 +107,7 @@ describe('createCrudService item operations', () => {
     const slugService = createCrudService<{ slug: string }, { slug: string }, string>(
       '/api/v1/publications/management/posts/'
     );
-    const res = (await slugService.get('tok', 'my-post')) as unknown as { path: string };
+    const res = (await slugService.get('my-post')) as unknown as { path: string };
     expect(res.path).toBe('/api/v1/publications/management/posts/my-post/');
   });
 });

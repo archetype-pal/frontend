@@ -77,7 +77,7 @@ describe('TeiTextEditor — Format button', () => {
     button.click();
 
     await waitFor(() => expect(onChange).toHaveBeenCalledWith('<p>\n  laid out\n</p>'));
-    expect(formatTei).toHaveBeenCalledWith(ONE_LINER, 't0ken');
+    expect(formatTei).toHaveBeenCalledWith(ONE_LINER);
   });
 
   it('is not offered in Preview mode — there is no source to lay out there', () => {

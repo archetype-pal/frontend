@@ -44,7 +44,7 @@ export interface UseMsDescAreaOptions<A extends MsDescAreaId> {
   savedPublished: boolean;
   token: string | null;
   /** Injectable for tests; defaults to the shared `validate-tei` endpoint. */
-  validate?: (content: string, token: string) => Promise<TeiValidationResult>;
+  validate?: (content: string) => Promise<TeiValidationResult>;
   debounceMs?: number;
 }
 
@@ -136,7 +136,7 @@ export function useMsDescArea<A extends MsDescAreaId>({
     let cancelled = false;
     const handle = setTimeout(async () => {
       try {
-        const result = await validate(draft.content, token);
+        const result = await validate(draft.content);
         if (cancelled) return;
         setChecked({ content: draft.content, valid: result.valid, errors: result.errors });
       } catch {

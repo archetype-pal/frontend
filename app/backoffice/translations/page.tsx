@@ -153,14 +153,12 @@ async function fetchModelLabels(): Promise<ModelLabelsConfig> {
 }
 
 async function saveModelLabels(
-  token: string,
   labels: Partial<Record<ModelLabelKey, LocalizedLabel>>
 ): Promise<ModelLabelsConfig | null> {
   const res = await fetch('/api/model-labels', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Token ${token}`,
     },
     body: JSON.stringify({ labels }),
   });
@@ -255,10 +253,7 @@ export default function TranslationsPage() {
           config.labels[key].fr !== serverConfig!.labels[key].fr ||
           config.labels[key].de !== serverConfig!.labels[key].de
       );
-      return saveModelLabels(
-        token!,
-        Object.fromEntries(changed.map((key) => [key, config.labels[key]]))
-      );
+      return saveModelLabels(Object.fromEntries(changed.map((key) => [key, config.labels[key]])));
     },
     onSuccess: (saved) => {
       toast.success(t('translations.toastSaved'));

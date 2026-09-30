@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -16,7 +15,6 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 
 export default function NewPagePage() {
-  const { token } = useAuth();
   const router = useRouter();
   const t = useTranslations('backoffice');
   const [title, setTitle] = useState('');
@@ -41,7 +39,7 @@ export default function NewPagePage() {
 
   const createMut = useMutation({
     mutationFn: () =>
-      createPage(token!, {
+      createPage({
         slug: resolvedSlug,
         title: { en: title, fr: '', de: '' },
         content: { en: '', fr: '', de: '' },

@@ -69,9 +69,7 @@ describe('useEntityEditor', () => {
     await waitFor(() => expect(result.current.form).not.toBeNull());
     act(() => result.current.setForm({ name: 'Beta' }));
     act(() => result.current.save());
-    await waitFor(() =>
-      expect(saveFn).toHaveBeenCalledWith('tok', 1, { name: 'Beta', note: 'hi' })
-    );
+    await waitFor(() => expect(saveFn).toHaveBeenCalledWith(1, { name: 'Beta', note: 'hi' }));
     await waitFor(() => expect(result.current.dirty).toBe(false));
     expect(toast.success).toHaveBeenCalledWith('Entity saved');
   });
@@ -80,7 +78,7 @@ describe('useEntityEditor', () => {
     const { result, deleteFn } = setup();
     await waitFor(() => expect(result.current.form).not.toBeNull());
     act(() => result.current.remove());
-    await waitFor(() => expect(deleteFn).toHaveBeenCalledWith('tok', 1));
+    await waitFor(() => expect(deleteFn).toHaveBeenCalledWith(1));
     await waitFor(() => expect(push).toHaveBeenCalledWith('/backoffice/entities'));
   });
 

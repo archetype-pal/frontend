@@ -146,19 +146,19 @@ export default function BackofficeDashboardPage() {
   // Data queries
   const characters = useQuery({
     queryKey: backofficeKeys.characters.all(),
-    queryFn: () => getCharacters(token!),
+    queryFn: () => getCharacters(),
     enabled: !!token,
   });
 
   const manuscripts = useQuery({
     queryKey: backofficeKeys.manuscripts.list({ limit: 1 }),
-    queryFn: () => getHistoricalItems(token!, { limit: 1 }),
+    queryFn: () => getHistoricalItems({ limit: 1 }),
     enabled: !!token,
   });
 
   const publications = useQuery({
     queryKey: backofficeKeys.publications.list({ limit: 1 }),
-    queryFn: () => getPublications(token!, { limit: 1 }),
+    queryFn: () => getPublications({ limit: 1 }),
     enabled: !!token,
   });
 
@@ -168,25 +168,25 @@ export default function BackofficeDashboardPage() {
   // about the queue depth when a busy editor had >100 publications.
   const draftPublications = useQuery({
     queryKey: backofficeKeys.publications.list({ limit: 1, status: 'Draft' }),
-    queryFn: () => getPublications(token!, { limit: 1, status: 'Draft' }),
+    queryFn: () => getPublications({ limit: 1, status: 'Draft' }),
     enabled: !!token,
   });
 
   const scribes = useQuery({
     queryKey: backofficeKeys.scribes.all(),
-    queryFn: () => getScribes(token!),
+    queryFn: () => getScribes(),
     enabled: !!token,
   });
 
   const pendingComments = useQuery({
     queryKey: backofficeKeys.comments.list('pending'),
-    queryFn: () => getComments(token!, { is_approved: false }),
+    queryFn: () => getComments({ is_approved: false }),
     enabled: !!token,
   });
 
   const searchStats = useQuery({
     queryKey: backofficeKeys.searchEngine.stats(),
-    queryFn: () => getSearchEngineStats(token!),
+    queryFn: () => getSearchEngineStats(),
     enabled: !!token,
     refetchInterval: 60_000,
   });

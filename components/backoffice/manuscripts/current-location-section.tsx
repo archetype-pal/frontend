@@ -26,7 +26,7 @@ import {
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { authFetch } from '@/lib/api-fetch';
+import { proxyFetch } from '@/lib/api-fetch';
 import type { CurrentItemOption, ItemPartNested, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
 
@@ -67,7 +67,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
 
   const { data: repositoriesData } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
-    queryFn: () => getRepositories(token!),
+    queryFn: () => getRepositories(),
     enabled: !!token,
   });
 
@@ -85,7 +85,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
       // `(repository, shelfmark)` row.
       const existingItems = await walkPaginated<CurrentItemOption>(
         `/api/v1/manuscripts/management/current-items/?repository=${Number(repository)}&limit=100`,
-        (path) => authFetch(path, token)
+        (path) => proxyFetch(path)
       );
       let currentItemId: number;
       const match = existingItems.find(
@@ -94,13 +94,13 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
       if (match) {
         currentItemId = match.id;
       } else {
-        const newCi = await createCurrentItem(token, {
+        const newCi = await createCurrentItem({
           repository: Number(repository),
           shelfmark: shelfmark.trim(),
         });
         currentItemId = newCi.id;
       }
-      await createItemPart(token, {
+      await createItemPart({
         historical_item: historicalItemId,
         current_item: currentItemId,
         current_item_locus: locus.trim(),
@@ -211,7 +211,7 @@ function SinglePartLocation({
         locus !== part.current_item_locus ||
         customLabel !== part.custom_label
       ) {
-        await updateItemPart(token, part.id, {
+        await updateItemPart(part.id, {
           current_item: currentItemId,
           current_item_locus: locus,
           custom_label: customLabel,

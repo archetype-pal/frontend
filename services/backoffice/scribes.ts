@@ -14,7 +14,7 @@ const scribesCrud = createCrudService<PaginatedResponse<AdminScribeListItem>, Ad
   '/api/v1/management/scribes/scribes/'
 );
 
-export const getScribes = (token: string) => scribesCrud.list(token);
+export const getScribes = () => scribesCrud.list();
 export const getScribe = scribesCrud.get;
 export const createScribe = scribesCrud.create;
 export const updateScribe = scribesCrud.update;
@@ -26,8 +26,8 @@ const handsCrud = createCrudService<PaginatedResponse<AdminHandListItem>, AdminH
   '/api/v1/management/scribes/hands/'
 );
 
-export function getHands(token: string, params?: { scribe?: number; item_part?: number }) {
-  return handsCrud.list(token, params);
+export function getHands(params?: { scribe?: number; item_part?: number }) {
+  return handsCrud.list(params);
 }
 
 export const getHand = handsCrud.get;
@@ -50,8 +50,8 @@ export const deleteHandDescription = handDescriptionsCrud.remove;
 
 const scriptsCrud = createCrudService<Script>('/api/v1/management/scribes/scripts/');
 
-export function getScripts(token: string) {
-  return backofficeGet<Script[]>('/api/v1/management/scribes/scripts/', token);
+export function getScripts() {
+  return backofficeGet<Script[]>('/api/v1/management/scribes/scripts/');
 }
 
 export const createScript = scriptsCrud.create;

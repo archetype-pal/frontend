@@ -1,10 +1,9 @@
-import { authFetch } from '@/lib/api-fetch';
+import { proxyFetch } from '@/lib/api-fetch';
 
 const TRANSIENT_STATUSES = [502, 503, 504];
 
 async function fetchWithRetry(
   path: string,
-  token: string,
   init?: RequestInit,
   retries = 2,
   delay = 500
@@ -17,7 +16,7 @@ async function fetchWithRetry(
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await authFetch(path, token, init);
+      const res = await proxyFetch(path, init);
       if (idempotent && attempt < retries && TRANSIENT_STATUSES.includes(res.status)) {
         await new Promise((r) => setTimeout(r, delay * (attempt + 1)));
         continue;
@@ -45,8 +44,8 @@ export class BackofficeApiError extends Error {
  * Authenticated fetch wrapper for backoffice API endpoints.
  * Sends requests to the provided API path and adds the auth token header.
  */
-async function apiRequest<T>(path: string, token: string, init?: RequestInit): Promise<T> {
-  const res = await fetchWithRetry(path, token, {
+async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetchWithRetry(path, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -65,29 +64,29 @@ async function apiRequest<T>(path: string, token: string, init?: RequestInit): P
 }
 
 /** GET with auth. Pass `init` (e.g. `{ cache: 'no-store' }`) for fresh reads. */
-export function backofficeGet<T>(path: string, token: string, init?: RequestInit): Promise<T> {
-  return apiRequest<T>(path, token, init);
+export function backofficeGet<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init);
 }
 
 /** POST with auth + JSON body */
-export function backofficePost<T>(path: string, token: string, data: unknown): Promise<T> {
-  return apiRequest<T>(path, token, {
+export function backofficePost<T>(path: string, data: unknown): Promise<T> {
+  return apiRequest<T>(path, {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
 /** PATCH with auth + JSON body */
-export function backofficePatch<T>(path: string, token: string, data: unknown): Promise<T> {
-  return apiRequest<T>(path, token, {
+export function backofficePatch<T>(path: string, data: unknown): Promise<T> {
+  return apiRequest<T>(path, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
 }
 
 /** DELETE with auth */
-export function backofficeDelete(path: string, token: string): Promise<void> {
-  return apiRequest<void>(path, token, { method: 'DELETE' });
+export function backofficeDelete(path: string): Promise<void> {
+  return apiRequest<void>(path, { method: 'DELETE' });
 }
 
 /**
@@ -95,13 +94,8 @@ export function backofficeDelete(path: string, token: string): Promise<void> {
  * Sends FormData without setting Content-Type so the browser
  * automatically adds the correct multipart boundary.
  */
-async function apiRequestFormData<T>(
-  path: string,
-  token: string,
-  method: string,
-  formData: FormData
-): Promise<T> {
-  const res = await fetchWithRetry(path, token, {
+async function apiRequestFormData<T>(path: string, method: string, formData: FormData): Promise<T> {
+  const res = await fetchWithRetry(path, {
     method,
     body: formData,
   });
@@ -116,19 +110,11 @@ async function apiRequestFormData<T>(
 }
 
 /** POST with auth + FormData body (multipart) */
-export function backofficePostFormData<T>(
-  path: string,
-  token: string,
-  formData: FormData
-): Promise<T> {
-  return apiRequestFormData<T>(path, token, 'POST', formData);
+export function backofficePostFormData<T>(path: string, formData: FormData): Promise<T> {
+  return apiRequestFormData<T>(path, 'POST', formData);
 }
 
 /** PATCH with auth + FormData body (multipart) */
-export function backofficePatchFormData<T>(
-  path: string,
-  token: string,
-  formData: FormData
-): Promise<T> {
-  return apiRequestFormData<T>(path, token, 'PATCH', formData);
+export function backofficePatchFormData<T>(path: string, formData: FormData): Promise<T> {
+  return apiRequestFormData<T>(path, 'PATCH', formData);
 }

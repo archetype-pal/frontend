@@ -1,4 +1,5 @@
-import { authFetch } from '@/lib/api-fetch';
+import { authFetch, proxyFetch } from '@/lib/api-fetch';
+import { BackofficeApiError } from '@/services/backoffice/api-client';
 
 export type ImageTextStatus = 'Draft' | 'Review' | 'Live' | 'Reviewed';
 
@@ -47,11 +48,10 @@ export async function fetchImageText(
 }
 
 export async function updateImageText(
-  token: string,
   textId: number,
   payload: Partial<Pick<ImageTextDetail, 'content' | 'status' | 'language' | 'type'>>
 ): Promise<ImageTextDetail> {
-  const response = await authFetch(`/api/v1/manuscripts/management/image-texts/${textId}/`, token, {
+  const response = await proxyFetch(`/api/v1/manuscripts/management/image-texts/${textId}/`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -74,8 +74,8 @@ export interface TeiValidationResult {
   errors: TeiValidationError[];
 }
 
-export async function validateTei(content: string, token: string): Promise<TeiValidationResult> {
-  const response = await authFetch('/api/v1/manuscripts/image-texts/validate-tei/', token, {
+export async function validateTei(content: string): Promise<TeiValidationResult> {
+  const response = await proxyFetch('/api/v1/manuscripts/image-texts/validate-tei/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content }),
@@ -91,8 +91,8 @@ export async function validateTei(content: string, token: string): Promise<TeiVa
  * `format_image_text_tei` management command can never drift apart). Rejects
  * malformed markup rather than reflowing it.
  */
-export async function formatTei(content: string, token: string): Promise<string> {
-  const response = await authFetch('/api/v1/manuscripts/image-texts/format-tei/', token, {
+export async function formatTei(content: string): Promise<string> {
+  const response = await proxyFetch('/api/v1/manuscripts/image-texts/format-tei/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content }),
@@ -115,7 +115,6 @@ export interface LinkRegionResult {
  * graph id and the updated (TEI) content. Superuser-gated server-side.
  */
 export async function linkRegionToElement(
-  token: string,
   textId: number,
   elementIndex: number,
   geometry?: unknown,
@@ -127,9 +126,8 @@ export async function linkRegionToElement(
     graphId != null
       ? { element_index: elementIndex, graph_id: graphId }
       : { element_index: elementIndex, geometry };
-  const response = await authFetch(
+  const response = await proxyFetch(
     `/api/v1/manuscripts/management/image-texts/${textId}/link-region/`,
-    token,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -150,14 +148,12 @@ export async function linkRegionToElement(
  * intact. Returns the updated content.
  */
 export async function unlinkElement(
-  token: string,
   textId: number,
   elementIndex: number,
   graphId: number
 ): Promise<{ content: string }> {
-  const response = await authFetch(
+  const response = await proxyFetch(
     `/api/v1/manuscripts/management/image-texts/${textId}/unlink-element/`,
-    token,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -179,11 +175,8 @@ export interface CreateImageTextPayload {
   status?: ImageTextStatus;
 }
 
-export async function createImageText(
-  token: string,
-  payload: CreateImageTextPayload
-): Promise<ImageTextDetail> {
-  const response = await authFetch(`/api/v1/manuscripts/management/image-texts/`, token, {
+export async function createImageText(payload: CreateImageTextPayload): Promise<ImageTextDetail> {
+  const response = await proxyFetch(`/api/v1/manuscripts/management/image-texts/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -194,14 +187,14 @@ export async function createImageText(
     }),
   });
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Failed to create image text: ${response.status}`);
+    const body = await response.json().catch(() => ({}));
+    throw new BackofficeApiError(response.status, body as Record<string, unknown>);
   }
   return response.json();
 }
 
-export async function deleteImageText(token: string, textId: number): Promise<void> {
-  const response = await authFetch(`/api/v1/manuscripts/management/image-texts/${textId}/`, token, {
+export async function deleteImageText(textId: number): Promise<void> {
+  const response = await proxyFetch(`/api/v1/manuscripts/management/image-texts/${textId}/`, {
     method: 'DELETE',
   });
   if (!response.ok && response.status !== 204) {

@@ -203,7 +203,7 @@ export default function UsersPage() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.users.all(),
-    queryFn: () => getUsers(token!),
+    queryFn: () => getUsers(),
     enabled: !!token,
   });
 
@@ -326,7 +326,7 @@ export default function UsersPage() {
   // ── Mutations ──────────────────────────────────────────────────────────
 
   const createMut = useMutation({
-    mutationFn: () => createUser(token!, createForm),
+    mutationFn: () => createUser(createForm),
     onSuccess: () => {
       toast.success(t('users.toastUserCreated'));
       invalidate();
@@ -340,10 +340,10 @@ export default function UsersPage() {
 
   const updateMut = useMutation({
     mutationFn: (vars?: { id: number; data: UserUpdatePayload }) => {
-      if (vars) return updateUser(token!, vars.id, vars.data);
+      if (vars) return updateUser(vars.id, vars.data);
       const payload: UserUpdatePayload = { ...editForm };
       if (!payload.password) delete payload.password;
-      return updateUser(token!, editTarget!.id, payload);
+      return updateUser(editTarget!.id, payload);
     },
     onSuccess: () => {
       toast.success(t('users.toastUserUpdated'));
@@ -356,7 +356,7 @@ export default function UsersPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => deleteUser(token!, id),
+    mutationFn: (id: number) => deleteUser(id),
     onSuccess: () => {
       toast.success(t('users.toastUserDeleted'));
       invalidate();
@@ -374,7 +374,7 @@ export default function UsersPage() {
     mutationFn: (ids: string[]) =>
       runBulkAction({
         ids,
-        action: (id) => deleteUser(token!, Number(id)),
+        action: (id) => deleteUser(Number(id)),
         invalidate,
         pastTense: 'deleted',
         noun: 'user',
@@ -402,7 +402,7 @@ export default function UsersPage() {
   async function handleBulkActivate() {
     await runBulkAction({
       ids: selectedIds,
-      action: (id) => updateUser(token!, Number(id), { is_active: true }),
+      action: (id) => updateUser(Number(id), { is_active: true }),
       invalidate,
       pastTense: 'activated',
       noun: 'user',
@@ -413,7 +413,7 @@ export default function UsersPage() {
   async function handleBulkDeactivate() {
     await runBulkAction({
       ids: selectedIds,
-      action: (id) => updateUser(token!, Number(id), { is_active: false }),
+      action: (id) => updateUser(Number(id), { is_active: false }),
       invalidate,
       pastTense: 'deactivated',
       noun: 'user',

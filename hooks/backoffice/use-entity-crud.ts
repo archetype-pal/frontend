@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 
@@ -9,11 +8,11 @@ interface EntityCrudConfig<T extends { id: number; name: string }> {
   /** React-Query key(s) to invalidate on mutations. */
   queryKeys: QueryKey[];
   /** API call to create an entity by name. */
-  createFn: (token: string, data: { name: string }) => Promise<T>;
+  createFn: (data: { name: string }) => Promise<T>;
   /** API call to rename an entity. */
-  updateFn: (token: string, id: number, data: { name: string }) => Promise<T>;
+  updateFn: (id: number, data: { name: string }) => Promise<T>;
   /** API call to delete an entity. */
-  deleteFn: (token: string, id: number) => Promise<void>;
+  deleteFn: (id: number) => Promise<void>;
   /** Human-readable entity label for toast messages (e.g. "Component"). */
   entityLabel: string;
 }
@@ -23,7 +22,6 @@ interface EntityCrudConfig<T extends { id: number; name: string }> {
  * shared by Component, Feature, and Position managers.
  */
 export function useEntityCrud<T extends { id: number; name: string }>(config: EntityCrudConfig<T>) {
-  const { token } = useAuth();
   const t = useTranslations('backoffice.simpleCrud');
   const queryClient = useQueryClient();
   const [newName, setNewName] = useState('');
@@ -36,7 +34,7 @@ export function useEntityCrud<T extends { id: number; name: string }>(config: En
   };
 
   const createMut = useMutation({
-    mutationFn: (name: string) => config.createFn(token!, { name }),
+    mutationFn: (name: string) => config.createFn({ name }),
     onSuccess: () => {
       invalidate();
       setNewName('');
@@ -50,8 +48,7 @@ export function useEntityCrud<T extends { id: number; name: string }>(config: En
   });
 
   const renameMut = useMutation({
-    mutationFn: ({ id, name }: { id: number; name: string }) =>
-      config.updateFn(token!, id, { name }),
+    mutationFn: ({ id, name }: { id: number; name: string }) => config.updateFn(id, { name }),
     onSuccess: () => {
       invalidate();
       toast.success(t('renamed', { label: config.entityLabel }));
@@ -64,7 +61,7 @@ export function useEntityCrud<T extends { id: number; name: string }>(config: En
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => config.deleteFn(token!, id),
+    mutationFn: (id: number) => config.deleteFn(id),
     onSuccess: () => {
       invalidate();
       setDeleteTarget(null);

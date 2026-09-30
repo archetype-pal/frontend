@@ -17,8 +17,8 @@ export const QualityResponseSchema = z.object({
 export type QualityCard = z.infer<typeof QualityCardSchema>;
 export type QualityResponse = z.infer<typeof QualityResponseSchema>;
 
-export async function fetchQualityDashboard(token: string): Promise<QualityResponse> {
-  const data = await backofficeGet<unknown>('/api/v1/search/management/quality/', token, {
+export async function fetchQualityDashboard(): Promise<QualityResponse> {
+  const data = await backofficeGet<unknown>('/api/v1/search/management/quality/', {
     cache: 'no-store',
   });
   return QualityResponseSchema.parse(data);

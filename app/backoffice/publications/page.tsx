@@ -28,7 +28,7 @@ import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { updatePublication, deletePublication } from '@/services/backoffice/publications';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { authFetch } from '@/lib/api-fetch';
+import { proxyFetch } from '@/lib/api-fetch';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import type { PublicationListItem } from '@/types/backoffice';
 
@@ -165,7 +165,7 @@ export default function PublicationsPage() {
     queryFn: () =>
       walkPaginated<PublicationListItem>(
         '/api/v1/media/management/publications/?limit=100',
-        (path) => authFetch(path, token!)
+        (path) => proxyFetch(path)
       ),
     enabled: !!token,
   });
@@ -193,7 +193,7 @@ export default function PublicationsPage() {
       action: async (slugs) => {
         await runBulkAction({
           ids: slugs,
-          action: (slug) => updatePublication(token!, slug, { status: 'Published' }),
+          action: (slug) => updatePublication(slug, { status: 'Published' }),
           invalidate: invalidatePubs,
           pastTense: 'published',
           noun: 'post',
@@ -210,7 +210,7 @@ export default function PublicationsPage() {
           execute: async (s) => {
             await runBulkAction({
               ids: s,
-              action: (slug) => updatePublication(token!, slug, { status: 'Draft' }),
+              action: (slug) => updatePublication(slug, { status: 'Draft' }),
               invalidate: invalidatePubs,
               pastTense: 'unpublished',
               noun: 'post',
@@ -231,7 +231,7 @@ export default function PublicationsPage() {
           execute: async (s) => {
             await runBulkAction({
               ids: s,
-              action: (slug) => deletePublication(token!, slug),
+              action: (slug) => deletePublication(slug),
               invalidate: invalidatePubs,
               pastTense: 'deleted',
               noun: 'post',

@@ -58,7 +58,7 @@ export function UncoveredImages() {
 
   const { data, isFetching, error } = useQuery({
     queryKey: ['backoffice', 'uncovered-images', mode, page],
-    queryFn: () => fetchUncoveredImages(token!, mode, page, PAGE_SIZE),
+    queryFn: () => fetchUncoveredImages(mode, page, PAGE_SIZE),
     enabled: !!token,
     placeholderData: (prev) => prev,
   });

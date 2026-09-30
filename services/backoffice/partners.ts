@@ -9,7 +9,7 @@ const PARTNERS_PATH = '/api/v1/media/management/partners/';
 
 const partnersCrud = createCrudService<PartnerItem[], PartnerItem>(PARTNERS_PATH);
 
-export const getPartners = (token: string) => partnersCrud.list(token);
+export const getPartners = () => partnersCrud.list();
 export const deletePartner = partnersCrud.remove;
 
 /** Plain JSON update (e.g. reordering). */
@@ -36,19 +36,11 @@ function buildPartnerFormData(data: Partial<PartnerItemPayload>): FormData {
 }
 
 /** Create a partner. Uses multipart when a logo File is provided. */
-export function createPartner(token: string, data: PartnerItemPayload): Promise<PartnerItem> {
-  return backofficePostFormData<PartnerItem>(PARTNERS_PATH, token, buildPartnerFormData(data));
+export function createPartner(data: PartnerItemPayload): Promise<PartnerItem> {
+  return backofficePostFormData<PartnerItem>(PARTNERS_PATH, buildPartnerFormData(data));
 }
 
 /** Update a partner. Uses multipart when a logo File is provided. */
-export function updatePartner(
-  token: string,
-  id: number,
-  data: Partial<PartnerItemPayload>
-): Promise<PartnerItem> {
-  return backofficePatchFormData<PartnerItem>(
-    `${PARTNERS_PATH}${id}/`,
-    token,
-    buildPartnerFormData(data)
-  );
+export function updatePartner(id: number, data: Partial<PartnerItemPayload>): Promise<PartnerItem> {
+  return backofficePatchFormData<PartnerItem>(`${PARTNERS_PATH}${id}/`, buildPartnerFormData(data));
 }

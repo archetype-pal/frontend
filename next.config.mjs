@@ -89,7 +89,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'archetype.elghareeb.space',
+        hostname: 'beta.archetype-pal.ink',
         pathname: '/**',
       },
       ...(process.env.NEXT_PUBLIC_API_URL

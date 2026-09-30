@@ -1,7 +1,7 @@
 import { backofficeGet } from './api-client';
 import { createCrudService } from './crud-factory';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { authFetch } from '@/lib/api-fetch';
+import { proxyFetch } from '@/lib/api-fetch';
 import type {
   PaginatedResponse,
   HistoricalItemListItem,
@@ -25,11 +25,8 @@ const historicalItemsCrud = createCrudService<
   HistoricalItemDetail
 >('/api/v1/manuscripts/management/historical-items/');
 
-export function getHistoricalItems(
-  token: string,
-  params?: { limit?: number; offset?: number; type?: string }
-) {
-  return historicalItemsCrud.list(token, params);
+export function getHistoricalItems(params?: { limit?: number; offset?: number; type?: string }) {
+  return historicalItemsCrud.list(params);
 }
 
 export const getHistoricalItem = historicalItemsCrud.get;
@@ -66,22 +63,19 @@ const itemImagesCrud = createCrudService<PaginatedResponse<AdminItemImage>, Admi
   '/api/v1/manuscripts/management/item-images/'
 );
 
-export function getItemImages(
-  token: string,
-  params?: { item_part?: number; limit?: number; offset?: number }
-) {
-  return itemImagesCrud.list(token, params);
+export function getItemImages(params?: { item_part?: number; limit?: number; offset?: number }) {
+  return itemImagesCrud.list(params);
 }
 
 export const createItemImage = itemImagesCrud.create;
 export const updateItemImage = itemImagesCrud.update;
 export const deleteItemImage = itemImagesCrud.remove;
 
-export function getMediaPickerContent(token: string, path = ''): Promise<MediaPickerContent> {
+export function getMediaPickerContent(path = ''): Promise<MediaPickerContent> {
   const qs = new URLSearchParams();
   if (path) qs.set('path', path);
   const endpoint = `/api/v1/manuscripts/management/image-picker-content/${qs.toString() ? `?${qs.toString()}` : ''}`;
-  return backofficeGet<MediaPickerContent>(endpoint, token);
+  return backofficeGet<MediaPickerContent>(endpoint);
 }
 
 // ── Item Parts ───────────────────────────────────────────────────────────
@@ -100,11 +94,8 @@ const currentItemsCrud = createCrudService<PaginatedResponse<CurrentItemOption>,
   '/api/v1/manuscripts/management/current-items/'
 );
 
-export function getCurrentItems(
-  token: string,
-  params?: { repository?: number; limit?: number; offset?: number }
-) {
-  return currentItemsCrud.list(token, params);
+export function getCurrentItems(params?: { repository?: number; limit?: number; offset?: number }) {
+  return currentItemsCrud.list(params);
 }
 
 export const getCurrentItem = currentItemsCrud.get;
@@ -151,11 +142,11 @@ const repositoriesCrud = createCrudService<PaginatedResponse<Repository>, Reposi
 
 // Walk all pages so consumers (the repositories CRUD page and the
 // physical-volumes filter dropdown) see every repository. The earlier
-// `repositoriesCrud.list(token)` returned the first DRF page only,
-// silently capping the list at 20.
-export const getRepositories = (token: string): Promise<Repository[]> =>
+// `repositoriesCrud.list()` returned the first DRF page only, silently
+// capping the list at 20.
+export const getRepositories = (): Promise<Repository[]> =>
   walkPaginated<Repository>('/api/v1/manuscripts/management/repositories/?limit=100', (path) =>
-    authFetch(path, token)
+    proxyFetch(path)
   );
 export const createRepository = repositoriesCrud.create;
 export const updateRepository = repositoriesCrud.update;
@@ -167,8 +158,8 @@ const sourcesCrud = createCrudService<BibliographicSource>(
   '/api/v1/manuscripts/management/sources/'
 );
 
-export function getSources(token: string) {
-  return backofficeGet<BibliographicSource[]>('/api/v1/manuscripts/management/sources/', token);
+export function getSources() {
+  return backofficeGet<BibliographicSource[]>('/api/v1/manuscripts/management/sources/');
 }
 
 export const createSource = sourcesCrud.create;
@@ -179,8 +170,8 @@ export const deleteSource = sourcesCrud.remove;
 
 const formatsCrud = createCrudService<ItemFormat>('/api/v1/manuscripts/management/formats/');
 
-export function getFormats(token: string) {
-  return backofficeGet<ItemFormat[]>('/api/v1/manuscripts/management/formats/', token);
+export function getFormats() {
+  return backofficeGet<ItemFormat[]>('/api/v1/manuscripts/management/formats/');
 }
 
 export const createFormat = formatsCrud.create;
@@ -191,8 +182,8 @@ export const deleteFormat = formatsCrud.remove;
 
 const datesCrud = createCrudService<BackofficeDate>('/api/v1/management/common/dates/');
 
-export function getDates(token: string) {
-  return backofficeGet<BackofficeDate[]>('/api/v1/management/common/dates/', token);
+export function getDates() {
+  return backofficeGet<BackofficeDate[]>('/api/v1/management/common/dates/');
 }
 
 export const createDate = datesCrud.create;

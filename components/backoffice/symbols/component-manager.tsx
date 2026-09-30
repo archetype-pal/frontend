@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
 import { Trash2, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,6 @@ interface ComponentManagerProps {
 
 export function ComponentManager({ components, allFeatures }: ComponentManagerProps) {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
@@ -39,7 +37,7 @@ export function ComponentManager({ components, allFeatures }: ComponentManagerPr
 
   const featureLinkMut = useMutation({
     mutationFn: ({ id, features }: { id: number; features: number[] }) =>
-      updateComponent(token!, id, { features }),
+      updateComponent(id, { features }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: backofficeKeys.components.all() });
       queryClient.invalidateQueries({ queryKey: backofficeKeys.characters.all() });

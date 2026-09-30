@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import { getPage, updatePage, deletePage } from '@/services/backoffice/pages';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
@@ -45,9 +46,14 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
   const queryClient = useQueryClient();
   const t = useTranslations('backoffice');
 
-  const { data: page, isLoading } = useQuery({
+  const {
+    data: page,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: backofficeKeys.pages.detail(slug),
-    queryFn: () => getPage(token!, slug),
+    queryFn: () => getPage(slug),
     enabled: !!token,
   });
 
@@ -120,7 +126,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
 
   const saveMut = useMutation({
     mutationFn: () =>
-      updatePage(token!, slug, {
+      updatePage(slug, {
         slug: pageSlug,
         title,
         content,
@@ -152,7 +158,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
   );
 
   const deleteMut = useMutation({
-    mutationFn: () => deletePage(token!, slug),
+    mutationFn: () => deletePage(slug),
     onSuccess: () => {
       toast.success(t('pagesDetail.toastDeleted'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.pages.all() });
@@ -163,6 +169,9 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
     },
   });
 
+  if (isError && !page) {
+    return <BackofficeErrorState message={t('pagesDetail.failedLoad')} onRetry={() => refetch()} />;
+  }
   if (isLoading || !page) {
     return (
       <div className="flex items-center justify-center h-64">

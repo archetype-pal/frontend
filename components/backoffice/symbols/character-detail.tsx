@@ -21,6 +21,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AllographTabPanel } from './allograph-tab-panel';
 import { ComparisonMatrix } from './comparison-matrix';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import {
   getCharacter,
   updateCharacterStructure,
@@ -73,9 +74,14 @@ export function CharacterDetail({
     return key ? t(key) : type;
   };
 
-  const { data: character, isLoading } = useQuery({
+  const {
+    data: character,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: backofficeKeys.characters.detail(characterId),
-    queryFn: () => getCharacter(token!, characterId),
+    queryFn: () => getCharacter(characterId),
     enabled: !!token,
   });
 
@@ -111,7 +117,7 @@ export function CharacterDetail({
   // Save mutation
   const saveMutation = useMutation({
     mutationFn: (payload: CharacterStructurePayload) =>
-      updateCharacterStructure(token!, characterId, payload),
+      updateCharacterStructure(characterId, payload),
     onSuccess: (data) => {
       toast.success(t('symbols.toastCharacterSaved'));
       queryClient.setQueryData(backofficeKeys.characters.detail(characterId), data);
@@ -127,7 +133,7 @@ export function CharacterDetail({
 
   // Delete mutation
   const deleteMutation = useMutation({
-    mutationFn: () => deleteCharacter(token!, characterId),
+    mutationFn: () => deleteCharacter(characterId),
     onSuccess: () => {
       toast.success(t('symbols.toastCharacterDeleted'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.characters.all() });
@@ -214,6 +220,9 @@ export function CharacterDetail({
     };
   }, [draft]);
 
+  if (isError && !character) {
+    return <BackofficeErrorState message={t('symbols.failedLoad')} onRetry={() => refetch()} />;
+  }
   if (isLoading || !draft) {
     return (
       <div className="flex items-center justify-center h-64">

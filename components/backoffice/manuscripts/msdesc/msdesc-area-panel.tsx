@@ -61,7 +61,7 @@ export function MsDescAreaPanel({ historicalItemId, area, row }: MsDescAreaPanel
 
   const saveMut = useMutation({
     mutationFn: () =>
-      updateMsDescArea(token!, row.id, {
+      updateMsDescArea(row.id, {
         content: editor.content,
         is_published: editor.isPublished,
       }),

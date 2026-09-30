@@ -5,7 +5,7 @@
 # not from package.json.
 overrides:
   qs: ^6.16.0
-  vite: 7.3.5
+  vite: 7.3.6
   esbuild: ^0.28.1
   postcss: ^8.5.17
   tmp: ^0.2.7

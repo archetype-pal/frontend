@@ -52,7 +52,7 @@ export function CatalogueNumbersSection({
 
   const { data: sources } = useQuery({
     queryKey: backofficeKeys.sources.all(),
-    queryFn: () => getSources(token!),
+    queryFn: () => getSources(),
     enabled: !!token,
   });
 
@@ -63,7 +63,7 @@ export function CatalogueNumbersSection({
 
   const createMut = useMutation({
     mutationFn: () =>
-      createCatalogueNumber(token!, {
+      createCatalogueNumber({
         historical_item: historicalItemId,
         catalogue: Number(newCatalogue),
         number: newNumber,
@@ -86,7 +86,7 @@ export function CatalogueNumbersSection({
 
   const updateMut = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
-      updateCatalogueNumber(token!, id, data),
+      updateCatalogueNumber(id, data),
     onSuccess: () => {
       toast.success(t('manuscriptsDetail.labelUpdated', { label: catalogueLabel }));
       invalidate();
@@ -103,7 +103,7 @@ export function CatalogueNumbersSection({
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => deleteCatalogueNumber(token!, id),
+    mutationFn: (id: number) => deleteCatalogueNumber(id),
     onSuccess: () => {
       toast.success(t('manuscriptsDetail.labelRemoved', { label: catalogueLabel }));
       invalidate();

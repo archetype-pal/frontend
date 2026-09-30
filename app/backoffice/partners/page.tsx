@@ -57,7 +57,7 @@ export default function PartnersPage() {
     refetch,
   } = useQuery({
     queryKey: backofficeKeys.partners.all(),
-    queryFn: () => getPartners(token!),
+    queryFn: () => getPartners(),
     enabled: !!token,
   });
 
@@ -85,7 +85,7 @@ export default function PartnersPage() {
 
   const createMut = useMutation({
     mutationFn: (data: { name: string; url: string; logo?: File | string }) =>
-      createPartner(token!, {
+      createPartner({
         name: data.name,
         url: data.url,
         ordering: (items?.length ?? 0) + 1,
@@ -110,7 +110,7 @@ export default function PartnersPage() {
     }: {
       id: number;
       data: { name: string; url: string; logo?: File | string };
-    }) => updatePartner(token!, id, data),
+    }) => updatePartner(id, data),
     onSuccess: (updated) => {
       toast.success(t('partners.toastUpdated'));
       invalidate();
@@ -124,7 +124,7 @@ export default function PartnersPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => deletePartner(token!, id),
+    mutationFn: (id: number) => deletePartner(id),
     onSuccess: () => {
       toast.success(t('partners.toastDeleted'));
       invalidate();
@@ -179,7 +179,7 @@ export default function PartnersPage() {
       );
       Promise.allSettled(
         updates.map((item) =>
-          updatePartnerJson(token!, item.id, {
+          updatePartnerJson(item.id, {
             ordering: item.ordering,
           })
         )
@@ -195,7 +195,7 @@ export default function PartnersPage() {
         }
       });
     },
-    [items, token, queryClient, invalidate, t]
+    [items, queryClient, invalidate, t]
   );
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────

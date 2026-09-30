@@ -23,6 +23,7 @@ import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
 import { CompletenessChecklist } from '@/components/backoffice/common/completeness-checklist';
 import { UnsavedChangesBar } from '@/components/backoffice/common/unsaved-changes-bar';
+import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import { CatalogueNumbersSection } from './catalogue-numbers-section';
 import { DescriptionsSection } from './descriptions-section';
 import { MsDescSection } from './msdesc-section';
@@ -73,21 +74,26 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   const dateLabel = getLabel('date');
   const hairTypeLabel = getLabel('fieldHairType');
 
-  const { data: item, isLoading } = useQuery({
+  const {
+    data: item,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: backofficeKeys.manuscripts.detail(itemId),
-    queryFn: () => getHistoricalItem(token!, itemId),
+    queryFn: () => getHistoricalItem(itemId),
     enabled: !!token,
   });
 
   const { data: formats } = useQuery({
     queryKey: backofficeKeys.formats.all(),
-    queryFn: () => getFormats(token!),
+    queryFn: () => getFormats(),
     enabled: !!token,
   });
 
   const { data: dates } = useQuery({
     queryKey: backofficeKeys.dates.all(),
-    queryFn: () => getDates(token!),
+    queryFn: () => getDates(),
     enabled: !!token,
   });
 
@@ -129,7 +135,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   useUnsavedGuard(dirty);
 
   const saveMut = useMutation({
-    mutationFn: () => updateHistoricalItem(token!, itemId, draft),
+    mutationFn: () => updateHistoricalItem(itemId, draft),
     onSuccess: () => {
       toast.success(t('manuscriptWorkspace.toastSaved', { label: historicalItemLabel }));
       queryClient.invalidateQueries({
@@ -160,7 +166,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   );
 
   const deleteMut = useMutation({
-    mutationFn: () => deleteHistoricalItem(token!, itemId),
+    mutationFn: () => deleteHistoricalItem(itemId),
     onSuccess: () => {
       toast.success(t('manuscriptWorkspace.toastDeleted', { label: historicalItemLabel }));
       queryClient.invalidateQueries({
@@ -178,6 +184,14 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
     },
   });
 
+  if (isError && !item) {
+    return (
+      <BackofficeErrorState
+        message={t('manuscriptWorkspace.failedLoad', { label: historicalItemLabel.toLowerCase() })}
+        onRetry={() => refetch()}
+      />
+    );
+  }
   if (isLoading || !item) {
     return (
       <div className="flex items-center justify-center h-64">

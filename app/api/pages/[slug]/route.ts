@@ -1,6 +1,7 @@
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
+import { getServerAuthToken } from '@/lib/auth-token-server';
 
 const MANAGEMENT_PAGES_PATH = '/api/v1/management/pages/';
 
@@ -15,15 +16,10 @@ async function verifySuperuser(token: string): Promise<boolean> {
   }
 }
 
-function getToken(request: NextRequest): string | null {
-  const authHeader = request.headers.get('Authorization');
-  return authHeader?.replace(/^Token\s+/i, '') || null;
-}
-
 type RouteParams = { params: Promise<{ slug: string }> };
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
-  const token = getToken(request);
+export async function GET(_request: NextRequest, { params }: RouteParams) {
+  const token = await getServerAuthToken();
   if (!token) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
   }
@@ -39,7 +35,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  const token = getToken(request);
+  const token = await getServerAuthToken();
   if (!token) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
   }
@@ -72,8 +68,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   return NextResponse.json(data);
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const token = getToken(request);
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+  const token = await getServerAuthToken();
   if (!token) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
   }

@@ -17,11 +17,11 @@ export default function FormatsPage() {
   return (
     <SimpleCrudPage<ItemFormat>
       queryKey={backofficeKeys.formats.all()}
-      queryFn={(token) => getFormats(token)}
+      queryFn={() => getFormats()}
       getRows={(data) => (Array.isArray(data) ? (data as ItemFormat[]) : [])}
-      createFn={(token, payload) => createFormat(token, payload as Partial<ItemFormat>)}
-      updateFn={(token, id, payload) => updateFormat(token, id, payload as Partial<ItemFormat>)}
-      deleteFn={(token, id) => deleteFormat(token, id)}
+      createFn={(payload) => createFormat(payload as Partial<ItemFormat>)}
+      updateFn={(id, payload) => updateFormat(id, payload as Partial<ItemFormat>)}
+      deleteFn={(id) => deleteFormat(id)}
       icon={Ruler}
       title={t('formats.title')}
       description={t('formats.description')}

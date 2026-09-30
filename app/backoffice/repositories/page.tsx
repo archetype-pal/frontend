@@ -17,10 +17,10 @@ export default function RepositoriesPage() {
   return (
     <SimpleCrudPage<Repository>
       queryKey={backofficeKeys.repositories.all()}
-      queryFn={(token) => getRepositories(token)}
+      queryFn={() => getRepositories()}
       getRows={(data) => (Array.isArray(data) ? (data as Repository[]) : [])}
-      createFn={(token, payload) =>
-        createRepository(token, {
+      createFn={(payload) =>
+        createRepository({
           name: String(payload.name ?? ''),
           label: String(payload.label ?? ''),
           place: String(payload.place ?? ''),
@@ -28,8 +28,8 @@ export default function RepositoriesPage() {
           type: null,
         })
       }
-      updateFn={(token, id, payload) => updateRepository(token, id, payload as Partial<Repository>)}
-      deleteFn={(token, id) => deleteRepository(token, id)}
+      updateFn={(id, payload) => updateRepository(id, payload as Partial<Repository>)}
+      deleteFn={(id) => deleteRepository(id)}
       icon={Building2}
       title={t('repositories.title')}
       description={t('repositories.description')}
@@ -54,6 +54,11 @@ export default function RepositoriesPage() {
         },
       ]}
       deleteDescription={t('repositories.deleteDescription')}
+      deleteBlockedReason={(row) =>
+        row.current_item_count
+          ? t('repositories.deleteBlocked', { count: row.current_item_count })
+          : null
+      }
     />
   );
 }

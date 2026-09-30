@@ -13,6 +13,7 @@ import { DataTable, sortableHeader } from '@/components/backoffice/common/data-t
 import { InlineEdit } from '@/components/backoffice/common/inline-edit';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -35,11 +36,11 @@ type CrudFieldConfig<T> = {
 
 type SimpleCrudPageProps<T extends { id: number }> = {
   queryKey: readonly unknown[];
-  queryFn: (token: string) => Promise<unknown>;
+  queryFn: () => Promise<unknown>;
   getRows: (data: unknown) => T[];
-  createFn: (token: string, payload: Record<string, unknown>) => Promise<unknown>;
-  updateFn: (token: string, id: number, payload: Record<string, unknown>) => Promise<unknown>;
-  deleteFn: (token: string, id: number) => Promise<unknown>;
+  createFn: (payload: Record<string, unknown>) => Promise<unknown>;
+  updateFn: (id: number, payload: Record<string, unknown>) => Promise<unknown>;
+  deleteFn: (id: number) => Promise<unknown>;
   icon: LucideIcon;
   title: string;
   description: string;
@@ -49,6 +50,8 @@ type SimpleCrudPageProps<T extends { id: number }> = {
   fields: CrudFieldConfig<T>[];
   showIdColumn?: boolean;
   deleteDescription: string;
+  /** Returns why a row cannot be deleted (disables its delete button, shown as a tooltip), or null. */
+  deleteBlockedReason?: (row: T) => string | null;
 };
 
 function toEditableString(value: unknown): string {
@@ -72,6 +75,7 @@ export function SimpleCrudPage<T extends { id: number }>({
   fields,
   showIdColumn = false,
   deleteDescription,
+  deleteBlockedReason,
 }: SimpleCrudPageProps<T>) {
   const t = useTranslations('backoffice');
   const { token } = useAuth();
@@ -82,7 +86,7 @@ export function SimpleCrudPage<T extends { id: number }>({
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey,
-    queryFn: () => queryFn(token!),
+    queryFn: () => queryFn(),
     enabled: !!token,
   });
 
@@ -106,7 +110,7 @@ export function SimpleCrudPage<T extends { id: number }>({
           return [String(field.key), field.parse ? field.parse(raw) : raw];
         })
       );
-      return createFn(token!, payload);
+      return createFn(payload);
     },
     onSuccess: () => {
       toast.success(t('simpleCrud.created', { label: singularLabel }));
@@ -123,7 +127,7 @@ export function SimpleCrudPage<T extends { id: number }>({
 
   const updateMut = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Record<string, unknown> }) =>
-      updateFn(token!, id, payload),
+      updateFn(id, payload),
     onSuccess: invalidate,
     onError: (err) => {
       toast.error(t('simpleCrud.failedUpdate', { label: singularLabel.toLowerCase() }), {
@@ -133,7 +137,7 @@ export function SimpleCrudPage<T extends { id: number }>({
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => deleteFn(token!, id),
+    mutationFn: (id: number) => deleteFn(id),
     onSuccess: () => {
       toast.success(t('simpleCrud.deleted', { label: singularLabel }));
       invalidate();
@@ -183,22 +187,46 @@ export function SimpleCrudPage<T extends { id: number }>({
 
     generated.push({
       id: 'actions',
-      cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-          onClick={() => setDeleteTarget(row.original)}
-          aria-label={t('simpleCrud.deleteLabel', { label: singularLabel.toLowerCase() })}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      ),
+      cell: ({ row }) => {
+        const blockedReason = deleteBlockedReason?.(row.original);
+        if (blockedReason) {
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {/* A disabled button fires no pointer events, so the span carries the tooltip. */}
+                <span tabIndex={0} className="inline-flex">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground"
+                    disabled
+                    aria-label={blockedReason}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{blockedReason}</TooltipContent>
+            </Tooltip>
+          );
+        }
+        return (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+            onClick={() => setDeleteTarget(row.original)}
+            aria-label={t('simpleCrud.deleteLabel', { label: singularLabel.toLowerCase() })}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        );
+      },
       size: 50,
     });
 
     return generated;
-  }, [fields, showIdColumn, updateMut, singularLabel, t]);
+  }, [fields, showIdColumn, updateMut, singularLabel, t, deleteBlockedReason]);
 
   if (isLoading) {
     return (

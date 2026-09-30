@@ -338,7 +338,6 @@
       "legacyDescriptions": "Descriptions de catalogue / citations",
       "sourceAttribution": "D'après {source}",
       "text": "Texte",
-      "textAside": "Latin et anglais",
       "images": "Images",
       "hands": "Mains",
       "record": "Notice"
@@ -1652,6 +1651,7 @@
       "deleteConfirm": "Supprimer",
       "toastSaved": "Article enregistré",
       "toastFailedSave": "Échec de l'enregistrement de l'article",
+      "failedLoad": "Échec du chargement de l'article",
       "toastDeleted": "Article supprimé",
       "toastFailedDelete": "Échec de la suppression de l'article"
     },
@@ -1722,6 +1722,7 @@
       "deleteConfirm": "Supprimer",
       "toastSaved": "Page enregistrée",
       "toastFailedSave": "Échec de l'enregistrement de la page",
+      "failedLoad": "Échec du chargement de la page",
       "toastDeleted": "Page supprimée",
       "toastFailedDelete": "Échec de la suppression de la page"
     },
@@ -1926,6 +1927,9 @@
       "toastDeleteFailed": "Échec de la suppression",
       "toastCreated": "Créé : {type} #{id}",
       "toastCreateFailed": "Échec de la création",
+      "errorAlreadyExists": "L'image {id} a déjà une {type, select, Translation {traduction} other {transcription}}.",
+      "editExisting": "Modifier l'existante",
+      "errorImageNotFound": "Aucune image n'a l'identifiant {id}.",
       "newDialogTitle": "Nouveau texte d'image",
       "newDialogDescription": "Crée un brouillon. Vous pourrez remplir le contenu et le modifier à l'écran suivant.",
       "newItemImageLabel": "Identifiant de l'image",
@@ -2260,6 +2264,7 @@
       "componentCount": "{count, plural, =1 {1 composant} other {{count} composants}}",
       "toastCharacterSaved": "Caractère enregistré",
       "toastFailedSave": "Échec de l'enregistrement du caractère",
+      "failedLoad": "Échec du chargement du caractère",
       "toastCharacterDeleted": "Caractère supprimé",
       "toastFailedDelete": "Échec de la suppression du caractère",
       "characterHeading": "Caractère : {name}",
@@ -2336,7 +2341,8 @@
       "fieldLabelPlaceholder": "BL",
       "fieldPlace": "Lieu",
       "fieldPlacePlaceholder": "Londres",
-      "deleteDescription": "Cela peut affecter les documents historiques qui référencent ce dépôt."
+      "deleteDescription": "Ce dépôt ne contient aucun élément.",
+      "deleteBlocked": "Suppression impossible : ce dépôt a {count, plural, one {# élément lié} other {# éléments liés}}. Déplacez-les ou supprimez-les d'abord."
     },
     "dataTable": {
       "searchPlaceholder": "Rechercher...",
@@ -2783,6 +2789,7 @@
       "typeLetter": "Lettre",
       "toastSaved": "{label} enregistré",
       "toastFailedSave": "Échec de l'enregistrement : {label}",
+      "failedLoad": "Échec du chargement : {label}",
       "toastDeleted": "{label} supprimé",
       "toastFailedDelete": "Échec de la suppression : {label}",
       "deleteButton": "Supprimer",

@@ -55,12 +55,12 @@ export interface ImageTextListParams {
   empty?: boolean;
   reviewAssignee?: number | '';
   search?: string;
+  itemImage?: number;
 }
 
 const PAGE_SIZE = 25;
 
 export function fetchImageTextList(
-  token: string,
   params: ImageTextListParams = {}
 ): Promise<PaginatedImageTextList> {
   const qs = new URLSearchParams();
@@ -74,10 +74,10 @@ export function fetchImageTextList(
   if (params.empty !== undefined) qs.set('empty', params.empty ? 'true' : 'false');
   if (params.reviewAssignee) qs.set('review_assignee', String(params.reviewAssignee));
   if (params.search) qs.set('search', params.search);
+  if (params.itemImage) qs.set('item_image', String(params.itemImage));
 
   return backofficeGet<PaginatedImageTextList>(
     `/api/v1/manuscripts/management/image-texts/?${qs.toString()}`,
-    token,
     { cache: 'no-store' }
   );
 }

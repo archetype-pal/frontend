@@ -90,7 +90,7 @@ export default function TrashPage() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list({ deleted: 'true', ...params }),
-    queryFn: () => getTrashedGraphs(token!, params),
+    queryFn: () => getTrashedGraphs(params),
     enabled: !!token,
   });
 
@@ -98,7 +98,7 @@ export default function TrashPage() {
   // restoring someone's last trashed row drops them from the dropdown.
   const { data: actors } = useQuery({
     queryKey: [...backofficeKeys.graphs.all(), 'trash-actors'],
-    queryFn: () => getTrashActors(token!),
+    queryFn: () => getTrashActors(),
     enabled: !!token,
   });
 
@@ -115,7 +115,7 @@ export default function TrashPage() {
     queryClient.invalidateQueries({ queryKey: backofficeKeys.graphs.all() });
 
   const restoreMut = useMutation({
-    mutationFn: (id: number) => restoreGraph(token!, id),
+    mutationFn: (id: number) => restoreGraph(id),
     onSuccess: () => {
       toast.success(t('trash.toastRestored'));
       invalidateGraphs();
@@ -126,7 +126,7 @@ export default function TrashPage() {
   });
 
   const purgeMut = useMutation({
-    mutationFn: (id: number) => purgeGraph(token!, id),
+    mutationFn: (id: number) => purgeGraph(id),
     onSuccess: () => {
       toast.success(t('trash.toastPurged'));
       invalidateGraphs();
@@ -286,7 +286,7 @@ export default function TrashPage() {
       action: async (ids) => {
         await runBulkAction({
           ids,
-          action: (id) => restoreGraph(token!, Number(id)),
+          action: (id) => restoreGraph(Number(id)),
           invalidate: invalidateGraphs,
           messages: {
             success: (count) => t('trash.bulkRestored', { count }),
@@ -467,7 +467,7 @@ export default function TrashPage() {
           setBulkPurgeIds(null);
           await runBulkAction({
             ids,
-            action: (id) => purgeGraph(token!, Number(id)),
+            action: (id) => purgeGraph(Number(id)),
             invalidate: invalidateGraphs,
             messages: {
               success: (count) => t('trash.bulkPurged', { count }),

@@ -123,7 +123,7 @@ describe('SanityChecksDashboard', () => {
     const sendButton = await screen.findByRole('button', { name: /send test email/i });
     fireEvent.click(sendButton);
 
-    await waitFor(() => expect(sendTestEmailMock).toHaveBeenCalledWith('tok'));
+    await waitFor(() => expect(sendTestEmailMock).toHaveBeenCalledWith());
     await waitFor(() => expect(toastSuccessMock).toHaveBeenCalled());
   });
 

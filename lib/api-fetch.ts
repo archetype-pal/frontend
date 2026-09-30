@@ -66,3 +66,26 @@ export async function authFetch(
   }
   return apiFetch(path, { ...init, headers });
 }
+
+/**
+ * Authenticated fetch for BROWSER code, which must not hold the raw auth
+ * token (see `lib/auth-token-cookie.ts`). Routes the request through
+ * `/api/proxy/*`, a same-origin Next.js handler that reads the auth cookie
+ * server-side and attaches the `Authorization` header itself. The browser
+ * sends that cookie automatically on this same-origin call regardless of
+ * whether it's JS-readable, so this keeps working whether or not the cookie
+ * is `HttpOnly`.
+ *
+ * Server-side code (route handlers, server components) should use
+ * `authFetch` with a token from `getServerAuthToken()` instead — calling this
+ * from the server would add a redundant hop through the Next server to
+ * itself.
+ */
+export async function proxyFetch(path: string, init?: RequestInit): Promise<Response> {
+  if (typeof window === 'undefined') {
+    throw new Error('proxyFetch is for browser code only — use authFetch on the server');
+  }
+  // Drop the trailing slash: Next would 308 `/api/proxy/…/7/` to `…/7`, and the
+  // browser re-sends the whole body. The proxy route restores it for Django.
+  return fetch(`/api/proxy${path.replace(/\/(?=[?#]|$)/, '')}`, init);
+}

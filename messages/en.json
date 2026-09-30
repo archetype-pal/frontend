@@ -338,7 +338,6 @@
       "legacyDescriptions": "Catalogue descriptions / citations",
       "sourceAttribution": "From {source}",
       "text": "Text",
-      "textAside": "Latin & English",
       "images": "Images",
       "hands": "Hands",
       "record": "Record"
@@ -1652,6 +1651,7 @@
       "deleteConfirm": "Delete",
       "toastSaved": "Post saved",
       "toastFailedSave": "Failed to save post",
+      "failedLoad": "Failed to load post",
       "toastDeleted": "Post deleted",
       "toastFailedDelete": "Failed to delete post"
     },
@@ -1722,6 +1722,7 @@
       "deleteConfirm": "Delete",
       "toastSaved": "Page saved",
       "toastFailedSave": "Failed to save page",
+      "failedLoad": "Failed to load page",
       "toastDeleted": "Page deleted",
       "toastFailedDelete": "Failed to delete page"
     },
@@ -1926,6 +1927,9 @@
       "toastDeleteFailed": "Delete failed",
       "toastCreated": "Created {type} #{id}",
       "toastCreateFailed": "Create failed",
+      "errorAlreadyExists": "Image {id} already has a {type, select, Translation {translation} other {transcription}}.",
+      "editExisting": "Edit the existing one",
+      "errorImageNotFound": "There is no image with id {id}.",
       "newDialogTitle": "New image-text",
       "newDialogDescription": "Creates a Draft. You can fill content and edit on the next screen.",
       "newItemImageLabel": "Item image id",
@@ -2260,6 +2264,7 @@
       "componentCount": "{count, plural, =1 {1 component} other {{count} components}}",
       "toastCharacterSaved": "Character saved",
       "toastFailedSave": "Failed to save character",
+      "failedLoad": "Failed to load character",
       "toastCharacterDeleted": "Character deleted",
       "toastFailedDelete": "Failed to delete character",
       "characterHeading": "Character: {name}",
@@ -2336,7 +2341,8 @@
       "fieldLabelPlaceholder": "BL",
       "fieldPlace": "Place",
       "fieldPlacePlaceholder": "London",
-      "deleteDescription": "This may affect historical items that reference this repository."
+      "deleteDescription": "This repository holds no items.",
+      "deleteBlocked": "Can't delete: this repository has {count, plural, one {# linked item} other {# linked items}}. Move or delete them first."
     },
     "dataTable": {
       "searchPlaceholder": "Search...",
@@ -2783,6 +2789,7 @@
       "typeLetter": "Letter",
       "toastSaved": "{label} saved",
       "toastFailedSave": "Failed to save {label}",
+      "failedLoad": "Failed to load {label}",
       "toastDeleted": "{label} deleted",
       "toastFailedDelete": "Failed to delete {label}",
       "deleteButton": "Delete",

@@ -338,7 +338,6 @@
       "legacyDescriptions": "Katalogbeschreibungen / Zitate",
       "sourceAttribution": "Aus {source}",
       "text": "Text",
-      "textAside": "Latein & Englisch",
       "images": "Bilder",
       "hands": "Hände",
       "record": "Datensatz"
@@ -1652,6 +1651,7 @@
       "deleteConfirm": "Löschen",
       "toastSaved": "Beitrag gespeichert",
       "toastFailedSave": "Speichern des Beitrags fehlgeschlagen",
+      "failedLoad": "Laden des Beitrags fehlgeschlagen",
       "toastDeleted": "Beitrag gelöscht",
       "toastFailedDelete": "Löschen des Beitrags fehlgeschlagen"
     },
@@ -1722,6 +1722,7 @@
       "deleteConfirm": "Löschen",
       "toastSaved": "Seite gespeichert",
       "toastFailedSave": "Speichern der Seite fehlgeschlagen",
+      "failedLoad": "Laden der Seite fehlgeschlagen",
       "toastDeleted": "Seite gelöscht",
       "toastFailedDelete": "Löschen der Seite fehlgeschlagen"
     },
@@ -1926,6 +1927,9 @@
       "toastDeleteFailed": "Löschen fehlgeschlagen",
       "toastCreated": "{type} Nr. {id} erstellt",
       "toastCreateFailed": "Erstellen fehlgeschlagen",
+      "errorAlreadyExists": "Bild {id} hat bereits eine {type, select, Translation {Übersetzung} other {Transkription}}.",
+      "editExisting": "Die vorhandene bearbeiten",
+      "errorImageNotFound": "Es gibt kein Bild mit der ID {id}.",
       "newDialogTitle": "Neuer Bildtext",
       "newDialogDescription": "Erstellt einen Entwurf. Inhalt und Bearbeitung erfolgen im nächsten Schritt.",
       "newItemImageLabel": "Bild-ID des Elements",
@@ -2260,6 +2264,7 @@
       "componentCount": "{count, plural, =1 {1 Komponente} other {{count} Komponenten}}",
       "toastCharacterSaved": "Zeichen gespeichert",
       "toastFailedSave": "Zeichen konnte nicht gespeichert werden",
+      "failedLoad": "Zeichen konnte nicht geladen werden",
       "toastCharacterDeleted": "Zeichen gelöscht",
       "toastFailedDelete": "Zeichen konnte nicht gelöscht werden",
       "characterHeading": "Zeichen: {name}",
@@ -2336,7 +2341,8 @@
       "fieldLabelPlaceholder": "BL",
       "fieldPlace": "Ort",
       "fieldPlacePlaceholder": "London",
-      "deleteDescription": "Dies kann sich auf historische Objekte auswirken, die auf diesen Verwahrort verweisen."
+      "deleteDescription": "Dieser Verwahrort enthält keine Elemente.",
+      "deleteBlocked": "Löschen nicht möglich: Dieser Verwahrort hat {count, plural, one {# verknüpftes Element} other {# verknüpfte Elemente}}. Verschieben oder löschen Sie diese zuerst."
     },
     "dataTable": {
       "searchPlaceholder": "Suchen …",
@@ -2783,6 +2789,7 @@
       "typeLetter": "Brief",
       "toastSaved": "{label} gespeichert",
       "toastFailedSave": "{label} konnte nicht gespeichert werden",
+      "failedLoad": "{label} konnte nicht geladen werden",
       "toastDeleted": "{label} gelöscht",
       "toastFailedDelete": "{label} konnte nicht gelöscht werden",
       "deleteButton": "Löschen",
