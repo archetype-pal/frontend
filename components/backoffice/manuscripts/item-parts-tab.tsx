@@ -241,6 +241,8 @@ function ItemPartCard({
                     key={img.id}
                     image={img}
                     historicalItemId={historicalItemId}
+                    itemPartId={part.id}
+                    itemPartLabel={part.display_label}
                   />
                 ))}
               </div>
@@ -305,9 +307,13 @@ function ItemPartCard({
 function EditableImageThumbnail({
   image,
   historicalItemId,
+  itemPartId,
+  itemPartLabel,
 }: {
   image: ItemPartImage;
   historicalItemId: number;
+  itemPartId: number;
+  itemPartLabel: string;
 }) {
   const t = useTranslations('backoffice');
   const [editOpen, setEditOpen] = useState(false);
@@ -341,6 +347,8 @@ function EditableImageThumbnail({
           onOpenChange={setEditOpen}
           image={image}
           historicalItemId={historicalItemId}
+          itemPartId={itemPartId}
+          itemPartLabel={itemPartLabel}
         />
       )}
     </>

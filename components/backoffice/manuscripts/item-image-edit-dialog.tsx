@@ -1,11 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { Loader2, Trash2 } from 'lucide-react';
+import { ChevronsUpDown, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import {
   Dialog,
   DialogContent,
@@ -16,9 +24,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { IiifThumbnail } from '@/components/backoffice/common/iiif-thumbnail';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 import { updateItemImage, deleteItemImage } from '@/services/backoffice/manuscripts';
+import { searchItemParts } from '@/services/tei-ref-search';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import type { ItemPartImage } from '@/types/backoffice';
@@ -28,6 +39,13 @@ interface ItemImageEditDialogProps {
   onOpenChange: (open: boolean) => void;
   image: ItemPartImage;
   historicalItemId: number;
+  itemPartId: number;
+  itemPartLabel: string;
+}
+
+interface PartChoice {
+  id: number;
+  label: string;
 }
 
 export function ItemImageEditDialog({
@@ -35,6 +53,8 @@ export function ItemImageEditDialog({
   onOpenChange,
   image,
   historicalItemId,
+  itemPartId,
+  itemPartLabel,
 }: ItemImageEditDialogProps) {
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
@@ -42,6 +62,7 @@ export function ItemImageEditDialog({
 
   const [locus, setLocus] = useState(image.locus);
   const [tags, setTags] = useState((image.tags ?? []).join(', '));
+  const [targetPart, setTargetPart] = useState<PartChoice | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const tagsKey = (image.tags ?? []).join(', ');
@@ -50,6 +71,7 @@ export function ItemImageEditDialog({
     if (open) {
       setLocus(image.locus); // eslint-disable-line react-hooks/set-state-in-effect
       setTags(tagsKey);
+      setTargetPart(null);
     }
     // `tagsKey` (not `image.tags`) so an equal-content refetch — which
     // returns a new array reference — doesn't re-trigger this and wipe an
@@ -69,10 +91,17 @@ export function ItemImageEditDialog({
           .split(',')
           .map((tag) => tag.trim())
           .filter(Boolean),
+        ...(targetPart ? { item_part: targetPart.id } : {}),
       }),
     onSuccess: () => {
-      toast.success(t('manuscriptsDetail.imageUpdated'));
-      invalidate();
+      if (targetPart) {
+        toast.success(t('manuscriptsDetail.imageMoved', { part: targetPart.label }));
+        // The part it joined may belong to another manuscript.
+        queryClient.invalidateQueries({ queryKey: backofficeKeys.manuscripts.all() });
+      } else {
+        toast.success(t('manuscriptsDetail.imageUpdated'));
+        invalidate();
+      }
       onOpenChange(false);
     },
     onError: (err) => {
@@ -115,6 +144,23 @@ export function ItemImageEditDialog({
                   className="h-9 font-mono text-xs bg-muted text-muted-foreground"
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor={`part-${image.id}`} className="text-xs">
+                {t('manuscriptsDetail.part')}
+              </Label>
+              <ItemPartPicker
+                id={`part-${image.id}`}
+                currentPartId={itemPartId}
+                label={targetPart?.label ?? itemPartLabel}
+                onPick={setTargetPart}
+              />
+              {targetPart && (
+                <p className="text-xs text-muted-foreground">
+                  {t('manuscriptsDetail.moveNotice', { part: targetPart.label })}
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -190,5 +236,97 @@ export function ItemImageEditDialog({
         onConfirm={() => deleteMut.mutate()}
       />
     </>
+  );
+}
+
+function ItemPartPicker({
+  id,
+  currentPartId,
+  label,
+  onPick,
+}: {
+  id: string;
+  currentPartId: number;
+  label: string;
+  onPick: (part: PartChoice) => void;
+}) {
+  const t = useTranslations('backoffice');
+  const [open, setOpen] = useState(false);
+  const { searchInput, setSearchInput, search } = useDebouncedSearch(300);
+  const query = search.trim();
+  const { data: hits = [], isFetching } = useQuery({
+    queryKey: ['item-part-search', query],
+    queryFn: ({ signal }) => searchItemParts(query, 12, signal),
+    enabled: open && query.length > 0,
+    staleTime: 60_000,
+  });
+  // Parts can share a label, so each row also shows what tells them apart.
+  const options = hits
+    .filter((hit) => hit.id !== currentPartId)
+    .map((hit) => ({
+      id: hit.id,
+      label: hit.display_label || `#${hit.id}`,
+      detail: [
+        `#${hit.id}`,
+        t('manuscriptsDetail.partImageCount', { count: hit.number_of_images ?? 0 }),
+        hit.date,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    }));
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          id={id}
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="h-9 w-full justify-between font-normal"
+        >
+          <span className="truncate">{label}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[360px] p-0">
+        <Command shouldFilter={false}>
+          <CommandInput
+            value={searchInput}
+            onValueChange={setSearchInput}
+            placeholder={t('manuscriptsDetail.searchParts')}
+          />
+          <CommandList>
+            <CommandEmpty>
+              {query.length === 0
+                ? t('msdesc.refPicker.typeToSearch')
+                : isFetching
+                  ? t('msdesc.refPicker.searching')
+                  : t('msdesc.refPicker.noResults')}
+            </CommandEmpty>
+            {options.length > 0 && (
+              <CommandGroup>
+                {options.map((option) => (
+                  <CommandItem
+                    key={option.id}
+                    value={String(option.id)}
+                    onSelect={() => {
+                      onPick({ id: option.id, label: option.label });
+                      setOpen(false);
+                    }}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate">{option.label}</p>
+                      <p className="text-xs text-muted-foreground">{option.detail}</p>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
