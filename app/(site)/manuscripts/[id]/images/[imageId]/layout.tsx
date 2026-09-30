@@ -1,5 +1,6 @@
 import * as React from 'react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { ManuscriptTabs } from '@/components/manuscript/manuscript-tabs';
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { fetchManuscriptImage, fetchManuscript } from '@/services/manuscripts';
@@ -38,6 +39,13 @@ export default async function ManuscriptImageLayout({ children, params }: Layout
         Image not found.
       </div>
     );
+  }
+
+  // A link saved before the image moved to another part still carries the old
+  // part id. A layout cannot see which tab was asked for, so this lands on the
+  // image itself.
+  if (id !== String(image.item_part)) {
+    redirect(`/manuscripts/${image.item_part}/images/${imageId}`);
   }
 
   const [manuscript, otherImages, imageGraphs, visibleTexts, siteFeatures, locale, modelLabels] =
