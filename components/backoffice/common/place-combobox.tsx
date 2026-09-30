@@ -48,7 +48,7 @@ export function PlaceCombobox({ value, onChange, selectedLabel, className }: Pla
 
   const { data: placesData } = useQuery({
     queryKey: backofficeKeys.places.all(),
-    queryFn: () => getPlaces(token!),
+    queryFn: () => getPlaces(),
     enabled: !!token && open,
   });
 
@@ -57,7 +57,7 @@ export function PlaceCombobox({ value, onChange, selectedLabel, className }: Pla
   const displayValue = value != null ? (selectedLabel ?? selected?.name ?? null) : null;
 
   const createMut = useMutation({
-    mutationFn: () => createPlace(token!, { name: newName.trim() }),
+    mutationFn: () => createPlace({ name: newName.trim() }),
     onSuccess: (data) => {
       toast.success(t('handsDetail.placeCreated'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.places.all() });

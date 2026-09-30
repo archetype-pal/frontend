@@ -1187,7 +1187,9 @@
       "noHands": "No hands associated with this scribe.",
       "deleteTitle": "Delete \"{name}\"?",
       "deleteDescription": "This may fail if the scribe has hands associated.",
-      "deleteConfirm": "Delete"
+      "deleteConfirm": "Delete",
+      "labelPeriod": "Period",
+      "selectNoPeriod": "None"
     },
     "hands": {
       "title": "Hands",
@@ -1229,6 +1231,7 @@
       "descriptionRemoved": "Description removed.",
       "descriptionRemoveFailed": "Failed to remove description.",
       "imagesLabel": "Images where this hand appears",
+      "imagesHelp": "Tick the images of this item part that this hand appears on, then Save. The hand is listed only on the ticked images.",
       "imagesCount": "{selected} of {total} selected",
       "selectAll": "Select All",
       "deselectAll": "Deselect All",

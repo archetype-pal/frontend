@@ -1187,7 +1187,9 @@
       "noHands": "Aucune main associée à ce scribe.",
       "deleteTitle": "Supprimer « {name} » ?",
       "deleteDescription": "Cela peut échouer si le scribe a des mains associées.",
-      "deleteConfirm": "Supprimer"
+      "deleteConfirm": "Supprimer",
+      "labelPeriod": "Période",
+      "selectNoPeriod": "Aucune"
     },
     "hands": {
       "title": "Mains",
@@ -1229,6 +1231,7 @@
       "descriptionRemoved": "Description supprimée.",
       "descriptionRemoveFailed": "Échec de la suppression de la description.",
       "imagesLabel": "Images où cette main apparaît",
+      "imagesHelp": "Cochez les images de cette partie d'objet où apparaît cette main, puis enregistrez. La main n'est rattachée qu'aux images cochées.",
       "imagesCount": "{selected} sur {total} sélectionné(s)",
       "selectAll": "Tout sélectionner",
       "deselectAll": "Tout désélectionner",

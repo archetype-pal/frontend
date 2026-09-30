@@ -76,7 +76,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
 
   const { data: dates } = useQuery({
     queryKey: backofficeKeys.dates.all(),
-    queryFn: () => getDates(token!),
+    queryFn: () => getDates(),
     enabled: !!token,
   });
 
@@ -233,6 +233,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
             </Button>
           </div>
         </div>
+        <p className="text-xs text-muted-foreground">{t('handsDetail.imagesHelp')}</p>
 
         {imagesLoading ? (
           <div className="flex items-center justify-center h-24 rounded-md border border-dashed">

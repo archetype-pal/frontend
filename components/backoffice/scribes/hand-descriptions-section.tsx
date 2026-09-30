@@ -52,7 +52,7 @@ export function HandDescriptionsSection({ handId, descriptions }: HandDescriptio
 
   const { data: sources } = useQuery({
     queryKey: backofficeKeys.sources.all(),
-    queryFn: () => getSources(token!),
+    queryFn: () => getSources(),
     enabled: !!token,
   });
 
@@ -60,7 +60,7 @@ export function HandDescriptionsSection({ handId, descriptions }: HandDescriptio
     queryClient.invalidateQueries({ queryKey: backofficeKeys.hands.detail(handId) });
 
   const createMut = useMutation({
-    mutationFn: () => createHandDescription(token!, { hand: handId, source: null, content: '' }),
+    mutationFn: () => createHandDescription({ hand: handId, source: null, content: '' }),
     onSuccess: () => {
       invalidate();
     },
@@ -71,7 +71,7 @@ export function HandDescriptionsSection({ handId, descriptions }: HandDescriptio
 
   const updateMut = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
-      updateHandDescription(token!, id, data),
+      updateHandDescription(id, data),
     onSuccess: invalidate,
     onError: (err) => {
       toast.error(t('handsDetail.descriptionUpdateFailed'), { description: formatApiError(err) });
@@ -79,7 +79,7 @@ export function HandDescriptionsSection({ handId, descriptions }: HandDescriptio
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => deleteHandDescription(token!, id),
+    mutationFn: (id: number) => deleteHandDescription(id),
     onSuccess: () => {
       toast.success(t('handsDetail.descriptionRemoved'));
       invalidate();

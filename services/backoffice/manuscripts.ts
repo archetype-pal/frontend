@@ -194,8 +194,8 @@ export const deleteDate = datesCrud.remove;
 
 const placesCrud = createCrudService<BackofficePlace>('/api/v1/management/common/places/');
 
-export function getPlaces(token: string) {
-  return backofficeGet<BackofficePlace[]>('/api/v1/management/common/places/', token);
+export function getPlaces() {
+  return backofficeGet<BackofficePlace[]>('/api/v1/management/common/places/');
 }
 
 export const createPlace = placesCrud.create;
