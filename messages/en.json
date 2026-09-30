@@ -62,7 +62,6 @@
     "bannerHide": "Hide banner",
     "bannerShow": "Show banner",
     "footer": {
-      "about": "Scottish Charters and the Emergence of Government, 1100–1250. A resource for the study of the contents, script and physical appearance of the corpus of Scottish charters.",
       "quickLinks": "Quick Links",
       "logIn": "Log in",
       "partners": "Partners",
@@ -471,7 +470,6 @@
   },
   "landing": {
     "aboutEyebrow": "About the Project",
-    "historicalContextLink": "Read more about the historical context",
     "latestEyebrow": "Latest",
     "newsTitle": "News",
     "featureArticlesTitle": "Feature Articles"
@@ -485,13 +483,7 @@
       "prevSlide": "Previous slide",
       "nextSlide": "Next slide",
       "goToSlide": "Go to slide {n}",
-      "scrollToExplore": "Scroll to explore",
-      "charterManuscripts": "Charter Manuscripts",
-      "charterManuscriptsDesc": "Browse and search the corpus of surviving Scottish charters from the twelfth and thirteenth centuries.",
-      "scribalHands": "Scribal Hands",
-      "scribalHandsDesc": "Explore the handwriting of the scribes who wrote these charters and trace connections between documents.",
-      "historicalContext": "Historical Context",
-      "historicalContextDesc": "Understand how charters shaped the emergence of government in medieval Scotland."
+      "scrollToExplore": "Scroll to explore"
     },
     "share": {
       "twitter": "Share on Twitter",
@@ -2190,6 +2182,8 @@
       "subtitle": "Manage domain-specific labels used across the site.",
       "sectionGeneralTitle": "General configuration",
       "sectionGeneralDesc": "Site-wide branding shown in the header and footer, such as the site title, tagline, and footer text.",
+      "sectionHomeTitle": "Home page",
+      "sectionHomeDesc": "The project-specific copy and links on the home page. Links accept a site path (e.g. /about/my-project) or an http(s) URL; leave a link empty to hide the button, card or link that uses it.",
       "sectionLabelsTitle": "App, model, and field labels",
       "sectionLabelsDesc": "These labels now live in the frontend and replace backend app/model/field display settings.",
       "sectionSearchTitle": "Search result categories",

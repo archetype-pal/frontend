@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { readModelLabels } from '@/lib/model-labels-server';
-import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
+import { resolveModelLabel, safeLinkHref, type ModelLabelLocale } from '@/lib/model-labels';
 import { getPublishedPages } from '@/lib/pages-server';
 import { resolvePageText, type PageLocale } from '@/lib/pages';
 import { fetchPartners, getCarouselImageUrl } from '@/utils/api';
@@ -33,8 +33,10 @@ export default async function Footer() {
     fetchPartners().catch(() => []),
   ]);
   const locale = rawLocale as ModelLabelLocale;
-  const getLabel = (key: 'siteTitle' | 'footerLine1' | 'footerLine2' | 'footerBottomLine') =>
-    resolveModelLabel(modelLabels.labels[key], locale);
+  const getLabel = (
+    key: 'siteTitle' | 'footerLine1' | 'footerLine2' | 'footerBottomLine' | 'homeAboutUrl'
+  ) => resolveModelLabel(modelLabels.labels[key], locale);
+  const aboutHref = safeLinkHref(getLabel('homeAboutUrl'));
   const quickLinkPages = pages
     .filter((page) => page.include_in_quick_link)
     .map((page) => ({
@@ -134,13 +136,15 @@ export default async function Footer() {
             >
               <GithubIcon className="h-5 w-5" />
             </Link>
-            <Link
-              href="/about/about-models-of-authority"
-              className="text-primary-foreground/85 hover:text-white transition-colors"
-              aria-label={t('projectWebsiteLabel')}
-            >
-              <ExternalLink className="h-5 w-5" />
-            </Link>
+            {aboutHref && (
+              <Link
+                href={aboutHref}
+                className="text-primary-foreground/85 hover:text-white transition-colors"
+                aria-label={t('projectWebsiteLabel')}
+              >
+                <ExternalLink className="h-5 w-5" />
+              </Link>
+            )}
           </div>
         </div>
       </div>

@@ -2,8 +2,10 @@ import IntroSection from '@/components/content/intro-section';
 import ArticleList from '@/components/content/article-list';
 import { apiFetch } from '@/lib/api-fetch';
 import { readSiteFeatures } from '@/lib/site-features-server';
+import { readModelLabels } from '@/lib/model-labels-server';
+import { resolveModelLabel, safeLinkHref, type ModelLabelLocale } from '@/lib/model-labels';
 import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 
 async function getPublications(params: { is_news?: boolean; is_featured?: boolean }) {
   const searchParams = new URLSearchParams();
@@ -23,8 +25,15 @@ async function getPublications(params: { is_news?: boolean; is_featured?: boolea
 }
 
 export default async function Home() {
-  const t = await getTranslations('landing');
-  const siteFeatures = await readSiteFeatures();
+  const [t, siteFeatures, modelLabels, locale] = await Promise.all([
+    getTranslations('landing'),
+    readSiteFeatures(),
+    readModelLabels(),
+    getLocale(),
+  ]);
+  const getLabel = (key: 'homeQuote' | 'homeQuoteLinkLabel' | 'homeContextUrl') =>
+    resolveModelLabel(modelLabels.labels[key], locale as ModelLabelLocale);
+  const contextHref = safeLinkHref(getLabel('homeContextUrl'));
   const showNews = siteFeatures.sections.news !== false;
   const showFeatureArticles = siteFeatures.sections.featureArticles !== false;
 
@@ -51,20 +60,20 @@ export default async function Home() {
               className="text-2xl md:text-3xl lg:text-4xl leading-snug tracking-tight text-foreground font-light"
               style={{ fontFamily: 'var(--font-display)' }}
             >
-              &ldquo;Government as we recognise it today first emerged in Western Europe in the
-              twelfth century. One of the cardinal points on which our understanding of this
-              development turns is the evidence of charters.&rdquo;
+              {getLabel('homeQuote')}
             </blockquote>
-            <div className="mt-8 flex items-center justify-center gap-4">
-              <span className="block w-12 h-px bg-border" />
-              <Link
-                href="/about/historical-context"
-                className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-              >
-                {t('historicalContextLink')}
-              </Link>
-              <span className="block w-12 h-px bg-border" />
-            </div>
+            {contextHref && (
+              <div className="mt-8 flex items-center justify-center gap-4">
+                <span className="block w-12 h-px bg-border" />
+                <Link
+                  href={contextHref}
+                  className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  {getLabel('homeQuoteLinkLabel')}
+                </Link>
+                <span className="block w-12 h-px bg-border" />
+              </div>
+            )}
           </div>
         </div>
       </section>

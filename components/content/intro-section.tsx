@@ -10,17 +10,25 @@ import type { CarouselItem } from '@/types/backoffice';
 import { fetchCarouselItems, getCarouselImageUrl } from '@/utils/api';
 import { sanitizeHtml, stripHtml } from '@/lib/sanitize-html';
 import { useSiteFeatures } from '@/contexts/site-features-context';
+import { useModelLabels } from '@/contexts/model-labels-context';
+import { safeLinkHref } from '@/lib/model-labels';
 import { searchHref } from '@/lib/search-routing';
 
-const ABOUT_MODELS_OF_AUTHORITY_PATH = '/about/about-models-of-authority';
-
-function normalizeCarouselLink(url: string | null | undefined): string | null {
+/** Carousel items linking to the bare `/about` (which has no page of its own)
+ *  go to the configured "About the project" page instead. */
+function normalizeCarouselLink(
+  url: string | null | undefined,
+  aboutHref: string | null
+): string | null {
   if (!url) return null;
-  return url === '/about' || url === '/about/' ? ABOUT_MODELS_OF_AUTHORITY_PATH : url;
+  return aboutHref && (url === '/about' || url === '/about/') ? aboutHref : url;
 }
 
 export default function IntroSection() {
   const t = useTranslations('content');
+  const { getLabel } = useModelLabels();
+  const aboutHref = safeLinkHref(getLabel('homeAboutUrl'));
+  const contextHref = safeLinkHref(getLabel('homeContextUrl'));
   const { enabledCategories, isSectionEnabled } = useSiteFeatures();
   const defaultSearchType = enabledCategories[0] ?? null;
   const defaultSearchHref = defaultSearchType ? searchHref(defaultSearchType) : '/not-found';
@@ -92,28 +100,28 @@ export default function IntroSection() {
 
   const hasImages = !error && carouselItems.length > 0;
   const currentItem = hasImages ? carouselItems[currentImage] : null;
-  const currentItemUrl = normalizeCarouselLink(currentItem?.url);
+  const currentItemUrl = normalizeCarouselLink(currentItem?.url, aboutHref);
   const exploreCards = [
     searchAvailable &&
       enabledCategories.includes('manuscripts') && {
-        title: t('intro.charterManuscripts'),
-        desc: t('intro.charterManuscriptsDesc'),
+        title: getLabel('homeCardManuscriptsTitle'),
+        desc: getLabel('homeCardManuscriptsDesc'),
         href: searchHref('manuscripts'),
         delay: 'delay-100',
         accent: 'var(--primary)',
       },
     searchAvailable &&
       enabledCategories.includes('hands') && {
-        title: t('intro.scribalHands'),
-        desc: t('intro.scribalHandsDesc'),
+        title: getLabel('homeCardHandsTitle'),
+        desc: getLabel('homeCardHandsDesc'),
         href: searchHref('hands'),
         delay: 'delay-200',
         accent: 'hsl(38 92% 50%)',
       },
-    {
-      title: t('intro.historicalContext'),
-      desc: t('intro.historicalContextDesc'),
-      href: '/about/historical-context',
+    contextHref && {
+      title: getLabel('homeCardContextTitle'),
+      desc: getLabel('homeCardContextDesc'),
+      href: contextHref,
       delay: 'delay-300',
       accent: 'hsl(25 15% 15%)',
     },
@@ -136,7 +144,7 @@ export default function IntroSection() {
               <div className="max-w-xl lg:max-w-lg">
                 {/* Eyebrow */}
                 <p className="animate-fade-up text-xs uppercase tracking-[0.3em] text-primary-foreground/45 mb-5 font-medium">
-                  1100–1250 &nbsp;·&nbsp; Scotland
+                  {getLabel('homeHeroEyebrow')}
                 </p>
 
                 {/* Headline */}
@@ -144,9 +152,9 @@ export default function IntroSection() {
                   className="animate-fade-up delay-100 text-4xl sm:text-5xl lg:text-6xl leading-[0.9] tracking-tight text-white mb-6"
                   style={{ fontFamily: 'var(--font-display)' }}
                 >
-                  <span className="font-light">Models of</span>
+                  <span className="font-light">{getLabel('homeHeroTitle')}</span>
                   <br />
-                  <span className="font-semibold italic">Authority</span>
+                  <span className="font-semibold italic">{getLabel('homeHeroTitleEmphasis')}</span>
                 </h1>
 
                 {/* Ornamental line */}
@@ -154,8 +162,7 @@ export default function IntroSection() {
 
                 {/* Subtitle */}
                 <p className="animate-fade-up delay-200 text-base text-white/70 leading-relaxed max-w-md font-serif">
-                  Scottish Charters and the Emergence of Government — a resource for the study of
-                  the contents, script and physical appearance of the surviving charter corpus.
+                  {getLabel('homeHeroSubtitle')}
                 </p>
 
                 {/* CTAs */}
@@ -172,16 +179,18 @@ export default function IntroSection() {
                       </Link>
                     </Button>
                   )}
-                  <Button
-                    size="lg"
-                    asChild
-                    className="border border-white/25 bg-white/5 text-white hover:bg-white/15 backdrop-blur-sm font-medium px-7 h-11"
-                  >
-                    <Link href="/about/about-models-of-authority">
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      {t('intro.aboutProject')}
-                    </Link>
-                  </Button>
+                  {aboutHref && (
+                    <Button
+                      size="lg"
+                      asChild
+                      className="border border-white/25 bg-white/5 text-white hover:bg-white/15 backdrop-blur-sm font-medium px-7 h-11"
+                    >
+                      <Link href={aboutHref}>
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        {t('intro.aboutProject')}
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -201,7 +210,7 @@ export default function IntroSection() {
             {hasImages ? (
               <div className="absolute inset-0">
                 {carouselItems.map((item, i) => {
-                  const itemUrl = normalizeCarouselLink(item.url);
+                  const itemUrl = normalizeCarouselLink(item.url, aboutHref);
                   const slide = (
                     <Image
                       src={getCarouselImageUrl(item.image)}

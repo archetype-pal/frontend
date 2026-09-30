@@ -24,7 +24,24 @@ export type ModelLabelKey =
   | 'siteTagline'
   | 'footerLine1'
   | 'footerLine2'
-  | 'footerBottomLine';
+  | 'footerBottomLine'
+  | 'siteDescription'
+  // Home page copy and links. Project-specific, so each deployment edits them
+  // in the backoffice instead of the source (archetype-pal/frontend#183).
+  | 'homeHeroEyebrow'
+  | 'homeHeroTitle'
+  | 'homeHeroTitleEmphasis'
+  | 'homeHeroSubtitle'
+  | 'homeAboutUrl'
+  | 'homeCardManuscriptsTitle'
+  | 'homeCardManuscriptsDesc'
+  | 'homeCardHandsTitle'
+  | 'homeCardHandsDesc'
+  | 'homeCardContextTitle'
+  | 'homeCardContextDesc'
+  | 'homeContextUrl'
+  | 'homeQuote'
+  | 'homeQuoteLinkLabel';
 
 export type ModelLabelLocale = 'en' | 'fr' | 'de';
 
@@ -77,7 +94,73 @@ export const DEFAULT_MODEL_LABELS: Record<ModelLabelKey, LocalizedLabel> = {
     fr: 'Construit avec Archetype.',
     de: 'Erstellt mit Archetype.',
   },
+  // Project-neutral fallbacks: the backend seeds each deployment's own copy
+  // (0017_sitelabel_home_page_copy), so these only show when a row is missing.
+  siteDescription: {
+    en: 'A resource for the study of the contents, script and physical appearance of manuscripts.',
+    fr: "Une ressource pour l'étude du contenu, de l'écriture et de l'aspect physique des manuscrits.",
+    de: 'Eine Ressource zur Erforschung von Inhalt, Schrift und äußerem Erscheinungsbild von Handschriften.',
+  },
+  homeHeroEyebrow: {
+    en: 'Digital palaeography',
+    fr: 'Paléographie numérique',
+    de: 'Digitale Paläographie',
+  },
+  homeHeroTitle: { en: 'Welcome to', fr: 'Bienvenue sur', de: 'Willkommen bei' },
+  homeHeroTitleEmphasis: { en: 'Archetype', fr: 'Archetype', de: 'Archetype' },
+  homeHeroSubtitle: {
+    en: 'A resource for the study of the contents, script and physical appearance of manuscripts.',
+    fr: "Une ressource pour l'étude du contenu, de l'écriture et de l'aspect physique des manuscrits.",
+    de: 'Eine Ressource zur Erforschung von Inhalt, Schrift und äußerem Erscheinungsbild von Handschriften.',
+  },
+  // Link targets: empty means "no link", and the button/card/link is hidden.
+  homeAboutUrl: { en: '', fr: '', de: '' },
+  homeCardManuscriptsTitle: { en: 'Manuscripts', fr: 'Manuscrits', de: 'Handschriften' },
+  homeCardManuscriptsDesc: {
+    en: 'Browse and search the manuscripts of the collection.',
+    fr: 'Parcourez et recherchez les manuscrits de la collection.',
+    de: 'Durchsuchen Sie die Handschriften der Sammlung.',
+  },
+  homeCardHandsTitle: { en: 'Scribal Hands', fr: 'Mains scribes', de: 'Schreiberhände' },
+  homeCardHandsDesc: {
+    en: 'Explore the handwriting of the scribes and trace connections between documents.',
+    fr: "Explorez l'écriture des scribes et tracez les connexions entre les documents.",
+    de: 'Erforschen Sie die Handschrift der Schreiber und verfolgen Sie Verbindungen zwischen Dokumenten.',
+  },
+  homeCardContextTitle: {
+    en: 'Historical Context',
+    fr: 'Contexte historique',
+    de: 'Historischer Kontext',
+  },
+  homeCardContextDesc: {
+    en: 'Learn about the historical background of the collection.',
+    fr: 'Découvrez le contexte historique de la collection.',
+    de: 'Erfahren Sie mehr über den historischen Hintergrund der Sammlung.',
+  },
+  homeContextUrl: { en: '', fr: '', de: '' },
+  homeQuote: {
+    en: 'Images, annotations and descriptions of manuscripts, brought together for the study of script.',
+    fr: "Images, annotations et descriptions de manuscrits, réunies pour l'étude de l'écriture.",
+    de: 'Bilder, Annotationen und Beschreibungen von Handschriften, vereint für die Erforschung der Schrift.',
+  },
+  homeQuoteLinkLabel: {
+    en: 'Read more about the historical context',
+    fr: 'En savoir plus sur le contexte historique',
+    de: 'Mehr über den historischen Kontext lesen',
+  },
 };
+
+/**
+ * A link label as an `href`, or null when it is unset or not a site-relative
+ * path / http(s) URL — mirrors the backend's PUT validation, so a value that
+ * slipped past it (or predates it) is dropped rather than rendered.
+ */
+export function safeLinkHref(value: string): string | null {
+  const href = value.trim();
+  if (!href) return null;
+  if (href.startsWith('/')) return href.startsWith('//') ? null : href;
+  return /^https?:\/\//i.test(href) ? href : null;
+}
 
 export function normalizeLocalizedValue(value: unknown, fallback: LocalizedLabel): LocalizedLabel {
   // Pre-i18n config files stored a single string shown to every locale. Seed

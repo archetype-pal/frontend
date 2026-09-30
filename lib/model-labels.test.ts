@@ -6,6 +6,7 @@ import {
   normalizeModelLabels,
   pluralizeLabel,
   resolveModelLabel,
+  safeLinkHref,
   type ModelLabelKey,
 } from './model-labels';
 
@@ -143,5 +144,23 @@ describe('pluralizeLabel', () => {
   it('matches the plural suffix casing to an all-caps label', () => {
     expect(pluralizeLabel('CITY')).toBe('CITIES');
     expect(pluralizeLabel('BOX')).toBe('BOXES');
+  });
+});
+
+describe('safeLinkHref', () => {
+  it('keeps site paths and http(s) URLs', () => {
+    expect(safeLinkHref(' /about/project ')).toBe('/about/project');
+    expect(safeLinkHref('https://example.org/about')).toBe('https://example.org/about');
+  });
+
+  it('treats an unset link as no link', () => {
+    expect(safeLinkHref('')).toBeNull();
+    expect(safeLinkHref('   ')).toBeNull();
+  });
+
+  it('drops script, protocol-relative and relative targets', () => {
+    expect(safeLinkHref('javascript:alert(1)')).toBeNull();
+    expect(safeLinkHref('//evil.example')).toBeNull();
+    expect(safeLinkHref('about/project')).toBeNull();
   });
 });
