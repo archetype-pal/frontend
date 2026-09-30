@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronLeft, ChevronDown, Search, BookOpen } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Search, BookOpen } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { CarouselItem } from '@/types/backoffice';
 import { fetchCarouselItems, getCarouselImageUrl } from '@/utils/api';
@@ -340,20 +340,6 @@ export default function IntroSection() {
               />
             </div>
           )}
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 animate-fade-in delay-700">
-          <button
-            onClick={() =>
-              document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth' })
-            }
-            className="flex flex-col items-center gap-1 text-white/40 hover:text-white/70 transition-colors"
-            aria-label={t('intro.scrollToExplore')}
-          >
-            <span className="text-[10px] uppercase tracking-[0.25em]">{t('intro.explore')}</span>
-            <ChevronDown className="h-4 w-4 animate-bounce" />
-          </button>
         </div>
       </section>
 
