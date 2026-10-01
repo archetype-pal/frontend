@@ -25,6 +25,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -92,6 +93,8 @@ interface DataTableProps<TData, TValue> {
   isError?: boolean;
   /** Retry handler shown with the error row (typically the query's `refetch`). */
   onRetry?: () => void;
+  /** Render placeholder rows (instead of "No results") while the data query has nothing to show yet. */
+  isLoading?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -114,6 +117,7 @@ export function DataTable<TData, TValue>({
   presetFilters,
   isError = false,
   onRetry,
+  isLoading = false,
 }: DataTableProps<TData, TValue>) {
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
@@ -405,6 +409,16 @@ export function DataTable<TData, TValue>({
                   />
                 </TableCell>
               </TableRow>
+            ) : isLoading ? (
+              [...Array(10)].map((_, i) => (
+                <TableRow key={`skeleton-${i}`}>
+                  {table.getVisibleLeafColumns().map((column) => (
+                    <TableCell key={column.id}>
+                      <Skeleton className="h-4 w-3/4" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
             ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
@@ -429,8 +443,8 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      {/* Pagination */}
-      {pagination && (
+      {/* Pagination (hidden while loading: its counts would read 0 of 0) */}
+      {pagination && !isLoading && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
             {enableRowSelection && selectedCount > 0

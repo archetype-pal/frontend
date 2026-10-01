@@ -62,7 +62,6 @@
     "bannerHide": "Banner ausblenden",
     "bannerShow": "Banner einblenden",
     "footer": {
-      "about": "Scottish Charters and the Emergence of Government, 1100–1250. Eine Ressource zur Erforschung von Inhalt, Schrift und äußerem Erscheinungsbild des Korpus schottischer Urkunden.",
       "quickLinks": "Schnellzugriff",
       "logIn": "Anmelden",
       "partners": "Partner",
@@ -471,7 +470,6 @@
   },
   "landing": {
     "aboutEyebrow": "Über das Projekt",
-    "historicalContextLink": "Mehr über den historischen Kontext lesen",
     "latestEyebrow": "Neueste",
     "newsTitle": "Neuigkeiten",
     "featureArticlesTitle": "Beiträge"
@@ -484,13 +482,7 @@
       "explore": "Entdecken",
       "prevSlide": "Vorheriges Bild",
       "nextSlide": "Nächstes Bild",
-      "goToSlide": "Zu Bild {n} gehen",
-      "charterManuscripts": "Urkundenhandschriften",
-      "charterManuscriptsDesc": "Durchsuchen Sie den Korpus der überlieferten schottischen Urkunden aus dem zwölften und dreizehnten Jahrhundert.",
-      "scribalHands": "Schreiberhände",
-      "scribalHandsDesc": "Erforschen Sie die Handschrift der Schreiber, die diese Urkunden verfasst haben, und verfolgen Sie Verbindungen zwischen Dokumenten.",
-      "historicalContext": "Historischer Kontext",
-      "historicalContextDesc": "Verstehen Sie, wie Urkunden die Entstehung der Regierung im mittelalterlichen Schottland geprägt haben."
+      "goToSlide": "Zu Bild {n} gehen"
     },
     "share": {
       "twitter": "Auf Twitter teilen",
@@ -629,7 +621,6 @@
     },
     "page": {
       "loading": "Wird geladen…",
-      "loadingSharedCollection": "Geteilte Sammlung wird geladen…",
       "sharedCollectionNotFoundTitle": "Geteilte Sammlung nicht gefunden",
       "sharedCollectionNotFoundDesc": "Dieser öffentliche Sammlungslink ist ungültig oder unvollständig.",
       "sharedCollectionMissingDesc": "Dieser öffentliche Link ist nicht verfügbar oder enthält keine Sammlungs-Momentaufnahme mehr.",
@@ -2189,6 +2180,8 @@
       "subtitle": "Domänenspezifische Bezeichnungen verwalten, die auf der gesamten Website verwendet werden.",
       "sectionGeneralTitle": "Allgemeine Konfiguration",
       "sectionGeneralDesc": "Website-weites Branding, das in Kopf- und Fußzeile angezeigt wird, z. B. Website-Titel, Slogan und Fußzeilentext.",
+      "sectionHomeTitle": "Startseite",
+      "sectionHomeDesc": "Die projektspezifischen Texte und Links der Startseite. Links akzeptieren einen Website-Pfad (z. B. /about/mein-projekt) oder eine http(s)-URL; lassen Sie einen Link leer, um die Schaltfläche, Karte oder den Link, die ihn verwenden, auszublenden.",
       "sectionLabelsTitle": "App-, Modell- und Feldbezeichnungen",
       "sectionLabelsDesc": "Diese Bezeichnungen befinden sich nun im Frontend und ersetzen die Backend-Anzeigeeinstellungen für App/Modell/Feld.",
       "sectionSearchTitle": "Suchergebniskategorien",
@@ -2589,6 +2582,11 @@
       "selectSourcePlaceholder": "Bibliografische Referenz auswählen...",
       "imageUpdated": "Bild aktualisiert",
       "imageUpdateFailed": "Bild konnte nicht aktualisiert werden",
+      "part": "Teil",
+      "searchParts": "Manuskripte suchen…",
+      "partImageCount": "{count, plural, one {# Bild} other {# Bilder}}",
+      "moveNotice": "Beim Speichern wird dieses Bild nach {part} verschoben.",
+      "imageMoved": "Bild nach {part} verschoben",
       "imageRemoved": "Bild entfernt",
       "imageRemoveFailed": "Bild konnte nicht entfernt werden",
       "editImage": "Bild bearbeiten",

@@ -18,6 +18,10 @@ vi.mock('@/contexts/collection-context', () => ({
 vi.mock('@/hooks/use-iiif-thumbnail', () => ({
   useIiifThumbnailUrl: (infoUrl: string, _coords?: string | null, maxSize?: number) =>
     infoUrl ? `https://example.test/crop.jpg?px=${maxSize}` : null,
+  useIiifThumbnail: (infoUrl: string, _coords?: string | null, maxSize?: number) => ({
+    src: infoUrl ? `https://example.test/crop.jpg?px=${maxSize}` : null,
+    failed: false,
+  }),
 }));
 
 const clause: ClauseListItem = {

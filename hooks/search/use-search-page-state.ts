@@ -137,6 +137,10 @@ export function useSearchPageState(initialType?: ResultType) {
   // flight. Withhold them so a graphs-tab table never renders (and
   // GraphDetailLink never tries to resolve) a stale manuscript/scribe row.
   const filtered = dataResultType === resultType ? data.results : [];
+  // Nothing loaded yet, or the payload on screen still belongs to the outgoing
+  // type: the page shows placeholders instead of a false "no results", the
+  // previous type's facets, and its totals.
+  const awaitingResults = isLoading || dataResultType !== resultType;
   const timelineDistribution = data.facetDistribution?.date_min ?? {};
   const cityDistribution = data.facetDistribution?.repository_city ?? {};
 
@@ -161,7 +165,7 @@ export function useSearchPageState(initialType?: ResultType) {
     queryState: queryHook.queryState,
     submittedKeyword,
     viewMode,
-    dataCount: data.count,
+    dataCount: awaitingResults ? undefined : data.count,
     results: data.results,
     enabledCategories,
   });
@@ -301,6 +305,7 @@ export function useSearchPageState(initialType?: ResultType) {
     sortOrdering,
     isFetching,
     isLoading,
+    awaitingResults,
     filtered,
     timelineDistribution,
     cityDistribution,

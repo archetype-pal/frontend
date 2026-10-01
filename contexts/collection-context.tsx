@@ -27,6 +27,9 @@ type CollectionContextType = {
   items: CollectionItem[];
   collections: NamedCollection[];
   activeCollection: NamedCollection;
+  // False until localStorage has been read after mount; until then `items` is
+  // the empty default, not the user's real collection.
+  isHydrated: boolean;
   canManageCollections: boolean;
   addItem: (item: CollectionItem) => void;
   mergeCollectionItems: (collectionId: string, items: CollectionItem[]) => void;
@@ -229,6 +232,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       items,
       collections: storageState.collections,
       activeCollection,
+      isHydrated,
       canManageCollections: persistenceOptions.writeVersionedState,
       addItem,
       mergeCollectionItems,
@@ -246,6 +250,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       items,
       storageState.collections,
       activeCollection,
+      isHydrated,
       persistenceOptions.writeVersionedState,
       addItem,
       mergeCollectionItems,

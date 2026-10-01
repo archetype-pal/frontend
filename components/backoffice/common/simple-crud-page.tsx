@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { LucideIcon } from 'lucide-react';
-import { Plus, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
@@ -228,14 +228,6 @@ export function SimpleCrudPage<T extends { id: number }>({
     return generated;
   }, [fields, showIdColumn, updateMut, singularLabel, t, deleteBlockedReason]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -262,6 +254,7 @@ export function SimpleCrudPage<T extends { id: number }>({
       <DataTable
         columns={columns}
         data={rows}
+        isLoading={isLoading}
         searchColumn={searchColumn as string}
         searchPlaceholder={t('simpleCrud.searchPlaceholder', { label: pluralLabel.toLowerCase() })}
         toolbarActions={

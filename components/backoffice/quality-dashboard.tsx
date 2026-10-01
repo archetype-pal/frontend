@@ -48,6 +48,12 @@ export function QualityDashboard() {
         </p>
       )}
 
+      {!data && isFetching && (
+        <div className="flex h-64 items-center justify-center text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {data?.cards.map((card) => (
           <Card key={card.id}>

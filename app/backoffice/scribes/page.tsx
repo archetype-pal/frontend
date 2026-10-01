@@ -90,7 +90,7 @@ export default function ScribesPage() {
   // `getScribes(token)` returned only the first DRF page (20), but the
   // header showed `data.count`, leaving admins with "150 scribes" + 20
   // visible rows and no pagination control.
-  const { data, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.scribes.list(),
     queryFn: () =>
       walkPaginated<AdminScribeListItem>('/api/v1/management/scribes/scribes/?limit=100', (path) =>
@@ -121,13 +121,14 @@ export default function ScribesPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t('scribes.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            {t('scribes.subtitle', { count: data?.length ?? 0 })}
+            {isLoading ? '...' : t('scribes.subtitle', { count: data?.length ?? 0 })}
           </p>
         </div>
       </div>
 
       <DataTable
         isError={isError}
+        isLoading={isLoading}
         onRetry={() => refetch()}
         columns={columns}
         data={data ?? []}
