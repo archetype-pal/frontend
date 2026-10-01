@@ -32,6 +32,7 @@ import { updateItemImage, deleteItemImage } from '@/services/backoffice/manuscri
 import { searchItemParts } from '@/services/tei-ref-search';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { BackofficeApiError } from '@/services/backoffice/api-client';
 import type { ItemPartImage } from '@/types/backoffice';
 
 interface ItemImageEditDialogProps {
@@ -98,6 +99,9 @@ export function ItemImageEditDialog({
         toast.success(t('manuscriptsDetail.imageMoved', { part: targetPart.label }));
         // The part it joined may belong to another manuscript.
         queryClient.invalidateQueries({ queryKey: backofficeKeys.manuscripts.all() });
+        // The hand pages list each part's images, and the picker shows image counts.
+        queryClient.invalidateQueries({ queryKey: ['backoffice', 'item-images'] });
+        queryClient.invalidateQueries({ queryKey: ['item-part-search'] });
       } else {
         toast.success(t('manuscriptsDetail.imageUpdated'));
         invalidate();
@@ -105,7 +109,14 @@ export function ItemImageEditDialog({
       onOpenChange(false);
     },
     onError: (err) => {
-      toast.error(t('manuscriptsDetail.imageUpdateFailed'), { description: formatApiError(err) });
+      // A refused move explains itself; the generic formatter would prefix the field name.
+      const moveError =
+        err instanceof BackofficeApiError && Array.isArray(err.body.item_part)
+          ? (err.body.item_part as string[]).join(' ')
+          : null;
+      toast.error(t('manuscriptsDetail.imageUpdateFailed'), {
+        description: moveError ?? formatApiError(err),
+      });
     },
   });
 
