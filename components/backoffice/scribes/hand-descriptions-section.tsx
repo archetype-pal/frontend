@@ -35,6 +35,21 @@ const RichTextEditor = dynamic(
   }
 );
 
+type SourceOption = { id: number; name: string; label: string };
+
+/** Dirty-tracking key for the not-yet-created draft row (real rows use their id). */
+const DRAFT_ID = -1;
+
+/** The editor's "empty" is `<p></p>`, which the API would accept as content. */
+function isBlankHtml(html: string): boolean {
+  return (
+    html
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .trim() === ''
+  );
+}
+
 interface HandDescriptionsSectionProps {
   handId: number;
   descriptions: HandDescription[];
@@ -58,6 +73,9 @@ export function HandDescriptionsSection({
   const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  // "Add" opens a local draft; it is created only once it has content, because
+  // the API rejects a description without any.
+  const [drafting, setDrafting] = useState(false);
   const [dirtyIds, setDirtyIds] = useState<ReadonlySet<number>>(new Set());
 
   const setRowDirty = useCallback((id: number, dirty: boolean) => {
@@ -85,8 +103,10 @@ export function HandDescriptionsSection({
     queryClient.invalidateQueries({ queryKey: backofficeKeys.hands.detail(handId) });
 
   const createMut = useMutation({
-    mutationFn: () => createHandDescription({ hand: handId, source: null, content: '' }),
+    mutationFn: ({ source, content }: { source: number | null; content: string }) =>
+      createHandDescription({ hand: handId, source, content }),
     onSuccess: () => {
+      setDrafting(false);
       invalidate();
     },
     onError: (err) => {
@@ -123,16 +143,28 @@ export function HandDescriptionsSection({
           variant="outline"
           size="sm"
           className="h-7 gap-1 text-xs"
-          onClick={() => createMut.mutate()}
-          disabled={createMut.isPending}
+          onClick={() => setDrafting(true)}
+          disabled={drafting}
         >
           <Plus className="h-3 w-3" />
           {tCommon('add')}
         </Button>
       </div>
 
+      {drafting && (
+        <HandDescriptionDraft
+          sources={sources ?? []}
+          saving={createMut.isPending}
+          onSave={(source, content) => createMut.mutate({ source, content })}
+          onCancel={() => setDrafting(false)}
+          onDirtyChange={setRowDirty}
+        />
+      )}
+
       {descriptions.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">{t('handsDetail.noDescriptions')}</p>
+        !drafting && (
+          <p className="text-sm text-muted-foreground py-2">{t('handsDetail.noDescriptions')}</p>
+        )
       ) : (
         <div className="space-y-4">
           {descriptions.map((d) => (
@@ -168,6 +200,92 @@ export function HandDescriptionsSection({
   );
 }
 
+function SourceSelect({
+  value,
+  sources,
+  onChange,
+}: {
+  value: number | null;
+  sources: SourceOption[];
+  onChange: (sourceId: number | null) => void;
+}) {
+  const t = useTranslations('backoffice');
+  return (
+    <Select
+      value={value != null ? String(value) : '__none'}
+      onValueChange={(val) => onChange(val === '__none' ? null : Number(val))}
+    >
+      <SelectTrigger className="h-7 w-56 text-xs">
+        <SelectValue placeholder={t('handsDetail.sourceOptional')} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none">{t('handsDetail.sourceOptional')}</SelectItem>
+        {sources.map((s) => (
+          <SelectItem key={s.id} value={String(s.id)}>
+            {s.label || s.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function HandDescriptionDraft({
+  sources,
+  saving,
+  onSave,
+  onCancel,
+  onDirtyChange,
+}: {
+  sources: SourceOption[];
+  saving: boolean;
+  onSave: (source: number | null, content: string) => void;
+  onCancel: () => void;
+  onDirtyChange: (id: number, dirty: boolean) => void;
+}) {
+  const t = useTranslations('backoffice');
+  const tCommon = useTranslations('common');
+  const [source, setSource] = useState<number | null>(null);
+  const [content, setContent] = useState('');
+  const blank = isBlankHtml(content);
+  const dirty = !blank || source != null;
+
+  useEffect(() => {
+    onDirtyChange(DRAFT_ID, dirty);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange(DRAFT_ID, false), [onDirtyChange]);
+
+  return (
+    <div className="rounded-md border border-dashed p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <SourceSelect value={source} sources={sources} onChange={setSource} />
+        <Badge variant="outline" className="ml-auto text-[10px] text-amber-600 border-amber-300">
+          {t('handsDetail.descriptionUnsaved')}
+        </Badge>
+      </div>
+      <RichTextEditor
+        content={content}
+        onChange={setContent}
+        placeholder={t('handsDetail.descriptionPlaceholder')}
+        minimal
+      />
+      <div className="flex justify-end gap-2">
+        <Button
+          size="sm"
+          className="h-7 text-xs"
+          onClick={() => onSave(source, content)}
+          disabled={blank || saving}
+        >
+          {tCommon('save')}
+        </Button>
+        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={onCancel}>
+          {tCommon('cancel')}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function HandDescriptionRow({
   description,
   sources,
@@ -177,7 +295,7 @@ function HandDescriptionRow({
   onDelete,
 }: {
   description: HandDescription;
-  sources: { id: number; name: string; label: string }[];
+  sources: SourceOption[];
   onChangeSource: (sourceId: number | null) => void;
   onSaveContent: (content: string) => void;
   onDirtyChange: (id: number, dirty: boolean) => void;
@@ -197,22 +315,7 @@ function HandDescriptionRow({
   return (
     <div className="rounded-md border p-3 space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <Select
-          value={description.source != null ? String(description.source) : '__none'}
-          onValueChange={(val) => onChangeSource(val === '__none' ? null : Number(val))}
-        >
-          <SelectTrigger className="h-7 w-56 text-xs">
-            <SelectValue placeholder={t('handsDetail.sourceOptional')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__none">{t('handsDetail.sourceOptional')}</SelectItem>
-            {sources.map((s) => (
-              <SelectItem key={s.id} value={String(s.id)}>
-                {s.label || s.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SourceSelect value={description.source} sources={sources} onChange={onChangeSource} />
         {dirty && (
           <Badge variant="outline" className="ml-auto text-[10px] text-amber-600 border-amber-300">
             {t('handsDetail.descriptionUnsaved')}
@@ -236,7 +339,12 @@ function HandDescriptionRow({
       />
       {dirty && (
         <div className="flex justify-end gap-2">
-          <Button size="sm" className="h-7 text-xs" onClick={() => onSaveContent(content)}>
+          <Button
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => onSaveContent(content)}
+            disabled={isBlankHtml(content)}
+          >
             {tCommon('save')}
           </Button>
           <Button

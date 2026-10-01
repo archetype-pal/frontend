@@ -6,9 +6,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { HandDescription } from '@/types/backoffice';
 
+const createHandDescriptionMock = vi.fn();
 const deleteHandDescriptionMock = vi.fn();
 vi.mock('@/services/backoffice/scribes', () => ({
-  createHandDescription: vi.fn(),
+  createHandDescription: (...args: unknown[]) => createHandDescriptionMock(...args),
   updateHandDescription: vi.fn(),
   deleteHandDescription: (...args: unknown[]) => deleteHandDescriptionMock(...args),
 }));
@@ -48,13 +49,13 @@ const DESCRIPTION: HandDescription = {
   content: '<p>Original</p>',
 };
 
-function renderSection(onDirtyChange = vi.fn()) {
+function renderSection(onDirtyChange = vi.fn(), descriptions = [DESCRIPTION]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
       <HandDescriptionsSection
         handId={3}
-        descriptions={[DESCRIPTION]}
+        descriptions={descriptions}
         onDirtyChange={onDirtyChange}
       />
     </QueryClientProvider>
@@ -63,6 +64,8 @@ function renderSection(onDirtyChange = vi.fn()) {
 }
 
 beforeEach(() => {
+  createHandDescriptionMock.mockReset();
+  createHandDescriptionMock.mockResolvedValue({});
   deleteHandDescriptionMock.mockReset();
   deleteHandDescriptionMock.mockResolvedValue(undefined);
 });
@@ -90,5 +93,42 @@ describe('HandDescriptionsSection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onDirtyChange).toHaveBeenLastCalledWith(false);
     expect(screen.queryByText('Unsaved')).toBeNull();
+  });
+
+  it('opens a local draft on Add and creates it only on Save, with content', async () => {
+    const { onDirtyChange } = renderSection(vi.fn(), []);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(createHandDescriptionMock).not.toHaveBeenCalled();
+
+    const save = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
+    // The editor's empty document is not content.
+    fireEvent.change(screen.getByLabelText('content'), { target: { value: '<p></p>' } });
+    expect(save.disabled).toBe(true);
+
+    fireEvent.change(screen.getByLabelText('content'), { target: { value: '<p>Text</p>' } });
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+    expect(save.disabled).toBe(false);
+
+    fireEvent.click(save);
+    await waitFor(() =>
+      expect(createHandDescriptionMock).toHaveBeenCalledWith({
+        hand: 3,
+        source: null,
+        content: '<p>Text</p>',
+      })
+    );
+  });
+
+  it('discards a draft on Cancel without calling the API', () => {
+    const { onDirtyChange } = renderSection(vi.fn(), []);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    fireEvent.change(screen.getByLabelText('content'), { target: { value: '<p>Text</p>' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByLabelText('content')).toBeNull();
+    expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+    expect(createHandDescriptionMock).not.toHaveBeenCalled();
   });
 });
