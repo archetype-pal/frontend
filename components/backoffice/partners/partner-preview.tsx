@@ -35,14 +35,15 @@ export function PartnerPreview({ items }: PartnerPreviewProps) {
           {items.map((partner) => (
             <div
               key={partner.id}
-              className="bg-white/90 rounded-md p-2 flex items-center justify-center"
+              className="bg-white/90 rounded-md p-3 flex items-center justify-center w-48 h-24"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={getCarouselImageUrl(partner.logo)}
                 alt={partner.name}
-                width={80}
-                height={40}
+                width={168}
+                height={72}
+                className="max-w-full max-h-full w-auto h-auto object-contain"
               />
             </div>
           ))}
