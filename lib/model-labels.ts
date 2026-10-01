@@ -158,7 +158,8 @@ export const DEFAULT_MODEL_LABELS: Record<ModelLabelKey, LocalizedLabel> = {
 export function safeLinkHref(value: string): string | null {
   const href = value.trim();
   if (!href) return null;
-  if (href.startsWith('/')) return href.startsWith('//') ? null : href;
+  // Browsers read `/\host` like `//host`, a protocol-relative URL.
+  if (href.startsWith('/')) return /^\/[/\\]/.test(href) ? null : href;
   return /^https?:\/\//i.test(href) ? href : null;
 }
 

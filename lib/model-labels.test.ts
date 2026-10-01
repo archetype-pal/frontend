@@ -161,6 +161,7 @@ describe('safeLinkHref', () => {
   it('drops script, protocol-relative and relative targets', () => {
     expect(safeLinkHref('javascript:alert(1)')).toBeNull();
     expect(safeLinkHref('//evil.example')).toBeNull();
+    expect(safeLinkHref('/\\evil.example')).toBeNull();
     expect(safeLinkHref('about/project')).toBeNull();
   });
 });

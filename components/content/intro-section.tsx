@@ -15,13 +15,14 @@ import { safeLinkHref } from '@/lib/model-labels';
 import { searchHref } from '@/lib/search-routing';
 
 /** Carousel items linking to the bare `/about` (which has no page of its own)
- *  go to the configured "About the project" page instead. */
+ *  go to the configured "About the project" page instead, or nowhere when
+ *  none is set. */
 function normalizeCarouselLink(
   url: string | null | undefined,
   aboutHref: string | null
 ): string | null {
   if (!url) return null;
-  return aboutHref && (url === '/about' || url === '/about/') ? aboutHref : url;
+  return url === '/about' || url === '/about/' ? aboutHref : url;
 }
 
 export default function IntroSection() {
