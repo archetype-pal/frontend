@@ -215,14 +215,14 @@ function SourceSelect({
       value={value != null ? String(value) : '__none'}
       onValueChange={(val) => onChange(val === '__none' ? null : Number(val))}
     >
-      <SelectTrigger className="h-7 w-56 text-xs">
+      <SelectTrigger className="h-7 w-80 max-w-full text-xs">
         <SelectValue placeholder={t('handsDetail.sourceOptional')} />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="__none">{t('handsDetail.sourceOptional')}</SelectItem>
         {sources.map((s) => (
           <SelectItem key={s.id} value={String(s.id)}>
-            {s.label || s.name}
+            {s.name || s.label}
           </SelectItem>
         ))}
       </SelectContent>
