@@ -87,6 +87,14 @@ export const createItemPart = itemPartsCrud.create;
 export const updateItemPart = itemPartsCrud.update;
 export const deleteItemPart = itemPartsCrud.remove;
 
+/** The HistoricalItem an ItemPart belongs to — the id the manuscript workspace is keyed by. */
+export async function getItemPartHistoricalItemId(itemPartId: number): Promise<number> {
+  const part = await backofficeGet<{ historical_item: number }>(
+    `/api/v1/manuscripts/management/item-parts/${itemPartId}/`
+  );
+  return part.historical_item;
+}
+
 // ── Current Items ────────────────────────────────────────────────────────
 
 const currentItemsCrud = createCrudService<PaginatedResponse<CurrentItemOption>, CurrentItemOption>(

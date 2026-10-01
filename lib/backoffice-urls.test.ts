@@ -3,11 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { backofficeUrlFor, type BackofficeKind } from './backoffice-urls';
 
 describe('backofficeUrlFor', () => {
-  it('routes manuscript and item-part to the same URL pattern', () => {
-    // ItemPart and Manuscript are the same row in the backoffice — the
-    // alias is intentional. Lock both branches in.
+  it('routes a manuscript (HistoricalItem) id straight to its workspace', () => {
     expect(backofficeUrlFor('manuscript', 42)).toBe('/backoffice/manuscripts/42');
-    expect(backofficeUrlFor('item-part', 42)).toBe('/backoffice/manuscripts/42');
+  });
+
+  it('routes an item-part id through the resolver, not the HistoricalItem workspace', () => {
+    // ItemPart and HistoricalItem ids are different tables: item part 895 is not
+    // historical item 895. archetype-pal/frontend#142
+    expect(backofficeUrlFor('item-part', 42)).toBe('/backoffice/item-parts/42');
   });
 
   it('routes scribe / hand / publication to their own admin sections', () => {

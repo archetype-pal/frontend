@@ -27,6 +27,19 @@ export function getImageDetailUrl(input: ImageRouteInput): string | null {
   return `/manuscripts/${manuscriptId}/images/${imageId}`;
 }
 
+/**
+ * Detail URL for a text-derived search hit (text, clause, person, place). These
+ * open the viewer of the image they annotate, but their own `id` is the hit's id
+ * (a text id, or a string like `12_p0`), not an image id, so unlike
+ * `getImageDetailUrl` they must never fall back to it. archetype-pal/frontend#142
+ */
+export function getAnnotatedHitDetailUrl(input: ImageRouteInput): string | null {
+  const imageId = toNumericId(input.item_image);
+  const manuscriptId = toNumericId(input.item_part) ?? toNumericId(input.item_part_id);
+  if (!imageId || !manuscriptId) return null;
+  return `/manuscripts/${manuscriptId}/images/${imageId}`;
+}
+
 export function getGraphDetailUrl(input: GraphRouteInput): string | null {
   const graphId = toNumericId(input.id);
   const imageId = toNumericId(input.item_image);

@@ -30,7 +30,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import type { ManuscriptCompareSelection } from '@/hooks/search/use-manuscript-compare-selection';
 import { clauseToGraphCollectionItem } from '@/lib/collection-item';
 import type { CollectionItem } from '@/lib/collection-storage';
-import { getImageDetailUrl, getGraphDetailUrl } from '@/lib/media-url';
+import { getAnnotatedHitDetailUrl, getImageDetailUrl, getGraphDetailUrl } from '@/lib/media-url';
 import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
 import { stripHtmlToPlainText } from '@/lib/sanitize-html';
@@ -408,7 +408,7 @@ const RESULT_TYPE_DESCRIPTORS = {
   },
   texts: {
     columns: COLUMNS.texts,
-    detailUrl: (item: TextListItem) => getImageDetailUrl(item),
+    detailUrl: (item: TextListItem) => getAnnotatedHitDetailUrl(item),
     previewAccessor: (item: TextListItem, size: ThumbnailSize) => (
       <AnnotationInlinePreview
         thumbnailIiif={item.thumbnail_iiif}
@@ -420,7 +420,7 @@ const RESULT_TYPE_DESCRIPTORS = {
   },
   clauses: {
     columns: COLUMNS.clauses,
-    detailUrl: (item: ClauseListItem) => getImageDetailUrl(item),
+    detailUrl: (item: ClauseListItem) => getAnnotatedHitDetailUrl(item),
     subRowAccessor: (item: ClauseListItem) => item.content,
     previewAccessor: (item: ClauseListItem, size: ThumbnailSize) => (
       <AnnotationInlinePreview
@@ -434,7 +434,7 @@ const RESULT_TYPE_DESCRIPTORS = {
   },
   people: {
     columns: COLUMNS.people,
-    detailUrl: (item: PersonListItem) => getImageDetailUrl(item),
+    detailUrl: (item: PersonListItem) => getAnnotatedHitDetailUrl(item),
     subRowAccessor: (item: PersonListItem) => item.name,
     previewAccessor: (item: PersonListItem, size: ThumbnailSize) => (
       <AnnotationInlinePreview
@@ -447,7 +447,7 @@ const RESULT_TYPE_DESCRIPTORS = {
   },
   places: {
     columns: COLUMNS.places,
-    detailUrl: (item: PlaceListItem) => getImageDetailUrl(item),
+    detailUrl: (item: PlaceListItem) => getAnnotatedHitDetailUrl(item),
     subRowAccessor: (item: PlaceListItem) => item.name,
     previewAccessor: (item: PlaceListItem, size: ThumbnailSize) => (
       <AnnotationInlinePreview
