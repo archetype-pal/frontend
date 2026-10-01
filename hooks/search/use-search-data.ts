@@ -75,19 +75,31 @@ export function useSearchData(opts: {
       const count = quickStatsQueries[idx]?.data;
       if (count !== undefined) next[item.value] = count;
     });
+    const unfiltered =
+      queryState.selected_facets.length === 0 &&
+      Object.keys(queryState.dateParams).length === 0 &&
+      Object.keys(queryState.extraParams ?? {}).length === 0;
     if (dataCount !== undefined) {
       next[resultType] = dataCount;
-    } else {
+    } else if (unfiltered) {
       // Right after a type switch the new tab's own results are still loading,
-      // but its count was already fetched while it was an inactive tab. A switch
-      // keeps only the keyword, so that count is the one the results will show.
+      // but its count was already fetched while it was an inactive tab. That
+      // count only reflects the keyword, so it is used only with no filters.
       const cached = queryClient.getQueryData<number>(
         quickStatsQuery(resultType, submittedKeyword).queryKey
       );
       if (cached !== undefined) next[resultType] = cached;
     }
     return next;
-  }, [dataCount, quickStatsItems, quickStatsQueries, queryClient, resultType, submittedKeyword]);
+  }, [
+    dataCount,
+    queryState,
+    quickStatsItems,
+    quickStatsQueries,
+    queryClient,
+    resultType,
+    submittedKeyword,
+  ]);
 
   const graphDistributionQuery = useQuery({
     queryKey: searchKeys.facets(

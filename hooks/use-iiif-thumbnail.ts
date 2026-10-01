@@ -12,11 +12,23 @@ export function useIiifThumbnailUrl(
   coordinatesJson?: string | null,
   maxSize?: number
 ): string | null {
+  return useIiifThumbnail(infoUrl, coordinatesJson, maxSize).src;
+}
+
+/** Like useIiifThumbnailUrl, but also says whether the URL lookup failed. */
+export function useIiifThumbnail(
+  infoUrl: string,
+  coordinatesJson?: string | null,
+  maxSize?: number
+): { src: string | null; failed: boolean } {
   const trimmed = (infoUrl || '').trim();
   // Use the raw JSON string as the dependency (stable primitive) instead of
   // the parsed coords object which would be a new reference every render.
   const coordsKey = coordinatesJson ?? '';
-  const [url, setUrl] = React.useState<string | null>(null);
+  const [state, setState] = React.useState<{ src: string | null; failed: boolean }>({
+    src: null,
+    failed: false,
+  });
 
   React.useEffect(() => {
     if (!trimmed) {
@@ -33,17 +45,17 @@ export function useIiifThumbnailUrl(
       ...(maxSize ? { maxSize } : {}),
     })
       .then((u) => {
-        if (!cancelled) setUrl(u);
+        if (!cancelled) setState({ src: u, failed: false });
       })
       .catch(() => {
-        if (!cancelled) setUrl(null);
+        if (!cancelled) setState({ src: null, failed: true });
       });
     return () => {
       cancelled = true;
     };
   }, [trimmed, coordsKey, maxSize]);
 
-  // When there is no input, the result is null regardless of any stored value
+  // When there is no input, the result is empty regardless of any stored value
   // (the effect leaves stored state untouched in that case).
-  return trimmed ? url : null;
+  return trimmed ? state : { src: null, failed: false };
 }

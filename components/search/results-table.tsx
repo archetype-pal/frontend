@@ -20,7 +20,7 @@ import type {
   TextListItem,
 } from '@/types/search';
 import { coordinatesFromGeoJson, getIiifImageUrl } from '@/utils/iiif';
-import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
+import { useIiifThumbnail, useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import type { ThumbnailSize } from '@/components/search/thumbnail-size-control';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import type { ModelLabelKey } from '@/lib/model-labels';
@@ -164,9 +164,9 @@ function AnnotationInlinePreview({
 }) {
   const infoUrl = (thumbnailIiif || '').trim();
   const { px, className } = PREVIEW_SIZES[size];
-  const src = useIiifThumbnailUrl(infoUrl, coordinates, px);
+  const { src, failed } = useIiifThumbnail(infoUrl, coordinates, px);
 
-  if (!infoUrl) return null;
+  if (!infoUrl || failed) return null;
 
   // The crop's shape is known from its coordinates before any request, so the
   // row reserves the preview's final size up front instead of growing once when
