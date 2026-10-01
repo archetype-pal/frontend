@@ -482,8 +482,7 @@
       "explore": "Explore",
       "prevSlide": "Previous slide",
       "nextSlide": "Next slide",
-      "goToSlide": "Go to slide {n}",
-      "scrollToExplore": "Scroll to explore"
+      "goToSlide": "Go to slide {n}"
     },
     "share": {
       "twitter": "Share on Twitter",

@@ -482,8 +482,7 @@
       "explore": "Entdecken",
       "prevSlide": "Vorheriges Bild",
       "nextSlide": "Nächstes Bild",
-      "goToSlide": "Zu Bild {n} gehen",
-      "scrollToExplore": "Scrollen, um zu entdecken"
+      "goToSlide": "Zu Bild {n} gehen"
     },
     "share": {
       "twitter": "Auf Twitter teilen",
