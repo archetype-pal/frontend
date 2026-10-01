@@ -62,7 +62,6 @@
     "bannerHide": "Masquer la bannière",
     "bannerShow": "Afficher la bannière",
     "footer": {
-      "about": "Les chartes écossaises et l'émergence du gouvernement, 1100–1250. Une ressource pour l'étude du contenu, de l'écriture et de l'aspect physique du corpus des chartes écossaises.",
       "quickLinks": "Liens rapides",
       "logIn": "Connexion",
       "partners": "Partenaires",
@@ -471,7 +470,6 @@
   },
   "landing": {
     "aboutEyebrow": "À propos du projet",
-    "historicalContextLink": "En savoir plus sur le contexte historique",
     "latestEyebrow": "À la une",
     "newsTitle": "Actualités",
     "featureArticlesTitle": "Articles de fond"
@@ -485,13 +483,7 @@
       "prevSlide": "Diapositive précédente",
       "nextSlide": "Diapositive suivante",
       "goToSlide": "Aller à la diapositive {n}",
-      "scrollToExplore": "Faire défiler pour explorer",
-      "charterManuscripts": "Manuscrits de chartes",
-      "charterManuscriptsDesc": "Parcourez et recherchez le corpus des chartes écossaises survivantes des XIIe et XIIIe siècles.",
-      "scribalHands": "Mains scribes",
-      "scribalHandsDesc": "Explorez l'écriture des scribes qui ont rédigé ces chartes et tracez les connexions entre les documents.",
-      "historicalContext": "Contexte historique",
-      "historicalContextDesc": "Comprenez comment les chartes ont façonné l'émergence du gouvernement dans l'Écosse médiévale."
+      "scrollToExplore": "Faire défiler pour explorer"
     },
     "share": {
       "twitter": "Partager sur Twitter",
@@ -2189,6 +2181,8 @@
       "subtitle": "Gérer les libellés spécifiques au domaine utilisés sur le site.",
       "sectionGeneralTitle": "Configuration générale",
       "sectionGeneralDesc": "Éléments d'identité du site affichés dans l'en-tête et le pied de page, tels que le titre du site, le slogan et le texte du pied de page.",
+      "sectionHomeTitle": "Page d'accueil",
+      "sectionHomeDesc": "Les textes et liens propres au projet sur la page d'accueil. Les liens acceptent un chemin du site (ex. /about/mon-projet) ou une URL http(s) ; laissez un lien vide pour masquer le bouton, la carte ou le lien qui l'utilise.",
       "sectionLabelsTitle": "Libellés d'applications, de modèles et de champs",
       "sectionLabelsDesc": "Ces libellés se trouvent désormais dans le frontend et remplacent les réglages d'affichage des applications/modèles/champs du backend.",
       "sectionSearchTitle": "Catégories de résultats de recherche",

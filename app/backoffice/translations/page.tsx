@@ -24,7 +24,15 @@ import {
   type ModelLabelsConfig,
 } from '@/lib/model-labels';
 
-const generalConfigFieldMeta: Array<{ key: ModelLabelKey; title: string; description: string }> = [
+type LabelFieldMeta = {
+  key: ModelLabelKey;
+  title: string;
+  description: string;
+  /** Long copy gets a textarea instead of a single-line input. */
+  multiline?: boolean;
+};
+
+const generalConfigFieldMeta: LabelFieldMeta[] = [
   {
     key: 'siteTitle',
     title: 'Site Title',
@@ -34,6 +42,12 @@ const generalConfigFieldMeta: Array<{ key: ModelLabelKey; title: string; descrip
     key: 'siteTagline',
     title: 'Site Tagline',
     description: 'The short strapline shown next to the site title in the header.',
+  },
+  {
+    key: 'siteDescription',
+    title: 'Site Description',
+    description: 'The description search engines and link previews show for the site.',
+    multiline: true,
   },
   {
     key: 'footerLine1',
@@ -52,7 +66,7 @@ const generalConfigFieldMeta: Array<{ key: ModelLabelKey; title: string; descrip
   },
 ];
 
-const fieldMeta: Array<{ key: ModelLabelKey; title: string; description: string }> = [
+const fieldMeta: LabelFieldMeta[] = [
   {
     key: 'appManuscripts',
     title: 'App Name: Manuscripts',
@@ -103,7 +117,7 @@ const fieldMeta: Array<{ key: ModelLabelKey; title: string; description: string 
 // Search result-category tab labels. "Manuscripts" is intentionally absent — it
 // reuses the "App Name: Manuscripts" label above so renaming it (e.g. to
 // "Corpus") stays consistent everywhere the manuscripts label appears.
-const searchCategoryFieldMeta: Array<{ key: ModelLabelKey; title: string; description: string }> = [
+const searchCategoryFieldMeta: LabelFieldMeta[] = [
   {
     key: 'searchCategoryImages',
     title: 'Images',
@@ -146,6 +160,86 @@ const searchCategoryFieldMeta: Array<{ key: ModelLabelKey; title: string; descri
   },
 ];
 
+const homePageFieldMeta: LabelFieldMeta[] = [
+  {
+    key: 'homeHeroEyebrow',
+    title: 'Hero: Eyebrow',
+    description: 'The small line above the home page title (e.g. period and region).',
+  },
+  {
+    key: 'homeHeroTitle',
+    title: 'Hero: Title',
+    description: 'The first line of the home page title.',
+  },
+  {
+    key: 'homeHeroTitleEmphasis',
+    title: 'Hero: Title (emphasised line)',
+    description: 'The second, bold italic line of the home page title.',
+  },
+  {
+    key: 'homeHeroSubtitle',
+    title: 'Hero: Subtitle',
+    description: 'The paragraph under the home page title.',
+    multiline: true,
+  },
+  {
+    key: 'homeAboutUrl',
+    title: 'Link: About the Project',
+    description:
+      'Target of the "About the Project" button and the footer project link; carousel slides linking to /about go here too.',
+  },
+  {
+    key: 'homeCardManuscriptsTitle',
+    title: 'Manuscripts Card: Title',
+    description: 'Title of the "Discover the Collection" card linking to manuscript search.',
+  },
+  {
+    key: 'homeCardManuscriptsDesc',
+    title: 'Manuscripts Card: Description',
+    description: 'Text of the manuscripts card.',
+    multiline: true,
+  },
+  {
+    key: 'homeCardHandsTitle',
+    title: 'Hands Card: Title',
+    description: 'Title of the "Discover the Collection" card linking to hand search.',
+  },
+  {
+    key: 'homeCardHandsDesc',
+    title: 'Hands Card: Description',
+    description: 'Text of the hands card.',
+    multiline: true,
+  },
+  {
+    key: 'homeCardContextTitle',
+    title: 'Context Card: Title',
+    description:
+      'Title of the third "Discover the Collection" card, which links to the context page.',
+  },
+  {
+    key: 'homeCardContextDesc',
+    title: 'Context Card: Description',
+    description: 'Text of the context card.',
+    multiline: true,
+  },
+  {
+    key: 'homeContextUrl',
+    title: 'Link: Context Page',
+    description: 'Target of the context card and of the link under the quote.',
+  },
+  {
+    key: 'homeQuote',
+    title: 'Quote',
+    description: 'The large quotation in the "About the Project" block. Include quotation marks.',
+    multiline: true,
+  },
+  {
+    key: 'homeQuoteLinkLabel',
+    title: 'Quote: Link Label',
+    description: 'Text of the link under the quote (it points to the context page link above).',
+  },
+];
+
 async function fetchModelLabels(): Promise<ModelLabelsConfig> {
   const res = await fetch('/api/model-labels');
   if (!res.ok) throw new Error('Failed to load model labels');
@@ -182,7 +276,7 @@ function LabelFieldsGrid({
   defaults,
   onChange,
 }: {
-  fields: Array<{ key: ModelLabelKey; title: string; description: string }>;
+  fields: LabelFieldMeta[];
   config: ModelLabelsConfig;
   defaults: ModelLabelsConfig;
   onChange: (key: ModelLabelKey, locale: ModelLabelLocale, value: string) => void;
@@ -201,12 +295,23 @@ function LabelFieldsGrid({
                 >
                   {title}
                 </Label>
-                <Input
-                  id={`model-label-${field.key}-${locale}`}
-                  value={config.labels[field.key]?.[locale] ?? ''}
-                  onChange={(event) => onChange(field.key, locale, event.target.value)}
-                  placeholder={defaults.labels[field.key][locale]}
-                />
+                {field.multiline ? (
+                  <textarea
+                    id={`model-label-${field.key}-${locale}`}
+                    value={config.labels[field.key]?.[locale] ?? ''}
+                    onChange={(event) => onChange(field.key, locale, event.target.value)}
+                    placeholder={defaults.labels[field.key][locale]}
+                    rows={4}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                ) : (
+                  <Input
+                    id={`model-label-${field.key}-${locale}`}
+                    value={config.labels[field.key]?.[locale] ?? ''}
+                    onChange={(event) => onChange(field.key, locale, event.target.value)}
+                    placeholder={defaults.labels[field.key][locale]}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -321,6 +426,20 @@ export default function TranslationsPage() {
 
         <LabelFieldsGrid
           fields={generalConfigFieldMeta}
+          config={config}
+          defaults={defaults}
+          onChange={handleLabelChange}
+        />
+      </div>
+
+      <div className="rounded-lg border bg-card p-6 space-y-6">
+        <div>
+          <h2 className="text-base font-medium">{t('translations.sectionHomeTitle')}</h2>
+          <p className="text-sm text-muted-foreground mt-1">{t('translations.sectionHomeDesc')}</p>
+        </div>
+
+        <LabelFieldsGrid
+          fields={homePageFieldMeta}
           config={config}
           defaults={defaults}
           onChange={handleLabelChange}

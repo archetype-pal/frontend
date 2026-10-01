@@ -65,8 +65,7 @@ export async function generateMetadata(): Promise<Metadata> {
       default: siteTitle,
       template: `%s | ${siteTitle}`,
     },
-    description:
-      'Scottish Charters and the Emergence of Government 1100-1250 – a resource for the study of the contents, script and physical appearance of the corpus of Scottish charters.',
+    description: resolveModelLabel(modelLabels.labels.siteDescription, locale),
     metadataBase: new URL(env.siteUrl),
     openGraph: {
       type: 'website',
