@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -145,7 +146,7 @@ function AddHandDialog({
         <DialogHeader>
           <DialogTitle>{t('manuscriptsDetail.newHandTitle')}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 px-5 py-2">
+        <DialogBody className="space-y-4">
           <div className="space-y-1.5">
             <FieldLabel required>{t('manuscriptsDetail.handScribe')}</FieldLabel>
             <SearchableSelect
@@ -170,7 +171,7 @@ function AddHandDialog({
               placeholder={t('manuscriptsDetail.handNamePlaceholder')}
             />
           </div>
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button
             variant="outline"
