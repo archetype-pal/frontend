@@ -430,6 +430,7 @@ export default function TrashPage() {
         columns={columns}
         data={rows}
         isError={isError}
+        isLoading={isLoading}
         onRetry={refetch}
         pagination={false}
         enableRowSelection

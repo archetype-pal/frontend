@@ -630,7 +630,6 @@
     },
     "page": {
       "loading": "Chargement...",
-      "loadingSharedCollection": "Chargement de la collection partagée...",
       "sharedCollectionNotFoundTitle": "Collection partagée introuvable",
       "sharedCollectionNotFoundDesc": "Ce lien de collection publique est invalide ou incomplet.",
       "sharedCollectionMissingDesc": "Ce lien public n'est pas disponible ou ne contient plus d'instantané de collection.",

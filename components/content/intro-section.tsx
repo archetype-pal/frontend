@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronRight, ChevronLeft, ChevronDown, Search, BookOpen } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { CarouselItem } from '@/types/backoffice';
@@ -80,15 +81,6 @@ export default function IntroSection() {
     if (carouselItems.length === 0) return;
     goToSlide((currentImage - 1 + carouselItems.length) % carouselItems.length);
   };
-
-  // Loading skeleton
-  if (isLoading) {
-    return (
-      <div>
-        <div className="relative w-full min-h-[420px] bg-primary animate-pulse" />
-      </div>
-    );
-  }
 
   const hasImages = !error && carouselItems.length > 0;
   const currentItem = hasImages ? carouselItems[currentImage] : null;
@@ -235,6 +227,10 @@ export default function IntroSection() {
                   );
                 })}
               </div>
+            ) : isLoading ? (
+              // Only the carousel waits on the fetch; the hero text and explore
+              // strip around it are static and render straight away.
+              <Skeleton className="absolute inset-0 rounded-none bg-white/10" />
             ) : (
               <div className="absolute inset-0 bg-primary/60" />
             )}

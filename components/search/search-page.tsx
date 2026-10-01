@@ -43,6 +43,11 @@ const SearchMapView = React.lazy(() =>
 );
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  SearchFacetsSkeleton,
+  SearchResultsSkeleton,
+} from '@/components/search/search-loading-skeleton';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { toast } from 'sonner';
@@ -72,6 +77,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const { user } = useAuth();
   const isStaff = Boolean(user?.is_staff);
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
+  const activeCount = s.countsByType[s.resultType];
   const router = useRouter();
   const { isSectionEnabled } = useSiteFeatures();
   const addToCompare = useCompareStore((state) => state.addItem);
@@ -221,19 +227,27 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
     <div className="flex min-h-[calc(100dvh-var(--site-header-h,0px))] flex-col bg-background">
       {/* Keep this above the sticky table header (z-10) so search dropdowns can overlap results. */}
       <header className="relative z-20 flex shrink-0 flex-col gap-2.5 border-b border-border bg-card px-3 py-2.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-transparent after:via-accent/50 after:to-transparent sm:px-5">
-        <h1 className="sr-only">{t('srHeading', { typeLabel, count: s.resultCount })}</h1>
+        <h1 className="sr-only">
+          {t('srHeading', { typeLabel, count: activeCount ?? s.resultCount })}
+        </h1>
         {/* Row 1: result count · the single keyword search · view / sort / actions */}
         <div className="flex items-center gap-3 sm:gap-4">
           <div
             className="shrink-0"
-            title={t('resultCountTitle', { typeLabel, count: s.resultCount })}
+            title={t('resultCountTitle', { typeLabel, count: activeCount ?? s.resultCount })}
           >
             <div className="flex items-baseline gap-2 whitespace-nowrap">
               {/* min-w reserves the 6-digit worst case ("999,999") so the row
                   doesn't reflow when switching result types changes the count width. */}
-              <span className="inline-block min-w-[7ch] text-right font-display text-[1.65rem] font-semibold leading-none tracking-tight tabular-nums text-primary sm:text-[2.4rem]">
-                {s.resultCount.toLocaleString()}
-              </span>
+              {/* Same number as the active tab's badge, which stays known
+                  through a type switch while the new results load. */}
+              {activeCount === undefined ? (
+                <Skeleton className="h-7 w-[7ch] font-display text-[1.65rem] font-semibold sm:h-9 sm:text-[2.4rem]" />
+              ) : (
+                <span className="inline-block min-w-[7ch] text-right font-display text-[1.65rem] font-semibold leading-none tracking-tight tabular-nums text-primary sm:text-[2.4rem]">
+                  {activeCount.toLocaleString()}
+                </span>
+              )}
               <span className="font-serif text-xs tracking-tight text-muted-foreground sm:text-sm">
                 {t('results')}
               </span>
@@ -317,7 +331,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 }}
               >
                 <DynamicFacets
-                  facets={s.data.facets}
+                  facets={s.awaitingResults ? {} : s.data.facets}
                   searchType={s.resultType}
                   keyword={s.mobileKeywordDraft}
                   activeTags={s.mobileActiveTags}
@@ -387,7 +401,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               triggerId="search-actions-trigger"
               keyword={s.submittedKeyword}
               filterCount={s.activeFilterCount}
-              resultCount={s.resultCount}
+              resultCount={activeCount ?? s.resultCount}
               viewMode={s.viewMode}
               setViewMode={s.setViewMode}
               showGridToggle={s.showGridToggle}
@@ -478,7 +492,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               : 'md:w-64 md:shrink-0 md:overflow-y-auto md:px-3 md:py-3'
           )}
         >
-          {Object.keys(s.data.facets).length > 0 ? (
+          {s.awaitingResults ? (
+            <SearchFacetsSkeleton />
+          ) : Object.keys(s.data.facets).length > 0 ? (
             <DynamicFacets
               facets={s.data.facets}
               searchType={s.resultType}
@@ -529,7 +545,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   resultType={s.resultType}
                   value={s.advancedSearch}
                   onChange={s.setAdvancedSearch}
-                  facetDistribution={s.data.facetDistribution}
+                  facetDistribution={s.awaitingResults ? undefined : s.data.facetDistribution}
                   keyword={s.draftKeyword}
                   onKeywordChange={s.setDraftKeyword}
                   onKeywordSubmit={s.setSubmittedKeyword}
@@ -553,7 +569,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                   isHydrating={editFlow.isHydrating}
                 />
               )}
-              {visibleFiltered.length > 0 ? (
+              {s.awaitingResults ? (
+                <SearchResultsSkeleton grid={s.viewMode === 'grid'} />
+              ) : visibleFiltered.length > 0 ? (
                 s.viewMode === 'table' ? (
                   <ResultsTable
                     resultType={s.resultType}
@@ -715,17 +733,19 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             </div>
             {/* Pagination follows directly after the results list (table/grid
                 only — the aggregate views have nothing to page through). */}
-            {s.data.count > 0 && (s.viewMode === 'table' || s.viewMode === 'grid') && (
-              <div className="flex justify-center border-t border-border/70 bg-card px-3 py-2">
-                <Pagination
-                  count={s.data.count}
-                  limit={s.queryState.limit}
-                  offset={s.queryState.offset}
-                  onPageChange={s.handlePage}
-                  onLimitChange={s.handleLimitChange}
-                />
-              </div>
-            )}
+            {!s.awaitingResults &&
+              s.data.count > 0 &&
+              (s.viewMode === 'table' || s.viewMode === 'grid') && (
+                <div className="flex justify-center border-t border-border/70 bg-card px-3 py-2">
+                  <Pagination
+                    count={s.data.count}
+                    limit={s.queryState.limit}
+                    offset={s.queryState.offset}
+                    onPageChange={s.handlePage}
+                    onLimitChange={s.handleLimitChange}
+                  />
+                </div>
+              )}
           </div>
         </main>
       </div>

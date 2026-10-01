@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useTranslations } from 'next-intl';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -115,10 +115,12 @@ export default function PhysicalVolumesPage() {
     offset: page * 50,
   };
 
-  const { data, isError, refetch } = useQuery({
+  const { data, isLoading, isPlaceholderData, isError, refetch } = useQuery({
     queryKey: backofficeKeys.currentItems.list(filterParams),
     queryFn: () => getCurrentItems(filterParams),
     enabled: !!token,
+    // Keep the current page on screen while the next page or search loads.
+    placeholderData: keepPreviousData,
   });
 
   const deleteMut = useMutation({
@@ -175,6 +177,7 @@ export default function PhysicalVolumesPage() {
 
       <DataTable
         isError={isError}
+        isLoading={isLoading}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}
@@ -194,7 +197,7 @@ export default function PhysicalVolumesPage() {
           total={data.count}
           pageSize={50}
           page={page}
-          hasNext={!!data.next}
+          hasNext={!!data.next && !isPlaceholderData}
           onPageChange={setPage}
         />
       )}

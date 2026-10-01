@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
@@ -62,3 +63,12 @@ export const useCompareStore = create<CompareState>()(
     }
   )
 );
+
+/** Whether `CompareStoreHydrator` has read sessionStorage yet; until then `items` is the empty default. */
+export function useCompareStoreHydrated(): boolean {
+  return useSyncExternalStore(
+    (onChange) => useCompareStore.persist.onFinishHydration(onChange),
+    () => useCompareStore.persist.hasHydrated(),
+    () => false
+  );
+}
