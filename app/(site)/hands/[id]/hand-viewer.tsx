@@ -317,7 +317,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
           <div className="rounded-lg border bg-card p-6">
             {hand.description ? (
               <div
-                className="prose max-w-none"
+                className="publication-body"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(hand.description) }}
               />
             ) : (
