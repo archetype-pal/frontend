@@ -40,6 +40,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
   const id = Number(rawId);
   const { token } = useAuth();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [descriptionsDirty, setDescriptionsDirty] = useState(false);
 
   const editor = useEntityEditor({
     id,
@@ -56,6 +57,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
     deleteFn: deleteHand,
     listRoute: '/backoffice/hands',
     label: 'Hand',
+    externalDirty: descriptionsDirty,
   });
 
   // Fetch images for the hand's item part. Walk all pages — `limit: 200` was
@@ -197,7 +199,11 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       </div>
 
-      <HandDescriptionsSection handId={id} descriptions={hand.descriptions} />
+      <HandDescriptionsSection
+        handId={id}
+        descriptions={hand.descriptions}
+        onDirtyChange={setDescriptionsDirty}
+      />
 
       {/* Image selection section */}
       <div className="space-y-3">

@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { Plus, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import {
   Select,
   SelectContent,
@@ -36,6 +38,8 @@ const RichTextEditor = dynamic(
 interface HandDescriptionsSectionProps {
   handId: number;
   descriptions: HandDescription[];
+  /** Whether any row holds content edits not yet saved (rows save on their own). */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 /**
@@ -44,11 +48,32 @@ interface HandDescriptionsSectionProps {
  * description field, which couldn't record multiple descriptions or where
  * any of them came from.
  */
-export function HandDescriptionsSection({ handId, descriptions }: HandDescriptionsSectionProps) {
+export function HandDescriptionsSection({
+  handId,
+  descriptions,
+  onDirtyChange,
+}: HandDescriptionsSectionProps) {
   const { token } = useAuth();
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [dirtyIds, setDirtyIds] = useState<ReadonlySet<number>>(new Set());
+
+  const setRowDirty = useCallback((id: number, dirty: boolean) => {
+    setDirtyIds((prev) => {
+      if (prev.has(id) === dirty) return prev;
+      const next = new Set(prev);
+      if (dirty) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const anyDirty = dirtyIds.size > 0;
+  useEffect(() => {
+    onDirtyChange?.(anyDirty);
+  }, [anyDirty, onDirtyChange]);
 
   const { data: sources } = useQuery({
     queryKey: backofficeKeys.sources.all(),
@@ -82,6 +107,7 @@ export function HandDescriptionsSection({ handId, descriptions }: HandDescriptio
     mutationFn: (id: number) => deleteHandDescription(id),
     onSuccess: () => {
       toast.success(t('handsDetail.descriptionRemoved'));
+      setPendingDeleteId(null);
       invalidate();
     },
     onError: (err) => {
@@ -118,11 +144,26 @@ export function HandDescriptionsSection({ handId, descriptions }: HandDescriptio
                 updateMut.mutate({ id: d.id, data: { source: sourceId } })
               }
               onSaveContent={(content) => updateMut.mutate({ id: d.id, data: { content } })}
-              onDelete={() => deleteMut.mutate(d.id)}
+              onDirtyChange={setRowDirty}
+              onDelete={() => setPendingDeleteId(d.id)}
             />
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteId(null);
+        }}
+        title={t('handsDetail.deleteDescriptionTitle')}
+        description={t('handsDetail.deleteDescriptionBody')}
+        confirmLabel={t('handsDetail.deleteConfirm')}
+        loading={deleteMut.isPending}
+        onConfirm={() => {
+          if (pendingDeleteId !== null) deleteMut.mutate(pendingDeleteId);
+        }}
+      />
     </div>
   );
 }
@@ -132,18 +173,26 @@ function HandDescriptionRow({
   sources,
   onChangeSource,
   onSaveContent,
+  onDirtyChange,
   onDelete,
 }: {
   description: HandDescription;
   sources: { id: number; name: string; label: string }[];
   onChangeSource: (sourceId: number | null) => void;
   onSaveContent: (content: string) => void;
+  onDirtyChange: (id: number, dirty: boolean) => void;
   onDelete: () => void;
 }) {
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const [content, setContent] = useState(description.content);
   const dirty = content !== description.content;
+
+  useEffect(() => {
+    onDirtyChange(description.id, dirty);
+  }, [description.id, dirty, onDirtyChange]);
+  // A deleted row unmounts with whatever it held; it no longer counts.
+  useEffect(() => () => onDirtyChange(description.id, false), [description.id, onDirtyChange]);
 
   return (
     <div className="rounded-md border p-3 space-y-2">
@@ -164,6 +213,11 @@ function HandDescriptionRow({
             ))}
           </SelectContent>
         </Select>
+        {dirty && (
+          <Badge variant="outline" className="ml-auto text-[10px] text-amber-600 border-amber-300">
+            {t('handsDetail.descriptionUnsaved')}
+          </Badge>
+        )}
         <Button
           variant="ghost"
           size="icon"
