@@ -19,6 +19,7 @@ import { CollectionTableView } from '@/components/collection/collection-table-vi
 import { PrintCollectionButton } from '@/components/collection/print-collection-button';
 import { ShareCollectionButton } from '@/components/collection/share-collection-button';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -237,6 +238,7 @@ function CollectionPageContent() {
   const {
     items: localItems,
     activeCollection: localActiveCollection,
+    isHydrated,
     collections,
     canManageCollections,
     createCollection,
@@ -427,11 +429,7 @@ function CollectionPageContent() {
   }
 
   if (shareId && !sharedStateMatches) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center text-muted-foreground">
-        {t('page.loadingSharedCollection')}
-      </div>
-    );
+    return <CollectionPageSkeleton shared />;
   }
 
   if (isSharedView && sharedStateMatches && sharedState.status === 'missing') {
@@ -460,6 +458,12 @@ function CollectionPageContent() {
         </Button>
       </div>
     );
+  }
+
+  // The server and the first client render can't see localStorage, so without
+  // this gate every visit would flash the empty-collection screen first.
+  if (!isSharedView && !isHydrated) {
+    return <CollectionPageSkeleton />;
   }
 
   if (items.length === 0) {
@@ -859,6 +863,50 @@ function CollectionPageContent() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// Mirrors the loaded page: the collection switcher and selection bar (local
+// view only), the title and action buttons, the filter/sort row, then a
+// section heading over the card grid.
+function CollectionPageSkeleton({ shared = false }: { shared?: boolean }) {
+  return (
+    <div className="container mx-auto px-4 py-6 sm:py-8 max-w-7xl">
+      {!shared && <Skeleton className="mb-6 h-[7.2rem] w-full rounded-lg" />}
+      <div className="mb-6 sm:mb-8">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <Skeleton className="mb-2 h-10 w-64" />
+            <div className="flex h-6 items-center">
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {['w-20', 'w-20', 'w-32', 'w-24'].map((w, i) => (
+              <Skeleton key={i} className={`h-9 ${w}`} />
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <Skeleton className="h-10 w-56 rounded-lg" />
+          <Skeleton className="h-10 w-64 rounded-lg" />
+          <Skeleton className="h-10 w-40 rounded-lg sm:ml-auto" />
+        </div>
+        {!shared && <Skeleton className="mt-4 h-14 w-full rounded-lg" />}
+      </div>
+      <Skeleton className="mb-6 h-9 w-48" />
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {[...Array(12)].map((_, i) => (
+          <div key={i} className="overflow-hidden rounded-lg border border-border bg-card">
+            <Skeleton className="aspect-4/3 w-full rounded-none" />
+            <div className="space-y-2 p-3">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

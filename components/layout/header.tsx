@@ -27,7 +27,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useCollection } from '@/contexts/collection-context';
-import { useCompareStore } from '@/stores/compare-store';
+import { useCompareStore, useCompareStoreHydrated } from '@/stores/compare-store';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { normalizeSectionOrder, type SectionKey } from '@/lib/site-features';
@@ -52,6 +52,7 @@ const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[] }) {
   const t = useTranslations('nav');
   const tCommon = useTranslations('common');
+  const tCompare = useTranslations('compare');
   const locale = coerceLocale(useLocale());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
@@ -70,8 +71,9 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-  const { items, activeCollection } = useCollection();
+  const { items, activeCollection, isHydrated } = useCollection();
   const compareItems = useCompareStore((state) => state.items);
+  const compareHydrated = useCompareStoreHydrated();
   const { getLabel } = useModelLabels();
   const { token, user, logout } = useAuth();
   const { config, isSectionEnabled, enabledCategories } = useSiteFeatures();
@@ -219,7 +221,11 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
             >
               <Link href="/collection">
                 <FolderOpen className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
-                {t('collection', { name: activeCollection.name, count: items.length })}
+                {/* The count isn't known until the saved collection is read after
+                    mount; show the name alone meanwhile rather than a false 0. */}
+                {isHydrated
+                  ? t('collection', { name: activeCollection.name, count: items.length })
+                  : activeCollection.name}
               </Link>
             </Button>
           </li>
@@ -248,7 +254,10 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
             >
               <Link href="/compare">
                 <GitCompare className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
-                {t('compare', { count: compareItems.length })}
+                {/* Same as the collection link: no count until the selection is read. */}
+                {compareHydrated
+                  ? t('compare', { count: compareItems.length })
+                  : tCompare('page.title')}
               </Link>
             </Button>
           </li>

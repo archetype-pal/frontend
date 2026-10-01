@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useQueries, useQuery } from '@tanstack/react-query';
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { resultTypeItems, type ResultType } from '@/lib/search-types';
 import { buildQueryString, getSuggestionsPool, type QueryState } from '@/lib/search-query';
 import {
@@ -13,13 +13,22 @@ import {
 import { useSearchContext } from '@/contexts/search-context';
 import type { ViewMode } from '@/components/search/search-actions-menu';
 
+function quickStatsQuery(type: ResultType, keyword: string) {
+  const params = new URLSearchParams();
+  params.set('limit', '1');
+  params.set('offset', '0');
+  if (keyword) params.set('q', keyword);
+  const url = `${getSearchBaseListUrl(type)}?${params.toString()}`;
+  return { url, queryKey: searchKeys.facets(type, `${url}|quick-stats`) };
+}
+
 export function useSearchData(opts: {
   resultType: ResultType;
   baseFacetURL: string;
   queryState: QueryState;
   submittedKeyword: string;
   viewMode: ViewMode;
-  dataCount: number;
+  dataCount: number | undefined;
   results: unknown[];
   enabledCategories: ResultType[];
 }) {
@@ -34,6 +43,7 @@ export function useSearchData(opts: {
     enabledCategories,
   } = opts;
   const { setSuggestionsPool, resetSuggestionsPool } = useSearchContext();
+  const queryClient = useQueryClient();
 
   // The active tab's count comes from the main results query (dataCount), so
   // only the other tabs need a count request — via the list endpoint, which
@@ -48,28 +58,48 @@ export function useSearchData(opts: {
 
   const quickStatsQueries = useQueries({
     queries: quickStatsItems.map((item) => {
-      const params = new URLSearchParams();
-      params.set('limit', '1');
-      params.set('offset', '0');
-      if (submittedKeyword) params.set('q', submittedKeyword);
-      const url = `${getSearchBaseListUrl(item.value)}?${params.toString()}`;
+      const { url, queryKey } = quickStatsQuery(item.value, submittedKeyword);
       return {
-        queryKey: searchKeys.facets(item.value, `${url}|quick-stats`),
+        queryKey,
         queryFn: async ({ signal }: { signal: AbortSignal }) => fetchCount(item.value, url, signal),
         staleTime: 5 * 60_000,
       };
     }),
   });
 
+  // A count that hasn't arrived yet is left out rather than shown as 0; the
+  // tab renders no badge until it's known.
   const countsByType = React.useMemo(() => {
-    const entries = quickStatsItems.map((item, idx) => [
-      item.value,
-      quickStatsQueries[idx]?.data ?? 0,
-    ]);
-    const next = Object.fromEntries(entries) as Partial<Record<ResultType, number>>;
-    next[resultType] = dataCount;
+    const next: Partial<Record<ResultType, number>> = {};
+    quickStatsItems.forEach((item, idx) => {
+      const count = quickStatsQueries[idx]?.data;
+      if (count !== undefined) next[item.value] = count;
+    });
+    const unfiltered =
+      queryState.selected_facets.length === 0 &&
+      Object.keys(queryState.dateParams).length === 0 &&
+      Object.keys(queryState.extraParams ?? {}).length === 0;
+    if (dataCount !== undefined) {
+      next[resultType] = dataCount;
+    } else if (unfiltered) {
+      // Right after a type switch the new tab's own results are still loading,
+      // but its count was already fetched while it was an inactive tab. That
+      // count only reflects the keyword, so it is used only with no filters.
+      const cached = queryClient.getQueryData<number>(
+        quickStatsQuery(resultType, submittedKeyword).queryKey
+      );
+      if (cached !== undefined) next[resultType] = cached;
+    }
     return next;
-  }, [dataCount, quickStatsItems, quickStatsQueries, resultType]);
+  }, [
+    dataCount,
+    queryState,
+    quickStatsItems,
+    quickStatsQueries,
+    queryClient,
+    resultType,
+    submittedKeyword,
+  ]);
 
   const graphDistributionQuery = useQuery({
     queryKey: searchKeys.facets(

@@ -29,6 +29,8 @@ export interface ItemPartHit {
   display_label?: string;
   repository_name?: string;
   shelfmark?: string;
+  number_of_images?: number;
+  date?: string;
 }
 
 /**

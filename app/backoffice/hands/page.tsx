@@ -94,7 +94,7 @@ export default function HandsPage() {
   // but the header showed `data.count` — admins saw "150 hands" with only
   // 20 rows visible. Walk all pages so the count and the table agree, and
   // client-side search/pagination on the DataTable spans the full set.
-  const { data, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.hands.all(),
     queryFn: () =>
       walkPaginated<AdminHandListItem>('/api/v1/management/scribes/hands/?limit=100', (path) =>
@@ -110,13 +110,14 @@ export default function HandsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t('hands.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            {t('hands.subtitle', { count: data?.length ?? 0 })}
+            {isLoading ? '...' : t('hands.subtitle', { count: data?.length ?? 0 })}
           </p>
         </div>
       </div>
 
       <DataTable
         isError={isError}
+        isLoading={isLoading}
         onRetry={() => refetch()}
         columns={columns}
         data={data ?? []}

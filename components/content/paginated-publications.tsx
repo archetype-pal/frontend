@@ -7,6 +7,7 @@ import Link from 'next/link';
 import BlogPostPreview from './blog-post-preview';
 import { getPublications, type Publication, type PublicationParams } from '@/utils/api';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { PageBanner } from '@/components/layout/page-banner';
 
 interface PaginatedPublicationsProps {
@@ -34,8 +35,9 @@ export default function PaginatedPublications({
   const page = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1;
   const offset = (page - 1) * POSTS_PER_PAGE;
 
-  const [articles, setArticles] = useState<Publication[]>([]);
-  const [recentPosts, setRecentPosts] = useState<Publication[]>([]);
+  // null until the first response: the list shows placeholders, not "No posts found".
+  const [articles, setArticles] = useState<Publication[] | null>(null);
+  const [recentPosts, setRecentPosts] = useState<Publication[] | null>(null);
   const [total, setTotal] = useState(0);
 
   const totalPages = Math.ceil(total / POSTS_PER_PAGE);
@@ -55,6 +57,7 @@ export default function PaginatedPublications({
         setTotal(data.count);
       } catch (err) {
         console.error('Error fetching paginated articles:', err);
+        setArticles((prev) => prev ?? []);
       }
     };
 
@@ -75,6 +78,7 @@ export default function PaginatedPublications({
         setRecentPosts(data.results);
       } catch (err) {
         console.error('Error fetching recent posts:', err);
+        setRecentPosts([]);
       }
     };
 
@@ -112,7 +116,25 @@ export default function PaginatedPublications({
         <div className="flex flex-col md:flex-row gap-16">
           {/* Main Content */}
           <main className="flex-1">
-            {articles.length === 0 ? (
+            {articles === null ? (
+              <div className="space-y-6">
+                {[...Array(4)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg border border-border border-l-4 border-l-accent bg-card p-5 shadow-sm"
+                  >
+                    <Skeleton className="mb-2 h-6 w-2/3" />
+                    <Skeleton className="mb-4 h-4 w-1/3" />
+                    <div className="mb-4 space-y-2">
+                      {[...Array(5)].map((_, j) => (
+                        <Skeleton key={j} className={j === 4 ? 'h-4 w-1/2' : 'h-4 w-full'} />
+                      ))}
+                    </div>
+                    <Skeleton className="h-9 w-28" />
+                  </div>
+                ))}
+              </div>
+            ) : articles.length === 0 ? (
               <p className="text-muted-foreground">{t('noPostsFound')}</p>
             ) : (
               <div className="space-y-6">
@@ -181,16 +203,22 @@ export default function PaginatedPublications({
                 <span className="block mt-1 w-8 h-0.5 bg-accent rounded-full" />
               </h2>
               <ul className="space-y-2.5">
-                {recentPosts.map((article) => (
-                  <li key={article.id}>
-                    <Link
-                      href={`${basePath}/${article.slug}`}
-                      className="text-sm text-primary hover:text-primary/80 transition-colors"
-                    >
-                      {article.title}
-                    </Link>
-                  </li>
-                ))}
+                {recentPosts === null
+                  ? [...Array(RECENT_POST_COUNT)].map((_, i) => (
+                      <li key={i}>
+                        <Skeleton className="h-5 w-full" />
+                      </li>
+                    ))
+                  : recentPosts.map((article) => (
+                      <li key={article.id}>
+                        <Link
+                          href={`${basePath}/${article.slug}`}
+                          className="text-sm text-primary hover:text-primary/80 transition-colors"
+                        >
+                          {article.title}
+                        </Link>
+                      </li>
+                    ))}
               </ul>
             </section>
 
