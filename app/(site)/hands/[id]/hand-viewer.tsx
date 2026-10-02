@@ -42,6 +42,13 @@ import { openLightboxWithItems } from '@/lib/lightbox-utils';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 import { useCollection } from '@/contexts/collection-context';
 import { Button } from '@/components/ui/button';
+import {
+  DENSITY_THUMB_PX,
+  DENSITY_WIDTH,
+  DensityControl,
+  useThumbDensity,
+  type ThumbDensity,
+} from '@/components/manuscript/thumb-density';
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { isSearchCategoryEnabled } from '@/lib/site-features';
@@ -59,15 +66,21 @@ interface HandViewerProps {
 /** A single graph thumbnail that resolves its IIIF crop URL and opens the graph on its image. */
 function GraphThumbnail({
   graph,
+  density,
   isSelected,
   onToggleSelect,
 }: {
   graph: HandGraph;
+  density: ThumbDensity;
   isSelected: boolean;
   onToggleSelect: () => void;
 }) {
   const t = useTranslations('hand.graphs');
-  const imageUrl = useIiifThumbnailUrl(graph.image_iiif, graph.coordinates);
+  const imageUrl = useIiifThumbnailUrl(
+    graph.image_iiif,
+    graph.coordinates,
+    DENSITY_THUMB_PX[density]
+  );
 
   return (
     <div className="relative group/thumb">
@@ -75,7 +88,8 @@ function GraphThumbnail({
         href={getGraphDetailUrl(graph) ?? '#'}
         aria-label={t('openGraph', { allograph: graph.allograph_name, id: graph.id })}
         className={cn(
-          'relative block w-20 h-20 border rounded bg-white overflow-hidden',
+          'relative block aspect-square border rounded bg-white overflow-hidden',
+          DENSITY_WIDTH[density],
           isSelected && 'ring-2 ring-primary ring-offset-2'
         )}
       >
@@ -85,7 +99,7 @@ function GraphThumbnail({
             alt={graph.allograph_name}
             fill
             className="object-contain transition-transform duration-200 group-hover/thumb:scale-110"
-            sizes="80px"
+            sizes="14rem"
             unoptimized
           />
         ) : (
@@ -100,7 +114,7 @@ function GraphThumbnail({
         aria-pressed={isSelected}
         aria-label={isSelected ? t('unselectGraph') : t('selectGraph')}
         className={cn(
-          'absolute left-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded border text-[10px] shadow-sm transition',
+          'absolute left-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md border text-xs shadow-sm transition',
           isSelected
             ? 'border-primary bg-primary text-primary-foreground'
             : 'border-foreground/30 bg-background/95 text-transparent hover:border-primary hover:text-primary group-hover/thumb:text-muted-foreground'
@@ -212,6 +226,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
     [graphsState]
   );
 
+  const [density, changeDensity] = useThumbDensity();
   const selection = useSelectionSet<number>();
   const nothingSelected = selection.selected.size === 0;
   const { addItem, isInCollection } = useCollection();
@@ -470,7 +485,10 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
           ) : graphs.length > 0 ? (
             <div className="space-y-6">
               {/* Hand name heading */}
-              <h2 className="text-xl font-semibold">{hand.name}</h2>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-xl font-semibold">{hand.name}</h2>
+                <DensityControl density={density} onChange={changeDensity} />
+              </div>
 
               {/* Always rendered, so the first selection does not push the grid down. */}
               <div className="sticky top-[var(--site-header-h,0px)] z-30 flex flex-wrap items-center gap-2 rounded-md border bg-card/95 px-4 py-3 text-sm shadow-sm backdrop-blur">
@@ -578,6 +596,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                           <GraphThumbnail
                             key={graph.id}
                             graph={graph}
+                            density={density}
                             isSelected={selection.selected.has(graph.id)}
                             onToggleSelect={() => selection.toggle(graph.id)}
                           />

@@ -34,7 +34,13 @@
     "unsavedChanges": "Unsaved changes",
     "processing": "Processing...",
     "signIn": "Sign in",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "thumbnailSize": {
+      "label": "Thumbnail size",
+      "compact": "Compact thumbnails",
+      "comfortable": "Comfortable thumbnails",
+      "large": "Large thumbnails"
+    }
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
