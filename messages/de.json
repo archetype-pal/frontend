@@ -2954,6 +2954,22 @@
     },
     "imageAltFallback": "Manuskriptbild",
     "annotationCount": "{count, plural, one {# Annotation} other {# Annotationen}}",
+    "graphs": {
+      "loading": "Graphen werden geladen...",
+      "loadError": "Graphen konnten nicht geladen werden. Bitte versuchen Sie es später erneut.",
+      "empty": "Dieser Hand sind keine Graphen zugeordnet.",
+      "allographsList": "Liste der Allographen",
+      "selectGraph": "Graph auswählen",
+      "unselectGraph": "Graph abwählen",
+      "openGraph": "{allograph}, Graph {id}",
+      "selectAll": "Alle auswählen",
+      "unselectAll": "Alle abwählen",
+      "addSelected": "Auswahl hinzufügen",
+      "selectedCount": "{count} ausgewählt",
+      "addToCollection": "Zur Sammlung hinzufügen",
+      "lightbox": "Lightbox",
+      "clearSelection": "Auswahl aufheben"
+    },
     "metadata": {
       "fallbackTitle": "Hand Nr. {id}",
       "catchFallbackTitle": "Hand",

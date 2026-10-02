@@ -2954,6 +2954,22 @@
     },
     "imageAltFallback": "Manuscript image",
     "annotationCount": "{count, plural, one {# Annotation} other {# Annotations}}",
+    "graphs": {
+      "loading": "Loading graphs...",
+      "loadError": "Failed to load graphs. Please try again later.",
+      "empty": "No graphs associated to this hand.",
+      "allographsList": "Allographs List",
+      "selectGraph": "Select graph",
+      "unselectGraph": "Unselect graph",
+      "openGraph": "{allograph}, graph {id}",
+      "selectAll": "Select all",
+      "unselectAll": "Unselect all",
+      "addSelected": "Add selected",
+      "selectedCount": "{count} selected",
+      "addToCollection": "Add to collection",
+      "lightbox": "Lightbox",
+      "clearSelection": "Clear"
+    },
     "metadata": {
       "fallbackTitle": "Hand #{id}",
       "catchFallbackTitle": "Hand",
