@@ -1412,11 +1412,12 @@ function LoadedThumbImage({
     );
   }
   return (
+    // Fills the box: small crops arrive at their own size, so S/M/L relies on this scaling.
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={thumb}
       alt={`Annotation ${graph.id}`}
-      className="max-h-full max-w-full object-contain"
+      className="h-full w-full object-contain"
       loading="lazy"
     />
   );
