@@ -39,7 +39,7 @@ import { formatAllographLabel } from '@/lib/allograph-labels';
 import { graphToCollectionItem } from '@/lib/collection-item';
 import { getGraphDetailUrl } from '@/lib/media-url';
 import { openLightboxWithItems } from '@/lib/lightbox-utils';
-import { useSelectionSet } from '@/hooks/use-selection-set';
+import { useRangeSelect, useSelectionSet } from '@/hooks/use-selection-set';
 import { useCollection } from '@/contexts/collection-context';
 import { Button } from '@/components/ui/button';
 import {
@@ -73,7 +73,7 @@ function GraphThumbnail({
   graph: HandGraph;
   density: ThumbDensity;
   isSelected: boolean;
-  onToggleSelect: () => void;
+  onToggleSelect: (shiftKey: boolean) => void;
 }) {
   const t = useTranslations('hand.graphs');
   const imageUrl = useIiifThumbnailUrl(
@@ -110,7 +110,7 @@ function GraphThumbnail({
       </Link>
       <button
         type="button"
-        onClick={onToggleSelect}
+        onClick={(e) => onToggleSelect(e.shiftKey)}
         aria-pressed={isSelected}
         aria-label={isSelected ? t('unselectGraph') : t('selectGraph')}
         className={cn(
@@ -228,6 +228,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
 
   const [density, changeDensity] = useThumbDensity();
   const selection = useSelectionSet<number>();
+  const selectGraph = useRangeSelect(selection);
   const nothingSelected = selection.selected.size === 0;
   const { addItem, isInCollection } = useCollection();
   const addSelectedToCollection = useCallback(
@@ -598,7 +599,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                             graph={graph}
                             density={density}
                             isSelected={selection.selected.has(graph.id)}
-                            onToggleSelect={() => selection.toggle(graph.id)}
+                            onToggleSelect={(shiftKey) => selectGraph(groupIds, graph.id, shiftKey)}
                           />
                         ))}
                       </div>

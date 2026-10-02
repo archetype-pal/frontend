@@ -209,4 +209,19 @@ describe('HandViewer Graphs tab', () => {
     expect(thumbSize).toHaveBeenLastCalledWith(700);
     expect(window.localStorage.getItem('annotation-gallery-density')).toBe('large');
   });
+
+  it('selects every graph between two clicks when shift is held', async () => {
+    const sameAllograph = [101, 103, 104].map((id) => ({ ...GRAPHS[0], id }));
+    apiFetch.mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () => (url.includes('/graphs/') ? sameAllograph : ALLOGRAPHS),
+    }));
+    renderGraphsTab();
+    const toggles = await screen.findAllByRole('button', { name: 'Select graph' });
+
+    fireEvent.click(toggles[0]);
+    fireEvent.click(toggles[2], { shiftKey: true });
+
+    expect(screen.getByText('3 selected')).toBeTruthy();
+  });
 });
