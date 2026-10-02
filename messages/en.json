@@ -3018,6 +3018,7 @@
       "selectedCount": "{count} selected",
       "addToCollection": "Add to collection",
       "lightbox": "Lightbox",
+      "exportCsv": "Export as CSV",
       "clearSelection": "Clear"
     },
     "metadata": {

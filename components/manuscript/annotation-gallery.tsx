@@ -28,8 +28,8 @@ import type { BackendGraph } from '@/services/annotations';
 import { deleteViewerAnnotation } from '@/services/annotations';
 import { fetchAllographs } from '@/services/manuscripts';
 import { formatAllographLabel } from '@/lib/allograph-labels';
-import { escapeCsvField } from '@/lib/backoffice/csv-escape';
 import { graphToCollectionItem } from '@/lib/collection-item';
+import { downloadCsv, graphsToCsv } from '@/lib/graph-csv';
 import { openLightboxWithItems } from '@/lib/lightbox-utils';
 import { toast } from 'sonner';
 import { sortHandsByPriority } from '@/lib/hand-ordering';
@@ -43,7 +43,6 @@ import {
   filtersFromParams,
   filtersToQuery,
   hasActiveFilters,
-  isGraphDescribed,
 } from '@/lib/annotation-gallery-filters';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -431,45 +430,14 @@ export function AnnotationGallery({
   // Export the selection (or, if nothing selected, the filtered view) as CSV (G4.3).
   const exportGraphs = React.useCallback(
     (rows: BackendGraph[]) => {
-      const headers = [
-        'id',
-        'allograph',
-        'hand',
-        'described',
-        'components',
-        'features',
-        'positions',
-      ];
-      const lines = rows.map((g) => {
-        const components = (g.graphcomponent_set ?? []).map(
-          (c) => c.component_name ?? `#${c.component}`
-        );
-        const features = (g.graphcomponent_set ?? []).flatMap((c) =>
-          (c.feature_details ?? []).map((f) => f.name)
-        );
-        const positions = (g.position_details ?? []).map((p) => p.name);
-        return [
-          String(g.id),
-          allographLabelById.get(g.allograph ?? -1) ?? '',
-          g.hand === null || g.hand === undefined ? 'Unattributed' : handLabel(g.hand),
-          isGraphDescribed(g) ? 'yes' : 'no',
-          components.join('; '),
-          features.join('; '),
-          positions.join('; '),
-        ]
-          .map((v) => escapeCsvField(String(v)))
-          .join(',');
-      });
-      const csv = [headers.map(escapeCsvField).join(','), ...lines].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `annotations-${imageId}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const csv = graphsToCsv(
+        rows.map((g) => ({
+          graph: g,
+          allograph: allographLabelById.get(g.allograph ?? -1) ?? '',
+          hand: g.hand === null || g.hand === undefined ? 'Unattributed' : handLabel(g.hand),
+        }))
+      );
+      downloadCsv(`annotations-${imageId}.csv`, csv);
     },
     [allographLabelById, handLabel, imageId]
   );
