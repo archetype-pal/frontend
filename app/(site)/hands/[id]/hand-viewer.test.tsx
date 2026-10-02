@@ -7,7 +7,7 @@ import { SiteFeaturesProvider } from '@/contexts/site-features-context';
 import { getDefaultConfig } from '@/lib/site-features';
 import { HandViewer } from './hand-viewer';
 
-const { addItem, apiFetch, nav, thumbSize, GRAPHS, ALLOGRAPHS } = vi.hoisted(() => {
+const { addItem, apiFetch, downloadCsv, nav, thumbSize, GRAPHS, ALLOGRAPHS } = vi.hoisted(() => {
   const annotation = {
     type: 'Feature',
     geometry: {
@@ -34,6 +34,7 @@ const { addItem, apiFetch, nav, thumbSize, GRAPHS, ALLOGRAPHS } = vi.hoisted(() 
   return {
     addItem: vi.fn(),
     apiFetch: vi.fn(),
+    downloadCsv: vi.fn(),
     nav: { search: 'tab=graphs' },
     thumbSize: vi.fn(),
     GRAPHS: [
@@ -58,6 +59,12 @@ vi.mock('@/lib/api-fetch', () => ({ apiFetch }));
 function respond(url: string) {
   return { ok: true, json: async () => (url.includes('/graphs/') ? GRAPHS : ALLOGRAPHS) };
 }
+
+// Browsers save the file; jsdom has no URL.createObjectURL, so only the hand off is checked.
+vi.mock('@/lib/graph-csv', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/graph-csv')>()),
+  downloadCsv,
+}));
 
 vi.mock('@/hooks/use-iiif-thumbnail', () => ({
   useIiifThumbnailUrl: (_infoUrl: string, _coordinates: string, maxSize?: number) => {
@@ -111,6 +118,7 @@ function renderGraphsTab() {
 describe('HandViewer Graphs tab', () => {
   beforeEach(() => {
     addItem.mockClear();
+    downloadCsv.mockClear();
     thumbSize.mockClear();
     window.localStorage.clear();
     nav.search = 'tab=graphs';
@@ -223,5 +231,19 @@ describe('HandViewer Graphs tab', () => {
     fireEvent.click(toggles[2], { shiftKey: true });
 
     expect(screen.getByText('3 selected')).toBeTruthy();
+  });
+
+  it('exports the selected graphs as CSV, with their image and locus', async () => {
+    renderGraphsTab();
+    const [firstToggle] = await screen.findAllByRole('button', { name: 'Select graph' });
+
+    fireEvent.click(firstToggle);
+    fireEvent.click(screen.getByRole('button', { name: 'Export as CSV' }));
+
+    expect(downloadCsv).toHaveBeenCalledWith(
+      'hand-5-graphs.csv',
+      'id,allograph,hand,described,components,features,positions,image,locus\n' +
+        '101,"a, Insular",Main Hand,no,,,,42,face'
+    );
   });
 });

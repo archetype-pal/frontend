@@ -20,6 +20,7 @@ import type { Allograph } from '@/types/allographs';
 import {
   BookOpen,
   Calendar,
+  Download,
   MapPin,
   PenTool,
   User,
@@ -38,6 +39,7 @@ import { cn } from '@/lib/utils';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { graphToCollectionItem } from '@/lib/collection-item';
 import { getGraphDetailUrl } from '@/lib/media-url';
+import { downloadCsv, graphsToCsv } from '@/lib/graph-csv';
 import { openLightboxWithItems } from '@/lib/lightbox-utils';
 import { useRangeSelect, useSelectionSet } from '@/hooks/use-selection-set';
 import { useCollection } from '@/contexts/collection-context';
@@ -168,6 +170,7 @@ function enrichGraphs(
           },
           collectionLabels
         ),
+        graph: g,
       };
     })
     .filter((g): g is HandGraph => g !== null);
@@ -240,6 +243,23 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
     },
     [addItem, isInCollection, selection.selected]
   );
+  const exportSelected = useCallback(() => {
+    const locusByImage = new Map(images.map((img) => [img.id, img.locus ?? '']));
+    const rows = graphs
+      .filter((g) => selection.selected.has(g.id))
+      .map((g) => ({
+        graph: g.graph,
+        allograph: g.collection_item.allograph ?? '',
+        hand: hand.name,
+        image: String(g.item_image),
+        locus: locusByImage.get(g.item_image) ?? '',
+      }));
+    const csv = graphsToCsv(rows, [
+      { header: 'image', value: (r) => r.image },
+      { header: 'locus', value: (r) => r.locus },
+    ]);
+    downloadCsv(`hand-${hand.id}-graphs.csv`, csv);
+  }, [graphs, hand, images, selection.selected]);
   const sendSelectionToLightbox = useCallback(() => {
     const ids = Array.from(selection.selected);
     if (ids.length === 0) return;
@@ -514,6 +534,16 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                 >
                   <Images className="h-4 w-4" />
                   {t('graphs.lightbox')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={nothingSelected}
+                  onClick={exportSelected}
+                >
+                  <Download className="h-4 w-4" />
+                  {t('graphs.exportCsv')}
                 </Button>
                 <Button
                   size="sm"
