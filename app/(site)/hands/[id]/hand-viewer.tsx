@@ -175,15 +175,10 @@ function useHandGraphs(
     if (!enabled || fetchedRef.current) return;
     fetchedRef.current = true;
 
-    const controller = new AbortController();
-
+    // Never cancelled: this runs once, so a cancelled request would not be retried.
     Promise.all([
-      apiFetch(`/api/v1/manuscripts/graphs/?hand=${hand.id}`, {
-        signal: controller.signal,
-      }).then((r) => (r.ok ? r.json() : [])),
-      apiFetch(`/api/v1/symbols_structure/allographs/`, {
-        signal: controller.signal,
-      }).then((r) => (r.ok ? r.json() : [])),
+      apiFetch(`/api/v1/manuscripts/graphs/?hand=${hand.id}`).then((r) => (r.ok ? r.json() : [])),
+      apiFetch(`/api/v1/symbols_structure/allographs/`).then((r) => (r.ok ? r.json() : [])),
     ])
       .then(([rawGraphs, allographs]) => {
         const graphsArr: BackendGraph[] = Array.isArray(rawGraphs)
@@ -192,12 +187,7 @@ function useHandGraphs(
         const graphs = enrichGraphs(graphsArr, allographs, images, hand, shelfmark);
         setState({ status: 'loaded', graphs });
       })
-      .catch((err) => {
-        if (err?.name === 'AbortError') return;
-        setState({ status: 'error' });
-      });
-
-    return () => controller.abort();
+      .catch(() => setState({ status: 'error' }));
   }, [enabled, hand, images, shelfmark]);
 
   return state;
