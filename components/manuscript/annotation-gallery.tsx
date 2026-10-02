@@ -21,7 +21,7 @@ import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { useInView } from '@/hooks/use-in-view';
 import { useSelectionSet, type SelectionSet } from '@/hooks/use-selection-set';
 import { useAuth } from '@/contexts/auth-context';
-import { useCollection, type CollectionItem } from '@/contexts/collection-context';
+import { useCollection } from '@/contexts/collection-context';
 import type { Allograph, AllographSummary } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 import type { BackendGraph } from '@/services/annotations';
@@ -29,6 +29,7 @@ import { deleteViewerAnnotation } from '@/services/annotations';
 import { fetchAllographs } from '@/services/manuscripts';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { escapeCsvField } from '@/lib/backoffice/csv-escape';
+import { graphToCollectionItem } from '@/lib/collection-item';
 import { openLightboxWithItems } from '@/lib/lightbox-utils';
 import { toast } from 'sonner';
 import { sortHandsByPriority } from '@/lib/hand-ordering';
@@ -483,7 +484,7 @@ export function AnnotationGallery({
         if (!selection.selected.has(g.id)) continue;
         if (isInCollection(g.id, 'graph')) continue;
         addItem(
-          buildCollectionItem(
+          graphToCollectionItem(
             g,
             { itemPartId, itemImageId, iiifImage, locus, shelfmark },
             { allographLabelById, handNameById }
@@ -1512,42 +1513,4 @@ function Kbd({ className, children }: { className?: string; children: React.Reac
       {children}
     </kbd>
   );
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-interface CollectionContext {
-  itemPartId: number;
-  itemImageId: number;
-  iiifImage: string;
-  locus: string;
-  shelfmark: string;
-}
-
-interface CollectionLabels {
-  allographLabelById: ReadonlyMap<number, string>;
-  handNameById: ReadonlyMap<number, string>;
-}
-
-function buildCollectionItem(
-  graph: BackendGraph,
-  ctx: CollectionContext,
-  labels: CollectionLabels
-): CollectionItem {
-  return {
-    id: graph.id,
-    type: 'graph',
-    item_part: ctx.itemPartId,
-    item_image: ctx.itemImageId,
-    image_iiif: ctx.iiifImage,
-    coordinates: JSON.stringify(graph.annotation),
-    annotation_type: graph.annotation_type,
-    allograph:
-      graph.allograph === null ? undefined : labels.allographLabelById.get(graph.allograph),
-    hand_name: graph.hand === null ? undefined : labels.handNameById.get(graph.hand),
-    shelfmark: ctx.shelfmark,
-    locus: ctx.locus,
-  };
 }
