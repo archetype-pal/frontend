@@ -1,4 +1,5 @@
 import type { CollectionItem } from '@/lib/collection-storage';
+import type { BackendGraph } from '@/services/annotations';
 
 export interface HandDescriptionPublic {
   id: number;
@@ -65,4 +66,5 @@ export interface HandGraph {
   item_part: number;
   item_image: number;
   collection_item: CollectionItem;
+  graph: BackendGraph;
 }
