@@ -2621,6 +2621,7 @@
       "selectScribePlaceholder": "Sélectionner un scribe...",
       "searchScribesPlaceholder": "Rechercher des scribes...",
       "noScribesFound": "Aucun scribe trouvé.",
+      "scribesLoadFailed": "Échec du chargement des scribes.",
       "handCreated": "Main ajoutée",
       "handCreateFailed": "Échec de l'ajout de la main",
       "savePart": "Enregistrer la partie",

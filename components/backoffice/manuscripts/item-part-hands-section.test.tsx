@@ -11,9 +11,9 @@ vi.mock('@/contexts/auth-context', () => ({
   useAuth: () => ({ token: 'tok' }),
 }));
 
-const walkPaginatedMock = vi.fn();
-vi.mock('@/lib/backoffice/walk-paginated', () => ({
-  walkPaginated: (...args: unknown[]) => walkPaginatedMock(...args),
+const proxyFetchMock = vi.fn();
+vi.mock('@/lib/api-fetch', () => ({
+  proxyFetch: (...args: unknown[]) => proxyFetchMock(...args),
 }));
 
 const createHandMock = vi.fn();
@@ -37,6 +37,10 @@ const SCRIBES = [
 
 let hands: AdminHandListItem[] = [];
 
+const page = (results: unknown[], next: string | null = null) =>
+  new Response(JSON.stringify({ next, results }));
+const serverError = () => new Response('{}', { status: 500 });
+
 function renderSection() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const invalidateSpy = vi.spyOn(client, 'invalidateQueries');
@@ -50,9 +54,9 @@ function renderSection() {
 
 beforeEach(() => {
   hands = [HAND];
-  walkPaginatedMock.mockReset();
-  walkPaginatedMock.mockImplementation(async (path: string) =>
-    path.includes('/scribes/scribes/') ? SCRIBES : hands
+  proxyFetchMock.mockReset();
+  proxyFetchMock.mockImplementation(async (path: string) =>
+    page(path.includes('/scribes/scribes/') ? SCRIBES : hands)
   );
   createHandMock.mockReset();
   createHandMock.mockResolvedValue({});
@@ -65,7 +69,7 @@ describe('ItemPartHandsSection', () => {
     const link = await screen.findByRole('link', { name: /Main hand/ });
     expect(link.getAttribute('href')).toBe('/backoffice/hands/11');
     expect(screen.getByText('Hands (1)')).toBeDefined();
-    expect(walkPaginatedMock.mock.calls[0][0]).toContain('/hands/?item_part=5&');
+    expect(proxyFetchMock.mock.calls[0][0]).toContain('/hands/?item_part=5&');
   });
 
   it('says graphs cannot be annotated while the part has no hands', async () => {
@@ -108,5 +112,45 @@ describe('ItemPartHandsSection', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: backofficeKeys.hands.all() })
     );
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('shows a load error with a retry when a page of hands fails', async () => {
+    proxyFetchMock.mockImplementation(async (path: string) =>
+      path.includes('offset=100')
+        ? serverError()
+        : page(
+            [HAND],
+            'http://api/api/v1/management/scribes/hands/?item_part=5&limit=100&offset=100'
+          )
+    );
+    renderSection();
+
+    expect(await screen.findByText('Failed to load hands.')).toBeDefined();
+    expect(screen.queryByText('Main hand')).toBeNull();
+
+    proxyFetchMock.mockImplementation(async () => page([HAND]));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByText('Hands (1)')).toBeDefined();
+  });
+
+  it('shows a load error with a retry when the scribe list fails', async () => {
+    proxyFetchMock.mockImplementation(async (path: string) =>
+      path.includes('/scribes/scribes/') ? serverError() : page([HAND])
+    );
+    renderSection();
+    await screen.findByText('Hands (1)');
+    fireEvent.click(screen.getByRole('button', { name: 'Add hand' }));
+
+    expect(await screen.findByText('Failed to load scribes.')).toBeDefined();
+    expect((screen.getByRole('combobox') as HTMLButtonElement).disabled).toBe(true);
+
+    proxyFetchMock.mockImplementation(async (path: string) =>
+      page(path.includes('/scribes/scribes/') ? SCRIBES : [HAND])
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() =>
+      expect((screen.getByRole('combobox') as HTMLButtonElement).disabled).toBe(false)
+    );
+    expect(screen.queryByText('Failed to load scribes.')).toBeNull();
   });
 });

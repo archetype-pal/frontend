@@ -2621,6 +2621,7 @@
       "selectScribePlaceholder": "Select scribe...",
       "searchScribesPlaceholder": "Search scribes...",
       "noScribesFound": "No scribes found.",
+      "scribesLoadFailed": "Failed to load scribes.",
       "handCreated": "Hand added",
       "handCreateFailed": "Failed to add hand",
       "savePart": "Save Part",

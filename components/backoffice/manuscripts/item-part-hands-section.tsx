@@ -26,6 +26,39 @@ import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import { proxyFetch } from '@/lib/api-fetch';
 import type { AdminHandListItem, AdminScribeListItem } from '@/types/backoffice';
 
+// walkPaginated returns the rows read so far when a page fails; throwing lets the query report it.
+async function fetchPageOrThrow(path: string): Promise<Response> {
+  const response = await proxyFetch(path);
+  if (!response.ok) throw new Error(`Request failed (${response.status})`);
+  return response;
+}
+
+function LoadFailed({
+  message,
+  retrying,
+  onRetry,
+}: {
+  message: string;
+  retrying: boolean;
+  onRetry: () => void;
+}) {
+  const t = useTranslations('backoffice');
+  return (
+    <div className="flex items-center gap-2">
+      <p className="text-xs text-destructive">{message}</p>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-7 text-xs"
+        onClick={onRetry}
+        disabled={retrying}
+      >
+        {t('queryState.retry')}
+      </Button>
+    </div>
+  );
+}
+
 /** The hands of one item part, with a dialog to add one. Saves on its own, not via "Save Part". */
 export function ItemPartHandsSection({ itemPartId }: { itemPartId: number }) {
   const t = useTranslations('backoffice');
@@ -36,12 +69,14 @@ export function ItemPartHandsSection({ itemPartId }: { itemPartId: number }) {
     data: hands,
     isLoading,
     isError,
+    isFetching,
+    refetch,
   } = useQuery({
     queryKey: backofficeKeys.hands.list({ item_part: itemPartId }),
     queryFn: () =>
       walkPaginated<AdminHandListItem>(
         `/api/v1/management/scribes/hands/?item_part=${itemPartId}&limit=100`,
-        (path) => proxyFetch(path)
+        fetchPageOrThrow
       ),
     enabled: !!token,
   });
@@ -68,7 +103,11 @@ export function ItemPartHandsSection({ itemPartId }: { itemPartId: number }) {
       {isLoading ? (
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       ) : isError ? (
-        <p className="text-xs text-destructive">{t('manuscriptsDetail.handsLoadFailed')}</p>
+        <LoadFailed
+          message={t('manuscriptsDetail.handsLoadFailed')}
+          retrying={isFetching}
+          onRetry={() => refetch()}
+        />
       ) : hands && hands.length > 0 ? (
         <div className="rounded-md border divide-y">
           {hands.map((hand) => (
@@ -109,12 +148,18 @@ function AddHandDialog({
   const [scribeId, setScribeId] = useState<string | null>(null);
   const [name, setName] = useState('');
 
-  // Same key and query as the scribes page, so both share one cached list of every scribe.
-  const { data: scribes, isLoading: scribesLoading } = useQuery({
+  // Same key as the scribes page, so both share one cached list of every scribe.
+  const {
+    data: scribes,
+    isError: scribesFailed,
+    isFetching: scribesFetching,
+    refetch: refetchScribes,
+  } = useQuery({
     queryKey: backofficeKeys.scribes.list(),
     queryFn: () =>
-      walkPaginated<AdminScribeListItem>('/api/v1/management/scribes/scribes/?limit=100', (path) =>
-        proxyFetch(path)
+      walkPaginated<AdminScribeListItem>(
+        '/api/v1/management/scribes/scribes/?limit=100',
+        fetchPageOrThrow
       ),
     enabled: !!token,
   });
@@ -157,8 +202,15 @@ function AddHandDialog({
               searchPlaceholder={t('manuscriptsDetail.searchScribesPlaceholder')}
               emptyText={t('manuscriptsDetail.noScribesFound')}
               clearLabel={tCommon('clear')}
-              disabled={scribesLoading}
+              disabled={!scribes}
             />
+            {scribesFailed && (
+              <LoadFailed
+                message={t('manuscriptsDetail.scribesLoadFailed')}
+                retrying={scribesFetching}
+                onRetry={() => refetchScribes()}
+              />
+            )}
           </div>
           <div className="space-y-1.5">
             <FieldLabel required htmlFor="new-hand-name">

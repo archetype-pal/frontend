@@ -2621,6 +2621,7 @@
       "selectScribePlaceholder": "Schreiber auswählen...",
       "searchScribesPlaceholder": "Schreiber durchsuchen...",
       "noScribesFound": "Keine Schreiber gefunden.",
+      "scribesLoadFailed": "Schreiber konnten nicht geladen werden.",
       "handCreated": "Hand hinzugefügt",
       "handCreateFailed": "Hand konnte nicht hinzugefügt werden",
       "savePart": "Teil speichern",
