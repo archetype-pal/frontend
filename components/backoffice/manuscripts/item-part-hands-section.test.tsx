@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
@@ -152,5 +152,30 @@ describe('ItemPartHandsSection', () => {
       expect((screen.getByRole('combobox') as HTMLButtonElement).disabled).toBe(false)
     );
     expect(screen.queryByText('Failed to load scribes.')).toBeNull();
+  });
+
+  it('stays open until the new hand is saved', async () => {
+    let finishCreate!: () => void;
+    createHandMock.mockImplementation(
+      () => new Promise<void>((resolve) => (finishCreate = resolve))
+    );
+    renderSection();
+    await screen.findByText('Hands (1)');
+    fireEvent.click(screen.getByRole('button', { name: 'Add hand' }));
+    await waitFor(() =>
+      expect((screen.getByRole('combobox') as HTMLButtonElement).disabled).toBe(false)
+    );
+    fireEvent.click(screen.getByRole('combobox'));
+    fireEvent.click(await screen.findByRole('option', { name: 'Scribe A' }));
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Second hand' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+    await waitFor(() => expect(createHandMock).toHaveBeenCalledTimes(1));
+
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.getByRole('dialog')).toBeDefined();
+
+    await act(async () => finishCreate());
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 });

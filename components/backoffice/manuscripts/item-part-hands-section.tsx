@@ -186,7 +186,13 @@ function AddHandDialog({
   });
 
   return (
-    <Dialog open onOpenChange={onOpenChange}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        // Esc, outside clicks and the close button all land here; none may close it mid-save.
+        if (!createMut.isPending) onOpenChange(open);
+      }}
+    >
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>{t('manuscriptsDetail.newHandTitle')}</DialogTitle>
