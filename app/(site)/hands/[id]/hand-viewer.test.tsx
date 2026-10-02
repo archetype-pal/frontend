@@ -7,7 +7,7 @@ import { SiteFeaturesProvider } from '@/contexts/site-features-context';
 import { getDefaultConfig } from '@/lib/site-features';
 import { HandViewer } from './hand-viewer';
 
-const { addItem, GRAPHS, ALLOGRAPHS } = vi.hoisted(() => {
+const { addItem, apiFetch, nav, GRAPHS, ALLOGRAPHS } = vi.hoisted(() => {
   const annotation = {
     type: 'Feature',
     geometry: {
@@ -33,6 +33,8 @@ const { addItem, GRAPHS, ALLOGRAPHS } = vi.hoisted(() => {
   };
   return {
     addItem: vi.fn(),
+    apiFetch: vi.fn(),
+    nav: { search: 'tab=graphs' },
     GRAPHS: [
       { ...graph, id: 101, allograph: 11 },
       { ...graph, id: 102, allograph: 12 },
@@ -47,15 +49,14 @@ const { addItem, GRAPHS, ALLOGRAPHS } = vi.hoisted(() => {
 vi.mock('next/navigation', () => ({
   usePathname: () => '/hands/5',
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
-  useSearchParams: () => new URLSearchParams('tab=graphs'),
+  useSearchParams: () => new URLSearchParams(nav.search),
 }));
 
-vi.mock('@/lib/api-fetch', () => ({
-  apiFetch: async (url: string) => ({
-    ok: true,
-    json: async () => (url.includes('/graphs/') ? GRAPHS : ALLOGRAPHS),
-  }),
-}));
+vi.mock('@/lib/api-fetch', () => ({ apiFetch }));
+
+function respond(url: string) {
+  return { ok: true, json: async () => (url.includes('/graphs/') ? GRAPHS : ALLOGRAPHS) };
+}
 
 vi.mock('@/hooks/use-iiif-thumbnail', () => ({
   useIiifThumbnailUrl: () => 'https://example.test/crop.jpg',
@@ -91,17 +92,24 @@ const IMAGES: HandImage[] = [
 
 const MANUSCRIPT: HandManuscript = { id: 22, display_label: 'Cotton Ch. 1' };
 
-function renderGraphsTab() {
-  return render(
+function viewer() {
+  return (
     <SiteFeaturesProvider initialConfig={getDefaultConfig()}>
       <HandViewer hand={HAND} images={IMAGES} scribe={null} manuscript={MANUSCRIPT} />
     </SiteFeaturesProvider>
   );
 }
 
+function renderGraphsTab() {
+  return render(viewer());
+}
+
 describe('HandViewer Graphs tab', () => {
   beforeEach(() => {
     addItem.mockClear();
+    nav.search = 'tab=graphs';
+    apiFetch.mockReset();
+    apiFetch.mockImplementation(async (url: string) => respond(url));
   });
 
   it('links each graph to its place on the image viewer, named by allograph and id', async () => {
@@ -159,5 +167,29 @@ describe('HandViewer Graphs tab', () => {
       shelfmark: 'Cotton Ch. 1',
       locus: 'face',
     });
+  });
+
+  it('still shows the graphs after leaving the tab while they load', async () => {
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    // Like fetch: a request whose signal is aborted fails.
+    apiFetch.mockImplementation(
+      (url: string, init?: { signal?: AbortSignal }) =>
+        new Promise((resolve, reject) => {
+          init?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError'))
+          );
+          void released.then(() => resolve(respond(url)));
+        })
+    );
+
+    const { rerender } = renderGraphsTab();
+    nav.search = '';
+    rerender(viewer());
+    nav.search = 'tab=graphs';
+    rerender(viewer());
+    release();
+
+    expect(await screen.findAllByRole('button', { name: 'Select graph' })).toHaveLength(2);
   });
 });
