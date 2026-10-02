@@ -19,7 +19,7 @@ import {
 
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { useInView } from '@/hooks/use-in-view';
-import { useSelectionSet, type SelectionSet } from '@/hooks/use-selection-set';
+import { useRangeSelect, useSelectionSet, type SelectionSet } from '@/hooks/use-selection-set';
 import { useAuth } from '@/contexts/auth-context';
 import { useCollection } from '@/contexts/collection-context';
 import type { Allograph, AllographSummary } from '@/types/allographs';
@@ -1016,24 +1016,14 @@ function AllographGroupSection({
   ).length;
   const allSelected = groupSelectedCount > 0 && groupSelectedCount === allographGroup.graphs.length;
 
-  // Anchor for shift-click range selection (G6.6): the last graph the user
-  // toggled within this group.
-  const lastSelectedRef = React.useRef<number | null>(null);
-  const handleThumbSelect = (graphId: number, shiftKey: boolean) => {
-    const ids = allographGroup.graphs.map((g) => g.id);
-    if (shiftKey && lastSelectedRef.current != null) {
-      const from = ids.indexOf(lastSelectedRef.current);
-      const to = ids.indexOf(graphId);
-      if (from !== -1 && to !== -1) {
-        const [lo, hi] = from < to ? [from, to] : [to, from];
-        selection.addMany(ids.slice(lo, hi + 1));
-        lastSelectedRef.current = graphId;
-        return;
-      }
-    }
-    selection.toggle(graphId);
-    lastSelectedRef.current = graphId;
-  };
+  // Shift-click range selection (G6.6), anchored within this group.
+  const selectInGroup = useRangeSelect(selection);
+  const handleThumbSelect = (graphId: number, shiftKey: boolean) =>
+    selectInGroup(
+      allographGroup.graphs.map((g) => g.id),
+      graphId,
+      shiftKey
+    );
 
   // Arrow-key roving across the thumb grid (G3.4 / G5.2). Left/Right/Home/End
   // move focus between cells' focusable controls; vertical movement is left to
