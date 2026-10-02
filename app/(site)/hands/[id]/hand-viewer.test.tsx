@@ -7,7 +7,7 @@ import { SiteFeaturesProvider } from '@/contexts/site-features-context';
 import { getDefaultConfig } from '@/lib/site-features';
 import { HandViewer } from './hand-viewer';
 
-const { addItem, apiFetch, nav, GRAPHS, ALLOGRAPHS } = vi.hoisted(() => {
+const { addItem, apiFetch, nav, thumbSize, GRAPHS, ALLOGRAPHS } = vi.hoisted(() => {
   const annotation = {
     type: 'Feature',
     geometry: {
@@ -35,6 +35,7 @@ const { addItem, apiFetch, nav, GRAPHS, ALLOGRAPHS } = vi.hoisted(() => {
     addItem: vi.fn(),
     apiFetch: vi.fn(),
     nav: { search: 'tab=graphs' },
+    thumbSize: vi.fn(),
     GRAPHS: [
       { ...graph, id: 101, allograph: 11 },
       { ...graph, id: 102, allograph: 12 },
@@ -59,7 +60,10 @@ function respond(url: string) {
 }
 
 vi.mock('@/hooks/use-iiif-thumbnail', () => ({
-  useIiifThumbnailUrl: () => 'https://example.test/crop.jpg',
+  useIiifThumbnailUrl: (_infoUrl: string, _coordinates: string, maxSize?: number) => {
+    thumbSize(maxSize);
+    return 'https://example.test/crop.jpg';
+  },
 }));
 
 vi.mock('@/contexts/collection-context', () => ({
@@ -107,6 +111,8 @@ function renderGraphsTab() {
 describe('HandViewer Graphs tab', () => {
   beforeEach(() => {
     addItem.mockClear();
+    thumbSize.mockClear();
+    window.localStorage.clear();
     nav.search = 'tab=graphs';
     apiFetch.mockReset();
     apiFetch.mockImplementation(async (url: string) => respond(url));
@@ -191,5 +197,16 @@ describe('HandViewer Graphs tab', () => {
     release();
 
     expect(await screen.findAllByRole('button', { name: 'Select graph' })).toHaveLength(2);
+  });
+
+  it('sizes the thumbnails with the S/M/L control of the image Annotations tab', async () => {
+    renderGraphsTab();
+    await screen.findAllByRole('button', { name: 'Select graph' });
+    expect(thumbSize).toHaveBeenLastCalledWith(500);
+
+    fireEvent.click(screen.getByRole('radio', { name: 'L' }));
+
+    expect(thumbSize).toHaveBeenLastCalledWith(700);
+    expect(window.localStorage.getItem('annotation-gallery-density')).toBe('large');
   });
 });

@@ -34,7 +34,13 @@
     "unsavedChanges": "Nicht gespeicherte Änderungen",
     "processing": "Wird verarbeitet...",
     "signIn": "Anmelden",
-    "signOut": "Abmelden"
+    "signOut": "Abmelden",
+    "thumbnailSize": {
+      "label": "Miniaturgröße",
+      "compact": "Kompakte Miniaturen",
+      "comfortable": "Mittlere Miniaturen",
+      "large": "Große Miniaturen"
+    }
   },
   "errors": {
     "somethingWentWrong": "Etwas ist schiefgelaufen",
