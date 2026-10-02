@@ -199,8 +199,11 @@ function AddHandDialog({
         </DialogHeader>
         <DialogBody className="space-y-4">
           <div className="space-y-1.5">
-            <FieldLabel required>{t('manuscriptsDetail.handScribe')}</FieldLabel>
+            <FieldLabel required htmlFor="new-hand-scribe">
+              {t('manuscriptsDetail.handScribe')}
+            </FieldLabel>
             <SearchableSelect
+              id="new-hand-scribe"
               options={scribeOptions}
               value={scribeId}
               onValueChange={setScribeId}

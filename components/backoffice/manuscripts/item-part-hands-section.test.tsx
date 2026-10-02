@@ -154,6 +154,14 @@ describe('ItemPartHandsSection', () => {
     expect(screen.queryByText('Failed to load scribes.')).toBeNull();
   });
 
+  it('names the scribe picker after its label', async () => {
+    renderSection();
+    await screen.findByText('Hands (1)');
+    fireEvent.click(screen.getByRole('button', { name: 'Add hand' }));
+
+    expect(screen.getByRole('combobox', { name: /^Scribe\s*\(required\)$/ })).toBeDefined();
+  });
+
   it('stays open until the new hand is saved', async () => {
     let finishCreate!: () => void;
     createHandMock.mockImplementation(
