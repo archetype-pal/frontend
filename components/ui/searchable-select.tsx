@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/command';
 
 interface SearchableSelectProps {
+  id?: string;
   options: SearchableOption[];
   value: string | null;
   onValueChange: (value: string | null) => void;
@@ -37,6 +38,7 @@ export type SearchableSelectHandle = {
 export const SearchableSelect = React.forwardRef<SearchableSelectHandle, SearchableSelectProps>(
   function SearchableSelect(
     {
+      id,
       options,
       value,
       onValueChange,
@@ -105,6 +107,7 @@ export const SearchableSelect = React.forwardRef<SearchableSelectHandle, Searcha
       >
         <PopoverTrigger asChild>
           <Button
+            id={id}
             type="button"
             variant="outline"
             role="combobox"

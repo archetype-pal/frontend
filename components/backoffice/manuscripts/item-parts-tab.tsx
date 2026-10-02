@@ -24,6 +24,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
 import { CurrentItemCombobox } from './current-item-combobox';
+import { ItemPartHandsSection } from './item-part-hands-section';
 import { createItemPart, updateItemPart, deleteItemPart } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
@@ -217,6 +218,8 @@ function ItemPartCard({
               className="h-9"
             />
           </div>
+
+          <ItemPartHandsSection itemPartId={part.id} />
 
           {/* Images */}
           <div>
