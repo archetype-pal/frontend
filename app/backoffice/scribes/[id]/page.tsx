@@ -10,6 +10,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { EntityEditorActions } from '@/components/backoffice/common/entity-editor-actions';
 import {
@@ -17,6 +24,7 @@ import {
   BackofficeLoadingState,
 } from '@/components/backoffice/common/query-state';
 import { getScribe, updateScribe, deleteScribe } from '@/services/backoffice/scribes';
+import { getDates } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
@@ -35,7 +43,7 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
     queryKey: backofficeKeys.scribes.detail(id),
     invalidateKeys: [backofficeKeys.scribes.detail(id), backofficeKeys.scribes.all()],
     fetchFn: getScribe,
-    toForm: (s) => ({ name: s.name, scriptorium: s.scriptorium }),
+    toForm: (s) => ({ name: s.name, scriptorium: s.scriptorium, period: s.period }),
     saveFn: (sid, form) => updateScribe(sid, form),
     deleteFn: deleteScribe,
     listRoute: '/backoffice/scribes',
@@ -52,6 +60,12 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
         `/api/v1/management/scribes/hands/?scribe=${id}&limit=100`,
         (path) => proxyFetch(path)
       ),
+    enabled: !!token,
+  });
+
+  const { data: dates } = useQuery({
+    queryKey: backofficeKeys.dates.all(),
+    queryFn: () => getDates(),
     enabled: !!token,
   });
 
@@ -102,6 +116,25 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
             onChange={(e) => setForm({ scriptorium: e.target.value })}
           />
         </div>
+        <div className="space-y-1.5">
+          <Label>{t('scribesDetail.labelPeriod')}</Label>
+          <Select
+            value={String(form.period ?? '__none')}
+            onValueChange={(val) => setForm({ period: val === '__none' ? null : Number(val) })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none">{t('scribesDetail.selectNoPeriod')}</SelectItem>
+              {(dates ?? []).map((d) => (
+                <SelectItem key={d.id} value={String(d.id)}>
+                  {d.date}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Quick links */}
@@ -144,10 +177,10 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
                         {hand.date_display}
                       </span>
                     )}
-                    {hand.place && (
+                    {hand.place_display && (
                       <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {hand.place}
+                        {hand.place_display}
                       </span>
                     )}
                     {hand.item_part_images?.length > 0 && (

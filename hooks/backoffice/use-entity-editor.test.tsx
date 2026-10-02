@@ -82,6 +82,15 @@ describe('useEntityEditor', () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith('/backoffice/entities'));
   });
 
+  it('arms the leave-page guard for externalDirty edits even when the form is clean', async () => {
+    const addSpy = vi.spyOn(window, 'addEventListener');
+    const { result } = setup({ externalDirty: true });
+    await waitFor(() => expect(result.current.form).not.toBeNull());
+    expect(result.current.dirty).toBe(false);
+    expect(addSpy.mock.calls.map(([type]) => type)).toContain('beforeunload');
+    addSpy.mockRestore();
+  });
+
   it('exposes isError (form stays null) when the fetch fails', async () => {
     const { result } = setup({
       fetchFn: vi.fn(async () => {
