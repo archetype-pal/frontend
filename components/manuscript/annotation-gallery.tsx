@@ -52,6 +52,13 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnnotationEditDialog } from '@/components/manuscript/annotation-edit-dialog';
 import {
+  DENSITY_THUMB_PX,
+  DENSITY_WIDTH,
+  DensityControl,
+  useThumbDensity,
+  type ThumbDensity,
+} from '@/components/manuscript/thumb-density';
+import {
   GalleryFilterChips,
   GalleryFilterControls,
   type HandOption,
@@ -167,16 +174,7 @@ export function AnnotationGallery({
   const canEdit = user?.is_staff ?? false;
 
   // Thumbnail density (G6.4), persisted across sessions.
-  const [density, setDensity] = React.useState<ThumbDensity>('comfortable');
-  React.useEffect(() => {
-    const saved = window.localStorage.getItem('annotation-gallery-density');
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed locally-owned state from localStorage after mount; deferring to an effect (vs. a lazy useState initializer) is required to avoid an SSR/client hydration mismatch, since `window` is unavailable during server render.
-    if (saved === 'compact' || saved === 'comfortable' || saved === 'large') setDensity(saved);
-  }, []);
-  const changeDensity = React.useCallback((next: ThumbDensity) => {
-    setDensity(next);
-    window.localStorage.setItem('annotation-gallery-density', next);
-  }, []);
+  const [density, changeDensity] = useThumbDensity();
 
   // Optimistically removed graph ids (G3.1) — hidden immediately on delete.
   const [deletedIds, setDeletedIds] = React.useState<Set<number>>(() => new Set());
@@ -876,65 +874,9 @@ function GalleryToolbar({
   );
 }
 
-// Thumbnail-size segmented control (G6.4).
-function DensityControl({
-  density,
-  onChange,
-}: {
-  density: ThumbDensity;
-  onChange: (value: ThumbDensity) => void;
-}) {
-  const options: { value: ThumbDensity; label: string; title: string }[] = [
-    { value: 'compact', label: 'S', title: 'Compact thumbnails' },
-    { value: 'comfortable', label: 'M', title: 'Comfortable thumbnails' },
-    { value: 'large', label: 'L', title: 'Large thumbnails' },
-  ];
-  return (
-    <div
-      role="radiogroup"
-      aria-label="Thumbnail size"
-      className="inline-flex overflow-hidden rounded-md border"
-    >
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          role="radio"
-          aria-checked={density === opt.value}
-          title={opt.title}
-          onClick={() => onChange(opt.value)}
-          className={cn(
-            'border-l px-2.5 py-1.5 text-xs font-medium transition first:border-l-0',
-            density === opt.value
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
-          )}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Per-hand section
 // ---------------------------------------------------------------------------
-
-export type ThumbDensity = 'compact' | 'comfortable' | 'large';
-
-// Tailwind width classes per density (G6.4). Footer slot widths must match the
-// thumb so the grid stays aligned.
-const DENSITY_WIDTH: Record<ThumbDensity, string> = {
-  compact: 'w-28',
-  comfortable: 'w-[10.5rem]',
-  large: 'w-56',
-};
-const DENSITY_THUMB_PX: Record<ThumbDensity, number> = {
-  compact: 320,
-  comfortable: 500,
-  large: 700,
-};
 
 // Stable, repeatable accent palette for visually separating hands (G6.9).
 const HAND_ACCENTS = [

@@ -34,7 +34,13 @@
     "unsavedChanges": "Modifications non enregistrées",
     "processing": "Traitement...",
     "signIn": "Se connecter",
-    "signOut": "Se déconnecter"
+    "signOut": "Se déconnecter",
+    "thumbnailSize": {
+      "label": "Taille des miniatures",
+      "compact": "Miniatures compactes",
+      "comfortable": "Miniatures moyennes",
+      "large": "Grandes miniatures"
+    }
   },
   "errors": {
     "somethingWentWrong": "Une erreur est survenue",
