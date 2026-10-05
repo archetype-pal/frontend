@@ -25,6 +25,15 @@ import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import type { AdminHandListItem, AdminScribeListItem } from '@/types/backoffice';
 
+export function formatScribeOptionLabel(scribe: {
+  name: string;
+  period_display?: string | null;
+  scriptorium?: string | null;
+}): string {
+  const details = [scribe.period_display, scribe.scriptorium?.trim()].filter(Boolean).join(' · ');
+  return details ? `${scribe.name} (${details})` : scribe.name;
+}
+
 function LoadFailed({
   message,
   retrying,
@@ -153,7 +162,11 @@ function AddHandDialog({
   });
 
   const scribeOptions = useMemo(
-    () => (scribes ?? []).map((scribe) => ({ value: String(scribe.id), label: scribe.name })),
+    () =>
+      (scribes ?? []).map((scribe) => ({
+        value: String(scribe.id),
+        label: formatScribeOptionLabel(scribe),
+      })),
     [scribes]
   );
 
