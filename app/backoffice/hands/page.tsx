@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import type { AdminHandListItem } from '@/types/backoffice';
 
 function buildColumns(t: ReturnType<typeof useTranslations>): ColumnDef<AdminHandListItem>[] {
@@ -96,10 +95,7 @@ export default function HandsPage() {
   // client-side search/pagination on the DataTable spans the full set.
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.hands.all(),
-    queryFn: () =>
-      walkPaginated<AdminHandListItem>('/api/v1/management/scribes/hands/?limit=100', (path) =>
-        proxyFetch(path)
-      ),
+    queryFn: () => walkPaginated<AdminHandListItem>('/api/v1/management/scribes/hands/?limit=100'),
     enabled: !!token,
   });
 

@@ -23,15 +23,7 @@ import { createHand } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import type { AdminHandListItem, AdminScribeListItem } from '@/types/backoffice';
-
-// walkPaginated returns the rows read so far when a page fails; throwing lets the query report it.
-async function fetchPageOrThrow(path: string): Promise<Response> {
-  const response = await proxyFetch(path);
-  if (!response.ok) throw new Error(`Request failed (${response.status})`);
-  return response;
-}
 
 function LoadFailed({
   message,
@@ -75,8 +67,7 @@ export function ItemPartHandsSection({ itemPartId }: { itemPartId: number }) {
     queryKey: backofficeKeys.hands.list({ item_part: itemPartId }),
     queryFn: () =>
       walkPaginated<AdminHandListItem>(
-        `/api/v1/management/scribes/hands/?item_part=${itemPartId}&limit=100`,
-        fetchPageOrThrow
+        `/api/v1/management/scribes/hands/?item_part=${itemPartId}&limit=100`
       ),
     enabled: !!token,
   });
@@ -157,10 +148,7 @@ function AddHandDialog({
   } = useQuery({
     queryKey: backofficeKeys.scribes.list(),
     queryFn: () =>
-      walkPaginated<AdminScribeListItem>(
-        '/api/v1/management/scribes/scribes/?limit=100',
-        fetchPageOrThrow
-      ),
+      walkPaginated<AdminScribeListItem>('/api/v1/management/scribes/scribes/?limit=100'),
     enabled: !!token,
   });
 

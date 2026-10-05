@@ -28,7 +28,6 @@ import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { updatePublication, deletePublication } from '@/services/backoffice/publications';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import type { PublicationListItem } from '@/types/backoffice';
 
@@ -163,10 +162,7 @@ export default function PublicationsPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.publications.list({ scope: 'all-pages', limit: 100 }),
     queryFn: () =>
-      walkPaginated<PublicationListItem>(
-        '/api/v1/media/management/publications/?limit=100',
-        (path) => proxyFetch(path)
-      ),
+      walkPaginated<PublicationListItem>('/api/v1/media/management/publications/?limit=100'),
     enabled: !!token,
   });
 

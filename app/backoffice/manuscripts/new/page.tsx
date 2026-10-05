@@ -29,7 +29,6 @@ import {
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import { toast } from 'sonner';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -93,8 +92,7 @@ export default function NewManuscriptPage() {
         let currentItemId: number | null = null;
         if (repository && shelfmark.trim()) {
           const existing = await walkPaginated<CurrentItemOption>(
-            `/api/v1/manuscripts/management/current-items/?repository=${Number(repository)}&limit=100`,
-            (path) => proxyFetch(path)
+            `/api/v1/manuscripts/management/current-items/?repository=${Number(repository)}&limit=100`
           );
           const match = existing.find(
             (ci) => ci.shelfmark.toLowerCase() === shelfmark.trim().toLowerCase()

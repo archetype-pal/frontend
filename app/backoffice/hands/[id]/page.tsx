@@ -31,7 +31,6 @@ import { getDates } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import type { AdminItemImage } from '@/services/backoffice/manuscripts';
 
 export default function HandDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -68,8 +67,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
     queryKey: ['backoffice', 'item-images', itemPart],
     queryFn: () =>
       walkPaginated<AdminItemImage>(
-        `/api/v1/manuscripts/management/item-images/?item_part=${itemPart}&limit=100`,
-        (path) => proxyFetch(path)
+        `/api/v1/manuscripts/management/item-images/?item_part=${itemPart}&limit=100`
       ),
     enabled: !!token && !!itemPart,
   });

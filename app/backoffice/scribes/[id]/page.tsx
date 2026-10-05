@@ -28,7 +28,6 @@ import { getDates } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import type { AdminHandListItem } from '@/types/backoffice';
 
 export default function ScribeDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -56,10 +55,7 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
   const { data: hands } = useQuery({
     queryKey: backofficeKeys.hands.list({ scribe: id }),
     queryFn: () =>
-      walkPaginated<AdminHandListItem>(
-        `/api/v1/management/scribes/hands/?scribe=${id}&limit=100`,
-        (path) => proxyFetch(path)
-      ),
+      walkPaginated<AdminHandListItem>(`/api/v1/management/scribes/hands/?scribe=${id}&limit=100`),
     enabled: !!token,
   });
 

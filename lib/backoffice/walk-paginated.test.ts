@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const proxyFetchMock = vi.fn();
+vi.mock('@/lib/api-fetch', () => ({
+  proxyFetch: (...args: unknown[]) => proxyFetchMock(...args),
+}));
+
+import { BackofficeApiError } from '@/services/backoffice/api-client';
 import { walkPaginated } from './walk-paginated';
 
 function jsonResponse(body: unknown, status = 200) {
@@ -13,6 +19,7 @@ const fetcher = vi.fn();
 
 beforeEach(() => {
   fetcher.mockReset();
+  proxyFetchMock.mockReset();
 });
 
 afterEach(() => {
@@ -50,7 +57,7 @@ describe('walkPaginated', () => {
     expect(secondPath.includes('http://')).toBe(false);
   });
 
-  it('returns the partial buffer on a non-OK response without throwing', async () => {
+  it('throws BackofficeApiError when a later page fails, instead of returning the first pages', async () => {
     fetcher.mockResolvedValueOnce(
       jsonResponse({
         count: 4,
@@ -60,9 +67,17 @@ describe('walkPaginated', () => {
       })
     );
     fetcher.mockResolvedValueOnce(jsonResponse({ detail: 'forbidden' }, 403));
-    const result = await walkPaginated<{ id: number }>('/items/?limit=100', fetcher);
-    // First page collected; second page short-circuits on 403.
-    expect(result.map((r) => r.id)).toEqual([1]);
+    const error = await walkPaginated('/items/?limit=100', fetcher).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(BackofficeApiError);
+    expect(error).toMatchObject({ status: 403, body: { detail: 'forbidden' } });
+  });
+
+  it('throws with an empty body when the error page is not JSON', async () => {
+    fetcher.mockResolvedValueOnce(new Response('<html>Bad Gateway</html>', { status: 502 }));
+    await expect(walkPaginated('/items/?limit=100', fetcher)).rejects.toMatchObject({
+      status: 502,
+      body: {},
+    });
   });
 
   it('handles a bare-array response (legacy / pagination disabled)', async () => {
@@ -112,5 +127,14 @@ describe('walkPaginated', () => {
     fetcher.mockResolvedValueOnce(jsonResponse({ count: 0, next: null, previous: null }));
     const result = await walkPaginated<{ id: number }>('/items/?limit=100', fetcher);
     expect(result).toEqual([]);
+  });
+});
+
+describe('walkPaginated default fetcher', () => {
+  it('uses proxyFetch when no fetcher is passed', async () => {
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ next: null, results: [{ id: 1 }] }));
+    const result = await walkPaginated<{ id: number }>('/api/v1/test/?limit=100');
+    expect(result.map((r) => r.id)).toEqual([1]);
+    expect(proxyFetchMock).toHaveBeenCalledWith('/api/v1/test/?limit=100');
   });
 });
