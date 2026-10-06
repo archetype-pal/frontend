@@ -35,7 +35,7 @@ import {
 } from '@/components/backoffice/new-image-text-dialog';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 20;
 
 function parseMode(value: string | null): UncoveredMode {
   if (value === 'transcription' || value === 'translation') return value;
