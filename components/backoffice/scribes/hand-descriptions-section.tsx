@@ -25,7 +25,7 @@ import {
 import { getSources } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
-import type { HandDescription } from '@/types/backoffice';
+import type { AdminHandListItem, HandDescription } from '@/types/backoffice';
 
 const RichTextEditor = dynamic(
   () => import('@/components/backoffice/common/rich-text-editor').then((m) => m.RichTextEditor),
@@ -123,6 +123,33 @@ export function HandDescriptionsSection({
     },
   });
 
+  // The source select reads the cached hand, so update it optimistically: it
+  // would otherwise snap back until the refetch lands, and stay there silently
+  // if the PATCH fails.
+  const sourceMut = useMutation({
+    mutationFn: ({ id, source }: { id: number; source: number | null }) =>
+      updateHandDescription(id, { source }),
+    onMutate: async ({ id, source }) => {
+      const key = backofficeKeys.hands.detail(handId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<AdminHandListItem>(key);
+      if (previous) {
+        queryClient.setQueryData<AdminHandListItem>(key, {
+          ...previous,
+          descriptions: previous.descriptions.map((d) => (d.id === id ? { ...d, source } : d)),
+        });
+      }
+      return { previous };
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(backofficeKeys.hands.detail(handId), context.previous);
+      }
+      toast.error(t('handsDetail.descriptionUpdateFailed'), { description: formatApiError(err) });
+    },
+    onSettled: invalidate,
+  });
+
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteHandDescription(id),
     onSuccess: () => {
@@ -172,9 +199,7 @@ export function HandDescriptionsSection({
               key={d.id}
               description={d}
               sources={sources ?? []}
-              onChangeSource={(sourceId) =>
-                updateMut.mutate({ id: d.id, data: { source: sourceId } })
-              }
+              onChangeSource={(sourceId) => sourceMut.mutate({ id: d.id, source: sourceId })}
               onSaveContent={(content) => updateMut.mutate({ id: d.id, data: { content } })}
               onDirtyChange={setRowDirty}
               onDelete={() => setPendingDeleteId(d.id)}

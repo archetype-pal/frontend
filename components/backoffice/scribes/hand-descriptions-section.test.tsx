@@ -1,21 +1,24 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { HandDescription } from '@/types/backoffice';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import type { AdminHandListItem, HandDescription } from '@/types/backoffice';
 
 const createHandDescriptionMock = vi.fn();
 const deleteHandDescriptionMock = vi.fn();
+const updateHandDescriptionMock = vi.fn();
+const getSourcesMock = vi.fn().mockResolvedValue([{ id: 11, name: 'Ker 1957', label: 'Ker' }]);
 vi.mock('@/services/backoffice/scribes', () => ({
   createHandDescription: (...args: unknown[]) => createHandDescriptionMock(...args),
-  updateHandDescription: vi.fn(),
+  updateHandDescription: (...args: unknown[]) => updateHandDescriptionMock(...args),
   deleteHandDescription: (...args: unknown[]) => deleteHandDescriptionMock(...args),
 }));
 
 vi.mock('@/services/backoffice/manuscripts', () => ({
-  getSources: vi.fn().mockResolvedValue([]),
+  getSources: () => getSourcesMock(),
 }));
 
 vi.mock('@/contexts/auth-context', () => ({
@@ -63,7 +66,33 @@ function renderSection(onDirtyChange = vi.fn(), descriptions = [DESCRIPTION]) {
   return { onDirtyChange };
 }
 
+/** Renders the section from the cached hand, as the hand page does. */
+function renderFromCache() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const key = backofficeKeys.hands.detail(3);
+  client.setQueryData(key, { id: 3, descriptions: [DESCRIPTION] } as AdminHandListItem);
+  // Keep the refetch from replacing the optimistic value during the test.
+  client.setQueryDefaults(key, { queryFn: () => new Promise(() => {}), staleTime: Infinity });
+  function FromCache() {
+    const { data } = useQuery<AdminHandListItem>({ queryKey: key });
+    return <HandDescriptionsSection handId={3} descriptions={data?.descriptions ?? []} />;
+  }
+  render(
+    <QueryClientProvider client={client}>
+      <FromCache />
+    </QueryClientProvider>
+  );
+}
+
+async function pickSource(name: string) {
+  const trigger = screen.getByRole('combobox');
+  // Radix opens on keyboard in jsdom (its pointer path needs pointer capture).
+  fireEvent.keyDown(trigger, { key: 'Enter' });
+  fireEvent.click(await screen.findByRole('option', { name }));
+}
+
 beforeEach(() => {
+  updateHandDescriptionMock.mockReset();
   createHandDescriptionMock.mockReset();
   createHandDescriptionMock.mockResolvedValue({});
   deleteHandDescriptionMock.mockReset();
@@ -130,5 +159,24 @@ describe('HandDescriptionsSection', () => {
     expect(screen.queryByLabelText('content')).toBeNull();
     expect(onDirtyChange).toHaveBeenLastCalledWith(false);
     expect(createHandDescriptionMock).not.toHaveBeenCalled();
+  });
+
+  it('shows a new source at once, and rolls it back if the update fails', async () => {
+    let reject: (err: Error) => void = () => {};
+    updateHandDescriptionMock.mockReturnValue(
+      new Promise((_, r) => {
+        reject = r;
+      })
+    );
+    renderFromCache();
+    // The source list loads asynchronously.
+    await waitFor(() => expect(getSourcesMock).toHaveBeenCalled());
+
+    await pickSource('Ker 1957');
+    await waitFor(() => expect(screen.getByRole('combobox').textContent).toBe('Ker 1957'));
+    expect(updateHandDescriptionMock).toHaveBeenCalledWith(7, { source: 11 });
+
+    reject(new Error('boom'));
+    await waitFor(() => expect(screen.getByRole('combobox').textContent).toBe('No source'));
   });
 });
