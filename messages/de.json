@@ -2088,7 +2088,6 @@
       "searchPlaceholder": "Benutzer suchen …",
       "newUserButton": "Neuer Benutzer",
       "selectedCount": "{selected} von {total} ausgewählt",
-      "rowsTotal": "{count} Zeile(n) insgesamt",
       "bulkActivate": "Aktivieren",
       "bulkDeactivate": "Deaktivieren",
       "bulkDelete": "Löschen",
@@ -2363,15 +2362,11 @@
       "selectedCount": "{count} ausgewählt",
       "loadError": "Laden fehlgeschlagen. Bitte erneut versuchen.",
       "noResults": "Keine Ergebnisse.",
-      "selectedOfTotal": "{count} von {total} ausgewählt",
-      "rowsTotal": "{count} Zeile(n) insgesamt"
+      "selectedOfTotal": "{count} von {total} ausgewählt"
     },
     "filterBar": {
       "allOption": "Alle {label}",
       "clearFilters": "Filter zurücksetzen"
-    },
-    "pagination": {
-      "pageOf": "Seite {page} von {total}"
     },
     "inlineEdit": {
       "placeholder": "Zum Bearbeiten klicken",

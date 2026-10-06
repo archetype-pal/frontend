@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
@@ -8,7 +8,7 @@ import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ScanLine, ExternalLink, Trash2, Image as ImageIcon, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ServerPagination } from '@/components/backoffice/common/server-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,8 +31,6 @@ import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import type { GraphItem } from '@/types/backoffice';
 import { toast } from 'sonner';
-
-const PAGE_SIZE = 50;
 
 export default function AnnotationsPage() {
   const t = useTranslations('backoffice');
@@ -157,6 +155,8 @@ export default function AnnotationsPage() {
   );
 
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
+  const tableRef = useRef<HTMLDivElement>(null);
   const [annotationType, setAnnotationType] = useState('__all');
   const [handFilter, setHandFilter] = useState('');
   const [allographFilter, setAllographFilter] = useState('');
@@ -164,20 +164,19 @@ export default function AnnotationsPage() {
 
   const filters = useMemo(() => {
     const params: Record<string, string | number> = {
-      limit: PAGE_SIZE,
-      offset: page * PAGE_SIZE,
+      limit: pageSize,
+      offset: page * pageSize,
     };
     if (annotationType !== '__all') params.annotation_type = annotationType;
     if (handFilter.trim()) params.hand = Number(handFilter);
     if (allographFilter.trim()) params.allograph = Number(allographFilter);
     return params;
-  }, [page, annotationType, handFilter, allographFilter]);
+  }, [page, pageSize, annotationType, handFilter, allographFilter]);
 
-  const { data, isLoading, isPlaceholderData, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list(filters),
     queryFn: () => getGraphs(filters),
     enabled: !!token,
-    // Keep the current page on screen while the next page or search loads.
     placeholderData: keepPreviousData,
   });
 
@@ -303,6 +302,7 @@ export default function AnnotationsPage() {
 
       {/* Data Table */}
       <DataTable
+        tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
         onRetry={() => refetch()}
@@ -316,12 +316,16 @@ export default function AnnotationsPage() {
         exportFilename="annotations"
       />
 
-      <ServerPagination
-        total={totalCount}
-        pageSize={PAGE_SIZE}
-        page={page}
-        hasNext={Boolean(data?.next) && !isPlaceholderData}
-        onPageChange={setPage}
+      <DataPagination
+        scrollTargetRef={tableRef}
+        totalItems={totalCount}
+        page={page + 1}
+        pageSize={pageSize}
+        onPageChange={(p) => setPage(p - 1)}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(0);
+        }}
       />
 
       <ConfirmDialog

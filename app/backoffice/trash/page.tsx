@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useMemo, useRef } from 'react';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ServerPagination } from '@/components/backoffice/common/server-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import {
   DataTable,
   sortableHeader,
@@ -44,8 +44,6 @@ import {
 import type { GraphItem } from '@/types/backoffice';
 import { toast } from 'sonner';
 
-const PAGE_SIZE = 50;
-
 // One entry per trashable model — later models are entries here, not new pages.
 const TRASH_TABS = [{ key: 'annotations', labelKey: 'trash.tabAnnotations' }] as const;
 
@@ -60,6 +58,8 @@ export default function TrashPage() {
 
   const [activeTab, setActiveTab] = useState<TrashTabKey>('annotations');
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
+  const tableRef = useRef<HTMLDivElement>(null);
   const [purgeTarget, setPurgeTarget] = useState<GraphItem | null>(null);
   const [bulkPurgeIds, setBulkPurgeIds] = useState<string[] | null>(null);
   // Bumped after anything that takes a row out of the trash: remounts the
@@ -81,17 +81,18 @@ export default function TrashPage() {
   // from colliding with the live list on the same filters.
   const params = useMemo(
     () => ({
-      limit: PAGE_SIZE,
-      offset: page * PAGE_SIZE,
+      limit: pageSize,
+      offset: page * pageSize,
       ...buildTrashFilterParams(filterState),
     }),
-    [page, filterState]
+    [page, pageSize, filterState]
   );
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list({ deleted: 'true', ...params }),
     queryFn: () => getTrashedGraphs(params),
     enabled: !!token,
+    placeholderData: keepPreviousData,
   });
 
   // Keyed under the graphs namespace so invalidateGraphs() refreshes it:
@@ -426,6 +427,7 @@ export default function TrashPage() {
       </div>
 
       <DataTable
+        tableRef={tableRef}
         key={`${activeTab}-${tableEpoch}`}
         columns={columns}
         data={rows}
@@ -437,12 +439,16 @@ export default function TrashPage() {
         enableColumnVisibility
         bulkActions={bulkActions}
       />
-      <ServerPagination
-        total={totalCount}
-        pageSize={PAGE_SIZE}
-        page={page}
-        hasNext={Boolean(data?.next)}
-        onPageChange={setPage}
+      <DataPagination
+        scrollTargetRef={tableRef}
+        totalItems={totalCount}
+        page={page + 1}
+        pageSize={pageSize}
+        onPageChange={(p) => setPage(p - 1)}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(0);
+        }}
       />
 
       <ConfirmDialog

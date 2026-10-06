@@ -118,8 +118,8 @@ export const backofficeKeys = {
   },
   uncoveredImages: {
     all: () => [...backofficeKeys.all, 'uncovered-images'] as const,
-    list: (mode: string, page: number) =>
-      [...backofficeKeys.uncoveredImages.all(), mode, page] as const,
+    list: (mode: string, page: number, pageSize: number) =>
+      [...backofficeKeys.uncoveredImages.all(), mode, page, pageSize] as const,
   },
   reviewQueue: {
     all: () => [...backofficeKeys.all, 'review-queue'] as const,

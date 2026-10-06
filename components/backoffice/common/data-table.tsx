@@ -7,6 +7,7 @@ import {
   type ColumnFiltersState,
   type VisibilityState,
   type RowSelectionState,
+  type PaginationState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -32,7 +33,8 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChevronLeft, ChevronRight, Search, Columns, Download, X } from 'lucide-react';
+import { Search, Columns, Download, X } from 'lucide-react';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { escapeCsvField } from '@/lib/backoffice/csv-escape';
@@ -96,6 +98,8 @@ interface DataTableProps<TData, TValue> {
   onRetry?: () => void;
   /** Render placeholder rows (instead of "No results") while the data query has nothing to show yet. */
   isLoading?: boolean;
+  /** Ref to the table box, for an outside pager to scroll to. */
+  tableRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function DataTable<TData, TValue>({
@@ -119,15 +123,21 @@ export function DataTable<TData, TValue>({
   isError = false,
   onRetry,
   isLoading = false,
+  tableRef,
 }: DataTableProps<TData, TValue>) {
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [tablePageSize, setTablePageSize] = useState(pageSize);
+  const paginationState: PaginationState = { pageIndex, pageSize: tablePageSize };
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [activePreset, setActivePreset] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const ownTableRef = useRef<HTMLDivElement>(null);
+  const tableBoxRef = tableRef ?? ownTableRef;
 
   const hasSearch = !!(searchColumn || onSearchChange);
 
@@ -201,15 +211,23 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     ...(pagination && { getPaginationRowModel: getPaginationRowModel() }),
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: (updater) => {
+      setColumnFilters(updater);
+      setPageIndex(0);
+    },
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(paginationState) : updater;
+      setPageIndex(next.pageIndex);
+      if (next.pageSize !== tablePageSize) setTablePageSize(next.pageSize);
+    },
+    autoResetPageIndex: false,
     enableRowSelection,
     getRowId: getRowId
       ? (row) => getRowId(row)
       : (row) => String((row as Record<string, unknown>).id ?? ''),
-    state: { sorting, columnFilters, columnVisibility, rowSelection },
-    initialState: { pagination: { pageSize } },
+    state: { sorting, columnFilters, columnVisibility, rowSelection, pagination: paginationState },
   });
 
   const selectedCount = Object.keys(rowSelection).length;
@@ -254,7 +272,10 @@ export function DataTable<TData, TValue>({
               <button
                 key={preset.label}
                 type="button"
-                onClick={() => setActivePreset(i)}
+                onClick={() => {
+                  setActivePreset(i);
+                  setPageIndex(0);
+                }}
                 className={cn(
                   'px-3 py-1.5 text-xs font-medium transition-colors border-b-2 -mb-px',
                   i === activePreset
@@ -371,7 +392,7 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div ref={tableBoxRef} className="rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -432,39 +453,22 @@ export function DataTable<TData, TValue>({
 
       {/* Pagination (hidden while loading: its counts would read 0 of 0) */}
       {pagination && !isLoading && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            {enableRowSelection && selectedCount > 0
+        <DataPagination
+          totalItems={table.getFilteredRowModel().rows.length}
+          page={table.getState().pagination.pageIndex + 1}
+          pageSize={table.getState().pagination.pageSize}
+          onPageChange={(p) => table.setPageIndex(p - 1)}
+          onPageSizeChange={(size) => table.setPageSize(size)}
+          scrollTargetRef={tableBoxRef}
+          summary={
+            enableRowSelection && selectedCount > 0
               ? t('dataTable.selectedOfTotal', {
                   count: selectedCount,
                   total: table.getFilteredRowModel().rows.length,
                 })
-              : t('dataTable.rowsTotal', { count: table.getFilteredRowModel().rows.length })}
-          </span>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="px-2 tabular-nums">
-              {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+              : undefined
+          }
+        />
       )}
     </div>
   );
