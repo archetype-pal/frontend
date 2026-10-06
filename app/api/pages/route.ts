@@ -2,6 +2,7 @@ import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
 import { getServerAuthToken } from '@/lib/auth-token-server';
+import { crossOriginRefusal, isSameOriginRequest } from '@/lib/same-origin';
 
 const MANAGEMENT_PAGES_PATH = '/api/v1/management/pages/';
 
@@ -32,6 +33,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isSameOriginRequest(request)) return crossOriginRefusal();
   const token = await getServerAuthToken();
   if (!token) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });

@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/env', () => ({ env: { serverApiUrl: 'http://api.test' } }));
+vi.mock('@/lib/env', () => ({
+  env: { serverApiUrl: 'http://api.test', siteUrl: 'http://site.test' },
+}));
 
 const { getServerAuthToken } = vi.hoisted(() => ({ getServerAuthToken: vi.fn() }));
 vi.mock('@/lib/auth-token-server', () => ({ getServerAuthToken }));
 
 import { NextRequest } from 'next/server';
-import { DELETE, GET, PATCH } from './route';
+import { DELETE, GET, PATCH, POST } from './route';
 
 const fetchMock = vi.fn();
 
@@ -45,7 +47,23 @@ describe('/api/proxy', () => {
     expect(new Headers(init.headers).get('Authorization')).toBe('Token tok');
   });
 
-  it('forwards a buffered body (not a stream), so the backend gets a Content-Length', async () => {
+  it('streams a body with the client Content-Length, so WSGI reads it without buffering', async () => {
+    const request = new NextRequest('http://site.test/api/proxy/api/v1/x/7', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', 'content-length': '7' },
+      body: '{"a":1}',
+    });
+
+    await PATCH(request, params('api', 'v1', 'x', '7'));
+
+    const init = fetchMock.mock.calls[0][1];
+    expect(init.body).toBeInstanceOf(ReadableStream);
+    expect(init.duplex).toBe('half');
+    expect(new Headers(init.headers).get('content-length')).toBe('7');
+    expect(await new Response(init.body).text()).toBe('{"a":1}');
+  });
+
+  it('buffers a body that came without a Content-Length, so fetch can compute one', async () => {
     const request = new NextRequest('http://site.test/api/proxy/api/v1/x/7', {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
@@ -96,5 +114,77 @@ describe('/api/proxy', () => {
 
     expect(response.status).toBe(401);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a sibling subdomain', { 'sec-fetch-site': 'same-site', origin: 'http://evil.site.test' }],
+    ['a foreign Origin from a browser without Sec-Fetch-Site', { origin: 'http://evil.test' }],
+  ])('refuses a write from %s', async (_label, headers) => {
+    const request = new NextRequest('http://site.test/api/proxy/api/v1/x', {
+      method: 'POST',
+      headers,
+      body: '{}',
+    });
+
+    const response = await POST(request, params('api', 'v1', 'x'));
+
+    expect(response.status).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('accepts a same-origin write', async () => {
+    const request = new NextRequest('http://site.test/api/proxy/api/v1/x', {
+      method: 'POST',
+      headers: { 'sec-fetch-site': 'same-origin', origin: 'http://site.test' },
+      body: '{}',
+    });
+
+    const response = await POST(request, params('api', 'v1', 'x'));
+
+    expect(response.status).toBe(200);
+  });
+
+  it('forwards the client IP and locale, and only those', async () => {
+    const request = new NextRequest('http://site.test/api/proxy/api/v1/x', {
+      headers: {
+        'accept-language': 'fr',
+        'x-forwarded-for': '203.0.113.7',
+        'x-real-ip': '203.0.113.7',
+        cookie: 'archetype_auth_token=tok',
+      },
+    });
+
+    await GET(request, params('api', 'v1', 'x'));
+
+    const sent = new Headers(fetchMock.mock.calls[0][1].headers);
+    expect(sent.get('accept-language')).toBe('fr');
+    expect(sent.get('x-forwarded-for')).toBe('203.0.113.7');
+    expect(sent.get('x-real-ip')).toBe('203.0.113.7');
+    expect(sent.has('cookie')).toBe(false);
+  });
+
+  it('passes useful response headers back to the browser', async () => {
+    fetchMock.mockResolvedValue(
+      new Response('a,b', {
+        status: 200,
+        headers: {
+          'content-type': 'text/csv',
+          'content-disposition': 'attachment; filename="texts.csv"',
+          'retry-after': '30',
+          etag: '"v1"',
+          'set-cookie': 'sessionid=x',
+        },
+      })
+    );
+
+    const response = await GET(
+      new NextRequest('http://site.test/api/proxy/api/v1/export'),
+      params('api', 'v1', 'export')
+    );
+
+    expect(response.headers.get('content-disposition')).toBe('attachment; filename="texts.csv"');
+    expect(response.headers.get('retry-after')).toBe('30');
+    expect(response.headers.get('etag')).toBe('"v1"');
+    expect(response.headers.has('set-cookie')).toBe(false);
   });
 });
