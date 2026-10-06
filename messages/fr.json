@@ -34,7 +34,18 @@
     "unsavedChanges": "Modifications non enregistrées",
     "processing": "Traitement...",
     "signIn": "Se connecter",
-    "signOut": "Se déconnecter"
+    "signOut": "Se déconnecter",
+    "pagination": {
+      "navLabel": "Pagination",
+      "rowsPerPage": "Lignes par page",
+      "range": "{from}–{to} sur {total}",
+      "goToPage": "Aller à la page",
+      "ofPages": "sur {total}",
+      "goToPageN": "Aller à la page {page}",
+      "currentPageN": "Page {page}",
+      "previousPage": "Aller à la page précédente",
+      "nextPage": "Aller à la page suivante"
+    }
   },
   "errors": {
     "somethingWentWrong": "Une erreur est survenue",

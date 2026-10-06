@@ -34,7 +34,18 @@
     "unsavedChanges": "Unsaved changes",
     "processing": "Processing...",
     "signIn": "Sign in",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "pagination": {
+      "navLabel": "Pagination",
+      "rowsPerPage": "Rows per page",
+      "range": "{from}–{to} of {total}",
+      "goToPage": "Go to page",
+      "ofPages": "of {total}",
+      "goToPageN": "Go to page {page}",
+      "currentPageN": "Page {page}",
+      "previousPage": "Go to previous page",
+      "nextPage": "Go to next page"
+    }
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
