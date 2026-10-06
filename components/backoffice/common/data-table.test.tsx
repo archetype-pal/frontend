@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import type { ColumnDef } from '@tanstack/react-table';
 
-import { DataTable } from './data-table';
+import { DataTable, sortableHeader } from './data-table';
 
 type Row = { id: number; name: string };
 
@@ -32,6 +32,30 @@ describe('DataTable error state', () => {
 
     expect(screen.queryByText('Alpha')).not.toBeNull();
     expect(screen.queryByText(/failed to load/i)).toBeNull();
+  });
+});
+
+describe('DataTable server sorting', () => {
+  const rows: Row[] = [
+    { id: 1, name: 'Beta' },
+    { id: 2, name: 'Alpha' },
+  ];
+
+  it('reports sorting changes and keeps the server row order', () => {
+    const onSortingChange = vi.fn();
+    render(
+      <DataTable
+        columns={[{ accessorKey: 'name', header: sortableHeader('Name') }]}
+        data={rows}
+        pagination={false}
+        sorting={[{ id: 'name', desc: false }]}
+        onSortingChange={onSortingChange}
+      />
+    );
+
+    expect(screen.getAllByRole('cell').map((cell) => cell.textContent)).toEqual(['Beta', 'Alpha']);
+    fireEvent.click(screen.getByRole('button', { name: /Name/ }));
+    expect(onSortingChange).toHaveBeenCalledWith([{ id: 'name', desc: true }]);
   });
 });
 
