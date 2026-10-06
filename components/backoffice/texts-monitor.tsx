@@ -92,7 +92,7 @@ export function TextsMonitor() {
   const searchParams = useSearchParams();
   const { data, isFetching, error, refetch } = useQuery({
     queryKey: ['backoffice', 'texts-monitor', 'overview'],
-    queryFn: () => fetchTextsOverview(token!),
+    queryFn: () => fetchTextsOverview(),
     enabled: !!token,
     refetchInterval: 60_000,
     staleTime: 30_000,

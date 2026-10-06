@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const authFetchMock = vi.fn();
+const optionalAuthFetchMock = vi.fn();
 const proxyFetchMock = vi.fn();
 
 vi.mock('@/lib/api-fetch', () => ({
-  authFetch: (...args: unknown[]) => authFetchMock(...args),
+  optionalAuthFetch: (...args: unknown[]) => optionalAuthFetchMock(...args),
   proxyFetch: (...args: unknown[]) => proxyFetchMock(...args),
 }));
 
@@ -26,7 +26,7 @@ function jsonResponse(status: number, body: unknown) {
 }
 
 beforeEach(() => {
-  authFetchMock.mockReset();
+  optionalAuthFetchMock.mockReset();
   proxyFetchMock.mockReset();
 });
 
@@ -41,7 +41,7 @@ describe('image-text write helpers', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: 'ok' }),
     });
-    expect(authFetchMock).not.toHaveBeenCalled();
+    expect(optionalAuthFetchMock).not.toHaveBeenCalled();
   });
 
   it('POSTs create requests through the same-origin proxy', async () => {
@@ -68,7 +68,7 @@ describe('image-text write helpers', () => {
         type: 'Transcription',
       }),
     });
-    expect(authFetchMock).not.toHaveBeenCalled();
+    expect(optionalAuthFetchMock).not.toHaveBeenCalled();
   });
 
   it('DELETEs through the same-origin proxy', async () => {
@@ -79,7 +79,7 @@ describe('image-text write helpers', () => {
     expect(proxyFetchMock).toHaveBeenCalledWith('/api/v1/manuscripts/management/image-texts/11/', {
       method: 'DELETE',
     });
-    expect(authFetchMock).not.toHaveBeenCalled();
+    expect(optionalAuthFetchMock).not.toHaveBeenCalled();
   });
 });
 
@@ -99,7 +99,7 @@ describe('TEI tooling and region-link helpers', () => {
       '/api/v1/manuscripts/image-texts/validate-tei/',
       jsonPost({ content: '<p/>' })
     );
-    expect(authFetchMock).not.toHaveBeenCalled();
+    expect(optionalAuthFetchMock).not.toHaveBeenCalled();
   });
 
   it('formats TEI through the same-origin proxy', async () => {
@@ -111,7 +111,7 @@ describe('TEI tooling and region-link helpers', () => {
       '/api/v1/manuscripts/image-texts/format-tei/',
       jsonPost({ content: '<p></p>' })
     );
-    expect(authFetchMock).not.toHaveBeenCalled();
+    expect(optionalAuthFetchMock).not.toHaveBeenCalled();
   });
 
   it('links a region through the same-origin proxy', async () => {
@@ -123,7 +123,7 @@ describe('TEI tooling and region-link helpers', () => {
       '/api/v1/manuscripts/management/image-texts/7/link-region/',
       jsonPost({ element_index: 3, graph_id: 5 })
     );
-    expect(authFetchMock).not.toHaveBeenCalled();
+    expect(optionalAuthFetchMock).not.toHaveBeenCalled();
   });
 
   it('unlinks an element through the same-origin proxy', async () => {
@@ -135,6 +135,6 @@ describe('TEI tooling and region-link helpers', () => {
       '/api/v1/manuscripts/management/image-texts/7/unlink-element/',
       jsonPost({ element_index: 3, graph_id: 5 })
     );
-    expect(authFetchMock).not.toHaveBeenCalled();
+    expect(optionalAuthFetchMock).not.toHaveBeenCalled();
   });
 });

@@ -89,3 +89,19 @@ export async function proxyFetch(path: string, init?: RequestInit): Promise<Resp
   // browser re-sends the whole body. The proxy route restores it for Django.
   return fetch(`/api/proxy${path.replace(/\/(?=[?#]|$)/, '')}`, init);
 }
+
+/**
+ * For optional-auth reads that run both in SSR and in the browser. A signed-in
+ * browser caller goes through the proxy so its cookie upgrades the response;
+ * everyone else calls Django directly and stays anonymous — which the "preview
+ * as public" dialog relies on.
+ */
+export async function optionalAuthFetch(
+  path: string,
+  authenticated: boolean,
+  init?: RequestInit
+): Promise<Response> {
+  return authenticated && typeof window !== 'undefined'
+    ? proxyFetch(path, init)
+    : apiFetch(path, init);
+}

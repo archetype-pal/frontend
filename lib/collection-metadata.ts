@@ -14,7 +14,7 @@ function getGraphItemsMissingLabels(items: CollectionItem[]): CollectionItem[] {
 
 export async function backfillCollectionGraphLabels(
   items: CollectionItem[],
-  token?: string | null
+  authenticated = false
 ): Promise<CollectionItem[]> {
   const candidates = getGraphItemsMissingLabels(items);
   if (candidates.length === 0) return items;
@@ -25,7 +25,9 @@ export async function backfillCollectionGraphLabels(
   const graphs = (
     await Promise.all(
       itemImageIds.map((itemImageId) =>
-        fetchAnnotationsForImage(String(itemImageId), undefined, null, token).catch(() => [])
+        fetchAnnotationsForImage(String(itemImageId), undefined, null, authenticated).catch(
+          () => []
+        )
       )
     )
   ).flat();

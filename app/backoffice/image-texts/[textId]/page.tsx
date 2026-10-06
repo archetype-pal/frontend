@@ -66,7 +66,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
   } = useQuery<ImageTextDetail>({
     queryKey: backofficeKeys.imageTexts.detail(textId),
     queryFn: async () => {
-      const record = await fetchImageText(textId, token!);
+      const record = await fetchImageText(textId, true);
       if (!record) throw new Error('Failed to load text');
       return record;
     },

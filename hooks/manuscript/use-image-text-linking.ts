@@ -117,7 +117,7 @@ export function useImageTextLinking({
   // presence — so the default Allograph view stays uncluttered.
   React.useEffect(() => {
     let active = true;
-    fetchImageTextsForImage(imageId, token)
+    fetchImageTextsForImage(imageId, !!token)
       .then((texts) => {
         if (!active) return;
         setImageTexts(texts);
@@ -135,7 +135,7 @@ export function useImageTextLinking({
   const reloadTextsAndAnnotations = React.useCallback(async () => {
     if (!manuscriptImage || !imageHeight) return;
     const [texts, refreshed] = await Promise.all([
-      fetchImageTextsForImage(imageId, token).catch(() => null),
+      fetchImageTextsForImage(imageId, !!token).catch(() => null),
       buildInitialViewerAnnotations({
         itemImageId: String(manuscriptImage.id),
         iiifImage: manuscriptImage.iiif_image,
@@ -144,7 +144,7 @@ export function useImageTextLinking({
         isPublicDemoMode,
         includeEditorial: canViewEditorialControls,
         includeText: true,
-        token,
+        authenticated: !!token,
         // Preserve any in-progress local drafts across the post-link reseed
         // (the merge keeps non-db drafts; passing [] would silently drop them).
         currentViewerAnnotations: viewerApiRef.current?.getAnnotations?.() ?? [],
@@ -288,7 +288,7 @@ export function useImageTextLinking({
       viewerApiRef.current?.removeAnnotationById?.(`db:${graphId}`);
       void (async () => {
         try {
-          await deleteViewerAnnotation(token, graphId);
+          await deleteViewerAnnotation(graphId);
           await reloadTextsAndAnnotations();
           showActionNotification({
             kind: 'deleted',
@@ -347,7 +347,7 @@ export function useImageTextLinking({
       const graphId = dbIdFromA9s(annotation);
       if (!(graphId && token && imageHeight)) return;
       const geometry = a9sToBackendFeature(annotation, imageHeight);
-      void updateViewerAnnotation(token, graphId, { annotation: geometry })
+      void updateViewerAnnotation(graphId, { annotation: geometry })
         .then(() =>
           showActionNotification({
             kind: 'updated',

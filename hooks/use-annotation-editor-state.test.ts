@@ -302,7 +302,7 @@ describe('saveAll — network outcomes', () => {
     expect(result.current.editorRecords['db:100']).toBeDefined();
     expect(result.current.editorRecords['db:100'].dirtyState).toBe('clean');
     expect(result.current.editorRecords['db:200'].annotation._meta?.annotationType).toBe('text');
-    expect(fetchAnnotationsForImage).toHaveBeenCalledWith('42', undefined, 'text', 'tok');
+    expect(fetchAnnotationsForImage).toHaveBeenCalledWith('42', undefined, 'text', true);
   });
 
   it('all-failed: returns failed count + firstError; records stay dirty', async () => {

@@ -447,7 +447,7 @@ function DialogBody({
         return;
       }
       try {
-        const updated = await updateViewerAnnotation(token, graph.id, patch);
+        const updated = await updateViewerAnnotation(graph.id, patch);
         onGraphSaved?.(updated);
         savedCount += 1;
       } catch {
