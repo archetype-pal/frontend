@@ -18,7 +18,8 @@ import { SearchKeywordBar } from '@/components/search/search-keyword-bar';
 import { type ResultType } from '@/lib/search-types';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { useModelLabels } from '@/contexts/model-labels-context';
-import { Pagination } from '@/components/search/paginated-search';
+import { DataPagination } from '@/components/ui/data-pagination';
+import { PAGE_SIZE_OPTIONS } from '@/lib/pagination';
 import type { ResultMap } from '@/types/search';
 import {
   clearAllFacetFilters,
@@ -66,6 +67,8 @@ import { ThumbnailToggle } from '@/components/search/thumbnail-toggle';
 import { useTranslations } from 'next-intl';
 
 type ResultListItem = ResultMap[ResultType];
+
+const EXPLORE_PAGE_SIZE_OPTIONS = [10, ...PAGE_SIZE_OPTIONS];
 
 export function SearchPage({ resultType: initialType }: { resultType?: ResultType } = {}) {
   const t = useTranslations('search');
@@ -156,6 +159,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
       return !deletedGraphIds.has(candidate.id);
     });
   }, [s.filtered, deletedGraphIds]);
+
+  // Only the table and grid page through results: the aggregate views have nothing to page.
+  const hasPager = s.viewMode === 'table' || s.viewMode === 'grid';
 
   const handleClearSelection = React.useCallback(() => {
     s.selection.clear();
@@ -547,7 +553,10 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           )}
         </aside>
 
-        <main className="flex min-w-0 flex-1 flex-col">
+        <main
+          ref={s.resultsRef}
+          className="flex min-w-0 flex-1 scroll-mt-[var(--site-header-h,0px)] flex-col"
+        >
           {/* Active-filters bar — full-width strip above the results. */}
           {s.activeFilterCount > 0 && (
             <div className="border-b border-border/70 bg-background px-3 py-2 sm:px-4">
@@ -695,30 +704,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     showThumbnails={showThumbnails}
                   />
                 )
-              ) : s.data.count > 0 && s.queryState.offset >= s.data.count ? (
-                // Results exist on earlier pages but the current offset overshoots
-                // the (narrowed) result count, so this page slice is empty. Offer a
-                // jump back rather than the misleading "nothing matches" empty state.
-                <section className="flex animate-[search-rise_0.4s_ease-out] flex-col items-center px-6 py-16 text-center">
-                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-border bg-muted/50 text-muted-foreground/70">
-                    <SearchX className="h-6 w-6" />
-                  </div>
-                  <h3 className="font-display text-2xl font-semibold tracking-tight text-foreground">
-                    {t('outOfRange')}
-                  </h3>
-                  <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                    {t('outOfRangeMessage', {
-                      count: s.data.count,
-                      typeLabel: typeLabel.toLowerCase(),
-                    })}
-                  </p>
-                  <div className="ornament-divider mt-6 w-44 text-border" aria-hidden />
-                  <div className="mt-5 flex flex-wrap justify-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => s.handlePage(1)}>
-                      {t('goToPage1')}
-                    </Button>
-                  </div>
-                </section>
+              ) : s.data.count > 0 && s.queryState.offset >= s.data.count && hasPager ? (
+                // Past the last page: the pager below is moving to the last page.
+                <SearchResultsSkeleton grid={s.viewMode === 'grid'} />
               ) : (
                 <section className="flex animate-[search-rise_0.4s_ease-out] flex-col items-center px-6 py-16 text-center">
                   <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-border bg-muted/50 text-muted-foreground/70">
@@ -758,21 +746,22 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 </section>
               )}
             </div>
-            {/* Pagination follows directly after the results list (table/grid
-                only — the aggregate views have nothing to page through). */}
-            {!s.awaitingResults &&
-              s.data.count > 0 &&
-              (s.viewMode === 'table' || s.viewMode === 'grid') && (
-                <div className="flex justify-center border-t border-border/70 bg-card px-3 py-2">
-                  <Pagination
-                    count={s.data.count}
-                    limit={s.queryState.limit}
-                    offset={s.queryState.offset}
-                    onPageChange={s.handlePage}
-                    onLimitChange={s.handleLimitChange}
-                  />
-                </div>
-              )}
+            {!s.awaitingResults && s.data.count > 0 && hasPager && (
+              <div className="flex justify-center border-t border-border/70 bg-card px-3 py-2">
+                <DataPagination
+                  totalItems={s.data.count}
+                  page={
+                    s.queryState.limit > 0
+                      ? Math.floor(s.queryState.offset / s.queryState.limit) + 1
+                      : 1
+                  }
+                  pageSize={s.queryState.limit}
+                  onPageChange={s.handlePage}
+                  onPageSizeChange={s.handleLimitChange}
+                  pageSizeOptions={EXPLORE_PAGE_SIZE_OPTIONS}
+                />
+              </div>
+            )}
           </div>
         </main>
       </div>

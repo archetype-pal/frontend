@@ -29,6 +29,7 @@ import { useSearchExport } from '@/hooks/search/use-search-export';
 import { useSearchUrlSync } from '@/hooks/search/use-search-url-sync';
 import { useSearchHotkeys } from '@/hooks/search/use-search-hotkeys';
 import { useSearchData } from '@/hooks/search/use-search-data';
+import { useResultsScroll } from '@/hooks/search/use-results-scroll';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 
 export function useSearchPageState(initialType?: ResultType) {
@@ -229,13 +230,9 @@ export function useSearchPageState(initialType?: ResultType) {
     [viewMode, setViewMode, selection]
   );
 
-  // --- Scroll to top on navigation ---
-  // The page now flows in the document (no internal scroll container), so a
-  // page change / type switch scrolls the window back to the top.
+  // --- Scroll on navigation ---
 
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
-  }, [resultType, queryHook.queryState.offset, viewMode]);
+  const resultsRef = useResultsScroll(resultType, queryHook.queryState.offset, viewMode);
 
   // --- handleResultTypeChange (resets state across multiple hooks) ---
 
@@ -331,6 +328,7 @@ export function useSearchPageState(initialType?: ResultType) {
     handleResultTypeChange,
     handleFacetClick: queryHook.handleFacetClick,
     handleMobileFacetClick: mobileHook.handleMobileFacetClick,
+    resultsRef,
     handlePage: queryHook.handlePage,
     handleLimitChange: queryHook.handleLimitChange,
     handleClearAllFilters: queryHook.handleClearAllFilters,
