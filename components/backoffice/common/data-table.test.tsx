@@ -34,3 +34,22 @@ describe('DataTable error state', () => {
     expect(screen.queryByText(/failed to load/i)).toBeNull();
   });
 });
+
+describe('DataTable client pagination', () => {
+  const many: Row[] = Array.from({ length: 45 }, (_, i) => ({ id: i + 1, name: `Row ${i + 1}` }));
+
+  it('keeps the page when the data refreshes and returns to page 1 on search', () => {
+    const { rerender } = render(<DataTable columns={columns} data={many} searchColumn="name" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.queryByText('Row 21')).not.toBeNull();
+
+    rerender(
+      <DataTable columns={columns} data={many.map((row) => ({ ...row }))} searchColumn="name" />
+    );
+    expect(screen.queryByText('Row 21')).not.toBeNull();
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Row 4' } });
+    expect(screen.queryByText('Row 4')).not.toBeNull();
+  });
+});

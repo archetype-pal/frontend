@@ -94,6 +94,16 @@ describe('backofficeKeys structure', () => {
     expect(a).not.toEqual(b);
   });
 
+  it('keeps each uncovered-images mode, page and page size in its own cache entry', () => {
+    const all = backofficeKeys.uncoveredImages.all();
+    const key = backofficeKeys.uncoveredImages.list('either', 0, 20);
+
+    expect(key.slice(0, all.length)).toEqual([...all]);
+    expect(key).not.toEqual(backofficeKeys.uncoveredImages.list('either', 0, 50));
+    expect(key).not.toEqual(backofficeKeys.uncoveredImages.list('either', 1, 20));
+    expect(key).not.toEqual(backofficeKeys.uncoveredImages.list('transcription', 0, 20));
+  });
+
   it('currentItems.list still extends its all() despite the inlined construction', () => {
     // The source builds list() as [...all, 'currentItems', 'list', filters] inline
     // rather than [...currentItems.all(), 'list', filters]. The assertion locks in
