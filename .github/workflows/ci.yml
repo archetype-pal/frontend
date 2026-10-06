@@ -8,6 +8,11 @@ on:
     branches:
       - main
 
+# A new push to a PR supersedes the run in flight; runs on main always finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -27,8 +32,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Only files whose content changed since the cached run are re-linted.
+      - name: Restore ESLint cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/eslint
+          key: eslint-${{ hashFiles('pnpm-lock.yaml', 'eslint.config.mjs') }}-${{ github.sha }}
+          restore-keys: eslint-${{ hashFiles('pnpm-lock.yaml', 'eslint.config.mjs') }}-
+
       - name: Run ESLint
-        run: pnpm lint
+        run: pnpm lint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/
 
   format:
     runs-on: ubuntu-latest
@@ -48,8 +61,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Restore Prettier cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/prettier
+          key: prettier-${{ hashFiles('pnpm-lock.yaml', '.prettierrc') }}-${{ github.sha }}
+          restore-keys: prettier-${{ hashFiles('pnpm-lock.yaml', '.prettierrc') }}-
+
       - name: Check formatting (Prettier)
-        run: pnpm run format
+        run: pnpm run format --cache --cache-strategy content
 
   test:
     runs-on: ubuntu-latest
@@ -72,6 +92,7 @@ jobs:
       - name: Run unit tests (Vitest)
         run: pnpm test
 
+  # Lighthouse audits this job's build instead of rebuilding in a job of its own.
   build:
     runs-on: ubuntu-latest
     env:
@@ -79,8 +100,6 @@ jobs:
       NEXT_PUBLIC_IIIF_UPSTREAM: https://archetype.gla.ac.uk
       NEXT_PUBLIC_SITE_URL: https://archetype.gla.ac.uk
       CORS_ALLOWED_ORIGINS: https://archetype.gla.ac
-      MEILI_MASTER_KEY: k-CFiSgz7lyXHPSTw_rhyTw0AKgNV7_y78k0NQR2fx4
-      MEILISEARCH_API_KEY: k-CFiSgz7lyXHPSTw_rhyTw0AKgNV7_y78k0NQR2fx4
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -96,41 +115,22 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # Next's build cache plus the incremental TypeScript state its type check reuses.
+      - name: Restore Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+            tsconfig.tsbuildinfo
+          key: nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build project
         run: pnpm build
 
       - name: Check bundle budget
         run: pnpm bundle-budget
-
-  lighthouse:
-    runs-on: ubuntu-latest
-    needs: build
-    env:
-      NEXT_PUBLIC_API_URL: https://archetype.gla.ac.uk
-      NEXT_PUBLIC_IIIF_UPSTREAM: https://archetype.gla.ac.uk
-      NEXT_PUBLIC_SITE_URL: https://archetype.gla.ac.uk
-      CORS_ALLOWED_ORIGINS: https://archetype.gla.ac
-      MEILI_MASTER_KEY: ${{ secrets.MEILI_MASTER_KEY }}
-      MEILISEARCH_API_KEY: ${{ secrets.MEILISEARCH_API_KEY }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '26'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build project
-        run: pnpm build
 
       - name: Run Lighthouse CI
         run: pnpm lhci
