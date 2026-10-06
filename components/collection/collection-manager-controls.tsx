@@ -55,7 +55,7 @@ import {
 import { backfillCollectionGraphLabels } from '@/lib/collection-metadata';
 
 export function CollectionManagerControls() {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const {
     collections,
     activeCollection,
@@ -157,7 +157,7 @@ export function CollectionManagerControls() {
   const handleExport = async () => {
     setIsTransferBusy(true);
     try {
-      const items = await backfillCollectionGraphLabels(activeCollection.items, !!token);
+      const items = await backfillCollectionGraphLabels(activeCollection.items, isAuthenticated);
       mergeCollectionItems(activeCollection.id, items);
       const content = JSON.stringify(
         createPortableCollectionFile({ ...activeCollection, items }),
@@ -196,7 +196,7 @@ export function CollectionManagerControls() {
       }
 
       const imported = parsePortableCollectionFile(await file.text());
-      const items = await backfillCollectionGraphLabels(imported.items, !!token);
+      const items = await backfillCollectionGraphLabels(imported.items, isAuthenticated);
       const name = getAvailableCollectionName(collections, imported.name);
       if (!name || !createCollection(name, items)) {
         throw new Error('Could not create a new local collection.');

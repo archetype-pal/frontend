@@ -41,7 +41,7 @@ function makeViewerApi() {
 function makeArgs(viewerApi: ViewerApi, overrides: Partial<Args> = {}): Args {
   return {
     imageId: '49',
-    token: 'test-token',
+    isAuthenticated: true,
     manuscriptImage: null, // keeps reloadTextsAndAnnotations a no-op after the link
     imageHeight: 1000,
     allographNameById: new Map(),

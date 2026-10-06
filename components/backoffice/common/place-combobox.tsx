@@ -46,7 +46,7 @@ export function PlaceCombobox({
   id,
   className,
 }: PlaceComboboxProps) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
@@ -58,7 +58,7 @@ export function PlaceCombobox({
   const { data: placesData } = useQuery({
     queryKey: backofficeKeys.places.all(),
     queryFn: () => getPlaces(),
-    enabled: !!token && open,
+    enabled: isAuthenticated && open,
   });
 
   const places: BackofficePlace[] = placesData ?? [];

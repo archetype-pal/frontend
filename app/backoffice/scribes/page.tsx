@@ -29,7 +29,7 @@ import type { AdminScribeListItem } from '@/types/backoffice';
 
 export default function ScribesPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -96,7 +96,7 @@ export default function ScribesPage() {
       walkPaginated<AdminScribeListItem>('/api/v1/management/scribes/scribes/?limit=100', (path) =>
         proxyFetch(path)
       ),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const createMut = useMutation({

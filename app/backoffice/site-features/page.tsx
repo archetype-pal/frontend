@@ -54,7 +54,7 @@ async function saveSiteFeatures(config: SiteFeaturesConfig): Promise<SiteFeature
 }
 
 export default function SiteFeaturesPage() {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const t = useTranslations('backoffice');
@@ -98,7 +98,7 @@ export default function SiteFeaturesPage() {
   const themeInvalid = hasInvalidThemeColor(config.theme);
 
   const handleSave = useCallback(() => {
-    if (!dirty || !token || saveMut.isPending) return;
+    if (!dirty || !isAuthenticated || saveMut.isPending) return;
     if (!hasEnabledSearchCategory(config)) {
       toast.error(t('siteFeatures.searchCategoriesRequired'));
       return;
@@ -108,7 +108,7 @@ export default function SiteFeaturesPage() {
       return;
     }
     saveMut.mutate();
-  }, [config, dirty, token, saveMut, t]);
+  }, [config, dirty, isAuthenticated, saveMut, t]);
 
   useKeyboardShortcut('mod+s', handleSave);
 
@@ -196,11 +196,7 @@ export default function SiteFeaturesPage() {
         onOrderChange={handleSectionOrderChange}
       />
       <FeatureToggles features={config.features} onChange={handleFeatureChange} />
-      <BrandingCustomization
-        branding={config.branding}
-        token={token}
-        onChange={handleBrandingChange}
-      />
+      <BrandingCustomization branding={config.branding} onChange={handleBrandingChange} />
       <ThemeCustomization
         theme={config.theme}
         defaults={defaults.theme}

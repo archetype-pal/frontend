@@ -34,7 +34,7 @@ import type { PublicationListItem } from '@/types/backoffice';
 
 export default function PublicationsPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -167,7 +167,7 @@ export default function PublicationsPage() {
         '/api/v1/media/management/publications/?limit=100',
         (path) => proxyFetch(path)
       ),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   // Client-side filtering

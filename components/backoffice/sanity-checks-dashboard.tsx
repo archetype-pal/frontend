@@ -68,12 +68,12 @@ function StatusRow({
 
 export function SanityChecksDashboard() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['backoffice', 'sanity-checks'],
     queryFn: () => getSanityChecks(),
-    enabled: !!token,
+    enabled: isAuthenticated,
     staleTime: 30_000,
   });
 
@@ -88,7 +88,7 @@ export function SanityChecksDashboard() {
   });
 
   function handleSendTestEmail() {
-    if (!token || testEmailMutation.isPending) return;
+    if (!isAuthenticated || testEmailMutation.isPending) return;
     testEmailMutation.mutate();
   }
 

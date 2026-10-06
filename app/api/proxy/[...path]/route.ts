@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/env';
 import { getServerAuthToken } from '@/lib/auth-token-server';
+import { CLIENT_REQUEST_HEADERS, pickHeaders } from '@/lib/forwarded-headers';
 import { crossOriginRefusal, isSameOriginRequest } from '@/lib/same-origin';
 
 /**
@@ -16,14 +17,7 @@ import { crossOriginRefusal, isSameOriginRequest } from '@/lib/same-origin';
 
 type RouteParams = { params: Promise<{ path: string[] }> };
 
-// Client IP and locale, so Django's throttles and logs see the visitor rather
-// than this container, and error messages keep the user's language.
-const FORWARDED_REQUEST_HEADERS = [
-  'content-type',
-  'accept-language',
-  'x-forwarded-for',
-  'x-real-ip',
-] as const;
+const FORWARDED_REQUEST_HEADERS = ['content-type', ...CLIENT_REQUEST_HEADERS];
 const FORWARDED_RESPONSE_HEADERS = [
   'content-type',
   'content-disposition',
@@ -31,15 +25,6 @@ const FORWARDED_RESPONSE_HEADERS = [
   'retry-after',
   'etag',
 ] as const;
-
-function pickHeaders(source: Headers, names: readonly string[]): Headers {
-  const picked = new Headers();
-  for (const name of names) {
-    const value = source.get(name);
-    if (value) picked.set(name, value);
-  }
-  return picked;
-}
 
 async function handle(request: NextRequest, { params }: RouteParams) {
   const { path } = await params;

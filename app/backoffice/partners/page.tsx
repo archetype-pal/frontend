@@ -44,7 +44,7 @@ type PanelMode = { kind: 'preview' } | { kind: 'edit'; item: PartnerItem } | { k
 
 export default function PartnersPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
   const [panel, setPanel] = useState<PanelMode>({ kind: 'preview' });
@@ -58,7 +58,7 @@ export default function PartnersPage() {
   } = useQuery({
     queryKey: backofficeKeys.partners.all(),
     queryFn: () => getPartners(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const invalidate = useCallback(

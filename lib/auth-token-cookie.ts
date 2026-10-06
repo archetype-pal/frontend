@@ -1,35 +1,11 @@
-const AUTH_TOKEN_COOKIE_NAME = 'archetype_auth_token';
-const AUTH_TOKEN_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
+/** HttpOnly: only the Next server reads it (`lib/auth-token-server.ts`, `proxy.ts`). */
+export const AUTH_TOKEN_COOKIE = 'archetype_auth_token';
 
-function secureSuffix(): string {
-  if (typeof window === 'undefined') {
-    return '';
-  }
-  return window.location.protocol === 'https:' ? '; Secure' : '';
-}
+/**
+ * Not a credential: a random id the server rotates on every sign-in and clears
+ * on sign-out, readable by browser code so it can tell, synchronously and
+ * across tabs, that the session changed (see `lib/auth-session.ts`).
+ */
+export const AUTH_SESSION_COOKIE = 'archetype_session';
 
-export function setAuthTokenCookie(token: string): void {
-  if (typeof document === 'undefined') {
-    return;
-  }
-  document.cookie =
-    `${AUTH_TOKEN_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; Max-Age=${AUTH_TOKEN_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax` +
-    secureSuffix();
-}
-
-export function clearAuthTokenCookie(): void {
-  if (typeof document === 'undefined') {
-    return;
-  }
-  document.cookie = `${AUTH_TOKEN_COOKIE_NAME}=; Path=/; Max-Age=0; SameSite=Lax${secureSuffix()}`;
-}
-
-export function getAuthTokenCookie(): string | null {
-  if (typeof document === 'undefined') {
-    return null;
-  }
-  const match = document.cookie.match(new RegExp(`(?:^|; )${AUTH_TOKEN_COOKIE_NAME}=([^;]*)`));
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
-export const AUTH_TOKEN_COOKIE = AUTH_TOKEN_COOKIE_NAME;
+export const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days

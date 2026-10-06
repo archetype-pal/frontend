@@ -91,7 +91,7 @@ export default function ManuscriptViewer({
     [capabilities, mode]
   );
 
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const tManuscript = useTranslations('manuscript');
 
   const isPublicDemoMode = mode === 'public';
@@ -253,7 +253,7 @@ export default function ManuscriptViewer({
   // Owns: editorRecords, the per-frame update debounce, save flow.
   // Returns derived a9sSnapshot, dirtyCount, isDirty, getCanonicalAnnotation.
   const editorState = useAnnotationEditorState({
-    token,
+    isAuthenticated,
     manuscriptImage,
     imageHeight,
     allographNameById,
@@ -278,7 +278,7 @@ export default function ManuscriptViewer({
       allographNameById,
       isPublicDemoMode,
       canViewEditorialControls,
-      token,
+      isAuthenticated,
       resetEditorFrom,
       viewerApiRef,
     });
@@ -322,7 +322,7 @@ export default function ManuscriptViewer({
     persistRegionGeometry,
   } = useImageTextLinking({
     imageId,
-    token,
+    isAuthenticated,
     manuscriptImage,
     imageHeight,
     allographNameById,
@@ -1158,7 +1158,6 @@ export default function ManuscriptViewer({
                   texts={imageTexts}
                   displayMode={effectiveTextDisplayMode}
                   layout={isBottomDock ? 'row' : 'column'}
-                  token={token}
                   canEdit={canPersistAnyAnnotations && !isPublicDemoMode}
                   onTextSaved={() => void reloadTextsAndAnnotations()}
                   linkedGraphId={linkedGraphId}

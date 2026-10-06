@@ -66,7 +66,7 @@ interface BackofficeSidebarProps {
 
 export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
   const pathname = usePathname();
-  const { token, user } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { getLabel, getPluralLabel } = useModelLabels();
   const t = useTranslations('backoffice');
   const includeAdmin = Boolean(user?.is_staff);
@@ -153,7 +153,7 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
   const { data: pendingComments } = useQuery({
     queryKey: backofficeKeys.comments.list('pending'),
     queryFn: () => getComments({ is_approved: false }),
-    enabled: !!token,
+    enabled: isAuthenticated,
     refetchInterval: 60_000,
     staleTime: 30_000,
   });

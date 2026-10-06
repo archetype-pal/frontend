@@ -14,14 +14,14 @@ interface ManuscriptViewerAuthGateProps {
 export default function ManuscriptViewerAuthGate({
   imageId,
 }: ManuscriptViewerAuthGateProps): React.JSX.Element {
-  const { token, user, isReady } = useAuth();
+  const { isAuthenticated, isReady } = useAuth();
 
   if (!isReady) {
     return <ViewerLoadingState />;
   }
 
   const viewerAccess = resolveManuscriptViewerAccess({
-    isAuthenticated: Boolean(token && user),
+    isAuthenticated,
     isEditor: false,
     isAdmin: false,
   });

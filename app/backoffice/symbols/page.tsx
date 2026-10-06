@@ -20,7 +20,7 @@ import { formatApiError } from '@/lib/backoffice/format-api-error';
 
 export default function SymbolsPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sidebarTab, setSidebarTab] = useState('characters');
@@ -28,25 +28,25 @@ export default function SymbolsPage() {
   const characters = useQuery({
     queryKey: backofficeKeys.characters.all(),
     queryFn: () => getCharacters(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const components = useQuery({
     queryKey: backofficeKeys.components.all(),
     queryFn: () => getComponents(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const features = useQuery({
     queryKey: backofficeKeys.features.all(),
     queryFn: () => getFeatures(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const positions = useQuery({
     queryKey: backofficeKeys.positions.all(),
     queryFn: () => getPositions(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const createMut = useMutation({

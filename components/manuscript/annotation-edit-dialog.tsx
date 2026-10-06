@@ -200,7 +200,7 @@ function DialogBody({
   onGraphSaved,
   onComplete,
 }: AnnotationEditDialogProps) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const t = useTranslations('search');
   // The two "nothing defined for this allograph" sentences are the same ones the
   // annotation popup shows for the same condition, already translated — reuse them
@@ -428,7 +428,7 @@ function DialogBody({
   }
 
   const runSave = async (targets: BackendGraph[]) => {
-    if (!token) {
+    if (!isAuthenticated) {
       setError(t('notAuthenticated'));
       return;
     }

@@ -1,4 +1,4 @@
-import { apiFetch, authFetch } from '@/lib/api-fetch';
+import { apiFetch } from '@/lib/api-fetch';
 import { env } from '@/lib/env';
 import type { CarouselItem, PartnerItem } from '@/types/backoffice';
 import type { UserProfile } from '@/types';
@@ -26,10 +26,6 @@ export interface Publication {
   created_at: string;
   updated_at: string;
   number_of_comments: number;
-}
-
-interface AuthToken {
-  auth_token: string;
 }
 
 interface PaginatedPublications {
@@ -103,12 +99,13 @@ export function getCarouselPickerStartPath(imagePath: string): string {
   return normalized.split('/').slice(0, -1).join('/');
 }
 
-export async function loginUser(username: string, password: string): Promise<AuthToken> {
-  const response = await apiFetch(`/api/v1/auth/token/login`, {
+// Same-origin Next routes (`app/api/auth/*`): the token lives in an HttpOnly
+// cookie that only the server reads or writes.
+
+export async function loginUser(username: string, password: string): Promise<UserProfile> {
+  const response = await fetch('/api/auth/login', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
   });
 
@@ -116,30 +113,25 @@ export async function loginUser(username: string, password: string): Promise<Aut
     throw new Error('Login failed');
   }
 
-  return response.json() as Promise<AuthToken>;
+  return ((await response.json()) as { user: UserProfile }).user;
 }
 
-export async function logoutUser(token: string) {
-  const response = await authFetch(`/api/v1/auth/token/logout`, token, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+export async function logoutUser(): Promise<void> {
+  const response = await fetch('/api/auth/logout', { method: 'POST' });
 
   if (!response.ok) {
     throw new Error('Logout failed');
   }
 }
 
-export async function getUserProfile(token: string): Promise<UserProfile> {
-  const response = await authFetch(`/api/v1/auth/profile`, token);
+export async function getUserProfile(): Promise<UserProfile | null> {
+  const response = await fetch('/api/auth/me', { cache: 'no-store' });
 
   if (!response.ok) {
     throw new Error('Failed to fetch user profile');
   }
 
-  return response.json() as Promise<UserProfile>;
+  return ((await response.json()) as { user: UserProfile | null }).user;
 }
 
 export type PublicationParams = {

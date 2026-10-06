@@ -59,7 +59,7 @@ const HAIR_TYPES = [
 
 export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { getLabel, getPluralLabel } = useModelLabels();
@@ -82,19 +82,19 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   } = useQuery({
     queryKey: backofficeKeys.manuscripts.detail(itemId),
     queryFn: () => getHistoricalItem(itemId),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const { data: formats } = useQuery({
     queryKey: backofficeKeys.formats.all(),
     queryFn: () => getFormats(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const { data: dates } = useQuery({
     queryKey: backofficeKeys.dates.all(),
     queryFn: () => getDates(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const { track } = useRecentEntities();

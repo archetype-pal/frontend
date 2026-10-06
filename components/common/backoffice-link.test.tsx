@@ -2,7 +2,7 @@ import * as React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-const authState: { token: string | null } = { token: null };
+const authState = { isAuthenticated: false };
 vi.mock('@/contexts/auth-context', () => ({ useAuth: () => authState }));
 vi.mock('next/link', () => ({
   __esModule: true,
@@ -14,18 +14,18 @@ import { BackofficeLink } from './backoffice-link';
 
 describe('BackofficeLink', () => {
   beforeEach(() => {
-    authState.token = null;
+    authState.isAuthenticated = false;
   });
 
   it('renders nothing for anonymous visitors', () => {
-    authState.token = null;
+    authState.isAuthenticated = false;
     expect(
       renderToStaticMarkup(<BackofficeLink kind="item-part" id={706} label="Edit in Backoffice" />)
     ).toBe('');
   });
 
   it('links an item-part through the backoffice resolver when logged in (image-viewer "Edit in Backoffice")', () => {
-    authState.token = 'tok';
+    authState.isAuthenticated = true;
     const html = renderToStaticMarkup(
       <BackofficeLink kind="item-part" id={706} label="Edit in Backoffice" />
     );
@@ -34,7 +34,7 @@ describe('BackofficeLink', () => {
   });
 
   it('maps each kind to its backoffice route', () => {
-    authState.token = 'tok';
+    authState.isAuthenticated = true;
     const hrefOf = (kind: 'scribe' | 'hand' | 'publication', id: string | number) =>
       renderToStaticMarkup(<BackofficeLink kind={kind} id={id} />).match(/href="([^"]+)"/)?.[1];
     expect(hrefOf('scribe', 3)).toBe('/backoffice/scribes/3');

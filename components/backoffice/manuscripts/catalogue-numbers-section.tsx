@@ -36,7 +36,7 @@ export function CatalogueNumbersSection({
   historicalItemId,
   catalogueNumbers,
 }: CatalogueNumbersSectionProps) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const { getLabel, getPluralLabel } = useModelLabels();
@@ -53,7 +53,7 @@ export function CatalogueNumbersSection({
   const { data: sources } = useQuery({
     queryKey: backofficeKeys.sources.all(),
     queryFn: () => getSources(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const invalidate = () =>

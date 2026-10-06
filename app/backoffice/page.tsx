@@ -137,7 +137,7 @@ function QuickAccessCard({
 
 export default function BackofficeDashboardPage() {
   const t = useTranslations('backoffice');
-  const { token, user } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { getLabel } = useModelLabels();
   const { entities: recentEntities } = useRecentEntities();
   const appManuscriptsLabel = getLabel('appManuscripts');
@@ -147,19 +147,19 @@ export default function BackofficeDashboardPage() {
   const characters = useQuery({
     queryKey: backofficeKeys.characters.all(),
     queryFn: () => getCharacters(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const manuscripts = useQuery({
     queryKey: backofficeKeys.manuscripts.list({ limit: 1 }),
     queryFn: () => getHistoricalItems({ limit: 1 }),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const publications = useQuery({
     queryKey: backofficeKeys.publications.list({ limit: 1 }),
     queryFn: () => getPublications({ limit: 1 }),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   // Separate count-only query for the draft pending-tasks indicator. The
@@ -169,25 +169,25 @@ export default function BackofficeDashboardPage() {
   const draftPublications = useQuery({
     queryKey: backofficeKeys.publications.list({ limit: 1, status: 'Draft' }),
     queryFn: () => getPublications({ limit: 1, status: 'Draft' }),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const scribes = useQuery({
     queryKey: backofficeKeys.scribes.all(),
     queryFn: () => getScribes(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const pendingComments = useQuery({
     queryKey: backofficeKeys.comments.list('pending'),
     queryFn: () => getComments({ is_approved: false }),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const searchStats = useQuery({
     queryKey: backofficeKeys.searchEngine.stats(),
     queryFn: () => getSearchEngineStats(),
-    enabled: !!token,
+    enabled: isAuthenticated,
     refetchInterval: 60_000,
   });
 

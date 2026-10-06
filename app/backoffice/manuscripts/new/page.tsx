@@ -36,7 +36,7 @@ import { useModelLabels } from '@/contexts/model-labels-context';
 
 export default function NewManuscriptPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const { getLabel } = useModelLabels();
 
@@ -64,13 +64,13 @@ export default function NewManuscriptPage() {
   const { data: repositoriesData } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
     queryFn: () => getRepositories(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const { data: datesData } = useQuery({
     queryKey: backofficeKeys.dates.all(),
     queryFn: () => getDates(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const repositories: Repository[] = repositoriesData ?? [];
@@ -78,7 +78,7 @@ export default function NewManuscriptPage() {
 
   const createMut = useMutation({
     mutationFn: async () => {
-      if (!token) throw new Error('Not authenticated');
+      if (!isAuthenticated) throw new Error('Not authenticated');
 
       let createdCurrentItemId: number | null = null;
       let createdHistoricalItemId: number | null = null;

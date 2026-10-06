@@ -28,18 +28,18 @@ import {
 import { Button } from '@/components/ui/button';
 
 export default function ReviewQueuePage() {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const t = useTranslations('backoffice');
 
   const { data: queue = [], isLoading } = useQuery<QueueEntry[]>({
     queryKey: ['review-queue'],
     queryFn: () => fetchReviewQueue(),
-    enabled: !!token,
+    enabled: isAuthenticated,
     refetchInterval: 60_000,
   });
 
-  if (!token) {
+  if (!isAuthenticated) {
     return (
       <div className="px-6 py-8 text-sm text-muted-foreground">{t('reviewQueue.signInPrompt')}</div>
     );

@@ -324,7 +324,7 @@ function LabelFieldsGrid({
 
 export default function TranslationsPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const defaults = getDefaultModelLabelsConfig();
@@ -373,9 +373,9 @@ export default function TranslationsPage() {
   });
 
   const handleSave = useCallback(() => {
-    if (!dirty || !token || saveMut.isPending) return;
+    if (!dirty || !isAuthenticated || saveMut.isPending) return;
     saveMut.mutate();
-  }, [dirty, token, saveMut]);
+  }, [dirty, isAuthenticated, saveMut]);
 
   useKeyboardShortcut('mod+s', handleSave);
 

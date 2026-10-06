@@ -36,7 +36,7 @@ const PAGE_SIZE = 50;
 
 export default function AnnotationsPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
   const ANNOTATION_TYPES = useMemo(
@@ -176,7 +176,7 @@ export default function AnnotationsPage() {
   const { data, isLoading, isPlaceholderData, isError, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list(filters),
     queryFn: () => getGraphs(filters),
-    enabled: !!token,
+    enabled: isAuthenticated,
     // Keep the current page on screen while the next page or search loads.
     placeholderData: keepPreviousData,
   });

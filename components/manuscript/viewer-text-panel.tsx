@@ -81,8 +81,6 @@ interface ViewerTextPanelProps {
     label: string
   ) => void;
   onClose: () => void;
-  /** Editor-only TEI authoring. */
-  token?: string | null;
   canEdit?: boolean;
   /** Called after a successful in-panel save so the viewer can reload texts. */
   onTextSaved?: () => void;
@@ -168,7 +166,6 @@ export interface EditorCardState {
 
 function TextEditor({
   text,
-  token,
   value,
   onChange,
   onSaved,
@@ -176,7 +173,6 @@ function TextEditor({
   onEditorState,
 }: {
   text: ImageTextDetail;
-  token: string | null | undefined;
   /** The current draft (parent-held so it survives unmount). */
   value: string;
   onChange: (next: string) => void;
@@ -227,7 +223,6 @@ function TextEditor({
       <TeiTextEditor
         value={value}
         onChange={onChange}
-        token={token ?? null}
         onValidityChange={setValid}
         toolbarContainer={toolbarHost}
         defaultMode="preview"
@@ -275,7 +270,6 @@ function textTone(type: string): string | undefined {
 function TextEditorCard({
   text,
   canEdit,
-  token,
   draft,
   onDraftChange,
   onSaved,
@@ -294,7 +288,6 @@ function TextEditorCard({
 }: {
   text: ImageTextDetail;
   canEdit: boolean;
-  token: string | null | undefined;
   /** Parent-held draft for this text (survives display-mode unmount). */
   draft: string;
   onDraftChange: (next: string) => void;
@@ -395,7 +388,6 @@ function TextEditorCard({
           <TextEditor
             key={text.id}
             text={text}
-            token={token}
             value={draft}
             onChange={onDraftChange}
             onSaved={onSaved}
@@ -452,7 +444,6 @@ export function ViewerTextPanel({
   onUnlinkElement,
   onLinkExistingRegion,
   onClose,
-  token,
   canEdit = false,
   onTextSaved,
   layout = 'column',
@@ -715,7 +706,6 @@ export function ViewerTextPanel({
             <TextEditorCard
               text={text}
               canEdit={canEdit}
-              token={token}
               draft={drafts[text.id] ?? text.content}
               onDraftChange={(next) => setDraftFor(text.id, next)}
               onSaved={() => {

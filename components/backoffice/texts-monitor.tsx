@@ -87,13 +87,13 @@ function isView(value: string | null): value is View {
 
 export function TextsMonitor() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data, isFetching, error, refetch } = useQuery({
     queryKey: ['backoffice', 'texts-monitor', 'overview'],
     queryFn: () => fetchTextsOverview(),
-    enabled: !!token,
+    enabled: isAuthenticated,
     refetchInterval: 60_000,
     staleTime: 30_000,
   });

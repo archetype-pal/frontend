@@ -55,7 +55,7 @@ export function CurrentLocationSection({
 // ── Case A: No parts yet ─────────────────────────────────────────────────
 
 function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number }) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const t = useTranslations('backoffice');
   const { getLabel } = useModelLabels();
   const queryClient = useQueryClient();
@@ -68,7 +68,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
   const { data: repositoriesData } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
     queryFn: () => getRepositories(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const repositories: Repository[] = repositoriesData ?? [];
@@ -76,7 +76,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
   const [saving, setSaving] = useState(false);
 
   const handleSetLocation = async () => {
-    if (!token || !repository || !shelfmark.trim()) return;
+    if (!isAuthenticated || !repository || !shelfmark.trim()) return;
     setSaving(true);
     try {
       // Walk all pages — `limit: 500` was silently capped at DRF's
@@ -194,7 +194,7 @@ function SinglePartLocation({
   historicalItemId: number;
   part: ItemPartNested;
 }) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const t = useTranslations('backoffice');
   const queryClient = useQueryClient();
   const [currentItemId, setCurrentItemId] = useState<number | null>(part.current_item);
@@ -204,7 +204,7 @@ function SinglePartLocation({
 
   const saveMut = useMutation({
     mutationFn: async () => {
-      if (!token) throw new Error('No token');
+      if (!isAuthenticated) throw new Error('No token');
 
       if (
         currentItemId !== part.current_item ||

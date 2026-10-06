@@ -45,7 +45,7 @@ export function UncoveredImages() {
   const t = useTranslations('backoffice');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const mode = parseMode(searchParams?.get('coverage') ?? null);
   const page = Math.max(0, Number.parseInt(searchParams?.get('uPage') ?? '0', 10) || 0);
@@ -59,7 +59,7 @@ export function UncoveredImages() {
   const { data, isFetching, error } = useQuery({
     queryKey: ['backoffice', 'uncovered-images', mode, page],
     queryFn: () => fetchUncoveredImages(mode, page, PAGE_SIZE),
-    enabled: !!token,
+    enabled: isAuthenticated,
     placeholderData: (prev) => prev,
   });
 
