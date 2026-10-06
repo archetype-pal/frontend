@@ -2,6 +2,7 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
 import { getServerAuthToken } from '@/lib/auth-token-server';
+import { crossOriginRefusal, isSameOriginRequest } from '@/lib/same-origin';
 import { readModelLabels, writeModelLabels, SITE_LABELS_TAG } from '@/lib/model-labels-server';
 import {
   DEFAULT_MODEL_LABELS,
@@ -30,6 +31,7 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  if (!isSameOriginRequest(request)) return crossOriginRefusal();
   const token = await getServerAuthToken();
   if (!token) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
