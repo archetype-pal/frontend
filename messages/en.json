@@ -1206,6 +1206,7 @@
       "noPlacesFound": "No places found.",
       "selectNoPlace": "None",
       "createNewPlace": "Create new place",
+      "createPlaceNamed": "Create “{name}”",
       "newPlace": "New place",
       "placeNamePlaceholder": "Place name",
       "placeCreated": "Place created.",

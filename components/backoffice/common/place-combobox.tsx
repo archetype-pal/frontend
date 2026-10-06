@@ -29,6 +29,8 @@ interface PlaceComboboxProps {
   onChange: (placeId: number | null, place?: BackofficePlace) => void;
   /** Authoritative display label for the selected value (avoids needing the full list to render). */
   selectedLabel?: string | null;
+  /** Id for the trigger button, so a `<Label htmlFor>` names the control. */
+  id?: string;
   className?: string;
 }
 
@@ -37,7 +39,13 @@ interface PlaceComboboxProps {
  * searchable list of existing Place rows, with an inline "create new place"
  * form for names not yet in the authority list.
  */
-export function PlaceCombobox({ value, onChange, selectedLabel, className }: PlaceComboboxProps) {
+export function PlaceCombobox({
+  value,
+  onChange,
+  selectedLabel,
+  id,
+  className,
+}: PlaceComboboxProps) {
   const { token } = useAuth();
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
@@ -45,6 +53,7 @@ export function PlaceCombobox({ value, onChange, selectedLabel, className }: Pla
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
+  const [search, setSearch] = useState('');
 
   const { data: placesData } = useQuery({
     queryKey: backofficeKeys.places.all(),
@@ -55,6 +64,19 @@ export function PlaceCombobox({ value, onChange, selectedLabel, className }: Pla
   const places: BackofficePlace[] = placesData ?? [];
   const selected = places.find((p) => p.id === value);
   const displayValue = value != null ? (selectedLabel ?? selected?.name ?? null) : null;
+  const searchName = search.trim();
+  // Typing a name that's already in the list shouldn't offer creating a duplicate.
+  const searchMatchesPlace = places.some(
+    (p) => p.name.trim().toLowerCase() === searchName.toLowerCase()
+  );
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) {
+      setSearch('');
+      setCreating(false);
+    }
+  };
 
   const createMut = useMutation({
     mutationFn: () => createPlace({ name: newName.trim() }),
@@ -64,6 +86,7 @@ export function PlaceCombobox({ value, onChange, selectedLabel, className }: Pla
       onChange(data.id, data);
       setCreating(false);
       setNewName('');
+      setSearch('');
       setOpen(false);
     },
     onError: (err) => {
@@ -74,9 +97,10 @@ export function PlaceCombobox({ value, onChange, selectedLabel, className }: Pla
   });
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           type="button"
           variant="outline"
           role="combobox"
@@ -126,7 +150,11 @@ export function PlaceCombobox({ value, onChange, selectedLabel, className }: Pla
           </div>
         ) : (
           <Command>
-            <CommandInput placeholder={t('handsDetail.searchPlacePlaceholder')} />
+            <CommandInput
+              value={search}
+              onValueChange={setSearch}
+              placeholder={t('handsDetail.searchPlacePlaceholder')}
+            />
             <CommandList>
               <CommandEmpty>{t('handsDetail.noPlacesFound')}</CommandEmpty>
               <CommandGroup>
@@ -158,13 +186,27 @@ export function PlaceCombobox({ value, onChange, selectedLabel, className }: Pla
                   </CommandItem>
                 ))}
               </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup>
-                <CommandItem onSelect={() => setCreating(true)} className="text-primary">
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t('handsDetail.createNewPlace')}
-                </CommandItem>
-              </CommandGroup>
+              <CommandSeparator alwaysRender />
+              {/* forceMount: cmdk would otherwise filter this entry out on the
+                  search text, hiding "create" exactly when the typed name has
+                  no match. */}
+              {!searchMatchesPlace && (
+                <CommandGroup forceMount>
+                  <CommandItem
+                    value="__create__"
+                    onSelect={() => {
+                      setNewName(searchName);
+                      setCreating(true);
+                    }}
+                    className="text-primary"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    {searchName
+                      ? t('handsDetail.createPlaceNamed', { name: searchName })
+                      : t('handsDetail.createNewPlace')}
+                  </CommandItem>
+                </CommandGroup>
+              )}
             </CommandList>
           </Command>
         )}

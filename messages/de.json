@@ -1206,6 +1206,7 @@
       "noPlacesFound": "Keine Orte gefunden.",
       "selectNoPlace": "Keiner",
       "createNewPlace": "Neuen Ort anlegen",
+      "createPlaceNamed": "„{name}“ anlegen",
       "newPlace": "Neuer Ort",
       "placeNamePlaceholder": "Ortsname",
       "placeCreated": "Ort angelegt.",
