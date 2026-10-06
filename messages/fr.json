@@ -2361,6 +2361,7 @@
       "columns": "Colonnes",
       "selectedCount": "{count} sélectionné(s)",
       "loadError": "Échec du chargement. Veuillez réessayer.",
+      "exportFailed": "Échec de l'export. Veuillez réessayer.",
       "noResults": "Aucun résultat.",
       "selectedOfTotal": "{count} sur {total} sélectionné(s)"
     },

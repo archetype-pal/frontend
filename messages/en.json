@@ -2361,6 +2361,7 @@
       "columns": "Columns",
       "selectedCount": "{count} selected",
       "loadError": "Failed to load. Please try again.",
+      "exportFailed": "Export failed. Please try again.",
       "noResults": "No results.",
       "selectedOfTotal": "{count} of {total} selected"
     },

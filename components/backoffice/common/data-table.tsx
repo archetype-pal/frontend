@@ -33,7 +33,8 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Search, Columns, Download, X } from 'lucide-react';
+import { Search, Columns, Download, Loader2, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { DataPagination } from '@/components/ui/data-pagination';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -86,6 +87,8 @@ interface DataTableProps<TData, TValue> {
   enableColumnVisibility?: boolean;
   /** Enable CSV export of current view. */
   enableExport?: boolean;
+  /** Fetch every row for Export when the table holds only one server page. */
+  fetchAllRows?: () => Promise<TData[]>;
   /** Filename for CSV export. */
   exportFilename?: string;
   /** Content for filter bar above the table. */
@@ -120,6 +123,7 @@ export function DataTable<TData, TValue>({
   getRowId,
   enableColumnVisibility = false,
   enableExport = false,
+  fetchAllRows,
   exportFilename = 'export',
   filterBar,
   presetFilters,
@@ -134,6 +138,7 @@ export function DataTable<TData, TValue>({
   const tCommon = useTranslations('common');
   const [localSorting, setLocalSorting] = useState<SortingState>([]);
   const sorting = onSortingChange ? (serverSorting ?? []) : localSorting;
+  const [exporting, setExporting] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [tablePageSize, setTablePageSize] = useState(pageSize);
@@ -242,16 +247,16 @@ export function DataTable<TData, TValue>({
   const selectedCount = Object.keys(rowSelection).length;
   const selectedIds = Object.keys(rowSelection);
 
-  function handleExport() {
-    const headers = table
+  function downloadCsv(source: TData[]) {
+    const exportColumns = table
       .getVisibleLeafColumns()
-      .filter((c) => c.id !== 'select' && c.id !== 'actions')
-      .map((c) => c.id);
+      .filter((c) => c.id !== 'select' && c.id !== 'actions');
+    const headers = exportColumns.map((c) => c.id);
 
-    const rows = table.getFilteredRowModel().rows.map((row) =>
-      headers
-        .map((h) => {
-          const val = row.getValue(h);
+    const rows = source.map((row, index) =>
+      exportColumns
+        .map((column) => {
+          const val = column.accessorFn?.(row, index);
           // `escapeCsvField` handles delimiters/quotes/newlines AND neutralizes
           // formula-injection prefixes (`=`, `+`, `-`, `@`, tab, `\r`) so a
           // backoffice CSV opened in Excel/Sheets can't execute hostile
@@ -267,6 +272,21 @@ export function DataTable<TData, TValue>({
     // would otherwise break CSV alignment for the whole file.
     const csv = [headers.map(escapeCsvField).join(','), ...rows].join('\n');
     downloadBlob(`${exportFilename}.csv`, new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+  }
+
+  async function handleExport() {
+    if (!fetchAllRows) {
+      downloadCsv(table.getFilteredRowModel().rows.map((row) => row.original));
+      return;
+    }
+    setExporting(true);
+    try {
+      downloadCsv(await fetchAllRows());
+    } catch {
+      toast.error(t('dataTable.exportFailed'));
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -333,8 +353,19 @@ export function DataTable<TData, TValue>({
           )}
           <div className="ml-auto flex items-center gap-2">
             {enableExport && (
-              <Button variant="outline" size="sm" className="h-9 gap-1" onClick={handleExport}>
-                <Download className="h-3.5 w-3.5" />
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1"
+                onClick={handleExport}
+                disabled={exporting}
+                aria-busy={exporting || undefined}
+              >
+                {exporting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
                 <span className="hidden sm:inline">{tCommon('export')}</span>
               </Button>
             )}
