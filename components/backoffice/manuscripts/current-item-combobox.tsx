@@ -17,7 +17,6 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from '@/components/ui/command';
 import {
   Select,
@@ -35,13 +34,20 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
+
+const SEARCH_LIMIT = 50;
+
+function itemLabel(item: CurrentItemOption) {
+  return `${item.repository_name} ${item.shelfmark}`;
+}
 
 interface CurrentItemComboboxProps {
   value: number | null;
   onChange: (currentItemId: number | null, currentItem?: CurrentItemOption) => void;
   /** Pre-filter by repository (optional). */
   repositoryId?: number;
-  /** Authoritative display label for the selected value (avoids needing the full list to render). */
+  /** Saved label of the value, shown until another item is picked here. */
   selectedLabel?: string | null;
   className?: string;
 }
@@ -63,17 +69,28 @@ export function CurrentItemCombobox({
   const [creating, setCreating] = useState(false);
   const [newRepo, setNewRepo] = useState(repositoryId ? String(repositoryId) : '');
   const [newShelfmark, setNewShelfmark] = useState('');
+  // The saved label only changes after Save, so remember what was picked here.
+  const [picked, setPicked] = useState<{ id: number; label: string } | null>(null);
+  const { searchInput, setSearchInput, search } = useDebouncedSearch(300);
+  const query = search.trim();
+  const typed = searchInput.trim();
 
-  const { data: currentItemsData } = useQuery({
-    queryKey: backofficeKeys.currentItems.list(
-      repositoryId ? { repository: repositoryId } : undefined
-    ),
+  // Until the pause in typing ends, the last results belong to an older search.
+  const settled = typed === query;
+
+  const {
+    data: currentItemsData,
+    isFetching,
+    isError,
+  } = useQuery({
+    queryKey: backofficeKeys.currentItems.list({
+      repository: repositoryId,
+      search: query,
+      limit: SEARCH_LIMIT,
+    }),
     queryFn: () =>
-      getCurrentItems({
-        repository: repositoryId,
-        limit: 500,
-      }),
-    enabled: !!token && open,
+      getCurrentItems({ repository: repositoryId, search: query, limit: SEARCH_LIMIT }),
+    enabled: !!token && open && query.length > 0,
   });
 
   const { data: repositoriesData } = useQuery({
@@ -82,15 +99,29 @@ export function CurrentItemCombobox({
     enabled: !!token && creating,
   });
 
-  const items: CurrentItemOption[] = currentItemsData?.results ?? [];
+  const showResults = settled && query.length > 0;
+  // The API returns search hits in no particular order.
+  const items: CurrentItemOption[] = showResults
+    ? [...(currentItemsData?.results ?? [])].sort((a, b) =>
+        itemLabel(a).localeCompare(itemLabel(b), undefined, { numeric: true })
+      )
+    : [];
+  const totalMatches = showResults ? (currentItemsData?.count ?? 0) : 0;
   const repositories: Repository[] = repositoriesData ?? [];
 
-  const selectedItem = items.find((ci) => ci.id === value);
   const displayValue =
-    value != null
-      ? (selectedLabel ??
-        (selectedItem ? `${selectedItem.repository_name} ${selectedItem.shelfmark}` : null))
-      : null;
+    value != null ? (picked?.id === value ? picked.label : (selectedLabel ?? null)) : null;
+
+  // Closing from code skips onOpenChange, so every close goes through here.
+  const close = () => {
+    setOpen(false);
+    setSearchInput('');
+  };
+
+  const pick = (item: CurrentItemOption) => {
+    setPicked({ id: item.id, label: itemLabel(item) });
+    onChange(item.id, item);
+  };
 
   const createMut = useMutation({
     mutationFn: () =>
@@ -101,10 +132,10 @@ export function CurrentItemCombobox({
     onSuccess: (data) => {
       toast.success(t('manuscriptsDetail.volumeCreated'));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.currentItems.all() });
-      onChange(data.id, data);
+      pick(data);
       setCreating(false);
       setNewShelfmark('');
-      setOpen(false);
+      close();
     },
     onError: (err) => {
       toast.error(t('manuscriptsDetail.volumeCreateFailed'), {
@@ -114,7 +145,7 @@ export function CurrentItemCombobox({
   });
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -179,46 +210,77 @@ export function CurrentItemCombobox({
             </div>
           </div>
         ) : (
-          <Command>
-            <CommandInput
-              placeholder={t('manuscriptsDetail.searchByLabelPlaceholder', {
-                label: shelfmarkLabel.toLowerCase(),
-              })}
-            />
-            <CommandList>
-              <CommandEmpty>{t('manuscriptsDetail.noVolumesFound')}</CommandEmpty>
-              <CommandGroup>
-                {items.map((ci) => {
-                  const label = `${ci.repository_name} ${ci.shelfmark}`;
-                  return (
-                    <CommandItem
-                      key={ci.id}
-                      value={label}
-                      onSelect={() => {
-                        onChange(ci.id, ci);
-                        setOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          value === ci.id ? 'opacity-100' : 'opacity-0'
-                        )}
-                      />
-                      <span>{label}</span>
-                    </CommandItem>
-                  );
+          <>
+            <Command shouldFilter={false}>
+              <CommandInput
+                value={searchInput}
+                onValueChange={setSearchInput}
+                placeholder={t('manuscriptsDetail.searchByLabelPlaceholder', {
+                  label: shelfmarkLabel.toLowerCase(),
                 })}
-              </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup>
-                <CommandItem onSelect={() => setCreating(true)} className="text-primary">
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t('manuscriptsDetail.createNewVolume')}
-                </CommandItem>
-              </CommandGroup>
-            </CommandList>
-          </Command>
+              />
+              <CommandList>
+                <CommandEmpty>
+                  {typed.length === 0
+                    ? t('msdesc.refPicker.typeToSearch')
+                    : !settled || isFetching
+                      ? t('msdesc.refPicker.searching')
+                      : isError
+                        ? t('manuscriptsDetail.volumeSearchFailed')
+                        : t('manuscriptsDetail.noVolumesFound')}
+                </CommandEmpty>
+                {items.length > 0 && (
+                  <CommandGroup>
+                    {items.map((ci) => (
+                      <CommandItem
+                        key={ci.id}
+                        value={String(ci.id)}
+                        onSelect={() => {
+                          pick(ci);
+                          close();
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            value === ci.id ? 'opacity-100' : 'opacity-0'
+                          )}
+                        />
+                        <span>{itemLabel(ci)}</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+              </CommandList>
+            </Command>
+            {/* Outside the scrolling list, so it stays in view and no search hides it. */}
+            <div className="border-t p-1">
+              {totalMatches > items.length && (
+                <p className="px-2 pb-1 pt-0.5 text-xs text-muted-foreground">
+                  {t('manuscriptsDetail.volumeSearchMore', {
+                    shown: items.length,
+                    count: totalMatches,
+                  })}
+                </p>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-8 w-full justify-start px-2 font-normal text-primary"
+                onClick={() => {
+                  setNewShelfmark(typed);
+                  setCreating(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                <span className="truncate">
+                  {typed
+                    ? t('manuscriptsDetail.createVolumeNamed', { name: typed })
+                    : t('manuscriptsDetail.createNewVolume')}
+                </span>
+              </Button>
+            </div>
+          </>
         )}
       </PopoverContent>
     </Popover>

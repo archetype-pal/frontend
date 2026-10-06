@@ -102,7 +102,12 @@ const currentItemsCrud = createCrudService<PaginatedResponse<CurrentItemOption>,
   '/api/v1/manuscripts/management/current-items/'
 );
 
-export function getCurrentItems(params?: { repository?: number; limit?: number; offset?: number }) {
+export function getCurrentItems(params?: {
+  repository?: number;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}) {
   return currentItemsCrud.list(params);
 }
 
