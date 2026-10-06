@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useRef, useState } from 'react';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
@@ -9,13 +9,18 @@ import { MessageSquare, CheckCircle, XCircle, Trash2, Clock, Filter } from 'luci
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
-import { approveComment, rejectComment, deleteComment } from '@/services/backoffice/publications';
+import {
+  getComments,
+  approveComment,
+  rejectComment,
+  deleteComment,
+} from '@/services/backoffice/publications';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
-import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 import type { CommentItem } from '@/types/backoffice';
 
@@ -29,19 +34,21 @@ export default function CommentsPage() {
   const selected = selection.selected;
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | 'delete' | null>(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  // Walk all pages so the moderation queue shows every matching comment.
-  // The earlier `getComments(token, ...)` returned only the first DRF page
-  // (20), and the page has no pagination control — pending comments past
-  // the 20th would be invisible to moderators until earlier ones cleared.
-  const { data, isError, refetch } = useQuery({
-    queryKey: backofficeKeys.comments.allPages(filter),
-    queryFn: () => {
-      const params = new URLSearchParams({ limit: '100' });
-      if (filter !== 'all') params.set('is_approved', String(filter === 'approved'));
-      return walkPaginated<CommentItem>(`/api/v1/media/management/comments/?${params.toString()}`);
-    },
+  const queryParams = {
+    limit: pageSize,
+    offset: page * pageSize,
+    ...(filter !== 'all' ? { is_approved: filter === 'approved' } : {}),
+  };
+
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: backofficeKeys.comments.list(queryParams),
+    queryFn: () => getComments(queryParams),
     enabled: !!token,
+    placeholderData: keepPreviousData,
   });
 
   const invalidate = () => {
@@ -89,7 +96,8 @@ export default function CommentsPage() {
     },
   });
 
-  const comments = data ?? [];
+  const comments = useMemo(() => data?.results ?? [], [data]);
+  const totalCount = data?.count ?? 0;
 
   const toggleSelectAll = () => {
     if (selected.size === comments.length) {
@@ -130,7 +138,7 @@ export default function CommentsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t('comments.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            {t('comments.subtitle', { count: data?.length ?? 0 })}
+            {isLoading ? '...' : t('comments.subtitle', { count: totalCount })}
           </p>
         </div>
       </div>
@@ -146,6 +154,7 @@ export default function CommentsPage() {
             onClick={() => {
               setFilter(f);
               selection.clear();
+              setPage(0);
             }}
             className="capitalize"
           >
@@ -207,7 +216,7 @@ export default function CommentsPage() {
       )}
 
       {/* Comment list */}
-      <div className="space-y-2">
+      <div ref={listRef} className="space-y-2">
         {comments.length > 0 && (
           <div className="flex items-center gap-2 px-1">
             <Checkbox
@@ -305,6 +314,24 @@ export default function CommentsPage() {
           ))
         )}
       </div>
+
+      {totalCount > 0 && (
+        <DataPagination
+          scrollTargetRef={listRef}
+          totalItems={totalCount}
+          page={page + 1}
+          pageSize={pageSize}
+          onPageChange={(p) => {
+            setPage(p - 1);
+            selection.clear();
+          }}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+            selection.clear();
+          }}
+        />
+      )}
 
       {/* Single delete confirmation */}
       <ConfirmDialog

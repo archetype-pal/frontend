@@ -123,7 +123,6 @@ function AddHandDialog({
   const [scribeId, setScribeId] = useState<string | null>(null);
   const [name, setName] = useState('');
 
-  // Same key as the scribes page, so both share one cached list of every scribe.
   const {
     data: scribes,
     isError: scribesFailed,
