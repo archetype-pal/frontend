@@ -56,3 +56,19 @@ describe('proxyFetch', () => {
     ]);
   });
 });
+
+describe('optionalAuthFetch', () => {
+  it('proxies a signed-in browser call and sends an anonymous one straight to Django', async () => {
+    const { optionalAuthFetch, API_BASE_URL } = await import('./api-fetch');
+    const fetchMock = vi.fn(async (_url: string) => new Response('[]'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await optionalAuthFetch('/api/v1/manuscripts/graphs/?item_image=1', true);
+    await optionalAuthFetch('/api/v1/manuscripts/graphs/?item_image=1', false);
+
+    expect(fetchMock.mock.calls.map((c) => c[0])).toEqual([
+      '/api/proxy/api/v1/manuscripts/graphs?item_image=1',
+      `${API_BASE_URL}/api/v1/manuscripts/graphs/?item_image=1`,
+    ]);
+  });
+});

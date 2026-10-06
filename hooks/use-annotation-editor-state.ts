@@ -348,10 +348,10 @@ export function useAnnotationEditorState(
       if (record.source === 'persisted' && isDbAnnotation(annotation)) {
         const id = dbIdFromA9s(annotation);
         if (id == null) continue;
-        upsertTasks.push(updateViewerAnnotation(token, id, writePayload));
+        upsertTasks.push(updateViewerAnnotation(id, writePayload));
       } else {
         upsertTasks.push(
-          createViewerAnnotation(token, {
+          createViewerAnnotation({
             ...writePayload,
             item_image: Number(manuscriptImage.id),
           })
@@ -365,7 +365,7 @@ export function useAnnotationEditorState(
     for (const record of deleteCandidates) {
       const id = dbIdFromA9s(record.annotation);
       if (id == null) continue;
-      deleteTasks.push(deleteViewerAnnotation(token, id));
+      deleteTasks.push(deleteViewerAnnotation(id));
       deleteRecords.push(record);
     }
 
@@ -401,16 +401,16 @@ export function useAnnotationEditorState(
         String(manuscriptImage.id),
         undefined,
         'image',
-        token
+        true
       );
       const refreshedEditorial = canViewEditorialControls
-        ? await fetchAnnotationsForImage(String(manuscriptImage.id), undefined, 'editorial', token)
+        ? await fetchAnnotationsForImage(String(manuscriptImage.id), undefined, 'editorial', true)
         : [];
       const refreshedText = await fetchAnnotationsForImage(
         String(manuscriptImage.id),
         undefined,
         'text',
-        token
+        true
       );
       refreshed = [...refreshedImage, ...refreshedEditorial, ...refreshedText];
     } catch (error) {

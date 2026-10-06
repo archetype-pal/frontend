@@ -304,7 +304,7 @@ export function AnnotationGallery({
       }
       setDeletedIds((prev) => new Set(prev).add(graphId));
       try {
-        await deleteViewerAnnotation(token, graphId);
+        await deleteViewerAnnotation(graphId);
         toast.success(t('gallery.deleteSuccess', { id: graphId }));
       } catch {
         setDeletedIds((prev) => {

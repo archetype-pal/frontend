@@ -42,7 +42,7 @@ export interface BackendGraph {
   is_described?: boolean;
 }
 
-import { authFetch } from '@/lib/api-fetch';
+import { optionalAuthFetch, proxyFetch } from '@/lib/api-fetch';
 
 const JSON_HEADERS: HeadersInit = { 'Content-Type': 'application/json' };
 
@@ -50,14 +50,16 @@ export async function fetchAnnotationsForImage(
   imageId: string,
   allographId?: string,
   annotationType: string | null = 'image',
-  token?: string | null
+  authenticated = false
 ): Promise<BackendGraph[]> {
   const params = new URLSearchParams({ item_image: imageId });
   if (allographId) params.set('allograph', allographId);
   if (annotationType) params.set('annotation_type', annotationType);
-  const res = await authFetch(`/api/v1/manuscripts/graphs/?${params.toString()}`, token ?? null, {
-    cache: 'no-store',
-  });
+  const res = await optionalAuthFetch(
+    `/api/v1/manuscripts/graphs/?${params.toString()}`,
+    authenticated,
+    { cache: 'no-store' }
+  );
   if (!res.ok) throw new Error('Failed to load annotations');
   return res.json();
 }
@@ -68,7 +70,7 @@ export async function fetchAnnotationsForImage(
  */
 export async function fetchGraphsByIds(
   ids: number[],
-  token?: string | null
+  authenticated = false
 ): Promise<BackendGraph[]> {
   if (ids.length === 0) return [];
 
@@ -81,9 +83,9 @@ export async function fetchGraphsByIds(
   const responses = await Promise.all(
     chunks.map(async (chunk) => {
       const params = new URLSearchParams({ id__in: chunk.join(',') });
-      const res = await authFetch(
+      const res = await optionalAuthFetch(
         `/api/v1/manuscripts/graphs/?${params.toString()}`,
-        token ?? null,
+        authenticated,
         { cache: 'no-store' }
       );
       if (!res.ok) throw new Error(`Failed to load graphs: ${res.status}`);
@@ -114,13 +116,12 @@ type ViewerAnnotationWritePayload = {
 };
 
 export async function createViewerAnnotation(
-  token: string,
   payload: ViewerAnnotationWritePayload & {
     item_image: number;
     annotation: BackendGraph['annotation'];
   }
 ) {
-  const res = await authFetch(`/api/v1/annotations/graphs/`, token, {
+  const res = await proxyFetch(`/api/v1/annotations/graphs/`, {
     method: 'POST',
     headers: JSON_HEADERS,
     body: JSON.stringify({
@@ -135,12 +136,8 @@ export async function createViewerAnnotation(
   return res.json() as Promise<BackendGraph>;
 }
 
-export async function updateViewerAnnotation(
-  token: string,
-  id: number,
-  partial: ViewerAnnotationWritePayload
-) {
-  const res = await authFetch(`/api/v1/annotations/graphs/${id}/`, token, {
+export async function updateViewerAnnotation(id: number, partial: ViewerAnnotationWritePayload) {
+  const res = await proxyFetch(`/api/v1/annotations/graphs/${id}/`, {
     method: 'PATCH',
     headers: JSON_HEADERS,
     body: JSON.stringify(partial),
@@ -152,8 +149,8 @@ export async function updateViewerAnnotation(
   return res.json() as Promise<BackendGraph>;
 }
 
-export async function deleteViewerAnnotation(token: string, id: number): Promise<void> {
-  const res = await authFetch(`/api/v1/annotations/graphs/${id}/`, token, {
+export async function deleteViewerAnnotation(id: number): Promise<void> {
+  const res = await proxyFetch(`/api/v1/annotations/graphs/${id}/`, {
     method: 'DELETE',
   });
   if (!res.ok) {

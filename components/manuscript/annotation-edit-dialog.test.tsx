@@ -195,7 +195,7 @@ describe('AnnotationEditDialog — allograph-switch save correctness', () => {
     fireEvent.click(saveButton);
 
     await waitFor(() => expect(updateViewerAnnotationMock).toHaveBeenCalledTimes(1));
-    const [, , patch] = updateViewerAnnotationMock.mock.calls[0];
+    const [, patch] = updateViewerAnnotationMock.mock.calls[0];
     expect(patch.allograph).toBe(2);
     // The critical assertion: component 10 (allograph A's "stem") must not
     // appear anywhere in the saved payload.
@@ -225,7 +225,7 @@ describe('AnnotationEditDialog — allograph-switch save correctness', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Save/ }));
 
     await waitFor(() => expect(updateViewerAnnotationMock).toHaveBeenCalledTimes(1));
-    const [, , patch] = updateViewerAnnotationMock.mock.calls[0];
+    const [, patch] = updateViewerAnnotationMock.mock.calls[0];
 
     expect(patch.allograph).toBeUndefined();
     expect(patch.graphcomponent_set).toEqual([
@@ -260,7 +260,7 @@ describe('AnnotationEditDialog — allograph-switch save correctness', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Save/ }));
 
     await waitFor(() => expect(updateViewerAnnotationMock).toHaveBeenCalledTimes(1));
-    const [, , patch] = updateViewerAnnotationMock.mock.calls[0];
+    const [, patch] = updateViewerAnnotationMock.mock.calls[0];
     expect(patch).toEqual({ hand: 5 });
   });
 
@@ -306,7 +306,7 @@ describe('AnnotationEditDialog — allograph-switch save correctness', () => {
 
     await waitFor(() => expect(updateViewerAnnotationMock).toHaveBeenCalledTimes(2));
     const patchByGraphId = new Map(
-      updateViewerAnnotationMock.mock.calls.map((call) => [call[1], call[2]])
+      updateViewerAnnotationMock.mock.calls.map((call) => [call[0], call[1]])
     );
 
     // Both graphs' old, now-foreign components must be pruned — neither
