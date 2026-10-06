@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +42,7 @@ import {
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { NewImageTextDialog } from '@/components/backoffice/new-image-text-dialog';
 import { ImportTeiDialog } from '@/components/backoffice/import-tei-dialog';
-import { ServerPagination } from '@/components/backoffice/common/server-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import {
   Table,
   TableBody,
@@ -139,6 +139,8 @@ export function TextsList() {
   );
 
   const [searchInput, setSearchInput] = useState(filters.search);
+  const [pageSize, setPageSize] = useState(IMAGE_TEXT_PAGE_SIZE);
+  const tableRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -158,7 +160,7 @@ export function TextsList() {
   // Drop any selected ids that fall out of view when filters/page change —
   // otherwise a "Delete N selected" would silently target hidden rows. Same
   // store-during-render reset pattern, keyed on the composite filter/page tuple.
-  const filterKey = `${filters.kind}|${filters.status}|${filters.language}|${filters.empty}|${filters.search}|${filters.page}`;
+  const filterKey = `${filters.kind}|${filters.status}|${filters.language}|${filters.empty}|${filters.search}|${filters.page}|${pageSize}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (prevFilterKey !== filterKey) {
     setPrevFilterKey(filterKey);
@@ -194,7 +196,7 @@ export function TextsList() {
 
   const apiParams: ImageTextListParams = {
     page: filters.page,
-    pageSize: IMAGE_TEXT_PAGE_SIZE,
+    pageSize,
     type: filters.kind || undefined,
     status: filters.status || undefined,
     language: filters.language || undefined,
@@ -418,7 +420,7 @@ export function TextsList() {
             </div>
           )}
 
-          <div className="overflow-x-auto">
+          <div ref={tableRef} className="overflow-x-auto scroll-mt-[var(--texts-switcher-h,0px)]">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -466,12 +468,16 @@ export function TextsList() {
           </div>
 
           <div className="px-6 pb-4">
-            <ServerPagination
-              total={total}
-              pageSize={IMAGE_TEXT_PAGE_SIZE}
-              page={filters.page}
-              hasNext={!!data?.next}
-              onPageChange={(p) => setParams({ page: p > 0 ? p : null })}
+            <DataPagination
+              scrollTargetRef={tableRef}
+              totalItems={total}
+              page={filters.page + 1}
+              pageSize={pageSize}
+              onPageChange={(p) => setParams({ page: p > 1 ? p - 1 : null })}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setParams({ page: null });
+              }}
             />
           </div>
         </CardContent>

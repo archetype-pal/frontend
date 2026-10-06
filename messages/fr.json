@@ -2089,7 +2089,6 @@
       "searchPlaceholder": "Rechercher des utilisateurs...",
       "newUserButton": "Nouvel utilisateur",
       "selectedCount": "{selected} sur {total} sélectionné(s)",
-      "rowsTotal": "{count} ligne(s) au total",
       "bulkActivate": "Activer",
       "bulkDeactivate": "Désactiver",
       "bulkDelete": "Supprimer",
@@ -2362,16 +2361,13 @@
       "columns": "Colonnes",
       "selectedCount": "{count} sélectionné(s)",
       "loadError": "Échec du chargement. Veuillez réessayer.",
+      "exportFailed": "Échec de l'export. Veuillez réessayer.",
       "noResults": "Aucun résultat.",
-      "selectedOfTotal": "{count} sur {total} sélectionné(s)",
-      "rowsTotal": "{count} ligne(s) au total"
+      "selectedOfTotal": "{count} sur {total} sélectionné(s)"
     },
     "filterBar": {
       "allOption": "Tous les {label}",
       "clearFilters": "Effacer les filtres"
-    },
-    "pagination": {
-      "pageOf": "Page {page} sur {total}"
     },
     "inlineEdit": {
       "placeholder": "Cliquer pour modifier",

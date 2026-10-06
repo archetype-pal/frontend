@@ -1,16 +1,20 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useState, useRef } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { PenTool, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
+import { DataPagination } from '@/components/ui/data-pagination';
+import { getHands } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { walkPaginated } from '@/lib/backoffice/walk-paginated';
+import { toOrdering } from '@/lib/backoffice/ordering';
+import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 import type { AdminHandListItem } from '@/types/backoffice';
 
 function buildColumns(t: ReturnType<typeof useTranslations>): ColumnDef<AdminHandListItem>[] {
@@ -84,19 +88,30 @@ function buildColumns(t: ReturnType<typeof useTranslations>): ColumnDef<AdminHan
   ];
 }
 
+const ORDERING_FIELDS = { name: 'name', scribe_name: 'scribe__name' };
+
 export default function HandsPage() {
   const t = useTranslations('backoffice');
   const { token } = useAuth();
   const columns = buildColumns(t);
+  const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
+  const [pageSize, setPageSize] = useState(20);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const ordering = toOrdering(sorting, ORDERING_FIELDS);
 
-  // The earlier `getHands(token)` returned only the first DRF page (20),
-  // but the header showed `data.count` — admins saw "150 hands" with only
-  // 20 rows visible. Walk all pages so the count and the table agree, and
-  // client-side search/pagination on the DataTable spans the full set.
+  const queryParams = {
+    limit: pageSize,
+    offset: page * pageSize,
+    ...(search ? { search } : {}),
+    ...(ordering ? { ordering } : {}),
+  };
+
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: backofficeKeys.hands.all(),
-    queryFn: () => walkPaginated<AdminHandListItem>('/api/v1/management/scribes/hands/?limit=100'),
+    queryKey: backofficeKeys.hands.list(queryParams),
+    queryFn: () => getHands(queryParams),
     enabled: !!token,
+    placeholderData: keepPreviousData,
   });
 
   return (
@@ -106,21 +121,42 @@ export default function HandsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t('hands.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            {isLoading ? '...' : t('hands.subtitle', { count: data?.length ?? 0 })}
+            {isLoading ? '...' : t('hands.subtitle', { count: data?.count ?? 0 })}
           </p>
         </div>
       </div>
 
       <DataTable
+        tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
         onRetry={() => refetch()}
         columns={columns}
-        data={data ?? []}
-        searchColumn="name"
+        data={data?.results ?? []}
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
         searchPlaceholder={t('hands.searchPlaceholder')}
-        pageSize={25}
+        pagination={false}
+        sorting={sorting}
+        onSortingChange={(next) => {
+          setSorting(next);
+          setPage(0);
+        }}
       />
+
+      {data && (
+        <DataPagination
+          scrollTargetRef={tableRef}
+          totalItems={data.count}
+          page={page + 1}
+          pageSize={pageSize}
+          onPageChange={(p) => setPage(p - 1)}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+          }}
+        />
+      )}
     </div>
   );
 }

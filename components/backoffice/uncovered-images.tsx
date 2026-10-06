@@ -9,7 +9,7 @@
  * segments can deep-link to the right view.
  */
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Plus } from 'lucide-react';
@@ -17,7 +17,7 @@ import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ServerPagination } from '@/components/backoffice/common/server-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import {
   Table,
   TableBody,
@@ -34,8 +34,6 @@ import {
   type NewTextKind,
 } from '@/components/backoffice/new-image-text-dialog';
 
-const PAGE_SIZE = 25;
-
 function parseMode(value: string | null): UncoveredMode {
   if (value === 'transcription' || value === 'translation') return value;
   return 'either';
@@ -49,6 +47,8 @@ export function UncoveredImages() {
 
   const mode = parseMode(searchParams?.get('coverage') ?? null);
   const page = Math.max(0, Number.parseInt(searchParams?.get('uPage') ?? '0', 10) || 0);
+  const [pageSize, setPageSize] = useState(20);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const [dialogState, setDialogState] = useState<{
     open: boolean;
@@ -57,8 +57,8 @@ export function UncoveredImages() {
   }>({ open: false, itemImage: null, type: 'Transcription' });
 
   const { data, isFetching, error } = useQuery({
-    queryKey: ['backoffice', 'uncovered-images', mode, page],
-    queryFn: () => fetchUncoveredImages(mode, page, PAGE_SIZE),
+    queryKey: ['backoffice', 'uncovered-images', mode, page, pageSize],
+    queryFn: () => fetchUncoveredImages(mode, page, pageSize),
     enabled: !!token,
     placeholderData: (prev) => prev,
   });
@@ -130,7 +130,7 @@ export function UncoveredImages() {
               {t('quality.uncovered.loadError', { message: (error as Error).message })}
             </div>
           )}
-          <div className="overflow-x-auto">
+          <div ref={tableRef} className="overflow-x-auto scroll-mt-[var(--texts-switcher-h,0px)]">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -212,12 +212,16 @@ export function UncoveredImages() {
             </Table>
           </div>
           <div className="px-6 pb-4">
-            <ServerPagination
-              total={total}
-              pageSize={PAGE_SIZE}
-              page={page}
-              hasNext={!!data?.next}
-              onPageChange={setPage}
+            <DataPagination
+              scrollTargetRef={tableRef}
+              totalItems={total}
+              page={page + 1}
+              pageSize={pageSize}
+              onPageChange={(p) => setPage(p > 1 ? p - 1 : 0)}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(0);
+              }}
             />
           </div>
           {isFetching && (

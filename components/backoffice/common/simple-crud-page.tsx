@@ -269,7 +269,6 @@ export function SimpleCrudPage<T extends { id: number }>({
             {t('simpleCrud.new', { label: singularLabel })}
           </Button>
         }
-        pagination={false}
       />
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>

@@ -2089,7 +2089,6 @@
       "searchPlaceholder": "Search users...",
       "newUserButton": "New User",
       "selectedCount": "{selected} of {total} selected",
-      "rowsTotal": "{count} row(s) total",
       "bulkActivate": "Activate",
       "bulkDeactivate": "Deactivate",
       "bulkDelete": "Delete",
@@ -2362,16 +2361,13 @@
       "columns": "Columns",
       "selectedCount": "{count} selected",
       "loadError": "Failed to load. Please try again.",
+      "exportFailed": "Export failed. Please try again.",
       "noResults": "No results.",
-      "selectedOfTotal": "{count} of {total} selected",
-      "rowsTotal": "{count} row(s) total"
+      "selectedOfTotal": "{count} of {total} selected"
     },
     "filterBar": {
       "allOption": "All {label}",
       "clearFilters": "Clear filters"
-    },
-    "pagination": {
-      "pageOf": "Page {page} of {total}"
     },
     "inlineEdit": {
       "placeholder": "Click to edit",

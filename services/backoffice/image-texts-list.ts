@@ -58,7 +58,7 @@ export interface ImageTextListParams {
   itemImage?: number;
 }
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 20;
 
 export function fetchImageTextList(
   params: ImageTextListParams = {}

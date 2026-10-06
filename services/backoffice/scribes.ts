@@ -14,7 +14,15 @@ const scribesCrud = createCrudService<PaginatedResponse<AdminScribeListItem>, Ad
   '/api/v1/management/scribes/scribes/'
 );
 
-export const getScribes = () => scribesCrud.list();
+export function getScribes(params?: {
+  limit?: number;
+  offset?: number;
+  search?: string;
+  period?: number;
+  ordering?: string;
+}) {
+  return scribesCrud.list(params);
+}
 export const getScribe = scribesCrud.get;
 export const createScribe = scribesCrud.create;
 export const updateScribe = scribesCrud.update;
@@ -26,7 +34,14 @@ const handsCrud = createCrudService<PaginatedResponse<AdminHandListItem>, AdminH
   '/api/v1/management/scribes/hands/'
 );
 
-export function getHands(params?: { scribe?: number; item_part?: number }) {
+export function getHands(params?: {
+  scribe?: number;
+  item_part?: number;
+  search?: string;
+  limit?: number;
+  offset?: number;
+  ordering?: string;
+}) {
   return handsCrud.list(params);
 }
 

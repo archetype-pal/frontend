@@ -20,10 +20,12 @@ const publicationsCrud = createCrudService<
 export function getPublications(params?: {
   limit?: number;
   offset?: number;
+  search?: string;
   status?: string;
   is_blog_post?: boolean;
   is_news?: boolean;
   is_featured?: boolean;
+  ordering?: string;
 }) {
   return publicationsCrud.list(params);
 }
@@ -39,7 +41,13 @@ const commentsCrud = createCrudService<PaginatedResponse<CommentItem>, CommentIt
   '/api/v1/media/management/comments/'
 );
 
-export function getComments(params?: { is_approved?: boolean; post?: number }) {
+export function getComments(params?: {
+  limit?: number;
+  offset?: number;
+  search?: string;
+  is_approved?: boolean;
+  post?: number;
+}) {
   return commentsCrud.list(params);
 }
 
