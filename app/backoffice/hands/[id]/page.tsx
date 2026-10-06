@@ -167,24 +167,29 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
       {/* Editable fields */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>{t('handsDetail.labelName')}</Label>
-          <Input value={form.name} onChange={(e) => setForm({ name: e.target.value })} />
+          <Label htmlFor="hand-name">{t('handsDetail.labelName')}</Label>
+          <Input
+            id="hand-name"
+            value={form.name}
+            onChange={(e) => setForm({ name: e.target.value })}
+          />
         </div>
         <div className="space-y-1.5">
-          <Label>{t('handsDetail.labelPlace')}</Label>
+          <Label htmlFor="hand-place">{t('handsDetail.labelPlace')}</Label>
           <PlaceCombobox
+            id="hand-place"
             value={form.place}
             selectedLabel={form.place === hand.place ? hand.place_display : undefined}
             onChange={(placeId) => setForm({ place: placeId })}
           />
         </div>
         <div className="space-y-1.5">
-          <Label>{t('handsDetail.labelDate')}</Label>
+          <Label htmlFor="hand-date">{t('handsDetail.labelDate')}</Label>
           <Select
             value={String(form.date ?? '__none')}
             onValueChange={(val) => setForm({ date: val === '__none' ? null : Number(val) })}
           >
-            <SelectTrigger>
+            <SelectTrigger id="hand-date">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -201,7 +206,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
 
       <HandDescriptionsSection
         handId={id}
-        descriptions={hand.descriptions}
+        descriptions={hand.descriptions ?? []}
         onDirtyChange={setDescriptionsDirty}
       />
 

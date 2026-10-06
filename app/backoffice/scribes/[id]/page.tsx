@@ -106,23 +106,28 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>{t('scribesDetail.labelName')}</Label>
-          <Input value={form.name} onChange={(e) => setForm({ name: e.target.value })} />
+          <Label htmlFor="scribe-name">{t('scribesDetail.labelName')}</Label>
+          <Input
+            id="scribe-name"
+            value={form.name}
+            onChange={(e) => setForm({ name: e.target.value })}
+          />
         </div>
         <div className="space-y-1.5">
-          <Label>{t('scribesDetail.labelScriptorium')}</Label>
+          <Label htmlFor="scribe-scriptorium">{t('scribesDetail.labelScriptorium')}</Label>
           <Input
+            id="scribe-scriptorium"
             value={form.scriptorium}
             onChange={(e) => setForm({ scriptorium: e.target.value })}
           />
         </div>
         <div className="space-y-1.5">
-          <Label>{t('scribesDetail.labelPeriod')}</Label>
+          <Label htmlFor="scribe-period">{t('scribesDetail.labelPeriod')}</Label>
           <Select
             value={String(form.period ?? '__none')}
             onValueChange={(val) => setForm({ period: val === '__none' ? null : Number(val) })}
           >
-            <SelectTrigger>
+            <SelectTrigger id="scribe-period">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
