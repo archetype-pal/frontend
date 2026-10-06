@@ -356,7 +356,7 @@ describe('ManuscriptViewer smoke test', () => {
     await screen.findByRole('button', { name: 'Image tools' });
     await waitFor(() => expect(fetchImageAllographIds).toHaveBeenCalledWith('4432'));
 
-    fireEvent.click(screen.getByRole('combobox'));
+    fireEvent.click(await screen.findByRole('combobox'));
     expect(await screen.findByText('a, Caroline')).toBeTruthy();
     await waitFor(() => expect(screen.queryByText('b, Anglicana')).toBeNull());
 
@@ -415,7 +415,7 @@ describe('ManuscriptViewer smoke test', () => {
     render(<ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />);
     await screen.findByRole('button', { name: 'Image tools' });
 
-    fireEvent.click(screen.getByRole('combobox'));
+    fireEvent.click(await screen.findByRole('combobox'));
     expect(await screen.findByText('a, Caroline')).toBeTruthy();
     expect(screen.queryByText('b, Anglicana')).toBeNull();
 
@@ -505,7 +505,7 @@ describe('ManuscriptViewer smoke test', () => {
     });
     expect(await screen.findByRole('dialog')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('combobox'));
+    fireEvent.click(await screen.findByRole('combobox'));
     const carolineOption = await screen.findByText('a, Caroline');
     fireEvent.mouseEnter(carolineOption.closest('[cmdk-item]') ?? carolineOption);
     fireEvent.click(carolineOption);
