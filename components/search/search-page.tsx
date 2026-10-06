@@ -18,7 +18,7 @@ import { SearchKeywordBar } from '@/components/search/search-keyword-bar';
 import { type ResultType } from '@/lib/search-types';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { useModelLabels } from '@/contexts/model-labels-context';
-import { Pagination } from '@/components/search/paginated-search';
+import { DataPagination } from '@/components/ui/data-pagination';
 import type { ResultMap } from '@/types/search';
 import {
   clearAllFacetFilters,
@@ -520,7 +520,10 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
           )}
         </aside>
 
-        <main className="flex min-w-0 flex-1 flex-col">
+        <main
+          ref={s.resultsRef}
+          className="flex min-w-0 flex-1 scroll-mt-[var(--site-header-h,0px)] flex-col"
+        >
           {/* Active-filters bar — full-width strip above the results. */}
           {s.activeFilterCount > 0 && (
             <div className="border-b border-border/70 bg-background px-3 py-2 sm:px-4">
@@ -731,18 +734,20 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 </section>
               )}
             </div>
-            {/* Pagination follows directly after the results list (table/grid
-                only — the aggregate views have nothing to page through). */}
             {!s.awaitingResults &&
               s.data.count > 0 &&
               (s.viewMode === 'table' || s.viewMode === 'grid') && (
                 <div className="flex justify-center border-t border-border/70 bg-card px-3 py-2">
-                  <Pagination
-                    count={s.data.count}
-                    limit={s.queryState.limit}
-                    offset={s.queryState.offset}
+                  <DataPagination
+                    totalItems={s.data.count}
+                    page={
+                      s.queryState.limit > 0
+                        ? Math.floor(s.queryState.offset / s.queryState.limit) + 1
+                        : 1
+                    }
+                    pageSize={s.queryState.limit}
                     onPageChange={s.handlePage}
-                    onLimitChange={s.handleLimitChange}
+                    onPageSizeChange={s.handleLimitChange}
                   />
                 </div>
               )}

@@ -530,8 +530,6 @@
     },
     "publicationsList": {
       "noPostsFound": "No posts found.",
-      "prev": "← Prev",
-      "next": "Next →",
       "recentPosts": "Recent Posts",
       "postsByDate": "Posts by Date",
       "selectMonth": "Select month",

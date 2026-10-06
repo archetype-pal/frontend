@@ -9,6 +9,7 @@ import { useModelLabels } from '@/contexts/model-labels-context';
 import { useSearchResults } from '@/hooks/search/use-search-results';
 import { resetQueryForTypeChange, stateFromSearchParams } from '@/lib/search-query';
 import { isOrderingUnsupported } from '@/lib/search-sort';
+import { smoothScrollToElement, smoothScrollToTop } from '@/lib/scroll-utils';
 import {
   DEFAULT_ADVANCED_SEARCH_STATE,
   type AdvancedSearchState,
@@ -229,12 +230,21 @@ export function useSearchPageState(initialType?: ResultType) {
     [viewMode, setViewMode, selection]
   );
 
-  // --- Scroll to top on navigation ---
-  // The page now flows in the document (no internal scroll container), so a
-  // page change / type switch scrolls the window back to the top.
+  // --- Scroll on navigation ---
+
+  const resultsRef = React.useRef<HTMLElement>(null);
+  const shownView = React.useRef<{ resultType: ResultType; viewMode: typeof viewMode } | null>(
+    null
+  );
 
   React.useEffect(() => {
-    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+    const previous = shownView.current;
+    shownView.current = { resultType, viewMode };
+    if (!previous || previous.resultType !== resultType || previous.viewMode !== viewMode) {
+      smoothScrollToTop(window, { duration: 250 });
+    } else {
+      smoothScrollToElement(resultsRef.current, { duration: 250 });
+    }
   }, [resultType, queryHook.queryState.offset, viewMode]);
 
   // --- handleResultTypeChange (resets state across multiple hooks) ---
@@ -331,6 +341,7 @@ export function useSearchPageState(initialType?: ResultType) {
     handleResultTypeChange,
     handleFacetClick: queryHook.handleFacetClick,
     handleMobileFacetClick: mobileHook.handleMobileFacetClick,
+    resultsRef,
     handlePage: queryHook.handlePage,
     handleLimitChange: queryHook.handleLimitChange,
     handleClearAllFilters: queryHook.handleClearAllFilters,
