@@ -324,7 +324,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                     </p>
                   )}
                   <div
-                    className="prose max-w-none"
+                    className="publication-body"
                     dangerouslySetInnerHTML={{ __html: sanitizeHtml(d.content) }}
                   />
                 </div>

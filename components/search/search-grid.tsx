@@ -17,7 +17,7 @@ import { Highlight } from './highlight';
 import { CollectionStar } from '@/components/collection/collection-star';
 import { Checkbox } from '@/components/ui/checkbox';
 import { OpenLightboxButton } from '@/components/lightbox/open-lightbox-button';
-import { getImageDetailUrl } from '@/lib/media-url';
+import { getAnnotatedHitDetailUrl, getImageDetailUrl } from '@/lib/media-url';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
 import { clauseToGraphCollectionItem } from '@/lib/collection-item';
 import { cn } from '@/lib/utils';
@@ -204,7 +204,7 @@ export function toGridCard(
     return {
       kind: 'clause',
       item: clause,
-      detailUrl: getImageDetailUrl(clause),
+      detailUrl: getAnnotatedHitDetailUrl(clause),
       displayText: label.text || 'Untitled',
       formattedDisplayText: label.formattedText,
       content: clause.content,

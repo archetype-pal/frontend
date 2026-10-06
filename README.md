@@ -47,3 +47,7 @@ pnpm dev               # also: lint / test / build / format
 Nothing in this repo deploys anywhere: CI builds the production image from
 `Dockerfile`, and staging/production run from the
 [infrastructure repo](https://github.com/archetype-pal/infrastructure).
+
+## License
+
+Licensed under the [GNU Affero General Public License v3.0](LICENSE).

@@ -32,7 +32,7 @@ export default async function AboutPage({ params }: { params: Promise<{ slug: st
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row gap-12">
           <main
-            className="flex-1 prose max-w-none"
+            className="flex-1 publication-body"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
           />
 

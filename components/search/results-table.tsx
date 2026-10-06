@@ -30,7 +30,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import type { ManuscriptCompareSelection } from '@/hooks/search/use-manuscript-compare-selection';
 import { clauseToGraphCollectionItem } from '@/lib/collection-item';
 import type { CollectionItem } from '@/lib/collection-storage';
-import { getImageDetailUrl, getGraphDetailUrl } from '@/lib/media-url';
+import { getAnnotatedHitDetailUrl, getImageDetailUrl, getGraphDetailUrl } from '@/lib/media-url';
 import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
 import { stripHtmlToPlainText } from '@/lib/sanitize-html';
@@ -408,7 +408,7 @@ const RESULT_TYPE_DESCRIPTORS = {
   },
   texts: {
     columns: COLUMNS.texts,
-    detailUrl: (item: TextListItem) => getImageDetailUrl(item),
+    detailUrl: (item: TextListItem) => getAnnotatedHitDetailUrl(item),
     previewAccessor: (item: TextListItem, size: ThumbnailSize) => (
       <AnnotationInlinePreview
         thumbnailIiif={item.thumbnail_iiif}
@@ -420,7 +420,7 @@ const RESULT_TYPE_DESCRIPTORS = {
   },
   clauses: {
     columns: COLUMNS.clauses,
-    detailUrl: (item: ClauseListItem) => getImageDetailUrl(item),
+    detailUrl: (item: ClauseListItem) => getAnnotatedHitDetailUrl(item),
     subRowAccessor: (item: ClauseListItem) => item.content,
     previewAccessor: (item: ClauseListItem, size: ThumbnailSize) => (
       <AnnotationInlinePreview
@@ -434,7 +434,7 @@ const RESULT_TYPE_DESCRIPTORS = {
   },
   people: {
     columns: COLUMNS.people,
-    detailUrl: (item: PersonListItem) => getImageDetailUrl(item),
+    detailUrl: (item: PersonListItem) => getAnnotatedHitDetailUrl(item),
     subRowAccessor: (item: PersonListItem) => item.name,
     previewAccessor: (item: PersonListItem, size: ThumbnailSize) => (
       <AnnotationInlinePreview
@@ -447,7 +447,7 @@ const RESULT_TYPE_DESCRIPTORS = {
   },
   places: {
     columns: COLUMNS.places,
-    detailUrl: (item: PlaceListItem) => getImageDetailUrl(item),
+    detailUrl: (item: PlaceListItem) => getAnnotatedHitDetailUrl(item),
     subRowAccessor: (item: PlaceListItem) => item.name,
     previewAccessor: (item: PlaceListItem, size: ThumbnailSize) => (
       <AnnotationInlinePreview
@@ -461,6 +461,32 @@ const RESULT_TYPE_DESCRIPTORS = {
 } satisfies { [K in ResultType]: ResultTypeDescriptor<K> };
 
 /** Table view only renders a thumbnail row for types that declare a preview. */
+/**
+ * Makes a whole result (main row + its preview/snippet rows) clickable by
+ * forwarding clicks to the row's primary link (the cell marked `data-row-link`).
+ *
+ * This replaces the "stretched link" trick (`position: relative` on the `<tr>` +
+ * an absolutely-positioned `::after` on the link): Safari ignores `relative` on
+ * table rows, so every overlay stretched over the whole table and the last row's
+ * captured every click and hover (archetype-pal/frontend#142).
+ */
+function handleRowGroupClick(event: React.MouseEvent<HTMLElement>) {
+  if (event.defaultPrevented || event.button !== 0) return;
+  // Real controls (the links themselves, checkbox, collection star) handle their own clicks.
+  if ((event.target as Element).closest('a, button, input, label, [role="checkbox"]')) return;
+  // Don't hijack a drag-to-select-text gesture.
+  if (window.getSelection()?.toString()) return;
+  const link = event.currentTarget.querySelector<HTMLElement>(
+    '[data-row-link] a, [data-row-link] button'
+  );
+  if (!link) return;
+  if ((event.metaKey || event.ctrlKey) && link instanceof HTMLAnchorElement) {
+    window.open(link.href, '_blank', 'noopener');
+    return;
+  }
+  link.click();
+}
+
 export function hasTablePreview(resultType: ResultType): boolean {
   return 'previewAccessor' in RESULT_TYPE_DESCRIPTORS[resultType];
 }
@@ -563,9 +589,9 @@ function ResultsTableComponent<K extends ResultType>({
       const previewCollectionItem = collectionItemAccessor ? collectionItemAccessor(row) : null;
       const rowKey = rowKeyOf(row, ri);
       return (
-        <tbody key={rowKey} className="group border-b">
+        <tbody key={rowKey} className="group border-b" onClick={handleRowGroupClick}>
           <TableRow
-            className={`relative cursor-pointer transition-colors group-hover:bg-secondary/80 ${ri % 2 === 0 ? 'bg-secondary/30' : ''}${hasSubRow ? ' border-b-0' : ''}`}
+            className={`cursor-pointer transition-colors group-hover:bg-secondary/80 ${ri % 2 === 0 ? 'bg-secondary/30' : ''}${hasSubRow ? ' border-b-0' : ''}`}
           >
             {hasSelection &&
               manuscriptSelection &&
@@ -586,16 +612,10 @@ function ResultsTableComponent<K extends ResultType>({
                 );
               })()}
             {hasSubRow && (
-              <TableCell className="w-16 py-1.5">
+              <TableCell className="w-16 py-1.5" data-row-link>
                 <Link
                   href={rowHref}
-                  className="absolute inset-0 z-[1]"
-                  tabIndex={-1}
-                  aria-hidden="true"
-                />
-                <Link
-                  href={rowHref}
-                  className="relative z-[2] inline-block text-xs text-primary border border-primary/30 rounded px-2 py-0.5 hover:bg-primary/5 transition-colors whitespace-nowrap"
+                  className="inline-block text-xs text-primary border border-primary/30 rounded px-2 py-0.5 hover:bg-primary/5 transition-colors whitespace-nowrap"
                 >
                   View
                 </Link>
@@ -619,22 +639,12 @@ function ResultsTableComponent<K extends ResultType>({
                 );
 
               return (
-                <TableCell key={ci} className={col.className}>
+                <TableCell key={ci} className={col.className} data-row-link={isFirst || undefined}>
                   {isFirst ? (
                     resultType === 'graphs' ? (
-                      <GraphDetailLink
-                        graph={row as GraphListItem}
-                        className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
-                      >
-                        {inner}
-                      </GraphDetailLink>
+                      <GraphDetailLink graph={row as GraphListItem}>{inner}</GraphDetailLink>
                     ) : (
-                      <Link
-                        href={rowHref}
-                        className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
-                      >
-                        {inner}
-                      </Link>
+                      <Link href={rowHref}>{inner}</Link>
                     )
                   ) : (
                     inner
@@ -667,7 +677,7 @@ function ResultsTableComponent<K extends ResultType>({
               survives hiding thumbnails whenever there is something to collect
               — it just shrinks to the star. */}
           {preview && (showThumbnails || previewCollectionItem) && (
-            <TableRow className="relative cursor-pointer group-hover:bg-muted/50 transition-colors">
+            <TableRow className="cursor-pointer group-hover:bg-muted/50 transition-colors">
               <TableCell
                 colSpan={totalColSpan}
                 className={`py-1.5 ${hasSubRow ? 'pl-20' : 'pl-4'} text-sm text-muted-foreground`}
@@ -678,11 +688,8 @@ function ResultsTableComponent<K extends ResultType>({
                   // sharing the image's positioning context so it sits over it.
                   <span className="relative inline-block">
                     {showThumbnails && (
-                      <Link
-                        href={rowHref}
-                        className="inline-block after:content-[''] after:absolute after:inset-0 after:z-[1]"
-                      >
-                        <span className="relative z-[2] inline-block">{preview}</span>
+                      <Link href={rowHref} className="inline-block">
+                        {preview}
                       </Link>
                     )}
                     <CollectionStar
@@ -694,26 +701,20 @@ function ResultsTableComponent<K extends ResultType>({
                     />
                   </span>
                 ) : (
-                  <Link
-                    href={rowHref}
-                    className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
-                  >
-                    <span className="relative z-[2] inline-block">{preview}</span>
+                  <Link href={rowHref} className="inline-block">
+                    {preview}
                   </Link>
                 )}
               </TableCell>
             </TableRow>
           )}
           {subRowAccessor && (
-            <TableRow className="relative cursor-pointer group-hover:bg-muted/50 transition-colors">
+            <TableRow className="cursor-pointer group-hover:bg-muted/50 transition-colors">
               <TableCell
                 colSpan={totalColSpan}
                 className="py-1.5 pl-20 text-sm italic text-muted-foreground"
               >
-                <Link
-                  href={rowHref}
-                  className="after:content-[''] after:absolute after:inset-0 after:z-[1]"
-                >
+                <Link href={rowHref}>
                   {highlightKeyword ? (
                     <Highlight
                       text={subRowAccessor(row)}
