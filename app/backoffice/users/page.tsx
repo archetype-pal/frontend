@@ -49,7 +49,8 @@ import {
   BackofficeErrorState,
   BackofficeLoadingState,
 } from '@/components/backoffice/common/query-state';
-import { getUsers, createUser, updateUser, deleteUser } from '@/services/backoffice/users';
+import { createUser, updateUser, deleteUser } from '@/services/backoffice/users';
+import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
@@ -204,11 +205,11 @@ export default function UsersPage() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.users.all(),
-    queryFn: () => getUsers(),
+    queryFn: () => walkPaginated<UserListItem>('/api/v1/auth/management/users/?limit=100'),
     enabled: !!token,
   });
 
-  const users = useMemo(() => data?.results ?? [], [data]);
+  const users = useMemo(() => data ?? [], [data]);
 
   const totalCount = users.length;
   const superuserCount = useMemo(() => users.filter((u) => u.is_superuser).length, [users]);
