@@ -137,6 +137,8 @@ function useHandGraphs(handId: number, images: HandImage[], enabled: boolean): G
 
 export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps) {
   const t = useTranslations('hand');
+  // `?? []`: an API that predates backend#184 still sends a single `description`.
+  const descriptions = hand.descriptions ?? [];
   const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB);
   const { config: siteFeatures, isSectionEnabled } = useSiteFeatures();
   const handsSearchEnabled =
@@ -314,12 +316,21 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
 
         {/* Description Tab */}
         <TabsContent value="description">
-          <div className="rounded-lg border bg-card p-6">
-            {hand.description ? (
-              <div
-                className="publication-body"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(hand.description) }}
-              />
+          <div className="rounded-lg border bg-card p-6 space-y-6">
+            {descriptions.length > 0 ? (
+              descriptions.map((d, i) => (
+                <div key={d.id} className={i > 0 ? 'pt-6 border-t' : undefined}>
+                  {d.source_label && (
+                    <p className="text-xs font-medium text-muted-foreground mb-2">
+                      {t('sourceLabel', { label: d.source_label })}
+                    </p>
+                  )}
+                  <div
+                    className="publication-body"
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(d.content) }}
+                  />
+                </div>
+              ))
             ) : (
               <div className="flex items-center gap-2 text-muted-foreground bg-muted/50 rounded-md p-4">
                 <FileText className="h-4 w-4" />
