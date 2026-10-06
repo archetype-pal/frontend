@@ -39,7 +39,7 @@ export function MsDescPartSection({
   showPartHeading,
 }: MsDescPartSectionProps) {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [activeArea, setActiveArea] = React.useState<MsDescAreaId>('msIdentifier');
 
@@ -87,7 +87,7 @@ export function MsDescPartSection({
             variant="outline"
             size="sm"
             onClick={() => seedMut.mutate()}
-            disabled={seedMut.isPending || !token}
+            disabled={seedMut.isPending || !isAuthenticated}
           >
             {seedMut.isPending ? (
               <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
@@ -126,7 +126,7 @@ export function MsDescPartSection({
                       variant="outline"
                       size="sm"
                       onClick={() => seedAreaMut.mutate(area)}
-                      disabled={seedAreaMut.isPending || !token}
+                      disabled={seedAreaMut.isPending || !isAuthenticated}
                     >
                       {seedAreaMut.isPending ? (
                         <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />

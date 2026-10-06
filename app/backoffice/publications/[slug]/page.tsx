@@ -49,7 +49,7 @@ import { getPublicationRoutes } from '@/lib/publications';
 
 export default function PublicationEditorPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const t = useTranslations('backoffice');
@@ -63,7 +63,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
   } = useQuery({
     queryKey: backofficeKeys.publications.detail(slug),
     queryFn: () => getPublication(slug),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const { track } = useRecentEntities();

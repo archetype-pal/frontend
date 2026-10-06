@@ -54,7 +54,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
   const { textId: rawId } = use(params);
   const textId = Number(rawId);
   const router = useRouter();
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -70,7 +70,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
       if (!record) throw new Error('Failed to load text');
       return record;
     },
-    enabled: !!token && Number.isFinite(textId),
+    enabled: isAuthenticated && Number.isFinite(textId),
   });
 
   // The text record carries `item_image` but not the parent `item_part`,
@@ -86,7 +86,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
   const { data: history } = useQuery({
     queryKey: backofficeKeys.imageTexts.history(textId),
     queryFn: () => fetchImageTextHistory(textId),
-    enabled: !!token && Number.isFinite(textId),
+    enabled: isAuthenticated && Number.isFinite(textId),
   });
 
   const [content, setContent] = useState('');
@@ -316,7 +316,6 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
         <Label>{t('imageTexts.fieldContent')}</Label>
         <TeiTextEditor
           value={content}
-          token={token}
           onValidityChange={setTeiValid}
           onChange={(next) => {
             setContent(next);

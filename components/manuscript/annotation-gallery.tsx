@@ -160,7 +160,7 @@ export function AnnotationGallery({
   supportingDataIncomplete = false,
 }: AnnotationGalleryProps) {
   const t = useTranslations('manuscript');
-  const { user, token } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const { addItem, isInCollection } = useCollection();
   const canEdit = user?.is_staff ?? false;
@@ -295,7 +295,7 @@ export function AnnotationGallery({
   // hide it, then call the API; restore + toast on failure.
   const handleDeleteGraph = React.useCallback(
     async (graphId: number) => {
-      if (!token) return;
+      if (!isAuthenticated) return;
       if (
         typeof window !== 'undefined' &&
         !window.confirm(t('gallery.deleteConfirm', { id: graphId }))
@@ -315,7 +315,7 @@ export function AnnotationGallery({
         toast.error(t('gallery.deleteFailed', { id: graphId }));
       }
     },
-    [token, t]
+    [isAuthenticated, t]
   );
 
   const editingGraphs = React.useMemo(() => {

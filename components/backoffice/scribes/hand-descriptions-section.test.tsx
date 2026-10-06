@@ -22,7 +22,7 @@ vi.mock('@/services/backoffice/manuscripts', () => ({
 }));
 
 vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ token: 'token' }),
+  useAuth: () => ({ isAuthenticated: true }),
 }));
 
 // The real editor is TipTap behind next/dynamic; a textarea exercises the same

@@ -33,7 +33,7 @@ vi.mock('next-intl', () => ({
 }));
 
 vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ token: null, user: null, logout: vi.fn() }),
+  useAuth: () => ({ isAuthenticated: false, user: null, logout: vi.fn() }),
 }));
 
 vi.mock('@/contexts/collection-context', () => ({

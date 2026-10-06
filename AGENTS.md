@@ -32,7 +32,11 @@
   - Zustand store for lightbox behavior in `stores/lightbox-store.ts`.
   - Dexie persistence for lightbox data in `lib/lightbox-db.ts`.
 - Auth:
-  - Token login/profile calls target backend `/api/v1/auth/*`.
+  - The token lives in an HttpOnly cookie that browser code can't read. Login,
+    logout and profile go through the Next routes `app/api/auth/*`, which set
+    and clear it; other authenticated browser calls go through `/api/proxy/*`
+    (`proxyFetch`). "Signed in" on the client is `useAuth().isAuthenticated`,
+    i.e. `/api/auth/me` returned a profile.
   - Three checks guard the backoffice, at three layers, and only the last is the
     security boundary: `proxy.ts` checks that the auth cookie _exists_;
     `BackofficeShell` checks `is_staff` client-side; the backend's management

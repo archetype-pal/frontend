@@ -78,7 +78,7 @@ export function SimpleCrudPage<T extends { id: number }>({
   deleteBlockedReason,
 }: SimpleCrudPageProps<T>) {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<T | null>(null);
@@ -87,7 +87,7 @@ export function SimpleCrudPage<T extends { id: number }>({
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey,
     queryFn: () => queryFn(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const rows = getRows(data);

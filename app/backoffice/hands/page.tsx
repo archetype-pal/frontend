@@ -87,7 +87,7 @@ function buildColumns(t: ReturnType<typeof useTranslations>): ColumnDef<AdminHan
 
 export default function HandsPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const columns = buildColumns(t);
 
   // The earlier `getHands(token)` returned only the first DRF page (20),
@@ -100,7 +100,7 @@ export default function HandsPage() {
       walkPaginated<AdminHandListItem>('/api/v1/management/scribes/hands/?limit=100', (path) =>
         proxyFetch(path)
       ),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   return (

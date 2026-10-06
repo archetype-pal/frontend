@@ -31,10 +31,9 @@ vi.mock('@/contexts/model-labels-context', () => ({
 
 vi.mock('@/contexts/auth-context', () => ({
   useAuth: () => ({
-    token: 'test-token',
+    isAuthenticated: true,
     user: null,
     isReady: true,
-    setToken: vi.fn(),
     logout: vi.fn(),
   }),
 }));

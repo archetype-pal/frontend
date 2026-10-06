@@ -14,8 +14,8 @@ type Props = {
 };
 
 export function BackofficeLink({ kind, id, className, label = 'View in backoffice' }: Props) {
-  const { token } = useAuth();
-  if (!token) return null;
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return null;
   return (
     <Link
       href={backofficeUrlFor(kind, id)}

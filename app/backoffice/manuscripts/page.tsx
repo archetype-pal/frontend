@@ -20,7 +20,7 @@ import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 
 export default function ManuscriptsPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
   const { getLabel, getPluralLabel } = useModelLabels();
@@ -117,7 +117,7 @@ export default function ManuscriptsPage() {
   const { data, isLoading, isPlaceholderData, isError, refetch } = useQuery({
     queryKey: backofficeKeys.manuscripts.list(queryParams),
     queryFn: () => getHistoricalItems(queryParams),
-    enabled: !!token,
+    enabled: isAuthenticated,
     // Keep the current page on screen while the next page or search loads.
     placeholderData: keepPreviousData,
   });

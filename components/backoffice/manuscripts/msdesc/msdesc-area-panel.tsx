@@ -43,14 +43,14 @@ interface MsDescAreaPanelProps {
  */
 export function MsDescAreaPanel({ historicalItemId, area, row }: MsDescAreaPanelProps) {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
   const editor = useMsDescArea({
     area,
     savedContent: row.content,
     savedPublished: row.is_published,
-    token,
+    isAuthenticated,
   });
   const formAvailable = editor.formState !== null;
 

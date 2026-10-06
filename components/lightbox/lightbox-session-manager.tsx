@@ -32,7 +32,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
   const tCommon = useTranslations('common');
   const { workspaces, currentWorkspaceId } = useLightboxStore();
   const workspaceImages = useWorkspaceImages();
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [sessions, setSessions] = useState<LightboxSession[]>([]);
   const [sessionName, setSessionName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -49,13 +49,13 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
   }, []);
 
   const refreshWorksets = React.useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       setWorksets(await listMyWorksets());
     } catch (error) {
       console.error('Failed to load worksets:', error);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   React.useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- refreshWorksets fetches server worksets and assigns the awaited result; the setState only runs after the network await, never synchronously, so it cannot cascade renders.
@@ -139,7 +139,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
   };
 
   const handleSaveToServer = async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     if (!worksetName.trim()) {
       toast.error(t('session.toastEnterWorksetName'));
       return;
@@ -164,7 +164,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
   };
 
   const handleLoadWorkset = async (publicId: string) => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
       const detail = await getWorkset(publicId);
       if (!detail) {
@@ -180,7 +180,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
   };
 
   const handleDeleteWorkset = async (publicId: string) => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     if (!confirm(t('session.toastWorksetDeleteConfirm'))) return;
     try {
       await deleteWorkset(publicId);
@@ -191,7 +191,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
   };
 
   const handleToggleVisibility = async (workset: WorksetSummary) => {
-    if (!token || togglingIds.has(workset.public_id)) return;
+    if (!isAuthenticated || togglingIds.has(workset.public_id)) return;
     const next = workset.visibility === 'Public' ? 'Private' : 'Public';
     setTogglingIds((prev) => new Set(prev).add(workset.public_id));
     try {
@@ -295,7 +295,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
           </div>
 
           {/* Server worksets — only for signed-in users */}
-          {token ? (
+          {isAuthenticated ? (
             <div className="border-t pt-4">
               <div className="border rounded-lg p-4">
                 <h4 className="font-medium mb-2 flex items-center gap-2">

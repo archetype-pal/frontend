@@ -9,7 +9,7 @@ import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
 import { toast } from 'sonner';
 import SiteFeaturesPage from './page';
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ token: 'tok' }) }));
+vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/contexts/model-labels-context', () => ({

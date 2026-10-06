@@ -24,7 +24,7 @@ import { resolvePageText, type PageListItem } from '@/lib/pages';
 
 export default function PagesPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -124,7 +124,7 @@ export default function PagesPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.pages.list(),
     queryFn: () => getPages(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const filtered = (data ?? []).filter((page) => {

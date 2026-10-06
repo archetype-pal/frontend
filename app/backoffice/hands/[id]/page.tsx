@@ -38,7 +38,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
   const t = useTranslations('backoffice');
   const { id: rawId } = use(params);
   const id = Number(rawId);
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [descriptionsDirty, setDescriptionsDirty] = useState(false);
 
@@ -71,7 +71,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
         `/api/v1/manuscripts/management/item-images/?item_part=${itemPart}&limit=100`,
         (path) => proxyFetch(path)
       ),
-    enabled: !!token && !!itemPart,
+    enabled: isAuthenticated && !!itemPart,
   });
 
   const availableImages = useMemo(() => imagesData ?? [], [imagesData]);
@@ -79,7 +79,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
   const { data: dates } = useQuery({
     queryKey: backofficeKeys.dates.all(),
     queryFn: () => getDates(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   if (editor.isError) {

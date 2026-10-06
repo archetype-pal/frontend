@@ -15,7 +15,7 @@ interface UseViewerAnnotationLoaderArgs {
   allographNameById: Map<number, string>;
   isPublicDemoMode: boolean;
   canViewEditorialControls: boolean;
-  token?: string | null;
+  isAuthenticated: boolean;
   resetEditorFrom: (annotations: A9sAnnotation[]) => void;
   viewerApiRef: React.RefObject<ViewerApi | null>;
 }
@@ -34,7 +34,7 @@ export function useViewerAnnotationLoader({
   allographNameById,
   isPublicDemoMode,
   canViewEditorialControls,
-  token,
+  isAuthenticated,
   resetEditorFrom,
   viewerApiRef,
 }: UseViewerAnnotationLoaderArgs) {
@@ -54,7 +54,7 @@ export function useViewerAnnotationLoader({
         isPublicDemoMode,
         includeEditorial: canViewEditorialControls,
         includeText: true,
-        authenticated: !!token,
+        authenticated: isAuthenticated,
         ...extra,
       });
     },
@@ -64,7 +64,7 @@ export function useViewerAnnotationLoader({
       imageHeight,
       isPublicDemoMode,
       manuscriptImage,
-      token,
+      isAuthenticated,
     ]
   );
 

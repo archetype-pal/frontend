@@ -75,7 +75,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
   const compareItems = useCompareStore((state) => state.items);
   const compareHydrated = useCompareStoreHydrated();
   const { getLabel } = useModelLabels();
-  const { token, user, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const { config, isSectionEnabled, enabledCategories } = useSiteFeatures();
   const pathname = usePathname();
   const defaultSearchType = enabledCategories[0] ?? null;
@@ -447,7 +447,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
               )}
               <div className="flex items-center gap-1 shrink-0">
                 <LanguageSwitcher />
-                {token ? (
+                {isAuthenticated ? (
                   <>
                     {user?.is_superuser && (
                       <Button

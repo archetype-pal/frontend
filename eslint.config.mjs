@@ -3,6 +3,27 @@ import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
+const SERVER_AUTH_FILES = [
+  'app/api/**',
+  'proxy.ts',
+  'lib/api-fetch.ts',
+  'lib/*-server.ts',
+  '**/*.test.{ts,tsx}',
+];
+// Cookies that aren't credentials: the session id and the locale.
+const COOKIE_FILES = ['lib/auth-session.ts', 'stores/locale-store.ts'];
+const AUTH_HEADER_MESSAGE =
+  'Browser code must not send the auth token; use proxyFetch, or authFetch on the server.';
+const NO_DOCUMENT_COOKIE = {
+  selector: "MemberExpression[object.name='document'][property.name='cookie']",
+  message: 'The auth cookie is HttpOnly; read sign-in state from useAuth().',
+};
+const NO_AUTH_HEADER = [
+  { selector: 'Literal[value=/^authorization$/i]', message: AUTH_HEADER_MESSAGE },
+  { selector: 'Property > Identifier.key[name=/^authorization$/i]', message: AUTH_HEADER_MESSAGE },
+  { selector: 'TemplateElement[value.raw=/^Token /]', message: AUTH_HEADER_MESSAGE },
+];
+
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -26,6 +47,17 @@ export default defineConfig([
       'react-hooks/immutability': 'off',
       'react-hooks/preserve-manual-memoization': 'off',
     },
+  },
+  // The auth token is an HttpOnly cookie: browser code can neither read it nor
+  // send it. Authenticated browser calls go through `/api/proxy` (`proxyFetch`).
+  {
+    files: ['**/*.{ts,tsx}'],
+    ignores: [...SERVER_AUTH_FILES, ...COOKIE_FILES],
+    rules: { 'no-restricted-syntax': ['error', NO_DOCUMENT_COOKIE, ...NO_AUTH_HEADER] },
+  },
+  {
+    files: COOKIE_FILES,
+    rules: { 'no-restricted-syntax': ['error', ...NO_AUTH_HEADER] },
   },
   globalIgnores([
     '.claude/**',

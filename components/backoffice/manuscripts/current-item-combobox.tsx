@@ -53,7 +53,7 @@ export function CurrentItemCombobox({
   selectedLabel,
   className,
 }: CurrentItemComboboxProps) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const { getLabel } = useModelLabels();
@@ -73,13 +73,13 @@ export function CurrentItemCombobox({
         repository: repositoryId,
         limit: 500,
       }),
-    enabled: !!token && open,
+    enabled: isAuthenticated && open,
   });
 
   const { data: repositoriesData } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
     queryFn: () => getRepositories(),
-    enabled: !!token && creating,
+    enabled: isAuthenticated && creating,
   });
 
   const items: CurrentItemOption[] = currentItemsData?.results ?? [];

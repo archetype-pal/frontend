@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { loginUser, getUserProfile } from '@/utils/api';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,13 +19,13 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { token, user, setToken } = useAuth();
+  const { user, login } = useAuth();
 
   useEffect(() => {
-    if (token && user) {
+    if (user) {
       router.replace(user.is_superuser ? '/backoffice' : '/');
     }
-  }, [token, user, router]);
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,10 +33,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await loginUser(username, password);
-      setToken(response.auth_token);
-
-      const profile = await getUserProfile(response.auth_token);
+      const profile = await login(username, password);
       router.push(profile.is_superuser ? '/backoffice' : '/');
     } catch (error) {
       setError((error as Error).message);

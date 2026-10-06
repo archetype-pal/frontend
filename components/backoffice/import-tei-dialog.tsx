@@ -52,7 +52,7 @@ export function ImportTeiDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -67,7 +67,7 @@ export function ImportTeiDialog({
   const [validating, setValidating] = useState(false);
 
   async function handleFile(file: File | undefined) {
-    if (!file || !token) return;
+    if (!file || !isAuthenticated) return;
     const text = await file.text();
     setFileName(file.name);
     setContent(text);

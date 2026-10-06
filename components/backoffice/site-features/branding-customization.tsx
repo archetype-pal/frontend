@@ -16,8 +16,6 @@ import type { BrandingConfig } from '@/lib/site-features';
 
 type Props = {
   branding: BrandingConfig;
-  /** Needed to upload a file straight to the backend (see `uploadBrandingLogo`). */
-  token: string | null;
   onChange: (value: string) => void;
 };
 
@@ -30,13 +28,12 @@ type Props = {
  * plain string leaf in a JSON blob (`AppSettings`) with no row of its own to
  * attach the file to, so there's nothing to defer the upload to.
  */
-export function BrandingCustomization({ branding, token, onChange }: Props) {
+export function BrandingCustomization({ branding, onChange }: Props) {
   const t = useTranslations('backoffice');
   const logoUrl = branding.logoUrl.trim();
   const [uploading, setUploading] = useState(false);
 
   const handleFileSelect = async (file: File) => {
-    if (!token) return;
     setUploading(true);
     try {
       const url = await uploadBrandingLogo(file);

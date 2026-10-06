@@ -70,9 +70,9 @@ function writeStored(type: ResultType, value: FieldVisibility) {
 }
 
 export function useSearchVisibility(type: ResultType) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const siteFeatures = useSiteFeatures();
-  const isResearcher = Boolean(token);
+  const isResearcher = isAuthenticated;
   const categoryConfig = siteFeatures.getCategoryConfig(type);
   const allowed = useMemo(
     () => normalizeConfigFields(type, categoryConfig),

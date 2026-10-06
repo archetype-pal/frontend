@@ -41,7 +41,7 @@ import { useAutosave } from '@/hooks/backoffice/use-autosave';
 
 export default function PageEditorPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const t = useTranslations('backoffice');
@@ -54,7 +54,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
   } = useQuery({
     queryKey: backofficeKeys.pages.detail(slug),
     queryFn: () => getPage(slug),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const [pageSlug, setPageSlug] = useState('');
