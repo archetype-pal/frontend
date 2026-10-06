@@ -98,6 +98,9 @@ interface DataTableProps<TData, TValue> {
   onRetry?: () => void;
   /** Render placeholder rows (instead of "No results") while the data query has nothing to show yet. */
   isLoading?: boolean;
+  /** Controlled sorting, for server ordering. */
+  sorting?: SortingState;
+  onSortingChange?: (sorting: SortingState) => void;
   /** Ref to the table box, for an outside pager to scroll to. */
   tableRef?: React.RefObject<HTMLDivElement | null>;
 }
@@ -123,11 +126,14 @@ export function DataTable<TData, TValue>({
   isError = false,
   onRetry,
   isLoading = false,
+  sorting: serverSorting,
+  onSortingChange,
   tableRef,
 }: DataTableProps<TData, TValue>) {
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [localSorting, setLocalSorting] = useState<SortingState>([]);
+  const sorting = onSortingChange ? (serverSorting ?? []) : localSorting;
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [tablePageSize, setTablePageSize] = useState(pageSize);
@@ -210,7 +216,10 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     ...(pagination && { getPaginationRowModel: getPaginationRowModel() }),
-    onSortingChange: setSorting,
+    manualSorting: !!onSortingChange,
+    onSortingChange: onSortingChange
+      ? (updater) => onSortingChange(typeof updater === 'function' ? updater(sorting) : updater)
+      : setLocalSorting,
     onColumnFiltersChange: (updater) => {
       setColumnFilters(updater);
       setPageIndex(0);
