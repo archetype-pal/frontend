@@ -35,6 +35,15 @@
     "processing": "Processing...",
     "signIn": "Sign in",
     "signOut": "Sign out",
+    "pagination": {
+      "navLabel": "Pagination",
+      "perPage": "Per page",
+      "range": "{from}–{to} of {total}",
+      "goToPage": "Go to page",
+      "ofPages": "of {total}",
+      "goToPageN": "Go to page {page}",
+      "currentPageN": "Page {page}"
+    },
     "thumbnailSize": {
       "label": "Thumbnail size",
       "compact": "Compact thumbnails",
