@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
+import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
 import {
   createHistoricalItem,
   createItemPart,
@@ -60,7 +61,12 @@ export default function NewManuscriptPage() {
   const [probableTextDate, setProbableTextDate] = useState('');
   const [datingNotes, setDatingNotes] = useState('');
 
-  const { data: repositoriesData } = useQuery({
+  const {
+    data: repositoriesData,
+    isError: repositoriesFailed,
+    isFetching: repositoriesFetching,
+    refetch: refetchRepositories,
+  } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
     queryFn: () => getRepositories(),
     enabled: !!token,
@@ -216,6 +222,13 @@ export default function NewManuscriptPage() {
                 ))}
               </SelectContent>
             </Select>
+            {repositoriesFailed && (
+              <BackofficeInlineError
+                message={t('repositories.loadFailed')}
+                retrying={repositoriesFetching}
+                onRetry={() => refetchRepositories()}
+              />
+            )}
           </div>
 
           <div className="space-y-1.5">

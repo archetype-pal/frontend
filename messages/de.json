@@ -1175,6 +1175,7 @@
       "viewPublicProfile": "Öffentliches Profil anzeigen",
       "handsSection": "Hände ({count})",
       "noHands": "Diesem Schreiber sind keine Hände zugeordnet.",
+      "handsLoadFailed": "Hände konnten nicht geladen werden.",
       "deleteTitle": "„{name}“ löschen?",
       "deleteDescription": "Dies kann fehlschlagen, wenn dem Schreiber Hände zugeordnet sind.",
       "deleteConfirm": "Löschen",
@@ -1230,6 +1231,7 @@
       "selectAll": "Alle auswählen",
       "deselectAll": "Auswahl aufheben",
       "noImages": "Keine Bilder für diesen Objektteil gefunden.",
+      "imagesLoadFailed": "Bilder konnten nicht geladen werden.",
       "deleteTitle": "„{name}“ löschen?",
       "deleteDescription": "Dies kann nicht rückgängig gemacht werden.",
       "deleteConfirm": "Löschen"
@@ -2334,6 +2336,7 @@
       "description": "Institutionelle Verwahrorte verwalten",
       "singularLabel": "Verwahrort",
       "pluralLabel": "Verwahrorte",
+      "loadFailed": "Verwahrorte konnten nicht geladen werden.",
       "fieldName": "Name",
       "fieldNamePlaceholder": "British Library",
       "fieldLabel": "Bezeichnung",

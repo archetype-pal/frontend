@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
+import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
 import { useAuth } from '@/contexts/auth-context';
 import { createHand } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
@@ -32,32 +33,6 @@ export function formatScribeOptionLabel(scribe: {
 }): string {
   const details = [scribe.period_display, scribe.scriptorium?.trim()].filter(Boolean).join(' · ');
   return details ? `${scribe.name} (${details})` : scribe.name;
-}
-
-function LoadFailed({
-  message,
-  retrying,
-  onRetry,
-}: {
-  message: string;
-  retrying: boolean;
-  onRetry: () => void;
-}) {
-  const t = useTranslations('backoffice');
-  return (
-    <div className="flex items-center gap-2">
-      <p className="text-xs text-destructive">{message}</p>
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-7 text-xs"
-        onClick={onRetry}
-        disabled={retrying}
-      >
-        {t('queryState.retry')}
-      </Button>
-    </div>
-  );
 }
 
 /** The hands of one item part, with a dialog to add one. Saves on its own, not via "Save Part". */
@@ -103,7 +78,7 @@ export function ItemPartHandsSection({ itemPartId }: { itemPartId: number }) {
       {isLoading ? (
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       ) : isError ? (
-        <LoadFailed
+        <BackofficeInlineError
           message={t('manuscriptsDetail.handsLoadFailed')}
           retrying={isFetching}
           onRetry={() => refetch()}
@@ -215,7 +190,7 @@ function AddHandDialog({
               disabled={!scribes}
             />
             {scribesFailed && (
-              <LoadFailed
+              <BackofficeInlineError
                 message={t('manuscriptsDetail.scribesLoadFailed')}
                 retrying={scribesFetching}
                 onRetry={() => refetchScribes()}

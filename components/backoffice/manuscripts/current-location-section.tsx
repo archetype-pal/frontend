@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
+import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
 import { CurrentItemCombobox } from './current-item-combobox';
 import {
   createItemPart,
@@ -64,7 +65,12 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
   const [shelfmark, setShelfmark] = useState('');
   const [locus, setLocus] = useState('');
 
-  const { data: repositoriesData } = useQuery({
+  const {
+    data: repositoriesData,
+    isError: repositoriesFailed,
+    isFetching: repositoriesFetching,
+    refetch: refetchRepositories,
+  } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
     queryFn: () => getRepositories(),
     enabled: !!token,
@@ -145,6 +151,13 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
                 ))}
               </SelectContent>
             </Select>
+            {repositoriesFailed && (
+              <BackofficeInlineError
+                message={t('repositories.loadFailed')}
+                retrying={repositoriesFetching}
+                onRetry={() => refetchRepositories()}
+              />
+            )}
           </div>
           <div className="space-y-1.5">
             <FieldLabel helpField="currentLocation.shelfmark">{shelfmarkLabel}</FieldLabel>

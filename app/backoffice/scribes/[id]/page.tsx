@@ -22,6 +22,7 @@ import { EntityEditorActions } from '@/components/backoffice/common/entity-edito
 import {
   BackofficeErrorState,
   BackofficeLoadingState,
+  BackofficeInlineError,
 } from '@/components/backoffice/common/query-state';
 import { getScribe, updateScribe, deleteScribe } from '@/services/backoffice/scribes';
 import { getDates } from '@/services/backoffice/manuscripts';
@@ -52,7 +53,12 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
   // Walk all pages — `getHands(token, { scribe })` returned only the first DRF
   // page (default 20). A productive scribe can have many hands across many
   // manuscripts; the per-scribe listing would hide entries 21+.
-  const { data: hands } = useQuery({
+  const {
+    data: hands,
+    isError: handsFailed,
+    isFetching: handsFetching,
+    refetch: refetchHands,
+  } = useQuery({
     queryKey: backofficeKeys.hands.list({ scribe: id }),
     queryFn: () =>
       walkPaginated<AdminHandListItem>(`/api/v1/management/scribes/hands/?scribe=${id}&limit=100`),
@@ -155,7 +161,13 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
             {t('scribesDetail.handsSection', { count: hands?.length ?? 0 })}
           </h3>
         </div>
-        {hands?.length === 0 ? (
+        {handsFailed ? (
+          <BackofficeInlineError
+            message={t('scribesDetail.handsLoadFailed')}
+            retrying={handsFetching}
+            onRetry={() => refetchHands()}
+          />
+        ) : hands?.length === 0 ? (
           <div className="rounded-md border border-dashed p-6 text-center text-muted-foreground text-sm">
             {t('scribesDetail.noHands')}
           </div>

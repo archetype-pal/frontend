@@ -29,3 +29,29 @@ export function BackofficeErrorState({
     </div>
   );
 }
+
+export function BackofficeInlineError({
+  message,
+  retrying,
+  onRetry,
+}: {
+  message: string;
+  retrying: boolean;
+  onRetry: () => void;
+}) {
+  const t = useTranslations('backoffice');
+  return (
+    <div className="flex items-center gap-2">
+      <p className="text-xs text-destructive">{message}</p>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-7 text-xs"
+        onClick={onRetry}
+        disabled={retrying}
+      >
+        {t('queryState.retry')}
+      </Button>
+    </div>
+  );
+}
