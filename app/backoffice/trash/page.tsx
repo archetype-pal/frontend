@@ -5,7 +5,7 @@ import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tansta
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { Trash2, ExternalLink, RotateCcw, Image as ImageIcon, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +33,7 @@ import {
 } from '@/services/backoffice/annotations';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { toOrdering } from '@/lib/backoffice/ordering';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { formatReviewAge } from '@/lib/backoffice/review-queue-sla';
@@ -52,6 +53,18 @@ type TrashTabKey = (typeof TRASH_TABS)[number]['key'];
 
 const ANNOTATION_TYPES = ['image', 'text', 'editorial', 'unknown'] as const;
 
+const ORDERING_FIELDS = {
+  id: 'id',
+  allograph_name: 'allograph__name',
+  hand_name: 'hand__name',
+  image_display:
+    'item_image__item_part__current_item__repository__label,item_image__item_part__current_item__shelfmark,item_image__item_part__current_item_locus,item_image__locus',
+  annotation_type: 'annotation_type',
+  created: 'created',
+  deleted_by: 'deleted_by__username',
+  deleted_at: 'deleted_at',
+};
+
 export default function TrashPage() {
   const t = useTranslations('backoffice');
   const { token } = useAuth();
@@ -61,6 +74,8 @@ export default function TrashPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = usePageSize('trash', 50);
   const tableRef = useRef<HTMLDivElement>(null);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const ordering = toOrdering(sorting, ORDERING_FIELDS);
   const [purgeTarget, setPurgeTarget] = useState<GraphItem | null>(null);
   const [bulkPurgeIds, setBulkPurgeIds] = useState<string[] | null>(null);
   // Bumped after anything that takes a row out of the trash: remounts the
@@ -85,8 +100,9 @@ export default function TrashPage() {
       limit: pageSize,
       offset: page * pageSize,
       ...buildTrashFilterParams(filterState),
+      ...(ordering ? { ordering } : {}),
     }),
-    [page, pageSize, filterState]
+    [page, pageSize, filterState, ordering]
   );
 
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
@@ -437,6 +453,11 @@ export default function TrashPage() {
         isStale={isPlaceholderData}
         onRetry={refetch}
         pagination={false}
+        sorting={sorting}
+        onSortingChange={(next) => {
+          setSorting(next);
+          setPage(0);
+        }}
         enableRowSelection
         enableColumnVisibility
         bulkActions={bulkActions}
