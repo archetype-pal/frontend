@@ -31,6 +31,7 @@ import {
   restoreGraph,
   purgeGraph,
 } from '@/services/backoffice/annotations';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
@@ -58,7 +59,7 @@ export default function TrashPage() {
 
   const [activeTab, setActiveTab] = useState<TrashTabKey>('annotations');
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = usePageSize('trash', 50);
   const tableRef = useRef<HTMLDivElement>(null);
   const [purgeTarget, setPurgeTarget] = useState<GraphItem | null>(null);
   const [bulkPurgeIds, setBulkPurgeIds] = useState<string[] | null>(null);

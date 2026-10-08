@@ -51,6 +51,7 @@ import {
 } from '@/components/backoffice/common/query-state';
 import { createUser, updateUser, deleteUser } from '@/services/backoffice/users';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
@@ -200,7 +201,7 @@ export default function UsersPage() {
   const selection = useSelectionSet<string>();
   const selected = selection.selected;
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = usePageSize('users', 20);
   const tableRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({

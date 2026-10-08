@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
 import { DataPagination } from '@/components/ui/data-pagination';
 import { getHands } from '@/services/backoffice/scribes';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toOrdering } from '@/lib/backoffice/ordering';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
@@ -95,7 +96,7 @@ export default function HandsPage() {
   const { token } = useAuth();
   const columns = buildColumns(t);
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = usePageSize('hands', 20);
   const tableRef = useRef<HTMLDivElement>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const ordering = toOrdering(sorting, ORDERING_FIELDS);

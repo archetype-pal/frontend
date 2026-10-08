@@ -34,6 +34,7 @@ import {
   type NewTextKind,
 } from '@/components/backoffice/new-image-text-dialog';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 
 const PAGE_SIZE = 20;
 
@@ -50,7 +51,7 @@ export function UncoveredImages() {
 
   const mode = parseMode(searchParams?.get('coverage') ?? null);
   const page = Math.max(0, Number.parseInt(searchParams?.get('uPage') ?? '0', 10) || 0);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  const [pageSize, setPageSize] = usePageSize('texts-uncovered', PAGE_SIZE);
   const tableRef = useRef<HTMLDivElement>(null);
 
   const [dialogState, setDialogState] = useState<{

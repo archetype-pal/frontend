@@ -2,6 +2,11 @@ export type PageToken = number | 'ellipsis-start' | 'ellipsis-end';
 
 export const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
+export function parsePageSize(raw: string | null, fallback: number): number {
+  const size = Number(raw);
+  return PAGE_SIZE_OPTIONS.includes(size) ? size : fallback;
+}
+
 /** Page tokens in a fixed width of `siblingCount * 2 + 5` slots, ellipses included. */
 export function getPageTokens(
   page: number,

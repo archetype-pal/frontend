@@ -54,6 +54,7 @@ import {
 import { useAuth } from '@/contexts/auth-context';
 import { proxyFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import {
   IMAGE_TEXT_PAGE_SIZE,
   fetchImageTextList,
@@ -145,7 +146,7 @@ export function TextsList() {
   const [searchInput, setSearchInput] = useState(filters.search);
   const selection = useSelectionSet<number>();
   const selected = selection.selected;
-  const [pageSize, setPageSize] = useState(IMAGE_TEXT_PAGE_SIZE);
+  const [pageSize, setPageSize] = usePageSize('texts-browse', IMAGE_TEXT_PAGE_SIZE);
   const tableRef = useRef<HTMLDivElement>(null);
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
