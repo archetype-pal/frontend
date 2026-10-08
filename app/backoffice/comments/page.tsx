@@ -18,6 +18,7 @@ import {
   rejectComment,
   deleteComment,
 } from '@/services/backoffice/publications';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
@@ -33,7 +34,7 @@ export default function CommentsPage() {
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | 'delete' | null>(null);
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = usePageSize('comments', 20);
   const listRef = useRef<HTMLDivElement>(null);
 
   const queryParams = {

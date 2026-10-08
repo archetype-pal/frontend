@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
 import { DataPagination } from '@/components/ui/data-pagination';
 import { getHistoricalItems } from '@/services/backoffice/manuscripts';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import type { HistoricalItemListItem } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -23,7 +24,7 @@ export default function ManuscriptsPage() {
   const { token } = useAuth();
   const router = useRouter();
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = usePageSize('manuscripts', 50);
   const tableRef = useRef<HTMLDivElement>(null);
   const { getLabel, getPluralLabel } = useModelLabels();
   const historicalItemLabel = getLabel('historicalItem');

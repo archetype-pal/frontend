@@ -52,6 +52,7 @@ import {
 import { createUser, updateUser, deleteUser } from '@/services/backoffice/users';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import { proxyFetch } from '@/lib/api-fetch';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
@@ -199,7 +200,7 @@ export default function UsersPage() {
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = usePageSize('users', 20);
   const tableRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({

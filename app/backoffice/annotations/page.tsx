@@ -26,6 +26,7 @@ import {
 } from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { getGraphs, deleteGraph } from '@/services/backoffice/annotations';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
@@ -155,7 +156,7 @@ export default function AnnotationsPage() {
   );
 
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = usePageSize('annotations', 50);
   const tableRef = useRef<HTMLDivElement>(null);
   const [annotationType, setAnnotationType] = useState('__all');
   const [handFilter, setHandFilter] = useState('');

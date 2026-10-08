@@ -256,6 +256,7 @@ export function SimpleCrudPage<T extends { id: number }>({
         data={rows}
         isLoading={isLoading}
         searchColumn={searchColumn as string}
+        pageSizeKey={queryKey.join('-')}
         searchPlaceholder={t('simpleCrud.searchPlaceholder', { label: pluralLabel.toLowerCase() })}
         toolbarActions={
           <Button

@@ -31,6 +31,7 @@ import {
   updatePublication,
   deletePublication,
 } from '@/services/backoffice/publications';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { listAllPages } from '@/lib/backoffice/list-all-pages';
 import { toOrdering } from '@/lib/backoffice/ordering';
@@ -162,7 +163,7 @@ export default function PublicationsPage() {
   ];
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = usePageSize('publications', 20);
   const tableRef = useRef<HTMLDivElement>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const ordering = toOrdering(sorting, ORDERING_FIELDS);
