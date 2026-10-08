@@ -2860,6 +2860,8 @@
       "export": "Exporter",
       "exportCsv": "CSV (toutes les lignes correspondantes)",
       "exportJson": "JSON (toutes les lignes correspondantes)",
+      "exportCsvSelected": "CSV (textes sélectionnés)",
+      "exportJsonSelected": "JSON (textes sélectionnés)",
       "importTei": "Importer TEI",
       "new": "Nouveau",
       "searchPlaceholder": "Rechercher par contenu ou langue…",
