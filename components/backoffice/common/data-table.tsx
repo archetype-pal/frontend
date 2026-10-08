@@ -104,6 +104,8 @@ interface DataTableProps<TData, TValue> {
   onRetry?: () => void;
   /** Render placeholder rows (instead of "No results") while the data query has nothing to show yet. */
   isLoading?: boolean;
+  /** Dim the rows while the next page or search loads. */
+  isStale?: boolean;
   /** Controlled sorting, for server ordering. */
   sorting?: SortingState;
   onSortingChange?: (sorting: SortingState) => void;
@@ -134,6 +136,7 @@ export function DataTable<TData, TValue>({
   isError = false,
   onRetry,
   isLoading = false,
+  isStale = false,
   sorting: serverSorting,
   onSortingChange,
   tableRef,
@@ -436,7 +439,14 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* Table */}
-      <div ref={tableBoxRef} className="rounded-md border">
+      <div
+        ref={tableBoxRef}
+        aria-busy={isStale || undefined}
+        className={cn(
+          'rounded-md border transition-opacity duration-250 ease-out',
+          isStale && 'opacity-60'
+        )}
+      >
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

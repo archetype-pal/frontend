@@ -23,6 +23,7 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { useSelectionSet } from '@/hooks/use-selection-set';
+import { cn } from '@/lib/utils';
 import type { CommentItem } from '@/types/backoffice';
 
 export default function CommentsPage() {
@@ -45,7 +46,7 @@ export default function CommentsPage() {
     ...(filter !== 'all' ? { is_approved: filter === 'approved' } : {}),
   };
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.comments.list(queryParams),
     queryFn: () => getComments(queryParams),
     enabled: !!token,
@@ -217,7 +218,14 @@ export default function CommentsPage() {
       )}
 
       {/* Comment list */}
-      <div ref={listRef} className="space-y-2">
+      <div
+        ref={listRef}
+        aria-busy={isPlaceholderData || undefined}
+        className={cn(
+          'space-y-2 transition-opacity duration-250 ease-out',
+          isPlaceholderData && 'opacity-60'
+        )}
+      >
         {comments.length > 0 && (
           <div className="flex items-center gap-2 px-1">
             <Checkbox

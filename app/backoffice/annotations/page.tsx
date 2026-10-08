@@ -174,7 +174,7 @@ export default function AnnotationsPage() {
     return params;
   }, [page, pageSize, annotationType, handFilter, allographFilter]);
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list(filters),
     queryFn: () => getGraphs(filters),
     enabled: !!token,
@@ -306,6 +306,7 @@ export default function AnnotationsPage() {
         tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={graphs}

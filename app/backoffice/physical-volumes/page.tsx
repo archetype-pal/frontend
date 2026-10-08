@@ -124,7 +124,7 @@ export default function PhysicalVolumesPage() {
     offset: page * pageSize,
   };
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.currentItems.list(filterParams),
     queryFn: () => getCurrentItems(filterParams),
     enabled: !!token,
@@ -194,6 +194,7 @@ export default function PhysicalVolumesPage() {
         tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}
