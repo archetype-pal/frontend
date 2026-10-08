@@ -5,7 +5,7 @@ import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tansta
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { ScanLine, ExternalLink, Trash2, Image as ImageIcon, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataPagination } from '@/components/ui/data-pagination';
@@ -28,10 +28,17 @@ import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { getGraphs, deleteGraph } from '@/services/backoffice/annotations';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { toOrdering } from '@/lib/backoffice/ordering';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import type { GraphItem } from '@/types/backoffice';
 import { toast } from 'sonner';
+
+const ORDERING_FIELDS = {
+  id: 'id',
+  allograph_name: 'allograph__name',
+  hand_name: 'hand__name',
+};
 
 export default function AnnotationsPage() {
   const t = useTranslations('backoffice');
@@ -158,6 +165,8 @@ export default function AnnotationsPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = usePageSize('annotations', 50);
   const tableRef = useRef<HTMLDivElement>(null);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const ordering = toOrdering(sorting, ORDERING_FIELDS);
   const [annotationType, setAnnotationType] = useState('__all');
   const [handFilter, setHandFilter] = useState('');
   const [allographFilter, setAllographFilter] = useState('');
@@ -171,8 +180,9 @@ export default function AnnotationsPage() {
     if (annotationType !== '__all') params.annotation_type = annotationType;
     if (handFilter.trim()) params.hand = Number(handFilter);
     if (allographFilter.trim()) params.allograph = Number(allographFilter);
+    if (ordering) params.ordering = ordering;
     return params;
-  }, [page, pageSize, annotationType, handFilter, allographFilter]);
+  }, [page, pageSize, annotationType, handFilter, allographFilter, ordering]);
 
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list(filters),
@@ -311,10 +321,16 @@ export default function AnnotationsPage() {
         columns={columns}
         data={graphs}
         pagination={false}
+        sorting={sorting}
+        onSortingChange={(next) => {
+          setSorting(next);
+          setPage(0);
+        }}
         enableRowSelection
         bulkActions={bulkActions}
         enableColumnVisibility
         enableExport
+        exportSelectionOnly
         exportFilename="annotations"
       />
 

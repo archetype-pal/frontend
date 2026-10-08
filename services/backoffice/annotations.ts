@@ -15,6 +15,7 @@ export function getGraphs(params?: {
   allograph?: number;
   limit?: number;
   offset?: number;
+  ordering?: string;
 }) {
   return graphsCrud.list(params);
 }
@@ -34,6 +35,7 @@ export function getTrashedGraphs(params?: {
   /** ISO 8601 instant — use Date.toISOString(), not a naive local string. */
   deleted_at__gte?: string;
   deleted_at__lte?: string;
+  ordering?: string;
 }) {
   return graphsCrud.list({ ...params, deleted: 'true' });
 }

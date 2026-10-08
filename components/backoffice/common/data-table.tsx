@@ -90,7 +90,9 @@ interface DataTableProps<TData, TValue> {
   /** Enable CSV export of current view. */
   enableExport?: boolean;
   /** Fetch every row for Export when the table holds only one server page. */
-  fetchAllRows?: () => Promise<TData[]>;
+  fetchAllRows?: (onProgress: (loaded: number, total: number) => void) => Promise<TData[]>;
+  /** Offer Export only for ticked rows. */
+  exportSelectionOnly?: boolean;
   /** Filename for CSV export. */
   exportFilename?: string;
   /** Content for filter bar above the table. */
@@ -129,6 +131,7 @@ export function DataTable<TData, TValue>({
   enableColumnVisibility = false,
   enableExport = false,
   fetchAllRows,
+  exportSelectionOnly = false,
   exportFilename = 'export',
   filterBar,
   presetFilters,
@@ -144,7 +147,9 @@ export function DataTable<TData, TValue>({
   const tCommon = useTranslations('common');
   const [localSorting, setLocalSorting] = useState<SortingState>([]);
   const sorting = onSortingChange ? (serverSorting ?? []) : localSorting;
-  const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState<{ loaded: number; total: number } | null>(
+    null
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [tablePageSize, setTablePageSize] = usePageSize(pageSizeKey ?? null, pageSize);
@@ -184,6 +189,9 @@ export function DataTable<TData, TValue>({
     presetFilters && presetFilters[activePreset]?.filter
       ? data.filter(presetFilters[activePreset].filter!)
       : data;
+
+  const rowIdOf = (row: TData) =>
+    getRowId ? getRowId(row) : String((row as Record<string, unknown>).id ?? '');
 
   // Prepend checkbox column if selection is enabled
   const finalColumns: ColumnDef<TData, TValue>[] = enableRowSelection
@@ -244,14 +252,23 @@ export function DataTable<TData, TValue>({
     },
     autoResetPageIndex: false,
     enableRowSelection,
-    getRowId: getRowId
-      ? (row) => getRowId(row)
-      : (row) => String((row as Record<string, unknown>).id ?? ''),
+    getRowId: rowIdOf,
     state: { sorting, columnFilters, columnVisibility, rowSelection, pagination: paginationState },
   });
 
   const selectedCount = Object.keys(rowSelection).length;
   const selectedIds = Object.keys(rowSelection);
+
+  // Rows ticked on other pages are no longer in `data`; keep them for Export.
+  const selectedRows = useRef(new Map<string, TData>());
+  useEffect(() => {
+    const kept = selectedRows.current;
+    for (const id of kept.keys()) if (!rowSelection[id]) kept.delete(id);
+    for (const row of data) {
+      const id = rowIdOf(row);
+      if (rowSelection[id]) kept.set(id, row);
+    }
+  });
 
   function downloadCsv(source: TData[]) {
     const exportColumns = table
@@ -294,18 +311,38 @@ export function DataTable<TData, TValue>({
     URL.revokeObjectURL(url);
   }
 
-  async function handleExport() {
-    if (!fetchAllRows) {
-      downloadCsv(table.getFilteredRowModel().rows.map((row) => row.original));
-      return;
-    }
-    setExporting(true);
+  // A long export stops at the next page once the table is gone.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  async function exportAll() {
+    if (!fetchAllRows) return;
+    setExportProgress({ loaded: 0, total: 0 });
     try {
-      downloadCsv(await fetchAllRows());
+      const all = await fetchAllRows((loaded, total) => {
+        if (!mounted.current) throw new Error('unmounted');
+        setExportProgress({ loaded, total });
+      });
+      downloadCsv(all);
     } catch {
-      toast.error(t('dataTable.exportFailed'));
+      if (mounted.current) toast.error(t('dataTable.exportFailed'));
     } finally {
-      setExporting(false);
+      if (mounted.current) setExportProgress(null);
+    }
+  }
+
+  function handleExport() {
+    if (selectedCount > 0) {
+      downloadCsv(selectedIds.flatMap((id) => selectedRows.current.get(id) ?? []));
+    } else if (fetchAllRows) {
+      void exportAll();
+    } else {
+      downloadCsv(table.getFilteredRowModel().rows.map((row) => row.original));
     }
   }
 
@@ -372,21 +409,29 @@ export function DataTable<TData, TValue>({
             </div>
           )}
           <div className="ml-auto flex items-center gap-2">
-            {enableExport && (
+            {enableExport && (!exportSelectionOnly || selectedCount > 0) && (
               <Button
                 variant="outline"
                 size="sm"
                 className="h-9 gap-1"
                 onClick={handleExport}
-                disabled={exporting}
-                aria-busy={exporting || undefined}
+                disabled={!!exportProgress}
+                aria-busy={!!exportProgress || undefined}
               >
-                {exporting ? (
+                {exportProgress ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
                   <Download className="h-3.5 w-3.5" />
                 )}
-                <span className="hidden sm:inline">{tCommon('export')}</span>
+                <span className="hidden sm:inline">
+                  {exportProgress
+                    ? exportProgress.total > 0
+                      ? t('dataTable.exportProgress', exportProgress)
+                      : t('dataTable.exporting')
+                    : selectedCount > 0
+                      ? t('dataTable.exportSelected', { count: selectedCount })
+                      : tCommon('export')}
+                </span>
               </Button>
             )}
             {enableColumnVisibility && (

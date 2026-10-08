@@ -23,10 +23,15 @@ describe('listAllPages', () => {
         )
       );
 
-    const rows = await listAllPages(list);
+    const onProgress = vi.fn();
+    const rows = await listAllPages(list, onProgress);
 
     expect(rows).toHaveLength(150);
     expect(list.mock.calls).toEqual([[{ limit: 100, offset: 0 }], [{ limit: 100, offset: 100 }]]);
+    expect(onProgress.mock.calls).toEqual([
+      [100, 150],
+      [150, 150],
+    ]);
   });
 
   it('stops on an empty page even if the count says more', async () => {

@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useTranslations } from 'next-intl';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { Archive, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -26,10 +26,18 @@ import {
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
+import { listAllPages } from '@/lib/backoffice/list-all-pages';
+import { toOrdering } from '@/lib/backoffice/ordering';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
+
+const ORDERING_FIELDS = {
+  repository_name: 'repository__name',
+  shelfmark: 'shelfmark',
+  part_count: 'part_count',
+};
 
 export default function PhysicalVolumesPage() {
   const t = useTranslations('backoffice');
@@ -41,6 +49,8 @@ export default function PhysicalVolumesPage() {
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
   const [pageSize, setPageSize] = usePageSize('physical-volumes', 50);
   const tableRef = useRef<HTMLDivElement>(null);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const ordering = toOrdering(sorting, ORDERING_FIELDS);
   const shelfmarkLabel = getLabel('fieldShelfmark');
   const appManuscriptsLabel = getLabel('appManuscripts');
 
@@ -117,12 +127,12 @@ export default function PhysicalVolumesPage() {
 
   const repositories: Repository[] = repositoriesData ?? [];
 
-  const filterParams = {
+  const listParams = {
     ...(repoFilter !== '__all' ? { repository: Number(repoFilter) } : {}),
     ...(search ? { search } : {}),
-    limit: pageSize,
-    offset: page * pageSize,
+    ...(ordering ? { ordering } : {}),
   };
+  const filterParams = { ...listParams, limit: pageSize, offset: page * pageSize };
 
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.currentItems.list(filterParams),
@@ -204,8 +214,16 @@ export default function PhysicalVolumesPage() {
           label: shelfmarkLabel.toLowerCase(),
         })}
         pagination={false}
+        sorting={sorting}
+        onSortingChange={(next) => {
+          setSorting(next);
+          setPage(0);
+        }}
         enableColumnVisibility
         enableExport
+        fetchAllRows={(onProgress) =>
+          listAllPages((p) => getCurrentItems({ ...listParams, ...p }), onProgress)
+        }
         exportFilename="items"
       />
 
