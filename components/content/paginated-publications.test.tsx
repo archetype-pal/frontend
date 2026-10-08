@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { Suspense, startTransition, use, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PublicationParams } from '@/utils/api';
@@ -34,14 +35,18 @@ function post(id: number) {
   };
 }
 
-function renderNews(search: string, count: number) {
-  nav.search = search;
-  getPublications.mockImplementation(async ({ limit = 0, offset = 0 }: PublicationParams) => ({
+function posts(count: number, { limit = 0, offset = 0 }: PublicationParams) {
+  return {
     count,
     results: Array.from({ length: Math.max(0, Math.min(limit, count - offset)) }, (_, i) =>
       post(offset + i + 1)
     ),
-  }));
+  };
+}
+
+function renderNews(search: string, count: number) {
+  nav.search = search;
+  getPublications.mockImplementation(async (params: PublicationParams) => posts(count, params));
   render(<PaginatedPublications title="News" categoryFlag="is_news" basePath="/news" />);
 }
 
@@ -72,5 +77,45 @@ describe('PaginatedPublications', () => {
 
     await waitFor(() => expect(nav.replace).toHaveBeenCalledWith('/news?page=3'));
     expect(nav.push).not.toHaveBeenCalled();
+  });
+
+  it('dims the posts from the click until the next page has loaded', async () => {
+    let land!: () => void;
+    const landed = new Promise<void>((resolve) => (land = resolve));
+    let serve!: () => void;
+    const served = new Promise<void>((resolve) => (serve = resolve));
+    let navigate!: (url: string) => void;
+    // Like the Next router: the URL changes in a transition that waits for the new page.
+    function Router() {
+      const [url, setUrl] = useState('/news');
+      navigate = setUrl;
+      if (url !== '/news') use(landed);
+      nav.search = new URL(url, 'http://localhost').search;
+      return <PaginatedPublications title="News" categoryFlag="is_news" basePath="/news" />;
+    }
+    nav.push.mockImplementation((url: string) => startTransition(() => navigate(url)));
+    getPublications.mockImplementation(async (params: PublicationParams) => {
+      if (params.offset) await served;
+      return posts(45, params);
+    });
+    render(
+      <Suspense>
+        <Router />
+      </Suspense>
+    );
+    await screen.findByRole('heading', { name: 'Post 1' });
+    const busy = () => document.querySelector('main [aria-busy="true"]');
+    expect(busy()).toBeNull();
+
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Go to page 2' })));
+    expect(busy()).not.toBeNull();
+
+    await act(async () => land());
+    expect(getPublications).toHaveBeenCalledWith({ limit: 20, offset: 20, is_news: true });
+    expect(busy()).not.toBeNull();
+
+    await act(async () => serve());
+    expect(await screen.findByRole('heading', { name: 'Post 21' })).toBeTruthy();
+    expect(busy()).toBeNull();
   });
 });
