@@ -108,7 +108,7 @@ export default function HandsPage() {
     ...(ordering ? { ordering } : {}),
   };
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.hands.list(queryParams),
     queryFn: () => getHands(queryParams),
     enabled: !!token,
@@ -131,6 +131,7 @@ export default function HandsPage() {
         tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}

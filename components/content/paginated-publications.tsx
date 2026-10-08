@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -9,6 +9,7 @@ import { getPublications, type Publication, type PublicationParams } from '@/uti
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageBanner } from '@/components/layout/page-banner';
 import { DataPagination } from '@/components/ui/data-pagination';
+import { cn } from '@/lib/utils';
 
 interface PaginatedPublicationsProps {
   title: string;
@@ -43,8 +44,14 @@ export default function PaginatedPublications({
   const [recentPosts, setRecentPosts] = useState<Publication[] | null>(null);
   const [total, setTotal] = useState(0);
   const listRef = useRef<HTMLElement>(null);
+  const requestKey = `${categoryFlag}:${limit}:${offset}`;
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  // Pending from the click until the new URL lands, so the list dims at once.
+  const [isNavigating, startNavigation] = useTransition();
+  const isStale = articles !== null && (loadedKey !== requestKey || isNavigating);
 
   useEffect(() => {
+    const key = `${categoryFlag}:${limit}:${offset}`;
     const fetchPaginated = async () => {
       try {
         const params: PublicationParams = {
@@ -60,6 +67,7 @@ export default function PaginatedPublications({
         console.error('Error fetching paginated articles:', err);
         setArticles((prev) => prev ?? []);
       }
+      setLoadedKey(key);
     };
 
     fetchPaginated();
@@ -90,15 +98,14 @@ export default function PaginatedPublications({
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.set('page', newPage.toString());
     const url = `${basePath}?${newParams.toString()}`;
-    if (options?.clamped) router.replace(url);
-    else router.push(url);
+    startNavigation(() => (options?.clamped ? router.replace(url) : router.push(url)));
   };
 
   const handleLimitChange = (newLimit: number) => {
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.set('limit', newLimit.toString());
     newParams.set('page', '1');
-    router.push(`${basePath}?${newParams.toString()}`);
+    startNavigation(() => router.push(`${basePath}?${newParams.toString()}`));
   };
 
   return (
@@ -129,7 +136,13 @@ export default function PaginatedPublications({
             ) : articles.length === 0 ? (
               <p className="text-muted-foreground">{t('noPostsFound')}</p>
             ) : (
-              <div className="space-y-6">
+              <div
+                aria-busy={isStale || undefined}
+                className={cn(
+                  'space-y-6 transition-opacity duration-250 ease-out',
+                  isStale && 'opacity-60'
+                )}
+              >
                 {articles.map((article) => (
                   <div
                     key={article.id}

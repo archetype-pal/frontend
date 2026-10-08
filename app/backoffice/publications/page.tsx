@@ -190,7 +190,7 @@ export default function PublicationsPage() {
   };
   const queryParams = { limit: pageSize, offset: page * pageSize, ...listParams };
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.publications.list(queryParams),
     queryFn: () => getPublications(queryParams),
     enabled: !!token,
@@ -279,6 +279,7 @@ export default function PublicationsPage() {
         tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}

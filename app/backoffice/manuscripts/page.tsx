@@ -117,7 +117,7 @@ export default function ManuscriptsPage() {
     ...(search ? { search } : {}),
   };
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.manuscripts.list(queryParams),
     queryFn: () => getHistoricalItems(queryParams),
     enabled: !!token,
@@ -149,6 +149,7 @@ export default function ManuscriptsPage() {
         tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}

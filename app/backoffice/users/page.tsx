@@ -231,7 +231,7 @@ export default function UsersPage() {
     ordering: toOrdering([{ id: sortKey, desc: sortDir === 'desc' }], ORDERING_FIELDS),
   };
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.users.list(queryParams),
     queryFn: () => getUsers(queryParams),
     enabled: !!token,
@@ -573,7 +573,14 @@ export default function UsersPage() {
         )}
 
         {/* Table */}
-        <div ref={tableRef} className="rounded-md border">
+        <div
+          ref={tableRef}
+          aria-busy={isPlaceholderData || undefined}
+          className={cn(
+            'rounded-md border transition-opacity duration-250 ease-out',
+            isPlaceholderData && 'opacity-60'
+          )}
+        >
           <Table>
             <TableHeader>
               <TableRow>

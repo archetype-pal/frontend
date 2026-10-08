@@ -103,7 +103,7 @@ export default function ScribesPage() {
     ...(ordering ? { ordering } : {}),
   };
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.scribes.list(queryParams),
     queryFn: () => getScribes(queryParams),
     enabled: !!token,
@@ -141,6 +141,7 @@ export default function ScribesPage() {
         tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}

@@ -89,7 +89,7 @@ export default function TrashPage() {
     [page, pageSize, filterState]
   );
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list({ deleted: 'true', ...params }),
     queryFn: () => getTrashedGraphs(params),
     enabled: !!token,
@@ -434,6 +434,7 @@ export default function TrashPage() {
         data={rows}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={refetch}
         pagination={false}
         enableRowSelection
