@@ -1740,6 +1740,7 @@
       "filterAll": "alle",
       "filterPending": "ausstehend",
       "filterApproved": "genehmigt",
+      "searchPlaceholder": "Kommentare suchen …",
       "selectedCount": "{count} ausgewählt",
       "approveAll": "Alle genehmigen",
       "rejectAll": "Alle ablehnen",

@@ -1740,6 +1740,7 @@
       "filterAll": "tous",
       "filterPending": "en attente",
       "filterApproved": "approuvés",
+      "searchPlaceholder": "Rechercher des commentaires...",
       "selectedCount": "{count} sélectionné(s)",
       "approveAll": "Tout approuver",
       "rejectAll": "Tout rejeter",
