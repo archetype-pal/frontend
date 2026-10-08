@@ -18,45 +18,21 @@ import {
 } from '@/components/ui/dialog';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
+import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
 import { useAuth } from '@/contexts/auth-context';
 import { createHand } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import type { AdminHandListItem, AdminScribeListItem } from '@/types/backoffice';
 
-// walkPaginated returns the rows read so far when a page fails; throwing lets the query report it.
-async function fetchPageOrThrow(path: string): Promise<Response> {
-  const response = await proxyFetch(path);
-  if (!response.ok) throw new Error(`Request failed (${response.status})`);
-  return response;
-}
-
-function LoadFailed({
-  message,
-  retrying,
-  onRetry,
-}: {
-  message: string;
-  retrying: boolean;
-  onRetry: () => void;
-}) {
-  const t = useTranslations('backoffice');
-  return (
-    <div className="flex items-center gap-2">
-      <p className="text-xs text-destructive">{message}</p>
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-7 text-xs"
-        onClick={onRetry}
-        disabled={retrying}
-      >
-        {t('queryState.retry')}
-      </Button>
-    </div>
-  );
+export function formatScribeOptionLabel(scribe: {
+  name: string;
+  period_display?: string | null;
+  scriptorium?: string | null;
+}): string {
+  const details = [scribe.period_display, scribe.scriptorium?.trim()].filter(Boolean).join(' · ');
+  return details ? `${scribe.name} (${details})` : scribe.name;
 }
 
 /** The hands of one item part, with a dialog to add one. Saves on its own, not via "Save Part". */
@@ -75,8 +51,7 @@ export function ItemPartHandsSection({ itemPartId }: { itemPartId: number }) {
     queryKey: backofficeKeys.hands.list({ item_part: itemPartId }),
     queryFn: () =>
       walkPaginated<AdminHandListItem>(
-        `/api/v1/management/scribes/hands/?item_part=${itemPartId}&limit=100`,
-        fetchPageOrThrow
+        `/api/v1/management/scribes/hands/?item_part=${itemPartId}&limit=100`
       ),
     enabled: !!token,
   });
@@ -103,7 +78,7 @@ export function ItemPartHandsSection({ itemPartId }: { itemPartId: number }) {
       {isLoading ? (
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       ) : isError ? (
-        <LoadFailed
+        <BackofficeInlineError
           message={t('manuscriptsDetail.handsLoadFailed')}
           retrying={isFetching}
           onRetry={() => refetch()}
@@ -157,15 +132,16 @@ function AddHandDialog({
   } = useQuery({
     queryKey: backofficeKeys.scribes.list(),
     queryFn: () =>
-      walkPaginated<AdminScribeListItem>(
-        '/api/v1/management/scribes/scribes/?limit=100',
-        fetchPageOrThrow
-      ),
+      walkPaginated<AdminScribeListItem>('/api/v1/management/scribes/scribes/?limit=100'),
     enabled: !!token,
   });
 
   const scribeOptions = useMemo(
-    () => (scribes ?? []).map((scribe) => ({ value: String(scribe.id), label: scribe.name })),
+    () =>
+      (scribes ?? []).map((scribe) => ({
+        value: String(scribe.id),
+        label: formatScribeOptionLabel(scribe),
+      })),
     [scribes]
   );
 
@@ -214,7 +190,7 @@ function AddHandDialog({
               disabled={!scribes}
             />
             {scribesFailed && (
-              <LoadFailed
+              <BackofficeInlineError
                 message={t('manuscriptsDetail.scribesLoadFailed')}
                 retrying={scribesFetching}
                 onRetry={() => refetchScribes()}

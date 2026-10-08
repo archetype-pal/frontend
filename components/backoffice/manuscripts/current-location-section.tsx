@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
+import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
 import { CurrentItemCombobox } from './current-item-combobox';
 import {
   createItemPart,
@@ -26,7 +27,6 @@ import {
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import type { CurrentItemOption, ItemPartNested, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
 
@@ -65,7 +65,12 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
   const [shelfmark, setShelfmark] = useState('');
   const [locus, setLocus] = useState('');
 
-  const { data: repositoriesData } = useQuery({
+  const {
+    data: repositoriesData,
+    isError: repositoriesFailed,
+    isFetching: repositoriesFetching,
+    refetch: refetchRepositories,
+  } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
     queryFn: () => getRepositories(),
     enabled: !!token,
@@ -84,8 +89,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
       // would be missed by the find-match step and we'd create a duplicate
       // `(repository, shelfmark)` row.
       const existingItems = await walkPaginated<CurrentItemOption>(
-        `/api/v1/manuscripts/management/current-items/?repository=${Number(repository)}&limit=100`,
-        (path) => proxyFetch(path)
+        `/api/v1/manuscripts/management/current-items/?repository=${Number(repository)}&limit=100`
       );
       let currentItemId: number;
       const match = existingItems.find(
@@ -147,6 +151,13 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
                 ))}
               </SelectContent>
             </Select>
+            {repositoriesFailed && (
+              <BackofficeInlineError
+                message={t('repositories.loadFailed')}
+                retrying={repositoriesFetching}
+                onRetry={() => refetchRepositories()}
+              />
+            )}
           </div>
           <div className="space-y-1.5">
             <FieldLabel helpField="currentLocation.shelfmark">{shelfmarkLabel}</FieldLabel>
