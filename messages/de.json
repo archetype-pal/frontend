@@ -2151,6 +2151,7 @@
       "toastUserDeleted": "Benutzer gelöscht",
       "toastFailedDelete": "Benutzer konnte nicht gelöscht werden",
       "failedLoad": "Benutzer konnten nicht geladen werden",
+      "summaryFailed": "Benutzerzahlen konnten nicht geladen werden",
       "relativeNever": "Nie",
       "relativeJustNow": "Gerade eben"
     },

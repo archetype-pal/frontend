@@ -2151,6 +2151,7 @@
       "toastUserDeleted": "User deleted",
       "toastFailedDelete": "Failed to delete user",
       "failedLoad": "Failed to load users",
+      "summaryFailed": "Failed to load user totals",
       "relativeNever": "Never",
       "relativeJustNow": "Just now"
     },

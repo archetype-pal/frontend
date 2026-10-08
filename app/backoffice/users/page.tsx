@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import {
   UserCog,
@@ -47,13 +47,20 @@ import {
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import {
   BackofficeErrorState,
+  BackofficeInlineError,
   BackofficeLoadingState,
 } from '@/components/backoffice/common/query-state';
-import { createUser, updateUser, deleteUser } from '@/services/backoffice/users';
-import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
+import {
+  createUser,
+  deleteUser,
+  getUserSummary,
+  getUsers,
+  updateUser,
+} from '@/services/backoffice/users';
+import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { toOrdering } from '@/lib/backoffice/ordering';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { cn } from '@/lib/utils';
@@ -116,6 +123,20 @@ const emptyCreate: UserCreatePayload = {
 type PresetKey = 'all' | 'superuser' | 'staff' | 'inactive';
 type SortKey = 'username' | 'name' | 'last_login' | 'date_joined';
 type SortDir = 'asc' | 'desc';
+
+const PRESET_FILTERS: Record<PresetKey, Record<string, boolean>> = {
+  all: {},
+  superuser: { is_superuser: true },
+  staff: { is_staff: true },
+  inactive: { is_active: false },
+};
+
+const ORDERING_FIELDS: Record<SortKey, string> = {
+  username: 'username',
+  name: 'first_name,last_name',
+  last_login: 'last_login',
+  date_joined: 'date_joined',
+};
 
 // ── Password Input ───────────────────────────────────────────────────────
 
@@ -194,101 +215,58 @@ export default function UsersPage() {
   const [editForm, setEditForm] = useState<UserUpdatePayload>({});
 
   // Table view state
-  const [search, setSearch] = useState('');
+  const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
   const [preset, setPreset] = useState<PresetKey>('all');
   const [sortKey, setSortKey] = useState<SortKey>('username');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
-  const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = usePageSize('users', 20);
   const tableRef = useRef<HTMLDivElement>(null);
 
+  const queryParams = {
+    limit: pageSize,
+    offset: page * pageSize,
+    ...(search ? { search } : {}),
+    ...PRESET_FILTERS[preset],
+    ordering: toOrdering([{ id: sortKey, desc: sortDir === 'desc' }], ORDERING_FIELDS),
+  };
+
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: backofficeKeys.users.all(),
-    queryFn: () =>
-      walkPaginated<UserListItem>('/api/v1/auth/management/users/?limit=100', (path) =>
-        proxyFetch(path)
-      ),
+    queryKey: backofficeKeys.users.list(queryParams),
+    queryFn: () => getUsers(queryParams),
     enabled: !!token,
+    placeholderData: keepPreviousData,
   });
 
-  const users = useMemo(() => data ?? [], [data]);
+  const {
+    data: summary,
+    isError: summaryFailed,
+    isFetching: summaryFetching,
+    refetch: refetchSummary,
+  } = useQuery({
+    queryKey: backofficeKeys.users.summary(),
+    queryFn: getUserSummary,
+    enabled: !!token,
+  });
+  const pendingCount = summaryFailed ? '–' : '…';
 
-  const totalCount = users.length;
-  const superuserCount = useMemo(() => users.filter((u) => u.is_superuser).length, [users]);
-  const staffCount = useMemo(() => users.filter((u) => u.is_staff).length, [users]);
-  const activeCount = useMemo(() => users.filter((u) => u.is_active).length, [users]);
-  const inactiveCount = totalCount - activeCount;
+  const pageRows = data?.results ?? [];
+  const matchingCount = data?.count ?? 0;
 
-  // ── Derived rows: preset → search → sort → paginate ───────────────────
+  // ── Selection ──────────────────────────────────────────────────────────
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return users.filter((u) => {
-      if (preset === 'superuser' && !u.is_superuser) return false;
-      if (preset === 'staff' && !u.is_staff) return false;
-      if (preset === 'inactive' && u.is_active) return false;
-      if (q) {
-        const haystack = `${u.username} ${u.email} ${fullName(u)}`.toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
-      return true;
-    });
-  }, [users, preset, search]);
-
-  const sorted = useMemo(() => {
-    const rows = [...filtered];
-    const factor = sortDir === 'asc' ? 1 : -1;
-    rows.sort((a, b) => {
-      let av: string | number;
-      let bv: string | number;
-      switch (sortKey) {
-        case 'name':
-          av = fullName(a).toLowerCase();
-          bv = fullName(b).toLowerCase();
-          break;
-        case 'last_login':
-          av = a.last_login ? new Date(a.last_login).getTime() : 0;
-          bv = b.last_login ? new Date(b.last_login).getTime() : 0;
-          break;
-        case 'date_joined':
-          av = new Date(a.date_joined).getTime();
-          bv = new Date(b.date_joined).getTime();
-          break;
-        default:
-          av = a.username.toLowerCase();
-          bv = b.username.toLowerCase();
-      }
-      if (av < bv) return -1 * factor;
-      if (av > bv) return 1 * factor;
-      return 0;
-    });
-    return rows;
-  }, [filtered, sortKey, sortDir]);
-
-  const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const currentPage = Math.min(page, pageCount - 1);
-  const pageRows = useMemo(
-    () => sorted.slice(currentPage * pageSize, currentPage * pageSize + pageSize),
-    [sorted, currentPage, pageSize]
-  );
-
-  // ── Selection (over the full filtered set) ────────────────────────────
-
-  const allSelected = filtered.length > 0 && filtered.every((u) => selected.has(String(u.id)));
-  const someSelected = !allSelected && filtered.some((u) => selected.has(String(u.id)));
+  const allSelected = pageRows.length > 0 && pageRows.every((u) => selected.has(String(u.id)));
+  const someSelected = !allSelected && pageRows.some((u) => selected.has(String(u.id)));
   const selectedIds = [...selected];
 
   function toggleAll() {
     setSelected((prev) => {
-      if (filtered.every((u) => prev.has(String(u.id)))) {
-        // deselect the filtered rows
-        const next = new Set(prev);
-        filtered.forEach((u) => next.delete(String(u.id)));
-        return next;
-      }
       const next = new Set(prev);
-      filtered.forEach((u) => next.add(String(u.id)));
+      if (pageRows.every((u) => prev.has(String(u.id)))) {
+        pageRows.forEach((u) => next.delete(String(u.id)));
+      } else {
+        pageRows.forEach((u) => next.add(String(u.id)));
+      }
       return next;
     });
   }
@@ -314,15 +292,11 @@ export default function UsersPage() {
       setSortKey(key);
       setSortDir('asc');
     }
+    setPage(0);
   }
 
   function changePreset(next: PresetKey) {
     setPreset(next);
-    setPage(0);
-  }
-
-  function changeSearch(next: string) {
-    setSearch(next);
     setPage(0);
   }
 
@@ -433,11 +407,11 @@ export default function UsersPage() {
     return <BackofficeErrorState message={t('users.failedLoad')} onRetry={() => refetch()} />;
 
   const canCreate = createForm.username.trim() && createForm.password.trim();
-  const presets: { key: PresetKey; label: string; count: number }[] = [
-    { key: 'all', label: t('users.filterAll'), count: totalCount },
-    { key: 'superuser', label: t('users.filterSuperuser'), count: superuserCount },
-    { key: 'staff', label: t('users.filterStaff'), count: staffCount },
-    { key: 'inactive', label: t('users.filterInactive'), count: inactiveCount },
+  const presets: { key: PresetKey; label: string; count: number | undefined }[] = [
+    { key: 'all', label: t('users.filterAll'), count: summary?.total },
+    { key: 'superuser', label: t('users.filterSuperuser'), count: summary?.superusers },
+    { key: 'staff', label: t('users.filterStaff'), count: summary?.staff },
+    { key: 'inactive', label: t('users.filterInactive'), count: summary?.inactive },
   ];
   const colSpan = 7;
 
@@ -462,7 +436,7 @@ export default function UsersPage() {
               <Users className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold tabular-nums">{totalCount}</p>
+              <p className="text-2xl font-bold tabular-nums">{summary?.total ?? pendingCount}</p>
               <p className="text-xs text-muted-foreground">{t('users.statTotalUsers')}</p>
             </div>
           </CardContent>
@@ -473,7 +447,7 @@ export default function UsersPage() {
               <ShieldCheck className="h-4 w-4 text-violet-600 dark:text-violet-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold tabular-nums">{staffCount}</p>
+              <p className="text-2xl font-bold tabular-nums">{summary?.staff ?? pendingCount}</p>
               <p className="text-xs text-muted-foreground">{t('users.statStaffMembers')}</p>
             </div>
           </CardContent>
@@ -484,7 +458,7 @@ export default function UsersPage() {
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold tabular-nums">{activeCount}</p>
+              <p className="text-2xl font-bold tabular-nums">{summary?.active ?? pendingCount}</p>
               <p className="text-xs text-muted-foreground">{t('users.statActive')}</p>
             </div>
           </CardContent>
@@ -495,12 +469,20 @@ export default function UsersPage() {
               <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold tabular-nums">{inactiveCount}</p>
+              <p className="text-2xl font-bold tabular-nums">{summary?.inactive ?? pendingCount}</p>
               <p className="text-xs text-muted-foreground">{t('users.statInactive')}</p>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {summaryFailed && (
+        <BackofficeInlineError
+          message={t('users.summaryFailed')}
+          retrying={summaryFetching}
+          onRetry={() => refetchSummary()}
+        />
+      )}
 
       {/* ── Table ───────────────────────────────────────────────────── */}
       <div className="space-y-3">
@@ -520,7 +502,7 @@ export default function UsersPage() {
             >
               {p.label}
               <span className="ml-1.5 text-[10px] tabular-nums text-muted-foreground">
-                {p.count}
+                {p.count ?? pendingCount}
               </span>
             </button>
           ))}
@@ -532,8 +514,8 @@ export default function UsersPage() {
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={t('users.searchPlaceholder')}
-              value={search}
-              onChange={(e) => changeSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-8 pr-8 h-9"
             />
           </div>
@@ -780,8 +762,8 @@ export default function UsersPage() {
         {/* Pagination */}
         <DataPagination
           scrollTargetRef={tableRef}
-          totalItems={sorted.length}
-          page={currentPage + 1}
+          totalItems={matchingCount}
+          page={page + 1}
           pageSize={pageSize}
           onPageChange={(p) => setPage(p - 1)}
           onPageSizeChange={(size) => {
@@ -790,7 +772,7 @@ export default function UsersPage() {
           }}
           summary={
             selectedIds.length > 0
-              ? t('users.selectedCount', { selected: selectedIds.length, total: sorted.length })
+              ? t('users.selectedCount', { selected: selectedIds.length, total: matchingCount })
               : undefined
           }
         />

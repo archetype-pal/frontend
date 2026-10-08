@@ -133,6 +133,7 @@ export const backofficeKeys = {
     list: (filters?: Record<string, unknown>) =>
       [...backofficeKeys.users.all(), 'list', filters] as const,
     detail: (id: number) => [...backofficeKeys.users.all(), 'detail', id] as const,
+    summary: () => [...backofficeKeys.users.all(), 'summary'] as const,
   },
 
   // ── Indexing ────────────────────────────────────────────────
