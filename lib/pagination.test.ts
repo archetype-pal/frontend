@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getPageTokens } from './pagination';
+import { getPageTokens, parsePageSize } from './pagination';
 
 describe('getPageTokens', () => {
   it('handles small total pages without ellipsis', () => {
@@ -41,5 +41,13 @@ describe('getPageTokens', () => {
       'ellipsis-end',
       20,
     ]);
+  });
+});
+
+describe('parsePageSize', () => {
+  it('accepts only the offered sizes', () => {
+    expect(parsePageSize('50', 20)).toBe(50);
+    expect(parsePageSize('37', 20)).toBe(20);
+    expect(parsePageSize(null, 20)).toBe(20);
   });
 });
