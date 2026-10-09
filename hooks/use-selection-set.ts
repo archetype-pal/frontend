@@ -56,3 +56,25 @@ export function useSelectionSet<T>(): SelectionSet<T> {
     [selected]
   );
 }
+
+/**
+ * A click toggles one id; a shift click adds every id between the last click
+ * and this one, when both are in the `ids` list passed with the click.
+ */
+export function useRangeSelect<T>(selection: SelectionSet<T>) {
+  const lastRef = React.useRef<T | null>(null);
+  return React.useCallback(
+    (ids: readonly T[], id: T, shiftKey: boolean) => {
+      const from = shiftKey && lastRef.current != null ? ids.indexOf(lastRef.current) : -1;
+      const to = ids.indexOf(id);
+      if (from !== -1 && to !== -1) {
+        const [lo, hi] = from < to ? [from, to] : [to, from];
+        selection.addMany(ids.slice(lo, hi + 1));
+      } else {
+        selection.toggle(id);
+      }
+      lastRef.current = id;
+    },
+    [selection]
+  );
+}

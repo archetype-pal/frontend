@@ -34,7 +34,13 @@
     "unsavedChanges": "Unsaved changes",
     "processing": "Processing...",
     "signIn": "Sign in",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "thumbnailSize": {
+      "label": "Thumbnail size",
+      "compact": "Compact thumbnails",
+      "comfortable": "Comfortable thumbnails",
+      "large": "Large thumbnails"
+    }
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
@@ -2990,11 +2996,29 @@
       "place": "Place"
     },
     "emptyStates": {
+      "images": "No manuscript images associated to this hand.",
       "description": "No description associated to this record."
     },
     "sourceLabel": "Source: {label}",
     "imageAltFallback": "Manuscript image",
     "annotationCount": "{count, plural, one {# Annotation} other {# Annotations}}",
+    "graphs": {
+      "loading": "Loading graphs...",
+      "loadError": "Failed to load graphs.",
+      "empty": "No graphs associated to this hand.",
+      "allographsList": "Allographs List",
+      "allographFallback": "Allograph {id}",
+      "selectGraph": "Select {allograph}, graph {id}",
+      "openGraph": "{allograph}, graph {id}",
+      "selectAll": "Select all",
+      "unselectAll": "Unselect all",
+      "addSelected": "Add selected",
+      "selectedCount": "{count} selected",
+      "addToCollection": "Add to collection",
+      "lightbox": "Lightbox",
+      "exportCsv": "Export as CSV",
+      "clearSelection": "Clear"
+    },
     "metadata": {
       "fallbackTitle": "Hand #{id}",
       "catchFallbackTitle": "Hand",

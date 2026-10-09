@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
+import { useInView } from '@/hooks/use-in-view';
 import { useTabNavigation } from '@/hooks/use-tab-navigation';
 import type {
   HandDetail,
@@ -16,20 +17,42 @@ import type {
   HandGraph,
 } from '@/types/hand-detail';
 import type { BackendGraph } from '@/services/annotations';
-import type { Allograph } from '@/types/allographs';
+import type { AllographSummary } from '@/types/allographs';
+import { fetchAllographSummaries } from '@/services/manuscripts';
 import {
   BookOpen,
   Calendar,
+  Download,
   MapPin,
   PenTool,
   User,
   FileText,
   ImageIcon,
+  Images,
   Grid3X3,
+  ListChecks,
   Loader2,
+  Square,
+  Star,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
 import { sanitizeHtml } from '@/lib/sanitize-html';
+import { cn } from '@/lib/utils';
+import { formatAllographLabel } from '@/lib/allograph-labels';
+import { graphToCollectionItem } from '@/lib/collection-item';
+import { getGraphDetailUrl } from '@/lib/media-url';
+import { downloadCsv, graphsToCsv } from '@/lib/graph-csv';
+import { openLightboxWithItems } from '@/lib/lightbox-utils';
+import { useRangeSelect, useSelectionSet } from '@/hooks/use-selection-set';
+import { useCollection } from '@/contexts/collection-context';
+import { Button } from '@/components/ui/button';
+import {
+  DENSITY_THUMB_PX,
+  DENSITY_WIDTH,
+  DensityControl,
+  useThumbDensity,
+  type ThumbDensity,
+} from '@/components/manuscript/thumb-density';
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { isSearchCategoryEnabled } from '@/lib/site-features';
@@ -44,26 +67,69 @@ interface HandViewerProps {
   manuscript: HandManuscript | null;
 }
 
-/** A single graph thumbnail that resolves its IIIF crop URL. */
-function GraphThumbnail({ graph }: { graph: HandGraph }) {
-  const imageUrl = useIiifThumbnailUrl(graph.image_iiif, graph.coordinates);
+/** A single graph thumbnail that resolves its IIIF crop URL and opens the graph on its image. */
+function GraphThumbnail({
+  graph,
+  density,
+  isSelected,
+  onToggleSelect,
+}: {
+  graph: HandGraph;
+  density: ThumbDensity;
+  isSelected: boolean;
+  onToggleSelect: (shiftKey: boolean) => void;
+}) {
+  const t = useTranslations('hand.graphs');
+  const linkRef = useRef<HTMLAnchorElement>(null);
+  const inView = useInView(linkRef);
+  // No crop lookup until the thumbnail nears the screen: the hook skips an empty URL.
+  const imageUrl = useIiifThumbnailUrl(
+    inView ? graph.image_iiif : '',
+    graph.coordinates,
+    DENSITY_THUMB_PX[density]
+  );
 
   return (
-    <div className="relative w-20 h-20 border rounded bg-white overflow-hidden group/thumb">
-      {imageUrl ? (
-        <Image
-          src={imageUrl}
-          alt={graph.allograph_name}
-          fill
-          className="object-contain transition-transform duration-200 group-hover/thumb:scale-110"
-          sizes="80px"
-          unoptimized
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
-          <ImageIcon className="h-5 w-5" />
-        </div>
-      )}
+    <div className="relative group/thumb">
+      <Link
+        ref={linkRef}
+        href={getGraphDetailUrl(graph) ?? '#'}
+        aria-label={t('openGraph', { allograph: graph.allograph_name, id: graph.id })}
+        className={cn(
+          'relative block aspect-square border rounded bg-white overflow-hidden',
+          DENSITY_WIDTH[density],
+          isSelected && 'ring-2 ring-primary ring-offset-2'
+        )}
+      >
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={graph.allograph_name}
+            fill
+            className="object-contain transition-transform duration-200 group-hover/thumb:scale-110"
+            sizes="14rem"
+            unoptimized
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
+            <ImageIcon className="h-5 w-5" />
+          </div>
+        )}
+      </Link>
+      <button
+        type="button"
+        onClick={(e) => onToggleSelect(e.shiftKey)}
+        aria-pressed={isSelected}
+        aria-label={t('selectGraph', { allograph: graph.allograph_name, id: graph.id })}
+        className={cn(
+          'absolute left-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md border text-xs shadow-sm transition',
+          isSelected
+            ? 'border-primary bg-primary text-primary-foreground'
+            : 'border-foreground/30 bg-background/95 text-transparent hover:border-primary hover:text-primary group-hover/thumb:text-muted-foreground'
+        )}
+      >
+        ✓
+      </button>
     </div>
   );
 }
@@ -72,23 +138,51 @@ function GraphThumbnail({ graph }: { graph: HandGraph }) {
 
 function enrichGraphs(
   backendGraphs: BackendGraph[],
-  allographs: Allograph[],
-  images: HandImage[]
+  allographs: AllographSummary[],
+  images: HandImage[],
+  hand: HandDetail,
+  shelfmark: string,
+  fallbackLabel: (allographId: number) => string
 ): HandGraph[] {
-  const allographMap = new Map(allographs.map((a) => [a.id, a.name]));
-  const imageMap = new Map(images.map((img) => [img.id, img.iiif_image]));
+  // Same labels as the image Annotations tab, on the page and in what is collected or exported.
+  const allographLabelById = new Map(allographs.map((a) => [a.id, formatAllographLabel(a)]));
+  for (const g of backendGraphs) {
+    if (typeof g.allograph === 'number' && !allographLabelById.has(g.allograph)) {
+      allographLabelById.set(g.allograph, fallbackLabel(g.allograph));
+    }
+  }
+  const imageMap = new Map(images.map((img) => [img.id, img]));
+  const collectionLabels = {
+    allographLabelById,
+    handNameById: new Map([[hand.id, hand.name]]),
+  };
 
   return backendGraphs
     .map((g) => {
-      const iiifImage = imageMap.get(g.item_image);
-      if (!iiifImage || typeof g.allograph !== 'number') return null;
+      const image = imageMap.get(g.item_image);
+      const iiifImage = image?.iiif_image;
+      if (!image || !iiifImage || typeof g.allograph !== 'number') return null;
 
       return {
         id: g.id,
-        allograph_name: allographMap.get(g.allograph) ?? `Allograph ${g.allograph}`,
+        allograph_name: allographLabelById.get(g.allograph) ?? fallbackLabel(g.allograph),
         allograph_id: g.allograph,
         image_iiif: iiifImage.endsWith('/info.json') ? iiifImage : `${iiifImage}/info.json`,
         coordinates: JSON.stringify(g.annotation),
+        item_part: image.item_part,
+        item_image: image.id,
+        collection_item: graphToCollectionItem(
+          g,
+          {
+            itemPartId: image.item_part,
+            itemImageId: image.id,
+            iiifImage,
+            locus: image.locus ?? '',
+            shelfmark,
+          },
+          collectionLabels
+        ),
+        graph: g,
       };
     })
     .filter((g): g is HandGraph => g !== null);
@@ -97,46 +191,57 @@ function enrichGraphs(
 type GraphsState =
   { status: 'loading' } | { status: 'loaded'; graphs: HandGraph[] } | { status: 'error' };
 
-function useHandGraphs(handId: number, images: HandImage[], enabled: boolean): GraphsState {
+function useHandGraphs(
+  hand: HandDetail,
+  images: HandImage[],
+  shelfmark: string,
+  enabled: boolean
+): { state: GraphsState; retry: () => void } {
+  const t = useTranslations('hand.graphs');
   const [state, setState] = useState<GraphsState>({ status: 'loading' });
   const fetchedRef = useRef(false);
 
-  useEffect(() => {
-    if (!enabled || fetchedRef.current) return;
-    fetchedRef.current = true;
-
-    const controller = new AbortController();
-
+  // Never cancelled: the effect below loads once, so a cancelled request would not be retried.
+  const load = useCallback(() => {
     Promise.all([
-      apiFetch(`/api/v1/manuscripts/graphs/?hand=${handId}`, {
-        signal: controller.signal,
-      }).then((r) => (r.ok ? r.json() : [])),
-      apiFetch(`/api/v1/symbols_structure/allographs/`, {
-        signal: controller.signal,
-      }).then((r) => (r.ok ? r.json() : [])),
+      apiFetch(`/api/v1/manuscripts/graphs/?hand=${hand.id}`).then((r) => {
+        if (!r.ok) throw new Error('Failed to fetch graphs');
+        return r.json();
+      }),
+      // Labels only: without them the graphs still show, under a fallback label.
+      fetchAllographSummaries().catch(() => []),
     ])
       .then(([rawGraphs, allographs]) => {
         const graphsArr: BackendGraph[] = Array.isArray(rawGraphs)
           ? rawGraphs
           : (rawGraphs?.results ?? []);
-        const graphs = enrichGraphs(graphsArr, allographs, images);
+        const graphs = enrichGraphs(graphsArr, allographs, images, hand, shelfmark, (id) =>
+          t('allographFallback', { id })
+        );
         setState({ status: 'loaded', graphs });
       })
-      .catch((err) => {
-        if (err?.name === 'AbortError') return;
-        setState({ status: 'error' });
-      });
+      .catch(() => setState({ status: 'error' }));
+  }, [hand, images, shelfmark, t]);
 
-    return () => controller.abort();
-  }, [enabled, handId, images]);
+  useEffect(() => {
+    if (!enabled || fetchedRef.current) return;
+    fetchedRef.current = true;
+    load();
+  }, [enabled, load]);
 
-  return state;
+  const retry = useCallback(() => {
+    setState({ status: 'loading' });
+    load();
+  }, [load]);
+
+  return { state, retry };
 }
 
 // ── Main component ──────────────────────────────────────────────────
 
 export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps) {
   const t = useTranslations('hand');
+  const tCommon = useTranslations('common');
   // `?? []`: an API that predates backend#184 still sends a single `description`.
   const descriptions = hand.descriptions ?? [];
   const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB);
@@ -148,11 +253,53 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
     manuscript?.display_label ?? manuscript?.current_item?.shelfmark ?? (hand.shelfmark || null);
 
   // Lazy-load graphs only when the Graphs tab is active
-  const graphsState = useHandGraphs(hand.id, images, activeTab === 'graphs');
+  const { state: graphsState, retry: retryGraphs } = useHandGraphs(
+    hand,
+    images,
+    manuscriptLabel ?? '',
+    activeTab === 'graphs'
+  );
   const graphs = useMemo(
     () => (graphsState.status === 'loaded' ? graphsState.graphs : []),
     [graphsState]
   );
+
+  const [density, changeDensity] = useThumbDensity();
+  const selection = useSelectionSet<number>();
+  const selectGraph = useRangeSelect(selection);
+  const nothingSelected = selection.selected.size === 0;
+  const { addItem, isInCollection } = useCollection();
+  const addSelectedToCollection = useCallback(
+    (candidates: HandGraph[]) => {
+      for (const g of candidates) {
+        if (!selection.selected.has(g.id) || isInCollection(g.id, 'graph')) continue;
+        addItem(g.collection_item);
+      }
+    },
+    [addItem, isInCollection, selection.selected]
+  );
+  const exportSelected = useCallback(() => {
+    const locusByImage = new Map(images.map((img) => [img.id, img.locus ?? '']));
+    const rows = graphs
+      .filter((g) => selection.selected.has(g.id))
+      .map((g) => ({
+        graph: g.graph,
+        allograph: g.collection_item.allograph ?? '',
+        hand: hand.name,
+        image: String(g.item_image),
+        locus: locusByImage.get(g.item_image) ?? '',
+      }));
+    const csv = graphsToCsv(rows, [
+      { header: 'image', value: (r) => r.image },
+      { header: 'locus', value: (r) => r.locus },
+    ]);
+    downloadCsv(`hand-${hand.id}-graphs.csv`, csv);
+  }, [graphs, hand, images, selection.selected]);
+  const sendSelectionToLightbox = useCallback(() => {
+    const ids = Array.from(selection.selected);
+    if (ids.length === 0) return;
+    openLightboxWithItems(ids.map((id) => ({ id, type: 'graph' as const })));
+  }, [selection.selected]);
 
   // Group graphs by allograph, preserving order of first appearance
   const graphGroups = useMemo(() => {
@@ -380,7 +527,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
             <div className="rounded-lg border bg-card p-6">
               <div className="flex items-center gap-2 text-muted-foreground bg-muted/50 rounded-md p-4">
                 <ImageIcon className="h-4 w-4" />
-                <span>No manuscript images associated to this hand.</span>
+                <span>{t('emptyStates.images')}</span>
               </div>
             </div>
           )}
@@ -391,23 +538,75 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
           {graphsState.status === 'loading' ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">Loading graphs...</span>
+              <span className="ml-2 text-sm text-muted-foreground">{t('graphs.loading')}</span>
             </div>
           ) : graphsState.status === 'error' ? (
             <div className="rounded-lg border bg-card p-6">
               <div className="flex items-center gap-2 text-destructive bg-destructive/10 rounded-md p-4">
                 <Grid3X3 className="h-4 w-4" />
-                <span>Failed to load graphs. Please try again later.</span>
+                <span>{t('graphs.loadError')}</span>
+                <Button size="sm" variant="outline" className="ml-auto" onClick={retryGraphs}>
+                  {tCommon('tryAgain')}
+                </Button>
               </div>
             </div>
           ) : graphs.length > 0 ? (
             <div className="space-y-6">
               {/* Hand name heading */}
-              <h2 className="text-xl font-semibold">{hand.name}</h2>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-xl font-semibold">{hand.name}</h2>
+                <DensityControl density={density} onChange={changeDensity} />
+              </div>
+
+              {/* Always rendered, so the first selection does not push the grid down. */}
+              <div className="sticky top-[var(--site-header-h,0px)] z-30 flex flex-wrap items-center gap-2 rounded-md border bg-card/95 px-4 py-3 text-sm shadow-sm backdrop-blur">
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 font-medium text-primary">
+                  {t('graphs.selectedCount', { count: selection.selected.size })}
+                </span>
+                <Button
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={nothingSelected}
+                  onClick={() => addSelectedToCollection(graphs)}
+                >
+                  <Star className="h-4 w-4" />
+                  {t('graphs.addToCollection')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={nothingSelected}
+                  onClick={sendSelectionToLightbox}
+                >
+                  <Images className="h-4 w-4" />
+                  {t('graphs.lightbox')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={nothingSelected}
+                  onClick={exportSelected}
+                >
+                  <Download className="h-4 w-4" />
+                  {t('graphs.exportCsv')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={nothingSelected}
+                  onClick={selection.clear}
+                >
+                  {t('graphs.clearSelection')}
+                </Button>
+              </div>
 
               {/* Allographs List navigation */}
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Allographs List</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                  {t('graphs.allographsList')}
+                </h3>
                 <div className="flex flex-wrap gap-1.5">
                   {graphGroups.map((group) => (
                     <button
@@ -425,14 +624,71 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
               <div className="space-y-8">
                 {graphGroups.map((group) => {
                   const key = `${group.allograph_id}-${group.allograph_name}`;
+                  const groupIds = group.graphs.map((g) => g.id);
+                  const groupSelectedCount = groupIds.filter((id) =>
+                    selection.selected.has(id)
+                  ).length;
+                  const allSelected =
+                    groupSelectedCount > 0 && groupSelectedCount === groupIds.length;
+                  // Number only: aria-describedby splits on spaces, and labels contain them.
+                  const headingId = `allograph-heading-${group.allograph_id}`;
+                  // The scroll margin clears the sticky header and the selection bar.
                   return (
-                    <section key={key} id={`allograph-${key}`} className="scroll-mt-4">
-                      <div className="border-b pb-2 mb-4">
-                        <h4 className="text-base font-semibold">{group.allograph_name}</h4>
+                    <section
+                      key={key}
+                      id={`allograph-${key}`}
+                      className="scroll-mt-[calc(var(--site-header-h,0px)+5rem)]"
+                    >
+                      <div className="border-b pb-2 mb-4 flex flex-wrap items-center gap-3">
+                        <h4 id={headingId} className="text-base font-semibold">
+                          {group.allograph_name}
+                        </h4>
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 gap-1.5"
+                            aria-describedby={headingId}
+                            onClick={() =>
+                              allSelected
+                                ? selection.removeMany(groupIds)
+                                : selection.addMany(groupIds)
+                            }
+                          >
+                            {allSelected ? (
+                              <>
+                                <Square className="h-3.5 w-3.5" />
+                                {t('graphs.unselectAll')}
+                              </>
+                            ) : (
+                              <>
+                                <ListChecks className="h-3.5 w-3.5" />
+                                {t('graphs.selectAll')}
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 gap-1.5"
+                            aria-describedby={headingId}
+                            disabled={groupSelectedCount === 0}
+                            onClick={() => addSelectedToCollection(group.graphs)}
+                          >
+                            <Star className="h-3.5 w-3.5" />
+                            {t('graphs.addSelected')}
+                          </Button>
+                        </div>
                       </div>
                       <div className="flex flex-wrap gap-3">
                         {group.graphs.map((graph) => (
-                          <GraphThumbnail key={graph.id} graph={graph} />
+                          <GraphThumbnail
+                            key={graph.id}
+                            graph={graph}
+                            density={density}
+                            isSelected={selection.selected.has(graph.id)}
+                            onToggleSelect={(shiftKey) => selectGraph(groupIds, graph.id, shiftKey)}
+                          />
                         ))}
                       </div>
                     </section>
@@ -444,7 +700,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
             <div className="rounded-lg border bg-card p-6">
               <div className="flex items-center gap-2 text-muted-foreground bg-muted/50 rounded-md p-4">
                 <Grid3X3 className="h-4 w-4" />
-                <span>No graphs associated to this hand.</span>
+                <span>{t('graphs.empty')}</span>
               </div>
             </div>
           )}

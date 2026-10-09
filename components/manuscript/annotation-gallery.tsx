@@ -19,16 +19,17 @@ import {
 
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import { useInView } from '@/hooks/use-in-view';
-import { useSelectionSet, type SelectionSet } from '@/hooks/use-selection-set';
+import { useRangeSelect, useSelectionSet, type SelectionSet } from '@/hooks/use-selection-set';
 import { useAuth } from '@/contexts/auth-context';
-import { useCollection, type CollectionItem } from '@/contexts/collection-context';
+import { useCollection } from '@/contexts/collection-context';
 import type { Allograph, AllographSummary } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 import type { BackendGraph } from '@/services/annotations';
 import { deleteViewerAnnotation } from '@/services/annotations';
 import { fetchAllographs } from '@/services/manuscripts';
 import { formatAllographLabel } from '@/lib/allograph-labels';
-import { escapeCsvField } from '@/lib/backoffice/csv-escape';
+import { graphToCollectionItem } from '@/lib/collection-item';
+import { downloadCsv, graphsToCsv } from '@/lib/graph-csv';
 import { openLightboxWithItems } from '@/lib/lightbox-utils';
 import { toast } from 'sonner';
 import { sortHandsByPriority } from '@/lib/hand-ordering';
@@ -42,7 +43,6 @@ import {
   filtersFromParams,
   filtersToQuery,
   hasActiveFilters,
-  isGraphDescribed,
 } from '@/lib/annotation-gallery-filters';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,13 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnnotationEditDialog } from '@/components/manuscript/annotation-edit-dialog';
+import {
+  DENSITY_THUMB_PX,
+  DENSITY_WIDTH,
+  DensityControl,
+  useThumbDensity,
+  type ThumbDensity,
+} from '@/components/manuscript/thumb-density';
 import {
   GalleryFilterChips,
   GalleryFilterControls,
@@ -166,16 +173,7 @@ export function AnnotationGallery({
   const canEdit = user?.is_staff ?? false;
 
   // Thumbnail density (G6.4), persisted across sessions.
-  const [density, setDensity] = React.useState<ThumbDensity>('comfortable');
-  React.useEffect(() => {
-    const saved = window.localStorage.getItem('annotation-gallery-density');
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed locally-owned state from localStorage after mount; deferring to an effect (vs. a lazy useState initializer) is required to avoid an SSR/client hydration mismatch, since `window` is unavailable during server render.
-    if (saved === 'compact' || saved === 'comfortable' || saved === 'large') setDensity(saved);
-  }, []);
-  const changeDensity = React.useCallback((next: ThumbDensity) => {
-    setDensity(next);
-    window.localStorage.setItem('annotation-gallery-density', next);
-  }, []);
+  const [density, changeDensity] = useThumbDensity();
 
   // Optimistically removed graph ids (G3.1) — hidden immediately on delete.
   const [deletedIds, setDeletedIds] = React.useState<Set<number>>(() => new Set());
@@ -432,45 +430,14 @@ export function AnnotationGallery({
   // Export the selection (or, if nothing selected, the filtered view) as CSV (G4.3).
   const exportGraphs = React.useCallback(
     (rows: BackendGraph[]) => {
-      const headers = [
-        'id',
-        'allograph',
-        'hand',
-        'described',
-        'components',
-        'features',
-        'positions',
-      ];
-      const lines = rows.map((g) => {
-        const components = (g.graphcomponent_set ?? []).map(
-          (c) => c.component_name ?? `#${c.component}`
-        );
-        const features = (g.graphcomponent_set ?? []).flatMap((c) =>
-          (c.feature_details ?? []).map((f) => f.name)
-        );
-        const positions = (g.position_details ?? []).map((p) => p.name);
-        return [
-          String(g.id),
-          allographLabelById.get(g.allograph ?? -1) ?? '',
-          g.hand === null || g.hand === undefined ? 'Unattributed' : handLabel(g.hand),
-          isGraphDescribed(g) ? 'yes' : 'no',
-          components.join('; '),
-          features.join('; '),
-          positions.join('; '),
-        ]
-          .map((v) => escapeCsvField(String(v)))
-          .join(',');
-      });
-      const csv = [headers.map(escapeCsvField).join(','), ...lines].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `annotations-${imageId}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const csv = graphsToCsv(
+        rows.map((g) => ({
+          graph: g,
+          allograph: allographLabelById.get(g.allograph ?? -1) ?? '',
+          hand: g.hand === null || g.hand === undefined ? 'Unattributed' : handLabel(g.hand),
+        }))
+      );
+      downloadCsv(`annotations-${imageId}.csv`, csv);
     },
     [allographLabelById, handLabel, imageId]
   );
@@ -483,7 +450,7 @@ export function AnnotationGallery({
         if (!selection.selected.has(g.id)) continue;
         if (isInCollection(g.id, 'graph')) continue;
         addItem(
-          buildCollectionItem(
+          graphToCollectionItem(
             g,
             { itemPartId, itemImageId, iiifImage, locus, shelfmark },
             { allographLabelById, handNameById }
@@ -875,65 +842,9 @@ function GalleryToolbar({
   );
 }
 
-// Thumbnail-size segmented control (G6.4).
-function DensityControl({
-  density,
-  onChange,
-}: {
-  density: ThumbDensity;
-  onChange: (value: ThumbDensity) => void;
-}) {
-  const options: { value: ThumbDensity; label: string; title: string }[] = [
-    { value: 'compact', label: 'S', title: 'Compact thumbnails' },
-    { value: 'comfortable', label: 'M', title: 'Comfortable thumbnails' },
-    { value: 'large', label: 'L', title: 'Large thumbnails' },
-  ];
-  return (
-    <div
-      role="radiogroup"
-      aria-label="Thumbnail size"
-      className="inline-flex overflow-hidden rounded-md border"
-    >
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          role="radio"
-          aria-checked={density === opt.value}
-          title={opt.title}
-          onClick={() => onChange(opt.value)}
-          className={cn(
-            'border-l px-2.5 py-1.5 text-xs font-medium transition first:border-l-0',
-            density === opt.value
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
-          )}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Per-hand section
 // ---------------------------------------------------------------------------
-
-export type ThumbDensity = 'compact' | 'comfortable' | 'large';
-
-// Tailwind width classes per density (G6.4). Footer slot widths must match the
-// thumb so the grid stays aligned.
-const DENSITY_WIDTH: Record<ThumbDensity, string> = {
-  compact: 'w-28',
-  comfortable: 'w-[10.5rem]',
-  large: 'w-56',
-};
-const DENSITY_THUMB_PX: Record<ThumbDensity, number> = {
-  compact: 320,
-  comfortable: 500,
-  large: 700,
-};
 
 // Stable, repeatable accent palette for visually separating hands (G6.9).
 const HAND_ACCENTS = [
@@ -1073,24 +984,14 @@ function AllographGroupSection({
   ).length;
   const allSelected = groupSelectedCount > 0 && groupSelectedCount === allographGroup.graphs.length;
 
-  // Anchor for shift-click range selection (G6.6): the last graph the user
-  // toggled within this group.
-  const lastSelectedRef = React.useRef<number | null>(null);
-  const handleThumbSelect = (graphId: number, shiftKey: boolean) => {
-    const ids = allographGroup.graphs.map((g) => g.id);
-    if (shiftKey && lastSelectedRef.current != null) {
-      const from = ids.indexOf(lastSelectedRef.current);
-      const to = ids.indexOf(graphId);
-      if (from !== -1 && to !== -1) {
-        const [lo, hi] = from < to ? [from, to] : [to, from];
-        selection.addMany(ids.slice(lo, hi + 1));
-        lastSelectedRef.current = graphId;
-        return;
-      }
-    }
-    selection.toggle(graphId);
-    lastSelectedRef.current = graphId;
-  };
+  // Shift-click range selection (G6.6), anchored within this group.
+  const selectInGroup = useRangeSelect(selection);
+  const handleThumbSelect = (graphId: number, shiftKey: boolean) =>
+    selectInGroup(
+      allographGroup.graphs.map((g) => g.id),
+      graphId,
+      shiftKey
+    );
 
   // Arrow-key roving across the thumb grid (G3.4 / G5.2). Left/Right/Home/End
   // move focus between cells' focusable controls; vertical movement is left to
@@ -1411,11 +1312,12 @@ function LoadedThumbImage({
     );
   }
   return (
+    // Fills the box: small crops arrive at their own size, so S/M/L relies on this scaling.
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={thumb}
       alt={`Annotation ${graph.id}`}
-      className="max-h-full max-w-full object-contain"
+      className="h-full w-full object-contain"
       loading="lazy"
     />
   );
@@ -1512,42 +1414,4 @@ function Kbd({ className, children }: { className?: string; children: React.Reac
       {children}
     </kbd>
   );
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-interface CollectionContext {
-  itemPartId: number;
-  itemImageId: number;
-  iiifImage: string;
-  locus: string;
-  shelfmark: string;
-}
-
-interface CollectionLabels {
-  allographLabelById: ReadonlyMap<number, string>;
-  handNameById: ReadonlyMap<number, string>;
-}
-
-function buildCollectionItem(
-  graph: BackendGraph,
-  ctx: CollectionContext,
-  labels: CollectionLabels
-): CollectionItem {
-  return {
-    id: graph.id,
-    type: 'graph',
-    item_part: ctx.itemPartId,
-    item_image: ctx.itemImageId,
-    image_iiif: ctx.iiifImage,
-    coordinates: JSON.stringify(graph.annotation),
-    annotation_type: graph.annotation_type,
-    allograph:
-      graph.allograph === null ? undefined : labels.allographLabelById.get(graph.allograph),
-    hand_name: graph.hand === null ? undefined : labels.handNameById.get(graph.hand),
-    shelfmark: ctx.shelfmark,
-    locus: ctx.locus,
-  };
 }
