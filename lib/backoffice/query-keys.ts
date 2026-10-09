@@ -34,6 +34,9 @@ export const backofficeKeys = {
     list: (filters?: Record<string, unknown>) =>
       [...backofficeKeys.manuscripts.all(), 'list', filters] as const,
     detail: (id: number) => [...backofficeKeys.manuscripts.all(), 'detail', id] as const,
+    /** ItemPart id → its HistoricalItem id (public deep links carry the part id). */
+    byItemPart: (itemPartId: number) =>
+      [...backofficeKeys.manuscripts.all(), 'by-item-part', itemPartId] as const,
   },
   currentItems: {
     all: () => [...backofficeKeys.all, 'currentItems'] as const,
@@ -51,6 +54,9 @@ export const backofficeKeys = {
   },
   dates: {
     all: () => [...backofficeKeys.all, 'dates'] as const,
+  },
+  places: {
+    all: () => [...backofficeKeys.all, 'places'] as const,
   },
 
   // ── Publications ───────────────────────────────────────────

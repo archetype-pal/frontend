@@ -13,6 +13,7 @@ import type {
   HistoricalItemDescription,
   MsDescArea,
   BackofficeDate,
+  BackofficePlace,
   CurrentItemOption,
   ItemPartNested,
 } from '@/types/backoffice';
@@ -86,6 +87,14 @@ const itemPartsCrud = createCrudService<PaginatedResponse<ItemPartNested>, ItemP
 export const createItemPart = itemPartsCrud.create;
 export const updateItemPart = itemPartsCrud.update;
 export const deleteItemPart = itemPartsCrud.remove;
+
+/** The HistoricalItem an ItemPart belongs to — the id the manuscript workspace is keyed by. */
+export async function getItemPartHistoricalItemId(itemPartId: number): Promise<number> {
+  const part = await backofficeGet<{ historical_item: number }>(
+    `/api/v1/manuscripts/management/item-parts/${itemPartId}/`
+  );
+  return part.historical_item;
+}
 
 // ── Current Items ────────────────────────────────────────────────────────
 
@@ -188,3 +197,15 @@ export function getDates() {
 export const createDate = datesCrud.create;
 export const updateDate = datesCrud.update;
 export const deleteDate = datesCrud.remove;
+
+// ── Places ──────────────────────────────────────────────────────────────
+
+const placesCrud = createCrudService<BackofficePlace>('/api/v1/management/common/places/');
+
+export function getPlaces() {
+  return backofficeGet<BackofficePlace[]>('/api/v1/management/common/places/');
+}
+
+export const createPlace = placesCrud.create;
+export const updatePlace = placesCrud.update;
+export const deletePlace = placesCrud.remove;

@@ -92,7 +92,7 @@ const HAND = {
   item_part: 22,
   date: null,
   place: null,
-  description: null,
+  descriptions: [],
 } as HandDetail;
 
 const IMAGES: HandImage[] = [

@@ -24,6 +24,12 @@ interface EntityEditorConfig<TDetail, TForm extends object> {
   listRoute: string;
   /** Entity label for toasts, e.g. "Scribe". */
   label: string;
+  /**
+   * Unsaved edits held outside `form` — e.g. a child section that saves its own
+   * rows — so the leave-page guard covers them too. One guard, not two: two
+   * would each prompt on the same navigation.
+   */
+  externalDirty?: boolean;
 }
 
 /**
@@ -79,7 +85,7 @@ export function useEntityEditor<TDetail, TForm extends object>(
     setDirty(true);
   };
 
-  useUnsavedGuard(dirty);
+  useUnsavedGuard(dirty || !!config.externalDirty);
 
   const invalidate = () => {
     for (const key of config.invalidateKeys) {

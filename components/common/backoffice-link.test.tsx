@@ -24,12 +24,12 @@ describe('BackofficeLink', () => {
     ).toBe('');
   });
 
-  it('links an item-part to its backoffice workspace when logged in (image-viewer "Edit in Backoffice")', () => {
+  it('links an item-part through the backoffice resolver when logged in (image-viewer "Edit in Backoffice")', () => {
     authState.token = 'tok';
     const html = renderToStaticMarkup(
       <BackofficeLink kind="item-part" id={706} label="Edit in Backoffice" />
     );
-    expect(html).toContain('href="/backoffice/manuscripts/706"');
+    expect(html).toContain('href="/backoffice/item-parts/706"');
     expect(html).toContain('Edit in Backoffice');
   });
 

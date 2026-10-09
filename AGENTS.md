@@ -55,6 +55,11 @@ Preferred (containerised — each runs inside the dev container):
 > lint, tsc and tests pass. For intentional growth: `just bundle-budget-update`,
 > then commit the refreshed budget file.
 
+> **Test environments are picked by file name** (`vitest.config.ts`).
+> `*.test.ts` runs in plain Node; `*.test.tsx` and `hooks/**` tests run in
+> jsdom under `pool: 'vmThreads'`. A `.ts` test outside `hooks/` that needs a
+> DOM must start with `/** @vitest-environment jsdom */`.
+
 Host-native equivalents:
 
 - `pnpm dev`

@@ -4,6 +4,7 @@ import type {
   PaginatedResponse,
   AdminScribeListItem,
   AdminHandListItem,
+  HandDescription,
   Script,
 } from '@/types/backoffice';
 
@@ -33,6 +34,17 @@ export const getHand = handsCrud.get;
 export const createHand = handsCrud.create;
 export const updateHand = handsCrud.update;
 export const deleteHand = handsCrud.remove;
+
+// ── Hand descriptions ──────────────────────────────────────────────────
+// Writes only — reads arrive nested per hand on the Hand detail endpoint.
+
+const handDescriptionsCrud = createCrudService<HandDescription>(
+  '/api/v1/management/scribes/hand-descriptions/'
+);
+
+export const createHandDescription = handDescriptionsCrud.create;
+export const updateHandDescription = handDescriptionsCrud.update;
+export const deleteHandDescription = handDescriptionsCrud.remove;
 
 // ── Scripts ─────────────────────────────────────────────────────────────
 
