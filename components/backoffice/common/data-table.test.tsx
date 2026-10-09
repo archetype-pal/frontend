@@ -90,6 +90,113 @@ describe('DataTable server sorting and export', () => {
 
     expect(await downloaded()).toBe('name\nBeta\nAlpha\nGamma');
   });
+
+  it('exports only the ticked rows, including one ticked on an earlier page', async () => {
+    const downloaded = stubDownload();
+    const fetchAllRows = vi.fn();
+    const table = (data: Row[]) => (
+      <DataTable
+        columns={columns}
+        data={data}
+        pagination={false}
+        enableRowSelection
+        enableExport
+        fetchAllRows={fetchAllRows}
+      />
+    );
+    const { rerender } = render(table([rows[0]]));
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /select row/i }));
+    rerender(table([rows[1]]));
+    fireEvent.click(screen.getByRole('button', { name: /export 1 selected/i }));
+
+    expect(await downloaded()).toBe('name\nBeta');
+    expect(fetchAllRows).not.toHaveBeenCalled();
+  });
+
+  it('stops a running export when the table goes away', async () => {
+    const downloaded = stubDownload();
+    let reportPage: (loaded: number, total: number) => void = () => {};
+    let finishPage: () => void = () => {};
+    const fetchAllRows = vi.fn(async (onProgress: (loaded: number, total: number) => void) => {
+      reportPage = onProgress;
+      await new Promise<void>((resolve) => (finishPage = resolve));
+      onProgress(100, 300);
+      return rows;
+    });
+    const { unmount } = render(
+      <DataTable
+        columns={columns}
+        data={rows}
+        pagination={false}
+        enableExport
+        fetchAllRows={fetchAllRows}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /export/i }));
+    await waitFor(() => expect(fetchAllRows).toHaveBeenCalled());
+    unmount();
+    finishPage();
+
+    await expect(downloaded()).rejects.toThrow();
+    expect(() => reportPage(200, 300)).toThrow('unmounted');
+  });
+
+  it('offers Export only once a row is ticked when limited to the selection', () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={rows}
+        pagination={false}
+        enableRowSelection
+        enableExport
+        exportSelectionOnly
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: /export/i })).toBeNull();
+    fireEvent.click(screen.getAllByRole('checkbox', { name: /select row/i })[0]);
+    expect(screen.queryByRole('button', { name: /export 1 selected/i })).not.toBeNull();
+  });
+});
+
+describe('DataTable bulk actions', () => {
+  const rows: Row[] = [
+    { id: 1, name: 'Beta' },
+    { id: 2, name: 'Alpha' },
+  ];
+  const table = (action: (ids: string[], clearSelection: () => void) => void) => (
+    <DataTable
+      columns={columns}
+      data={rows}
+      pagination={false}
+      enableRowSelection
+      enableExport
+      bulkActions={[{ label: 'Run', action }]}
+    />
+  );
+
+  it('clears the ticks when the action calls clearSelection', () => {
+    const action = vi.fn((_ids: string[], clearSelection: () => void) => clearSelection());
+    render(table(action));
+
+    fireEvent.click(screen.getAllByRole('checkbox', { name: /select row/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(action).toHaveBeenCalledWith(['1'], expect.any(Function));
+    expect(screen.queryByText('1 selected')).toBeNull();
+    expect(screen.queryByRole('button', { name: /export 1 selected/i })).toBeNull();
+  });
+
+  it('keeps the ticks when the action does not clear them', () => {
+    render(table(vi.fn()));
+
+    fireEvent.click(screen.getAllByRole('checkbox', { name: /select row/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(screen.queryByText('1 selected')).not.toBeNull();
+  });
 });
 
 describe('DataTable client pagination', () => {
