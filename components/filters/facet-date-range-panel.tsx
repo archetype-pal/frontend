@@ -151,27 +151,29 @@ export function FacetDateRangePanel({
   }, [sliderValue, precision, year, handleSearchSubmit]);
 
   return (
-    <div id={id} className="overflow-hidden rounded-lg border border-border/60 bg-card/50">
-      <button
-        type="button"
-        aria-expanded={expanded}
-        aria-label={expanded ? 'Collapse panel' : 'Expand panel'}
-        onClick={() => setExpanded((prev) => !prev)}
-        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
-      >
-        <h4 className="font-serif text-[13px] font-semibold tracking-tight text-foreground">
-          {title}
-        </h4>
-        <ChevronDown
-          className={cn(
-            'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
-            expanded ? 'rotate-0' : '-rotate-90'
-          )}
-        />
-      </button>
+    <div id={id} className="overflow-clip rounded-lg border border-border/60 bg-card/50">
+      <div className="sticky -top-3 z-[15] bg-card">
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Collapse panel' : 'Expand panel'}
+          onClick={() => setExpanded((prev) => !prev)}
+          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
+        >
+          <h4 className="font-serif text-[13px] font-semibold tracking-tight text-foreground">
+            {title}
+          </h4>
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+              expanded ? 'rotate-0' : '-rotate-90'
+            )}
+          />
+        </button>
+      </div>
 
       {expanded && (
-        <div className="max-h-56 space-y-4 overflow-y-auto border-t border-border/50 p-3">
+        <div className="space-y-4 border-t border-border/50 p-3">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input

@@ -43,7 +43,6 @@ export function FacetPanel({
     'name-asc'
   );
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [expandedList, setExpandedList] = React.useState(false);
 
   // Excluded values are surfaced in their own strip, so drop them from the
   // selectable list — otherwise a value could read as both excludable and
@@ -77,20 +76,6 @@ export function FacetPanel({
     return sortedItems.filter((item) => item.label.toLowerCase().includes(q));
   }, [searchTerm, sortedItems]);
 
-  // Reset the "show all" collapse whenever the search query, sort order, or
-  // panel identity changes. Adjusting state during render (per React docs:
-  // "You Might Not Need an Effect") avoids a cascading second render that an
-  // effect would cause, and keeps the visible slice in sync within the same pass.
-  const [resetKey, setResetKey] = React.useState(JSON.stringify([searchTerm, sortBy, id]));
-  const currentResetKey = JSON.stringify([searchTerm, sortBy, id]);
-  if (resetKey !== currentResetKey) {
-    setResetKey(currentResetKey);
-    setExpandedList(false);
-  }
-
-  const INITIAL_VISIBLE_COUNT = 10;
-  const hasOverflow = filteredItems.length > INITIAL_VISIBLE_COUNT;
-  const visibleItems = expandedList ? filteredItems : filteredItems.slice(0, INITIAL_VISIBLE_COUNT);
   const maxCount = React.useMemo(
     () => filteredItems.reduce((max, item) => Math.max(max, item.count), 0),
     [filteredItems]
@@ -106,30 +91,32 @@ export function FacetPanel({
 
   return (
     <div
-      className="overflow-hidden rounded-lg border border-border/60 bg-card/50 transition-colors"
+      className="overflow-clip rounded-lg border border-border/60 bg-card/50 transition-colors"
       id={`panel-${id}`}
     >
-      <button
-        type="button"
-        onClick={() => setIsExpanded((prev) => !prev)}
-        aria-expanded={isExpanded}
-        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
-      >
-        <h4 className="flex items-baseline gap-1.5 font-serif text-[13px] font-semibold tracking-tight text-foreground">
-          {title}
-          {total !== undefined && (
-            <span className="text-[11px] font-normal tabular-nums text-muted-foreground/70">
-              {total}
-            </span>
-          )}
-        </h4>
-        <ChevronDown
-          className={cn(
-            'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
-            isExpanded ? 'rotate-0' : '-rotate-90'
-          )}
-        />
-      </button>
+      <div className="sticky -top-3 z-[15] bg-card">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          aria-expanded={isExpanded}
+          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
+        >
+          <h4 className="flex items-baseline gap-1.5 font-serif text-[13px] font-semibold tracking-tight text-foreground">
+            {title}
+            {total !== undefined && (
+              <span className="text-[11px] font-normal tabular-nums text-muted-foreground/70">
+                {total}
+              </span>
+            )}
+          </h4>
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+              isExpanded ? 'rotate-0' : '-rotate-90'
+            )}
+          />
+        </button>
+      </div>
       {isExpanded && showSort && (
         <div className="flex justify-between border-t border-border/50 px-3 py-1.5 text-[11px] text-muted-foreground">
           <button
@@ -184,7 +171,7 @@ export function FacetPanel({
         </div>
       )}
       {isExpanded && (
-        <div className="max-h-56 overflow-y-auto border-t border-border/50">
+        <div className="border-t border-border/50">
           <div className="p-2 pb-0">
             <Input
               value={searchTerm}
@@ -195,7 +182,7 @@ export function FacetPanel({
             />
           </div>
           <ul className="space-y-0.5 p-2 text-[13px]">
-            {visibleItems.map((item) => {
+            {filteredItems.map((item) => {
               const isSelected = selectedValue === item.value;
               return (
                 <li key={item.value} className="flex items-stretch gap-0.5">
@@ -276,23 +263,10 @@ export function FacetPanel({
                 </li>
               );
             })}
-            {visibleItems.length === 0 && (
+            {filteredItems.length === 0 && (
               <li className="px-2 py-1 text-xs text-muted-foreground">No matching facet values.</li>
             )}
           </ul>
-          {hasOverflow && (
-            <div className="px-2 pb-2">
-              <button
-                type="button"
-                className="w-full rounded-md border border-dashed border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-border hover:text-foreground"
-                onClick={() => setExpandedList((prev) => !prev)}
-              >
-                {expandedList
-                  ? 'Show fewer'
-                  : `Show all (${filteredItems.length - INITIAL_VISIBLE_COUNT} more)`}
-              </button>
-            </div>
-          )}
         </div>
       )}
     </div>
