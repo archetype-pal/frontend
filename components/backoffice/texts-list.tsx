@@ -121,7 +121,7 @@ function buildExportQuery(
   selectedIds: number[]
 ): string {
   const qs = new URLSearchParams();
-  qs.set('format', format);
+  qs.set('export_format', format);
   if (selectedIds.length > 0) qs.set('id__in', selectedIds.join(','));
   if (filters.kind) qs.set('type', filters.kind);
   if (filters.status) qs.set('status', filters.status);
