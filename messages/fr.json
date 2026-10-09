@@ -2956,17 +2956,18 @@
       "place": "Lieu"
     },
     "emptyStates": {
+      "images": "Aucune image de manuscrit associée à cette main.",
       "description": "Aucune description associée à cette fiche."
     },
     "imageAltFallback": "Image du manuscrit",
     "annotationCount": "{count, plural, one {# annotation} other {# annotations}}",
     "graphs": {
       "loading": "Chargement des graphèmes...",
-      "loadError": "Impossible de charger les graphèmes. Veuillez réessayer plus tard.",
+      "loadError": "Impossible de charger les graphèmes.",
       "empty": "Aucun graphème associé à cette main.",
       "allographsList": "Liste des allographes",
-      "selectGraph": "Sélectionner le graphème",
-      "unselectGraph": "Désélectionner le graphème",
+      "allographFallback": "Allographe {id}",
+      "selectGraph": "Sélectionner {allograph}, graphème {id}",
       "openGraph": "{allograph}, graphème {id}",
       "selectAll": "Tout sélectionner",
       "unselectAll": "Tout désélectionner",

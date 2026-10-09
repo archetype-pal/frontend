@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
+import { useInView } from '@/hooks/use-in-view';
 import { useTabNavigation } from '@/hooks/use-tab-navigation';
 import type {
   HandDetail,
@@ -16,7 +17,8 @@ import type {
   HandGraph,
 } from '@/types/hand-detail';
 import type { BackendGraph } from '@/services/annotations';
-import type { Allograph } from '@/types/allographs';
+import type { AllographSummary } from '@/types/allographs';
+import { fetchAllographSummaries } from '@/services/manuscripts';
 import {
   BookOpen,
   Calendar,
@@ -78,8 +80,11 @@ function GraphThumbnail({
   onToggleSelect: (shiftKey: boolean) => void;
 }) {
   const t = useTranslations('hand.graphs');
+  const linkRef = useRef<HTMLAnchorElement>(null);
+  const inView = useInView(linkRef);
+  // No crop lookup until the thumbnail nears the screen: the hook skips an empty URL.
   const imageUrl = useIiifThumbnailUrl(
-    graph.image_iiif,
+    inView ? graph.image_iiif : '',
     graph.coordinates,
     DENSITY_THUMB_PX[density]
   );
@@ -87,6 +92,7 @@ function GraphThumbnail({
   return (
     <div className="relative group/thumb">
       <Link
+        ref={linkRef}
         href={getGraphDetailUrl(graph) ?? '#'}
         aria-label={t('openGraph', { allograph: graph.allograph_name, id: graph.id })}
         className={cn(
@@ -114,7 +120,7 @@ function GraphThumbnail({
         type="button"
         onClick={(e) => onToggleSelect(e.shiftKey)}
         aria-pressed={isSelected}
-        aria-label={isSelected ? t('unselectGraph') : t('selectGraph')}
+        aria-label={t('selectGraph', { allograph: graph.allograph_name, id: graph.id })}
         className={cn(
           'absolute left-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md border text-xs shadow-sm transition',
           isSelected
@@ -132,13 +138,19 @@ function GraphThumbnail({
 
 function enrichGraphs(
   backendGraphs: BackendGraph[],
-  allographs: Allograph[],
+  allographs: AllographSummary[],
   images: HandImage[],
   hand: HandDetail,
-  shelfmark: string
+  shelfmark: string,
+  fallbackLabel: (allographId: number) => string
 ): HandGraph[] {
   // Same labels as the image Annotations tab, on the page and in what is collected or exported.
   const allographLabelById = new Map(allographs.map((a) => [a.id, formatAllographLabel(a)]));
+  for (const g of backendGraphs) {
+    if (typeof g.allograph === 'number' && !allographLabelById.has(g.allograph)) {
+      allographLabelById.set(g.allograph, fallbackLabel(g.allograph));
+    }
+  }
   const imageMap = new Map(images.map((img) => [img.id, img]));
   const collectionLabels = {
     allographLabelById,
@@ -153,7 +165,7 @@ function enrichGraphs(
 
       return {
         id: g.id,
-        allograph_name: allographLabelById.get(g.allograph) ?? `Allograph ${g.allograph}`,
+        allograph_name: allographLabelById.get(g.allograph) ?? fallbackLabel(g.allograph),
         allograph_id: g.allograph,
         image_iiif: iiifImage.endsWith('/info.json') ? iiifImage : `${iiifImage}/info.json`,
         coordinates: JSON.stringify(g.annotation),
@@ -184,36 +196,52 @@ function useHandGraphs(
   images: HandImage[],
   shelfmark: string,
   enabled: boolean
-): GraphsState {
+): { state: GraphsState; retry: () => void } {
+  const t = useTranslations('hand.graphs');
   const [state, setState] = useState<GraphsState>({ status: 'loading' });
   const fetchedRef = useRef(false);
 
-  useEffect(() => {
-    if (!enabled || fetchedRef.current) return;
-    fetchedRef.current = true;
-
-    // Never cancelled: this runs once, so a cancelled request would not be retried.
+  // Never cancelled: the effect below loads once, so a cancelled request would not be retried.
+  const load = useCallback(() => {
     Promise.all([
-      apiFetch(`/api/v1/manuscripts/graphs/?hand=${hand.id}`).then((r) => (r.ok ? r.json() : [])),
-      apiFetch(`/api/v1/symbols_structure/allographs/`).then((r) => (r.ok ? r.json() : [])),
+      apiFetch(`/api/v1/manuscripts/graphs/?hand=${hand.id}`).then((r) => {
+        if (!r.ok) throw new Error('Failed to fetch graphs');
+        return r.json();
+      }),
+      // Labels only: without them the graphs still show, under a fallback label.
+      fetchAllographSummaries().catch(() => []),
     ])
       .then(([rawGraphs, allographs]) => {
         const graphsArr: BackendGraph[] = Array.isArray(rawGraphs)
           ? rawGraphs
           : (rawGraphs?.results ?? []);
-        const graphs = enrichGraphs(graphsArr, allographs, images, hand, shelfmark);
+        const graphs = enrichGraphs(graphsArr, allographs, images, hand, shelfmark, (id) =>
+          t('allographFallback', { id })
+        );
         setState({ status: 'loaded', graphs });
       })
       .catch(() => setState({ status: 'error' }));
-  }, [enabled, hand, images, shelfmark]);
+  }, [hand, images, shelfmark, t]);
 
-  return state;
+  useEffect(() => {
+    if (!enabled || fetchedRef.current) return;
+    fetchedRef.current = true;
+    load();
+  }, [enabled, load]);
+
+  const retry = useCallback(() => {
+    setState({ status: 'loading' });
+    load();
+  }, [load]);
+
+  return { state, retry };
 }
 
 // ── Main component ──────────────────────────────────────────────────
 
 export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps) {
   const t = useTranslations('hand');
+  const tCommon = useTranslations('common');
   const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB);
   const { config: siteFeatures, isSectionEnabled } = useSiteFeatures();
   const handsSearchEnabled =
@@ -223,7 +251,12 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
     manuscript?.display_label ?? manuscript?.current_item?.shelfmark ?? (hand.shelfmark || null);
 
   // Lazy-load graphs only when the Graphs tab is active
-  const graphsState = useHandGraphs(hand, images, manuscriptLabel ?? '', activeTab === 'graphs');
+  const { state: graphsState, retry: retryGraphs } = useHandGraphs(
+    hand,
+    images,
+    manuscriptLabel ?? '',
+    activeTab === 'graphs'
+  );
   const graphs = useMemo(
     () => (graphsState.status === 'loaded' ? graphsState.graphs : []),
     [graphsState]
@@ -483,7 +516,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
             <div className="rounded-lg border bg-card p-6">
               <div className="flex items-center gap-2 text-muted-foreground bg-muted/50 rounded-md p-4">
                 <ImageIcon className="h-4 w-4" />
-                <span>No manuscript images associated to this hand.</span>
+                <span>{t('emptyStates.images')}</span>
               </div>
             </div>
           )}
@@ -501,6 +534,9 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
               <div className="flex items-center gap-2 text-destructive bg-destructive/10 rounded-md p-4">
                 <Grid3X3 className="h-4 w-4" />
                 <span>{t('graphs.loadError')}</span>
+                <Button size="sm" variant="outline" className="ml-auto" onClick={retryGraphs}>
+                  {tCommon('tryAgain')}
+                </Button>
               </div>
             </div>
           ) : graphs.length > 0 ? (
@@ -583,15 +619,25 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                   ).length;
                   const allSelected =
                     groupSelectedCount > 0 && groupSelectedCount === groupIds.length;
+                  // Number only: aria-describedby splits on spaces, and labels contain them.
+                  const headingId = `allograph-heading-${group.allograph_id}`;
+                  // The scroll margin clears the sticky header and the selection bar.
                   return (
-                    <section key={key} id={`allograph-${key}`} className="scroll-mt-4">
+                    <section
+                      key={key}
+                      id={`allograph-${key}`}
+                      className="scroll-mt-[calc(var(--site-header-h,0px)+5rem)]"
+                    >
                       <div className="border-b pb-2 mb-4 flex flex-wrap items-center gap-3">
-                        <h4 className="text-base font-semibold">{group.allograph_name}</h4>
+                        <h4 id={headingId} className="text-base font-semibold">
+                          {group.allograph_name}
+                        </h4>
                         <div className="flex items-center gap-1.5">
                           <Button
                             size="sm"
                             variant="outline"
                             className="h-7 gap-1.5"
+                            aria-describedby={headingId}
                             onClick={() =>
                               allSelected
                                 ? selection.removeMany(groupIds)
@@ -614,6 +660,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                             size="sm"
                             variant="outline"
                             className="h-7 gap-1.5"
+                            aria-describedby={headingId}
                             disabled={groupSelectedCount === 0}
                             onClick={() => addSelectedToCollection(group.graphs)}
                           >

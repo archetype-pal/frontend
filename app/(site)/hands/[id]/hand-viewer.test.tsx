@@ -67,11 +67,15 @@ vi.mock('@/lib/graph-csv', async (importOriginal) => ({
 }));
 
 vi.mock('@/hooks/use-iiif-thumbnail', () => ({
-  useIiifThumbnailUrl: (_infoUrl: string, _coordinates: string, maxSize?: number) => {
+  useIiifThumbnailUrl: (infoUrl: string, _coordinates: string, maxSize?: number) => {
     thumbSize(maxSize);
-    return 'https://example.test/crop.jpg';
+    return infoUrl ? 'https://example.test/crop.jpg' : null;
   },
 }));
+
+// Whether thumbnails count as near the screen, where they look up their crop.
+const view = vi.hoisted(() => ({ near: true }));
+vi.mock('@/hooks/use-in-view', () => ({ useInView: () => view.near }));
 
 vi.mock('@/contexts/collection-context', () => ({
   useCollection: () => ({ addItem, isInCollection: () => false }),
@@ -103,6 +107,9 @@ const IMAGES: HandImage[] = [
 
 const MANUSCRIPT: HandManuscript = { id: 22, display_label: 'Cotton Ch. 1' };
 
+// A thumbnail's select toggle, named after its graph; never a group's "Select all".
+const TOGGLE = /^Select .+, graph \d+$/;
+
 function viewer() {
   return (
     <SiteFeaturesProvider initialConfig={getDefaultConfig()}>
@@ -122,6 +129,7 @@ describe('HandViewer Graphs tab', () => {
     thumbSize.mockClear();
     window.localStorage.clear();
     nav.search = 'tab=graphs';
+    view.near = true;
     apiFetch.mockReset();
     apiFetch.mockImplementation(async (url: string) => respond(url));
   });
@@ -141,11 +149,91 @@ describe('HandViewer Graphs tab', () => {
 
     expect(await screen.findByRole('heading', { name: 'a, Insular' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'b, Caroline' })).toBeTruthy();
+    expect(apiFetch).toHaveBeenCalledWith('/api/v1/symbols_structure/allographs/?light=1');
+  });
+
+  it('keeps the graphs, under a fallback label, when the allograph labels fail to load', async () => {
+    apiFetch.mockImplementation(async (url: string) =>
+      url.includes('/graphs/') ? respond(url) : { ok: false, status: 500, json: async () => ({}) }
+    );
+    renderGraphsTab();
+
+    expect(await screen.findByRole('heading', { name: 'Allograph 11' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Allograph 12' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Allograph 11, graph 101' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Export as CSV' }));
+
+    expect(downloadCsv).toHaveBeenCalledWith(
+      'hand-5-graphs.csv',
+      'id,allograph,hand,described,components,features,positions,image,locus\n' +
+        '101,Allograph 11,Main Hand,no,,,,42,face'
+    );
+  });
+
+  it('shows the load error, not an empty list, when the graphs request fails', async () => {
+    apiFetch.mockImplementation(async (url: string) =>
+      url.includes('/graphs/') ? { ok: false, status: 500, json: async () => ({}) } : respond(url)
+    );
+    renderGraphsTab();
+
+    expect(await screen.findByText('Failed to load graphs.')).toBeTruthy();
+    expect(screen.queryByText('No graphs associated to this hand.')).toBeNull();
+  });
+
+  it('loads the graphs again from the error message', async () => {
+    let graphsFail = true;
+    apiFetch.mockImplementation(async (url: string) =>
+      graphsFail && url.includes('/graphs/')
+        ? { ok: false, status: 500, json: async () => ({}) }
+        : respond(url)
+    );
+    renderGraphsTab();
+    const retry = await screen.findByRole('button', { name: 'Try again' });
+
+    graphsFail = false;
+    fireEvent.click(retry);
+
+    expect(await screen.findAllByRole('button', { name: TOGGLE })).toHaveLength(2);
+  });
+
+  it('looks up a thumbnail crop only once it nears the screen', async () => {
+    view.near = false;
+    const { rerender } = renderGraphsTab();
+    await screen.findAllByRole('button', { name: TOGGLE });
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
+
+    view.near = true;
+    rerender(viewer());
+
+    expect(screen.getAllByRole('img')).toHaveLength(2);
+  });
+
+  it('names each select toggle after its graph, and keeps that name once selected', async () => {
+    renderGraphsTab();
+    const toggle = await screen.findByRole('button', { name: 'Select a, Insular, graph 101' });
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+
+    fireEvent.click(toggle);
+
+    expect(toggle.getAttribute('aria-label')).toBe('Select a, Insular, graph 101');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('describes each group button with its allograph', async () => {
+    renderGraphsTab();
+
+    expect(
+      await screen.findByRole('button', { name: 'Select all', description: 'a, Insular' })
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Add selected', description: 'b, Caroline' })
+    ).toBeTruthy();
   });
 
   it('shows the selection bar before anything is selected, with its actions disabled', async () => {
     renderGraphsTab();
-    const [firstToggle] = await screen.findAllByRole('button', { name: 'Select graph' });
+    const [firstToggle] = await screen.findAllByRole('button', { name: TOGGLE });
     const addButton = screen.getByRole('button', {
       name: 'Add to collection',
     }) as HTMLButtonElement;
@@ -161,7 +249,7 @@ describe('HandViewer Graphs tab', () => {
 
   it('adds only the selected graphs to the collection, as the image Annotations tab does', async () => {
     renderGraphsTab();
-    const [firstToggle] = await screen.findAllByRole('button', { name: 'Select graph' });
+    const [firstToggle] = await screen.findAllByRole('button', { name: TOGGLE });
 
     fireEvent.click(firstToggle);
     expect(screen.getByText('1 selected')).toBeTruthy();
@@ -204,12 +292,12 @@ describe('HandViewer Graphs tab', () => {
     rerender(viewer());
     release();
 
-    expect(await screen.findAllByRole('button', { name: 'Select graph' })).toHaveLength(2);
+    expect(await screen.findAllByRole('button', { name: TOGGLE })).toHaveLength(2);
   });
 
   it('sizes the thumbnails with the S/M/L control of the image Annotations tab', async () => {
     renderGraphsTab();
-    await screen.findAllByRole('button', { name: 'Select graph' });
+    await screen.findAllByRole('button', { name: TOGGLE });
     expect(thumbSize).toHaveBeenLastCalledWith(500);
 
     fireEvent.click(screen.getByRole('radio', { name: 'L' }));
@@ -225,7 +313,7 @@ describe('HandViewer Graphs tab', () => {
       json: async () => (url.includes('/graphs/') ? sameAllograph : ALLOGRAPHS),
     }));
     renderGraphsTab();
-    const toggles = await screen.findAllByRole('button', { name: 'Select graph' });
+    const toggles = await screen.findAllByRole('button', { name: TOGGLE });
 
     fireEvent.click(toggles[0]);
     fireEvent.click(toggles[2], { shiftKey: true });
@@ -235,7 +323,7 @@ describe('HandViewer Graphs tab', () => {
 
   it('exports the selected graphs as CSV, with their image and locus', async () => {
     renderGraphsTab();
-    const [firstToggle] = await screen.findAllByRole('button', { name: 'Select graph' });
+    const [firstToggle] = await screen.findAllByRole('button', { name: TOGGLE });
 
     fireEvent.click(firstToggle);
     fireEvent.click(screen.getByRole('button', { name: 'Export as CSV' }));

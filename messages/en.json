@@ -2956,17 +2956,18 @@
       "place": "Place"
     },
     "emptyStates": {
+      "images": "No manuscript images associated to this hand.",
       "description": "No description associated to this record."
     },
     "imageAltFallback": "Manuscript image",
     "annotationCount": "{count, plural, one {# Annotation} other {# Annotations}}",
     "graphs": {
       "loading": "Loading graphs...",
-      "loadError": "Failed to load graphs. Please try again later.",
+      "loadError": "Failed to load graphs.",
       "empty": "No graphs associated to this hand.",
       "allographsList": "Allographs List",
-      "selectGraph": "Select graph",
-      "unselectGraph": "Unselect graph",
+      "allographFallback": "Allograph {id}",
+      "selectGraph": "Select {allograph}, graph {id}",
       "openGraph": "{allograph}, graph {id}",
       "selectAll": "Select all",
       "unselectAll": "Unselect all",
