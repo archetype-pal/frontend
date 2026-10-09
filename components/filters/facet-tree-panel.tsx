@@ -83,38 +83,37 @@ export function FacetTreePanel({
   const showProportionBars = filteredTree.length >= 1 && maxCount > 0;
 
   return (
-    <div
-      className="overflow-hidden rounded-lg border border-border/60 bg-card/50"
-      id={`panel-${id}`}
-    >
-      <button
-        type="button"
-        onClick={() => setIsExpanded((prev) => !prev)}
-        aria-expanded={isExpanded}
-        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
-      >
-        <h4 className="flex items-baseline gap-1.5 font-serif text-[13px] font-semibold leading-tight tracking-tight text-foreground">
-          {title}
-          {total !== undefined && (
-            <span className="text-[11px] font-normal tabular-nums text-muted-foreground/70">
-              {total}
-            </span>
-          )}
-          {selectedCount > 0 && (
-            <span className="rounded-full border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
-              {selectedCount} selected
-            </span>
-          )}
-        </h4>
-        <ChevronDown
-          className={cn(
-            'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
-            isExpanded ? 'rotate-0' : '-rotate-90'
-          )}
-        />
-      </button>
+    <div className="overflow-clip rounded-lg border border-border/60 bg-card/50" id={`panel-${id}`}>
+      <div className="sticky -top-3 z-[15] bg-card">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          aria-expanded={isExpanded}
+          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
+        >
+          <h4 className="flex items-baseline gap-1.5 font-serif text-[13px] font-semibold leading-tight tracking-tight text-foreground">
+            {title}
+            {total !== undefined && (
+              <span className="text-[11px] font-normal tabular-nums text-muted-foreground/70">
+                {total}
+              </span>
+            )}
+            {selectedCount > 0 && (
+              <span className="rounded-full border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
+                {selectedCount} selected
+              </span>
+            )}
+          </h4>
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+              isExpanded ? 'rotate-0' : '-rotate-90'
+            )}
+          />
+        </button>
+      </div>
       {isExpanded && (
-        <div className="max-h-72 space-y-2 overflow-y-auto border-t border-border/50 px-2 py-2">
+        <div className="space-y-2 border-t border-border/50 px-2 py-2">
           <p className="px-1 text-[11px] text-muted-foreground">
             Select one or more feature combinations. Matching records must include all selected
             features.

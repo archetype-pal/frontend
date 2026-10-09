@@ -27,13 +27,6 @@ import { useTranslations } from 'next-intl';
 
 export type DynamicFacetsDensity = 'default' | 'sidebar';
 
-/**
- * Progressive disclosure: how many leading facets stay open by default. The
- * rest collapse so the rail isn't one long scroll (a facet with an active
- * selection always stays open regardless of position).
- */
-const PRIMARY_FACET_COUNT = 3;
-
 type DynamicFacetsProps = {
   facets: FacetData;
   searchType: ResultType;
@@ -259,13 +252,8 @@ export function DynamicFacets({
         </div>
       )}
 
-      <div className="space-y-4">
-        {renderableFacets.map(({ facetKey, facetValue, type, title }, index) => {
-          const hasSelection =
-            selectedByFacet[facetKey] != null ||
-            (selectedValuesByFacet[facetKey]?.length ?? 0) > 0 ||
-            (excludedByFacet[facetKey]?.length ?? 0) > 0;
-          const defaultExpanded = index < PRIMARY_FACET_COUNT || hasSelection;
+      <div key={searchType} className="space-y-4">
+        {renderableFacets.map(({ facetKey, facetValue, type, title }) => {
           if (facetValue.kind === 'range') {
             return (
               <FacetDateRangePanel
@@ -274,7 +262,7 @@ export function DynamicFacets({
                 title={title}
                 range={facetValue.range}
                 defaultValue={facetValue.defaultValue}
-                defaultExpanded={defaultExpanded}
+                defaultExpanded={false}
                 onSearch={({ min, max, precision, diff }) => {
                   let url = `${baseFacetURL}?min_date=${min}&max_date=${max}`;
                   if (precision && diff > 0) {
@@ -294,7 +282,7 @@ export function DynamicFacets({
                 total={facetValue.items.length}
                 items={facetValue.items}
                 selectedValues={selectedValuesByFacet[facetKey] ?? []}
-                defaultExpanded={defaultExpanded}
+                defaultExpanded={false}
                 onSelect={(value, isDeselect) => {
                   onFacetClick?.(
                     baseFacetURL,
@@ -317,7 +305,7 @@ export function DynamicFacets({
               baseFacetURL={baseFacetURL}
               selectedValue={selectedByFacet[facetKey] ?? null}
               showSort={type !== 'toggle'}
-              expanded={defaultExpanded}
+              expanded={false}
               onSelect={(url, val, isDeselect) => {
                 onFacetClick?.(
                   url,

@@ -35,6 +35,14 @@ function withProviders(ui: React.ReactElement) {
   );
 }
 
+function expandPanel(container: HTMLElement, facetKey: string) {
+  const toggle = container.querySelector(`#panel-${facetKey} button[aria-expanded="false"]`);
+  expect(toggle).not.toBeNull();
+  act(() => {
+    toggle?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+}
+
 describe('DynamicFacets', () => {
   it('renders active filters section above keyword search', () => {
     const facets: FacetData = {
@@ -229,6 +237,11 @@ describe('DynamicFacets', () => {
       );
     });
 
+    expect(
+      container.querySelector('button[aria-label="Stop excluding British Library"]')
+    ).toBeNull();
+    expandPanel(container, 'repository_name');
+
     const revert = container.querySelector('button[aria-label="Stop excluding British Library"]');
     expect(revert).not.toBeNull();
 
@@ -292,6 +305,9 @@ describe('DynamicFacets', () => {
         )
       );
     });
+    expandPanel(container, 'material');
+    expandPanel(container, 'script');
+    expandPanel(container, 'origin_place');
 
     expect(container.textContent).toContain('Parchment (vellum)');
     expect(container.textContent).toContain('Gothic textualis (Northern)');
