@@ -44,7 +44,7 @@ import { usePageSize } from '@/hooks/backoffice/use-page-size';
 
 export interface BulkAction {
   label: string;
-  action: (ids: string[]) => void;
+  action: (ids: string[], clearSelection: () => void) => void;
   variant?: 'destructive' | 'default';
   icon?: React.ReactNode;
 }
@@ -477,7 +477,7 @@ export function DataTable<TData, TValue>({
                 variant={action.variant === 'destructive' ? 'destructive' : 'outline'}
                 size="sm"
                 className="h-7 gap-1 text-xs"
-                onClick={() => action.action(selectedIds)}
+                onClick={() => action.action(selectedIds, () => setRowSelection({}))}
               >
                 {action.icon}
                 {action.label}

@@ -161,6 +161,44 @@ describe('DataTable server sorting and export', () => {
   });
 });
 
+describe('DataTable bulk actions', () => {
+  const rows: Row[] = [
+    { id: 1, name: 'Beta' },
+    { id: 2, name: 'Alpha' },
+  ];
+  const table = (action: (ids: string[], clearSelection: () => void) => void) => (
+    <DataTable
+      columns={columns}
+      data={rows}
+      pagination={false}
+      enableRowSelection
+      enableExport
+      bulkActions={[{ label: 'Run', action }]}
+    />
+  );
+
+  it('clears the ticks when the action calls clearSelection', () => {
+    const action = vi.fn((_ids: string[], clearSelection: () => void) => clearSelection());
+    render(table(action));
+
+    fireEvent.click(screen.getAllByRole('checkbox', { name: /select row/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(action).toHaveBeenCalledWith(['1'], expect.any(Function));
+    expect(screen.queryByText('1 selected')).toBeNull();
+    expect(screen.queryByRole('button', { name: /export 1 selected/i })).toBeNull();
+  });
+
+  it('keeps the ticks when the action does not clear them', () => {
+    render(table(vi.fn()));
+
+    fireEvent.click(screen.getAllByRole('checkbox', { name: /select row/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(screen.queryByText('1 selected')).not.toBeNull();
+  });
+});
+
 describe('DataTable client pagination', () => {
   const many: Row[] = Array.from({ length: 45 }, (_, i) => ({ id: i + 1, name: `Row ${i + 1}` }));
 

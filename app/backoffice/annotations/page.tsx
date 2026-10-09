@@ -213,7 +213,7 @@ export default function AnnotationsPage() {
       label: 'Delete',
       variant: 'destructive',
       icon: <Trash2 className="h-3 w-3" />,
-      action: async (ids) => {
+      action: async (ids, clearSelection) => {
         await runBulkAction({
           ids,
           action: (id) => deleteGraph(Number(id)),
@@ -225,6 +225,7 @@ export default function AnnotationsPage() {
             partial: (succeeded, failed) => t('annotations.bulkPartial', { succeeded, failed }),
           },
         });
+        clearSelection();
       },
     },
   ];

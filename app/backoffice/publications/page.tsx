@@ -204,7 +204,7 @@ export default function PublicationsPage() {
     {
       label: t('publications.bulkPublish'),
       icon: <CheckCircle className="h-3 w-3" />,
-      action: async (slugs) => {
+      action: async (slugs, clearSelection) => {
         await runBulkAction({
           ids: slugs,
           action: (slug) => updatePublication(slug, { status: 'Published' }),
@@ -212,12 +212,13 @@ export default function PublicationsPage() {
           pastTense: 'published',
           noun: 'post',
         });
+        clearSelection();
       },
     },
     {
       label: t('publications.bulkUnpublish'),
       icon: <XCircle className="h-3 w-3" />,
-      action: (slugs) => {
+      action: (slugs, clearSelection) => {
         setPendingBulkAction({
           label: t('publications.bulkUnpublish'),
           slugs,
@@ -229,6 +230,7 @@ export default function PublicationsPage() {
               pastTense: 'unpublished',
               noun: 'post',
             });
+            clearSelection();
           },
         });
         setBulkConfirmOpen(true);
@@ -238,7 +240,7 @@ export default function PublicationsPage() {
       label: t('publications.bulkDelete'),
       variant: 'destructive',
       icon: <Trash2 className="h-3 w-3" />,
-      action: (slugs) => {
+      action: (slugs, clearSelection) => {
         setPendingBulkAction({
           label: t('publications.bulkDelete'),
           slugs,
@@ -250,6 +252,7 @@ export default function PublicationsPage() {
               pastTense: 'deleted',
               noun: 'post',
             });
+            clearSelection();
           },
         });
         setBulkConfirmOpen(true);
