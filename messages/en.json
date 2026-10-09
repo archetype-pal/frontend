@@ -34,7 +34,18 @@
     "unsavedChanges": "Unsaved changes",
     "processing": "Processing...",
     "signIn": "Sign in",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "pagination": {
+      "navLabel": "Pagination",
+      "rowsPerPage": "Rows per page",
+      "range": "{from}–{to} of {total}",
+      "goToPage": "Go to page",
+      "ofPages": "of {total}",
+      "goToPageN": "Go to page {page}",
+      "currentPageN": "Page {page}",
+      "previousPage": "Go to previous page",
+      "nextPage": "Go to next page"
+    }
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
@@ -519,8 +530,6 @@
     },
     "publicationsList": {
       "noPostsFound": "No posts found.",
-      "prev": "← Prev",
-      "next": "Next →",
       "recentPosts": "Recent Posts",
       "postsByDate": "Posts by Date",
       "selectMonth": "Select month",
@@ -2080,7 +2089,6 @@
       "searchPlaceholder": "Search users...",
       "newUserButton": "New User",
       "selectedCount": "{selected} of {total} selected",
-      "rowsTotal": "{count} row(s) total",
       "bulkActivate": "Activate",
       "bulkDeactivate": "Deactivate",
       "bulkDelete": "Delete",
@@ -2353,16 +2361,13 @@
       "columns": "Columns",
       "selectedCount": "{count} selected",
       "loadError": "Failed to load. Please try again.",
+      "exportFailed": "Export failed. Please try again.",
       "noResults": "No results.",
-      "selectedOfTotal": "{count} of {total} selected",
-      "rowsTotal": "{count} row(s) total"
+      "selectedOfTotal": "{count} of {total} selected"
     },
     "filterBar": {
       "allOption": "All {label}",
       "clearFilters": "Clear filters"
-    },
-    "pagination": {
-      "pageOf": "Page {page} of {total}"
     },
     "inlineEdit": {
       "placeholder": "Click to edit",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
@@ -17,11 +17,10 @@ import {
   CheckCircle,
   XCircle,
   Search,
-  ChevronLeft,
-  ChevronRight,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -50,7 +49,9 @@ import {
   BackofficeErrorState,
   BackofficeLoadingState,
 } from '@/components/backoffice/common/query-state';
-import { getUsers, createUser, updateUser, deleteUser } from '@/services/backoffice/users';
+import { createUser, updateUser, deleteUser } from '@/services/backoffice/users';
+import { walkPaginated } from '@/lib/backoffice/walk-paginated';
+import { proxyFetch } from '@/lib/api-fetch';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
@@ -110,8 +111,6 @@ const emptyCreate: UserCreatePayload = {
   is_superuser: false,
   is_active: true,
 };
-
-const PAGE_SIZE = 20;
 
 type PresetKey = 'all' | 'superuser' | 'staff' | 'inactive';
 type SortKey = 'username' | 'name' | 'last_login' | 'date_joined';
@@ -200,14 +199,19 @@ export default function UsersPage() {
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.users.all(),
-    queryFn: () => getUsers(),
+    queryFn: () =>
+      walkPaginated<UserListItem>('/api/v1/auth/management/users/?limit=100', (path) =>
+        proxyFetch(path)
+      ),
     enabled: !!token,
   });
 
-  const users = useMemo(() => data?.results ?? [], [data]);
+  const users = useMemo(() => data ?? [], [data]);
 
   const totalCount = users.length;
   const superuserCount = useMemo(() => users.filter((u) => u.is_superuser).length, [users]);
@@ -261,11 +265,11 @@ export default function UsersPage() {
     return rows;
   }, [filtered, sortKey, sortDir]);
 
-  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
   const currentPage = Math.min(page, pageCount - 1);
   const pageRows = useMemo(
-    () => sorted.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE),
-    [sorted, currentPage]
+    () => sorted.slice(currentPage * pageSize, currentPage * pageSize + pageSize),
+    [sorted, currentPage, pageSize]
   );
 
   // ── Selection (over the full filtered set) ────────────────────────────
@@ -586,7 +590,7 @@ export default function UsersPage() {
         )}
 
         {/* Table */}
-        <div className="rounded-md border">
+        <div ref={tableRef} className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -773,36 +777,22 @@ export default function UsersPage() {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            {selectedIds.length > 0
+        <DataPagination
+          scrollTargetRef={tableRef}
+          totalItems={sorted.length}
+          page={currentPage + 1}
+          pageSize={pageSize}
+          onPageChange={(p) => setPage(p - 1)}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+          }}
+          summary={
+            selectedIds.length > 0
               ? t('users.selectedCount', { selected: selectedIds.length, total: sorted.length })
-              : t('users.rowsTotal', { count: sorted.length })}
-          </span>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={currentPage === 0}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="px-2 tabular-nums">
-              {currentPage + 1} / {pageCount}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-              disabled={currentPage >= pageCount - 1}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+              : undefined
+          }
+        />
       </div>
 
       {/* ── Create dialog ───────────────────────────────────────────── */}

@@ -34,7 +34,18 @@
     "unsavedChanges": "Nicht gespeicherte Änderungen",
     "processing": "Wird verarbeitet...",
     "signIn": "Anmelden",
-    "signOut": "Abmelden"
+    "signOut": "Abmelden",
+    "pagination": {
+      "navLabel": "Seitennummerierung",
+      "rowsPerPage": "Zeilen pro Seite",
+      "range": "{from}–{to} von {total}",
+      "goToPage": "Gehe zu Seite",
+      "ofPages": "von {total}",
+      "goToPageN": "Gehe zu Seite {page}",
+      "currentPageN": "Seite {page}",
+      "previousPage": "Zur vorherigen Seite",
+      "nextPage": "Zur nächsten Seite"
+    }
   },
   "errors": {
     "somethingWentWrong": "Etwas ist schiefgelaufen",
@@ -519,8 +530,6 @@
     },
     "publicationsList": {
       "noPostsFound": "Keine Beiträge gefunden.",
-      "prev": "← Zurück",
-      "next": "Weiter →",
       "recentPosts": "Neueste Beiträge",
       "postsByDate": "Beiträge nach Datum",
       "selectMonth": "Monat auswählen",
@@ -2080,7 +2089,6 @@
       "searchPlaceholder": "Benutzer suchen …",
       "newUserButton": "Neuer Benutzer",
       "selectedCount": "{selected} von {total} ausgewählt",
-      "rowsTotal": "{count} Zeile(n) insgesamt",
       "bulkActivate": "Aktivieren",
       "bulkDeactivate": "Deaktivieren",
       "bulkDelete": "Löschen",
@@ -2353,16 +2361,13 @@
       "columns": "Spalten",
       "selectedCount": "{count} ausgewählt",
       "loadError": "Laden fehlgeschlagen. Bitte erneut versuchen.",
+      "exportFailed": "Export fehlgeschlagen. Bitte erneut versuchen.",
       "noResults": "Keine Ergebnisse.",
-      "selectedOfTotal": "{count} von {total} ausgewählt",
-      "rowsTotal": "{count} Zeile(n) insgesamt"
+      "selectedOfTotal": "{count} von {total} ausgewählt"
     },
     "filterBar": {
       "allOption": "Alle {label}",
       "clearFilters": "Filter zurücksetzen"
-    },
-    "pagination": {
-      "pageOf": "Seite {page} von {total}"
     },
     "inlineEdit": {
       "placeholder": "Zum Bearbeiten klicken",

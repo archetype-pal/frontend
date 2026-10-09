@@ -69,8 +69,8 @@ export const backofficeKeys = {
   },
   comments: {
     all: () => [...backofficeKeys.all, 'comments'] as const,
-    list: (filter?: string) => [...backofficeKeys.comments.all(), 'list', filter] as const,
-    allPages: (filter: string) => [...backofficeKeys.comments.all(), 'all-pages', filter] as const,
+    list: (filters?: Record<string, unknown> | string) =>
+      [...backofficeKeys.comments.all(), 'list', filters] as const,
   },
   carousel: {
     all: () => [...backofficeKeys.all, 'carousel'] as const,
@@ -88,7 +88,8 @@ export const backofficeKeys = {
   // ── Scribes ────────────────────────────────────────────────
   scribes: {
     all: () => [...backofficeKeys.all, 'scribes'] as const,
-    list: () => [...backofficeKeys.scribes.all(), 'list'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...backofficeKeys.scribes.all(), 'list', filters] as const,
     detail: (id: number) => [...backofficeKeys.scribes.all(), 'detail', id] as const,
   },
   hands: {

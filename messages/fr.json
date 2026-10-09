@@ -34,7 +34,18 @@
     "unsavedChanges": "Modifications non enregistrées",
     "processing": "Traitement...",
     "signIn": "Se connecter",
-    "signOut": "Se déconnecter"
+    "signOut": "Se déconnecter",
+    "pagination": {
+      "navLabel": "Pagination",
+      "rowsPerPage": "Lignes par page",
+      "range": "{from}–{to} sur {total}",
+      "goToPage": "Aller à la page",
+      "ofPages": "sur {total}",
+      "goToPageN": "Aller à la page {page}",
+      "currentPageN": "Page {page}",
+      "previousPage": "Aller à la page précédente",
+      "nextPage": "Aller à la page suivante"
+    }
   },
   "errors": {
     "somethingWentWrong": "Une erreur est survenue",
@@ -519,8 +530,6 @@
     },
     "publicationsList": {
       "noPostsFound": "Aucun article trouvé.",
-      "prev": "← Précédent",
-      "next": "Suivant →",
       "recentPosts": "Articles récents",
       "postsByDate": "Articles par date",
       "selectMonth": "Sélectionner un mois",
@@ -2080,7 +2089,6 @@
       "searchPlaceholder": "Rechercher des utilisateurs...",
       "newUserButton": "Nouvel utilisateur",
       "selectedCount": "{selected} sur {total} sélectionné(s)",
-      "rowsTotal": "{count} ligne(s) au total",
       "bulkActivate": "Activer",
       "bulkDeactivate": "Désactiver",
       "bulkDelete": "Supprimer",
@@ -2353,16 +2361,13 @@
       "columns": "Colonnes",
       "selectedCount": "{count} sélectionné(s)",
       "loadError": "Échec du chargement. Veuillez réessayer.",
+      "exportFailed": "Échec de l'export. Veuillez réessayer.",
       "noResults": "Aucun résultat.",
-      "selectedOfTotal": "{count} sur {total} sélectionné(s)",
-      "rowsTotal": "{count} ligne(s) au total"
+      "selectedOfTotal": "{count} sur {total} sélectionné(s)"
     },
     "filterBar": {
       "allOption": "Tous les {label}",
       "clearFilters": "Effacer les filtres"
-    },
-    "pagination": {
-      "pageOf": "Page {page} sur {total}"
     },
     "inlineEdit": {
       "placeholder": "Cliquer pour modifier",

@@ -19,7 +19,15 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { memo, useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -204,8 +212,28 @@ const ViewSwitcher = memo(function ViewSwitcher({
     icon: VIEW_ICONS[key],
   }));
   const active = viewMeta.find((v) => v.key === view) ?? viewMeta[0];
+
+  // Lets the tables below stay clear of this sticky bar when scrolled to.
+  const barRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const root = document.documentElement;
+    const setVar = () => root.style.setProperty('--texts-switcher-h', `${el.offsetHeight}px`);
+    setVar();
+    const observer = new ResizeObserver(setVar);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty('--texts-switcher-h');
+    };
+  }, []);
+
   return (
-    <div className="sticky top-0 z-20 -mx-6 border-b border-border/60 bg-background/85 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/65">
+    <div
+      ref={barRef}
+      className="sticky top-0 z-20 -mx-6 border-b border-border/60 bg-background/85 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/65"
+    >
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div
           role="tablist"

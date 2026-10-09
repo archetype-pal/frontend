@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import BlogPostPreview from './blog-post-preview';
 import { getPublications, type Publication, type PublicationParams } from '@/utils/api';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageBanner } from '@/components/layout/page-banner';
+import { DataPagination } from '@/components/ui/data-pagination';
 
 interface PaginatedPublicationsProps {
   title: string;
@@ -16,7 +16,7 @@ interface PaginatedPublicationsProps {
   basePath: string;
 }
 
-const POSTS_PER_PAGE = 10;
+const DEFAULT_POSTS_PER_PAGE = 20;
 const RECENT_POST_COUNT = 5;
 
 export default function PaginatedPublications({
@@ -28,26 +28,27 @@ export default function PaginatedPublications({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Clamp the page param: a non-numeric (?page=abc → NaN) or out-of-range
-  // (?page=0 → negative offset) value would otherwise send a malformed offset
-  // to the API. Fall back to page 1 and floor fractional values.
   const parsedPage = Math.floor(Number(searchParams.get('page')));
   const page = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1;
-  const offset = (page - 1) * POSTS_PER_PAGE;
 
-  // null until the first response: the list shows placeholders, not "No posts found".
+  const parsedLimit = Math.floor(Number(searchParams.get('limit')));
+  const limit =
+    Number.isFinite(parsedLimit) && parsedLimit >= 1 && parsedLimit <= 100
+      ? parsedLimit
+      : DEFAULT_POSTS_PER_PAGE;
+
+  const offset = (page - 1) * limit;
+
   const [articles, setArticles] = useState<Publication[] | null>(null);
   const [recentPosts, setRecentPosts] = useState<Publication[] | null>(null);
   const [total, setTotal] = useState(0);
+  const listRef = useRef<HTMLElement>(null);
 
-  const totalPages = Math.ceil(total / POSTS_PER_PAGE);
-
-  // Fetch paginated articles
   useEffect(() => {
     const fetchPaginated = async () => {
       try {
         const params: PublicationParams = {
-          limit: POSTS_PER_PAGE,
+          limit,
           offset,
           [categoryFlag]: true,
         };
@@ -62,7 +63,7 @@ export default function PaginatedPublications({
     };
 
     fetchPaginated();
-  }, [offset, categoryFlag]);
+  }, [offset, limit, categoryFlag]);
 
   // Fetch fixed list of recent posts only once
   useEffect(() => {
@@ -85,28 +86,19 @@ export default function PaginatedPublications({
     fetchRecent();
   }, [categoryFlag]);
 
-  const goToPage = (newPage: number) => {
+  const handlePageChange = (newPage: number, options?: { clamped: boolean }) => {
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.set('page', newPage.toString());
-    router.push(`${basePath}?${newParams.toString()}`);
+    const url = `${basePath}?${newParams.toString()}`;
+    if (options?.clamped) router.replace(url);
+    else router.push(url);
   };
 
-  // Window the page-number buttons (first/last + a sibling window + ellipsis),
-  // matching components/search/paginated-search.tsx, so a large publication
-  // count doesn't render hundreds of buttons.
-  const buildPageWindow = (): (number | 'ellipsis')[] => {
-    const pages: (number | 'ellipsis')[] = [];
-    const siblings = 1;
-    const left = Math.max(page - siblings, 2);
-    const right = Math.min(page + siblings, totalPages - 1);
-
-    pages.push(1);
-    if (left > 2) pages.push('ellipsis');
-    for (let i = left; i <= right; i++) pages.push(i);
-    if (right < totalPages - 1) pages.push('ellipsis');
-    if (totalPages > 1) pages.push(totalPages);
-
-    return pages;
+  const handleLimitChange = (newLimit: number) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set('limit', newLimit.toString());
+    newParams.set('page', '1');
+    router.push(`${basePath}?${newParams.toString()}`);
   };
 
   return (
@@ -115,7 +107,7 @@ export default function PaginatedPublications({
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row gap-16">
           {/* Main Content */}
-          <main className="flex-1">
+          <main ref={listRef} className="flex-1 scroll-mt-[var(--site-header-h,0px)]">
             {articles === null ? (
               <div className="space-y-6">
                 {[...Array(4)].map((_, i) => (
@@ -159,37 +151,16 @@ export default function PaginatedPublications({
               </div>
             )}
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-12 flex-wrap">
-                <Button variant="outline" onClick={() => goToPage(page - 1)} disabled={page <= 1}>
-                  {t('prev')}
-                </Button>
-
-                {buildPageWindow().map((pageNum, i) =>
-                  pageNum === 'ellipsis' ? (
-                    <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">
-                      …
-                    </span>
-                  ) : (
-                    <Button
-                      key={pageNum}
-                      variant={pageNum === page ? 'default' : 'outline'}
-                      onClick={() => goToPage(pageNum)}
-                      className={pageNum === page ? 'shadow-sm' : ''}
-                    >
-                      {pageNum}
-                    </Button>
-                  )
-                )}
-
-                <Button
-                  variant="outline"
-                  onClick={() => goToPage(page + 1)}
-                  disabled={page >= totalPages}
-                >
-                  {t('next')}
-                </Button>
+            {articles && (
+              <div className="mt-12">
+                <DataPagination
+                  scrollTargetRef={listRef}
+                  totalItems={total}
+                  page={page}
+                  pageSize={limit}
+                  onPageChange={handlePageChange}
+                  onPageSizeChange={handleLimitChange}
+                />
               </div>
             )}
           </main>

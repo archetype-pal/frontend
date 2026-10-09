@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
@@ -11,7 +11,7 @@ import { BookOpen, Plus, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
-import { ServerPagination } from '@/components/backoffice/common/server-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { getHistoricalItems } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import type { HistoricalItemListItem } from '@/types/backoffice';
@@ -23,6 +23,8 @@ export default function ManuscriptsPage() {
   const { token } = useAuth();
   const router = useRouter();
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
+  const [pageSize, setPageSize] = useState(50);
+  const tableRef = useRef<HTMLDivElement>(null);
   const { getLabel, getPluralLabel } = useModelLabels();
   const historicalItemLabel = getLabel('historicalItem');
   const historicalItemPlural = getPluralLabel('historicalItem');
@@ -109,16 +111,15 @@ export default function ManuscriptsPage() {
   );
 
   const queryParams = {
-    limit: 50,
-    offset: page * 50,
+    limit: pageSize,
+    offset: page * pageSize,
     ...(search ? { search } : {}),
   };
 
-  const { data, isLoading, isPlaceholderData, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.manuscripts.list(queryParams),
     queryFn: () => getHistoricalItems(queryParams),
     enabled: !!token,
-    // Keep the current page on screen while the next page or search loads.
     placeholderData: keepPreviousData,
   });
 
@@ -144,6 +145,7 @@ export default function ManuscriptsPage() {
       </div>
 
       <DataTable
+        tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
         onRetry={() => refetch()}
@@ -159,12 +161,16 @@ export default function ManuscriptsPage() {
       />
 
       {data && (
-        <ServerPagination
-          total={data.count}
-          pageSize={50}
-          page={page}
-          hasNext={!!data.next && !isPlaceholderData}
-          onPageChange={setPage}
+        <DataPagination
+          scrollTargetRef={tableRef}
+          totalItems={data.count}
+          page={page + 1}
+          pageSize={pageSize}
+          onPageChange={(p) => setPage(p - 1)}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+          }}
         />
       )}
     </div>

@@ -77,7 +77,7 @@ describe('backofficeKeys structure', () => {
   it('keeps the comments page key distinct from the pending-count key', () => {
     const all = backofficeKeys.comments.all();
     const pendingCount = backofficeKeys.comments.list('pending');
-    const pendingPage = backofficeKeys.comments.allPages('pending');
+    const pendingPage = backofficeKeys.comments.list({ limit: 20, offset: 0, is_approved: false });
 
     expect(pendingPage).not.toEqual(pendingCount);
     expect(pendingPage.slice(0, all.length)).toEqual([...all]);

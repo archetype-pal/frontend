@@ -224,7 +224,7 @@ export default function PagesPage() {
         data={filtered}
         searchColumn="title"
         searchPlaceholder={t('pages.searchPlaceholder')}
-        pageSize={25}
+        pageSize={20}
         enableColumnVisibility
         enableRowSelection
         bulkActions={bulkActions}
