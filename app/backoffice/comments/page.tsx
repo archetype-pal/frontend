@@ -5,10 +5,11 @@ import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tansta
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
-import { MessageSquare, CheckCircle, XCircle, Trash2, Clock, Filter } from 'lucide-react';
+import { MessageSquare, CheckCircle, XCircle, Trash2, Clock, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { DataPagination } from '@/components/ui/data-pagination';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
@@ -18,9 +19,12 @@ import {
   rejectComment,
   deleteComment,
 } from '@/services/backoffice/publications';
+import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
+import { cn } from '@/lib/utils';
 import type { CommentItem } from '@/types/backoffice';
 
 export default function CommentsPage() {
@@ -32,17 +36,18 @@ export default function CommentsPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | 'delete' | null>(null);
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
+  const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
+  const [pageSize, setPageSize] = usePageSize('comments', 20);
   const listRef = useRef<HTMLDivElement>(null);
 
   const queryParams = {
     limit: pageSize,
     offset: page * pageSize,
+    ...(search ? { search } : {}),
     ...(filter !== 'all' ? { is_approved: filter === 'approved' } : {}),
   };
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.comments.list(queryParams),
     queryFn: () => getComments(queryParams),
     enabled: !!token,
@@ -151,7 +156,7 @@ export default function CommentsPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Filter className="h-4 w-4 text-muted-foreground" />
         {(['all', 'pending', 'approved'] as const).map((f) => (
           <Button
@@ -174,6 +179,18 @@ export default function CommentsPage() {
             }
           </Button>
         ))}
+        <div className="relative ml-auto w-full max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={t('comments.searchPlaceholder')}
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              setSelected(new Set());
+            }}
+            className="pl-8 h-9"
+          />
+        </div>
       </div>
 
       {/* Bulk actions bar */}
@@ -223,7 +240,14 @@ export default function CommentsPage() {
       )}
 
       {/* Comment list */}
-      <div ref={listRef} className="space-y-2">
+      <div
+        ref={listRef}
+        aria-busy={isPlaceholderData || undefined}
+        className={cn(
+          'space-y-2 transition-opacity duration-250 ease-out',
+          isPlaceholderData && 'opacity-60'
+        )}
+      >
         {comments.length > 0 && (
           <div className="flex items-center gap-2 px-1">
             <Checkbox

@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
 import { DataPagination } from '@/components/ui/data-pagination';
 import { getHands } from '@/services/backoffice/scribes';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toOrdering } from '@/lib/backoffice/ordering';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
@@ -95,7 +96,7 @@ export default function HandsPage() {
   const { token } = useAuth();
   const columns = buildColumns(t);
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = usePageSize('hands', 20);
   const tableRef = useRef<HTMLDivElement>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const ordering = toOrdering(sorting, ORDERING_FIELDS);
@@ -107,7 +108,7 @@ export default function HandsPage() {
     ...(ordering ? { ordering } : {}),
   };
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.hands.list(queryParams),
     queryFn: () => getHands(queryParams),
     enabled: !!token,
@@ -130,6 +131,7 @@ export default function HandsPage() {
         tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}

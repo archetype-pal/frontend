@@ -7,7 +7,6 @@ import {
   Download,
   ExternalLink,
   Filter as FilterIcon,
-  Loader2,
   Plus,
   Search,
   Trash2,
@@ -16,7 +15,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +53,7 @@ import {
 import { useAuth } from '@/contexts/auth-context';
 import { proxyFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import {
   IMAGE_TEXT_PAGE_SIZE,
   fetchImageTextList,
@@ -139,7 +139,7 @@ export function TextsList() {
   );
 
   const [searchInput, setSearchInput] = useState(filters.search);
-  const [pageSize, setPageSize] = useState(IMAGE_TEXT_PAGE_SIZE);
+  const [pageSize, setPageSize] = usePageSize('texts-browse', IMAGE_TEXT_PAGE_SIZE);
   const tableRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [newDialogOpen, setNewDialogOpen] = useState(false);
@@ -181,6 +181,9 @@ export function TextsList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput, filters.search]);
 
+  // Pending from the click until the new URL lands, so the list dims at once.
+  const [isNavigating, startNavigation] = useTransition();
+
   function setParams(next: Record<string, string | number | null>) {
     const sp = new URLSearchParams(searchParams?.toString() ?? '');
     for (const [key, value] of Object.entries(next)) {
@@ -191,7 +194,7 @@ export function TextsList() {
       }
     }
     const qs = sp.toString();
-    router.replace(qs ? `?${qs}` : '?', { scroll: false });
+    startNavigation(() => router.replace(qs ? `?${qs}` : '?', { scroll: false }));
   }
 
   const apiParams: ImageTextListParams = {
@@ -204,7 +207,7 @@ export function TextsList() {
     search: filters.search || undefined,
   };
 
-  const { data, isFetching, error } = useQuery({
+  const { data, isFetching, isPlaceholderData, error } = useQuery({
     queryKey: ['backoffice', 'image-texts', 'list', apiParams],
     queryFn: () => fetchImageTextList(apiParams),
     enabled: !!token,
@@ -213,6 +216,7 @@ export function TextsList() {
 
   const total = data?.count ?? 0;
   const rows = data?.results ?? [];
+  const isStale = isPlaceholderData || isNavigating;
 
   const allVisibleSelected = rows.length > 0 && rows.every((r) => selected.has(r.id));
   const someVisibleSelected = rows.some((r) => selected.has(r.id));
@@ -400,9 +404,6 @@ export function TextsList() {
               ]}
               onChange={(v) => setParams({ empty: v || null, page: null })}
             />
-            {isFetching && (
-              <Loader2 className="ml-auto h-4 w-4 animate-spin text-muted-foreground" />
-            )}
           </div>
 
           {selectedCount > 0 && (
@@ -420,7 +421,14 @@ export function TextsList() {
             </div>
           )}
 
-          <div ref={tableRef} className="overflow-x-auto scroll-mt-[var(--texts-switcher-h,0px)]">
+          <div
+            ref={tableRef}
+            aria-busy={isStale || undefined}
+            className={cn(
+              'overflow-x-auto scroll-mt-[var(--texts-switcher-h,0px)] transition-opacity duration-250 ease-out',
+              isStale && 'opacity-60'
+            )}
+          >
             <Table>
               <TableHeader>
                 <TableRow>

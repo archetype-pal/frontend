@@ -1740,6 +1740,7 @@
       "filterAll": "tous",
       "filterPending": "en attente",
       "filterApproved": "approuvés",
+      "searchPlaceholder": "Rechercher des commentaires...",
       "selectedCount": "{count} sélectionné(s)",
       "approveAll": "Tout approuver",
       "rejectAll": "Tout rejeter",
@@ -2151,6 +2152,7 @@
       "toastUserDeleted": "Utilisateur supprimé",
       "toastFailedDelete": "Échec de la suppression de l'utilisateur",
       "failedLoad": "Échec du chargement des utilisateurs",
+      "summaryFailed": "Échec du chargement des totaux d'utilisateurs",
       "relativeNever": "Jamais",
       "relativeJustNow": "À l'instant"
     },

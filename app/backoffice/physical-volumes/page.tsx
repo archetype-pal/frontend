@@ -23,6 +23,7 @@ import {
   getCurrentItems,
   getRepositories,
 } from '@/services/backoffice/manuscripts';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
@@ -38,7 +39,7 @@ export default function PhysicalVolumesPage() {
   const [repoFilter, setRepoFilter] = useState<string>('__all');
   const [deleteTarget, setDeleteTarget] = useState<CurrentItemOption | null>(null);
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = usePageSize('physical-volumes', 50);
   const tableRef = useRef<HTMLDivElement>(null);
   const shelfmarkLabel = getLabel('fieldShelfmark');
   const appManuscriptsLabel = getLabel('appManuscripts');
@@ -123,7 +124,7 @@ export default function PhysicalVolumesPage() {
     offset: page * pageSize,
   };
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.currentItems.list(filterParams),
     queryFn: () => getCurrentItems(filterParams),
     enabled: !!token,
@@ -193,6 +194,7 @@ export default function PhysicalVolumesPage() {
         tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}

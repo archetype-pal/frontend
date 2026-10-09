@@ -9,10 +9,10 @@
  * segments can deep-link to the right view.
  */
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,8 @@ import {
   NewImageTextDialog,
   type NewTextKind,
 } from '@/components/backoffice/new-image-text-dialog';
+import { cn } from '@/lib/utils';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 
 function parseMode(value: string | null): UncoveredMode {
   if (value === 'transcription' || value === 'translation') return value;
@@ -47,7 +49,7 @@ export function UncoveredImages() {
 
   const mode = parseMode(searchParams?.get('coverage') ?? null);
   const page = Math.max(0, Number.parseInt(searchParams?.get('uPage') ?? '0', 10) || 0);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = usePageSize('texts-uncovered', 20);
   const tableRef = useRef<HTMLDivElement>(null);
 
   const [dialogState, setDialogState] = useState<{
@@ -56,30 +58,38 @@ export function UncoveredImages() {
     type: NewTextKind;
   }>({ open: false, itemImage: null, type: 'Transcription' });
 
-  const { data, isFetching, error } = useQuery({
+  const { data, isFetching, isPlaceholderData, error } = useQuery({
     queryKey: ['backoffice', 'uncovered-images', mode, page, pageSize],
     queryFn: () => fetchUncoveredImages(mode, page, pageSize),
     enabled: !!token,
     placeholderData: (prev) => prev,
   });
 
+  // Pending from the click until the new URL lands, so the list dims at once.
+  const [isNavigating, startNavigation] = useTransition();
+  const isStale = isPlaceholderData || isNavigating;
+
   function setMode(next: UncoveredMode) {
     const sp = new URLSearchParams(searchParams?.toString() ?? '');
     if (next === 'either') sp.delete('coverage');
     else sp.set('coverage', next);
     sp.delete('uPage');
-    router.replace(sp.toString() ? `?${sp.toString()}#uncovered` : '?#uncovered', {
-      scroll: false,
-    });
+    startNavigation(() =>
+      router.replace(sp.toString() ? `?${sp.toString()}#uncovered` : '?#uncovered', {
+        scroll: false,
+      })
+    );
   }
 
   function setPage(next: number) {
     const sp = new URLSearchParams(searchParams?.toString() ?? '');
     if (next > 0) sp.set('uPage', String(next));
     else sp.delete('uPage');
-    router.replace(sp.toString() ? `?${sp.toString()}#uncovered` : '?#uncovered', {
-      scroll: false,
-    });
+    startNavigation(() =>
+      router.replace(sp.toString() ? `?${sp.toString()}#uncovered` : '?#uncovered', {
+        scroll: false,
+      })
+    );
   }
 
   function openCreate(imageId: number, type: NewTextKind) {
@@ -130,7 +140,14 @@ export function UncoveredImages() {
               {t('quality.uncovered.loadError', { message: (error as Error).message })}
             </div>
           )}
-          <div ref={tableRef} className="overflow-x-auto scroll-mt-[var(--texts-switcher-h,0px)]">
+          <div
+            ref={tableRef}
+            aria-busy={isStale || undefined}
+            className={cn(
+              'overflow-x-auto scroll-mt-[var(--texts-switcher-h,0px)] transition-opacity duration-250 ease-out',
+              isStale && 'opacity-60'
+            )}
+          >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -224,11 +241,6 @@ export function UncoveredImages() {
               }}
             />
           </div>
-          {isFetching && (
-            <div className="absolute right-6 top-3 text-xs text-muted-foreground">
-              <Loader2 className="inline h-3 w-3 animate-spin" />
-            </div>
-          )}
         </CardContent>
       </Card>
 

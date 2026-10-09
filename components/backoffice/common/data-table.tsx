@@ -40,6 +40,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { escapeCsvField } from '@/lib/backoffice/csv-escape';
 import { BackofficeErrorState } from './query-state';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 
 export interface BulkAction {
   label: string;
@@ -76,6 +77,8 @@ interface DataTableProps<TData, TValue> {
   /** Enable client-side pagination (default: true). */
   pagination?: boolean;
   pageSize?: number;
+  /** Remembers the chosen rows per page in this browser under this name. */
+  pageSizeKey?: string;
   /** Enable row selection with checkboxes. */
   enableRowSelection?: boolean;
   /** Bulk actions shown when rows are selected. */
@@ -100,6 +103,8 @@ interface DataTableProps<TData, TValue> {
   onRetry?: () => void;
   /** Render placeholder rows (instead of "No results") while the data query has nothing to show yet. */
   isLoading?: boolean;
+  /** Dim the rows while the next page or search loads. */
+  isStale?: boolean;
   /** Controlled sorting, for server ordering. */
   sorting?: SortingState;
   onSortingChange?: (sorting: SortingState) => void;
@@ -117,6 +122,7 @@ export function DataTable<TData, TValue>({
   toolbarActions,
   pagination = true,
   pageSize = 20,
+  pageSizeKey,
   enableRowSelection = false,
   bulkActions,
   getRowId,
@@ -129,6 +135,7 @@ export function DataTable<TData, TValue>({
   isError = false,
   onRetry,
   isLoading = false,
+  isStale = false,
   sorting: serverSorting,
   onSortingChange,
   tableRef,
@@ -140,7 +147,7 @@ export function DataTable<TData, TValue>({
   const [exporting, setExporting] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [pageIndex, setPageIndex] = useState(0);
-  const [tablePageSize, setTablePageSize] = useState(pageSize);
+  const [tablePageSize, setTablePageSize] = usePageSize(pageSizeKey ?? null, pageSize);
   const paginationState: PaginationState = { pageIndex, pageSize: tablePageSize };
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -445,7 +452,14 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* Table */}
-      <div ref={tableBoxRef} className="rounded-md border">
+      <div
+        ref={tableBoxRef}
+        aria-busy={isStale || undefined}
+        className={cn(
+          'rounded-md border transition-opacity duration-250 ease-out',
+          isStale && 'opacity-60'
+        )}
+      >
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

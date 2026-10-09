@@ -326,6 +326,14 @@ export interface PartnerItem {
 
 // ── Users ──────────────────────────────────────────────────────────────
 
+export interface UserSummary {
+  total: number;
+  superusers: number;
+  staff: number;
+  active: number;
+  inactive: number;
+}
+
 export interface UserListItem {
   id: number;
   username: string;

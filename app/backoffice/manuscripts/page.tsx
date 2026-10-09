@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
 import { DataPagination } from '@/components/ui/data-pagination';
 import { getHistoricalItems } from '@/services/backoffice/manuscripts';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import type { HistoricalItemListItem } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -23,7 +24,7 @@ export default function ManuscriptsPage() {
   const { token } = useAuth();
   const router = useRouter();
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = usePageSize('manuscripts', 50);
   const tableRef = useRef<HTMLDivElement>(null);
   const { getLabel, getPluralLabel } = useModelLabels();
   const historicalItemLabel = getLabel('historicalItem');
@@ -116,7 +117,7 @@ export default function ManuscriptsPage() {
     ...(search ? { search } : {}),
   };
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.manuscripts.list(queryParams),
     queryFn: () => getHistoricalItems(queryParams),
     enabled: !!token,
@@ -148,6 +149,7 @@ export default function ManuscriptsPage() {
         tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}
