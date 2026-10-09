@@ -223,6 +223,24 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
     setGraphOverrides((prev) => ({ ...prev, [updatedGraph.id]: updatedGraph }));
   }, []);
 
+  const asideRef = React.useRef<HTMLElement>(null);
+  React.useEffect(() => {
+    const aside = asideRef.current;
+    if (!aside) return;
+    const fit = () => {
+      aside.style.height = `${document.documentElement.clientHeight - aside.getBoundingClientRect().top}px`;
+    };
+    const observer = new ResizeObserver(fit);
+    document.querySelectorAll('header').forEach((header) => observer.observe(header));
+    window.addEventListener('scroll', fit, { passive: true });
+    window.addEventListener('resize', fit);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', fit);
+      window.removeEventListener('resize', fit);
+    };
+  }, []);
+
   return (
     <div className="flex min-h-[calc(100dvh-var(--site-header-h,0px))] flex-col bg-background">
       {/* Keep this above the sticky table header (z-10) so search dropdowns can overlap results. */}
@@ -481,15 +499,16 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
 
       <div className="flex flex-1 items-start">
         <aside
+          ref={asideRef}
           id="search-filters-aside"
           aria-hidden={s.filtersSidebarCollapsed}
           className={cn(
             // Sticky sidebar: stays beside the results below the site header,
             // scrolling internally when the facet list is tall.
-            'hidden border-r border-border bg-background transition-[width,opacity,border-color] duration-200 ease-out md:flex md:flex-col md:self-start md:sticky md:top-[var(--site-header-h,0px)] md:h-[calc(100dvh-var(--site-header-h,0px))]',
+            'hidden border-r border-border bg-background transition-[width,opacity,border-color] duration-200 ease-out md:flex md:flex-col md:self-start md:sticky md:top-[var(--site-header-h,0px)] md:max-h-[calc(100dvh-var(--site-header-h,0px))]',
             s.filtersSidebarCollapsed
               ? 'md:pointer-events-none md:w-0 md:min-w-0 md:overflow-hidden md:border-transparent md:p-0 md:opacity-0'
-              : 'md:w-64 md:shrink-0 md:overflow-y-auto md:px-3 md:py-3'
+              : 'md:w-64 md:shrink-0 md:overflow-y-auto md:overscroll-contain md:px-3 md:py-3'
           )}
         >
           {s.awaitingResults ? (
