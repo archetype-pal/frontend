@@ -124,6 +124,11 @@ export function CurrentItemCombobox({
     setSearchInput('');
   };
 
+  const startCreate = () => {
+    setNewShelfmark(typed);
+    setCreating(true);
+  };
+
   const pick = (item: CurrentItemOption) => {
     setPicked({ id: item.id, label: itemLabel(item) });
     onChange(item.id, item);
@@ -228,6 +233,13 @@ export function CurrentItemCombobox({
               <CommandInput
                 value={searchInput}
                 onValueChange={setSearchInput}
+                onKeyDown={(e) => {
+                  // With no match to highlight, Enter goes to Create, which sits outside the list.
+                  if (e.key === 'Enter' && settled && !isFetching && items.length === 0) {
+                    e.preventDefault();
+                    startCreate();
+                  }
+                }}
                 placeholder={t('manuscriptsDetail.searchByLabelPlaceholder', {
                   label: shelfmarkLabel.toLowerCase(),
                 })}
@@ -280,10 +292,7 @@ export function CurrentItemCombobox({
                 type="button"
                 variant="ghost"
                 className="h-8 w-full justify-start px-2 font-normal text-primary"
-                onClick={() => {
-                  setNewShelfmark(typed);
-                  setCreating(true);
-                }}
+                onClick={startCreate}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 <span className="truncate">
