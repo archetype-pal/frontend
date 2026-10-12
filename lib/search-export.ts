@@ -1,3 +1,4 @@
+import { escapeCsvField } from '@/lib/backoffice/csv-escape';
 import type { ResultType } from '@/lib/search-types';
 
 /**
@@ -109,13 +110,6 @@ function formatCell(value: unknown): string {
   if (value == null) return '';
   if (Array.isArray(value)) return value.join('; ');
   return String(value);
-}
-
-function escapeCsvField(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
 }
 
 export function buildFormattedCsv(
