@@ -108,6 +108,11 @@ export function FacetPanel({
                 {total}
               </span>
             )}
+            {selectedValue && (
+              <span className="rounded-full border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
+                1 selected
+              </span>
+            )}
           </h4>
           <ChevronDown
             className={cn(
