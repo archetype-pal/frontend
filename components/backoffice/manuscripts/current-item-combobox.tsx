@@ -106,12 +106,8 @@ export function CurrentItemCombobox({
   });
 
   const showResults = settled && query.length > 0;
-  // The API returns search hits in no particular order.
-  const items: CurrentItemOption[] = showResults
-    ? [...(currentItemsData?.results ?? [])].sort((a, b) =>
-        itemLabel(a).localeCompare(itemLabel(b), undefined, { numeric: true })
-      )
-    : [];
+  // Kept in the server's order, which also picks the first 50 matches.
+  const items: CurrentItemOption[] = showResults ? (currentItemsData?.results ?? []) : [];
   const totalMatches = showResults ? (currentItemsData?.count ?? 0) : 0;
   const repositories: Repository[] = repositoriesData ?? [];
 
