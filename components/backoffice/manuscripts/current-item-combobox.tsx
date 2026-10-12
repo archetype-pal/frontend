@@ -277,14 +277,17 @@ export function CurrentItemCombobox({
             </Command>
             {/* Outside the scrolling list, so it stays in view and no search hides it. */}
             <div className="border-t p-1">
-              {totalMatches > items.length && (
-                <p className="px-2 pb-1 pt-0.5 text-xs text-muted-foreground">
-                  {t('manuscriptsDetail.volumeSearchMore', {
-                    shown: items.length,
-                    count: totalMatches,
-                  })}
-                </p>
-              )}
+              {/* Always mounted, so screen readers announce the hint when it appears. */}
+              <div aria-live="polite">
+                {totalMatches > items.length && (
+                  <p className="px-2 pb-1 pt-0.5 text-xs text-muted-foreground">
+                    {t('manuscriptsDetail.volumeSearchMore', {
+                      shown: items.length,
+                      count: totalMatches,
+                    })}
+                  </p>
+                )}
+              </div>
               <Button
                 type="button"
                 variant="ghost"
