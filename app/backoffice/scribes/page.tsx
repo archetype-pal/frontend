@@ -23,7 +23,6 @@ import { createScribe } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import { toast } from 'sonner';
 import type { AdminScribeListItem } from '@/types/backoffice';
 
@@ -93,9 +92,7 @@ export default function ScribesPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.scribes.list(),
     queryFn: () =>
-      walkPaginated<AdminScribeListItem>('/api/v1/management/scribes/scribes/?limit=100', (path) =>
-        proxyFetch(path)
-      ),
+      walkPaginated<AdminScribeListItem>('/api/v1/management/scribes/scribes/?limit=100'),
     enabled: !!token,
   });
 

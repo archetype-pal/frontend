@@ -1175,6 +1175,7 @@
       "viewPublicProfile": "Voir le profil public",
       "handsSection": "Mains ({count})",
       "noHands": "Aucune main associée à ce scribe.",
+      "handsLoadFailed": "Échec du chargement des mains.",
       "deleteTitle": "Supprimer « {name} » ?",
       "deleteDescription": "Cela peut échouer si le scribe a des mains associées.",
       "deleteConfirm": "Supprimer",
@@ -1230,6 +1231,7 @@
       "selectAll": "Tout sélectionner",
       "deselectAll": "Tout désélectionner",
       "noImages": "Aucune image trouvée pour cette partie d'élément.",
+      "imagesLoadFailed": "Échec du chargement des images.",
       "deleteTitle": "Supprimer « {name} » ?",
       "deleteDescription": "Cette action est irréversible.",
       "deleteConfirm": "Supprimer"
@@ -2334,6 +2336,7 @@
       "description": "Gérer les dépôts institutionnels",
       "singularLabel": "Dépôt",
       "pluralLabel": "Dépôts",
+      "loadFailed": "Échec du chargement des dépôts.",
       "fieldName": "Nom",
       "fieldNamePlaceholder": "British Library",
       "fieldLabel": "Libellé",

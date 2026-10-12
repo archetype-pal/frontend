@@ -1175,6 +1175,7 @@
       "viewPublicProfile": "View Public Profile",
       "handsSection": "Hands ({count})",
       "noHands": "No hands associated with this scribe.",
+      "handsLoadFailed": "Failed to load hands.",
       "deleteTitle": "Delete \"{name}\"?",
       "deleteDescription": "This may fail if the scribe has hands associated.",
       "deleteConfirm": "Delete",
@@ -1230,6 +1231,7 @@
       "selectAll": "Select All",
       "deselectAll": "Deselect All",
       "noImages": "No images found for this item part.",
+      "imagesLoadFailed": "Failed to load images.",
       "deleteTitle": "Delete \"{name}\"?",
       "deleteDescription": "This cannot be undone.",
       "deleteConfirm": "Delete"
@@ -2334,6 +2336,7 @@
       "description": "Manage institutional repositories",
       "singularLabel": "Repository",
       "pluralLabel": "Repositories",
+      "loadFailed": "Failed to load repositories.",
       "fieldName": "Name",
       "fieldNamePlaceholder": "British Library",
       "fieldLabel": "Label",

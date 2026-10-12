@@ -21,7 +21,7 @@ vi.mock('@/services/backoffice/scribes', () => ({
   createHand: (...args: unknown[]) => createHandMock(...args),
 }));
 
-import { ItemPartHandsSection } from './item-part-hands-section';
+import { ItemPartHandsSection, formatScribeOptionLabel } from './item-part-hands-section';
 
 const HAND = {
   id: 11,
@@ -185,5 +185,104 @@ describe('ItemPartHandsSection', () => {
 
     await act(async () => finishCreate());
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('displays period and scriptorium in the scribe picker options to tell same-name scribes apart', async () => {
+    proxyFetchMock.mockImplementation(async (path: string) =>
+      page(
+        path.includes('/scribes/scribes/')
+          ? [
+              {
+                id: 31,
+                name: 'Anonymous',
+                period_display: 'Early 12th c.',
+                scriptorium: 'St Andrews',
+              },
+              {
+                id: 32,
+                name: 'Anonymous',
+                period_display: 'Late 12th c.',
+                scriptorium: 'Holyrood',
+              },
+            ]
+          : hands
+      )
+    );
+
+    renderSection();
+    await screen.findByText('Hands (1)');
+    fireEvent.click(screen.getByRole('button', { name: 'Add hand' }));
+
+    await waitFor(() =>
+      expect((screen.getByRole('combobox') as HTMLButtonElement).disabled).toBe(false)
+    );
+    fireEvent.click(screen.getByRole('combobox'));
+
+    expect(
+      await screen.findByRole('option', { name: 'Anonymous (Early 12th c. · St Andrews)' })
+    ).toBeDefined();
+    expect(
+      await screen.findByRole('option', { name: 'Anonymous (Late 12th c. · Holyrood)' })
+    ).toBeDefined();
+  });
+});
+
+describe('formatScribeOptionLabel', () => {
+  it('combines period and scriptorium when both are provided', () => {
+    expect(
+      formatScribeOptionLabel({
+        name: 'Unknown',
+        period_display: 'Early 12th c.',
+        scriptorium: 'St Andrews',
+      })
+    ).toBe('Unknown (Early 12th c. · St Andrews)');
+  });
+
+  it('displays only period when scriptorium is empty or null', () => {
+    expect(
+      formatScribeOptionLabel({
+        name: 'Unknown',
+        period_display: 'Early 12th c.',
+        scriptorium: '',
+      })
+    ).toBe('Unknown (Early 12th c.)');
+
+    expect(
+      formatScribeOptionLabel({
+        name: 'Unknown',
+        period_display: 'Early 12th c.',
+        scriptorium: null,
+      })
+    ).toBe('Unknown (Early 12th c.)');
+  });
+
+  it('displays only scriptorium when period_display is missing', () => {
+    expect(
+      formatScribeOptionLabel({
+        name: 'Unknown',
+        period_display: null,
+        scriptorium: 'Kelso',
+      })
+    ).toBe('Unknown (Kelso)');
+  });
+
+  it('returns plain name when both period_display and scriptorium are missing', () => {
+    expect(
+      formatScribeOptionLabel({
+        name: 'Unknown',
+        period_display: null,
+        scriptorium: '',
+      })
+    ).toBe('Unknown');
+  });
+
+  it('trims whitespace-only scriptorium cleanly', () => {
+    expect(
+      formatScribeOptionLabel({
+        name: 'Unknown',
+        period_display: 'Early 12th c.',
+        scriptorium: '   ',
+      })
+    ).toBe('Unknown (Early 12th c.)');
   });
 });
