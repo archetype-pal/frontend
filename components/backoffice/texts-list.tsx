@@ -63,6 +63,7 @@ import {
 } from '@/services/backoffice/image-texts-list';
 import { bulkActionImageTexts } from '@/services/backoffice/image-texts-bulk';
 import { transitionImageText, type ImageTextStatus } from '@/services/backoffice/review-queue';
+import { downloadBlob } from '@/lib/download';
 
 const STATUS_TONE: Record<ImageTextStatus, string> = {
   Draft:
@@ -286,14 +287,7 @@ export function TextsList() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const filename = `image-texts.${format}`;
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = objectUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(objectUrl);
+      downloadBlob(filename, blob);
       toast.success(t('textsList.toastDownloaded', { filename }), { id: toastId });
     } catch (err) {
       toast.error(t('textsList.toastExportFailed'), {

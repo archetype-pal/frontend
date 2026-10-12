@@ -36,6 +36,7 @@ import { ChevronLeft, ChevronRight, Search, Columns, Download, X } from 'lucide-
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { escapeCsvField } from '@/lib/backoffice/csv-escape';
+import { downloadBlob } from '@/lib/download';
 import { BackofficeErrorState } from './query-state';
 
 export interface BulkAction {
@@ -238,21 +239,7 @@ export function DataTable<TData, TValue>({
     // could introduce a comma, quote, or formula-prefix character that
     // would otherwise break CSV alignment for the whole file.
     const csv = [headers.map(escapeCsvField).join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${exportFilename}.csv`;
-    // Append-click-remove instead of bare `.click()` on a detached node.
-    // Modern Chrome/Firefox/Safari trigger the download fine, but older
-    // Firefox versions and some mobile Safari builds silently no-op the
-    // click on an unattached anchor — admins on those browsers got no
-    // export file. Same fix as cycle 179's search-results exporter and
-    // cycle 149's lightbox exporter.
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadBlob(`${exportFilename}.csv`, new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
   }
 
   return (

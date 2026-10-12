@@ -9,6 +9,7 @@ import { Download, FileText, Image as ImageIcon, Printer, X, FileJson } from 'lu
 import { useLightboxStore, useWorkspaceImages } from '@/stores/lightbox-store';
 import type { LightboxImage } from '@/lib/lightbox-db';
 import { getLightboxImageCaption, getLightboxImageLabel } from '@/lib/lightbox-display';
+import { downloadBlob } from '@/lib/download';
 import { useModelLabels } from '@/contexts/model-labels-context';
 
 interface LightboxExportProps {
@@ -225,14 +226,7 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
       try {
         const response = await fetch(image.imageUrl);
         const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${toSafeFilename(getLightboxImageLabel(image))}-${image.id}.jpg`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        downloadBlob(`${toSafeFilename(getLightboxImageLabel(image))}-${image.id}.jpg`, blob);
       } catch (error) {
         console.error(`Image export failed for ${image.id}:`, error);
         failed++;
@@ -285,14 +279,7 @@ export function LightboxExport({ onClose }: LightboxExportProps) {
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
       type: 'application/json',
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `lightbox-export-${Date.now()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadBlob(`lightbox-export-${Date.now()}.json`, blob);
   };
 
   const exportAsTEI = async (workspaceImages: LightboxImage[]) => {
@@ -350,14 +337,7 @@ ${annotationElements ? annotationElements + '\n' : ''}    </surface>`;
     const teiContent = teiHeader + surfaceElements.join('\n') + '\n' + teiFooter;
 
     const blob = new Blob([teiContent], { type: 'application/xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `lightbox-export-${Date.now()}.xml`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadBlob(`lightbox-export-${Date.now()}.xml`, blob);
   };
 
   return (

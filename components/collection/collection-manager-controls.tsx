@@ -53,6 +53,7 @@ import {
   parsePortableCollectionFile,
 } from '@/lib/collection-transfer';
 import { backfillCollectionGraphLabels } from '@/lib/collection-metadata';
+import { downloadBlob } from '@/lib/download';
 
 export function CollectionManagerControls() {
   const { token } = useAuth();
@@ -169,11 +170,7 @@ export function CollectionManagerControls() {
         throw new Error('Collection is larger than the 5 MB portable file limit.');
       }
 
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = getPortableCollectionFilename(activeCollection.name);
-      link.click();
-      URL.revokeObjectURL(link.href);
+      downloadBlob(getPortableCollectionFilename(activeCollection.name), blob);
       toast.success(t('manager.toastExported', { name: activeCollection.name }));
     } catch (error) {
       toast.error(t('manager.toastExportFailed'), {

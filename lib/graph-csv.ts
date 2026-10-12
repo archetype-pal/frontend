@@ -1,5 +1,6 @@
 import type { BackendGraph } from '@/services/annotations';
 import { escapeCsvField } from '@/lib/backoffice/csv-escape';
+import { downloadBlob } from '@/lib/download';
 import { isGraphDescribed } from '@/lib/annotation-gallery-filters';
 
 export interface GraphCsvRow {
@@ -48,13 +49,5 @@ export function graphsToCsv<R extends GraphCsvRow>(
 }
 
 export function downloadCsv(filename: string, csv: string) {
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  downloadBlob(filename, new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
 }
