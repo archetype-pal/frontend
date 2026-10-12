@@ -25,13 +25,13 @@ import { EntityEditorActions } from '@/components/backoffice/common/entity-edito
 import {
   BackofficeErrorState,
   BackofficeLoadingState,
+  BackofficeInlineError,
 } from '@/components/backoffice/common/query-state';
 import { getHand, updateHand, deleteHand } from '@/services/backoffice/scribes';
 import { getDates } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import type { AdminItemImage } from '@/services/backoffice/manuscripts';
 
 export default function HandDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -64,12 +64,17 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
   // silently capped at DRF's max_limit=100, so editors associating a hand with
   // images on a multi-folio cartulary couldn't reach folios past the 100th.
   const itemPart = editor.entity?.item_part;
-  const { data: imagesData, isLoading: imagesLoading } = useQuery({
+  const {
+    data: imagesData,
+    isLoading: imagesLoading,
+    isError: imagesFailed,
+    isFetching: imagesFetching,
+    refetch: refetchImages,
+  } = useQuery({
     queryKey: ['backoffice', 'item-images', itemPart],
     queryFn: () =>
       walkPaginated<AdminItemImage>(
-        `/api/v1/manuscripts/management/item-images/?item_part=${itemPart}&limit=100`,
-        (path) => proxyFetch(path)
+        `/api/v1/manuscripts/management/item-images/?item_part=${itemPart}&limit=100`
       ),
     enabled: !!token && !!itemPart,
   });
@@ -229,7 +234,11 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
               size="sm"
               className="h-7 text-xs"
               onClick={selectAllImages}
-              disabled={form.item_part_images.length === availableImages.length}
+              disabled={
+                !imagesData ||
+                imagesFailed ||
+                form.item_part_images.length === availableImages.length
+              }
             >
               {t('handsDetail.selectAll')}
             </Button>
@@ -250,6 +259,12 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
           <div className="flex items-center justify-center h-24 rounded-md border border-dashed">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
+        ) : imagesFailed ? (
+          <BackofficeInlineError
+            message={t('handsDetail.imagesLoadFailed')}
+            retrying={imagesFetching}
+            onRetry={() => refetchImages()}
+          />
         ) : availableImages.length === 0 ? (
           <div className="rounded-md border border-dashed p-6 text-center text-muted-foreground text-sm">
             {t('handsDetail.noImages')}

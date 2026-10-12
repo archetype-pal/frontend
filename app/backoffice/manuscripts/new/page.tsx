@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
+import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
 import {
   createHistoricalItem,
   createItemPart,
@@ -29,7 +30,6 @@ import {
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import { toast } from 'sonner';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -61,7 +61,12 @@ export default function NewManuscriptPage() {
   const [probableTextDate, setProbableTextDate] = useState('');
   const [datingNotes, setDatingNotes] = useState('');
 
-  const { data: repositoriesData } = useQuery({
+  const {
+    data: repositoriesData,
+    isError: repositoriesFailed,
+    isFetching: repositoriesFetching,
+    refetch: refetchRepositories,
+  } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
     queryFn: () => getRepositories(),
     enabled: !!token,
@@ -93,8 +98,7 @@ export default function NewManuscriptPage() {
         let currentItemId: number | null = null;
         if (repository && shelfmark.trim()) {
           const existing = await walkPaginated<CurrentItemOption>(
-            `/api/v1/manuscripts/management/current-items/?repository=${Number(repository)}&limit=100`,
-            (path) => proxyFetch(path)
+            `/api/v1/manuscripts/management/current-items/?repository=${Number(repository)}&limit=100`
           );
           const match = existing.find(
             (ci) => ci.shelfmark.toLowerCase() === shelfmark.trim().toLowerCase()
@@ -218,6 +222,13 @@ export default function NewManuscriptPage() {
                 ))}
               </SelectContent>
             </Select>
+            {repositoriesFailed && (
+              <BackofficeInlineError
+                message={t('repositories.loadFailed')}
+                retrying={repositoriesFetching}
+                onRetry={() => refetchRepositories()}
+              />
+            )}
           </div>
 
           <div className="space-y-1.5">

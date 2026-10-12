@@ -34,7 +34,13 @@
     "unsavedChanges": "Unsaved changes",
     "processing": "Processing...",
     "signIn": "Sign in",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "thumbnailSize": {
+      "label": "Thumbnail size",
+      "compact": "Compact thumbnails",
+      "comfortable": "Comfortable thumbnails",
+      "large": "Large thumbnails"
+    }
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
@@ -1175,6 +1181,7 @@
       "viewPublicProfile": "View Public Profile",
       "handsSection": "Hands ({count})",
       "noHands": "No hands associated with this scribe.",
+      "handsLoadFailed": "Failed to load hands.",
       "deleteTitle": "Delete \"{name}\"?",
       "deleteDescription": "This may fail if the scribe has hands associated.",
       "deleteConfirm": "Delete",
@@ -1230,6 +1237,7 @@
       "selectAll": "Select All",
       "deselectAll": "Deselect All",
       "noImages": "No images found for this item part.",
+      "imagesLoadFailed": "Failed to load images.",
       "deleteTitle": "Delete \"{name}\"?",
       "deleteDescription": "This cannot be undone.",
       "deleteConfirm": "Delete"
@@ -2334,6 +2342,7 @@
       "description": "Manage institutional repositories",
       "singularLabel": "Repository",
       "pluralLabel": "Repositories",
+      "loadFailed": "Failed to load repositories.",
       "fieldName": "Name",
       "fieldNamePlaceholder": "British Library",
       "fieldLabel": "Label",
@@ -2990,11 +2999,29 @@
       "place": "Place"
     },
     "emptyStates": {
+      "images": "No manuscript images associated to this hand.",
       "description": "No description associated to this record."
     },
     "sourceLabel": "Source: {label}",
     "imageAltFallback": "Manuscript image",
     "annotationCount": "{count, plural, one {# Annotation} other {# Annotations}}",
+    "graphs": {
+      "loading": "Loading graphs...",
+      "loadError": "Failed to load graphs.",
+      "empty": "No graphs associated to this hand.",
+      "allographsList": "Allographs List",
+      "allographFallback": "Allograph {id}",
+      "selectGraph": "Select {allograph}, graph {id}",
+      "openGraph": "{allograph}, graph {id}",
+      "selectAll": "Select all",
+      "unselectAll": "Unselect all",
+      "addSelected": "Add selected",
+      "selectedCount": "{count} selected",
+      "addToCollection": "Add to collection",
+      "lightbox": "Lightbox",
+      "exportCsv": "Export as CSV",
+      "clearSelection": "Clear"
+    },
     "metadata": {
       "fallbackTitle": "Hand #{id}",
       "catchFallbackTitle": "Hand",

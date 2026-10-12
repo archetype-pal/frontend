@@ -16,7 +16,6 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import type { CommentItem } from '@/types/backoffice';
 
 export default function CommentsPage() {
@@ -38,10 +37,7 @@ export default function CommentsPage() {
     queryFn: () => {
       const params = new URLSearchParams({ limit: '100' });
       if (filter !== 'all') params.set('is_approved', String(filter === 'approved'));
-      return walkPaginated<CommentItem>(
-        `/api/v1/media/management/comments/?${params.toString()}`,
-        (path) => proxyFetch(path)
-      );
+      return walkPaginated<CommentItem>(`/api/v1/media/management/comments/?${params.toString()}`);
     },
     enabled: !!token,
   });
