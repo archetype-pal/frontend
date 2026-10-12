@@ -24,6 +24,7 @@ import {
   getRepositories,
 } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -100,7 +101,12 @@ export default function PhysicalVolumesPage() {
     },
   ];
 
-  const { data: repositoriesData } = useQuery({
+  const {
+    data: repositoriesData,
+    isError: repositoriesFailed,
+    isFetching: repositoriesFetching,
+    refetch: refetchRepositories,
+  } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
     queryFn: () => getRepositories(),
     enabled: !!token,
@@ -153,6 +159,13 @@ export default function PhysicalVolumesPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {repositoriesFailed && (
+            <BackofficeInlineError
+              message={t('repositories.loadFailed')}
+              retrying={repositoriesFetching}
+              onRetry={() => refetchRepositories()}
+            />
+          )}
           <Select
             value={repoFilter}
             onValueChange={(v) => {

@@ -10,17 +10,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { EntityEditorActions } from '@/components/backoffice/common/entity-editor-actions';
 import {
   BackofficeErrorState,
   BackofficeLoadingState,
+  BackofficeInlineError,
 } from '@/components/backoffice/common/query-state';
 import { getScribe, updateScribe, deleteScribe } from '@/services/backoffice/scribes';
+import { getDates } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import type { AdminHandListItem } from '@/types/backoffice';
 
 export default function ScribeDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -35,7 +43,7 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
     queryKey: backofficeKeys.scribes.detail(id),
     invalidateKeys: [backofficeKeys.scribes.detail(id), backofficeKeys.scribes.all()],
     fetchFn: getScribe,
-    toForm: (s) => ({ name: s.name, scriptorium: s.scriptorium }),
+    toForm: (s) => ({ name: s.name, scriptorium: s.scriptorium, period: s.period }),
     saveFn: (sid, form) => updateScribe(sid, form),
     deleteFn: deleteScribe,
     listRoute: '/backoffice/scribes',
@@ -45,13 +53,21 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
   // Walk all pages — `getHands(token, { scribe })` returned only the first DRF
   // page (default 20). A productive scribe can have many hands across many
   // manuscripts; the per-scribe listing would hide entries 21+.
-  const { data: hands } = useQuery({
+  const {
+    data: hands,
+    isError: handsFailed,
+    isFetching: handsFetching,
+    refetch: refetchHands,
+  } = useQuery({
     queryKey: backofficeKeys.hands.list({ scribe: id }),
     queryFn: () =>
-      walkPaginated<AdminHandListItem>(
-        `/api/v1/management/scribes/hands/?scribe=${id}&limit=100`,
-        (path) => proxyFetch(path)
-      ),
+      walkPaginated<AdminHandListItem>(`/api/v1/management/scribes/hands/?scribe=${id}&limit=100`),
+    enabled: !!token,
+  });
+
+  const { data: dates } = useQuery({
+    queryKey: backofficeKeys.dates.all(),
+    queryFn: () => getDates(),
     enabled: !!token,
   });
 
@@ -92,15 +108,39 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>{t('scribesDetail.labelName')}</Label>
-          <Input value={form.name} onChange={(e) => setForm({ name: e.target.value })} />
+          <Label htmlFor="scribe-name">{t('scribesDetail.labelName')}</Label>
+          <Input
+            id="scribe-name"
+            value={form.name}
+            onChange={(e) => setForm({ name: e.target.value })}
+          />
         </div>
         <div className="space-y-1.5">
-          <Label>{t('scribesDetail.labelScriptorium')}</Label>
+          <Label htmlFor="scribe-scriptorium">{t('scribesDetail.labelScriptorium')}</Label>
           <Input
+            id="scribe-scriptorium"
             value={form.scriptorium}
             onChange={(e) => setForm({ scriptorium: e.target.value })}
           />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="scribe-period">{t('scribesDetail.labelPeriod')}</Label>
+          <Select
+            value={String(form.period ?? '__none')}
+            onValueChange={(val) => setForm({ period: val === '__none' ? null : Number(val) })}
+          >
+            <SelectTrigger id="scribe-period">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none">{t('scribesDetail.selectNoPeriod')}</SelectItem>
+              {(dates ?? []).map((d) => (
+                <SelectItem key={d.id} value={String(d.id)}>
+                  {d.date}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -121,7 +161,13 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
             {t('scribesDetail.handsSection', { count: hands?.length ?? 0 })}
           </h3>
         </div>
-        {hands?.length === 0 ? (
+        {handsFailed ? (
+          <BackofficeInlineError
+            message={t('scribesDetail.handsLoadFailed')}
+            retrying={handsFetching}
+            onRetry={() => refetchHands()}
+          />
+        ) : hands?.length === 0 ? (
           <div className="rounded-md border border-dashed p-6 text-center text-muted-foreground text-sm">
             {t('scribesDetail.noHands')}
           </div>
@@ -144,10 +190,10 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
                         {hand.date_display}
                       </span>
                     )}
-                    {hand.place && (
+                    {hand.place_display && (
                       <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {hand.place}
+                        {hand.place_display}
                       </span>
                     )}
                     {hand.item_part_images?.length > 0 && (

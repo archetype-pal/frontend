@@ -108,7 +108,7 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
             <div className="rounded-lg border bg-card p-6">
               <h2 className="text-lg font-semibold mb-4">{t('fields.description')}</h2>
               <div
-                className="prose max-w-none"
+                className="publication-body"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(scribe.description) }}
               />
             </div>

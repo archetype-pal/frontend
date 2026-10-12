@@ -128,7 +128,7 @@ const HAND: HandType = {
   item_part: 1,
   date: '',
   place: '',
-  description: '',
+  descriptions: [],
 };
 
 function makeGraph(overrides: Partial<BackendGraph> = {}): BackendGraph {

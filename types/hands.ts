@@ -1,4 +1,5 @@
 import type { PaginatedResponse } from './backoffice';
+import type { HandDescriptionPublic } from './hand-detail';
 
 export interface HandType {
   id: number;
@@ -7,7 +8,7 @@ export interface HandType {
   item_part: number;
   date: string;
   place: string;
-  description: string;
+  descriptions: HandDescriptionPublic[];
   /** Legacy DigiPal hand display order. Lower values are shown first. */
   num?: number | null;
   /** Newer/API aliases used by some hand ordering implementations. */

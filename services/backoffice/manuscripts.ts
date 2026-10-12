@@ -1,7 +1,6 @@
 import { backofficeGet } from './api-client';
 import { createCrudService } from './crud-factory';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import type {
   PaginatedResponse,
   HistoricalItemListItem,
@@ -13,6 +12,7 @@ import type {
   HistoricalItemDescription,
   MsDescArea,
   BackofficeDate,
+  BackofficePlace,
   CurrentItemOption,
   ItemPartNested,
 } from '@/types/backoffice';
@@ -157,9 +157,7 @@ const repositoriesCrud = createCrudService<PaginatedResponse<Repository>, Reposi
 // `repositoriesCrud.list()` returned the first DRF page only, silently
 // capping the list at 20.
 export const getRepositories = (): Promise<Repository[]> =>
-  walkPaginated<Repository>('/api/v1/manuscripts/management/repositories/?limit=100', (path) =>
-    proxyFetch(path)
-  );
+  walkPaginated<Repository>('/api/v1/manuscripts/management/repositories/?limit=100');
 export const createRepository = repositoriesCrud.create;
 export const updateRepository = repositoriesCrud.update;
 export const deleteRepository = repositoriesCrud.remove;
@@ -201,3 +199,15 @@ export function getDates() {
 export const createDate = datesCrud.create;
 export const updateDate = datesCrud.update;
 export const deleteDate = datesCrud.remove;
+
+// ── Places ──────────────────────────────────────────────────────────────
+
+const placesCrud = createCrudService<BackofficePlace>('/api/v1/management/common/places/');
+
+export function getPlaces() {
+  return backofficeGet<BackofficePlace[]>('/api/v1/management/common/places/');
+}
+
+export const createPlace = placesCrud.create;
+export const updatePlace = placesCrud.update;
+export const deletePlace = placesCrud.remove;

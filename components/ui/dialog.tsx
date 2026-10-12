@@ -58,6 +58,11 @@ function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
   return <div className={cn('flex flex-col gap-1.5 px-5 pt-5', className)} {...props} />;
 }
 
+// DialogContent has no padding of its own: header, body and footer each carry the side padding.
+function DialogBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn('px-5 py-2', className)} {...props} />;
+}
+
 function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div className={cn('flex items-center justify-end gap-2 px-5 pb-5', className)} {...props} />
@@ -93,6 +98,7 @@ export {
   DialogTrigger,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogFooter,
   DialogTitle,
   DialogDescription,

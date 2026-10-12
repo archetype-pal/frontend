@@ -11,7 +11,7 @@ function hand(overrides: Partial<HandType>): HandType {
     item_part: 1,
     date: '',
     place: '',
-    description: '',
+    descriptions: [],
     ...overrides,
   };
 }

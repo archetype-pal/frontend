@@ -31,6 +31,7 @@ import {
   getRepositories,
 } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -93,7 +94,12 @@ export function CurrentItemCombobox({
     enabled: !!token && open && query.length > 0,
   });
 
-  const { data: repositoriesData } = useQuery({
+  const {
+    data: repositoriesData,
+    isError: repositoriesFailed,
+    isFetching: repositoriesFetching,
+    refetch: refetchRepositories,
+  } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
     queryFn: () => getRepositories(),
     enabled: !!token && creating,
@@ -180,6 +186,13 @@ export function CurrentItemCombobox({
                   ))}
                 </SelectContent>
               </Select>
+              {repositoriesFailed && (
+                <BackofficeInlineError
+                  message={t('repositories.loadFailed')}
+                  retrying={repositoriesFetching}
+                  onRetry={() => refetchRepositories()}
+                />
+              )}
               <Input
                 value={newShelfmark}
                 onChange={(e) => setNewShelfmark(e.target.value)}

@@ -35,6 +35,14 @@ function withProviders(ui: React.ReactElement) {
   );
 }
 
+function expandPanel(container: HTMLElement, facetKey: string) {
+  const toggle = container.querySelector(`#panel-${facetKey} button[aria-expanded="false"]`);
+  expect(toggle).not.toBeNull();
+  act(() => {
+    toggle?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+}
+
 describe('DynamicFacets', () => {
   it('renders active filters section above keyword search', () => {
     const facets: FacetData = {
@@ -229,6 +237,11 @@ describe('DynamicFacets', () => {
       );
     });
 
+    expect(
+      container.querySelector('button[aria-label="Stop excluding British Library"]')
+    ).toBeNull();
+    expandPanel(container, 'repository_name');
+
     const revert = container.querySelector('button[aria-label="Stop excluding British Library"]');
     expect(revert).not.toBeNull();
 
@@ -292,6 +305,9 @@ describe('DynamicFacets', () => {
         )
       );
     });
+    expandPanel(container, 'material');
+    expandPanel(container, 'script');
+    expandPanel(container, 'origin_place');
 
     expect(container.textContent).toContain('Parchment (vellum)');
     expect(container.textContent).toContain('Gothic textualis (Northern)');
@@ -314,6 +330,53 @@ describe('DynamicFacets', () => {
         value: 'perg',
       }
     );
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('collapses opened panels when the search type changes', () => {
+    const facets: FacetData = {
+      repository_name: {
+        kind: 'list',
+        items: [{ label: 'Durham', value: 'Durham', count: 12, href: '' }],
+      },
+    };
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const renderFor = (searchType: 'manuscripts' | 'images') =>
+      act(() => {
+        root.render(
+          withProviders(
+            <DynamicFacets
+              facets={facets}
+              searchType={searchType}
+              keyword=""
+              activeTags={[]}
+              onKeywordChange={() => {}}
+              onKeywordSubmit={() => {}}
+              selectedFacets={[]}
+              onFacetClick={() => {}}
+              onClearAllFilters={() => {}}
+              baseFacetURL="http://localhost:8000/api/v1/search/item-parts/facets"
+            />
+          )
+        );
+      });
+
+    renderFor('manuscripts');
+    expandPanel(container, 'repository_name');
+    expect(
+      container.querySelector('#panel-repository_name button[aria-expanded="true"]')
+    ).not.toBeNull();
+
+    renderFor('images');
+    expect(
+      container.querySelector('#panel-repository_name button[aria-expanded="false"]')
+    ).not.toBeNull();
 
     act(() => {
       root.unmount();
