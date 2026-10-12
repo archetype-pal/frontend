@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
-import { Loader2, Type, Layers, Tag, ChevronRight } from 'lucide-react';
+import { Type, Layers, Tag, ChevronRight } from 'lucide-react';
 import { SymbolTreeSidebar } from '@/components/backoffice/symbols/symbol-tree-sidebar';
 import { CharacterDetail } from '@/components/backoffice/symbols/character-detail';
 import {
@@ -16,6 +16,7 @@ import {
   createCharacter,
 } from '@/services/backoffice/symbols';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { BackofficeLoadingState } from '@/components/backoffice/common/query-state';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 
 export default function SymbolsPage() {
@@ -67,14 +68,7 @@ export default function SymbolsPage() {
     characters.isLoading || components.isLoading || features.isLoading || positions.isLoading;
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{t('symbols.loadingStructure')}</p>
-        </div>
-      </div>
-    );
+    return <BackofficeLoadingState label={t('symbols.loadingStructure')} />;
   }
 
   return (

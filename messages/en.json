@@ -1116,7 +1116,6 @@
       "failedUpdate": "Failed to update {label}",
       "failedDelete": "Failed to delete {label}",
       "failedLoad": "Failed to load {label}",
-      "retry": "Retry",
       "create": "Create",
       "new": "New {label}",
       "idColumn": "ID",

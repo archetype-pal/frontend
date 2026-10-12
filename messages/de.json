@@ -1116,7 +1116,6 @@
       "failedUpdate": "Aktualisieren von {label} fehlgeschlagen",
       "failedDelete": "Löschen von {label} fehlgeschlagen",
       "failedLoad": "Laden von {label} fehlgeschlagen",
-      "retry": "Erneut versuchen",
       "create": "Erstellen",
       "new": "Neu: {label}",
       "idColumn": "ID",

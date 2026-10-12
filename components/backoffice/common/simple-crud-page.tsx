@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import {
   Dialog,
   DialogContent,
@@ -230,14 +231,10 @@ export function SimpleCrudPage<T extends { id: number }>({
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <p className="text-sm text-destructive">
-          {t('simpleCrud.failedLoad', { label: pluralLabel.toLowerCase() })}
-        </p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          {t('simpleCrud.retry')}
-        </Button>
-      </div>
+      <BackofficeErrorState
+        message={t('simpleCrud.failedLoad', { label: pluralLabel.toLowerCase() })}
+        onRetry={() => refetch()}
+      />
     );
   }
 

@@ -1116,7 +1116,6 @@
       "failedUpdate": "Échec de la mise à jour de {label}",
       "failedDelete": "Échec de la suppression de {label}",
       "failedLoad": "Échec du chargement de {label}",
-      "retry": "Réessayer",
       "create": "Créer",
       "new": "Nouveau {label}",
       "idColumn": "ID",
