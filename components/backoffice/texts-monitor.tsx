@@ -850,6 +850,7 @@ const LanguageBreakdown = memo(function LanguageBreakdown({
 
 const RecentEdits = memo(function RecentEdits({ rows }: { rows: RecentRow[] }) {
   const t = useTranslations('backoffice');
+  const router = useRouter();
   const [filter, setFilter] = useState<'all' | Kind>('all');
   const filtered = filter === 'all' ? rows : rows.filter((r) => r.type === filter);
   return (
@@ -911,9 +912,7 @@ const RecentEdits = memo(function RecentEdits({ rows }: { rows: RecentRow[] }) {
                     <TableRow
                       key={r.id}
                       className="group cursor-pointer hover:bg-accent/30"
-                      onClick={() => {
-                        window.location.href = editorLink;
-                      }}
+                      onClick={() => router.push(editorLink)}
                     >
                       <TableCell>
                         <Badge
