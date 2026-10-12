@@ -227,14 +227,22 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   React.useEffect(() => {
     const aside = asideRef.current;
     if (!aside) return;
+    const desktop = window.matchMedia('(min-width: 768px)');
+    let frame = 0;
+    // Batch to one layout read per frame; below md the aside is hidden.
     const fit = () => {
-      aside.style.height = `${document.documentElement.clientHeight - aside.getBoundingClientRect().top}px`;
+      if (frame || !desktop.matches) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        aside.style.height = `${document.documentElement.clientHeight - aside.getBoundingClientRect().top}px`;
+      });
     };
     const observer = new ResizeObserver(fit);
     document.querySelectorAll('header').forEach((header) => observer.observe(header));
     window.addEventListener('scroll', fit, { passive: true });
     window.addEventListener('resize', fit);
     return () => {
+      cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener('scroll', fit);
       window.removeEventListener('resize', fit);
