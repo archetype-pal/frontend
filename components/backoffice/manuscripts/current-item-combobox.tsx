@@ -91,7 +91,8 @@ export function CurrentItemCombobox({
     }),
     queryFn: () =>
       getCurrentItems({ repository: repositoryId, search: query, limit: SEARCH_LIMIT }),
-    enabled: !!token && open && query.length > 0,
+    // Gate on the typed text too: after a close, the debounced query keeps the old text briefly.
+    enabled: !!token && open && typed.length > 0 && query.length > 0,
   });
 
   const {
