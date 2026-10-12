@@ -47,7 +47,7 @@ export function FacetTreePanel({
   items,
   selectedValues,
   onSelect,
-  defaultExpanded = true,
+  defaultExpanded = false,
 }: FacetTreePanelProps) {
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
   const [expandedNodes, setExpandedNodes] = React.useState<Record<string, boolean>>({});

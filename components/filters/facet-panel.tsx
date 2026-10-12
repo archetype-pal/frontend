@@ -29,7 +29,7 @@ export function FacetPanel({
   title,
   total,
   items,
-  expanded = true,
+  expanded = false,
   onSelect,
   onExclude,
   excludedValues = [],

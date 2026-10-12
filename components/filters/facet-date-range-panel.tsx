@@ -35,7 +35,7 @@ export function FacetDateRangePanel({
     { label: 'at most', value: 'at most' },
     { label: 'at least', value: 'at least' },
   ],
-  defaultExpanded = true,
+  defaultExpanded = false,
   onSearch,
 }: FacetDateRangePanelProps) {
   const normalizedDefaultValue = range ?? defaultValue;

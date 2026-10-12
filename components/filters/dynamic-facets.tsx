@@ -262,7 +262,6 @@ export function DynamicFacets({
                 title={title}
                 range={facetValue.range}
                 defaultValue={facetValue.defaultValue}
-                defaultExpanded={false}
                 onSearch={({ min, max, precision, diff }) => {
                   let url = `${baseFacetURL}?min_date=${min}&max_date=${max}`;
                   if (precision && diff > 0) {
@@ -282,7 +281,6 @@ export function DynamicFacets({
                 total={facetValue.items.length}
                 items={facetValue.items}
                 selectedValues={selectedValuesByFacet[facetKey] ?? []}
-                defaultExpanded={false}
                 onSelect={(value, isDeselect) => {
                   onFacetClick?.(
                     baseFacetURL,
@@ -305,7 +303,6 @@ export function DynamicFacets({
               baseFacetURL={baseFacetURL}
               selectedValue={selectedByFacet[facetKey] ?? null}
               showSort={type !== 'toggle'}
-              expanded={false}
               onSelect={(url, val, isDeselect) => {
                 onFacetClick?.(
                   url,
