@@ -91,7 +91,7 @@ export function FacetPanel({
 
   return (
     <div
-      className="overflow-clip rounded-lg border border-border/60 bg-card/50 transition-colors"
+      className="overflow-clip rounded-lg border border-border/60 bg-card transition-colors"
       id={`panel-${id}`}
     >
       <div className="sticky -top-3 z-[15] bg-card">

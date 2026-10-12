@@ -151,7 +151,7 @@ export function FacetDateRangePanel({
   }, [sliderValue, precision, year, handleSearchSubmit]);
 
   return (
-    <div id={id} className="overflow-clip rounded-lg border border-border/60 bg-card/50">
+    <div id={id} className="overflow-clip rounded-lg border border-border/60 bg-card">
       <div className="sticky -top-3 z-[15] bg-card">
         <button
           type="button"

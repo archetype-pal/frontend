@@ -83,7 +83,7 @@ export function FacetTreePanel({
   const showProportionBars = filteredTree.length >= 1 && maxCount > 0;
 
   return (
-    <div className="overflow-clip rounded-lg border border-border/60 bg-card/50" id={`panel-${id}`}>
+    <div className="overflow-clip rounded-lg border border-border/60 bg-card" id={`panel-${id}`}>
       <div className="sticky -top-3 z-[15] bg-card">
         <button
           type="button"
