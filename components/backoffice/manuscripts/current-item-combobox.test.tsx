@@ -90,9 +90,11 @@ describe('CurrentItemCombobox', () => {
       search: 'taunton',
       limit: 50,
     });
-    expect(options.map((o) => o.textContent)).toEqual(['Taunton DD/CC 2', 'Taunton DD/CC 10']);
+    // The server's order, not re-sorted here.
+    expect(options.map((o) => o.textContent)).toEqual(['Taunton DD/CC 10', 'Taunton DD/CC 2']);
     const hint = screen.getByText('Showing 2 of 120. Keep typing to narrow the list.');
     expect(screen.getByRole('listbox').contains(hint)).toBe(false);
+    expect(hint.closest('[aria-live="polite"]')).not.toBeNull();
   });
 
   it('hides the previous results until the new search has run', async () => {
@@ -141,6 +143,7 @@ describe('CurrentItemCombobox', () => {
 
     openAndType('GD55/9');
     expect(await screen.findByText('No items found.')).toBeDefined();
+    expect(getCurrentItemsMock).toHaveBeenCalledWith(expect.objectContaining({ repository: 3 }));
     fireEvent.click(screen.getByRole('button', { name: 'Create "GD55/9"' }));
 
     expect((screen.getByPlaceholderText('Shelfmark (e.g. GD55/1)') as HTMLInputElement).value).toBe(
@@ -154,5 +157,37 @@ describe('CurrentItemCombobox', () => {
     await waitFor(() =>
       expect(screen.getByRole('combobox').textContent).toBe('Winchester Coll. GD55/9')
     );
+  });
+
+  it('starts Create with Enter when the search has no matches', async () => {
+    getCurrentItemsMock.mockResolvedValue({ count: 0, results: [] });
+    renderCombobox(3);
+
+    openAndType('GD55/9');
+    expect(await screen.findByText('No items found.')).toBeDefined();
+    fireEvent.keyDown(screen.getByPlaceholderText('Search by repository or shelfmark...'), {
+      key: 'Enter',
+    });
+
+    expect((screen.getByPlaceholderText('Shelfmark (e.g. GD55/1)') as HTMLInputElement).value).toBe(
+      'GD55/9'
+    );
+  });
+
+  it('does not search for the old text when reopened right after closing', async () => {
+    getCurrentItemsMock.mockResolvedValue({ count: 1, results: [item(2, 'Taunton', 'DD/CC 10')] });
+    renderCombobox();
+    const trigger = screen.getByRole('combobox');
+
+    openAndType('taunton');
+    await screen.findByRole('option', { name: 'Taunton DD/CC 10' });
+    expect(getCurrentItemsMock).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(trigger);
+    fireEvent.click(trigger);
+    expect(screen.getByText('Type to search')).toBeDefined();
+    await new Promise((resolve) => setTimeout(resolve, 350));
+
+    expect(getCurrentItemsMock).toHaveBeenCalledTimes(1);
   });
 });
