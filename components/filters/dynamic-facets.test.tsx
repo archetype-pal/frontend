@@ -336,4 +336,51 @@ describe('DynamicFacets', () => {
     });
     container.remove();
   });
+
+  it('collapses opened panels when the search type changes', () => {
+    const facets: FacetData = {
+      repository_name: {
+        kind: 'list',
+        items: [{ label: 'Durham', value: 'Durham', count: 12, href: '' }],
+      },
+    };
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const renderFor = (searchType: 'manuscripts' | 'images') =>
+      act(() => {
+        root.render(
+          withProviders(
+            <DynamicFacets
+              facets={facets}
+              searchType={searchType}
+              keyword=""
+              activeTags={[]}
+              onKeywordChange={() => {}}
+              onKeywordSubmit={() => {}}
+              selectedFacets={[]}
+              onFacetClick={() => {}}
+              onClearAllFilters={() => {}}
+              baseFacetURL="http://localhost:8000/api/v1/search/item-parts/facets"
+            />
+          )
+        );
+      });
+
+    renderFor('manuscripts');
+    expandPanel(container, 'repository_name');
+    expect(
+      container.querySelector('#panel-repository_name button[aria-expanded="true"]')
+    ).not.toBeNull();
+
+    renderFor('images');
+    expect(
+      container.querySelector('#panel-repository_name button[aria-expanded="false"]')
+    ).not.toBeNull();
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
 });

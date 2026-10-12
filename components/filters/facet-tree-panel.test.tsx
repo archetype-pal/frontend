@@ -25,6 +25,7 @@ describe('FacetTreePanel readable labels', () => {
     const { container, cleanup } = mount(
       <FacetTreePanel
         id="component_features"
+        defaultExpanded
         title="Component features"
         items={[
           {
