@@ -487,21 +487,20 @@ function DialogBody({
   };
 
   // ⌘/Ctrl+Enter to save without reaching for the mouse. Skips when there's
-  // nothing to commit or a save is already in flight.
+  // nothing to commit or a save is already in flight. An effect event, so the
+  // listener always sees the latest edits rather than the ones from when the
+  // gating flags last changed.
+  const onSaveHotkey = React.useEffectEvent((e: KeyboardEvent) => {
+    if (!(e.metaKey || e.ctrlKey) || e.key !== 'Enter') return;
+    if (saving || !hasPendingChanges) return;
+    e.preventDefault();
+    void handleSave();
+  });
   React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        if (saving || !hasPendingChanges) return;
-        e.preventDefault();
-        void handleSave();
-      }
-    };
+    const onKey = (e: KeyboardEvent) => onSaveHotkey(e);
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-    // handleSave closes over state at this render — using a stale closure
-    // would replay stale edits, so we depend only on the gating flags.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saving, hasPendingChanges]);
+  }, []);
 
   // ---- Render -------------------------------------------------------------
 
