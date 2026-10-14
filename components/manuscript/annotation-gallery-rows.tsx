@@ -207,29 +207,29 @@ function AllographRow({
         GALLERY_SCROLL_MARGIN
       )}
     >
-      <div className="flex w-full shrink-0 items-start gap-2.5 sm:w-[10.5rem]">
-        <div className="flex min-w-0 flex-col items-start gap-1.5">
-          <GroupCheckbox
-            checked={allSelected ? true : selectedCount > 0 ? 'mixed' : false}
-            label={t('selectAllInRow', { allograph: allographName })}
-            onToggle={() => (allSelected ? selection.removeMany(ids) : selection.addMany(ids))}
-          />
-          <h3
-            id={headingId}
-            className="break-words font-display text-3xl font-semibold leading-none"
-          >
-            {allographName}
-          </h3>
-        </div>
-        <div className="flex flex-col gap-1 pt-0.5 text-xs tabular-nums text-muted-foreground">
+      {/* Stacked, so a long name ("./, punctus elevatus") wraps in its own
+          column instead of squeezing the counts or spilling into the next row. */}
+      <div className="flex w-full shrink-0 flex-col items-start gap-1.5 sm:w-[10.5rem]">
+        <GroupCheckbox
+          checked={allSelected ? true : selectedCount > 0 ? 'mixed' : false}
+          label={t('selectAllInRow', { allograph: allographName })}
+          onToggle={() => (allSelected ? selection.removeMany(ids) : selection.addMany(ids))}
+        />
+        <h3
+          id={headingId}
+          className="max-w-full break-words font-display text-3xl font-semibold leading-tight"
+        >
+          {allographName}
+        </h3>
+        <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-xs tabular-nums text-muted-foreground">
           <span>{t('rowGraphs', { count: graphs.length })}</span>
           <span>{t('rowDescribed', { count: graphs.filter(isGraphDescribed).length })}</span>
-          {selectedCount > 0 && (
-            <span className="self-start rounded-full bg-primary/10 px-2 py-px font-semibold text-primary">
-              {t('rowSelected', { count: selectedCount })}
-            </span>
-          )}
         </div>
+        {selectedCount > 0 && (
+          <span className="rounded-full bg-primary/10 px-2 py-px text-xs font-semibold tabular-nums text-primary">
+            {t('rowSelected', { count: selectedCount })}
+          </span>
+        )}
       </div>
 
       <div className="flex min-w-0 flex-1 basis-[30rem] flex-wrap gap-3" onKeyDown={handleKeyDown}>
