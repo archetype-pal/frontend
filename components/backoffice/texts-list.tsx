@@ -63,6 +63,7 @@ import {
 } from '@/services/backoffice/image-texts-list';
 import { bulkActionImageTexts } from '@/services/backoffice/image-texts-bulk';
 import { transitionImageText, type ImageTextStatus } from '@/services/backoffice/review-queue';
+import { useSelectionSet } from '@/hooks/use-selection-set';
 import { downloadBlob } from '@/lib/download';
 
 const STATUS_TONE: Record<ImageTextStatus, string> = {
@@ -140,7 +141,8 @@ export function TextsList() {
   );
 
   const [searchInput, setSearchInput] = useState(filters.search);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const selection = useSelectionSet<number>();
+  const selected = selection.selected;
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
@@ -163,7 +165,7 @@ export function TextsList() {
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (prevFilterKey !== filterKey) {
     setPrevFilterKey(filterKey);
-    setSelected(new Set());
+    selection.clear();
   }
 
   // Debounced commit of the search input back into the URL — 350ms is the
@@ -217,24 +219,9 @@ export function TextsList() {
   const someVisibleSelected = rows.some((r) => selected.has(r.id));
 
   function toggleAllVisible() {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (allVisibleSelected) {
-        for (const r of rows) next.delete(r.id);
-      } else {
-        for (const r of rows) next.add(r.id);
-      }
-      return next;
-    });
-  }
-
-  function toggleOne(id: number) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    const ids = rows.map((r) => r.id);
+    if (allVisibleSelected) selection.removeMany(ids);
+    else selection.addMany(ids);
   }
 
   const activeFilterCount =
@@ -266,7 +253,7 @@ export function TextsList() {
     mutationFn: () => bulkActionImageTexts({ ids: Array.from(selected), action: 'delete' }),
     onSuccess: ({ affected }) => {
       toast.success(t('textsList.toastBulkDeleted', { count: affected }));
-      setSelected(new Set());
+      selection.clear();
       setConfirmBulkDelete(false);
       invalidate();
     },
@@ -400,7 +387,7 @@ export function TextsList() {
           {selectedCount > 0 && (
             <BulkActionBar
               ids={Array.from(selected)}
-              onCleared={() => setSelected(new Set())}
+              onCleared={() => selection.clear()}
               onInvalidated={invalidate}
               onAskDelete={() => setConfirmBulkDelete(true)}
             />
@@ -450,7 +437,7 @@ export function TextsList() {
                       key={row.id}
                       row={row}
                       selected={selected.has(row.id)}
-                      onToggle={() => toggleOne(row.id)}
+                      onToggle={() => selection.toggle(row.id)}
                       onTransitioned={invalidate}
                     />
                   ))
