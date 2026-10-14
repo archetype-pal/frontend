@@ -254,6 +254,27 @@ export function DataTable<TData, TValue>({
   const selectedCount = Object.keys(rowSelection).length;
   const selectedIds = Object.keys(rowSelection);
 
+  // Ticked rows for Export. Rows ticked on another server page are no longer in
+  // `data`, so they are kept here. Each page keeps the place it first took, so
+  // going back to a page does not move it, and its rows follow the screen order.
+  const tickedRows = useRef(new Map<string, TData>());
+  useEffect(() => {
+    const shown = table.getSortedRowModel().rows;
+    const onPage = new Set(shown.map((row) => row.id));
+    const next = new Map<string, TData>();
+    let placed = false;
+    const placePage = () => {
+      for (const row of shown) if (row.getIsSelected()) next.set(row.id, row.original);
+      placed = true;
+    };
+    for (const [id, row] of tickedRows.current) {
+      if (!onPage.has(id)) next.set(id, row);
+      else if (!placed) placePage();
+    }
+    if (!placed) placePage();
+    tickedRows.current = next;
+  });
+
   function downloadCsv(source: TData[]) {
     const exportColumns = table
       .getVisibleLeafColumns()
@@ -282,6 +303,10 @@ export function DataTable<TData, TValue>({
   }
 
   async function handleExport() {
+    if (selectedCount > 0) {
+      downloadCsv([...tickedRows.current.values()]);
+      return;
+    }
     if (!fetchAllRows) {
       downloadCsv(table.getFilteredRowModel().rows.map((row) => row.original));
       return;
@@ -373,7 +398,11 @@ export function DataTable<TData, TValue>({
                 ) : (
                   <Download className="h-3.5 w-3.5" />
                 )}
-                <span className="hidden sm:inline">{tCommon('export')}</span>
+                <span className="hidden sm:inline">
+                  {selectedCount > 0
+                    ? t('dataTable.exportSelected', { count: selectedCount })
+                    : tCommon('export')}
+                </span>
               </Button>
             )}
             {enableColumnVisibility && (
