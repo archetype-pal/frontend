@@ -441,7 +441,10 @@
       "hiddenByFilters": "({count} durch Filter ausgeblendet, nicht enthalten)",
       "trashed": "Graph #{id} in den Papierkorb verschoben. Ein Administrator kann ihn wiederherstellen.",
       "undo": "Rückgängig",
-      "undoTooLate": "Graph #{id} ist bereits im Papierkorb. Ein Administrator kann ihn wiederherstellen."
+      "undoTooLate": "Graph #{id} ist bereits im Papierkorb. Ein Administrator kann ihn wiederherstellen.",
+      "imageFailed": "Bild nicht geladen",
+      "retryImage": "Erneut laden",
+      "retryImageLabel": "Bild von Graph {id} erneut laden"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Diesen editorischen Entwurf löschen?} other {Diesen öffentlichen Entwurf löschen?}}\n\nEr wird lokal verworfen.",

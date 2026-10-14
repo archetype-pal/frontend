@@ -3,9 +3,9 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Check, Minus, Pencil, Trash2 } from 'lucide-react';
+import { Check, Minus, Pencil, RefreshCw, Trash2 } from 'lucide-react';
 
-import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
+import { useIiifThumbnail } from '@/hooks/use-iiif-thumbnail';
 import { useInView } from '@/hooks/use-in-view';
 import { useRangeSelect, type SelectionSet } from '@/hooks/use-selection-set';
 import type { BackendGraph } from '@/services/annotations';
@@ -314,6 +314,16 @@ function GraphThumb({
   const described = isGraphDescribed(graph);
   const names = { allograph: allographName, id: graph.id };
 
+  // A crop that fails says so and can be retried; remounting the image (a new
+  // key) re-runs the lookup, and a failed info.json is never cached.
+  const [cropAttempt, setCropAttempt] = React.useState(0);
+  const [cropFailed, setCropFailed] = React.useState(false);
+  const onCropFailed = React.useCallback(() => setCropFailed(true), []);
+  const retryCrop = () => {
+    setCropFailed(false);
+    setCropAttempt((n) => n + 1);
+  };
+
   // Selection ring + hover ring on the image element so it hugs the glyph.
   const thumbClassName = cn(
     'relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-md border bg-muted transition',
@@ -360,7 +370,13 @@ function GraphThumb({
               aria-label={t('selectThumb', names)}
               className={thumbClassName}
             >
-              <GraphThumbImage graph={graph} iiifImage={iiifImage} density={density} />
+              <GraphThumbImage
+                key={cropAttempt}
+                graph={graph}
+                iiifImage={iiifImage}
+                density={density}
+                onFailed={onCropFailed}
+              />
             </button>
           ) : (
             <Link
@@ -369,7 +385,13 @@ function GraphThumb({
               aria-label={t('openThumb', names)}
               className={thumbClassName}
             >
-              <GraphThumbImage graph={graph} iiifImage={iiifImage} density={density} />
+              <GraphThumbImage
+                key={cropAttempt}
+                graph={graph}
+                iiifImage={iiifImage}
+                density={density}
+                onFailed={onCropFailed}
+              />
             </Link>
           )}
         </TooltipTrigger>
@@ -386,6 +408,19 @@ function GraphThumb({
           />
         </TooltipContent>
       </Tooltip>
+
+      {cropFailed && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 gap-1.5 self-start px-2 text-xs"
+          onClick={retryCrop}
+          aria-label={t('retryImageLabel', { id: graph.id })}
+        >
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+          {t('retryImage')}
+        </Button>
+      )}
 
       <div className="flex items-center gap-1.5 text-xs tabular-nums text-muted-foreground">
         <span
@@ -437,17 +472,24 @@ function GraphThumbImage({
   graph,
   iiifImage,
   density,
+  onFailed,
 }: {
   graph: BackendGraph;
   iiifImage: string;
   density: ThumbDensity;
+  onFailed: () => void;
 }) {
   const ref = React.useRef<HTMLSpanElement>(null);
   const inView = useInView(ref);
   return (
     <span ref={ref} className="flex h-full w-full items-center justify-center">
       {inView ? (
-        <LoadedThumbImage graph={graph} iiifImage={iiifImage} density={density} />
+        <LoadedThumbImage
+          graph={graph}
+          iiifImage={iiifImage}
+          density={density}
+          onFailed={onFailed}
+        />
       ) : (
         <ThumbPlaceholder />
       )}
@@ -463,20 +505,43 @@ function LoadedThumbImage({
   graph,
   iiifImage,
   density,
+  onFailed,
 }: {
   graph: BackendGraph;
   iiifImage: string;
   density: ThumbDensity;
+  onFailed: () => void;
 }) {
+  const t = useTranslations('manuscript.gallery');
   // Legacy GeoJSON polygons are stored bottom-left origin (Web Mercator);
-  // useIiifThumbnailUrl handles the y-flip and bounds clamping via info.json.
+  // useIiifThumbnail handles the y-flip and bounds clamping via info.json.
   const annotationJson = React.useMemo(() => JSON.stringify(graph.annotation), [graph.annotation]);
-  const thumb = useIiifThumbnailUrl(iiifImage, annotationJson, DENSITY_THUMB_PX[density]);
-  if (!thumb) return <ThumbPlaceholder />;
+  const thumb = useIiifThumbnail(iiifImage, annotationJson, DENSITY_THUMB_PX[density]);
+  const [imageFailed, setImageFailed] = React.useState(false);
+  const failed = thumb.failed || imageFailed;
+
+  React.useEffect(() => {
+    if (failed) onFailed();
+  }, [failed, onFailed]);
+
+  if (failed) {
+    return (
+      <span className="flex h-full w-full items-center justify-center bg-[repeating-linear-gradient(135deg,var(--muted)_0_8px,var(--secondary)_8px_16px)] p-2 text-center text-xs text-muted-foreground">
+        {t('imageFailed')}
+      </span>
+    );
+  }
+  if (!thumb.src) return <ThumbPlaceholder />;
   return (
     // Fills the box: small crops arrive at their own size, so S/M/L relies on this scaling.
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={thumb} alt="" className="h-full w-full object-contain" loading="lazy" />
+    <img
+      src={thumb.src}
+      alt=""
+      className="h-full w-full object-contain"
+      loading="lazy"
+      onError={() => setImageFailed(true)}
+    />
   );
 }
 

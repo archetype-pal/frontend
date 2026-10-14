@@ -441,7 +441,10 @@
       "hiddenByFilters": "({count} hidden by filters, not included)",
       "trashed": "Graph #{id} moved to the trash. An admin can restore it.",
       "undo": "Undo",
-      "undoTooLate": "Graph #{id} is already in the trash. An admin can restore it."
+      "undoTooLate": "Graph #{id} is already in the trash. An admin can restore it.",
+      "imageFailed": "Image didn't load",
+      "retryImage": "Retry image",
+      "retryImageLabel": "Retry the image of graph {id}"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Delete this editorial draft annotation?} other {Delete this public draft annotation?}}\n\nThis will discard it locally.",

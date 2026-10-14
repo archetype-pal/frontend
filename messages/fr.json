@@ -441,7 +441,10 @@
       "hiddenByFilters": "({count} masqué(s) par les filtres, non inclus)",
       "trashed": "Graphème n°{id} mis à la corbeille. Un administrateur peut le restaurer.",
       "undo": "Annuler",
-      "undoTooLate": "Le graphème n°{id} est déjà dans la corbeille. Un administrateur peut le restaurer."
+      "undoTooLate": "Le graphème n°{id} est déjà dans la corbeille. Un administrateur peut le restaurer.",
+      "imageFailed": "Image non chargée",
+      "retryImage": "Recharger l'image",
+      "retryImageLabel": "Recharger l'image du graphème {id}"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Supprimer ce brouillon d'annotation éditoriale ?} other {Supprimer ce brouillon d'annotation publique ?}}\n\nIl sera abandonné localement.",
