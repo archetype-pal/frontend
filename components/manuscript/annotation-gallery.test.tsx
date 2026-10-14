@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AnnotationGallery } from './annotation-gallery';
@@ -42,6 +42,14 @@ vi.mock('@/hooks/use-iiif-thumbnail', () => ({
 }));
 
 vi.mock('@/services/manuscripts', () => ({ fetchAllographs: vi.fn(() => new Promise(() => {})) }));
+
+const toastMock = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  dismiss: vi.fn(),
+}));
+vi.mock('sonner', () => ({ toast: toastMock }));
 
 const openLightboxMock = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/lightbox-utils', () => ({ openLightboxWithItems: openLightboxMock }));
@@ -106,6 +114,7 @@ beforeEach(() => {
   mockState.user = null;
   mockState.refresh.mockReset();
   openLightboxMock.mockReset();
+  Object.values(toastMock).forEach((fn) => fn.mockReset());
   window.history.replaceState(null, '', '/manuscripts/1/images/5');
 });
 
@@ -237,5 +246,28 @@ describe('AnnotationGallery selection', () => {
     const add = within(bar).getByRole('button', { name: 'Add 0 to collection' });
     expect(add.hasAttribute('disabled')).toBe(true);
     expect(within(bar).getByRole('button', { name: 'Clear' }).hasAttribute('disabled')).toBe(false);
+  });
+});
+
+describe('AnnotationGallery delete', () => {
+  it('hides a deleted graph without a confirm and brings it back on Undo', () => {
+    mockState.user = { is_staff: true };
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    renderGallery();
+    fireEvent.keyDown(window, { key: 'a' });
+    fireEvent.click(screen.getByRole('button', { name: 'Select A graph 4189' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move graph 4189 to the trash' }));
+
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(screen.queryByText('#4189')).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Selection' })).toBeNull();
+    expect(summary()).toBe('Showing 2 of 2 graphs in 2 allographs');
+    const [message, options] = toastMock.success.mock.calls[0];
+    expect(message).toBe('Graph #4189 moved to the trash. An admin can restore it.');
+
+    act(() => options.action.onClick());
+    expect(screen.getByText('#4189')).toBeTruthy();
+    confirmSpy.mockRestore();
   });
 });
