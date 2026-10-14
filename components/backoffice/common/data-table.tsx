@@ -46,7 +46,8 @@ import type { ListAllPagesOptions } from '@/lib/backoffice/list-all-pages';
 
 export interface BulkAction {
   label: string;
-  action: (ids: string[]) => void;
+  /** `keepTicked` replaces the ticks with the given ids, e.g. the rows that failed. */
+  action: (ids: string[], keepTicked: (ids: string[]) => void) => void;
   variant?: 'destructive' | 'default';
   icon?: React.ReactNode;
 }
@@ -277,6 +278,7 @@ export function DataTable<TData, TValue>({
       placed = true;
     };
     for (const [id, row] of tickedRows.current) {
+      if (!rowSelection[id]) continue;
       if (!onPage.has(id)) next.set(id, row);
       else if (!placed) placePage();
     }
@@ -468,7 +470,11 @@ export function DataTable<TData, TValue>({
                 variant={action.variant === 'destructive' ? 'destructive' : 'outline'}
                 size="sm"
                 className="h-7 gap-1 text-xs"
-                onClick={() => action.action(selectedIds)}
+                onClick={() =>
+                  action.action(selectedIds, (ids) =>
+                    setRowSelection(Object.fromEntries(ids.map((id) => [id, true])))
+                  )
+                }
               >
                 {action.icon}
                 {action.label}

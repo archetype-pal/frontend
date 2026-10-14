@@ -213,8 +213,8 @@ export default function AnnotationsPage() {
       label: 'Delete',
       variant: 'destructive',
       icon: <Trash2 className="h-3 w-3" />,
-      action: async (ids) => {
-        await runBulkAction({
+      action: async (ids, keepTicked) => {
+        const { failedIds } = await runBulkAction({
           ids,
           action: (id) => deleteGraph(Number(id)),
           invalidate: () =>
@@ -225,6 +225,7 @@ export default function AnnotationsPage() {
             partial: (succeeded, failed) => t('annotations.bulkPartial', { succeeded, failed }),
           },
         });
+        keepTicked(failedIds);
       },
     },
   ];

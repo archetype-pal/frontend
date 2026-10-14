@@ -77,11 +77,15 @@ export default function TrashPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const ordering = toOrdering(sorting, ORDERING_FIELDS);
   const [purgeTarget, setPurgeTarget] = useState<GraphItem | null>(null);
-  const [bulkPurgeIds, setBulkPurgeIds] = useState<string[] | null>(null);
-  // Bumped after anything that takes a row out of the trash: remounts the
-  // DataTable so row selection doesn't linger over rows that are gone. Selection
-  // is keyed by graph id, so a stale entry would otherwise be sent to the server
-  // and 404 -- a spurious "n succeeded, 1 failed".
+  const [bulkPurge, setBulkPurge] = useState<{
+    ids: string[];
+    keepTicked: (ids: string[]) => void;
+  } | null>(null);
+  // Bumped after a single row leaves the trash: remounts the DataTable so row
+  // selection doesn't linger over a row that is gone. Selection is keyed by
+  // graph id, so a stale entry would otherwise be sent to the server and 404 --
+  // a spurious "n succeeded, 1 failed". Bulk actions keep only their failed rows
+  // ticked instead.
   const [tableEpoch, setTableEpoch] = useState(0);
 
   const [filterState, setFilterState] = useState(EMPTY_TRASH_FILTERS);
@@ -301,8 +305,8 @@ export default function TrashPage() {
     {
       label: t('trash.restore'),
       icon: <RotateCcw className="h-3 w-3" />,
-      action: async (ids) => {
-        await runBulkAction({
+      action: async (ids, keepTicked) => {
+        const { failedIds } = await runBulkAction({
           ids,
           action: (id) => restoreGraph(Number(id)),
           invalidate: invalidateGraphs,
@@ -312,14 +316,14 @@ export default function TrashPage() {
             partial: (succeeded, failed) => t('trash.bulkPartial', { succeeded, failed }),
           },
         });
-        setTableEpoch((n) => n + 1);
+        keepTicked(failedIds);
       },
     },
     {
       label: t('trash.purge'),
       variant: 'destructive',
       icon: <Trash2 className="h-3 w-3" />,
-      action: (ids) => setBulkPurgeIds(ids),
+      action: (ids, keepTicked) => setBulkPurge({ ids, keepTicked }),
     },
   ];
 
@@ -486,16 +490,17 @@ export default function TrashPage() {
       />
 
       <ConfirmDialog
-        open={!!bulkPurgeIds}
-        onOpenChange={(open) => !open && setBulkPurgeIds(null)}
-        title={t('trash.bulkPurgeTitle', { count: bulkPurgeIds?.length ?? 0 })}
+        open={!!bulkPurge}
+        onOpenChange={(open) => !open && setBulkPurge(null)}
+        title={t('trash.bulkPurgeTitle', { count: bulkPurge?.ids.length ?? 0 })}
         description={t('trash.bulkPurgeDesc')}
         confirmLabel={t('trash.purgeConfirm')}
         variant="destructive"
         onConfirm={async () => {
-          const ids = bulkPurgeIds ?? [];
-          setBulkPurgeIds(null);
-          await runBulkAction({
+          if (!bulkPurge) return;
+          const { ids, keepTicked } = bulkPurge;
+          setBulkPurge(null);
+          const { failedIds } = await runBulkAction({
             ids,
             action: (id) => purgeGraph(Number(id)),
             invalidate: invalidateGraphs,
@@ -505,7 +510,7 @@ export default function TrashPage() {
               partial: (succeeded, failed) => t('trash.bulkPartial', { succeeded, failed }),
             },
           });
-          setTableEpoch((n) => n + 1);
+          keepTicked(failedIds);
         }}
       />
     </div>
