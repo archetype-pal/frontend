@@ -35,6 +35,15 @@
     "processing": "Traitement...",
     "signIn": "Se connecter",
     "signOut": "Se déconnecter",
+    "pagination": {
+      "navLabel": "Pagination",
+      "perPage": "Par page",
+      "range": "{from}–{to} sur {total}",
+      "goToPage": "Aller à la page",
+      "ofPages": "sur {total}",
+      "goToPageN": "Aller à la page {page}",
+      "currentPageN": "Page {page}"
+    },
     "thumbnailSize": {
       "label": "Taille des miniatures",
       "compact": "Miniatures compactes",
@@ -90,9 +99,6 @@
     "loadingMap": "Chargement de la carte…",
     "loadingCharts": "Chargement des graphiques…",
     "distributionError": "Impossible de charger les statistiques. Réessayez en basculant vers la vue Graphiques.",
-    "outOfRange": "Cette page est hors limites",
-    "outOfRangeMessage": "Il y a {count} {typeLabel}, mais moins de pages que celle sur laquelle vous êtes.",
-    "goToPage1": "Aller à la page 1",
     "noResults": "Aucun résultat dans les archives",
     "noResultsKeyword": "Aucun {typeLabel} ne correspond à « {keyword} ». Essayez un terme plus large ou assouplissez les filtres.",
     "noResultsFilters": "Aucun {typeLabel} ne correspond aux filtres actuels.",
@@ -524,8 +530,6 @@
     },
     "publicationsList": {
       "noPostsFound": "Aucun article trouvé.",
-      "prev": "← Précédent",
-      "next": "Suivant →",
       "recentPosts": "Articles récents",
       "postsByDate": "Articles par date",
       "selectMonth": "Sélectionner un mois",
@@ -2084,7 +2088,6 @@
       "searchPlaceholder": "Rechercher des utilisateurs...",
       "newUserButton": "Nouvel utilisateur",
       "selectedCount": "{selected} sur {total} sélectionné(s)",
-      "rowsTotal": "{count} ligne(s) au total",
       "bulkActivate": "Activer",
       "bulkDeactivate": "Désactiver",
       "bulkDelete": "Supprimer",
@@ -2358,16 +2361,13 @@
       "columns": "Colonnes",
       "selectedCount": "{count} sélectionné(s)",
       "loadError": "Échec du chargement. Veuillez réessayer.",
+      "exportFailed": "Échec de l'export. Veuillez réessayer.",
       "noResults": "Aucun résultat.",
-      "selectedOfTotal": "{count} sur {total} sélectionné(s)",
-      "rowsTotal": "{count} ligne(s) au total"
+      "selectedOfTotal": "{count} sur {total} sélectionné(s)"
     },
     "filterBar": {
       "allOption": "Tous les {label}",
       "clearFilters": "Effacer les filtres"
-    },
-    "pagination": {
-      "pageOf": "Page {page} sur {total}"
     },
     "inlineEdit": {
       "placeholder": "Cliquer pour modifier",

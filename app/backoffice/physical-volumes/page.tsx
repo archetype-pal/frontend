@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useTranslations } from 'next-intl';
@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
-import { ServerPagination } from '@/components/backoffice/common/server-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import {
   deleteCurrentItem,
   getCurrentItems,
@@ -38,6 +38,8 @@ export default function PhysicalVolumesPage() {
   const [repoFilter, setRepoFilter] = useState<string>('__all');
   const [deleteTarget, setDeleteTarget] = useState<CurrentItemOption | null>(null);
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
+  const [pageSize, setPageSize] = useState(50);
+  const tableRef = useRef<HTMLDivElement>(null);
   const shelfmarkLabel = getLabel('fieldShelfmark');
   const appManuscriptsLabel = getLabel('appManuscripts');
 
@@ -117,15 +119,14 @@ export default function PhysicalVolumesPage() {
   const filterParams = {
     ...(repoFilter !== '__all' ? { repository: Number(repoFilter) } : {}),
     ...(search ? { search } : {}),
-    limit: 50,
-    offset: page * 50,
+    limit: pageSize,
+    offset: page * pageSize,
   };
 
-  const { data, isLoading, isPlaceholderData, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.currentItems.list(filterParams),
     queryFn: () => getCurrentItems(filterParams),
     enabled: !!token,
-    // Keep the current page on screen while the next page or search loads.
     placeholderData: keepPreviousData,
   });
 
@@ -189,6 +190,7 @@ export default function PhysicalVolumesPage() {
       </div>
 
       <DataTable
+        tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
         onRetry={() => refetch()}
@@ -206,12 +208,16 @@ export default function PhysicalVolumesPage() {
       />
 
       {data && (
-        <ServerPagination
-          total={data.count}
-          pageSize={50}
-          page={page}
-          hasNext={!!data.next && !isPlaceholderData}
-          onPageChange={setPage}
+        <DataPagination
+          scrollTargetRef={tableRef}
+          totalItems={data.count}
+          page={page + 1}
+          pageSize={pageSize}
+          onPageChange={(p) => setPage(p - 1)}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+          }}
         />
       )}
 

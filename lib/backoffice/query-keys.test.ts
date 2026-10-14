@@ -81,8 +81,8 @@ describe('backofficeKeys structure', () => {
 
   it('keeps the comments page key distinct from the pending-count key', () => {
     const all = backofficeKeys.comments.all();
-    const pendingCount = backofficeKeys.comments.list('pending');
-    const pendingPage = backofficeKeys.comments.allPages('pending');
+    const pendingCount = backofficeKeys.comments.list({ is_approved: false });
+    const pendingPage = backofficeKeys.comments.list({ limit: 20, offset: 0, is_approved: false });
 
     expect(pendingPage).not.toEqual(pendingCount);
     expect(pendingPage.slice(0, all.length)).toEqual([...all]);
@@ -92,6 +92,16 @@ describe('backofficeKeys structure', () => {
     const a = backofficeKeys.manuscripts.list({ offset: 0 });
     const b = backofficeKeys.manuscripts.list({ offset: 20 });
     expect(a).not.toEqual(b);
+  });
+
+  it('keeps each uncovered-images mode, page and page size in its own cache entry', () => {
+    const all = backofficeKeys.uncoveredImages.all();
+    const key = backofficeKeys.uncoveredImages.list('either', 0, 20);
+
+    expect(key.slice(0, all.length)).toEqual([...all]);
+    expect(key).not.toEqual(backofficeKeys.uncoveredImages.list('either', 0, 50));
+    expect(key).not.toEqual(backofficeKeys.uncoveredImages.list('either', 1, 20));
+    expect(key).not.toEqual(backofficeKeys.uncoveredImages.list('transcription', 0, 20));
   });
 
   it('currentItems.list still extends its all() despite the inlined construction', () => {

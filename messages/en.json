@@ -35,6 +35,15 @@
     "processing": "Processing...",
     "signIn": "Sign in",
     "signOut": "Sign out",
+    "pagination": {
+      "navLabel": "Pagination",
+      "perPage": "Per page",
+      "range": "{from}–{to} of {total}",
+      "goToPage": "Go to page",
+      "ofPages": "of {total}",
+      "goToPageN": "Go to page {page}",
+      "currentPageN": "Page {page}"
+    },
     "thumbnailSize": {
       "label": "Thumbnail size",
       "compact": "Compact thumbnails",
@@ -90,9 +99,6 @@
     "loadingMap": "Loading map…",
     "loadingCharts": "Loading charts…",
     "distributionError": "Could not load distribution stats. Please retry by toggling the Charts view.",
-    "outOfRange": "This page is out of range",
-    "outOfRangeMessage": "There are {count} {typeLabel}, but fewer pages than the one you're on.",
-    "goToPage1": "Go to page 1",
     "noResults": "Nothing in the archive matches",
     "noResultsKeyword": "No {typeLabel} matched \"{keyword}\". Try a broader term or loosen the filters.",
     "noResultsFilters": "No {typeLabel} matched the current filters.",
@@ -524,8 +530,6 @@
     },
     "publicationsList": {
       "noPostsFound": "No posts found.",
-      "prev": "← Prev",
-      "next": "Next →",
       "recentPosts": "Recent Posts",
       "postsByDate": "Posts by Date",
       "selectMonth": "Select month",
@@ -2084,7 +2088,6 @@
       "searchPlaceholder": "Search users...",
       "newUserButton": "New User",
       "selectedCount": "{selected} of {total} selected",
-      "rowsTotal": "{count} row(s) total",
       "bulkActivate": "Activate",
       "bulkDeactivate": "Deactivate",
       "bulkDelete": "Delete",
@@ -2358,16 +2361,13 @@
       "columns": "Columns",
       "selectedCount": "{count} selected",
       "loadError": "Failed to load. Please try again.",
+      "exportFailed": "Export failed. Please try again.",
       "noResults": "No results.",
-      "selectedOfTotal": "{count} of {total} selected",
-      "rowsTotal": "{count} row(s) total"
+      "selectedOfTotal": "{count} of {total} selected"
     },
     "filterBar": {
       "allOption": "All {label}",
       "clearFilters": "Clear filters"
-    },
-    "pagination": {
-      "pageOf": "Page {page} of {total}"
     },
     "inlineEdit": {
       "placeholder": "Click to edit",
