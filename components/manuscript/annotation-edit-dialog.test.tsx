@@ -479,3 +479,28 @@ describe('AnnotationEditDialog — allograph list status', () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('AnnotationEditDialog — keyboard on feature rows', () => {
+  it('moves between All, None and Mixed with the arrow keys', () => {
+    render(
+      <AnnotationEditDialog
+        open
+        onOpenChange={vi.fn()}
+        graphs={[makeGraph({ id: 1 }), makeGraph({ id: 2 })]}
+        allographs={[ALLOGRAPH_A]}
+        hands={[HAND]}
+      />
+    );
+    const all = screen.getByRole('radio', { name: 'Set curved on all selected' });
+    const none = screen.getByRole('radio', { name: 'Remove curved from all selected' });
+    const mixed = screen.getByRole('radio', { name: 'Leave curved unchanged per graph' });
+    expect([all.tabIndex, none.tabIndex, mixed.tabIndex]).toEqual([-1, 0, -1]);
+
+    fireEvent.keyDown(none, { key: 'ArrowRight' });
+    expect(mixed.getAttribute('aria-checked')).toBe('true');
+    expect(document.activeElement).toBe(mixed);
+
+    fireEvent.keyDown(mixed, { key: 'ArrowRight' });
+    expect(all.getAttribute('aria-checked')).toBe('true');
+  });
+});
