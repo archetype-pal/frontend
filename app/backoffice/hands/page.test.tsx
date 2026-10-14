@@ -86,4 +86,26 @@ describe('<HandsPage>', () => {
       ordering: 'name',
     });
   });
+
+  it('dims the table while the new results load', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const respond = getHands.getMockImplementation()!;
+    getHands.mockImplementation(async (params: { search?: string }) => {
+      if (params.search) await gate;
+      return respond(params);
+    });
+    renderPage();
+    await screen.findByText('Hand 1');
+    const busy = () => screen.getByRole('table').closest('[aria-busy="true"]');
+    expect(busy()).toBeNull();
+
+    fireEvent.change(screen.getByPlaceholderText('Search hands...'), {
+      target: { value: 'Hand' },
+    });
+
+    await waitFor(() => expect(busy()).not.toBeNull());
+    release();
+    await waitFor(() => expect(busy()).toBeNull());
+  });
 });
