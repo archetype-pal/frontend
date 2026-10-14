@@ -8,6 +8,8 @@ export interface SegmentedOption<T extends string> {
   label: React.ReactNode;
   disabled?: boolean;
   title?: string;
+  /** Names the segment for assistive tech when its visible label is too terse. */
+  ariaLabel?: string;
 }
 
 /**
@@ -91,6 +93,7 @@ export function Segmented<T extends string>({
             type="button"
             role="radio"
             aria-checked={active}
+            aria-label={opt.ariaLabel}
             tabIndex={index === tabbableIndex ? 0 : -1}
             disabled={opt.disabled}
             title={opt.title}

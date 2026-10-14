@@ -21,11 +21,11 @@ import type { HandType } from '@/types/hands';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { Segmented, type SegmentedOption } from '@/components/ui/segmented';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { SearchableOption } from '@/lib/searchable-option-ranking';
-import { cn } from '@/lib/utils';
 
 // Tri-state model: every toggleable thing (feature, position) is 'all' (set
 // on every selected graph), 'none' (set on none), or 'mixed' (some have it).
@@ -882,70 +882,29 @@ interface TriRowProps {
 // (or 2-button in single-graph mode where 'mixed' is unreachable) followed by
 // the option label. Replaces the prior cycle-on-click checkbox UI, which was
 // fast for power users but undiscoverable for everyone else — the explicit
-// All/None/Mixed labels make the model obvious.
+// All/None/Mixed labels make the model obvious. Arrow keys move between them.
 function TriRow({ label, isMulti, state, onSet }: TriRowProps) {
+  const options: SegmentedOption<TriState>[] = [
+    { value: 'all', label: 'All', ariaLabel: `Set ${label} on all selected` },
+    { value: 'none', label: 'None', ariaLabel: `Remove ${label} from all selected` },
+  ];
+  if (isMulti) {
+    options.push({
+      value: 'mixed',
+      label: 'Mixed',
+      ariaLabel: `Leave ${label} unchanged per graph`,
+    });
+  }
   return (
     <div className="flex items-center gap-2.5 text-sm">
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="inline-flex shrink-0 overflow-hidden rounded-md border"
-      >
-        <SegmentedButton
-          active={state === 'all'}
-          onClick={() => onSet('all')}
-          ariaLabel={`Set ${label} on all selected`}
-        >
-          All
-        </SegmentedButton>
-        <SegmentedButton
-          active={state === 'none'}
-          onClick={() => onSet('none')}
-          ariaLabel={`Remove ${label} from all selected`}
-        >
-          None
-        </SegmentedButton>
-        {isMulti && (
-          <SegmentedButton
-            active={state === 'mixed'}
-            onClick={() => onSet('mixed')}
-            ariaLabel={`Leave ${label} unchanged per graph`}
-          >
-            Mixed
-          </SegmentedButton>
-        )}
-      </div>
+      <Segmented
+        ariaLabel={label}
+        value={state}
+        options={options}
+        onChange={onSet}
+        className="shrink-0"
+      />
       <span className="leading-snug text-foreground">{label}</span>
     </div>
-  );
-}
-
-function SegmentedButton({
-  active,
-  onClick,
-  ariaLabel,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  ariaLabel: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={active}
-      aria-label={ariaLabel}
-      onClick={onClick}
-      className={cn(
-        'min-w-[3rem] border-l px-2.5 py-1 text-xs font-medium transition first:border-l-0',
-        active
-          ? 'bg-primary text-primary-foreground'
-          : 'bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
-      )}
-    >
-      {children}
-    </button>
   );
 }
