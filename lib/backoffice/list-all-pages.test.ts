@@ -7,7 +7,7 @@ function page(results: number[], count: number) {
 }
 
 describe('listAllPages', () => {
-  it('reads pages of 100 until the count is reached', async () => {
+  it('reads pages of 100 until the count is reached, reporting each page', async () => {
     const list = vi
       .fn()
       .mockResolvedValueOnce(
@@ -23,10 +23,15 @@ describe('listAllPages', () => {
         )
       );
 
-    const rows = await listAllPages(list);
+    const onProgress = vi.fn();
+    const rows = await listAllPages(list, { onProgress });
 
     expect(rows).toHaveLength(150);
     expect(list.mock.calls).toEqual([[{ limit: 100, offset: 0 }], [{ limit: 100, offset: 100 }]]);
+    expect(onProgress.mock.calls).toEqual([
+      [100, 150],
+      [150, 150],
+    ]);
   });
 
   it('stops on an empty page even if the count says more', async () => {
@@ -51,5 +56,19 @@ describe('listAllPages', () => {
       .mockRejectedValueOnce(new Error('502'));
 
     await expect(listAllPages(list)).rejects.toThrow('502');
+  });
+
+  it('stops reading once aborted, discarding the page in flight', async () => {
+    const controller = new AbortController();
+    const list = vi.fn(async () => {
+      controller.abort();
+      return page(
+        Array.from({ length: 100 }, (_, i) => i),
+        300
+      );
+    });
+
+    await expect(listAllPages(list, { signal: controller.signal })).rejects.toThrow(/abort/i);
+    expect(list).toHaveBeenCalledTimes(1);
   });
 });

@@ -2,7 +2,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, onTestFinished, vi } from 'vitest';
 import type { ColumnDef } from '@tanstack/react-table';
 
+import { listAllPages } from '@/lib/backoffice/list-all-pages';
 import { DataTable, sortableHeader } from './data-table';
+
+const { toast } = vi.hoisted(() => ({ toast: { error: vi.fn() } }));
+vi.mock('sonner', () => ({ toast }));
 
 type Row = { id: number; name: string };
 
@@ -89,6 +93,62 @@ describe('DataTable server sorting and export', () => {
     fireEvent.click(screen.getByRole('button', { name: /export/i }));
 
     expect(await downloaded()).toBe('name\nBeta\nAlpha\nGamma');
+  });
+
+  it('shows how many rows it has read while it exports every row', async () => {
+    const downloaded = stubDownload();
+    let finish!: () => void;
+    const fetchAllRows = vi.fn(
+      async ({ onProgress }: { onProgress: (loaded: number, total: number) => void }) => {
+        onProgress(100, 300);
+        await new Promise<void>((resolve) => (finish = resolve));
+        return rows;
+      }
+    );
+    render(
+      <DataTable
+        columns={columns}
+        data={rows}
+        pagination={false}
+        enableExport
+        fetchAllRows={fetchAllRows}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+
+    const button = await screen.findByRole('button', { name: 'Exporting 100 of 300…' });
+    expect(button).toHaveProperty('disabled', true);
+    finish();
+    expect(await downloaded()).toBe('name\nBeta\nAlpha');
+    await screen.findByRole('button', { name: 'Export' });
+  });
+
+  it('stops a running export when the table goes away, without a download or an error', async () => {
+    const downloaded = stubDownload();
+    let finishPage!: () => void;
+    const list = vi.fn(async () => {
+      await new Promise<void>((resolve) => (finishPage = resolve));
+      return { count: 300, next: null, previous: null, results: rows };
+    });
+    const { unmount } = render(
+      <DataTable
+        columns={columns}
+        data={rows}
+        pagination={false}
+        enableExport
+        fetchAllRows={(options) => listAllPages(list, options)}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+    await waitFor(() => expect(list).toHaveBeenCalledTimes(1));
+    unmount();
+    finishPage();
+
+    await expect(downloaded()).rejects.toThrow();
+    expect(list).toHaveBeenCalledTimes(1);
+    expect(toast.error).not.toHaveBeenCalled();
   });
 
   it('exports only the ticked rows in list order, page by page, even after going back to an earlier page', async () => {
