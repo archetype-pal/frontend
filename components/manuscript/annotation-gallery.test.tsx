@@ -25,13 +25,39 @@ vi.mock('@/contexts/auth-context', () => ({
   useAuth: () => ({ user: mockState.user, token: mockState.user ? 'token' : null }),
 }));
 
-vi.mock('@/contexts/collection-context', () => ({
-  useCollection: () => ({
-    addItem: vi.fn(),
-    removeItem: vi.fn(),
-    isInCollection: () => false,
-  }),
-}));
+// A small in-memory collection, so membership changes re-render the gallery.
+const collection = vi.hoisted(() => {
+  let ids = new Set<number>();
+  const listeners = new Set<() => void>();
+  const set = (next: Set<number>) => {
+    ids = next;
+    listeners.forEach((listener) => listener());
+  };
+  return {
+    ids: () => ids,
+    reset: (initial: number[] = []) => set(new Set(initial)),
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
+    add: (id: number) => set(new Set(ids).add(id)),
+    remove: (removed: number[]) => set(new Set([...ids].filter((id) => !removed.includes(id)))),
+  };
+});
+vi.mock('@/contexts/collection-context', async () => {
+  const { useSyncExternalStore } = await import('react');
+  return {
+    useCollection: () => {
+      const ids = useSyncExternalStore(collection.subscribe, collection.ids);
+      return {
+        addItem: (item: { id: number }) => collection.add(item.id),
+        removeItem: (id: number) => collection.remove([id]),
+        removeItems: (items: { id: number }[]) => collection.remove(items.map((i) => i.id)),
+        isInCollection: (id: number) => ids.has(id),
+      };
+    },
+  };
+});
 
 vi.mock('@/contexts/model-labels-context', () => ({
   useModelLabels: () => ({ getLabel: (k: string) => k, getPluralLabel: (k: string) => k }),
@@ -120,6 +146,7 @@ beforeEach(() => {
   mockState.crop.mockReset();
   mockState.crop.mockReturnValue({ src: 'https://iiif.example/crop.jpg', failed: false });
   openLightboxMock.mockReset();
+  collection.reset();
   fetchAllographsMock.mockReset();
   fetchAllographsMock.mockReturnValue(new Promise(() => {}));
   Object.values(toastMock).forEach((fn) => fn.mockReset());
@@ -325,5 +352,35 @@ describe('AnnotationGallery edit sheet', () => {
     fireEvent.click(within(alert).getByRole('button', { name: 'Try again' }));
     expect(fetchAllographsMock).toHaveBeenCalledTimes(2);
     expect(screen.getByRole('status').textContent).toBe('Loading allographs…');
+  });
+});
+
+describe('AnnotationGallery collection', () => {
+  it('says how many selected graphs went into the collection, and undoes it', () => {
+    collection.reset([4410]);
+    renderGallery();
+    fireEvent.click(within(row('A')).getByRole('checkbox', { name: 'Select all A graphs' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add 2 to collection' }));
+
+    expect([...collection.ids()].sort()).toEqual([4189, 4410]);
+    expect(screen.queryByRole('region', { name: 'Selection' })).toBeNull();
+    const [message, options] = toastMock.success.mock.calls[0];
+    expect(message).toBe('Added 1 graph to your collection (1 already there).');
+    expect(options.cancel.label).toBe('View collection');
+
+    act(() => options.action.onClick());
+    expect([...collection.ids()]).toEqual([4410]);
+  });
+
+  it('says so when every selected graph is already in the collection', () => {
+    collection.reset([4190]);
+    renderGallery();
+    fireEvent.click(screen.getByRole('button', { name: 'Select b graph 4190' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add 1 to collection' }));
+
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(toastMock.info).toHaveBeenCalledWith('That graph is already in your collection.');
   });
 });
