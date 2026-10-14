@@ -89,7 +89,7 @@ export default function SymbolsPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] -m-6">
+    <div className="flex h-[calc(100dvh-3.5rem)] -m-6">
       {/* Left: tabbed sidebar */}
       <div className="w-80 shrink-0 border-r bg-card">
         <SymbolTreeSidebar
