@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import type { BackendGraph } from '@/services/annotations';
 import type { HandType } from '@/types/hands';
-import { groupAnnotations, handAccentColor, handAnchorId } from './annotation-gallery-groups';
+import {
+  groupAnnotations,
+  handAccentColor,
+  handAnchorId,
+  NO_ALLOGRAPH_LABEL,
+  withUnassignedLast,
+} from './annotation-gallery-groups';
 
 function makeGraph(overrides: Partial<BackendGraph> = {}): BackendGraph {
   return {
@@ -75,10 +81,34 @@ describe('groupAnnotations', () => {
     expect(groups.map((g) => g.handName)).toEqual(['First', 'Second', 'Unattributed']);
   });
 
+  it('lists graphs that have no allograph in a group of their own, last', () => {
+    const [hand] = groupAnnotations(
+      [makeGraph({ id: 1, allograph: null }), makeGraph({ id: 2, allograph: 11 })],
+      [makeHand()],
+      ALLOGRAPHS
+    );
+
+    expect(hand.allographs.map((a) => [a.allographId, a.allographName])).toEqual([
+      [11, 'b'],
+      [null, NO_ALLOGRAPH_LABEL],
+    ]);
+    expect(hand.allographs[1].graphs.map((g) => g.id)).toEqual([1]);
+  });
+
   it('falls back to ids when the hand or allograph names did not load', () => {
     const [hand] = groupAnnotations([makeGraph({ hand: 7, allograph: 99 })], [], []);
     expect(hand.handName).toBe('Hand 7');
     expect(hand.allographs[0].allographName).toBe('Allograph 99');
+  });
+});
+
+describe('withUnassignedLast', () => {
+  it('keeps the no-allograph group last under any sort', () => {
+    const groups = [{ allographId: null }, { allographId: 2 }, { allographId: 1 }];
+    const descending = withUnassignedLast<{ allographId: number | null }>(
+      (a, b) => (b.allographId ?? 0) - (a.allographId ?? 0)
+    );
+    expect([...groups].sort(descending).map((g) => g.allographId)).toEqual([2, 1, null]);
   });
 });
 
