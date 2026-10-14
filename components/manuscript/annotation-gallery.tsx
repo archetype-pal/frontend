@@ -38,6 +38,7 @@ import {
   groupAnnotations,
   handAccentColor,
   handAnchorId,
+  withUnassignedLast,
 } from '@/lib/annotation-gallery-groups';
 import {
   type GalleryFilterState,
@@ -314,10 +315,12 @@ export function AnnotationGallery({
     const comparator = allographGroupComparator(filters.sort);
     return grouped.map((handGroup) => ({
       ...handGroup,
-      allographs: [...handGroup.allographs].sort((a, b) =>
-        comparator(
-          { allographName: a.allographName, count: a.graphs.length },
-          { allographName: b.allographName, count: b.graphs.length }
+      allographs: [...handGroup.allographs].sort(
+        withUnassignedLast((a, b) =>
+          comparator(
+            { allographName: a.allographName, count: a.graphs.length },
+            { allographName: b.allographName, count: b.graphs.length }
+          )
         )
       ),
     }));
@@ -836,9 +839,9 @@ function HandSection({
         </div>
         <ul className="mt-3 flex flex-wrap gap-2 text-sm">
           {handGroup.allographs.map((a) => (
-            <li key={a.allographId}>
+            <li key={a.allographId ?? 'none'}>
               <a
-                href={`#${anchorId}-allograph-${a.allographId}`}
+                href={`#${anchorId}-allograph-${a.allographId ?? 'none'}`}
                 className="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 text-foreground/80 transition hover:border-primary hover:text-foreground"
               >
                 {a.allographName}
@@ -854,7 +857,7 @@ function HandSection({
       <div className="space-y-8">
         {handGroup.allographs.map((allographGroup) => (
           <AllographGroupSection
-            key={allographGroup.allographId}
+            key={allographGroup.allographId ?? 'none'}
             anchorId={anchorId}
             allographGroup={allographGroup}
             accent={accent}
@@ -947,7 +950,7 @@ function AllographGroupSection({
   };
 
   return (
-    <div id={`${anchorId}-allograph-${allographGroup.allographId}`} className="space-y-3">
+    <div id={`${anchorId}-allograph-${allographGroup.allographId ?? 'none'}`} className="space-y-3">
       {/* Sticky inside the section so the per-allograph actions follow the
           user down a long thumb grid. `top-48` (192px) clears the page-level
           toolbar (top-28 offset + ~64px height + ~16px gap); bg-background
