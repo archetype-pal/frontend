@@ -266,7 +266,9 @@
     "unselectGraph": "Graph abwählen",
     "deleteGraphLabel": "Graph Nr. {id} löschen",
     "editorialGraphsSkipped": "{count, plural, one {# editorischer Graph wurde ausgelassen} other {# editorische Graphen wurden ausgelassen}}: Nur Superuser können sie bearbeiten.",
-    "editorialGraphsOnlySuperusers": "Nur Superuser können editorische Graphen bearbeiten."
+    "editorialGraphsOnlySuperusers": "Nur Superuser können editorische Graphen bearbeiten.",
+    "allographsLoading": "Allographen werden geladen…",
+    "allographsFailed": "Die Liste der Allographen konnte nicht geladen werden."
   },
   "filters": {
     "activeTitle": "Aktive Filter",

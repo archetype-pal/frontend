@@ -266,7 +266,9 @@
     "unselectGraph": "Unselect graph",
     "deleteGraphLabel": "Delete graph #{id}",
     "editorialGraphsSkipped": "{count, plural, one {# editorial graph was left out} other {# editorial graphs were left out}}: only superusers can edit them.",
-    "editorialGraphsOnlySuperusers": "Only superusers can edit editorial graphs."
+    "editorialGraphsOnlySuperusers": "Only superusers can edit editorial graphs.",
+    "allographsLoading": "Loading allographs…",
+    "allographsFailed": "Couldn't load the allograph list."
   },
   "filters": {
     "activeTitle": "Active filters",

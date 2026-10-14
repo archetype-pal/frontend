@@ -166,6 +166,11 @@ export interface AnnotationEditDialogProps {
   onOpenChange: (open: boolean) => void;
   graphs: BackendGraph[];
   allographs: Allograph[];
+  /** Set while the caller is still fetching `allographs`, or after that fetch
+   *  failed; the Allograph field says so instead of offering an empty list. */
+  allographsStatus?: 'loading' | 'error';
+  /** Fetch `allographs` again after a failure. */
+  onRetryAllographs?: () => void;
   hands: HandType[];
   /** IIIF info URL for the parent image, used to render a crop preview of the
    *  graph(s) under edit. */
@@ -193,6 +198,8 @@ function DialogBody({
   onOpenChange,
   graphs,
   allographs,
+  allographsStatus,
+  onRetryAllographs,
   hands,
   iiifImage,
   handDisabled,
@@ -202,6 +209,9 @@ function DialogBody({
 }: AnnotationEditDialogProps) {
   const { token } = useAuth();
   const t = useTranslations('search');
+  const tCommon = useTranslations('common');
+  // Saving waits for the allograph list: without it the schema can't be shown.
+  const allographsReady = allographsStatus === undefined;
   // The two "nothing defined for this allograph" sentences are the same ones the
   // annotation popup shows for the same condition, already translated — reuse them
   // rather than keeping a second copy that can drift out of step.
@@ -492,7 +502,7 @@ function DialogBody({
   // gating flags last changed.
   const onSaveHotkey = React.useEffectEvent((e: KeyboardEvent) => {
     if (!(e.metaKey || e.ctrlKey) || e.key !== 'Enter') return;
-    if (saving || !hasPendingChanges) return;
+    if (saving || !hasPendingChanges || !allographsReady) return;
     e.preventDefault();
     void handleSave();
   });
@@ -536,17 +546,44 @@ function DialogBody({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-sm font-medium">Allograph</Label>
-              <SearchableSelect
-                options={allographOptions}
-                value={allographId != null ? String(allographId) : null}
-                onValueChange={(v) => setAllographId(v ? Number(v) : null)}
-                placeholder={
-                  isMulti && initialAllograph === MIXED ? t('mixedPickOne') : 'Allograph'
-                }
-                searchPlaceholder={t('searchAllographs')}
-                emptyText={t('noAllographs')}
-                triggerClassName="h-9 w-full text-sm"
-              />
+              {allographsStatus === 'error' ? (
+                <div
+                  role="alert"
+                  className="flex flex-wrap items-center gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-2.5 py-1.5 text-sm text-destructive"
+                >
+                  {t('allographsFailed')}
+                  {onRetryAllographs && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={onRetryAllographs}
+                    >
+                      {tCommon('tryAgain')}
+                    </Button>
+                  )}
+                </div>
+              ) : allographsStatus === 'loading' ? (
+                <div
+                  role="status"
+                  className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm text-muted-foreground"
+                >
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                  {t('allographsLoading')}
+                </div>
+              ) : (
+                <SearchableSelect
+                  options={allographOptions}
+                  value={allographId != null ? String(allographId) : null}
+                  onValueChange={(v) => setAllographId(v ? Number(v) : null)}
+                  placeholder={
+                    isMulti && initialAllograph === MIXED ? t('mixedPickOne') : 'Allograph'
+                  }
+                  searchPlaceholder={t('searchAllographs')}
+                  emptyText={t('noAllographs')}
+                  triggerClassName="h-9 w-full text-sm"
+                />
+              )}
             </div>
             <div>
               <Label className="mb-1.5 block text-sm font-medium">Hand</Label>
@@ -693,11 +730,11 @@ function DialogBody({
                 </div>
               )}
             </>
-          ) : (
+          ) : allographsReady ? (
             <p className="text-xs text-muted-foreground">
               Pick an allograph to edit its components and positions.
             </p>
-          )}
+          ) : null}
 
           {error && <p className="text-xs text-destructive">{error}</p>}
         </div>
@@ -721,7 +758,7 @@ function DialogBody({
           <Button
             size="sm"
             onClick={handleSave}
-            disabled={saving || !hasPendingChanges}
+            disabled={saving || !hasPendingChanges || !allographsReady}
             title="⌘/Ctrl+Enter to save"
             className="gap-2"
           >

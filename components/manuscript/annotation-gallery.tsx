@@ -193,15 +193,25 @@ export function AnnotationGallery({
   // Full allograph schema (components/positions) is only needed by the edit
   // dialog, so we lazy-fetch it on first open instead of paying for the whole
   // taxonomy on every page load (the page sends labels-only summaries). G2.3.
+  // Its status reaches the dialog, which would otherwise offer an empty list
+  // while the fetch runs and keep offering it after a failure.
   const [fullAllographs, setFullAllographs] = React.useState<Allograph[]>([]);
+  const [fullAllographsStatus, setFullAllographsStatus] = React.useState<
+    'idle' | 'loading' | 'ready' | 'error'
+  >('idle');
   const allographsFetchRef = React.useRef<Promise<void> | null>(null);
   const ensureFullAllographs = React.useCallback(() => {
     if (allographsFetchRef.current) return;
+    setFullAllographsStatus('loading');
     allographsFetchRef.current = fetchAllographs()
-      .then(setFullAllographs)
+      .then((list) => {
+        setFullAllographs(list);
+        setFullAllographsStatus('ready');
+      })
       .catch(() => {
-        // Reset so a later open can retry.
+        // Reset so a retry (or a later open) fetches again.
         allographsFetchRef.current = null;
+        setFullAllographsStatus('error');
       });
   }, []);
   const openEditor = React.useCallback(
@@ -612,6 +622,12 @@ export function AnnotationGallery({
           }}
           graphs={editingGraphs}
           allographs={fullAllographs}
+          allographsStatus={
+            fullAllographsStatus === 'loading' || fullAllographsStatus === 'error'
+              ? fullAllographsStatus
+              : undefined
+          }
+          onRetryAllographs={ensureFullAllographs}
           hands={hands}
           iiifImage={iiifImage}
           onGraphSaved={handleGraphSaved}

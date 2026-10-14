@@ -266,7 +266,9 @@
     "unselectGraph": "Désélectionner le graphème",
     "deleteGraphLabel": "Supprimer le graphème n° {id}",
     "editorialGraphsSkipped": "{count, plural, one {# graphème éditorial a été exclu} other {# graphèmes éditoriaux ont été exclus}} : seuls les superutilisateurs peuvent les modifier.",
-    "editorialGraphsOnlySuperusers": "Seuls les superutilisateurs peuvent modifier les graphèmes éditoriaux."
+    "editorialGraphsOnlySuperusers": "Seuls les superutilisateurs peuvent modifier les graphèmes éditoriaux.",
+    "allographsLoading": "Chargement des allographes…",
+    "allographsFailed": "Impossible de charger la liste des allographes."
   },
   "filters": {
     "activeTitle": "Filtres actifs",
