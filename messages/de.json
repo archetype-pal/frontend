@@ -2223,6 +2223,7 @@
     },
     "symbols": {
       "loadingStructure": "Symbolstruktur wird geladen …",
+      "loadStructureFailed": "Die Symbolstruktur konnte nicht geladen werden",
       "gettingStartedTitle": "Erste Schritte mit der paläografischen Struktur",
       "step1Title": "Komponenten erstellen",
       "step1Desc": "Definieren Sie die strukturellen Teile eines Buchstabens (z. B. Oberlänge, Grundkörper, Unterlänge)",

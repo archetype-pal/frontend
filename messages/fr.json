@@ -2223,6 +2223,7 @@
     },
     "symbols": {
       "loadingStructure": "Chargement de la structure des symboles...",
+      "loadStructureFailed": "Impossible de charger la structure des symboles",
       "gettingStartedTitle": "Premiers pas avec la structure paléographique",
       "step1Title": "Créer des composants",
       "step1Desc": "Définir les parties structurelles d'une lettre (ex. hampe, corps, jambage)",

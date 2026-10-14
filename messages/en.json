@@ -2223,6 +2223,7 @@
     },
     "symbols": {
       "loadingStructure": "Loading symbols structure...",
+      "loadStructureFailed": "Failed to load the symbols structure",
       "gettingStartedTitle": "Getting Started with Palaeographic Structure",
       "step1Title": "Create Components",
       "step1Desc": "Define the structural parts of a letter (e.g., ascender, body, descender)",

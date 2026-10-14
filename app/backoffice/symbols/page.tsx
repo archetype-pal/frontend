@@ -16,7 +16,10 @@ import {
   createCharacter,
 } from '@/services/backoffice/symbols';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { BackofficeLoadingState } from '@/components/backoffice/common/query-state';
+import {
+  BackofficeErrorState,
+  BackofficeLoadingState,
+} from '@/components/backoffice/common/query-state';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 
 export default function SymbolsPage() {
@@ -69,6 +72,20 @@ export default function SymbolsPage() {
 
   if (isLoading) {
     return <BackofficeLoadingState label={t('symbols.loadingStructure')} />;
+  }
+
+  // Only a query with nothing to show fails the page: a failed background
+  // refetch keeps its data, and the editor (with any draft) stays mounted.
+  const failed = [characters, components, features, positions].filter(
+    (q) => q.isError && q.data === undefined
+  );
+  if (failed.length > 0) {
+    return (
+      <BackofficeErrorState
+        message={t('symbols.loadStructureFailed')}
+        onRetry={() => failed.forEach((q) => void q.refetch())}
+      />
+    );
   }
 
   return (
