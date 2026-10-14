@@ -24,7 +24,13 @@ const historicalItemsCrud = createCrudService<
   HistoricalItemDetail
 >('/api/v1/manuscripts/management/historical-items/');
 
-export function getHistoricalItems(params?: { limit?: number; offset?: number; type?: string }) {
+export function getHistoricalItems(params?: {
+  limit?: number;
+  offset?: number;
+  type?: string;
+  search?: string;
+  ordering?: string;
+}) {
   return historicalItemsCrud.list(params);
 }
 
@@ -101,6 +107,7 @@ export function getCurrentItems(params?: {
   search?: string;
   limit?: number;
   offset?: number;
+  ordering?: string;
 }) {
   return currentItemsCrud.list(params);
 }

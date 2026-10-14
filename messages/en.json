@@ -2363,6 +2363,9 @@
       "selectedCount": "{count} selected",
       "loadError": "Failed to load. Please try again.",
       "exportFailed": "Export failed. Please try again.",
+      "exporting": "Exporting…",
+      "exportProgress": "Exporting {loaded, number} of {total, number}…",
+      "exportSelected": "Export {count, number} selected",
       "noResults": "No results.",
       "selectedOfTotal": "{count} of {total} selected"
     },
@@ -2857,6 +2860,8 @@
       "export": "Export",
       "exportCsv": "CSV (all matching rows)",
       "exportJson": "JSON (all matching rows)",
+      "exportCsvSelected": "CSV (selected texts)",
+      "exportJsonSelected": "JSON (selected texts)",
       "importTei": "Import TEI",
       "new": "New",
       "searchPlaceholder": "Search content or language…",

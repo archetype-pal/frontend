@@ -42,10 +42,12 @@ import { escapeCsvField } from '@/lib/backoffice/csv-escape';
 import { downloadBlob } from '@/lib/download';
 import { BackofficeErrorState } from './query-state';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
+import type { ListAllPagesOptions } from '@/lib/backoffice/list-all-pages';
 
 export interface BulkAction {
   label: string;
-  action: (ids: string[]) => void;
+  /** `keepTicked` replaces the ticks with the given ids, e.g. the rows that failed. */
+  action: (ids: string[], keepTicked: (ids: string[]) => void) => void;
   variant?: 'destructive' | 'default';
   icon?: React.ReactNode;
 }
@@ -91,7 +93,9 @@ interface DataTableProps<TData, TValue> {
   /** Enable CSV export of current view. */
   enableExport?: boolean;
   /** Fetch every row for Export when the table holds only one server page. */
-  fetchAllRows?: () => Promise<TData[]>;
+  fetchAllRows?: (options: Required<ListAllPagesOptions>) => Promise<TData[]>;
+  /** Offer Export only for ticked rows. */
+  exportSelectionOnly?: boolean;
   /** Filename for CSV export. */
   exportFilename?: string;
   /** Content for filter bar above the table. */
@@ -130,6 +134,7 @@ export function DataTable<TData, TValue>({
   enableColumnVisibility = false,
   enableExport = false,
   fetchAllRows,
+  exportSelectionOnly = false,
   exportFilename = 'export',
   filterBar,
   presetFilters,
@@ -145,7 +150,12 @@ export function DataTable<TData, TValue>({
   const tCommon = useTranslations('common');
   const [localSorting, setLocalSorting] = useState<SortingState>([]);
   const sorting = onSortingChange ? (serverSorting ?? []) : localSorting;
-  const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState<{ loaded: number; total: number } | null>(
+    null
+  );
+  // Leaving the table stops a running export when its page in flight returns.
+  const exportAbort = useRef<AbortController | null>(null);
+  useEffect(() => () => exportAbort.current?.abort(), []);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [tablePageSize, setTablePageSize] = usePageSize(pageSizeKey ?? null, pageSize);
@@ -254,6 +264,28 @@ export function DataTable<TData, TValue>({
   const selectedCount = Object.keys(rowSelection).length;
   const selectedIds = Object.keys(rowSelection);
 
+  // Ticked rows for Export. Rows ticked on another server page are no longer in
+  // `data`, so they are kept here. Each page keeps the place it first took, so
+  // going back to a page does not move it, and its rows follow the screen order.
+  const tickedRows = useRef(new Map<string, TData>());
+  useEffect(() => {
+    const shown = table.getSortedRowModel().rows;
+    const onPage = new Set(shown.map((row) => row.id));
+    const next = new Map<string, TData>();
+    let placed = false;
+    const placePage = () => {
+      for (const row of shown) if (row.getIsSelected()) next.set(row.id, row.original);
+      placed = true;
+    };
+    for (const [id, row] of tickedRows.current) {
+      if (!rowSelection[id]) continue;
+      if (!onPage.has(id)) next.set(id, row);
+      else if (!placed) placePage();
+    }
+    if (!placed) placePage();
+    tickedRows.current = next;
+  });
+
   function downloadCsv(source: TData[]) {
     const exportColumns = table
       .getVisibleLeafColumns()
@@ -282,17 +314,28 @@ export function DataTable<TData, TValue>({
   }
 
   async function handleExport() {
+    if (selectedCount > 0) {
+      downloadCsv([...tickedRows.current.values()]);
+      return;
+    }
     if (!fetchAllRows) {
       downloadCsv(table.getFilteredRowModel().rows.map((row) => row.original));
       return;
     }
-    setExporting(true);
+    const controller = new AbortController();
+    exportAbort.current = controller;
+    const { signal } = controller;
+    setExportProgress({ loaded: 0, total: 0 });
     try {
-      downloadCsv(await fetchAllRows());
+      const rows = await fetchAllRows({
+        signal,
+        onProgress: (loaded, total) => setExportProgress({ loaded, total }),
+      });
+      downloadCsv(rows);
     } catch {
-      toast.error(t('dataTable.exportFailed'));
+      if (!signal.aborted) toast.error(t('dataTable.exportFailed'));
     } finally {
-      setExporting(false);
+      if (!signal.aborted) setExportProgress(null);
     }
   }
 
@@ -359,21 +402,29 @@ export function DataTable<TData, TValue>({
             </div>
           )}
           <div className="ml-auto flex items-center gap-2">
-            {enableExport && (
+            {enableExport && (!exportSelectionOnly || selectedCount > 0) && (
               <Button
                 variant="outline"
                 size="sm"
                 className="h-9 gap-1"
                 onClick={handleExport}
-                disabled={exporting}
-                aria-busy={exporting || undefined}
+                disabled={!!exportProgress}
+                aria-busy={!!exportProgress || undefined}
               >
-                {exporting ? (
+                {exportProgress ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
                   <Download className="h-3.5 w-3.5" />
                 )}
-                <span className="hidden sm:inline">{tCommon('export')}</span>
+                <span className="hidden sm:inline">
+                  {exportProgress
+                    ? exportProgress.total > 0
+                      ? t('dataTable.exportProgress', exportProgress)
+                      : t('dataTable.exporting')
+                    : selectedCount > 0
+                      ? t('dataTable.exportSelected', { count: selectedCount })
+                      : tCommon('export')}
+                </span>
               </Button>
             )}
             {enableColumnVisibility && (
@@ -419,7 +470,11 @@ export function DataTable<TData, TValue>({
                 variant={action.variant === 'destructive' ? 'destructive' : 'outline'}
                 size="sm"
                 className="h-7 gap-1 text-xs"
-                onClick={() => action.action(selectedIds)}
+                onClick={() =>
+                  action.action(selectedIds, (ids) =>
+                    setRowSelection(Object.fromEntries(ids.map((id) => [id, true])))
+                  )
+                }
               >
                 {action.icon}
                 {action.label}

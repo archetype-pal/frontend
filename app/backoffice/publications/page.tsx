@@ -204,31 +204,33 @@ export default function PublicationsPage() {
     {
       label: t('publications.bulkPublish'),
       icon: <CheckCircle className="h-3 w-3" />,
-      action: async (slugs) => {
-        await runBulkAction({
+      action: async (slugs, keepTicked) => {
+        const { failedIds } = await runBulkAction({
           ids: slugs,
           action: (slug) => updatePublication(slug, { status: 'Published' }),
           invalidate: invalidatePubs,
           pastTense: 'published',
           noun: 'post',
         });
+        keepTicked(failedIds);
       },
     },
     {
       label: t('publications.bulkUnpublish'),
       icon: <XCircle className="h-3 w-3" />,
-      action: (slugs) => {
+      action: (slugs, keepTicked) => {
         setPendingBulkAction({
           label: t('publications.bulkUnpublish'),
           slugs,
           execute: async (s) => {
-            await runBulkAction({
+            const { failedIds } = await runBulkAction({
               ids: s,
               action: (slug) => updatePublication(slug, { status: 'Draft' }),
               invalidate: invalidatePubs,
               pastTense: 'unpublished',
               noun: 'post',
             });
+            keepTicked(failedIds);
           },
         });
         setBulkConfirmOpen(true);
@@ -238,18 +240,19 @@ export default function PublicationsPage() {
       label: t('publications.bulkDelete'),
       variant: 'destructive',
       icon: <Trash2 className="h-3 w-3" />,
-      action: (slugs) => {
+      action: (slugs, keepTicked) => {
         setPendingBulkAction({
           label: t('publications.bulkDelete'),
           slugs,
           execute: async (s) => {
-            await runBulkAction({
+            const { failedIds } = await runBulkAction({
               ids: s,
               action: (slug) => deletePublication(slug),
               invalidate: invalidatePubs,
               pastTense: 'deleted',
               noun: 'post',
             });
+            keepTicked(failedIds);
           },
         });
         setBulkConfirmOpen(true);
@@ -294,7 +297,9 @@ export default function PublicationsPage() {
         }}
         enableColumnVisibility
         enableExport
-        fetchAllRows={() => listAllPages((p) => getPublications({ ...listParams, ...p }))}
+        fetchAllRows={(options) =>
+          listAllPages((p) => getPublications({ ...listParams, ...p }), options)
+        }
         exportFilename="posts"
         enableRowSelection
         bulkActions={bulkActions}

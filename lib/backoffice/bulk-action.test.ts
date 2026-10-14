@@ -38,7 +38,7 @@ describe('runBulkAction', () => {
       pastTense: 'deleted',
       noun: 'comment',
     });
-    expect(result).toEqual({ succeeded: 3, failed: 0 });
+    expect(result).toEqual({ succeeded: 3, failed: 0, failedIds: [] });
     expect(action).toHaveBeenCalledTimes(3);
     expect(invalidate).toHaveBeenCalledTimes(1);
     expect(toastMocks.success).toHaveBeenCalledWith('3 comments deleted');
@@ -59,12 +59,12 @@ describe('runBulkAction', () => {
       pastTense: 'deleted',
       noun: 'user',
     });
-    expect(result).toEqual({ succeeded: 0, failed: 2 });
+    expect(result).toEqual({ succeeded: 0, failed: 2, failedIds: [1, 2] });
     expect(invalidate).toHaveBeenCalledTimes(1);
     expect(toastMocks.error).toHaveBeenCalledWith('Failed to update users');
   });
 
-  it('toasts a partial-success warning when only some reject', async () => {
+  it('toasts a partial-success warning when only some reject, and returns the ids that failed', async () => {
     const invalidate = vi.fn();
     const action = vi
       .fn()
@@ -78,7 +78,7 @@ describe('runBulkAction', () => {
       pastTense: 'activated',
       noun: 'user',
     });
-    expect(result).toEqual({ succeeded: 2, failed: 1 });
+    expect(result).toEqual({ succeeded: 2, failed: 1, failedIds: [2] });
     expect(invalidate).toHaveBeenCalledTimes(1);
     expect(toastMocks.warning).toHaveBeenCalledWith('2 activated, 1 failed');
   });

@@ -119,9 +119,14 @@ function parseFilters(sp: URLSearchParams): UrlFilterState {
   };
 }
 
-function buildExportQuery(filters: UrlFilterState, format: 'csv' | 'json'): string {
+function buildExportQuery(
+  filters: UrlFilterState,
+  format: 'csv' | 'json',
+  selectedIds: number[]
+): string {
   const qs = new URLSearchParams();
-  qs.set('format', format);
+  qs.set('export_format', format);
+  if (selectedIds.length > 0) qs.set('id__in', selectedIds.join(','));
   if (filters.kind) qs.set('type', filters.kind);
   if (filters.status) qs.set('status', filters.status);
   if (filters.language) qs.set('language', filters.language);
@@ -274,7 +279,7 @@ export function TextsList() {
     // Authenticated download path: fetch through the auth proxy, then
     // synthesize an <a download> link from the blob. Direct navigation to the
     // backend URL would carry no Authorization header and 401.
-    const qs = buildExportQuery(filters, format);
+    const qs = buildExportQuery(filters, format, [...selected]);
     const path = `/api/v1/manuscripts/management/image-texts/export/?${qs}`;
     const toastId = toast.loading(t('textsList.toastPreparingExport'));
     try {
@@ -317,15 +322,22 @@ export function TextsList() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="outline" className="h-7 text-xs">
-                    <Download className="mr-1 h-3 w-3" /> {t('textsList.export')}
+                    <Download className="mr-1 h-3 w-3" />{' '}
+                    {selected.size > 0
+                      ? t('dataTable.exportSelected', { count: selected.size })
+                      : t('textsList.export')}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => void exportTo('csv')}>
-                    {t('textsList.exportCsv')}
+                    {selected.size > 0
+                      ? t('textsList.exportCsvSelected')
+                      : t('textsList.exportCsv')}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => void exportTo('json')}>
-                    {t('textsList.exportJson')}
+                    {selected.size > 0
+                      ? t('textsList.exportJsonSelected')
+                      : t('textsList.exportJson')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
