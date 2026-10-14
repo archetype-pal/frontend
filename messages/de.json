@@ -446,7 +446,10 @@
       "undoTooLate": "Graph #{id} ist bereits im Papierkorb. Ein Administrator kann ihn wiederherstellen.",
       "imageFailed": "Bild nicht geladen",
       "retryImage": "Erneut laden",
-      "retryImageLabel": "Bild von Graph {id} erneut laden"
+      "retryImageLabel": "Bild von Graph {id} erneut laden",
+      "collectionAdded": "{count, plural, one {# Graph} other {# Graphen}} zu Ihrer Sammlung hinzugefügt{already, plural, =0 {} other { (# bereits vorhanden)}}.",
+      "collectionAlreadyThere": "{count, plural, one {Dieser Graph ist} other {Diese Graphen sind}} bereits in Ihrer Sammlung.",
+      "viewCollection": "Sammlung ansehen"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Diesen editorischen Entwurf löschen?} other {Diesen öffentlichen Entwurf löschen?}}\n\nEr wird lokal verworfen.",

@@ -446,7 +446,10 @@
       "undoTooLate": "Graph #{id} is already in the trash. An admin can restore it.",
       "imageFailed": "Image didn't load",
       "retryImage": "Retry image",
-      "retryImageLabel": "Retry the image of graph {id}"
+      "retryImageLabel": "Retry the image of graph {id}",
+      "collectionAdded": "Added {count, plural, one {# graph} other {# graphs}} to your collection{already, plural, =0 {} other { (# already there)}}.",
+      "collectionAlreadyThere": "{count, plural, one {That graph is} other {Those graphs are}} already in your collection.",
+      "viewCollection": "View collection"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Delete this editorial draft annotation?} other {Delete this public draft annotation?}}\n\nThis will discard it locally.",

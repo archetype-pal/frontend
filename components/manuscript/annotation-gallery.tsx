@@ -93,7 +93,7 @@ export function AnnotationGallery({
   const tCommon = useTranslations('common');
   const { user, token } = useAuth();
   const router = useRouter();
-  const { addItem, isInCollection } = useCollection();
+  const { addItem, removeItems, isInCollection } = useCollection();
   const canEdit = user?.is_staff ?? false;
   // Editing needs the hand and allograph names; without them it would half-work.
   const editingAvailable = canEdit && !supportingDataIncomplete;
@@ -420,28 +420,46 @@ export function AnnotationGallery({
     [allographLabelById, handLabel, imageId]
   );
 
+  const toCollectionItem = React.useCallback(
+    (g: BackendGraph) =>
+      graphToCollectionItem(
+        g,
+        { itemPartId, itemImageId, iiifImage, locus, shelfmark },
+        { allographLabelById, handNameById }
+      ),
+    [allographLabelById, handNameById, iiifImage, itemImageId, itemPartId, locus, shelfmark]
+  );
+
+  // Adds the selected graphs on screen, says how many went in (and how many
+  // were already there), and offers Undo for the ones it added.
   const addSelectedToCollection = React.useCallback(() => {
-    for (const g of selectedShown) {
-      if (isInCollection(g.id, 'graph')) continue;
-      addItem(
-        graphToCollectionItem(
-          g,
-          { itemPartId, itemImageId, iiifImage, locus, shelfmark },
-          { allographLabelById, handNameById }
-        )
-      );
+    const added = selectedShown.filter((g) => !isInCollection(g.id, 'graph'));
+    const already = selectedShown.length - added.length;
+    for (const g of added) addItem(toCollectionItem(g));
+    selection.clear();
+    if (added.length === 0) {
+      toast.info(tGallery('collectionAlreadyThere', { count: already }));
+      return;
     }
+    toast.success(tGallery('collectionAdded', { count: added.length, already }), {
+      action: {
+        label: tGallery('undo'),
+        onClick: () => removeItems(added.map((g) => ({ id: g.id, type: 'graph' as const }))),
+      },
+      cancel: {
+        label: tGallery('viewCollection'),
+        onClick: () => router.push('/collection'),
+      },
+    });
   }, [
     addItem,
-    allographLabelById,
-    handNameById,
-    iiifImage,
     isInCollection,
-    itemImageId,
-    itemPartId,
-    locus,
+    removeItems,
+    router,
     selectedShown,
-    shelfmark,
+    selection,
+    tGallery,
+    toCollectionItem,
   ]);
 
   // The annotations fetch failed — show a recoverable error rather than the
