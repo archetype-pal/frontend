@@ -43,6 +43,9 @@ vi.mock('@/hooks/use-iiif-thumbnail', () => ({
 
 vi.mock('@/services/manuscripts', () => ({ fetchAllographs: vi.fn(() => new Promise(() => {})) }));
 
+const openLightboxMock = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/lightbox-utils', () => ({ openLightboxWithItems: openLightboxMock }));
+
 const HAND: HandType = {
   id: 141,
   name: 'Main Hand',
@@ -102,6 +105,7 @@ const row = (name: string) => screen.getByRole('group', { name });
 beforeEach(() => {
   mockState.user = null;
   mockState.refresh.mockReset();
+  openLightboxMock.mockReset();
   window.history.replaceState(null, '', '/manuscripts/1/images/5');
 });
 
@@ -205,5 +209,33 @@ describe('AnnotationGallery states', () => {
       'true'
     );
     expect(screen.getByText('Editing mode: clicking a graph selects it')).toBeTruthy();
+  });
+});
+
+describe('AnnotationGallery selection', () => {
+  it('leaves selected graphs that the filters hide out of every action', () => {
+    renderGallery();
+    fireEvent.click(within(row('A')).getByRole('checkbox', { name: 'Select all A graphs' }));
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Undescribed 2' }));
+
+    const bar = screen.getByRole('region', { name: 'Selection' });
+    expect(within(bar).getByText('2 selected')).toBeTruthy();
+    expect(within(bar).getByText('(1 hidden by filters, not included)')).toBeTruthy();
+    expect(within(bar).getByRole('button', { name: 'Add 1 to collection' })).toBeTruthy();
+
+    fireEvent.click(within(bar).getByRole('button', { name: 'Compare in lightbox' }));
+    expect(openLightboxMock).toHaveBeenCalledWith([{ id: 4189, type: 'graph' }]);
+  });
+
+  it('disables the actions while every selected graph is hidden', () => {
+    renderGallery();
+    fireEvent.click(screen.getByRole('button', { name: 'Select b graph 4190' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Described 1' }));
+
+    const bar = screen.getByRole('region', { name: 'Selection' });
+    const add = within(bar).getByRole('button', { name: 'Add 0 to collection' });
+    expect(add.hasAttribute('disabled')).toBe(true);
+    expect(within(bar).getByRole('button', { name: 'Clear' }).hasAttribute('disabled')).toBe(false);
   });
 });
