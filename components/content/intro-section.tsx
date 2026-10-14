@@ -190,7 +190,7 @@ export default function IntroSection() {
           </div>
 
           {/* Right: carousel — spans 7 of 12 cols */}
-          <div className="relative hidden lg:block lg:col-span-7 group/carousel">
+          <div className="relative hidden lg:block lg:col-span-7 group/carousel overflow-hidden">
             {/* Gradient blend from primary into image */}
             <div
               className="absolute inset-0 z-10 pointer-events-none"

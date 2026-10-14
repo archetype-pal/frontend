@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -181,7 +182,7 @@ export default function ScribesPage() {
           <DialogHeader>
             <DialogTitle>{t('scribes.dialogTitle')}</DialogTitle>
           </DialogHeader>
-          <div className="mt-2 space-y-1.5">
+          <DialogBody className="space-y-1.5">
             <Label>{t('scribes.fieldName')}</Label>
             <Input
               value={newName}
@@ -189,7 +190,7 @@ export default function ScribesPage() {
               placeholder={t('scribes.fieldNamePlaceholder')}
               autoFocus
             />
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button
               onClick={() => createMut.mutate()}

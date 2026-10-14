@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -65,50 +66,52 @@ export function PreviewAsPublicDialog({ textId, currentStatus }: PreviewAsPublic
           <DialogDescription>{t('previewAsPublic.dialogDescription')}</DialogDescription>
         </DialogHeader>
 
-        {isFetching ? (
-          <div className="flex h-32 items-center justify-center text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
-          </div>
-        ) : isError ? (
-          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-            {t('previewAsPublic.fetchError')}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {mismatch ? (
-              <div className="flex items-start gap-2 rounded-md border border-amber-400/50 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-900/20 dark:text-amber-200">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>
-                  {t.rich('previewAsPublic.mismatch', {
-                    status: currentStatus,
-                    result: actuallyVisible ? 'content' : 'nothing',
-                    strong: (chunks) => <strong>{chunks}</strong>,
-                  })}
-                </span>
-              </div>
-            ) : null}
-
-            {actuallyVisible ? (
-              <>
-                <div className="flex items-center gap-2 rounded-md border border-green-500/40 bg-green-50 p-2.5 text-xs font-medium text-green-800 dark:bg-green-900/20 dark:text-green-200">
-                  <Eye className="h-4 w-4" />
-                  {t('previewAsPublic.visible', { status: currentStatus })}
+        <DialogBody className="pb-5">
+          {isFetching ? (
+            <div className="flex h-32 items-center justify-center text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+          ) : isError ? (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+              {t('previewAsPublic.fetchError')}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {mismatch ? (
+                <div className="flex items-start gap-2 rounded-md border border-amber-400/50 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-900/20 dark:text-amber-200">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>
+                    {t.rich('previewAsPublic.mismatch', {
+                      status: currentStatus,
+                      result: actuallyVisible ? 'content' : 'nothing',
+                      strong: (chunks) => <strong>{chunks}</strong>,
+                    })}
+                  </span>
                 </div>
-                <ImageTextViewer html={data!.content} />
-              </>
-            ) : (
-              <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
-                <EyeOff className="h-4 w-4 shrink-0" />
-                <span>
-                  {t.rich('previewAsPublic.notVisible', {
-                    status: currentStatus,
-                    strong: (chunks) => <strong>{chunks}</strong>,
-                  })}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
+              ) : null}
+
+              {actuallyVisible ? (
+                <>
+                  <div className="flex items-center gap-2 rounded-md border border-green-500/40 bg-green-50 p-2.5 text-xs font-medium text-green-800 dark:bg-green-900/20 dark:text-green-200">
+                    <Eye className="h-4 w-4" />
+                    {t('previewAsPublic.visible', { status: currentStatus })}
+                  </div>
+                  <ImageTextViewer html={data!.content} />
+                </>
+              ) : (
+                <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+                  <EyeOff className="h-4 w-4 shrink-0" />
+                  <span>
+                    {t.rich('previewAsPublic.notVisible', {
+                      status: currentStatus,
+                      strong: (chunks) => <strong>{chunks}</strong>,
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );
