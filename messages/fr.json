@@ -165,7 +165,6 @@
     "saveSearchPlaceholder": "Nommer cette recherche…",
     "noSavedSearches": "Aucune recherche sauvegardée",
     "deleteSavedSearch": "Supprimer la recherche « {name} »",
-    "savedState": "Sauvegardé",
     "filtersTrigger": "Filtres",
     "filtersDialogTitle": "Filtres ({count})",
     "filtersDialogDescription": "Ajustez les filtres, puis appliquez les modifications.",

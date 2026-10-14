@@ -1,11 +1,9 @@
-import { backofficeGet } from './api-client';
 import { createCrudService } from './crud-factory';
 import type {
   PaginatedResponse,
   AdminScribeListItem,
   AdminHandListItem,
   HandDescription,
-  Script,
 } from '@/types/backoffice';
 
 // ── Scribes ─────────────────────────────────────────────────────────────
@@ -26,10 +24,6 @@ const handsCrud = createCrudService<PaginatedResponse<AdminHandListItem>, AdminH
   '/api/v1/management/scribes/hands/'
 );
 
-export function getHands(params?: { scribe?: number; item_part?: number }) {
-  return handsCrud.list(params);
-}
-
 export const getHand = handsCrud.get;
 export const createHand = handsCrud.create;
 export const updateHand = handsCrud.update;
@@ -45,14 +39,3 @@ const handDescriptionsCrud = createCrudService<HandDescription>(
 export const createHandDescription = handDescriptionsCrud.create;
 export const updateHandDescription = handDescriptionsCrud.update;
 export const deleteHandDescription = handDescriptionsCrud.remove;
-
-// ── Scripts ─────────────────────────────────────────────────────────────
-
-const scriptsCrud = createCrudService<Script>('/api/v1/management/scribes/scripts/');
-
-export function getScripts() {
-  return backofficeGet<Script[]>('/api/v1/management/scribes/scripts/');
-}
-
-export const createScript = scriptsCrud.create;
-export const deleteScript = scriptsCrud.remove;

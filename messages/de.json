@@ -165,7 +165,6 @@
     "saveSearchPlaceholder": "Suche benennen…",
     "noSavedSearches": "Noch keine gespeicherten Suchen",
     "deleteSavedSearch": "Gespeicherte Suche „{name}“ löschen",
-    "savedState": "Gespeichert",
     "filtersTrigger": "Filter",
     "filtersDialogTitle": "Filter ({count})",
     "filtersDialogDescription": "Filter anpassen und dann Änderungen übernehmen.",

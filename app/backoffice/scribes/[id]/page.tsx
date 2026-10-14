@@ -50,9 +50,8 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
     label: 'Scribe',
   });
 
-  // Walk all pages — `getHands(token, { scribe })` returned only the first DRF
-  // page (default 20). A productive scribe can have many hands across many
-  // manuscripts; the per-scribe listing would hide entries 21+.
+  // Walk all pages, not just the first DRF page (default 20): a productive
+  // scribe can have many hands across many manuscripts.
   const {
     data: hands,
     isError: handsFailed,

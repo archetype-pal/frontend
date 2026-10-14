@@ -6,7 +6,6 @@ const usersCrud = createCrudService<PaginatedResponse<UserListItem>, UserDetail>
 );
 
 export const getUsers = usersCrud.list;
-export const getUser = usersCrud.get;
 export const createUser = usersCrud.create;
 export const updateUser = usersCrud.update;
 export const deleteUser = usersCrud.remove;

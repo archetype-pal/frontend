@@ -19,8 +19,6 @@ export function getGraphs(params?: {
   return graphsCrud.list(params);
 }
 
-export const getGraph = graphsCrud.get;
-export const updateGraph = graphsCrud.update;
 export const deleteGraph = graphsCrud.remove;
 
 // ── Trash (soft-deleted graphs) ──────────────────────────────────────────

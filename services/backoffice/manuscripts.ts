@@ -62,11 +62,6 @@ const itemImagesCrud = createCrudService<PaginatedResponse<AdminItemImage>, Admi
   '/api/v1/manuscripts/management/item-images/'
 );
 
-export function getItemImages(params?: { item_part?: number; limit?: number; offset?: number }) {
-  return itemImagesCrud.list(params);
-}
-
-export const createItemImage = itemImagesCrud.create;
 export const updateItemImage = itemImagesCrud.update;
 export const deleteItemImage = itemImagesCrud.remove;
 
@@ -110,9 +105,7 @@ export function getCurrentItems(params?: {
   return currentItemsCrud.list(params);
 }
 
-export const getCurrentItem = currentItemsCrud.get;
 export const createCurrentItem = currentItemsCrud.create;
-export const updateCurrentItem = currentItemsCrud.update;
 export const deleteCurrentItem = currentItemsCrud.remove;
 
 // ── Catalogue Numbers ───────────────────────────────────────────────────
@@ -144,7 +137,6 @@ const msdescAreasCrud = createCrudService<MsDescArea>(
 
 export const createMsDescArea = msdescAreasCrud.create;
 export const updateMsDescArea = msdescAreasCrud.update;
-export const deleteMsDescArea = msdescAreasCrud.remove;
 
 // ── Repositories ────────────────────────────────────────────────────────
 
@@ -209,5 +201,3 @@ export function getPlaces() {
 }
 
 export const createPlace = placesCrud.create;
-export const updatePlace = placesCrud.update;
-export const deletePlace = placesCrud.remove;
