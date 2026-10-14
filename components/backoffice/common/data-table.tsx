@@ -93,6 +93,8 @@ interface DataTableProps<TData, TValue> {
   enableExport?: boolean;
   /** Fetch every row for Export when the table holds only one server page. */
   fetchAllRows?: (options: Required<ListAllPagesOptions>) => Promise<TData[]>;
+  /** Offer Export only for ticked rows. */
+  exportSelectionOnly?: boolean;
   /** Filename for CSV export. */
   exportFilename?: string;
   /** Content for filter bar above the table. */
@@ -131,6 +133,7 @@ export function DataTable<TData, TValue>({
   enableColumnVisibility = false,
   enableExport = false,
   fetchAllRows,
+  exportSelectionOnly = false,
   exportFilename = 'export',
   filterBar,
   presetFilters,
@@ -397,7 +400,7 @@ export function DataTable<TData, TValue>({
             </div>
           )}
           <div className="ml-auto flex items-center gap-2">
-            {enableExport && (
+            {enableExport && (!exportSelectionOnly || selectedCount > 0) && (
               <Button
                 variant="outline"
                 size="sm"

@@ -330,6 +330,7 @@ export default function AnnotationsPage() {
         bulkActions={bulkActions}
         enableColumnVisibility
         enableExport
+        exportSelectionOnly
         exportFilename="annotations"
       />
 
