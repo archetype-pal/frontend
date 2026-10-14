@@ -188,6 +188,23 @@ describe('DataTable server sorting and export', () => {
     expect(await downloaded()).toBe('name\nGamma\nDelta\nBeta\nAlpha');
     expect(fetchAllRows).not.toHaveBeenCalled();
   });
+
+  it('offers Export only once a row is ticked when limited to the selection', () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={rows}
+        pagination={false}
+        enableRowSelection
+        enableExport
+        exportSelectionOnly
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: /export/i })).toBeNull();
+    fireEvent.click(screen.getAllByRole('checkbox', { name: /select row/i })[0]);
+    expect(screen.queryByRole('button', { name: /export 1 selected/i })).not.toBeNull();
+  });
 });
 
 describe('DataTable client pagination', () => {
