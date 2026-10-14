@@ -12,6 +12,7 @@ import type { HandType } from '@/types/hands';
 const mockState = vi.hoisted(() => ({
   user: null as { is_staff: boolean } | null,
   refresh: vi.fn(),
+  crop: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -38,7 +39,7 @@ vi.mock('@/contexts/model-labels-context', () => ({
 
 vi.mock('@/hooks/use-in-view', () => ({ useInView: () => true }));
 vi.mock('@/hooks/use-iiif-thumbnail', () => ({
-  useIiifThumbnailUrl: () => 'https://iiif.example/crop.jpg',
+  useIiifThumbnail: () => mockState.crop(),
 }));
 
 vi.mock('@/services/manuscripts', () => ({ fetchAllographs: vi.fn(() => new Promise(() => {})) }));
@@ -113,6 +114,8 @@ const row = (name: string) => screen.getByRole('group', { name });
 beforeEach(() => {
   mockState.user = null;
   mockState.refresh.mockReset();
+  mockState.crop.mockReset();
+  mockState.crop.mockReturnValue({ src: 'https://iiif.example/crop.jpg', failed: false });
   openLightboxMock.mockReset();
   Object.values(toastMock).forEach((fn) => fn.mockReset());
   window.history.replaceState(null, '', '/manuscripts/1/images/5');
@@ -269,5 +272,34 @@ describe('AnnotationGallery delete', () => {
     act(() => options.action.onClick());
     expect(screen.getByText('#4189')).toBeTruthy();
     confirmSpy.mockRestore();
+  });
+});
+
+describe('AnnotationGallery crops', () => {
+  it('says when a crop fails and looks it up again on retry', () => {
+    mockState.crop.mockImplementation(() => ({ src: null, failed: true }));
+    renderGallery({ graphs: [GRAPHS[0]] });
+
+    expect(screen.getByText("Image didn't load")).toBeTruthy();
+    expect(screen.getByText('#4189')).toBeTruthy();
+    const lookups = mockState.crop.mock.calls.length;
+
+    mockState.crop.mockImplementation(() => ({
+      src: 'https://iiif.example/crop.jpg',
+      failed: false,
+    }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry the image of graph 4189' }));
+
+    expect(mockState.crop.mock.calls.length).toBeGreaterThan(lookups);
+    expect(screen.queryByText("Image didn't load")).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry the image of graph 4189' })).toBeNull();
+  });
+
+  it('treats an image that errors after loading as failed', () => {
+    renderGallery({ graphs: [GRAPHS[0]] });
+
+    fireEvent.error(document.querySelector('img[src="https://iiif.example/crop.jpg"]')!);
+
+    expect(screen.getByText("Image didn't load")).toBeTruthy();
   });
 });
