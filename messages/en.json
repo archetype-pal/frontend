@@ -369,9 +369,7 @@
       "message": "This manuscript could not be loaded. Please try again."
     },
     "gallery": {
-      "deleteConfirm": "Delete graph #{id}? It moves to the trash; an admin can restore it.",
-      "deleteSuccess": "Graph #{id} moved to trash; an admin can restore it",
-      "deleteFailed": "Failed to delete graph #{id}",
+      "deleteFailed": "Couldn't delete graph #{id}. It is back in the gallery.",
       "editingModeTooltip": "Toggle inline graph editing (press A)",
       "filterPlaceholder": "Filter allographs…",
       "filterLabel": "Filter allographs by name. Press / to focus.",
@@ -440,7 +438,10 @@
       "clearAllFilters": "Clear all filters",
       "supportingDataFailed": "Hand and allograph names couldn't be loaded. The graphs are all here, but some names show as numbers and editing is paused.",
       "backToTop": "Back to top",
-      "hiddenByFilters": "({count} hidden by filters, not included)"
+      "hiddenByFilters": "({count} hidden by filters, not included)",
+      "trashed": "Graph #{id} moved to the trash. An admin can restore it.",
+      "undo": "Undo",
+      "undoTooLate": "Graph #{id} is already in the trash. An admin can restore it."
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Delete this editorial draft annotation?} other {Delete this public draft annotation?}}\n\nThis will discard it locally.",

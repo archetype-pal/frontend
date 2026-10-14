@@ -369,9 +369,7 @@
       "message": "Dieses Manuskript konnte nicht geladen werden. Bitte versuchen Sie es erneut."
     },
     "gallery": {
-      "deleteConfirm": "Graph #{id} löschen? Er wird in den Papierkorb verschoben; ein Administrator kann ihn wiederherstellen.",
-      "deleteSuccess": "Graph #{id} in den Papierkorb verschoben; ein Administrator kann ihn wiederherstellen",
-      "deleteFailed": "Graph #{id} konnte nicht gelöscht werden",
+      "deleteFailed": "Graph #{id} konnte nicht gelöscht werden. Er ist wieder in der Galerie.",
       "editingModeTooltip": "Grapheme direkt bearbeiten ein-/ausschalten (Taste A)",
       "filterPlaceholder": "Allographen filtern…",
       "filterLabel": "Allographen nach Namen filtern. Mit / fokussieren.",
@@ -440,7 +438,10 @@
       "clearAllFilters": "Alle Filter entfernen",
       "supportingDataFailed": "Die Namen der Hände und Allographen konnten nicht geladen werden. Alle Graphen sind da, aber einige Namen erscheinen als Nummern und das Bearbeiten ist pausiert.",
       "backToTop": "Nach oben",
-      "hiddenByFilters": "({count} durch Filter ausgeblendet, nicht enthalten)"
+      "hiddenByFilters": "({count} durch Filter ausgeblendet, nicht enthalten)",
+      "trashed": "Graph #{id} in den Papierkorb verschoben. Ein Administrator kann ihn wiederherstellen.",
+      "undo": "Rückgängig",
+      "undoTooLate": "Graph #{id} ist bereits im Papierkorb. Ein Administrator kann ihn wiederherstellen."
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Diesen editorischen Entwurf löschen?} other {Diesen öffentlichen Entwurf löschen?}}\n\nEr wird lokal verworfen.",

@@ -7,12 +7,15 @@ import { useTranslations } from 'next-intl';
 import { AlertTriangle, ArrowUp } from 'lucide-react';
 
 import { useSelectionSet } from '@/hooks/use-selection-set';
+import {
+  UNDO_WINDOW_MS,
+  useUndoableGraphDelete,
+} from '@/hooks/manuscript/use-undoable-graph-delete';
 import { useAuth } from '@/contexts/auth-context';
 import { useCollection } from '@/contexts/collection-context';
 import type { Allograph, AllographSummary } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 import type { BackendGraph } from '@/services/annotations';
-import { deleteViewerAnnotation } from '@/services/annotations';
 import { fetchAllographs } from '@/services/manuscripts';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { graphToCollectionItem } from '@/lib/collection-item';
@@ -49,6 +52,8 @@ import { GalleryToolbar } from '@/components/manuscript/annotation-gallery-toolb
 import { HandSection } from '@/components/manuscript/annotation-gallery-rows';
 import { GallerySelectionBar } from '@/components/manuscript/annotation-gallery-selection-bar';
 
+const trashToastId = (graphId: number) => `gallery-trash-${graphId}`;
+
 interface AnnotationGalleryProps {
   manuscriptId: string;
   imageId: string;
@@ -84,7 +89,6 @@ export function AnnotationGallery({
   loadError = false,
   supportingDataIncomplete = false,
 }: AnnotationGalleryProps) {
-  const t = useTranslations('manuscript');
   const tGallery = useTranslations('manuscript.gallery');
   const tCommon = useTranslations('common');
   const { user, token } = useAuth();
@@ -213,32 +217,50 @@ export function AnnotationGallery({
     [graphs, graphOverrides, deletedIds]
   );
 
-  // Delete a graph straight from the gallery (G3.1), staff-only. Optimistic:
-  // hide it, then call the API; restore + toast on failure.
-  const handleDeleteGraph = React.useCallback(
-    async (graphId: number) => {
-      if (!token) return;
-      if (
-        typeof window !== 'undefined' &&
-        !window.confirm(t('gallery.deleteConfirm', { id: graphId }))
-      ) {
-        return;
-      }
+  // Delete a graph straight from the gallery (G3.1), staff-only. No confirm
+  // dialog: the graph hides at once and the toast offers Undo until the
+  // delete is sent. A sent delete refreshes the route, so the tab count drops.
+  const showGraph = React.useCallback((graphId: number) => {
+    setDeletedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(graphId);
+      return next;
+    });
+  }, []);
+  const graphDelete = useUndoableGraphDelete({
+    token,
+    onHide: (graphId) => {
       setDeletedIds((prev) => new Set(prev).add(graphId));
       selection.remove(graphId);
-      try {
-        await deleteViewerAnnotation(token, graphId);
-        toast.success(t('gallery.deleteSuccess', { id: graphId }));
-      } catch {
-        setDeletedIds((prev) => {
-          const next = new Set(prev);
-          next.delete(graphId);
-          return next;
-        });
-        toast.error(t('gallery.deleteFailed', { id: graphId }));
-      }
     },
-    [token, t, selection]
+    onRestore: showGraph,
+    onDeleted: (graphId) => {
+      toast.dismiss(trashToastId(graphId));
+      router.refresh();
+    },
+    onFailed: (graphId) => {
+      toast.dismiss(trashToastId(graphId));
+      toast.error(tGallery('deleteFailed', { id: graphId }));
+    },
+  });
+  const handleDeleteGraph = React.useCallback(
+    (graphId: number) => {
+      if (!token) return;
+      graphDelete.remove(graphId);
+      toast.success(tGallery('trashed', { id: graphId }), {
+        id: trashToastId(graphId),
+        duration: UNDO_WINDOW_MS,
+        action: {
+          label: tGallery('undo'),
+          onClick: () => {
+            if (!graphDelete.undo(graphId)) {
+              toast.info(tGallery('undoTooLate', { id: graphId }));
+            }
+          },
+        },
+      });
+    },
+    [token, graphDelete, tGallery]
   );
 
   const editingGraphs = React.useMemo(() => {

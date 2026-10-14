@@ -152,8 +152,13 @@ export async function updateViewerAnnotation(
   return res.json() as Promise<BackendGraph>;
 }
 
-export async function deleteViewerAnnotation(token: string, id: number): Promise<void> {
+export async function deleteViewerAnnotation(
+  token: string,
+  id: number,
+  init?: Pick<RequestInit, 'keepalive'>
+): Promise<void> {
   const res = await authFetch(`/api/v1/annotations/graphs/${id}/`, token, {
+    ...init,
     method: 'DELETE',
   });
   if (!res.ok) {
