@@ -33,7 +33,12 @@ const collection = vi.hoisted(() => {
     ids = next;
     listeners.forEach((listener) => listener());
   };
+  let hydrated = true;
   return {
+    hydrated: () => hydrated,
+    setHydrated: (next: boolean) => {
+      hydrated = next;
+    },
     ids: () => ids,
     reset: (initial: number[] = []) => set(new Set(initial)),
     subscribe: (listener: () => void) => {
@@ -54,6 +59,7 @@ vi.mock('@/contexts/collection-context', async () => {
         removeItem: (id: number) => collection.remove([id]),
         removeItems: (items: { id: number }[]) => collection.remove(items.map((i) => i.id)),
         isInCollection: (id: number) => ids.has(id),
+        isHydrated: collection.hydrated(),
       };
     },
   };
@@ -147,6 +153,7 @@ beforeEach(() => {
   mockState.crop.mockReturnValue({ src: 'https://iiif.example/crop.jpg', failed: false });
   openLightboxMock.mockReset();
   collection.reset();
+  collection.setHydrated(true);
   fetchAllographsMock.mockReset();
   fetchAllographsMock.mockReturnValue(new Promise(() => {}));
   Object.values(toastMock).forEach((fn) => fn.mockReset());
@@ -382,5 +389,32 @@ describe('AnnotationGallery collection', () => {
 
     expect(toastMock.success).not.toHaveBeenCalled();
     expect(toastMock.info).toHaveBeenCalledWith('That graph is already in your collection.');
+  });
+
+  it('adds and removes a single graph from its star, with Undo', () => {
+    renderGallery();
+    const star = screen.getByRole('button', { name: 'Add graph 4189 to your collection' });
+    expect(star.getAttribute('aria-pressed')).toBe('false');
+
+    fireEvent.click(star);
+    expect([...collection.ids()]).toEqual([4189]);
+    expect(star.getAttribute('aria-pressed')).toBe('true');
+    expect(star.getAttribute('aria-label')).toBe('Remove graph 4189 from your collection');
+    expect(toastMock.success.mock.calls[0][0]).toBe('Added graph #4189 to your collection.');
+
+    fireEvent.click(star);
+    expect([...collection.ids()]).toEqual([]);
+    const [message, options] = toastMock.success.mock.calls[1];
+    expect(message).toBe('Removed graph #4189 from your collection.');
+
+    act(() => options.action.onClick());
+    expect([...collection.ids()]).toEqual([4189]);
+  });
+
+  it('holds the star until the saved collection has loaded', () => {
+    collection.setHydrated(false);
+    renderGallery();
+    const star = screen.getByRole('button', { name: 'Add graph 4189 to your collection' });
+    expect(star.hasAttribute('disabled')).toBe(true);
   });
 });
