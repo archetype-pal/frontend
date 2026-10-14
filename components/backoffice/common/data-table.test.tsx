@@ -3,7 +3,7 @@ import { describe, it, expect, onTestFinished, vi } from 'vitest';
 import type { ColumnDef } from '@tanstack/react-table';
 
 import { listAllPages } from '@/lib/backoffice/list-all-pages';
-import { DataTable, sortableHeader } from './data-table';
+import { DataTable, sortableHeader, type BulkAction } from './data-table';
 
 const { toast } = vi.hoisted(() => ({ toast: { error: vi.fn() } }));
 vi.mock('sonner', () => ({ toast }));
@@ -204,6 +204,52 @@ describe('DataTable server sorting and export', () => {
     expect(screen.queryByRole('button', { name: /export/i })).toBeNull();
     fireEvent.click(screen.getAllByRole('checkbox', { name: /select row/i })[0]);
     expect(screen.queryByRole('button', { name: /export 1 selected/i })).not.toBeNull();
+  });
+});
+
+describe('DataTable bulk actions', () => {
+  const tick = (index: number) =>
+    fireEvent.click(screen.getAllByRole('checkbox', { name: /select row/i })[index]);
+  const table = (action: BulkAction['action'], data: Row[]) => (
+    <DataTable
+      columns={columns}
+      data={data}
+      pagination={false}
+      enableRowSelection
+      enableExport
+      bulkActions={[{ label: 'Run', action }]}
+    />
+  );
+
+  it('keeps ticked only the rows the action hands back, on every page', async () => {
+    const downloaded = stubDownload();
+    const action = vi.fn<BulkAction['action']>((_ids, keepTicked) => keepTicked(['3']));
+    const { rerender } = render(
+      table(action, [
+        { id: 1, name: 'Beta' },
+        { id: 3, name: 'Gamma' },
+      ])
+    );
+    tick(0);
+    tick(1);
+    rerender(table(action, [{ id: 2, name: 'Alpha' }]));
+    tick(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect([...action.mock.calls[0][0]].sort()).toEqual(['1', '2', '3']);
+    expect(screen.queryByText('1 selected')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /export 1 selected/i }));
+    expect(await downloaded()).toBe('name\nGamma');
+  });
+
+  it('keeps the ticks when the action does not clear them', () => {
+    render(table(vi.fn(), [{ id: 1, name: 'Beta' }]));
+
+    tick(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(screen.queryByText('1 selected')).not.toBeNull();
   });
 });
 
