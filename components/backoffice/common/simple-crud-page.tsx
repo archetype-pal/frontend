@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -274,7 +275,7 @@ export function SimpleCrudPage<T extends { id: number }>({
           <DialogHeader>
             <DialogTitle>{t('simpleCrud.new', { label: singularLabel })}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 mt-2">
+          <DialogBody className="space-y-3">
             {fields.map((field) => {
               const key = String(field.key);
               return (
@@ -295,7 +296,7 @@ export function SimpleCrudPage<T extends { id: number }>({
                 </div>
               );
             })}
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button
               onClick={() => createMut.mutate()}
