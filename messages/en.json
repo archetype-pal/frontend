@@ -2363,6 +2363,8 @@
       "selectedCount": "{count} selected",
       "loadError": "Failed to load. Please try again.",
       "exportFailed": "Export failed. Please try again.",
+      "exporting": "Exporting…",
+      "exportProgress": "Exporting {loaded, number} of {total, number}…",
       "exportSelected": "Export {count, number} selected",
       "noResults": "No results.",
       "selectedOfTotal": "{count} of {total} selected"

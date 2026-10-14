@@ -15,6 +15,7 @@ import { DataPagination } from '@/components/ui/data-pagination';
 import { getHistoricalItems } from '@/services/backoffice/manuscripts';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { listAllPages } from '@/lib/backoffice/list-all-pages';
 import { toOrdering } from '@/lib/backoffice/ordering';
 import type { HistoricalItemListItem } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -175,6 +176,9 @@ export default function ManuscriptsPage() {
         }}
         enableColumnVisibility
         enableExport
+        fetchAllRows={(options) =>
+          listAllPages((p) => getHistoricalItems({ ...listParams, ...p }), options)
+        }
         exportFilename="manuscripts"
       />
 

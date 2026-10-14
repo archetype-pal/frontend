@@ -294,7 +294,9 @@ export default function PublicationsPage() {
         }}
         enableColumnVisibility
         enableExport
-        fetchAllRows={() => listAllPages((p) => getPublications({ ...listParams, ...p }))}
+        fetchAllRows={(options) =>
+          listAllPages((p) => getPublications({ ...listParams, ...p }), options)
+        }
         exportFilename="posts"
         enableRowSelection
         bulkActions={bulkActions}

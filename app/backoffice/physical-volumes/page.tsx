@@ -26,6 +26,7 @@ import {
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
+import { listAllPages } from '@/lib/backoffice/list-all-pages';
 import { toOrdering } from '@/lib/backoffice/ordering';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
@@ -220,6 +221,9 @@ export default function PhysicalVolumesPage() {
         }}
         enableColumnVisibility
         enableExport
+        fetchAllRows={(options) =>
+          listAllPages((p) => getCurrentItems({ ...listParams, ...p }), options)
+        }
         exportFilename="items"
       />
 
