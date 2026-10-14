@@ -95,6 +95,28 @@ describe('groupAnnotations', () => {
     expect(hand.allographs[1].graphs.map((g) => g.id)).toEqual([1]);
   });
 
+  it('names the groups that have no record with the labels it is given', () => {
+    const groups = groupAnnotations(
+      [
+        makeGraph({ id: 1, hand: null, allograph: null }),
+        makeGraph({ id: 2, hand: 7, allograph: 99 }),
+      ],
+      [],
+      [],
+      {
+        unattributed: 'Nicht zugeordnet',
+        noAllograph: 'Kein Allograph',
+        hand: (id) => `Hand Nr. ${id}`,
+        allograph: (id) => `Allograph Nr. ${id}`,
+      }
+    );
+
+    expect(groups.map((h) => [h.handName, h.allographs.map((a) => a.allographName)])).toEqual([
+      ['Hand Nr. 7', ['Allograph Nr. 99']],
+      ['Nicht zugeordnet', ['Kein Allograph']],
+    ]);
+  });
+
   it('falls back to ids when the hand or allograph names did not load', () => {
     const [hand] = groupAnnotations([makeGraph({ hand: 7, allograph: 99 })], [], []);
     expect(hand.handName).toBe('Hand 7');
