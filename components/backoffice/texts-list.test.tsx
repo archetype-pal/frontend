@@ -116,7 +116,7 @@ describe('<TextsList> export', () => {
     expect(exportQuery().get('id__in')).toBe('2');
   });
 
-  it('exports every matching text when none is ticked', async () => {
+  it('exports every matching text as CSV when none is ticked', async () => {
     renderList();
     await screen.findByRole('checkbox', { name: 'Select image-text 2' });
 
@@ -124,5 +124,7 @@ describe('<TextsList> export', () => {
 
     await waitFor(() => expect(proxyFetch).toHaveBeenCalledTimes(1));
     expect(exportQuery().has('id__in')).toBe(false);
+    expect(exportQuery().get('export_format')).toBe('csv');
+    expect(exportQuery().has('format')).toBe(false);
   });
 });
