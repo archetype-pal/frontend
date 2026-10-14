@@ -225,6 +225,7 @@ export function AnnotationGallery({
         return;
       }
       setDeletedIds((prev) => new Set(prev).add(graphId));
+      selection.remove(graphId);
       try {
         await deleteViewerAnnotation(token, graphId);
         toast.success(t('gallery.deleteSuccess', { id: graphId }));
@@ -237,7 +238,7 @@ export function AnnotationGallery({
         toast.error(t('gallery.deleteFailed', { id: graphId }));
       }
     },
-    [token, t]
+    [token, t, selection]
   );
 
   const editingGraphs = React.useMemo(() => {
@@ -334,6 +335,18 @@ export function AnnotationGallery({
     [filteredGroups]
   );
 
+  // Selection actions only touch graphs on screen: a selected graph that the
+  // filters now hide is counted in the bar but left out, and an id that is no
+  // longer on the image at all (deleted, or gone after a refresh) is ignored.
+  const selectedShown = React.useMemo(
+    () => shownGraphs.filter((g) => selection.selected.has(g.id)),
+    [shownGraphs, selection.selected]
+  );
+  const selectedHiddenCount = React.useMemo(
+    () => effectiveGraphs.filter((g) => selection.selected.has(g.id)).length - selectedShown.length,
+    [effectiveGraphs, selection.selected, selectedShown]
+  );
+
   const filtersActive = hasActiveFilters(filters);
   const clearAllFilters = React.useCallback(() => setFilters(EMPTY_FILTERS), []);
 
@@ -356,10 +369,9 @@ export function AnnotationGallery({
 
   // Open the current selection in the lightbox for side-by-side comparison (G4.1).
   const sendSelectionToLightbox = React.useCallback(() => {
-    const ids = Array.from(selection.selected);
-    if (ids.length === 0) return;
-    openLightboxWithItems(ids.map((id) => ({ id, type: 'graph' as const })));
-  }, [selection.selected]);
+    if (selectedShown.length === 0) return;
+    openLightboxWithItems(selectedShown.map((g) => ({ id: g.id, type: 'graph' as const })));
+  }, [selectedShown]);
 
   // Export the selection as CSV (G4.3).
   const exportGraphs = React.useCallback(
@@ -377,8 +389,7 @@ export function AnnotationGallery({
   );
 
   const addSelectedToCollection = React.useCallback(() => {
-    for (const g of effectiveGraphs) {
-      if (!selection.selected.has(g.id)) continue;
+    for (const g of selectedShown) {
       if (isInCollection(g.id, 'graph')) continue;
       addItem(
         graphToCollectionItem(
@@ -391,14 +402,13 @@ export function AnnotationGallery({
   }, [
     addItem,
     allographLabelById,
-    effectiveGraphs,
     handNameById,
     iiifImage,
     isInCollection,
     itemImageId,
     itemPartId,
     locus,
-    selection.selected,
+    selectedShown,
     shelfmark,
   ]);
 
@@ -546,12 +556,13 @@ export function AnnotationGallery({
         ))}
 
         <GallerySelectionBar
-          selectedCount={selection.selected.size}
+          shownCount={selectedShown.length}
+          hiddenCount={selectedHiddenCount}
           annotatingMode={annotatingMode}
-          onEdit={() => openEditor(Array.from(selection.selected))}
+          onEdit={() => openEditor(selectedShown.map((g) => g.id))}
           onAddToCollection={addSelectedToCollection}
           onSendToLightbox={sendSelectionToLightbox}
-          onExport={() => exportGraphs(effectiveGraphs.filter((g) => selection.selected.has(g.id)))}
+          onExport={() => exportGraphs(selectedShown)}
           onClear={selection.clear}
         />
 

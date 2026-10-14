@@ -6,7 +6,10 @@ import { Download, Images, Pencil, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface GallerySelectionBarProps {
-  selectedCount: number;
+  /** Selected graphs on screen — the ones every action works on. */
+  shownCount: number;
+  /** Selected graphs the filters currently hide; counted, but left out. */
+  hiddenCount: number;
   annotatingMode: boolean;
   onEdit: () => void;
   onAddToCollection: () => void;
@@ -18,7 +21,8 @@ interface GallerySelectionBarProps {
 // Floats at the bottom of the gallery while anything is selected, so the
 // actions stay in reach without the toolbar changing size.
 export function GallerySelectionBar({
-  selectedCount,
+  shownCount,
+  hiddenCount,
   annotatingMode,
   onEdit,
   onAddToCollection,
@@ -27,8 +31,11 @@ export function GallerySelectionBar({
   onClear,
 }: GallerySelectionBarProps) {
   const t = useTranslations('manuscript.gallery');
+  const selectedCount = shownCount + hiddenCount;
   if (selectedCount === 0) return null;
+  const nothingShown = shownCount === 0;
 
+  const primaryButton = 'h-9 gap-1.5 bg-background text-foreground hover:bg-background/90';
   const barButton =
     'h-9 gap-1.5 border-background/30 bg-transparent text-background hover:bg-background/15 hover:text-background';
 
@@ -42,31 +49,45 @@ export function GallerySelectionBar({
         <span className="text-sm font-semibold tabular-nums">
           {t('selectedCount', { count: selectedCount })}
         </span>
+        {hiddenCount > 0 && (
+          <span className="text-xs text-background/75">
+            {t('hiddenByFilters', { count: hiddenCount })}
+          </span>
+        )}
         <span aria-hidden className="mx-1 h-5 w-px bg-background/25" />
         {annotatingMode ? (
-          <Button
-            size="sm"
-            className="h-9 gap-1.5 bg-background text-foreground hover:bg-background/90"
-            onClick={onEdit}
-          >
+          <Button size="sm" className={primaryButton} onClick={onEdit} disabled={nothingShown}>
             <Pencil className="h-4 w-4" aria-hidden />
-            {t('editSelected', { count: selectedCount })}
+            {t('editSelected', { count: shownCount })}
           </Button>
         ) : (
           <Button
             size="sm"
-            className="h-9 gap-1.5 bg-background text-foreground hover:bg-background/90"
+            className={primaryButton}
             onClick={onAddToCollection}
+            disabled={nothingShown}
           >
             <Star className="h-4 w-4" aria-hidden />
-            {t('addSelected', { count: selectedCount })}
+            {t('addSelected', { count: shownCount })}
           </Button>
         )}
-        <Button size="sm" variant="outline" className={barButton} onClick={onSendToLightbox}>
+        <Button
+          size="sm"
+          variant="outline"
+          className={barButton}
+          onClick={onSendToLightbox}
+          disabled={nothingShown}
+        >
           <Images className="h-4 w-4" aria-hidden />
           {t('compare')}
         </Button>
-        <Button size="sm" variant="outline" className={barButton} onClick={onExport}>
+        <Button
+          size="sm"
+          variant="outline"
+          className={barButton}
+          onClick={onExport}
+          disabled={nothingShown}
+        >
           <Download className="h-4 w-4" aria-hidden />
           {t('exportCsv')}
         </Button>

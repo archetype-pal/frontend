@@ -439,7 +439,8 @@
       "noMatchCombined": "Jeder Filter trifft etwas, aber kein Graph erfüllt alle zugleich. Entfernen Sie einen.",
       "clearAllFilters": "Alle Filter entfernen",
       "supportingDataFailed": "Die Namen der Hände und Allographen konnten nicht geladen werden. Alle Graphen sind da, aber einige Namen erscheinen als Nummern und das Bearbeiten ist pausiert.",
-      "backToTop": "Nach oben"
+      "backToTop": "Nach oben",
+      "hiddenByFilters": "({count} durch Filter ausgeblendet, nicht enthalten)"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Diesen editorischen Entwurf löschen?} other {Diesen öffentlichen Entwurf löschen?}}\n\nEr wird lokal verworfen.",

@@ -439,7 +439,8 @@
       "noMatchCombined": "Each filter matches something, but no graph matches them all. Try removing one.",
       "clearAllFilters": "Clear all filters",
       "supportingDataFailed": "Hand and allograph names couldn't be loaded. The graphs are all here, but some names show as numbers and editing is paused.",
-      "backToTop": "Back to top"
+      "backToTop": "Back to top",
+      "hiddenByFilters": "({count} hidden by filters, not included)"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Delete this editorial draft annotation?} other {Delete this public draft annotation?}}\n\nThis will discard it locally.",

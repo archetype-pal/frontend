@@ -439,7 +439,8 @@
       "noMatchCombined": "Chaque filtre trouve quelque chose, mais aucun graphème ne les satisfait tous. Retirez-en un.",
       "clearAllFilters": "Effacer tous les filtres",
       "supportingDataFailed": "Les noms des mains et des allographes n'ont pas pu être chargés. Tous les graphèmes sont là, mais certains noms s'affichent sous forme de numéros et l'édition est suspendue.",
-      "backToTop": "Retour en haut"
+      "backToTop": "Retour en haut",
+      "hiddenByFilters": "({count} masqué(s) par les filtres, non inclus)"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Supprimer ce brouillon d'annotation éditoriale ?} other {Supprimer ce brouillon d'annotation publique ?}}\n\nIl sera abandonné localement.",
