@@ -453,7 +453,8 @@
       "addGraphToCollection": "Graph {id} zu Ihrer Sammlung hinzufügen",
       "removeGraphFromCollection": "Graph {id} aus Ihrer Sammlung entfernen",
       "collectionAddedOne": "Graph #{id} zu Ihrer Sammlung hinzugefügt.",
-      "collectionRemovedOne": "Graph #{id} aus Ihrer Sammlung entfernt."
+      "collectionRemovedOne": "Graph #{id} aus Ihrer Sammlung entfernt.",
+      "loading": "Annotationen werden geladen"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Diesen editorischen Entwurf löschen?} other {Diesen öffentlichen Entwurf löschen?}}\n\nEr wird lokal verworfen.",

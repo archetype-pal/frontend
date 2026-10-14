@@ -453,7 +453,8 @@
       "addGraphToCollection": "Add graph {id} to your collection",
       "removeGraphFromCollection": "Remove graph {id} from your collection",
       "collectionAddedOne": "Added graph #{id} to your collection.",
-      "collectionRemovedOne": "Removed graph #{id} from your collection."
+      "collectionRemovedOne": "Removed graph #{id} from your collection.",
+      "loading": "Loading annotations"
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Delete this editorial draft annotation?} other {Delete this public draft annotation?}}\n\nThis will discard it locally.",
