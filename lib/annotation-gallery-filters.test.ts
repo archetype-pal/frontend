@@ -13,6 +13,7 @@ import {
   filtersToQuery,
   type GalleryFilterState,
   isGraphDescribed,
+  withFiltersInSearch,
 } from './annotation-gallery-filters';
 
 function makeGraph(overrides: Partial<BackendGraph> = {}): BackendGraph {
@@ -170,5 +171,15 @@ describe('URL round-trip', () => {
 
   it('parses an empty query to empty filters', () => {
     expect(filtersFromParams(new URLSearchParams())).toEqual(EMPTY_FILTERS);
+  });
+
+  it('writes filters into a URL query, keeping its other params', () => {
+    const state: GalleryFilterState = { ...EMPTY_FILTERS, hands: [1], sort: 'count-desc' };
+    expect(withFiltersInSearch('?view=grid&a=x', state)).toBe('view=grid&h=1&sort=count-desc');
+  });
+
+  it('drops every filter from the URL query once the filters are reset', () => {
+    const search = '?a=x&h=1&s=described&f=2&p=3&sort=count-desc&view=grid';
+    expect(withFiltersInSearch(search, EMPTY_FILTERS)).toBe('view=grid');
   });
 });

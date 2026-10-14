@@ -100,8 +100,8 @@ export function ItemImageEditDialog({
         // The part it joined may belong to another manuscript.
         queryClient.invalidateQueries({ queryKey: backofficeKeys.manuscripts.all() });
         // The hand pages list each part's images, and the picker shows image counts.
-        queryClient.invalidateQueries({ queryKey: ['backoffice', 'item-images'] });
-        queryClient.invalidateQueries({ queryKey: ['item-part-search'] });
+        queryClient.invalidateQueries({ queryKey: backofficeKeys.itemImages.all() });
+        queryClient.invalidateQueries({ queryKey: backofficeKeys.itemPartSearch.all() });
       } else {
         toast.success(t('manuscriptsDetail.imageUpdated'));
         invalidate();
@@ -266,7 +266,7 @@ function ItemPartPicker({
   const { searchInput, setSearchInput, search } = useDebouncedSearch(300);
   const query = search.trim();
   const { data: hits = [], isFetching } = useQuery({
-    queryKey: ['item-part-search', query],
+    queryKey: backofficeKeys.itemPartSearch.list(query),
     queryFn: ({ signal }) => searchItemParts(query, 12, signal),
     enabled: open && query.length > 0,
     staleTime: 60_000,

@@ -63,6 +63,10 @@ import {
 } from '@/services/backoffice/image-texts-list';
 import { bulkActionImageTexts } from '@/services/backoffice/image-texts-bulk';
 import { transitionImageText, type ImageTextStatus } from '@/services/backoffice/review-queue';
+import { useSelectionSet } from '@/hooks/use-selection-set';
+import { downloadBlob } from '@/lib/download';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { invalidateAfterImageTextDelete } from '@/lib/backoffice/image-text-cache';
 
 const STATUS_TONE: Record<ImageTextStatus, string> = {
   Draft:
@@ -139,7 +143,8 @@ export function TextsList() {
   );
 
   const [searchInput, setSearchInput] = useState(filters.search);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const selection = useSelectionSet<number>();
+  const selected = selection.selected;
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
@@ -162,7 +167,7 @@ export function TextsList() {
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (prevFilterKey !== filterKey) {
     setPrevFilterKey(filterKey);
-    setSelected(new Set());
+    selection.clear();
   }
 
   // Debounced commit of the search input back into the URL — 350ms is the
@@ -203,7 +208,7 @@ export function TextsList() {
   };
 
   const { data, isFetching, error } = useQuery({
-    queryKey: ['backoffice', 'image-texts', 'list', apiParams],
+    queryKey: backofficeKeys.imageTexts.list({ ...apiParams }),
     queryFn: () => fetchImageTextList(apiParams),
     enabled: !!token,
     placeholderData: (prev) => prev,
@@ -216,24 +221,9 @@ export function TextsList() {
   const someVisibleSelected = rows.some((r) => selected.has(r.id));
 
   function toggleAllVisible() {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (allVisibleSelected) {
-        for (const r of rows) next.delete(r.id);
-      } else {
-        for (const r of rows) next.add(r.id);
-      }
-      return next;
-    });
-  }
-
-  function toggleOne(id: number) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    const ids = rows.map((r) => r.id);
+    if (allVisibleSelected) selection.removeMany(ids);
+    else selection.addMany(ids);
   }
 
   const activeFilterCount =
@@ -255,19 +245,19 @@ export function TextsList() {
   }
 
   function invalidate() {
-    queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts', 'list'] });
-    queryClient.invalidateQueries({ queryKey: ['backoffice', 'texts-monitor', 'overview'] });
-    queryClient.invalidateQueries({ queryKey: ['review-queue'] });
-    queryClient.invalidateQueries({ queryKey: ['backoffice', 'uncovered-images'] });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.list() });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.textsMonitor.overview() });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.reviewQueue.all() });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.uncoveredImages.all() });
   }
 
   const bulkDelete = useMutation({
     mutationFn: () => bulkActionImageTexts({ ids: Array.from(selected), action: 'delete' }),
     onSuccess: ({ affected }) => {
       toast.success(t('textsList.toastBulkDeleted', { count: affected }));
-      setSelected(new Set());
+      selection.clear();
       setConfirmBulkDelete(false);
-      invalidate();
+      void invalidateAfterImageTextDelete(queryClient);
     },
     onError: (err: Error) =>
       toast.error(t('textsList.toastBulkDeleteFailed'), { description: err.message }),
@@ -286,14 +276,7 @@ export function TextsList() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const filename = `image-texts.${format}`;
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = objectUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(objectUrl);
+      downloadBlob(filename, blob);
       toast.success(t('textsList.toastDownloaded', { filename }), { id: toastId });
     } catch (err) {
       toast.error(t('textsList.toastExportFailed'), {
@@ -406,7 +389,7 @@ export function TextsList() {
           {selectedCount > 0 && (
             <BulkActionBar
               ids={Array.from(selected)}
-              onCleared={() => setSelected(new Set())}
+              onCleared={() => selection.clear()}
               onInvalidated={invalidate}
               onAskDelete={() => setConfirmBulkDelete(true)}
             />
@@ -456,7 +439,7 @@ export function TextsList() {
                       key={row.id}
                       row={row}
                       selected={selected.has(row.id)}
-                      onToggle={() => toggleOne(row.id)}
+                      onToggle={() => selection.toggle(row.id)}
                       onTransitioned={invalidate}
                     />
                   ))

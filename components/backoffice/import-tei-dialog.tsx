@@ -41,6 +41,7 @@ import {
   ExistingTextNotice,
   useExistingImageText,
 } from '@/components/backoffice/image-text-create-guards';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 type Kind = 'Transcription' | 'Translation';
 
@@ -93,8 +94,8 @@ export function ImportTeiDialog({
       }),
     onSuccess: (saved) => {
       toast.success(t('importTei.toastImported', { type: saved.type.toLowerCase(), id: saved.id }));
-      queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts'] });
-      queryClient.invalidateQueries({ queryKey: ['backoffice', 'texts-monitor', 'overview'] });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.all() });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.textsMonitor.overview() });
       onOpenChange(false);
       router.push(`/backoffice/image-texts/${saved.id}`);
     },

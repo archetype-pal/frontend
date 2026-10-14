@@ -16,6 +16,7 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
+import { useSelectionSet } from '@/hooks/use-selection-set';
 import type { CommentItem } from '@/types/backoffice';
 
 export default function CommentsPage() {
@@ -24,7 +25,8 @@ export default function CommentsPage() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('all');
   const [deleteTarget, setDeleteTarget] = useState<CommentItem | null>(null);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const selection = useSelectionSet<number>();
+  const selected = selection.selected;
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | 'delete' | null>(null);
 
@@ -44,7 +46,7 @@ export default function CommentsPage() {
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: backofficeKeys.comments.all() });
-    setSelected(new Set());
+    selection.clear();
   };
 
   const approveMut = useMutation({
@@ -89,20 +91,11 @@ export default function CommentsPage() {
 
   const comments = data ?? [];
 
-  const toggleSelect = (id: number) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
   const toggleSelectAll = () => {
     if (selected.size === comments.length) {
-      setSelected(new Set());
+      selection.clear();
     } else {
-      setSelected(new Set(comments.map((c) => c.id)));
+      selection.addMany(comments.map((c) => c.id));
     }
   };
 
@@ -152,7 +145,7 @@ export default function CommentsPage() {
             size="sm"
             onClick={() => {
               setFilter(f);
-              setSelected(new Set());
+              selection.clear();
             }}
             className="capitalize"
           >
@@ -205,7 +198,7 @@ export default function CommentsPage() {
               variant="ghost"
               size="sm"
               className="h-7 text-xs"
-              onClick={() => setSelected(new Set())}
+              onClick={() => selection.clear()}
             >
               {t('comments.clear')}
             </Button>
@@ -246,7 +239,7 @@ export default function CommentsPage() {
                 <div className="flex items-start gap-3">
                   <Checkbox
                     checked={selected.has(comment.id)}
-                    onCheckedChange={() => toggleSelect(comment.id)}
+                    onCheckedChange={() => selection.toggle(comment.id)}
                     aria-label={t('comments.selectAriaLabel', { name: comment.author_name })}
                     className="mt-0.5"
                   />

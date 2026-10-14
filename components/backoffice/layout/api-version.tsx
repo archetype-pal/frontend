@@ -6,6 +6,7 @@ import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 interface Build {
   version: string;
@@ -41,7 +42,7 @@ export function ApiVersion() {
   const t = useTranslations('backoffice');
   const locale = useLocale();
   const { data } = useQuery({
-    queryKey: ['backoffice', 'api-version'],
+    queryKey: backofficeKeys.apiVersion(),
     queryFn: getApiBuild,
     staleTime: Infinity,
   });

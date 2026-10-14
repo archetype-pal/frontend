@@ -165,7 +165,6 @@
     "saveSearchPlaceholder": "Name this search…",
     "noSavedSearches": "No saved searches yet",
     "deleteSavedSearch": "Delete saved search \"{name}\"",
-    "savedState": "Saved",
     "filtersTrigger": "Filters",
     "filtersDialogTitle": "Filters ({count})",
     "filtersDialogDescription": "Adjust filters, then apply changes.",
@@ -1117,7 +1116,6 @@
       "failedUpdate": "Failed to update {label}",
       "failedDelete": "Failed to delete {label}",
       "failedLoad": "Failed to load {label}",
-      "retry": "Retry",
       "create": "Create",
       "new": "New {label}",
       "idColumn": "ID",
@@ -2225,6 +2223,7 @@
     },
     "symbols": {
       "loadingStructure": "Loading symbols structure...",
+      "loadStructureFailed": "Failed to load the symbols structure",
       "gettingStartedTitle": "Getting Started with Palaeographic Structure",
       "step1Title": "Create Components",
       "step1Desc": "Define the structural parts of a letter (e.g., ascender, body, descender)",

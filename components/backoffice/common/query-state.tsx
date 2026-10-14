@@ -4,10 +4,11 @@ import { useTranslations } from 'next-intl';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export function BackofficeLoadingState() {
+export function BackofficeLoadingState({ label }: { label?: string } = {}) {
   return (
-    <div className="flex items-center justify-center py-20">
+    <div className="flex flex-col items-center justify-center gap-3 py-20">
       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      {label && <p className="text-sm text-muted-foreground">{label}</p>}
     </div>
   );
 }

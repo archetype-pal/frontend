@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { fetchImageText, type ImageTextStatus } from '@/services/image-texts';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 // Mirrors the backend's public visibility rule (ImageTextViewSet.get_queryset):
 // anonymous visitors only ever see Live/Reviewed texts.
@@ -38,7 +39,7 @@ export function PreviewAsPublicDialog({ textId, currentStatus }: PreviewAsPublic
   const [open, setOpen] = React.useState(false);
 
   const { data, isFetching, isError } = useQuery({
-    queryKey: ['preview-as-public', textId],
+    queryKey: backofficeKeys.previewAsPublic(textId),
     // No token → the request is anonymous, exactly like a logged-out visitor.
     queryFn: () => fetchImageText(textId),
     enabled: open,

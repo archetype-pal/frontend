@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
-import { Loader2, Type, Layers, Tag, ChevronRight } from 'lucide-react';
+import { Type, Layers, Tag, ChevronRight } from 'lucide-react';
 import { SymbolTreeSidebar } from '@/components/backoffice/symbols/symbol-tree-sidebar';
 import { CharacterDetail } from '@/components/backoffice/symbols/character-detail';
 import {
@@ -16,6 +16,10 @@ import {
   createCharacter,
 } from '@/services/backoffice/symbols';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import {
+  BackofficeErrorState,
+  BackofficeLoadingState,
+} from '@/components/backoffice/common/query-state';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 
 export default function SymbolsPage() {
@@ -67,13 +71,20 @@ export default function SymbolsPage() {
     characters.isLoading || components.isLoading || features.isLoading || positions.isLoading;
 
   if (isLoading) {
+    return <BackofficeLoadingState label={t('symbols.loadingStructure')} />;
+  }
+
+  // Only a query with nothing to show fails the page: a failed background
+  // refetch keeps its data, and the editor (with any draft) stays mounted.
+  const failed = [characters, components, features, positions].filter(
+    (q) => q.isError && q.data === undefined
+  );
+  if (failed.length > 0) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{t('symbols.loadingStructure')}</p>
-        </div>
-      </div>
+      <BackofficeErrorState
+        message={t('symbols.loadStructureFailed')}
+        onRetry={() => failed.forEach((q) => void q.refetch())}
+      />
     );
   }
 

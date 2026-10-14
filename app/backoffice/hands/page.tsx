@@ -89,10 +89,9 @@ export default function HandsPage() {
   const { token } = useAuth();
   const columns = buildColumns(t);
 
-  // The earlier `getHands(token)` returned only the first DRF page (20),
-  // but the header showed `data.count` — admins saw "150 hands" with only
-  // 20 rows visible. Walk all pages so the count and the table agree, and
-  // client-side search/pagination on the DataTable spans the full set.
+  // Walk all pages, not just the first DRF page (20), so the header count and
+  // the table agree and client-side search/pagination on the DataTable spans
+  // the full set.
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.hands.all(),
     queryFn: () => walkPaginated<AdminHandListItem>('/api/v1/management/scribes/hands/?limit=100'),

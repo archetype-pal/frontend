@@ -55,6 +55,7 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { cn } from '@/lib/utils';
+import { useSelectionSet } from '@/hooks/use-selection-set';
 import { toast } from 'sonner';
 import type { UserListItem, UserCreatePayload, UserUpdatePayload } from '@/types/backoffice';
 
@@ -198,7 +199,8 @@ export default function UsersPage() {
   const [preset, setPreset] = useState<PresetKey>('all');
   const [sortKey, setSortKey] = useState<SortKey>('username');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
-  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const selection = useSelectionSet<string>();
+  const selected = selection.selected;
   const [page, setPage] = useState(0);
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -275,32 +277,12 @@ export default function UsersPage() {
   const selectedIds = [...selected];
 
   function toggleAll() {
-    setSelected((prev) => {
-      if (filtered.every((u) => prev.has(String(u.id)))) {
-        // deselect the filtered rows
-        const next = new Set(prev);
-        filtered.forEach((u) => next.delete(String(u.id)));
-        return next;
-      }
-      const next = new Set(prev);
-      filtered.forEach((u) => next.add(String(u.id)));
-      return next;
-    });
+    const ids = filtered.map((u) => String(u.id));
+    if (allSelected) selection.removeMany(ids);
+    else selection.addMany(ids);
   }
 
-  function toggleRow(id: number) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      const key = String(id);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }
-
-  function clearSelection() {
-    setSelected(new Set());
-  }
+  const clearSelection = selection.clear;
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -645,7 +627,7 @@ export default function UsersPage() {
                       <TableCell>
                         <Checkbox
                           checked={isSelected}
-                          onCheckedChange={() => toggleRow(u.id)}
+                          onCheckedChange={() => selection.toggle(String(u.id))}
                           aria-label={t('users.selectRow')}
                           className="translate-y-[2px]"
                         />
