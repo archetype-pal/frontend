@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AnnotationEditDialog } from './annotation-edit-dialog';
@@ -435,5 +435,47 @@ describe('AnnotationEditDialog — component/position tabs', () => {
       ctrlKey: false,
     });
     expect(screen.getByRole('radio', { name: 'Set closed on all selected' })).toBeDefined();
+  });
+});
+
+describe('AnnotationEditDialog — allograph list status', () => {
+  it('says the allographs are loading and holds Save, even for a hand edit', () => {
+    render(
+      <AnnotationEditDialog
+        open
+        onOpenChange={vi.fn()}
+        graphs={[makeGraph({ hand: null })]}
+        allographs={[]}
+        allographsStatus="loading"
+        hands={[HAND]}
+      />
+    );
+
+    expect(screen.getByRole('status').textContent).toBe('Loading allographs…');
+    expect(
+      screen.queryByText('Pick an allograph to edit its components and positions.')
+    ).toBeNull();
+    const save = screen.getByRole('button', { name: /^Save/ }) as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
+  });
+
+  it('says the allograph list failed and fetches it again on request', () => {
+    const onRetry = vi.fn();
+    render(
+      <AnnotationEditDialog
+        open
+        onOpenChange={vi.fn()}
+        graphs={[makeGraph()]}
+        allographs={[]}
+        allographsStatus="error"
+        onRetryAllographs={onRetry}
+        hands={[HAND]}
+      />
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toContain("Couldn't load the allograph list.");
+    fireEvent.click(within(alert).getByRole('button', { name: 'Try again' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });

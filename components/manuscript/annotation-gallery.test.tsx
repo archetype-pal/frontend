@@ -40,9 +40,12 @@ vi.mock('@/contexts/model-labels-context', () => ({
 vi.mock('@/hooks/use-in-view', () => ({ useInView: () => true }));
 vi.mock('@/hooks/use-iiif-thumbnail', () => ({
   useIiifThumbnail: () => mockState.crop(),
+  // The edit sheet's preview strip.
+  useIiifThumbnailUrl: () => null,
 }));
 
-vi.mock('@/services/manuscripts', () => ({ fetchAllographs: vi.fn(() => new Promise(() => {})) }));
+const fetchAllographsMock = vi.hoisted(() => vi.fn());
+vi.mock('@/services/manuscripts', () => ({ fetchAllographs: fetchAllographsMock }));
 
 const toastMock = vi.hoisted(() => ({
   success: vi.fn(),
@@ -117,6 +120,8 @@ beforeEach(() => {
   mockState.crop.mockReset();
   mockState.crop.mockReturnValue({ src: 'https://iiif.example/crop.jpg', failed: false });
   openLightboxMock.mockReset();
+  fetchAllographsMock.mockReset();
+  fetchAllographsMock.mockReturnValue(new Promise(() => {}));
   Object.values(toastMock).forEach((fn) => fn.mockReset());
   window.history.replaceState(null, '', '/manuscripts/1/images/5');
 });
@@ -301,5 +306,24 @@ describe('AnnotationGallery crops', () => {
     fireEvent.error(document.querySelector('img[src="https://iiif.example/crop.jpg"]')!);
 
     expect(screen.getByText("Image didn't load")).toBeTruthy();
+  });
+});
+
+describe('AnnotationGallery edit sheet', () => {
+  it('passes a failed allograph fetch to the sheet, and fetches again on retry', async () => {
+    mockState.user = { is_staff: true };
+    fetchAllographsMock.mockRejectedValueOnce(new Error('500'));
+    renderGallery();
+    fireEvent.keyDown(window, { key: 'a' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit graph 4189' }));
+    expect(screen.getByRole('status').textContent).toBe('Loading allographs…');
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain("Couldn't load the allograph list.");
+
+    fireEvent.click(within(alert).getByRole('button', { name: 'Try again' }));
+    expect(fetchAllographsMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole('status').textContent).toBe('Loading allographs…');
   });
 });
