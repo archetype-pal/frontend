@@ -23,6 +23,7 @@ import { downloadCsv, graphsToCsv } from '@/lib/graph-csv';
 import { openLightboxWithItems } from '@/lib/lightbox-utils';
 import { toast } from 'sonner';
 import {
+  type GroupLabels,
   groupAnnotations,
   handAccentColor,
   handAnchorId,
@@ -281,11 +282,21 @@ export function AnnotationGallery({
       .filter((g): g is BackendGraph => g !== undefined);
   }, [editingGraphIds, effectiveGraphs]);
 
+  const groupLabels = React.useMemo<GroupLabels>(
+    () => ({
+      unattributed: tGallery('unattributed'),
+      noAllograph: tGallery('noAllograph'),
+      hand: (id) => tGallery('handFallback', { id }),
+      allograph: (id) => tGallery('allographFallback', { id }),
+    }),
+    [tGallery]
+  );
+
   // Unfiltered grouping — drives the hand accents and the "is this image
   // genuinely empty?" check (vs. "filters excluded everything").
   const allGroups = React.useMemo(
-    () => groupAnnotations(effectiveGraphs, hands, allographs),
-    [effectiveGraphs, hands, allographs]
+    () => groupAnnotations(effectiveGraphs, hands, allographs, groupLabels),
+    [effectiveGraphs, hands, allographs, groupLabels]
   );
 
   // Filter options derived from what's actually present, so dropdowns only
@@ -295,9 +306,9 @@ export function AnnotationGallery({
     for (const g of effectiveGraphs) present.add(typeof g.hand === 'number' ? g.hand : null);
     const opts: HandOption[] = [];
     for (const h of hands) if (present.has(h.id)) opts.push({ key: h.id, name: h.name });
-    if (present.has(null)) opts.push({ key: null, name: 'Unattributed' });
+    if (present.has(null)) opts.push({ key: null, name: groupLabels.unattributed });
     return opts;
-  }, [effectiveGraphs, hands]);
+  }, [effectiveGraphs, hands, groupLabels]);
   const featureOptions = React.useMemo(() => collectFeatures(effectiveGraphs), [effectiveGraphs]);
   const positionOptions = React.useMemo(() => collectPositions(effectiveGraphs), [effectiveGraphs]);
   const statusCounts = React.useMemo<StatusCounts>(() => {
@@ -312,24 +323,26 @@ export function AnnotationGallery({
   const handLabel = React.useCallback(
     (key: number | null) =>
       key === null
-        ? 'Unattributed'
-        : (handOptions.find((h) => h.key === key)?.name ?? `Hand ${key}`),
-    [handOptions]
+        ? groupLabels.unattributed
+        : (handOptions.find((h) => h.key === key)?.name ?? groupLabels.hand(key)),
+    [handOptions, groupLabels]
   );
   const featureLabel = React.useCallback(
-    (id: number) => featureOptions.find((f) => f.id === id)?.name ?? `Feature ${id}`,
-    [featureOptions]
+    (id: number) =>
+      featureOptions.find((f) => f.id === id)?.name ?? tGallery('featureFallback', { id }),
+    [featureOptions, tGallery]
   );
   const positionLabel = React.useCallback(
-    (id: number) => positionOptions.find((p) => p.id === id)?.name ?? `Position ${id}`,
-    [positionOptions]
+    (id: number) =>
+      positionOptions.find((p) => p.id === id)?.name ?? tGallery('positionFallback', { id }),
+    [positionOptions, tGallery]
   );
 
   // Graph-level filters (hand / status / feature / position), then regroup and
   // apply the chosen allograph-group sort.
   const groups = React.useMemo(() => {
     const filteredGraphs = applyGraphFilters(effectiveGraphs, filters);
-    const grouped = groupAnnotations(filteredGraphs, hands, allographs);
+    const grouped = groupAnnotations(filteredGraphs, hands, allographs, groupLabels);
     const comparator = allographGroupComparator(filters.sort);
     return grouped.map((handGroup) => ({
       ...handGroup,
@@ -342,7 +355,7 @@ export function AnnotationGallery({
         )
       ),
     }));
-  }, [effectiveGraphs, filters, hands, allographs]);
+  }, [effectiveGraphs, filters, hands, allographs, groupLabels]);
 
   // Group-level allograph-name substring filter (case-insensitive).
   const filteredGroups = React.useMemo(() => {
@@ -412,7 +425,7 @@ export function AnnotationGallery({
         rows.map((g) => ({
           graph: g,
           allograph: allographLabelById.get(g.allograph ?? -1) ?? '',
-          hand: g.hand === null || g.hand === undefined ? 'Unattributed' : handLabel(g.hand),
+          hand: handLabel(typeof g.hand === 'number' ? g.hand : null),
         }))
       );
       downloadCsv(`annotations-${imageId}.csv`, csv);

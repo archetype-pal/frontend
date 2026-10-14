@@ -531,7 +531,9 @@ function DialogBody({
       >
         <SheetHeader>
           <SheetTitle className="text-xl">
-            {isMulti ? `Edit ${graphs.length} graphs` : `Edit graph #${graphs[0].id}`}
+            {isMulti
+              ? t('editSheetTitleMany', { count: graphs.length })
+              : t('editSheetTitleOne', { id: graphs[0].id })}
           </SheetTitle>
         </SheetHeader>
 
@@ -545,7 +547,7 @@ function DialogBody({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label className="mb-1.5 block text-sm font-medium">Allograph</Label>
+              <Label className="mb-1.5 block text-sm font-medium">{t('allographField')}</Label>
               {allographsStatus === 'error' ? (
                 <div
                   role="alert"
@@ -577,7 +579,7 @@ function DialogBody({
                   value={allographId != null ? String(allographId) : null}
                   onValueChange={(v) => setAllographId(v ? Number(v) : null)}
                   placeholder={
-                    isMulti && initialAllograph === MIXED ? t('mixedPickOne') : 'Allograph'
+                    isMulti && initialAllograph === MIXED ? t('mixedPickOne') : t('allographField')
                   }
                   searchPlaceholder={t('searchAllographs')}
                   emptyText={t('noAllographs')}
@@ -586,7 +588,7 @@ function DialogBody({
               )}
             </div>
             <div>
-              <Label className="mb-1.5 block text-sm font-medium">Hand</Label>
+              <Label className="mb-1.5 block text-sm font-medium">{t('handField')}</Label>
               {handDisabled ? (
                 <TooltipProvider delayDuration={150}>
                   <Tooltip>
@@ -622,7 +624,7 @@ function DialogBody({
                   options={handOptions}
                   value={hand === MIXED || hand == null ? null : String(hand)}
                   onValueChange={(v) => setHand(v ? Number(v) : null)}
-                  placeholder={hand === MIXED ? t('mixedPickOne') : 'Hand'}
+                  placeholder={hand === MIXED ? t('mixedPickOne') : t('handField')}
                   searchPlaceholder={t('searchHands')}
                   emptyText={t('noHands')}
                   clearLabel={t('noHand')}
@@ -636,10 +638,9 @@ function DialogBody({
             <>
               {isMulti && (
                 <p className="rounded-md border border-muted-foreground/20 bg-muted/40 px-3 py-2.5 text-sm leading-relaxed text-muted-foreground">
-                  Each row has three options: <span className="font-medium">All</span> applies to
-                  every selected graph, <span className="font-medium">None</span> removes from every
-                  selected graph, and <span className="font-medium">Mixed</span> leaves each
-                  graph&apos;s current value alone on save.
+                  {t.rich('triStateHint', {
+                    b: (chunks) => <span className="font-medium">{chunks}</span>,
+                  })}
                 </p>
               )}
 
@@ -731,9 +732,7 @@ function DialogBody({
               )}
             </>
           ) : allographsReady ? (
-            <p className="text-xs text-muted-foreground">
-              Pick an allograph to edit its components and positions.
-            </p>
+            <p className="text-xs text-muted-foreground">{t('pickAllographHint')}</p>
           ) : null}
 
           {error && <p className="text-xs text-destructive">{error}</p>}
@@ -741,7 +740,7 @@ function DialogBody({
 
         <SheetFooter className="gap-2">
           <Button variant="ghost" size="sm" onClick={requestClose} disabled={saving}>
-            Cancel
+            {tCommon('cancel')}
           </Button>
           {failedIds.length > 0 && (
             <Button
@@ -752,18 +751,18 @@ function DialogBody({
               className="gap-2 text-destructive"
             >
               {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              Retry failed ({failedIds.length})
+              {t('retryFailed', { count: failedIds.length })}
             </Button>
           )}
           <Button
             size="sm"
             onClick={handleSave}
             disabled={saving || !hasPendingChanges || !allographsReady}
-            title="⌘/Ctrl+Enter to save"
+            title={t('saveShortcut')}
             className="gap-2"
           >
             {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            {isMulti ? `Save ${graphs.length} graphs` : 'Save'}
+            {isMulti ? t('saveMany', { count: graphs.length }) : tCommon('save')}
             <kbd className="ml-1 hidden rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1 text-[10px] font-medium sm:inline">
               ⌘↵
             </kbd>
@@ -815,6 +814,7 @@ function GraphPreviewStrip({
 }
 
 function GraphPreviewThumb({ graph, iiifImage }: { graph: BackendGraph; iiifImage: string }) {
+  const t = useTranslations('search');
   const annotationJson = React.useMemo(() => JSON.stringify(graph.annotation), [graph.annotation]);
   const thumb = useIiifThumbnailUrl(iiifImage, annotationJson, 200);
   return (
@@ -823,7 +823,7 @@ function GraphPreviewThumb({ graph, iiifImage }: { graph: BackendGraph; iiifImag
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={thumb}
-          alt={`Graph ${graph.id}`}
+          alt={t('previewAlt', { id: graph.id })}
           className="max-h-full max-w-full object-contain"
           loading="lazy"
         />
@@ -884,15 +884,16 @@ interface TriRowProps {
 // fast for power users but undiscoverable for everyone else — the explicit
 // All/None/Mixed labels make the model obvious. Arrow keys move between them.
 function TriRow({ label, isMulti, state, onSet }: TriRowProps) {
+  const t = useTranslations('search');
   const options: SegmentedOption<TriState>[] = [
-    { value: 'all', label: 'All', ariaLabel: `Set ${label} on all selected` },
-    { value: 'none', label: 'None', ariaLabel: `Remove ${label} from all selected` },
+    { value: 'all', label: t('triAll'), ariaLabel: t('triAllLabel', { label }) },
+    { value: 'none', label: t('triNone'), ariaLabel: t('triNoneLabel', { label }) },
   ];
   if (isMulti) {
     options.push({
       value: 'mixed',
-      label: 'Mixed',
-      ariaLabel: `Leave ${label} unchanged per graph`,
+      label: t('triMixed'),
+      ariaLabel: t('triMixedLabel', { label }),
     });
   }
   return (

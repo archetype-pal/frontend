@@ -268,7 +268,23 @@
     "editorialGraphsSkipped": "{count, plural, one {# graphème éditorial a été exclu} other {# graphèmes éditoriaux ont été exclus}} : seuls les superutilisateurs peuvent les modifier.",
     "editorialGraphsOnlySuperusers": "Seuls les superutilisateurs peuvent modifier les graphèmes éditoriaux.",
     "allographsLoading": "Chargement des allographes…",
-    "allographsFailed": "Impossible de charger la liste des allographes."
+    "allographsFailed": "Impossible de charger la liste des allographes.",
+    "editSheetTitleOne": "Modifier le graphème n°{id}",
+    "editSheetTitleMany": "Modifier {count} graphèmes",
+    "allographField": "Allographe",
+    "handField": "Main",
+    "triStateHint": "Chaque ligne propose trois options : <b>Tous</b> s'applique à chaque graphème sélectionné, <b>Aucun</b> le retire de chaque graphème sélectionné, et <b>Mixte</b> laisse la valeur actuelle de chaque graphème inchangée à l'enregistrement.",
+    "pickAllographHint": "Choisissez un allographe pour modifier ses composants et ses positions.",
+    "retryFailed": "Réessayer les échecs ({count})",
+    "saveMany": "Enregistrer {count} graphèmes",
+    "saveShortcut": "⌘/Ctrl+Entrée pour enregistrer",
+    "previewAlt": "Graphème {id}",
+    "triAll": "Tous",
+    "triNone": "Aucun",
+    "triMixed": "Mixte",
+    "triAllLabel": "Appliquer {label} à toute la sélection",
+    "triNoneLabel": "Retirer {label} de toute la sélection",
+    "triMixedLabel": "Laisser {label} inchangé pour chaque graphème"
   },
   "filters": {
     "activeTitle": "Filtres actifs",
@@ -454,7 +470,14 @@
       "removeGraphFromCollection": "Retirer le graphème {id} de votre collection",
       "collectionAddedOne": "Graphème n°{id} ajouté à votre collection.",
       "collectionRemovedOne": "Graphème n°{id} retiré de votre collection.",
-      "loading": "Chargement des annotations"
+      "loading": "Chargement des annotations",
+      "unattributed": "Non attribué",
+      "noAllograph": "Sans allographe",
+      "handFallback": "Main {id}",
+      "allographFallback": "Allographe {id}",
+      "featureFallback": "Caractéristique {id}",
+      "positionFallback": "Position {id}",
+      "imageLoadError": "Impossible de charger l'image."
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Supprimer ce brouillon d'annotation éditoriale ?} other {Supprimer ce brouillon d'annotation publique ?}}\n\nIl sera abandonné localement.",

@@ -268,7 +268,23 @@
     "editorialGraphsSkipped": "{count, plural, one {# editorischer Graph wurde ausgelassen} other {# editorische Graphen wurden ausgelassen}}: Nur Superuser können sie bearbeiten.",
     "editorialGraphsOnlySuperusers": "Nur Superuser können editorische Graphen bearbeiten.",
     "allographsLoading": "Allographen werden geladen…",
-    "allographsFailed": "Die Liste der Allographen konnte nicht geladen werden."
+    "allographsFailed": "Die Liste der Allographen konnte nicht geladen werden.",
+    "editSheetTitleOne": "Graph #{id} bearbeiten",
+    "editSheetTitleMany": "{count} Graphen bearbeiten",
+    "allographField": "Allograph",
+    "handField": "Hand",
+    "triStateHint": "Jede Zeile hat drei Optionen: <b>Alle</b> gilt für jeden ausgewählten Graphen, <b>Keine</b> entfernt es von jedem ausgewählten Graphen, und <b>Gemischt</b> lässt den Wert jedes Graphen beim Speichern unverändert.",
+    "pickAllographHint": "Wählen Sie ein Allograph, um seine Komponenten und Positionen zu bearbeiten.",
+    "retryFailed": "Fehlgeschlagene erneut versuchen ({count})",
+    "saveMany": "{count} Graphen speichern",
+    "saveShortcut": "⌘/Strg+Enter zum Speichern",
+    "previewAlt": "Graph {id}",
+    "triAll": "Alle",
+    "triNone": "Keine",
+    "triMixed": "Gemischt",
+    "triAllLabel": "{label} bei allen ausgewählten setzen",
+    "triNoneLabel": "{label} bei allen ausgewählten entfernen",
+    "triMixedLabel": "{label} je Graph unverändert lassen"
   },
   "filters": {
     "activeTitle": "Aktive Filter",
@@ -454,7 +470,14 @@
       "removeGraphFromCollection": "Graph {id} aus Ihrer Sammlung entfernen",
       "collectionAddedOne": "Graph #{id} zu Ihrer Sammlung hinzugefügt.",
       "collectionRemovedOne": "Graph #{id} aus Ihrer Sammlung entfernt.",
-      "loading": "Annotationen werden geladen"
+      "loading": "Annotationen werden geladen",
+      "unattributed": "Nicht zugeordnet",
+      "noAllograph": "Kein Allograph",
+      "handFallback": "Hand {id}",
+      "allographFallback": "Allograph {id}",
+      "featureFallback": "Merkmal {id}",
+      "positionFallback": "Position {id}",
+      "imageLoadError": "Das Bild konnte nicht geladen werden."
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Diesen editorischen Entwurf löschen?} other {Diesen öffentlichen Entwurf löschen?}}\n\nEr wird lokal verworfen.",

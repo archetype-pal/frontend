@@ -268,7 +268,23 @@
     "editorialGraphsSkipped": "{count, plural, one {# editorial graph was left out} other {# editorial graphs were left out}}: only superusers can edit them.",
     "editorialGraphsOnlySuperusers": "Only superusers can edit editorial graphs.",
     "allographsLoading": "Loading allographs…",
-    "allographsFailed": "Couldn't load the allograph list."
+    "allographsFailed": "Couldn't load the allograph list.",
+    "editSheetTitleOne": "Edit graph #{id}",
+    "editSheetTitleMany": "Edit {count} graphs",
+    "allographField": "Allograph",
+    "handField": "Hand",
+    "triStateHint": "Each row has three options: <b>All</b> applies to every selected graph, <b>None</b> removes from every selected graph, and <b>Mixed</b> leaves each graph's current value alone on save.",
+    "pickAllographHint": "Pick an allograph to edit its components and positions.",
+    "retryFailed": "Retry failed ({count})",
+    "saveMany": "Save {count} graphs",
+    "saveShortcut": "⌘/Ctrl+Enter to save",
+    "previewAlt": "Graph {id}",
+    "triAll": "All",
+    "triNone": "None",
+    "triMixed": "Mixed",
+    "triAllLabel": "Set {label} on all selected",
+    "triNoneLabel": "Remove {label} from all selected",
+    "triMixedLabel": "Leave {label} unchanged per graph"
   },
   "filters": {
     "activeTitle": "Active filters",
@@ -454,7 +470,14 @@
       "removeGraphFromCollection": "Remove graph {id} from your collection",
       "collectionAddedOne": "Added graph #{id} to your collection.",
       "collectionRemovedOne": "Removed graph #{id} from your collection.",
-      "loading": "Loading annotations"
+      "loading": "Loading annotations",
+      "unattributed": "Unattributed",
+      "noAllograph": "No allograph",
+      "handFallback": "Hand {id}",
+      "allographFallback": "Allograph {id}",
+      "featureFallback": "Feature {id}",
+      "positionFallback": "Position {id}",
+      "imageLoadError": "Unable to load image."
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Delete this editorial draft annotation?} other {Delete this public draft annotation?}}\n\nThis will discard it locally.",

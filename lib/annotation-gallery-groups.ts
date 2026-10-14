@@ -22,6 +22,21 @@ export interface HandGroup {
 
 export const NO_ALLOGRAPH_LABEL = 'No allograph';
 
+/** Names for groups that have no record to take one from; the gallery passes translations. */
+export interface GroupLabels {
+  unattributed: string;
+  noAllograph: string;
+  hand: (id: number) => string;
+  allograph: (id: number) => string;
+}
+
+export const DEFAULT_GROUP_LABELS: GroupLabels = {
+  unattributed: 'Unattributed',
+  noAllograph: NO_ALLOGRAPH_LABEL,
+  hand: (id) => `Hand ${id}`,
+  allograph: (id) => `Allograph ${id}`,
+};
+
 /** Wraps an allograph-group comparator so the "no allograph" group always sorts last. */
 export function withUnassignedLast<T extends { allographId: number | null }>(
   compare: (a: T, b: T) => number
@@ -37,7 +52,8 @@ export function withUnassignedLast<T extends { allographId: number | null }>(
 export function groupAnnotations(
   graphs: BackendGraph[],
   hands: HandType[],
-  allographs: AllographSummary[]
+  allographs: AllographSummary[],
+  labels: GroupLabels = DEFAULT_GROUP_LABELS
 ): HandGroup[] {
   const sortedHands = sortHandsByPriority(hands);
   const handLabelById = new Map(sortedHands.map((h) => [h.id, h.name]));
@@ -62,13 +78,14 @@ export function groupAnnotations(
 
   return Array.from(handMap, ([handKey, allographMap]) => ({
     handId: handKey,
-    handName: handKey === null ? 'Unattributed' : (handLabelById.get(handKey) ?? `Hand ${handKey}`),
+    handName:
+      handKey === null ? labels.unattributed : (handLabelById.get(handKey) ?? labels.hand(handKey)),
     allographs: Array.from(allographMap, ([allographId, graphs]) => ({
       allographId,
       allographName:
         allographId === null
-          ? NO_ALLOGRAPH_LABEL
-          : (allographLabelById.get(allographId) ?? `Allograph ${allographId}`),
+          ? labels.noAllograph
+          : (allographLabelById.get(allographId) ?? labels.allograph(allographId)),
       graphs,
     })).sort(withUnassignedLast((a, b) => a.allographName.localeCompare(b.allographName))),
   })).sort((a, b) => {
