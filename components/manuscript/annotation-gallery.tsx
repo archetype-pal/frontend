@@ -4,22 +4,9 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import {
-  AlertTriangle,
-  ArrowUp,
-  Download,
-  Images,
-  ListChecks,
-  Pencil,
-  RefreshCw,
-  Square,
-  Star,
-  Trash2,
-} from 'lucide-react';
+import { AlertTriangle, ArrowUp } from 'lucide-react';
 
-import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
-import { useInView } from '@/hooks/use-in-view';
-import { useRangeSelect, useSelectionSet, type SelectionSet } from '@/hooks/use-selection-set';
+import { useSelectionSet } from '@/hooks/use-selection-set';
 import { useAuth } from '@/contexts/auth-context';
 import { useCollection } from '@/contexts/collection-context';
 import type { Allograph, AllographSummary } from '@/types/allographs';
@@ -33,8 +20,6 @@ import { downloadCsv, graphsToCsv } from '@/lib/graph-csv';
 import { openLightboxWithItems } from '@/lib/lightbox-utils';
 import { toast } from 'sonner';
 import {
-  type AllographGroup,
-  type HandGroup,
   groupAnnotations,
   handAccentColor,
   handAnchorId,
@@ -49,30 +34,20 @@ import {
   collectPositions,
   filtersFromParams,
   hasActiveFilters,
+  isGraphDescribed,
   withFiltersInSearch,
 } from '@/lib/annotation-gallery-filters';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnnotationEditDialog } from '@/components/manuscript/annotation-edit-dialog';
-import {
-  DENSITY_THUMB_PX,
-  DENSITY_WIDTH,
-  DensityControl,
-  useThumbDensity,
-  type ThumbDensity,
-} from '@/components/manuscript/thumb-density';
-import {
-  GalleryFilterChips,
-  GalleryFilterControls,
-  type HandOption,
+import { useThumbDensity } from '@/components/manuscript/thumb-density';
+import type {
+  HandOption,
+  StatusCounts,
 } from '@/components/manuscript/annotation-gallery-filter-bar';
-
-// ---------------------------------------------------------------------------
-// Top-level component
-// ---------------------------------------------------------------------------
+import { GalleryToolbar } from '@/components/manuscript/annotation-gallery-toolbar';
+import { HandSection } from '@/components/manuscript/annotation-gallery-rows';
+import { GallerySelectionBar } from '@/components/manuscript/annotation-gallery-selection-bar';
 
 interface AnnotationGalleryProps {
   manuscriptId: string;
@@ -110,10 +85,15 @@ export function AnnotationGallery({
   supportingDataIncomplete = false,
 }: AnnotationGalleryProps) {
   const t = useTranslations('manuscript');
+  const tGallery = useTranslations('manuscript.gallery');
+  const tCommon = useTranslations('common');
   const { user, token } = useAuth();
   const router = useRouter();
   const { addItem, isInCollection } = useCollection();
   const canEdit = user?.is_staff ?? false;
+  // Editing needs the hand and allograph names; without them it would half-work.
+  const editingAvailable = canEdit && !supportingDataIncomplete;
+  const viewerHref = `/manuscripts/${manuscriptId}/images/${imageId}`;
 
   // Thumbnail density (G6.4), persisted across sessions.
   const [density, changeDensity] = useThumbDensity();
@@ -141,18 +121,9 @@ export function AnnotationGallery({
   }, [filters, pathname]);
 
   const [annotatingMode, setAnnotatingMode] = React.useState(false);
-  // Two scroll thresholds drive UI affordances:
-  //   - isScrolled (>16px): the sticky toolbar collapses to the right half
-  //     of the page so gallery content underneath stays visible on the left.
-  //   - showBackToTop (>600px): the floating back-to-top button appears.
-  const [isScrolled, setIsScrolled] = React.useState(false);
   const [showBackToTop, setShowBackToTop] = React.useState(false);
   React.useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY;
-      setIsScrolled(y > 16);
-      setShowBackToTop(y > 600);
-    };
+    const onScroll = () => setShowBackToTop(window.scrollY > 600);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -162,27 +133,33 @@ export function AnnotationGallery({
 
   // Page-level keyboard shortcuts:
   //   `/`  — focus the allograph filter
-  //   `A`  — toggle annotating mode (admin only)
+  //   `A`  — toggle editing mode (staff only)
   // Both are skipped when the user is typing into a form field, so they don't
   // hijack normal input.
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) {
+      if (
+        t &&
+        (t.tagName === 'INPUT' ||
+          t.tagName === 'TEXTAREA' ||
+          t.tagName === 'SELECT' ||
+          t.isContentEditable)
+      ) {
         return;
       }
       if (e.key === '/') {
         e.preventDefault();
         filterInputRef.current?.focus();
-      } else if ((e.key === 'a' || e.key === 'A') && canEdit) {
+      } else if ((e.key === 'a' || e.key === 'A') && editingAvailable) {
         e.preventDefault();
         setAnnotatingMode((v) => !v);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [canEdit]);
+  }, [editingAvailable]);
 
   // Saved-graph overrides keep edits visible immediately (especially the
   // re-grouping that follows an allograph change) without waiting for a
@@ -236,7 +213,7 @@ export function AnnotationGallery({
     [graphs, graphOverrides, deletedIds]
   );
 
-  // Delete a graph straight from the gallery (G3.1), admin-only. Optimistic:
+  // Delete a graph straight from the gallery (G3.1), staff-only. Optimistic:
   // hide it, then call the API; restore + toast on failure.
   const handleDeleteGraph = React.useCallback(
     async (graphId: number) => {
@@ -271,8 +248,8 @@ export function AnnotationGallery({
       .filter((g): g is BackendGraph => g !== undefined);
   }, [editingGraphIds, effectiveGraphs]);
 
-  // Unfiltered grouping — drives the totals and the "is this image genuinely
-  // empty?" check (vs. "filters excluded everything").
+  // Unfiltered grouping — drives the hand accents and the "is this image
+  // genuinely empty?" check (vs. "filters excluded everything").
   const allGroups = React.useMemo(
     () => groupAnnotations(effectiveGraphs, hands, allographs),
     [effectiveGraphs, hands, allographs]
@@ -290,6 +267,14 @@ export function AnnotationGallery({
   }, [effectiveGraphs, hands]);
   const featureOptions = React.useMemo(() => collectFeatures(effectiveGraphs), [effectiveGraphs]);
   const positionOptions = React.useMemo(() => collectPositions(effectiveGraphs), [effectiveGraphs]);
+  const statusCounts = React.useMemo<StatusCounts>(() => {
+    const described = effectiveGraphs.filter(isGraphDescribed).length;
+    return {
+      all: effectiveGraphs.length,
+      described,
+      undescribed: effectiveGraphs.length - described,
+    };
+  }, [effectiveGraphs]);
 
   const handLabel = React.useCallback(
     (key: number | null) =>
@@ -340,11 +325,11 @@ export function AnnotationGallery({
       .filter((handGroup) => handGroup.allographs.length > 0);
   }, [groups, filters.allograph]);
 
-  const totalAllographCount = React.useMemo(
-    () => allGroups.reduce((sum, g) => sum + g.allographs.length, 0),
-    [allGroups]
+  const shownGraphs = React.useMemo(
+    () => filteredGroups.flatMap((h) => h.allographs.flatMap((a) => a.graphs)),
+    [filteredGroups]
   );
-  const filteredAllographCount = React.useMemo(
+  const shownAllographCount = React.useMemo(
     () => filteredGroups.reduce((sum, g) => sum + g.allographs.length, 0),
     [filteredGroups]
   );
@@ -376,7 +361,7 @@ export function AnnotationGallery({
     openLightboxWithItems(ids.map((id) => ({ id, type: 'graph' as const })));
   }, [selection.selected]);
 
-  // Export the selection (or, if nothing selected, the filtered view) as CSV (G4.3).
+  // Export the selection as CSV (G4.3).
   const exportGraphs = React.useCallback(
     (rows: BackendGraph[]) => {
       const csv = graphsToCsv(
@@ -391,179 +376,155 @@ export function AnnotationGallery({
     [allographLabelById, handLabel, imageId]
   );
 
-  // Single source of truth for "add graphs to the collection" — used by both
-  // the per-allograph "Add selected" and the top toolbar's "Add to collection."
-  const addToCollection = React.useCallback(
-    (candidateGraphs: BackendGraph[]) => {
-      for (const g of candidateGraphs) {
-        if (!selection.selected.has(g.id)) continue;
-        if (isInCollection(g.id, 'graph')) continue;
-        addItem(
-          graphToCollectionItem(
-            g,
-            { itemPartId, itemImageId, iiifImage, locus, shelfmark },
-            { allographLabelById, handNameById }
-          )
-        );
-      }
-    },
-    [
-      addItem,
-      allographLabelById,
-      handNameById,
-      iiifImage,
-      isInCollection,
-      itemImageId,
-      itemPartId,
-      locus,
-      selection.selected,
-      shelfmark,
-    ]
-  );
+  const addSelectedToCollection = React.useCallback(() => {
+    for (const g of effectiveGraphs) {
+      if (!selection.selected.has(g.id)) continue;
+      if (isInCollection(g.id, 'graph')) continue;
+      addItem(
+        graphToCollectionItem(
+          g,
+          { itemPartId, itemImageId, iiifImage, locus, shelfmark },
+          { allographLabelById, handNameById }
+        )
+      );
+    }
+  }, [
+    addItem,
+    allographLabelById,
+    effectiveGraphs,
+    handNameById,
+    iiifImage,
+    isInCollection,
+    itemImageId,
+    itemPartId,
+    locus,
+    selection.selected,
+    shelfmark,
+  ]);
 
   // The annotations fetch failed — show a recoverable error rather than the
   // empty state, which would falsely imply the image has no annotations.
   if (loadError) {
     return (
-      <div className="flex flex-col items-center gap-4 rounded-md border border-destructive/30 bg-destructive/5 px-6 py-12 text-center">
+      <div className="flex flex-col items-center gap-4 rounded-lg border border-destructive/30 bg-destructive/5 px-6 py-12 text-center">
         <AlertTriangle className="h-8 w-8 text-destructive" aria-hidden />
-        <div className="space-y-1">
-          <p className="text-base font-medium text-foreground">Couldn&apos;t load annotations</p>
-          <p className="text-sm text-muted-foreground">
-            Something went wrong fetching the annotations for this image.
-          </p>
+        <div className="max-w-md space-y-1">
+          <p className="text-base font-semibold text-foreground">{tGallery('loadErrorTitle')}</p>
+          <p className="text-sm text-muted-foreground">{tGallery('loadErrorBody')}</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-2" onClick={() => router.refresh()}>
-          <RefreshCw className="h-4 w-4" />
-          Retry
-        </Button>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button size="sm" onClick={() => router.refresh()}>
+            {tCommon('tryAgain')}
+          </Button>
+          <Button size="sm" variant="outline" asChild>
+            <Link href={viewerHref}>{tGallery('openViewer')}</Link>
+          </Button>
+        </div>
       </div>
     );
   }
 
   if (allGroups.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-md border border-dashed bg-muted/40 px-6 py-12 text-center">
-        <Square className="h-8 w-8 text-muted-foreground/50" aria-hidden />
+      <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed bg-card px-6 py-12 text-center">
         <div className="space-y-1">
-          <p className="text-base font-medium text-foreground">No annotations on this image yet</p>
-          {canEdit ? (
-            <p className="text-sm text-muted-foreground">
-              Open the{' '}
-              <Link
-                href={`/manuscripts/${manuscriptId}/images/${imageId}`}
-                className="font-medium text-primary underline-offset-2 hover:underline"
-              >
-                image viewer
-              </Link>{' '}
-              to start drawing annotations.
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              This image hasn&apos;t been annotated yet.
-            </p>
-          )}
+          <p className="text-base font-semibold text-foreground">{tGallery('emptyTitle')}</p>
+          <p className="text-sm text-muted-foreground">
+            {canEdit ? tGallery('emptyStaff') : tGallery('emptyVisitor')}
+          </p>
         </div>
+        {canEdit && (
+          <Button size="sm" asChild>
+            <Link href={viewerHref}>{tGallery('openViewer')}</Link>
+          </Button>
+        )}
       </div>
     );
   }
 
   return (
     <TooltipProvider delayDuration={200}>
-      {/* Sticky offsets centralized here (G5.1): the toolbar pins at
-          --gallery-sticky-top; the per-allograph header pins just below it at
-          --gallery-sticky-top-2. Change the header height in one place. */}
-      <div
-        className="space-y-10"
-        style={
-          {
-            '--gallery-sticky-top': '7rem',
-            '--gallery-sticky-top-2': '12rem',
-          } as React.CSSProperties
-        }
-      >
+      <div className="space-y-6">
         {supportingDataIncomplete && (
-          <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <div
+            role="alert"
+            className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900"
+          >
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-            <span>
-              Some reference data (hands or allographs) failed to load — filtering and editing may
-              be incomplete.{' '}
-              <button
-                type="button"
-                onClick={() => router.refresh()}
-                className="font-medium underline underline-offset-2"
-              >
-                Retry
-              </button>
-            </span>
+            <span className="flex-1 basis-64">{tGallery('supportingDataFailed')}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-amber-300 bg-transparent"
+              onClick={() => router.refresh()}
+            >
+              {tCommon('tryAgain')}
+            </Button>
           </div>
         )}
+
         <GalleryToolbar
           filters={filters}
           onFiltersChange={setFilters}
+          onClearAllFilters={clearAllFilters}
           handOptions={handOptions}
           featureOptions={featureOptions}
           positionOptions={positionOptions}
+          statusCounts={statusCounts}
+          handLabel={handLabel}
+          featureLabel={featureLabel}
+          positionLabel={positionLabel}
           filterInputRef={filterInputRef}
-          totalAllographCount={totalAllographCount}
-          filteredAllographCount={filteredAllographCount}
+          shownGraphs={shownGraphs.length}
+          totalGraphs={effectiveGraphs.length}
+          shownAllographs={shownAllographCount}
           density={density}
           onDensityChange={changeDensity}
           canEdit={canEdit}
+          editingAvailable={editingAvailable}
           annotatingMode={annotatingMode}
           onAnnotatingModeChange={setAnnotatingMode}
-          selectionCount={selection.selected.size}
-          onClearSelection={selection.clear}
-          onAddSelectedToCollection={() => addToCollection(effectiveGraphs)}
-          onEditSelected={() => openEditor(Array.from(selection.selected))}
-          onSendToLightbox={sendSelectionToLightbox}
-          onExportSelected={() =>
-            exportGraphs(effectiveGraphs.filter((g) => selection.selected.has(g.id)))
-          }
-          isScrolled={isScrolled}
         />
 
-        {filtersActive && (
-          <GalleryFilterChips
-            filters={filters}
-            onChange={setFilters}
-            onClearAll={clearAllFilters}
-            handLabel={handLabel}
-            featureLabel={featureLabel}
-            positionLabel={positionLabel}
-          />
-        )}
-
         {filteredGroups.length > 1 && (
-          <nav aria-label="Hands on this image">
-            <h2 className="text-lg font-semibold">Hands</h2>
-            <ul className="mt-3 flex flex-wrap gap-2 text-sm">
-              {filteredGroups.map((g) => {
-                const count = g.allographs.reduce((sum, a) => sum + a.graphs.length, 0);
-                return (
-                  <li key={g.handId ?? 'unattributed'}>
-                    <a
-                      href={`#${handAnchorId(g.handId)}`}
-                      className="inline-flex items-center gap-2 rounded-md border bg-card px-3 py-1.5 font-medium text-foreground shadow-sm transition hover:border-primary hover:bg-primary/5"
-                    >
-                      {g.handName}
-                      <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-                        {count}
-                      </span>
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
+          <nav aria-label={tGallery('handsNav')} className="flex flex-wrap items-center gap-2">
+            <h2 className="mr-1 text-sm font-medium text-muted-foreground">
+              {tGallery('handsHeading')}
+            </h2>
+            {filteredGroups.map((g) => {
+              const count = g.allographs.reduce((sum, a) => sum + a.graphs.length, 0);
+              return (
+                <a
+                  key={g.handId ?? 'unattributed'}
+                  href={`#${handAnchorId(g.handId)}`}
+                  className="inline-flex h-7 items-center gap-1.5 rounded-full border bg-card px-3 text-sm font-medium text-foreground transition hover:border-primary hover:text-primary"
+                >
+                  {g.handName}
+                  <span className="tabular-nums text-muted-foreground">{count}</span>
+                </a>
+              );
+            })}
           </nav>
         )}
 
-        {filteredGroups.length === 0 && filtersActive && (
-          <div className="flex items-center justify-between gap-3 rounded-md border border-dashed bg-muted/40 px-4 py-3 text-base text-muted-foreground">
-            <span>No annotations match the current filters.</span>
-            <Button size="sm" variant="ghost" onClick={clearAllFilters}>
-              Clear all filters
-            </Button>
+        {filteredGroups.length === 0 && (
+          <div className="rounded-lg border border-dashed bg-card px-5 py-10 text-center">
+            <p className="text-base font-semibold text-foreground">{tGallery('noMatchTitle')}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {filters.allograph.trim() &&
+              !allGroups.some((h) =>
+                h.allographs.some((a) =>
+                  a.allographName.toLowerCase().includes(filters.allograph.trim().toLowerCase())
+                )
+              )
+                ? tGallery('noMatchName', { query: filters.allograph.trim() })
+                : tGallery('noMatchCombined')}
+            </p>
+            {filtersActive && (
+              <Button size="sm" variant="outline" className="mt-4" onClick={clearAllFilters}>
+                {tGallery('clearAllFilters')}
+              </Button>
+            )}
           </div>
         )}
 
@@ -579,26 +540,35 @@ export function AnnotationGallery({
             canEdit={canEdit}
             annotatingMode={annotatingMode}
             selection={selection}
-            onAddGroupToCollection={addToCollection}
             onEditGraph={(graphId) => openEditor([graphId])}
             onDeleteGraph={handleDeleteGraph}
           />
         ))}
+
+        <GallerySelectionBar
+          selectedCount={selection.selected.size}
+          annotatingMode={annotatingMode}
+          onEdit={() => openEditor(Array.from(selection.selected))}
+          onAddToCollection={addSelectedToCollection}
+          onSendToLightbox={sendSelectionToLightbox}
+          onExport={() => exportGraphs(effectiveGraphs.filter((g) => selection.selected.has(g.id)))}
+          onClear={selection.clear}
+        />
 
         {showBackToTop && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 size="icon"
-                variant="default"
-                className="fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full shadow-lg"
+                variant="outline"
+                className="fixed bottom-6 right-6 z-50 h-11 w-11 rounded-full bg-card shadow-lg"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                aria-label="Back to top"
+                aria-label={tGallery('backToTop')}
               >
-                <ArrowUp className="h-5 w-5" />
+                <ArrowUp className="h-5 w-5" aria-hidden />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">Back to top</TooltipContent>
+            <TooltipContent side="left">{tGallery('backToTop')}</TooltipContent>
           </Tooltip>
         )}
 
@@ -615,736 +585,5 @@ export function AnnotationGallery({
         />
       </div>
     </TooltipProvider>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Toolbar
-// ---------------------------------------------------------------------------
-
-interface GalleryToolbarProps {
-  filters: GalleryFilterState;
-  onFiltersChange: (next: GalleryFilterState) => void;
-  handOptions: HandOption[];
-  featureOptions: { id: number; name: string }[];
-  positionOptions: { id: number; name: string }[];
-  filterInputRef: React.RefObject<HTMLInputElement | null>;
-  totalAllographCount: number;
-  filteredAllographCount: number;
-  density: ThumbDensity;
-  onDensityChange: (value: ThumbDensity) => void;
-  canEdit: boolean;
-  annotatingMode: boolean;
-  onAnnotatingModeChange: (value: boolean) => void;
-  selectionCount: number;
-  onClearSelection: () => void;
-  onAddSelectedToCollection: () => void;
-  onEditSelected: () => void;
-  onSendToLightbox: () => void;
-  onExportSelected: () => void;
-  isScrolled: boolean;
-}
-
-function GalleryToolbar({
-  filters,
-  onFiltersChange,
-  handOptions,
-  featureOptions,
-  positionOptions,
-  filterInputRef,
-  totalAllographCount,
-  filteredAllographCount,
-  density,
-  onDensityChange,
-  canEdit,
-  annotatingMode,
-  onAnnotatingModeChange,
-  selectionCount,
-  onClearSelection,
-  onAddSelectedToCollection,
-  onEditSelected,
-  onSendToLightbox,
-  onExportSelected,
-  isScrolled,
-}: GalleryToolbarProps) {
-  const t = useTranslations('manuscript');
-  const tCommon = useTranslations('common');
-  const isFiltering = filters.allograph.trim().length > 0;
-  return (
-    // Sticky so the filter and selection actions stay reachable when scrolling
-    // through long pages with many hands. `top-0` puts it just below whatever
-    // the page-level layout's chrome ends up being; bg-card/backdrop-blur
-    // keeps content behind it readable.
-    // Once the page scrolls past the top, the toolbar shrinks to the right
-    // half of the page so the gallery content is visible to its left
-    // (margin-left: auto on a sized block right-aligns it).
-    <div
-      className={cn(
-        // Sticky offset is driven by --gallery-sticky-top (set on the gallery
-        // root) instead of a hard-coded literal, so it stays in sync with the
-        // per-allograph header offset (G5.1).
-        'sticky top-[var(--gallery-sticky-top,7rem)] z-30 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card/95 px-4 py-3 shadow-sm backdrop-blur transition-all duration-200 supports-[backdrop-filter]:bg-card/85',
-        isScrolled ? 'ml-auto w-full lg:w-1/2' : 'w-full sm:w-auto'
-      )}
-    >
-      <div className="flex flex-1 flex-wrap items-center gap-3">
-        <div className="relative flex items-center gap-2">
-          <Input
-            ref={filterInputRef}
-            type="search"
-            placeholder="Filter allographs…"
-            value={filters.allograph}
-            onChange={(e) => onFiltersChange({ ...filters, allograph: e.target.value })}
-            className="h-9 w-full pr-9 text-sm sm:w-56"
-            aria-label="Filter allographs by name. Press / to focus."
-          />
-          {!isFiltering && (
-            <Kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">/</Kbd>
-          )}
-          {isFiltering && (
-            <span className="text-sm text-muted-foreground" aria-live="polite">
-              {filteredAllographCount} of {totalAllographCount}
-            </span>
-          )}
-        </div>
-
-        <GalleryFilterControls
-          filters={filters}
-          onChange={onFiltersChange}
-          handOptions={handOptions}
-          featureOptions={featureOptions}
-          positionOptions={positionOptions}
-        />
-
-        <DensityControl density={density} onChange={onDensityChange} />
-
-        {canEdit && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <label
-                className={cn(
-                  'flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition',
-                  annotatingMode
-                    ? 'border-primary bg-primary/10 text-foreground'
-                    : 'border-transparent text-muted-foreground hover:border-border hover:bg-muted/50'
-                )}
-              >
-                <Switch
-                  checked={annotatingMode}
-                  onCheckedChange={onAnnotatingModeChange}
-                  aria-label={tCommon('editingMode')}
-                />
-                {tCommon('editingMode')}
-                <Kbd>A</Kbd>
-              </label>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">{t('gallery.editingModeTooltip')}</TooltipContent>
-          </Tooltip>
-        )}
-      </div>
-
-      {selectionCount > 0 && (
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="rounded-full bg-primary/10 px-2.5 py-1 font-medium text-primary">
-            {selectionCount} selected
-          </span>
-          {annotatingMode ? (
-            <Button size="sm" variant="default" className="gap-1.5" onClick={onEditSelected}>
-              <Pencil className="h-4 w-4" />
-              Edit selected
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="default"
-              className="gap-1.5"
-              onClick={onAddSelectedToCollection}
-            >
-              <Star className="h-4 w-4" />
-              Add to collection
-            </Button>
-          )}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={onSendToLightbox}>
-                <Images className="h-4 w-4" />
-                <span className="hidden sm:inline">Lightbox</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Compare selected in the lightbox</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={onExportSelected}>
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Export</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Export selected as CSV</TooltipContent>
-          </Tooltip>
-          <Button size="sm" variant="ghost" onClick={onClearSelection}>
-            Clear
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Per-hand section
-// ---------------------------------------------------------------------------
-
-interface HandSectionProps {
-  handGroup: HandGroup;
-  accent: string;
-  density: ThumbDensity;
-  iiifImage: string;
-  manuscriptId: string;
-  imageId: string;
-  canEdit: boolean;
-  annotatingMode: boolean;
-  selection: SelectionSet<number>;
-  onAddGroupToCollection: (graphs: BackendGraph[]) => void;
-  onEditGraph: (graphId: number) => void;
-  onDeleteGraph: (graphId: number) => void;
-}
-
-function HandSection({
-  handGroup,
-  accent,
-  density,
-  iiifImage,
-  manuscriptId,
-  imageId,
-  canEdit,
-  annotatingMode,
-  selection,
-  onAddGroupToCollection,
-  onEditGraph,
-  onDeleteGraph,
-}: HandSectionProps) {
-  const anchorId = handAnchorId(handGroup.handId);
-  const totalGraphs = handGroup.allographs.reduce((sum, a) => sum + a.graphs.length, 0);
-  return (
-    <section id={anchorId} className="space-y-4">
-      <header className="border-b border-l-4 pb-3 pl-3" style={{ borderLeftColor: accent }}>
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h2 className="text-2xl font-semibold tracking-tight">{handGroup.handName}</h2>
-          {/* Per-hand signature summary (G4.2): glyph + allograph-variety counts. */}
-          <span className="text-sm text-muted-foreground">
-            {totalGraphs} {totalGraphs === 1 ? 'graph' : 'graphs'} · {handGroup.allographs.length}{' '}
-            {handGroup.allographs.length === 1 ? 'allograph' : 'allographs'}
-          </span>
-        </div>
-        <ul className="mt-3 flex flex-wrap gap-2 text-sm">
-          {handGroup.allographs.map((a) => (
-            <li key={a.allographId ?? 'none'}>
-              <a
-                href={`#${anchorId}-allograph-${a.allographId ?? 'none'}`}
-                className="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 text-foreground/80 transition hover:border-primary hover:text-foreground"
-              >
-                {a.allographName}
-                <span className="rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">
-                  {a.graphs.length}
-                </span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </header>
-
-      <div className="space-y-8">
-        {handGroup.allographs.map((allographGroup) => (
-          <AllographGroupSection
-            key={allographGroup.allographId ?? 'none'}
-            anchorId={anchorId}
-            allographGroup={allographGroup}
-            accent={accent}
-            density={density}
-            handName={handGroup.handName}
-            iiifImage={iiifImage}
-            manuscriptId={manuscriptId}
-            imageId={imageId}
-            canEdit={canEdit}
-            annotatingMode={annotatingMode}
-            selection={selection}
-            onAddGroupToCollection={() => onAddGroupToCollection(allographGroup.graphs)}
-            onEditGraph={onEditGraph}
-            onDeleteGraph={onDeleteGraph}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-interface AllographGroupSectionProps {
-  anchorId: string;
-  allographGroup: AllographGroup;
-  accent: string;
-  density: ThumbDensity;
-  handName: string;
-  iiifImage: string;
-  manuscriptId: string;
-  imageId: string;
-  canEdit: boolean;
-  annotatingMode: boolean;
-  selection: SelectionSet<number>;
-  onAddGroupToCollection: () => void;
-  onEditGraph: (graphId: number) => void;
-  onDeleteGraph: (graphId: number) => void;
-}
-
-function AllographGroupSection({
-  anchorId,
-  allographGroup,
-  accent,
-  density,
-  handName,
-  iiifImage,
-  manuscriptId,
-  imageId,
-  canEdit,
-  annotatingMode,
-  selection,
-  onAddGroupToCollection,
-  onEditGraph,
-  onDeleteGraph,
-}: AllographGroupSectionProps) {
-  const groupSelectedCount = allographGroup.graphs.filter((g) =>
-    selection.selected.has(g.id)
-  ).length;
-  const allSelected = groupSelectedCount > 0 && groupSelectedCount === allographGroup.graphs.length;
-
-  // Shift-click range selection (G6.6), anchored within this group.
-  const selectInGroup = useRangeSelect(selection);
-  const handleThumbSelect = (graphId: number, shiftKey: boolean) =>
-    selectInGroup(
-      allographGroup.graphs.map((g) => g.id),
-      graphId,
-      shiftKey
-    );
-
-  // Arrow-key roving across the thumb grid (G3.4 / G5.2). Left/Right/Home/End
-  // move focus between cells' focusable controls; vertical movement is left to
-  // the browser's default tab order (column count is layout-dependent).
-  const handleGridKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') {
-      return;
-    }
-    const grid = e.currentTarget;
-    const cells = Array.from(grid.querySelectorAll<HTMLElement>('[data-thumb-focusable]'));
-    if (cells.length === 0) return;
-    const current = document.activeElement as HTMLElement | null;
-    const idx = current ? cells.indexOf(current) : -1;
-    let next = idx;
-    if (e.key === 'ArrowRight') next = idx < cells.length - 1 ? idx + 1 : 0;
-    else if (e.key === 'ArrowLeft') next = idx > 0 ? idx - 1 : cells.length - 1;
-    else if (e.key === 'Home') next = 0;
-    else if (e.key === 'End') next = cells.length - 1;
-    if (next !== idx && cells[next]) {
-      e.preventDefault();
-      cells[next].focus();
-    }
-  };
-
-  return (
-    <div id={`${anchorId}-allograph-${allographGroup.allographId ?? 'none'}`} className="space-y-3">
-      {/* Sticky inside the section so the per-allograph actions follow the
-          user down a long thumb grid. `top-48` (192px) clears the page-level
-          toolbar (top-28 offset + ~64px height + ~16px gap); bg-background
-          + blur keeps the seam clean. Actions sit immediately next to the
-          title (left-aligned cluster) instead of across the row, so the
-          "Select all" / "Add selected" buttons are visually anchored to the
-          allograph they act on. */}
-      <div className="sticky top-[var(--gallery-sticky-top-2,12rem)] z-20 -mx-1 flex flex-wrap items-center gap-3 rounded-md bg-background/95 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-        <h3 className="flex items-baseline gap-2 text-lg font-semibold">
-          {allographGroup.allographName}
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-            {allographGroup.graphs.length}
-          </span>
-          {groupSelectedCount > 0 && (
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              {groupSelectedCount} selected
-            </span>
-          )}
-        </h3>
-
-        <div className="flex items-center gap-1.5">
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 gap-1.5"
-            onClick={() =>
-              allSelected
-                ? selection.removeMany(allographGroup.graphs.map((g) => g.id))
-                : selection.addMany(allographGroup.graphs.map((g) => g.id))
-            }
-          >
-            {allSelected ? (
-              <>
-                <Square className="h-3.5 w-3.5" />
-                Unselect all
-              </>
-            ) : (
-              <>
-                <ListChecks className="h-3.5 w-3.5" />
-                Select all
-              </>
-            )}
-          </Button>
-
-          {!annotatingMode && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 gap-1.5"
-              disabled={groupSelectedCount === 0}
-              onClick={onAddGroupToCollection}
-            >
-              <Star className="h-3.5 w-3.5" />
-              Add selected
-            </Button>
-          )}
-        </div>
-      </div>
-
-      <div
-        role="grid"
-        aria-label={`${allographGroup.allographName} graphs (${handName})`}
-        className="flex flex-wrap gap-3"
-        onKeyDown={handleGridKeyDown}
-      >
-        {allographGroup.graphs.map((graph) => (
-          <GraphThumb
-            key={graph.id}
-            graph={graph}
-            accent={accent}
-            density={density}
-            allographName={allographGroup.allographName}
-            handName={handName}
-            iiifImage={iiifImage}
-            manuscriptId={manuscriptId}
-            imageId={imageId}
-            isSelected={selection.selected.has(graph.id)}
-            onSelect={(shiftKey) => handleThumbSelect(graph.id, shiftKey)}
-            canEdit={canEdit}
-            annotatingMode={annotatingMode}
-            onEdit={() => onEditGraph(graph.id)}
-            onDelete={() => onDeleteGraph(graph.id)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Per-graph thumbnail
-// ---------------------------------------------------------------------------
-
-interface GraphThumbProps {
-  graph: BackendGraph;
-  accent: string;
-  density: ThumbDensity;
-  allographName: string;
-  handName: string;
-  iiifImage: string;
-  manuscriptId: string;
-  imageId: string;
-  isSelected: boolean;
-  onSelect: (shiftKey: boolean) => void;
-  canEdit: boolean;
-  annotatingMode: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-}
-
-function GraphThumb({
-  graph,
-  accent,
-  density,
-  allographName,
-  handName,
-  iiifImage,
-  manuscriptId,
-  imageId,
-  isSelected,
-  onSelect,
-  canEdit,
-  annotatingMode,
-  onEdit,
-  onDelete,
-}: GraphThumbProps) {
-  const href = `/manuscripts/${manuscriptId}/images/${imageId}?graph=${graph.id}`;
-  const widthClass = DENSITY_WIDTH[density];
-
-  // Selection ring + hover ring on the image element so it hugs the glyph.
-  const thumbClassName = cn(
-    'flex aspect-square items-center justify-center overflow-hidden rounded transition',
-    widthClass,
-    isSelected
-      ? 'ring-2 ring-primary ring-offset-2'
-      : 'hover:ring-2 hover:ring-primary/40 hover:ring-offset-2'
-  );
-  const tooltipLabel = annotatingMode
-    ? isSelected
-      ? 'Unselect graph'
-      : 'Select graph'
-    : canEdit
-      ? 'Edit graph'
-      : 'View graph in the manuscript viewer';
-
-  return (
-    // role=gridcell + content-visibility:auto so offscreen thumbs skip layout
-    // and paint work on dense folios (G2.2). contain-intrinsic-size reserves
-    // roughly the rendered height to avoid scrollbar jump.
-    <div
-      role="gridcell"
-      className="group relative flex flex-col gap-1.5"
-      style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 12rem' }}
-    >
-      {/* Always-visible selection toggle. */}
-      <button
-        type="button"
-        onClick={(e) => onSelect(e.shiftKey)}
-        aria-pressed={isSelected}
-        aria-label={isSelected ? 'Unselect graph' : 'Select graph'}
-        className={cn(
-          'absolute left-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md border text-xs shadow-sm transition',
-          isSelected
-            ? 'border-primary bg-primary text-primary-foreground'
-            : 'border-foreground/30 bg-background/95 text-transparent hover:border-primary hover:text-primary group-hover:text-muted-foreground'
-        )}
-      >
-        ✓
-      </button>
-
-      {/* Per-hand accent dot (G6.9). */}
-      <span
-        aria-hidden
-        className="absolute right-1.5 top-1.5 z-10 h-2.5 w-2.5 rounded-full ring-1 ring-background"
-        style={{ backgroundColor: accent }}
-      />
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {annotatingMode ? (
-            <button
-              type="button"
-              data-thumb-focusable
-              onClick={(e) => onSelect(e.shiftKey)}
-              className={thumbClassName}
-              aria-label={tooltipLabel}
-            >
-              <GraphThumbImage graph={graph} iiifImage={iiifImage} density={density} />
-            </button>
-          ) : (
-            <Link href={href} data-thumb-focusable className={thumbClassName}>
-              <GraphThumbImage graph={graph} iiifImage={iiifImage} density={density} />
-            </Link>
-          )}
-        </TooltipTrigger>
-        {/* Hover peek (G6.5): richer context without entering annotating mode. */}
-        <TooltipContent
-          side="top"
-          className="max-w-xs border border-border bg-popover px-3 py-2 text-popover-foreground shadow-lg"
-        >
-          <GraphPeek
-            graph={graph}
-            allographName={allographName}
-            handName={handName}
-            actionLabel={tooltipLabel}
-          />
-        </TooltipContent>
-      </Tooltip>
-
-      {/* When the user can edit (admin), always render the footer slot — even
-          in view mode — so toggling annotating mode doesn't reflow the grid. */}
-      {canEdit && (
-        <div
-          className={cn('mt-1 space-y-1.5', widthClass, !annotatingMode && 'invisible')}
-          aria-hidden={!annotatingMode}
-        >
-          <div className="flex gap-1.5">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 flex-1 gap-1.5 text-xs"
-              onClick={onEdit}
-              tabIndex={annotatingMode ? 0 : -1}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Edit
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 gap-1.5 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={onDelete}
-              tabIndex={annotatingMode ? 0 : -1}
-              aria-label={`Delete graph #${graph.id}`}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          <AnnotatingDetails graph={graph} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Lazy IIIF thumbnail — only resolves its bounded URL once scrolled into view
-// (G2.1), so a dense folio doesn't fire hundreds of info.json-driven requests
-// on mount. Kept as its own component so the hook is gated behind the
-// in-view check.
-function GraphThumbImage({
-  graph,
-  iiifImage,
-  density,
-}: {
-  graph: BackendGraph;
-  iiifImage: string;
-  density: ThumbDensity;
-}) {
-  const ref = React.useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref);
-  return (
-    <span ref={ref} className="flex aspect-square h-full w-full items-center justify-center">
-      {inView ? (
-        <LoadedThumbImage graph={graph} iiifImage={iiifImage} density={density} />
-      ) : (
-        <span className="flex h-full w-full items-center justify-center bg-muted text-xs text-muted-foreground">
-          …
-        </span>
-      )}
-    </span>
-  );
-}
-
-function LoadedThumbImage({
-  graph,
-  iiifImage,
-  density,
-}: {
-  graph: BackendGraph;
-  iiifImage: string;
-  density: ThumbDensity;
-}) {
-  // Legacy GeoJSON polygons are stored bottom-left origin (Web Mercator);
-  // useIiifThumbnailUrl handles the y-flip and bounds clamping via info.json.
-  const annotationJson = React.useMemo(() => JSON.stringify(graph.annotation), [graph.annotation]);
-  const thumb = useIiifThumbnailUrl(iiifImage, annotationJson, DENSITY_THUMB_PX[density]);
-  if (!thumb) {
-    return (
-      <span className="flex h-full w-full items-center justify-center bg-muted text-xs text-muted-foreground">
-        …
-      </span>
-    );
-  }
-  return (
-    // Fills the box: small crops arrive at their own size, so S/M/L relies on this scaling.
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={thumb}
-      alt={`Annotation ${graph.id}`}
-      className="h-full w-full object-contain"
-      loading="lazy"
-    />
-  );
-}
-
-// Hover-peek body: allograph, hand, and described features/positions.
-function GraphPeek({
-  graph,
-  allographName,
-  handName,
-  actionLabel,
-}: {
-  graph: BackendGraph;
-  allographName: string;
-  handName: string;
-  actionLabel: string;
-}) {
-  const components = graph.graphcomponent_set ?? [];
-  const positions = graph.position_details ?? [];
-  return (
-    <div className="space-y-1 text-xs">
-      <div className="font-medium text-foreground">{allographName}</div>
-      <div className="text-muted-foreground">{handName}</div>
-      {components.length > 0 && (
-        <div className="text-muted-foreground">
-          {components
-            .map((c) =>
-              c.feature_details && c.feature_details.length > 0
-                ? `${c.component_name ?? `#${c.component}`}: ${c.feature_details.map((f) => f.name).join(', ')}`
-                : (c.component_name ?? `#${c.component}`)
-            )
-            .join(' · ')}
-        </div>
-      )}
-      {positions.length > 0 && (
-        <div className="italic text-muted-foreground">
-          {positions.map((p) => p.name).join(', ')}
-        </div>
-      )}
-      {components.length === 0 && positions.length === 0 && (
-        <div className="italic text-muted-foreground">Undescribed</div>
-      )}
-      <div className="pt-0.5 text-muted-foreground/80">{actionLabel}</div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Annotating-mode inline detail (admin)
-// ---------------------------------------------------------------------------
-
-function AnnotatingDetails({ graph }: { graph: BackendGraph }) {
-  const components = graph.graphcomponent_set ?? [];
-  const positions = graph.position_details ?? [];
-
-  if (components.length === 0 && positions.length === 0) {
-    return <p className="text-center text-[11px] italic text-muted-foreground/80">Undescribed</p>;
-  }
-
-  return (
-    // Bumped from 10px (verging on illegible) to 11px with stronger contrast
-    // for the supporting feature/position text. Component names use the
-    // foreground colour for readable scanning at 11px.
-    <div className="space-y-0.5 text-[11px] leading-snug text-muted-foreground">
-      {components.map((c, i) => (
-        <div key={`${c.component}-${i}`}>
-          <span className="font-medium text-foreground">
-            {c.component_name ?? `#${c.component}`}
-          </span>
-          {c.feature_details && c.feature_details.length > 0 && (
-            <span className="text-foreground/70">
-              {' — '}
-              {c.feature_details.map((f) => f.name).join(', ')}
-            </span>
-          )}
-        </div>
-      ))}
-      {positions.length > 0 && (
-        <div className="italic text-foreground/70">{positions.map((p) => p.name).join(', ')}</div>
-      )}
-    </div>
-  );
-}
-
-// Tiny inline keyboard-shortcut chip; styled like the GitHub/Linear pattern.
-function Kbd({ className, children }: { className?: string; children: React.ReactNode }) {
-  return (
-    <kbd
-      className={cn(
-        'inline-flex h-4 min-w-4 items-center justify-center rounded border bg-muted px-1 font-sans text-[10px] font-medium text-muted-foreground',
-        className
-      )}
-    >
-      {children}
-    </kbd>
   );
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { ArrowDownWideNarrow, Check, ListFilter, Users, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { Check, ListFilter, Users, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import {
@@ -9,7 +10,6 @@ import {
   type NamedOption,
   type SortKey,
   SORT_KEYS,
-  SORT_LABELS,
 } from '@/lib/annotation-gallery-filters';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,8 +26,6 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -39,19 +37,24 @@ export interface HandOption {
   name: string;
 }
 
+/** How many graphs on the image each description status would show. */
+export type StatusCounts = Record<GalleryFilterState['status'], number>;
+
 interface GalleryFilterControlsProps {
   filters: GalleryFilterState;
   onChange: (next: GalleryFilterState) => void;
   handOptions: HandOption[];
   featureOptions: NamedOption[];
   positionOptions: NamedOption[];
+  statusCounts: StatusCounts;
 }
 
-const STATUS_OPTIONS: SegmentedOption<GalleryFilterState['status']>[] = [
-  { value: 'all', label: 'All' },
-  { value: 'described', label: 'Described' },
-  { value: 'undescribed', label: 'Undescribed' },
-];
+const SORT_MESSAGE_KEYS: Record<SortKey, 'sortAz' | 'sortZa' | 'sortMost' | 'sortFewest'> = {
+  'allograph-asc': 'sortAz',
+  'allograph-desc': 'sortZa',
+  'count-desc': 'sortMost',
+  'count-asc': 'sortFewest',
+};
 
 // The hand/status/feature/sort controls that sit inline in the gallery
 // toolbar, next to the allograph search input.
@@ -61,7 +64,9 @@ export function GalleryFilterControls({
   handOptions,
   featureOptions,
   positionOptions,
+  statusCounts,
 }: GalleryFilterControlsProps) {
+  const t = useTranslations('manuscript.gallery');
   const toggleHand = (key: number | null) => {
     const has = filters.hands.includes(key);
     onChange({
@@ -70,17 +75,30 @@ export function GalleryFilterControls({
     });
   };
 
-  const markupActive = filters.features.length + filters.positions.length;
+  const statusOptions: SegmentedOption<GalleryFilterState['status']>[] = (
+    [
+      ['all', t('statusAll')],
+      ['described', t('statusDescribed')],
+      ['undescribed', t('statusUndescribed')],
+    ] as const
+  ).map(([value, label]) => ({
+    value,
+    label: (
+      <>
+        {label} <span className="tabular-nums opacity-70">{statusCounts[value]}</span>
+      </>
+    ),
+  }));
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <>
       {/* Hand filter */}
       {handOptions.length > 1 && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-9 gap-1.5">
-              <Users className="h-4 w-4" />
-              Hands
+              <Users className="h-4 w-4" aria-hidden />
+              {t('hands')}
               {filters.hands.length > 0 && (
                 <Badge variant="secondary" className="ml-0.5 px-1.5">
                   {filters.hands.length}
@@ -89,7 +107,7 @@ export function GalleryFilterControls({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
-            <DropdownMenuLabel>Filter by hand</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('filterByHand')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {handOptions.map((h) => (
               <DropdownMenuCheckboxItem
@@ -107,47 +125,52 @@ export function GalleryFilterControls({
 
       {/* Description status */}
       <Segmented
-        ariaLabel="Description status"
+        ariaLabel={t('statusLabel')}
         value={filters.status}
-        options={STATUS_OPTIONS}
+        options={statusOptions}
         onChange={(status) => onChange({ ...filters, status })}
+        className="h-9"
       />
 
-      {/* Feature / position filter */}
-      {featureOptions.length + positionOptions.length > 0 && (
+      {/* Feature / position filter. Shown even with nothing to offer, so the
+          toolbar keeps its shape and says why the filter is empty. */}
+      {featureOptions.length + positionOptions.length > 0 ? (
         <MarkupFilter
           filters={filters}
           onChange={onChange}
           featureOptions={featureOptions}
           positionOptions={positionOptions}
-          activeCount={markupActive}
         />
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 gap-1.5 border-dashed"
+          disabled
+          title={t('featuresNoneTitle')}
+        >
+          <ListFilter className="h-4 w-4" aria-hidden />
+          {t('features')}
+          <span className="font-normal text-muted-foreground">{t('featuresNone')}</span>
+        </Button>
       )}
 
       {/* Sort */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-9 gap-1.5">
-            <ArrowDownWideNarrow className="h-4 w-4" />
-            <span className="hidden sm:inline">{SORT_LABELS[filters.sort]}</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Sort allographs</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup
-            value={filters.sort}
-            onValueChange={(v) => onChange({ ...filters, sort: v as SortKey })}
-          >
-            {SORT_KEYS.map((key) => (
-              <DropdownMenuRadioItem key={key} value={key}>
-                {SORT_LABELS[key]}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+      <label className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+        {t('sort')}
+        <select
+          value={filters.sort}
+          onChange={(e) => onChange({ ...filters, sort: e.target.value as SortKey })}
+          className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          {SORT_KEYS.map((key) => (
+            <option key={key} value={key}>
+              {t(SORT_MESSAGE_KEYS[key])}
+            </option>
+          ))}
+        </select>
+      </label>
+    </>
   );
 }
 
@@ -156,14 +179,14 @@ function MarkupFilter({
   onChange,
   featureOptions,
   positionOptions,
-  activeCount,
 }: {
   filters: GalleryFilterState;
   onChange: (next: GalleryFilterState) => void;
   featureOptions: NamedOption[];
   positionOptions: NamedOption[];
-  activeCount: number;
 }) {
+  const t = useTranslations('manuscript.gallery');
+  const activeCount = filters.features.length + filters.positions.length;
   const toggle = (kind: 'features' | 'positions', id: number) => {
     const current = filters[kind];
     const has = current.includes(id);
@@ -177,8 +200,8 @@ function MarkupFilter({
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="h-9 gap-1.5">
-          <ListFilter className="h-4 w-4" />
-          Features
+          <ListFilter className="h-4 w-4" aria-hidden />
+          {t('features')}
           {activeCount > 0 && (
             <Badge variant="secondary" className="ml-0.5 px-1.5">
               {activeCount}
@@ -188,11 +211,11 @@ function MarkupFilter({
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search features / positions…" />
+          <CommandInput placeholder={t('searchFeatures')} />
           <CommandList>
-            <CommandEmpty>No matches.</CommandEmpty>
+            <CommandEmpty>{t('noFeatureMatches')}</CommandEmpty>
             {featureOptions.length > 0 && (
-              <CommandGroup heading="Features">
+              <CommandGroup heading={t('features')}>
                 {featureOptions.map((f) => (
                   <CommandItem
                     key={`f-${f.id}`}
@@ -211,7 +234,7 @@ function MarkupFilter({
               </CommandGroup>
             )}
             {positionOptions.length > 0 && (
-              <CommandGroup heading="Positions">
+              <CommandGroup heading={t('positions')}>
                 {positionOptions.map((p) => (
                   <CommandItem
                     key={`p-${p.id}`}
@@ -249,6 +272,7 @@ interface GalleryFilterChipsProps {
   positionLabel: (id: number) => string;
 }
 
+// Renders the chips inline (no wrapper) so they flow in the summary line.
 export function GalleryFilterChips({
   filters,
   onChange,
@@ -257,40 +281,41 @@ export function GalleryFilterChips({
   featureLabel,
   positionLabel,
 }: GalleryFilterChipsProps) {
+  const t = useTranslations('manuscript.gallery');
   const chips: { key: string; label: string; remove: () => void }[] = [];
 
   if (filters.allograph.trim()) {
     chips.push({
       key: 'allograph',
-      label: `Allograph: “${filters.allograph.trim()}”`,
+      label: t('chipAllograph', { value: filters.allograph.trim() }),
       remove: () => onChange({ ...filters, allograph: '' }),
     });
   }
   for (const h of filters.hands) {
     chips.push({
       key: `hand-${h ?? 'unattributed'}`,
-      label: `Hand: ${handLabel(h)}`,
+      label: t('chipHand', { value: handLabel(h) }),
       remove: () => onChange({ ...filters, hands: filters.hands.filter((x) => x !== h) }),
     });
   }
   if (filters.status !== 'all') {
     chips.push({
       key: 'status',
-      label: filters.status === 'described' ? 'Described' : 'Undescribed',
+      label: filters.status === 'described' ? t('statusDescribed') : t('statusUndescribed'),
       remove: () => onChange({ ...filters, status: 'all' }),
     });
   }
   for (const id of filters.features) {
     chips.push({
       key: `feature-${id}`,
-      label: `Feature: ${featureLabel(id)}`,
+      label: t('chipFeature', { value: featureLabel(id) }),
       remove: () => onChange({ ...filters, features: filters.features.filter((x) => x !== id) }),
     });
   }
   for (const id of filters.positions) {
     chips.push({
       key: `position-${id}`,
-      label: `Position: ${positionLabel(id)}`,
+      label: t('chipPosition', { value: positionLabel(id) }),
       remove: () => onChange({ ...filters, positions: filters.positions.filter((x) => x !== id) }),
     });
   }
@@ -298,25 +323,29 @@ export function GalleryFilterChips({
   if (chips.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <>
       {chips.map((chip) => (
-        <Badge key={chip.key} variant="secondary" className="gap-1 py-1 pl-2.5 pr-1">
+        <Badge
+          key={chip.key}
+          variant="secondary"
+          className="gap-1 py-0.5 pl-2.5 pr-1 font-normal text-foreground"
+        >
           {chip.label}
           <button
             type="button"
             onClick={chip.remove}
-            aria-label={`Remove filter ${chip.label}`}
+            aria-label={t('removeFilter', { label: chip.label })}
             className="rounded-full p-0.5 hover:bg-background/60"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3 w-3" aria-hidden />
           </button>
         </Badge>
       ))}
       {chips.length > 1 && (
-        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onClearAll}>
-          Clear all
+        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={onClearAll}>
+          {t('clearAll')}
         </Button>
       )}
-    </div>
+    </>
   );
 }
