@@ -660,7 +660,8 @@ export function AnnotationGallery({
           onClear={selection.clear}
         />
 
-        {showBackToTop && (
+        {/* Gives way to the selection bar, which it would cover on a phone. */}
+        {showBackToTop && selectedShown.length + selectedHiddenCount === 0 && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

@@ -37,6 +37,9 @@ export interface HandOption {
   name: string;
 }
 
+/** Segmented toggles stretch to the toolbar's 36px control height. */
+export const TOOLBAR_SEGMENTED = 'h-9 [&>button]:h-full';
+
 /** How many graphs on the image each description status would show. */
 export type StatusCounts = Record<GalleryFilterState['status'], number>;
 
@@ -129,7 +132,7 @@ export function GalleryFilterControls({
         value={filters.status}
         options={statusOptions}
         onChange={(status) => onChange({ ...filters, status })}
-        className="h-9"
+        className={TOOLBAR_SEGMENTED}
       />
 
       {/* Feature / position filter. Shown even with nothing to offer, so the

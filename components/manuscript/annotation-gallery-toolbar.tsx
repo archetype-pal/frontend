@@ -15,6 +15,7 @@ import {
   GalleryFilterControls,
   type HandOption,
   type StatusCounts,
+  TOOLBAR_SEGMENTED,
 } from '@/components/manuscript/annotation-gallery-filter-bar';
 
 /** CSS variable carrying the toolbar's height, so anchors can clear it. */
@@ -49,8 +50,9 @@ interface GalleryToolbarProps {
 }
 
 // One fixed-size toolbar: the controls on top, and a summary line under them
-// that always says what is shown and which filters are on. It pins below the
-// site header and publishes its own height, so anchor jumps land below it.
+// that always says what is shown and which filters are on. From the sm
+// breakpoint up it pins below the site header and publishes its own height,
+// so anchor jumps land below it.
 export function GalleryToolbar({
   filters,
   onFiltersChange,
@@ -81,13 +83,20 @@ export function GalleryToolbar({
     const el = rootRef.current;
     if (!el) return;
     const root = document.documentElement;
-    const publish = () =>
-      root.style.setProperty(GALLERY_TOOLBAR_HEIGHT_VAR, `${el.offsetHeight}px`);
+    // On phones the toolbar scrolls away (pinned, it would cover a third of
+    // the screen), so it only takes room above an anchor while it is pinned.
+    const publish = () => {
+      const pinned = getComputedStyle(el).position === 'sticky';
+      root.style.setProperty(GALLERY_TOOLBAR_HEIGHT_VAR, pinned ? `${el.offsetHeight}px` : '0px');
+    };
     publish();
     const observer = new ResizeObserver(publish);
     observer.observe(el);
+    // Crossing the breakpoint can pin or unpin it without a size change.
+    window.addEventListener('resize', publish);
     return () => {
       observer.disconnect();
+      window.removeEventListener('resize', publish);
       root.style.removeProperty(GALLERY_TOOLBAR_HEIGHT_VAR);
     };
   }, []);
@@ -95,7 +104,7 @@ export function GalleryToolbar({
   return (
     <div
       ref={rootRef}
-      className="sticky top-[var(--site-header-h,0px)] z-30 -mx-1 bg-background/95 px-1 pb-1 pt-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/85"
+      className="relative z-30 sm:sticky sm:top-[var(--site-header-h,0px)] -mx-1 bg-background/95 px-1 pb-1 pt-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/85"
     >
       <div
         className={cn(
@@ -130,7 +139,11 @@ export function GalleryToolbar({
             statusCounts={statusCounts}
           />
 
-          <DensityControl density={density} onChange={onDensityChange} />
+          <DensityControl
+            density={density}
+            onChange={onDensityChange}
+            className={TOOLBAR_SEGMENTED}
+          />
 
           {canEdit && (
             <Tooltip>

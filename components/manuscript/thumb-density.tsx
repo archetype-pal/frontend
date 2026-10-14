@@ -41,9 +41,11 @@ export function useThumbDensity(): [ThumbDensity, (next: ThumbDensity) => void] 
 export function DensityControl({
   density,
   onChange,
+  className,
 }: {
   density: ThumbDensity;
   onChange: (value: ThumbDensity) => void;
+  className?: string;
 }) {
   const t = useTranslations('common.thumbnailSize');
   const options: SegmentedOption<ThumbDensity>[] = [
@@ -51,5 +53,13 @@ export function DensityControl({
     { value: 'comfortable', label: 'M', title: t('comfortable') },
     { value: 'large', label: 'L', title: t('large') },
   ];
-  return <Segmented ariaLabel={t('label')} value={density} options={options} onChange={onChange} />;
+  return (
+    <Segmented
+      ariaLabel={t('label')}
+      value={density}
+      options={options}
+      onChange={onChange}
+      className={className}
+    />
+  );
 }
