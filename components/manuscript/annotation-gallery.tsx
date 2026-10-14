@@ -41,8 +41,8 @@ import {
   collectFeatures,
   collectPositions,
   filtersFromParams,
-  filtersToQuery,
   hasActiveFilters,
+  withFiltersInSearch,
 } from '@/lib/annotation-gallery-filters';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -183,15 +183,19 @@ export function AnnotationGallery({
   const searchParams = useSearchParams();
 
   // Filter/sort state, initialised from the URL so a shared link reproduces
-  // the view. Written back to the URL (replace, no history entries) on change.
+  // the view. Written back to the URL on change with history.replaceState, not
+  // router.replace: this route renders on the server, so a router navigation
+  // would re-run its fetches on every keystroke. Other params are kept.
   const [filters, setFilters] = React.useState<GalleryFilterState>(() =>
     filtersFromParams(new URLSearchParams(searchParams.toString()))
   );
   React.useEffect(() => {
-    const params = new URLSearchParams(filtersToQuery(filters));
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [filters, pathname, router]);
+    const qs = withFiltersInSearch(window.location.search, filters);
+    const next = qs ? `${pathname}?${qs}` : pathname;
+    if (next !== `${window.location.pathname}${window.location.search}`) {
+      window.history.replaceState(null, '', next);
+    }
+  }, [filters, pathname]);
 
   const [annotatingMode, setAnnotatingMode] = React.useState(false);
   // Two scroll thresholds drive UI affordances:
