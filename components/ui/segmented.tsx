@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils';
 
 export interface SegmentedOption<T extends string> {
   value: T;
-  label: string;
+  /** Usually text; a node lets a segment carry a count beside its name. */
+  label: React.ReactNode;
   disabled?: boolean;
   title?: string;
 }

@@ -32,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Segmented, type SegmentedOption } from '@/components/ui/segmented';
 
 export interface HandOption {
   key: number | null;
@@ -46,7 +47,7 @@ interface GalleryFilterControlsProps {
   positionOptions: NamedOption[];
 }
 
-const STATUS_OPTIONS: { value: GalleryFilterState['status']; label: string }[] = [
+const STATUS_OPTIONS: SegmentedOption<GalleryFilterState['status']>[] = [
   { value: 'all', label: 'All' },
   { value: 'described', label: 'Described' },
   { value: 'undescribed', label: 'Undescribed' },
@@ -105,29 +106,12 @@ export function GalleryFilterControls({
       )}
 
       {/* Description status */}
-      <div
-        role="radiogroup"
-        aria-label="Description status"
-        className="inline-flex overflow-hidden rounded-md border"
-      >
-        {STATUS_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            role="radio"
-            aria-checked={filters.status === opt.value}
-            onClick={() => onChange({ ...filters, status: opt.value })}
-            className={cn(
-              'border-l px-2.5 py-1.5 text-xs font-medium transition first:border-l-0',
-              filters.status === opt.value
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
-            )}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        ariaLabel="Description status"
+        value={filters.status}
+        options={STATUS_OPTIONS}
+        onChange={(status) => onChange({ ...filters, status })}
+      />
 
       {/* Feature / position filter */}
       {featureOptions.length + positionOptions.length > 0 && (
