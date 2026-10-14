@@ -34,6 +34,7 @@ import { PreviewAsPublicDialog } from '@/components/backoffice/preview-as-public
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { invalidateAfterImageTextDelete } from '@/lib/backoffice/image-text-cache';
 import {
   deleteImageText,
   fetchImageText,
@@ -144,8 +145,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
     mutationFn: () => deleteImageText(textId),
     onSuccess: () => {
       toast.success(t('imageTexts.toastDeleted', { id: textId }));
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.list() });
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.textsMonitor.overview() });
+      void invalidateAfterImageTextDelete(queryClient);
       // The detail query would 404 if we left it cached.
       queryClient.removeQueries({ queryKey: backofficeKeys.imageTexts.detail(textId) });
       router.push('/backoffice/texts');

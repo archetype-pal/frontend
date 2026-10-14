@@ -66,6 +66,7 @@ import { transitionImageText, type ImageTextStatus } from '@/services/backoffice
 import { useSelectionSet } from '@/hooks/use-selection-set';
 import { downloadBlob } from '@/lib/download';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { invalidateAfterImageTextDelete } from '@/lib/backoffice/image-text-cache';
 
 const STATUS_TONE: Record<ImageTextStatus, string> = {
   Draft:
@@ -256,7 +257,7 @@ export function TextsList() {
       toast.success(t('textsList.toastBulkDeleted', { count: affected }));
       selection.clear();
       setConfirmBulkDelete(false);
-      invalidate();
+      void invalidateAfterImageTextDelete(queryClient);
     },
     onError: (err: Error) =>
       toast.error(t('textsList.toastBulkDeleteFailed'), { description: err.message }),

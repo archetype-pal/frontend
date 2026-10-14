@@ -107,6 +107,10 @@ export const backofficeKeys = {
         : ([...backofficeKeys.imageTexts.all(), 'list', filters] as const),
     detail: (id: number) => [...backofficeKeys.imageTexts.all(), 'detail', id] as const,
     history: (id: number) => [...backofficeKeys.imageTexts.all(), 'detail', id, 'history'] as const,
+    forImage: (itemImage?: number) =>
+      itemImage === undefined
+        ? ([...backofficeKeys.imageTexts.all(), 'for-image'] as const)
+        : ([...backofficeKeys.imageTexts.all(), 'for-image', itemImage] as const),
   },
   textsMonitor: {
     all: () => [...backofficeKeys.all, 'texts-monitor'] as const,
