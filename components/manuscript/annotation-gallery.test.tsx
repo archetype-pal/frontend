@@ -418,3 +418,18 @@ describe('AnnotationGallery collection', () => {
     expect(star.hasAttribute('disabled')).toBe(true);
   });
 });
+
+describe('AnnotationGallery back to top', () => {
+  it('gives way to the selection bar', () => {
+    renderGallery();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    act(() => {
+      window.dispatchEvent(new Event('scroll'));
+    });
+    expect(screen.getByRole('button', { name: 'Back to top' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select b graph 4190' }));
+    expect(screen.queryByRole('button', { name: 'Back to top' })).toBeNull();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+  });
+});
