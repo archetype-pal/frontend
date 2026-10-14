@@ -449,7 +449,11 @@
       "retryImageLabel": "Recharger l'image du graphème {id}",
       "collectionAdded": "{count, plural, one {# graphème ajouté} other {# graphèmes ajoutés}} à votre collection{already, plural, =0 {} other { (# déjà présent(s))}}.",
       "collectionAlreadyThere": "{count, plural, one {Ce graphème est} other {Ces graphèmes sont}} déjà dans votre collection.",
-      "viewCollection": "Voir la collection"
+      "viewCollection": "Voir la collection",
+      "addGraphToCollection": "Ajouter le graphème {id} à votre collection",
+      "removeGraphFromCollection": "Retirer le graphème {id} de votre collection",
+      "collectionAddedOne": "Graphème n°{id} ajouté à votre collection.",
+      "collectionRemovedOne": "Graphème n°{id} retiré de votre collection."
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Supprimer ce brouillon d'annotation éditoriale ?} other {Supprimer ce brouillon d'annotation publique ?}}\n\nIl sera abandonné localement.",

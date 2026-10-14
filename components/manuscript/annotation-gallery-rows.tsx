@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Check, Minus, Pencil, RefreshCw, Trash2 } from 'lucide-react';
+import { Check, Minus, Pencil, RefreshCw, Star, Trash2 } from 'lucide-react';
 
 import { useIiifThumbnail } from '@/hooks/use-iiif-thumbnail';
 import { useInView } from '@/hooks/use-in-view';
@@ -20,6 +20,13 @@ import {
   type ThumbDensity,
 } from '@/components/manuscript/thumb-density';
 import { GALLERY_SCROLL_MARGIN } from '@/components/manuscript/annotation-gallery-toolbar';
+
+/** The collection, as the rows need it: membership and a per-graph toggle. */
+export interface GraphCollection {
+  ready: boolean;
+  has: (graphId: number) => boolean;
+  toggle: (graph: BackendGraph) => void;
+}
 
 const allographAnchorId = (handId: number | null, allographId: number | null) =>
   `${handAnchorId(handId)}-allograph-${allographId ?? 'none'}`;
@@ -40,6 +47,7 @@ interface HandSectionProps {
   selection: SelectionSet<number>;
   onEditGraph: (graphId: number) => void;
   onDeleteGraph: (graphId: number) => void;
+  collection: GraphCollection;
 }
 
 export function HandSection({
@@ -54,6 +62,7 @@ export function HandSection({
   selection,
   onEditGraph,
   onDeleteGraph,
+  collection,
 }: HandSectionProps) {
   const t = useTranslations('manuscript.gallery');
   const anchorId = handAnchorId(handGroup.handId);
@@ -116,6 +125,7 @@ export function HandSection({
             selection={selection}
             onEditGraph={onEditGraph}
             onDeleteGraph={onDeleteGraph}
+            collection={collection}
           />
         ))}
       </div>
@@ -136,6 +146,7 @@ interface AllographRowProps {
   selection: SelectionSet<number>;
   onEditGraph: (graphId: number) => void;
   onDeleteGraph: (graphId: number) => void;
+  collection: GraphCollection;
 }
 
 // One allograph per row: its name, counts and a select-all box on the left,
@@ -153,6 +164,7 @@ function AllographRow({
   selection,
   onEditGraph,
   onDeleteGraph,
+  collection,
 }: AllographRowProps) {
   const t = useTranslations('manuscript.gallery');
   const { allographName, graphs } = allographGroup;
@@ -237,6 +249,9 @@ function AllographRow({
             annotatingMode={annotatingMode}
             onEdit={() => onEditGraph(graph.id)}
             onDelete={() => onDeleteGraph(graph.id)}
+            inCollection={collection.has(graph.id)}
+            collectionReady={collection.ready}
+            onToggleCollection={() => collection.toggle(graph)}
           />
         ))}
       </div>
@@ -291,6 +306,10 @@ interface GraphThumbProps {
   annotatingMode: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  inCollection: boolean;
+  /** False until the saved collection has loaded, when membership is unknown. */
+  collectionReady: boolean;
+  onToggleCollection: () => void;
 }
 
 function GraphThumb({
@@ -307,6 +326,9 @@ function GraphThumb({
   annotatingMode,
   onEdit,
   onDelete,
+  inCollection,
+  collectionReady,
+  onToggleCollection,
 }: GraphThumbProps) {
   const t = useTranslations('manuscript.gallery');
   const tCommon = useTranslations('common');
@@ -357,6 +379,38 @@ function GraphThumb({
         )}
       >
         <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
+      </button>
+
+      {/* Adds just this graph to the collection. A bare star with a light
+          halo, so it reads over any crop without covering it. */}
+      <button
+        type="button"
+        onClick={onToggleCollection}
+        disabled={!collectionReady}
+        aria-pressed={inCollection}
+        aria-label={
+          inCollection
+            ? t('removeGraphFromCollection', { id: graph.id })
+            : t('addGraphToCollection', { id: graph.id })
+        }
+        title={
+          inCollection
+            ? t('removeGraphFromCollection', { id: graph.id })
+            : t('addGraphToCollection', { id: graph.id })
+        }
+        className={cn(
+          'group/star absolute right-1 top-1 z-10 flex h-[30px] w-[30px] items-center justify-center rounded-md disabled:invisible',
+          inCollection ? 'text-amber-600' : 'text-foreground'
+        )}
+      >
+        <Star
+          aria-hidden
+          strokeWidth={1.75}
+          className={cn(
+            'h-[18px] w-[18px] drop-shadow-[0_0_1.5px_rgb(255_255_255/0.9)] transition group-hover/star:scale-110 group-hover/star:opacity-100 group-focus-visible/star:opacity-100',
+            inCollection ? 'fill-current opacity-85' : 'fill-white/50 opacity-55'
+          )}
+        />
       </button>
 
       <Tooltip>

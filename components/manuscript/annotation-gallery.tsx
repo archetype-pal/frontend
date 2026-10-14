@@ -49,7 +49,7 @@ import type {
   StatusCounts,
 } from '@/components/manuscript/annotation-gallery-filter-bar';
 import { GalleryToolbar } from '@/components/manuscript/annotation-gallery-toolbar';
-import { HandSection } from '@/components/manuscript/annotation-gallery-rows';
+import { type GraphCollection, HandSection } from '@/components/manuscript/annotation-gallery-rows';
 import { GallerySelectionBar } from '@/components/manuscript/annotation-gallery-selection-bar';
 
 const trashToastId = (graphId: number) => `gallery-trash-${graphId}`;
@@ -93,7 +93,7 @@ export function AnnotationGallery({
   const tCommon = useTranslations('common');
   const { user, token } = useAuth();
   const router = useRouter();
-  const { addItem, removeItems, isInCollection } = useCollection();
+  const { addItem, removeItem, removeItems, isInCollection, isHydrated } = useCollection();
   const canEdit = user?.is_staff ?? false;
   // Editing needs the hand and allograph names; without them it would half-work.
   const editingAvailable = canEdit && !supportingDataIncomplete;
@@ -462,6 +462,36 @@ export function AnnotationGallery({
     toCollectionItem,
   ]);
 
+  // The star on each graph: adds or removes just that graph, with Undo.
+  const toggleGraphInCollection = React.useCallback(
+    (g: BackendGraph) => {
+      const toastId = `gallery-collection-${g.id}`;
+      if (isInCollection(g.id, 'graph')) {
+        removeItem(g.id, 'graph');
+        toast.success(tGallery('collectionRemovedOne', { id: g.id }), {
+          id: toastId,
+          action: { label: tGallery('undo'), onClick: () => addItem(toCollectionItem(g)) },
+        });
+        return;
+      }
+      addItem(toCollectionItem(g));
+      toast.success(tGallery('collectionAddedOne', { id: g.id }), {
+        id: toastId,
+        action: { label: tGallery('undo'), onClick: () => removeItem(g.id, 'graph') },
+        cancel: { label: tGallery('viewCollection'), onClick: () => router.push('/collection') },
+      });
+    },
+    [addItem, isInCollection, removeItem, router, tGallery, toCollectionItem]
+  );
+  const graphCollection = React.useMemo<GraphCollection>(
+    () => ({
+      ready: isHydrated,
+      has: (graphId) => isInCollection(graphId, 'graph'),
+      toggle: toggleGraphInCollection,
+    }),
+    [isHydrated, isInCollection, toggleGraphInCollection]
+  );
+
   // The annotations fetch failed — show a recoverable error rather than the
   // empty state, which would falsely imply the image has no annotations.
   if (loadError) {
@@ -602,6 +632,7 @@ export function AnnotationGallery({
             selection={selection}
             onEditGraph={(graphId) => openEditor([graphId])}
             onDeleteGraph={handleDeleteGraph}
+            collection={graphCollection}
           />
         ))}
 

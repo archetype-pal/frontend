@@ -449,7 +449,11 @@
       "retryImageLabel": "Retry the image of graph {id}",
       "collectionAdded": "Added {count, plural, one {# graph} other {# graphs}} to your collection{already, plural, =0 {} other { (# already there)}}.",
       "collectionAlreadyThere": "{count, plural, one {That graph is} other {Those graphs are}} already in your collection.",
-      "viewCollection": "View collection"
+      "viewCollection": "View collection",
+      "addGraphToCollection": "Add graph {id} to your collection",
+      "removeGraphFromCollection": "Remove graph {id} from your collection",
+      "collectionAddedOne": "Added graph #{id} to your collection.",
+      "collectionRemovedOne": "Removed graph #{id} from your collection."
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Delete this editorial draft annotation?} other {Delete this public draft annotation?}}\n\nThis will discard it locally.",

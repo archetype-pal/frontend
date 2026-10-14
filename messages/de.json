@@ -449,7 +449,11 @@
       "retryImageLabel": "Bild von Graph {id} erneut laden",
       "collectionAdded": "{count, plural, one {# Graph} other {# Graphen}} zu Ihrer Sammlung hinzugefügt{already, plural, =0 {} other { (# bereits vorhanden)}}.",
       "collectionAlreadyThere": "{count, plural, one {Dieser Graph ist} other {Diese Graphen sind}} bereits in Ihrer Sammlung.",
-      "viewCollection": "Sammlung ansehen"
+      "viewCollection": "Sammlung ansehen",
+      "addGraphToCollection": "Graph {id} zu Ihrer Sammlung hinzufügen",
+      "removeGraphFromCollection": "Graph {id} aus Ihrer Sammlung entfernen",
+      "collectionAddedOne": "Graph #{id} zu Ihrer Sammlung hinzugefügt.",
+      "collectionRemovedOne": "Graph #{id} aus Ihrer Sammlung entfernt."
     },
     "delete": {
       "draftConfirm": "{kind, select, editorial {Diesen editorischen Entwurf löschen?} other {Diesen öffentlichen Entwurf löschen?}}\n\nEr wird lokal verworfen.",
