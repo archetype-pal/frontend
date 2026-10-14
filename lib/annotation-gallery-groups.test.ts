@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import type { BackendGraph } from '@/services/annotations';
 import type { HandType } from '@/types/hands';
+import { EMPTY_FILTERS } from './annotation-gallery-filters';
 import {
   type GroupLabels,
+  filterAndGroup,
   groupAnnotations,
   handAccentColor,
   handAnchorId,
@@ -140,6 +142,44 @@ describe('groupAnnotations', () => {
     );
 
     expect(hand.allographs.map((a) => a.allographId)).toEqual([10, null]);
+  });
+});
+
+describe('filterAndGroup', () => {
+  const graphs = [
+    makeGraph({ id: 1, allograph: 10, is_described: true }),
+    makeGraph({ id: 2, allograph: 11 }),
+    makeGraph({ id: 3, allograph: 11 }),
+    makeGraph({ id: 4, allograph: 12, hand: 200 }),
+  ];
+  const hands = [makeHand(), makeHand({ id: 200, name: 'Second Hand' })];
+  const shown = (filters: Partial<typeof EMPTY_FILTERS>) =>
+    filterAndGroup(graphs, { ...EMPTY_FILTERS, ...filters }, hands, ALLOGRAPHS, LABELS).map((h) => [
+      h.handName,
+      h.allographs.map((a) => [a.allographName, a.graphs.map((g) => g.id)]),
+    ]);
+
+  it('applies the graph filters before grouping', () => {
+    expect(shown({ status: 'undescribed' })).toEqual([
+      ['Main Hand', [['b', [2, 3]]]],
+      ['Second Hand', [['s, long', [4]]]],
+    ]);
+  });
+
+  it('sorts the allograph groups in the chosen sort', () => {
+    expect(shown({ sort: 'count-desc', hands: [100] })).toEqual([
+      [
+        'Main Hand',
+        [
+          ['b', [2, 3]],
+          ['a', [1]],
+        ],
+      ],
+    ]);
+  });
+
+  it('matches the allograph name search anywhere in the label, and drops emptied hands', () => {
+    expect(shown({ allograph: 'LON' })).toEqual([['Second Hand', [['s, long', [4]]]]]);
   });
 });
 
