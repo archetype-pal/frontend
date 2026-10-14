@@ -27,6 +27,7 @@ import {
   sendTestEmail,
   type ServiceCheck,
 } from '@/services/backoffice/sanity-checks';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 /** Best-effort human message from a failed sendTestEmail call. */
 function extractErrorDetail(err: unknown): string | undefined {
@@ -72,7 +73,7 @@ export function SanityChecksDashboard() {
   const { token } = useAuth();
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ['backoffice', 'sanity-checks'],
+    queryKey: backofficeKeys.sanityChecks(),
     queryFn: () => getSanityChecks(),
     enabled: !!token,
     staleTime: 30_000,

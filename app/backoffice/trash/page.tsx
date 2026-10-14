@@ -97,7 +97,7 @@ export default function TrashPage() {
   // Keyed under the graphs namespace so invalidateGraphs() refreshes it:
   // restoring someone's last trashed row drops them from the dropdown.
   const { data: actors } = useQuery({
-    queryKey: [...backofficeKeys.graphs.all(), 'trash-actors'],
+    queryKey: backofficeKeys.graphs.trashActors(),
     queryFn: () => getTrashActors(),
     enabled: !!token,
   });

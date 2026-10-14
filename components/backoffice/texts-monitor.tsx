@@ -47,6 +47,7 @@ import {
   type Status,
   type TextsOverview,
 } from '@/services/texts-monitor';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 type MatrixPayload = TextsOverview['matrix'];
 type CoveragePayload = TextsOverview['coverage'];
@@ -91,7 +92,7 @@ export function TextsMonitor() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data, isFetching, error, refetch } = useQuery({
-    queryKey: ['backoffice', 'texts-monitor', 'overview'],
+    queryKey: backofficeKeys.textsMonitor.overview(),
     queryFn: () => fetchTextsOverview(token!),
     enabled: !!token,
     refetchInterval: 60_000,

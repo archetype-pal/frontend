@@ -33,6 +33,7 @@ import {
   NewImageTextDialog,
   type NewTextKind,
 } from '@/components/backoffice/new-image-text-dialog';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 const PAGE_SIZE = 25;
 
@@ -57,7 +58,7 @@ export function UncoveredImages() {
   }>({ open: false, itemImage: null, type: 'Transcription' });
 
   const { data, isFetching, error } = useQuery({
-    queryKey: ['backoffice', 'uncovered-images', mode, page],
+    queryKey: backofficeKeys.uncoveredImages.list(mode, page),
     queryFn: () => fetchUncoveredImages(mode, page, PAGE_SIZE),
     enabled: !!token,
     placeholderData: (prev) => prev,

@@ -117,6 +117,25 @@ export const backofficeKeys = {
     list: (mode: string, page: number) =>
       [...backofficeKeys.uncoveredImages.all(), mode, page] as const,
   },
+  reviewQueue: {
+    all: () => [...backofficeKeys.all, 'review-queue'] as const,
+  },
+  previewAsPublic: (textId: number) =>
+    [...backofficeKeys.all, 'preview-as-public', textId] as const,
+  teiRefSearch: (segment: string, query: string) =>
+    [...backofficeKeys.all, 'tei-ref-search', segment, query] as const,
+
+  // ── Item images ─────────────────────────────────────────────
+  itemImages: {
+    all: () => [...backofficeKeys.all, 'item-images'] as const,
+    forPart: (itemPart: number | undefined) =>
+      [...backofficeKeys.itemImages.all(), 'for-part', itemPart] as const,
+    detail: (id: number | undefined) => [...backofficeKeys.itemImages.all(), 'detail', id] as const,
+  },
+  itemPartSearch: {
+    all: () => [...backofficeKeys.all, 'item-part-search'] as const,
+    list: (query: string) => [...backofficeKeys.itemPartSearch.all(), query] as const,
+  },
 
   // ── Annotations ──────────────────────────────────────────
   graphs: {
@@ -124,6 +143,7 @@ export const backofficeKeys = {
     list: (filters?: Record<string, unknown>) =>
       [...backofficeKeys.all, 'graphs', 'list', filters] as const,
     detail: (id: number) => [...backofficeKeys.all, 'graphs', 'detail', id] as const,
+    trashActors: () => [...backofficeKeys.all, 'graphs', 'trash-actors'] as const,
   },
 
   // ── Users ────────────────────────────────────────────────────
@@ -140,4 +160,9 @@ export const backofficeKeys = {
     stats: () => [...backofficeKeys.all, 'searchEngine', 'stats'] as const,
     task: (taskId: string) => [...backofficeKeys.all, 'searchEngine', 'task', taskId] as const,
   },
+
+  // ── Health ──────────────────────────────────────────────────
+  apiVersion: () => [...backofficeKeys.all, 'api-version'] as const,
+  qualityDashboard: () => [...backofficeKeys.all, 'quality-dashboard'] as const,
+  sanityChecks: () => [...backofficeKeys.all, 'sanity-checks'] as const,
 } as const;

@@ -71,7 +71,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
     isFetching: imagesFetching,
     refetch: refetchImages,
   } = useQuery({
-    queryKey: ['backoffice', 'item-images', itemPart],
+    queryKey: backofficeKeys.itemImages.forPart(itemPart),
     queryFn: () =>
       walkPaginated<AdminItemImage>(
         `/api/v1/manuscripts/management/item-images/?item_part=${itemPart}&limit=100`

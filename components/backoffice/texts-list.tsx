@@ -65,6 +65,7 @@ import { bulkActionImageTexts } from '@/services/backoffice/image-texts-bulk';
 import { transitionImageText, type ImageTextStatus } from '@/services/backoffice/review-queue';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 import { downloadBlob } from '@/lib/download';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 const STATUS_TONE: Record<ImageTextStatus, string> = {
   Draft:
@@ -206,7 +207,7 @@ export function TextsList() {
   };
 
   const { data, isFetching, error } = useQuery({
-    queryKey: ['backoffice', 'image-texts', 'list', apiParams],
+    queryKey: backofficeKeys.imageTexts.list({ ...apiParams }),
     queryFn: () => fetchImageTextList(apiParams),
     enabled: !!token,
     placeholderData: (prev) => prev,
@@ -243,10 +244,10 @@ export function TextsList() {
   }
 
   function invalidate() {
-    queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts', 'list'] });
-    queryClient.invalidateQueries({ queryKey: ['backoffice', 'texts-monitor', 'overview'] });
-    queryClient.invalidateQueries({ queryKey: ['review-queue'] });
-    queryClient.invalidateQueries({ queryKey: ['backoffice', 'uncovered-images'] });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.list() });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.textsMonitor.overview() });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.reviewQueue.all() });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.uncoveredImages.all() });
   }
 
   const bulkDelete = useMutation({
