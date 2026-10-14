@@ -2,6 +2,13 @@ import type { BackendGraph } from '@/services/annotations';
 import type { AllographSummary } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 import { formatAllographLabel } from '@/lib/allograph-labels';
+import {
+  type GalleryFilterState,
+  type SortKey,
+  DEFAULT_SORT,
+  allographGroupComparator,
+  applyGraphFilters,
+} from '@/lib/annotation-gallery-filters';
 import { sortHandsByPriority } from '@/lib/hand-ordering';
 
 // Hand → allograph grouping for the per-image annotation gallery. Kept out of
@@ -20,8 +27,6 @@ export interface HandGroup {
   allographs: AllographGroup[];
 }
 
-export const NO_ALLOGRAPH_LABEL = 'No allograph';
-
 /** Names for groups that have no record to take one from; the gallery passes translations. */
 export interface GroupLabels {
   unattributed: string;
@@ -30,39 +35,25 @@ export interface GroupLabels {
   allograph: (id: number) => string;
 }
 
-export const DEFAULT_GROUP_LABELS: GroupLabels = {
-  unattributed: 'Unattributed',
-  noAllograph: NO_ALLOGRAPH_LABEL,
-  hand: (id) => `Hand ${id}`,
-  allograph: (id) => `Allograph ${id}`,
-};
-
-/** Wraps an allograph-group comparator so the "no allograph" group always sorts last. */
-export function withUnassignedLast<T extends { allographId: number | null }>(
-  compare: (a: T, b: T) => number
-) {
-  return (a: T, b: T) => {
-    if (a.allographId === null || b.allographId === null) {
-      return (a.allographId === null ? 1 : 0) - (b.allographId === null ? 1 : 0);
-    }
-    return compare(a, b);
-  };
-}
-
+/**
+ * Groups graphs by hand (in hand priority order, unattributed last), then by
+ * allograph in the given sort. A graph without an allograph still counts on
+ * the tab, so it is listed too, in a group of its own that always sorts last.
+ */
 export function groupAnnotations(
   graphs: BackendGraph[],
   hands: HandType[],
   allographs: AllographSummary[],
-  labels: GroupLabels = DEFAULT_GROUP_LABELS
+  labels: GroupLabels,
+  sort: SortKey = DEFAULT_SORT
 ): HandGroup[] {
   const sortedHands = sortHandsByPriority(hands);
   const handLabelById = new Map(sortedHands.map((h) => [h.id, h.name]));
   const handRankById = new Map(sortedHands.map((h, index) => [h.id, index]));
   const allographLabelById = new Map(allographs.map((a) => [a.id, formatAllographLabel(a)]));
+  const compare = allographGroupComparator(sort);
   const handMap = new Map<number | null, Map<number | null, BackendGraph[]>>();
 
-  // A graph without an allograph still counts on the tab, so it is listed too,
-  // under its own group, rather than dropped.
   for (const graph of graphs) {
     const allographKey = typeof graph.allograph === 'number' ? graph.allograph : null;
     const handKey = typeof graph.hand === 'number' ? graph.hand : null;
@@ -76,6 +67,10 @@ export function groupAnnotations(
     allographMap.set(allographKey, list);
   }
 
+  // Unattributed sorts after every hand, known or not.
+  const rank = (handId: number | null) =>
+    handId === null ? Number.MAX_VALUE : (handRankById.get(handId) ?? Number.MAX_SAFE_INTEGER);
+
   return Array.from(handMap, ([handKey, allographMap]) => ({
     handId: handKey,
     handName:
@@ -87,18 +82,44 @@ export function groupAnnotations(
           ? labels.noAllograph
           : (allographLabelById.get(allographId) ?? labels.allograph(allographId)),
       graphs,
-    })).sort(withUnassignedLast((a, b) => a.allographName.localeCompare(b.allographName))),
-  })).sort((a, b) => {
-    if (a.handId === null && b.handId === null) return 0;
-    if (a.handId === null) return 1;
-    if (b.handId === null) return -1;
+    })).sort(
+      (a, b) =>
+        Number(a.allographId === null) - Number(b.allographId === null) ||
+        compare(
+          { allographName: a.allographName, count: a.graphs.length },
+          { allographName: b.allographName, count: b.graphs.length }
+        )
+    ),
+  })).sort((a, b) => rank(a.handId) - rank(b.handId) || a.handName.localeCompare(b.handName));
+}
 
-    const rankDelta =
-      (handRankById.get(a.handId) ?? Number.MAX_SAFE_INTEGER) -
-      (handRankById.get(b.handId) ?? Number.MAX_SAFE_INTEGER);
-
-    return rankDelta || a.handName.localeCompare(b.handName);
-  });
+/**
+ * What the gallery shows: the graph-level filters (hand, status, features,
+ * positions) applied, grouped in the chosen sort, then the allograph-name
+ * filter (case-insensitive substring) applied to the groups.
+ */
+export function filterAndGroup(
+  graphs: BackendGraph[],
+  filters: GalleryFilterState,
+  hands: HandType[],
+  allographs: AllographSummary[],
+  labels: GroupLabels
+): HandGroup[] {
+  const groups = groupAnnotations(
+    applyGraphFilters(graphs, filters),
+    hands,
+    allographs,
+    labels,
+    filters.sort
+  );
+  const needle = filters.allograph.trim().toLowerCase();
+  if (!needle) return groups;
+  return groups
+    .map((hand) => ({
+      ...hand,
+      allographs: hand.allographs.filter((a) => a.allographName.toLowerCase().includes(needle)),
+    }))
+    .filter((hand) => hand.allographs.length > 0);
 }
 
 export const handAnchorId = (handId: number | null) => `hand-${handId ?? 'unattributed'}`;

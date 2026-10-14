@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { AlertTriangle, ArrowUp } from 'lucide-react';
+import { toast } from 'sonner';
 
+import { isEditableTarget } from '@/hooks/use-hotkeys';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 import {
   UNDO_WINDOW_MS,
@@ -21,23 +23,19 @@ import { formatAllographLabel } from '@/lib/allograph-labels';
 import { graphToCollectionItem } from '@/lib/collection-item';
 import { downloadCsv, graphsToCsv } from '@/lib/graph-csv';
 import { openLightboxWithItems } from '@/lib/lightbox-utils';
-import { toast } from 'sonner';
 import {
   type GroupLabels,
+  filterAndGroup,
   groupAnnotations,
   handAccentColor,
   handAnchorId,
-  withUnassignedLast,
 } from '@/lib/annotation-gallery-groups';
 import {
   type GalleryFilterState,
   EMPTY_FILTERS,
-  allographGroupComparator,
-  applyGraphFilters,
   collectFeatures,
   collectPositions,
   filtersFromParams,
-  hasActiveFilters,
   isGraphDescribed,
   withFiltersInSearch,
 } from '@/lib/annotation-gallery-filters';
@@ -45,12 +43,13 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnnotationEditDialog } from '@/components/manuscript/annotation-edit-dialog';
 import { useThumbDensity } from '@/components/manuscript/thumb-density';
-import type {
-  HandOption,
-  StatusCounts,
-} from '@/components/manuscript/annotation-gallery-filter-bar';
+import type { FilterOptions } from '@/components/manuscript/annotation-gallery-filter-bar';
 import { GalleryToolbar } from '@/components/manuscript/annotation-gallery-toolbar';
-import { type GraphCollection, HandSection } from '@/components/manuscript/annotation-gallery-rows';
+import {
+  type GalleryRowsContextValue,
+  GalleryRowsProvider,
+  HandSection,
+} from '@/components/manuscript/annotation-gallery-rows';
 import { GallerySelectionBar } from '@/components/manuscript/annotation-gallery-selection-bar';
 
 const trashToastId = (graphId: number) => `gallery-trash-${graphId}`;
@@ -90,10 +89,12 @@ export function AnnotationGallery({
   loadError = false,
   supportingDataIncomplete = false,
 }: AnnotationGalleryProps) {
-  const tGallery = useTranslations('manuscript.gallery');
+  const t = useTranslations('manuscript.gallery');
   const tCommon = useTranslations('common');
   const { user, token } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { addItem, removeItem, removeItems, isInCollection, isHydrated } = useCollection();
   const canEdit = user?.is_staff ?? false;
   // Editing needs the hand and allograph names; without them it would half-work.
@@ -102,13 +103,8 @@ export function AnnotationGallery({
 
   // Thumbnail density (G6.4), persisted across sessions.
   const [density, changeDensity] = useThumbDensity();
-
-  // Optimistically removed graph ids (G3.1) — hidden immediately on delete.
-  const [deletedIds, setDeletedIds] = React.useState<Set<number>>(() => new Set());
-
   const selection = useSelectionSet<number>();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const [annotatingMode, setAnnotatingMode] = React.useState(false);
 
   // Filter/sort state, initialised from the URL so a shared link reproduces
   // the view. Written back to the URL on change with history.replaceState, not
@@ -125,7 +121,6 @@ export function AnnotationGallery({
     }
   }, [filters, pathname]);
 
-  const [annotatingMode, setAnnotatingMode] = React.useState(false);
   const [showBackToTop, setShowBackToTop] = React.useState(false);
   React.useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > 600);
@@ -134,30 +129,16 @@ export function AnnotationGallery({
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // `/` focuses the allograph filter; `A` toggles editing mode. Neither fires
+  // while typing in a field. Shift is not checked: `/` needs it on some layouts.
   const filterInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Page-level keyboard shortcuts:
-  //   `/`  — focus the allograph filter
-  //   `A`  — toggle editing mode (staff only)
-  // Both are skipped when the user is typing into a form field, so they don't
-  // hijack normal input.
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const t = e.target as HTMLElement | null;
-      if (
-        t &&
-        (t.tagName === 'INPUT' ||
-          t.tagName === 'TEXTAREA' ||
-          t.tagName === 'SELECT' ||
-          t.isContentEditable)
-      ) {
-        return;
-      }
+      if (e.metaKey || e.ctrlKey || e.altKey || isEditableTarget(e.target)) return;
       if (e.key === '/') {
         e.preventDefault();
         filterInputRef.current?.focus();
-      } else if ((e.key === 'a' || e.key === 'A') && editingAvailable) {
+      } else if (e.key.toLowerCase() === 'a' && editingAvailable) {
         e.preventDefault();
         setAnnotatingMode((v) => !v);
       }
@@ -168,34 +149,26 @@ export function AnnotationGallery({
 
   // Saved-graph overrides keep edits visible immediately (especially the
   // re-grouping that follows an allograph change) without waiting for a
-  // route refresh. Each entry shadows the corresponding prop graph.
+  // route refresh. A fresh server load (new `graphs` identity, e.g. after
+  // router.refresh()) drops them, using the "adjust state during render when
+  // a prop changes" pattern so the reset lands before the children render.
   const [graphOverrides, setGraphOverrides] = React.useState<Record<number, BackendGraph>>({});
-  const handleGraphSaved = React.useCallback((graph: BackendGraph) => {
-    setGraphOverrides((prev) => ({ ...prev, [graph.id]: graph }));
-  }, []);
-
-  // Drop optimistic overrides when a fresh server load arrives (a new `graphs`
-  // prop identity, e.g. after router.refresh()) so re-fetched data wins
-  // instead of being shadowed indefinitely by stale local edits. This is the
-  // React "adjust state during render when a prop changes" pattern (tracked via
-  // the previous `graphs` identity) rather than an effect, so the reset is
-  // applied before the children render instead of in a follow-up commit.
   const [prevGraphs, setPrevGraphs] = React.useState(graphs);
   if (prevGraphs !== graphs) {
     setPrevGraphs(graphs);
     setGraphOverrides({});
   }
-
-  // Dialog state — `editingGraphIds` is the list of graphs the dialog should
-  // target. Resolved through `effectiveGraphs` so the dialog always sees the
-  // freshest values after a save.
-  const [editingGraphIds, setEditingGraphIds] = React.useState<number[] | null>(null);
+  // Graphs hidden at once on delete (G3.1), until the delete is sent or undone.
+  const [deletedIds, setDeletedIds] = React.useState<Set<number>>(() => new Set());
+  const effectiveGraphs = React.useMemo(
+    () => graphs.filter((g) => !deletedIds.has(g.id)).map((g) => graphOverrides[g.id] ?? g),
+    [graphs, graphOverrides, deletedIds]
+  );
 
   // Full allograph schema (components/positions) is only needed by the edit
-  // dialog, so we lazy-fetch it on first open instead of paying for the whole
-  // taxonomy on every page load (the page sends labels-only summaries). G2.3.
-  // Its status reaches the dialog, which would otherwise offer an empty list
-  // while the fetch runs and keep offering it after a failure.
+  // dialog, so it is fetched on first open rather than on every page load (the
+  // page sends labels-only summaries, G2.3). Its status reaches the dialog,
+  // which would otherwise offer an empty list while loading or after a failure.
   const [fullAllographs, setFullAllographs] = React.useState<Allograph[]>([]);
   const [fullAllographsStatus, setFullAllographsStatus] = React.useState<
     'idle' | 'loading' | 'ready' | 'error'
@@ -215,6 +188,10 @@ export function AnnotationGallery({
         setFullAllographsStatus('error');
       });
   }, []);
+
+  // The graphs the edit dialog targets, resolved through `effectiveGraphs` so
+  // it always sees the freshest values after a save.
+  const [editingGraphIds, setEditingGraphIds] = React.useState<number[]>([]);
   const openEditor = React.useCallback(
     (ids: number[]) => {
       ensureFullAllographs();
@@ -222,216 +199,113 @@ export function AnnotationGallery({
     },
     [ensureFullAllographs]
   );
-
-  const effectiveGraphs = React.useMemo(
-    () => graphs.filter((g) => !deletedIds.has(g.id)).map((g) => graphOverrides[g.id] ?? g),
-    [graphs, graphOverrides, deletedIds]
+  const editingGraphs = React.useMemo(
+    () => effectiveGraphs.filter((g) => editingGraphIds.includes(g.id)),
+    [editingGraphIds, effectiveGraphs]
   );
 
-  // Delete a graph straight from the gallery (G3.1), staff-only. No confirm
-  // dialog: the graph hides at once and the toast offers Undo until the
-  // delete is sent. A sent delete refreshes the route, so the tab count drops.
-  const showGraph = React.useCallback((graphId: number) => {
-    setDeletedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(graphId);
-      return next;
-    });
-  }, []);
+  // Delete without a confirm dialog: the graph hides at once and the toast
+  // offers Undo until the delete is sent. A sent delete refreshes the route,
+  // so the tab count drops.
   const graphDelete = useUndoableGraphDelete({
     token,
     onHide: (graphId) => {
       setDeletedIds((prev) => new Set(prev).add(graphId));
       selection.remove(graphId);
     },
-    onRestore: showGraph,
+    onRestore: (graphId) =>
+      setDeletedIds((prev) => new Set([...prev].filter((id) => id !== graphId))),
     onDeleted: (graphId) => {
       toast.dismiss(trashToastId(graphId));
       router.refresh();
     },
     onFailed: (graphId) => {
       toast.dismiss(trashToastId(graphId));
-      toast.error(tGallery('deleteFailed', { id: graphId }));
+      toast.error(t('deleteFailed', { id: graphId }));
     },
   });
-  const handleDeleteGraph = React.useCallback(
+  const deleteGraph = React.useCallback(
     (graphId: number) => {
       if (!token) return;
       graphDelete.remove(graphId);
-      toast.success(tGallery('trashed', { id: graphId }), {
+      toast.success(t('trashed', { id: graphId }), {
         id: trashToastId(graphId),
         duration: UNDO_WINDOW_MS,
         action: {
-          label: tGallery('undo'),
+          label: t('undo'),
           onClick: () => {
-            if (!graphDelete.undo(graphId)) {
-              toast.info(tGallery('undoTooLate', { id: graphId }));
-            }
+            if (!graphDelete.undo(graphId)) toast.info(t('undoTooLate', { id: graphId }));
           },
         },
       });
     },
-    [token, graphDelete, tGallery]
+    [token, graphDelete, t]
   );
-
-  const editingGraphs = React.useMemo(() => {
-    if (!editingGraphIds) return [];
-    const byId = new Map(effectiveGraphs.map((g) => [g.id, g]));
-    return editingGraphIds
-      .map((id) => byId.get(id))
-      .filter((g): g is BackendGraph => g !== undefined);
-  }, [editingGraphIds, effectiveGraphs]);
 
   const groupLabels = React.useMemo<GroupLabels>(
     () => ({
-      unattributed: tGallery('unattributed'),
-      noAllograph: tGallery('noAllograph'),
-      hand: (id) => tGallery('handFallback', { id }),
-      allograph: (id) => tGallery('allographFallback', { id }),
+      unattributed: t('unattributed'),
+      noAllograph: t('noAllograph'),
+      hand: (id) => t('handFallback', { id }),
+      allograph: (id) => t('allographFallback', { id }),
     }),
-    [tGallery]
+    [t]
   );
 
-  // Unfiltered grouping — drives the hand accents and the "is this image
-  // genuinely empty?" check (vs. "filters excluded everything").
+  // Unfiltered grouping: drives the hand accents and tells an empty image
+  // apart from filters that exclude everything.
   const allGroups = React.useMemo(
     () => groupAnnotations(effectiveGraphs, hands, allographs, groupLabels),
     [effectiveGraphs, hands, allographs, groupLabels]
   );
-
-  // Filter options derived from what's actually present, so dropdowns only
-  // offer constraints that can match something.
-  const handOptions = React.useMemo<HandOption[]>(() => {
-    const present = new Set<number | null>();
-    for (const g of effectiveGraphs) present.add(typeof g.hand === 'number' ? g.hand : null);
-    const opts: HandOption[] = [];
-    for (const h of hands) if (present.has(h.id)) opts.push({ key: h.id, name: h.name });
-    if (present.has(null)) opts.push({ key: null, name: groupLabels.unattributed });
-    return opts;
-  }, [effectiveGraphs, hands, groupLabels]);
-  const featureOptions = React.useMemo(() => collectFeatures(effectiveGraphs), [effectiveGraphs]);
-  const positionOptions = React.useMemo(() => collectPositions(effectiveGraphs), [effectiveGraphs]);
-  const statusCounts = React.useMemo<StatusCounts>(() => {
-    const described = effectiveGraphs.filter(isGraphDescribed).length;
-    return {
-      all: effectiveGraphs.length,
-      described,
-      undescribed: effectiveGraphs.length - described,
-    };
-  }, [effectiveGraphs]);
-
-  const handLabel = React.useCallback(
-    (key: number | null) =>
-      key === null
-        ? groupLabels.unattributed
-        : (handOptions.find((h) => h.key === key)?.name ?? groupLabels.hand(key)),
-    [handOptions, groupLabels]
+  const shownGroups = React.useMemo(
+    () => filterAndGroup(effectiveGraphs, filters, hands, allographs, groupLabels),
+    [effectiveGraphs, filters, hands, allographs, groupLabels]
   );
-  const featureLabel = React.useCallback(
-    (id: number) =>
-      featureOptions.find((f) => f.id === id)?.name ?? tGallery('featureFallback', { id }),
-    [featureOptions, tGallery]
-  );
-  const positionLabel = React.useCallback(
-    (id: number) =>
-      positionOptions.find((p) => p.id === id)?.name ?? tGallery('positionFallback', { id }),
-    [positionOptions, tGallery]
-  );
-
-  // Graph-level filters (hand / status / feature / position), then regroup and
-  // apply the chosen allograph-group sort.
-  const groups = React.useMemo(() => {
-    const filteredGraphs = applyGraphFilters(effectiveGraphs, filters);
-    const grouped = groupAnnotations(filteredGraphs, hands, allographs, groupLabels);
-    const comparator = allographGroupComparator(filters.sort);
-    return grouped.map((handGroup) => ({
-      ...handGroup,
-      allographs: [...handGroup.allographs].sort(
-        withUnassignedLast((a, b) =>
-          comparator(
-            { allographName: a.allographName, count: a.graphs.length },
-            { allographName: b.allographName, count: b.graphs.length }
-          )
-        )
-      ),
-    }));
-  }, [effectiveGraphs, filters, hands, allographs, groupLabels]);
-
-  // Group-level allograph-name substring filter (case-insensitive).
-  const filteredGroups = React.useMemo(() => {
-    const needle = filters.allograph.trim().toLowerCase();
-    if (!needle) return groups;
-    return groups
-      .map((handGroup) => ({
-        ...handGroup,
-        allographs: handGroup.allographs.filter((a) =>
-          a.allographName.toLowerCase().includes(needle)
-        ),
-      }))
-      .filter((handGroup) => handGroup.allographs.length > 0);
-  }, [groups, filters.allograph]);
-
   const shownGraphs = React.useMemo(
-    () => filteredGroups.flatMap((h) => h.allographs.flatMap((a) => a.graphs)),
-    [filteredGroups]
-  );
-  const shownAllographCount = React.useMemo(
-    () => filteredGroups.reduce((sum, g) => sum + g.allographs.length, 0),
-    [filteredGroups]
+    () => shownGroups.flatMap((h) => h.allographs.flatMap((a) => a.graphs)),
+    [shownGroups]
   );
 
-  // Selection actions only touch graphs on screen: a selected graph that the
-  // filters now hide is counted in the bar but left out, and an id that is no
-  // longer on the image at all (deleted, or gone after a refresh) is ignored.
-  const selectedShown = React.useMemo(
-    () => shownGraphs.filter((g) => selection.selected.has(g.id)),
-    [shownGraphs, selection.selected]
+  // Filter options come from what is on the image, so they can all match.
+  const filterOptions = React.useMemo<FilterOptions>(
+    () => ({
+      hands: allGroups.map((g) => ({ key: g.handId, name: g.handName })),
+      features: collectFeatures(effectiveGraphs),
+      positions: collectPositions(effectiveGraphs),
+    }),
+    [allGroups, effectiveGraphs]
   );
-  const selectedHiddenCount = React.useMemo(
-    () => effectiveGraphs.filter((g) => selection.selected.has(g.id)).length - selectedShown.length,
-    [effectiveGraphs, selection.selected, selectedShown]
-  );
+  const describedCount = effectiveGraphs.filter(isGraphDescribed).length;
 
-  const filtersActive = hasActiveFilters(filters);
-  const clearAllFilters = React.useCallback(() => setFilters(EMPTY_FILTERS), []);
-
-  // Stable hand→accent assignment from the unfiltered order so a hand keeps its
-  // colour regardless of active filters (G6.9).
-  const handAccents = React.useMemo(() => {
-    const m = new Map<number | null, string>();
-    allGroups.forEach((g, i) => m.set(g.handId, handAccentColor(g.handId, i)));
-    return m;
-  }, [allGroups]);
+  // Selection actions only touch graphs on screen: a selected graph the
+  // filters hide is counted in the bar but left out, and an id no longer on
+  // the image (deleted, or gone after a refresh) is ignored.
+  const selectedShown = shownGraphs.filter((g) => selection.selected.has(g.id));
+  const selectedHiddenCount =
+    effectiveGraphs.filter((g) => selection.selected.has(g.id)).length - selectedShown.length;
 
   const allographLabelById = React.useMemo(
     () => new Map(allographs.map((a) => [a.id, formatAllographLabel(a)])),
     [allographs]
   );
-  const handNameById = React.useMemo(
-    () => new Map(hands.map((hand) => [hand.id, hand.name])),
-    [hands]
-  );
-
-  // Open the current selection in the lightbox for side-by-side comparison (G4.1).
-  const sendSelectionToLightbox = React.useCallback(() => {
-    if (selectedShown.length === 0) return;
-    openLightboxWithItems(selectedShown.map((g) => ({ id: g.id, type: 'graph' as const })));
-  }, [selectedShown]);
+  const handNameById = React.useMemo(() => new Map(hands.map((h) => [h.id, h.name])), [hands]);
 
   // Export the selection as CSV (G4.3).
-  const exportGraphs = React.useCallback(
-    (rows: BackendGraph[]) => {
-      const csv = graphsToCsv(
-        rows.map((g) => ({
+  const exportSelected = () =>
+    downloadCsv(
+      `annotations-${imageId}.csv`,
+      graphsToCsv(
+        selectedShown.map((g) => ({
           graph: g,
           allograph: allographLabelById.get(g.allograph ?? -1) ?? '',
-          hand: handLabel(typeof g.hand === 'number' ? g.hand : null),
+          hand:
+            typeof g.hand === 'number'
+              ? (handNameById.get(g.hand) ?? groupLabels.hand(g.hand))
+              : groupLabels.unattributed,
         }))
-      );
-      downloadCsv(`annotations-${imageId}.csv`, csv);
-    },
-    [allographLabelById, handLabel, imageId]
-  );
+      )
+    );
 
   const toCollectionItem = React.useCallback(
     (g: BackendGraph) =>
@@ -442,68 +316,62 @@ export function AnnotationGallery({
       ),
     [allographLabelById, handNameById, iiifImage, itemImageId, itemPartId, locus, shelfmark]
   );
+  const viewCollection = { label: t('viewCollection'), onClick: () => router.push('/collection') };
 
   // Adds the selected graphs on screen, says how many went in (and how many
   // were already there), and offers Undo for the ones it added.
-  const addSelectedToCollection = React.useCallback(() => {
+  const addSelectedToCollection = () => {
     const added = selectedShown.filter((g) => !isInCollection(g.id, 'graph'));
     const already = selectedShown.length - added.length;
-    for (const g of added) addItem(toCollectionItem(g));
+    added.forEach((g) => addItem(toCollectionItem(g)));
     selection.clear();
     if (added.length === 0) {
-      toast.info(tGallery('collectionAlreadyThere', { count: already }));
+      toast.info(t('collectionAlreadyThere', { count: already }));
       return;
     }
-    toast.success(tGallery('collectionAdded', { count: added.length, already }), {
+    toast.success(t('collectionAdded', { count: added.length, already }), {
       action: {
-        label: tGallery('undo'),
+        label: t('undo'),
         onClick: () => removeItems(added.map((g) => ({ id: g.id, type: 'graph' as const }))),
       },
-      cancel: {
-        label: tGallery('viewCollection'),
-        onClick: () => router.push('/collection'),
-      },
+      cancel: viewCollection,
     });
-  }, [
-    addItem,
-    isInCollection,
-    removeItems,
-    router,
-    selectedShown,
-    selection,
-    tGallery,
-    toCollectionItem,
-  ]);
+  };
 
   // The star on each graph: adds or removes just that graph, with Undo.
-  const toggleGraphInCollection = React.useCallback(
-    (g: BackendGraph) => {
-      const toastId = `gallery-collection-${g.id}`;
-      if (isInCollection(g.id, 'graph')) {
-        removeItem(g.id, 'graph');
-        toast.success(tGallery('collectionRemovedOne', { id: g.id }), {
-          id: toastId,
-          action: { label: tGallery('undo'), onClick: () => addItem(toCollectionItem(g)) },
-        });
-        return;
-      }
-      addItem(toCollectionItem(g));
-      toast.success(tGallery('collectionAddedOne', { id: g.id }), {
-        id: toastId,
-        action: { label: tGallery('undo'), onClick: () => removeItem(g.id, 'graph') },
-        cancel: { label: tGallery('viewCollection'), onClick: () => router.push('/collection') },
+  const toggleInCollection = (g: BackendGraph) => {
+    const id = `gallery-collection-${g.id}`;
+    if (isInCollection(g.id, 'graph')) {
+      removeItem(g.id, 'graph');
+      toast.success(t('collectionRemovedOne', { id: g.id }), {
+        id,
+        action: { label: t('undo'), onClick: () => addItem(toCollectionItem(g)) },
       });
-    },
-    [addItem, isInCollection, removeItem, router, tGallery, toCollectionItem]
-  );
-  const graphCollection = React.useMemo<GraphCollection>(
-    () => ({
+    } else {
+      addItem(toCollectionItem(g));
+      toast.success(t('collectionAddedOne', { id: g.id }), {
+        id,
+        action: { label: t('undo'), onClick: () => removeItem(g.id, 'graph') },
+        cancel: viewCollection,
+      });
+    }
+  };
+
+  const rows: GalleryRowsContextValue = {
+    density,
+    iiifImage,
+    viewerHref,
+    canEdit,
+    annotatingMode,
+    selection,
+    onEditGraph: (graphId) => openEditor([graphId]),
+    onDeleteGraph: deleteGraph,
+    collection: {
       ready: isHydrated,
       has: (graphId) => isInCollection(graphId, 'graph'),
-      toggle: toggleGraphInCollection,
-    }),
-    [isHydrated, isInCollection, toggleGraphInCollection]
-  );
+      toggle: toggleInCollection,
+    },
+  };
 
   // The annotations fetch failed — show a recoverable error rather than the
   // empty state, which would falsely imply the image has no annotations.
@@ -512,15 +380,15 @@ export function AnnotationGallery({
       <div className="flex flex-col items-center gap-4 rounded-lg border border-destructive/30 bg-destructive/5 px-6 py-12 text-center">
         <AlertTriangle className="h-8 w-8 text-destructive" aria-hidden />
         <div className="max-w-md space-y-1">
-          <p className="text-base font-semibold text-foreground">{tGallery('loadErrorTitle')}</p>
-          <p className="text-sm text-muted-foreground">{tGallery('loadErrorBody')}</p>
+          <p className="text-base font-semibold text-foreground">{t('loadErrorTitle')}</p>
+          <p className="text-sm text-muted-foreground">{t('loadErrorBody')}</p>
         </div>
         <div className="flex flex-wrap justify-center gap-2">
           <Button size="sm" onClick={() => router.refresh()}>
             {tCommon('tryAgain')}
           </Button>
           <Button size="sm" variant="outline" asChild>
-            <Link href={viewerHref}>{tGallery('openViewer')}</Link>
+            <Link href={viewerHref}>{t('openViewer')}</Link>
           </Button>
         </div>
       </div>
@@ -531,19 +399,26 @@ export function AnnotationGallery({
     return (
       <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed bg-card px-6 py-12 text-center">
         <div className="space-y-1">
-          <p className="text-base font-semibold text-foreground">{tGallery('emptyTitle')}</p>
+          <p className="text-base font-semibold text-foreground">{t('emptyTitle')}</p>
           <p className="text-sm text-muted-foreground">
-            {canEdit ? tGallery('emptyStaff') : tGallery('emptyVisitor')}
+            {canEdit ? t('emptyStaff') : t('emptyVisitor')}
           </p>
         </div>
         {canEdit && (
           <Button size="sm" asChild>
-            <Link href={viewerHref}>{tGallery('openViewer')}</Link>
+            <Link href={viewerHref}>{t('openViewer')}</Link>
           </Button>
         )}
       </div>
     );
   }
+
+  const nameQuery = filters.allograph.trim();
+  const nameMatchesNothing =
+    nameQuery !== '' &&
+    !allGroups.some((h) =>
+      h.allographs.some((a) => a.allographName.toLowerCase().includes(nameQuery.toLowerCase()))
+    );
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -554,7 +429,7 @@ export function AnnotationGallery({
             className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900"
           >
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="flex-1 basis-64">{tGallery('supportingDataFailed')}</span>
+            <span className="flex-1 basis-64">{t('supportingDataFailed')}</span>
             <Button
               size="sm"
               variant="outline"
@@ -569,85 +444,77 @@ export function AnnotationGallery({
         <GalleryToolbar
           filters={filters}
           onFiltersChange={setFilters}
-          onClearAllFilters={clearAllFilters}
-          handOptions={handOptions}
-          featureOptions={featureOptions}
-          positionOptions={positionOptions}
-          statusCounts={statusCounts}
-          handLabel={handLabel}
-          featureLabel={featureLabel}
-          positionLabel={positionLabel}
+          options={filterOptions}
+          statusCounts={{
+            all: effectiveGraphs.length,
+            described: describedCount,
+            undescribed: effectiveGraphs.length - describedCount,
+          }}
           filterInputRef={filterInputRef}
-          shownGraphs={shownGraphs.length}
-          totalGraphs={effectiveGraphs.length}
-          shownAllographs={shownAllographCount}
+          summary={{
+            shown: shownGraphs.length,
+            total: effectiveGraphs.length,
+            groups: shownGroups.reduce((sum, h) => sum + h.allographs.length, 0),
+          }}
           density={density}
           onDensityChange={changeDensity}
-          canEdit={canEdit}
-          editingAvailable={editingAvailable}
-          annotatingMode={annotatingMode}
-          onAnnotatingModeChange={setAnnotatingMode}
+          editing={
+            canEdit
+              ? { on: annotatingMode, available: editingAvailable, onChange: setAnnotatingMode }
+              : undefined
+          }
         />
 
-        {filteredGroups.length > 1 && (
-          <nav aria-label={tGallery('handsNav')} className="flex flex-wrap items-center gap-2">
-            <h2 className="mr-1 text-sm font-medium text-muted-foreground">
-              {tGallery('handsHeading')}
-            </h2>
-            {filteredGroups.map((g) => {
-              const count = g.allographs.reduce((sum, a) => sum + a.graphs.length, 0);
-              return (
-                <a
-                  key={g.handId ?? 'unattributed'}
-                  href={`#${handAnchorId(g.handId)}`}
-                  className="inline-flex h-7 items-center gap-1.5 rounded-full border bg-card px-3 text-sm font-medium text-foreground transition hover:border-primary hover:text-primary"
-                >
-                  {g.handName}
-                  <span className="tabular-nums text-muted-foreground">{count}</span>
-                </a>
-              );
-            })}
+        {shownGroups.length > 1 && (
+          <nav aria-label={t('handsNav')} className="flex flex-wrap items-center gap-2">
+            <h2 className="mr-1 text-sm font-medium text-muted-foreground">{t('hands')}</h2>
+            {shownGroups.map((g) => (
+              <a
+                key={g.handId ?? 'unattributed'}
+                href={`#${handAnchorId(g.handId)}`}
+                className="inline-flex h-7 items-center gap-1.5 rounded-full border bg-card px-3 text-sm font-medium text-foreground transition hover:border-primary hover:text-primary"
+              >
+                {g.handName}
+                <span className="tabular-nums text-muted-foreground">
+                  {g.allographs.reduce((sum, a) => sum + a.graphs.length, 0)}
+                </span>
+              </a>
+            ))}
           </nav>
         )}
 
-        {filteredGroups.length === 0 && (
+        {/* The image has graphs (checked above), so only the filters can hide them all. */}
+        {shownGroups.length === 0 && (
           <div className="rounded-lg border border-dashed bg-card px-5 py-10 text-center">
-            <p className="text-base font-semibold text-foreground">{tGallery('noMatchTitle')}</p>
+            <p className="text-base font-semibold text-foreground">{t('noMatchTitle')}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {filters.allograph.trim() &&
-              !allGroups.some((h) =>
-                h.allographs.some((a) =>
-                  a.allographName.toLowerCase().includes(filters.allograph.trim().toLowerCase())
-                )
-              )
-                ? tGallery('noMatchName', { query: filters.allograph.trim() })
-                : tGallery('noMatchCombined')}
+              {nameMatchesNothing ? t('noMatchName', { query: nameQuery }) : t('noMatchCombined')}
             </p>
-            {filtersActive && (
-              <Button size="sm" variant="outline" className="mt-4" onClick={clearAllFilters}>
-                {tGallery('clearAllFilters')}
-              </Button>
-            )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-4"
+              onClick={() => setFilters(EMPTY_FILTERS)}
+            >
+              {t('clearAllFilters')}
+            </Button>
           </div>
         )}
 
-        {filteredGroups.map((handGroup) => (
-          <HandSection
-            key={handGroup.handId ?? 'unattributed'}
-            handGroup={handGroup}
-            accent={handAccents.get(handGroup.handId) ?? '#94a3b8'}
-            density={density}
-            iiifImage={iiifImage}
-            manuscriptId={manuscriptId}
-            imageId={imageId}
-            canEdit={canEdit}
-            annotatingMode={annotatingMode}
-            selection={selection}
-            onEditGraph={(graphId) => openEditor([graphId])}
-            onDeleteGraph={handleDeleteGraph}
-            collection={graphCollection}
-          />
-        ))}
+        <GalleryRowsProvider value={rows}>
+          {shownGroups.map((handGroup) => (
+            <HandSection
+              key={handGroup.handId ?? 'unattributed'}
+              handGroup={handGroup}
+              // Accents follow the unfiltered order, so a hand keeps its colour
+              // whatever the filters (G6.9).
+              accent={handAccentColor(
+                handGroup.handId,
+                allGroups.findIndex((g) => g.handId === handGroup.handId)
+              )}
+            />
+          ))}
+        </GalleryRowsProvider>
 
         <GallerySelectionBar
           shownCount={selectedShown.length}
@@ -655,8 +522,10 @@ export function AnnotationGallery({
           annotatingMode={annotatingMode}
           onEdit={() => openEditor(selectedShown.map((g) => g.id))}
           onAddToCollection={addSelectedToCollection}
-          onSendToLightbox={sendSelectionToLightbox}
-          onExport={() => exportGraphs(selectedShown)}
+          onSendToLightbox={() =>
+            openLightboxWithItems(selectedShown.map((g) => ({ id: g.id, type: 'graph' as const })))
+          }
+          onExport={exportSelected}
           onClear={selection.clear}
         />
 
@@ -669,19 +538,19 @@ export function AnnotationGallery({
                 variant="outline"
                 className="fixed bottom-6 right-6 z-50 h-11 w-11 rounded-full bg-card shadow-lg"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                aria-label={tGallery('backToTop')}
+                aria-label={t('backToTop')}
               >
                 <ArrowUp className="h-5 w-5" aria-hidden />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">{tGallery('backToTop')}</TooltipContent>
+            <TooltipContent side="left">{t('backToTop')}</TooltipContent>
           </Tooltip>
         )}
 
         <AnnotationEditDialog
           open={editingGraphs.length > 0}
           onOpenChange={(open) => {
-            if (!open) setEditingGraphIds(null);
+            if (!open) setEditingGraphIds([]);
           }}
           graphs={editingGraphs}
           allographs={fullAllographs}
@@ -693,7 +562,7 @@ export function AnnotationGallery({
           onRetryAllographs={ensureFullAllographs}
           hands={hands}
           iiifImage={iiifImage}
-          onGraphSaved={handleGraphSaved}
+          onGraphSaved={(graph) => setGraphOverrides((prev) => ({ ...prev, [graph.id]: graph }))}
         />
       </div>
     </TooltipProvider>

@@ -1,6 +1,5 @@
 'use client';
 
-import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Check, ListFilter, Users, X } from 'lucide-react';
 
@@ -9,6 +8,7 @@ import {
   type GalleryFilterState,
   type NamedOption,
   type SortKey,
+  EMPTY_FILTERS,
   SORT_KEYS,
 } from '@/lib/annotation-gallery-filters';
 import { Button } from '@/components/ui/button';
@@ -43,14 +43,22 @@ export const TOOLBAR_SEGMENTED = 'h-9 [&>button]:h-full';
 /** How many graphs on the image each description status would show. */
 export type StatusCounts = Record<GalleryFilterState['status'], number>;
 
-interface GalleryFilterControlsProps {
+/** What the filters can offer: only values present on the image. */
+export interface FilterOptions {
+  hands: HandOption[];
+  features: NamedOption[];
+  positions: NamedOption[];
+}
+
+interface FilterProps {
   filters: GalleryFilterState;
   onChange: (next: GalleryFilterState) => void;
-  handOptions: HandOption[];
-  featureOptions: NamedOption[];
-  positionOptions: NamedOption[];
-  statusCounts: StatusCounts;
+  options: FilterOptions;
 }
+
+/** `list` with `item` added, or removed when it is already there. */
+const toggled = <T,>(list: T[], item: T) =>
+  list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
 
 const SORT_MESSAGE_KEYS: Record<SortKey, 'sortAz' | 'sortZa' | 'sortMost' | 'sortFewest'> = {
   'allograph-asc': 'sortAz',
@@ -64,20 +72,10 @@ const SORT_MESSAGE_KEYS: Record<SortKey, 'sortAz' | 'sortZa' | 'sortMost' | 'sor
 export function GalleryFilterControls({
   filters,
   onChange,
-  handOptions,
-  featureOptions,
-  positionOptions,
+  options,
   statusCounts,
-}: GalleryFilterControlsProps) {
+}: FilterProps & { statusCounts: StatusCounts }) {
   const t = useTranslations('manuscript.gallery');
-  const toggleHand = (key: number | null) => {
-    const has = filters.hands.includes(key);
-    onChange({
-      ...filters,
-      hands: has ? filters.hands.filter((h) => h !== key) : [...filters.hands, key],
-    });
-  };
-
   const statusOptions: SegmentedOption<GalleryFilterState['status']>[] = (
     [
       ['all', t('statusAll')],
@@ -95,28 +93,25 @@ export function GalleryFilterControls({
 
   return (
     <>
-      {/* Hand filter */}
-      {handOptions.length > 1 && (
+      {options.hands.length > 1 && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-9 gap-1.5">
               <Users className="h-4 w-4" aria-hidden />
               {t('hands')}
-              {filters.hands.length > 0 && (
-                <Badge variant="secondary" className="ml-0.5 px-1.5">
-                  {filters.hands.length}
-                </Badge>
-              )}
+              <CountBadge count={filters.hands.length} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
             <DropdownMenuLabel>{t('filterByHand')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {handOptions.map((h) => (
+            {options.hands.map((h) => (
               <DropdownMenuCheckboxItem
                 key={h.key ?? 'unattributed'}
                 checked={filters.hands.includes(h.key)}
-                onCheckedChange={() => toggleHand(h.key)}
+                onCheckedChange={() =>
+                  onChange({ ...filters, hands: toggled(filters.hands, h.key) })
+                }
                 onSelect={(e) => e.preventDefault()}
               >
                 {h.name}
@@ -126,7 +121,6 @@ export function GalleryFilterControls({
         </DropdownMenu>
       )}
 
-      {/* Description status */}
       <Segmented
         ariaLabel={t('statusLabel')}
         value={filters.status}
@@ -135,15 +129,10 @@ export function GalleryFilterControls({
         className={TOOLBAR_SEGMENTED}
       />
 
-      {/* Feature / position filter. Shown even with nothing to offer, so the
-          toolbar keeps its shape and says why the filter is empty. */}
-      {featureOptions.length + positionOptions.length > 0 ? (
-        <MarkupFilter
-          filters={filters}
-          onChange={onChange}
-          featureOptions={featureOptions}
-          positionOptions={positionOptions}
-        />
+      {/* Shown even with nothing to offer, so the toolbar keeps its shape and
+          says why the filter is empty. */}
+      {options.features.length + options.positions.length > 0 ? (
+        <MarkupFilter filters={filters} onChange={onChange} options={options} />
       ) : (
         <Button
           variant="outline"
@@ -158,7 +147,6 @@ export function GalleryFilterControls({
         </Button>
       )}
 
-      {/* Sort */}
       <label className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
         {t('sort')}
         <select
@@ -177,27 +165,21 @@ export function GalleryFilterControls({
   );
 }
 
-function MarkupFilter({
-  filters,
-  onChange,
-  featureOptions,
-  positionOptions,
-}: {
-  filters: GalleryFilterState;
-  onChange: (next: GalleryFilterState) => void;
-  featureOptions: NamedOption[];
-  positionOptions: NamedOption[];
-}) {
+function CountBadge({ count }: { count: number }) {
+  if (count === 0) return null;
+  return (
+    <Badge variant="secondary" className="ml-0.5 px-1.5">
+      {count}
+    </Badge>
+  );
+}
+
+function MarkupFilter({ filters, onChange, options }: FilterProps) {
   const t = useTranslations('manuscript.gallery');
-  const activeCount = filters.features.length + filters.positions.length;
-  const toggle = (kind: 'features' | 'positions', id: number) => {
-    const current = filters[kind];
-    const has = current.includes(id);
-    onChange({
-      ...filters,
-      [kind]: has ? current.filter((x) => x !== id) : [...current, id],
-    });
-  };
+  const kinds = [
+    { kind: 'features', heading: t('features'), items: options.features },
+    { kind: 'positions', heading: t('positions'), items: options.positions },
+  ] as const;
 
   return (
     <Popover>
@@ -205,11 +187,7 @@ function MarkupFilter({
         <Button variant="outline" size="sm" className="h-9 gap-1.5">
           <ListFilter className="h-4 w-4" aria-hidden />
           {t('features')}
-          {activeCount > 0 && (
-            <Badge variant="secondary" className="ml-0.5 px-1.5">
-              {activeCount}
-            </Badge>
-          )}
+          <CountBadge count={filters.features.length + filters.positions.length} />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0" align="start">
@@ -217,43 +195,29 @@ function MarkupFilter({
           <CommandInput placeholder={t('searchFeatures')} />
           <CommandList>
             <CommandEmpty>{t('noFeatureMatches')}</CommandEmpty>
-            {featureOptions.length > 0 && (
-              <CommandGroup heading={t('features')}>
-                {featureOptions.map((f) => (
-                  <CommandItem
-                    key={`f-${f.id}`}
-                    value={`feature ${f.name}`}
-                    onSelect={() => toggle('features', f.id)}
-                  >
-                    <Check
-                      className={cn(
-                        'mr-2 h-4 w-4',
-                        filters.features.includes(f.id) ? 'opacity-100' : 'opacity-0'
-                      )}
-                    />
-                    {f.name}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-            {positionOptions.length > 0 && (
-              <CommandGroup heading={t('positions')}>
-                {positionOptions.map((p) => (
-                  <CommandItem
-                    key={`p-${p.id}`}
-                    value={`position ${p.name}`}
-                    onSelect={() => toggle('positions', p.id)}
-                  >
-                    <Check
-                      className={cn(
-                        'mr-2 h-4 w-4',
-                        filters.positions.includes(p.id) ? 'opacity-100' : 'opacity-0'
-                      )}
-                    />
-                    {p.name}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+            {kinds.map(
+              ({ kind, heading, items }) =>
+                items.length > 0 && (
+                  <CommandGroup key={kind} heading={heading}>
+                    {items.map((item) => (
+                      <CommandItem
+                        key={item.id}
+                        value={`${kind} ${item.name}`}
+                        onSelect={() =>
+                          onChange({ ...filters, [kind]: toggled(filters[kind], item.id) })
+                        }
+                      >
+                        <Check
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            filters[kind].includes(item.id) ? 'opacity-100' : 'opacity-0'
+                          )}
+                        />
+                        {item.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )
             )}
           </CommandList>
         </Command>
@@ -266,24 +230,8 @@ function MarkupFilter({
 // Active-filter chips (G6.3)
 // ---------------------------------------------------------------------------
 
-interface GalleryFilterChipsProps {
-  filters: GalleryFilterState;
-  onChange: (next: GalleryFilterState) => void;
-  onClearAll: () => void;
-  handLabel: (key: number | null) => string;
-  featureLabel: (id: number) => string;
-  positionLabel: (id: number) => string;
-}
-
 // Renders the chips inline (no wrapper) so they flow in the summary line.
-export function GalleryFilterChips({
-  filters,
-  onChange,
-  onClearAll,
-  handLabel,
-  featureLabel,
-  positionLabel,
-}: GalleryFilterChipsProps) {
+export function GalleryFilterChips({ filters, onChange, options }: FilterProps) {
   const t = useTranslations('manuscript.gallery');
   const chips: { key: string; label: string; remove: () => void }[] = [];
 
@@ -295,10 +243,13 @@ export function GalleryFilterChips({
     });
   }
   for (const h of filters.hands) {
+    const name =
+      options.hands.find((o) => o.key === h)?.name ??
+      (h === null ? t('unattributed') : t('handFallback', { id: h }));
     chips.push({
       key: `hand-${h ?? 'unattributed'}`,
-      label: t('chipHand', { value: handLabel(h) }),
-      remove: () => onChange({ ...filters, hands: filters.hands.filter((x) => x !== h) }),
+      label: t('chipHand', { value: name }),
+      remove: () => onChange({ ...filters, hands: toggled(filters.hands, h) }),
     });
   }
   if (filters.status !== 'all') {
@@ -308,19 +259,17 @@ export function GalleryFilterChips({
       remove: () => onChange({ ...filters, status: 'all' }),
     });
   }
-  for (const id of filters.features) {
-    chips.push({
-      key: `feature-${id}`,
-      label: t('chipFeature', { value: featureLabel(id) }),
-      remove: () => onChange({ ...filters, features: filters.features.filter((x) => x !== id) }),
-    });
-  }
-  for (const id of filters.positions) {
-    chips.push({
-      key: `position-${id}`,
-      label: t('chipPosition', { value: positionLabel(id) }),
-      remove: () => onChange({ ...filters, positions: filters.positions.filter((x) => x !== id) }),
-    });
+  for (const kind of ['features', 'positions'] as const) {
+    for (const id of filters[kind]) {
+      const name =
+        options[kind].find((o) => o.id === id)?.name ??
+        t(kind === 'features' ? 'featureFallback' : 'positionFallback', { id });
+      chips.push({
+        key: `${kind}-${id}`,
+        label: t(kind === 'features' ? 'chipFeature' : 'chipPosition', { value: name }),
+        remove: () => onChange({ ...filters, [kind]: toggled(filters[kind], id) }),
+      });
+    }
   }
 
   if (chips.length === 0) return null;
@@ -345,7 +294,12 @@ export function GalleryFilterChips({
         </Badge>
       ))}
       {chips.length > 1 && (
-        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={onClearAll}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs"
+          onClick={() => onChange(EMPTY_FILTERS)}
+        >
           {t('clearAll')}
         </Button>
       )}

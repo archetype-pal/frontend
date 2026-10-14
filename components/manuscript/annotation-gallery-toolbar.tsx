@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { PencilLine, Search } from 'lucide-react';
 
-import type { GalleryFilterState, NamedOption } from '@/lib/annotation-gallery-filters';
+import type { GalleryFilterState } from '@/lib/annotation-gallery-filters';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -13,7 +13,7 @@ import { DensityControl, type ThumbDensity } from '@/components/manuscript/thumb
 import {
   GalleryFilterChips,
   GalleryFilterControls,
-  type HandOption,
+  type FilterOptions,
   type StatusCounts,
   TOOLBAR_SEGMENTED,
 } from '@/components/manuscript/annotation-gallery-filter-bar';
@@ -28,25 +28,16 @@ export const GALLERY_SCROLL_MARGIN =
 interface GalleryToolbarProps {
   filters: GalleryFilterState;
   onFiltersChange: (next: GalleryFilterState) => void;
-  onClearAllFilters: () => void;
-  handOptions: HandOption[];
-  featureOptions: NamedOption[];
-  positionOptions: NamedOption[];
+  options: FilterOptions;
   statusCounts: StatusCounts;
-  handLabel: (key: number | null) => string;
-  featureLabel: (id: number) => string;
-  positionLabel: (id: number) => string;
   filterInputRef: React.RefObject<HTMLInputElement | null>;
-  shownGraphs: number;
-  totalGraphs: number;
-  shownAllographs: number;
+  /** For the summary line: graphs shown, graphs on the image, allograph rows shown. */
+  summary: { shown: number; total: number; groups: number };
   density: ThumbDensity;
   onDensityChange: (value: ThumbDensity) => void;
-  canEdit: boolean;
-  /** False when the hand or allograph names failed to load, which editing needs. */
-  editingAvailable: boolean;
-  annotatingMode: boolean;
-  onAnnotatingModeChange: (value: boolean) => void;
+  /** Staff only. `available` is false when the hand or allograph names failed
+   *  to load, which editing needs. */
+  editing?: { on: boolean; available: boolean; onChange: (on: boolean) => void };
 }
 
 // One fixed-size toolbar: the controls on top, and a summary line under them
@@ -56,24 +47,13 @@ interface GalleryToolbarProps {
 export function GalleryToolbar({
   filters,
   onFiltersChange,
-  onClearAllFilters,
-  handOptions,
-  featureOptions,
-  positionOptions,
+  options,
   statusCounts,
-  handLabel,
-  featureLabel,
-  positionLabel,
   filterInputRef,
-  shownGraphs,
-  totalGraphs,
-  shownAllographs,
+  summary,
   density,
   onDensityChange,
-  canEdit,
-  editingAvailable,
-  annotatingMode,
-  onAnnotatingModeChange,
+  editing,
 }: GalleryToolbarProps) {
   const t = useTranslations('manuscript.gallery');
   const tCommon = useTranslations('common');
@@ -109,7 +89,7 @@ export function GalleryToolbar({
       <div
         className={cn(
           'rounded-lg border bg-card px-3 py-2.5 shadow-sm transition-colors',
-          annotatingMode && 'border-primary'
+          editing?.on && 'border-primary'
         )}
       >
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
@@ -133,9 +113,7 @@ export function GalleryToolbar({
           <GalleryFilterControls
             filters={filters}
             onChange={onFiltersChange}
-            handOptions={handOptions}
-            featureOptions={featureOptions}
-            positionOptions={positionOptions}
+            options={options}
             statusCounts={statusCounts}
           />
 
@@ -145,23 +123,23 @@ export function GalleryToolbar({
             className={TOOLBAR_SEGMENTED}
           />
 
-          {canEdit && (
+          {editing && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <label
                   className={cn(
                     'ml-auto flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm font-medium transition',
-                    !editingAvailable
+                    !editing.available
                       ? 'cursor-not-allowed border-dashed text-muted-foreground'
-                      : annotatingMode
+                      : editing.on
                         ? 'cursor-pointer border-primary bg-primary/10 text-foreground'
                         : 'cursor-pointer border-transparent text-foreground hover:border-border'
                   )}
                 >
                   <Switch
-                    checked={annotatingMode}
-                    onCheckedChange={onAnnotatingModeChange}
-                    disabled={!editingAvailable}
+                    checked={editing.on}
+                    onCheckedChange={editing.onChange}
+                    disabled={!editing.available}
                     aria-label={tCommon('editingMode')}
                   />
                   {tCommon('editingMode')}
@@ -169,7 +147,7 @@ export function GalleryToolbar({
                 </label>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                {editingAvailable ? t('editingModeTooltip') : t('editingUnavailable')}
+                {editing.available ? t('editingModeTooltip') : t('editingUnavailable')}
               </TooltipContent>
             </Tooltip>
           )}
@@ -178,21 +156,12 @@ export function GalleryToolbar({
         <div className="mt-2 flex min-h-7 flex-wrap items-center gap-x-2.5 gap-y-1.5 text-sm text-muted-foreground">
           <span aria-live="polite">
             {t.rich('summary', {
-              shown: shownGraphs,
-              total: totalGraphs,
-              groups: shownAllographs,
+              ...summary,
               b: (chunks) => <b className="font-semibold tabular-nums text-foreground">{chunks}</b>,
             })}
           </span>
-          <GalleryFilterChips
-            filters={filters}
-            onChange={onFiltersChange}
-            onClearAll={onClearAllFilters}
-            handLabel={handLabel}
-            featureLabel={featureLabel}
-            positionLabel={positionLabel}
-          />
-          {annotatingMode && (
+          <GalleryFilterChips filters={filters} onChange={onFiltersChange} options={options} />
+          {editing?.on && (
             <span className="ml-auto inline-flex items-center gap-1.5 font-medium text-primary">
               <PencilLine className="h-3.5 w-3.5" aria-hidden />
               {t('editingHint')}

@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Download, Images, Pencil, Star } from 'lucide-react';
 
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 interface GallerySelectionBarProps {
@@ -33,11 +34,18 @@ export function GallerySelectionBar({
   const t = useTranslations('manuscript.gallery');
   const selectedCount = shownCount + hiddenCount;
   if (selectedCount === 0) return null;
-  const nothingShown = shownCount === 0;
 
-  const primaryButton = 'h-9 gap-1.5 bg-background text-foreground hover:bg-background/90';
-  const barButton =
-    'h-9 gap-1.5 border-background/30 bg-transparent text-background hover:bg-background/15 hover:text-background';
+  const actions = [
+    annotatingMode
+      ? { icon: Pencil, label: t('editSelected', { count: shownCount }), onClick: onEdit }
+      : {
+          icon: Star,
+          label: t('addSelected', { count: shownCount }),
+          onClick: onAddToCollection,
+        },
+    { icon: Images, label: t('compare'), onClick: onSendToLightbox },
+    { icon: Download, label: t('exportCsv'), onClick: onExport },
+  ];
 
   return (
     <div className="pointer-events-none sticky bottom-4 z-40 flex justify-center pt-6">
@@ -55,42 +63,25 @@ export function GallerySelectionBar({
           </span>
         )}
         <span aria-hidden className="mx-1 h-5 w-px bg-background/25" />
-        {annotatingMode ? (
-          <Button size="sm" className={primaryButton} onClick={onEdit} disabled={nothingShown}>
-            <Pencil className="h-4 w-4" aria-hidden />
-            {t('editSelected', { count: shownCount })}
-          </Button>
-        ) : (
+        {actions.map(({ icon: Icon, label, onClick }, i) => (
           <Button
+            key={label}
             size="sm"
-            className={primaryButton}
-            onClick={onAddToCollection}
-            disabled={nothingShown}
+            variant={i === 0 ? 'default' : 'outline'}
+            onClick={onClick}
+            disabled={shownCount === 0}
+            className={cn(
+              'h-9 gap-1.5',
+              // The first action is the primary one.
+              i === 0
+                ? 'bg-background text-foreground hover:bg-background/90'
+                : 'border-background/30 bg-transparent text-background hover:bg-background/15 hover:text-background'
+            )}
           >
-            <Star className="h-4 w-4" aria-hidden />
-            {t('addSelected', { count: shownCount })}
+            <Icon className="h-4 w-4" aria-hidden />
+            {label}
           </Button>
-        )}
-        <Button
-          size="sm"
-          variant="outline"
-          className={barButton}
-          onClick={onSendToLightbox}
-          disabled={nothingShown}
-        >
-          <Images className="h-4 w-4" aria-hidden />
-          {t('compare')}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className={barButton}
-          onClick={onExport}
-          disabled={nothingShown}
-        >
-          <Download className="h-4 w-4" aria-hidden />
-          {t('exportCsv')}
-        </Button>
+        ))}
         <Button
           size="sm"
           variant="ghost"

@@ -3,11 +3,10 @@ import { describe, expect, it } from 'vitest';
 import type { BackendGraph } from '@/services/annotations';
 import type { HandType } from '@/types/hands';
 import {
+  type GroupLabels,
   groupAnnotations,
   handAccentColor,
   handAnchorId,
-  NO_ALLOGRAPH_LABEL,
-  withUnassignedLast,
 } from './annotation-gallery-groups';
 
 function makeGraph(overrides: Partial<BackendGraph> = {}): BackendGraph {
@@ -36,6 +35,13 @@ function makeHand(overrides: Partial<HandType> = {}): HandType {
   };
 }
 
+const LABELS: GroupLabels = {
+  unattributed: 'Unattributed',
+  noAllograph: 'No allograph',
+  hand: (id) => `Hand ${id}`,
+  allograph: (id) => `Allograph ${id}`,
+};
+
 const ALLOGRAPHS = [
   { id: 10, name: 'a' },
   { id: 11, name: 'b' },
@@ -51,7 +57,8 @@ describe('groupAnnotations', () => {
         makeGraph({ id: 3, allograph: 11 }),
       ],
       [makeHand()],
-      ALLOGRAPHS
+      ALLOGRAPHS,
+      LABELS
     );
 
     expect(groups).toHaveLength(1);
@@ -63,7 +70,12 @@ describe('groupAnnotations', () => {
   });
 
   it('labels an allograph with its character', () => {
-    const [hand] = groupAnnotations([makeGraph({ allograph: 12 })], [makeHand()], ALLOGRAPHS);
+    const [hand] = groupAnnotations(
+      [makeGraph({ allograph: 12 })],
+      [makeHand()],
+      ALLOGRAPHS,
+      LABELS
+    );
     expect(hand.allographs[0].allographName).toBe('s, long');
   });
 
@@ -75,7 +87,8 @@ describe('groupAnnotations', () => {
         makeGraph({ id: 3, hand: 100 }),
       ],
       [makeHand({ id: 100, name: 'Second', num: 2 }), makeHand({ id: 200, name: 'First', num: 1 })],
-      ALLOGRAPHS
+      ALLOGRAPHS,
+      LABELS
     );
 
     expect(groups.map((g) => g.handName)).toEqual(['First', 'Second', 'Unattributed']);
@@ -85,17 +98,18 @@ describe('groupAnnotations', () => {
     const [hand] = groupAnnotations(
       [makeGraph({ id: 1, allograph: null }), makeGraph({ id: 2, allograph: 11 })],
       [makeHand()],
-      ALLOGRAPHS
+      ALLOGRAPHS,
+      LABELS
     );
 
     expect(hand.allographs.map((a) => [a.allographId, a.allographName])).toEqual([
       [11, 'b'],
-      [null, NO_ALLOGRAPH_LABEL],
+      [null, 'No allograph'],
     ]);
     expect(hand.allographs[1].graphs.map((g) => g.id)).toEqual([1]);
   });
 
-  it('names the groups that have no record with the labels it is given', () => {
+  it('names hands and allographs it has no record of from the labels it is given', () => {
     const groups = groupAnnotations(
       [
         makeGraph({ id: 1, hand: null, allograph: null }),
@@ -103,34 +117,29 @@ describe('groupAnnotations', () => {
       ],
       [],
       [],
-      {
-        unattributed: 'Nicht zugeordnet',
-        noAllograph: 'Kein Allograph',
-        hand: (id) => `Hand Nr. ${id}`,
-        allograph: (id) => `Allograph Nr. ${id}`,
-      }
+      LABELS
     );
 
     expect(groups.map((h) => [h.handName, h.allographs.map((a) => a.allographName)])).toEqual([
-      ['Hand Nr. 7', ['Allograph Nr. 99']],
-      ['Nicht zugeordnet', ['Kein Allograph']],
+      ['Hand 7', ['Allograph 99']],
+      ['Unattributed', ['No allograph']],
     ]);
   });
 
-  it('falls back to ids when the hand or allograph names did not load', () => {
-    const [hand] = groupAnnotations([makeGraph({ hand: 7, allograph: 99 })], [], []);
-    expect(hand.handName).toBe('Hand 7');
-    expect(hand.allographs[0].allographName).toBe('Allograph 99');
-  });
-});
-
-describe('withUnassignedLast', () => {
   it('keeps the no-allograph group last under any sort', () => {
-    const groups = [{ allographId: null }, { allographId: 2 }, { allographId: 1 }];
-    const descending = withUnassignedLast<{ allographId: number | null }>(
-      (a, b) => (b.allographId ?? 0) - (a.allographId ?? 0)
+    const [hand] = groupAnnotations(
+      [
+        makeGraph({ id: 1, allograph: null }),
+        makeGraph({ id: 2, allograph: null }),
+        makeGraph({ id: 3, allograph: 10 }),
+      ],
+      [makeHand()],
+      ALLOGRAPHS,
+      LABELS,
+      'count-desc'
     );
-    expect([...groups].sort(descending).map((g) => g.allographId)).toEqual([2, 1, null]);
+
+    expect(hand.allographs.map((a) => a.allographId)).toEqual([10, null]);
   });
 });
 
