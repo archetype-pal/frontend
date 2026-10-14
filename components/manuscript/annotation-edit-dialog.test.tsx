@@ -316,6 +316,37 @@ describe('AnnotationEditDialog — allograph-switch save correctness', () => {
   });
 });
 
+describe('AnnotationEditDialog — keyboard save', () => {
+  beforeEach(() => {
+    updateViewerAnnotationMock.mockReset();
+    updateViewerAnnotationMock.mockResolvedValue(makeGraph());
+  });
+
+  it('saves every pending edit with Cmd/Ctrl+Enter', async () => {
+    render(
+      <AnnotationEditDialog
+        open
+        onOpenChange={vi.fn()}
+        graphs={[makeGraph({ allograph: 1, graphcomponent_set: [], positions: [] })]}
+        allographs={[ALLOGRAPH_A]}
+        hands={[HAND]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Set curved on all selected' }));
+    // Radix activates a tab on mouseDown, not click.
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'position-plural' }), { button: 0 });
+    fireEvent.click(screen.getByRole('radio', { name: 'Set initial on all selected' }));
+
+    fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
+
+    await waitFor(() => expect(updateViewerAnnotationMock).toHaveBeenCalledTimes(1));
+    const [, , patch] = updateViewerAnnotationMock.mock.calls[0];
+    expect(patch.graphcomponent_set).toEqual([{ component: 10, features: [100] }]);
+    expect(patch.positions).toEqual([1000]);
+  });
+});
+
 describe('AnnotationEditDialog — component/position tabs', () => {
   beforeEach(() => {
     updateViewerAnnotationMock.mockReset();
