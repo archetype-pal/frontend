@@ -90,6 +90,44 @@ describe('DataTable server sorting and export', () => {
 
     expect(await downloaded()).toBe('name\nBeta\nAlpha\nGamma');
   });
+
+  it('exports only the ticked rows in list order, page by page, even after going back to an earlier page', async () => {
+    const downloaded = stubDownload();
+    const fetchAllRows = vi.fn();
+    const table = (data: Row[]) => (
+      <DataTable
+        columns={columns}
+        data={data}
+        pagination={false}
+        enableRowSelection
+        enableExport
+        fetchAllRows={fetchAllRows}
+      />
+    );
+    const tick = (index: number) =>
+      fireEvent.click(screen.getAllByRole('checkbox', { name: /select row/i })[index]);
+    const firstPage: Row[] = [
+      { id: 3, name: 'Gamma' },
+      { id: 4, name: 'Delta' },
+    ];
+    const { rerender } = render(table(firstPage));
+
+    tick(0);
+    rerender(
+      table([
+        { id: 2, name: 'Beta' },
+        { id: 1, name: 'Alpha' },
+      ])
+    );
+    tick(1);
+    tick(0);
+    rerender(table(firstPage));
+    tick(1);
+    fireEvent.click(screen.getByRole('button', { name: /export 4 selected/i }));
+
+    expect(await downloaded()).toBe('name\nGamma\nDelta\nBeta\nAlpha');
+    expect(fetchAllRows).not.toHaveBeenCalled();
+  });
 });
 
 describe('DataTable client pagination', () => {
