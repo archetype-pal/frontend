@@ -139,11 +139,19 @@ function LightboxPageContent() {
   }, [initialize]);
 
   const paramKey = searchParams.toString();
+  // The query this page last replaced the URL with after a load. The re-render
+  // that delivers it must not load its (failed) ids again; a reload remounts
+  // with this ref empty, and so retries them.
+  const replacedParamKeyRef = React.useRef<string | null>(null);
   const fromCollectionCount =
     searchParams.get('from') === 'collection' ? collectionItems.length : -1;
 
   React.useEffect(() => {
     if (!isInitialized) return;
+    if (replacedParamKeyRef.current === paramKey) {
+      replacedParamKeyRef.current = null;
+      return;
+    }
 
     // Handoff from a server workset: it was already persisted to Dexie (and so
     // reloaded by initialize() above), we just need to select its workspace —
@@ -162,6 +170,7 @@ function LightboxPageContent() {
 
     let cancelled = false;
     async function loadImagesFromParams() {
+      let nextQuery: URLSearchParams | null = null;
       try {
         setError(null);
         setLoading(true);
@@ -173,6 +182,11 @@ function LightboxPageContent() {
           | import('@/types/search').ImageListItem
           | import('@/types/search').GraphListItem;
         const itemsToLoad: ResolvedItem[] = [];
+        // Ids of a multi-item URL that could not be fetched, one message per kind.
+        const failures: string[] = [];
+        const reportFailure = (msg: string) => failures.push(msg);
+        let failedImageIds: number[] = [];
+        let failedGraphIds: number[] = [];
 
         if (imageId) {
           const item = await resolveItemById('image', imageId, collectionItems, setError);
@@ -180,21 +194,58 @@ function LightboxPageContent() {
         } else if (graphId) {
           const item = await resolveItemById('graph', graphId, collectionItems, setError);
           if (item) itemsToLoad.push(item);
-        } else if (imagesParam) {
-          const ids = imagesParam.split(',').map(Number);
-          await resolveItemsByIds('image', ids, collectionItems, itemsToLoad, setError);
-        } else if (graphsParam) {
-          const ids = graphsParam.split(',').map(Number);
-          await resolveItemsByIds('graph', ids, collectionItems, itemsToLoad, setError);
+        } else if (imagesParam || graphsParam) {
+          // A mixed selection carries both params (see getLightboxItemsUrl), so
+          // load each kind rather than stopping at the first.
+          if (imagesParam) {
+            const ids = imagesParam.split(',').map(Number);
+            failedImageIds = await resolveItemsByIds(
+              'image',
+              ids,
+              collectionItems,
+              itemsToLoad,
+              reportFailure
+            );
+          }
+          if (graphsParam) {
+            const ids = graphsParam.split(',').map(Number);
+            failedGraphIds = await resolveItemsByIds(
+              'graph',
+              ids,
+              collectionItems,
+              itemsToLoad,
+              reportFailure
+            );
+          }
         } else if (fromCollection) {
           itemsToLoad.push(...collectionItems);
         }
 
-        if (!cancelled && itemsToLoad.length > 0) await loadImages(itemsToLoad);
+        if (cancelled) return;
+        if (itemsToLoad.length > 0) {
+          await loadImages(itemsToLoad);
+          // Some items made it in, so keep the workspace on screen and name the
+          // rest in a toast rather than the full-page error.
+          if (!cancelled) failures.forEach((msg) => toast.error(msg));
+          // The loaded items are now persisted in the workspace, so drop their
+          // ids: a reload (or Back into this entry) must not add them a second
+          // time. Keep only the failed ids, so a reload retries just those.
+          nextQuery = new URLSearchParams();
+          if (failedImageIds.length > 0) nextQuery.set('images', failedImageIds.join(','));
+          if (failedGraphIds.length > 0) nextQuery.set('graphs', failedGraphIds.join(','));
+        } else if (failures.length > 0) {
+          setError(failures.join('. '));
+        }
       } catch (error) {
         if (!cancelled) setError(error instanceof Error ? error.message : 'Failed to load images');
       } finally {
         if (!cancelled) setLoading(false);
+      }
+      if (nextQuery && !cancelled) {
+        replacedParamKeyRef.current = nextQuery.toString();
+        // Keep the id lists readable (`images=1,2`, as the links build them).
+        const query = replacedParamKeyRef.current.replaceAll('%2C', ',');
+        router.replace(query ? `/lightbox?${query}` : '/lightbox');
       }
     }
 

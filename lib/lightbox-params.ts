@@ -37,19 +37,24 @@ export async function resolveItemById(
   }
 }
 
-/** Resolve multiple items by ids: from collection + fetch missing from API. Pushes to itemsToLoad and may set error. */
+/**
+ * Resolve multiple items by ids: from collection + fetch missing from API. Pushes to itemsToLoad,
+ * reports the ids that could not be fetched (even when others of the same kind loaded) and
+ * returns them.
+ */
 export async function resolveItemsByIds(
   type: ItemType,
   ids: number[],
   collectionItems: CollectionItem[],
   itemsToLoad: ResolvedItem[],
-  setError: (msg: string | null) => void
-): Promise<void> {
+  reportFailure: (msg: string) => void
+): Promise<number[]> {
   const fromCollection = collectionItems.filter((i) => ids.includes(i.id) && i.type === type);
   const missingIds = ids.filter((id) => !fromCollection.some((i) => i.id === id));
   const endpoint = type === 'image' ? 'item-images' : 'graphs';
   const label = type === 'image' ? 'image' : 'graph';
   const failed: string[] = [];
+  const failedIds: number[] = [];
 
   const results = await Promise.allSettled(
     missingIds.map(async (id) => {
@@ -60,16 +65,18 @@ export async function resolveItemsByIds(
     })
   );
 
-  for (const result of results) {
+  for (const [index, result] of results.entries()) {
     if (result.status === 'fulfilled') {
       itemsToLoad.push(result.value);
     } else {
+      failedIds.push(missingIds[index]);
       failed.push(result.reason instanceof Error ? result.reason.message : String(result.reason));
     }
   }
 
-  if (failed.length > 0 && fromCollection.length === 0 && itemsToLoad.length === 0) {
-    setError(`Could not load ${type === 'image' ? 'images' : 'graphs'}: ${failed.join('; ')}`);
+  if (failed.length > 0) {
+    reportFailure(`Could not load ${type === 'image' ? 'images' : 'graphs'}: ${failed.join('; ')}`);
   }
   itemsToLoad.push(...fromCollection);
+  return failedIds;
 }

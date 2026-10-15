@@ -945,7 +945,8 @@
       "imagesTitle": "Images",
       "imagesInWorkspace": "{count, plural, =1 {{count} image} other {{count} images}} in workspace",
       "noImages": "No images in workspace",
-      "addFromCollection": "Add images from your collection"
+      "addFromCollection": "Add images from your collection",
+      "addAllFromCollection": "Add all from collection"
     },
     "session": {
       "title": "Session Manager",
