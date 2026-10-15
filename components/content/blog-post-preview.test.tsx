@@ -88,8 +88,9 @@ describe('BlogPostPreview', () => {
     const { getByText, unmount } = renderPreview();
     const author = getByText('Alice Smith');
     expect(author.closest('a')).toBeNull();
-    // The meta row marks its links with the primary colour; plain text must not borrow it.
-    expect(author.className).not.toMatch(/text-primary/);
+    // jsdom loads no Tailwind, so check classes: like the date, the author sets no
+    // text colour of its own and inherits the row's muted colour, unlike its links.
+    expect(author.className).not.toMatch(/(^|\s)text-/);
     unmount();
   });
 
