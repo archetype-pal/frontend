@@ -157,7 +157,8 @@ export function ViewerToolbar({
 
         <ToolbarButton
           icon={RefreshCcw}
-          label={t('toolbar.refresh')}
+          label={t('toolbar.resetView')}
+          tooltip={t('toolbar.resetViewTooltip')}
           keyshortcuts="Home"
           onClick={onRefresh}
         />
