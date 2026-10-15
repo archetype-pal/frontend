@@ -180,12 +180,17 @@ function LightboxPageContent() {
         } else if (graphId) {
           const item = await resolveItemById('graph', graphId, collectionItems, setError);
           if (item) itemsToLoad.push(item);
-        } else if (imagesParam) {
-          const ids = imagesParam.split(',').map(Number);
-          await resolveItemsByIds('image', ids, collectionItems, itemsToLoad, setError);
-        } else if (graphsParam) {
-          const ids = graphsParam.split(',').map(Number);
-          await resolveItemsByIds('graph', ids, collectionItems, itemsToLoad, setError);
+        } else if (imagesParam || graphsParam) {
+          // A mixed selection carries both params (see getLightboxItemsUrl), so
+          // load each kind rather than stopping at the first.
+          if (imagesParam) {
+            const ids = imagesParam.split(',').map(Number);
+            await resolveItemsByIds('image', ids, collectionItems, itemsToLoad, setError);
+          }
+          if (graphsParam) {
+            const ids = graphsParam.split(',').map(Number);
+            await resolveItemsByIds('graph', ids, collectionItems, itemsToLoad, setError);
+          }
         } else if (fromCollection) {
           itemsToLoad.push(...collectionItems);
         }
