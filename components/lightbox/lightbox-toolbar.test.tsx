@@ -65,6 +65,23 @@ describe('LightboxToolbar selection-only controls', () => {
     expect(isDisabled('Compare Images')).toBe(true);
   });
 
+  it('still name themselves on hover while disabled', () => {
+    render(<LightboxToolbar onCrop={vi.fn()} onToggleComparison={vi.fn()} />);
+
+    // jsdom applies no Tailwind CSS, so check the two halves of a hover tooltip:
+    // the `title` text, and the class that keeps a disabled button hoverable.
+    const iconControls = selectionControls.filter((name) => name !== 'Adjust');
+    for (const name of [...iconControls, 'Compare Images', 'Undo', 'Redo']) {
+      const button = screen.getByRole('button', { name }) as HTMLButtonElement;
+      expect(button.disabled).toBe(true);
+      expect(button.title).toBe(name);
+      expect(button.className).toContain('disabled:pointer-events-auto');
+    }
+    const annotations = screen.getByRole('button', { name: 'Toggle annotations overlay' });
+    expect(annotations.title).toBe('Toggle Annotations');
+    expect(annotations.className).toContain('disabled:pointer-events-auto');
+  });
+
   it('become enabled once images are selected', () => {
     render(<LightboxToolbar onCrop={vi.fn()} onToggleComparison={vi.fn()} />);
 
