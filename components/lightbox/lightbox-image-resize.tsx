@@ -100,24 +100,32 @@ export function LightboxImageResize({ image, containerRef }: LightboxImageResize
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  // A resize ends with a click on the handle; keep it from bubbling to the
+  // image, where it would toggle selection.
+  const stopClick = (e: React.MouseEvent) => e.stopPropagation();
+
   return (
     <>
       {/* Resize handles */}
       <div
         className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 border-2 border-white rounded cursor-se-resize z-10 opacity-0 group-hover:opacity-100 transition-opacity"
         onMouseDown={(e) => handleMouseDown(e, 'se')}
+        onClick={stopClick}
       />
       <div
         className="absolute -bottom-1 -left-1 w-4 h-4 bg-blue-500 border-2 border-white rounded cursor-sw-resize z-10 opacity-0 group-hover:opacity-100 transition-opacity"
         onMouseDown={(e) => handleMouseDown(e, 'sw')}
+        onClick={stopClick}
       />
       <div
         className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 border-2 border-white rounded cursor-ne-resize z-10 opacity-0 group-hover:opacity-100 transition-opacity"
         onMouseDown={(e) => handleMouseDown(e, 'ne')}
+        onClick={stopClick}
       />
       <div
         className="absolute -top-1 -left-1 w-4 h-4 bg-blue-500 border-2 border-white rounded cursor-nw-resize z-10 opacity-0 group-hover:opacity-100 transition-opacity"
         onMouseDown={(e) => handleMouseDown(e, 'nw')}
+        onClick={stopClick}
       />
     </>
   );
