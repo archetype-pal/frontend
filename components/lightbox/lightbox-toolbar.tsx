@@ -145,77 +145,91 @@ export function LightboxToolbar({
         </Button>
       </div>
 
-      {/* Transform Controls */}
-      {hasSelection && (
-        <>
-          <LightboxTransformPanel />
-          <Button variant="ghost" size="sm" onClick={handleRotate} title={t('toolbar.rotate')}>
-            <RotateCw className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleFlipX}
-            title={t('toolbar.flipHorizontal')}
-          >
-            <FlipHorizontal className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleFlipY} title={t('toolbar.flipVertical')}>
-            <FlipVertical className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-0.5 border-l pl-2 ml-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => selectedImages.forEach((img) => bringToFront(img.id))}
-              title={t('toolbar.bringToFront')}
-            >
-              <ArrowUpToLine className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => selectedImages.forEach((img) => moveUp(img.id))}
-              title={t('toolbar.moveUp')}
-            >
-              <ChevronUp className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => selectedImages.forEach((img) => moveDown(img.id))}
-              title={t('toolbar.moveDown')}
-            >
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => selectedImages.forEach((img) => sendToBack(img.id))}
-              title={t('toolbar.sendToBack')}
-            >
-              <ArrowDownToLine className="h-4 w-4" />
-            </Button>
-          </div>
-        </>
-      )}
-
-      {/* Actions */}
-      {hasSelection && (
+      {/* Transform Controls. These and the other selection-only controls stay
+          rendered (disabled without a selection) so selecting an image doesn't
+          reflow the toolbar and shift the workspace. */}
+      <LightboxTransformPanel />
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleRotate}
+        disabled={!hasSelection}
+        title={t('toolbar.rotate')}
+      >
+        <RotateCw className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleFlipX}
+        disabled={!hasSelection}
+        title={t('toolbar.flipHorizontal')}
+      >
+        <FlipHorizontal className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleFlipY}
+        disabled={!hasSelection}
+        title={t('toolbar.flipVertical')}
+      >
+        <FlipVertical className="h-4 w-4" />
+      </Button>
+      <div className="flex items-center gap-0.5 border-l pl-2 ml-1">
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => {
-            const firstSelected = selectedImages[0];
-            if (firstSelected && onCrop) {
-              onCrop(firstSelected.id);
-            }
-          }}
-          title={t('toolbar.crop')}
+          onClick={() => selectedImages.forEach((img) => bringToFront(img.id))}
+          disabled={!hasSelection}
+          title={t('toolbar.bringToFront')}
         >
-          <Crop className="h-4 w-4" />
+          <ArrowUpToLine className="h-4 w-4" />
         </Button>
-      )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => selectedImages.forEach((img) => moveUp(img.id))}
+          disabled={!hasSelection}
+          title={t('toolbar.moveUp')}
+        >
+          <ChevronUp className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => selectedImages.forEach((img) => moveDown(img.id))}
+          disabled={!hasSelection}
+          title={t('toolbar.moveDown')}
+        >
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => selectedImages.forEach((img) => sendToBack(img.id))}
+          disabled={!hasSelection}
+          title={t('toolbar.sendToBack')}
+        >
+          <ArrowDownToLine className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Actions */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => {
+          const firstSelected = selectedImages[0];
+          if (firstSelected && onCrop) {
+            onCrop(firstSelected.id);
+          }
+        }}
+        disabled={!hasSelection}
+        title={t('toolbar.crop')}
+      >
+        <Crop className="h-4 w-4" />
+      </Button>
 
       {/* Undo/Redo */}
       <div className="flex items-center gap-1 border-r pr-2">
@@ -265,18 +279,17 @@ export function LightboxToolbar({
             <StickyNote className="h-4 w-4" />
           </Button>
         )}
-        {hasSelection && selectedImages.length === 1 && (
-          <Button
-            variant={showAnnotations ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setShowAnnotations(!showAnnotations)}
-            title={t('toolbar.toggleAnnotations')}
-            aria-label={t('toolbar.toggleAnnotationsLabel')}
-            aria-pressed={showAnnotations}
-          >
-            <MessageSquare className="h-4 w-4" />
-          </Button>
-        )}
+        <Button
+          variant={showAnnotations ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setShowAnnotations(!showAnnotations)}
+          disabled={selectedImages.length !== 1}
+          title={t('toolbar.toggleAnnotations')}
+          aria-label={t('toolbar.toggleAnnotationsLabel')}
+          aria-pressed={showAnnotations}
+        >
+          <MessageSquare className="h-4 w-4" />
+        </Button>
         {onToggleMinimap && (
           <Button
             variant="ghost"
@@ -297,11 +310,12 @@ export function LightboxToolbar({
             <Ruler className="h-4 w-4" />
           </Button>
         )}
-        {onToggleComparison && hasSelection && selectedImages.length >= 2 && (
+        {onToggleComparison && (
           <Button
             variant="ghost"
             size="sm"
             onClick={onToggleComparison}
+            disabled={selectedImages.length < 2}
             title={t('toolbar.compareImages')}
           >
             <Split className="h-4 w-4" />
