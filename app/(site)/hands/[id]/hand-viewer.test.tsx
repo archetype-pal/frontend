@@ -152,24 +152,43 @@ describe('HandViewer Graphs tab', () => {
     expect(apiFetch).toHaveBeenCalledWith('/api/v1/symbols_structure/allographs/?light=1');
   });
 
-  it('keeps the graphs, under a fallback label, when the allograph labels fail to load', async () => {
-    apiFetch.mockImplementation(async (url: string) =>
-      url.includes('/graphs/') ? respond(url) : { ok: false, status: 500, json: async () => ({}) }
-    );
-    renderGraphsTab();
+  // The fallback label is for the page only: a collected graph or a CSV row keeps no placeholder.
+  it.each([
+    [
+      'fail to load',
+      () => ({ ok: false, status: 500, json: async () => ({}) }),
+      ['Allograph 11', 'Allograph 12'],
+    ],
+    [
+      'lack its allograph',
+      () => ({ ok: true, json: async () => ALLOGRAPHS.slice(1) }),
+      ['Allograph 11', 'b, Caroline'],
+    ],
+  ])(
+    'shows a graph under a fallback label, but collects and exports it without an allograph, when the allograph labels %s',
+    async (_case, allographsResponse, headings) => {
+      apiFetch.mockImplementation(async (url: string) =>
+        url.includes('/graphs/') ? respond(url) : allographsResponse()
+      );
+      renderGraphsTab();
 
-    expect(await screen.findByRole('heading', { name: 'Allograph 11' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Allograph 12' })).toBeTruthy();
+      expect(await screen.findByRole('heading', { name: headings[0] })).toBeTruthy();
+      expect(screen.getByRole('heading', { name: headings[1] })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Select Allograph 11, graph 101' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Export as CSV' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Select Allograph 11, graph 101' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Add to collection' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Export as CSV' }));
 
-    expect(downloadCsv).toHaveBeenCalledWith(
-      'hand-5-graphs.csv',
-      'id,allograph,hand,described,components,features,positions,image,locus\n' +
-        '101,Allograph 11,Main Hand,no,,,,42,face'
-    );
-  });
+      expect(addItem).toHaveBeenCalledTimes(1);
+      expect(addItem.mock.calls[0][0]).toMatchObject({ id: 101, hand_name: 'Main Hand' });
+      expect(addItem.mock.calls[0][0].allograph).toBeUndefined();
+      expect(downloadCsv).toHaveBeenCalledWith(
+        'hand-5-graphs.csv',
+        'id,allograph,hand,described,components,features,positions,image,locus\n' +
+          '101,,Main Hand,no,,,,42,face'
+      );
+    }
+  );
 
   it('shows the load error, not an empty list, when the graphs request fails', async () => {
     apiFetch.mockImplementation(async (url: string) =>
