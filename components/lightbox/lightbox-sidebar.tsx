@@ -166,6 +166,8 @@ export function LightboxSidebar() {
                 size="sm"
                 onClick={handleLoadFromCollection}
                 disabled={collectionItems.length === 0}
+                aria-label={t('sidebar.addAllFromCollection')}
+                title={t('sidebar.addAllFromCollection')}
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -227,7 +229,18 @@ export function LightboxSidebar() {
                 <div className="text-center py-8 text-sm text-muted-foreground">
                   <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p>{t('sidebar.noImages')}</p>
-                  <p className="text-xs mt-1">{t('sidebar.addFromCollection')}</p>
+                  {collectionItems.length > 0 ? (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto mt-1 p-0 text-xs"
+                      onClick={handleLoadFromCollection}
+                    >
+                      {t('sidebar.addFromCollection')}
+                    </Button>
+                  ) : (
+                    <p className="text-xs mt-1">{t('sidebar.addFromCollection')}</p>
+                  )}
                 </div>
               )}
             </div>
