@@ -100,8 +100,9 @@ export function LightboxImageResize({ image, containerRef }: LightboxImageResize
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  // A resize ends with a click on the handle; keep it from bubbling to the
-  // image, where it would toggle selection.
+  // A press on a handle that barely moves ends with a click on the handle; keep
+  // it from bubbling to the image, where it would toggle selection. A resize that
+  // ends off the handle is caught by the image's press-distance check instead.
   const stopClick = (e: React.MouseEvent) => e.stopPropagation();
 
   return (

@@ -26,8 +26,9 @@ function clampPosition(
   };
 }
 
-// How far (px) the pointer must travel before a press counts as a drag rather
-// than a click. Below this, hand jitter during a click still toggles selection.
+// How far (px) the pointer may travel between press and click for the click to
+// still toggle selection. Farther than this, the press was a drag or a resize,
+// so hand jitter during a plain click still toggles but a move doesn't.
 const DRAG_CLICK_THRESHOLD = 4;
 
 const ImageWithErrorHandler = React.memo(function ImageWithErrorHandler({
@@ -112,6 +113,11 @@ const LightboxImageItem = React.memo(function LightboxImageItem({
   onClick,
 }: LightboxImageItemProps) {
   const elRef = React.useRef<HTMLDivElement>(null);
+  // Where the current press started. Recorded in the capture phase so a press on
+  // a resize handle (which stops the mousedown bubbling) still counts; the click
+  // after a resize can land on the item body once the aspect-ratio lock or the
+  // minimum size moves the handle away from the pointer.
+  const pressRef = React.useRef({ x: 0, y: 0 });
 
   const transformStyle: React.CSSProperties = {
     position: 'absolute',
@@ -163,9 +169,19 @@ const LightboxImageItem = React.memo(function LightboxImageItem({
         'border-2 group',
         isSelected ? 'border-blue-500 shadow-lg' : 'border-transparent hover:border-gray-300'
       )}
+      onMouseDownCapture={(e) => {
+        pressRef.current = { x: e.clientX, y: e.clientY };
+      }}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
-      onClick={(e) => onClick(e, image.id)}
+      onClick={(e) => {
+        const { x, y } = pressRef.current;
+        if (Math.hypot(e.clientX - x, e.clientY - y) > DRAG_CLICK_THRESHOLD) {
+          e.stopPropagation();
+          return;
+        }
+        onClick(e, image.id);
+      }}
     >
       <div className="relative w-full h-full">
         <ImageWithErrorHandler image={image} />
@@ -200,32 +216,16 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
     imageId: string | null;
     el: HTMLDivElement | null;
     offset: { x: number; y: number };
-    start: { x: number; y: number };
-    moved: boolean;
     lastPosition: { x: number; y: number } | null;
-  }>({
-    imageId: null,
-    el: null,
-    offset: { x: 0, y: 0 },
-    start: { x: 0, y: 0 },
-    moved: false,
-    lastPosition: null,
-  });
-  // Set when a press ends as a real drag, so the click the browser fires after
-  // the mouseup doesn't toggle selection. Reset on every new press, so a drag
-  // that never produces a click (touch) can't swallow the next genuine click.
-  const suppressClickRef = React.useRef(false);
+  }>({ imageId: null, el: null, offset: { x: 0, y: 0 }, lastPosition: null });
 
   const startDrag = React.useCallback(
     (imageId: string, clientX: number, clientY: number, el: HTMLDivElement) => {
       const rect = el.getBoundingClientRect();
-      suppressClickRef.current = false;
       dragRef.current = {
         imageId,
         el,
         offset: { x: clientX - rect.left, y: clientY - rect.top },
-        start: { x: clientX, y: clientY },
-        moved: false,
         lastPosition: null,
       };
       el.style.cursor = 'grabbing';
@@ -234,11 +234,8 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
   );
 
   const moveDrag = React.useCallback((clientX: number, clientY: number) => {
-    const { imageId, el, offset, start } = dragRef.current;
+    const { imageId, el, offset } = dragRef.current;
     if (!imageId || !el || !containerRef.current) return;
-    if (Math.hypot(clientX - start.x, clientY - start.y) > DRAG_CLICK_THRESHOLD) {
-      dragRef.current.moved = true;
-    }
     const containerRect = containerRef.current.getBoundingClientRect();
     const image = imagesRef.current.find((img) => img.id === imageId);
     if (!image) return;
@@ -253,16 +250,8 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
   }, []);
 
   const endDrag = React.useCallback(() => {
-    const { imageId, el, lastPosition, moved } = dragRef.current;
-    dragRef.current = {
-      imageId: null,
-      el: null,
-      offset: { x: 0, y: 0 },
-      start: { x: 0, y: 0 },
-      moved: false,
-      lastPosition: null,
-    };
-    suppressClickRef.current = moved;
+    const { imageId, el, lastPosition } = dragRef.current;
+    dragRef.current = { imageId: null, el: null, offset: { x: 0, y: 0 }, lastPosition: null };
     if (el) el.style.cursor = 'grab';
 
     if (imageId && lastPosition) {
@@ -318,10 +307,6 @@ export function LightboxImageLayer({ images }: LightboxImageLayerProps) {
 
   const handleImageClick = React.useCallback((e: React.MouseEvent, imageId: string) => {
     e.stopPropagation();
-    if (suppressClickRef.current) {
-      suppressClickRef.current = false;
-      return;
-    }
     const { selectImage, deselectImage, selectedImageIds } = useLightboxStore.getState();
     if (selectedImageIds.has(imageId)) {
       deselectImage(imageId);
