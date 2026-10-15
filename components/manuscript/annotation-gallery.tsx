@@ -291,7 +291,8 @@ export function AnnotationGallery({
   );
   const handNameById = React.useMemo(() => new Map(hands.map((h) => [h.id, h.name])), [hands]);
 
-  // Export the selection as CSV (G4.3).
+  // Export the selection as CSV (G4.3). Real names only: the "Hand 5" fallback
+  // is for the page, so a hand whose name is unknown gets an empty cell.
   const exportSelected = () =>
     downloadCsv(
       `annotations-${imageId}.csv`,
@@ -301,7 +302,7 @@ export function AnnotationGallery({
           allograph: allographLabelById.get(g.allograph ?? -1) ?? '',
           hand:
             typeof g.hand === 'number'
-              ? (handNameById.get(g.hand) ?? groupLabels.hand(g.hand))
+              ? (handNameById.get(g.hand) ?? '')
               : groupLabels.unattributed,
         }))
       )
