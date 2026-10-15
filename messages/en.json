@@ -334,7 +334,7 @@
       "zoomOut": "Zoom out",
       "zoomOutTooltip": "Zoom Out",
       "resetView": "Reset view",
-      "resetViewTooltip": "Reset view (Home)",
+      "resetViewTooltip": "Reset view and reload saved annotations (Home)",
       "editorialAnnotation": "Create editorial annotation",
       "editorialAnnotationTooltip": "Create Editorial Annotation",
       "save": "Save (s)",

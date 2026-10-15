@@ -334,7 +334,7 @@
       "zoomOut": "Verkleinern",
       "zoomOutTooltip": "Verkleinern",
       "resetView": "Ansicht zurücksetzen",
-      "resetViewTooltip": "Ansicht zurücksetzen (Home)",
+      "resetViewTooltip": "Ansicht zurücksetzen und gespeicherte Annotationen neu laden (Home)",
       "editorialAnnotation": "Editorische Annotation erstellen",
       "editorialAnnotationTooltip": "Editorische Annotation erstellen",
       "save": "Speichern (s)",

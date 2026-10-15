@@ -334,7 +334,7 @@
       "zoomOut": "Zoom arrière",
       "zoomOutTooltip": "Zoom arrière",
       "resetView": "Réinitialiser la vue",
-      "resetViewTooltip": "Réinitialiser la vue (Home)",
+      "resetViewTooltip": "Réinitialiser la vue et recharger les annotations enregistrées (Home)",
       "editorialAnnotation": "Créer une annotation éditoriale",
       "editorialAnnotationTooltip": "Créer une annotation éditoriale",
       "save": "Enregistrer (s)",
