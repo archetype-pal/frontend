@@ -69,4 +69,17 @@ describe('/lightbox item params', () => {
     await waitFor(() => expect(loadImagesMock).toHaveBeenCalled());
     expect(loadedItems().sort()).toEqual(['graph:3', 'image:1', 'image:2']);
   });
+
+  it('drops the item params once loaded, so reloading the page does not add them again', async () => {
+    const { unmount } = renderWithParams('images=1&graphs=3');
+
+    await waitFor(() => expect(nav.replace).toHaveBeenCalledWith('/lightbox'));
+    expect(loadImagesMock).toHaveBeenCalledTimes(1);
+
+    // Reload: the page comes back on the URL it was replaced with.
+    unmount();
+    renderWithParams(nav.replace.mock.calls[0][0].split('?')[1] ?? '');
+    await act(async () => {});
+    expect(loadImagesMock).toHaveBeenCalledTimes(1);
+  });
 });
