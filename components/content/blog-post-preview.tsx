@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import ShareButtons from './share-buttons';
 import { renderPublicationHtml } from '@/lib/publication-html';
+import { PUBLICATION_KIND_CONFIG, type PublicationKind } from '@/lib/publications';
 
 // Format a date string, returning '' for null/empty/malformed input so the UI
 // never surfaces the literal 'Invalid Date' to readers.
@@ -78,11 +79,17 @@ export default function BlogPostPreview({
 }: BlogPostPreviewProps) {
   const t = useTranslations('content');
   const tags = parseKeywords(keywords).filter((tag) => !CATEGORY_KEYWORDS.has(tag.toLowerCase()));
-  const publicationLabel = slug.includes('/publications/feature')
-    ? t('blog.typeFeature')
+  const kind: PublicationKind = slug.includes('/publications/feature')
+    ? 'feature'
     : slug.includes('/publications/blogs')
-      ? t('blog.typeBlog')
-      : t('blog.typeNews');
+      ? 'blogs'
+      : 'news';
+  const publicationLabel =
+    kind === 'feature'
+      ? t('blog.typeFeature')
+      : kind === 'blogs'
+        ? t('blog.typeBlog')
+        : t('blog.typeNews');
 
   return (
     <article className="mb-0">
@@ -96,22 +103,27 @@ export default function BlogPostPreview({
           <User className="h-4 w-4 mr-1" />
           {t('blog.postedBy')}
         </span>
-        <span className="text-primary font-medium">{author}</span>
+        {/* Plain text: there is no per-author listing to link to. */}
+        <span>{author}</span>
         <span className="mx-1">·</span>
         <span className="flex items-center">
           <Calendar className="h-4 w-4 mr-1" />
           <time dateTime={date}>{formatDate(date)}</time>
         </span>
         <span className="mx-1">·</span>
-        <Link href={slug} className="flex items-center text-primary hover:underline">
+        <Link
+          href={PUBLICATION_KIND_CONFIG[kind].routeBase}
+          className="flex items-center text-primary hover:underline"
+        >
           <Newspaper className="h-4 w-4 mr-1" />
           {publicationLabel}
         </Link>
         <span className="mx-1">·</span>
-        <Link href={`${slug}`} className="flex items-center text-primary hover:underline">
+        {/* A count only: comments are not shown on the post page yet (#187). */}
+        <span className="flex items-center">
           <MessageSquare className="h-4 w-4 mr-1" />
           {t('blog.comments', { count: commentsCount })}
-        </Link>
+        </span>
       </div>
 
       {tags.length > 0 && (
