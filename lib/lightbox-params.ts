@@ -37,13 +37,16 @@ export async function resolveItemById(
   }
 }
 
-/** Resolve multiple items by ids: from collection + fetch missing from API. Pushes to itemsToLoad and may set error. */
+/**
+ * Resolve multiple items by ids: from collection + fetch missing from API. Pushes to itemsToLoad
+ * and reports the ids that could not be fetched, even when others of the same kind loaded.
+ */
 export async function resolveItemsByIds(
   type: ItemType,
   ids: number[],
   collectionItems: CollectionItem[],
   itemsToLoad: ResolvedItem[],
-  setError: (msg: string | null) => void
+  reportFailure: (msg: string) => void
 ): Promise<void> {
   const fromCollection = collectionItems.filter((i) => ids.includes(i.id) && i.type === type);
   const missingIds = ids.filter((id) => !fromCollection.some((i) => i.id === id));
@@ -68,8 +71,8 @@ export async function resolveItemsByIds(
     }
   }
 
-  if (failed.length > 0 && fromCollection.length === 0 && itemsToLoad.length === 0) {
-    setError(`Could not load ${type === 'image' ? 'images' : 'graphs'}: ${failed.join('; ')}`);
+  if (failed.length > 0) {
+    reportFailure(`Could not load ${type === 'image' ? 'images' : 'graphs'}: ${failed.join('; ')}`);
   }
   itemsToLoad.push(...fromCollection);
 }

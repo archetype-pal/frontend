@@ -162,7 +162,7 @@ function LightboxPageContent() {
 
     let cancelled = false;
     async function loadImagesFromParams() {
-      let loaded = false;
+      let loadedAll = false;
       try {
         setError(null);
         setLoading(true);
@@ -174,6 +174,9 @@ function LightboxPageContent() {
           | import('@/types/search').ImageListItem
           | import('@/types/search').GraphListItem;
         const itemsToLoad: ResolvedItem[] = [];
+        // Ids of a multi-item URL that could not be fetched, one message per kind.
+        const failures: string[] = [];
+        const reportFailure = (msg: string) => failures.push(msg);
 
         if (imageId) {
           const item = await resolveItemById('image', imageId, collectionItems, setError);
@@ -186,19 +189,25 @@ function LightboxPageContent() {
           // load each kind rather than stopping at the first.
           if (imagesParam) {
             const ids = imagesParam.split(',').map(Number);
-            await resolveItemsByIds('image', ids, collectionItems, itemsToLoad, setError);
+            await resolveItemsByIds('image', ids, collectionItems, itemsToLoad, reportFailure);
           }
           if (graphsParam) {
             const ids = graphsParam.split(',').map(Number);
-            await resolveItemsByIds('graph', ids, collectionItems, itemsToLoad, setError);
+            await resolveItemsByIds('graph', ids, collectionItems, itemsToLoad, reportFailure);
           }
         } else if (fromCollection) {
           itemsToLoad.push(...collectionItems);
         }
 
-        if (!cancelled && itemsToLoad.length > 0) {
+        if (cancelled) return;
+        if (itemsToLoad.length > 0) {
           await loadImages(itemsToLoad);
-          loaded = true;
+          loadedAll = failures.length === 0;
+          // Some items made it in, so keep the workspace on screen and name the
+          // rest in a toast rather than the full-page error.
+          if (!cancelled) failures.forEach((msg) => toast.error(msg));
+        } else if (failures.length > 0) {
+          setError(failures.join('. '));
         }
       } catch (error) {
         if (!cancelled) setError(error instanceof Error ? error.message : 'Failed to load images');
@@ -206,8 +215,9 @@ function LightboxPageContent() {
         if (!cancelled) setLoading(false);
       }
       // The items are now persisted in the workspace; drop the params so a
-      // reload (or Back into this entry) doesn't add them a second time.
-      if (loaded && !cancelled) router.replace('/lightbox');
+      // reload (or Back into this entry) doesn't add them a second time. Keep
+      // them when any item failed, so a reload can retry it.
+      if (loadedAll && !cancelled) router.replace('/lightbox');
     }
 
     loadImagesFromParams();
