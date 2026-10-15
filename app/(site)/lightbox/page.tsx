@@ -162,6 +162,7 @@ function LightboxPageContent() {
 
     let cancelled = false;
     async function loadImagesFromParams() {
+      let loaded = false;
       try {
         setError(null);
         setLoading(true);
@@ -195,12 +196,18 @@ function LightboxPageContent() {
           itemsToLoad.push(...collectionItems);
         }
 
-        if (!cancelled && itemsToLoad.length > 0) await loadImages(itemsToLoad);
+        if (!cancelled && itemsToLoad.length > 0) {
+          await loadImages(itemsToLoad);
+          loaded = true;
+        }
       } catch (error) {
         if (!cancelled) setError(error instanceof Error ? error.message : 'Failed to load images');
       } finally {
         if (!cancelled) setLoading(false);
       }
+      // The items are now persisted in the workspace; drop the params so a
+      // reload (or Back into this entry) doesn't add them a second time.
+      if (loaded && !cancelled) router.replace('/lightbox');
     }
 
     loadImagesFromParams();
