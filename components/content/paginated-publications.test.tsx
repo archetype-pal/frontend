@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Suspense, startTransition, use, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -77,6 +77,25 @@ describe('PaginatedPublications', () => {
 
     await waitFor(() => expect(nav.replace).toHaveBeenCalledWith('/news?page=3'));
     expect(nav.push).not.toHaveBeenCalled();
+  });
+
+  it('offers only the recent posts in the sidebar, with no dead date filter or feed link', async () => {
+    renderNews('', 45);
+
+    const sidebar = screen.getByRole('complementary');
+    expect(await within(sidebar).findByRole('link', { name: 'Post 5' })).toBeTruthy();
+    expect(
+      within(sidebar)
+        .getAllByRole('heading')
+        .map((h) => h.textContent)
+    ).toEqual(['Recent Posts']);
+    expect(within(sidebar).queryByRole('combobox')).toBeNull();
+    expect(within(sidebar).queryByText(/RSS|Atom/)).toBeNull();
+    expect(
+      within(sidebar)
+        .getAllByRole('link')
+        .map((a) => a.getAttribute('href'))
+    ).not.toContain('#');
   });
 
   it('dims the posts from the click until the next page has loaded', async () => {
