@@ -311,6 +311,40 @@ describe('ManuscriptViewer smoke test', () => {
     await waitFor(() => expect(enablePan).toHaveBeenCalledTimes(2));
   });
 
+  it('resets the view and reloads the saved annotations when Reset view is clicked', async () => {
+    render(<ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />);
+    await screen.findByRole('button', { name: 'Image tools' });
+
+    const props = annotoriousPropsRef.current;
+    const goHome = vi.fn();
+    const api = new Proxy(
+      { goHome },
+      {
+        get: (target, prop) =>
+          prop in target ? target[prop as keyof typeof target] : () => undefined,
+      }
+    );
+    act(() => {
+      props!.exposeApi?.(api);
+    });
+
+    await act(async () => {
+      props!.onCreate?.(draftAnnotation('draft-before-reset'));
+    });
+    expect(await screen.findByRole('button', { name: 'Save (s)' })).toHaveProperty(
+      'disabled',
+      false
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset view' }));
+
+    expect(goHome).toHaveBeenCalledTimes(1);
+    // The unsaved draft is dropped in favour of the saved annotations.
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Save (s)' })).toHaveProperty('disabled', true)
+    );
+  });
+
   it('uses plain s to immediately save an edited active popup', async () => {
     render(<ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />);
     await screen.findByRole('button', { name: 'Image tools' });
