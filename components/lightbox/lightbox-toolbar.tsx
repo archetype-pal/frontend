@@ -33,6 +33,11 @@ import { useLightboxStore, useSelectedImages } from '@/stores/lightbox-store';
 import { LightboxTransformPanel } from './lightbox-transform-panel';
 import { LightboxHelpDialog } from './lightbox-help-dialog';
 
+// `Button` turns off pointer events when disabled, which also hides its `title`
+// tooltip. Keep them on for the icon-only controls that can be disabled, so a
+// greyed-out icon still names itself on hover.
+const DISABLED_HINT = 'disabled:pointer-events-auto disabled:cursor-not-allowed';
+
 interface LightboxToolbarProps {
   onCrop?: (imageId: string) => void;
   onExport?: () => void;
@@ -154,6 +159,7 @@ export function LightboxToolbar({
         size="sm"
         onClick={handleRotate}
         disabled={!hasSelection}
+        className={DISABLED_HINT}
         title={t('toolbar.rotate')}
       >
         <RotateCw className="h-4 w-4" />
@@ -163,6 +169,7 @@ export function LightboxToolbar({
         size="sm"
         onClick={handleFlipX}
         disabled={!hasSelection}
+        className={DISABLED_HINT}
         title={t('toolbar.flipHorizontal')}
       >
         <FlipHorizontal className="h-4 w-4" />
@@ -172,6 +179,7 @@ export function LightboxToolbar({
         size="sm"
         onClick={handleFlipY}
         disabled={!hasSelection}
+        className={DISABLED_HINT}
         title={t('toolbar.flipVertical')}
       >
         <FlipVertical className="h-4 w-4" />
@@ -182,6 +190,7 @@ export function LightboxToolbar({
           size="sm"
           onClick={() => selectedImages.forEach((img) => bringToFront(img.id))}
           disabled={!hasSelection}
+          className={DISABLED_HINT}
           title={t('toolbar.bringToFront')}
         >
           <ArrowUpToLine className="h-4 w-4" />
@@ -191,6 +200,7 @@ export function LightboxToolbar({
           size="sm"
           onClick={() => selectedImages.forEach((img) => moveUp(img.id))}
           disabled={!hasSelection}
+          className={DISABLED_HINT}
           title={t('toolbar.moveUp')}
         >
           <ChevronUp className="h-4 w-4" />
@@ -200,6 +210,7 @@ export function LightboxToolbar({
           size="sm"
           onClick={() => selectedImages.forEach((img) => moveDown(img.id))}
           disabled={!hasSelection}
+          className={DISABLED_HINT}
           title={t('toolbar.moveDown')}
         >
           <ChevronDown className="h-4 w-4" />
@@ -209,6 +220,7 @@ export function LightboxToolbar({
           size="sm"
           onClick={() => selectedImages.forEach((img) => sendToBack(img.id))}
           disabled={!hasSelection}
+          className={DISABLED_HINT}
           title={t('toolbar.sendToBack')}
         >
           <ArrowDownToLine className="h-4 w-4" />
@@ -226,6 +238,7 @@ export function LightboxToolbar({
           }
         }}
         disabled={!hasSelection}
+        className={DISABLED_HINT}
         title={t('toolbar.crop')}
       >
         <Crop className="h-4 w-4" />
@@ -238,6 +251,7 @@ export function LightboxToolbar({
           size="sm"
           onClick={undo}
           disabled={historyIndex <= 0}
+          className={DISABLED_HINT}
           title={t('toolbar.undo')}
         >
           <Undo2 className="h-4 w-4" />
@@ -247,6 +261,7 @@ export function LightboxToolbar({
           size="sm"
           onClick={redo}
           disabled={historyIndex >= history.length - 1}
+          className={DISABLED_HINT}
           title={t('toolbar.redo')}
         >
           <Redo2 className="h-4 w-4" />
@@ -284,6 +299,7 @@ export function LightboxToolbar({
           size="sm"
           onClick={() => setShowAnnotations(!showAnnotations)}
           disabled={selectedImages.length !== 1}
+          className={DISABLED_HINT}
           title={t('toolbar.toggleAnnotations')}
           aria-label={t('toolbar.toggleAnnotationsLabel')}
           aria-pressed={showAnnotations}
@@ -316,6 +332,7 @@ export function LightboxToolbar({
             size="sm"
             onClick={onToggleComparison}
             disabled={selectedImages.length < 2}
+            className={DISABLED_HINT}
             title={t('toolbar.compareImages')}
           >
             <Split className="h-4 w-4" />
