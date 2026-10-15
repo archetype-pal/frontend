@@ -632,11 +632,7 @@
     },
     "publicationsList": {
       "noPostsFound": "No posts found.",
-      "recentPosts": "Recent Posts",
-      "postsByDate": "Posts by Date",
-      "selectMonth": "Select month",
-      "feeds": "Feeds",
-      "rssAtom": "RSS / Atom"
+      "recentPosts": "Recent Posts"
     }
   },
   "collection": {
