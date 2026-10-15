@@ -89,21 +89,29 @@ describe('/lightbox item params', () => {
     expect(nav.replace).toHaveBeenCalledTimes(1);
   });
 
-  it('names a kind that failed while the other loaded, and keeps the URL to retry it', async () => {
+  it('names a kind that failed while the other loaded, and keeps only its ids to retry', async () => {
     failingPaths.add('/api/v1/search/graphs/3/');
-    const { unmount } = renderWithParams('images=1&graphs=3');
+    const { rerender, unmount } = renderWithParams('images=1,2&graphs=3,4');
 
-    await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('graph 3'))
-    );
-    expect(loadedItems()).toEqual(['image:1']);
-    expect(nav.replace).not.toHaveBeenCalled();
+    await waitFor(() => expect(nav.replace).toHaveBeenCalledWith('/lightbox?graphs=3'));
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('graph 3'));
+    expect(loadedItems().sort()).toEqual(['graph:4', 'image:1', 'image:2']);
 
-    // Reloading the same URL once the graph is reachable again loads it.
+    // The re-render that delivers the new URL doesn't retry on its own.
+    nav.params = new URLSearchParams('graphs=3');
+    rerender(<LightboxPage />);
+    await act(async () => {});
+    expect(loadImagesMock).toHaveBeenCalledTimes(1);
+    expect(toast.error).toHaveBeenCalledTimes(1);
+    expect(useLightboxStore.getState().error).toBeNull();
+
+    // Reloading it once the graph is reachable again loads just that graph.
     unmount();
     failingPaths.clear();
-    renderWithParams('images=1&graphs=3');
-    await waitFor(() => expect(loadedItems()).toContain('graph:3'));
+    loadImagesMock.mockClear();
+    renderWithParams('graphs=3');
+    await waitFor(() => expect(loadImagesMock).toHaveBeenCalled());
+    expect(loadedItems()).toEqual(['graph:3']);
   });
 
   it('names images that failed while the graphs loaded, over the workspace', async () => {
@@ -114,7 +122,7 @@ describe('/lightbox item params', () => {
       expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('image 1'))
     );
     expect(loadedItems()).toEqual(['graph:3']);
-    expect(nav.replace).not.toHaveBeenCalled();
+    expect(nav.replace).toHaveBeenCalledWith('/lightbox?images=1');
     expect(useLightboxStore.getState().error).toBeNull();
   });
 });
