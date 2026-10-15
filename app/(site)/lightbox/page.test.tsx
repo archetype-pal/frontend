@@ -75,16 +75,18 @@ describe('/lightbox item params', () => {
   });
 
   it('drops the item params once loaded, so reloading the page does not add them again', async () => {
-    const { unmount } = renderWithParams('images=1&graphs=3');
+    const { rerender } = renderWithParams('images=1&graphs=3');
 
     await waitFor(() => expect(nav.replace).toHaveBeenCalledWith('/lightbox'));
     expect(loadImagesMock).toHaveBeenCalledTimes(1);
 
-    // Reload: the page comes back on the URL it was replaced with.
-    unmount();
-    renderWithParams(nav.replace.mock.calls[0][0].split('?')[1] ?? '');
+    // Next delivers the replaced URL by re-rendering the mounted page, which
+    // re-runs the params effect; a reload then starts from that same URL.
+    nav.params = new URLSearchParams(nav.replace.mock.calls[0][0].split('?')[1] ?? '');
+    rerender(<LightboxPage />);
     await act(async () => {});
     expect(loadImagesMock).toHaveBeenCalledTimes(1);
+    expect(nav.replace).toHaveBeenCalledTimes(1);
   });
 
   it('names a kind that failed while the other loaded, and keeps the URL to retry it', async () => {
