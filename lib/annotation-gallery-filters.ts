@@ -8,12 +8,6 @@ export type DescriptionStatus = 'all' | 'described' | 'undescribed';
 export type SortKey = 'allograph-asc' | 'allograph-desc' | 'count-desc' | 'count-asc';
 export const DEFAULT_SORT: SortKey = 'allograph-asc';
 export const SORT_KEYS: SortKey[] = ['allograph-asc', 'allograph-desc', 'count-desc', 'count-asc'];
-export const SORT_LABELS: Record<SortKey, string> = {
-  'allograph-asc': 'Allograph A–Z',
-  'allograph-desc': 'Allograph Z–A',
-  'count-desc': 'Most graphs',
-  'count-asc': 'Fewest graphs',
-};
 
 export interface GalleryFilterState {
   /** Allograph-name substring (case-insensitive). */

@@ -7,6 +7,7 @@ import {
 import { fetchAnnotationsForImage, type BackendGraph } from '@/services/annotations';
 import { AnnotationGallery } from '@/components/manuscript/annotation-gallery';
 import { sortHandsByPriority } from '@/lib/hand-ordering';
+import { getTranslations } from 'next-intl/server';
 
 // The gallery reads filter state from the URL via useSearchParams, which
 // requires the route to render dynamically (it already fetches with no-store).
@@ -34,7 +35,8 @@ export default async function AnnotationsTabPage({ params }: PageProps) {
   try {
     image = await fetchManuscriptImage(imageId);
   } catch {
-    return <div className="px-4 py-6 text-muted-foreground">Unable to load image.</div>;
+    const t = await getTranslations('manuscript.gallery');
+    return <div className="px-4 py-6 text-muted-foreground">{t('imageLoadError')}</div>;
   }
 
   const [graphsResult, allographsResult, handsResult, manuscript] = await Promise.all([

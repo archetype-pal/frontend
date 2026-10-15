@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 
-import { cn } from '@/lib/utils';
+import { Segmented, type SegmentedOption } from '@/components/ui/segmented';
 
 export type ThumbDensity = 'compact' | 'comfortable' | 'large';
 
@@ -37,44 +37,29 @@ export function useThumbDensity(): [ThumbDensity, (next: ThumbDensity) => void] 
   return [density, changeDensity];
 }
 
-// Thumbnail-size segmented control (G6.4).
+// Thumbnail-size segmented control (G6.4). Arrow keys move between sizes.
 export function DensityControl({
   density,
   onChange,
+  className,
 }: {
   density: ThumbDensity;
   onChange: (value: ThumbDensity) => void;
+  className?: string;
 }) {
   const t = useTranslations('common.thumbnailSize');
-  const options: { value: ThumbDensity; label: string; title: string }[] = [
+  const options: SegmentedOption<ThumbDensity>[] = [
     { value: 'compact', label: 'S', title: t('compact') },
     { value: 'comfortable', label: 'M', title: t('comfortable') },
     { value: 'large', label: 'L', title: t('large') },
   ];
   return (
-    <div
-      role="radiogroup"
-      aria-label={t('label')}
-      className="inline-flex overflow-hidden rounded-md border"
-    >
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          role="radio"
-          aria-checked={density === opt.value}
-          title={opt.title}
-          onClick={() => onChange(opt.value)}
-          className={cn(
-            'border-l px-2.5 py-1.5 text-xs font-medium transition first:border-l-0',
-            density === opt.value
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
-          )}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
+    <Segmented
+      ariaLabel={t('label')}
+      value={density}
+      options={options}
+      onChange={onChange}
+      className={className}
+    />
   );
 }
