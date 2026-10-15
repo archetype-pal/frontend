@@ -26,6 +26,11 @@ function clampPosition(
   };
 }
 
+// How far (px) the pointer may travel between press and click for the click to
+// still toggle selection. Farther than this, the press was a drag or a resize,
+// so hand jitter during a plain click still toggles but a move doesn't.
+const DRAG_CLICK_THRESHOLD = 4;
+
 const ImageWithErrorHandler = React.memo(function ImageWithErrorHandler({
   image,
 }: {
@@ -108,6 +113,11 @@ const LightboxImageItem = React.memo(function LightboxImageItem({
   onClick,
 }: LightboxImageItemProps) {
   const elRef = React.useRef<HTMLDivElement>(null);
+  // Where the current press started. Recorded in the capture phase so a press on
+  // a resize handle (which stops the mousedown bubbling) still counts; the click
+  // after a resize can land on the item body once the aspect-ratio lock or the
+  // minimum size moves the handle away from the pointer.
+  const pressRef = React.useRef({ x: 0, y: 0 });
 
   const transformStyle: React.CSSProperties = {
     position: 'absolute',
@@ -159,9 +169,19 @@ const LightboxImageItem = React.memo(function LightboxImageItem({
         'border-2 group',
         isSelected ? 'border-blue-500 shadow-lg' : 'border-transparent hover:border-gray-300'
       )}
+      onMouseDownCapture={(e) => {
+        pressRef.current = { x: e.clientX, y: e.clientY };
+      }}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
-      onClick={(e) => onClick(e, image.id)}
+      onClick={(e) => {
+        const { x, y } = pressRef.current;
+        if (Math.hypot(e.clientX - x, e.clientY - y) > DRAG_CLICK_THRESHOLD) {
+          e.stopPropagation();
+          return;
+        }
+        onClick(e, image.id);
+      }}
     >
       <div className="relative w-full h-full">
         <ImageWithErrorHandler image={image} />
