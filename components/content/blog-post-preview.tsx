@@ -6,7 +6,11 @@ import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import ShareButtons from './share-buttons';
 import { renderPublicationHtml } from '@/lib/publication-html';
-import { PUBLICATION_KIND_CONFIG, type PublicationKind } from '@/lib/publications';
+import {
+  PUBLICATION_KINDS,
+  PUBLICATION_KIND_CONFIG,
+  type PublicationKind,
+} from '@/lib/publications';
 
 // Format a date string, returning '' for null/empty/malformed input so the UI
 // never surfaces the literal 'Invalid Date' to readers.
@@ -79,11 +83,11 @@ export default function BlogPostPreview({
 }: BlogPostPreviewProps) {
   const t = useTranslations('content');
   const tags = parseKeywords(keywords).filter((tag) => !CATEGORY_KEYWORDS.has(tag.toLowerCase()));
-  const kind: PublicationKind = slug.includes('/publications/feature')
-    ? 'feature'
-    : slug.includes('/publications/blogs')
-      ? 'blogs'
-      : 'news';
+  // Both callers pass `${routeBase}/${slug}`, so the config that builds the
+  // type link's href also tells us which listing this post is viewed under.
+  const kind: PublicationKind =
+    PUBLICATION_KINDS.find((k) => slug.startsWith(`${PUBLICATION_KIND_CONFIG[k].routeBase}/`)) ??
+    'news';
   const publicationLabel =
     kind === 'feature'
       ? t('blog.typeFeature')
