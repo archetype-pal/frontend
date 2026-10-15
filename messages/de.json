@@ -315,7 +315,7 @@
       "zoomIn": "Vergrößern",
       "zoomOut": "Verkleinern",
       "nudge": "Bild schrittweise verschieben",
-      "resetView": "Ansicht zurücksetzen",
+      "resetView": "Ansicht zurücksetzen und gespeicherte Annotationen neu laden",
       "fullScreen": "Vollbild",
       "drawRegion": "Bereich zeichnen",
       "modifyReshape": "Ändern / Umformen",

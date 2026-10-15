@@ -315,7 +315,7 @@
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
       "nudge": "Nudge the image",
-      "resetView": "Reset the view",
+      "resetView": "Reset the view and reload saved annotations",
       "fullScreen": "Full screen",
       "drawRegion": "Draw a region",
       "modifyReshape": "Modify / reshape",
