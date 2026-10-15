@@ -83,7 +83,17 @@ describe('LightboxImageLayer selection', () => {
     const handle = item.querySelector('.cursor-se-resize') as HTMLElement;
 
     await act(async () => press(handle, [300, 300], [360, 360]));
+    expect(isSelected()).toBe(true);
 
+    // A mostly sideways drag: the aspect-ratio lock grows the height too, so the
+    // handle ends up below the pointer and the mouseup lands on the image body.
+    const body = item.firstElementChild as HTMLElement;
+    await act(async () => {
+      fireEvent.mouseDown(handle, { clientX: 360, clientY: 360 });
+      fireEvent.mouseMove(document, { clientX: 460, clientY: 370 });
+      fireEvent.mouseUp(body, { clientX: 460, clientY: 370 });
+      fireEvent.click(item, { clientX: 460, clientY: 370 });
+    });
     expect(isSelected()).toBe(true);
   });
 
