@@ -5,14 +5,17 @@ import { describe, expect, it } from 'vitest';
 
 import BlogPostPreview from './blog-post-preview';
 
-const renderPreview = (keywords?: string | null) =>
+const renderPreview = (
+  keywords?: string | null,
+  slug = '/publications/blogs/medieval-manuscripts'
+) =>
   render(
     <BlogPostPreview
       title="Medieval Manuscripts"
       author="Alice Smith"
       date="2020-01-01T00:00:00Z"
       excerpt="<p>An overview.</p>"
-      slug="/publications/blogs/medieval-manuscripts"
+      slug={slug}
       keywords={keywords}
       showShareBtns={false}
       showReadMoreBtn={false}
@@ -79,6 +82,34 @@ describe('BlogPostPreview', () => {
     expect(badges('')).toBeNull();
     expect(badges(null)).toBeNull();
     expect(badges(undefined)).toBeNull();
+  });
+
+  it('shows the author as plain text, neither a link nor styled as one', () => {
+    const { getByText, unmount } = renderPreview();
+    const author = getByText('Alice Smith');
+    expect(author.closest('a')).toBeNull();
+    // The meta row marks its links with the primary colour; plain text must not borrow it.
+    expect(author.className).not.toMatch(/text-primary/);
+    unmount();
+  });
+
+  it('links the publication type to the listing of that kind', () => {
+    const cases = [
+      ['/publications/news/a-post', 'News', '/publications/news'],
+      ['/publications/blogs/a-post', 'Blog', '/publications/blogs'],
+      ['/publications/feature/a-post', 'Feature', '/publications/feature'],
+    ];
+    for (const [slug, label, listing] of cases) {
+      const { getByRole, unmount } = renderPreview(null, slug);
+      expect(getByRole('link', { name: label }).getAttribute('href')).toBe(listing);
+      unmount();
+    }
+  });
+
+  it('shows the comment count without linking to comments the post page cannot show', () => {
+    const { getByText, unmount } = renderPreview();
+    expect(getByText('0 Comments').closest('a')).toBeNull();
+    unmount();
   });
 
   it('names the keyword group for assistive tech', () => {
