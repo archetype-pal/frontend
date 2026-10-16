@@ -36,7 +36,7 @@ export function useUndoableGraphDelete(options: UndoableGraphDeleteOptions) {
     const { token, onRestore, onDeleted, onFailed } = optionsRef.current;
     pendingRef.current.delete(graphId);
     if (!token) return;
-    const request = deleteViewerAnnotation(token, graphId, { keepalive: true });
+    const request = deleteViewerAnnotation(graphId, { keepalive: true });
     // Nothing is left to update once the page has gone.
     if (leaving) {
       request.catch(() => {});

@@ -449,7 +449,6 @@ describe('ManuscriptViewer smoke test', () => {
 
     await waitFor(() =>
       expect(annotationServiceMocks.createViewerAnnotation).toHaveBeenCalledWith(
-        'token',
         expect.objectContaining({
           allograph: allographB.id,
           hand: 10,

@@ -1,4 +1,4 @@
-import { authFetch, proxyFetch } from '@/lib/api-fetch';
+import { optionalAuthFetch, proxyFetch } from '@/lib/api-fetch';
 import { BackofficeApiError } from '@/services/backoffice/api-client';
 
 export type ImageTextStatus = 'Draft' | 'Review' | 'Live' | 'Reviewed';
@@ -23,11 +23,11 @@ interface PaginatedImageTexts {
 
 export async function fetchImageTextsForImage(
   imageId: string | number,
-  token?: string | null
+  authenticated = false
 ): Promise<ImageTextDetail[]> {
-  const response = await authFetch(
+  const response = await optionalAuthFetch(
     `/api/v1/manuscripts/image-texts/?item_image=${imageId}`,
-    token ?? null,
+    authenticated,
     { cache: 'no-store' }
   );
   if (!response.ok) return [];
@@ -38,11 +38,13 @@ export async function fetchImageTextsForImage(
 
 export async function fetchImageText(
   textId: string | number,
-  token?: string | null
+  authenticated = false
 ): Promise<ImageTextDetail | null> {
-  const response = await authFetch(`/api/v1/manuscripts/image-texts/${textId}/`, token ?? null, {
-    cache: 'no-store',
-  });
+  const response = await optionalAuthFetch(
+    `/api/v1/manuscripts/image-texts/${textId}/`,
+    authenticated,
+    { cache: 'no-store' }
+  );
   if (!response.ok) return null;
   return response.json();
 }

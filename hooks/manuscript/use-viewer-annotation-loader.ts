@@ -54,7 +54,7 @@ export function useViewerAnnotationLoader({
         isPublicDemoMode,
         includeEditorial: canViewEditorialControls,
         includeText: true,
-        token,
+        authenticated: !!token,
         ...extra,
       });
     },
