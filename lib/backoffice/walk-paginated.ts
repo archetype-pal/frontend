@@ -17,10 +17,12 @@
  *    can't resolve. Stripping back to a path keeps the next iteration on
  *    the same base.
  *
- * On a non-OK response the partial buffer is returned (matches the
- * defensive behavior the previous inlined helpers committed to). The
- * caller decides whether to surface this as an error.
+ * On a non-OK response it throws `BackofficeApiError`, so a React Query
+ * using it reports `isError` instead of caching a partial list.
  */
+
+import { proxyFetch } from '@/lib/api-fetch';
+import { BackofficeApiError } from '@/services/backoffice/api-client';
 
 interface PaginatedDrfResponse<T> {
   next?: string | null;
@@ -29,13 +31,16 @@ interface PaginatedDrfResponse<T> {
 
 export async function walkPaginated<T>(
   startPath: string,
-  fetcher: (path: string) => Promise<Response>
+  fetcher: (path: string) => Promise<Response> = proxyFetch
 ): Promise<T[]> {
   let path: string | null = startPath;
   const out: T[] = [];
   while (path) {
     const response = await fetcher(path);
-    if (!response.ok) return out;
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new BackofficeApiError(response.status, body as Record<string, unknown>);
+    }
     const data: unknown = await response.json();
     if (Array.isArray(data)) {
       out.push(...(data as T[]));

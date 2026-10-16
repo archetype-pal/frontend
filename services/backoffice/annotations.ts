@@ -15,12 +15,11 @@ export function getGraphs(params?: {
   allograph?: number;
   limit?: number;
   offset?: number;
+  ordering?: string;
 }) {
   return graphsCrud.list(params);
 }
 
-export const getGraph = graphsCrud.get;
-export const updateGraph = graphsCrud.update;
 export const deleteGraph = graphsCrud.remove;
 
 // ── Trash (soft-deleted graphs) ──────────────────────────────────────────
@@ -34,6 +33,7 @@ export function getTrashedGraphs(params?: {
   /** ISO 8601 instant — use Date.toISOString(), not a naive local string. */
   deleted_at__gte?: string;
   deleted_at__lte?: string;
+  ordering?: string;
 }) {
   return graphsCrud.list({ ...params, deleted: 'true' });
 }

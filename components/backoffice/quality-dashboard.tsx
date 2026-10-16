@@ -8,12 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
 import { fetchQualityDashboard } from '@/services/backoffice/quality-dashboard';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 export function QualityDashboard() {
   const t = useTranslations('backoffice');
   const { isAuthenticated } = useAuth();
   const { data, isFetching, error, refetch } = useQuery({
-    queryKey: ['backoffice', 'quality-dashboard'],
+    queryKey: backofficeKeys.qualityDashboard(),
     queryFn: () => fetchQualityDashboard(),
     enabled: isAuthenticated,
     staleTime: 30_000,

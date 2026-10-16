@@ -145,31 +145,33 @@ export default function PagesPage() {
     {
       label: t('pages.bulkPublish'),
       icon: <CheckCircle className="h-3 w-3" />,
-      action: async (slugs) => {
-        await runBulkAction({
+      action: async (slugs, keepTicked) => {
+        const { failedIds } = await runBulkAction({
           ids: slugs,
           action: (slug) => updatePage(slug, { status: 'Published' }),
           invalidate: invalidatePages,
           pastTense: 'published',
           noun: 'page',
         });
+        keepTicked(failedIds);
       },
     },
     {
       label: t('pages.bulkUnpublish'),
       icon: <XCircle className="h-3 w-3" />,
-      action: (slugs) => {
+      action: (slugs, keepTicked) => {
         setPendingBulkAction({
           label: t('pages.bulkUnpublish'),
           slugs,
           execute: async (s) => {
-            await runBulkAction({
+            const { failedIds } = await runBulkAction({
               ids: s,
               action: (slug) => updatePage(slug, { status: 'Draft' }),
               invalidate: invalidatePages,
               pastTense: 'unpublished',
               noun: 'page',
             });
+            keepTicked(failedIds);
           },
         });
         setBulkConfirmOpen(true);
@@ -179,18 +181,19 @@ export default function PagesPage() {
       label: t('pages.bulkDelete'),
       variant: 'destructive',
       icon: <Trash2 className="h-3 w-3" />,
-      action: (slugs) => {
+      action: (slugs, keepTicked) => {
         setPendingBulkAction({
           label: t('pages.bulkDelete'),
           slugs,
           execute: async (s) => {
-            await runBulkAction({
+            const { failedIds } = await runBulkAction({
               ids: s,
               action: (slug) => deletePage(slug),
               invalidate: invalidatePages,
               pastTense: 'deleted',
               noun: 'page',
             });
+            keepTicked(failedIds);
           },
         });
         setBulkConfirmOpen(true);
@@ -224,7 +227,8 @@ export default function PagesPage() {
         data={filtered}
         searchColumn="title"
         searchPlaceholder={t('pages.searchPlaceholder')}
-        pageSize={25}
+        pageSize={20}
+        pageSizeKey="pages"
         enableColumnVisibility
         enableRowSelection
         bulkActions={bulkActions}

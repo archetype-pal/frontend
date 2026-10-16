@@ -179,7 +179,7 @@ export default function BackofficeDashboardPage() {
   });
 
   const pendingComments = useQuery({
-    queryKey: backofficeKeys.comments.list('pending'),
+    queryKey: backofficeKeys.comments.list({ is_approved: false }),
     queryFn: () => getComments({ is_approved: false }),
     enabled: isAuthenticated,
   });

@@ -151,7 +151,7 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
 
   // Lightweight poll for pending comments (60s)
   const { data: pendingComments } = useQuery({
-    queryKey: backofficeKeys.comments.list('pending'),
+    queryKey: backofficeKeys.comments.list({ is_approved: false }),
     queryFn: () => getComments({ is_approved: false }),
     enabled: isAuthenticated,
     refetchInterval: 60_000,

@@ -22,13 +22,13 @@ import { EntityEditorActions } from '@/components/backoffice/common/entity-edito
 import {
   BackofficeErrorState,
   BackofficeLoadingState,
+  BackofficeInlineError,
 } from '@/components/backoffice/common/query-state';
 import { getScribe, updateScribe, deleteScribe } from '@/services/backoffice/scribes';
 import { getDates } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import type { AdminHandListItem } from '@/types/backoffice';
 
 export default function ScribeDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -50,16 +50,17 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
     label: 'Scribe',
   });
 
-  // Walk all pages — `getHands(token, { scribe })` returned only the first DRF
-  // page (default 20). A productive scribe can have many hands across many
-  // manuscripts; the per-scribe listing would hide entries 21+.
-  const { data: hands } = useQuery({
+  // Walk all pages, not just the first DRF page (default 20): a productive
+  // scribe can have many hands across many manuscripts.
+  const {
+    data: hands,
+    isError: handsFailed,
+    isFetching: handsFetching,
+    refetch: refetchHands,
+  } = useQuery({
     queryKey: backofficeKeys.hands.list({ scribe: id }),
     queryFn: () =>
-      walkPaginated<AdminHandListItem>(
-        `/api/v1/management/scribes/hands/?scribe=${id}&limit=100`,
-        (path) => proxyFetch(path)
-      ),
+      walkPaginated<AdminHandListItem>(`/api/v1/management/scribes/hands/?scribe=${id}&limit=100`),
     enabled: isAuthenticated,
   });
 
@@ -159,7 +160,13 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
             {t('scribesDetail.handsSection', { count: hands?.length ?? 0 })}
           </h3>
         </div>
-        {hands?.length === 0 ? (
+        {handsFailed ? (
+          <BackofficeInlineError
+            message={t('scribesDetail.handsLoadFailed')}
+            retrying={handsFetching}
+            onRetry={() => refetchHands()}
+          />
+        ) : hands?.length === 0 ? (
           <div className="rounded-md border border-dashed p-6 text-center text-muted-foreground text-sm">
             {t('scribesDetail.noHands')}
           </div>

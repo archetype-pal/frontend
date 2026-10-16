@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
+import { BackofficeLoadingState } from '@/components/backoffice/common/query-state';
 import { formatBytes } from '@/lib/format-bytes';
 import { BackofficeApiError } from '@/services/backoffice/api-client';
 import {
@@ -26,6 +27,7 @@ import {
   sendTestEmail,
   type ServiceCheck,
 } from '@/services/backoffice/sanity-checks';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 /** Best-effort human message from a failed sendTestEmail call. */
 function extractErrorDetail(err: unknown): string | undefined {
@@ -71,7 +73,7 @@ export function SanityChecksDashboard() {
   const { isAuthenticated } = useAuth();
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ['backoffice', 'sanity-checks'],
+    queryKey: backofficeKeys.sanityChecks(),
     queryFn: () => getSanityChecks(),
     enabled: isAuthenticated,
     staleTime: 30_000,
@@ -147,11 +149,7 @@ export function SanityChecksDashboard() {
         </Alert>
       )}
 
-      {isLoading && !data && (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      )}
+      {isLoading && !data && <BackofficeLoadingState />}
 
       {data && (
         <div className="grid gap-4 md:grid-cols-2">

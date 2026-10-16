@@ -7,7 +7,6 @@ import {
   Download,
   ExternalLink,
   Filter as FilterIcon,
-  Loader2,
   Plus,
   Search,
   Trash2,
@@ -16,7 +15,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +41,7 @@ import {
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { NewImageTextDialog } from '@/components/backoffice/new-image-text-dialog';
 import { ImportTeiDialog } from '@/components/backoffice/import-tei-dialog';
-import { ServerPagination } from '@/components/backoffice/common/server-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import {
   Table,
   TableBody,
@@ -54,6 +53,7 @@ import {
 import { useAuth } from '@/contexts/auth-context';
 import { proxyFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import {
   IMAGE_TEXT_PAGE_SIZE,
   fetchImageTextList,
@@ -63,6 +63,10 @@ import {
 } from '@/services/backoffice/image-texts-list';
 import { bulkActionImageTexts } from '@/services/backoffice/image-texts-bulk';
 import { transitionImageText, type ImageTextStatus } from '@/services/backoffice/review-queue';
+import { useSelectionSet } from '@/hooks/use-selection-set';
+import { downloadBlob } from '@/lib/download';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { invalidateAfterImageTextDelete } from '@/lib/backoffice/image-text-cache';
 
 const STATUS_TONE: Record<ImageTextStatus, string> = {
   Draft:
@@ -115,9 +119,14 @@ function parseFilters(sp: URLSearchParams): UrlFilterState {
   };
 }
 
-function buildExportQuery(filters: UrlFilterState, format: 'csv' | 'json'): string {
+function buildExportQuery(
+  filters: UrlFilterState,
+  format: 'csv' | 'json',
+  selectedIds: number[]
+): string {
   const qs = new URLSearchParams();
-  qs.set('format', format);
+  qs.set('export_format', format);
+  if (selectedIds.length > 0) qs.set('id__in', selectedIds.join(','));
   if (filters.kind) qs.set('type', filters.kind);
   if (filters.status) qs.set('status', filters.status);
   if (filters.language) qs.set('language', filters.language);
@@ -139,7 +148,10 @@ export function TextsList() {
   );
 
   const [searchInput, setSearchInput] = useState(filters.search);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const selection = useSelectionSet<number>();
+  const selected = selection.selected;
+  const [pageSize, setPageSize] = usePageSize('texts-browse', IMAGE_TEXT_PAGE_SIZE);
+  const tableRef = useRef<HTMLDivElement>(null);
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
@@ -158,11 +170,11 @@ export function TextsList() {
   // Drop any selected ids that fall out of view when filters/page change —
   // otherwise a "Delete N selected" would silently target hidden rows. Same
   // store-during-render reset pattern, keyed on the composite filter/page tuple.
-  const filterKey = `${filters.kind}|${filters.status}|${filters.language}|${filters.empty}|${filters.search}|${filters.page}`;
+  const filterKey = `${filters.kind}|${filters.status}|${filters.language}|${filters.empty}|${filters.search}|${filters.page}|${pageSize}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (prevFilterKey !== filterKey) {
     setPrevFilterKey(filterKey);
-    setSelected(new Set());
+    selection.clear();
   }
 
   // Debounced commit of the search input back into the URL — 350ms is the
@@ -179,6 +191,9 @@ export function TextsList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput, filters.search]);
 
+  // Pending from the click until the new URL lands, so the list dims at once.
+  const [isNavigating, startNavigation] = useTransition();
+
   function setParams(next: Record<string, string | number | null>) {
     const sp = new URLSearchParams(searchParams?.toString() ?? '');
     for (const [key, value] of Object.entries(next)) {
@@ -189,12 +204,12 @@ export function TextsList() {
       }
     }
     const qs = sp.toString();
-    router.replace(qs ? `?${qs}` : '?', { scroll: false });
+    startNavigation(() => router.replace(qs ? `?${qs}` : '?', { scroll: false }));
   }
 
   const apiParams: ImageTextListParams = {
     page: filters.page,
-    pageSize: IMAGE_TEXT_PAGE_SIZE,
+    pageSize,
     type: filters.kind || undefined,
     status: filters.status || undefined,
     language: filters.language || undefined,
@@ -202,8 +217,8 @@ export function TextsList() {
     search: filters.search || undefined,
   };
 
-  const { data, isFetching, error } = useQuery({
-    queryKey: ['backoffice', 'image-texts', 'list', apiParams],
+  const { data, isFetching, isPlaceholderData, error } = useQuery({
+    queryKey: backofficeKeys.imageTexts.list({ ...apiParams }),
     queryFn: () => fetchImageTextList(apiParams),
     enabled: isAuthenticated,
     placeholderData: (prev) => prev,
@@ -211,29 +226,15 @@ export function TextsList() {
 
   const total = data?.count ?? 0;
   const rows = data?.results ?? [];
+  const isStale = isPlaceholderData || isNavigating;
 
   const allVisibleSelected = rows.length > 0 && rows.every((r) => selected.has(r.id));
   const someVisibleSelected = rows.some((r) => selected.has(r.id));
 
   function toggleAllVisible() {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (allVisibleSelected) {
-        for (const r of rows) next.delete(r.id);
-      } else {
-        for (const r of rows) next.add(r.id);
-      }
-      return next;
-    });
-  }
-
-  function toggleOne(id: number) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    const ids = rows.map((r) => r.id);
+    if (allVisibleSelected) selection.removeMany(ids);
+    else selection.addMany(ids);
   }
 
   const activeFilterCount =
@@ -255,19 +256,19 @@ export function TextsList() {
   }
 
   function invalidate() {
-    queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts', 'list'] });
-    queryClient.invalidateQueries({ queryKey: ['backoffice', 'texts-monitor', 'overview'] });
-    queryClient.invalidateQueries({ queryKey: ['review-queue'] });
-    queryClient.invalidateQueries({ queryKey: ['backoffice', 'uncovered-images'] });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.list() });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.textsMonitor.overview() });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.reviewQueue.all() });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.uncoveredImages.all() });
   }
 
   const bulkDelete = useMutation({
     mutationFn: () => bulkActionImageTexts({ ids: Array.from(selected), action: 'delete' }),
     onSuccess: ({ affected }) => {
       toast.success(t('textsList.toastBulkDeleted', { count: affected }));
-      setSelected(new Set());
+      selection.clear();
       setConfirmBulkDelete(false);
-      invalidate();
+      void invalidateAfterImageTextDelete(queryClient);
     },
     onError: (err: Error) =>
       toast.error(t('textsList.toastBulkDeleteFailed'), { description: err.message }),
@@ -278,7 +279,7 @@ export function TextsList() {
     // Authenticated download path: fetch through the auth proxy, then
     // synthesize an <a download> link from the blob. Direct navigation to the
     // backend URL would carry no Authorization header and 401.
-    const qs = buildExportQuery(filters, format);
+    const qs = buildExportQuery(filters, format, [...selected]);
     const path = `/api/v1/manuscripts/management/image-texts/export/?${qs}`;
     const toastId = toast.loading(t('textsList.toastPreparingExport'));
     try {
@@ -286,14 +287,7 @@ export function TextsList() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const filename = `image-texts.${format}`;
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = objectUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(objectUrl);
+      downloadBlob(filename, blob);
       toast.success(t('textsList.toastDownloaded', { filename }), { id: toastId });
     } catch (err) {
       toast.error(t('textsList.toastExportFailed'), {
@@ -328,15 +322,22 @@ export function TextsList() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="outline" className="h-7 text-xs">
-                    <Download className="mr-1 h-3 w-3" /> {t('textsList.export')}
+                    <Download className="mr-1 h-3 w-3" />{' '}
+                    {selected.size > 0
+                      ? t('dataTable.exportSelected', { count: selected.size })
+                      : t('textsList.export')}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => void exportTo('csv')}>
-                    {t('textsList.exportCsv')}
+                    {selected.size > 0
+                      ? t('textsList.exportCsvSelected')
+                      : t('textsList.exportCsv')}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => void exportTo('json')}>
-                    {t('textsList.exportJson')}
+                    {selected.size > 0
+                      ? t('textsList.exportJsonSelected')
+                      : t('textsList.exportJson')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -398,15 +399,12 @@ export function TextsList() {
               ]}
               onChange={(v) => setParams({ empty: v || null, page: null })}
             />
-            {isFetching && (
-              <Loader2 className="ml-auto h-4 w-4 animate-spin text-muted-foreground" />
-            )}
           </div>
 
           {selectedCount > 0 && (
             <BulkActionBar
               ids={Array.from(selected)}
-              onCleared={() => setSelected(new Set())}
+              onCleared={() => selection.clear()}
               onInvalidated={invalidate}
               onAskDelete={() => setConfirmBulkDelete(true)}
             />
@@ -418,7 +416,14 @@ export function TextsList() {
             </div>
           )}
 
-          <div className="overflow-x-auto">
+          <div
+            ref={tableRef}
+            aria-busy={isStale || undefined}
+            className={cn(
+              'overflow-x-auto scroll-mt-20 transition-opacity duration-250 ease-out',
+              isStale && 'opacity-60'
+            )}
+          >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -456,7 +461,7 @@ export function TextsList() {
                       key={row.id}
                       row={row}
                       selected={selected.has(row.id)}
-                      onToggle={() => toggleOne(row.id)}
+                      onToggle={() => selection.toggle(row.id)}
                       onTransitioned={invalidate}
                     />
                   ))
@@ -466,12 +471,16 @@ export function TextsList() {
           </div>
 
           <div className="px-6 pb-4">
-            <ServerPagination
-              total={total}
-              pageSize={IMAGE_TEXT_PAGE_SIZE}
-              page={filters.page}
-              hasNext={!!data?.next}
-              onPageChange={(p) => setParams({ page: p > 0 ? p : null })}
+            <DataPagination
+              scrollTargetRef={tableRef}
+              totalItems={total}
+              page={filters.page + 1}
+              pageSize={pageSize}
+              onPageChange={(p) => setParams({ page: p > 1 ? p - 1 : null })}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setParams({ page: null });
+              }}
             />
           </div>
         </CardContent>

@@ -45,6 +45,7 @@ import {
   searchPlaces,
   searchScribes,
 } from '@/services/tei-ref-search';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 interface TeiRefPickerProps {
   open: boolean;
@@ -220,7 +221,7 @@ function IndexSearchTab({
   // The tab only exists while the dialog is open (Radix unmounts the body on
   // close), so the query needs no extra `open` gate.
   const { data: results = [], isFetching } = useQuery({
-    queryKey: ['tei-ref-search', segment, query],
+    queryKey: backofficeKeys.teiRefSearch(segment, query),
     queryFn: ({ signal }) => runIndexSearch(kind, query, signal),
     enabled: query.length > 0,
     staleTime: 60_000,

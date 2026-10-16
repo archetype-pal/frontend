@@ -8,12 +8,6 @@ export type DescriptionStatus = 'all' | 'described' | 'undescribed';
 export type SortKey = 'allograph-asc' | 'allograph-desc' | 'count-desc' | 'count-asc';
 export const DEFAULT_SORT: SortKey = 'allograph-asc';
 export const SORT_KEYS: SortKey[] = ['allograph-asc', 'allograph-desc', 'count-desc', 'count-asc'];
-export const SORT_LABELS: Record<SortKey, string> = {
-  'allograph-asc': 'Allograph A–Z',
-  'allograph-desc': 'Allograph Z–A',
-  'count-desc': 'Most graphs',
-  'count-asc': 'Fewest graphs',
-};
 
 export interface GalleryFilterState {
   /** Allograph-name substring (case-insensitive). */
@@ -144,6 +138,9 @@ const parseCsvNumbers = (raw: string | null): number[] =>
     .map((s) => Number(s))
     .filter((n) => Number.isFinite(n));
 
+/** Every param filtersToQuery can write, so a sync can clear stale ones. */
+const GALLERY_QUERY_KEYS = ['a', 'h', 's', 'f', 'p', 'sort'] as const;
+
 export function filtersToQuery(f: GalleryFilterState): Record<string, string> {
   const q: Record<string, string> = {};
   if (f.allograph.trim()) q.a = f.allograph.trim();
@@ -154,6 +151,14 @@ export function filtersToQuery(f: GalleryFilterState): Record<string, string> {
   if (f.positions.length > 0) q.p = csvNumbers(f.positions);
   if (f.sort !== DEFAULT_SORT) q.sort = f.sort;
   return q;
+}
+
+/** `search` with its gallery filters replaced by `f`; unrelated params are kept. */
+export function withFiltersInSearch(search: string, f: GalleryFilterState): string {
+  const params = new URLSearchParams(search);
+  for (const key of GALLERY_QUERY_KEYS) params.delete(key);
+  for (const [key, value] of Object.entries(filtersToQuery(f))) params.set(key, value);
+  return params.toString();
 }
 
 export function filtersFromParams(params: URLSearchParams): GalleryFilterState {

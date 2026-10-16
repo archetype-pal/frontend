@@ -38,12 +38,13 @@ type BulkActionOptions<TId> = {
  */
 export async function runBulkAction<TId>(
   options: BulkActionOptions<TId>
-): Promise<{ succeeded: number; failed: number }> {
+): Promise<{ succeeded: number; failed: number; failedIds: TId[] }> {
   const { ids, action, invalidate } = options;
   const results = await Promise.allSettled(ids.map((id) => action(id)));
   invalidate();
 
-  const failed = results.filter((r) => r.status === 'rejected').length;
+  const failedIds = ids.filter((_, i) => results[i].status === 'rejected');
+  const failed = failedIds.length;
   const total = ids.length;
   const succeeded = total - failed;
 
@@ -56,7 +57,7 @@ export async function runBulkAction<TId>(
     } else {
       toast.warning(messages.partial(succeeded, failed));
     }
-    return { succeeded, failed };
+    return { succeeded, failed, failedIds };
   }
 
   const { pastTense, noun } = options;
@@ -70,5 +71,5 @@ export async function runBulkAction<TId>(
     toast.warning(`${succeeded} ${pastTense}, ${failed} failed`);
   }
 
-  return { succeeded, failed };
+  return { succeeded, failed, failedIds };
 }

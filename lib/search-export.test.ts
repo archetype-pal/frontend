@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COLUMN_FIELD_MAP } from './search-export';
+import { COLUMN_FIELD_MAP, buildFormattedCsv } from './search-export';
 import { SEARCH_RESULT_TYPES } from './search-types';
 import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
 
@@ -13,5 +13,17 @@ describe('export column field map', () => {
         expect(COLUMN_HEADERS_BY_TYPE[type]).toContain(header);
       }
     }
+  });
+});
+
+describe('buildFormattedCsv', () => {
+  it('neutralises cells that a spreadsheet would run as a formula', () => {
+    const csv = buildFormattedCsv(
+      'manuscripts',
+      [{ repository_name: '=HYPERLINK("http://x")', shelfmark: 'MS 1, f. 2' }],
+      ['Repository', 'Shelfmark']
+    );
+
+    expect(csv).toBe('Repository,Shelfmark\n"\'=HYPERLINK(""http://x"")","MS 1, f. 2"');
   });
 });

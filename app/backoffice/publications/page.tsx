@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import {
   Newspaper,
   Plus,
@@ -25,12 +25,25 @@ import {
 } from '@/components/backoffice/common/data-table';
 import { FilterBar, type FilterConfig } from '@/components/backoffice/common/filter-bar';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
-import { updatePublication, deletePublication } from '@/services/backoffice/publications';
+import { DataPagination } from '@/components/ui/data-pagination';
+import {
+  getPublications,
+  updatePublication,
+  deletePublication,
+} from '@/services/backoffice/publications';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
+import { listAllPages } from '@/lib/backoffice/list-all-pages';
+import { toOrdering } from '@/lib/backoffice/ordering';
+import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import type { PublicationListItem } from '@/types/backoffice';
+
+const ORDERING_FIELDS = {
+  title: 'title',
+  comment_count: 'comment_count',
+  created_at: 'created_at',
+};
 
 export default function PublicationsPage() {
   const t = useTranslations('backoffice');
@@ -149,6 +162,11 @@ export default function PublicationsPage() {
     },
   ];
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
+  const [pageSize, setPageSize] = usePageSize('publications', 20);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const ordering = toOrdering(sorting, ORDERING_FIELDS);
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState<{
     label: string;
@@ -156,31 +174,27 @@ export default function PublicationsPage() {
     execute: (slugs: string[]) => Promise<void>;
   } | null>(null);
 
-  // Walk all pages so the client-side filter spans every publication.
-  // The earlier `getPublications(token, { limit: 200 })` was silently
-  // capped to 100 by DRF's BoundedLimitOffsetPagination, hiding row 101+
-  // from this page (admins doing bulk publish/unpublish couldn't reach them).
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: backofficeKeys.publications.list({ scope: 'all-pages', limit: 100 }),
-    queryFn: () =>
-      walkPaginated<PublicationListItem>(
-        '/api/v1/media/management/publications/?limit=100',
-        (path) => proxyFetch(path)
-      ),
-    enabled: isAuthenticated,
-  });
+  const listParams = {
+    ...(search ? { search } : {}),
+    ...(ordering ? { ordering } : {}),
+    ...(filterValues.status && filterValues.status !== '__all'
+      ? { status: filterValues.status }
+      : {}),
+    ...(filterValues.type === 'blog'
+      ? { is_blog_post: true }
+      : filterValues.type === 'news'
+        ? { is_news: true }
+        : filterValues.type === 'featured'
+          ? { is_featured: true }
+          : {}),
+  };
+  const queryParams = { limit: pageSize, offset: page * pageSize, ...listParams };
 
-  // Client-side filtering
-  const filtered = (data ?? []).filter((pub) => {
-    if (filterValues.status && filterValues.status !== '__all') {
-      if (pub.status !== filterValues.status) return false;
-    }
-    if (filterValues.type && filterValues.type !== '__all') {
-      if (filterValues.type === 'blog' && !pub.is_blog_post) return false;
-      if (filterValues.type === 'news' && !pub.is_news) return false;
-      if (filterValues.type === 'featured' && !pub.is_featured) return false;
-    }
-    return true;
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
+    queryKey: backofficeKeys.publications.list(queryParams),
+    queryFn: () => getPublications(queryParams),
+    enabled: isAuthenticated,
+    placeholderData: keepPreviousData,
   });
 
   const invalidatePubs = () =>
@@ -190,31 +204,33 @@ export default function PublicationsPage() {
     {
       label: t('publications.bulkPublish'),
       icon: <CheckCircle className="h-3 w-3" />,
-      action: async (slugs) => {
-        await runBulkAction({
+      action: async (slugs, keepTicked) => {
+        const { failedIds } = await runBulkAction({
           ids: slugs,
           action: (slug) => updatePublication(slug, { status: 'Published' }),
           invalidate: invalidatePubs,
           pastTense: 'published',
           noun: 'post',
         });
+        keepTicked(failedIds);
       },
     },
     {
       label: t('publications.bulkUnpublish'),
       icon: <XCircle className="h-3 w-3" />,
-      action: (slugs) => {
+      action: (slugs, keepTicked) => {
         setPendingBulkAction({
           label: t('publications.bulkUnpublish'),
           slugs,
           execute: async (s) => {
-            await runBulkAction({
+            const { failedIds } = await runBulkAction({
               ids: s,
               action: (slug) => updatePublication(slug, { status: 'Draft' }),
               invalidate: invalidatePubs,
               pastTense: 'unpublished',
               noun: 'post',
             });
+            keepTicked(failedIds);
           },
         });
         setBulkConfirmOpen(true);
@@ -224,18 +240,19 @@ export default function PublicationsPage() {
       label: t('publications.bulkDelete'),
       variant: 'destructive',
       icon: <Trash2 className="h-3 w-3" />,
-      action: (slugs) => {
+      action: (slugs, keepTicked) => {
         setPendingBulkAction({
           label: t('publications.bulkDelete'),
           slugs,
           execute: async (s) => {
-            await runBulkAction({
+            const { failedIds } = await runBulkAction({
               ids: s,
               action: (slug) => deletePublication(slug),
               invalidate: invalidatePubs,
               pastTense: 'deleted',
               noun: 'post',
             });
+            keepTicked(failedIds);
           },
         });
         setBulkConfirmOpen(true);
@@ -251,7 +268,7 @@ export default function PublicationsPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">{t('publications.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              {isLoading ? '...' : t('publications.subtitle', { count: data?.length ?? 0 })}
+              {isLoading ? '...' : t('publications.subtitle', { count: data?.count ?? 0 })}
             </p>
           </div>
         </div>
@@ -262,16 +279,27 @@ export default function PublicationsPage() {
       </div>
 
       <DataTable
+        tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
-        data={filtered}
-        searchColumn="title"
+        data={data?.results ?? []}
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
         searchPlaceholder={t('publications.searchPlaceholder')}
-        pageSize={25}
+        pagination={false}
+        sorting={sorting}
+        onSortingChange={(next) => {
+          setSorting(next);
+          setPage(0);
+        }}
         enableColumnVisibility
         enableExport
+        fetchAllRows={(options) =>
+          listAllPages((p) => getPublications({ ...listParams, ...p }), options)
+        }
         exportFilename="posts"
         enableRowSelection
         bulkActions={bulkActions}
@@ -280,11 +308,31 @@ export default function PublicationsPage() {
           <FilterBar
             filters={pubFilters}
             values={filterValues}
-            onChange={(key, value) => setFilterValues((prev) => ({ ...prev, [key]: value }))}
-            onClear={() => setFilterValues({})}
+            onChange={(key, value) => {
+              setFilterValues((prev) => ({ ...prev, [key]: value }));
+              setPage(0);
+            }}
+            onClear={() => {
+              setFilterValues({});
+              setPage(0);
+            }}
           />
         }
       />
+
+      {data && (
+        <DataPagination
+          scrollTargetRef={tableRef}
+          totalItems={data.count}
+          page={page + 1}
+          pageSize={pageSize}
+          onPageChange={(p) => setPage(p - 1)}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+          }}
+        />
+      )}
 
       <ConfirmDialog
         open={bulkConfirmOpen}

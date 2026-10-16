@@ -34,6 +34,7 @@ import { PreviewAsPublicDialog } from '@/components/backoffice/preview-as-public
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { invalidateAfterImageTextDelete } from '@/lib/backoffice/image-text-cache';
 import {
   deleteImageText,
   fetchImageText,
@@ -78,7 +79,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
   // header. Resolve it once the text loads so the "Public viewer" link is
   // valid (the previous hard-coded `/manuscripts/0/...` 404'd the back-link).
   const { data: image } = useQuery({
-    queryKey: ['backoffice', 'item-image', text?.item_image],
+    queryKey: backofficeKeys.itemImages.detail(text?.item_image),
     queryFn: () => fetchManuscriptImage(String(text!.item_image)),
     enabled: !!text,
   });
@@ -133,7 +134,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
       queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.history(textId) });
       queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.list() });
       queryClient.invalidateQueries({ queryKey: backofficeKeys.textsMonitor.overview() });
-      queryClient.invalidateQueries({ queryKey: ['review-queue'] });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.reviewQueue.all() });
       setStatus(saved.status);
     },
     onError: (err) =>
@@ -144,8 +145,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
     mutationFn: () => deleteImageText(textId),
     onSuccess: () => {
       toast.success(t('imageTexts.toastDeleted', { id: textId }));
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.list() });
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.textsMonitor.overview() });
+      void invalidateAfterImageTextDelete(queryClient);
       // The detail query would 404 if we left it cached.
       queryClient.removeQueries({ queryKey: backofficeKeys.imageTexts.detail(textId) });
       router.push('/backoffice/texts');

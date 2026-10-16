@@ -26,6 +26,7 @@ import {
   type QueueEntry,
 } from '@/services/backoffice/review-queue';
 import { Button } from '@/components/ui/button';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 export default function ReviewQueuePage() {
   const { isAuthenticated } = useAuth();
@@ -33,7 +34,7 @@ export default function ReviewQueuePage() {
   const t = useTranslations('backoffice');
 
   const { data: queue = [], isLoading } = useQuery<QueueEntry[]>({
-    queryKey: ['review-queue'],
+    queryKey: backofficeKeys.reviewQueue.all(),
     queryFn: () => fetchReviewQueue(),
     enabled: isAuthenticated,
     refetchInterval: 60_000,
@@ -72,7 +73,9 @@ export default function ReviewQueuePage() {
           <ReviewRow
             key={row.id}
             row={row}
-            onTransitioned={() => queryClient.invalidateQueries({ queryKey: ['review-queue'] })}
+            onTransitioned={() =>
+              queryClient.invalidateQueries({ queryKey: backofficeKeys.reviewQueue.all() })
+            }
           />
         ))}
       </ul>

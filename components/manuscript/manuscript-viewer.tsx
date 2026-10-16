@@ -791,8 +791,6 @@ export default function ManuscriptViewer({
 
   // ---- Effects ----
 
-  // (currentCreationKind fallback invariant moved into useViewerEditorUiState — Phase A.2)
-
   React.useEffect(() => {
     setHands([]);
     setHandsLoaded(false);
@@ -810,10 +808,6 @@ export default function ManuscriptViewer({
     // resetImageAdjustments and closeFilterPanel are stable; depend on imageId only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageId]);
-
-  // (selectedHand reset invariant moved into useViewerEditorUiState — Phase A.2)
-
-  // (allograph-modal auto-close invariant moved into useViewerEditorUiState — Phase A.2)
 
   // keep popup on valid tab
   React.useEffect(() => {

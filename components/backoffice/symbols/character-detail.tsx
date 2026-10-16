@@ -232,7 +232,7 @@ export function CharacterDetail({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex min-h-full flex-col space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
@@ -436,7 +436,7 @@ export function CharacterDetail({
 
       {/* Dirty indicator */}
       {dirty && (
-        <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t -mx-6 px-6 py-3 flex items-center justify-between">
+        <div className="sticky -bottom-6 z-20 mt-auto -mx-6 -mb-6 bg-background/95 backdrop-blur border-t px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-sm text-amber-600 font-medium">{tCommon('unsavedChanges')}</span>
             <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">

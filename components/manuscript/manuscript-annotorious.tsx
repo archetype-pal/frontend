@@ -511,9 +511,12 @@ export default function ManuscriptAnnotorious({
         setState((prev) => ({ ...prev, isLoading: false, hasError: false }));
 
         if (!annoRef.current) {
+          // disableDeleteKey: Annotorious otherwise removes the selected shape
+          // itself on a Delete keyup, bypassing our confirm + unsaved-change
+          // flow. Delete is our own shortcut for the delete tool instead.
           const annoOptions: NonNullable<Parameters<AnnotoriousFactory>[1]> = disableEditor
-            ? { disableEditor: true, readOnly }
-            : { widgets: [{ widget: 'COMMENT' as const }], readOnly };
+            ? { disableEditor: true, disableDeleteKey: true, readOnly }
+            : { widgets: [{ widget: 'COMMENT' as const }], disableDeleteKey: true, readOnly };
           const anno = AnnotoriousCtor(viewer, annoOptions);
 
           annoRef.current = anno;

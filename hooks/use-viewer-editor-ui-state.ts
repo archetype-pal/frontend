@@ -51,10 +51,6 @@ export interface ViewerEditorUiState {
 //      contains it.
 //   3. isAllographModalOpen auto-closes when there's no longer an explicitly
 //      focused allograph.
-//
-// Phase A.2 of ROADMAP-EDITORS. The next refactor (component split) will
-// let consumers subscribe to subsets of this state without re-rendering
-// the whole viewer — for now, bundling is the LOC + cohesion win.
 export function useViewerEditorUiState(args: UseViewerEditorUiStateArgs): ViewerEditorUiState {
   const { viewerCapabilities, handsForThisImage, onAllographModalAutoClose } = args;
 

@@ -44,6 +44,7 @@ import {
   ExistingTextNotice,
   useExistingImageText,
 } from '@/components/backoffice/image-text-create-guards';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 export type NewTextKind = 'Transcription' | 'Translation';
 
@@ -105,9 +106,9 @@ export function NewImageTextDialog({
       }),
     onSuccess: (saved) => {
       toast.success(t('imageTexts.toastCreated', { type: saved.type.toLowerCase(), id: saved.id }));
-      queryClient.invalidateQueries({ queryKey: ['backoffice', 'image-texts'] });
-      queryClient.invalidateQueries({ queryKey: ['backoffice', 'texts-monitor', 'overview'] });
-      queryClient.invalidateQueries({ queryKey: ['backoffice', 'uncovered-images'] });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.all() });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.textsMonitor.overview() });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.uncoveredImages.all() });
       onOpenChange(false);
       router.push(`/backoffice/image-texts/${saved.id}`);
     },

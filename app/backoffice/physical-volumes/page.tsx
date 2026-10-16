@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useTranslations } from 'next-intl';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { Archive, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -17,17 +17,27 @@ import {
 import { Button } from '@/components/ui/button';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
-import { ServerPagination } from '@/components/backoffice/common/server-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import {
   deleteCurrentItem,
   getCurrentItems,
   getRepositories,
 } from '@/services/backoffice/manuscripts';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
+import { listAllPages } from '@/lib/backoffice/list-all-pages';
+import { toOrdering } from '@/lib/backoffice/ordering';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
+
+const ORDERING_FIELDS = {
+  repository_name: 'repository__label',
+  shelfmark: 'shelfmark',
+  part_count: 'part_count',
+};
 
 export default function PhysicalVolumesPage() {
   const t = useTranslations('backoffice');
@@ -37,6 +47,10 @@ export default function PhysicalVolumesPage() {
   const [repoFilter, setRepoFilter] = useState<string>('__all');
   const [deleteTarget, setDeleteTarget] = useState<CurrentItemOption | null>(null);
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
+  const [pageSize, setPageSize] = usePageSize('physical-volumes', 50);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const ordering = toOrdering(sorting, ORDERING_FIELDS);
   const shelfmarkLabel = getLabel('fieldShelfmark');
   const appManuscriptsLabel = getLabel('appManuscripts');
 
@@ -100,7 +114,12 @@ export default function PhysicalVolumesPage() {
     },
   ];
 
-  const { data: repositoriesData } = useQuery({
+  const {
+    data: repositoriesData,
+    isError: repositoriesFailed,
+    isFetching: repositoriesFetching,
+    refetch: refetchRepositories,
+  } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
     queryFn: () => getRepositories(),
     enabled: isAuthenticated,
@@ -108,18 +127,17 @@ export default function PhysicalVolumesPage() {
 
   const repositories: Repository[] = repositoriesData ?? [];
 
-  const filterParams = {
+  const listParams = {
     ...(repoFilter !== '__all' ? { repository: Number(repoFilter) } : {}),
     ...(search ? { search } : {}),
-    limit: 50,
-    offset: page * 50,
+    ...(ordering ? { ordering } : {}),
   };
+  const filterParams = { ...listParams, limit: pageSize, offset: page * pageSize };
 
-  const { data, isLoading, isPlaceholderData, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.currentItems.list(filterParams),
     queryFn: () => getCurrentItems(filterParams),
     enabled: isAuthenticated,
-    // Keep the current page on screen while the next page or search loads.
     placeholderData: keepPreviousData,
   });
 
@@ -153,6 +171,13 @@ export default function PhysicalVolumesPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {repositoriesFailed && (
+            <BackofficeInlineError
+              message={t('repositories.loadFailed')}
+              retrying={repositoriesFetching}
+              onRetry={() => refetchRepositories()}
+            />
+          )}
           <Select
             value={repoFilter}
             onValueChange={(v) => {
@@ -176,8 +201,10 @@ export default function PhysicalVolumesPage() {
       </div>
 
       <DataTable
+        tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}
@@ -187,18 +214,30 @@ export default function PhysicalVolumesPage() {
           label: shelfmarkLabel.toLowerCase(),
         })}
         pagination={false}
+        sorting={sorting}
+        onSortingChange={(next) => {
+          setSorting(next);
+          setPage(0);
+        }}
         enableColumnVisibility
         enableExport
+        fetchAllRows={(options) =>
+          listAllPages((p) => getCurrentItems({ ...listParams, ...p }), options)
+        }
         exportFilename="items"
       />
 
       {data && (
-        <ServerPagination
-          total={data.count}
-          pageSize={50}
-          page={page}
-          hasNext={!!data.next && !isPlaceholderData}
-          onPageChange={setPage}
+        <DataPagination
+          scrollTargetRef={tableRef}
+          totalItems={data.count}
+          page={page + 1}
+          pageSize={pageSize}
+          onPageChange={(p) => setPage(p - 1)}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+          }}
         />
       )}
 

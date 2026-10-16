@@ -387,7 +387,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
             </Button>
           </div>
           <div
-            className={`flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-2 ${
+            className={`flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-2 lg:min-h-10 ${
               isMenuOpen ? 'flex' : 'hidden lg:flex'
             }`}
           >

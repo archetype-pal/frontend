@@ -1,22 +1,31 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useRef, useState } from 'react';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
-import { MessageSquare, CheckCircle, XCircle, Trash2, Clock, Filter } from 'lucide-react';
+import { MessageSquare, CheckCircle, XCircle, Trash2, Clock, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
-import { approveComment, rejectComment, deleteComment } from '@/services/backoffice/publications';
+import {
+  getComments,
+  approveComment,
+  rejectComment,
+  deleteComment,
+} from '@/services/backoffice/publications';
+import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
-import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
+import { useSelectionSet } from '@/hooks/use-selection-set';
+import { cn } from '@/lib/utils';
 import type { CommentItem } from '@/types/backoffice';
 
 export default function CommentsPage() {
@@ -25,30 +34,31 @@ export default function CommentsPage() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('all');
   const [deleteTarget, setDeleteTarget] = useState<CommentItem | null>(null);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const selection = useSelectionSet<number>();
+  const selected = selection.selected;
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | 'delete' | null>(null);
+  const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
+  const [pageSize, setPageSize] = usePageSize('comments', 20);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  // Walk all pages so the moderation queue shows every matching comment.
-  // The earlier `getComments(token, ...)` returned only the first DRF page
-  // (20), and the page has no pagination control — pending comments past
-  // the 20th would be invisible to moderators until earlier ones cleared.
-  const { data, isError, refetch } = useQuery({
-    queryKey: backofficeKeys.comments.allPages(filter),
-    queryFn: () => {
-      const params = new URLSearchParams({ limit: '100' });
-      if (filter !== 'all') params.set('is_approved', String(filter === 'approved'));
-      return walkPaginated<CommentItem>(
-        `/api/v1/media/management/comments/?${params.toString()}`,
-        (path) => proxyFetch(path)
-      );
-    },
+  const queryParams = {
+    limit: pageSize,
+    offset: page * pageSize,
+    ...(search ? { search } : {}),
+    ...(filter !== 'all' ? { is_approved: filter === 'approved' } : {}),
+  };
+
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
+    queryKey: backofficeKeys.comments.list(queryParams),
+    queryFn: () => getComments(queryParams),
     enabled: isAuthenticated,
+    placeholderData: keepPreviousData,
   });
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: backofficeKeys.comments.all() });
-    setSelected(new Set());
+    selection.clear();
   };
 
   const approveMut = useMutation({
@@ -91,22 +101,14 @@ export default function CommentsPage() {
     },
   });
 
-  const comments = data ?? [];
-
-  const toggleSelect = (id: number) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  const comments = useMemo(() => data?.results ?? [], [data]);
+  const totalCount = data?.count ?? 0;
 
   const toggleSelectAll = () => {
     if (selected.size === comments.length) {
-      setSelected(new Set());
+      selection.clear();
     } else {
-      setSelected(new Set(comments.map((c) => c.id)));
+      selection.addMany(comments.map((c) => c.id));
     }
   };
 
@@ -141,13 +143,13 @@ export default function CommentsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t('comments.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            {t('comments.subtitle', { count: data?.length ?? 0 })}
+            {isLoading ? '...' : t('comments.subtitle', { count: totalCount })}
           </p>
         </div>
       </div>
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Filter className="h-4 w-4 text-muted-foreground" />
         {(['all', 'pending', 'approved'] as const).map((f) => (
           <Button
@@ -156,7 +158,8 @@ export default function CommentsPage() {
             size="sm"
             onClick={() => {
               setFilter(f);
-              setSelected(new Set());
+              selection.clear();
+              setPage(0);
             }}
             className="capitalize"
           >
@@ -169,6 +172,18 @@ export default function CommentsPage() {
             }
           </Button>
         ))}
+        <div className="relative ml-auto w-full max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={t('comments.searchPlaceholder')}
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              selection.clear();
+            }}
+            className="pl-8 h-9"
+          />
+        </div>
       </div>
 
       {/* Bulk actions bar */}
@@ -209,7 +224,7 @@ export default function CommentsPage() {
               variant="ghost"
               size="sm"
               className="h-7 text-xs"
-              onClick={() => setSelected(new Set())}
+              onClick={() => selection.clear()}
             >
               {t('comments.clear')}
             </Button>
@@ -218,7 +233,14 @@ export default function CommentsPage() {
       )}
 
       {/* Comment list */}
-      <div className="space-y-2">
+      <div
+        ref={listRef}
+        aria-busy={isPlaceholderData || undefined}
+        className={cn(
+          'space-y-2 transition-opacity duration-250 ease-out',
+          isPlaceholderData && 'opacity-60'
+        )}
+      >
         {comments.length > 0 && (
           <div className="flex items-center gap-2 px-1">
             <Checkbox
@@ -250,7 +272,7 @@ export default function CommentsPage() {
                 <div className="flex items-start gap-3">
                   <Checkbox
                     checked={selected.has(comment.id)}
-                    onCheckedChange={() => toggleSelect(comment.id)}
+                    onCheckedChange={() => selection.toggle(comment.id)}
                     aria-label={t('comments.selectAriaLabel', { name: comment.author_name })}
                     className="mt-0.5"
                   />
@@ -316,6 +338,24 @@ export default function CommentsPage() {
           ))
         )}
       </div>
+
+      {totalCount > 0 && (
+        <DataPagination
+          scrollTargetRef={listRef}
+          totalItems={totalCount}
+          page={page + 1}
+          pageSize={pageSize}
+          onPageChange={(p) => {
+            setPage(p - 1);
+            selection.clear();
+          }}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+            selection.clear();
+          }}
+        />
+      )}
 
       {/* Single delete confirmation */}
       <ConfirmDialog

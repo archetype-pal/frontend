@@ -2,7 +2,13 @@
 
 import { type Dispatch, type SetStateAction, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Shortcut {
   keys: string[];
@@ -62,38 +68,40 @@ export function KeyboardShortcutsDialog({ open, onOpenChange }: KeyboardShortcut
         <DialogHeader>
           <DialogTitle>{t('keyboardShortcuts.title')}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-5 mt-2">
-          {shortcuts.map((group) => (
-            <div key={group.group}>
-              <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-                {group.group}
-              </h3>
-              <div className="space-y-2">
-                {group.items.map((shortcut) => (
-                  <div
-                    key={shortcut.description}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="text-muted-foreground">{shortcut.description}</span>
-                    <div className="flex items-center gap-1">
-                      {shortcut.keys.map((key) => (
-                        <kbd
-                          key={key}
-                          className="inline-flex h-5 min-w-5 items-center justify-center rounded border bg-muted px-1.5 text-[10px] font-medium text-muted-foreground"
-                        >
-                          {key}
-                        </kbd>
-                      ))}
+        <DialogBody className="pb-5">
+          <div className="space-y-5">
+            {shortcuts.map((group) => (
+              <div key={group.group}>
+                <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                  {group.group}
+                </h3>
+                <div className="space-y-2">
+                  {group.items.map((shortcut) => (
+                    <div
+                      key={shortcut.description}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span className="text-muted-foreground">{shortcut.description}</span>
+                      <div className="flex items-center gap-1">
+                        {shortcut.keys.map((key) => (
+                          <kbd
+                            key={key}
+                            className="inline-flex h-5 min-w-5 items-center justify-center rounded border bg-muted px-1.5 text-[10px] font-medium text-muted-foreground"
+                          >
+                            {key}
+                          </kbd>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-        <p className="text-[10px] text-muted-foreground mt-3">
-          {t('keyboardShortcuts.pressToShow', { key: '?' })}
-        </p>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-3">
+            {t('keyboardShortcuts.pressToShow', { key: '?' })}
+          </p>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );

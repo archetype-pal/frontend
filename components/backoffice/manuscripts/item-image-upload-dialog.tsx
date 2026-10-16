@@ -7,6 +7,7 @@ import { FileImage, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -147,7 +148,7 @@ export function ItemImageUploadDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-3 px-1">
+        <DialogBody className="flex min-h-0 flex-1 flex-col gap-3">
           {/* Drop zone */}
           <div
             role="button"
@@ -217,7 +218,7 @@ export function ItemImageUploadDialog({
               ))}
             </ul>
           )}
-        </div>
+        </DialogBody>
 
         <DialogFooter className="shrink-0 border-t pt-3">
           <Button

@@ -23,7 +23,6 @@ export function getCharacters() {
 
 export const getCharacter = charactersCrud.get;
 export const createCharacter = charactersCrud.create;
-export const updateCharacter = charactersCrud.update;
 export const deleteCharacter = charactersCrud.remove;
 
 export function updateCharacterStructure(id: number, data: CharacterStructurePayload) {

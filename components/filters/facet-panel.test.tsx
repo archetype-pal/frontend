@@ -38,6 +38,7 @@ describe('FacetPanel exclude/remove affordance', () => {
     const { container, cleanup } = mount(
       <FacetPanel
         id="repository_name"
+        expanded
         title="Repository"
         items={ITEMS}
         baseFacetURL={BASE_URL}
@@ -66,6 +67,7 @@ describe('FacetPanel exclude/remove affordance', () => {
     const { container, cleanup } = mount(
       <FacetPanel
         id="repository_name"
+        expanded
         title="Repository"
         items={ITEMS}
         baseFacetURL={BASE_URL}
@@ -100,6 +102,7 @@ describe('FacetPanel excluded-values strip', () => {
     const { container, cleanup } = mount(
       <FacetPanel
         id="repository_name"
+        expanded
         title="Repository"
         items={ITEMS} // "British Library" is NOT in the distribution here
         baseFacetURL={BASE_URL}
@@ -127,6 +130,7 @@ describe('FacetPanel excluded-values strip', () => {
     const { container, cleanup } = mount(
       <FacetPanel
         id="repository_name"
+        expanded
         title="Repository"
         items={ITEMS} // Durham, St Andrews
         baseFacetURL={BASE_URL}
@@ -155,6 +159,7 @@ describe('FacetPanel readable labels', () => {
     const { container, cleanup } = mount(
       <FacetPanel
         id="repository_name"
+        expanded
         title="Repository"
         items={ITEMS_WITH_PROPORTIONS.map((item, index) =>
           index === 0 ? { ...item, label: longLabel, value: longLabel } : item
@@ -174,6 +179,66 @@ describe('FacetPanel readable labels', () => {
     expect(option?.innerHTML).not.toContain('w-12');
     expect(proportionBar?.className).toContain('absolute');
     expect(proportionBar?.className).toContain('bottom-1');
+
+    cleanup();
+  });
+});
+
+describe('FacetPanel collapsed state', () => {
+  it('starts collapsed and shows on its header that a value is selected', () => {
+    const { container, cleanup } = mount(
+      <FacetPanel
+        id="repository_name"
+        title="Repository"
+        items={ITEMS}
+        baseFacetURL={BASE_URL}
+        selectedValue="Durham"
+      />
+    );
+
+    expect(container.querySelector('button[aria-expanded="false"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Durham, 12"]')).toBeNull();
+    expect(container.querySelector('h4')?.textContent).toContain('1 selected');
+
+    cleanup();
+  });
+
+  it('shows no selected badge when nothing is selected', () => {
+    const { container, cleanup } = mount(
+      <FacetPanel
+        id="repository_name"
+        title="Repository"
+        items={ITEMS}
+        baseFacetURL={BASE_URL}
+        selectedValue={null}
+      />
+    );
+
+    expect(container.querySelector('h4')?.textContent).not.toContain('selected');
+
+    cleanup();
+  });
+
+  it('lists every value once opened, with no Show all cap', () => {
+    const items: FacetListItem[] = Array.from({ length: 15 }, (_, i) => ({
+      label: `Repository ${i + 1}`,
+      value: `Repository ${i + 1}`,
+      count: i + 1,
+      href: '',
+    }));
+    const { container, cleanup } = mount(
+      <FacetPanel
+        id="repository_name"
+        title="Repository"
+        items={items}
+        baseFacetURL={BASE_URL}
+        selectedValue={null}
+        expanded
+      />
+    );
+
+    expect(container.querySelectorAll('button[aria-pressed]')).toHaveLength(15);
+    expect(container.textContent).not.toMatch(/show all/i);
 
     cleanup();
   });

@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { ScanLine, ExternalLink, Trash2, Image as ImageIcon, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ServerPagination } from '@/components/backoffice/common/server-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,13 +26,19 @@ import {
 } from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { getGraphs, deleteGraph } from '@/services/backoffice/annotations';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { toOrdering } from '@/lib/backoffice/ordering';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import type { GraphItem } from '@/types/backoffice';
 import { toast } from 'sonner';
 
-const PAGE_SIZE = 50;
+const ORDERING_FIELDS = {
+  id: 'id',
+  allograph_name: 'allograph__name',
+  hand_name: 'hand__name',
+};
 
 export default function AnnotationsPage() {
   const t = useTranslations('backoffice');
@@ -157,6 +163,10 @@ export default function AnnotationsPage() {
   );
 
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = usePageSize('annotations', 50);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const ordering = toOrdering(sorting, ORDERING_FIELDS);
   const [annotationType, setAnnotationType] = useState('__all');
   const [handFilter, setHandFilter] = useState('');
   const [allographFilter, setAllographFilter] = useState('');
@@ -164,20 +174,20 @@ export default function AnnotationsPage() {
 
   const filters = useMemo(() => {
     const params: Record<string, string | number> = {
-      limit: PAGE_SIZE,
-      offset: page * PAGE_SIZE,
+      limit: pageSize,
+      offset: page * pageSize,
     };
     if (annotationType !== '__all') params.annotation_type = annotationType;
     if (handFilter.trim()) params.hand = Number(handFilter);
     if (allographFilter.trim()) params.allograph = Number(allographFilter);
+    if (ordering) params.ordering = ordering;
     return params;
-  }, [page, annotationType, handFilter, allographFilter]);
+  }, [page, pageSize, annotationType, handFilter, allographFilter, ordering]);
 
-  const { data, isLoading, isPlaceholderData, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list(filters),
     queryFn: () => getGraphs(filters),
     enabled: isAuthenticated,
-    // Keep the current page on screen while the next page or search loads.
     placeholderData: keepPreviousData,
   });
 
@@ -203,8 +213,8 @@ export default function AnnotationsPage() {
       label: 'Delete',
       variant: 'destructive',
       icon: <Trash2 className="h-3 w-3" />,
-      action: async (ids) => {
-        await runBulkAction({
+      action: async (ids, keepTicked) => {
+        const { failedIds } = await runBulkAction({
           ids,
           action: (id) => deleteGraph(Number(id)),
           invalidate: () =>
@@ -215,6 +225,7 @@ export default function AnnotationsPage() {
             partial: (succeeded, failed) => t('annotations.bulkPartial', { succeeded, failed }),
           },
         });
+        keepTicked(failedIds);
       },
     },
   ];
@@ -303,25 +314,37 @@ export default function AnnotationsPage() {
 
       {/* Data Table */}
       <DataTable
+        tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={graphs}
         pagination={false}
+        sorting={sorting}
+        onSortingChange={(next) => {
+          setSorting(next);
+          setPage(0);
+        }}
         enableRowSelection
         bulkActions={bulkActions}
         enableColumnVisibility
         enableExport
+        exportSelectionOnly
         exportFilename="annotations"
       />
 
-      <ServerPagination
-        total={totalCount}
-        pageSize={PAGE_SIZE}
-        page={page}
-        hasNext={Boolean(data?.next) && !isPlaceholderData}
-        onPageChange={setPage}
+      <DataPagination
+        scrollTargetRef={tableRef}
+        totalItems={totalCount}
+        page={page + 1}
+        pageSize={pageSize}
+        onPageChange={(p) => setPage(p - 1)}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(0);
+        }}
       />
 
       <ConfirmDialog
