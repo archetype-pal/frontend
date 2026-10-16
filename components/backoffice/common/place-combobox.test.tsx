@@ -14,7 +14,7 @@ vi.mock('@/services/backoffice/manuscripts', () => ({
 }));
 
 vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ token: 'token' }),
+  useAuth: () => ({ isAuthenticated: true }),
 }));
 
 import { PlaceCombobox } from './place-combobox';

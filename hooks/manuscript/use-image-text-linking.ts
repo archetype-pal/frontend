@@ -22,7 +22,7 @@ import type { A9sWithMeta } from '@/types/annotation-viewer';
 
 interface UseImageTextLinkingArgs {
   imageId: string;
-  token: string | null | undefined;
+  isAuthenticated: boolean;
   manuscriptImage: ManuscriptImageType | null;
   imageHeight: number;
   allographNameById: Map<number, string>;
@@ -56,7 +56,7 @@ export function toTextRegionDraft(annotation: A9sAnnotation): A9sAnnotation {
  */
 export function useImageTextLinking({
   imageId,
-  token,
+  isAuthenticated,
   manuscriptImage,
   imageHeight,
   allographNameById,
@@ -117,7 +117,7 @@ export function useImageTextLinking({
   // presence — so the default Allograph view stays uncluttered.
   React.useEffect(() => {
     let active = true;
-    fetchImageTextsForImage(imageId, !!token)
+    fetchImageTextsForImage(imageId, isAuthenticated)
       .then((texts) => {
         if (!active) return;
         setImageTexts(texts);
@@ -128,14 +128,14 @@ export function useImageTextLinking({
     return () => {
       active = false;
     };
-  }, [imageId, token]);
+  }, [imageId, isAuthenticated]);
 
   // Reload image-texts + re-seed annotations after a server-side change (used by
   // the link-region flow so the new region + corresp appear).
   const reloadTextsAndAnnotations = React.useCallback(async () => {
     if (!manuscriptImage || !imageHeight) return;
     const [texts, refreshed] = await Promise.all([
-      fetchImageTextsForImage(imageId, !!token).catch(() => null),
+      fetchImageTextsForImage(imageId, isAuthenticated).catch(() => null),
       buildInitialViewerAnnotations({
         itemImageId: String(manuscriptImage.id),
         iiifImage: manuscriptImage.iiif_image,
@@ -144,7 +144,7 @@ export function useImageTextLinking({
         isPublicDemoMode,
         includeEditorial: canViewEditorialControls,
         includeText: true,
-        authenticated: !!token,
+        authenticated: isAuthenticated,
         // Preserve any in-progress local drafts across the post-link reseed
         // (the merge keeps non-db drafts; passing [] would silently drop them).
         currentViewerAnnotations: viewerApiRef.current?.getAnnotations?.() ?? [],
@@ -160,7 +160,7 @@ export function useImageTextLinking({
     manuscriptImage,
     imageHeight,
     imageId,
-    token,
+    isAuthenticated,
     allographNameById,
     isPublicDemoMode,
     canViewEditorialControls,
@@ -198,7 +198,7 @@ export function useImageTextLinking({
   const linkPendingToPhrase = React.useCallback(
     (textId: number, elementIndex: number, label: string) => {
       const region = pendingLinkRegionRef.current;
-      if (!(region && token && imageHeight)) return;
+      if (!(region && isAuthenticated && imageHeight)) return;
       const geometry = a9sToBackendFeature(region, imageHeight);
       void (async () => {
         try {
@@ -226,7 +226,7 @@ export function useImageTextLinking({
         }
       })();
     },
-    [token, imageHeight, viewerApiRef, reloadTextsAndAnnotations]
+    [isAuthenticated, imageHeight, viewerApiRef, reloadTextsAndAnnotations]
   );
 
   const cancelPendingLink = React.useCallback(() => {
@@ -246,7 +246,7 @@ export function useImageTextLinking({
   // the image).
   const linkExistingRegionToElement = React.useCallback(
     (textId: number, elementIndex: number, graphId: number, label: string) => {
-      if (!token) return;
+      if (!isAuthenticated) return;
       void (async () => {
         try {
           await linkRegionToElement(textId, elementIndex, undefined, graphId);
@@ -267,7 +267,7 @@ export function useImageTextLinking({
         }
       })();
     },
-    [token, reloadTextsAndAnnotations]
+    [isAuthenticated, reloadTextsAndAnnotations]
   );
 
   // Trash a selected linked region — the plain annotation DELETE, NOT unlink-region
@@ -276,7 +276,7 @@ export function useImageTextLinking({
   // makes a restore lossless.
   const trashSelectedRegion = React.useCallback(
     (graphId: number) => {
-      if (!token) return;
+      if (!isAuthenticated) return;
       // Drop the box from the canvas up front. removeAnnotationById → the lib's
       // removeAnnotation deselects a selected shape synchronously before dropping
       // it, so a region deleted while it is the live selection (the panel
@@ -308,7 +308,7 @@ export function useImageTextLinking({
         }
       })();
     },
-    [token, viewerApiRef, reloadTextsAndAnnotations, t]
+    [isAuthenticated, viewerApiRef, reloadTextsAndAnnotations, t]
   );
 
   // Per-element unlink: strip just this element's ref to a region, keeping the
@@ -316,7 +316,7 @@ export function useImageTextLinking({
   // whole region). The region stays on the canvas — no removeAnnotationById.
   const unlinkElementFromRegion = React.useCallback(
     (textId: number, elementIndex: number, graphId: number) => {
-      if (!token) return;
+      if (!isAuthenticated) return;
       void (async () => {
         try {
           await unlinkElement(textId, elementIndex, graphId);
@@ -337,7 +337,7 @@ export function useImageTextLinking({
         }
       })();
     },
-    [token, reloadTextsAndAnnotations]
+    [isAuthenticated, reloadTextsAndAnnotations]
   );
 
   // Persist a region reshape (Modify): PATCH the TEXT graph's geometry. The
@@ -345,7 +345,7 @@ export function useImageTextLinking({
   const persistRegionGeometry = React.useCallback(
     (annotation: A9sAnnotation) => {
       const graphId = dbIdFromA9s(annotation);
-      if (!(graphId && token && imageHeight)) return;
+      if (!(graphId && isAuthenticated && imageHeight)) return;
       const geometry = a9sToBackendFeature(annotation, imageHeight);
       void updateViewerAnnotation(graphId, { annotation: geometry })
         .then(() =>
@@ -365,7 +365,7 @@ export function useImageTextLinking({
           })
         );
     },
-    [token, imageHeight]
+    [isAuthenticated, imageHeight]
   );
 
   return {

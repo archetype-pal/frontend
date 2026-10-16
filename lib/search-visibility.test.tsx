@@ -6,12 +6,12 @@ import type { ResultType } from '@/lib/search-types';
 import { useSearchVisibility } from './search-visibility';
 
 const mockState = vi.hoisted(() => ({
-  token: null as string | null,
+  isAuthenticated: false,
   config: null as SiteFeaturesConfig | null,
 }));
 
 vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ token: mockState.token }),
+  useAuth: () => ({ isAuthenticated: mockState.isAuthenticated }),
 }));
 
 vi.mock('@/contexts/site-features-context', () => ({
@@ -34,7 +34,7 @@ function configWithManuscriptFields(
 
 beforeEach(() => {
   window.localStorage.clear();
-  mockState.token = null;
+  mockState.isAuthenticated = false;
   mockState.config = getDefaultConfig();
 });
 
@@ -50,7 +50,7 @@ describe('useSearchVisibility', () => {
   });
 
   it('uses Back Office column and facet selections for logged-in users without local overrides', () => {
-    mockState.token = 'tok';
+    mockState.isAuthenticated = true;
     mockState.config = configWithManuscriptFields(['Repository City'], ['text_date']);
 
     const { result } = renderHook(() => useSearchVisibility('manuscripts'));
@@ -63,7 +63,7 @@ describe('useSearchVisibility', () => {
   });
 
   it('filters stale logged-in local preferences through Back Office selections', () => {
-    mockState.token = 'tok';
+    mockState.isAuthenticated = true;
     mockState.config = configWithManuscriptFields(['Repository City'], ['text_date']);
     window.localStorage.setItem(
       storageKey('manuscripts'),
@@ -80,7 +80,7 @@ describe('useSearchVisibility', () => {
   });
 
   it('persists only admin-allowed fields when a logged-in user customizes visibility', () => {
-    mockState.token = 'tok';
+    mockState.isAuthenticated = true;
     mockState.config = configWithManuscriptFields(
       ['Repository City', 'Shelfmark'],
       ['text_date', 'format']
@@ -104,7 +104,7 @@ describe('useSearchVisibility', () => {
   });
 
   it('resets logged-in visibility to Back Office selections, not every possible field', () => {
-    mockState.token = 'tok';
+    mockState.isAuthenticated = true;
     mockState.config = configWithManuscriptFields(['Repository City'], ['text_date']);
     window.localStorage.setItem(
       storageKey('manuscripts'),

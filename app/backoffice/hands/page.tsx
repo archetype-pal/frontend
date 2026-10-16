@@ -93,7 +93,7 @@ const ORDERING_FIELDS = { name: 'name', scribe_name: 'scribe__name' };
 
 export default function HandsPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const columns = buildColumns(t);
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
   const [pageSize, setPageSize] = usePageSize('hands', 20);
@@ -111,7 +111,7 @@ export default function HandsPage() {
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.hands.list(queryParams),
     queryFn: () => getHands(queryParams),
-    enabled: !!token,
+    enabled: isAuthenticated,
     placeholderData: keepPreviousData,
   });
 

@@ -10,8 +10,7 @@ vi.mock('next/dynamic', () => ({
   default: () => () => null,
 }));
 
-// Preview never hits the validator (token=null short-circuits the effect), but
-// mock the service so importing it never reaches real network code.
+// The validator effect runs on mount, so mock the service off the network.
 const formatTei = vi.fn().mockResolvedValue('<p>\n  laid out\n</p>');
 vi.mock('@/services/image-texts', () => ({
   validateTei: vi.fn().mockResolvedValue({ valid: true, errors: [] }),
@@ -26,13 +25,7 @@ describe('TeiTextEditor — Preview mode', () => {
 
   function renderPreview() {
     return render(
-      <TeiTextEditor
-        value={VALUE}
-        onChange={() => {}}
-        token={null}
-        defaultMode="preview"
-        hideSource
-      />
+      <TeiTextEditor value={VALUE} onChange={() => {}} defaultMode="preview" hideSource />
     );
   }
 
@@ -69,7 +62,7 @@ describe('TeiTextEditor — Format button', () => {
   it('is offered in Source mode and hands back the formatted text', async () => {
     const onChange = vi.fn();
     const { getByLabelText } = render(
-      <TeiTextEditor value={ONE_LINER} onChange={onChange} token="t0ken" defaultMode="source" />
+      <TeiTextEditor value={ONE_LINER} onChange={onChange} defaultMode="source" />
     );
 
     const button = getByLabelText('Format') as HTMLButtonElement;
@@ -82,15 +75,8 @@ describe('TeiTextEditor — Format button', () => {
 
   it('is not offered in Preview mode — there is no source to lay out there', () => {
     const { queryByLabelText } = render(
-      <TeiTextEditor value={ONE_LINER} onChange={() => {}} token="t0ken" defaultMode="preview" />
+      <TeiTextEditor value={ONE_LINER} onChange={() => {}} defaultMode="preview" />
     );
     expect(queryByLabelText('Format')).toBeNull();
-  });
-
-  it('stays disabled without a token', () => {
-    const { getByLabelText } = render(
-      <TeiTextEditor value={ONE_LINER} onChange={() => {}} token={null} defaultMode="source" />
-    );
-    expect((getByLabelText('Format') as HTMLButtonElement).disabled).toBe(true);
   });
 });

@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CurrentItemOption } from '@/types/backoffice';
 
 vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ token: 'tok' }),
+  useAuth: () => ({ isAuthenticated: true }),
 }));
 
 vi.mock('@/contexts/model-labels-context', () => ({

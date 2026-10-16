@@ -30,7 +30,7 @@ import type { CommentItem } from '@/types/backoffice';
 
 export default function CommentsPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('all');
   const [deleteTarget, setDeleteTarget] = useState<CommentItem | null>(null);
@@ -52,7 +52,7 @@ export default function CommentsPage() {
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.comments.list(queryParams),
     queryFn: () => getComments(queryParams),
-    enabled: !!token,
+    enabled: isAuthenticated,
     placeholderData: keepPreviousData,
   });
 

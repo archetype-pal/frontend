@@ -9,16 +9,16 @@ import type { BackendGraph } from '@/services/annotations';
 // test doesn't pull in the real (canvas-heavy) annotorious module — but capture
 // the props the viewer hands it, so tests can drive its events (exposeApi /
 // onSelect / onCreate …) and exercise the viewer's wiring.
-const { annotoriousPropsRef, authTokenRef, annotationServiceMocks } = vi.hoisted(() => ({
+const { annotoriousPropsRef, authRef, annotationServiceMocks } = vi.hoisted(() => ({
   annotoriousPropsRef: { current: null as Record<string, (...args: unknown[]) => unknown> | null },
-  authTokenRef: { current: null as string | null },
+  authRef: { current: false },
   annotationServiceMocks: {
     fetchAnnotationsForImage: vi.fn(
       async (
         _imageId?: string,
         _allographId?: string,
         _annotationType?: string | null,
-        _token?: string | null
+        _authenticated?: boolean
       ): Promise<BackendGraph[]> => []
     ),
     createViewerAnnotation: vi.fn(async () => ({})),
@@ -41,10 +41,9 @@ const mockViewerApi = new Proxy({}, { get: () => () => undefined });
 
 vi.mock('@/contexts/auth-context', () => ({
   useAuth: () => ({
-    token: authTokenRef.current,
+    isAuthenticated: authRef.current,
     user: null,
     isReady: true,
-    setToken: vi.fn(),
     logout: vi.fn(),
   }),
 }));
@@ -189,7 +188,7 @@ function backendGraph(id: number, allographId: number): BackendGraph {
 describe('ManuscriptViewer smoke test', () => {
   afterEach(() => {
     vi.clearAllMocks();
-    authTokenRef.current = null;
+    authRef.current = false;
     annotationServiceMocks.fetchAnnotationsForImage.mockResolvedValue([]);
     annotationServiceMocks.createViewerAnnotation.mockResolvedValue({});
     annotationServiceMocks.updateViewerAnnotation.mockResolvedValue({});
@@ -399,7 +398,7 @@ describe('ManuscriptViewer smoke test', () => {
   });
 
   it('adds a newly saved annotation allograph to the image-scoped header dropdown without reload', async () => {
-    authTokenRef.current = 'token';
+    authRef.current = true;
     fetchBaseData.mockResolvedValueOnce({
       image: fakeImage,
       manuscript: fakeManuscript,

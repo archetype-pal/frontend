@@ -57,8 +57,6 @@ const TeiRichEditor = dynamic(() => import('./tei-rich-editor'), {
 interface TeiTextEditorProps {
   value: string;
   onChange: (value: string) => void;
-  /** Signed-in guard: validation/formatting only run when set (the request itself goes via the auth proxy). */
-  token: string | null;
   /** Reports TEI well-formedness so the parent can gate saving. */
   onValidityChange?: (valid: boolean) => void;
   placeholder?: string;
@@ -104,7 +102,6 @@ export type Mode = 'source' | 'rich' | 'preview';
 export function TeiTextEditor({
   value,
   onChange,
-  token,
   onValidityChange,
   placeholder,
   toolbarContainer,
@@ -154,7 +151,6 @@ export function TeiTextEditor({
   // Debounced well-formedness check against the server validator. The parent
   // uses `onValidityChange` to disable Save while the TEI is malformed.
   React.useEffect(() => {
-    if (!token) return;
     // Pessimistically mark invalid until this content is confirmed valid, so a
     // Save fired inside the debounce window (or while a check is pending) can't
     // persist not-yet-validated content on a stale `true`.
@@ -177,7 +173,7 @@ export function TeiTextEditor({
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [value, token, onValidityChange]);
+  }, [value, onValidityChange]);
 
   // Hydrate the persisted highlight preference after mount (keeps first render
   // deterministic), then persist on every change.
@@ -228,7 +224,7 @@ export function TeiTextEditor({
   // would only lose the author's place.
   const [formatting, setFormatting] = React.useState(false);
   const handleFormat = React.useCallback(async () => {
-    if (!token || formatting) return;
+    if (formatting) return;
     setFormatting(true);
     try {
       const formatted = await formatTei(value);
@@ -238,7 +234,7 @@ export function TeiTextEditor({
     } finally {
       setFormatting(false);
     }
-  }, [value, token, onChange, formatting]);
+  }, [value, onChange, formatting]);
 
   // Hosted in a panel header: render icon-only tabs + an icon-only validity badge
   // so the whole bar fits a narrow (split-column) header without a second row.
@@ -282,7 +278,7 @@ export function TeiTextEditor({
           icon={WrapText}
           label={t('teiEditor.format')}
           compact={hosted}
-          disabled={!token || !valid || formatting}
+          disabled={!valid || formatting}
           title={valid ? t('teiEditor.formatHint') : t('teiEditor.formatUnavailable')}
         />
       )}

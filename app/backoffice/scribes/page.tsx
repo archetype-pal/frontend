@@ -34,7 +34,7 @@ const ORDERING_FIELDS = { name: 'name', hand_count: 'hand_count' };
 
 export default function ScribesPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -107,7 +107,7 @@ export default function ScribesPage() {
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.scribes.list(queryParams),
     queryFn: () => getScribes(queryParams),
-    enabled: !!token,
+    enabled: isAuthenticated,
     placeholderData: keepPreviousData,
   });
 

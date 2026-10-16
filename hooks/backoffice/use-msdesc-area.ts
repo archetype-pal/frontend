@@ -42,7 +42,7 @@ export interface UseMsDescAreaOptions<A extends MsDescAreaId> {
   /** Stored fragment from the server (resynced after refetch when pristine). */
   savedContent: string;
   savedPublished: boolean;
-  token: string | null;
+  isAuthenticated: boolean;
   /** Injectable for tests; defaults to the shared `validate-tei` endpoint. */
   validate?: (content: string) => Promise<TeiValidationResult>;
   debounceMs?: number;
@@ -95,7 +95,7 @@ export function useMsDescArea<A extends MsDescAreaId>({
   area,
   savedContent,
   savedPublished,
-  token,
+  isAuthenticated,
   validate = validateTei,
   debounceMs = 400,
 }: UseMsDescAreaOptions<A>): UseMsDescAreaResult<A> {
@@ -132,7 +132,7 @@ export function useMsDescArea<A extends MsDescAreaId>({
   // (never per leaf). Only content edits need it; stored content was already
   // persisted as-is and a publish-only toggle re-sends the same bytes.
   useEffect(() => {
-    if (!contentDirty || !token) return;
+    if (!contentDirty || !isAuthenticated) return;
     let cancelled = false;
     const handle = setTimeout(async () => {
       try {
@@ -149,16 +149,17 @@ export function useMsDescArea<A extends MsDescAreaId>({
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [draft.content, contentDirty, token, validate, debounceMs]);
+  }, [draft.content, contentDirty, isAuthenticated, validate, debounceMs]);
 
   const validation = useMemo<MsDescValidation>(() => {
     if (!contentDirty) return { status: 'idle', errors: [] };
     if (checked && checked.content === draft.content) {
       return { status: checked.valid ? 'valid' : 'invalid', errors: checked.errors };
     }
-    if (checkFailedFor === draft.content || !token) return { status: 'unknown', errors: [] };
+    if (checkFailedFor === draft.content || !isAuthenticated)
+      return { status: 'unknown', errors: [] };
     return { status: 'pending', errors: [] };
-  }, [contentDirty, checked, checkFailedFor, draft.content, token]);
+  }, [contentDirty, checked, checkFailedFor, draft.content, isAuthenticated]);
 
   const canSave = dirty && (!contentDirty || validation.status === 'valid');
 
