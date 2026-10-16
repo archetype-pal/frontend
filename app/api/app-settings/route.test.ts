@@ -65,6 +65,7 @@ afterEach(() => {
  *  from the mocked `getServerAuthToken`, not a client-supplied header. */
 function putRequest(body: unknown): NextRequest {
   return {
+    headers: new Headers(),
     json: async () => body,
   } as unknown as NextRequest;
 }

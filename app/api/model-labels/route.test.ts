@@ -48,6 +48,7 @@ beforeEach(() => {
 
 function putRequest(body: unknown): NextRequest {
   return {
+    headers: new Headers(),
     json: async () => body,
   } as unknown as NextRequest;
 }
