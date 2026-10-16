@@ -2,9 +2,8 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Bookmark, BookmarkCheck, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { type ResultType } from '@/lib/search-types';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -24,10 +23,6 @@ type SavedSearchesPanelProps = {
   resultCount: number;
   /** When following a saved link (e.g. close parent dropdown). */
   onNavigate?: () => void;
-  /** After a successful save (e.g. flash trigger icon). */
-  onSaveComplete?: () => void;
-  /** Focus name field on mount (popover trigger). */
-  autoFocusNameInput?: boolean;
 };
 
 export function SavedSearchesPanel({
@@ -36,8 +31,6 @@ export function SavedSearchesPanel({
   filterCount,
   resultCount,
   onNavigate,
-  onSaveComplete,
-  autoFocusNameInput = false,
 }: SavedSearchesPanelProps) {
   const t = useTranslations('search');
   const tCommon = useTranslations('common');
@@ -59,8 +52,7 @@ export function SavedSearchesPanel({
     });
     setSearches(getSavedSearches());
     setLabel('');
-    onSaveComplete?.();
-  }, [label, resultType, keyword, filterCount, resultCount, onSaveComplete]);
+  }, [label, resultType, keyword, filterCount, resultCount]);
 
   const handleRemove = React.useCallback((id: string) => {
     removeSavedSearch(id);
@@ -88,7 +80,6 @@ export function SavedSearchesPanel({
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             onKeyDown={handleKeyDown}
-            autoFocus={autoFocusNameInput}
             className="flex-1 min-w-0 rounded-md border px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <Button size="sm" onClick={handleSave} disabled={!label.trim()}>
@@ -135,57 +126,5 @@ export function SavedSearchesPanel({
         )}
       </div>
     </div>
-  );
-}
-
-type SavedSearchesDropdownProps = {
-  resultType: ResultType;
-  keyword: string;
-  filterCount: number;
-  resultCount: number;
-  triggerId?: string;
-};
-
-export function SavedSearchesDropdown({
-  resultType,
-  keyword,
-  filterCount,
-  resultCount,
-  triggerId,
-}: SavedSearchesDropdownProps) {
-  const t = useTranslations('search');
-  const tCommon = useTranslations('common');
-  const [open, setOpen] = React.useState(false);
-  const [justSaved, setJustSaved] = React.useState(false);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button id={triggerId} variant="ghost" size="sm">
-          {justSaved ? (
-            <BookmarkCheck className="h-4 w-4 text-green-600" />
-          ) : (
-            <Bookmark className="h-4 w-4" />
-          )}
-          <span className="ml-1 hidden sm:inline">
-            {justSaved ? t('savedState') : tCommon('save')}
-          </span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
-        <SavedSearchesPanel
-          resultType={resultType}
-          keyword={keyword}
-          filterCount={filterCount}
-          resultCount={resultCount}
-          autoFocusNameInput
-          onNavigate={() => setOpen(false)}
-          onSaveComplete={() => {
-            setJustSaved(true);
-            setTimeout(() => setJustSaved(false), 1500);
-          }}
-        />
-      </PopoverContent>
-    </Popover>
   );
 }

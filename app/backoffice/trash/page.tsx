@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useMemo, useRef } from 'react';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { Trash2, ExternalLink, RotateCcw, Image as ImageIcon, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ServerPagination } from '@/components/backoffice/common/server-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import {
   DataTable,
   sortableHeader,
@@ -31,7 +31,9 @@ import {
   restoreGraph,
   purgeGraph,
 } from '@/services/backoffice/annotations';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { toOrdering } from '@/lib/backoffice/ordering';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { formatReviewAge } from '@/lib/backoffice/review-queue-sla';
@@ -44,14 +46,24 @@ import {
 import type { GraphItem } from '@/types/backoffice';
 import { toast } from 'sonner';
 
-const PAGE_SIZE = 50;
-
 // One entry per trashable model — later models are entries here, not new pages.
 const TRASH_TABS = [{ key: 'annotations', labelKey: 'trash.tabAnnotations' }] as const;
 
 type TrashTabKey = (typeof TRASH_TABS)[number]['key'];
 
 const ANNOTATION_TYPES = ['image', 'text', 'editorial', 'unknown'] as const;
+
+const ORDERING_FIELDS = {
+  id: 'id',
+  allograph_name: 'allograph__name',
+  hand_name: 'hand__name',
+  image_display:
+    'item_image__item_part__current_item__repository__label,item_image__item_part__current_item__shelfmark,item_image__item_part__current_item_locus,item_image__locus',
+  annotation_type: 'annotation_type',
+  created: 'created',
+  deleted_by: 'deleted_by__username',
+  deleted_at: 'deleted_at',
+};
 
 export default function TrashPage() {
   const t = useTranslations('backoffice');
@@ -60,12 +72,20 @@ export default function TrashPage() {
 
   const [activeTab, setActiveTab] = useState<TrashTabKey>('annotations');
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = usePageSize('trash', 50);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const ordering = toOrdering(sorting, ORDERING_FIELDS);
   const [purgeTarget, setPurgeTarget] = useState<GraphItem | null>(null);
-  const [bulkPurgeIds, setBulkPurgeIds] = useState<string[] | null>(null);
-  // Bumped after anything that takes a row out of the trash: remounts the
-  // DataTable so row selection doesn't linger over rows that are gone. Selection
-  // is keyed by graph id, so a stale entry would otherwise be sent to the server
-  // and 404 -- a spurious "n succeeded, 1 failed".
+  const [bulkPurge, setBulkPurge] = useState<{
+    ids: string[];
+    keepTicked: (ids: string[]) => void;
+  } | null>(null);
+  // Bumped after a single row leaves the trash: remounts the DataTable so row
+  // selection doesn't linger over a row that is gone. Selection is keyed by
+  // graph id, so a stale entry would otherwise be sent to the server and 404 --
+  // a spurious "n succeeded, 1 failed". Bulk actions keep only their failed rows
+  // ticked instead.
   const [tableEpoch, setTableEpoch] = useState(0);
 
   const [filterState, setFilterState] = useState(EMPTY_TRASH_FILTERS);
@@ -81,23 +101,25 @@ export default function TrashPage() {
   // from colliding with the live list on the same filters.
   const params = useMemo(
     () => ({
-      limit: PAGE_SIZE,
-      offset: page * PAGE_SIZE,
+      limit: pageSize,
+      offset: page * pageSize,
       ...buildTrashFilterParams(filterState),
+      ...(ordering ? { ordering } : {}),
     }),
-    [page, filterState]
+    [page, pageSize, filterState, ordering]
   );
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list({ deleted: 'true', ...params }),
     queryFn: () => getTrashedGraphs(params),
     enabled: !!token,
+    placeholderData: keepPreviousData,
   });
 
   // Keyed under the graphs namespace so invalidateGraphs() refreshes it:
   // restoring someone's last trashed row drops them from the dropdown.
   const { data: actors } = useQuery({
-    queryKey: [...backofficeKeys.graphs.all(), 'trash-actors'],
+    queryKey: backofficeKeys.graphs.trashActors(),
     queryFn: () => getTrashActors(),
     enabled: !!token,
   });
@@ -283,8 +305,8 @@ export default function TrashPage() {
     {
       label: t('trash.restore'),
       icon: <RotateCcw className="h-3 w-3" />,
-      action: async (ids) => {
-        await runBulkAction({
+      action: async (ids, keepTicked) => {
+        const { failedIds } = await runBulkAction({
           ids,
           action: (id) => restoreGraph(Number(id)),
           invalidate: invalidateGraphs,
@@ -294,14 +316,14 @@ export default function TrashPage() {
             partial: (succeeded, failed) => t('trash.bulkPartial', { succeeded, failed }),
           },
         });
-        setTableEpoch((n) => n + 1);
+        keepTicked(failedIds);
       },
     },
     {
       label: t('trash.purge'),
       variant: 'destructive',
       icon: <Trash2 className="h-3 w-3" />,
-      action: (ids) => setBulkPurgeIds(ids),
+      action: (ids, keepTicked) => setBulkPurge({ ids, keepTicked }),
     },
   ];
 
@@ -426,23 +448,34 @@ export default function TrashPage() {
       </div>
 
       <DataTable
+        tableRef={tableRef}
         key={`${activeTab}-${tableEpoch}`}
         columns={columns}
         data={rows}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={refetch}
         pagination={false}
+        sorting={sorting}
+        onSortingChange={(next) => {
+          setSorting(next);
+          setPage(0);
+        }}
         enableRowSelection
         enableColumnVisibility
         bulkActions={bulkActions}
       />
-      <ServerPagination
-        total={totalCount}
-        pageSize={PAGE_SIZE}
-        page={page}
-        hasNext={Boolean(data?.next)}
-        onPageChange={setPage}
+      <DataPagination
+        scrollTargetRef={tableRef}
+        totalItems={totalCount}
+        page={page + 1}
+        pageSize={pageSize}
+        onPageChange={(p) => setPage(p - 1)}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(0);
+        }}
       />
 
       <ConfirmDialog
@@ -457,16 +490,17 @@ export default function TrashPage() {
       />
 
       <ConfirmDialog
-        open={!!bulkPurgeIds}
-        onOpenChange={(open) => !open && setBulkPurgeIds(null)}
-        title={t('trash.bulkPurgeTitle', { count: bulkPurgeIds?.length ?? 0 })}
+        open={!!bulkPurge}
+        onOpenChange={(open) => !open && setBulkPurge(null)}
+        title={t('trash.bulkPurgeTitle', { count: bulkPurge?.ids.length ?? 0 })}
         description={t('trash.bulkPurgeDesc')}
         confirmLabel={t('trash.purgeConfirm')}
         variant="destructive"
         onConfirm={async () => {
-          const ids = bulkPurgeIds ?? [];
-          setBulkPurgeIds(null);
-          await runBulkAction({
+          if (!bulkPurge) return;
+          const { ids, keepTicked } = bulkPurge;
+          setBulkPurge(null);
+          const { failedIds } = await runBulkAction({
             ids,
             action: (id) => purgeGraph(Number(id)),
             invalidate: invalidateGraphs,
@@ -476,7 +510,7 @@ export default function TrashPage() {
               partial: (succeeded, failed) => t('trash.bulkPartial', { succeeded, failed }),
             },
           });
-          setTableEpoch((n) => n + 1);
+          keepTicked(failedIds);
         }}
       />
     </div>

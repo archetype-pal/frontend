@@ -69,8 +69,8 @@ export const backofficeKeys = {
   },
   comments: {
     all: () => [...backofficeKeys.all, 'comments'] as const,
-    list: (filter?: string) => [...backofficeKeys.comments.all(), 'list', filter] as const,
-    allPages: (filter: string) => [...backofficeKeys.comments.all(), 'all-pages', filter] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...backofficeKeys.comments.all(), 'list', filters] as const,
   },
   carousel: {
     all: () => [...backofficeKeys.all, 'carousel'] as const,
@@ -88,7 +88,8 @@ export const backofficeKeys = {
   // ── Scribes ────────────────────────────────────────────────
   scribes: {
     all: () => [...backofficeKeys.all, 'scribes'] as const,
-    list: () => [...backofficeKeys.scribes.all(), 'list'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...backofficeKeys.scribes.all(), 'list', filters] as const,
     detail: (id: number) => [...backofficeKeys.scribes.all(), 'detail', id] as const,
   },
   hands: {
@@ -107,6 +108,10 @@ export const backofficeKeys = {
         : ([...backofficeKeys.imageTexts.all(), 'list', filters] as const),
     detail: (id: number) => [...backofficeKeys.imageTexts.all(), 'detail', id] as const,
     history: (id: number) => [...backofficeKeys.imageTexts.all(), 'detail', id, 'history'] as const,
+    forImage: (itemImage?: number) =>
+      itemImage === undefined
+        ? ([...backofficeKeys.imageTexts.all(), 'for-image'] as const)
+        : ([...backofficeKeys.imageTexts.all(), 'for-image', itemImage] as const),
   },
   textsMonitor: {
     all: () => [...backofficeKeys.all, 'texts-monitor'] as const,
@@ -114,8 +119,27 @@ export const backofficeKeys = {
   },
   uncoveredImages: {
     all: () => [...backofficeKeys.all, 'uncovered-images'] as const,
-    list: (mode: string, page: number) =>
-      [...backofficeKeys.uncoveredImages.all(), mode, page] as const,
+    list: (mode: string, page: number, pageSize: number) =>
+      [...backofficeKeys.uncoveredImages.all(), mode, page, pageSize] as const,
+  },
+  reviewQueue: {
+    all: () => [...backofficeKeys.all, 'review-queue'] as const,
+  },
+  previewAsPublic: (textId: number) =>
+    [...backofficeKeys.all, 'preview-as-public', textId] as const,
+  teiRefSearch: (segment: string, query: string) =>
+    [...backofficeKeys.all, 'tei-ref-search', segment, query] as const,
+
+  // ── Item images ─────────────────────────────────────────────
+  itemImages: {
+    all: () => [...backofficeKeys.all, 'item-images'] as const,
+    forPart: (itemPart: number | undefined) =>
+      [...backofficeKeys.itemImages.all(), 'for-part', itemPart] as const,
+    detail: (id: number | undefined) => [...backofficeKeys.itemImages.all(), 'detail', id] as const,
+  },
+  itemPartSearch: {
+    all: () => [...backofficeKeys.all, 'item-part-search'] as const,
+    list: (query: string) => [...backofficeKeys.itemPartSearch.all(), query] as const,
   },
 
   // ── Annotations ──────────────────────────────────────────
@@ -124,6 +148,7 @@ export const backofficeKeys = {
     list: (filters?: Record<string, unknown>) =>
       [...backofficeKeys.all, 'graphs', 'list', filters] as const,
     detail: (id: number) => [...backofficeKeys.all, 'graphs', 'detail', id] as const,
+    trashActors: () => [...backofficeKeys.all, 'graphs', 'trash-actors'] as const,
   },
 
   // ── Users ────────────────────────────────────────────────────
@@ -140,4 +165,9 @@ export const backofficeKeys = {
     stats: () => [...backofficeKeys.all, 'searchEngine', 'stats'] as const,
     task: (taskId: string) => [...backofficeKeys.all, 'searchEngine', 'task', taskId] as const,
   },
+
+  // ── Health ──────────────────────────────────────────────────
+  apiVersion: () => [...backofficeKeys.all, 'api-version'] as const,
+  qualityDashboard: () => [...backofficeKeys.all, 'quality-dashboard'] as const,
+  sanityChecks: () => [...backofficeKeys.all, 'sanity-checks'] as const,
 } as const;

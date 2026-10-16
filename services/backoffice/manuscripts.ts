@@ -1,7 +1,6 @@
 import { backofficeGet } from './api-client';
 import { createCrudService } from './crud-factory';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
-import { proxyFetch } from '@/lib/api-fetch';
 import type {
   PaginatedResponse,
   HistoricalItemListItem,
@@ -25,7 +24,13 @@ const historicalItemsCrud = createCrudService<
   HistoricalItemDetail
 >('/api/v1/manuscripts/management/historical-items/');
 
-export function getHistoricalItems(params?: { limit?: number; offset?: number; type?: string }) {
+export function getHistoricalItems(params?: {
+  limit?: number;
+  offset?: number;
+  type?: string;
+  search?: string;
+  ordering?: string;
+}) {
   return historicalItemsCrud.list(params);
 }
 
@@ -63,11 +68,6 @@ const itemImagesCrud = createCrudService<PaginatedResponse<AdminItemImage>, Admi
   '/api/v1/manuscripts/management/item-images/'
 );
 
-export function getItemImages(params?: { item_part?: number; limit?: number; offset?: number }) {
-  return itemImagesCrud.list(params);
-}
-
-export const createItemImage = itemImagesCrud.create;
 export const updateItemImage = itemImagesCrud.update;
 export const deleteItemImage = itemImagesCrud.remove;
 
@@ -102,13 +102,17 @@ const currentItemsCrud = createCrudService<PaginatedResponse<CurrentItemOption>,
   '/api/v1/manuscripts/management/current-items/'
 );
 
-export function getCurrentItems(params?: { repository?: number; limit?: number; offset?: number }) {
+export function getCurrentItems(params?: {
+  repository?: number;
+  search?: string;
+  limit?: number;
+  offset?: number;
+  ordering?: string;
+}) {
   return currentItemsCrud.list(params);
 }
 
-export const getCurrentItem = currentItemsCrud.get;
 export const createCurrentItem = currentItemsCrud.create;
-export const updateCurrentItem = currentItemsCrud.update;
 export const deleteCurrentItem = currentItemsCrud.remove;
 
 // ── Catalogue Numbers ───────────────────────────────────────────────────
@@ -140,7 +144,6 @@ const msdescAreasCrud = createCrudService<MsDescArea>(
 
 export const createMsDescArea = msdescAreasCrud.create;
 export const updateMsDescArea = msdescAreasCrud.update;
-export const deleteMsDescArea = msdescAreasCrud.remove;
 
 // ── Repositories ────────────────────────────────────────────────────────
 
@@ -153,9 +156,7 @@ const repositoriesCrud = createCrudService<PaginatedResponse<Repository>, Reposi
 // `repositoriesCrud.list()` returned the first DRF page only, silently
 // capping the list at 20.
 export const getRepositories = (): Promise<Repository[]> =>
-  walkPaginated<Repository>('/api/v1/manuscripts/management/repositories/?limit=100', (path) =>
-    proxyFetch(path)
-  );
+  walkPaginated<Repository>('/api/v1/manuscripts/management/repositories/?limit=100');
 export const createRepository = repositoriesCrud.create;
 export const updateRepository = repositoriesCrud.update;
 export const deleteRepository = repositoriesCrud.remove;
@@ -207,5 +208,3 @@ export function getPlaces() {
 }
 
 export const createPlace = placesCrud.create;
-export const updatePlace = placesCrud.update;
-export const deletePlace = placesCrud.remove;

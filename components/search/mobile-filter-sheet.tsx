@@ -48,12 +48,12 @@ export function MobileFilterSheet({
         )}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="top-auto bottom-0 left-0 right-0 translate-x-0 translate-y-0 max-w-none rounded-b-none rounded-t-xl p-0 h-[85vh]">
+        <DialogContent className="top-auto bottom-0 left-0 right-0 translate-x-0 translate-y-0 max-w-none rounded-b-none rounded-t-xl p-0 h-[85vh] flex flex-col">
           <DialogHeader className="border-b px-4 py-3">
             <DialogTitle>{t('filtersDialogTitle', { count: activeFilterCount })}</DialogTitle>
             <DialogDescription>{t('filtersDialogDescription')}</DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto p-3">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">{children}</div>
           <div className="border-t p-3 flex items-center justify-between gap-2">
             <Button variant="ghost" size="sm" onClick={onClearAll}>
               {tFilters('clearAll')}

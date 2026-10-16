@@ -149,8 +149,12 @@ export async function updateViewerAnnotation(id: number, partial: ViewerAnnotati
   return res.json() as Promise<BackendGraph>;
 }
 
-export async function deleteViewerAnnotation(id: number): Promise<void> {
+export async function deleteViewerAnnotation(
+  id: number,
+  init?: Pick<RequestInit, 'keepalive'>
+): Promise<void> {
   const res = await proxyFetch(`/api/v1/annotations/graphs/${id}/`, {
+    ...init,
     method: 'DELETE',
   });
   if (!res.ok) {

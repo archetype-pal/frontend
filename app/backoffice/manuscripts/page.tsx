@@ -1,28 +1,43 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { BookOpen, Plus, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
-import { ServerPagination } from '@/components/backoffice/common/server-pagination';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { getHistoricalItems } from '@/services/backoffice/manuscripts';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { listAllPages } from '@/lib/backoffice/list-all-pages';
+import { toOrdering } from '@/lib/backoffice/ordering';
 import type { HistoricalItemListItem } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
+
+const ORDERING_FIELDS = {
+  location_display: 'first_repository_label,first_shelfmark',
+  repository_label: 'first_repository_label,first_shelfmark',
+  type: 'type',
+  date_display: 'date__min_weight,date__max_weight',
+  image_count: 'image_count',
+};
 
 export default function ManuscriptsPage() {
   const t = useTranslations('backoffice');
   const { token } = useAuth();
   const router = useRouter();
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
+  const [pageSize, setPageSize] = usePageSize('manuscripts', 50);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const ordering = toOrdering(sorting, ORDERING_FIELDS);
   const { getLabel, getPluralLabel } = useModelLabels();
   const historicalItemLabel = getLabel('historicalItem');
   const historicalItemPlural = getPluralLabel('historicalItem');
@@ -108,17 +123,16 @@ export default function ManuscriptsPage() {
     [catalogueLabel, dateLabel, historicalItemLabel, shelfmarkLabel, t]
   );
 
-  const queryParams = {
-    limit: 50,
-    offset: page * 50,
+  const listParams = {
     ...(search ? { search } : {}),
+    ...(ordering ? { ordering } : {}),
   };
+  const queryParams = { limit: pageSize, offset: page * pageSize, ...listParams };
 
-  const { data, isLoading, isPlaceholderData, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.manuscripts.list(queryParams),
     queryFn: () => getHistoricalItems(queryParams),
     enabled: !!token,
-    // Keep the current page on screen while the next page or search loads.
     placeholderData: keepPreviousData,
   });
 
@@ -144,8 +158,10 @@ export default function ManuscriptsPage() {
       </div>
 
       <DataTable
+        tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
+        isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}
@@ -153,18 +169,30 @@ export default function ManuscriptsPage() {
         onSearchChange={setSearchInput}
         searchPlaceholder={`Search by shelfmark or ${catalogueLabel.toLowerCase()}...`}
         pagination={false}
+        sorting={sorting}
+        onSortingChange={(next) => {
+          setSorting(next);
+          setPage(0);
+        }}
         enableColumnVisibility
         enableExport
+        fetchAllRows={(options) =>
+          listAllPages((p) => getHistoricalItems({ ...listParams, ...p }), options)
+        }
         exportFilename="manuscripts"
       />
 
       {data && (
-        <ServerPagination
-          total={data.count}
-          pageSize={50}
-          page={page}
-          hasNext={!!data.next && !isPlaceholderData}
-          onPageChange={setPage}
+        <DataPagination
+          scrollTargetRef={tableRef}
+          totalItems={data.count}
+          page={page + 1}
+          pageSize={pageSize}
+          onPageChange={(p) => setPage(p - 1)}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+          }}
         />
       )}
     </div>

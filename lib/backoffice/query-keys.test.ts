@@ -10,6 +10,11 @@ describe('backofficeKeys structure', () => {
     expect(backofficeKeys.publications.all()[0]).toBe('backoffice');
     expect(backofficeKeys.users.all()[0]).toBe('backoffice');
     expect(backofficeKeys.searchEngine.all()[0]).toBe('backoffice');
+    expect(backofficeKeys.reviewQueue.all()[0]).toBe('backoffice');
+    expect(backofficeKeys.itemPartSearch.list('x')[0]).toBe('backoffice');
+    expect(backofficeKeys.teiRefSearch('item', 'x')[0]).toBe('backoffice');
+    expect(backofficeKeys.previewAsPublic(1)[0]).toBe('backoffice');
+    expect(backofficeKeys.apiVersion()[0]).toBe('backoffice');
   });
 
   it('encodes the entity name as the second segment for `all()`', () => {
@@ -76,8 +81,8 @@ describe('backofficeKeys structure', () => {
 
   it('keeps the comments page key distinct from the pending-count key', () => {
     const all = backofficeKeys.comments.all();
-    const pendingCount = backofficeKeys.comments.list('pending');
-    const pendingPage = backofficeKeys.comments.allPages('pending');
+    const pendingCount = backofficeKeys.comments.list({ is_approved: false });
+    const pendingPage = backofficeKeys.comments.list({ limit: 20, offset: 0, is_approved: false });
 
     expect(pendingPage).not.toEqual(pendingCount);
     expect(pendingPage.slice(0, all.length)).toEqual([...all]);
@@ -87,6 +92,16 @@ describe('backofficeKeys structure', () => {
     const a = backofficeKeys.manuscripts.list({ offset: 0 });
     const b = backofficeKeys.manuscripts.list({ offset: 20 });
     expect(a).not.toEqual(b);
+  });
+
+  it('keeps each uncovered-images mode, page and page size in its own cache entry', () => {
+    const all = backofficeKeys.uncoveredImages.all();
+    const key = backofficeKeys.uncoveredImages.list('either', 0, 20);
+
+    expect(key.slice(0, all.length)).toEqual([...all]);
+    expect(key).not.toEqual(backofficeKeys.uncoveredImages.list('either', 0, 50));
+    expect(key).not.toEqual(backofficeKeys.uncoveredImages.list('either', 1, 20));
+    expect(key).not.toEqual(backofficeKeys.uncoveredImages.list('transcription', 0, 20));
   });
 
   it('currentItems.list still extends its all() despite the inlined construction', () => {
@@ -102,11 +117,18 @@ describe('backofficeKeys structure', () => {
     const all = backofficeKeys.graphs.all();
     expect(backofficeKeys.graphs.list({}).slice(0, all.length)).toEqual([...all]);
     expect(backofficeKeys.graphs.detail(1).slice(0, all.length)).toEqual([...all]);
+    expect(backofficeKeys.graphs.trashActors().slice(0, all.length)).toEqual([...all]);
   });
 
   it('searchEngine.stats and searchEngine.task extend searchEngine.all()', () => {
     const all = backofficeKeys.searchEngine.all();
     expect(backofficeKeys.searchEngine.stats().slice(0, all.length)).toEqual([...all]);
     expect(backofficeKeys.searchEngine.task('abc').slice(0, all.length)).toEqual([...all]);
+  });
+
+  it('itemImages.forPart and itemImages.detail extend itemImages.all()', () => {
+    const all = backofficeKeys.itemImages.all();
+    expect(backofficeKeys.itemImages.forPart(3).slice(0, all.length)).toEqual([...all]);
+    expect(backofficeKeys.itemImages.detail(7).slice(0, all.length)).toEqual([...all]);
   });
 });

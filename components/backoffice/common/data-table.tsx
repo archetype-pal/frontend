@@ -7,6 +7,7 @@ import {
   type ColumnFiltersState,
   type VisibilityState,
   type RowSelectionState,
+  type PaginationState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -32,15 +33,21 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChevronLeft, ChevronRight, Search, Columns, Download, X } from 'lucide-react';
+import { Search, Columns, Download, Loader2, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { escapeCsvField } from '@/lib/backoffice/csv-escape';
+import { downloadBlob } from '@/lib/download';
 import { BackofficeErrorState } from './query-state';
+import { usePageSize } from '@/hooks/backoffice/use-page-size';
+import type { ListAllPagesOptions } from '@/lib/backoffice/list-all-pages';
 
 export interface BulkAction {
   label: string;
-  action: (ids: string[]) => void;
+  /** `keepTicked` replaces the ticks with the given ids, e.g. the rows that failed. */
+  action: (ids: string[], keepTicked: (ids: string[]) => void) => void;
   variant?: 'destructive' | 'default';
   icon?: React.ReactNode;
 }
@@ -73,6 +80,8 @@ interface DataTableProps<TData, TValue> {
   /** Enable client-side pagination (default: true). */
   pagination?: boolean;
   pageSize?: number;
+  /** Remembers the chosen rows per page in this browser under this name. */
+  pageSizeKey?: string;
   /** Enable row selection with checkboxes. */
   enableRowSelection?: boolean;
   /** Bulk actions shown when rows are selected. */
@@ -83,6 +92,10 @@ interface DataTableProps<TData, TValue> {
   enableColumnVisibility?: boolean;
   /** Enable CSV export of current view. */
   enableExport?: boolean;
+  /** Fetch every row for Export when the table holds only one server page. */
+  fetchAllRows?: (options: Required<ListAllPagesOptions>) => Promise<TData[]>;
+  /** Offer Export only for ticked rows. */
+  exportSelectionOnly?: boolean;
   /** Filename for CSV export. */
   exportFilename?: string;
   /** Content for filter bar above the table. */
@@ -95,6 +108,13 @@ interface DataTableProps<TData, TValue> {
   onRetry?: () => void;
   /** Render placeholder rows (instead of "No results") while the data query has nothing to show yet. */
   isLoading?: boolean;
+  /** Dim the rows while the next page or search loads. */
+  isStale?: boolean;
+  /** Controlled sorting, for server ordering. */
+  sorting?: SortingState;
+  onSortingChange?: (sorting: SortingState) => void;
+  /** Ref to the table box, for an outside pager to scroll to. */
+  tableRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function DataTable<TData, TValue>({
@@ -107,26 +127,45 @@ export function DataTable<TData, TValue>({
   toolbarActions,
   pagination = true,
   pageSize = 20,
+  pageSizeKey,
   enableRowSelection = false,
   bulkActions,
   getRowId,
   enableColumnVisibility = false,
   enableExport = false,
+  fetchAllRows,
+  exportSelectionOnly = false,
   exportFilename = 'export',
   filterBar,
   presetFilters,
   isError = false,
   onRetry,
   isLoading = false,
+  isStale = false,
+  sorting: serverSorting,
+  onSortingChange,
+  tableRef,
 }: DataTableProps<TData, TValue>) {
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [localSorting, setLocalSorting] = useState<SortingState>([]);
+  const sorting = onSortingChange ? (serverSorting ?? []) : localSorting;
+  const [exportProgress, setExportProgress] = useState<{ loaded: number; total: number } | null>(
+    null
+  );
+  // Leaving the table stops a running export when its page in flight returns.
+  const exportAbort = useRef<AbortController | null>(null);
+  useEffect(() => () => exportAbort.current?.abort(), []);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [tablePageSize, setTablePageSize] = usePageSize(pageSizeKey ?? null, pageSize);
+  const paginationState: PaginationState = { pageIndex, pageSize: tablePageSize };
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [activePreset, setActivePreset] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const ownTableRef = useRef<HTMLDivElement>(null);
+  const tableBoxRef = tableRef ?? ownTableRef;
 
   const hasSearch = !!(searchColumn || onSearchChange);
 
@@ -199,31 +238,64 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     ...(pagination && { getPaginationRowModel: getPaginationRowModel() }),
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    manualSorting: !!onSortingChange,
+    onSortingChange: onSortingChange
+      ? (updater) => onSortingChange(typeof updater === 'function' ? updater(sorting) : updater)
+      : setLocalSorting,
+    onColumnFiltersChange: (updater) => {
+      setColumnFilters(updater);
+      setPageIndex(0);
+    },
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(paginationState) : updater;
+      setPageIndex(next.pageIndex);
+      if (next.pageSize !== tablePageSize) setTablePageSize(next.pageSize);
+    },
+    autoResetPageIndex: false,
     enableRowSelection,
     getRowId: getRowId
       ? (row) => getRowId(row)
       : (row) => String((row as Record<string, unknown>).id ?? ''),
-    state: { sorting, columnFilters, columnVisibility, rowSelection },
-    initialState: { pagination: { pageSize } },
+    state: { sorting, columnFilters, columnVisibility, rowSelection, pagination: paginationState },
   });
 
   const selectedCount = Object.keys(rowSelection).length;
   const selectedIds = Object.keys(rowSelection);
 
-  function handleExport() {
-    const headers = table
-      .getVisibleLeafColumns()
-      .filter((c) => c.id !== 'select' && c.id !== 'actions')
-      .map((c) => c.id);
+  // Ticked rows for Export. Rows ticked on another server page are no longer in
+  // `data`, so they are kept here. Each page keeps the place it first took, so
+  // going back to a page does not move it, and its rows follow the screen order.
+  const tickedRows = useRef(new Map<string, TData>());
+  useEffect(() => {
+    const shown = table.getSortedRowModel().rows;
+    const onPage = new Set(shown.map((row) => row.id));
+    const next = new Map<string, TData>();
+    let placed = false;
+    const placePage = () => {
+      for (const row of shown) if (row.getIsSelected()) next.set(row.id, row.original);
+      placed = true;
+    };
+    for (const [id, row] of tickedRows.current) {
+      if (!rowSelection[id]) continue;
+      if (!onPage.has(id)) next.set(id, row);
+      else if (!placed) placePage();
+    }
+    if (!placed) placePage();
+    tickedRows.current = next;
+  });
 
-    const rows = table.getFilteredRowModel().rows.map((row) =>
-      headers
-        .map((h) => {
-          const val = row.getValue(h);
+  function downloadCsv(source: TData[]) {
+    const exportColumns = table
+      .getVisibleLeafColumns()
+      .filter((c) => c.id !== 'select' && c.id !== 'actions');
+    const headers = exportColumns.map((c) => c.id);
+
+    const rows = source.map((row, index) =>
+      exportColumns
+        .map((column) => {
+          const val = column.accessorFn?.(row, index);
           // `escapeCsvField` handles delimiters/quotes/newlines AND neutralizes
           // formula-injection prefixes (`=`, `+`, `-`, `@`, tab, `\r`) so a
           // backoffice CSV opened in Excel/Sheets can't execute hostile
@@ -238,21 +310,33 @@ export function DataTable<TData, TValue>({
     // could introduce a comma, quote, or formula-prefix character that
     // would otherwise break CSV alignment for the whole file.
     const csv = [headers.map(escapeCsvField).join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${exportFilename}.csv`;
-    // Append-click-remove instead of bare `.click()` on a detached node.
-    // Modern Chrome/Firefox/Safari trigger the download fine, but older
-    // Firefox versions and some mobile Safari builds silently no-op the
-    // click on an unattached anchor — admins on those browsers got no
-    // export file. Same fix as cycle 179's search-results exporter and
-    // cycle 149's lightbox exporter.
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadBlob(`${exportFilename}.csv`, new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+  }
+
+  async function handleExport() {
+    if (selectedCount > 0) {
+      downloadCsv([...tickedRows.current.values()]);
+      return;
+    }
+    if (!fetchAllRows) {
+      downloadCsv(table.getFilteredRowModel().rows.map((row) => row.original));
+      return;
+    }
+    const controller = new AbortController();
+    exportAbort.current = controller;
+    const { signal } = controller;
+    setExportProgress({ loaded: 0, total: 0 });
+    try {
+      const rows = await fetchAllRows({
+        signal,
+        onProgress: (loaded, total) => setExportProgress({ loaded, total }),
+      });
+      downloadCsv(rows);
+    } catch {
+      if (!signal.aborted) toast.error(t('dataTable.exportFailed'));
+    } finally {
+      if (!signal.aborted) setExportProgress(null);
+    }
   }
 
   return (
@@ -267,7 +351,10 @@ export function DataTable<TData, TValue>({
               <button
                 key={preset.label}
                 type="button"
-                onClick={() => setActivePreset(i)}
+                onClick={() => {
+                  setActivePreset(i);
+                  setPageIndex(0);
+                }}
                 className={cn(
                   'px-3 py-1.5 text-xs font-medium transition-colors border-b-2 -mb-px',
                   i === activePreset
@@ -315,10 +402,29 @@ export function DataTable<TData, TValue>({
             </div>
           )}
           <div className="ml-auto flex items-center gap-2">
-            {enableExport && (
-              <Button variant="outline" size="sm" className="h-9 gap-1" onClick={handleExport}>
-                <Download className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{tCommon('export')}</span>
+            {enableExport && (!exportSelectionOnly || selectedCount > 0) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1"
+                onClick={handleExport}
+                disabled={!!exportProgress}
+                aria-busy={!!exportProgress || undefined}
+              >
+                {exportProgress ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                <span className="hidden sm:inline">
+                  {exportProgress
+                    ? exportProgress.total > 0
+                      ? t('dataTable.exportProgress', exportProgress)
+                      : t('dataTable.exporting')
+                    : selectedCount > 0
+                      ? t('dataTable.exportSelected', { count: selectedCount })
+                      : tCommon('export')}
+                </span>
               </Button>
             )}
             {enableColumnVisibility && (
@@ -364,7 +470,11 @@ export function DataTable<TData, TValue>({
                 variant={action.variant === 'destructive' ? 'destructive' : 'outline'}
                 size="sm"
                 className="h-7 gap-1 text-xs"
-                onClick={() => action.action(selectedIds)}
+                onClick={() =>
+                  action.action(selectedIds, (ids) =>
+                    setRowSelection(Object.fromEntries(ids.map((id) => [id, true])))
+                  )
+                }
               >
                 {action.icon}
                 {action.label}
@@ -384,7 +494,14 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div
+        ref={tableBoxRef}
+        aria-busy={isStale || undefined}
+        className={cn(
+          'rounded-md border transition-opacity duration-250 ease-out',
+          isStale && 'opacity-60'
+        )}
+      >
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -445,39 +562,22 @@ export function DataTable<TData, TValue>({
 
       {/* Pagination (hidden while loading: its counts would read 0 of 0) */}
       {pagination && !isLoading && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            {enableRowSelection && selectedCount > 0
+        <DataPagination
+          totalItems={table.getFilteredRowModel().rows.length}
+          page={table.getState().pagination.pageIndex + 1}
+          pageSize={table.getState().pagination.pageSize}
+          onPageChange={(p) => table.setPageIndex(p - 1)}
+          onPageSizeChange={(size) => table.setPageSize(size)}
+          scrollTargetRef={tableBoxRef}
+          summary={
+            enableRowSelection && selectedCount > 0
               ? t('dataTable.selectedOfTotal', {
                   count: selectedCount,
                   total: table.getFilteredRowModel().rows.length,
                 })
-              : t('dataTable.rowsTotal', { count: table.getFilteredRowModel().rows.length })}
-          </span>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="px-2 tabular-nums">
-              {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+              : undefined
+          }
+        />
       )}
     </div>
   );
