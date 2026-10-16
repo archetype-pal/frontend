@@ -1,11 +1,9 @@
-import { backofficeGet } from './api-client';
 import { createCrudService } from './crud-factory';
 import type {
   PaginatedResponse,
   AdminScribeListItem,
   AdminHandListItem,
   HandDescription,
-  Script,
 } from '@/types/backoffice';
 
 // ── Scribes ─────────────────────────────────────────────────────────────
@@ -14,7 +12,15 @@ const scribesCrud = createCrudService<PaginatedResponse<AdminScribeListItem>, Ad
   '/api/v1/management/scribes/scribes/'
 );
 
-export const getScribes = () => scribesCrud.list();
+export function getScribes(params?: {
+  limit?: number;
+  offset?: number;
+  search?: string;
+  period?: number;
+  ordering?: string;
+}) {
+  return scribesCrud.list(params);
+}
 export const getScribe = scribesCrud.get;
 export const createScribe = scribesCrud.create;
 export const updateScribe = scribesCrud.update;
@@ -26,7 +32,14 @@ const handsCrud = createCrudService<PaginatedResponse<AdminHandListItem>, AdminH
   '/api/v1/management/scribes/hands/'
 );
 
-export function getHands(params?: { scribe?: number; item_part?: number }) {
+export function getHands(params?: {
+  scribe?: number;
+  item_part?: number;
+  search?: string;
+  limit?: number;
+  offset?: number;
+  ordering?: string;
+}) {
   return handsCrud.list(params);
 }
 
@@ -45,14 +58,3 @@ const handDescriptionsCrud = createCrudService<HandDescription>(
 export const createHandDescription = handDescriptionsCrud.create;
 export const updateHandDescription = handDescriptionsCrud.update;
 export const deleteHandDescription = handDescriptionsCrud.remove;
-
-// ── Scripts ─────────────────────────────────────────────────────────────
-
-const scriptsCrud = createCrudService<Script>('/api/v1/management/scribes/scripts/');
-
-export function getScripts() {
-  return backofficeGet<Script[]>('/api/v1/management/scribes/scripts/');
-}
-
-export const createScript = scriptsCrud.create;
-export const deleteScript = scriptsCrud.remove;

@@ -8,6 +8,7 @@ import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { buildQueryString, type QueryState } from '@/lib/search-query';
 import { API_BASE_URL } from '@/lib/api-fetch';
 import { buildFormattedCsv, buildFormattedJson } from '@/lib/search-export';
+import { downloadBlob } from '@/lib/download';
 import type { ModelLabelKey } from '@/lib/model-labels';
 
 export function useSearchExport(opts: {
@@ -47,11 +48,7 @@ export function useSearchExport(opts: {
         const blob = new Blob([content], {
           type: format === 'json' ? 'application/json' : 'text/plain',
         });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `${resultType}-${scope}.${format === 'bibtex' ? 'bib' : format}`;
-        a.click();
-        URL.revokeObjectURL(a.href);
+        downloadBlob(`${resultType}-${scope}.${format === 'bibtex' ? 'bib' : format}`, blob);
         toast.success(
           `Exported ${resolveResultTypeLabel(resultType, getLabel)} as ${format.toUpperCase()}`
         );
@@ -85,11 +82,7 @@ export function useSearchExport(opts: {
         const blob = new Blob([content], {
           type: format === 'json' ? 'application/json' : 'text/csv;charset=utf-8',
         });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `${resultType}-${scope}-formatted.${format}`;
-        a.click();
-        URL.revokeObjectURL(a.href);
+        downloadBlob(`${resultType}-${scope}-formatted.${format}`, blob);
         toast.success(
           `Exported ${resolveResultTypeLabel(resultType, getLabel)} as formatted ${format.toUpperCase()}`
         );

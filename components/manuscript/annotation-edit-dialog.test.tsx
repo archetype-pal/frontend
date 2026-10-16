@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AnnotationEditDialog } from './annotation-edit-dialog';
@@ -316,6 +316,37 @@ describe('AnnotationEditDialog — allograph-switch save correctness', () => {
   });
 });
 
+describe('AnnotationEditDialog — keyboard save', () => {
+  beforeEach(() => {
+    updateViewerAnnotationMock.mockReset();
+    updateViewerAnnotationMock.mockResolvedValue(makeGraph());
+  });
+
+  it('saves every pending edit with Cmd/Ctrl+Enter', async () => {
+    render(
+      <AnnotationEditDialog
+        open
+        onOpenChange={vi.fn()}
+        graphs={[makeGraph({ allograph: 1, graphcomponent_set: [], positions: [] })]}
+        allographs={[ALLOGRAPH_A]}
+        hands={[HAND]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Set curved on all selected' }));
+    // Radix activates a tab on mouseDown, not click.
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'position-plural' }), { button: 0 });
+    fireEvent.click(screen.getByRole('radio', { name: 'Set initial on all selected' }));
+
+    fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
+
+    await waitFor(() => expect(updateViewerAnnotationMock).toHaveBeenCalledTimes(1));
+    const [, patch] = updateViewerAnnotationMock.mock.calls[0];
+    expect(patch.graphcomponent_set).toEqual([{ component: 10, features: [100] }]);
+    expect(patch.positions).toEqual([1000]);
+  });
+});
+
 describe('AnnotationEditDialog — component/position tabs', () => {
   beforeEach(() => {
     updateViewerAnnotationMock.mockReset();
@@ -404,5 +435,72 @@ describe('AnnotationEditDialog — component/position tabs', () => {
       ctrlKey: false,
     });
     expect(screen.getByRole('radio', { name: 'Set closed on all selected' })).toBeDefined();
+  });
+});
+
+describe('AnnotationEditDialog — allograph list status', () => {
+  it('says the allographs are loading and holds Save, even for a hand edit', () => {
+    render(
+      <AnnotationEditDialog
+        open
+        onOpenChange={vi.fn()}
+        graphs={[makeGraph({ hand: null })]}
+        allographs={[]}
+        allographsStatus="loading"
+        hands={[HAND]}
+      />
+    );
+
+    expect(screen.getByRole('status').textContent).toBe('Loading allographs…');
+    expect(
+      screen.queryByText('Pick an allograph to edit its components and positions.')
+    ).toBeNull();
+    const save = screen.getByRole('button', { name: /^Save/ }) as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
+  });
+
+  it('says the allograph list failed and fetches it again on request', () => {
+    const onRetry = vi.fn();
+    render(
+      <AnnotationEditDialog
+        open
+        onOpenChange={vi.fn()}
+        graphs={[makeGraph()]}
+        allographs={[]}
+        allographsStatus="error"
+        onRetryAllographs={onRetry}
+        hands={[HAND]}
+      />
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toContain("Couldn't load the allograph list.");
+    fireEvent.click(within(alert).getByRole('button', { name: 'Try again' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('AnnotationEditDialog — keyboard on feature rows', () => {
+  it('moves between All, None and Mixed with the arrow keys', () => {
+    render(
+      <AnnotationEditDialog
+        open
+        onOpenChange={vi.fn()}
+        graphs={[makeGraph({ id: 1 }), makeGraph({ id: 2 })]}
+        allographs={[ALLOGRAPH_A]}
+        hands={[HAND]}
+      />
+    );
+    const all = screen.getByRole('radio', { name: 'Set curved on all selected' });
+    const none = screen.getByRole('radio', { name: 'Remove curved from all selected' });
+    const mixed = screen.getByRole('radio', { name: 'Leave curved unchanged per graph' });
+    expect([all.tabIndex, none.tabIndex, mixed.tabIndex]).toEqual([-1, 0, -1]);
+
+    fireEvent.keyDown(none, { key: 'ArrowRight' });
+    expect(mixed.getAttribute('aria-checked')).toBe('true');
+    expect(document.activeElement).toBe(mixed);
+
+    fireEvent.keyDown(mixed, { key: 'ArrowRight' });
+    expect(all.getAttribute('aria-checked')).toBe('true');
   });
 });

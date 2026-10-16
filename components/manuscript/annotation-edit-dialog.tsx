@@ -21,11 +21,11 @@ import type { HandType } from '@/types/hands';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { Segmented, type SegmentedOption } from '@/components/ui/segmented';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { SearchableOption } from '@/lib/searchable-option-ranking';
-import { cn } from '@/lib/utils';
 
 // Tri-state model: every toggleable thing (feature, position) is 'all' (set
 // on every selected graph), 'none' (set on none), or 'mixed' (some have it).
@@ -166,6 +166,11 @@ export interface AnnotationEditDialogProps {
   onOpenChange: (open: boolean) => void;
   graphs: BackendGraph[];
   allographs: Allograph[];
+  /** Set while the caller is still fetching `allographs`, or after that fetch
+   *  failed; the Allograph field says so instead of offering an empty list. */
+  allographsStatus?: 'loading' | 'error';
+  /** Fetch `allographs` again after a failure. */
+  onRetryAllographs?: () => void;
   hands: HandType[];
   /** IIIF info URL for the parent image, used to render a crop preview of the
    *  graph(s) under edit. */
@@ -193,6 +198,8 @@ function DialogBody({
   onOpenChange,
   graphs,
   allographs,
+  allographsStatus,
+  onRetryAllographs,
   hands,
   iiifImage,
   handDisabled,
@@ -202,6 +209,9 @@ function DialogBody({
 }: AnnotationEditDialogProps) {
   const { token } = useAuth();
   const t = useTranslations('search');
+  const tCommon = useTranslations('common');
+  // Saving waits for the allograph list: without it the schema can't be shown.
+  const allographsReady = allographsStatus === undefined;
   // The two "nothing defined for this allograph" sentences are the same ones the
   // annotation popup shows for the same condition, already translated — reuse them
   // rather than keeping a second copy that can drift out of step.
@@ -487,21 +497,20 @@ function DialogBody({
   };
 
   // ⌘/Ctrl+Enter to save without reaching for the mouse. Skips when there's
-  // nothing to commit or a save is already in flight.
+  // nothing to commit or a save is already in flight. An effect event, so the
+  // listener always sees the latest edits rather than the ones from when the
+  // gating flags last changed.
+  const onSaveHotkey = React.useEffectEvent((e: KeyboardEvent) => {
+    if (!(e.metaKey || e.ctrlKey) || e.key !== 'Enter') return;
+    if (saving || !hasPendingChanges || !allographsReady) return;
+    e.preventDefault();
+    void handleSave();
+  });
   React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        if (saving || !hasPendingChanges) return;
-        e.preventDefault();
-        void handleSave();
-      }
-    };
+    const onKey = (e: KeyboardEvent) => onSaveHotkey(e);
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-    // handleSave closes over state at this render — using a stale closure
-    // would replay stale edits, so we depend only on the gating flags.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saving, hasPendingChanges]);
+  }, []);
 
   // ---- Render -------------------------------------------------------------
 
@@ -522,7 +531,9 @@ function DialogBody({
       >
         <SheetHeader>
           <SheetTitle className="text-xl">
-            {isMulti ? `Edit ${graphs.length} graphs` : `Edit graph #${graphs[0].id}`}
+            {isMulti
+              ? t('editSheetTitleMany', { count: graphs.length })
+              : t('editSheetTitleOne', { id: graphs[0].id })}
           </SheetTitle>
         </SheetHeader>
 
@@ -536,21 +547,48 @@ function DialogBody({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label className="mb-1.5 block text-sm font-medium">Allograph</Label>
-              <SearchableSelect
-                options={allographOptions}
-                value={allographId != null ? String(allographId) : null}
-                onValueChange={(v) => setAllographId(v ? Number(v) : null)}
-                placeholder={
-                  isMulti && initialAllograph === MIXED ? t('mixedPickOne') : 'Allograph'
-                }
-                searchPlaceholder={t('searchAllographs')}
-                emptyText={t('noAllographs')}
-                triggerClassName="h-9 w-full text-sm"
-              />
+              <Label className="mb-1.5 block text-sm font-medium">{t('allographField')}</Label>
+              {allographsStatus === 'error' ? (
+                <div
+                  role="alert"
+                  className="flex flex-wrap items-center gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-2.5 py-1.5 text-sm text-destructive"
+                >
+                  {t('allographsFailed')}
+                  {onRetryAllographs && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={onRetryAllographs}
+                    >
+                      {tCommon('tryAgain')}
+                    </Button>
+                  )}
+                </div>
+              ) : allographsStatus === 'loading' ? (
+                <div
+                  role="status"
+                  className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm text-muted-foreground"
+                >
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                  {t('allographsLoading')}
+                </div>
+              ) : (
+                <SearchableSelect
+                  options={allographOptions}
+                  value={allographId != null ? String(allographId) : null}
+                  onValueChange={(v) => setAllographId(v ? Number(v) : null)}
+                  placeholder={
+                    isMulti && initialAllograph === MIXED ? t('mixedPickOne') : t('allographField')
+                  }
+                  searchPlaceholder={t('searchAllographs')}
+                  emptyText={t('noAllographs')}
+                  triggerClassName="h-9 w-full text-sm"
+                />
+              )}
             </div>
             <div>
-              <Label className="mb-1.5 block text-sm font-medium">Hand</Label>
+              <Label className="mb-1.5 block text-sm font-medium">{t('handField')}</Label>
               {handDisabled ? (
                 <TooltipProvider delayDuration={150}>
                   <Tooltip>
@@ -586,7 +624,7 @@ function DialogBody({
                   options={handOptions}
                   value={hand === MIXED || hand == null ? null : String(hand)}
                   onValueChange={(v) => setHand(v ? Number(v) : null)}
-                  placeholder={hand === MIXED ? t('mixedPickOne') : 'Hand'}
+                  placeholder={hand === MIXED ? t('mixedPickOne') : t('handField')}
                   searchPlaceholder={t('searchHands')}
                   emptyText={t('noHands')}
                   clearLabel={t('noHand')}
@@ -600,10 +638,9 @@ function DialogBody({
             <>
               {isMulti && (
                 <p className="rounded-md border border-muted-foreground/20 bg-muted/40 px-3 py-2.5 text-sm leading-relaxed text-muted-foreground">
-                  Each row has three options: <span className="font-medium">All</span> applies to
-                  every selected graph, <span className="font-medium">None</span> removes from every
-                  selected graph, and <span className="font-medium">Mixed</span> leaves each
-                  graph&apos;s current value alone on save.
+                  {t.rich('triStateHint', {
+                    b: (chunks) => <span className="font-medium">{chunks}</span>,
+                  })}
                 </p>
               )}
 
@@ -694,18 +731,16 @@ function DialogBody({
                 </div>
               )}
             </>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Pick an allograph to edit its components and positions.
-            </p>
-          )}
+          ) : allographsReady ? (
+            <p className="text-xs text-muted-foreground">{t('pickAllographHint')}</p>
+          ) : null}
 
           {error && <p className="text-xs text-destructive">{error}</p>}
         </div>
 
         <SheetFooter className="gap-2">
           <Button variant="ghost" size="sm" onClick={requestClose} disabled={saving}>
-            Cancel
+            {tCommon('cancel')}
           </Button>
           {failedIds.length > 0 && (
             <Button
@@ -716,18 +751,18 @@ function DialogBody({
               className="gap-2 text-destructive"
             >
               {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              Retry failed ({failedIds.length})
+              {t('retryFailed', { count: failedIds.length })}
             </Button>
           )}
           <Button
             size="sm"
             onClick={handleSave}
-            disabled={saving || !hasPendingChanges}
-            title="⌘/Ctrl+Enter to save"
+            disabled={saving || !hasPendingChanges || !allographsReady}
+            title={t('saveShortcut')}
             className="gap-2"
           >
             {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            {isMulti ? `Save ${graphs.length} graphs` : 'Save'}
+            {isMulti ? t('saveMany', { count: graphs.length }) : tCommon('save')}
             <kbd className="ml-1 hidden rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1 text-[10px] font-medium sm:inline">
               ⌘↵
             </kbd>
@@ -779,6 +814,7 @@ function GraphPreviewStrip({
 }
 
 function GraphPreviewThumb({ graph, iiifImage }: { graph: BackendGraph; iiifImage: string }) {
+  const t = useTranslations('search');
   const annotationJson = React.useMemo(() => JSON.stringify(graph.annotation), [graph.annotation]);
   const thumb = useIiifThumbnailUrl(iiifImage, annotationJson, 200);
   return (
@@ -787,7 +823,7 @@ function GraphPreviewThumb({ graph, iiifImage }: { graph: BackendGraph; iiifImag
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={thumb}
-          alt={`Graph ${graph.id}`}
+          alt={t('previewAlt', { id: graph.id })}
           className="max-h-full max-w-full object-contain"
           loading="lazy"
         />
@@ -846,70 +882,30 @@ interface TriRowProps {
 // (or 2-button in single-graph mode where 'mixed' is unreachable) followed by
 // the option label. Replaces the prior cycle-on-click checkbox UI, which was
 // fast for power users but undiscoverable for everyone else — the explicit
-// All/None/Mixed labels make the model obvious.
+// All/None/Mixed labels make the model obvious. Arrow keys move between them.
 function TriRow({ label, isMulti, state, onSet }: TriRowProps) {
+  const t = useTranslations('search');
+  const options: SegmentedOption<TriState>[] = [
+    { value: 'all', label: t('triAll'), ariaLabel: t('triAllLabel', { label }) },
+    { value: 'none', label: t('triNone'), ariaLabel: t('triNoneLabel', { label }) },
+  ];
+  if (isMulti) {
+    options.push({
+      value: 'mixed',
+      label: t('triMixed'),
+      ariaLabel: t('triMixedLabel', { label }),
+    });
+  }
   return (
     <div className="flex items-center gap-2.5 text-sm">
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="inline-flex shrink-0 overflow-hidden rounded-md border"
-      >
-        <SegmentedButton
-          active={state === 'all'}
-          onClick={() => onSet('all')}
-          ariaLabel={`Set ${label} on all selected`}
-        >
-          All
-        </SegmentedButton>
-        <SegmentedButton
-          active={state === 'none'}
-          onClick={() => onSet('none')}
-          ariaLabel={`Remove ${label} from all selected`}
-        >
-          None
-        </SegmentedButton>
-        {isMulti && (
-          <SegmentedButton
-            active={state === 'mixed'}
-            onClick={() => onSet('mixed')}
-            ariaLabel={`Leave ${label} unchanged per graph`}
-          >
-            Mixed
-          </SegmentedButton>
-        )}
-      </div>
+      <Segmented
+        ariaLabel={label}
+        value={state}
+        options={options}
+        onChange={onSet}
+        className="shrink-0"
+      />
       <span className="leading-snug text-foreground">{label}</span>
     </div>
-  );
-}
-
-function SegmentedButton({
-  active,
-  onClick,
-  ariaLabel,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  ariaLabel: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={active}
-      aria-label={ariaLabel}
-      onClick={onClick}
-      className={cn(
-        'min-w-[3rem] border-l px-2.5 py-1 text-xs font-medium transition first:border-l-0',
-        active
-          ? 'bg-primary text-primary-foreground'
-          : 'bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
-      )}
-    >
-      {children}
-    </button>
   );
 }

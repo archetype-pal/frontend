@@ -255,11 +255,6 @@ export interface HandDescription {
   content: string;
 }
 
-export interface Script {
-  id: number;
-  name: string;
-}
-
 // ── Publications ────────────────────────────────────────────────────────
 
 export interface PublicationListItem {
@@ -283,15 +278,6 @@ export interface PublicationDetail extends PublicationListItem {
   keywords: string;
   allow_comments: boolean;
   similar_posts: number[];
-  updated_at: string;
-}
-
-export interface EventItem {
-  id: number;
-  title: string;
-  slug: string;
-  content: string;
-  created_at: string;
   updated_at: string;
 }
 

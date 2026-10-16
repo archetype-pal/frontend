@@ -30,7 +30,7 @@ export type UncoveredMode = 'either' | 'transcription' | 'translation';
 export function fetchUncoveredImages(
   mode: UncoveredMode = 'either',
   page = 0,
-  pageSize = 25
+  pageSize = 20
 ): Promise<PaginatedUncovered> {
   const qs = new URLSearchParams({ limit: String(pageSize), offset: String(page * pageSize) });
   if (mode === 'either') qs.set('has_text', 'false');

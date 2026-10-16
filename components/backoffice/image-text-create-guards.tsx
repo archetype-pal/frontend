@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 
 import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { BackofficeApiError } from '@/services/backoffice/api-client';
 import { fetchImageTextList, type ImageTextListRow } from '@/services/backoffice/image-texts-list';
 
@@ -11,7 +12,7 @@ type Translate = (key: string, values?: Record<string, string | number>) => stri
 /** The image's existing text of this type, if any. An image holds one of each. */
 export function useExistingImageText(itemImage: number, type: string) {
   const { data } = useQuery({
-    queryKey: ['backoffice', 'image-texts', 'for-image', itemImage],
+    queryKey: backofficeKeys.imageTexts.forImage(itemImage),
     queryFn: () => fetchImageTextList({ itemImage, pageSize: 10 }),
     enabled: Number.isInteger(itemImage) && itemImage > 0,
   });
