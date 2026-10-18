@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/env';
 import { getServerAuthToken } from '@/lib/auth-token-server';
+import { crossOriginRefusal, isSameOriginRequest } from '@/lib/same-origin';
 
 /**
  * Same-origin passthrough to the Django API, for browser code that must not
@@ -15,6 +16,31 @@ import { getServerAuthToken } from '@/lib/auth-token-server';
 
 type RouteParams = { params: Promise<{ path: string[] }> };
 
+// Client IP and locale, so Django's throttles and logs see the visitor rather
+// than this container, and error messages keep the user's language.
+const FORWARDED_REQUEST_HEADERS = [
+  'content-type',
+  'accept-language',
+  'x-forwarded-for',
+  'x-real-ip',
+] as const;
+const FORWARDED_RESPONSE_HEADERS = [
+  'content-type',
+  'content-disposition',
+  'location',
+  'retry-after',
+  'etag',
+] as const;
+
+function pickHeaders(source: Headers, names: readonly string[]): Headers {
+  const picked = new Headers();
+  for (const name of names) {
+    const value = source.get(name);
+    if (value) picked.set(name, value);
+  }
+  return picked;
+}
+
 async function handle(request: NextRequest, { params }: RouteParams) {
   const { path } = await params;
   const token = await getServerAuthToken();
@@ -24,43 +50,47 @@ async function handle(request: NextRequest, { params }: RouteParams) {
   // without it makes Django answer with an APPEND_SLASH 301 — so restore it.
   const targetUrl = `${env.serverApiUrl}/${path.join('/')}/${request.nextUrl.search}`;
 
-  const headers = new Headers();
-  const contentType = request.headers.get('content-type');
-  if (contentType) headers.set('content-type', contentType);
+  const headers = pickHeaders(request.headers, FORWARDED_REQUEST_HEADERS);
   if (token) headers.set('Authorization', `Token ${token}`);
 
-  // Buffer rather than stream the body: a streamed body goes out chunked with
-  // no Content-Length, and Django under WSGI (`manage.py runserver`, the dev
-  // compose) reads that as an EMPTY body — a PATCH then "succeeds" having
-  // changed nothing. A buffered body also stays replayable across a redirect.
-  // Costs memory up to one upload chunk (UPLOADS_CHUNK_SIZE) per request.
   const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
-  // Refuse an anonymous write before buffering it, so a client without a
-  // cookie can't make this server hold an upload-sized body in memory.
+  if (hasBody && !isSameOriginRequest(request)) return crossOriginRefusal();
+  // Refuse an anonymous write before reading it, so a client without a cookie
+  // can't make this server take in an upload-sized body.
   if (hasBody && !token) {
     return NextResponse.json(
       { detail: 'Authentication credentials were not provided.' },
       { status: 401 }
     );
   }
-  const buffered = hasBody ? await request.arrayBuffer() : null;
-  const body = buffered && buffered.byteLength > 0 ? buffered : undefined;
+
+  // Django under WSGI (`manage.py runserver`, the dev compose) reads a body
+  // with no Content-Length as EMPTY, so a PATCH "succeeds" having changed
+  // nothing. Streaming with the client's length avoids that without buffering,
+  // which peaks at ~4.5x the body (~470 MB for one 100 MB upload chunk). A
+  // client that sent no length gets its body buffered instead.
+  const init: RequestInit & { duplex?: 'half' } = { method: request.method, headers };
+  const contentLength = request.headers.get('content-length');
+  if (hasBody && contentLength && contentLength !== '0') {
+    headers.set('content-length', contentLength);
+    init.body = request.body;
+    init.duplex = 'half';
+  } else if (hasBody && !contentLength) {
+    const buffered = await request.arrayBuffer();
+    if (buffered.byteLength > 0) init.body = buffered;
+  }
 
   let upstream: Response;
   try {
-    upstream = await fetch(targetUrl, { method: request.method, headers, body });
+    upstream = await fetch(targetUrl, init);
   } catch (err) {
     console.error(`[proxy] ${request.method} ${targetUrl} failed`, err);
     return NextResponse.json({ error: 'Upstream request failed' }, { status: 502 });
   }
 
-  const responseHeaders = new Headers();
-  const upstreamContentType = upstream.headers.get('content-type');
-  if (upstreamContentType) responseHeaders.set('content-type', upstreamContentType);
-
   return new NextResponse(upstream.body, {
     status: upstream.status,
-    headers: responseHeaders,
+    headers: pickHeaders(upstream.headers, FORWARDED_RESPONSE_HEADERS),
   });
 }
 
