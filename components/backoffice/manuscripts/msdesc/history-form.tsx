@@ -108,7 +108,7 @@ export function HistoryForm({
                   />
                   {/*
                     Manual entry only: Place is a `@target`-only kind (no Place
-                    model, §8.3) so the picker yields no `@key` for it, and the
+                    model, `docs/tei.md` §3.4) so the picker yields no `@key` for it, and the
                     only keyed kind is Person — a lookup here would stamp
                     `key="person_…"` on a place name and the renderer would link
                     it to a scribe detail page.

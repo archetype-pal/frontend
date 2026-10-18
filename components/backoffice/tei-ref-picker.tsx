@@ -228,7 +228,7 @@ function IndexSearchTab({
   });
 
   // For a place, always offer the free-text query itself as a search link — a
-  // place need not appear in the corpus index to be linkable (§8.3).
+  // place need not appear in the corpus index to be linkable (`docs/tei.md` §3.4).
   const rows: ResourceRef[] =
     kind === 'place' && query.length > 0 ? withPlaceFallback(results, query) : results;
 

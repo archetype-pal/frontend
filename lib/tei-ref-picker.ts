@@ -63,7 +63,7 @@ export const REF_PICKER_KINDS: readonly ResourceKind[] = [
 export const PLACE_SEARCH_RESULT_TYPE = 'manuscripts';
 
 /**
- * A `@target`-only site-search link for a place name (`§8.3`: Place has no
+ * A `@target`-only site-search link for a place name (`docs/tei.md` §3.4: Place has no
  * model, so it links to a keyword search, not a detail route).
  *
  * The shape must match the site's typed search URLs —
