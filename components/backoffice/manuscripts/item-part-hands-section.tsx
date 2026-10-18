@@ -38,7 +38,7 @@ export function formatScribeOptionLabel(scribe: {
 /** The hands of one item part, with a dialog to add one. Saves on its own, not via "Save Part". */
 export function ItemPartHandsSection({ itemPartId }: { itemPartId: number }) {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [addOpen, setAddOpen] = useState(false);
 
   const {
@@ -53,7 +53,7 @@ export function ItemPartHandsSection({ itemPartId }: { itemPartId: number }) {
       walkPaginated<AdminHandListItem>(
         `/api/v1/management/scribes/hands/?item_part=${itemPartId}&limit=100`
       ),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   return (
@@ -118,7 +118,7 @@ function AddHandDialog({
 }) {
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [scribeId, setScribeId] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -132,7 +132,7 @@ function AddHandDialog({
     queryKey: backofficeKeys.scribes.list(),
     queryFn: () =>
       walkPaginated<AdminScribeListItem>('/api/v1/management/scribes/scribes/?limit=100'),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const scribeOptions = useMemo(

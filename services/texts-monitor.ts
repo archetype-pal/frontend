@@ -1,4 +1,4 @@
-import { authFetch } from '@/lib/api-fetch';
+import { proxyFetch } from '@/lib/api-fetch';
 
 export type Kind = 'Transcription' | 'Translation';
 export type Status = 'Draft' | 'Review' | 'Live' | 'Reviewed';
@@ -72,8 +72,8 @@ export type TextsOverview = {
   annotation_health: AnnotationHealth;
 };
 
-export async function fetchTextsOverview(token: string): Promise<TextsOverview> {
-  const response = await authFetch('/api/v1/search/management/image-texts/overview/', token, {
+export async function fetchTextsOverview(): Promise<TextsOverview> {
+  const response = await proxyFetch('/api/v1/search/management/image-texts/overview/', {
     cache: 'no-store',
   });
   if (!response.ok) {

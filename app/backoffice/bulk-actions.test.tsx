@@ -40,7 +40,7 @@ const services = vi.hoisted(() => {
   };
 });
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ token: 'tok' }) }));
+vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
 vi.mock('@/services/backoffice/annotations', () => ({
   ...services,

@@ -207,7 +207,7 @@ function DialogBody({
   onGraphSaved,
   onComplete,
 }: AnnotationEditDialogProps) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const t = useTranslations('search');
   const tCommon = useTranslations('common');
   // Saving waits for the allograph list: without it the schema can't be shown.
@@ -438,7 +438,7 @@ function DialogBody({
   }
 
   const runSave = async (targets: BackendGraph[]) => {
-    if (!token) {
+    if (!isAuthenticated) {
       setError(t('notAuthenticated'));
       return;
     }
@@ -457,7 +457,7 @@ function DialogBody({
         return;
       }
       try {
-        const updated = await updateViewerAnnotation(token, graph.id, patch);
+        const updated = await updateViewerAnnotation(graph.id, patch);
         onGraphSaved?.(updated);
         savedCount += 1;
       } catch {

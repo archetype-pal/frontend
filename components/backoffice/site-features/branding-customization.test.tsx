@@ -19,7 +19,7 @@ beforeEach(() => {
 });
 
 const renderComponent = (logoUrl = '') =>
-  render(<BrandingCustomization branding={{ logoUrl }} token="tok" onChange={onChange} />);
+  render(<BrandingCustomization branding={{ logoUrl }} onChange={onChange} />);
 
 const onChange = vi.fn();
 

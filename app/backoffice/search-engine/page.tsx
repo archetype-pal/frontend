@@ -68,7 +68,7 @@ interface TrackedTask {
 
 export default function SearchEnginePage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
   // Active tasks being tracked
@@ -96,7 +96,7 @@ export default function SearchEnginePage() {
   } = useQuery({
     queryKey: backofficeKeys.searchEngine.stats(),
     queryFn: () => getSearchEngineStats(),
-    enabled: !!token,
+    enabled: isAuthenticated,
     refetchInterval: hasActiveTasks ? 5000 : false,
   });
 
@@ -139,7 +139,7 @@ export default function SearchEnginePage() {
 
   // Poll each active task
   useEffect(() => {
-    if (!token || activeTaskIds.length === 0) return;
+    if (!isAuthenticated || activeTaskIds.length === 0) return;
 
     const interval = setInterval(async () => {
       const updates = await Promise.allSettled(activeTaskIds.map((id) => getTaskStatus(id)));
@@ -158,7 +158,7 @@ export default function SearchEnginePage() {
     }, 800);
 
     return () => clearInterval(interval);
-  }, [token, activeTaskKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, activeTaskKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // When tasks complete, refetch stats and show toast
   const prevTaskStatesRef = useRef<Record<string, string>>({});

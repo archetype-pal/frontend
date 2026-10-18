@@ -22,7 +22,7 @@ function setup(overrides: Partial<Parameters<typeof useMsDescArea>[0]> = {}) {
     area: 'msIdentifier' as const,
     savedContent: IDENTIFIER,
     savedPublished: false,
-    token: 'tok',
+    isAuthenticated: true,
     validate,
     debounceMs: 400,
     ...overrides,
@@ -162,8 +162,8 @@ describe('useMsDescArea — validation gating (6.1)', () => {
     expect(validate).not.toHaveBeenCalled();
   });
 
-  it('without a token validity is unknown and save stays disabled', async () => {
-    const { result, validate } = setup({ token: null });
+  it('signed out, validity is unknown and save stays disabled', async () => {
+    const { result, validate } = setup({ isAuthenticated: false });
     act(() => result.current.applySource('<msIdentifier/>'));
     expect(result.current.validation.status).toBe('unknown');
     expect(result.current.canSave).toBe(false);
