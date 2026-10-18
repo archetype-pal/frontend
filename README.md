@@ -31,9 +31,15 @@ just build
 After changing `package.json`/`pnpm-lock.yaml`, refresh the shared deps
 volume with `just install`.
 
+CI runs lint, format (`prettier --check .`, Markdown included), Vitest, and a
+build that also checks the bundle budget and runs Lighthouse. The pre-commit
+hook in `.githooks/` runs only lint and format, and is opt-in:
+`git config core.hooksPath .githooks`.
+
 ## Host-Native Alternative (pnpm)
 
-Requires Node `>=26` and pnpm `>=10`, plus a `.env`:
+Requires Node 26+ and pnpm 11 (`packageManager` pins `pnpm@11.9.0`), plus a
+`.env`:
 
 ```bash
 cp .env.example .env   # NEXT_PUBLIC_API_URL, NEXT_PUBLIC_IIIF_UPSTREAM,
