@@ -615,7 +615,19 @@
       "backToList": "Retour à la liste",
       "viewAll": "Voir tous les {title}",
       "publicationFallbackTitle": "Publication",
-      "keywordsLabel": "Mots-clés"
+      "keywordsLabel": "Mots-clés",
+      "reply": "Répondre",
+      "leaveComment": "Laisser un commentaire",
+      "replyingTo": "En réponse à {name}",
+      "cancelReply": "Annuler la réponse",
+      "commentName": "Nom",
+      "commentEmail": "E-mail",
+      "commentEmailHint": "Ne sera pas publié.",
+      "commentText": "Commentaire",
+      "postComment": "Publier le commentaire",
+      "sendingComment": "Envoi…",
+      "commentSent": "Merci. Votre commentaire apparaîtra dès qu'un modérateur l'aura approuvé.",
+      "commentFailed": "Votre commentaire n'a pas pu être envoyé. Veuillez réessayer."
     },
     "publicationKinds": {
       "news": {

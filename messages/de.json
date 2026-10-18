@@ -615,7 +615,19 @@
       "backToList": "Zurück zur Liste",
       "viewAll": "Alle {title} anzeigen",
       "publicationFallbackTitle": "Publikation",
-      "keywordsLabel": "Schlagwörter"
+      "keywordsLabel": "Schlagwörter",
+      "reply": "Antworten",
+      "leaveComment": "Kommentar schreiben",
+      "replyingTo": "Antwort an {name}",
+      "cancelReply": "Antwort abbrechen",
+      "commentName": "Name",
+      "commentEmail": "E-Mail",
+      "commentEmailHint": "Wird nicht veröffentlicht.",
+      "commentText": "Kommentar",
+      "postComment": "Kommentar senden",
+      "sendingComment": "Wird gesendet…",
+      "commentSent": "Danke. Ihr Kommentar erscheint, sobald ein Moderator ihn freigegeben hat.",
+      "commentFailed": "Ihr Kommentar konnte nicht gesendet werden. Bitte versuchen Sie es erneut."
     },
     "publicationKinds": {
       "news": {

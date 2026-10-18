@@ -22,6 +22,7 @@ describe('PublicationComments', () => {
   it('nests a reply inside the comment it answers', () => {
     render(
       <PublicationComments
+        slug="a-post"
         allowComments
         comments={[comment(1, null, '<p>Question</p>'), comment(2, 1, '<p>Answer</p>')]}
       />
@@ -34,6 +35,7 @@ describe('PublicationComments', () => {
   it('leaves out a reply whose parent is not shown', () => {
     render(
       <PublicationComments
+        slug="a-post"
         allowComments
         comments={[comment(1, null, '<p>Shown</p>'), comment(3, 99, '<p>Orphan</p>')]}
       />
@@ -45,7 +47,11 @@ describe('PublicationComments', () => {
 
   it('renders nothing when the publication does not allow comments', () => {
     const { container } = render(
-      <PublicationComments allowComments={false} comments={[comment(1, null, '<p>Hidden</p>')]} />
+      <PublicationComments
+        slug="a-post"
+        allowComments={false}
+        comments={[comment(1, null, '<p>Hidden</p>')]}
+      />
     );
 
     expect(container.innerHTML).toBe('');
@@ -54,6 +60,7 @@ describe('PublicationComments', () => {
   it('keeps comment formatting but strips scripts and event handlers', () => {
     const { container } = render(
       <PublicationComments
+        slug="a-post"
         allowComments
         comments={[
           comment(
@@ -73,6 +80,7 @@ describe('PublicationComments', () => {
   it('shows the author and the UTC date of each comment', () => {
     render(
       <PublicationComments
+        slug="a-post"
         allowComments
         comments={[comment(1, null, '<p>Late</p>', '2015-05-03T23:30:00Z')]}
       />

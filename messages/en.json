@@ -615,7 +615,19 @@
       "backToList": "Back to list",
       "viewAll": "View all {title}",
       "publicationFallbackTitle": "Publication",
-      "keywordsLabel": "Keywords"
+      "keywordsLabel": "Keywords",
+      "reply": "Reply",
+      "leaveComment": "Leave a comment",
+      "replyingTo": "Replying to {name}",
+      "cancelReply": "Cancel reply",
+      "commentName": "Name",
+      "commentEmail": "Email",
+      "commentEmailHint": "Not published.",
+      "commentText": "Comment",
+      "postComment": "Post comment",
+      "sendingComment": "Sending…",
+      "commentSent": "Thank you. Your comment will appear once a moderator approves it.",
+      "commentFailed": "Your comment could not be sent. Please try again."
     },
     "publicationKinds": {
       "news": {

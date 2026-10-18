@@ -119,7 +119,11 @@ export async function PublicationDetailPage({
             showShareBtns
             showReadMoreBtn={false}
           />
-          <PublicationComments comments={item.comments ?? []} allowComments={item.allow_comments} />
+          <PublicationComments
+            slug={item.slug}
+            comments={item.comments ?? []}
+            allowComments={item.allow_comments}
+          />
         </main>
         <aside className="w-full md:w-80">
           <section className="mb-8">
