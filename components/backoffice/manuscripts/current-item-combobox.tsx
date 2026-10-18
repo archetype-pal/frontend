@@ -60,7 +60,7 @@ export function CurrentItemCombobox({
   selectedLabel,
   className,
 }: CurrentItemComboboxProps) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const { getLabel } = useModelLabels();
@@ -92,7 +92,7 @@ export function CurrentItemCombobox({
     queryFn: () =>
       getCurrentItems({ repository: repositoryId, search: query, limit: SEARCH_LIMIT }),
     // Gate on the typed text too: after a close, the debounced query keeps the old text briefly.
-    enabled: !!token && open && typed.length > 0 && query.length > 0,
+    enabled: isAuthenticated && open && typed.length > 0 && query.length > 0,
   });
 
   const {
@@ -103,7 +103,7 @@ export function CurrentItemCombobox({
   } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
     queryFn: () => getRepositories(),
-    enabled: !!token && creating,
+    enabled: isAuthenticated && creating,
   });
 
   const showResults = settled && query.length > 0;

@@ -41,7 +41,7 @@ const ORDERING_FIELDS = {
 
 export default function PhysicalVolumesPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const { getLabel } = useModelLabels();
   const [repoFilter, setRepoFilter] = useState<string>('__all');
@@ -122,7 +122,7 @@ export default function PhysicalVolumesPage() {
   } = useQuery({
     queryKey: backofficeKeys.repositories.all(),
     queryFn: () => getRepositories(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const repositories: Repository[] = repositoriesData ?? [];
@@ -137,7 +137,7 @@ export default function PhysicalVolumesPage() {
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.currentItems.list(filterParams),
     queryFn: () => getCurrentItems(filterParams),
-    enabled: !!token,
+    enabled: isAuthenticated,
     placeholderData: keepPreviousData,
   });
 

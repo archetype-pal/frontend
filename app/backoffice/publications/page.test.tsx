@@ -7,7 +7,7 @@ import PublicationsPage from './page';
 
 const { getPublications } = vi.hoisted(() => ({ getPublications: vi.fn() }));
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ token: 'tok' }) }));
+vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/services/backoffice/publications', () => ({

@@ -139,7 +139,7 @@ export function TextsList() {
   const t = useTranslations('backoffice');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
   const filters = useMemo(
@@ -220,7 +220,7 @@ export function TextsList() {
   const { data, isFetching, isPlaceholderData, error } = useQuery({
     queryKey: backofficeKeys.imageTexts.list({ ...apiParams }),
     queryFn: () => fetchImageTextList(apiParams),
-    enabled: !!token,
+    enabled: isAuthenticated,
     placeholderData: (prev) => prev,
   });
 
@@ -275,7 +275,7 @@ export function TextsList() {
   });
 
   async function exportTo(format: 'csv' | 'json') {
-    if (!token) return;
+    if (!isAuthenticated) return;
     // Authenticated download path: fetch through the auth proxy, then
     // synthesize an <a download> link from the blob. Direct navigation to the
     // backend URL would carry no Authorization header and 401.

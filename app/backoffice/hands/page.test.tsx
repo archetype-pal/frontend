@@ -7,7 +7,7 @@ import HandsPage from './page';
 
 const { getHands } = vi.hoisted(() => ({ getHands: vi.fn() }));
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ token: 'tok' }) }));
+vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 vi.mock('@/services/backoffice/scribes', () => ({ getHands }));
 
 const TOTAL = 45;

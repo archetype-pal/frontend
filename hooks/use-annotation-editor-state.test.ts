@@ -77,7 +77,7 @@ function makeArgs(
   overrides: Partial<UseAnnotationEditorStateArgs> = {}
 ): UseAnnotationEditorStateArgs {
   return {
-    token: 'tok',
+    isAuthenticated: true,
     manuscriptImage: { id: 42 } as UseAnnotationEditorStateArgs['manuscriptImage'],
     imageHeight: 100,
     allographNameById: new Map(),
@@ -210,8 +210,10 @@ describe('mark* mutations', () => {
 });
 
 describe('saveAll — early-return outcomes', () => {
-  it('returns no-token when token is null', async () => {
-    const { result } = renderHook(() => useAnnotationEditorState(makeArgs({ token: null })));
+  it('returns no-token when signed out', async () => {
+    const { result } = renderHook(() =>
+      useAnnotationEditorState(makeArgs({ isAuthenticated: false }))
+    );
     await expect(result.current.saveAll()).resolves.toEqual({ kind: 'no-token' });
   });
 

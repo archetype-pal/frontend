@@ -27,7 +27,7 @@ import {
 } from '@/services/backoffice/uploads';
 
 vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ token: 'tok', user: null, isReady: true, setToken: vi.fn(), logout: vi.fn() }),
+  useAuth: () => ({ isAuthenticated: true, user: null, isReady: true, logout: vi.fn() }),
 }));
 
 // The mock router must be render-stable like the real one: a fresh object per
@@ -210,7 +210,7 @@ beforeEach(() => {
   // `drain` reads the token from the cookie, not the auth context — that is
   // the only source that actually goes empty on logout. Signing in here makes
   // the harness match reality; the `useAuth` mock above only feeds the shell.
-  document.cookie = 'archetype_auth_token=tok; Path=/';
+  document.cookie = 'archetype_session=s1; Path=/';
   vi.clearAllMocks();
 });
 
@@ -370,7 +370,7 @@ describe('reindex nudge', () => {
     mockedUpload.mockImplementation(() => {
       call += 1;
       if (call === 1) return Promise.resolve(session({ status: 'complete', item_image: 1 }));
-      document.cookie = 'archetype_auth_token=; Path=/; Max-Age=0';
+      document.cookie = 'archetype_session=; Path=/; Max-Age=0';
       return Promise.reject(new BackofficeApiError(401, { detail: 'Invalid token.' }));
     });
     renderHarness();
@@ -520,12 +520,11 @@ describe('cancel', () => {
 
 describe('logout mid-queue', () => {
   it('stops the queue instead of firing a failed upload per file', async () => {
-    // Logout clears the cookie synchronously (clearAuthTokenCookie) but leaves
-    // this provider's tokenRef holding the revoked token, because
-    // BackofficeShell stops rendering it rather than re-rendering with null.
-    // Reading the ref meant every queued file hit createUploadSession with a
-    // dead token and raised a toast on the login page.
-    document.cookie = 'archetype_auth_token=; Path=/; Max-Age=0';
+    // Logout clears the session cookie synchronously, while BackofficeShell
+    // stops rendering this provider rather than re-rendering it signed out.
+    // Anything but the cookie would send every queued file to
+    // createUploadSession with a dead token and raise a toast on the login page.
+    document.cookie = 'archetype_session=; Path=/; Max-Age=0';
     renderHarness();
 
     fireEvent.click(screen.getByText('enqueue one'));
@@ -788,8 +787,8 @@ describe('signing out mid-upload', () => {
     mockedUpload.mockImplementation(() => {
       calls += 1;
       if (calls === 1) {
-        document.cookie = 'archetype_auth_token=; Path=/; Max-Age=0';
-        document.cookie = 'archetype_auth_token=tok_other_user; Path=/';
+        document.cookie = 'archetype_session=; Path=/; Max-Age=0';
+        document.cookie = 'archetype_session=other-sign-in; Path=/';
         return Promise.reject(new BackofficeApiError(401, { detail: 'Invalid token.' }));
       }
       return Promise.resolve(session({ status: 'complete', item_image: 1 }));
@@ -814,8 +813,8 @@ describe('signing out mid-upload', () => {
     mockedUpload.mockImplementation(() => {
       calls += 1;
       if (calls === 1) {
-        document.cookie = 'archetype_auth_token=; Path=/; Max-Age=0';
-        document.cookie = 'archetype_auth_token=tok_other_user; Path=/';
+        document.cookie = 'archetype_session=; Path=/; Max-Age=0';
+        document.cookie = 'archetype_session=other-sign-in; Path=/';
         return Promise.reject(new BackofficeApiError(401, { detail: 'Invalid token.' }));
       }
       return Promise.resolve(session({ status: 'complete', item_image: 1 }));

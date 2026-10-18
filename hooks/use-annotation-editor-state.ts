@@ -61,7 +61,7 @@ export type SaveOutcome =
   | { kind: 'saved-but-refresh-failed'; succeededCount: number; message: string };
 
 export interface UseAnnotationEditorStateArgs {
-  token: string | null | undefined;
+  isAuthenticated: boolean;
   manuscriptImage: ManuscriptImage | null;
   imageHeight: number;
   allographNameById: Map<number, string>;
@@ -119,7 +119,7 @@ export function useAnnotationEditorState(
   args: UseAnnotationEditorStateArgs
 ): AnnotationEditorState {
   const {
-    token,
+    isAuthenticated,
     manuscriptImage,
     imageHeight,
     allographNameById,
@@ -282,7 +282,7 @@ export function useAnnotationEditorState(
       return { kind: 'no-capability' };
     }
     if (!manuscriptImage) return { kind: 'no-image' };
-    if (!token) return { kind: 'no-token' };
+    if (!isAuthenticated) return { kind: 'no-token' };
 
     const upsertCandidates = Object.values(editorRecords).filter((record) => {
       if (record.dirtyState !== 'created' && record.dirtyState !== 'updated') {
@@ -462,7 +462,7 @@ export function useAnnotationEditorState(
       seed,
     };
   }, [
-    token,
+    isAuthenticated,
     manuscriptImage,
     imageHeight,
     allographNameById,

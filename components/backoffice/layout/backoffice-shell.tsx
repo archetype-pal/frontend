@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
-import { getAuthTokenCookie } from '@/lib/auth-token-cookie';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BackofficeSidebar } from './backoffice-sidebar';
 import { BackofficeHeader } from './backoffice-header';
@@ -15,7 +14,7 @@ import { UploadTray } from '@/components/backoffice/uploads/upload-tray';
 
 export function BackofficeShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations('backoffice');
-  const { token, user } = useAuth();
+  const { user, isReady } = useAuth();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -23,12 +22,8 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
 
   // Auth guard — redirect non-authenticated visitors to login
   useEffect(() => {
-    if (token === null) {
-      if (!getAuthTokenCookie()) {
-        router.replace('/login');
-      }
-    }
-  }, [token, router]);
+    if (isReady && !user) router.replace('/login');
+  }, [isReady, user, router]);
 
   // Staff guard — the whole backoffice is staff-only. Once the profile loads,
   // bounce a non-staff (but authenticated) user back to the public site. This
@@ -39,7 +34,7 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
     }
   }, [user, router]);
 
-  if (!token || (user && !user.is_staff)) {
+  if (!user?.is_staff) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
