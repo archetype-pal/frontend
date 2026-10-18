@@ -77,6 +77,18 @@ describe('PublicationComments', () => {
     expect(container.querySelector('[onerror]')).toBeNull();
   });
 
+  it('counts a single comment in the singular', () => {
+    render(
+      <PublicationComments
+        slug="a-post"
+        allowComments
+        comments={[comment(1, null, '<p>One</p>')]}
+      />
+    );
+
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('1 Comment');
+  });
+
   it('shows the author and the UTC date of each comment', () => {
     render(
       <PublicationComments
