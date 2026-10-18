@@ -19,7 +19,7 @@ export interface UseGraphEditFlowOpts {
 }
 
 export function useGraphEditFlow({ onGraphDeleted }: UseGraphEditFlowOpts = {}) {
-  const { token, user } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const isSuperuser = Boolean(user?.is_superuser);
   const t = useTranslations('search');
 
@@ -38,7 +38,7 @@ export function useGraphEditFlow({ onGraphDeleted }: UseGraphEditFlowOpts = {}) 
 
       try {
         // 1. Fetch full graphs
-        const fetched = await fetchGraphsByIds(ids, token);
+        const fetched = await fetchGraphsByIds(ids, isAuthenticated);
         if (fetched.length === 0) {
           toast.error(t('noGraphData', { defaultValue: 'No graph data found for selected items' }));
           return;
@@ -109,12 +109,12 @@ export function useGraphEditFlow({ onGraphDeleted }: UseGraphEditFlowOpts = {}) 
         setIsHydrating(false);
       }
     },
-    [allographs, isSuperuser, t, token]
+    [allographs, isSuperuser, t, isAuthenticated]
   );
 
   const deleteOne = React.useCallback(
     async (id: number) => {
-      if (!token) {
+      if (!isAuthenticated) {
         toast.error(t('notAuthenticated', { defaultValue: 'Not authenticated.' }));
         return;
       }
@@ -126,14 +126,14 @@ export function useGraphEditFlow({ onGraphDeleted }: UseGraphEditFlowOpts = {}) 
       }
 
       try {
-        await deleteViewerAnnotation(token, id);
+        await deleteViewerAnnotation(id);
         onGraphDeleted?.(id);
         toast.success(t('graphDeleted', { defaultValue: 'Graph deleted' }));
       } catch {
         toast.error(t('deleteFailed', { defaultValue: 'Failed to delete graph' }));
       }
     },
-    [onGraphDeleted, t, token]
+    [onGraphDeleted, t, isAuthenticated]
   );
 
   return {

@@ -13,7 +13,7 @@ export async function buildInitialViewerAnnotations(params: {
   isPublicDemoMode: boolean;
   includeEditorial?: boolean;
   includeText?: boolean;
-  token?: string | null;
+  authenticated?: boolean;
   currentViewerAnnotations: A9sAnnotation[];
   currentUrl?: string;
 }): Promise<A9sAnnotation[]> {
@@ -23,20 +23,25 @@ export async function buildInitialViewerAnnotations(params: {
     allographNameById,
     includeEditorial = false,
     includeText = false,
-    token,
+    authenticated,
     currentViewerAnnotations,
     currentUrl,
   } = params;
 
-  const imageAnnotations = await fetchAnnotationsForImage(itemImageId, undefined, 'image', token);
+  const imageAnnotations = await fetchAnnotationsForImage(
+    itemImageId,
+    undefined,
+    'image',
+    authenticated
+  );
   const editorialAnnotations = includeEditorial
-    ? await fetchAnnotationsForImage(itemImageId, undefined, 'editorial', token)
+    ? await fetchAnnotationsForImage(itemImageId, undefined, 'editorial', authenticated)
     : [];
   // Text-region annotations back the transcription↔image link. They render as
   // boxes but are gated behind the text panel's visibility filter in the
   // viewer, so the default annotation view is unaffected.
   const textAnnotations = includeText
-    ? await fetchAnnotationsForImage(itemImageId, undefined, 'text', token)
+    ? await fetchAnnotationsForImage(itemImageId, undefined, 'text', authenticated)
     : [];
   const list = [...imageAnnotations, ...editorialAnnotations, ...textAnnotations];
 

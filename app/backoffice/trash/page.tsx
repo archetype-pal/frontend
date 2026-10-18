@@ -67,7 +67,7 @@ const ORDERING_FIELDS = {
 
 export default function TrashPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<TrashTabKey>('annotations');
@@ -112,7 +112,7 @@ export default function TrashPage() {
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list({ deleted: 'true', ...params }),
     queryFn: () => getTrashedGraphs(params),
-    enabled: !!token,
+    enabled: isAuthenticated,
     placeholderData: keepPreviousData,
   });
 
@@ -121,7 +121,7 @@ export default function TrashPage() {
   const { data: actors } = useQuery({
     queryKey: backofficeKeys.graphs.trashActors(),
     queryFn: () => getTrashActors(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const actorOptions = useMemo(() => {

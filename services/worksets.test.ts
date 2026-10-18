@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const apiFetchMock = vi.fn();
-const authFetchMock = vi.fn();
+const proxyFetchMock = vi.fn();
 vi.mock('@/lib/api-fetch', () => ({
   apiFetch: (...args: unknown[]) => apiFetchMock(...args),
-  authFetch: (...args: unknown[]) => authFetchMock(...args),
+  proxyFetch: (...args: unknown[]) => proxyFetchMock(...args),
 }));
 
 import {
@@ -26,7 +26,7 @@ const PAYLOAD = { schema_version: 2, workspaces: [], images: [] };
 
 beforeEach(() => {
   apiFetchMock.mockReset();
-  authFetchMock.mockReset();
+  proxyFetchMock.mockReset();
 });
 
 describe('getWorkset', () => {
@@ -50,30 +50,28 @@ describe('getWorkset', () => {
 });
 
 describe('listMyWorksets', () => {
-  it('passes the token and unwraps paginated results', async () => {
-    authFetchMock.mockResolvedValueOnce(
+  it('goes through the proxy and unwraps paginated results', async () => {
+    proxyFetchMock.mockResolvedValueOnce(
       jsonResponse(200, { count: 1, results: [{ public_id: 'a' }] })
     );
-    const result = await listMyWorksets('tok');
+    const result = await listMyWorksets();
     expect(result).toEqual([{ public_id: 'a' }]);
-    const [path, token] = authFetchMock.mock.calls[0]!;
+    const [path] = proxyFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/worksets/');
-    expect(token).toBe('tok');
   });
 
   it('returns [] when unauthorized', async () => {
-    authFetchMock.mockResolvedValueOnce(jsonResponse(401, {}));
-    await expect(listMyWorksets('tok')).resolves.toEqual([]);
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse(401, {}));
+    await expect(listMyWorksets()).resolves.toEqual([]);
   });
 });
 
 describe('createWorkset', () => {
-  it('POSTs the input with the token', async () => {
-    authFetchMock.mockResolvedValueOnce(jsonResponse(201, { public_id: 'new' }));
-    await createWorkset('tok', { title: 'My set', payload: PAYLOAD });
-    const [path, token, init] = authFetchMock.mock.calls[0]!;
+  it('POSTs the input through the proxy', async () => {
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse(201, { public_id: 'new' }));
+    await createWorkset({ title: 'My set', payload: PAYLOAD });
+    const [path, init] = proxyFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/worksets/');
-    expect(token).toBe('tok');
     expect((init as RequestInit).method).toBe('POST');
     expect(JSON.parse((init as RequestInit).body as string)).toEqual({
       title: 'My set',
@@ -82,16 +80,16 @@ describe('createWorkset', () => {
   });
 
   it('throws on a non-2xx response', async () => {
-    authFetchMock.mockResolvedValueOnce(new Response('bad', { status: 400 }));
-    await expect(createWorkset('tok', { title: '', payload: PAYLOAD })).rejects.toThrow();
+    proxyFetchMock.mockResolvedValueOnce(new Response('bad', { status: 400 }));
+    await expect(createWorkset({ title: '', payload: PAYLOAD })).rejects.toThrow();
   });
 });
 
 describe('updateWorkset', () => {
   it('PATCHes the public_id path', async () => {
-    authFetchMock.mockResolvedValueOnce(jsonResponse(200, { public_id: 'abc' }));
-    await updateWorkset('tok', 'abc', { visibility: 'Public' });
-    const [path, , init] = authFetchMock.mock.calls[0]!;
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { public_id: 'abc' }));
+    await updateWorkset('abc', { visibility: 'Public' });
+    const [path, init] = proxyFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/worksets/abc/');
     expect((init as RequestInit).method).toBe('PATCH');
     expect(JSON.parse((init as RequestInit).body as string)).toEqual({ visibility: 'Public' });
@@ -100,9 +98,9 @@ describe('updateWorkset', () => {
 
 describe('deleteWorkset', () => {
   it('DELETEs and tolerates 204', async () => {
-    authFetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
-    await expect(deleteWorkset('tok', 'abc')).resolves.toBeUndefined();
-    const [path, , init] = authFetchMock.mock.calls[0]!;
+    proxyFetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    await expect(deleteWorkset('abc')).resolves.toBeUndefined();
+    const [path, init] = proxyFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/worksets/abc/');
     expect((init as RequestInit).method).toBe('DELETE');
   });

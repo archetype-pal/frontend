@@ -14,7 +14,7 @@ vi.mock('next/dynamic', () => ({
 }));
 
 vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ token: 'tok' }),
+  useAuth: () => ({ isAuthenticated: true }),
 }));
 
 vi.mock('@/services/backoffice/manuscripts', () => ({

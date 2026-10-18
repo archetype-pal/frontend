@@ -35,7 +35,7 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
   const t = useTranslations('backoffice');
   const { id: rawId } = use(params);
   const id = Number(rawId);
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const editor = useEntityEditor({
@@ -61,13 +61,13 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
     queryKey: backofficeKeys.hands.list({ scribe: id }),
     queryFn: () =>
       walkPaginated<AdminHandListItem>(`/api/v1/management/scribes/hands/?scribe=${id}&limit=100`),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const { data: dates } = useQuery({
     queryKey: backofficeKeys.dates.all(),
     queryFn: () => getDates(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   if (editor.isError) {

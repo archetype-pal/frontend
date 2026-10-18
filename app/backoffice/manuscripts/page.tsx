@@ -31,7 +31,7 @@ const ORDERING_FIELDS = {
 
 export default function ManuscriptsPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
   const [pageSize, setPageSize] = usePageSize('manuscripts', 50);
@@ -132,7 +132,7 @@ export default function ManuscriptsPage() {
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.manuscripts.list(queryParams),
     queryFn: () => getHistoricalItems(queryParams),
-    enabled: !!token,
+    enabled: isAuthenticated,
     placeholderData: keepPreviousData,
   });
 

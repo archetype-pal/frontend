@@ -1,4 +1,4 @@
-import { apiFetch, authFetch } from '@/lib/api-fetch';
+import { apiFetch, proxyFetch } from '@/lib/api-fetch';
 import type { PaginatedResponse } from '@/types/backoffice';
 import type {
   WorksetDetail,
@@ -27,8 +27,8 @@ export async function getWorkset(publicId: string): Promise<WorksetDetail | null
 }
 
 /** The authenticated caller's own worksets (metadata only — no payload). */
-export async function listMyWorksets(token: string): Promise<WorksetSummary[]> {
-  const response = await authFetch(BASE, token, { cache: 'no-store' });
+export async function listMyWorksets(): Promise<WorksetSummary[]> {
+  const response = await proxyFetch(BASE, { cache: 'no-store' });
   if (!response.ok) return [];
   const data: PaginatedResponse<WorksetSummary> | WorksetSummary[] = await response.json();
   return Array.isArray(data) ? data : data.results;
@@ -41,8 +41,8 @@ export interface WorksetInput {
   payload: WorksetPayload;
 }
 
-export async function createWorkset(token: string, input: WorksetInput): Promise<WorksetDetail> {
-  const response = await authFetch(BASE, token, {
+export async function createWorkset(input: WorksetInput): Promise<WorksetDetail> {
+  const response = await proxyFetch(BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -54,11 +54,10 @@ export async function createWorkset(token: string, input: WorksetInput): Promise
 }
 
 export async function updateWorkset(
-  token: string,
   publicId: string,
   patch: Partial<WorksetInput>
 ): Promise<WorksetDetail> {
-  const response = await authFetch(`${BASE}${encodeURIComponent(publicId)}/`, token, {
+  const response = await proxyFetch(`${BASE}${encodeURIComponent(publicId)}/`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(patch),
@@ -69,8 +68,8 @@ export async function updateWorkset(
   return response.json();
 }
 
-export async function deleteWorkset(token: string, publicId: string): Promise<void> {
-  const response = await authFetch(`${BASE}${encodeURIComponent(publicId)}/`, token, {
+export async function deleteWorkset(publicId: string): Promise<void> {
+  const response = await proxyFetch(`${BASE}${encodeURIComponent(publicId)}/`, {
     method: 'DELETE',
   });
   if (!response.ok && response.status !== 204) {

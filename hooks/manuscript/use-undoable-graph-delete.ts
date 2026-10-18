@@ -8,7 +8,7 @@ import { deleteViewerAnnotation } from '@/services/annotations';
 export const UNDO_WINDOW_MS = 6000;
 
 interface UndoableGraphDeleteOptions {
-  token: string | null | undefined;
+  isAuthenticated: boolean;
   /** Hide the graph at once, before the delete is sent. */
   onHide: (graphId: number) => void;
   /** Show the graph again: after Undo, or when the delete failed. */
@@ -33,10 +33,10 @@ export function useUndoableGraphDelete(options: UndoableGraphDeleteOptions) {
   const pendingRef = React.useRef(new Map<number, ReturnType<typeof setTimeout>>());
 
   const send = React.useCallback((graphId: number, leaving: boolean) => {
-    const { token, onRestore, onDeleted, onFailed } = optionsRef.current;
+    const { isAuthenticated, onRestore, onDeleted, onFailed } = optionsRef.current;
     pendingRef.current.delete(graphId);
-    if (!token) return;
-    const request = deleteViewerAnnotation(token, graphId, { keepalive: true });
+    if (!isAuthenticated) return;
+    const request = deleteViewerAnnotation(graphId, { keepalive: true });
     // Nothing is left to update once the page has gone.
     if (leaving) {
       request.catch(() => {});
