@@ -51,7 +51,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
   const refreshWorksets = React.useCallback(async () => {
     if (!token) return;
     try {
-      setWorksets(await listMyWorksets(token));
+      setWorksets(await listMyWorksets());
     } catch (error) {
       console.error('Failed to load worksets:', error);
     }
@@ -150,7 +150,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
     }
     setIsSyncing(true);
     try {
-      await createWorkset(token, { title: worksetName.trim(), payload: buildPayload() });
+      await createWorkset({ title: worksetName.trim(), payload: buildPayload() });
       setWorksetName('');
       await refreshWorksets();
       toast.success(t('session.toastWorksetSaved'));
@@ -183,7 +183,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
     if (!token) return;
     if (!confirm(t('session.toastWorksetDeleteConfirm'))) return;
     try {
-      await deleteWorkset(token, publicId);
+      await deleteWorkset(publicId);
       await refreshWorksets();
     } catch {
       toast.error(t('session.toastWorksetDeleteFailed'));
@@ -195,7 +195,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
     const next = workset.visibility === 'Public' ? 'Private' : 'Public';
     setTogglingIds((prev) => new Set(prev).add(workset.public_id));
     try {
-      const updated = await updateWorkset(token, workset.public_id, { visibility: next });
+      const updated = await updateWorkset(workset.public_id, { visibility: next });
       // Reflect server truth from the response itself, so the Share button is
       // enabled/disabled correctly even if a follow-up refetch fails.
       setWorksets((prev) =>

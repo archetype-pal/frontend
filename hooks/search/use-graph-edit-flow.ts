@@ -38,7 +38,7 @@ export function useGraphEditFlow({ onGraphDeleted }: UseGraphEditFlowOpts = {}) 
 
       try {
         // 1. Fetch full graphs
-        const fetched = await fetchGraphsByIds(ids, token);
+        const fetched = await fetchGraphsByIds(ids, !!token);
         if (fetched.length === 0) {
           toast.error(t('noGraphData', { defaultValue: 'No graph data found for selected items' }));
           return;
@@ -126,7 +126,7 @@ export function useGraphEditFlow({ onGraphDeleted }: UseGraphEditFlowOpts = {}) 
       }
 
       try {
-        await deleteViewerAnnotation(token, id);
+        await deleteViewerAnnotation(id);
         onGraphDeleted?.(id);
         toast.success(t('graphDeleted', { defaultValue: 'Graph deleted' }));
       } catch {

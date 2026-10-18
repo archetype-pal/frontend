@@ -38,7 +38,7 @@ describe('useUndoableGraphDelete', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(UNDO_WINDOW_MS);
     });
-    expect(deleteMock).toHaveBeenCalledWith('token', 7, { keepalive: true });
+    expect(deleteMock).toHaveBeenCalledWith(7, { keepalive: true });
     expect(onDeleted).toHaveBeenCalledWith(7);
   });
 
@@ -91,7 +91,7 @@ describe('useUndoableGraphDelete', () => {
     act(() => api().remove(7));
     window.dispatchEvent(new Event('pagehide'));
 
-    expect(deleteMock).toHaveBeenCalledWith('token', 7, { keepalive: true });
+    expect(deleteMock).toHaveBeenCalledWith(7, { keepalive: true });
   });
 
   it('sends a waiting delete straight away when the gallery unmounts', () => {
