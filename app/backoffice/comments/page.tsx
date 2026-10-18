@@ -26,6 +26,7 @@ import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 import { cn } from '@/lib/utils';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 import type { CommentItem } from '@/types/backoffice';
 
 export default function CommentsPage() {
@@ -333,7 +334,10 @@ export default function CommentsPage() {
                   </Button>
                 </div>
               </div>
-              <p className="text-sm whitespace-pre-wrap pl-8">{comment.content}</p>
+              <div
+                className="publication-body text-sm pl-8"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(comment.content) }}
+              />
             </div>
           ))
         )}
