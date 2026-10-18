@@ -604,7 +604,7 @@
     },
     "blog": {
       "postedBy": "Veröffentlicht von:",
-      "comments": "{count} Kommentare",
+      "comments": "{count, plural, one {# Kommentar} other {# Kommentare}}",
       "readMore": "Weiterlesen",
       "typeFeature": "Beitrag",
       "typeBlog": "Blog",

@@ -604,7 +604,7 @@
     },
     "blog": {
       "postedBy": "Posted by:",
-      "comments": "{count} Comments",
+      "comments": "{count, plural, one {# Comment} other {# Comments}}",
       "readMore": "Read more",
       "typeFeature": "Feature",
       "typeBlog": "Blog",
