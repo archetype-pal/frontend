@@ -11,7 +11,7 @@ create that HTML.
 ## Display Compatibility
 
 Public publication pages and the backoffice Preview tab render publication HTML
-through `renderPublicationHtml()`.
+through `renderPublicationHtml()` (`lib/publication-html.ts`).
 
 That display path sanitizes legacy-safe publication HTML, links legacy footnotes,
 and applies `.publication-body` styling. It exists so imported records from the
@@ -20,8 +20,9 @@ rewritten immediately.
 
 ## Supported Modern Authoring
 
-The visual rich editor is the supported authoring surface for modern publication
-content. It intentionally creates semantic HTML only:
+The visual rich editor (`components/backoffice/common/rich-text-editor.tsx`) is
+the supported authoring surface for modern publication content. It intentionally
+creates semantic HTML only:
 
 - paragraphs
 - `h1`, `h2`, `h3`
@@ -47,6 +48,7 @@ support them as new authoring features:
 - arbitrary `class=""`
 - inline `style=""`
 - `h4`, `h5`, `h6`
+- `div`, `span`, `u`, `mark`, `sub`, `sup`, and definition lists
 - forms and inputs
 - Bootstrap-style panels, lists, and utility classes
 - old Word/import/search/event classes
@@ -57,9 +59,10 @@ authoring model.
 
 ## Raw Source Mode
 
-`hasLegacyRichPublicationHtml()` identifies publication content that the visual
-editor cannot preserve reliably. Matching records should open in raw/source mode
-with a warning, and editors should use the Preview tab as the display authority.
+`hasLegacyRichPublicationHtml()` (`lib/legacy-publication-html.ts`) identifies
+publication content that the visual editor cannot preserve reliably, using the
+display-only list above. Matching records open in raw/source mode with a
+warning, and editors should use the Preview tab as the display authority.
 
 ## Future Editor Additions
 
