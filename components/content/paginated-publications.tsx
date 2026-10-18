@@ -210,31 +210,6 @@ export default function PaginatedPublications({
                     ))}
               </ul>
             </section>
-
-            {/* Placeholder Filters */}
-            <section className="mb-10">
-              <h2 className="text-lg font-serif font-semibold text-foreground mb-4">
-                {t('postsByDate')}
-                <span className="block mt-1 w-8 h-0.5 bg-accent rounded-full" />
-              </h2>
-              <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-card">
-                <option>{t('selectMonth')}</option>
-                {/* Filter by month – not yet wired to data */}
-              </select>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-serif font-semibold text-foreground mb-4">
-                {t('feeds')}
-                <span className="block mt-1 w-8 h-0.5 bg-accent rounded-full" />
-              </h2>
-              <Link
-                href="#"
-                className="text-sm text-primary hover:text-primary/80 transition-colors"
-              >
-                {t('rssAtom')}
-              </Link>
-            </section>
           </aside>
         </div>
       </div>

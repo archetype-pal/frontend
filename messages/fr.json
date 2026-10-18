@@ -632,11 +632,7 @@
     },
     "publicationsList": {
       "noPostsFound": "Aucun article trouvé.",
-      "recentPosts": "Articles récents",
-      "postsByDate": "Articles par date",
-      "selectMonth": "Sélectionner un mois",
-      "feeds": "Flux",
-      "rssAtom": "RSS / Atom"
+      "recentPosts": "Articles récents"
     }
   },
   "collection": {
