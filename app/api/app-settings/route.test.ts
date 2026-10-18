@@ -63,9 +63,9 @@ afterEach(() => {
 
 /** Minimal duck-typed request: the handler only reads the body — auth comes
  *  from the mocked `getServerAuthToken`, not a client-supplied header. */
-function putRequest(body: unknown): NextRequest {
+function putRequest(body: unknown, headers?: HeadersInit): NextRequest {
   return {
-    headers: new Headers(),
+    headers: new Headers(headers),
     json: async () => body,
   } as unknown as NextRequest;
 }
@@ -178,6 +178,14 @@ describe('PUT /api/app-settings — theme', () => {
 });
 
 describe('PUT /api/app-settings — the superuser gate protecting the flags', () => {
+  it('refuses a cross-origin write without reading the token or calling the backend', async () => {
+    const response = await PUT(putRequest(getDefaultConfig(), { 'sec-fetch-site': 'cross-site' }));
+
+    expect(response.status).toBe(403);
+    expect(getServerAuthToken).not.toHaveBeenCalled();
+    expect(authFetch).not.toHaveBeenCalled();
+  });
+
   it('rejects an unauthenticated caller before touching the config', async () => {
     getServerAuthToken.mockResolvedValueOnce(null);
     const before = await readSiteFeatures();

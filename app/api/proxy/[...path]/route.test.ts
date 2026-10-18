@@ -132,10 +132,16 @@ describe('/api/proxy', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('accepts a same-origin write', async () => {
+  it.each([
+    [
+      'a browser that sends Sec-Fetch-Site',
+      { 'sec-fetch-site': 'same-origin', origin: 'http://site.test' },
+    ],
+    ['a browser that sends only Origin', { origin: 'http://site.test' }],
+  ])('accepts a same-origin write from %s', async (_label, headers) => {
     const request = new NextRequest('http://site.test/api/proxy/api/v1/x', {
       method: 'POST',
-      headers: { 'sec-fetch-site': 'same-origin', origin: 'http://site.test' },
+      headers,
       body: '{}',
     });
 
