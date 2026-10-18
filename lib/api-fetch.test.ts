@@ -72,4 +72,18 @@ describe('optionalAuthFetch', () => {
       `${API_BASE_URL}/api/v1/manuscripts/graphs/?item_image=1`,
     ]);
   });
+
+  it('sends a signed-in server-side read straight to Django instead of throwing', async () => {
+    vi.stubGlobal('window', undefined);
+    vi.resetModules();
+    const { optionalAuthFetch, API_BASE_URL } = await import('./api-fetch');
+    const fetchMock = vi.fn(async (_url: string) => new Response('[]'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await optionalAuthFetch('/api/v1/manuscripts/graphs/?item_image=1', true);
+
+    expect(fetchMock.mock.calls.map((c) => c[0])).toEqual([
+      `${API_BASE_URL}/api/v1/manuscripts/graphs/?item_image=1`,
+    ]);
+  });
 });
