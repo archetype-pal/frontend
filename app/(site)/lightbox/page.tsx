@@ -229,7 +229,8 @@ function LightboxPageContent() {
           if (!cancelled) failures.forEach((msg) => toast.error(msg));
           // The loaded items are now persisted in the workspace, so drop their
           // ids: a reload (or Back into this entry) must not add them a second
-          // time. Keep only the failed ids, so a reload retries just those.
+          // time. Keep only the failed ids worth retrying (resolveItemsByIds
+          // leaves out a 404), so a reload retries just those.
           nextQuery = new URLSearchParams();
           if (failedImageIds.length > 0) nextQuery.set('images', failedImageIds.join(','));
           if (failedGraphIds.length > 0) nextQuery.set('graphs', failedGraphIds.join(','));

@@ -40,7 +40,9 @@ export async function resolveItemById(
 /**
  * Resolve multiple items by ids: from collection + fetch missing from API. Pushes to itemsToLoad,
  * reports the ids that could not be fetched (even when others of the same kind loaded) and
- * returns them.
+ * returns the ones worth retrying: a network error, a throttled request or a server error. A
+ * 4xx such as a 404 (a deleted graph, or an editorial one the search index leaves out) would
+ * fail the same way every time, so it is reported but not returned.
  */
 export async function resolveItemsByIds(
   type: ItemType,
@@ -54,12 +56,16 @@ export async function resolveItemsByIds(
   const endpoint = type === 'image' ? 'item-images' : 'graphs';
   const label = type === 'image' ? 'image' : 'graph';
   const failed: string[] = [];
-  const failedIds: number[] = [];
+  const retryableIds: number[] = [];
+  const statusById = new Map<number, number>();
 
   const results = await Promise.allSettled(
     missingIds.map(async (id) => {
       const response = await apiFetch(`/api/v1/search/${endpoint}/${id}/`);
-      if (!response.ok) throw new Error(`${label} ${id} (${response.status})`);
+      if (!response.ok) {
+        statusById.set(id, response.status);
+        throw new Error(`${label} ${id} (${response.status})`);
+      }
       const data = await response.json();
       return { ...data, type } as ResolvedItem;
     })
@@ -69,7 +75,9 @@ export async function resolveItemsByIds(
     if (result.status === 'fulfilled') {
       itemsToLoad.push(result.value);
     } else {
-      failedIds.push(missingIds[index]);
+      const id = missingIds[index];
+      const status = statusById.get(id);
+      if (status === undefined || status >= 500 || status === 429) retryableIds.push(id);
       failed.push(result.reason instanceof Error ? result.reason.message : String(result.reason));
     }
   }
@@ -78,5 +86,5 @@ export async function resolveItemsByIds(
     reportFailure(`Could not load ${type === 'image' ? 'images' : 'graphs'}: ${failed.join('; ')}`);
   }
   itemsToLoad.push(...fromCollection);
-  return failedIds;
+  return retryableIds;
 }
