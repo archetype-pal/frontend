@@ -945,7 +945,8 @@
       "imagesTitle": "Bilder",
       "imagesInWorkspace": "{count, plural, =1 {{count} Bild} other {{count} Bilder}} im Arbeitsbereich",
       "noImages": "Keine Bilder im Arbeitsbereich",
-      "addFromCollection": "Bilder aus Ihrer Sammlung hinzufügen"
+      "addFromCollection": "Bilder aus Ihrer Sammlung hinzufügen",
+      "addAllFromCollection": "Alle aus der Sammlung hinzufügen"
     },
     "session": {
       "title": "Sitzungsverwaltung",
