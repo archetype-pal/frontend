@@ -22,6 +22,10 @@ const NO_AUTH_HEADER = [
   { selector: 'Literal[value=/^authorization$/i]', message: AUTH_HEADER_MESSAGE },
   { selector: 'Property > Identifier.key[name=/^authorization$/i]', message: AUTH_HEADER_MESSAGE },
   { selector: 'TemplateElement[value.raw=/^Token /]', message: AUTH_HEADER_MESSAGE },
+  {
+    selector: "BinaryExpression[operator='+'] > Literal[value=/^Token $/]",
+    message: AUTH_HEADER_MESSAGE,
+  },
 ];
 
 export default defineConfig([
