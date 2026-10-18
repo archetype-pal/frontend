@@ -90,6 +90,12 @@ vi.mock('sonner', () => ({ toast: toastMock }));
 const openLightboxMock = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/lightbox-utils', () => ({ openLightboxWithItems: openLightboxMock }));
 
+const downloadCsvMock = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/graph-csv', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/graph-csv')>()),
+  downloadCsv: downloadCsvMock,
+}));
+
 const HAND: HandType = {
   id: 141,
   name: 'Main Hand',
@@ -152,6 +158,7 @@ beforeEach(() => {
   mockState.crop.mockReset();
   mockState.crop.mockReturnValue({ src: 'https://iiif.example/crop.jpg', failed: false });
   openLightboxMock.mockReset();
+  downloadCsvMock.mockReset();
   collection.reset();
   collection.setHydrated(true);
   fetchAllographsMock.mockReset();
@@ -289,6 +296,31 @@ describe('AnnotationGallery selection', () => {
     expect(add.hasAttribute('disabled')).toBe(true);
     expect(within(bar).getByRole('button', { name: 'Clear' }).hasAttribute('disabled')).toBe(false);
   });
+});
+
+describe('AnnotationGallery export', () => {
+  // The fallback name is for the page only: a CSV row carries the real name or nothing.
+  it.each([
+    ['load', [HAND], 'Main Hand', 'Main Hand'],
+    ['fail to load', [], 'Hand 141', ''],
+    ["lack the graph's hand", [{ ...HAND, id: 7, name: 'Other Hand' }], 'Hand 141', ''],
+  ])(
+    'exports the real hand name, never the on-screen fallback, when the hand names %s',
+    (_case, hands, heading, csvHand) => {
+      renderGallery({ hands });
+
+      expect(screen.getByRole('heading', { name: heading })).toBeTruthy();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Select A graph 4189' }));
+      const bar = screen.getByRole('region', { name: 'Selection' });
+      fireEvent.click(within(bar).getByRole('button', { name: 'Export CSV' }));
+
+      expect(downloadCsvMock).toHaveBeenCalledWith(
+        'annotations-5.csv',
+        'id,allograph,hand,described,components,features,positions\n' + `4189,A,${csvHand},no,,,`
+      );
+    }
+  );
 });
 
 describe('AnnotationGallery delete', () => {
