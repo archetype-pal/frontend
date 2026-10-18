@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { PublicationComment } from '@/utils/api';
 import PublicationComments from './publication-comments';
@@ -88,5 +88,90 @@ describe('PublicationComments', () => {
 
     expect(screen.queryByText('Author 1')).not.toBeNull();
     expect(screen.getByText('3 May 2015').getAttribute('datetime')).toBe('2015-05-03T23:30:00Z');
+  });
+});
+
+describe('PublicationComments form', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  const stubFetch = (status: number) => {
+    const fetchMock = vi.fn<typeof fetch>(async () => new Response('{}', { status }));
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  };
+
+  const sentBody = (fetchMock: ReturnType<typeof stubFetch>) =>
+    JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+
+  const fillAndSend = () => {
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'B. Reader' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'reader@example.org' } });
+    fireEvent.change(screen.getByLabelText('Comment'), { target: { value: 'Thanks' } });
+    fireEvent.submit(screen.getByRole('form', { name: 'Leave a comment' }));
+  };
+
+  const thread = [comment(1, null, '<p>Question</p>'), comment(2, 1, '<p>Answer</p>')];
+
+  it('posts a comment to the post and says it waits for moderation', async () => {
+    const fetchMock = stubFetch(201);
+    render(<PublicationComments slug="a-post" allowComments comments={thread} />);
+
+    fillAndSend();
+
+    expect(
+      await screen.findByText('Thank you. Your comment will appear once a moderator approves it.')
+    ).not.toBeNull();
+    expect(String(fetchMock.mock.calls[0][0])).toContain(
+      '/api/v1/media/publications/a-post/comments/'
+    );
+    expect(sentBody(fetchMock)).toEqual({
+      parent: null,
+      author_name: 'B. Reader',
+      author_email: 'reader@example.org',
+      content: 'Thanks',
+    });
+    expect((screen.getByLabelText('Comment') as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('replies to the comment whose Reply button was pressed', async () => {
+    const fetchMock = stubFetch(201);
+    render(<PublicationComments slug="a-post" allowComments comments={thread} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reply', description: /Author 2/ }));
+
+    expect(screen.queryByText('Replying to Author 2')).not.toBeNull();
+    expect(document.activeElement).toBe(screen.getByLabelText('Comment'));
+    fillAndSend();
+    await screen.findByText('Thank you. Your comment will appear once a moderator approves it.');
+    expect(sentBody(fetchMock).parent).toBe(2);
+    expect(screen.queryByText('Replying to Author 2')).toBeNull();
+  });
+
+  it('sends a top level comment after the reply is cancelled', async () => {
+    const fetchMock = stubFetch(201);
+    render(<PublicationComments slug="a-post" allowComments comments={thread} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reply', description: /Author 1/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel reply' }));
+    fillAndSend();
+    await screen.findByText('Thank you. Your comment will appear once a moderator approves it.');
+
+    expect(sentBody(fetchMock).parent).toBeNull();
+  });
+
+  it('keeps the text and says so when the comment cannot be sent', async () => {
+    stubFetch(400);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<PublicationComments slug="a-post" allowComments comments={thread} />);
+
+    fillAndSend();
+
+    expect(
+      await screen.findByText('Your comment could not be sent. Please try again.')
+    ).not.toBeNull();
+    expect((screen.getByLabelText('Comment') as HTMLTextAreaElement).value).toBe('Thanks');
   });
 });
