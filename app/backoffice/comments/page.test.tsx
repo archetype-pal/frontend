@@ -77,4 +77,19 @@ describe('<CommentsPage>', () => {
       expect(getComments).toHaveBeenLastCalledWith({ limit: 20, offset: 0, search: 'spam link' })
     );
   });
+
+  it('shows comment text as formatted HTML with scripts removed', async () => {
+    getComments.mockResolvedValue({
+      count: 1,
+      next: null,
+      previous: null,
+      results: [
+        { ...comment(1), content: '<p><i>Quoted</i> text</p><script>window.x = 1</script>' },
+      ],
+    });
+    renderPage();
+
+    expect((await screen.findByText('Quoted')).tagName).toBe('I');
+    expect(document.body.querySelector('script')).toBeNull();
+  });
 });
