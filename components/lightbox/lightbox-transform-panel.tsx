@@ -92,8 +92,13 @@ export function LightboxTransformPanel() {
     }));
   };
 
+  // Rendered disabled rather than hidden so the toolbar keeps its width.
   if (selectedImages.length === 0) {
-    return null;
+    return (
+      <Button variant="ghost" size="sm" disabled>
+        Adjust
+      </Button>
+    );
   }
 
   return (
