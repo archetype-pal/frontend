@@ -13,7 +13,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ token: 'tok' }),
+  useAuth: () => ({ isAuthenticated: true }),
 }));
 
 const OVERVIEW: TextsOverview = {

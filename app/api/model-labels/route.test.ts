@@ -46,8 +46,9 @@ beforeEach(() => {
   });
 });
 
-function putRequest(body: unknown): NextRequest {
+function putRequest(body: unknown, headers?: HeadersInit): NextRequest {
   return {
+    headers: new Headers(headers),
     json: async () => body,
   } as unknown as NextRequest;
 }
@@ -74,6 +75,14 @@ describe('GET /api/model-labels', () => {
 });
 
 describe('PUT /api/model-labels', () => {
+  it('refuses a cross-origin write without reading the token or calling the backend', async () => {
+    const response = await PUT(putRequest({ labels: {} }, { 'sec-fetch-site': 'cross-site' }));
+
+    expect(response.status).toBe(403);
+    expect(getServerAuthToken).not.toHaveBeenCalled();
+    expect(authFetch).not.toHaveBeenCalled();
+  });
+
   it('forwards only the keys it was given and leaves the rest stored', async () => {
     stored.labels.appManuscripts = { en: 'Corpus', fr: 'Corpus', de: 'Corpus' };
 

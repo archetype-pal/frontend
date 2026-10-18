@@ -6,14 +6,14 @@ import { UNDO_WINDOW_MS, useUndoableGraphDelete } from './use-undoable-graph-del
 const deleteMock = vi.hoisted(() => vi.fn());
 vi.mock('@/services/annotations', () => ({ deleteViewerAnnotation: deleteMock }));
 
-function setup(token: string | null = 'token') {
+function setup(isAuthenticated = true) {
   const callbacks = {
     onHide: vi.fn(),
     onRestore: vi.fn(),
     onDeleted: vi.fn(),
     onFailed: vi.fn(),
   };
-  const hook = renderHook(() => useUndoableGraphDelete({ token, ...callbacks }));
+  const hook = renderHook(() => useUndoableGraphDelete({ isAuthenticated, ...callbacks }));
   return { ...callbacks, hook, api: () => hook.result.current };
 }
 
@@ -38,7 +38,7 @@ describe('useUndoableGraphDelete', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(UNDO_WINDOW_MS);
     });
-    expect(deleteMock).toHaveBeenCalledWith('token', 7, { keepalive: true });
+    expect(deleteMock).toHaveBeenCalledWith(7, { keepalive: true });
     expect(onDeleted).toHaveBeenCalledWith(7);
   });
 
@@ -91,7 +91,7 @@ describe('useUndoableGraphDelete', () => {
     act(() => api().remove(7));
     window.dispatchEvent(new Event('pagehide'));
 
-    expect(deleteMock).toHaveBeenCalledWith('token', 7, { keepalive: true });
+    expect(deleteMock).toHaveBeenCalledWith(7, { keepalive: true });
   });
 
   it('sends a waiting delete straight away when the gallery unmounts', () => {

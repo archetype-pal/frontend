@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const authFetchMock = vi.fn();
+const optionalAuthFetchMock = vi.fn();
+const proxyFetchMock = vi.fn();
 vi.mock('@/lib/api-fetch', () => ({
-  authFetch: (...args: unknown[]) => authFetchMock(...args),
+  optionalAuthFetch: (...args: unknown[]) => optionalAuthFetchMock(...args),
+  proxyFetch: (...args: unknown[]) => proxyFetchMock(...args),
 }));
 
 import {
@@ -41,75 +43,75 @@ const ANNOTATION: BackendGraph['annotation'] = {
 };
 
 beforeEach(() => {
-  authFetchMock.mockReset();
+  optionalAuthFetchMock.mockReset();
+  proxyFetchMock.mockReset();
 });
 
 describe('fetchAnnotationsForImage', () => {
   it('builds the graphs query with item_image and optional filters', async () => {
-    authFetchMock.mockResolvedValueOnce(jsonResponse(200, []));
-    await fetchAnnotationsForImage('42', '7', 'text', 'tok');
-    const [path, token, init] = authFetchMock.mock.calls[0]!;
+    optionalAuthFetchMock.mockResolvedValueOnce(jsonResponse(200, []));
+    await fetchAnnotationsForImage('42', '7', 'text', true);
+    const [path, authenticated, init] = optionalAuthFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/manuscripts/graphs/?item_image=42&allograph=7&annotation_type=text');
-    expect(token).toBe('tok');
+    expect(authenticated).toBe(true);
     expect((init as RequestInit)?.cache).toBe('no-store');
   });
 
   it('omits annotation_type when explicitly null', async () => {
-    authFetchMock.mockResolvedValueOnce(jsonResponse(200, []));
+    optionalAuthFetchMock.mockResolvedValueOnce(jsonResponse(200, []));
     await fetchAnnotationsForImage('42', undefined, null);
-    const [path] = authFetchMock.mock.calls[0]!;
+    const [path] = optionalAuthFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/manuscripts/graphs/?item_image=42');
   });
 
   it('throws on a non-OK response', async () => {
-    authFetchMock.mockResolvedValueOnce(textResponse(500, 'boom'));
+    optionalAuthFetchMock.mockResolvedValueOnce(textResponse(500, 'boom'));
     await expect(fetchAnnotationsForImage('42')).rejects.toThrow('Failed to load annotations');
   });
 });
 
 describe('createViewerAnnotation', () => {
   it('POSTs with a default annotation_type of "image"', async () => {
-    authFetchMock.mockResolvedValueOnce(jsonResponse(201, { id: 1 }));
-    await createViewerAnnotation('tok', { item_image: 42, annotation: ANNOTATION });
-    const [path, token, init] = authFetchMock.mock.calls[0]!;
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse(201, { id: 1 }));
+    await createViewerAnnotation({ item_image: 42, annotation: ANNOTATION });
+    const [path, init] = proxyFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/annotations/graphs/');
-    expect(token).toBe('tok');
     const body = JSON.parse((init as RequestInit).body as string);
     expect((init as RequestInit).method).toBe('POST');
     expect(body.annotation_type).toBe('image');
   });
 
   it('preserves an explicit annotation_type', async () => {
-    authFetchMock.mockResolvedValueOnce(jsonResponse(201, { id: 1 }));
-    await createViewerAnnotation('tok', {
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse(201, { id: 1 }));
+    await createViewerAnnotation({
       item_image: 42,
       annotation: ANNOTATION,
       annotation_type: 'editorial',
     });
-    const body = JSON.parse((authFetchMock.mock.calls[0]![2] as RequestInit).body as string);
+    const body = JSON.parse((proxyFetchMock.mock.calls[0]![1] as RequestInit).body as string);
     expect(body.annotation_type).toBe('editorial');
   });
 
   it('throws with the status + body on a non-OK response', async () => {
-    authFetchMock.mockResolvedValueOnce(textResponse(400, 'invalid'));
+    proxyFetchMock.mockResolvedValueOnce(textResponse(400, 'invalid'));
     await expect(
-      createViewerAnnotation('tok', { item_image: 42, annotation: ANNOTATION })
+      createViewerAnnotation({ item_image: 42, annotation: ANNOTATION })
     ).rejects.toThrow('POST failed: 400 invalid');
   });
 });
 
 describe('updateViewerAnnotation', () => {
   it('PATCHes the graph by id', async () => {
-    authFetchMock.mockResolvedValueOnce(jsonResponse(200, { id: 5 }));
-    await updateViewerAnnotation('tok', 5, { note: 'hi' });
-    const [path, , init] = authFetchMock.mock.calls[0]!;
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { id: 5 }));
+    await updateViewerAnnotation(5, { note: 'hi' });
+    const [path, init] = proxyFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/annotations/graphs/5/');
     expect((init as RequestInit).method).toBe('PATCH');
   });
 
   it('throws with the status + body on a non-OK response', async () => {
-    authFetchMock.mockResolvedValueOnce(textResponse(409, 'conflict'));
-    await expect(updateViewerAnnotation('tok', 5, { note: 'hi' })).rejects.toThrow(
+    proxyFetchMock.mockResolvedValueOnce(textResponse(409, 'conflict'));
+    await expect(updateViewerAnnotation(5, { note: 'hi' })).rejects.toThrow(
       'PATCH failed: 409 conflict'
     );
   });
@@ -117,16 +119,16 @@ describe('updateViewerAnnotation', () => {
 
 describe('deleteViewerAnnotation', () => {
   it('DELETEs the graph by id and resolves on OK', async () => {
-    authFetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
-    await expect(deleteViewerAnnotation('tok', 5)).resolves.toBeUndefined();
-    const [path, , init] = authFetchMock.mock.calls[0]!;
+    proxyFetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    await expect(deleteViewerAnnotation(5)).resolves.toBeUndefined();
+    const [path, init] = proxyFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/annotations/graphs/5/');
     expect((init as RequestInit).method).toBe('DELETE');
   });
 
   it('throws with the status + body on a non-OK response', async () => {
-    authFetchMock.mockResolvedValueOnce(textResponse(404, 'gone'));
-    await expect(deleteViewerAnnotation('tok', 5)).rejects.toThrow('DELETE failed: 404 gone');
+    proxyFetchMock.mockResolvedValueOnce(textResponse(404, 'gone'));
+    await expect(deleteViewerAnnotation(5)).rejects.toThrow('DELETE failed: 404 gone');
   });
 });
 
@@ -134,20 +136,20 @@ describe('fetchGraphsByIds', () => {
   it('returns empty array when given no IDs', async () => {
     const result = await fetchGraphsByIds([]);
     expect(result).toEqual([]);
-    expect(authFetchMock).not.toHaveBeenCalled();
+    expect(optionalAuthFetchMock).not.toHaveBeenCalled();
   });
 
   it('fetches graphs with comma-separated id__in parameter', async () => {
     const mockGraphs = [{ id: 10 }, { id: 20 }] as BackendGraph[];
-    authFetchMock.mockResolvedValueOnce(jsonResponse(200, mockGraphs));
+    optionalAuthFetchMock.mockResolvedValueOnce(jsonResponse(200, mockGraphs));
 
-    const result = await fetchGraphsByIds([10, 20], 'tok');
+    const result = await fetchGraphsByIds([10, 20], true);
     expect(result).toEqual(mockGraphs);
-    expect(authFetchMock).toHaveBeenCalledTimes(1);
+    expect(optionalAuthFetchMock).toHaveBeenCalledTimes(1);
 
-    const [path, token, init] = authFetchMock.mock.calls[0]!;
+    const [path, authenticated, init] = optionalAuthFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/manuscripts/graphs/?id__in=10%2C20');
-    expect(token).toBe('tok');
+    expect(authenticated).toBe(true);
     expect((init as RequestInit)?.cache).toBe('no-store');
   });
 
@@ -157,23 +159,23 @@ describe('fetchGraphsByIds', () => {
     const chunk2 = ids.slice(300, 600).map((id) => ({ id })) as BackendGraph[];
     const chunk3 = ids.slice(600).map((id) => ({ id })) as BackendGraph[];
 
-    authFetchMock
+    optionalAuthFetchMock
       .mockResolvedValueOnce(jsonResponse(200, chunk1))
       .mockResolvedValueOnce(jsonResponse(200, chunk2))
       .mockResolvedValueOnce(jsonResponse(200, chunk3));
 
-    const result = await fetchGraphsByIds(ids, 'tok');
+    const result = await fetchGraphsByIds(ids, true);
     expect(result.length).toBe(650);
-    expect(authFetchMock).toHaveBeenCalledTimes(3);
+    expect(optionalAuthFetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('throws when the API returns graphs that were not requested', async () => {
-    authFetchMock.mockResolvedValueOnce(jsonResponse(200, [{ id: 10 }, { id: 99 }]));
-    await expect(fetchGraphsByIds([10], 'tok')).rejects.toThrow('not requested');
+    optionalAuthFetchMock.mockResolvedValueOnce(jsonResponse(200, [{ id: 10 }, { id: 99 }]));
+    await expect(fetchGraphsByIds([10], true)).rejects.toThrow('not requested');
   });
 
   it('throws when the API request fails', async () => {
-    authFetchMock.mockResolvedValueOnce(textResponse(500, 'Server Error'));
+    optionalAuthFetchMock.mockResolvedValueOnce(textResponse(500, 'Server Error'));
     await expect(fetchGraphsByIds([1, 2])).rejects.toThrow('Failed to load graphs: 500');
   });
 });

@@ -91,7 +91,7 @@ export function AnnotationGallery({
 }: AnnotationGalleryProps) {
   const t = useTranslations('manuscript.gallery');
   const tCommon = useTranslations('common');
-  const { user, token } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -208,7 +208,7 @@ export function AnnotationGallery({
   // offers Undo until the delete is sent. A sent delete refreshes the route,
   // so the tab count drops.
   const graphDelete = useUndoableGraphDelete({
-    token,
+    isAuthenticated,
     onHide: (graphId) => {
       setDeletedIds((prev) => new Set(prev).add(graphId));
       selection.remove(graphId);
@@ -226,7 +226,7 @@ export function AnnotationGallery({
   });
   const deleteGraph = React.useCallback(
     (graphId: number) => {
-      if (!token) return;
+      if (!isAuthenticated) return;
       graphDelete.remove(graphId);
       toast.success(t('trashed', { id: graphId }), {
         id: trashToastId(graphId),
@@ -239,7 +239,7 @@ export function AnnotationGallery({
         },
       });
     },
-    [token, graphDelete, t]
+    [isAuthenticated, graphDelete, t]
   );
 
   const groupLabels = React.useMemo<GroupLabels>(

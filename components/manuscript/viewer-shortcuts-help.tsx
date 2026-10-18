@@ -55,7 +55,7 @@ export function ViewerShortcutsHelp({
       { keys: ['D', 'Space'], label: t('shortcuts.drawRegion') },
       { keys: ['M'], label: t('shortcuts.modifyReshape') },
       { keys: ['E'], label: t('shortcuts.editorial') },
-      { keys: ['X', 'Delete'], label: t('shortcuts.deleteSelection') },
+      { keys: ['X', 'Delete'], label: t('shortcuts.deleteTool') },
       { keys: ['S'], label: t('shortcuts.saveChanges') },
     ],
   };

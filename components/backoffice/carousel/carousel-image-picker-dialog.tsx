@@ -33,7 +33,7 @@ export function CarouselImagePickerDialog({
   initialPath = '',
 }: CarouselImagePickerDialogProps) {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [currentPath, setCurrentPath] = useState(initialPath);
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export function CarouselImagePickerDialog({
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: backofficeKeys.carousel.mediaPicker(currentPath),
     queryFn: () => getMediaPickerContent(currentPath),
-    enabled: !!token && open,
+    enabled: isAuthenticated && open,
   });
 
   const breadcrumbs = useMemo(() => {

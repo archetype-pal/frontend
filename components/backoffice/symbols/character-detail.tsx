@@ -66,7 +66,7 @@ export function CharacterDetail({
 }: CharacterDetailProps) {
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
   const characterTypeLabel = (type: string) => {
@@ -82,7 +82,7 @@ export function CharacterDetail({
   } = useQuery({
     queryKey: backofficeKeys.characters.detail(characterId),
     queryFn: () => getCharacter(characterId),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   // Local draft state for editing
