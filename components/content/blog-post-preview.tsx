@@ -123,7 +123,6 @@ export default function BlogPostPreview({
           {publicationLabel}
         </Link>
         <span className="mx-1">·</span>
-        {/* A count only: comments are not shown on the post page yet (#187). */}
         <span className="flex items-center">
           <MessageSquare className="h-4 w-4 mr-1" />
           {t('blog.comments', { count: commentsCount })}

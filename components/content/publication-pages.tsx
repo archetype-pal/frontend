@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { getLocale, getTranslations } from 'next-intl/server';
 import PaginatedPublications from '@/components/content/paginated-publications';
 import BlogPostPreview from '@/components/content/blog-post-preview';
+import PublicationComments from '@/components/content/publication-comments';
 import {
   getPublicationItem,
   PublicationNotFoundError,
@@ -118,6 +119,7 @@ export async function PublicationDetailPage({
             showShareBtns
             showReadMoreBtn={false}
           />
+          <PublicationComments comments={item.comments ?? []} allowComments={item.allow_comments} />
         </main>
         <aside className="w-full md:w-80">
           <section className="mb-8">
