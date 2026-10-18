@@ -320,7 +320,7 @@
       "drawRegion": "Bereich zeichnen",
       "modifyReshape": "Ändern / Umformen",
       "editorial": "Editorische Annotation",
-      "deleteSelection": "Auswahl löschen",
+      "deleteTool": "Löschwerkzeug",
       "saveChanges": "Änderungen speichern"
     },
     "toolbar": {

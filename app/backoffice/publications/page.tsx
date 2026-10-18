@@ -47,7 +47,7 @@ const ORDERING_FIELDS = {
 
 export default function PublicationsPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -193,7 +193,7 @@ export default function PublicationsPage() {
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.publications.list(queryParams),
     queryFn: () => getPublications(queryParams),
-    enabled: !!token,
+    enabled: isAuthenticated,
     placeholderData: keepPreviousData,
   });
 

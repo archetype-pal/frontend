@@ -181,7 +181,7 @@ function SortHeader({
 
 export default function UsersPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
   // Dialog / mutation targets
@@ -207,7 +207,7 @@ export default function UsersPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: backofficeKeys.users.all(),
     queryFn: () => walkPaginated<UserListItem>('/api/v1/auth/management/users/?limit=100'),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const users = useMemo(() => data ?? [], [data]);

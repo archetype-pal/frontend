@@ -68,7 +68,7 @@ export function HandDescriptionsSection({
   descriptions,
   onDirtyChange,
 }: HandDescriptionsSectionProps) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
@@ -96,7 +96,7 @@ export function HandDescriptionsSection({
   const { data: sources } = useQuery({
     queryKey: backofficeKeys.sources.all(),
     queryFn: () => getSources(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const invalidate = () =>

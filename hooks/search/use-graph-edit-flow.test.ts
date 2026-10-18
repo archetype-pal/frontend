@@ -7,7 +7,7 @@ import * as manuscriptsService from '@/services/manuscripts';
 
 vi.mock('@/contexts/auth-context', () => ({
   useAuth: () => ({
-    token: 'test-token',
+    isAuthenticated: true,
     user: { id: 1, is_staff: true, is_superuser: false },
   }),
 }));

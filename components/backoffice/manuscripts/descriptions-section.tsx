@@ -71,7 +71,7 @@ interface DescriptionsSectionProps {
  * data model are deliberately untouched.
  */
 export function DescriptionsSection({ historicalItemId, descriptions }: DescriptionsSectionProps) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
@@ -90,7 +90,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
   const { data: sources } = useQuery({
     queryKey: backofficeKeys.sources.all(),
     queryFn: () => getSources(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const invalidate = () =>
