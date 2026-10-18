@@ -145,12 +145,9 @@ function enrichGraphs(
   fallbackLabel: (allographId: number) => string
 ): HandGraph[] {
   // Same labels as the image Annotations tab, on the page and in what is collected or exported.
+  // Real labels only: the fallback is for the page, so a collected graph or a CSV row is left
+  // without an allograph rather than keeping the placeholder.
   const allographLabelById = new Map(allographs.map((a) => [a.id, formatAllographLabel(a)]));
-  for (const g of backendGraphs) {
-    if (typeof g.allograph === 'number' && !allographLabelById.has(g.allograph)) {
-      allographLabelById.set(g.allograph, fallbackLabel(g.allograph));
-    }
-  }
   const imageMap = new Map(images.map((img) => [img.id, img]));
   const collectionLabels = {
     allographLabelById,
