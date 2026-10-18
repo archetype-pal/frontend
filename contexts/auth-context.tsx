@@ -2,103 +2,64 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getUserProfile, logoutUser } from '@/utils/api';
-import {
-  clearAuthTokenCookie,
-  getAuthTokenCookie,
-  setAuthTokenCookie,
-} from '@/lib/auth-token-cookie';
+import { getUserProfile, loginUser, logoutUser } from '@/utils/api';
+import { clearAuthSessionId } from '@/lib/auth-session';
 import type { UserProfile } from '@/types';
 
 interface AuthContextType {
-  token: string | null;
   user: UserProfile | null;
+  isAuthenticated: boolean;
   isReady: boolean;
-  setToken: (token: string | null) => void;
+  login: (username: string, password: string) => Promise<UserProfile>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+/**
+ * The token is in an HttpOnly cookie this code can't read, so "signed in"
+ * means "the server returned a profile" — never "a token is present".
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isReady, setIsReady] = useState(false);
   const router = useRouter();
 
-  const setAuthToken = useCallback((nextToken: string | null) => {
-    setToken(nextToken);
-
-    if (nextToken) {
-      setAuthTokenCookie(nextToken);
-      return;
-    }
-
-    clearAuthTokenCookie();
-  }, []);
-
-  const logout = useCallback(() => {
-    // Revoke the server-side token so a captured token can't be reused after
-    // logout. Fire-and-forget: a network/HTTP failure must not block the local
-    // sign-out, so swallow any error.
-    if (token) {
-      void logoutUser(token).catch(() => {});
-    }
-    setAuthToken(null);
-    setUser(null);
-    setIsReady(true);
-    router.push('/login');
-  }, [router, setAuthToken, token]);
-
   useEffect(() => {
-    const storedToken = getAuthTokenCookie();
-
-    if (storedToken) {
-      queueMicrotask(() => setAuthToken(storedToken));
-      return;
-    }
-
-    // No stored token: nothing to fetch, so we're immediately ready. Defer the
-    // flip off the synchronous effect path (mirroring the setAuthToken branch
-    // above) to avoid a cascading-render setState directly inside the effect.
-    queueMicrotask(() => setIsReady(true));
-  }, [setAuthToken]);
-
-  useEffect(() => {
-    // Generation guard: if `token` changes (A→B) while a fetch for the old
-    // token is in flight, ignore that stale result so it can't set a profile
-    // for the wrong token or clobber the newer valid token on failure.
     let active = true;
-
-    async function fetchUserProfile() {
-      if (!token) return;
-
-      try {
-        const profile = await getUserProfile(token);
-        if (!active) return;
-        setUser(profile);
-      } catch {
-        if (!active) return;
-        // Stale/invalid token or transient API failure: clear local auth state
-        // silently. Do not navigate — public pages must stay viewable for guests.
-        setAuthToken(null);
-        setUser(null);
-        return;
-      } finally {
+    getUserProfile()
+      .then((profile) => {
+        if (active) setUser(profile);
+      })
+      // An outage reads as signed out for now; the cookie survives for the next load.
+      .catch(() => {})
+      .finally(() => {
         if (active) setIsReady(true);
-      }
-    }
-
-    void fetchUserProfile();
-
+      });
     return () => {
       active = false;
     };
-  }, [token, setAuthToken]);
+  }, []);
+
+  const login = useCallback(async (username: string, password: string) => {
+    const profile = await loginUser(username, password);
+    setUser(profile);
+    return profile;
+  }, []);
+
+  const logout = useCallback(() => {
+    // The upload runner checks the session id synchronously, so it must be gone
+    // before the revoke round trip, not after.
+    clearAuthSessionId();
+    void logoutUser().catch(() => {});
+    setUser(null);
+    setIsReady(true);
+    router.push('/login');
+  }, [router]);
 
   const value = useMemo<AuthContextType>(
-    () => ({ token, user, isReady, setToken: setAuthToken, logout }),
-    [token, user, isReady, setAuthToken, logout]
+    () => ({ user, isAuthenticated: user !== null, isReady, login, logout }),
+    [user, isReady, login, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

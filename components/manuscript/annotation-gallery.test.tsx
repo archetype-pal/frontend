@@ -22,7 +22,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ user: mockState.user, token: mockState.user ? 'token' : null }),
+  useAuth: () => ({ user: mockState.user, isAuthenticated: !!mockState.user }),
 }));
 
 // A small in-memory collection, so membership changes re-render the gallery.

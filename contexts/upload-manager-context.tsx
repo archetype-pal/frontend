@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
-import { getAuthTokenCookie } from '@/lib/auth-token-cookie';
+import { getAuthSessionId } from '@/lib/auth-session';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import {
   findActiveDuplicate,
@@ -206,7 +206,7 @@ function newId(): string {
  */
 export function UploadManagerProvider({ children }: { children: React.ReactNode }) {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
   const [items, setItems] = useState<UploadItem[]>([]);
@@ -218,14 +218,11 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
   // of not-yet-started ids.
   const itemsRef = useRef(new Map<string, UploadItem>());
   const controllers = useRef(new Map<string, AbortController>());
-  // Token that was current when each item was queued. Kept in a ref, not on the
-  // item, so a credential never enters React state or a breadcrumb.
-  const itemTokens = useRef(new Map<string, string>());
+  // Sign-in session that was current when each item was queued.
+  const itemSessions = useRef(new Map<string, string>());
   const queueRef = useRef<string[]>([]);
   const drainingRef = useRef(false);
-  const tokenRef = useRef(token);
-  tokenRef.current = token;
-  // Read through a ref, like `token` above: `t` identity is not guaranteed
+  // Read through a ref: `t` identity is not guaranteed
   // stable across renders, and this provider's callback chain feeds effects —
   // an unstable dependency here has caused a render loop before.
   const tRef = useRef(t);
@@ -313,32 +310,20 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
         // Recovered watch items never enqueue; this guard is for the compiler.
         if (!item.file) continue;
 
-        // The cookie, not `tokenRef`: logout clears the cookie synchronously,
-        // but the ref goes STALE rather than null — BackofficeShell's `!token`
-        // early return stops rendering this provider, so `tokenRef.current =
-        // token` never runs again and the ref keeps the revoked token. Reading
-        // it here let every queued file 401 at createUploadSession and raise a
-        // red toast on the login page the editor had just landed on.
-        // The cookie, not `tokenRef`: logout clears the cookie synchronously,
-        // but the ref goes STALE rather than null — BackofficeShell's `!token`
-        // early return stops rendering this provider, so `tokenRef.current =
-        // token` never runs again and it keeps the revoked token.
-        const authToken = getAuthTokenCookie();
-        // ...and it must be the SAME token that queued this file. Re-reading the
-        // cookie per item means a sign-out followed by anyone signing in would
-        // otherwise hand the rest of the queue to them — the server takes
-        // `owner=request.user`, so their name lands on files someone else chose.
-        // A same-user re-login also mints a new token and the cookie carries no
-        // identity, so any change stops the queue; resuming is deliberate.
-        // Fail CLOSED on a missing entry: `queuedWith &&` used to skip the
-        // comparison entirely, so any path that did not record a token ran
-        // under whatever was in the cookie — including another user's.
-        const queuedWith = itemTokens.current.get(id);
-        if (!authToken || authToken !== queuedWith) {
+        // The cookie, not React state: logout clears it synchronously, and so
+        // does a sign-out in another tab, while this provider may have stopped
+        // rendering. It must also be the SAME sign-in that queued this file:
+        // otherwise a sign-out followed by anyone signing in hands them the rest
+        // of the queue, and the server takes `owner=request.user`. Every sign-in
+        // mints a new id, so any change stops the queue; resuming is deliberate.
+        // A missing entry fails closed.
+        const authSession = getAuthSessionId();
+        const queuedWith = itemSessions.current.get(id);
+        if (!authSession || authSession !== queuedWith) {
           signedOut = true;
           patch(id, { status: 'error', error: tRef.current('uploads.errors.signedOut') });
           updateUploadBreadcrumb(id, { status: 'error' });
-          itemTokens.current.delete(id);
+          itemSessions.current.delete(id);
           continue;
         }
 
@@ -454,7 +439,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
           }
         } finally {
           controllers.current.delete(id);
-          itemTokens.current.delete(id);
+          itemSessions.current.delete(id);
         }
       }
       if (created > 0 && !signedOut) showReindexNudge(created);
@@ -464,7 +449,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
   }, [patch, invalidateManuscript, showReindexNudge, errorText]);
 
   /**
-   * The ONLY way an item may enter the runner. It records the token the item was
+   * The ONLY way an item may enter the runner. It records the sign-in the item was
    * queued with, which `drain` then requires to still be current — a sign-out
    * followed by anyone signing in must not hand the rest of the batch to them,
    * because the server takes `owner=request.user`.
@@ -477,9 +462,9 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
    */
   const queueForDrain = useCallback(
     (ids: string[]) => {
-      const queuedWith = getAuthTokenCookie();
+      const queuedWith = getAuthSessionId();
       for (const id of ids) {
-        if (queuedWith) itemTokens.current.set(id, queuedWith);
+        if (queuedWith) itemSessions.current.set(id, queuedWith);
         // Never queue one item twice. `cancel` on a not-yet-started item leaves
         // it in the queue (there is no controller to abort, only a status
         // patch), so a later `retry` would add a second entry and the runner
@@ -526,8 +511,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
 
   /** Fire-and-forget: a failed abort leaves nothing the user could act on. */
   const abortSession = useCallback((sessionId: string) => {
-    const authToken = tokenRef.current;
-    if (sessionId && authToken) void abortUploadSession(sessionId).catch(() => {});
+    if (sessionId && getAuthSessionId()) void abortUploadSession(sessionId).catch(() => {});
   }, []);
 
   const cancel = useCallback(
@@ -554,7 +538,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
    * A rejection is swallowed — the sign-out must not be blocked by cleanup.
    */
   const cancelAll = useCallback(async () => {
-    const authToken = getAuthTokenCookie();
+    const signedIn = getAuthSessionId() !== null;
     const crumbs = listUploadBreadcrumbs();
     // Only what the SERVER will still discard. `processing` and the finalizing
     // phase belong to the ingest task: the bytes are in, Celery will publish
@@ -574,8 +558,8 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       patch(it.id, { status: 'canceled' });
     }
 
-    // No token means nothing can be freed, so every crumb must survive.
-    if (!authToken) return;
+    // Signed out means nothing can be freed, so every crumb must survive.
+    if (!signedIn) return;
 
     const settled = await Promise.all(
       abandonable.map(async (it) => {
@@ -741,8 +725,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       // conversion the server is still running or has finished. Re-creating
       // the session would 409 with `session_active` — re-attach instead.
       const crumb = listUploadBreadcrumbs().find((c) => c.id === id);
-      const authToken = getAuthTokenCookie();
-      if (crumb?.sessionId && authToken) {
+      if (crumb?.sessionId && getAuthSessionId()) {
         let live: UploadSession | null = null;
         try {
           live = await getUploadSession(crumb.sessionId);
@@ -776,8 +759,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
    *  rows vanish when another tab claims or finishes them. */
   const scanBreadcrumbs = useCallback(async () => {
     if (scanningRef.current) return;
-    const authToken = tokenRef.current;
-    if (!authToken) return;
+    if (!getAuthSessionId()) return;
     scanningRef.current = true;
     try {
       const { adoptable, expired } = partitionUploadBreadcrumbs(
@@ -862,7 +844,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
   // on cross-tab storage changes so crumbs orphaned by a dead sibling tab get
   // picked up and rows claimed elsewhere disappear.
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     void scanBreadcrumbs();
     const interval = window.setInterval(() => void scanBreadcrumbs(), RESCAN_MS);
     const onStorage = (e: StorageEvent) => {
@@ -873,7 +855,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
       window.clearInterval(interval);
       window.removeEventListener('storage', onStorage);
     };
-  }, [token, scanBreadcrumbs]);
+  }, [isAuthenticated, scanBreadcrumbs]);
 
   // Heartbeat the crumbs of live items so sibling tabs don't adopt them.
   useEffect(() => {

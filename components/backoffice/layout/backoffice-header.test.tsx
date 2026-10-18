@@ -15,7 +15,11 @@ const cancelAll = vi.fn(async () => {
 let activeCount = 0;
 
 vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ user: { username: 'ali', email: 'ali@example.org' }, logout, token: 'tok' }),
+  useAuth: () => ({
+    user: { username: 'ali', email: 'ali@example.org' },
+    logout,
+    isAuthenticated: true,
+  }),
 }));
 vi.mock('@/contexts/upload-manager-context', () => ({
   useUploadManager: () => ({ activeCount, cancelAll }),

@@ -77,7 +77,7 @@ function makeArgs(
   overrides: Partial<UseAnnotationEditorStateArgs> = {}
 ): UseAnnotationEditorStateArgs {
   return {
-    token: 'tok',
+    isAuthenticated: true,
     manuscriptImage: { id: 42 } as UseAnnotationEditorStateArgs['manuscriptImage'],
     imageHeight: 100,
     allographNameById: new Map(),
@@ -210,8 +210,10 @@ describe('mark* mutations', () => {
 });
 
 describe('saveAll — early-return outcomes', () => {
-  it('returns no-token when token is null', async () => {
-    const { result } = renderHook(() => useAnnotationEditorState(makeArgs({ token: null })));
+  it('returns no-token when signed out', async () => {
+    const { result } = renderHook(() =>
+      useAnnotationEditorState(makeArgs({ isAuthenticated: false }))
+    );
     await expect(result.current.saveAll()).resolves.toEqual({ kind: 'no-token' });
   });
 
@@ -302,7 +304,7 @@ describe('saveAll — network outcomes', () => {
     expect(result.current.editorRecords['db:100']).toBeDefined();
     expect(result.current.editorRecords['db:100'].dirtyState).toBe('clean');
     expect(result.current.editorRecords['db:200'].annotation._meta?.annotationType).toBe('text');
-    expect(fetchAnnotationsForImage).toHaveBeenCalledWith('42', undefined, 'text', 'tok');
+    expect(fetchAnnotationsForImage).toHaveBeenCalledWith('42', undefined, 'text', true);
   });
 
   it('all-failed: returns failed count + firstError; records stay dirty', async () => {

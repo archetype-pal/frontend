@@ -8,7 +8,7 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import type { AdminHandListItem, AdminScribeListItem } from '@/types/backoffice';
 
 vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ token: 'tok' }),
+  useAuth: () => ({ isAuthenticated: true }),
 }));
 
 const proxyFetchMock = vi.fn();

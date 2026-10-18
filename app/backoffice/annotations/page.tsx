@@ -42,7 +42,7 @@ const ORDERING_FIELDS = {
 
 export default function AnnotationsPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
   const ANNOTATION_TYPES = useMemo(
@@ -187,7 +187,7 @@ export default function AnnotationsPage() {
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list(filters),
     queryFn: () => getGraphs(filters),
-    enabled: !!token,
+    enabled: isAuthenticated,
     placeholderData: keepPreviousData,
   });
 
