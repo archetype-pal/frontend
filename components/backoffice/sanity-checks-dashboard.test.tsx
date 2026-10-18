@@ -5,7 +5,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ token: 'tok' }),
+  useAuth: () => ({ isAuthenticated: true }),
 }));
 
 const getSanityChecksMock = vi.fn();

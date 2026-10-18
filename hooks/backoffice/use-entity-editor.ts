@@ -45,7 +45,7 @@ interface EntityEditorConfig<TDetail, TForm extends object> {
 export function useEntityEditor<TDetail, TForm extends object>(
   config: EntityEditorConfig<TDetail, TForm>
 ) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -57,7 +57,7 @@ export function useEntityEditor<TDetail, TForm extends object>(
   } = useQuery({
     queryKey: config.queryKey,
     queryFn: () => config.fetchFn(config.id),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const [form, setFormState] = useState<TForm | null>(null);

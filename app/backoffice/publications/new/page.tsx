@@ -18,7 +18,7 @@ import { useTranslations } from 'next-intl';
 import { getPublicationRoutes } from '@/lib/publications';
 
 export default function NewPublicationPage() {
-  const { token, user } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const router = useRouter();
   const t = useTranslations('backoffice');
   const [title, setTitle] = useState('');
@@ -43,7 +43,7 @@ export default function NewPublicationPage() {
 
   const createMut = useMutation({
     mutationFn: () => {
-      if (!token) throw new Error('Missing auth token');
+      if (!isAuthenticated) throw new Error('Missing auth token');
 
       return createPublication({
         title,
@@ -169,7 +169,7 @@ export default function NewPublicationPage() {
 
         <Button
           onClick={() => createMut.mutate()}
-          disabled={!token || !title.trim() || createMut.isPending}
+          disabled={!isAuthenticated || !title.trim() || createMut.isPending}
           className="w-full"
         >
           {createMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}

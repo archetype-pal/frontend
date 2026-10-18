@@ -68,13 +68,10 @@ export async function authFetch(
 }
 
 /**
- * Authenticated fetch for BROWSER code, which must not hold the raw auth
- * token (see `lib/auth-token-cookie.ts`). Routes the request through
+ * Authenticated fetch for BROWSER code, which can't read the HttpOnly auth
+ * cookie (see `lib/auth-token-cookie.ts`). Routes the request through
  * `/api/proxy/*`, a same-origin Next.js handler that reads the auth cookie
- * server-side and attaches the `Authorization` header itself. The browser
- * sends that cookie automatically on this same-origin call regardless of
- * whether it's JS-readable, so this keeps working whether or not the cookie
- * is `HttpOnly`.
+ * server-side and attaches the `Authorization` header itself.
  *
  * Server-side code (route handlers, server components) should use
  * `authFetch` with a token from `getServerAuthToken()` instead — calling this
@@ -88,4 +85,20 @@ export async function proxyFetch(path: string, init?: RequestInit): Promise<Resp
   // Drop the trailing slash: Next would 308 `/api/proxy/…/7/` to `…/7`, and the
   // browser re-sends the whole body. The proxy route restores it for Django.
   return fetch(`/api/proxy${path.replace(/\/(?=[?#]|$)/, '')}`, init);
+}
+
+/**
+ * For optional-auth reads that run both in SSR and in the browser. A signed-in
+ * browser caller goes through the proxy so its cookie upgrades the response;
+ * everyone else calls Django directly and stays anonymous — which the "preview
+ * as public" dialog relies on.
+ */
+export async function optionalAuthFetch(
+  path: string,
+  authenticated: boolean,
+  init?: RequestInit
+): Promise<Response> {
+  return authenticated && typeof window !== 'undefined'
+    ? proxyFetch(path, init)
+    : apiFetch(path, init);
 }

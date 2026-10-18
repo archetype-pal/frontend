@@ -44,7 +44,7 @@ type PanelMode = { kind: 'preview' } | { kind: 'edit'; item: CarouselItem } | { 
 
 export default function CarouselPage() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
   const [panel, setPanel] = useState<PanelMode>({ kind: 'preview' });
@@ -58,7 +58,7 @@ export default function CarouselPage() {
   } = useQuery({
     queryKey: backofficeKeys.carousel.all(),
     queryFn: () => getCarouselItems(),
-    enabled: !!token,
+    enabled: isAuthenticated,
   });
 
   const invalidate = useCallback(

@@ -12,11 +12,11 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 export function QualityDashboard() {
   const t = useTranslations('backoffice');
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { data, isFetching, error, refetch } = useQuery({
     queryKey: backofficeKeys.qualityDashboard(),
     queryFn: () => fetchQualityDashboard(),
-    enabled: !!token,
+    enabled: isAuthenticated,
     staleTime: 30_000,
   });
 
