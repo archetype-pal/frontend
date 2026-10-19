@@ -1699,6 +1699,7 @@
       "colType": "Typ",
       "colAuthor": "Autor",
       "colComments": "Kommentare",
+      "commentsLink": "{count, plural, one {# Kommentar} other {# Kommentare}} zu {title}",
       "colCreated": "Erstellt",
       "bulkPublish": "Veröffentlichen",
       "bulkUnpublish": "Veröffentlichung aufheben",

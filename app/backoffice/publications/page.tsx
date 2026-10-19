@@ -130,10 +130,18 @@ export default function PublicationsPage() {
       header: sortableHeader(t('publications.colComments')),
       cell: ({ row }) =>
         row.original.comment_count > 0 ? (
-          <Badge variant="secondary" className="text-xs gap-1">
-            <MessageSquare className="h-3 w-3" />
-            {row.original.comment_count}
-          </Badge>
+          <Link
+            href={`/backoffice/comments?post=${row.original.id}`}
+            aria-label={t('publications.commentsLink', {
+              count: row.original.comment_count,
+              title: row.original.title,
+            })}
+          >
+            <Badge variant="secondary" className="text-xs gap-1 hover:underline">
+              <MessageSquare className="h-3 w-3" />
+              {row.original.comment_count}
+            </Badge>
+          </Link>
         ) : (
           <span className="text-xs text-muted-foreground">0</span>
         ),
