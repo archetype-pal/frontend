@@ -285,6 +285,8 @@ export interface CommentItem {
   id: number;
   post: number;
   post_title: string;
+  parent_author_name: string | null;
+  parent_content: string | null;
   content: string;
   author_name: string;
   author_email: string;

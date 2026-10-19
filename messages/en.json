@@ -1863,6 +1863,7 @@
       "selectAriaLabel": "Select comment by {name}",
       "badgeApproved": "Approved",
       "badgePending": "Pending",
+      "replyTo": "Reply to {name}: “{excerpt}”",
       "approveButton": "Approve",
       "rejectButton": "Reject",
       "singleDeleteTitle": "Delete this comment?",

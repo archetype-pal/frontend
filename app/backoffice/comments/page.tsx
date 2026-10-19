@@ -5,7 +5,16 @@ import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tansta
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
-import { MessageSquare, CheckCircle, XCircle, Trash2, Clock, Filter, Search } from 'lucide-react';
+import {
+  MessageSquare,
+  CheckCircle,
+  XCircle,
+  Trash2,
+  Clock,
+  Filter,
+  Search,
+  CornerDownRight,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,7 +35,7 @@ import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 import { cn } from '@/lib/utils';
-import { sanitizeHtml } from '@/lib/sanitize-html';
+import { sanitizeHtml, stripHtmlToPlainText } from '@/lib/sanitize-html';
 import type { CommentItem } from '@/types/backoffice';
 
 export default function CommentsPage() {
@@ -334,6 +343,20 @@ export default function CommentsPage() {
                   </Button>
                 </div>
               </div>
+              {comment.parent_author_name && (
+                <p className="flex items-center gap-1 pl-8 text-xs text-muted-foreground">
+                  <CornerDownRight className="h-3 w-3 shrink-0" />
+                  <span
+                    className="truncate"
+                    title={stripHtmlToPlainText(comment.parent_content ?? '')}
+                  >
+                    {t('comments.replyTo', {
+                      name: comment.parent_author_name,
+                      excerpt: stripHtmlToPlainText(comment.parent_content ?? ''),
+                    })}
+                  </span>
+                </p>
+              )}
               <div
                 className="publication-body text-sm pl-8"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(comment.content) }}

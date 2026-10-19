@@ -1863,6 +1863,7 @@
       "selectAriaLabel": "Sélectionner le commentaire de {name}",
       "badgeApproved": "Approuvé",
       "badgePending": "En attente",
+      "replyTo": "En réponse à {name} : « {excerpt} »",
       "approveButton": "Approuver",
       "rejectButton": "Rejeter",
       "singleDeleteTitle": "Supprimer ce commentaire ?",

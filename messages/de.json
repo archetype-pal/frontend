@@ -1863,6 +1863,7 @@
       "selectAriaLabel": "Kommentar von {name} auswählen",
       "badgeApproved": "Genehmigt",
       "badgePending": "Ausstehend",
+      "replyTo": "Antwort an {name}: „{excerpt}“",
       "approveButton": "Genehmigen",
       "rejectButton": "Ablehnen",
       "singleDeleteTitle": "Diesen Kommentar löschen?",
