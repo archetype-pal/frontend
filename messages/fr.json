@@ -1864,6 +1864,7 @@
       "badgeApproved": "Approuvé",
       "badgePending": "En attente",
       "replyTo": "En réponse à {name} : « {excerpt} »",
+      "onPost": "sur « <post>{title}</post> »",
       "approveButton": "Approuver",
       "rejectButton": "Rejeter",
       "singleDeleteTitle": "Supprimer ce commentaire ?",

@@ -1864,6 +1864,7 @@
       "badgeApproved": "Genehmigt",
       "badgePending": "Ausstehend",
       "replyTo": "Antwort an {name}: „{excerpt}“",
+      "onPost": "zu „<post>{title}</post>“",
       "approveButton": "Genehmigen",
       "rejectButton": "Ablehnen",
       "singleDeleteTitle": "Diesen Kommentar löschen?",

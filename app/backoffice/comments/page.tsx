@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
@@ -303,8 +304,18 @@ export default function CommentsPage() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      on &ldquo;{comment.post_title}&rdquo; &middot;{' '}
-                      {new Date(comment.created_at).toLocaleDateString()}
+                      {t.rich('comments.onPost', {
+                        title: comment.post_title,
+                        post: (chunks) => (
+                          <Link
+                            href={`/backoffice/publications/${comment.post_slug}`}
+                            className="text-primary hover:underline"
+                          >
+                            {chunks}
+                          </Link>
+                        ),
+                      })}{' '}
+                      &middot; {new Date(comment.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
