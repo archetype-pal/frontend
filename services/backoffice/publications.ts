@@ -8,6 +8,7 @@ import type {
   CarouselItem,
 } from '@/types/backoffice';
 import { normalizeCarouselImagePath } from '@/utils/api';
+import { listAllPages } from '@/lib/backoffice/list-all-pages';
 
 // ── Publications ────────────────────────────────────────────────────────
 
@@ -28,6 +29,10 @@ export function getPublications(params?: {
   ordering?: string;
 }) {
   return publicationsCrud.list(params);
+}
+
+export function getAllPublications() {
+  return listAllPages((page) => getPublications({ ...page, ordering: 'title' }));
 }
 
 export const getPublication = publicationsCrud.get;

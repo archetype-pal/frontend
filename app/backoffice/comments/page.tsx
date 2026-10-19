@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { Suspense, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
@@ -23,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { DataPagination } from '@/components/ui/data-pagination';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
+import { PublicationCombobox } from '@/components/backoffice/common/publication-combobox';
 import {
   getComments,
   approveComment,
@@ -40,7 +42,18 @@ import { sanitizeHtml, stripHtmlToPlainText } from '@/lib/sanitize-html';
 import type { CommentItem } from '@/types/backoffice';
 
 export default function CommentsPage() {
+  return (
+    <Suspense>
+      <CommentsPageContent />
+    </Suspense>
+  );
+}
+
+function CommentsPageContent() {
   const t = useTranslations('backoffice');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const postId = Number(searchParams.get('post')) || null;
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('all');
@@ -58,6 +71,7 @@ export default function CommentsPage() {
     offset: page * pageSize,
     ...(search ? { search } : {}),
     ...(filter !== 'all' ? { is_approved: filter === 'approved' } : {}),
+    ...(postId ? { post: postId } : {}),
   };
 
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
@@ -142,6 +156,16 @@ export default function CommentsPage() {
     setBulkAction(null);
   };
 
+  const setPostFilter = (id: number | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id === null) params.delete('post');
+    else params.set('post', String(id));
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : '?', { scroll: false });
+    selection.clear();
+    setPage(0);
+  };
+
   const openBulkConfirm = (action: 'approve' | 'reject' | 'delete') => {
     setBulkAction(action);
     setBulkConfirmOpen(true);
@@ -183,6 +207,7 @@ export default function CommentsPage() {
             }
           </Button>
         ))}
+        <PublicationCombobox value={postId} onChange={setPostFilter} />
         <div className="relative ml-auto w-full max-w-sm">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
