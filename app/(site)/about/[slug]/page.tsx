@@ -36,7 +36,7 @@ export default async function AboutPage({ params }: { params: Promise<{ slug: st
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
           />
 
-          <AboutSidebar />
+          <AboutSidebar menuHeading={page.menu_heading} />
         </div>
       </div>
     </div>

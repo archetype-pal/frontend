@@ -24,6 +24,7 @@ import {
   hasEnabledSearchCategory,
   hasInvalidThemeColor,
   normalizeSectionOrder,
+  type NavKey,
   type SiteFeaturesConfig,
   type SectionKey,
   type FeatureKey,
@@ -31,6 +32,8 @@ import {
   type ThemeColors,
 } from '@/lib/site-features';
 import type { ResultType } from '@/lib/search-types';
+import { getMenuHeadings } from '@/services/backoffice/pages';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 async function fetchSiteFeatures(): Promise<SiteFeaturesConfig> {
   const res = await fetch('/api/app-settings');
@@ -68,6 +71,15 @@ export default function SiteFeaturesPage() {
   } = useQuery({
     queryKey: ['site-features'],
     queryFn: fetchSiteFeatures,
+  });
+
+  // Custom menu headings are sortable alongside the sections. If this read
+  // fails they are missing from the editor, and reordering then drops their
+  // positions (the header appends them at the end).
+  const { data: menuHeadings = [] } = useQuery({
+    queryKey: backofficeKeys.pages.headings(),
+    queryFn: () => getMenuHeadings(),
+    enabled: isAuthenticated,
   });
 
   const [config, setConfig] = useState<SiteFeaturesConfig>(defaults);
@@ -127,7 +139,7 @@ export default function SiteFeaturesPage() {
     setDirty(true);
   };
 
-  const handleSectionOrderChange = (sectionOrder: SectionKey[]) => {
+  const handleSectionOrderChange = (sectionOrder: NavKey[]) => {
     setConfig((prev) => ({
       ...prev,
       sectionOrder: normalizeSectionOrder(sectionOrder),
@@ -192,6 +204,7 @@ export default function SiteFeaturesPage() {
       <SectionToggles
         sections={config.sections}
         sectionOrder={config.sectionOrder}
+        menuHeadings={menuHeadings}
         onChange={handleSectionChange}
         onOrderChange={handleSectionOrderChange}
       />

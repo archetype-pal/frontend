@@ -22,10 +22,13 @@ let responseConfig: SiteFeaturesConfig;
 beforeEach(() => {
   getStatus = 200;
   responseConfig = getDefaultConfig();
-  vi.stubGlobal('fetch', async () =>
-    getStatus === 200
-      ? new Response(JSON.stringify(responseConfig), { status: 200 })
-      : new Response(JSON.stringify({ error: 'unavailable' }), { status: getStatus })
+  vi.stubGlobal('fetch', async (input: RequestInfo | URL) =>
+    // The page also lists the custom menu headings for the nav-order editor.
+    String(input).startsWith('/api/menu-headings')
+      ? new Response('[]', { status: 200 })
+      : getStatus === 200
+        ? new Response(JSON.stringify(responseConfig), { status: 200 })
+        : new Response(JSON.stringify({ error: 'unavailable' }), { status: getStatus })
   );
 });
 

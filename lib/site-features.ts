@@ -17,6 +17,31 @@ export type SectionKey =
   | 'about';
 
 /**
+ * An admin-created menu heading (a `MenuHeading` in the backend) placed in the
+ * nav order next to the built-in sections. Its slug is immutable on the
+ * backend, so the key stays valid for the heading's lifetime.
+ */
+export type HeadingNavKey = `heading:${string}`;
+
+/** One entry of the top-level nav order: a built-in section or a custom heading. */
+export type NavKey = SectionKey | HeadingNavKey;
+
+const HEADING_NAV_KEY_RE = /^heading:[a-z0-9_-]+$/;
+
+export function headingNavKey(slug: string): HeadingNavKey {
+  return `heading:${slug}`;
+}
+
+export function isHeadingNavKey(key: string): key is HeadingNavKey {
+  return HEADING_NAV_KEY_RE.test(key);
+}
+
+/** The heading slug a `heading:<slug>` key refers to. */
+export function headingSlugFromNavKey(key: HeadingNavKey): string {
+  return key.slice('heading:'.length);
+}
+
+/**
  * Admin-controlled flags for optional site *features* — as opposed to
  * `SectionKey`, which is a top-level navigation entry (labelled, drag-sortable,
  * routed). A feature flag hides a surface inside pages that keep existing; it
@@ -58,7 +83,7 @@ export type BrandingConfig = {
 
 export type SiteFeaturesConfig = {
   sections: Record<SectionKey, boolean>;
-  sectionOrder: SectionKey[];
+  sectionOrder: NavKey[];
   features: Record<FeatureKey, boolean>;
   searchCategories: Record<ResultType, SearchCategoryConfig>;
   theme: ThemeColors;
@@ -251,13 +276,20 @@ export function hasEnabledSearchCategory(config: SearchCategoryConfigOwner): boo
   return getEnabledSearchCategories(config).length > 0;
 }
 
-export function normalizeSectionOrder(order: readonly SectionKey[] | undefined): SectionKey[] {
-  const ordered: SectionKey[] = [];
-  const seen = new Set<SectionKey>();
+/**
+ * Canonicalize a stored nav order: known built-in sections and well-formed
+ * `heading:<slug>` keys are kept (first occurrence wins), anything else is
+ * dropped, and missing built-in sections are appended in canonical order.
+ * Whether a heading still exists isn't known here — `resolveNavOrder` does that.
+ */
+export function normalizeSectionOrder(order: readonly string[] | undefined): NavKey[] {
+  const ordered: NavKey[] = [];
+  const seen = new Set<string>();
 
   for (const key of order ?? []) {
-    if (ALL_SECTION_KEYS.includes(key) && !seen.has(key)) {
-      ordered.push(key);
+    if (seen.has(key)) continue;
+    if ((ALL_SECTION_KEYS as string[]).includes(key) || isHeadingNavKey(key)) {
+      ordered.push(key as NavKey);
       seen.add(key);
     }
   }
@@ -269,6 +301,27 @@ export function normalizeSectionOrder(order: readonly SectionKey[] | undefined):
   }
 
   return ordered;
+}
+
+/**
+ * The nav order against the headings that exist now: keys of deleted headings
+ * are dropped, and headings the stored order doesn't mention yet (created since
+ * the order was last saved) are appended at the end.
+ */
+export function resolveNavOrder(
+  order: readonly string[] | undefined,
+  headingSlugs: readonly string[]
+): NavKey[] {
+  const existing = new Set(headingSlugs);
+  const resolved = normalizeSectionOrder(order).filter(
+    (key) => !isHeadingNavKey(key) || existing.has(headingSlugFromNavKey(key))
+  );
+  const placed = new Set<string>(resolved);
+  for (const slug of headingSlugs) {
+    const key = headingNavKey(slug);
+    if (!placed.has(key)) resolved.push(key);
+  }
+  return resolved;
 }
 
 const DEFAULT_COLUMNS: Record<ResultType, string[]> = Object.fromEntries(

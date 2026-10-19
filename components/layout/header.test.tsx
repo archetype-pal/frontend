@@ -1,8 +1,9 @@
 /** @vitest-environment jsdom */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { PageListItem } from '@/lib/pages';
 import type { ResultType } from '@/lib/search-types';
 import Header from './header';
 
@@ -11,6 +12,10 @@ const mockState = vi.hoisted(() => ({
   push: vi.fn(),
   loadGlobalSuggestions: vi.fn(),
   getServerSuggestions: vi.fn(async () => []),
+  siteFeatures: {
+    sectionOrder: ['search'] as string[],
+    enabledSections: ['search'] as string[],
+  },
 }));
 
 vi.mock('next/navigation', () => ({
@@ -51,8 +56,12 @@ vi.mock('@/contexts/model-labels-context', () => ({
 
 vi.mock('@/contexts/site-features-context', () => ({
   useSiteFeatures: () => ({
-    config: { sectionOrder: ['search'], sections: { search: true }, searchCategories: {} },
-    isSectionEnabled: (key: string) => key === 'search',
+    config: {
+      sectionOrder: mockState.siteFeatures.sectionOrder,
+      sections: { search: true },
+      searchCategories: {},
+    },
+    isSectionEnabled: (key: string) => mockState.siteFeatures.enabledSections.includes(key),
     enabledCategories: mockState.enabledCategories,
   }),
 }));
@@ -65,17 +74,31 @@ vi.mock('@/contexts/search-context', () => ({
   }),
 }));
 
-function renderHeader() {
+function renderHeader(props: React.ComponentProps<typeof Header> = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <Header />
+      <Header {...props} />
     </QueryClientProvider>
   );
 }
 
+function listItem(slug: string, title: string, menuHeading: string | null): PageListItem {
+  return {
+    id: 0,
+    slug,
+    title: { en: title, fr: '', de: '' },
+    status: 'Published',
+    menu_heading: menuHeading,
+    order: 0,
+    include_in_quick_link: false,
+    updated_at: '',
+  };
+}
+
 beforeEach(() => {
   mockState.enabledCategories = ['images'];
+  mockState.siteFeatures = { sectionOrder: ['search'], enabledSections: ['search'] };
   mockState.push.mockClear();
   mockState.loadGlobalSuggestions.mockClear();
   mockState.getServerSuggestions.mockClear();
@@ -97,5 +120,57 @@ describe('<Header> search entry points', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(mockState.push).toHaveBeenCalledWith('/search/images?keyword=Kelso');
+  });
+});
+
+describe('<Header> static page menus', () => {
+  const help = { id: 1, slug: 'help', title: { en: 'Help', fr: 'Aide', de: '' } };
+  const pages = [
+    listItem('about-the-project', 'About the Project', null),
+    listItem('how-to-use', 'How to use', 'help'),
+    listItem('orphan', 'Orphan', 'deleted-heading'),
+  ];
+
+  function menuLinks(trigger: string) {
+    const item = screen.getByRole('button', { name: trigger }).closest('li')!;
+    return within(item)
+      .getAllByRole('link')
+      .map((link) => link.getAttribute('href'));
+  }
+
+  it('groups pages under their heading, keeping URLs under /about/', () => {
+    mockState.siteFeatures = {
+      sectionOrder: ['heading:help', 'about'],
+      enabledSections: ['about'],
+    };
+    renderHeader({ pages, menuHeadings: [help] });
+
+    expect(menuLinks('Help')).toEqual(['/about/how-to-use']);
+    // A page whose heading no longer exists falls back under About.
+    expect(menuLinks('about')).toEqual(['/about/about-the-project', '/about/orphan']);
+  });
+
+  it('places headings by the nav order and appends unplaced ones', () => {
+    mockState.siteFeatures = {
+      sectionOrder: ['heading:help', 'about'],
+      enabledSections: ['about'],
+    };
+    const events = { id: 2, slug: 'events', title: { en: 'Events', fr: '', de: '' } };
+    renderHeader({
+      pages: [...pages, listItem('past-events', 'Past events', 'events')],
+      menuHeadings: [help, events],
+    });
+
+    const triggers = screen
+      .getAllByRole('button')
+      .map((button) => button.textContent)
+      .filter((text) => ['Help', 'about', 'Events'].includes(text ?? ''));
+    expect(triggers).toEqual(['Help', 'about', 'Events']);
+  });
+
+  it('hides a heading with no published page', () => {
+    mockState.siteFeatures = { sectionOrder: ['heading:help'], enabledSections: [] };
+    renderHeader({ pages: [], menuHeadings: [help] });
+    expect(screen.queryByRole('button', { name: 'Help' })).toBeNull();
   });
 });
