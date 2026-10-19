@@ -22,13 +22,11 @@ import { fetchAllographSummaries } from '@/services/manuscripts';
 import {
   BookOpen,
   Calendar,
-  Download,
   MapPin,
   PenTool,
   User,
   FileText,
   ImageIcon,
-  Images,
   Grid3X3,
   ListChecks,
   Loader2,
@@ -53,6 +51,7 @@ import {
   useThumbDensity,
   type ThumbDensity,
 } from '@/components/manuscript/thumb-density';
+import { GallerySelectionBar } from '@/components/manuscript/annotation-gallery-selection-bar';
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { isSearchCategoryEnabled } from '@/lib/site-features';
@@ -264,7 +263,6 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
   const [density, changeDensity] = useThumbDensity();
   const selection = useSelectionSet<number>();
   const selectGraph = useRangeSelect(selection);
-  const nothingSelected = selection.selected.size === 0;
   const { addItem, isInCollection } = useCollection();
   const addSelectedToCollection = useCallback(
     (candidates: HandGraph[]) => {
@@ -555,50 +553,6 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                 <DensityControl density={density} onChange={changeDensity} />
               </div>
 
-              {/* Always rendered, so the first selection does not push the grid down. */}
-              <div className="sticky top-[var(--site-header-h,0px)] z-30 flex flex-wrap items-center gap-2 rounded-md border bg-card/95 px-4 py-3 text-sm shadow-sm backdrop-blur">
-                <span className="rounded-full bg-primary/10 px-2.5 py-1 font-medium text-primary">
-                  {t('graphs.selectedCount', { count: selection.selected.size })}
-                </span>
-                <Button
-                  size="sm"
-                  className="gap-1.5"
-                  disabled={nothingSelected}
-                  onClick={() => addSelectedToCollection(graphs)}
-                >
-                  <Star className="h-4 w-4" />
-                  {t('graphs.addToCollection')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5"
-                  disabled={nothingSelected}
-                  onClick={sendSelectionToLightbox}
-                >
-                  <Images className="h-4 w-4" />
-                  {t('graphs.lightbox')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5"
-                  disabled={nothingSelected}
-                  onClick={exportSelected}
-                >
-                  <Download className="h-4 w-4" />
-                  {t('graphs.exportCsv')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={nothingSelected}
-                  onClick={selection.clear}
-                >
-                  {t('graphs.clearSelection')}
-                </Button>
-              </div>
-
               {/* Allographs List navigation */}
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-2">
@@ -692,6 +646,14 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                   );
                 })}
               </div>
+
+              <GallerySelectionBar
+                shownCount={selection.selected.size}
+                onAddToCollection={() => addSelectedToCollection(graphs)}
+                onSendToLightbox={sendSelectionToLightbox}
+                onExport={exportSelected}
+                onClear={selection.clear}
+              />
             </div>
           ) : (
             <div className="rounded-lg border bg-card p-6">

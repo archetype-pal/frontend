@@ -3123,12 +3123,7 @@
       "openGraph": "{allograph}, graphème {id}",
       "selectAll": "Tout sélectionner",
       "unselectAll": "Tout désélectionner",
-      "addSelected": "Ajouter la sélection",
-      "selectedCount": "{count} sélectionné(s)",
-      "addToCollection": "Ajouter à la collection",
-      "lightbox": "Visionneuse",
-      "exportCsv": "Exporter en CSV",
-      "clearSelection": "Effacer"
+      "addSelected": "Ajouter la sélection"
     },
     "metadata": {
       "fallbackTitle": "Main n°{id}",

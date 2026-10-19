@@ -3123,12 +3123,7 @@
       "openGraph": "{allograph}, graph {id}",
       "selectAll": "Select all",
       "unselectAll": "Unselect all",
-      "addSelected": "Add selected",
-      "selectedCount": "{count} selected",
-      "addToCollection": "Add to collection",
-      "lightbox": "Lightbox",
-      "exportCsv": "Export as CSV",
-      "clearSelection": "Clear"
+      "addSelected": "Add selected"
     },
     "metadata": {
       "fallbackTitle": "Hand #{id}",

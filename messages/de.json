@@ -3123,12 +3123,7 @@
       "openGraph": "{allograph}, Graph {id}",
       "selectAll": "Alle auswählen",
       "unselectAll": "Alle abwählen",
-      "addSelected": "Auswahl hinzufügen",
-      "selectedCount": "{count} ausgewählt",
-      "addToCollection": "Zur Sammlung hinzufügen",
-      "lightbox": "Lightbox",
-      "exportCsv": "Als CSV exportieren",
-      "clearSelection": "Auswahl aufheben"
+      "addSelected": "Auswahl hinzufügen"
     },
     "metadata": {
       "fallbackTitle": "Hand Nr. {id}",

@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { HandDetail, HandImage, HandManuscript } from '@/types/hand-detail';
@@ -176,8 +176,8 @@ describe('HandViewer Graphs tab', () => {
       expect(screen.getByRole('heading', { name: headings[1] })).toBeTruthy();
 
       fireEvent.click(screen.getByRole('button', { name: 'Select Allograph 11, graph 101' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Add to collection' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Export as CSV' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Add 1 to collection' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
 
       expect(addItem).toHaveBeenCalledTimes(1);
       expect(addItem.mock.calls[0][0]).toMatchObject({ id: 101, hand_name: 'Main Hand' });
@@ -250,20 +250,15 @@ describe('HandViewer Graphs tab', () => {
     ).toBeTruthy();
   });
 
-  it('shows the selection bar before anything is selected, with its actions disabled', async () => {
+  it('shows the selection bar only while something is selected', async () => {
     renderGraphsTab();
     const [firstToggle] = await screen.findAllByRole('button', { name: TOGGLE });
-    const addButton = screen.getByRole('button', {
-      name: 'Add to collection',
-    }) as HTMLButtonElement;
-
-    expect(screen.getByText('0 selected')).toBeTruthy();
-    expect(addButton.disabled).toBe(true);
+    expect(screen.queryByRole('region', { name: 'Selection' })).toBeNull();
 
     fireEvent.click(firstToggle);
 
-    expect(screen.getByText('1 selected')).toBeTruthy();
-    expect(addButton.disabled).toBe(false);
+    const bar = screen.getByRole('region', { name: 'Selection' });
+    expect(within(bar).getByText('1 selected')).toBeTruthy();
   });
 
   it('adds only the selected graphs to the collection, as the image Annotations tab does', async () => {
@@ -272,7 +267,7 @@ describe('HandViewer Graphs tab', () => {
 
     fireEvent.click(firstToggle);
     expect(screen.getByText('1 selected')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Add to collection' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add 1 to collection' }));
 
     expect(addItem).toHaveBeenCalledTimes(1);
     expect(addItem).toHaveBeenCalledWith({
@@ -345,7 +340,7 @@ describe('HandViewer Graphs tab', () => {
     const [firstToggle] = await screen.findAllByRole('button', { name: TOGGLE });
 
     fireEvent.click(firstToggle);
-    fireEvent.click(screen.getByRole('button', { name: 'Export as CSV' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
 
     expect(downloadCsv).toHaveBeenCalledWith(
       'hand-5-graphs.csv',
