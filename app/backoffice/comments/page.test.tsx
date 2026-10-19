@@ -21,6 +21,8 @@ function comment(id: number) {
     id,
     post: 1,
     post_title: 'Post',
+    parent_author_name: null as string | null,
+    parent_content: null as string | null,
     content: `Comment ${id}`,
     author_name: `Author ${id}`,
     author_email: '',
@@ -91,5 +93,25 @@ describe('<CommentsPage>', () => {
 
     expect((await screen.findByText('Quoted')).tagName).toBe('I');
     expect(document.body.querySelector('script')).toBeNull();
+  });
+
+  it('names the comment a reply answers and leaves top level comments alone', async () => {
+    getComments.mockResolvedValue({
+      count: 2,
+      next: null,
+      previous: null,
+      results: [
+        { ...comment(1), content: '<p>Which hand?</p>' },
+        {
+          ...comment(2),
+          parent_author_name: 'Author 1',
+          parent_content: '<p>Which <i>hand</i>?</p>',
+        },
+      ],
+    });
+    renderPage();
+
+    expect(await screen.findByText('Reply to Author 1: “Which hand?”')).not.toBeNull();
+    expect(screen.getAllByText(/^Reply to/)).toHaveLength(1);
   });
 });
