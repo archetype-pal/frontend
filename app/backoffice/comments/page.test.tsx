@@ -5,17 +5,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import CommentsPage from './page';
 
-const { getComments } = vi.hoisted(() => ({ getComments: vi.fn() }));
+const { getComments, getAllPublications, routerReplace, urlParams } = vi.hoisted(() => ({
+  getComments: vi.fn(),
+  getAllPublications: vi.fn(),
+  routerReplace: vi.fn(),
+  urlParams: { current: new URLSearchParams() },
+}));
 
 vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
-  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: vi.fn(), replace: routerReplace }),
+  useSearchParams: () => urlParams.current,
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/services/backoffice/publications', () => ({
   getComments,
-  getAllPublications: vi.fn(async () => []),
+  getAllPublications,
   approveComment: vi.fn(),
   rejectComment: vi.fn(),
   deleteComment: vi.fn(),
@@ -50,6 +55,11 @@ function renderPage() {
 
 describe('<CommentsPage>', () => {
   beforeEach(() => {
+    urlParams.current = new URLSearchParams();
+    routerReplace.mockReset();
+    getAllPublications.mockResolvedValue([
+      { id: 7, title: 'Scribal hands', slug: 'scribal-hands', comment_count: 3 },
+    ]);
     getComments.mockReset();
     getComments.mockImplementation(
       async ({ limit, offset }: { limit: number; offset: number }) => ({
@@ -127,5 +137,36 @@ describe('<CommentsPage>', () => {
 
     const link = await screen.findByRole('link', { name: 'Post' });
     expect(link.getAttribute('href')).toBe('/backoffice/publications/a-post');
+  });
+
+  it('shows only the comments on the post named in the address', async () => {
+    urlParams.current = new URLSearchParams('post=7');
+    renderPage();
+
+    await waitFor(() =>
+      expect(getComments).toHaveBeenLastCalledWith({ limit: 20, offset: 0, post: 7 })
+    );
+    expect((await screen.findByRole('combobox', { name: 'Filter by post' })).textContent).toContain(
+      'Scribal hands'
+    );
+  });
+
+  it('puts the chosen post in the address', async () => {
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Filter by post' }));
+    fireEvent.click(await screen.findByRole('option', { name: /Scribal hands/ }));
+
+    expect(routerReplace).toHaveBeenCalledWith('?post=7', { scroll: false });
+  });
+
+  it('takes the post out of the address when All posts is chosen', async () => {
+    urlParams.current = new URLSearchParams('post=7');
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Filter by post' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'All posts' }));
+
+    expect(routerReplace).toHaveBeenCalledWith('?', { scroll: false });
   });
 });
