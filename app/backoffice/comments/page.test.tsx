@@ -21,6 +21,7 @@ function comment(id: number) {
     id,
     post: 1,
     post_title: 'Post',
+    post_slug: 'a-post',
     parent_author_name: null as string | null,
     parent_content: null as string | null,
     content: `Comment ${id}`,
@@ -113,5 +114,13 @@ describe('<CommentsPage>', () => {
 
     expect(await screen.findByText('Reply to Author 1: “Which hand?”')).not.toBeNull();
     expect(screen.getAllByText(/^Reply to/)).toHaveLength(1);
+  });
+
+  it('links each comment to its post in the backoffice', async () => {
+    getComments.mockResolvedValue({ count: 1, next: null, previous: null, results: [comment(1)] });
+    renderPage();
+
+    const link = await screen.findByRole('link', { name: 'Post' });
+    expect(link.getAttribute('href')).toBe('/backoffice/publications/a-post');
   });
 });
