@@ -35,6 +35,7 @@ import { graphToCollectionItem } from '@/lib/collection-item';
 import { downloadCsv, graphsToCsv } from '@/lib/graph-csv';
 import { openLightboxWithItems } from '@/lib/lightbox-utils';
 import { useSelectionSet } from '@/hooks/use-selection-set';
+import { useGraphCollection } from '@/hooks/manuscript/use-graph-collection';
 import { useCollection } from '@/contexts/collection-context';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -192,13 +193,12 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
 
   const [density, changeDensity] = useThumbDensity();
   const selection = useSelectionSet<number>();
-  const { addItem, removeItem, isInCollection, isHydrated } = useCollection();
-  const addSelectedToCollection = useCallback(() => {
-    for (const g of graphs) {
-      if (!selection.selected.has(g.id) || isInCollection(g.id, 'graph')) continue;
-      addItem(g.collection_item);
-    }
-  }, [addItem, graphs, isInCollection, selection.selected]);
+  const { isInCollection, isHydrated } = useCollection();
+  const { addGraphs, toggleGraph } = useGraphCollection();
+  const addSelectedToCollection = () => {
+    addGraphs(graphs.filter((g) => selection.selected.has(g.id)).map((g) => g.collection_item));
+    selection.clear();
+  };
   const exportSelected = useCallback(() => {
     const locusByImage = new Map(images.map((img) => [img.id, img.locus ?? '']));
     const rows = graphs
@@ -256,8 +256,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
       has: (graphId) => isInCollection(graphId, 'graph'),
       toggle: (g) => {
         const handGraph = handGraphById.get(g.id);
-        if (isInCollection(g.id, 'graph')) removeItem(g.id, 'graph');
-        else if (handGraph) addItem(handGraph.collection_item);
+        if (handGraph) toggleGraph(handGraph.collection_item);
       },
     },
   };

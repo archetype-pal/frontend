@@ -188,8 +188,8 @@ describe('HandViewer Graphs tab', () => {
       expect(screen.getByRole('heading', { name: headings[1] })).toBeTruthy();
 
       fireEvent.click(screen.getByRole('button', { name: 'Select Allograph 11 graph 101' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Add 1 to collection' }));
       fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Add 1 to collection' }));
 
       expect(addItem).toHaveBeenCalledTimes(1);
       expect(addItem.mock.calls[0][0]).toMatchObject({ id: 101, hand_name: 'Main Hand' });
