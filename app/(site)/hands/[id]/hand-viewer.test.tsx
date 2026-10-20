@@ -69,7 +69,7 @@ vi.mock('@/lib/graph-csv', async (importOriginal) => ({
 vi.mock('@/hooks/use-iiif-thumbnail', () => ({
   useIiifThumbnail: (infoUrl: string, _coordinates: string, maxSize?: number) => {
     thumbSize(maxSize);
-    return { src: infoUrl ? 'https://example.test/crop.jpg' : null, failed: false };
+    return { src: infoUrl ? `${infoUrl}#crop` : null, failed: false };
   },
 }));
 
@@ -77,11 +77,12 @@ vi.mock('@/hooks/use-iiif-thumbnail', () => ({
 const view = vi.hoisted(() => ({ near: true }));
 vi.mock('@/hooks/use-in-view', () => ({ useInView: () => view.near }));
 
+const collection = vi.hoisted(() => ({ ids: new Set<number>(), removeItem: vi.fn() }));
 vi.mock('@/contexts/collection-context', () => ({
   useCollection: () => ({
     addItem,
-    removeItem: vi.fn(),
-    isInCollection: () => false,
+    removeItem: collection.removeItem,
+    isInCollection: (id: number) => collection.ids.has(id),
     isHydrated: true,
   }),
 }));
@@ -115,10 +116,10 @@ const MANUSCRIPT: HandManuscript = { id: 22, display_label: 'Cotton Ch. 1' };
 // A thumbnail's select toggle, named after its graph; never a group's "Select all".
 const TOGGLE = /^Select .+ graph \d+$/;
 
-function viewer() {
+function viewer(images = IMAGES) {
   return (
     <SiteFeaturesProvider initialConfig={getDefaultConfig()}>
-      <HandViewer hand={HAND} images={IMAGES} scribe={null} manuscript={MANUSCRIPT} />
+      <HandViewer hand={HAND} images={images} scribe={null} manuscript={MANUSCRIPT} />
     </SiteFeaturesProvider>
   );
 }
@@ -130,6 +131,8 @@ function renderGraphsTab() {
 describe('HandViewer Graphs tab', () => {
   beforeEach(() => {
     addItem.mockClear();
+    collection.ids.clear();
+    collection.removeItem.mockClear();
     downloadCsv.mockClear();
     thumbSize.mockClear();
     window.localStorage.clear();
@@ -358,5 +361,54 @@ describe('HandViewer Graphs tab', () => {
       'id,allograph,hand,described,components,features,positions,image,locus\n' +
         '101,"a, Insular",Main Hand,no,,,,42,face'
     );
+  });
+
+  it('links and crops each graph from its own image', async () => {
+    const dorse = {
+      ...IMAGES[0],
+      id: 43,
+      iiif_image: 'https://example.test/iiif/dorse.jp2',
+      locus: 'dorse',
+    };
+    apiFetch.mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () =>
+        url.includes('/graphs/')
+          ? [GRAPHS[0], { ...GRAPHS[0], id: 105, item_image: 43 }]
+          : ALLOGRAPHS,
+    }));
+    render(viewer([...IMAGES, dorse]));
+
+    const face = await screen.findByRole('link', {
+      name: 'a, Insular, graph 101, open in the image viewer',
+    });
+    const back = screen.getByRole('link', {
+      name: 'a, Insular, graph 105, open in the image viewer',
+    });
+
+    expect(face.getAttribute('href')).toBe('/manuscripts/22/images/42?graph=101');
+    expect(back.getAttribute('href')).toBe('/manuscripts/22/images/43?graph=105');
+    expect(face.querySelector('img')?.getAttribute('src')).toBe(
+      'https://example.test/iiif/face.jp2/info.json#crop'
+    );
+    expect(back.querySelector('img')?.getAttribute('src')).toBe(
+      'https://example.test/iiif/dorse.jp2/info.json#crop'
+    );
+  });
+
+  it('adds one graph to the collection with its star, and takes it out again', async () => {
+    const { rerender } = renderGraphsTab();
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Add graph 101 to your collection' })
+    );
+    expect(addItem).toHaveBeenCalledTimes(1);
+    expect(addItem.mock.calls[0][0]).toMatchObject({ id: 101, type: 'graph', locus: 'face' });
+
+    collection.ids.add(101);
+    rerender(viewer());
+    fireEvent.click(screen.getByRole('button', { name: 'Remove graph 101 from your collection' }));
+
+    expect(collection.removeItem).toHaveBeenCalledWith(101, 'graph');
   });
 });
