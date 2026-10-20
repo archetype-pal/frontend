@@ -77,11 +77,18 @@ vi.mock('@/hooks/use-iiif-thumbnail', () => ({
 const view = vi.hoisted(() => ({ near: true }));
 vi.mock('@/hooks/use-in-view', () => ({ useInView: () => view.near }));
 
-const collection = vi.hoisted(() => ({ ids: new Set<number>(), removeItem: vi.fn() }));
+const collection = vi.hoisted(() => ({
+  ids: new Set<number>(),
+  removeItem: vi.fn(),
+  removeItems: vi.fn(),
+}));
+const toastMock = vi.hoisted(() => ({ success: vi.fn(), info: vi.fn() }));
+vi.mock('sonner', () => ({ toast: toastMock }));
 vi.mock('@/contexts/collection-context', () => ({
   useCollection: () => ({
     addItem,
     removeItem: collection.removeItem,
+    removeItems: collection.removeItems,
     isInCollection: (id: number) => collection.ids.has(id),
     isHydrated: true,
   }),
@@ -133,6 +140,9 @@ describe('HandViewer Graphs tab', () => {
     addItem.mockClear();
     collection.ids.clear();
     collection.removeItem.mockClear();
+    collection.removeItems.mockClear();
+    toastMock.success.mockClear();
+    toastMock.info.mockClear();
     downloadCsv.mockClear();
     thumbSize.mockClear();
     window.localStorage.clear();
@@ -410,5 +420,53 @@ describe('HandViewer Graphs tab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove graph 101 from your collection' }));
 
     expect(collection.removeItem).toHaveBeenCalledWith(101, 'graph');
+  });
+
+  it('says when the star adds or removes a graph, and undoes it from the message', async () => {
+    const { rerender } = renderGraphsTab();
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Add graph 101 to your collection' })
+    );
+    const [added, addedOptions] = toastMock.success.mock.calls[0];
+    expect(added).toBe('Added graph #101 to your collection.');
+    addedOptions.action.onClick();
+    expect(collection.removeItem).toHaveBeenCalledWith(101, 'graph');
+
+    collection.ids.add(101);
+    rerender(viewer());
+    fireEvent.click(screen.getByRole('button', { name: 'Remove graph 101 from your collection' }));
+    const [removed, removedOptions] = toastMock.success.mock.calls[1];
+    expect(removed).toBe('Removed graph #101 from your collection.');
+    removedOptions.action.onClick();
+    expect(addItem).toHaveBeenLastCalledWith(expect.objectContaining({ id: 101, type: 'graph' }));
+  });
+
+  it('says how many graphs the bar added, clears the ticks, and undoes it from the message', async () => {
+    collection.ids.add(102);
+    renderGraphsTab();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Select a, Insular graph 101' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select b, Caroline graph 102' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add 2 to collection' }));
+
+    expect(addItem).toHaveBeenCalledTimes(1);
+    expect(addItem.mock.calls[0][0]).toMatchObject({ id: 101, type: 'graph' });
+    expect(screen.queryByRole('region', { name: 'Selection' })).toBeNull();
+    const [message, options] = toastMock.success.mock.calls[0];
+    expect(message).toBe('Added 1 graph to your collection (1 already there).');
+    options.action.onClick();
+    expect(collection.removeItems).toHaveBeenCalledWith([{ id: 101, type: 'graph' }]);
+  });
+
+  it('says so when every selected graph is already in the collection', async () => {
+    collection.ids.add(101);
+    renderGraphsTab();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Select a, Insular graph 101' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add 1 to collection' }));
+
+    expect(addItem).not.toHaveBeenCalled();
+    expect(toastMock.info).toHaveBeenCalledWith('That graph is already in your collection.');
   });
 });
