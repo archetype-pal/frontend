@@ -24,9 +24,9 @@ import { GALLERY_SCROLL_MARGIN } from '@/components/manuscript/annotation-galler
 /** What every row and graph shares, provided once by the gallery. */
 export interface GalleryRowsContextValue {
   density: ThumbDensity;
-  iiifImage: string;
+  iiifImage: (graph: BackendGraph) => string;
   /** The image viewer; a graph opens there with `?graph=<id>`. */
-  viewerHref: string;
+  viewerHref: (graph: BackendGraph) => string;
   canEdit: boolean;
   annotatingMode: boolean;
   selection: SelectionSet<number>;
@@ -354,7 +354,7 @@ function GraphThumb({
             </button>
           ) : (
             <Link
-              href={`${viewerHref}?graph=${graph.id}`}
+              href={`${viewerHref(graph)}?graph=${graph.id}`}
               data-thumb-focusable
               aria-label={t('openThumb', names)}
               className={thumbClassName}
@@ -447,7 +447,7 @@ function ThumbImage({ graph, onFailed }: { graph: BackendGraph; onFailed: () => 
   // useIiifThumbnail handles the y-flip and bounds clamping via info.json.
   const annotationJson = React.useMemo(() => JSON.stringify(graph.annotation), [graph.annotation]);
   const thumb = useIiifThumbnail(
-    inView ? iiifImage : '',
+    inView ? iiifImage(graph) : '',
     annotationJson,
     DENSITY_THUMB_PX[density]
   );

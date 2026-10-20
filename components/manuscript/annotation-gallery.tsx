@@ -360,8 +360,8 @@ export function AnnotationGallery({
 
   const rows: GalleryRowsContextValue = {
     density,
-    iiifImage,
-    viewerHref,
+    iiifImage: () => iiifImage,
+    viewerHref: () => viewerHref,
     canEdit,
     annotatingMode,
     selection,
