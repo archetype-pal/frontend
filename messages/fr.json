@@ -3117,13 +3117,7 @@
       "loading": "Chargement des graphèmes...",
       "loadError": "Impossible de charger les graphèmes.",
       "empty": "Aucun graphème associé à cette main.",
-      "allographsList": "Liste des allographes",
-      "allographFallback": "Allographe {id}",
-      "selectGraph": "Sélectionner {allograph}, graphème {id}",
-      "openGraph": "{allograph}, graphème {id}",
-      "selectAll": "Tout sélectionner",
-      "unselectAll": "Tout désélectionner",
-      "addSelected": "Ajouter la sélection"
+      "allographFallback": "Allographe {id}"
     },
     "metadata": {
       "fallbackTitle": "Main n°{id}",

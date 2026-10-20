@@ -6,8 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getIiifImageUrl } from '@/utils/iiif';
-import { useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
-import { useInView } from '@/hooks/use-in-view';
 import { useTabNavigation } from '@/hooks/use-tab-navigation';
 import type {
   HandDetail,
@@ -28,30 +26,30 @@ import {
   FileText,
   ImageIcon,
   Grid3X3,
-  ListChecks,
   Loader2,
-  Square,
-  Star,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
 import { sanitizeHtml } from '@/lib/sanitize-html';
-import { cn } from '@/lib/utils';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { graphToCollectionItem } from '@/lib/collection-item';
-import { getGraphDetailUrl } from '@/lib/media-url';
 import { downloadCsv, graphsToCsv } from '@/lib/graph-csv';
 import { openLightboxWithItems } from '@/lib/lightbox-utils';
-import { useRangeSelect, useSelectionSet } from '@/hooks/use-selection-set';
+import { useSelectionSet } from '@/hooks/use-selection-set';
 import { useCollection } from '@/contexts/collection-context';
 import { Button } from '@/components/ui/button';
-import {
-  DENSITY_THUMB_PX,
-  DENSITY_WIDTH,
-  DensityControl,
-  useThumbDensity,
-  type ThumbDensity,
-} from '@/components/manuscript/thumb-density';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { DensityControl, useThumbDensity } from '@/components/manuscript/thumb-density';
 import { GallerySelectionBar } from '@/components/manuscript/annotation-gallery-selection-bar';
+import {
+  GalleryRowsProvider,
+  HandSection,
+  type GalleryRowsContextValue,
+} from '@/components/manuscript/annotation-gallery-rows';
+import {
+  type AllographGroup,
+  type HandGroup,
+  handAccentColor,
+} from '@/lib/annotation-gallery-groups';
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { isSearchCategoryEnabled } from '@/lib/site-features';
@@ -64,73 +62,6 @@ interface HandViewerProps {
   images: HandImage[];
   scribe: HandScribe | null;
   manuscript: HandManuscript | null;
-}
-
-/** A single graph thumbnail that resolves its IIIF crop URL and opens the graph on its image. */
-function GraphThumbnail({
-  graph,
-  density,
-  isSelected,
-  onToggleSelect,
-}: {
-  graph: HandGraph;
-  density: ThumbDensity;
-  isSelected: boolean;
-  onToggleSelect: (shiftKey: boolean) => void;
-}) {
-  const t = useTranslations('hand.graphs');
-  const linkRef = useRef<HTMLAnchorElement>(null);
-  const inView = useInView(linkRef);
-  // No crop lookup until the thumbnail nears the screen: the hook skips an empty URL.
-  const imageUrl = useIiifThumbnailUrl(
-    inView ? graph.image_iiif : '',
-    graph.coordinates,
-    DENSITY_THUMB_PX[density]
-  );
-
-  return (
-    <div className="relative group/thumb">
-      <Link
-        ref={linkRef}
-        href={getGraphDetailUrl(graph) ?? '#'}
-        aria-label={t('openGraph', { allograph: graph.allograph_name, id: graph.id })}
-        className={cn(
-          'relative block aspect-square border rounded bg-white overflow-hidden',
-          DENSITY_WIDTH[density],
-          isSelected && 'ring-2 ring-primary ring-offset-2'
-        )}
-      >
-        {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt={graph.allograph_name}
-            fill
-            className="object-contain transition-transform duration-200 group-hover/thumb:scale-110"
-            sizes="14rem"
-            unoptimized
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
-            <ImageIcon className="h-5 w-5" />
-          </div>
-        )}
-      </Link>
-      <button
-        type="button"
-        onClick={(e) => onToggleSelect(e.shiftKey)}
-        aria-pressed={isSelected}
-        aria-label={t('selectGraph', { allograph: graph.allograph_name, id: graph.id })}
-        className={cn(
-          'absolute left-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md border text-xs shadow-sm transition',
-          isSelected
-            ? 'border-primary bg-primary text-primary-foreground'
-            : 'border-foreground/30 bg-background/95 text-transparent hover:border-primary hover:text-primary group-hover/thumb:text-muted-foreground'
-        )}
-      >
-        ✓
-      </button>
-    </div>
-  );
 }
 
 // ── Client-side graph fetching ──────────────────────────────────────
@@ -164,7 +95,6 @@ function enrichGraphs(
         allograph_name: allographLabelById.get(g.allograph) ?? fallbackLabel(g.allograph),
         allograph_id: g.allograph,
         image_iiif: iiifImage.endsWith('/info.json') ? iiifImage : `${iiifImage}/info.json`,
-        coordinates: JSON.stringify(g.annotation),
         item_part: image.item_part,
         item_image: image.id,
         collection_item: graphToCollectionItem(
@@ -262,17 +192,13 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
 
   const [density, changeDensity] = useThumbDensity();
   const selection = useSelectionSet<number>();
-  const selectGraph = useRangeSelect(selection);
-  const { addItem, isInCollection } = useCollection();
-  const addSelectedToCollection = useCallback(
-    (candidates: HandGraph[]) => {
-      for (const g of candidates) {
-        if (!selection.selected.has(g.id) || isInCollection(g.id, 'graph')) continue;
-        addItem(g.collection_item);
-      }
-    },
-    [addItem, isInCollection, selection.selected]
-  );
+  const { addItem, removeItem, isInCollection, isHydrated } = useCollection();
+  const addSelectedToCollection = useCallback(() => {
+    for (const g of graphs) {
+      if (!selection.selected.has(g.id) || isInCollection(g.id, 'graph')) continue;
+      addItem(g.collection_item);
+    }
+  }, [addItem, graphs, isInCollection, selection.selected]);
   const exportSelected = useCallback(() => {
     const locusByImage = new Map(images.map((img) => [img.id, img.locus ?? '']));
     const rows = graphs
@@ -297,32 +223,44 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
   }, [selection.selected]);
 
   // Group graphs by allograph, preserving order of first appearance
-  const graphGroups = useMemo(() => {
-    const groupMap = new Map<
-      string,
-      { allograph_id: number; allograph_name: string; graphs: HandGraph[] }
-    >();
+  const handGroup = useMemo<HandGroup>(() => {
+    const groupMap = new Map<number, AllographGroup>();
     for (const g of graphs) {
-      const key = `${g.allograph_id}-${g.allograph_name}`;
-      if (!groupMap.has(key)) {
-        groupMap.set(key, {
-          allograph_id: g.allograph_id,
-          allograph_name: g.allograph_name,
+      if (!groupMap.has(g.allograph_id)) {
+        groupMap.set(g.allograph_id, {
+          allographId: g.allograph_id,
+          allographName: g.allograph_name,
           graphs: [],
         });
       }
-      groupMap.get(key)!.graphs.push(g);
+      groupMap.get(g.allograph_id)!.graphs.push(g.graph);
     }
-    return Array.from(groupMap.values());
-  }, [graphs]);
+    return { handId: hand.id, handName: hand.name, allographs: Array.from(groupMap.values()) };
+  }, [graphs, hand.id, hand.name]);
 
-  const scrollToAllograph = useCallback((allographId: number, allographName: string) => {
-    const key = `${allographId}-${allographName}`;
-    const el = document.getElementById(`allograph-${key}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, []);
+  const handGraphById = useMemo(() => new Map(graphs.map((g) => [g.id, g])), [graphs]);
+  const rows: GalleryRowsContextValue = {
+    density,
+    iiifImage: (g) => handGraphById.get(g.id)?.image_iiif ?? '',
+    viewerHref: (g) => {
+      const handGraph = handGraphById.get(g.id);
+      return handGraph ? `/manuscripts/${handGraph.item_part}/images/${handGraph.item_image}` : '';
+    },
+    canEdit: false,
+    annotatingMode: false,
+    selection,
+    onEditGraph: () => {},
+    onDeleteGraph: () => {},
+    collection: {
+      ready: isHydrated,
+      has: (graphId) => isInCollection(graphId, 'graph'),
+      toggle: (g) => {
+        const handGraph = handGraphById.get(g.id);
+        if (isInCollection(g.id, 'graph')) removeItem(g.id, 'graph');
+        else if (handGraph) addItem(handGraph.collection_item);
+      },
+    },
+  };
 
   return (
     <main className="container mx-auto p-4 max-w-6xl">
@@ -547,109 +485,19 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
             </div>
           ) : graphs.length > 0 ? (
             <div className="space-y-6">
-              {/* Hand name heading */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-xl font-semibold">{hand.name}</h2>
+              <div className="flex justify-end">
                 <DensityControl density={density} onChange={changeDensity} />
               </div>
 
-              {/* Allographs List navigation */}
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                  {t('graphs.allographsList')}
-                </h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {graphGroups.map((group) => (
-                    <button
-                      key={`${group.allograph_id}-${group.allograph_name}`}
-                      onClick={() => scrollToAllograph(group.allograph_id, group.allograph_name)}
-                      className="px-2.5 py-1 text-xs font-medium rounded border bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
-                    >
-                      {group.allograph_name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Allograph sections */}
-              <div className="space-y-8">
-                {graphGroups.map((group) => {
-                  const key = `${group.allograph_id}-${group.allograph_name}`;
-                  const groupIds = group.graphs.map((g) => g.id);
-                  const groupSelectedCount = groupIds.filter((id) =>
-                    selection.selected.has(id)
-                  ).length;
-                  const allSelected =
-                    groupSelectedCount > 0 && groupSelectedCount === groupIds.length;
-                  // Number only: aria-describedby splits on spaces, and labels contain them.
-                  const headingId = `allograph-heading-${group.allograph_id}`;
-                  // The scroll margin clears the sticky header and the selection bar.
-                  return (
-                    <section
-                      key={key}
-                      id={`allograph-${key}`}
-                      className="scroll-mt-[calc(var(--site-header-h,0px)+5rem)]"
-                    >
-                      <div className="border-b pb-2 mb-4 flex flex-wrap items-center gap-3">
-                        <h4 id={headingId} className="text-base font-semibold">
-                          {group.allograph_name}
-                        </h4>
-                        <div className="flex items-center gap-1.5">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 gap-1.5"
-                            aria-describedby={headingId}
-                            onClick={() =>
-                              allSelected
-                                ? selection.removeMany(groupIds)
-                                : selection.addMany(groupIds)
-                            }
-                          >
-                            {allSelected ? (
-                              <>
-                                <Square className="h-3.5 w-3.5" />
-                                {t('graphs.unselectAll')}
-                              </>
-                            ) : (
-                              <>
-                                <ListChecks className="h-3.5 w-3.5" />
-                                {t('graphs.selectAll')}
-                              </>
-                            )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 gap-1.5"
-                            aria-describedby={headingId}
-                            disabled={groupSelectedCount === 0}
-                            onClick={() => addSelectedToCollection(group.graphs)}
-                          >
-                            <Star className="h-3.5 w-3.5" />
-                            {t('graphs.addSelected')}
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-3">
-                        {group.graphs.map((graph) => (
-                          <GraphThumbnail
-                            key={graph.id}
-                            graph={graph}
-                            density={density}
-                            isSelected={selection.selected.has(graph.id)}
-                            onToggleSelect={(shiftKey) => selectGraph(groupIds, graph.id, shiftKey)}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  );
-                })}
-              </div>
+              <TooltipProvider delayDuration={200}>
+                <GalleryRowsProvider value={rows}>
+                  <HandSection handGroup={handGroup} accent={handAccentColor(hand.id, 0)} />
+                </GalleryRowsProvider>
+              </TooltipProvider>
 
               <GallerySelectionBar
                 shownCount={selection.selected.size}
-                onAddToCollection={() => addSelectedToCollection(graphs)}
+                onAddToCollection={addSelectedToCollection}
                 onSendToLightbox={sendSelectionToLightbox}
                 onExport={exportSelected}
                 onClear={selection.clear}
