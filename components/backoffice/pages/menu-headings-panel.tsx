@@ -176,7 +176,9 @@ export function MenuHeadingsPanel({ enabled }: { enabled: boolean }) {
                 <Label>{t('pages.headingSlug')}</Label>
                 <Input
                   value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
+                  // Lowercase as typed: the backend rejects uppercase heading
+                  // slugs, which the nav order's `heading:<slug>` keys can't hold.
+                  onChange={(e) => setSlug(e.target.value.toLowerCase())}
                   placeholder={generateSlug(title.en) || 'help'}
                   className="font-mono text-sm"
                 />
