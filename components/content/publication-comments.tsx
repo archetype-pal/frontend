@@ -84,6 +84,15 @@ function CommentList({
   );
 }
 
+async function failureOf(res: Response) {
+  if (res.status === 403) return 'closed';
+  if (res.status === 400) {
+    const body: unknown = await res.json().catch(() => null);
+    if (body && typeof body === 'object' && 'author_email' in body) return 'badEmail';
+  }
+  return 'failed';
+}
+
 function CommentForm({
   slug,
   replyTo,
@@ -97,6 +106,8 @@ function CommentForm({
 }) {
   const t = useTranslations('content');
   const [sending, setSending] = useState(false);
+  const [emailInvalid, setEmailInvalid] = useState(false);
+  const emailRef = useRef<HTMLInputElement>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -115,7 +126,13 @@ function CommentForm({
         }),
       });
       if (!res.ok) {
-        toast.error(t('blog.commentFailed'));
+        const failure = await failureOf(res);
+        if (failure === 'badEmail') {
+          setEmailInvalid(true);
+          emailRef.current?.focus();
+        } else {
+          toast.error(t(failure === 'closed' ? 'blog.commentsClosed' : 'blog.commentFailed'));
+        }
         return;
       }
       form.reset();
@@ -166,13 +183,23 @@ function CommentForm({
         <div className="space-y-1.5">
           <Label htmlFor="comment-email">{t('blog.commentEmail')}</Label>
           <Input
+            ref={emailRef}
             id="comment-email"
             name="author_email"
             type="email"
             required
             autoComplete="email"
-            aria-describedby="comment-email-hint"
+            aria-invalid={emailInvalid}
+            aria-describedby={
+              emailInvalid ? 'comment-email-error comment-email-hint' : 'comment-email-hint'
+            }
+            onChange={() => setEmailInvalid(false)}
           />
+          {emailInvalid && (
+            <p id="comment-email-error" className="text-xs text-destructive">
+              {t('blog.commentBadEmail')}
+            </p>
+          )}
           <p id="comment-email-hint" className="text-xs text-muted-foreground">
             {t('blog.commentEmailHint')}
           </p>

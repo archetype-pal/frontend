@@ -629,7 +629,8 @@
       "postComment": "Kommentar senden",
       "sendingComment": "Wird gesendet…",
       "commentSent": "Danke. Ihr Kommentar erscheint, sobald ein Moderator ihn freigegeben hat.",
-      "commentFailed": "Ihr Kommentar konnte nicht gesendet werden. Bitte versuchen Sie es erneut."
+      "commentFailed": "Ihr Kommentar konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+      "commentBadEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein."
     },
     "publicationKinds": {
       "news": {
