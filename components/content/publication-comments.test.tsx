@@ -263,6 +263,20 @@ describe('PublicationComments form', () => {
     expect(document.activeElement).toBe(screen.getByLabelText('Comment'));
   });
 
+  it('asks to wait when too many comments were sent', async () => {
+    stubFetch(429);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<PublicationComments slug="a-post" allowComments comments={thread} />);
+
+    fillAndSend();
+
+    await waitFor(() =>
+      expect(toastMock.error).toHaveBeenCalledWith(
+        'You have sent several comments recently. Please try again later.'
+      )
+    );
+  });
+
   it('keeps the text and says so when the comment cannot be sent', async () => {
     stubFetch(400);
     vi.spyOn(console, 'error').mockImplementation(() => {});
