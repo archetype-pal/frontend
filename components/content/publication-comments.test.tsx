@@ -77,6 +77,25 @@ describe('PublicationComments', () => {
     expect(container.innerHTML).toBe('');
   });
 
+  it('shows a hidden comment that has replies as a placeholder with its replies under it', () => {
+    render(
+      <PublicationComments
+        slug="a-post"
+        allowComments
+        comments={[
+          comment(1, null, '<p>Question</p>'),
+          { id: 2, parent: 1, removed: true },
+          comment(3, 2, '<p>Answer</p>'),
+        ]}
+      />
+    );
+
+    const placeholder = screen.getByText('This comment is no longer shown.');
+    expect(placeholder.closest('li')?.contains(screen.getByText('Answer'))).toBe(true);
+    expect(screen.getByRole('heading', { name: '2 Comments' })).not.toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Reply' })).toHaveLength(2);
+  });
+
   it('keeps comment formatting but strips scripts and event handlers', () => {
     const { container } = render(
       <PublicationComments
