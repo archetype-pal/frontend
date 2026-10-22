@@ -1869,6 +1869,7 @@
       "failedLoad": "Failed to load comments.",
       "noComments": "No comments to show.",
       "selectAriaLabel": "Select comment by {name}",
+      "deleteAriaLabel": "Delete comment by {name}",
       "badgeApproved": "Approved",
       "badgePending": "Pending",
       "replyTo": "Reply to {name}: “{excerpt}”",

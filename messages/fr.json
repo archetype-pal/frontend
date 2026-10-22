@@ -1869,6 +1869,7 @@
       "failedLoad": "Échec du chargement des commentaires.",
       "noComments": "Aucun commentaire à afficher.",
       "selectAriaLabel": "Sélectionner le commentaire de {name}",
+      "deleteAriaLabel": "Supprimer le commentaire de {name}",
       "badgeApproved": "Approuvé",
       "badgePending": "En attente",
       "replyTo": "En réponse à {name} : « {excerpt} »",

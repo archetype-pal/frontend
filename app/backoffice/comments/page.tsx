@@ -377,6 +377,7 @@ function CommentsPageContent() {
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                    aria-label={t('comments.deleteAriaLabel', { name: comment.author_name })}
                     onClick={() => setDeleteTarget(comment)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />

@@ -1869,6 +1869,7 @@
       "failedLoad": "Kommentare konnten nicht geladen werden.",
       "noComments": "Keine Kommentare vorhanden.",
       "selectAriaLabel": "Kommentar von {name} auswählen",
+      "deleteAriaLabel": "Kommentar von {name} löschen",
       "badgeApproved": "Genehmigt",
       "badgePending": "Ausstehend",
       "replyTo": "Antwort an {name}: „{excerpt}“",
