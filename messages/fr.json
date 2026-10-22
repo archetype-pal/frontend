@@ -1877,6 +1877,8 @@
       "filterPostAll": "Tous les articles",
       "filterPostSearch": "Rechercher un article…",
       "filterPostNone": "Aucun article trouvé.",
+      "filterPostLoading": "Chargement des articles…",
+      "filterPostUnknown": "Article inconnu",
       "approveButton": "Approuver",
       "rejectButton": "Rejeter",
       "singleDeleteTitle": "Supprimer ce commentaire ?",

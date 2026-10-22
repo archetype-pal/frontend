@@ -1877,6 +1877,8 @@
       "filterPostAll": "Alle Beiträge",
       "filterPostSearch": "Beiträge durchsuchen…",
       "filterPostNone": "Keine Beiträge gefunden.",
+      "filterPostLoading": "Beiträge werden geladen…",
+      "filterPostUnknown": "Unbekannter Beitrag",
       "approveButton": "Genehmigen",
       "rejectButton": "Ablehnen",
       "singleDeleteTitle": "Diesen Kommentar löschen?",

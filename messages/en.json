@@ -1877,6 +1877,8 @@
       "filterPostAll": "All posts",
       "filterPostSearch": "Search posts…",
       "filterPostNone": "No posts found.",
+      "filterPostLoading": "Loading posts…",
+      "filterPostUnknown": "Unknown post",
       "approveButton": "Approve",
       "rejectButton": "Reject",
       "singleDeleteTitle": "Delete this comment?",

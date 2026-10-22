@@ -18,7 +18,7 @@ export function PublicationCombobox({ value, onChange, className }: PublicationC
   const { isAuthenticated } = useAuth();
   const t = useTranslations('backoffice');
 
-  const { data: publications = [] } = useQuery({
+  const { data: publications = [], isPending } = useQuery({
     queryKey: backofficeKeys.publications.options(),
     queryFn: getAllPublications,
     enabled: isAuthenticated,
@@ -28,6 +28,13 @@ export function PublicationCombobox({ value, onChange, className }: PublicationC
     value: String(p.id),
     label: `${p.title} (${p.comment_count})`,
   }));
+
+  const placeholder =
+    value == null
+      ? t('comments.filterPostAll')
+      : isPending
+        ? t('comments.filterPostLoading')
+        : t('comments.filterPostUnknown');
 
   return (
     <div className={cn('w-64', className)}>
@@ -39,7 +46,7 @@ export function PublicationCombobox({ value, onChange, className }: PublicationC
         options={options}
         value={value == null ? null : String(value)}
         onValueChange={(next) => onChange(next == null ? null : Number(next))}
-        placeholder={t('comments.filterPostAll')}
+        placeholder={placeholder}
         searchPlaceholder={t('comments.filterPostSearch')}
         emptyText={t('comments.filterPostNone')}
         clearLabel={t('comments.filterPostAll')}
