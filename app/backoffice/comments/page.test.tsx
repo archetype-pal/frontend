@@ -96,6 +96,14 @@ describe('<CommentsPage>', () => {
     );
   });
 
+  it('names each delete button after the comment author', async () => {
+    renderPage();
+
+    expect(
+      await screen.findByRole('button', { name: 'Delete comment by Author 1' })
+    ).not.toBeNull();
+  });
+
   it('shows comment text as formatted HTML with scripts removed', async () => {
     getComments.mockResolvedValue({
       count: 1,
