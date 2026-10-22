@@ -235,4 +235,22 @@ describe('<CommentsPage>', () => {
       )
     );
   });
+
+  it('updates the comment count of each post after a comment is approved', async () => {
+    urlParams.current = new URLSearchParams('post=7');
+    getAllPublications
+      .mockResolvedValueOnce([
+        { id: 7, title: 'Scribal hands', slug: 'scribal-hands', comment_count: 3 },
+      ])
+      .mockResolvedValue([
+        { id: 7, title: 'Scribal hands', slug: 'scribal-hands', comment_count: 4 },
+      ]);
+    renderPage();
+    const filter = await screen.findByRole('combobox', { name: 'Filter by post' });
+    await waitFor(() => expect(filter.textContent).toBe('Scribal hands (3)'));
+
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Approve' }))[0]);
+
+    await waitFor(() => expect(filter.textContent).toBe('Scribal hands (4)'));
+  });
 });
