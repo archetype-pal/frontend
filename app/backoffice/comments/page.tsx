@@ -84,6 +84,7 @@ function CommentsPageContent() {
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: backofficeKeys.comments.all() });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
     selection.clear();
   };
 
