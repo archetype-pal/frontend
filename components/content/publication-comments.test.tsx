@@ -2,11 +2,17 @@ import * as React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { UserProfile } from '@/types';
 import type { PublicationComment } from '@/utils/api';
 import PublicationComments from './publication-comments';
 
 const toastMock = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock('sonner', () => ({ toast: toastMock }));
+
+const { authState } = vi.hoisted(() => ({ authState: { user: null as UserProfile | null } }));
+vi.mock('@/contexts/auth-context', () => ({
+  useAuth: () => ({ user: authState.user, isAuthenticated: authState.user !== null }),
+}));
 
 const comment = (
   id: number,
@@ -226,6 +232,7 @@ describe('PublicationComments', () => {
 
 describe('PublicationComments form', () => {
   afterEach(() => {
+    authState.user = null;
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
     vi.clearAllMocks();

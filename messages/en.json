@@ -623,6 +623,7 @@
       "leaveComment": "Leave a comment",
       "replyingTo": "Replying to {name}",
       "cancelReply": "Cancel reply",
+      "commentingAs": "Commenting as {name}",
       "commentName": "Name",
       "commentEmail": "Email",
       "commentEmailHint": "Optional, never published.",

@@ -8,7 +8,8 @@ import { CommentText } from '@/components/common/comment-text';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { apiFetch } from '@/lib/api-fetch';
+import { useAuth } from '@/contexts/auth-context';
+import { optionalAuthFetch } from '@/lib/api-fetch';
 import type { PublicationComment, RemovedPublicationComment } from '@/utils/api';
 
 type ThreadComment = PublicationComment | RemovedPublicationComment;
@@ -106,6 +107,7 @@ function CommentForm({
   textareaRef: RefObject<HTMLTextAreaElement | null>;
 }) {
   const t = useTranslations('content');
+  const { user, isAuthenticated } = useAuth();
   const [sending, setSending] = useState(false);
   const [emailInvalid, setEmailInvalid] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
@@ -116,16 +118,15 @@ function CommentForm({
     const data = new FormData(form);
     setSending(true);
     try {
-      const res = await apiFetch(`/api/v1/media/publications/${slug}/comments/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          parent: replyTo?.id ?? null,
-          author_name: data.get('author_name'),
-          author_email: data.get('author_email'),
-          content: data.get('content'),
-        }),
-      });
+      const res = await optionalAuthFetch(
+        `/api/v1/media/publications/${slug}/comments/`,
+        isAuthenticated,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...Object.fromEntries(data), parent: replyTo?.id ?? null }),
+        }
+      );
       if (!res.ok) {
         const failure = await failureOf(res);
         if (failure === 'badEmail') {
@@ -182,41 +183,52 @@ function CommentForm({
           </Button>
         </p>
       )}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="comment-name">{t('blog.commentName')}</Label>
-          <Input
-            id="comment-name"
-            name="author_name"
-            required
-            maxLength={150}
-            autoComplete="name"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="comment-email">{t('blog.commentEmail')}</Label>
-          <Input
-            ref={emailRef}
-            id="comment-email"
-            name="author_email"
-            type="email"
-            autoComplete="email"
-            aria-invalid={emailInvalid}
-            aria-describedby={
-              emailInvalid ? 'comment-email-error comment-email-hint' : 'comment-email-hint'
-            }
-            onChange={() => setEmailInvalid(false)}
-          />
-          {emailInvalid && (
-            <p id="comment-email-error" className="text-xs text-destructive">
-              {t('blog.commentBadEmail')}
-            </p>
+      {user && (
+        <p className="text-sm text-muted-foreground">
+          {t('blog.commentingAs', {
+            name: `${user.first_name} ${user.last_name}`.trim() || user.username,
+          })}
+        </p>
+      )}
+      {!user?.email && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {!user && (
+            <div className="space-y-1.5">
+              <Label htmlFor="comment-name">{t('blog.commentName')}</Label>
+              <Input
+                id="comment-name"
+                name="author_name"
+                required
+                maxLength={150}
+                autoComplete="name"
+              />
+            </div>
           )}
-          <p id="comment-email-hint" className="text-xs text-muted-foreground">
-            {t('blog.commentEmailHint')}
-          </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="comment-email">{t('blog.commentEmail')}</Label>
+            <Input
+              ref={emailRef}
+              id="comment-email"
+              name="author_email"
+              type="email"
+              autoComplete="email"
+              aria-invalid={emailInvalid}
+              aria-describedby={
+                emailInvalid ? 'comment-email-error comment-email-hint' : 'comment-email-hint'
+              }
+              onChange={() => setEmailInvalid(false)}
+            />
+            {emailInvalid && (
+              <p id="comment-email-error" className="text-xs text-destructive">
+                {t('blog.commentBadEmail')}
+              </p>
+            )}
+            <p id="comment-email-hint" className="text-xs text-muted-foreground">
+              {t('blog.commentEmailHint')}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
       <div className="space-y-1.5">
         <Label htmlFor="comment-content">{t('blog.commentText')}</Label>
         <textarea
