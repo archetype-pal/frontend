@@ -1,9 +1,12 @@
 import * as React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { PublicationComment } from '@/utils/api';
 import PublicationComments from './publication-comments';
+
+const toastMock = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+vi.mock('sonner', () => ({ toast: toastMock }));
 
 const comment = (
   id: number,
@@ -158,6 +161,7 @@ describe('PublicationComments form', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   const stubFetch = (status: number) => {
@@ -184,9 +188,11 @@ describe('PublicationComments form', () => {
 
     fillAndSend();
 
-    expect(
-      await screen.findByText('Thank you. Your comment will appear once a moderator approves it.')
-    ).not.toBeNull();
+    await waitFor(() =>
+      expect(toastMock.success).toHaveBeenCalledWith(
+        'Thank you. Your comment will appear once a moderator approves it.'
+      )
+    );
     expect(String(fetchMock.mock.calls[0][0])).toContain(
       '/api/v1/media/publications/a-post/comments/'
     );
@@ -208,7 +214,11 @@ describe('PublicationComments form', () => {
     expect(screen.queryByText('Replying to Author 2')).not.toBeNull();
     expect(document.activeElement).toBe(screen.getByLabelText('Comment'));
     fillAndSend();
-    await screen.findByText('Thank you. Your comment will appear once a moderator approves it.');
+    await waitFor(() =>
+      expect(toastMock.success).toHaveBeenCalledWith(
+        'Thank you. Your comment will appear once a moderator approves it.'
+      )
+    );
     expect(sentBody(fetchMock).parent).toBe(2);
     expect(screen.queryByText('Replying to Author 2')).toBeNull();
   });
@@ -220,7 +230,11 @@ describe('PublicationComments form', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reply', description: /Author 1/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel reply' }));
     fillAndSend();
-    await screen.findByText('Thank you. Your comment will appear once a moderator approves it.');
+    await waitFor(() =>
+      expect(toastMock.success).toHaveBeenCalledWith(
+        'Thank you. Your comment will appear once a moderator approves it.'
+      )
+    );
 
     expect(sentBody(fetchMock).parent).toBeNull();
   });
@@ -232,9 +246,11 @@ describe('PublicationComments form', () => {
 
     fillAndSend();
 
-    expect(
-      await screen.findByText('Your comment could not be sent. Please try again.')
-    ).not.toBeNull();
+    await waitFor(() =>
+      expect(toastMock.error).toHaveBeenCalledWith(
+        'Your comment could not be sent. Please try again.'
+      )
+    );
     expect((screen.getByLabelText('Comment') as HTMLTextAreaElement).value).toBe('Thanks');
   });
 });

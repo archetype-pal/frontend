@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent, type RefObject } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -83,8 +84,6 @@ function CommentList({
   );
 }
 
-type SendState = 'idle' | 'sending' | 'sent' | 'failed';
-
 function CommentForm({
   slug,
   replyTo,
@@ -97,13 +96,13 @@ function CommentForm({
   textareaRef: RefObject<HTMLTextAreaElement | null>;
 }) {
   const t = useTranslations('content');
-  const [state, setState] = useState<SendState>('idle');
+  const [sending, setSending] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    setState('sending');
+    setSending(true);
     try {
       const res = await apiFetch(`/api/v1/media/publications/${slug}/comments/`, {
         method: 'POST',
@@ -116,14 +115,16 @@ function CommentForm({
         }),
       });
       if (!res.ok) {
-        setState('failed');
+        toast.error(t('blog.commentFailed'));
         return;
       }
       form.reset();
       onCancelReply();
-      setState('sent');
+      toast.success(t('blog.commentSent'));
     } catch {
-      setState('failed');
+      toast.error(t('blog.commentFailed'));
+    } finally {
+      setSending(false);
     }
   }
 
@@ -131,7 +132,7 @@ function CommentForm({
     <form
       onSubmit={handleSubmit}
       aria-labelledby="comment-form-heading"
-      aria-busy={state === 'sending'}
+      aria-busy={sending}
       className="mt-8 space-y-4"
     >
       <h3 id="comment-form-heading" className="font-serif text-base font-semibold text-foreground">
@@ -188,13 +189,9 @@ function CommentForm({
           className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
-      <Button type="submit" disabled={state === 'sending'}>
-        {state === 'sending' ? t('blog.sendingComment') : t('blog.postComment')}
+      <Button type="submit" disabled={sending}>
+        {sending ? t('blog.sendingComment') : t('blog.postComment')}
       </Button>
-      <p aria-live="polite" className="text-sm text-muted-foreground">
-        {state === 'sent' && t('blog.commentSent')}
-        {state === 'failed' && t('blog.commentFailed')}
-      </p>
     </form>
   );
 }
