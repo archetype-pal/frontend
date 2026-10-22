@@ -456,6 +456,7 @@ describe('PublicationComments form', () => {
       '/api/proxy/api/v1/media/publications/a-post/comments'
     );
     expect(sentBody(fetchMock)).toEqual({ parent: null, content: 'Thanks' });
+    expect(routerRefresh).not.toHaveBeenCalled();
   });
 
   it('asks a signed in account with no email for an optional one, but not for a name', async () => {
@@ -480,5 +481,20 @@ describe('PublicationComments form', () => {
       author_email: 'ada@example.org',
       content: 'Thanks',
     });
+  });
+
+  it('says a comment the server approved at once is published and shows it', async () => {
+    authState.user = account({ first_name: '', last_name: '', is_superuser: true });
+    stubFetch(201, JSON.stringify({ is_approved: true }));
+    render(<PublicationComments slug="a-post" allowComments comments={thread} />);
+
+    expect(screen.queryByText('Commenting as ada')).not.toBeNull();
+    fireEvent.change(screen.getByLabelText('Comment'), { target: { value: 'Thanks' } });
+    fireEvent.submit(screen.getByRole('form', { name: 'Leave a comment' }));
+
+    await waitFor(() =>
+      expect(toastMock.success).toHaveBeenCalledWith('Thank you. Your comment is published.')
+    );
+    expect(routerRefresh).toHaveBeenCalledTimes(1);
   });
 });
