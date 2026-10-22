@@ -54,7 +54,7 @@ function CommentList({
           ) : (
             <article>
               <p id={`comment-${comment.id}-byline`} className="mb-1 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{comment.author_name}</span>
+                <span className="font-medium text-primary">{comment.author_name}</span>
                 <span className="mx-1">·</span>
                 <time dateTime={comment.created_at}>{formatCommentDate(comment.created_at)}</time>
               </p>
