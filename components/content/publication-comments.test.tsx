@@ -9,10 +9,14 @@ import PublicationComments from './publication-comments';
 const toastMock = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock('sonner', () => ({ toast: toastMock }));
 
-const { authState } = vi.hoisted(() => ({ authState: { user: null as UserProfile | null } }));
+const { authState, routerRefresh } = vi.hoisted(() => ({
+  authState: { user: null as UserProfile | null },
+  routerRefresh: vi.fn(),
+}));
 vi.mock('@/contexts/auth-context', () => ({
   useAuth: () => ({ user: authState.user, isAuthenticated: authState.user !== null }),
 }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: routerRefresh }) }));
 
 const account = (overrides: Partial<UserProfile> = {}): UserProfile => ({
   id: 1,

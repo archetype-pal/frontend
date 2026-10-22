@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, type FormEvent, type RefObject } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Reply } from 'lucide-react';
 import { toast } from 'sonner';
@@ -108,6 +109,7 @@ function CommentForm({
 }) {
   const t = useTranslations('content');
   const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
   const [sending, setSending] = useState(false);
   const [emailInvalid, setEmailInvalid] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
@@ -145,10 +147,16 @@ function CommentForm({
         }
         return;
       }
+      const created: { is_approved?: boolean } = await res.json();
       form.reset();
       onCancelReply();
       textareaRef.current?.focus();
-      toast.success(t('blog.commentSent'));
+      if (created.is_approved) {
+        toast.success(t('blog.commentPublished'));
+        router.refresh();
+      } else {
+        toast.success(t('blog.commentSent'));
+      }
     } catch {
       toast.error(t('blog.commentFailed'));
     } finally {
