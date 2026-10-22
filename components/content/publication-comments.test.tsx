@@ -14,6 +14,17 @@ vi.mock('@/contexts/auth-context', () => ({
   useAuth: () => ({ user: authState.user, isAuthenticated: authState.user !== null }),
 }));
 
+const account = (overrides: Partial<UserProfile> = {}): UserProfile => ({
+  id: 1,
+  username: 'ada',
+  email: 'ada@example.org',
+  first_name: 'Ada',
+  last_name: 'Lovelace',
+  is_staff: true,
+  is_superuser: false,
+  ...overrides,
+});
+
 const comment = (
   id: number,
   parent: number | null,
@@ -419,5 +430,51 @@ describe('PublicationComments form', () => {
       )
     );
     expect(sentBody(fetchMock).author_email).toBe('');
+  });
+
+  it('comments as the signed in account, without asking for a name or email', async () => {
+    authState.user = account();
+    const fetchMock = stubFetch(201, JSON.stringify({ is_approved: false }));
+    render(<PublicationComments slug="a-post" allowComments comments={thread} />);
+
+    expect(screen.queryByText('Commenting as Ada Lovelace')).not.toBeNull();
+    expect(screen.queryByLabelText('Name')).toBeNull();
+    expect(screen.queryByLabelText('Email')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Comment'), { target: { value: 'Thanks' } });
+    fireEvent.submit(screen.getByRole('form', { name: 'Leave a comment' }));
+
+    await waitFor(() =>
+      expect(toastMock.success).toHaveBeenCalledWith(
+        'Thank you. Your comment will appear once a moderator approves it.'
+      )
+    );
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      '/api/proxy/api/v1/media/publications/a-post/comments'
+    );
+    expect(sentBody(fetchMock)).toEqual({ parent: null, content: 'Thanks' });
+  });
+
+  it('asks a signed in account with no email for an optional one, but not for a name', async () => {
+    authState.user = account({ email: '' });
+    const fetchMock = stubFetch(201, JSON.stringify({ is_approved: false }));
+    render(<PublicationComments slug="a-post" allowComments comments={thread} />);
+
+    expect(screen.queryByText('Commenting as Ada Lovelace')).not.toBeNull();
+    expect(screen.queryByLabelText('Name')).toBeNull();
+    const email = screen.getByRole('textbox', {
+      name: 'Email',
+      description: 'Optional, never published.',
+    }) as HTMLInputElement;
+    expect(email.required).toBe(false);
+    fireEvent.change(email, { target: { value: 'ada@example.org' } });
+    fireEvent.change(screen.getByLabelText('Comment'), { target: { value: 'Thanks' } });
+    fireEvent.submit(screen.getByRole('form', { name: 'Leave a comment' }));
+
+    await waitFor(() => expect(toastMock.success).toHaveBeenCalled());
+    expect(sentBody(fetchMock)).toEqual({
+      parent: null,
+      author_email: 'ada@example.org',
+      content: 'Thanks',
+    });
   });
 });
