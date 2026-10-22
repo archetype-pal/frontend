@@ -392,4 +392,25 @@ describe('PublicationComments form', () => {
 
     await waitFor(() => expect(toastMock.error).toHaveBeenCalledWith('Comments are closed.'));
   });
+
+  it('lets a guest send a comment without an email', async () => {
+    const fetchMock = stubFetch(201);
+    render(<PublicationComments slug="a-post" allowComments comments={thread} />);
+
+    const email = screen.getByRole('textbox', {
+      name: 'Email',
+      description: 'Optional, never published.',
+    }) as HTMLInputElement;
+    expect(email.required).toBe(false);
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'B. Reader' } });
+    fireEvent.change(screen.getByLabelText('Comment'), { target: { value: 'Thanks' } });
+    fireEvent.submit(screen.getByRole('form', { name: 'Leave a comment' }));
+
+    await waitFor(() =>
+      expect(toastMock.success).toHaveBeenCalledWith(
+        'Thank you. Your comment will appear once a moderator approves it.'
+      )
+    );
+    expect(sentBody(fetchMock).author_email).toBe('');
+  });
 });
