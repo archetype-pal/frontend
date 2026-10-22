@@ -137,6 +137,7 @@ function CommentForm({
       }
       form.reset();
       onCancelReply();
+      textareaRef.current?.focus();
       toast.success(t('blog.commentSent'));
     } catch {
       toast.error(t('blog.commentFailed'));
@@ -163,7 +164,10 @@ function CommentForm({
             variant="link"
             size="sm"
             className="h-auto px-0"
-            onClick={onCancelReply}
+            onClick={() => {
+              onCancelReply();
+              textareaRef.current?.focus();
+            }}
           >
             {t('blog.cancelReply')}
           </Button>
