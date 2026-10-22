@@ -73,6 +73,22 @@ describe('PublicationComments', () => {
     expect(container.innerHTML).toBe('');
   });
 
+  it('keeps showing the comments after comments are closed, without the form or Reply', () => {
+    render(
+      <PublicationComments
+        slug="a-post"
+        allowComments={false}
+        comments={[comment(1, null, '<p>Question</p>'), comment(2, 1, '<p>Answer</p>')]}
+      />
+    );
+
+    expect(screen.getByRole('heading', { name: '2 Comments' })).not.toBeNull();
+    expect(screen.getByText('Answer')).not.toBeNull();
+    expect(screen.getByText('Comments are closed.')).not.toBeNull();
+    expect(screen.queryByRole('form', { name: 'Leave a comment' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Reply' })).toBeNull();
+  });
+
   it('shows a hidden comment that has replies as a placeholder with its replies under it', () => {
     render(
       <PublicationComments
