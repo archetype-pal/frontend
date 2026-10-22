@@ -25,6 +25,7 @@ import { DataPagination } from '@/components/ui/data-pagination';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import { PublicationCombobox } from '@/components/backoffice/common/publication-combobox';
+import { CommentText } from '@/components/common/comment-text';
 import {
   getComments,
   approveComment,
@@ -38,7 +39,7 @@ import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 import { cn } from '@/lib/utils';
-import { sanitizeHtml, stripHtmlToPlainText } from '@/lib/sanitize-html';
+import { stripHtmlToPlainText } from '@/lib/sanitize-html';
 import type { CommentItem } from '@/types/backoffice';
 
 export default function CommentsPage() {
@@ -314,7 +315,9 @@ function CommentsPageContent() {
                   />
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{comment.author_name}</span>
+                      <span id={`comment-${comment.id}-author`} className="font-medium text-sm">
+                        {comment.author_name}
+                      </span>
                       <span className="text-xs text-muted-foreground">{comment.author_email}</span>
                       {comment.is_approved ? (
                         <Badge variant="default" className="text-[10px] gap-0.5">
@@ -393,9 +396,10 @@ function CommentsPageContent() {
                   </span>
                 </p>
               )}
-              <div
-                className="publication-body text-sm pl-8"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(comment.content) }}
+              <CommentText
+                html={comment.content}
+                describedBy={`comment-${comment.id}-author`}
+                className="pl-8"
               />
             </div>
           ))
