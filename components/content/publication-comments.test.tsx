@@ -22,7 +22,18 @@ const comment = (
   removed: false,
 });
 
+const pretendLongTextIsTallerThanEightLines = () => {
+  vi.spyOn(Element.prototype, 'clientHeight', 'get').mockReturnValue(200);
+  vi.spyOn(Element.prototype, 'scrollHeight', 'get').mockImplementation(function (this: Element) {
+    return (this.textContent?.length ?? 0) > 1000 ? 600 : 200;
+  });
+};
+
 describe('PublicationComments', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('nests a reply inside the comment it answers', () => {
     render(
       <PublicationComments
@@ -154,6 +165,62 @@ describe('PublicationComments', () => {
 
     expect(screen.queryByText('Author 1')).not.toBeNull();
     expect(screen.getByText('3 May 2015').getAttribute('datetime')).toBe('2015-05-03T23:30:00Z');
+  });
+
+  it('shows Read more only on a comment taller than 8 lines and opens it', () => {
+    pretendLongTextIsTallerThanEightLines();
+    render(
+      <PublicationComments
+        slug="a-post"
+        allowComments
+        comments={[
+          comment(1, null, '<p>Short one</p>'),
+          comment(2, null, `<p>Start ${'word '.repeat(250)}Finale</p>`),
+        ]}
+      />
+    );
+
+    const text = screen.getByText(/^Start/).closest('.publication-body');
+    expect(screen.getByText('Short one').closest('.publication-body')?.className).toContain(
+      'line-clamp-8'
+    );
+    expect(text?.className).toContain('line-clamp-8');
+    const readMore = screen.getByRole('button', { name: 'Read more' });
+    expect(readMore.getAttribute('aria-describedby')).toBe('comment-2-byline');
+    expect(readMore.getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(readMore);
+
+    expect(text?.className).not.toContain('line-clamp-8');
+    const showLess = screen.getByRole('button', { name: 'Show less' });
+    expect(showLess.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.click(showLess);
+
+    expect(text?.className).toContain('line-clamp-8');
+  });
+
+  it('scrolls back to the top of a long comment when Show less leaves it above the screen', async () => {
+    pretendLongTextIsTallerThanEightLines();
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      top: -500,
+    } as DOMRect);
+    render(
+      <PublicationComments
+        slug="a-post"
+        allowComments
+        comments={[comment(1, null, `<p>${'word '.repeat(250)}</p>`)]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Read more' }));
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Show less' }));
+
+    await waitFor(() =>
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' })
+    );
   });
 });
 
