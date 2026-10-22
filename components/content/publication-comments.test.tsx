@@ -239,6 +239,30 @@ describe('PublicationComments form', () => {
     expect(sentBody(fetchMock).parent).toBeNull();
   });
 
+  it('puts the cursor back in the comment box after Cancel reply', () => {
+    render(<PublicationComments slug="a-post" allowComments comments={thread} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reply', description: /Author 1/ }));
+    const cancel = screen.getByRole('button', { name: 'Cancel reply' });
+    cancel.focus();
+    fireEvent.click(cancel);
+
+    expect(document.activeElement).toBe(screen.getByLabelText('Comment'));
+  });
+
+  it('puts the cursor back in the comment box after the comment is sent', async () => {
+    stubFetch(201);
+    render(<PublicationComments slug="a-post" allowComments comments={thread} />);
+
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'B. Reader' } });
+    fireEvent.change(screen.getByLabelText('Comment'), { target: { value: 'Thanks' } });
+    screen.getByRole('button', { name: 'Post comment' }).focus();
+    fireEvent.submit(screen.getByRole('form', { name: 'Leave a comment' }));
+
+    await waitFor(() => expect(toastMock.success).toHaveBeenCalled());
+    expect(document.activeElement).toBe(screen.getByLabelText('Comment'));
+  });
+
   it('keeps the text and says so when the comment cannot be sent', async () => {
     stubFetch(400);
     vi.spyOn(console, 'error').mockImplementation(() => {});
