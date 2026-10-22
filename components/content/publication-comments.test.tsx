@@ -32,6 +32,25 @@ describe('PublicationComments', () => {
     expect(questionItem?.contains(screen.getByText('Answer'))).toBe(true);
   });
 
+  it('shows newer comments first and keeps replies in the order they were written', () => {
+    render(
+      <PublicationComments
+        slug="a-post"
+        allowComments
+        comments={[
+          comment(1, null, '<p>Older</p>', '2012-01-01T10:00:00Z'),
+          comment(3, 1, '<p>First reply</p>', '2012-02-01T10:00:00Z'),
+          comment(4, 1, '<p>Second reply</p>', '2012-03-01T10:00:00Z'),
+          comment(2, null, '<p>Newer</p>', '2013-01-01T10:00:00Z'),
+        ]}
+      />
+    );
+
+    expect(
+      screen.getAllByText(/^(Older|Newer|First reply|Second reply)$/).map((p) => p.textContent)
+    ).toEqual(['Newer', 'Older', 'First reply', 'Second reply']);
+  });
+
   it('leaves out a reply whose parent is not shown', () => {
     render(
       <PublicationComments
