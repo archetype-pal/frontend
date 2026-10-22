@@ -625,7 +625,7 @@
       "cancelReply": "Antwort abbrechen",
       "commentName": "Name",
       "commentEmail": "E-Mail",
-      "commentEmailHint": "Wird nicht veröffentlicht.",
+      "commentEmailHint": "Optional, wird nie veröffentlicht.",
       "commentText": "Kommentar",
       "postComment": "Kommentar senden",
       "sendingComment": "Wird gesendet…",

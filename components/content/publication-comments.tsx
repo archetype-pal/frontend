@@ -200,7 +200,6 @@ function CommentForm({
             id="comment-email"
             name="author_email"
             type="email"
-            required
             autoComplete="email"
             aria-invalid={emailInvalid}
             aria-describedby={
