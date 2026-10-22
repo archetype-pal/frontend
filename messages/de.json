@@ -630,6 +630,7 @@
       "sendingComment": "Wird gesendet…",
       "commentSent": "Danke. Ihr Kommentar erscheint, sobald ein Moderator ihn freigegeben hat.",
       "commentFailed": "Ihr Kommentar konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+      "commentTooMany": "Sie haben in letzter Zeit mehrere Kommentare gesendet. Bitte versuchen Sie es später erneut.",
       "commentBadEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein."
     },
     "publicationKinds": {

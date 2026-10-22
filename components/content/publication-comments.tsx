@@ -86,6 +86,7 @@ function CommentList({
 
 async function failureOf(res: Response) {
   if (res.status === 403) return 'closed';
+  if (res.status === 429) return 'tooMany';
   if (res.status === 400) {
     const body: unknown = await res.json().catch(() => null);
     if (body && typeof body === 'object' && 'author_email' in body) return 'badEmail';
@@ -131,7 +132,15 @@ function CommentForm({
           setEmailInvalid(true);
           emailRef.current?.focus();
         } else {
-          toast.error(t(failure === 'closed' ? 'blog.commentsClosed' : 'blog.commentFailed'));
+          toast.error(
+            t(
+              failure === 'closed'
+                ? 'blog.commentsClosed'
+                : failure === 'tooMany'
+                  ? 'blog.commentTooMany'
+                  : 'blog.commentFailed'
+            )
+          );
         }
         return;
       }

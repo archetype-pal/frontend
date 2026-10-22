@@ -630,6 +630,7 @@
       "sendingComment": "Envoi…",
       "commentSent": "Merci. Votre commentaire apparaîtra dès qu'un modérateur l'aura approuvé.",
       "commentFailed": "Votre commentaire n'a pas pu être envoyé. Veuillez réessayer.",
+      "commentTooMany": "Vous avez envoyé plusieurs commentaires récemment. Veuillez réessayer plus tard.",
       "commentBadEmail": "Veuillez saisir une adresse e-mail valide."
     },
     "publicationKinds": {

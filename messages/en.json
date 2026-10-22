@@ -630,6 +630,7 @@
       "sendingComment": "Sending…",
       "commentSent": "Thank you. Your comment will appear once a moderator approves it.",
       "commentFailed": "Your comment could not be sent. Please try again.",
+      "commentTooMany": "You have sent several comments recently. Please try again later.",
       "commentBadEmail": "Please enter a valid email address."
     },
     "publicationKinds": {
