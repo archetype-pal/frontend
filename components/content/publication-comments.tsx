@@ -39,7 +39,7 @@ function CommentList({
   nested = false,
 }: {
   comments: CommentNode[];
-  onReply: (comment: PublicationComment) => void;
+  onReply?: (comment: PublicationComment) => void;
   nested?: boolean;
 }) {
   const t = useTranslations('content');
@@ -60,16 +60,18 @@ function CommentList({
                 className="publication-body text-sm"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(comment.content) }}
               />
-              <Button
-                type="button"
-                variant="link"
-                size="sm"
-                className="h-auto px-0 text-xs"
-                aria-describedby={`comment-${comment.id}-byline`}
-                onClick={() => onReply(comment)}
-              >
-                {t('blog.reply')}
-              </Button>
+              {onReply && (
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto px-0 text-xs"
+                  aria-describedby={`comment-${comment.id}-byline`}
+                  onClick={() => onReply(comment)}
+                >
+                  {t('blog.reply')}
+                </Button>
+              )}
             </article>
           )}
           {comment.replies.length > 0 && (
@@ -210,7 +212,7 @@ export default function PublicationComments({
   const [replyTo, setReplyTo] = useState<PublicationComment | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const shownCount = comments.filter((comment) => !comment.removed).length;
-  if (!allowComments) return null;
+  if (!allowComments && shownCount === 0) return null;
 
   const startReply = (comment: PublicationComment) => {
     setReplyTo(comment);
@@ -227,14 +229,21 @@ export default function PublicationComments({
         {t('blog.comments', { count: shownCount })}
       </h2>
       {comments.length > 0 && (
-        <CommentList comments={buildCommentTree(comments)} onReply={startReply} />
+        <CommentList
+          comments={buildCommentTree(comments)}
+          onReply={allowComments ? startReply : undefined}
+        />
       )}
-      <CommentForm
-        slug={slug}
-        replyTo={replyTo}
-        onCancelReply={() => setReplyTo(null)}
-        textareaRef={textareaRef}
-      />
+      {allowComments ? (
+        <CommentForm
+          slug={slug}
+          replyTo={replyTo}
+          onCancelReply={() => setReplyTo(null)}
+          textareaRef={textareaRef}
+        />
+      ) : (
+        <p className="mt-8 text-sm text-muted-foreground">{t('blog.commentsClosed')}</p>
+      )}
     </section>
   );
 }

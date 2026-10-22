@@ -65,13 +65,9 @@ describe('PublicationComments', () => {
     expect(screen.queryByText('Orphan')).toBeNull();
   });
 
-  it('renders nothing when the publication does not allow comments', () => {
+  it('renders nothing when comments are closed and there are none', () => {
     const { container } = render(
-      <PublicationComments
-        slug="a-post"
-        allowComments={false}
-        comments={[comment(1, null, '<p>Hidden</p>')]}
-      />
+      <PublicationComments slug="a-post" allowComments={false} comments={[]} />
     );
 
     expect(container.innerHTML).toBe('');

@@ -617,6 +617,7 @@
       "publicationFallbackTitle": "Publication",
       "keywordsLabel": "Keywords",
       "commentNotShown": "This comment is no longer shown.",
+      "commentsClosed": "Comments are closed.",
       "reply": "Reply",
       "leaveComment": "Leave a comment",
       "replyingTo": "Replying to {name}",
