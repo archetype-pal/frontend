@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent, type RefObject } from 'react';
 import { useTranslations } from 'next-intl';
+import { Reply } from 'lucide-react';
 import { toast } from 'sonner';
 import { CommentText } from '@/components/common/comment-text';
 import { Button } from '@/components/ui/button';
@@ -61,12 +62,13 @@ function CommentList({
                 {onReply && (
                   <Button
                     type="button"
-                    variant="link"
+                    variant="secondary"
                     size="sm"
-                    className="h-auto px-0 text-xs"
+                    className="h-7 cursor-pointer gap-1 rounded-full px-3 hover:bg-primary hover:text-primary-foreground"
                     aria-describedby={`comment-${comment.id}-byline`}
                     onClick={() => onReply(comment)}
                   >
+                    <Reply className="h-3.5 w-3.5" />
                     {t('blog.reply')}
                   </Button>
                 )}
