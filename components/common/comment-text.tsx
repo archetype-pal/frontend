@@ -34,7 +34,10 @@ export function CommentText({ html, describedBy, className, children }: Props) {
   }, [content, expanded]);
 
   return (
-    <div ref={rootRef} className={cn('scroll-mt-[calc(var(--site-header-h,0px)+2rem)]', className)}>
+    <div
+      ref={rootRef}
+      className={cn('scroll-mt-[calc(var(--site-header-h,0px)+2rem)] wrap-anywhere', className)}
+    >
       <div
         ref={bodyRef}
         className={cn(

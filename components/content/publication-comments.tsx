@@ -261,7 +261,7 @@ export default function PublicationComments({
     <section
       id="comments"
       aria-labelledby="comments-heading"
-      className="mt-10 scroll-mt-[var(--site-header-h,0px)] border-t border-border pt-6"
+      className="mt-10 scroll-mt-[var(--site-header-h,0px)] border-t border-border pt-6 wrap-anywhere"
     >
       <h2 id="comments-heading" className="mb-4 font-serif text-lg font-semibold text-foreground">
         {t('blog.comments', { count: shownCount })}
