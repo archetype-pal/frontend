@@ -14,6 +14,13 @@ export interface PublicationComment {
   author_name: string;
   content: string;
   created_at: string;
+  removed: false;
+}
+
+export interface RemovedPublicationComment {
+  id: number;
+  parent: number | null;
+  removed: true;
 }
 
 export interface Publication {
@@ -34,7 +41,7 @@ export interface Publication {
   created_at: string;
   updated_at: string;
   number_of_comments: number;
-  comments?: PublicationComment[];
+  comments?: (PublicationComment | RemovedPublicationComment)[];
 }
 
 interface PaginatedPublications {

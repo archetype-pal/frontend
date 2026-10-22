@@ -16,6 +16,7 @@ const comment = (
   author_name: `Author ${id}`,
   content,
   created_at: createdAt,
+  removed: false,
 });
 
 describe('PublicationComments', () => {

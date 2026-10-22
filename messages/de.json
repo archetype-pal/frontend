@@ -616,6 +616,7 @@
       "viewAll": "Alle {title} anzeigen",
       "publicationFallbackTitle": "Publikation",
       "keywordsLabel": "Schlagwörter",
+      "commentNotShown": "Dieser Kommentar wird nicht mehr angezeigt.",
       "reply": "Antworten",
       "leaveComment": "Kommentar schreiben",
       "replyingTo": "Antwort an {name}",

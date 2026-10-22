@@ -7,13 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiFetch } from '@/lib/api-fetch';
 import { sanitizeHtml } from '@/lib/sanitize-html';
-import type { PublicationComment } from '@/utils/api';
+import type { PublicationComment, RemovedPublicationComment } from '@/utils/api';
 
-interface CommentNode extends PublicationComment {
-  replies: CommentNode[];
-}
+type ThreadComment = PublicationComment | RemovedPublicationComment;
 
-function buildCommentTree(comments: PublicationComment[]): CommentNode[] {
+type CommentNode = ThreadComment & { replies: CommentNode[] };
+
+function buildCommentTree(comments: ThreadComment[]): CommentNode[] {
   const nodes = new Map<number, CommentNode>(
     comments.map((comment) => [comment.id, { ...comment, replies: [] }])
   );
@@ -39,7 +39,7 @@ function CommentList({
   nested = false,
 }: {
   comments: CommentNode[];
-  onReply: (comment: CommentNode) => void;
+  onReply: (comment: PublicationComment) => void;
   nested?: boolean;
 }) {
   const t = useTranslations('content');
@@ -47,27 +47,31 @@ function CommentList({
     <ol className={nested ? 'mt-4 space-y-4 border-l border-border pl-3 sm:pl-6' : 'space-y-6'}>
       {comments.map((comment) => (
         <li key={comment.id}>
-          <article>
-            <p id={`comment-${comment.id}-byline`} className="mb-1 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{comment.author_name}</span>
-              <span className="mx-1">·</span>
-              <time dateTime={comment.created_at}>{formatCommentDate(comment.created_at)}</time>
-            </p>
-            <div
-              className="publication-body text-sm"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(comment.content) }}
-            />
-            <Button
-              type="button"
-              variant="link"
-              size="sm"
-              className="h-auto px-0 text-xs"
-              aria-describedby={`comment-${comment.id}-byline`}
-              onClick={() => onReply(comment)}
-            >
-              {t('blog.reply')}
-            </Button>
-          </article>
+          {comment.removed ? (
+            <p className="text-sm italic text-muted-foreground">{t('blog.commentNotShown')}</p>
+          ) : (
+            <article>
+              <p id={`comment-${comment.id}-byline`} className="mb-1 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{comment.author_name}</span>
+                <span className="mx-1">·</span>
+                <time dateTime={comment.created_at}>{formatCommentDate(comment.created_at)}</time>
+              </p>
+              <div
+                className="publication-body text-sm"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(comment.content) }}
+              />
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                className="h-auto px-0 text-xs"
+                aria-describedby={`comment-${comment.id}-byline`}
+                onClick={() => onReply(comment)}
+              >
+                {t('blog.reply')}
+              </Button>
+            </article>
+          )}
           {comment.replies.length > 0 && (
             <CommentList comments={comment.replies} onReply={onReply} nested />
           )}
@@ -86,7 +90,7 @@ function CommentForm({
   textareaRef,
 }: {
   slug: string;
-  replyTo: CommentNode | null;
+  replyTo: PublicationComment | null;
   onCancelReply: () => void;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
 }) {
@@ -199,15 +203,16 @@ export default function PublicationComments({
   allowComments,
 }: {
   slug: string;
-  comments: PublicationComment[];
+  comments: ThreadComment[];
   allowComments: boolean;
 }) {
   const t = useTranslations('content');
-  const [replyTo, setReplyTo] = useState<CommentNode | null>(null);
+  const [replyTo, setReplyTo] = useState<PublicationComment | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const shownCount = comments.filter((comment) => !comment.removed).length;
   if (!allowComments) return null;
 
-  const startReply = (comment: CommentNode) => {
+  const startReply = (comment: PublicationComment) => {
     setReplyTo(comment);
     textareaRef.current?.focus();
   };
@@ -219,7 +224,7 @@ export default function PublicationComments({
       className="mt-10 border-t border-border pt-6"
     >
       <h2 id="comments-heading" className="mb-4 font-serif text-lg font-semibold text-foreground">
-        {t('blog.comments', { count: comments.length })}
+        {t('blog.comments', { count: shownCount })}
       </h2>
       {comments.length > 0 && (
         <CommentList comments={buildCommentTree(comments)} onReply={startReply} />
