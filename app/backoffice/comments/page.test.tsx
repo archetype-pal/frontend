@@ -198,4 +198,25 @@ describe('<CommentsPage>', () => {
 
     expect(routerReplace).toHaveBeenCalledWith('?', { scroll: false });
   });
+
+  it('keeps showing that a post filter is on while the posts load', async () => {
+    urlParams.current = new URLSearchParams('post=7');
+    getAllPublications.mockReturnValue(new Promise(() => {}));
+    renderPage();
+
+    expect((await screen.findByRole('combobox', { name: 'Filter by post' })).textContent).toBe(
+      'Loading posts…'
+    );
+  });
+
+  it('says the post is unknown when the address names no post', async () => {
+    urlParams.current = new URLSearchParams('post=99');
+    renderPage();
+
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Filter by post' }).textContent).toBe(
+        'Unknown post'
+      )
+    );
+  });
 });
