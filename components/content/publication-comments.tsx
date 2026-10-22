@@ -3,11 +3,11 @@
 import { useRef, useState, type FormEvent, type RefObject } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { CommentText } from '@/components/common/comment-text';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiFetch } from '@/lib/api-fetch';
-import { sanitizeHtml } from '@/lib/sanitize-html';
 import type { PublicationComment, RemovedPublicationComment } from '@/utils/api';
 
 type ThreadComment = PublicationComment | RemovedPublicationComment;
@@ -57,22 +57,20 @@ function CommentList({
                 <span className="mx-1">·</span>
                 <time dateTime={comment.created_at}>{formatCommentDate(comment.created_at)}</time>
               </p>
-              <div
-                className="publication-body text-sm"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(comment.content) }}
-              />
-              {onReply && (
-                <Button
-                  type="button"
-                  variant="link"
-                  size="sm"
-                  className="h-auto px-0 text-xs"
-                  aria-describedby={`comment-${comment.id}-byline`}
-                  onClick={() => onReply(comment)}
-                >
-                  {t('blog.reply')}
-                </Button>
-              )}
+              <CommentText html={comment.content} describedBy={`comment-${comment.id}-byline`}>
+                {onReply && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="h-auto px-0 text-xs"
+                    aria-describedby={`comment-${comment.id}-byline`}
+                    onClick={() => onReply(comment)}
+                  >
+                    {t('blog.reply')}
+                  </Button>
+                )}
+              </CommentText>
             </article>
           )}
           {comment.replies.length > 0 && (

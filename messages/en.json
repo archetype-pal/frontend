@@ -606,6 +606,7 @@
       "postedBy": "Posted by:",
       "comments": "{count, plural, one {# Comment} other {# Comments}}",
       "readMore": "Read more",
+      "showLess": "Show less",
       "typeFeature": "Feature",
       "typeBlog": "Blog",
       "typeNews": "News",
