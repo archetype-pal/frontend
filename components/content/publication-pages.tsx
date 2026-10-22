@@ -118,6 +118,7 @@ export async function PublicationDetailPage({
             commentsCount={item.number_of_comments}
             showShareBtns
             showReadMoreBtn={false}
+            linkComments={item.allow_comments || item.number_of_comments > 0}
           />
           <PublicationComments
             slug={item.slug}
