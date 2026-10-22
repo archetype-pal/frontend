@@ -22,7 +22,7 @@ function buildCommentTree(comments: PublicationComment[]): CommentNode[] {
     if (node.parent === null) roots.push(node);
     else nodes.get(node.parent)?.replies.push(node);
   }
-  return roots;
+  return roots.reverse();
 }
 
 const formatCommentDate = (value: string) =>
