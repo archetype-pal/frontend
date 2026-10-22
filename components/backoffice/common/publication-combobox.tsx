@@ -24,10 +24,12 @@ export function PublicationCombobox({ value, onChange, className }: PublicationC
     enabled: isAuthenticated,
   });
 
-  const options = publications.map((p) => ({
-    value: String(p.id),
-    label: `${p.title} (${p.comment_count})`,
-  }));
+  const options = publications
+    .filter((p) => p.comment_count > 0 || p.id === value)
+    .map((p) => ({
+      value: String(p.id),
+      label: `${p.title} (${p.comment_count})`,
+    }));
 
   const placeholder =
     value == null
