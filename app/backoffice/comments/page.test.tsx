@@ -111,6 +111,35 @@ describe('<CommentsPage>', () => {
     expect(document.body.querySelector('script')).toBeNull();
   });
 
+  it('shows Read more on a comment taller than 8 lines', async () => {
+    vi.spyOn(Element.prototype, 'clientHeight', 'get').mockReturnValue(200);
+    vi.spyOn(Element.prototype, 'scrollHeight', 'get').mockImplementation(function (this: Element) {
+      return (this.textContent?.length ?? 0) > 1000 ? 600 : 200;
+    });
+    getComments.mockResolvedValue({
+      count: 2,
+      next: null,
+      previous: null,
+      results: [
+        { ...comment(1), content: '<p>Short one</p>' },
+        { ...comment(2), content: `<p>Start ${'word '.repeat(250)}Finale</p>` },
+      ],
+    });
+    renderPage();
+
+    await screen.findByText('Short one');
+    const readMore = await screen.findByRole('button', { name: 'Read more' });
+    expect(readMore.getAttribute('aria-describedby')).toBe('comment-2-author');
+    expect(document.getElementById('comment-2-author')?.textContent).toBe('Author 2');
+
+    fireEvent.click(readMore);
+
+    expect(screen.getByRole('button', { name: 'Show less' }).getAttribute('aria-expanded')).toBe(
+      'true'
+    );
+    vi.restoreAllMocks();
+  });
+
   it('names the comment a reply answers and leaves top level comments alone', async () => {
     getComments.mockResolvedValue({
       count: 2,
