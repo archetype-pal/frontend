@@ -164,8 +164,8 @@ describe('PublicationComments form', () => {
     vi.clearAllMocks();
   });
 
-  const stubFetch = (status: number) => {
-    const fetchMock = vi.fn<typeof fetch>(async () => new Response('{}', { status }));
+  const stubFetch = (status: number, body = '{}') => {
+    const fetchMock = vi.fn<typeof fetch>(async () => new Response(body, { status }));
     vi.stubGlobal('fetch', fetchMock);
     return fetchMock;
   };
@@ -252,5 +252,39 @@ describe('PublicationComments form', () => {
       )
     );
     expect((screen.getByLabelText('Comment') as HTMLTextAreaElement).value).toBe('Thanks');
+  });
+
+  it('shows a refused email address as an error on the email field', async () => {
+    stubFetch(400, JSON.stringify({ author_email: ['Enter a valid email address.'] }));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<PublicationComments slug="a-post" allowComments comments={thread} />);
+
+    fillAndSend();
+
+    const email = screen.getByLabelText('Email');
+    await waitFor(() => expect(email.getAttribute('aria-invalid')).toBe('true'));
+    expect(
+      screen.getByRole('textbox', {
+        name: 'Email',
+        description: /Please enter a valid email address/,
+      })
+    ).toBe(email);
+    expect(document.activeElement).toBe(email);
+    expect(toastMock.error).not.toHaveBeenCalled();
+
+    fireEvent.change(email, { target: { value: 'reader@example.com' } });
+
+    expect(email.getAttribute('aria-invalid')).toBe('false');
+    expect(screen.queryByText('Please enter a valid email address.')).toBeNull();
+  });
+
+  it('says comments are closed when the post closed them after the page loaded', async () => {
+    stubFetch(403, JSON.stringify({ detail: 'Comments are closed on this publication.' }));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<PublicationComments slug="a-post" allowComments comments={thread} />);
+
+    fillAndSend();
+
+    await waitFor(() => expect(toastMock.error).toHaveBeenCalledWith('Comments are closed.'));
   });
 });
