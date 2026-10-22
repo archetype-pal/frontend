@@ -189,6 +189,22 @@ describe('<CommentsPage>', () => {
     expect(routerReplace).toHaveBeenCalledWith('?post=7', { scroll: false });
   });
 
+  it('leaves posts without comments out of the post filter, unless the address names one', async () => {
+    getAllPublications.mockResolvedValue([
+      { id: 7, title: 'Scribal hands', slug: 'scribal-hands', comment_count: 3 },
+      { id: 8, title: 'Quiet post', slug: 'quiet-post', comment_count: 0 },
+      { id: 9, title: 'Another quiet post', slug: 'another-quiet-post', comment_count: 0 },
+    ]);
+    urlParams.current = new URLSearchParams('post=9');
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Filter by post' }));
+
+    expect(await screen.findByRole('option', { name: /Scribal hands/ })).not.toBeNull();
+    expect(screen.queryByRole('option', { name: /^Quiet post/ })).toBeNull();
+    expect(screen.queryByRole('option', { name: /Another quiet post/ })).not.toBeNull();
+  });
+
   it('takes the post out of the address when All posts is chosen', async () => {
     urlParams.current = new URLSearchParams('post=7');
     renderPage();
