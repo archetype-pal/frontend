@@ -5,11 +5,15 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import type { ColumnDef, SortingState } from '@tanstack/react-table';
+import type { SortingState } from '@tanstack/react-table';
 import { PenTool, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
+import {
+  DataTable,
+  sortableHeader,
+  type DataTableColumn,
+} from '@/components/backoffice/common/data-table';
 import { DataPagination } from '@/components/ui/data-pagination';
 import { getHands } from '@/services/backoffice/scribes';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
@@ -18,7 +22,7 @@ import { toOrdering } from '@/lib/backoffice/ordering';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 import type { AdminHandListItem } from '@/types/backoffice';
 
-function buildColumns(t: ReturnType<typeof useTranslations>): ColumnDef<AdminHandListItem>[] {
+function buildColumns(t: ReturnType<typeof useTranslations>): DataTableColumn<AdminHandListItem>[] {
   return [
     {
       accessorKey: 'name',

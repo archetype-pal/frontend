@@ -6,11 +6,15 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { ColumnDef, SortingState } from '@tanstack/react-table';
+import type { SortingState } from '@tanstack/react-table';
 import { BookOpen, Plus, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
+import {
+  DataTable,
+  sortableHeader,
+  type DataTableColumn,
+} from '@/components/backoffice/common/data-table';
 import { DataPagination } from '@/components/ui/data-pagination';
 import { getHistoricalItems } from '@/services/backoffice/manuscripts';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
@@ -46,7 +50,7 @@ export default function ManuscriptsPage() {
   const appManuscriptsLabel = getLabel('appManuscripts');
   const shelfmarkLabel = getLabel('fieldShelfmark');
 
-  const columns = useMemo<ColumnDef<HistoricalItemListItem>[]>(
+  const columns = useMemo<DataTableColumn<HistoricalItemListItem>[]>(
     () => [
       {
         accessorKey: 'location_display',

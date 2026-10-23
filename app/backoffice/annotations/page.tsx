@@ -5,7 +5,7 @@ import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tansta
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
-import type { ColumnDef, SortingState } from '@tanstack/react-table';
+import type { SortingState } from '@tanstack/react-table';
 import { ScanLine, ExternalLink, Trash2, Image as ImageIcon, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataPagination } from '@/components/ui/data-pagination';
@@ -23,6 +23,7 @@ import {
   DataTable,
   sortableHeader,
   type BulkAction,
+  type DataTableColumn,
 } from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { getGraphs, deleteGraph } from '@/services/backoffice/annotations';
@@ -56,7 +57,7 @@ export default function AnnotationsPage() {
     [t]
   );
 
-  const columns: ColumnDef<GraphItem>[] = useMemo(
+  const columns: DataTableColumn<GraphItem>[] = useMemo(
     () => [
       {
         accessorKey: 'id',

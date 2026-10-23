@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
-import type { ColumnDef, SortingState } from '@tanstack/react-table';
+import type { SortingState } from '@tanstack/react-table';
 import { Users, Plus, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +19,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
+import {
+  DataTable,
+  sortableHeader,
+  type DataTableColumn,
+} from '@/components/backoffice/common/data-table';
 import { DataPagination } from '@/components/ui/data-pagination';
 import { getScribes, createScribe } from '@/services/backoffice/scribes';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
@@ -39,7 +43,7 @@ export default function ScribesPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState('');
 
-  const columns: ColumnDef<AdminScribeListItem>[] = [
+  const columns: DataTableColumn<AdminScribeListItem>[] = [
     {
       accessorKey: 'name',
       header: sortableHeader(t('scribes.colName')),

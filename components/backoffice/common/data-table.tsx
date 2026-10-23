@@ -3,17 +3,35 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   type ColumnDef,
+  type CellData,
+  type RowData,
   type SortingState,
   type ColumnFiltersState,
-  type VisibilityState,
+  type ColumnVisibilityState,
   type RowSelectionState,
   type PaginationState,
+  columnFilteringFeature,
+  columnSizingFeature,
+  columnVisibilityFeature,
+  createFilteredRowModel,
+  createPaginatedRowModel,
+  createSortedRowModel,
+  filterFn_arrIncludes,
+  filterFn_equals,
+  filterFn_inDateRange,
+  filterFn_inNumberRange,
+  filterFn_includesString,
+  filterFn_weakEquals,
   flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+  rowPaginationFeature,
+  rowSelectionFeature,
+  rowSortingFeature,
+  sortFn_alphanumeric,
+  sortFn_basic,
+  sortFn_datetime,
+  sortFn_text,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -44,6 +62,43 @@ import { BackofficeErrorState } from './query-state';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import type { ListAllPagesOptions } from '@/lib/backoffice/list-all-pages';
 
+// v9 resolves a column's 'auto' sort and filter only among registered
+// functions, so register every one v8's 'auto' could pick.
+const dataTableFeatures = tableFeatures({
+  columnFilteringFeature,
+  columnSizingFeature,
+  columnVisibilityFeature,
+  rowPaginationFeature,
+  rowSelectionFeature,
+  rowSortingFeature,
+  filteredRowModel: createFilteredRowModel(),
+  paginatedRowModel: createPaginatedRowModel(),
+  sortedRowModel: createSortedRowModel(),
+  filterFns: {
+    arrIncludes: filterFn_arrIncludes,
+    equals: filterFn_equals,
+    inDateRange: filterFn_inDateRange,
+    inNumberRange: filterFn_inNumberRange,
+    includesString: filterFn_includesString,
+    weakEquals: filterFn_weakEquals,
+  },
+  sortFns: {
+    alphanumeric: sortFn_alphanumeric,
+    basic: sortFn_basic,
+    datetime: sortFn_datetime,
+    text: sortFn_text,
+  },
+});
+
+export type DataTableFeatures = typeof dataTableFeatures;
+
+/** A column of a {@link DataTable}. */
+export type DataTableColumn<TData extends RowData, TValue extends CellData = CellData> = ColumnDef<
+  DataTableFeatures,
+  TData,
+  TValue
+>;
+
 export interface BulkAction {
   label: string;
   /** `keepTicked` replaces the ticks with the given ids, e.g. the rows that failed. */
@@ -61,8 +116,8 @@ export interface PresetFilter<TData> {
   count?: number;
 }
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
+interface DataTableProps<TData extends RowData> {
+  columns: DataTableColumn<TData>[];
   data: TData[];
   /** Key of the column used for the global search input (client-side filtering). */
   searchColumn?: string;
@@ -117,7 +172,7 @@ interface DataTableProps<TData, TValue> {
   tableRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends RowData>({
   columns,
   data,
   searchColumn,
@@ -145,7 +200,7 @@ export function DataTable<TData, TValue>({
   sorting: serverSorting,
   onSortingChange,
   tableRef,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const [localSorting, setLocalSorting] = useState<SortingState>([]);
@@ -160,7 +215,7 @@ export function DataTable<TData, TValue>({
   const [pageIndex, setPageIndex] = useState(0);
   const [tablePageSize, setTablePageSize] = usePageSize(pageSizeKey ?? null, pageSize);
   const paginationState: PaginationState = { pageIndex, pageSize: tablePageSize };
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>({});
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [activePreset, setActivePreset] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -197,7 +252,7 @@ export function DataTable<TData, TValue>({
       : data;
 
   // Prepend checkbox column if selection is enabled
-  const finalColumns: ColumnDef<TData, TValue>[] = enableRowSelection
+  const finalColumns: DataTableColumn<TData>[] = enableRowSelection
     ? [
         {
           id: 'select',
@@ -223,21 +278,17 @@ export function DataTable<TData, TValue>({
           enableSorting: false,
           enableHiding: false,
           size: 32,
-        } as ColumnDef<TData, TValue>,
+        } as DataTableColumn<TData>,
         ...columns,
       ]
     : columns;
 
-  // TanStack Table's useReactTable() returns unstable refs; React Compiler skip is intentional.
-  // @tanstack/react-table + React 19: incompatible-library until upstream support; disable is intentional
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const table = useTable<DataTableFeatures, TData>({
+    features: dataTableFeatures,
     data: filteredData,
     columns: finalColumns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    ...(pagination && { getPaginationRowModel: getPaginationRowModel() }),
+    // Without pagination every row shows, as if the data came already paged.
+    manualPagination: !pagination,
     manualSorting: !!onSortingChange,
     onSortingChange: onSortingChange
       ? (updater) => onSortingChange(typeof updater === 'function' ? updater(sorting) : updater)
@@ -564,8 +615,8 @@ export function DataTable<TData, TValue>({
       {pagination && !isLoading && (
         <DataPagination
           totalItems={table.getFilteredRowModel().rows.length}
-          page={table.getState().pagination.pageIndex + 1}
-          pageSize={table.getState().pagination.pageSize}
+          page={paginationState.pageIndex + 1}
+          pageSize={paginationState.pageSize}
           onPageChange={(p) => table.setPageIndex(p - 1)}
           onPageSizeChange={(size) => table.setPageSize(size)}
           scrollTargetRef={tableBoxRef}

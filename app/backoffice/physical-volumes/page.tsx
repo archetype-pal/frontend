@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useTranslations } from 'next-intl';
-import type { ColumnDef, SortingState } from '@tanstack/react-table';
+import type { SortingState } from '@tanstack/react-table';
 import { Archive, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -15,7 +15,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
+import {
+  DataTable,
+  sortableHeader,
+  type DataTableColumn,
+} from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { DataPagination } from '@/components/ui/data-pagination';
 import {
@@ -54,7 +58,7 @@ export default function PhysicalVolumesPage() {
   const shelfmarkLabel = getLabel('fieldShelfmark');
   const appManuscriptsLabel = getLabel('appManuscripts');
 
-  const columns: ColumnDef<CurrentItemOption>[] = [
+  const columns: DataTableColumn<CurrentItemOption>[] = [
     {
       accessorKey: 'repository_name',
       header: sortableHeader(t('physicalVolumes.colRepository')),

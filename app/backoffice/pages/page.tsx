@@ -6,7 +6,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { ColumnDef } from '@tanstack/react-table';
 import { Files, Plus, ExternalLink, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +13,7 @@ import {
   DataTable,
   sortableHeader,
   type BulkAction,
+  type DataTableColumn,
 } from '@/components/backoffice/common/data-table';
 import { FilterBar, type FilterConfig } from '@/components/backoffice/common/filter-bar';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
@@ -39,7 +39,7 @@ export default function PagesPage() {
     },
   ];
 
-  const columns: ColumnDef<PageListItem>[] = [
+  const columns: DataTableColumn<PageListItem>[] = [
     {
       id: 'title',
       header: t('pages.colTitle'),
