@@ -62,7 +62,6 @@ export interface HandGraph {
   allograph_name: string; // e.g. "a, Caroline"
   allograph_id: number;
   image_iiif: string; // IIIF info URL from item_image
-  coordinates: string; // GeoJSON string (from annotation.geometry)
   item_part: number;
   item_image: number;
   collection_item: CollectionItem;
