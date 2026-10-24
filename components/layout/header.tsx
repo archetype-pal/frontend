@@ -359,7 +359,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
           <div className="container mx-auto px-4 py-4 md:py-5">
             <div className="flex items-end gap-6">
               {logoUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
+                // oxlint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt="" className="h-10 w-auto shrink-0 object-contain md:h-12" />
               )}
               <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight text-title-bar-foreground leading-tight">

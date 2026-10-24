@@ -14,6 +14,8 @@ overrides:
   # the annotation editor's runtime back down to 11.x.
   '@recogito/recogito-client-core>uuid': ^11.1.1
   '@lhci/cli>uuid': ^11.1.1
+  # Next's lint plugin needs only eslint-utils' helpers, not ESLint itself.
+  '@eslint-community/eslint-utils>eslint': '-'
 
 # Build-script approval. pnpm 11 replaced the `onlyBuiltDependencies` list with
 # this map and errors (rather than warns) until every package that ships an

@@ -3,7 +3,7 @@ set -euo pipefail
 
 echo "==> Running pre-commit checks..."
 
-echo "  Checking ESLint..."
+echo "  Checking Oxlint..."
 pnpm lint
 
 echo "  Checking Prettier..."

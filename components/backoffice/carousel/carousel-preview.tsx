@@ -58,7 +58,7 @@ export function CarouselPreview({ items }: CarouselPreviewProps) {
         <div className="relative aspect-[16/7] overflow-hidden rounded-lg border bg-black">
           {hasImage ? (
             <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {/* oxlint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imageUrl}
                 alt={stripHtml(currentItem.title)}

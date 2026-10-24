@@ -37,7 +37,7 @@ export function OtherImagesGrid({ manuscriptId, images, limit = 20 }: OtherImage
               className="group flex flex-col gap-2 rounded-md border bg-card p-2 transition hover:border-primary"
             >
               <div className="aspect-[3/4] overflow-hidden rounded bg-muted">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {/* oxlint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={thumbUrl}
                   alt={`Manuscript image ${img.locus}`}

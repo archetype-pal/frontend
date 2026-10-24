@@ -99,7 +99,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
 
   useEffect(() => {
     if (text) {
-      setContent(text.content); // eslint-disable-line react-hooks/set-state-in-effect
+      setContent(text.content); // oxlint-disable-line react-hooks/set-state-in-effect
       setStatus(text.status);
       setType(text.type);
       setLanguage(text.language ?? '');

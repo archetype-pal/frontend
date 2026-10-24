@@ -27,7 +27,7 @@ export function useThumbDensity(): [ThumbDensity, (next: ThumbDensity) => void] 
   const [density, setDensity] = React.useState<ThumbDensity>('comfortable');
   React.useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed locally-owned state from localStorage after mount; deferring to an effect (vs. a lazy useState initializer) is required to avoid an SSR/client hydration mismatch, since `window` is unavailable during server render.
+    // oxlint-disable-next-line react-hooks/set-state-in-effect -- seed locally-owned state from localStorage after mount; deferring to an effect (vs. a lazy useState initializer) is required to avoid an SSR/client hydration mismatch, since `window` is unavailable during server render.
     if (saved === 'compact' || saved === 'comfortable' || saved === 'large') setDensity(saved);
   }, []);
   const changeDensity = React.useCallback((next: ThumbDensity) => {

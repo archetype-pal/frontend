@@ -91,7 +91,7 @@ export default async function Footer() {
                 {partners.map((partner) => {
                   const logoCard = (
                     <div className="bg-white/90 rounded-md p-3 flex items-center justify-center w-48 h-24">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {/* oxlint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={getCarouselImageUrl(partner.logo)}
                         alt={partner.name}

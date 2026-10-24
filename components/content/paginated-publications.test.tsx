@@ -103,16 +103,16 @@ describe('PaginatedPublications', () => {
     const landed = new Promise<void>((resolve) => (land = resolve));
     let serve!: () => void;
     const served = new Promise<void>((resolve) => (serve = resolve));
-    let navigate!: (url: string) => void;
+    const router: { navigate?: (url: string) => void } = {};
     // Like the Next router: the URL changes in a transition that waits for the new page.
     function Router() {
       const [url, setUrl] = useState('/news');
-      navigate = setUrl;
+      router.navigate = setUrl;
       if (url !== '/news') use(landed);
       nav.search = new URL(url, 'http://localhost').search;
       return <PaginatedPublications title="News" categoryFlag="is_news" basePath="/news" />;
     }
-    nav.push.mockImplementation((url: string) => startTransition(() => navigate(url)));
+    nav.push.mockImplementation((url: string) => startTransition(() => router.navigate!(url)));
     getPublications.mockImplementation(async (params: PublicationParams) => {
       if (params.offset) await served;
       return posts(45, params);

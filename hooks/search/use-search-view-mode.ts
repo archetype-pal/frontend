@@ -96,7 +96,7 @@ export function useSearchViewMode(resultType: ResultType) {
       if (candidate === 'distribution' && resultType !== 'graphs') return;
       if (candidate === 'map' && isTableOnlyType(resultType)) return;
       if (candidate === 'grid' && isTableOnlyType(resultType)) return;
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- seeds viewMode from a browser-only store (localStorage) post-mount to avoid a hydration mismatch; cannot run during render or via useSyncExternalStore because it is keyed on the resultType prop and must yield to later setViewMode calls
+      // oxlint-disable-next-line react-hooks/set-state-in-effect -- seeds viewMode from a browser-only store (localStorage) post-mount to avoid a hydration mismatch; cannot run during render or via useSyncExternalStore because it is keyed on the resultType prop and must yield to later setViewMode calls
       setViewMode(candidate);
     } catch {
       // ignore invalid persisted prefs

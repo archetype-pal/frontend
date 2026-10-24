@@ -52,7 +52,7 @@ export function MiradorViewer({ manifestUrls, language, className }: MiradorView
     // manifestUrls is intentionally tracked via manifestUrlsKey: Mirador only
     // needs to reboot when the actual set of manifests changes, not on every
     // render that happens to pass a new array with the same contents.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [containerId, language, manifestUrlsKey]);
 
   return (

@@ -111,7 +111,7 @@ export function DynamicFacets({
     // Deferred localStorage read: getSearchHistory() returns [] during SSR, so a
     // useState initializer would hydrate empty then diverge. Reading after mount
     // avoids the hydration mismatch while seeding the recent-searches list.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot read of an external store (localStorage) post-hydration to avoid an SSR mismatch
+    // oxlint-disable-next-line react-hooks/set-state-in-effect -- one-shot read of an external store (localStorage) post-hydration to avoid an SSR mismatch
     setHistoryItems(getSearchHistory());
   }, []);
 

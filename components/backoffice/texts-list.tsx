@@ -188,7 +188,7 @@ export function TextsList() {
     return () => clearTimeout(handle);
     // setParams is stable enough for this debounce window; including it
     // would force a re-arm on every navigation.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput, filters.search]);
 
   // Pending from the click until the new URL lands, so the list dims at once.

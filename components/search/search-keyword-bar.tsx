@@ -68,7 +68,7 @@ export function SearchKeywordBar({
     // new entry; localStorage emits no same-tab change event, so `value` is the
     // refresh trigger. A useSyncExternalStore migration would need a custom
     // same-tab write event in lib/search-history.ts (out of scope here).
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from localStorage; no same-tab change event exists to subscribe to
+    // oxlint-disable-next-line react-hooks/set-state-in-effect -- syncing from localStorage; no same-tab change event exists to subscribe to
     setHistory(getSearchHistory());
   }, [value]);
 

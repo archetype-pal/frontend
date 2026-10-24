@@ -75,7 +75,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
 
   useEffect(() => {
     if (page) {
-      setPageSlug(page.slug); // eslint-disable-line react-hooks/set-state-in-effect
+      setPageSlug(page.slug); // oxlint-disable-line react-hooks/set-state-in-effect
       setTitle(page.title);
       setContent(page.content);
       setStatus(page.status);
@@ -97,9 +97,9 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
   useEffect(() => {
     const info = getDraftInfo();
     if (info.exists && page) {
-      setShowRecovery(true); // eslint-disable-line react-hooks/set-state-in-effect
+      setShowRecovery(true); // oxlint-disable-line react-hooks/set-state-in-effect
     }
-  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page]); // oxlint-disable-line react-hooks/exhaustive-deps
 
   const recoverDraft = () => {
     const draft = recover();

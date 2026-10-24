@@ -68,7 +68,7 @@ export function useAutosave<T>(key: string, data: T, dirty: boolean, intervalMs 
   // Periodic autosave when dirty
   useEffect(() => {
     if (!dirty) {
-      setStatus('idle'); // eslint-disable-line react-hooks/set-state-in-effect
+      setStatus('idle'); // oxlint-disable-line react-hooks/set-state-in-effect
       return;
     }
 
