@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import BlogPostPreview from './blog-post-preview';
 
@@ -110,6 +110,35 @@ describe('BlogPostPreview', () => {
   it('shows the comment count without linking to comments the post page cannot show', () => {
     const { getByText, unmount } = renderPreview();
     expect(getByText('0 Comments').closest('a')).toBeNull();
+    unmount();
+  });
+
+  it('links the comment count to the comments below and scrolls there smoothly', () => {
+    const { container, getByRole, unmount } = render(
+      <>
+        <BlogPostPreview
+          title="Medieval Manuscripts"
+          author="Alice Smith"
+          date="2020-01-01T00:00:00Z"
+          excerpt="<p>An overview.</p>"
+          slug="/publications/blogs/medieval-manuscripts"
+          commentsCount={3}
+          showShareBtns={false}
+          showReadMoreBtn={false}
+          linkComments
+        />
+        <section id="comments" />
+      </>
+    );
+    const comments = container.querySelector<HTMLElement>('#comments');
+    const scrollIntoView = vi.fn();
+    if (comments) comments.scrollIntoView = scrollIntoView;
+
+    const link = getByRole('link', { name: '3 Comments' });
+    expect(link.getAttribute('href')).toBe('#comments');
+    fireEvent.click(link);
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' });
     unmount();
   });
 

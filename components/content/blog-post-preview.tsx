@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import ShareButtons from './share-buttons';
 import { renderPublicationHtml } from '@/lib/publication-html';
+import { scrollBehavior } from '@/lib/scroll-utils';
 import {
   PUBLICATION_KINDS,
   PUBLICATION_KIND_CONFIG,
@@ -68,6 +69,7 @@ interface BlogPostPreviewProps {
   commentsCount?: number;
   showShareBtns: boolean;
   showReadMoreBtn: boolean;
+  linkComments?: boolean;
 }
 
 export default function BlogPostPreview({
@@ -80,6 +82,7 @@ export default function BlogPostPreview({
   commentsCount = 0,
   showShareBtns = true,
   showReadMoreBtn = true,
+  linkComments = false,
 }: BlogPostPreviewProps) {
   const t = useTranslations('content');
   const tags = parseKeywords(keywords).filter((tag) => !CATEGORY_KEYWORDS.has(tag.toLowerCase()));
@@ -123,11 +126,26 @@ export default function BlogPostPreview({
           {publicationLabel}
         </Link>
         <span className="mx-1">·</span>
-        {/* A count only: comments are not shown on the post page yet (#187). */}
-        <span className="flex items-center">
-          <MessageSquare className="h-4 w-4 mr-1" />
-          {t('blog.comments', { count: commentsCount })}
-        </span>
+        {linkComments ? (
+          <a
+            href="#comments"
+            onClick={(event) => {
+              const comments = document.getElementById('comments');
+              if (!comments) return;
+              event.preventDefault();
+              comments.scrollIntoView({ block: 'start', behavior: scrollBehavior() });
+            }}
+            className="flex items-center text-primary hover:underline"
+          >
+            <MessageSquare className="h-4 w-4 mr-1" />
+            {t('blog.comments', { count: commentsCount })}
+          </a>
+        ) : (
+          <span className="flex items-center">
+            <MessageSquare className="h-4 w-4 mr-1" />
+            {t('blog.comments', { count: commentsCount })}
+          </span>
+        )}
       </div>
 
       {tags.length > 0 && (
