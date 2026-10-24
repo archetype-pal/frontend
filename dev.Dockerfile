@@ -11,7 +11,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # corepack is unreliable on Alpine; pin the pnpm from package.json's packageManager
-RUN npm install -g pnpm@11.9.0
+RUN npm install -g pnpm@12.15.0
 
 # Manifests only: source arrives via the compose bind-mount, and node_modules
 # lives in an anonymous volume seeded from this layer.
