@@ -2,7 +2,7 @@
 
 Design options for [frontend#75](https://github.com/archetype-pal/frontend/issues/75).
 
-`use-search-page-state.ts` builds the search timeline from
+`hooks/search/use-search-page-state.ts` builds the search timeline from
 `facetDistribution.date_min` alone. `date_max` is never read, so a charter dated
 `1235 × 1265` is drawn as a spike on 1235. 3,052 of the 5,424 indexed Models of
 Authority clauses (56%) carry a range rather than a point.
