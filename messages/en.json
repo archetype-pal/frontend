@@ -1876,6 +1876,10 @@
     "comments": {
       "title": "Comment Moderation",
       "subtitle": "{count, plural, =0 {0 comments} =1 {1 comment} other {{count} comments}}",
+      "emailSettingLabel": "Email me about comments awaiting approval",
+      "emailSettingTo": "Sent to {email}",
+      "emailSettingNoAddress": "Your account has no email address.",
+      "emailSettingFailed": "Could not save your email setting",
       "filterAll": "all",
       "filterPending": "pending",
       "filterApproved": "approved",
