@@ -64,12 +64,12 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^1.61.0",
     "mirador": "^4.2.4",
-    "next": "^16.4.2",
+    "next": "^16.4.3",
     "next-intl": "^4.14.9",
     "openseadragon": "^6.1.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-i18next": "^17.1.2",
+    "react-i18next": "^17.1.4",
     "react-remove-scroll": "^2.7.2",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.7.0",
@@ -79,8 +79,8 @@
   },
   "devDependencies": {
     "@lhci/cli": "^0.15.1",
-    "@next/bundle-analyzer": "^16.4.2",
-    "@next/eslint-plugin-next": "16.4.2",
+    "@next/bundle-analyzer": "^16.4.3",
+    "@next/eslint-plugin-next": "16.4.3",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
@@ -98,7 +98,7 @@
   },
   "engines": {
     "node": ">=26.0.0",
-    "pnpm": ">=10.0.0"
+    "pnpm": ">=12.0.0"
   },
-  "packageManager": "pnpm@11.9.0"
+  "packageManager": "pnpm@12.15.0"
 }
