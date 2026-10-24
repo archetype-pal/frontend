@@ -68,7 +68,7 @@ export function SortableCarouselCard({
 
       <div className="h-12 w-20 shrink-0 rounded overflow-hidden bg-muted flex items-center justify-center">
         {hasImage ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
+          /* oxlint-disable-next-line @next/next/no-img-element */
           <img src={imageUrl} alt={stripHtml(item.title)} className="h-full w-full object-cover" />
         ) : (
           <ImageIcon className="h-5 w-5 text-muted-foreground/50" />

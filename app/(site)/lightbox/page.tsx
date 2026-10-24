@@ -254,7 +254,7 @@ function LightboxPageContent() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitialized, paramKey, fromCollectionCount]);
 
   const handleBack = () => {

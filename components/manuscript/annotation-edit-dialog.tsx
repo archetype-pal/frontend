@@ -820,7 +820,7 @@ function GraphPreviewThumb({ graph, iiifImage }: { graph: BackendGraph; iiifImag
   return (
     <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded border bg-background">
       {thumb ? (
-        // eslint-disable-next-line @next/next/no-img-element
+        // oxlint-disable-next-line @next/next/no-img-element
         <img
           src={thumb}
           alt={t('previewAlt', { id: graph.id })}

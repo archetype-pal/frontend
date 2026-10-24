@@ -192,7 +192,7 @@ export function useSearchPageState(initialType?: ResultType) {
       if (areExtraParamsEqual(prev.extraParams, nextExtra)) return prev;
       return { ...prev, extraParams: nextExtra, offset: 0 };
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [advancedSearch]);
 
   // --- URL sync ---
@@ -250,7 +250,7 @@ export function useSearchPageState(initialType?: ResultType) {
       queryHook.setQueryState((prev) => resetQueryForTypeChange(prev));
       setAdvancedSearch(DEFAULT_ADVANCED_SEARCH_STATE);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable refs from sub-hooks
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- stable refs from sub-hooks
     [queryHook.setQueryState, selection]
   );
 

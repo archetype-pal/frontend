@@ -43,7 +43,7 @@ export function PartnerEditorPanel({
 
   // Reset form when the selected item changes
   useEffect(() => {
-    setName(item?.name ?? ''); // eslint-disable-line react-hooks/set-state-in-effect
+    setName(item?.name ?? ''); // oxlint-disable-line react-hooks/set-state-in-effect
     setUrl(item?.url ?? '');
     setLogoPath(item?.logo ?? '');
     setLogoFile(null);

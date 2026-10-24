@@ -344,7 +344,7 @@ export default function TranslationsPage() {
 
   useEffect(() => {
     if (!serverConfig) return;
-    setConfig(serverConfig); // eslint-disable-line react-hooks/set-state-in-effect
+    setConfig(serverConfig); // oxlint-disable-line react-hooks/set-state-in-effect
     setDirty(false);
   }, [serverConfig]);
 

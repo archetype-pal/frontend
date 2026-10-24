@@ -158,7 +158,7 @@ export default function SearchEnginePage() {
     }, 800);
 
     return () => clearInterval(interval);
-  }, [isAuthenticated, activeTaskKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, activeTaskKey]); // oxlint-disable-line react-hooks/exhaustive-deps
 
   // When tasks complete, refetch stats and show toast
   const prevTaskStatesRef = useRef<Record<string, string>>({});

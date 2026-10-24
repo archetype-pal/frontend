@@ -70,7 +70,7 @@ export function ItemImageEditDialog({
 
   useEffect(() => {
     if (open) {
-      setLocus(image.locus); // eslint-disable-line react-hooks/set-state-in-effect
+      setLocus(image.locus); // oxlint-disable-line react-hooks/set-state-in-effect
       setTags(tagsKey);
       setTargetPart(null);
     }

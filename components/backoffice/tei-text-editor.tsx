@@ -182,7 +182,7 @@ export function TeiTextEditor({
       const raw = localStorage.getItem(HIGHLIGHT_STORAGE_KEY);
       const parsed: unknown = raw ? JSON.parse(raw) : null;
       if (Array.isArray(parsed)) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrating from a client-only source (localStorage) MUST happen post-mount: reading it during render would desync SSR/first-client render. Deliberate, runs once.
+        // oxlint-disable-next-line react-hooks/set-state-in-effect -- hydrating from a client-only source (localStorage) MUST happen post-mount: reading it during render would desync SSR/first-client render. Deliberate, runs once.
         setHighlight(new Set(parsed.filter((v): v is string => typeof v === 'string')));
       }
     } catch {

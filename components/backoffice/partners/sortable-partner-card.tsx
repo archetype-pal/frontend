@@ -67,7 +67,7 @@ export function SortablePartnerCard({
 
       <div className="h-12 w-20 shrink-0 rounded overflow-hidden bg-muted flex items-center justify-center">
         {hasLogo ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
+          /* oxlint-disable-next-line @next/next/no-img-element */
           <img src={logoUrl} alt={item.name} className="h-full w-full object-contain" />
         ) : (
           <Handshake className="h-5 w-5 text-muted-foreground/50" />

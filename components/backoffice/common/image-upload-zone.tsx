@@ -164,7 +164,7 @@ export function ImageUploadZone({
       >
         {displayUrl ? (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {/* oxlint-disable-next-line @next/next/no-img-element */}
             <img
               src={displayUrl}
               alt={t('imageUpload.previewAlt')}

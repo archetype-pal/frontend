@@ -112,7 +112,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
           : `${historicalItemLabel} #${item.id}`;
       track({ label, href: `/backoffice/manuscripts/${itemId}`, type: historicalItemLabel });
       // Sync draft from item; intentional setState in effect.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // oxlint-disable-next-line react-hooks/set-state-in-effect
       setDraft({
         type: item.type,
         format: item.format,

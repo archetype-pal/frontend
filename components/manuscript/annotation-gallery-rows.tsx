@@ -466,7 +466,7 @@ function ThumbImage({ graph, onFailed }: { graph: BackendGraph; onFailed: () => 
         </span>
       ) : thumb.src ? (
         // Fills the box: small crops arrive at their own size, so S/M/L relies on this scaling.
-        // eslint-disable-next-line @next/next/no-img-element
+        // oxlint-disable-next-line @next/next/no-img-element
         <img
           src={thumb.src}
           alt=""
