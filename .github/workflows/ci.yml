@@ -54,7 +54,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Restore Prettier cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules/.cache/prettier
           key: prettier-${{ hashFiles('pnpm-lock.yaml', '.prettierrc') }}-${{ github.sha }}
@@ -110,7 +110,7 @@ jobs:
 
       # Next's build cache plus the incremental TypeScript state its type check reuses.
       - name: Restore Next.js build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             .next/cache
