@@ -1,0 +1,36 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  # Weekly, so an advisory published against an unchanged lockfile still fails.
+  schedule:
+    - cron: '0 4 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Dependabot's dependency graph cannot read the pnpm 12 lockfile, so GitHub
+  # raises no alerts for these packages; this job is the vulnerability check.
+  # Production dependencies only: the dev-only advisories under @lhci/cli
+  # (extract-zip, basic-ftp) have no patched release and never ship.
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '26'
+      # Reads pnpm-lock.yaml only; no install needed.
+      - name: Run dependency audit
+        run: pnpm audit --prod
