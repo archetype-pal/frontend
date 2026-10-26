@@ -31,6 +31,23 @@ function pick(filterIndex: number, option: string) {
   fireEvent.click(screen.getByRole('option', { name: option }));
 }
 
+function post(id: number, title: string, commentCount: number) {
+  return {
+    id,
+    title,
+    slug: title.toLowerCase().replace(/ /g, '-'),
+    status: 'Published' as const,
+    is_blog_post: true,
+    is_news: false,
+    is_featured: false,
+    author: 1,
+    author_name: 'editor',
+    published_at: null,
+    created_at: '2015-05-02T00:00:00Z',
+    comment_count: commentCount,
+  };
+}
+
 describe('<PublicationsPage>', () => {
   beforeEach(() => {
     getPublications.mockReset();
@@ -59,5 +76,19 @@ describe('<PublicationsPage>', () => {
         is_news: true,
       })
     );
+  });
+
+  it('links a comment count to the comments on that post', async () => {
+    getPublications.mockResolvedValue({
+      count: 2,
+      next: null,
+      previous: null,
+      results: [post(7, 'Scribal hands', 11), post(8, 'Quiet post', 0)],
+    });
+    renderPage();
+
+    const link = await screen.findByRole('link', { name: '11 comments on Scribal hands' });
+    expect(link.getAttribute('href')).toBe('/backoffice/comments?post=7');
+    expect(screen.queryByRole('link', { name: /on Quiet post/ })).toBeNull();
   });
 });

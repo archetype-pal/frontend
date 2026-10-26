@@ -8,6 +8,21 @@ export interface PublicationAuthor {
   last_name: string;
 }
 
+export interface PublicationComment {
+  id: number;
+  parent: number | null;
+  author_name: string;
+  content: string;
+  created_at: string;
+  removed: false;
+}
+
+export interface RemovedPublicationComment {
+  id: number;
+  parent: number | null;
+  removed: true;
+}
+
 export interface Publication {
   id: number | string;
   title: string;
@@ -26,6 +41,7 @@ export interface Publication {
   created_at: string;
   updated_at: string;
   number_of_comments: number;
+  comments?: (PublicationComment | RemovedPublicationComment)[];
 }
 
 interface PaginatedPublications {

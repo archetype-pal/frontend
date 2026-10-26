@@ -1,11 +1,22 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { Suspense, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
-import { MessageSquare, CheckCircle, XCircle, Trash2, Clock, Filter, Search } from 'lucide-react';
+import {
+  MessageSquare,
+  CheckCircle,
+  XCircle,
+  Trash2,
+  Clock,
+  Filter,
+  Search,
+  CornerDownRight,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,6 +24,8 @@ import { Input } from '@/components/ui/input';
 import { DataPagination } from '@/components/ui/data-pagination';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
+import { PublicationCombobox } from '@/components/backoffice/common/publication-combobox';
+import { CommentText } from '@/components/common/comment-text';
 import {
   getComments,
   approveComment,
@@ -26,10 +39,22 @@ import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 import { cn } from '@/lib/utils';
+import { stripHtmlToPlainText } from '@/lib/sanitize-html';
 import type { CommentItem } from '@/types/backoffice';
 
 export default function CommentsPage() {
+  return (
+    <Suspense>
+      <CommentsPageContent />
+    </Suspense>
+  );
+}
+
+function CommentsPageContent() {
   const t = useTranslations('backoffice');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const postId = Number(searchParams.get('post')) || null;
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('all');
@@ -47,6 +72,7 @@ export default function CommentsPage() {
     offset: page * pageSize,
     ...(search ? { search } : {}),
     ...(filter !== 'all' ? { is_approved: filter === 'approved' } : {}),
+    ...(postId ? { post: postId } : {}),
   };
 
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
@@ -58,6 +84,7 @@ export default function CommentsPage() {
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: backofficeKeys.comments.all() });
+    queryClient.invalidateQueries({ queryKey: backofficeKeys.publications.all() });
     selection.clear();
   };
 
@@ -131,6 +158,16 @@ export default function CommentsPage() {
     setBulkAction(null);
   };
 
+  const setPostFilter = (id: number | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id === null) params.delete('post');
+    else params.set('post', String(id));
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : '?', { scroll: false });
+    selection.clear();
+    setPage(0);
+  };
+
   const openBulkConfirm = (action: 'approve' | 'reject' | 'delete') => {
     setBulkAction(action);
     setBulkConfirmOpen(true);
@@ -172,6 +209,7 @@ export default function CommentsPage() {
             }
           </Button>
         ))}
+        <PublicationCombobox value={postId} onChange={setPostFilter} />
         <div className="relative ml-auto w-full max-w-sm">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -278,7 +316,9 @@ export default function CommentsPage() {
                   />
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{comment.author_name}</span>
+                      <span id={`comment-${comment.id}-author`} className="font-medium text-sm">
+                        {comment.author_name}
+                      </span>
                       <span className="text-xs text-muted-foreground">{comment.author_email}</span>
                       {comment.is_approved ? (
                         <Badge variant="default" className="text-[10px] gap-0.5">
@@ -293,8 +333,18 @@ export default function CommentsPage() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      on &ldquo;{comment.post_title}&rdquo; &middot;{' '}
-                      {new Date(comment.created_at).toLocaleDateString()}
+                      {t.rich('comments.onPost', {
+                        title: comment.post_title,
+                        post: (chunks) => (
+                          <Link
+                            href={`/backoffice/publications/${comment.post_slug}`}
+                            className="text-primary hover:underline"
+                          >
+                            {chunks}
+                          </Link>
+                        ),
+                      })}{' '}
+                      &middot; {new Date(comment.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -327,13 +377,32 @@ export default function CommentsPage() {
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                    aria-label={t('comments.deleteAriaLabel', { name: comment.author_name })}
                     onClick={() => setDeleteTarget(comment)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
-              <p className="text-sm whitespace-pre-wrap pl-8">{comment.content}</p>
+              {comment.parent_author_name && (
+                <p className="flex items-center gap-1 pl-8 text-xs text-muted-foreground">
+                  <CornerDownRight className="h-3 w-3 shrink-0" />
+                  <span
+                    className="truncate"
+                    title={stripHtmlToPlainText(comment.parent_content ?? '')}
+                  >
+                    {t('comments.replyTo', {
+                      name: comment.parent_author_name,
+                      excerpt: stripHtmlToPlainText(comment.parent_content ?? ''),
+                    })}
+                  </span>
+                </p>
+              )}
+              <CommentText
+                html={comment.content}
+                describedBy={`comment-${comment.id}-author`}
+                className="pl-8"
+              />
             </div>
           ))
         )}
