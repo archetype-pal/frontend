@@ -303,8 +303,10 @@ function GraphThumb({
       <button
         type="button"
         onClick={(e) => onSelect(e.shiftKey)}
+        // One name in both states: aria-pressed carries the state, so a name that
+        // flipped to "Unselect" would announce it twice.
         aria-pressed={isSelected}
-        aria-label={isSelected ? t('unselectGraph', names) : t('selectGraph', names)}
+        aria-label={t('selectGraph', names)}
         className={cn(
           'absolute left-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-[5px] border-[1.5px] shadow-sm transition',
           isSelected
@@ -321,7 +323,8 @@ function GraphThumb({
         type="button"
         onClick={() => collection.toggle(graph)}
         disabled={!collection.ready}
-        aria-pressed={inCollection}
+        // The label names the action (add or remove), so it carries the state;
+        // aria-pressed on top would say it twice.
         aria-label={starLabel}
         title={starLabel}
         className={cn(
