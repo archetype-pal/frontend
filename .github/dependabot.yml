@@ -30,10 +30,11 @@ updates:
           - 'minor'
           - 'patch'
     ignore:
-      # Held back: Mirador 4.3 needs MUI 9 and bundles its own dependencies
-      # (OpenSeadragon included), which takes the Compare chunk over the bundle
-      # budget. Lift both once a Mirador release externalises them again.
+      # Held at 4.2.4: in 4.2.6 and 4.3, Mirador's build bundles its own
+      # dependencies, OpenSeadragon included, which takes the Compare chunk from
+      # ~200 to ~474 KiB gzip, over the bundle budget; 4.3 also needs MUI 9. Lift
+      # both once a Mirador release externalises them again.
       - dependency-name: 'mirador'
-        versions: ['>=4.3.0']
+        versions: ['>4.2.4']
       - dependency-name: '@mui/*'
         update-types: ['version-update:semver-major']
