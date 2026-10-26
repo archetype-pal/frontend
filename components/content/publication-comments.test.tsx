@@ -87,17 +87,22 @@ describe('PublicationComments', () => {
     ).toEqual(['Newer', 'Older', 'First reply', 'Second reply']);
   });
 
-  it('leaves out a reply whose parent is not shown', () => {
+  // An admin can move a reply to another post; it still counts towards the
+  // post's comments, so it must not vanish.
+  it('shows a reply whose parent is not in the list as a top-level comment', () => {
     render(
       <PublicationComments
         slug="a-post"
         allowComments
-        comments={[comment(1, null, '<p>Shown</p>'), comment(3, 99, '<p>Orphan</p>')]}
+        comments={[comment(1, null, '<p>Shown</p>'), comment(3, 99, '<p>Moved reply</p>')]}
       />
     );
 
-    expect(screen.queryByText('Shown')).not.toBeNull();
-    expect(screen.queryByText('Orphan')).toBeNull();
+    const shownItem = screen.getByText('Shown').closest('li');
+    const movedItem = screen.getByText('Moved reply').closest('li');
+    expect(movedItem).not.toBeNull();
+    expect(shownItem?.contains(movedItem as Node)).toBe(false);
+    expect(movedItem?.parentElement).toBe(shownItem?.parentElement);
   });
 
   it('renders nothing when comments are closed and there are none', () => {
@@ -270,6 +275,11 @@ describe('PublicationComments form', () => {
   };
 
   const thread = [comment(1, null, '<p>Question</p>'), comment(2, 1, '<p>Answer</p>')];
+
+  it('limits a comment to the 10,000 characters the server accepts', () => {
+    render(<PublicationComments slug="a-post" allowComments comments={[]} />);
+    expect(screen.getByLabelText('Comment').getAttribute('maxlength')).toBe('10000');
+  });
 
   it('posts a comment to the post and says it waits for moderation', async () => {
     const fetchMock = stubFetch(201);
