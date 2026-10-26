@@ -1783,7 +1783,26 @@
       "bulkConfirmDescDelete": "{count, plural, =1 {1 Seite} other {{count} Seiten}} werden endgültig gelöscht.",
       "bulkConfirmDescUnpublish": "{count, plural, =1 {1 Seite} other {{count} Seiten}} werden nicht mehr veröffentlicht.",
       "bulkConfirmLabel": "Alle {label}",
-      "yes": "Ja"
+      "yes": "Ja",
+      "colMenuHeading": "Menü",
+      "headingsTitle": "Menüpunkte",
+      "headingsDescription": "Menüpunkte der Hauptnavigation, die Seiten gruppieren, zusätzlich zu „Über“. Ein Menüpunkt erscheint in der Kopfzeile, sobald er eine veröffentlichte Seite enthält; seine Position wird unter „Website anpassen“ festgelegt.",
+      "headingNewButton": "Neuer Menüpunkt",
+      "headingEdit": "Menüpunkt bearbeiten",
+      "headingDelete": "Menüpunkt löschen",
+      "headingTitle_en": "Titel (Englisch)",
+      "headingTitle_fr": "Titel (Französisch)",
+      "headingTitle_de": "Titel (Deutsch)",
+      "headingSlug": "Schlüssel",
+      "headingSlugHelp": "Interne Kennung, später nicht änderbar. Leer lassen, um sie aus dem englischen Titel abzuleiten.",
+      "headingReservedSlug": "Dieser Schlüssel ist einem eingebauten Menüpunkt vorbehalten.",
+      "headingInvalidSlug": "Nur Kleinbuchstaben, Ziffern, „-“ und „_“ verwenden.",
+      "headingDeleteTitle": "Diesen Menüpunkt löschen?",
+      "headingDeleteDescription": "Seine Seiten bleiben erhalten und wandern zurück unter „Über“.",
+      "headingToastSaved": "Menüpunkt gespeichert",
+      "headingToastFailedSave": "Menüpunkt konnte nicht gespeichert werden",
+      "headingToastDeleted": "Menüpunkt gelöscht",
+      "headingToastFailedDelete": "Menüpunkt konnte nicht gelöscht werden"
     },
     "pagesNew": {
       "pageTitle": "Neue Seite",
@@ -1815,7 +1834,7 @@
       "fieldStatus": "Status",
       "statusDraft": "Entwurf",
       "statusPublished": "Veröffentlicht",
-      "fieldOrder": "Reihenfolge im Über-uns-Menü",
+      "fieldOrder": "Reihenfolge im Menü",
       "fieldQuickLink": "Im Footer-Schnelllink anzeigen",
       "tabEnglish": "Englisch",
       "tabFrench": "Français",
@@ -1825,13 +1844,15 @@
       "fieldContent": "Inhalt",
       "contentPlaceholder": "Beginnen Sie mit dem Schreiben dieser Seite...",
       "deleteTitle": "Diese Seite löschen?",
-      "deleteDescription": "Dadurch wird diese Seite endgültig gelöscht. Sie verschwindet aus dem Über-uns-Menü und der Seitenleiste.",
+      "deleteDescription": "Diese Seite wird endgültig gelöscht. Sie verschwindet aus ihrem Menü und der Seitenleiste.",
       "deleteConfirm": "Löschen",
       "toastSaved": "Seite gespeichert",
       "toastFailedSave": "Speichern der Seite fehlgeschlagen",
       "failedLoad": "Laden der Seite fehlgeschlagen",
       "toastDeleted": "Seite gelöscht",
-      "toastFailedDelete": "Löschen der Seite fehlgeschlagen"
+      "toastFailedDelete": "Löschen der Seite fehlgeschlagen",
+      "fieldMenuHeading": "Menüpunkt",
+      "menuHeadingAbout": "Über"
     },
     "comments": {
       "title": "Kommentarmoderation",
@@ -2173,7 +2194,8 @@
       "searchCategoriesDescription": "Kategorien umschalten und sichtbare Spalten und Facetten konfigurieren. Zum Neuordnen ziehen.",
       "categorySummary": "{columns} Sp. · {facets} Facetten",
       "columnsHeading": "Spalten",
-      "facetsHeading": "Facetten"
+      "facetsHeading": "Facetten",
+      "headingHint": "Eigener Menüpunkt — sichtbar, sobald er eine veröffentlichte Seite enthält. Menüpunkte werden unter „Seiten“ verwaltet."
     },
     "users": {
       "title": "Benutzerverwaltung",

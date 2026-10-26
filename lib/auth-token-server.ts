@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import type { NextRequest, NextResponse } from 'next/server';
+import { authFetch } from '@/lib/api-fetch';
 import {
   AUTH_COOKIE_MAX_AGE_SECONDS,
   AUTH_SESSION_COOKIE,
@@ -14,6 +15,18 @@ import {
 export async function getServerAuthToken(): Promise<string | null> {
   const store = await cookies();
   return store.get(AUTH_TOKEN_COOKIE)?.value ?? null;
+}
+
+/** Whether `token` belongs to a superuser; any failure reads as "no". */
+export async function verifySuperuser(token: string): Promise<boolean> {
+  try {
+    const res = await authFetch('/api/v1/auth/profile', token);
+    if (!res.ok) return false;
+    const user = await res.json();
+    return user.is_superuser === true;
+  } catch {
+    return false;
+  }
 }
 
 function isHttps(request: NextRequest): boolean {
