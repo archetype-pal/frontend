@@ -3139,18 +3139,7 @@
       "loading": "Loading graphs...",
       "loadError": "Failed to load graphs.",
       "empty": "No graphs associated to this hand.",
-      "allographsList": "Allographs List",
-      "allographFallback": "Allograph {id}",
-      "selectGraph": "Select {allograph}, graph {id}",
-      "openGraph": "{allograph}, graph {id}",
-      "selectAll": "Select all",
-      "unselectAll": "Unselect all",
-      "addSelected": "Add selected",
-      "selectedCount": "{count} selected",
-      "addToCollection": "Add to collection",
-      "lightbox": "Lightbox",
-      "exportCsv": "Export as CSV",
-      "clearSelection": "Clear"
+      "allographFallback": "Allograph {id}"
     },
     "metadata": {
       "fallbackTitle": "Hand #{id}",

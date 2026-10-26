@@ -10,9 +10,9 @@ interface GallerySelectionBarProps {
   /** Selected graphs on screen — the ones every action works on. */
   shownCount: number;
   /** Selected graphs the filters currently hide; counted, but left out. */
-  hiddenCount: number;
-  annotatingMode: boolean;
-  onEdit: () => void;
+  hiddenCount?: number;
+  annotatingMode?: boolean;
+  onEdit?: () => void;
   onAddToCollection: () => void;
   onSendToLightbox: () => void;
   onExport: () => void;
@@ -23,7 +23,7 @@ interface GallerySelectionBarProps {
 // actions stay in reach without the toolbar changing size.
 export function GallerySelectionBar({
   shownCount,
-  hiddenCount,
+  hiddenCount = 0,
   annotatingMode,
   onEdit,
   onAddToCollection,

@@ -13,6 +13,7 @@ import {
   UNDO_WINDOW_MS,
   useUndoableGraphDelete,
 } from '@/hooks/manuscript/use-undoable-graph-delete';
+import { useGraphCollection } from '@/hooks/manuscript/use-graph-collection';
 import { useAuth } from '@/contexts/auth-context';
 import { useCollection } from '@/contexts/collection-context';
 import type { Allograph, AllographSummary } from '@/types/allographs';
@@ -95,7 +96,8 @@ export function AnnotationGallery({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { addItem, removeItem, removeItems, isInCollection, isHydrated } = useCollection();
+  const { isInCollection, isHydrated } = useCollection();
+  const { addGraphs, toggleGraph } = useGraphCollection();
   const canEdit = user?.is_staff ?? false;
   // Editing needs the hand and allograph names; without them it would half-work.
   const editingAvailable = canEdit && !supportingDataIncomplete;
@@ -317,51 +319,17 @@ export function AnnotationGallery({
       ),
     [allographLabelById, handNameById, iiifImage, itemImageId, itemPartId, locus, shelfmark]
   );
-  const viewCollection = { label: t('viewCollection'), onClick: () => router.push('/collection') };
-
   // Adds the selected graphs on screen, says how many went in (and how many
   // were already there), and offers Undo for the ones it added.
   const addSelectedToCollection = () => {
-    const added = selectedShown.filter((g) => !isInCollection(g.id, 'graph'));
-    const already = selectedShown.length - added.length;
-    added.forEach((g) => addItem(toCollectionItem(g)));
+    addGraphs(selectedShown.map((g) => toCollectionItem(g)));
     selection.clear();
-    if (added.length === 0) {
-      toast.info(t('collectionAlreadyThere', { count: already }));
-      return;
-    }
-    toast.success(t('collectionAdded', { count: added.length, already }), {
-      action: {
-        label: t('undo'),
-        onClick: () => removeItems(added.map((g) => ({ id: g.id, type: 'graph' as const }))),
-      },
-      cancel: viewCollection,
-    });
-  };
-
-  // The star on each graph: adds or removes just that graph, with Undo.
-  const toggleInCollection = (g: BackendGraph) => {
-    const id = `gallery-collection-${g.id}`;
-    if (isInCollection(g.id, 'graph')) {
-      removeItem(g.id, 'graph');
-      toast.success(t('collectionRemovedOne', { id: g.id }), {
-        id,
-        action: { label: t('undo'), onClick: () => addItem(toCollectionItem(g)) },
-      });
-    } else {
-      addItem(toCollectionItem(g));
-      toast.success(t('collectionAddedOne', { id: g.id }), {
-        id,
-        action: { label: t('undo'), onClick: () => removeItem(g.id, 'graph') },
-        cancel: viewCollection,
-      });
-    }
   };
 
   const rows: GalleryRowsContextValue = {
     density,
-    iiifImage,
-    viewerHref,
+    iiifImage: () => iiifImage,
+    viewerHref: () => viewerHref,
     canEdit,
     annotatingMode,
     selection,
@@ -370,7 +338,7 @@ export function AnnotationGallery({
     collection: {
       ready: isHydrated,
       has: (graphId) => isInCollection(graphId, 'graph'),
-      toggle: toggleInCollection,
+      toggle: (g) => toggleGraph(toCollectionItem(g)),
     },
   };
 
