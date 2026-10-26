@@ -6,18 +6,21 @@ import { Download, Images, Pencil, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
-interface GallerySelectionBarProps {
+/** Editing comes with its handler: a bar in annotating mode without onEdit would
+ *  offer an enabled "Edit N" that does nothing. */
+type GallerySelectionBarEditProps =
+  { annotatingMode?: false; onEdit?: undefined } | { annotatingMode: boolean; onEdit: () => void };
+
+type GallerySelectionBarProps = GallerySelectionBarEditProps & {
   /** Selected graphs on screen — the ones every action works on. */
   shownCount: number;
   /** Selected graphs the filters currently hide; counted, but left out. */
   hiddenCount?: number;
-  annotatingMode?: boolean;
-  onEdit?: () => void;
   onAddToCollection: () => void;
   onSendToLightbox: () => void;
   onExport: () => void;
   onClear: () => void;
-}
+};
 
 // Floats at the bottom of the gallery while anything is selected, so the
 // actions stay in reach without the toolbar changing size.
