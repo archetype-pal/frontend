@@ -425,7 +425,6 @@
       "rowGraphs": "{count, plural, one {# Graph} other {# Graphen}}",
       "rowDescribed": "{count} beschrieben",
       "selectGraph": "{allograph}, Graph {id} auswählen",
-      "unselectGraph": "{allograph}, Graph {id} abwählen",
       "selectThumb": "{allograph}, Graph {id}, auswählen",
       "openThumb": "{allograph}, Graph {id}, im Bildbetrachter öffnen",
       "peekOpen": "Graph im Bildbetrachter ansehen",
