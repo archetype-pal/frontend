@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { PageBanner } from '@/components/layout/page-banner';
 import { AboutSidebar } from '../_components/about-sidebar';
 import { getMenuHeadings, getPublishedPageBySlug } from '@/lib/pages-server';
-import { resolvePageText, type Page, type PageLocale } from '@/lib/pages';
+import { isListedUnderAbout, resolvePageText, type Page, type PageLocale } from '@/lib/pages';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import { sanitizeHtml } from '@/lib/sanitize-html';
 
@@ -20,9 +20,7 @@ async function getVisiblePage(slug: string): Promise<Page | null> {
     getMenuHeadings(),
   ]);
   if (!page || siteFeatures.sections.about !== false) return page;
-  // Same fallback as the header: a page whose heading is unknown sits under About.
-  const underAbout = !menuHeadings.some((h) => h.slug === page.menu_heading);
-  return underAbout ? null : page;
+  return isListedUnderAbout(page.menu_heading, menuHeadings) ? null : page;
 }
 
 export async function generateMetadata({

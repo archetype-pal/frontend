@@ -49,6 +49,17 @@ export function pageHref(slug: string): string {
   return `/about/${slug}`;
 }
 
+/**
+ * Whether a page is listed under About: it has no heading, or its heading no
+ * longer exists (the header and sidebar fall back to About for those too).
+ */
+export function isListedUnderAbout(
+  menuHeading: string | null,
+  menuHeadings: readonly Pick<MenuHeading, 'slug'>[]
+): boolean {
+  return !menuHeadings.some((heading) => heading.slug === menuHeading);
+}
+
 // Slugs a DB-backed Page must not shadow (frontend route segments like
 // `/about/_components` and `/backoffice/pages/new`, plus any backend-reserved slugs).
 export const RESERVED_PAGE_SLUGS = ['_components', 'new'] as const;
