@@ -88,7 +88,7 @@ export function useViewerEditorUiState(args: UseViewerEditorUiStateArgs): Viewer
   React.useEffect(() => {
     if (!isAllographModalOpen) return;
     if (filteredAllograph) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-close is paired with the external onAllographModalAutoClose callback (resets the caller's drag state); that side effect must not run during render, so this stays an effect.
+    // oxlint-disable-next-line react-hooks/set-state-in-effect -- auto-close is paired with the external onAllographModalAutoClose callback (resets the caller's drag state); that side effect must not run during render, so this stays an effect.
     setIsAllographModalOpen(false);
     onAllographModalAutoClose?.();
   }, [isAllographModalOpen, filteredAllograph, onAllographModalAutoClose]);

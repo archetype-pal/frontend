@@ -6,7 +6,7 @@ import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-quer
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { ColumnDef, SortingState } from '@tanstack/react-table';
+import type { SortingState } from '@tanstack/react-table';
 import {
   Newspaper,
   Plus,
@@ -22,6 +22,7 @@ import {
   DataTable,
   sortableHeader,
   type BulkAction,
+  type DataTableColumn,
 } from '@/components/backoffice/common/data-table';
 import { FilterBar, type FilterConfig } from '@/components/backoffice/common/filter-bar';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
@@ -71,7 +72,7 @@ export default function PublicationsPage() {
     },
   ];
 
-  const columns: ColumnDef<PublicationListItem>[] = [
+  const columns: DataTableColumn<PublicationListItem>[] = [
     {
       accessorKey: 'title',
       header: sortableHeader(t('publications.colTitle')),

@@ -90,7 +90,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
 
   useEffect(() => {
     if (pub) {
-      setTitle(pub.title); // eslint-disable-line react-hooks/set-state-in-effect
+      setTitle(pub.title); // oxlint-disable-line react-hooks/set-state-in-effect
       setPubSlug(pub.slug);
       setContent(pub.content);
       setPreview(pub.preview);
@@ -130,9 +130,9 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
   useEffect(() => {
     const info = getDraftInfo();
     if (info.exists && pub) {
-      setShowRecovery(true); // eslint-disable-line react-hooks/set-state-in-effect
+      setShowRecovery(true); // oxlint-disable-line react-hooks/set-state-in-effect
     }
-  }, [pub]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pub]); // oxlint-disable-line react-hooks/exhaustive-deps
 
   const recoverDraft = () => {
     const draft = recover();

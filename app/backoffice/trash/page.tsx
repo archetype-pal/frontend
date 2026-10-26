@@ -5,7 +5,7 @@ import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tansta
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
-import type { ColumnDef, SortingState } from '@tanstack/react-table';
+import type { SortingState } from '@tanstack/react-table';
 import { Trash2, ExternalLink, RotateCcw, Image as ImageIcon, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,7 @@ import {
   DataTable,
   sortableHeader,
   type BulkAction,
+  type DataTableColumn,
 } from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import {
@@ -163,7 +164,7 @@ export default function TrashPage() {
   // depending on it directly would make the memo below never hold.
   const restore = restoreMut.mutate;
 
-  const columns: ColumnDef<GraphItem>[] = useMemo(
+  const columns: DataTableColumn<GraphItem>[] = useMemo(
     () => [
       {
         accessorKey: 'id',

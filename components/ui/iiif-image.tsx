@@ -9,6 +9,6 @@ import Image, { type ImageProps } from 'next/image';
  * sites never need to remember to add the prop.
  */
 export function IiifImage(props: Omit<ImageProps, 'unoptimized'>) {
-  // eslint-disable-next-line jsx-a11y/alt-text -- alt is required by ImageProps and forwarded via spread
+  // oxlint-disable-next-line jsx-a11y/alt-text -- alt is required by ImageProps and forwarded via spread
   return <Image {...props} unoptimized />;
 }

@@ -24,9 +24,9 @@ import { GALLERY_SCROLL_MARGIN } from '@/components/manuscript/annotation-galler
 /** What every row and graph shares, provided once by the gallery. */
 export interface GalleryRowsContextValue {
   density: ThumbDensity;
-  iiifImage: string;
+  iiifImage: (graph: BackendGraph) => string;
   /** The image viewer; a graph opens there with `?graph=<id>`. */
-  viewerHref: string;
+  viewerHref: (graph: BackendGraph) => string;
   canEdit: boolean;
   annotatingMode: boolean;
   selection: SelectionSet<number>;
@@ -303,8 +303,10 @@ function GraphThumb({
       <button
         type="button"
         onClick={(e) => onSelect(e.shiftKey)}
+        // One name in both states: aria-pressed carries the state, so a name that
+        // flipped to "Unselect" would announce it twice.
         aria-pressed={isSelected}
-        aria-label={isSelected ? t('unselectGraph', names) : t('selectGraph', names)}
+        aria-label={t('selectGraph', names)}
         className={cn(
           'absolute left-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-[5px] border-[1.5px] shadow-sm transition',
           isSelected
@@ -321,7 +323,8 @@ function GraphThumb({
         type="button"
         onClick={() => collection.toggle(graph)}
         disabled={!collection.ready}
-        aria-pressed={inCollection}
+        // The label names the action (add or remove), so it carries the state;
+        // aria-pressed on top would say it twice.
         aria-label={starLabel}
         title={starLabel}
         className={cn(
@@ -354,7 +357,7 @@ function GraphThumb({
             </button>
           ) : (
             <Link
-              href={`${viewerHref}?graph=${graph.id}`}
+              href={`${viewerHref(graph)}?graph=${graph.id}`}
               data-thumb-focusable
               aria-label={t('openThumb', names)}
               className={thumbClassName}
@@ -447,7 +450,7 @@ function ThumbImage({ graph, onFailed }: { graph: BackendGraph; onFailed: () => 
   // useIiifThumbnail handles the y-flip and bounds clamping via info.json.
   const annotationJson = React.useMemo(() => JSON.stringify(graph.annotation), [graph.annotation]);
   const thumb = useIiifThumbnail(
-    inView ? iiifImage : '',
+    inView ? iiifImage(graph) : '',
     annotationJson,
     DENSITY_THUMB_PX[density]
   );
@@ -466,7 +469,7 @@ function ThumbImage({ graph, onFailed }: { graph: BackendGraph; onFailed: () => 
         </span>
       ) : thumb.src ? (
         // Fills the box: small crops arrive at their own size, so S/M/L relies on this scaling.
-        // eslint-disable-next-line @next/next/no-img-element
+        // oxlint-disable-next-line @next/next/no-img-element
         <img
           src={thumb.src}
           alt=""

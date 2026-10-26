@@ -100,7 +100,7 @@ export function CharacterDetail({
   // Sync draft with fetched data
   useEffect(() => {
     if (character) {
-      setDraft(character); // eslint-disable-line react-hooks/set-state-in-effect
+      setDraft(character); // oxlint-disable-line react-hooks/set-state-in-effect
       setDirty(false);
     }
   }, [character]);

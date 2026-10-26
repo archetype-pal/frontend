@@ -38,7 +38,7 @@ export function CarouselImagePickerDialog({
 
   useEffect(() => {
     if (open) {
-      setCurrentPath(initialPath); // eslint-disable-line react-hooks/set-state-in-effect
+      setCurrentPath(initialPath); // oxlint-disable-line react-hooks/set-state-in-effect
     }
   }, [open, initialPath]);
 
@@ -156,7 +156,7 @@ export function CarouselImagePickerDialog({
                             }}
                           >
                             <div className="aspect-square bg-muted relative">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              {/* oxlint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={image.url}
                                 alt={image.name}

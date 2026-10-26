@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { ColumnDef } from '@tanstack/react-table';
 import { Files, Plus, ExternalLink, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,19 +13,35 @@ import {
   DataTable,
   sortableHeader,
   type BulkAction,
+  type DataTableColumn,
 } from '@/components/backoffice/common/data-table';
 import { FilterBar, type FilterConfig } from '@/components/backoffice/common/filter-bar';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
-import { getPages, updatePage, deletePage } from '@/services/backoffice/pages';
+import { getPages, getMenuHeadings, updatePage, deletePage } from '@/services/backoffice/pages';
+import { MenuHeadingsPanel } from '@/components/backoffice/pages/menu-headings-panel';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
-import { resolvePageText, type PageListItem } from '@/lib/pages';
+import { pageHref, resolvePageText, type PageListItem } from '@/lib/pages';
+import { coerceLocale } from '@/lib/locale';
 
 export default function PagesPage() {
   const t = useTranslations('backoffice');
+  const locale = coerceLocale(useLocale());
   const { isAuthenticated } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  const { data: menuHeadings = [] } = useQuery({
+    queryKey: backofficeKeys.pages.headings(),
+    queryFn: () => getMenuHeadings(),
+    enabled: isAuthenticated,
+  });
+  const headingLabel = (slug: string | null) => {
+    const heading = slug ? menuHeadings.find((h) => h.slug === slug) : undefined;
+    return heading
+      ? resolvePageText(heading.title, locale) || heading.slug
+      : t('pagesDetail.menuHeadingAbout');
+  };
 
   const pageFilters: FilterConfig[] = [
     {
@@ -39,7 +54,7 @@ export default function PagesPage() {
     },
   ];
 
-  const columns: ColumnDef<PageListItem>[] = [
+  const columns: DataTableColumn<PageListItem>[] = [
     {
       id: 'title',
       header: t('pages.colTitle'),
@@ -57,8 +72,17 @@ export default function PagesPage() {
       accessorKey: 'slug',
       header: t('pages.colSlug'),
       cell: ({ row }) => (
-        <span className="text-xs text-muted-foreground font-mono">/about/{row.original.slug}</span>
+        <span className="text-xs text-muted-foreground font-mono">
+          {pageHref(row.original.slug)}
+        </span>
       ),
+    },
+    {
+      id: 'menu_heading',
+      header: t('pages.colMenuHeading'),
+      accessorFn: (row) => headingLabel(row.menu_heading),
+      cell: ({ getValue }) => <span className="text-sm">{getValue<string>()}</span>,
+      size: 110,
     },
     {
       accessorKey: 'status',
@@ -103,7 +127,7 @@ export default function PagesPage() {
     {
       id: 'actions',
       cell: ({ row }) => (
-        <Link href={`/about/${row.original.slug}`} target="_blank" rel="noopener noreferrer">
+        <Link href={pageHref(row.original.slug)} target="_blank" rel="noopener noreferrer">
           <Button variant="ghost" size="icon" className="h-7 w-7">
             <ExternalLink className="h-3.5 w-3.5" />
           </Button>
@@ -218,6 +242,8 @@ export default function PagesPage() {
           {t('pages.newButton')}
         </Button>
       </div>
+
+      <MenuHeadingsPanel enabled={isAuthenticated} />
 
       <DataTable
         isError={isError}

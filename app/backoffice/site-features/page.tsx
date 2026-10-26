@@ -24,6 +24,7 @@ import {
   hasEnabledSearchCategory,
   hasInvalidThemeColor,
   normalizeSectionOrder,
+  type NavKey,
   type SiteFeaturesConfig,
   type SectionKey,
   type FeatureKey,
@@ -31,6 +32,8 @@ import {
   type ThemeColors,
 } from '@/lib/site-features';
 import type { ResultType } from '@/lib/search-types';
+import { getMenuHeadings } from '@/services/backoffice/pages';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 async function fetchSiteFeatures(): Promise<SiteFeaturesConfig> {
   const res = await fetch('/api/app-settings');
@@ -70,12 +73,21 @@ export default function SiteFeaturesPage() {
     queryFn: fetchSiteFeatures,
   });
 
+  // Custom menu headings are sortable alongside the sections. Until this read
+  // succeeds `menuHeadings` stays undefined and the editor keeps the stored
+  // `heading:*` keys untouched, labelled by slug.
+  const { data: menuHeadings } = useQuery({
+    queryKey: backofficeKeys.pages.headings(),
+    queryFn: () => getMenuHeadings(),
+    enabled: isAuthenticated,
+  });
+
   const [config, setConfig] = useState<SiteFeaturesConfig>(defaults);
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     if (serverConfig) {
-      setConfig(serverConfig); // eslint-disable-line react-hooks/set-state-in-effect
+      setConfig(serverConfig); // oxlint-disable-line react-hooks/set-state-in-effect
       setDirty(false);
     }
   }, [serverConfig]);
@@ -127,7 +139,7 @@ export default function SiteFeaturesPage() {
     setDirty(true);
   };
 
-  const handleSectionOrderChange = (sectionOrder: SectionKey[]) => {
+  const handleSectionOrderChange = (sectionOrder: NavKey[]) => {
     setConfig((prev) => ({
       ...prev,
       sectionOrder: normalizeSectionOrder(sectionOrder),
@@ -192,6 +204,7 @@ export default function SiteFeaturesPage() {
       <SectionToggles
         sections={config.sections}
         sectionOrder={config.sectionOrder}
+        menuHeadings={menuHeadings}
         onChange={handleSectionChange}
         onOrderChange={handleSectionOrderChange}
       />

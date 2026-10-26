@@ -48,7 +48,7 @@ function ErrorFallbackUI({ error, onReset }: { error: Error | null; onReset: () 
             onReset();
             // A full reload on purpose: it discards the crashed client state,
             // where a router push would first re-render the failing tree.
-            // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+            // oxlint-disable-next-line next-js/no-location-assign-relative-destination
             window.location.href = '/backoffice';
           }}
         >

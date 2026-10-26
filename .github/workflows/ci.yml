@@ -24,7 +24,7 @@ jobs:
         uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '26'
           cache: 'pnpm'
@@ -32,16 +32,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Only files whose content changed since the cached run are re-linted.
-      - name: Restore ESLint cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules/.cache/eslint
-          key: eslint-${{ hashFiles('pnpm-lock.yaml', 'eslint.config.mjs') }}-${{ github.sha }}
-          restore-keys: eslint-${{ hashFiles('pnpm-lock.yaml', 'eslint.config.mjs') }}-
-
-      - name: Run ESLint
-        run: pnpm lint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/
+      - name: Run Oxlint
+        run: pnpm lint
 
   format:
     runs-on: ubuntu-latest
@@ -53,7 +45,7 @@ jobs:
         uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '26'
           cache: 'pnpm'
@@ -62,7 +54,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Restore Prettier cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules/.cache/prettier
           key: prettier-${{ hashFiles('pnpm-lock.yaml', '.prettierrc') }}-${{ github.sha }}
@@ -81,7 +73,7 @@ jobs:
         uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '26'
           cache: 'pnpm'
@@ -108,7 +100,7 @@ jobs:
         uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '26'
           cache: 'pnpm'
@@ -118,7 +110,7 @@ jobs:
 
       # Next's build cache plus the incremental TypeScript state its type check reuses.
       - name: Restore Next.js build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             .next/cache

@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { HandDetail, HandImage, HandManuscript } from '@/types/hand-detail';
@@ -67,9 +67,9 @@ vi.mock('@/lib/graph-csv', async (importOriginal) => ({
 }));
 
 vi.mock('@/hooks/use-iiif-thumbnail', () => ({
-  useIiifThumbnailUrl: (infoUrl: string, _coordinates: string, maxSize?: number) => {
+  useIiifThumbnail: (infoUrl: string, _coordinates: string, maxSize?: number) => {
     thumbSize(maxSize);
-    return infoUrl ? 'https://example.test/crop.jpg' : null;
+    return { src: infoUrl ? `${infoUrl}#crop` : null, failed: false };
   },
 }));
 
@@ -77,8 +77,21 @@ vi.mock('@/hooks/use-iiif-thumbnail', () => ({
 const view = vi.hoisted(() => ({ near: true }));
 vi.mock('@/hooks/use-in-view', () => ({ useInView: () => view.near }));
 
+const collection = vi.hoisted(() => ({
+  ids: new Set<number>(),
+  removeItem: vi.fn(),
+  removeItems: vi.fn(),
+}));
+const toastMock = vi.hoisted(() => ({ success: vi.fn(), info: vi.fn() }));
+vi.mock('sonner', () => ({ toast: toastMock }));
 vi.mock('@/contexts/collection-context', () => ({
-  useCollection: () => ({ addItem, isInCollection: () => false }),
+  useCollection: () => ({
+    addItem,
+    removeItem: collection.removeItem,
+    removeItems: collection.removeItems,
+    isInCollection: (id: number) => collection.ids.has(id),
+    isHydrated: true,
+  }),
 }));
 
 vi.mock('@/components/common/backoffice-link', () => ({
@@ -108,12 +121,12 @@ const IMAGES: HandImage[] = [
 const MANUSCRIPT: HandManuscript = { id: 22, display_label: 'Cotton Ch. 1' };
 
 // A thumbnail's select toggle, named after its graph; never a group's "Select all".
-const TOGGLE = /^Select .+, graph \d+$/;
+const TOGGLE = /^Select .+ graph \d+$/;
 
-function viewer() {
+function viewer(images = IMAGES) {
   return (
     <SiteFeaturesProvider initialConfig={getDefaultConfig()}>
-      <HandViewer hand={HAND} images={IMAGES} scribe={null} manuscript={MANUSCRIPT} />
+      <HandViewer hand={HAND} images={images} scribe={null} manuscript={MANUSCRIPT} />
     </SiteFeaturesProvider>
   );
 }
@@ -125,6 +138,11 @@ function renderGraphsTab() {
 describe('HandViewer Graphs tab', () => {
   beforeEach(() => {
     addItem.mockClear();
+    collection.ids.clear();
+    collection.removeItem.mockClear();
+    collection.removeItems.mockClear();
+    toastMock.success.mockClear();
+    toastMock.info.mockClear();
     downloadCsv.mockClear();
     thumbSize.mockClear();
     window.localStorage.clear();
@@ -137,8 +155,12 @@ describe('HandViewer Graphs tab', () => {
   it('links each graph to its place on the image viewer, named by allograph and id', async () => {
     renderGraphsTab();
 
-    const first = await screen.findByRole('link', { name: 'a, Insular, graph 101' });
-    const second = screen.getByRole('link', { name: 'b, Caroline, graph 102' });
+    const first = await screen.findByRole('link', {
+      name: 'a, Insular, graph 101, open in the image viewer',
+    });
+    const second = screen.getByRole('link', {
+      name: 'b, Caroline, graph 102, open in the image viewer',
+    });
 
     expect(first.getAttribute('href')).toBe('/manuscripts/22/images/42?graph=101');
     expect(second.getAttribute('href')).toBe('/manuscripts/22/images/42?graph=102');
@@ -175,9 +197,9 @@ describe('HandViewer Graphs tab', () => {
       expect(await screen.findByRole('heading', { name: headings[0] })).toBeTruthy();
       expect(screen.getByRole('heading', { name: headings[1] })).toBeTruthy();
 
-      fireEvent.click(screen.getByRole('button', { name: 'Select Allograph 11, graph 101' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Add to collection' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Export as CSV' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Select Allograph 11 graph 101' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Add 1 to collection' }));
 
       expect(addItem).toHaveBeenCalledTimes(1);
       expect(addItem.mock.calls[0][0]).toMatchObject({ id: 101, hand_name: 'Main Hand' });
@@ -218,52 +240,45 @@ describe('HandViewer Graphs tab', () => {
 
   it('looks up a thumbnail crop only once it nears the screen', async () => {
     view.near = false;
-    const { rerender } = renderGraphsTab();
+    const { container, rerender } = renderGraphsTab();
     await screen.findAllByRole('button', { name: TOGGLE });
-    expect(screen.queryAllByRole('img')).toHaveLength(0);
+    expect(container.querySelectorAll('img')).toHaveLength(0);
 
     view.near = true;
     rerender(viewer());
 
-    expect(screen.getAllByRole('img')).toHaveLength(2);
+    expect(container.querySelectorAll('img')).toHaveLength(2);
   });
 
   it('names each select toggle after its graph, and keeps that name once selected', async () => {
     renderGraphsTab();
-    const toggle = await screen.findByRole('button', { name: 'Select a, Insular, graph 101' });
+    const toggle = await screen.findByRole('button', { name: 'Select a, Insular graph 101' });
     expect(toggle.getAttribute('aria-pressed')).toBe('false');
 
     fireEvent.click(toggle);
 
-    expect(toggle.getAttribute('aria-label')).toBe('Select a, Insular, graph 101');
+    expect(toggle.getAttribute('aria-label')).toBe('Select a, Insular graph 101');
     expect(toggle.getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('describes each group button with its allograph', async () => {
+  it('names each group checkbox after its allograph', async () => {
     renderGraphsTab();
 
     expect(
-      await screen.findByRole('button', { name: 'Select all', description: 'a, Insular' })
+      await screen.findByRole('checkbox', { name: 'Select all a, Insular graphs' })
     ).toBeTruthy();
-    expect(
-      screen.getByRole('button', { name: 'Add selected', description: 'b, Caroline' })
-    ).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: 'Select all b, Caroline graphs' })).toBeTruthy();
   });
 
-  it('shows the selection bar before anything is selected, with its actions disabled', async () => {
+  it('shows the selection bar only while something is selected', async () => {
     renderGraphsTab();
     const [firstToggle] = await screen.findAllByRole('button', { name: TOGGLE });
-    const addButton = screen.getByRole('button', {
-      name: 'Add to collection',
-    }) as HTMLButtonElement;
-
-    expect(screen.getByText('0 selected')).toBeTruthy();
-    expect(addButton.disabled).toBe(true);
+    expect(screen.queryByRole('region', { name: 'Selection' })).toBeNull();
 
     fireEvent.click(firstToggle);
 
-    expect(screen.getByText('1 selected')).toBeTruthy();
-    expect(addButton.disabled).toBe(false);
+    const bar = screen.getByRole('region', { name: 'Selection' });
+    expect(within(bar).getByText('1 selected')).toBeTruthy();
   });
 
   it('adds only the selected graphs to the collection, as the image Annotations tab does', async () => {
@@ -271,8 +286,10 @@ describe('HandViewer Graphs tab', () => {
     const [firstToggle] = await screen.findAllByRole('button', { name: TOGGLE });
 
     fireEvent.click(firstToggle);
-    expect(screen.getByText('1 selected')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Add to collection' }));
+    expect(
+      within(screen.getByRole('region', { name: 'Selection' })).getByText('1 selected')
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add 1 to collection' }));
 
     expect(addItem).toHaveBeenCalledTimes(1);
     expect(addItem).toHaveBeenCalledWith({
@@ -337,7 +354,9 @@ describe('HandViewer Graphs tab', () => {
     fireEvent.click(toggles[0]);
     fireEvent.click(toggles[2], { shiftKey: true });
 
-    expect(screen.getByText('3 selected')).toBeTruthy();
+    expect(
+      within(screen.getByRole('region', { name: 'Selection' })).getByText('3 selected')
+    ).toBeTruthy();
   });
 
   it('exports the selected graphs as CSV, with their image and locus', async () => {
@@ -345,12 +364,109 @@ describe('HandViewer Graphs tab', () => {
     const [firstToggle] = await screen.findAllByRole('button', { name: TOGGLE });
 
     fireEvent.click(firstToggle);
-    fireEvent.click(screen.getByRole('button', { name: 'Export as CSV' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
 
     expect(downloadCsv).toHaveBeenCalledWith(
       'hand-5-graphs.csv',
       'id,allograph,hand,described,components,features,positions,image,locus\n' +
         '101,"a, Insular",Main Hand,no,,,,42,face'
     );
+  });
+
+  it('links and crops each graph from its own image', async () => {
+    const dorse = {
+      ...IMAGES[0],
+      id: 43,
+      iiif_image: 'https://example.test/iiif/dorse.jp2',
+      locus: 'dorse',
+    };
+    apiFetch.mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () =>
+        url.includes('/graphs/')
+          ? [GRAPHS[0], { ...GRAPHS[0], id: 105, item_image: 43 }]
+          : ALLOGRAPHS,
+    }));
+    render(viewer([...IMAGES, dorse]));
+
+    const face = await screen.findByRole('link', {
+      name: 'a, Insular, graph 101, open in the image viewer',
+    });
+    const back = screen.getByRole('link', {
+      name: 'a, Insular, graph 105, open in the image viewer',
+    });
+
+    expect(face.getAttribute('href')).toBe('/manuscripts/22/images/42?graph=101');
+    expect(back.getAttribute('href')).toBe('/manuscripts/22/images/43?graph=105');
+    expect(face.querySelector('img')?.getAttribute('src')).toBe(
+      'https://example.test/iiif/face.jp2/info.json#crop'
+    );
+    expect(back.querySelector('img')?.getAttribute('src')).toBe(
+      'https://example.test/iiif/dorse.jp2/info.json#crop'
+    );
+  });
+
+  it('adds one graph to the collection with its star, and takes it out again', async () => {
+    const { rerender } = renderGraphsTab();
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Add graph 101 to your collection' })
+    );
+    expect(addItem).toHaveBeenCalledTimes(1);
+    expect(addItem.mock.calls[0][0]).toMatchObject({ id: 101, type: 'graph', locus: 'face' });
+
+    collection.ids.add(101);
+    rerender(viewer());
+    fireEvent.click(screen.getByRole('button', { name: 'Remove graph 101 from your collection' }));
+
+    expect(collection.removeItem).toHaveBeenCalledWith(101, 'graph');
+  });
+
+  it('says when the star adds or removes a graph, and undoes it from the message', async () => {
+    const { rerender } = renderGraphsTab();
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Add graph 101 to your collection' })
+    );
+    const [added, addedOptions] = toastMock.success.mock.calls[0];
+    expect(added).toBe('Added graph #101 to your collection.');
+    addedOptions.action.onClick();
+    expect(collection.removeItem).toHaveBeenCalledWith(101, 'graph');
+
+    collection.ids.add(101);
+    rerender(viewer());
+    fireEvent.click(screen.getByRole('button', { name: 'Remove graph 101 from your collection' }));
+    const [removed, removedOptions] = toastMock.success.mock.calls[1];
+    expect(removed).toBe('Removed graph #101 from your collection.');
+    removedOptions.action.onClick();
+    expect(addItem).toHaveBeenLastCalledWith(expect.objectContaining({ id: 101, type: 'graph' }));
+  });
+
+  it('says how many graphs the bar added, clears the ticks, and undoes it from the message', async () => {
+    collection.ids.add(102);
+    renderGraphsTab();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Select a, Insular graph 101' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select b, Caroline graph 102' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add 2 to collection' }));
+
+    expect(addItem).toHaveBeenCalledTimes(1);
+    expect(addItem.mock.calls[0][0]).toMatchObject({ id: 101, type: 'graph' });
+    expect(screen.queryByRole('region', { name: 'Selection' })).toBeNull();
+    const [message, options] = toastMock.success.mock.calls[0];
+    expect(message).toBe('Added 1 graph to your collection (1 already there).');
+    options.action.onClick();
+    expect(collection.removeItems).toHaveBeenCalledWith([{ id: 101, type: 'graph' }]);
+  });
+
+  it('says so when every selected graph is already in the collection', async () => {
+    collection.ids.add(101);
+    renderGraphsTab();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Select a, Insular graph 101' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add 1 to collection' }));
+
+    expect(addItem).not.toHaveBeenCalled();
+    expect(toastMock.info).toHaveBeenCalledWith('That graph is already in your collection.');
   });
 });

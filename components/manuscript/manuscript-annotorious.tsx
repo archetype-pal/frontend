@@ -1534,10 +1534,12 @@ export default function ManuscriptAnnotorious({
     // reload) can't silently drop a freshly-drawn, not-yet-saved polygon. Only
     // the async load path folds drafts back into initialAnnotations; this guards
     // the other callers (e.g. handleDefaultZoom passing []). Drafts already
-    // present in the incoming set (by id) are not duplicated.
+    // present in the incoming set (by id) are not duplicated. A text-region draft
+    // (the box drawn to link) is the parent's to keep: it is folded into
+    // initialAnnotations while pending, so its absence means it was discarded.
     const incomingIds = new Set(initialAnnotations.map((a) => a.id));
     const drafts = ((anno.getAnnotations?.() ?? []) as Annotation[]).filter(
-      (a) => isDraftAnnotation(a) && !incomingIds.has(a.id)
+      (a) => isDraftAnnotation(a) && !isTextRegionAnnotation(a) && !incomingIds.has(a.id)
     );
     const next = drafts.length > 0 ? [...initialAnnotations, ...drafts] : initialAnnotations;
 

@@ -30,8 +30,20 @@ import { useCollection } from '@/contexts/collection-context';
 import { useCompareStore, useCompareStoreHydrated } from '@/stores/compare-store';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
-import { normalizeSectionOrder, type SectionKey } from '@/lib/site-features';
-import { resolvePageText, type PageListItem, type PageLocale } from '@/lib/pages';
+import {
+  headingSlugFromNavKey,
+  isHeadingNavKey,
+  resolveNavOrder,
+  type NavKey,
+  type SectionKey,
+} from '@/lib/site-features';
+import {
+  pageHref,
+  resolvePageText,
+  type MenuHeading,
+  type PageListItem,
+  type PageLocale,
+} from '@/lib/pages';
 import { ChevronDown } from 'lucide-react';
 import {
   addSearchHistory,
@@ -49,7 +61,13 @@ import { getCarouselImageUrl } from '@/utils/api';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 
-export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[] }) {
+export default function Header({
+  pages = [],
+  menuHeadings = [],
+}: {
+  pages?: PageListItem[];
+  menuHeadings?: MenuHeading[];
+}) {
   const t = useTranslations('nav');
   const tCommon = useTranslations('common');
   const tCompare = useTranslations('compare');
@@ -177,7 +195,25 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
     return pathname?.startsWith(href);
   };
 
-  const orderedSections = normalizeSectionOrder(config.sectionOrder);
+  const orderedSections = resolveNavOrder(
+    config.sectionOrder,
+    menuHeadings.map((heading) => heading.slug)
+  );
+
+  // Pages grouped by menu heading; a page whose heading is unknown (e.g. it
+  // was deleted since this list was fetched) falls back under About.
+  const headingSlugs = new Set(menuHeadings.map((heading) => heading.slug));
+  const pageLinksByHeading = new Map<string | null, { href: string; label: string }[]>();
+  for (const page of pages) {
+    const heading =
+      page.menu_heading && headingSlugs.has(page.menu_heading) ? page.menu_heading : null;
+    const links = pageLinksByHeading.get(heading) ?? [];
+    links.push({
+      href: pageHref(page.slug),
+      label: resolvePageText(page.title, locale as PageLocale) || page.slug,
+    });
+    pageLinksByHeading.set(heading, links);
+  }
 
   const navLinkClass = (active: boolean) =>
     cn(
@@ -186,6 +222,54 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
         ? 'text-nav-bar-foreground font-semibold border-b-2 border-accent rounded-none'
         : 'text-nav-bar-foreground/80 hover:text-nav-bar-foreground hover:bg-nav-bar-foreground/10'
     );
+
+  // A heading's dropdown of static pages. All pages live under /about/, so
+  // "active" means the current page is one of this menu's links, not a prefix.
+  const renderPageMenu = (key: string, label: string, links: { href: string; label: string }[]) => (
+    <li key={key} className="relative group/menu">
+      <Button
+        variant="ghost"
+        size="sm"
+        className={cn('group', navLinkClass(links.some((link) => pathname === link.href)))}
+      >
+        {label}
+        <ChevronDown className="h-3.5 w-3.5 ml-1" />
+      </Button>
+      {/* Pure CSS hover menu: stays a descendant of the <li>, so hovering
+          the panel never leaves the hoverable area (unlike a portaled
+          Radix dropdown, which caused open/close flicker). */}
+      <div
+        className={cn(
+          'invisible absolute left-0 top-full z-50 min-w-[10rem] rounded-md border bg-popover p-1 text-popover-foreground opacity-0 shadow-md transition-opacity duration-150',
+          'group-hover/menu:visible group-hover/menu:opacity-100 group-focus-within/menu:visible group-focus-within/menu:opacity-100'
+        )}
+      >
+        {links.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="block rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent focus:bg-accent"
+          >
+            {link.label}
+          </Link>
+        ))}
+      </div>
+    </li>
+  );
+
+  const renderNavEntry = (navKey: NavKey) => {
+    if (!isHeadingNavKey(navKey)) return renderSectionButton(navKey);
+    const slug = headingSlugFromNavKey(navKey);
+    const heading = menuHeadings.find((h) => h.slug === slug);
+    const links = pageLinksByHeading.get(slug) ?? [];
+    // A custom heading only shows once it has a published page.
+    if (!heading || links.length === 0) return null;
+    return renderPageMenu(
+      navKey,
+      resolvePageText(heading.title, locale as PageLocale) || slug,
+      links
+    );
+  };
 
   const renderSectionButton = (sectionKey: SectionKey) => {
     if (!isSectionEnabled(sectionKey)) {
@@ -303,45 +387,8 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
         );
       case 'events':
         return null;
-      case 'about': {
-        // All about pages (including the 3 former built-in ones) are now
-        // DB-backed Pages, ordered by their `order` field — see about-sidebar.tsx.
-        const aboutLinks = aboutPages.map((page) => ({
-          href: `/about/${page.slug}`,
-          label: resolvePageText(page.title, locale as PageLocale) || page.slug,
-        }));
-        return (
-          <li key={sectionKey} className="relative group/about">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn('group', navLinkClass(!!isActive('/about')))}
-            >
-              {t('about')}
-              <ChevronDown className="h-3.5 w-3.5 ml-1" />
-            </Button>
-            {/* Pure CSS hover menu: stays a descendant of the <li>, so hovering
-                the panel never leaves the hoverable area (unlike a portaled
-                Radix dropdown, which caused open/close flicker). */}
-            <div
-              className={cn(
-                'invisible absolute left-0 top-full z-50 min-w-[10rem] rounded-md border bg-popover p-1 text-popover-foreground opacity-0 shadow-md transition-opacity duration-150',
-                'group-hover/about:visible group-hover/about:opacity-100 group-focus-within/about:visible group-focus-within/about:opacity-100'
-              )}
-            >
-              {aboutLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="block rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent focus:bg-accent"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </li>
-        );
-      }
+      case 'about':
+        return renderPageMenu('about', t('about'), pageLinksByHeading.get(null) ?? []);
       default:
         return null;
     }
@@ -359,7 +406,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
           <div className="container mx-auto px-4 py-4 md:py-5">
             <div className="flex items-end gap-6">
               {logoUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
+                // oxlint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt="" className="h-10 w-auto shrink-0 object-contain md:h-12" />
               )}
               <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight text-title-bar-foreground leading-tight">
@@ -405,7 +452,7 @@ export default function Header({ aboutPages = [] }: { aboutPages?: PageListItem[
                   </Link>
                 </Button>
               </li>
-              {orderedSections.map((sectionKey) => renderSectionButton(sectionKey))}
+              {orderedSections.map((navKey) => renderNavEntry(navKey))}
             </ul>
             <div className="flex flex-col lg:flex-row items-center gap-3 w-full lg:w-auto">
               {isSectionEnabled('search') && defaultSearchType && (

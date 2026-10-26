@@ -96,7 +96,7 @@ export function AllographGalleryDialog({
                   type="button"
                 >
                   <div className="w-full aspect-square bg-muted flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {/* oxlint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={src}
                       alt={`Annotation thumbnail: ${annotation.id}`}

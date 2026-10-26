@@ -14,6 +14,7 @@ vi.mock('next-intl', async (importOriginal) => {
   const messages = (await import('./messages/en.json')).default;
   return {
     ...actual,
+    useLocale: () => 'en',
     useTranslations: (namespace?: string) =>
       actual.createTranslator({
         locale: 'en',

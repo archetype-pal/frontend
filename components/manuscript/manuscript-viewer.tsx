@@ -796,7 +796,7 @@ export default function ManuscriptViewer({
     setHandsLoaded(false);
     setSelectedHand(undefined);
     editorState.resetFrom([]);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- per-image teardown: clears several independent state atoms alongside an imperative editor reset (editorState.resetFrom) and hook resetters; this is genuine synchronization on image change, and the `key`-reset boundary lives in the parent (out of scope to edit).
+    // oxlint-disable-next-line react-hooks/set-state-in-effect -- per-image teardown: clears several independent state atoms alongside an imperative editor reset (editorState.resetFrom) and hook resetters; this is genuine synchronization on image change, and the `key`-reset boundary lives in the parent (out of scope to edit).
     setSelectedAnnotationIds([]);
     // (pending-link/selected-region reset → useImageTextLinking; share-URL
     // re-arm → useShareTarget; both keyed on imageId.)
@@ -806,7 +806,7 @@ export default function ManuscriptViewer({
     // (keyed on imageId); we only close the panel here.
     closeFilterPanel();
     // resetImageAdjustments and closeFilterPanel are stable; depend on imageId only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [imageId]);
 
   // keep popup on valid tab

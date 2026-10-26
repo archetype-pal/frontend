@@ -1,16 +1,15 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, onTestFinished, vi } from 'vitest';
-import type { ColumnDef } from '@tanstack/react-table';
 
 import { listAllPages } from '@/lib/backoffice/list-all-pages';
-import { DataTable, sortableHeader, type BulkAction } from './data-table';
+import { DataTable, sortableHeader, type BulkAction, type DataTableColumn } from './data-table';
 
 const { toast } = vi.hoisted(() => ({ toast: { error: vi.fn() } }));
 vi.mock('sonner', () => ({ toast }));
 
 type Row = { id: number; name: string };
 
-const columns: ColumnDef<Row>[] = [{ accessorKey: 'name', header: 'Name' }];
+const columns: DataTableColumn<Row>[] = [{ accessorKey: 'name', header: 'Name' }];
 
 describe('DataTable error state', () => {
   it('renders an error row + Retry when isError, instead of rows or the empty state', () => {
@@ -36,6 +35,23 @@ describe('DataTable error state', () => {
 
     expect(screen.queryByText('Alpha')).not.toBeNull();
     expect(screen.queryByText(/failed to load/i)).toBeNull();
+  });
+});
+
+describe('DataTable paging', () => {
+  const rows = Array.from({ length: 25 }, (_, i) => ({ id: i + 1, name: `Row ${i + 1}` }));
+
+  it('shows every row it is given when pagination is off', () => {
+    render(<DataTable columns={columns} data={rows} pagination={false} />);
+
+    expect(screen.queryByText('Row 25')).not.toBeNull();
+  });
+
+  it('shows one page of rows when pagination is on', () => {
+    render(<DataTable columns={columns} data={rows} pageSize={20} />);
+
+    expect(screen.queryByText('Row 20')).not.toBeNull();
+    expect(screen.queryByText('Row 21')).toBeNull();
   });
 });
 

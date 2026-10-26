@@ -3,13 +3,16 @@
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ColumnDef } from '@tanstack/react-table';
 import type { LucideIcon } from 'lucide-react';
 import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
-import { DataTable, sortableHeader } from '@/components/backoffice/common/data-table';
+import {
+  DataTable,
+  sortableHeader,
+  type DataTableColumn,
+} from '@/components/backoffice/common/data-table';
 import { InlineEdit } from '@/components/backoffice/common/inline-edit';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { Button } from '@/components/ui/button';
@@ -152,8 +155,8 @@ export function SimpleCrudPage<T extends { id: number }>({
     },
   });
 
-  const columns = useMemo<ColumnDef<T>[]>(() => {
-    const generated: ColumnDef<T>[] = [];
+  const columns = useMemo<DataTableColumn<T>[]>(() => {
+    const generated: DataTableColumn<T>[] = [];
 
     if (showIdColumn) {
       generated.push({

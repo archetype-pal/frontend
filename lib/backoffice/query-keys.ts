@@ -81,6 +81,7 @@ export const backofficeKeys = {
     all: () => [...backofficeKeys.all, 'pages'] as const,
     list: () => [...backofficeKeys.pages.all(), 'list'] as const,
     detail: (slug: string) => [...backofficeKeys.pages.all(), 'detail', slug] as const,
+    headings: () => [...backofficeKeys.pages.all(), 'headings'] as const,
   },
   partners: {
     all: () => [...backofficeKeys.all, 'partners'] as const,

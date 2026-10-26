@@ -103,6 +103,8 @@ export function PlaceCombobox({
           id={id}
           type="button"
           variant="outline"
+          // Radix's PopoverTrigger sets aria-controls while the list is open.
+          // oxlint-disable-next-line jsx-a11y/role-has-required-aria-props
           role="combobox"
           aria-expanded={open}
           className={cn(

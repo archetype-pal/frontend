@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft, Save, Trash2, Loader2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,13 +31,22 @@ import {
 } from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
-import { getPage, updatePage, deletePage } from '@/services/backoffice/pages';
+import { getPage, getMenuHeadings, updatePage, deletePage } from '@/services/backoffice/pages';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
-import { isReservedPageSlug, type LocalizedText, type PageStatus } from '@/lib/pages';
+import {
+  isReservedPageSlug,
+  resolvePageText,
+  type LocalizedText,
+  type PageStatus,
+} from '@/lib/pages';
+import { coerceLocale } from '@/lib/locale';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { useAutosave } from '@/hooks/backoffice/use-autosave';
+
+// Radix Select can't hold a null value; this stands for "no custom heading".
+const ABOUT_HEADING_VALUE = '__about';
 
 export default function PageEditorPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -45,6 +54,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
   const router = useRouter();
   const queryClient = useQueryClient();
   const t = useTranslations('backoffice');
+  const uiLocale = coerceLocale(useLocale());
 
   const {
     data: page,
@@ -57,11 +67,18 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
     enabled: isAuthenticated,
   });
 
+  const { data: menuHeadings = [] } = useQuery({
+    queryKey: backofficeKeys.pages.headings(),
+    queryFn: () => getMenuHeadings(),
+    enabled: isAuthenticated,
+  });
+
   const [pageSlug, setPageSlug] = useState('');
   const [slugLocked, setSlugLocked] = useState(true);
   const [title, setTitle] = useState<LocalizedText>({ en: '', fr: '', de: '' });
   const [content, setContent] = useState<LocalizedText>({ en: '', fr: '', de: '' });
   const [status, setStatus] = useState<PageStatus>('Draft');
+  const [menuHeading, setMenuHeading] = useState<string | null>(null);
   const [order, setOrder] = useState(0);
   const [includeInQuickLink, setIncludeInQuickLink] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -75,17 +92,26 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
 
   useEffect(() => {
     if (page) {
-      setPageSlug(page.slug); // eslint-disable-line react-hooks/set-state-in-effect
+      setPageSlug(page.slug); // oxlint-disable-line react-hooks/set-state-in-effect
       setTitle(page.title);
       setContent(page.content);
       setStatus(page.status);
+      setMenuHeading(page.menu_heading);
       setOrder(page.order);
       setIncludeInQuickLink(page.include_in_quick_link);
       setDirty(false);
     }
   }, [page]);
 
-  const autosaveData = { pageSlug, title, content, status, order, includeInQuickLink };
+  const autosaveData = {
+    pageSlug,
+    title,
+    content,
+    status,
+    menuHeading,
+    order,
+    includeInQuickLink,
+  };
   const {
     status: autosaveStatus,
     discard: discardDraft,
@@ -97,9 +123,9 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
   useEffect(() => {
     const info = getDraftInfo();
     if (info.exists && page) {
-      setShowRecovery(true); // eslint-disable-line react-hooks/set-state-in-effect
+      setShowRecovery(true); // oxlint-disable-line react-hooks/set-state-in-effect
     }
-  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page]); // oxlint-disable-line react-hooks/exhaustive-deps
 
   const recoverDraft = () => {
     const draft = recover();
@@ -108,6 +134,8 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
       setTitle(draft.title);
       setContent(draft.content);
       setStatus(draft.status);
+      // Drafts autosaved before headings existed have no `menuHeading`.
+      setMenuHeading(draft.menuHeading ?? null);
       setOrder(draft.order);
       setIncludeInQuickLink(draft.includeInQuickLink);
       setDirty(true);
@@ -131,6 +159,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
         title,
         content,
         status,
+        menu_heading: menuHeading,
         order,
         include_in_quick_link: includeInQuickLink,
       }),
@@ -286,7 +315,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div className="space-y-1.5">
             <Label>{t('pagesDetail.fieldStatus')}</Label>
             <Select
@@ -302,6 +331,30 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
               <SelectContent>
                 <SelectItem value="Draft">{t('pagesDetail.statusDraft')}</SelectItem>
                 <SelectItem value="Published">{t('pagesDetail.statusPublished')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('pagesDetail.fieldMenuHeading')}</Label>
+            <Select
+              value={menuHeading ?? ABOUT_HEADING_VALUE}
+              onValueChange={(val) => {
+                setMenuHeading(val === ABOUT_HEADING_VALUE ? null : val);
+                markDirty();
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ABOUT_HEADING_VALUE}>
+                  {t('pagesDetail.menuHeadingAbout')}
+                </SelectItem>
+                {menuHeadings.map((heading) => (
+                  <SelectItem key={heading.slug} value={heading.slug}>
+                    {resolvePageText(heading.title, uiLocale) || heading.slug}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

@@ -70,7 +70,7 @@ export function ItemImageEditDialog({
 
   useEffect(() => {
     if (open) {
-      setLocus(image.locus); // eslint-disable-line react-hooks/set-state-in-effect
+      setLocus(image.locus); // oxlint-disable-line react-hooks/set-state-in-effect
       setTags(tagsKey);
       setTargetPart(null);
     }
@@ -293,6 +293,8 @@ function ItemPartPicker({
           id={id}
           type="button"
           variant="outline"
+          // Radix's PopoverTrigger sets aria-controls while the list is open.
+          // oxlint-disable-next-line jsx-a11y/role-has-required-aria-props
           role="combobox"
           aria-expanded={open}
           className="h-9 w-full justify-between font-normal"

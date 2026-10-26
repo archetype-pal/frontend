@@ -425,7 +425,6 @@
       "rowGraphs": "{count, plural, one {# graph} other {# graphs}}",
       "rowDescribed": "{count} described",
       "selectGraph": "Select {allograph} graph {id}",
-      "unselectGraph": "Unselect {allograph} graph {id}",
       "selectThumb": "{allograph}, graph {id}, select",
       "openThumb": "{allograph}, graph {id}, open in the image viewer",
       "peekOpen": "View graph in the image viewer",
@@ -1803,7 +1802,26 @@
       "bulkConfirmDescDelete": "{count, plural, =1 {1 page} other {{count} pages}} will be permanently deleted.",
       "bulkConfirmDescUnpublish": "{count, plural, =1 {1 page} other {{count} pages}} will be unpublished.",
       "bulkConfirmLabel": "{label} All",
-      "yes": "Yes"
+      "yes": "Yes",
+      "colMenuHeading": "Menu",
+      "headingsTitle": "Menu headings",
+      "headingsDescription": "Main-menu headings that group pages, besides About. A heading appears in the site header once it has a published page; set its position under Customise site.",
+      "headingNewButton": "New heading",
+      "headingEdit": "Edit heading",
+      "headingDelete": "Delete heading",
+      "headingTitle_en": "Title (English)",
+      "headingTitle_fr": "Title (French)",
+      "headingTitle_de": "Title (German)",
+      "headingSlug": "Key",
+      "headingSlugHelp": "Internal identifier; cannot be changed later. Leave empty to derive it from the English title.",
+      "headingReservedSlug": "This key is reserved for a built-in heading.",
+      "headingInvalidSlug": "Use only lowercase letters, digits, \"-\" and \"_\".",
+      "headingDeleteTitle": "Delete this heading?",
+      "headingDeleteDescription": "Its pages are kept and move back under About.",
+      "headingToastSaved": "Heading saved",
+      "headingToastFailedSave": "Failed to save heading",
+      "headingToastDeleted": "Heading deleted",
+      "headingToastFailedDelete": "Failed to delete heading"
     },
     "pagesNew": {
       "pageTitle": "New Page",
@@ -1835,7 +1853,7 @@
       "fieldStatus": "Status",
       "statusDraft": "Draft",
       "statusPublished": "Published",
-      "fieldOrder": "Order in About menu",
+      "fieldOrder": "Order in menu",
       "fieldQuickLink": "Show in footer quick links",
       "tabEnglish": "English",
       "tabFrench": "Français",
@@ -1845,13 +1863,15 @@
       "fieldContent": "Content",
       "contentPlaceholder": "Start writing this page...",
       "deleteTitle": "Delete this page?",
-      "deleteDescription": "This will permanently delete this page. It will disappear from the About menu and sidebar.",
+      "deleteDescription": "This will permanently delete this page. It will disappear from its menu and sidebar.",
       "deleteConfirm": "Delete",
       "toastSaved": "Page saved",
       "toastFailedSave": "Failed to save page",
       "failedLoad": "Failed to load page",
       "toastDeleted": "Page deleted",
-      "toastFailedDelete": "Failed to delete page"
+      "toastFailedDelete": "Failed to delete page",
+      "fieldMenuHeading": "Menu heading",
+      "menuHeadingAbout": "About"
     },
     "comments": {
       "title": "Comment Moderation",
@@ -2202,7 +2222,8 @@
       "searchCategoriesDescription": "Toggle categories and configure visible columns and facets. Drag to reorder.",
       "categorySummary": "{columns} col · {facets} facets",
       "columnsHeading": "Columns",
-      "facetsHeading": "Facets"
+      "facetsHeading": "Facets",
+      "headingHint": "Custom menu heading — shown when it has a published page. Manage headings under Pages."
     },
     "users": {
       "title": "User Management",
@@ -3146,18 +3167,7 @@
       "loading": "Loading graphs...",
       "loadError": "Failed to load graphs.",
       "empty": "No graphs associated to this hand.",
-      "allographsList": "Allographs List",
-      "allographFallback": "Allograph {id}",
-      "selectGraph": "Select {allograph}, graph {id}",
-      "openGraph": "{allograph}, graph {id}",
-      "selectAll": "Select all",
-      "unselectAll": "Unselect all",
-      "addSelected": "Add selected",
-      "selectedCount": "{count} selected",
-      "addToCollection": "Add to collection",
-      "lightbox": "Lightbox",
-      "exportCsv": "Export as CSV",
-      "clearSelection": "Clear"
+      "allographFallback": "Allograph {id}"
     },
     "metadata": {
       "fallbackTitle": "Hand #{id}",

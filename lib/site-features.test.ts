@@ -19,6 +19,7 @@ import {
   mergeFeatureFlags,
   mergeThemeColors,
   normalizeSectionOrder,
+  resolveNavOrder,
   type FeatureKey,
   type SectionKey,
 } from './site-features';
@@ -65,6 +66,29 @@ describe('normalizeSectionOrder', () => {
     const result = normalizeSectionOrder(messy);
     expect(result).toHaveLength(ALL_SECTION_KEYS.length);
     expect(new Set(result)).toEqual(new Set(ALL_SECTION_KEYS));
+  });
+});
+
+describe('normalizeSectionOrder with menu headings', () => {
+  it('keeps heading keys where the admin placed them', () => {
+    const result = normalizeSectionOrder(['search', 'heading:help', 'about']);
+    expect(result.slice(0, 3)).toEqual(['search', 'heading:help', 'about']);
+  });
+
+  it('drops malformed heading keys', () => {
+    const result = normalizeSectionOrder(['heading:', 'heading:Bad Slug', 'search']);
+    expect(result[0]).toBe('search');
+    expect(result).toHaveLength(ALL_SECTION_KEYS.length);
+  });
+});
+
+describe('resolveNavOrder', () => {
+  it('drops headings that no longer exist and appends new ones', () => {
+    const result = resolveNavOrder(['heading:gone', 'search', 'heading:help'], ['help', 'events']);
+    expect(result).not.toContain('heading:gone');
+    expect(result.slice(0, 2)).toEqual(['search', 'heading:help']);
+    expect(result.at(-1)).toBe('heading:events');
+    expect(result).toHaveLength(ALL_SECTION_KEYS.length + 2);
   });
 });
 

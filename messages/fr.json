@@ -425,7 +425,6 @@
       "rowGraphs": "{count, plural, one {# graphème} other {# graphèmes}}",
       "rowDescribed": "{count} décrit(s)",
       "selectGraph": "Sélectionner {allograph}, graphème {id}",
-      "unselectGraph": "Désélectionner {allograph}, graphème {id}",
       "selectThumb": "{allograph}, graphème {id}, sélectionner",
       "openThumb": "{allograph}, graphème {id}, ouvrir dans la visionneuse d'image",
       "peekOpen": "Voir le graphème dans la visionneuse d'image",
@@ -1803,7 +1802,26 @@
       "bulkConfirmDescDelete": "{count, plural, =1 {1 page} other {{count} pages}} seront définitivement supprimées.",
       "bulkConfirmDescUnpublish": "{count, plural, =1 {1 page} other {{count} pages}} seront dépubliées.",
       "bulkConfirmLabel": "{label} tout",
-      "yes": "Oui"
+      "yes": "Oui",
+      "colMenuHeading": "Menu",
+      "headingsTitle": "Rubriques du menu",
+      "headingsDescription": "Rubriques du menu principal qui regroupent des pages, en plus de « À propos ». Une rubrique apparaît dans l’en-tête du site dès qu’elle contient une page publiée ; sa position se règle dans Personnaliser le site.",
+      "headingNewButton": "Nouvelle rubrique",
+      "headingEdit": "Modifier la rubrique",
+      "headingDelete": "Supprimer la rubrique",
+      "headingTitle_en": "Titre (anglais)",
+      "headingTitle_fr": "Titre (français)",
+      "headingTitle_de": "Titre (allemand)",
+      "headingSlug": "Clé",
+      "headingSlugHelp": "Identifiant interne, non modifiable ensuite. Laisser vide pour le déduire du titre anglais.",
+      "headingReservedSlug": "Cette clé est réservée à une rubrique intégrée.",
+      "headingInvalidSlug": "Utilisez uniquement des minuscules, des chiffres, « - » et « _ ».",
+      "headingDeleteTitle": "Supprimer cette rubrique ?",
+      "headingDeleteDescription": "Ses pages sont conservées et reviennent sous « À propos ».",
+      "headingToastSaved": "Rubrique enregistrée",
+      "headingToastFailedSave": "Échec de l’enregistrement de la rubrique",
+      "headingToastDeleted": "Rubrique supprimée",
+      "headingToastFailedDelete": "Échec de la suppression de la rubrique"
     },
     "pagesNew": {
       "pageTitle": "Nouvelle page",
@@ -1835,7 +1853,7 @@
       "fieldStatus": "Statut",
       "statusDraft": "Brouillon",
       "statusPublished": "Publiée",
-      "fieldOrder": "Ordre dans le menu À propos",
+      "fieldOrder": "Ordre dans le menu",
       "fieldQuickLink": "Afficher dans les liens rapides du pied de page",
       "tabEnglish": "Anglais",
       "tabFrench": "Français",
@@ -1845,13 +1863,15 @@
       "fieldContent": "Contenu",
       "contentPlaceholder": "Commencez à rédiger cette page...",
       "deleteTitle": "Supprimer cette page ?",
-      "deleteDescription": "Cette page sera définitivement supprimée. Elle disparaîtra du menu et de la barre latérale À propos.",
+      "deleteDescription": "Cette page sera définitivement supprimée. Elle disparaîtra de son menu et de la barre latérale.",
       "deleteConfirm": "Supprimer",
       "toastSaved": "Page enregistrée",
       "toastFailedSave": "Échec de l'enregistrement de la page",
       "failedLoad": "Échec du chargement de la page",
       "toastDeleted": "Page supprimée",
-      "toastFailedDelete": "Échec de la suppression de la page"
+      "toastFailedDelete": "Échec de la suppression de la page",
+      "fieldMenuHeading": "Rubrique du menu",
+      "menuHeadingAbout": "À propos"
     },
     "comments": {
       "title": "Modération des commentaires",
@@ -2202,7 +2222,8 @@
       "searchCategoriesDescription": "Activez ou désactivez les catégories et configurez les colonnes et facettes visibles. Glissez pour réorganiser.",
       "categorySummary": "{columns} col. · {facets} facettes",
       "columnsHeading": "Colonnes",
-      "facetsHeading": "Facettes"
+      "facetsHeading": "Facettes",
+      "headingHint": "Rubrique personnalisée — affichée dès qu’elle contient une page publiée. Les rubriques se gèrent dans Pages."
     },
     "users": {
       "title": "Gestion des utilisateurs",
@@ -3146,18 +3167,7 @@
       "loading": "Chargement des graphèmes...",
       "loadError": "Impossible de charger les graphèmes.",
       "empty": "Aucun graphème associé à cette main.",
-      "allographsList": "Liste des allographes",
-      "allographFallback": "Allographe {id}",
-      "selectGraph": "Sélectionner {allograph}, graphème {id}",
-      "openGraph": "{allograph}, graphème {id}",
-      "selectAll": "Tout sélectionner",
-      "unselectAll": "Tout désélectionner",
-      "addSelected": "Ajouter la sélection",
-      "selectedCount": "{count} sélectionné(s)",
-      "addToCollection": "Ajouter à la collection",
-      "lightbox": "Visionneuse",
-      "exportCsv": "Exporter en CSV",
-      "clearSelection": "Effacer"
+      "allographFallback": "Allographe {id}"
     },
     "metadata": {
       "fallbackTitle": "Main n°{id}",

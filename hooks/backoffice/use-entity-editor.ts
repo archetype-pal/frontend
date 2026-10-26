@@ -77,7 +77,7 @@ export function useEntityEditor<TDetail, TForm extends object>(
       setFormState(config.toForm(entity));
       setDirty(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [entity, config.id]);
 
   const setForm = (patch: Partial<TForm>) => {

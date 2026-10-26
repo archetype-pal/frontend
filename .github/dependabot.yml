@@ -1,0 +1,39 @@
+version: 2
+updates:
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+
+  # Covers Dockerfile and dev.Dockerfile (node:26-alpine).
+  - package-ecosystem: 'docker'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+
+  # "npm" is Dependabot's ecosystem for pnpm too; it reads pnpm-lock.yaml and
+  # runs pnpm to update it. Dependabot's dependency graph cannot read the pnpm 12
+  # lockfile yet, so its security alerts miss these packages: the
+  # dependency-audit job in security.yml covers that instead.
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    # Batch routine minor/patch bumps into one PR instead of one per package.
+    # Major bumps are deliberately left ungrouped so they arrive alone and get
+    # reviewed on their own merits.
+    groups:
+      npm-minor-patch:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
+    ignore:
+      # Held back: Mirador 4.3 needs MUI 9 and bundles its own dependencies
+      # (OpenSeadragon included), which takes the Compare chunk over the bundle
+      # budget. Lift both once a Mirador release externalises them again.
+      - dependency-name: 'mirador'
+        versions: ['>=4.3.0']
+      - dependency-name: '@mui/*'
+        update-types: ['version-update:semver-major']

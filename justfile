@@ -37,7 +37,7 @@ install:
 
 # --- Quality checks -----------------------------------------------------------
 
-# ESLint
+# Oxlint
 lint:
     docker compose run --rm frontend pnpm lint
 
