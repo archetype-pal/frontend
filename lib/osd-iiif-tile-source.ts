@@ -34,12 +34,30 @@ function isPowerOfTwo(value: unknown): boolean {
 // maxLevel/tile geometry and only ever paints a fraction of the canvas. Treat
 // that the same as "no tiles advertised" and fall back to the full-image
 // pyramid built from `sizes`, which OSD tiles correctly regardless.
-function hasUsableTileDescriptors(tiles: unknown): boolean {
+function hasUsableTileDescriptors(
+  tiles: unknown,
+  fullSize: { width: number; height: number } | null
+): boolean {
   if (!hasTileDescriptors(tiles)) return false;
 
   return (tiles as unknown[]).every((descriptor) => {
-    const scaleFactors = (descriptor as { scaleFactors?: unknown }).scaleFactors;
-    return Array.isArray(scaleFactors) && scaleFactors.every(isPowerOfTwo);
+    const { scaleFactors, width, height } = descriptor as {
+      scaleFactors?: unknown;
+      width?: unknown;
+      height?: unknown;
+    };
+    if (!Array.isArray(scaleFactors) || !scaleFactors.every(isPowerOfTwo)) return false;
+
+    // An untiled JP2 (the whole legacy corpus) is one tile the size of the
+    // image. SIPI v6.4.1+ advertises it as that single tile at scaleFactors
+    // [1], which OSD would honour by fetching the full-resolution image at
+    // every zoom. Not a pyramid, so use the full-image fallback instead.
+    const coversImage =
+      fullSize !== null &&
+      typeof width === 'number' &&
+      width >= fullSize.width &&
+      (typeof height === 'number' ? height : width) >= fullSize.height;
+    return !(coversImage && scaleFactors.length === 1);
   });
 }
 
@@ -50,12 +68,33 @@ function imageSize(value: unknown): { width: number; height: number } | null {
   return typeof width === 'number' && typeof height === 'number' ? { width, height } : null;
 }
 
+// Smallest synthesized level: stop halving once the longer side is this small.
+const MIN_SYNTHESIZED_LEVEL_SIDE = 256;
+
+// SIPI v6.4.1+ lists only the full size in `sizes` for an untiled image, so
+// derive the halvings SIPI v5/v6.3 used to advertise. Any size is servable.
+function halvedSizes(fullSize: { width: number; height: number }) {
+  const halvings: { width: number; height: number }[] = [];
+  let { width, height } = fullSize;
+  while (Math.max(width, height) > MIN_SYNTHESIZED_LEVEL_SIDE) {
+    width = Math.ceil(width / 2);
+    height = Math.ceil(height / 2);
+    halvings.push({ width, height });
+  }
+  return halvings;
+}
+
 function buildLegacyPyramidLevels(
   info: Record<string, unknown>,
   proxiedBaseUrl: string
 ): ImagePyramidLevel[] {
   const fullSize = imageSize(info);
-  const sizes = Array.isArray(info.sizes) ? info.sizes.map(imageSize).filter((size) => size) : [];
+  const advertised = Array.isArray(info.sizes)
+    ? info.sizes.map(imageSize).filter((size) => size)
+    : [];
+  const hasSmallerSize =
+    fullSize !== null && advertised.some((size) => size && size.width < fullSize.width);
+  const sizes = fullSize && !hasSmallerSize ? halvedSizes(fullSize) : advertised;
   const levels = fullSize ? [...sizes, fullSize] : sizes;
   const uniqueLevels = new Map<string, ImagePyramidLevel>();
 
@@ -76,7 +115,7 @@ export function buildOpenSeadragonTileSource(
 ): Record<string, unknown> {
   const source: Record<string, unknown> = { ...info, id: proxiedBaseUrl, '@id': proxiedBaseUrl };
 
-  if (!isIiif3ImageService(source) || hasUsableTileDescriptors(source.tiles)) {
+  if (!isIiif3ImageService(source) || hasUsableTileDescriptors(source.tiles, imageSize(source))) {
     return source;
   }
 

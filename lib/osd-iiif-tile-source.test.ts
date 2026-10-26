@@ -151,6 +151,83 @@ describe('buildOpenSeadragonTileSource', () => {
     expect(source.tiles).toEqual([{ width: 512, scaleFactors: [1, 2, 4, 8] }]);
   });
 
+  // SIPI v6.4.1+ info.json for an untiled legacy-corpus JP2: one tile covering
+  // the whole image at scaleFactors [1], and only the full size in `sizes`.
+  const SIPI_V10_UNTILED_INFO = {
+    '@context': IIIF3_CONTEXT,
+    id: 'https://beta.archetype-pal.ink/sipi/Holyrood_2/gd004500013_00215_00001_.jp2',
+    type: 'ImageService3',
+    profile: 'level2',
+    width: 2431,
+    height: 2005,
+    tiles: [{ width: 2431, height: 2005, scaleFactors: [1] }],
+    sizes: [{ width: 2431, height: 2005 }],
+  };
+
+  it('builds a halving pyramid for an untiled image SIPI v6.4.1+ advertises as one tile', () => {
+    const source = buildOpenSeadragonTileSource(SIPI_V10_UNTILED_INFO, PROXIED_BASE_URL);
+
+    // The same levels SIPI v5.0.1 advertised in `sizes` for this image.
+    expect(source.type).toBe('legacy-image-pyramid');
+    expect(
+      (source.levels as { width: number; height: number }[]).map((l) => [l.width, l.height])
+    ).toEqual([
+      [152, 126],
+      [304, 251],
+      [608, 502],
+      [1216, 1003],
+      [2431, 2005],
+    ]);
+  });
+
+  it('opens an untiled SIPI v6.4.1+ image at a small level, not full resolution', async () => {
+    const getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    try {
+      const OpenSeadragon = (await import('openseadragon'))
+        .default as unknown as OpenSeadragonIiifApi;
+      const source = buildOpenSeadragonTileSource(SIPI_V10_UNTILED_INFO, PROXIED_BASE_URL);
+      const configured = OpenSeadragon.LegacyTileSource.prototype.configure(
+        source,
+        `${PROXIED_BASE_URL}/info.json`,
+        null
+      );
+      const tileSource = new OpenSeadragon.LegacyTileSource(configured);
+
+      expect(tileSource.maxLevel).toBe(4);
+      expect(tileSource.getTileUrl(0, 0, 0)).toBe(`${PROXIED_BASE_URL}/full/152,126/0/default.jpg`);
+    } finally {
+      getContextSpy.mockRestore();
+    }
+  });
+
+  it('preserves real tiling from SIPI v6.4.1+ for tiled JP2s', () => {
+    // The upload pipeline's vips output: 512px tiles, power-of-two levels.
+    const tiles = [{ width: 512, height: 512, scaleFactors: [1, 2, 4] }];
+    const source = buildOpenSeadragonTileSource(
+      { ...SIPI_V10_UNTILED_INFO, width: 1285, height: 860, tiles },
+      PROXIED_BASE_URL
+    );
+
+    expect(source.tiles).toEqual(tiles);
+  });
+
+  it('serves a small untiled image as its single full size', () => {
+    const source = buildOpenSeadragonTileSource(
+      {
+        ...SIPI_V10_UNTILED_INFO,
+        width: 200,
+        height: 150,
+        tiles: [{ width: 200, height: 150, scaleFactors: [1] }],
+        sizes: [{ width: 200, height: 150 }],
+      },
+      PROXIED_BASE_URL
+    );
+
+    expect(source.levels).toEqual([
+      { url: `${PROXIED_BASE_URL}/full/200,150/0/default.jpg`, width: 200, height: 150 },
+    ]);
+  });
+
   it('does not add IIIF 3 fallback tiles to non-IIIF-3 descriptors', () => {
     const source = buildOpenSeadragonTileSource(
       {
