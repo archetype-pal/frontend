@@ -5,7 +5,12 @@ import type OpenSeadragon from 'openseadragon';
 import '@recogito/annotorious/dist/annotorious.min.css';
 
 import { smallestBoxContainingPoint, type HitBox } from '@/lib/manuscript-viewer-hit-test';
-import { buildOpenSeadragonTileSource } from '@/lib/osd-iiif-tile-source';
+import {
+  buildOpenSeadragonTileSource,
+  createFullImagePyramid,
+  type ImagePyramidLevel,
+  type LegacyPyramidTileSource,
+} from '@/lib/osd-iiif-tile-source';
 
 // ---- Annotation data model ----
 export interface Annotation {
@@ -442,11 +447,12 @@ export default function ManuscriptAnnotorious({
     };
 
     void (async () => {
-      let tileSources: string | Record<string, unknown> = tileSourceUrl;
+      let tileSources: string | Record<string, unknown> | LegacyPyramidTileSource = tileSourceUrl;
       let OpenSeadragonCtor: {
         (options: Record<string, unknown>): OpenSeadragon.Viewer;
         Rect: new (x: number, y: number, w: number, h: number) => unknown;
         Point: new (x: number, y: number) => OpenSeadragon.Point;
+        LegacyTileSource: new (levels: ImagePyramidLevel[]) => LegacyPyramidTileSource;
       };
       let AnnotoriousCtor: AnnotoriousFactory;
       try {
@@ -458,6 +464,7 @@ export default function ManuscriptAnnotorious({
           (options: Record<string, unknown>): OpenSeadragon.Viewer;
           Rect: new (x: number, y: number, w: number, h: number) => unknown;
           Point: new (x: number, y: number) => OpenSeadragon.Point;
+          LegacyTileSource: new (levels: ImagePyramidLevel[]) => LegacyPyramidTileSource;
         };
         AnnotoriousCtor = annoModule.default;
         osdModuleRef.current = OpenSeadragonCtor;
@@ -481,7 +488,14 @@ export default function ManuscriptAnnotorious({
         // its advertised sizes instead. That avoids OSD's inferred/cropped tile
         // pyramid, which can drift from Annotorious or only cover part of the
         // canvas.
-        tileSources = buildOpenSeadragonTileSource(obj, baseUrl);
+        const descriptor = buildOpenSeadragonTileSource(obj, baseUrl);
+        tileSources =
+          descriptor.type === 'legacy-image-pyramid'
+            ? createFullImagePyramid(
+                OpenSeadragonCtor.LegacyTileSource,
+                descriptor.levels as ImagePyramidLevel[]
+              )
+            : descriptor;
       } catch (err) {
         if (isMounted) {
           setState({
