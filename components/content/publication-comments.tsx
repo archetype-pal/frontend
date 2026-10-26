@@ -23,8 +23,11 @@ function buildCommentTree(comments: ThreadComment[]): CommentNode[] {
   );
   const roots: CommentNode[] = [];
   for (const node of nodes.values()) {
-    if (node.parent === null) roots.push(node);
-    else nodes.get(node.parent)?.replies.push(node);
+    // A reply whose parent is not in the list (an admin can move a comment to
+    // another post) shows as a top-level comment rather than vanishing.
+    const parent = node.parent === null ? undefined : nodes.get(node.parent);
+    if (parent) parent.replies.push(node);
+    else roots.push(node);
   }
   return roots.reverse();
 }
