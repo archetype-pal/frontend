@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import { describe, expect, it, vi } from 'vitest';
 
-import { buildOpenSeadragonTileSource } from './osd-iiif-tile-source';
+import { buildOpenSeadragonTileSource, withReducedLevels } from './osd-iiif-tile-source';
 
 const IIIF3_CONTEXT = 'http://iiif.io/api/image/3/context.json';
 const PROXIED_BASE_URL = '/iiif-proxy/4w108287_89_90_91_92p%2Fa80128_37.jp2';
@@ -19,6 +19,12 @@ const SIPI_V5_INFO = {
     { width: 342, height: 405 },
   ],
   extraFeatures: ['sizeByWh'],
+};
+// SIPI 6.4.1+ on an untiled JP2: one whole-image tile, full resolution only.
+const SIPI_V10_INFO = {
+  ...SIPI_V5_INFO,
+  sizes: [{ width: 5468, height: 6471 }],
+  tiles: [{ width: 5468, height: 6471, scaleFactors: [1] }],
 };
 
 type IiifTileSource = {
@@ -151,6 +157,21 @@ describe('buildOpenSeadragonTileSource', () => {
     expect(source.tiles).toEqual([{ width: 512, scaleFactors: [1, 2, 4, 8] }]);
   });
 
+  it('builds the reduced levels itself when SIPI offers only full resolution', () => {
+    const source = buildOpenSeadragonTileSource(SIPI_V10_INFO, PROXIED_BASE_URL);
+
+    expect(source.type).toBe('legacy-image-pyramid');
+    expect(
+      (source.levels as { width: number; height: number }[]).map((l) => [l.width, l.height])
+    ).toEqual([
+      [342, 405],
+      [684, 809],
+      [1367, 1618],
+      [2734, 3236],
+      [5468, 6471],
+    ]);
+  });
+
   it('does not add IIIF 3 fallback tiles to non-IIIF-3 descriptors', () => {
     const source = buildOpenSeadragonTileSource(
       {
@@ -165,5 +186,36 @@ describe('buildOpenSeadragonTileSource', () => {
     );
 
     expect(source.tiles).toBeUndefined();
+  });
+});
+
+describe('withReducedLevels', () => {
+  it('adds halvings and power-of-two scaleFactors when SIPI offers only full resolution', () => {
+    const info = withReducedLevels(SIPI_V10_INFO);
+
+    expect(info.tiles).toEqual([{ width: 5468, height: 6471, scaleFactors: [1, 2, 4, 8, 16] }]);
+    expect(info.sizes).toEqual([
+      { width: 2734, height: 3236 },
+      { width: 1367, height: 1618 },
+      { width: 684, height: 809 },
+      { width: 342, height: 405 },
+    ]);
+  });
+
+  it('leaves an info.json that already offers reduced levels as it is', () => {
+    expect(withReducedLevels(SIPI_V5_INFO)).toBe(SIPI_V5_INFO);
+    const tiled = { ...SIPI_V10_INFO, tiles: [{ width: 512, scaleFactors: [1, 2, 4] }] };
+    expect(withReducedLevels(tiled)).toBe(tiled);
+  });
+
+  it('leaves an image too small to halve as it is', () => {
+    const small = {
+      ...SIPI_V10_INFO,
+      width: 200,
+      height: 120,
+      sizes: [{ width: 200, height: 120 }],
+      tiles: [{ width: 200, height: 120, scaleFactors: [1] }],
+    };
+    expect(withReducedLevels(small)).toBe(small);
   });
 });
