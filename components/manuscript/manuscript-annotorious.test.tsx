@@ -75,4 +75,48 @@ describe('ManuscriptAnnotorious', () => {
     expect(api.getAnnotations().map((a) => a.id)).toEqual([savedGlyph.id]);
     expect(onDelete).not.toHaveBeenCalled();
   });
+
+  describe('re-seeding from initialAnnotations', () => {
+    const saved: Annotation = { ...savedGlyph, id: 'db:1' };
+    const glyphDraft: Annotation = { ...savedGlyph, id: '#glyph-draft' };
+    const textDraft: Annotation = {
+      ...savedGlyph,
+      id: '#text-draft',
+      _meta: { annotationType: 'text' },
+    };
+
+    async function renderThenReseed(first: Annotation[], next: Annotation[]) {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => new Response(JSON.stringify(iiifInfo)))
+      );
+      let api: ViewerApi | null = null;
+      const view = (annotations: Annotation[]) => (
+        <ManuscriptAnnotorious
+          iiifImageUrl="http://iiif.test/img/info.json"
+          initialAnnotations={annotations}
+          exposeApi={(exposed) => (api = exposed)}
+        />
+      );
+      const { rerender } = render(view(first));
+      await waitFor(() => expect(api?.getAnnotations()).toHaveLength(first.length));
+      await act(async () => {
+        rerender(view(next));
+        await settle();
+      });
+      return (api as unknown as ViewerApi).getAnnotations().map((a) => a.id);
+    }
+
+    it('keeps an unsaved glyph draft that the new set leaves out', async () => {
+      const ids = await renderThenReseed([saved, glyphDraft], [saved]);
+      expect(ids).toEqual([saved.id, glyphDraft.id]);
+    });
+
+    // The box drawn to link a phrase is folded into the set by the parent while
+    // pending; leaving it out is how a discard reaches the image.
+    it('drops a text-region draft that the new set leaves out', async () => {
+      const ids = await renderThenReseed([saved, textDraft], [saved]);
+      expect(ids).toEqual([saved.id]);
+    });
+  });
 });
