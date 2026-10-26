@@ -1,6 +1,6 @@
 const IIIF_IMAGE_3_CONTEXT = 'http://iiif.io/api/image/3/context.json';
 
-type ImagePyramidLevel = {
+export type ImagePyramidLevel = {
   url: string;
   width: number;
   height: number;
@@ -141,4 +141,24 @@ export function buildOpenSeadragonTileSource(
 
   const levels = buildLegacyPyramidLevels(withReducedLevels(source), proxiedBaseUrl);
   return levels.length > 0 ? { type: 'legacy-image-pyramid', levels } : source;
+}
+
+export type LegacyPyramidTileSource = { minLevel: number; getClosestLevel: () => number };
+
+/**
+ * Builds OpenSeadragon's tile source for a full-image pyramid, with the smallest
+ * level as its cutoff. OpenSeadragon takes the cutoff to be the highest level
+ * that fits in one tile: it force-loads that level whenever the levels it wants
+ * are not loaded yet (so on every open), and never evicts it from its cache. In
+ * a full-image pyramid every level is one tile, so the cutoff was the
+ * full-resolution image, fetched on every open (5.6 MB for a 12967 px folio)
+ * although the home view needs a fraction of it.
+ */
+export function createFullImagePyramid<T extends LegacyPyramidTileSource>(
+  LegacyTileSource: new (levels: ImagePyramidLevel[]) => T,
+  levels: ImagePyramidLevel[]
+): T {
+  const source = new LegacyTileSource(levels);
+  source.getClosestLevel = () => source.minLevel;
+  return source;
 }

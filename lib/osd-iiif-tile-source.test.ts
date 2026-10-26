@@ -1,7 +1,12 @@
 /** @vitest-environment jsdom */
 import { describe, expect, it, vi } from 'vitest';
 
-import { buildOpenSeadragonTileSource, withReducedLevels } from './osd-iiif-tile-source';
+import {
+  buildOpenSeadragonTileSource,
+  createFullImagePyramid,
+  type ImagePyramidLevel,
+  withReducedLevels,
+} from './osd-iiif-tile-source';
 
 const IIIF3_CONTEXT = 'http://iiif.io/api/image/3/context.json';
 const PROXIED_BASE_URL = '/iiif-proxy/4w108287_89_90_91_92p%2Fa80128_37.jp2';
@@ -105,6 +110,29 @@ describe('buildOpenSeadragonTileSource', () => {
       expect(tileSource.getNumTiles(0)).toMatchObject({ x: 1, y: 1 });
       expect(tileSource.getNumTiles(tileSource.maxLevel)).toMatchObject({ x: 1, y: 1 });
       expect(tileSource.getTileUrl(0, 0, 0)).not.toContain('/full/full/');
+    } finally {
+      getContextSpy.mockRestore();
+    }
+  });
+
+  it("makes the smallest level OpenSeadragon's cutoff, so opening does not fetch full resolution", async () => {
+    const getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    try {
+      const OpenSeadragon = (await import('openseadragon'))
+        .default as unknown as OpenSeadragonIiifApi;
+      const source = buildOpenSeadragonTileSource(SIPI_V5_INFO, PROXIED_BASE_URL);
+      const tileSource = createFullImagePyramid(
+        OpenSeadragon.LegacyTileSource as unknown as new (levels: ImagePyramidLevel[]) => {
+          minLevel: number;
+          maxLevel: number;
+          getClosestLevel: () => number;
+        },
+        source.levels as ImagePyramidLevel[]
+      );
+
+      // Every level is one tile, so OpenSeadragon's own choice is the top one.
+      expect(tileSource.maxLevel).toBe(4);
+      expect(tileSource.getClosestLevel()).toBe(0);
     } finally {
       getContextSpy.mockRestore();
     }
