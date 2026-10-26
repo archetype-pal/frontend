@@ -3,8 +3,9 @@ import { ExternalLink } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, safeLinkHref, type ModelLabelLocale } from '@/lib/model-labels';
-import { getPublishedPages } from '@/lib/pages-server';
-import { resolvePageText, type PageLocale } from '@/lib/pages';
+import { getMenuHeadings, getPublishedPages } from '@/lib/pages-server';
+import { isListedUnderAbout, pageHref, resolvePageText, type PageLocale } from '@/lib/pages';
+import { readSiteFeatures } from '@/lib/site-features-server';
 import { fetchPartners, getCarouselImageUrl } from '@/utils/api';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -25,22 +26,29 @@ function GithubIcon({ className }: { className?: string }) {
 }
 
 export default async function Footer() {
-  const [t, rawLocale, modelLabels, pages, partners] = await Promise.all([
-    getTranslations('nav.footer'),
-    getLocale(),
-    readModelLabels(),
-    getPublishedPages(),
-    fetchPartners().catch(() => []),
-  ]);
+  const [t, rawLocale, modelLabels, pages, menuHeadings, siteFeatures, partners] =
+    await Promise.all([
+      getTranslations('nav.footer'),
+      getLocale(),
+      readModelLabels(),
+      getPublishedPages(),
+      getMenuHeadings(),
+      readSiteFeatures(),
+      fetchPartners().catch(() => []),
+    ]);
   const locale = rawLocale as ModelLabelLocale;
   const getLabel = (
     key: 'siteTitle' | 'footerLine1' | 'footerLine2' | 'footerBottomLine' | 'homeAboutUrl'
   ) => resolveModelLabel(modelLabels.labels[key], locale);
   const aboutHref = safeLinkHref(getLabel('homeAboutUrl'));
+  // With About off, its pages 404 (see app/(site)/about/[slug]/page.tsx), so
+  // they can't be quick links either.
+  const aboutOff = siteFeatures.sections.about === false;
   const quickLinkPages = pages
     .filter((page) => page.include_in_quick_link)
+    .filter((page) => !(aboutOff && isListedUnderAbout(page.menu_heading, menuHeadings)))
     .map((page) => ({
-      href: `/about/${page.slug}`,
+      href: pageHref(page.slug),
       label: resolvePageText(page.title, locale as PageLocale) || page.slug,
     }));
 

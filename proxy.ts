@@ -13,7 +13,9 @@ const SECTION_ROUTE_MAP: Partial<Record<SectionKey, string>> = {
   news: '/publications/news',
   blogs: '/publications/blogs',
   featureArticles: '/publications/feature',
-  about: '/about',
+  // No `about`: every page lives at /about/{slug} whatever its menu heading, so
+  // the About toggle can't gate the prefix. The page route 404s About's own
+  // pages when the section is off; pages under a custom heading stay reachable.
 };
 
 // CSP / security-header concerns previously lived in middleware.ts. Next 16

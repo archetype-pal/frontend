@@ -3,9 +3,25 @@ import { getLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { PageBanner } from '@/components/layout/page-banner';
 import { AboutSidebar } from '../_components/about-sidebar';
-import { getPublishedPageBySlug } from '@/lib/pages-server';
-import { resolvePageText, type PageLocale } from '@/lib/pages';
+import { getMenuHeadings, getPublishedPageBySlug } from '@/lib/pages-server';
+import { isListedUnderAbout, resolvePageText, type Page, type PageLocale } from '@/lib/pages';
+import { readSiteFeatures } from '@/lib/site-features-server';
 import { sanitizeHtml } from '@/lib/sanitize-html';
+
+/**
+ * The page, or null when it's missing or listed under About while the About
+ * section is off. proxy.ts can't gate `/about/*` itself: pages under a custom
+ * heading share the prefix and stay reachable with About off.
+ */
+async function getVisiblePage(slug: string): Promise<Page | null> {
+  const [page, siteFeatures, menuHeadings] = await Promise.all([
+    getPublishedPageBySlug(slug),
+    readSiteFeatures(),
+    getMenuHeadings(),
+  ]);
+  if (!page || siteFeatures.sections.about !== false) return page;
+  return isListedUnderAbout(page.menu_heading, menuHeadings) ? null : page;
+}
 
 export async function generateMetadata({
   params,
@@ -13,14 +29,14 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const [locale, page] = await Promise.all([getLocale(), getPublishedPageBySlug(slug)]);
+  const [locale, page] = await Promise.all([getLocale(), getVisiblePage(slug)]);
   if (!page) return {};
   return { title: resolvePageText(page.title, locale as PageLocale) };
 }
 
 export default async function AboutPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [locale, page] = await Promise.all([getLocale(), getPublishedPageBySlug(slug)]);
+  const [locale, page] = await Promise.all([getLocale(), getVisiblePage(slug)]);
   if (!page) notFound();
 
   const title = resolvePageText(page.title, locale as PageLocale);
@@ -36,7 +52,7 @@ export default async function AboutPage({ params }: { params: Promise<{ slug: st
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
           />
 
-          <AboutSidebar />
+          <AboutSidebar menuHeading={page.menu_heading} />
         </div>
       </div>
     </div>

@@ -1,25 +1,47 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createPage } from '@/services/backoffice/pages';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useAuth } from '@/contexts/auth-context';
+import { createPage, getMenuHeadings } from '@/services/backoffice/pages';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
-import { isReservedPageSlug } from '@/lib/pages';
+import { isReservedPageSlug, resolvePageText } from '@/lib/pages';
+import { coerceLocale } from '@/lib/locale';
 import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+
+// Radix Select can't hold a null value; this stands for "no custom heading".
+const ABOUT_HEADING_VALUE = '__about';
 
 export default function NewPagePage() {
   const router = useRouter();
   const t = useTranslations('backoffice');
+  const locale = coerceLocale(useLocale());
+  const { isAuthenticated } = useAuth();
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [slugLocked, setSlugLocked] = useState(false);
+  const [menuHeading, setMenuHeading] = useState<string | null>(null);
+
+  const { data: menuHeadings = [] } = useQuery({
+    queryKey: backofficeKeys.pages.headings(),
+    queryFn: () => getMenuHeadings(),
+    enabled: isAuthenticated,
+  });
 
   const generateSlug = (value: string) =>
     value
@@ -44,6 +66,7 @@ export default function NewPagePage() {
         title: { en: title, fr: '', de: '' },
         content: { en: '', fr: '', de: '' },
         status: 'Draft',
+        menu_heading: menuHeading,
         order: 0,
       }),
     onSuccess: (data) => {
@@ -108,6 +131,28 @@ export default function NewPagePage() {
                 : t('pagesNew.slugUrlPreview', { slug: resolvedSlug })}
             </p>
           )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>{t('pagesDetail.fieldMenuHeading')}</Label>
+          <Select
+            value={menuHeading ?? ABOUT_HEADING_VALUE}
+            onValueChange={(val) => setMenuHeading(val === ABOUT_HEADING_VALUE ? null : val)}
+          >
+            <SelectTrigger aria-label={t('pagesDetail.fieldMenuHeading')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ABOUT_HEADING_VALUE}>
+                {t('pagesDetail.menuHeadingAbout')}
+              </SelectItem>
+              {menuHeadings.map((heading) => (
+                <SelectItem key={heading.slug} value={heading.slug}>
+                  {resolvePageText(heading.title, locale) || heading.slug}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <Button

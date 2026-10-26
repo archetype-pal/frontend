@@ -1,10 +1,18 @@
 import { apiFetch } from './api-fetch';
-import { normalizePage, normalizePageListItem, type Page, type PageListItem } from './pages';
+import {
+  normalizeMenuHeading,
+  normalizePage,
+  normalizePageListItem,
+  type MenuHeading,
+  type Page,
+  type PageListItem,
+} from './pages';
 
 const PAGES_PATH = '/api/v1/pages/';
+const MENU_HEADINGS_PATH = '/api/v1/menu-headings/';
 
 /**
- * Published pages, ordered for the About menu/sidebar. Any failure —
+ * Published pages, ordered for the menu dropdowns/sidebars. Any failure —
  * network error, non-200, or an unexpected response shape — resolves to an
  * empty list so SSR never 500s over a backend hiccup (matches
  * `readModelLabels`'s fallback behavior).
@@ -43,5 +51,21 @@ export async function getPublishedPageBySlug(slug: string): Promise<Page | null>
     return page;
   } catch {
     return null;
+  }
+}
+
+/** Custom menu headings. Same empty-list fallback as `getPublishedPages`. */
+export async function getMenuHeadings(): Promise<MenuHeading[]> {
+  try {
+    const res = await apiFetch(MENU_HEADINGS_PATH);
+    if (!res.ok) return []; // apiFetch already logged the non-2xx above.
+    const raw = await res.json();
+    if (!Array.isArray(raw)) {
+      console.error(`[API] GET ${MENU_HEADINGS_PATH} → 200 with unexpected body shape`, raw);
+      return [];
+    }
+    return raw.map(normalizeMenuHeading).filter((h): h is MenuHeading => h !== null);
+  } catch {
+    return [];
   }
 }

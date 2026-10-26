@@ -28,14 +28,24 @@ import {
   CalendarDays,
   Info,
   Image,
+  ListTree,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { normalizeSectionOrder, type SectionKey } from '@/lib/site-features';
+import {
+  headingSlugFromNavKey,
+  isHeadingNavKey,
+  resolveNavOrder,
+  type HeadingNavKey,
+  type NavKey,
+  type SectionKey,
+} from '@/lib/site-features';
+import { resolvePageText, type MenuHeading } from '@/lib/pages';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { coerceLocale } from '@/lib/locale';
 
 const SECTION_ICONS: Record<SectionKey, LucideIcon> = {
   search: Search,
@@ -51,10 +61,51 @@ const SECTION_ICONS: Record<SectionKey, LucideIcon> = {
 
 type Props = {
   sections: Record<SectionKey, boolean>;
-  sectionOrder: SectionKey[];
+  sectionOrder: NavKey[];
+  /**
+   * Custom menu headings, sortable alongside the built-in sections. `undefined`
+   * while they're loading or if the read failed: the stored order is then kept
+   * as is, so a reorder can't drop the headings' positions.
+   */
+  menuHeadings: MenuHeading[] | undefined;
   onChange: (key: SectionKey, enabled: boolean) => void;
-  onOrderChange: (sectionOrder: SectionKey[]) => void;
+  onOrderChange: (sectionOrder: NavKey[]) => void;
 };
+
+/** A custom heading's card: sortable, but with no switch — it shows whenever it has a published page. */
+function SortableHeadingCard({ navKey, label }: { navKey: HeadingNavKey; label: string }) {
+  const t = useTranslations('backoffice');
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: navKey,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      title={t('siteFeatures.headingHint')}
+      className={cn(
+        'flex items-center gap-2.5 rounded-lg border border-dashed bg-card px-3 py-2.5',
+        isDragging && 'opacity-60 z-20'
+      )}
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none shrink-0 p-0.5 rounded-sm hover:bg-muted"
+        aria-label={t('siteFeatures.reorderSection', { section: label })}
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground/70" />
+      </button>
+      <ListTree className="h-4 w-4 shrink-0" />
+      <span className="text-sm font-medium flex-1 truncate">{label}</span>
+    </div>
+  );
+}
 
 function SortableSectionCard({
   sectionKey,
@@ -112,9 +163,21 @@ function SortableSectionCard({
   );
 }
 
-export function SectionToggles({ sections, sectionOrder, onChange, onOrderChange }: Props) {
+export function SectionToggles({
+  sections,
+  sectionOrder,
+  menuHeadings,
+  onChange,
+  onOrderChange,
+}: Props) {
   const t = useTranslations('backoffice');
-  const orderedKeys = normalizeSectionOrder(sectionOrder);
+  const locale = coerceLocale(useLocale());
+  const orderedKeys = menuHeadings
+    ? resolveNavOrder(
+        sectionOrder,
+        menuHeadings.map((heading) => heading.slug)
+      )
+    : sectionOrder;
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -123,8 +186,8 @@ export function SectionToggles({ sections, sectionOrder, onChange, onOrderChange
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = orderedKeys.indexOf(active.id as SectionKey);
-    const newIndex = orderedKeys.indexOf(over.id as SectionKey);
+    const oldIndex = orderedKeys.indexOf(active.id as NavKey);
+    const newIndex = orderedKeys.indexOf(over.id as NavKey);
     if (oldIndex < 0 || newIndex < 0) return;
     onOrderChange(arrayMove(orderedKeys, oldIndex, newIndex));
   };
@@ -139,14 +202,22 @@ export function SectionToggles({ sections, sectionOrder, onChange, onOrderChange
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={orderedKeys} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {orderedKeys.map((key) => (
-                <SortableSectionCard
-                  key={key}
-                  sectionKey={key}
-                  enabled={sections[key]}
-                  onChange={onChange}
-                />
-              ))}
+              {orderedKeys.map((key) => {
+                if (!isHeadingNavKey(key)) {
+                  return (
+                    <SortableSectionCard
+                      key={key}
+                      sectionKey={key}
+                      enabled={sections[key]}
+                      onChange={onChange}
+                    />
+                  );
+                }
+                const slug = headingSlugFromNavKey(key);
+                const heading = menuHeadings?.find((h) => h.slug === slug);
+                const label = (heading && resolvePageText(heading.title, locale)) || slug;
+                return <SortableHeadingCard key={key} navKey={key} label={label} />;
+              })}
             </div>
           </SortableContext>
         </DndContext>
