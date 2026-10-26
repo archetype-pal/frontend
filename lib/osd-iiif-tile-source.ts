@@ -34,13 +34,28 @@ function isPowerOfTwo(value: unknown): boolean {
 // maxLevel/tile geometry and only ever paints a fraction of the canvas. Treat
 // that the same as "no tiles advertised" and fall back to the full-image
 // pyramid built from `sizes`, which OSD tiles correctly regardless.
+//
+// Descriptors that offer only scaleFactor 1 are no pyramid at all, so they
+// fall back too (see withReducedLevels).
 function hasUsableTileDescriptors(tiles: unknown): boolean {
   if (!hasTileDescriptors(tiles)) return false;
 
-  return (tiles as unknown[]).every((descriptor) => {
-    const scaleFactors = (descriptor as { scaleFactors?: unknown }).scaleFactors;
-    return Array.isArray(scaleFactors) && scaleFactors.every(isPowerOfTwo);
-  });
+  return (
+    (tiles as unknown[]).every((descriptor) => {
+      const scaleFactors = (descriptor as { scaleFactors?: unknown }).scaleFactors;
+      return Array.isArray(scaleFactors) && scaleFactors.every(isPowerOfTwo);
+    }) && tilesHaveReducedLevels(tiles)
+  );
+}
+
+function tilesHaveReducedLevels(tiles: unknown): boolean {
+  return (
+    Array.isArray(tiles) &&
+    tiles.some((descriptor) => {
+      const scaleFactors = (descriptor as { scaleFactors?: unknown }).scaleFactors;
+      return Array.isArray(scaleFactors) && scaleFactors.some((factor) => Number(factor) > 1);
+    })
+  );
 }
 
 function imageSize(value: unknown): { width: number; height: number } | null {
@@ -48,6 +63,50 @@ function imageSize(value: unknown): { width: number; height: number } | null {
 
   const { width, height } = value as { width?: unknown; height?: unknown };
   return typeof width === 'number' && typeof height === 'number' ? { width, height } : null;
+}
+
+// Halving stops before a level's longer side drops below this many pixels, and
+// at 1/16: our JP2s hold four reduced resolutions, so SIPI renders down to 1/16
+// from those, but anything smaller means decoding the full image (8 s instead
+// of 0.05 s on a 12967 px folio).
+const MIN_LEVEL_SIDE = 128;
+const MAX_SCALE_FACTOR = 16;
+
+/**
+ * SIPI 6.4.1 and later derive scaleFactors and sizes from the JP2's own tile
+ * grid, so an untiled JP2 (as ours are) advertises a single level: one tile the
+ * size of the image, at full resolution. A viewer fed that has nothing to paint
+ * until it has fetched and decoded the whole image. SIPI still renders any size,
+ * so when info.json offers no reduced level this adds halvings, as SIPI v5 did:
+ * as `sizes`, and as power-of-two scaleFactors on its tiles.
+ */
+export function withReducedLevels(info: Record<string, unknown>): Record<string, unknown> {
+  const full = imageSize(info);
+  if (!full || !isIiif3ImageService(info) || tilesHaveReducedLevels(info.tiles)) return info;
+  const sizes = Array.isArray(info.sizes) ? info.sizes.map(imageSize) : [];
+  if (sizes.some((size) => size && size.width < full.width)) return info;
+
+  const reduced: { width: number; height: number }[] = [];
+  for (
+    let factor = 2;
+    factor <= MAX_SCALE_FACTOR && Math.max(full.width, full.height) / factor >= MIN_LEVEL_SIDE;
+    factor *= 2
+  ) {
+    reduced.push({
+      width: Math.ceil(full.width / factor),
+      height: Math.ceil(full.height / factor),
+    });
+  }
+  if (reduced.length === 0) return info;
+
+  const scaleFactors = [1, ...reduced.map((_, index) => 2 ** (index + 1))];
+  return {
+    ...info,
+    sizes: reduced,
+    ...(hasTileDescriptors(info.tiles) && {
+      tiles: (info.tiles as Record<string, unknown>[]).map((tile) => ({ ...tile, scaleFactors })),
+    }),
+  };
 }
 
 function buildLegacyPyramidLevels(
@@ -80,6 +139,6 @@ export function buildOpenSeadragonTileSource(
     return source;
   }
 
-  const levels = buildLegacyPyramidLevels(source, proxiedBaseUrl);
+  const levels = buildLegacyPyramidLevels(withReducedLevels(source), proxiedBaseUrl);
   return levels.length > 0 ? { type: 'legacy-image-pyramid', levels } : source;
 }
