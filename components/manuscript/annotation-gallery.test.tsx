@@ -200,7 +200,7 @@ describe('AnnotationGallery layout', () => {
       within(screen.getByRole('region', { name: 'Selection' })).getByText('2 selected')
     ).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Unselect A graph 4189' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select A graph 4189', pressed: true }));
     expect(box.getAttribute('aria-checked')).toBe('mixed');
     expect(within(row('A')).getByText('1 selected')).toBeTruthy();
   });
@@ -426,12 +426,13 @@ describe('AnnotationGallery collection', () => {
   it('adds and removes a single graph from its star, with Undo', () => {
     renderGallery();
     const star = screen.getByRole('button', { name: 'Add graph 4189 to your collection' });
-    expect(star.getAttribute('aria-pressed')).toBe('false');
+    // The label names the action, so the star is not also a pressed toggle.
+    expect(star.hasAttribute('aria-pressed')).toBe(false);
 
     fireEvent.click(star);
     expect([...collection.ids()]).toEqual([4189]);
-    expect(star.getAttribute('aria-pressed')).toBe('true');
     expect(star.getAttribute('aria-label')).toBe('Remove graph 4189 from your collection');
+    expect(star.hasAttribute('aria-pressed')).toBe(false);
     expect(toastMock.success.mock.calls[0][0]).toBe('Added graph #4189 to your collection.');
 
     fireEvent.click(star);

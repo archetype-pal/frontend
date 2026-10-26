@@ -250,14 +250,14 @@ describe('HandViewer Graphs tab', () => {
     expect(container.querySelectorAll('img')).toHaveLength(2);
   });
 
-  it('names each select toggle after its graph', async () => {
+  it('names each select toggle after its graph, and keeps that name once selected', async () => {
     renderGraphsTab();
     const toggle = await screen.findByRole('button', { name: 'Select a, Insular graph 101' });
     expect(toggle.getAttribute('aria-pressed')).toBe('false');
 
     fireEvent.click(toggle);
 
-    expect(toggle.getAttribute('aria-label')).toBe('Unselect a, Insular graph 101');
+    expect(toggle.getAttribute('aria-label')).toBe('Select a, Insular graph 101');
     expect(toggle.getAttribute('aria-pressed')).toBe('true');
   });
 
