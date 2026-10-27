@@ -4,10 +4,10 @@
  *
  * A `<ref>` is a **self-contained inline construct, NOT** a member of the
  * linkable-element set (`LINKABLE_ELEMENTS` / `_TEI_LINKABLE`) — adding it there
- * would corrupt region-link positional `element_index` (findings §8.3). `@target`
+ * would corrupt region-link positional `element_index` (`docs/tei.md` §3.4). `@target`
  * is the authoritative href; `@type`/`@key` are identity/styling only.
  *
- * Serialization (roadmap §8.3), attribute order `type` → `key` → `target`,
+ * Serialization (`docs/tei.md` §3.4), attribute order `type` → `key` → `target`,
  * escaped through the shared `escapeXmlAttr`/`escapeXmlText` emitters in
  * `lib/msdesc-fragments.ts` so every form round-trips through `parseFragment`:
  *   - External URL: `<ref target="https://…">text</ref>`
@@ -83,7 +83,7 @@ export interface ResourceRef {
 
 /**
  * The `@key` for a resource, or undefined. Only Person carries a key
- * (`person_{id}`); place/search/manuscript are `@target`-only (§8.3). An
+ * (`person_{id}`); place/search/manuscript are `@target`-only (`docs/tei.md` §3.4). An
  * explicit `key` already on the ref wins (so a parsed `person_42` — or a
  * tolerated `work_` on the external catch-all — round-trips verbatim).
  */

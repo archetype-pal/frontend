@@ -104,7 +104,7 @@ const nextConfig = {
     ],
   },
 
-  // CSP is set dynamically per request in middleware.ts (nonce-based).
+  // CSP is set dynamically per request in proxy.ts (nonce-based).
   async headers() {
     return [
       {
