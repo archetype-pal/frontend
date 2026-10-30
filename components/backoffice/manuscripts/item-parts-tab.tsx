@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
-import { CurrentItemCombobox } from './current-item-combobox';
+import { CurrentItemPicker } from './current-item-edit-dialog';
 import { ItemPartHandsSection } from './item-part-hands-section';
 import { createItemPart, updateItemPart, deleteItemPart } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
@@ -174,14 +174,13 @@ function ItemPartCard({
               <FieldLabel helpField="itemPart.currentItem">
                 {t('manuscriptsDetail.physicalVolume')}
               </FieldLabel>
-              <CurrentItemCombobox
+              <CurrentItemPicker
+                part={part}
                 value={currentItemId}
                 onChange={(id) => {
                   setCurrentItemId(id);
                   setDirty(true);
                 }}
-                selectedLabel={part.current_item_display}
-                className="w-full"
               />
             </div>
             <div className="space-y-1.5">
