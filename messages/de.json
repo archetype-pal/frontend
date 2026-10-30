@@ -1876,6 +1876,11 @@
     "comments": {
       "title": "Kommentarmoderation",
       "subtitle": "{count, plural, =0 {0 Kommentare} =1 {1 Kommentar} other {{count} Kommentare}}",
+      "emailSettingLabel": "Mich per E-Mail über Kommentare informieren, die auf Freigabe warten",
+      "emailSettingTo": "Gesendet an {email}",
+      "emailSettingNoAddress": "Ihr Konto hat keine E-Mail-Adresse.",
+      "emailSettingFailed": "Ihre E-Mail-Einstellung konnte nicht gespeichert werden",
+      "emailSettingUnavailable": "Ihre E-Mail-Einstellung konnte nicht geladen werden: {reason}",
       "filterAll": "alle",
       "filterPending": "ausstehend",
       "filterApproved": "genehmigt",

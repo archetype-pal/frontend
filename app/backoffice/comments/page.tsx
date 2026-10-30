@@ -25,6 +25,7 @@ import { DataPagination } from '@/components/ui/data-pagination';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import { PublicationCombobox } from '@/components/backoffice/common/publication-combobox';
+import { CommentEmailSetting } from '@/components/backoffice/comment-email-setting';
 import { CommentText } from '@/components/common/comment-text';
 import {
   getComments,
@@ -175,14 +176,17 @@ function CommentsPageContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <MessageSquare className="h-6 w-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t('comments.title')}</h1>
-          <p className="text-sm text-muted-foreground">
-            {isLoading ? '...' : t('comments.subtitle', { count: totalCount })}
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <MessageSquare className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('comments.title')}</h1>
+            <p className="text-sm text-muted-foreground">
+              {isLoading ? '...' : t('comments.subtitle', { count: totalCount })}
+            </p>
+          </div>
         </div>
+        <CommentEmailSetting />
       </div>
 
       {/* Filter tabs */}

@@ -1876,6 +1876,11 @@
     "comments": {
       "title": "Modération des commentaires",
       "subtitle": "{count, plural, =0 {0 commentaire} =1 {1 commentaire} other {{count} commentaires}}",
+      "emailSettingLabel": "M'envoyer un e-mail pour les commentaires en attente d'approbation",
+      "emailSettingTo": "Envoyé à {email}",
+      "emailSettingNoAddress": "Votre compte n'a pas d'adresse e-mail.",
+      "emailSettingFailed": "Impossible d'enregistrer votre réglage d'e-mail",
+      "emailSettingUnavailable": "Impossible de charger votre réglage d'e-mail : {reason}",
       "filterAll": "tous",
       "filterPending": "en attente",
       "filterApproved": "approuvés",
