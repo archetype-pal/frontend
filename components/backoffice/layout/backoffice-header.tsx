@@ -123,6 +123,7 @@ export function BackofficeHeader({
       scribes: t('header.breadcrumbs.scribes'),
       hands: t('header.breadcrumbs.hands'),
       dates: getPluralLabel('date'),
+      places: t('header.breadcrumbs.places'),
       formats: t('header.breadcrumbs.formats'),
       sources: t('header.breadcrumbs.sources'),
       annotations: t('header.breadcrumbs.annotations'),

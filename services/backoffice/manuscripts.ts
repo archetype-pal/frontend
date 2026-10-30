@@ -206,3 +206,5 @@ const placesCrud = createCrudService<BackofficePlace[], BackofficePlace>(
 export const getPlaces = () => placesCrud.list();
 
 export const createPlace = placesCrud.create;
+export const updatePlace = placesCrud.update;
+export const deletePlace = placesCrud.remove;

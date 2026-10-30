@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Image,
   Hash,
+  MapPin,
   Settings,
   Search,
   Database,
@@ -95,6 +96,12 @@ function getEntries(
       label: datesLabel,
       href: '/backoffice/dates',
       icon: Hash,
+      group: t('search.groupManuscripts'),
+    },
+    {
+      label: t('search.places'),
+      href: '/backoffice/places',
+      icon: MapPin,
       group: t('search.groupManuscripts'),
     },
     {

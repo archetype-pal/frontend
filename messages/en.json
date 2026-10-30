@@ -1073,6 +1073,7 @@
         "backoffice": "Backoffice",
         "symbols": "Palaeography",
         "repositories": "Repositories",
+        "places": "Places",
         "publications": "Posts",
         "events": "Events",
         "comments": "Comments",
@@ -1109,6 +1110,7 @@
       "supportingData": "Supporting Data",
       "physicalVolumes": "Items",
       "repositories": "Repositories",
+      "places": "Places",
       "formats": "Formats",
       "sources": "Bibliographic References",
       "groupSiteContent": "Site & Content",
@@ -1180,6 +1182,7 @@
       "annotations": "Annotations",
       "characters": "Characters",
       "repositories": "Repositories",
+      "places": "Places",
       "formats": "Formats",
       "sources": "Bibliographic References",
       "publications": "Posts",
@@ -2786,6 +2789,14 @@
       "fieldDateString": "{dateLabel} string",
       "fieldDatePlaceholder": "e.g. s.xii",
       "deleteDescription": "This may affect {historicalItemPlural} that reference this {dateLabel}."
+    },
+    "places": {
+      "title": "Places",
+      "singular": "Place",
+      "description": "Manage the shared list of places",
+      "fieldName": "Name",
+      "fieldNamePlaceholder": "e.g. Worcester",
+      "deleteDescription": "Hands linked to this place will no longer have a place."
     },
     "importTei": {
       "validatorUnreachable": "Could not reach the validator",

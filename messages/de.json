@@ -1073,6 +1073,7 @@
         "backoffice": "Backoffice",
         "symbols": "Paläographie",
         "repositories": "Bibliotheken",
+        "places": "Orte",
         "publications": "Beiträge",
         "events": "Veranstaltungen",
         "comments": "Kommentare",
@@ -1109,6 +1110,7 @@
       "supportingData": "Zusatzdaten",
       "physicalVolumes": "Elemente",
       "repositories": "Bibliotheken",
+      "places": "Orte",
       "formats": "Formate",
       "sources": "Bibliografische Referenzen",
       "groupSiteContent": "Website & Inhalte",
@@ -1180,6 +1182,7 @@
       "annotations": "Annotationen",
       "characters": "Zeichen",
       "repositories": "Bibliotheken",
+      "places": "Orte",
       "formats": "Formate",
       "sources": "Bibliografische Referenzen",
       "publications": "Beiträge",
@@ -2786,6 +2789,14 @@
       "fieldDateString": "{dateLabel}-Zeichenfolge",
       "fieldDatePlaceholder": "z. B. s.xii",
       "deleteDescription": "Dies kann sich auf {historicalItemPlural} auswirken, die auf {dateLabel} verweisen."
+    },
+    "places": {
+      "title": "Orte",
+      "singular": "Ort",
+      "description": "Verwalten Sie die gemeinsame Liste der Orte",
+      "fieldName": "Name",
+      "fieldNamePlaceholder": "z. B. Worcester",
+      "deleteDescription": "Mit diesem Ort verknüpfte Hände haben danach keinen Ort mehr."
     },
     "importTei": {
       "validatorUnreachable": "Der Validator konnte nicht erreicht werden",

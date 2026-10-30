@@ -1073,6 +1073,7 @@
         "backoffice": "Administration",
         "symbols": "Paléographie",
         "repositories": "Dépôts",
+        "places": "Lieux",
         "publications": "Articles",
         "events": "Événements",
         "comments": "Commentaires",
@@ -1109,6 +1110,7 @@
       "supportingData": "Données de support",
       "physicalVolumes": "Éléments",
       "repositories": "Dépôts",
+      "places": "Lieux",
       "formats": "Formats",
       "sources": "Références bibliographiques",
       "groupSiteContent": "Site & Contenu",
@@ -1180,6 +1182,7 @@
       "annotations": "Annotations",
       "characters": "Caractères",
       "repositories": "Dépôts",
+      "places": "Lieux",
       "formats": "Formats",
       "sources": "Références bibliographiques",
       "publications": "Articles",
@@ -2786,6 +2789,14 @@
       "fieldDateString": "Chaîne de {dateLabel}",
       "fieldDatePlaceholder": "p. ex. s.xii",
       "deleteDescription": "Cela peut affecter les {historicalItemPlural} faisant référence à cette {dateLabel}."
+    },
+    "places": {
+      "title": "Lieux",
+      "singular": "Lieu",
+      "description": "Gérer la liste commune des lieux",
+      "fieldName": "Nom",
+      "fieldNamePlaceholder": "p. ex. Worcester",
+      "deleteDescription": "Les mains liées à ce lieu n'auront plus de lieu."
     },
     "importTei": {
       "validatorUnreachable": "Impossible de joindre le validateur",
