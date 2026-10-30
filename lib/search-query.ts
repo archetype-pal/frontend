@@ -159,7 +159,7 @@ export function buildApiUrl(base: string, q: QueryState, keyword?: string): stri
   return qs ? `${base}?${qs}` : base;
 }
 
-export function parseDateParamsFromUrl(url: string, base: string): Record<string, string> {
+function parseDateParamsFromUrl(url: string, base: string): Record<string, string> {
   const u = new URL(url, base);
   return readDateParams(u.searchParams);
 }
@@ -343,10 +343,7 @@ export function getSelectedForFacet(selectedFacets: string[], facetKey: string):
   return found ? found.slice(prefix.length) : null;
 }
 
-export function buildActiveFacetTags(
-  selectedFacets: string[],
-  searchType?: string
-): ActiveFacetTag[] {
+function buildActiveFacetTags(selectedFacets: string[], searchType?: string): ActiveFacetTag[] {
   return selectedFacets
     .map((entry) => entry.trim())
     .filter(Boolean)

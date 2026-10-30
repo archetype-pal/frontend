@@ -107,7 +107,7 @@ export interface BulkAction {
   icon?: React.ReactNode;
 }
 
-export interface PresetFilter<TData> {
+interface PresetFilter<TData> {
   /** Display label for the tab, e.g. "All", "Missing dates", "Drafts" */
   label: string;
   /** Filter function applied to data. Return true to include the row. */

@@ -4,7 +4,7 @@ import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
-export interface CompletenessItem {
+interface CompletenessItem {
   /** Human-readable label, e.g. "Date" */
   label: string;
   /** Whether the field is populated */

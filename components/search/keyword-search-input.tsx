@@ -31,7 +31,7 @@ export type KeywordSuggestionItem = {
   snippet?: string;
 };
 
-export type KeywordHistoryItem = {
+type KeywordHistoryItem = {
   id: string;
   label: string;
   value: string;

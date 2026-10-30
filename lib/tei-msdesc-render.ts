@@ -50,7 +50,7 @@ import type { MsDescAreaId, MsDescVocabId, MsDescVocabValue } from '@/lib/msdesc
 export type MsDescTranslate = (key: string) => string;
 
 /** Heading level for an area title; nested groups render one level deeper. */
-export type MsDescHeadingLevel = 2 | 3 | 4 | 5;
+type MsDescHeadingLevel = 2 | 3 | 4 | 5;
 
 /**
  * The backoffice Preview tab's level, and therefore the default: the panel's

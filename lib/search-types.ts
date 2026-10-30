@@ -12,7 +12,7 @@ export const SEARCH_RESULT_TYPES = [
 export type ResultType = (typeof SEARCH_RESULT_TYPES)[number];
 export type FacetRenderType = 'checkbox' | 'toggle' | 'range' | 'number-select' | 'tree';
 
-export type SearchFacetConfig = {
+type SearchFacetConfig = {
   key: string;
   render: FacetRenderType;
 };

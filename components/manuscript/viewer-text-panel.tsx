@@ -156,7 +156,7 @@ const TYPE_ORDER = (type: string): number => {
  * (keyed by text id) so it survives a display-mode switch that unmounts this card.
  */
 /** Editor state a text card lifts out of its editor to drive the link bar. */
-export interface EditorCardState {
+interface EditorCardState {
   mode: Mode;
   richAvailable: boolean;
   linkTarget: EditorLinkSelection | null;

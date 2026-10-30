@@ -9,7 +9,7 @@ const QualityCardSchema = z.object({
   sample: z.array(z.record(z.string(), z.unknown())),
 });
 
-export const QualityResponseSchema = z.object({
+const QualityResponseSchema = z.object({
   generated_at: z.string(),
   cards: z.array(QualityCardSchema),
 });

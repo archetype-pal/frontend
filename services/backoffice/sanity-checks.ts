@@ -14,7 +14,7 @@ const ServiceCheckSchema = z.object({
   detail: z.string().nullable(),
 });
 
-export const SanityChecksSchema = z.object({
+const SanityChecksSchema = z.object({
   migrations: z.object({
     ok: z.boolean(),
     // null when the migration graph itself cannot be read; `detail` says why.

@@ -23,7 +23,7 @@
  * swallowed — breadcrumbs improve recovery, they never gate an upload.
  */
 
-export type UploadBreadcrumbStatus = 'pending' | 'uploading' | 'processing' | 'error' | 'canceled';
+type UploadBreadcrumbStatus = 'pending' | 'uploading' | 'processing' | 'error' | 'canceled';
 
 export interface UploadBreadcrumb {
   /** Same id as the tray's UploadItem, so the two stay one namespace. */

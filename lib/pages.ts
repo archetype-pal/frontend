@@ -62,11 +62,11 @@ export function isListedUnderAbout(
 
 // Slugs a DB-backed Page must not shadow (frontend route segments like
 // `/about/_components` and `/backoffice/pages/new`, plus any backend-reserved slugs).
-export const RESERVED_PAGE_SLUGS = ['_components', 'new'] as const;
+const RESERVED_PAGE_SLUGS = ['_components', 'new'] as const;
 
 // Mirrors RESERVED_HEADING_SLUGS in the backend's apps/pages/models.py: "about"
 // is the built-in heading's key in the nav order.
-export const RESERVED_HEADING_SLUGS = ['about', 'new'] as const;
+const RESERVED_HEADING_SLUGS = ['about', 'new'] as const;
 
 export function isReservedHeadingSlug(slug: string): boolean {
   return (RESERVED_HEADING_SLUGS as readonly string[]).includes(slug);

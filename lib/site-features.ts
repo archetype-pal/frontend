@@ -28,7 +28,7 @@ export type NavKey = SectionKey | HeadingNavKey;
 
 const HEADING_NAV_KEY_RE = /^heading:[a-z0-9_-]+$/;
 
-export function headingNavKey(slug: string): HeadingNavKey {
+function headingNavKey(slug: string): HeadingNavKey {
   return `heading:${slug}`;
 }
 
@@ -90,7 +90,7 @@ export type SiteFeaturesConfig = {
   branding: BrandingConfig;
 };
 
-export type SearchCategoryFlags = Partial<Record<ResultType, { enabled?: boolean }>>;
+type SearchCategoryFlags = Partial<Record<ResultType, { enabled?: boolean }>>;
 
 export type SearchCategoryConfigOwner = {
   searchCategories: SearchCategoryFlags;
@@ -110,22 +110,10 @@ export const ALL_SECTION_KEYS: SectionKey[] = [
   'events',
 ];
 
-export const SECTION_LABELS: Record<SectionKey, string> = {
-  search: 'Explore',
-  collection: 'My Collection',
-  lightbox: 'Lightbox',
-  compare: 'Compare',
-  news: 'News',
-  blogs: 'Blogs',
-  featureArticles: 'Feature Articles',
-  events: 'Past Events',
-  about: 'About',
-};
-
 export const ALL_FEATURE_KEYS: FeatureKey[] = ['manuscriptDescriptions'];
 
 /**
- * English source of truth for the flag names, mirroring `SECTION_LABELS`. The
+ * English source of truth for the flag names. The
  * admin UI renders the localized `backoffice.siteFeatures.features.*` keys
  * (exactly as the section toggles render `…siteFeatures.sections.*`); these
  * constants keep a locale-independent name next to the key union, and
@@ -184,7 +172,7 @@ const THEME_COLOR_KEYS: (keyof ThemeColors)[] = [
   'navBarTextColor',
 ];
 
-export const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i;
+const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i;
 
 export function isValidHexColor(value: string): boolean {
   return HEX_COLOR_RE.test(value);
@@ -327,8 +315,6 @@ export function resolveNavOrder(
 const DEFAULT_COLUMNS: Record<ResultType, string[]> = Object.fromEntries(
   SEARCH_RESULT_TYPES.map((type) => [type, [...getDefaultVisibleColumns(type)]])
 ) as Record<ResultType, string[]>;
-
-export { DEFAULT_COLUMNS };
 
 export function getDefaultConfig(): SiteFeaturesConfig {
   const sections = Object.fromEntries(ALL_SECTION_KEYS.map((k) => [k, true])) as Record<

@@ -38,7 +38,7 @@ export function teiElementLabel(el: string, type?: string): string {
   }
 }
 
-export const TeiMark = Mark.create({
+const TeiMark = Mark.create({
   name: 'tei',
 
   addAttributes() {
@@ -88,7 +88,7 @@ export const TeiMark = Mark.create({
   },
 });
 
-export const TeiEmpty = Node.create({
+const TeiEmpty = Node.create({
   name: 'teiEmpty',
   group: 'inline',
   inline: true,
@@ -117,7 +117,7 @@ export const TeiEmpty = Node.create({
   },
 });
 
-export const ParagraphPAttrs = Extension.create({
+const ParagraphPAttrs = Extension.create({
   name: 'paragraphPAttrs',
   addGlobalAttributes() {
     return [

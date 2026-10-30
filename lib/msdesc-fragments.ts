@@ -27,7 +27,7 @@
 
 // ── Parsed-tree types ───────────────────────────────────────────────────
 
-export interface XmlAttribute {
+interface XmlAttribute {
   name: string;
   /** Decoded value (entities resolved). */
   value: string;
@@ -49,7 +49,7 @@ export interface XmlElementNode {
   innerEnd: number;
 }
 
-export interface XmlTextNode {
+interface XmlTextNode {
   kind: 'text';
   /** Decoded text (entities resolved). */
   text: string;
@@ -344,7 +344,7 @@ export function resolvePath(
  *   - `inner-xml`: a verbatim prose leaf — any inner content is representable
  *     because it is carried byte-exact, never reshaped.
  */
-export type ShapeContent = 'elements' | 'text' | 'inner-xml';
+type ShapeContent = 'elements' | 'text' | 'inner-xml';
 
 export interface ElementShape {
   content: ShapeContent;
@@ -396,7 +396,7 @@ export function checkShape(
 
 // ── Canonical serialization ─────────────────────────────────────────────
 
-export interface BuildAttr {
+interface BuildAttr {
   name: string;
   value: string;
 }

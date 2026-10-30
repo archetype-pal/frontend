@@ -13,7 +13,7 @@ function firstFiniteNumber(values: Array<number | null | undefined>): number | n
   return null;
 }
 
-export function getHandDisplayOrder(hand: HandType): number {
+function getHandDisplayOrder(hand: HandType): number {
   return (
     firstFiniteNumber([hand.num, hand.order, hand.ordering, hand.sort_order, hand.display_order]) ??
     LAST_ORDER
@@ -28,7 +28,7 @@ function isDefaultHand(hand: HandType): boolean {
   return Boolean(hand.is_default || hand.default || hand.default_hand);
 }
 
-export function compareHandsByPriority(a: HandType, b: HandType): number {
+function compareHandsByPriority(a: HandType, b: HandType): number {
   const defaultDelta = Number(isDefaultHand(b)) - Number(isDefaultHand(a));
   if (defaultDelta !== 0) return defaultDelta;
 

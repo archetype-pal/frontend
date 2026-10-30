@@ -9,7 +9,7 @@ import type { A9sWithMeta } from '@/types/annotation-viewer';
 import type { Manuscript } from '@/types/manuscript';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
 
-export async function fetchIiifImageHeight(iiifImage: string): Promise<number> {
+async function fetchIiifImageHeight(iiifImage: string): Promise<number> {
   const baseUrl = browserSafeIiifUrl(getIiifBaseUrl(iiifImage));
   const infoUrl = `${baseUrl}/info.json`;
 

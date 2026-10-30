@@ -57,7 +57,7 @@ const BASE = '/api/v1/uploads/sessions/';
 /*  Session endpoints                                                  */
 /* ------------------------------------------------------------------ */
 
-export function createUploadSession(input: CreateUploadSessionInput): Promise<UploadSession> {
+function createUploadSession(input: CreateUploadSessionInput): Promise<UploadSession> {
   return backofficePost<UploadSession>(BASE, input);
 }
 
@@ -66,7 +66,7 @@ export function getUploadSession(id: string): Promise<UploadSession> {
   return backofficeGet<UploadSession>(`${BASE}${id}/`, { cache: 'no-store' });
 }
 
-export function finalizeUploadSession(id: string): Promise<UploadSession> {
+function finalizeUploadSession(id: string): Promise<UploadSession> {
   return backofficePost<UploadSession>(`${BASE}${id}/finalize/`, {});
 }
 
@@ -128,7 +128,7 @@ export function chunkErrorDetail(status: number, responseText: string): string {
 }
 
 /** Code for a chunk failure we worded ourselves; null when the backend spoke. */
-export function chunkErrorCode(responseText: string): UploadMessageCode | null {
+function chunkErrorCode(responseText: string): UploadMessageCode | null {
   return backendChunkDetail(responseText) === null ? 'chunkServerError' : null;
 }
 
@@ -232,7 +232,7 @@ export function uploadErrorStatus(err: unknown): number | null {
 }
 
 /** Machine-readable error code from the backend body ('' when absent). */
-export function uploadErrorCode(err: unknown): string {
+function uploadErrorCode(err: unknown): string {
   if (err instanceof BackofficeApiError) {
     const code = err.body?.code;
     return typeof code === 'string' ? code : '';

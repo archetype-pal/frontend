@@ -12,7 +12,7 @@ function getMetadataString(image: LightboxImage, key: string): string | undefine
   return typeof value === 'string' && value.trim() ? value : undefined;
 }
 
-export function getLightboxDisplayItem(image: LightboxImage): CollectionDisplayInput {
+function getLightboxDisplayItem(image: LightboxImage): CollectionDisplayInput {
   return {
     type: image.type,
     annotation_type: getMetadataString(image, 'annotation_type'),

@@ -1,8 +1,8 @@
 import type { A9sWithMeta } from '@/types/annotation-viewer';
 
-export const ALLOGRAPH_BODY_PURPOSE = 'commenting';
-export const STANDARD_NOTE_BODY_PURPOSE = 'describing';
-export const EDITORIAL_INTERNAL_NOTE_BODY_PURPOSE = 'editing';
+const ALLOGRAPH_BODY_PURPOSE = 'commenting';
+const STANDARD_NOTE_BODY_PURPOSE = 'describing';
+const EDITORIAL_INTERNAL_NOTE_BODY_PURPOSE = 'editing';
 
 function firstBodyValue(
   annotation: A9sWithMeta,

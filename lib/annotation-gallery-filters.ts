@@ -3,7 +3,7 @@ import type { BackendGraph } from '@/services/annotations';
 // Pure filter/sort/URL logic for the per-image annotation gallery. Kept out of
 // the (large) gallery component so it can be unit-tested in isolation.
 
-export type DescriptionStatus = 'all' | 'described' | 'undescribed';
+type DescriptionStatus = 'all' | 'described' | 'undescribed';
 
 export type SortKey = 'allograph-asc' | 'allograph-desc' | 'count-desc' | 'count-asc';
 export const DEFAULT_SORT: SortKey = 'allograph-asc';
@@ -49,11 +49,11 @@ function graphHandKey(graph: BackendGraph): number | null {
   return typeof graph.hand === 'number' ? graph.hand : null;
 }
 
-export function graphHasFeature(graph: BackendGraph, featureId: number): boolean {
+function graphHasFeature(graph: BackendGraph, featureId: number): boolean {
   return (graph.graphcomponent_set ?? []).some((c) => c.features.includes(featureId));
 }
 
-export function graphMatchesFilters(graph: BackendGraph, f: GalleryFilterState): boolean {
+function graphMatchesFilters(graph: BackendGraph, f: GalleryFilterState): boolean {
   if (f.hands.length > 0 && !f.hands.includes(graphHandKey(graph))) return false;
   if (f.status === 'described' && !isGraphDescribed(graph)) return false;
   if (f.status === 'undescribed' && isGraphDescribed(graph)) return false;
@@ -98,10 +98,6 @@ export function activeFilterCount(f: GalleryFilterState): number {
     f.features.length +
     f.positions.length
   );
-}
-
-export function hasActiveFilters(f: GalleryFilterState): boolean {
-  return activeFilterCount(f) > 0;
 }
 
 // Comparator over { allographName, graphCount } so the gallery can reorder

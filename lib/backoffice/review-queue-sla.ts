@@ -22,7 +22,7 @@ export interface ReviewAssignee {
   username: string;
 }
 
-export type ReviewItemStatus = 'draft' | 'review' | 'live';
+type ReviewItemStatus = 'draft' | 'review' | 'live';
 
 export interface ReviewQueueItem {
   id: number;

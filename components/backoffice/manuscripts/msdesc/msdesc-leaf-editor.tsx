@@ -83,7 +83,7 @@ export function normalizeLeafEmit(tei: string): string {
 }
 
 /** True when any element covering the selection/caret is a `<ref>`. */
-export function isInsideRef(editor: Editor): boolean {
+function isInsideRef(editor: Editor): boolean {
   return currentStack(editor).some((entry) => entry.el.toLowerCase() === 'ref');
 }
 
@@ -126,7 +126,7 @@ function stampTarget(editor: Editor, ref: ResourceRef): StackEntry | null {
  * True when the innermost element carries a link as attributes rather than as a
  * `<ref>` wrapper — the state {@link insertRefIntoLeaf} produces when it stamps.
  */
-export function linkIsStamped(editor: Editor): boolean {
+function linkIsStamped(editor: Editor): boolean {
   const element = currentElement(editor);
   if (!element) return false;
   if (element.el.toLowerCase() === 'ref') return false;
@@ -223,7 +223,7 @@ function toLeafContent(value: string): Record<string, unknown> {
  * toolbar does: the renderer's hover pill reads `attrs['type'] ?? name`
  * (`tei-msdesc-render.ts`), so every person would be labelled "name".
  */
-export interface TeiEntityTool {
+interface TeiEntityTool {
   el: string;
   attrs?: Record<string, string>;
   label: string;

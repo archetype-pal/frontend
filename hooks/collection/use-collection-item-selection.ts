@@ -11,7 +11,7 @@ type CollectionItemSelectionState = {
 
 const EMPTY_ITEM_KEYS = new Set<string>();
 
-export function getCollectionItemKey(item: Pick<CollectionItem, 'id' | 'type'>): string {
+function getCollectionItemKey(item: Pick<CollectionItem, 'id' | 'type'>): string {
   return `${item.type}:${item.id}`;
 }
 

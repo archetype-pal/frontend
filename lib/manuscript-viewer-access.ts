@@ -13,18 +13,18 @@ export interface ResolveViewerAccessInput {
   isAdmin?: boolean;
 }
 
-export function resolveViewerRole(input: ResolveViewerAccessInput = {}): ViewerRole {
+function resolveViewerRole(input: ResolveViewerAccessInput = {}): ViewerRole {
   if (input.isAdmin) return 'admin';
   if (input.isEditor) return 'editor';
   if (input.isAuthenticated) return 'editor';
   return 'public';
 }
 
-export function getViewerModeForRole(role: ViewerRole): ViewerMode {
+function getViewerModeForRole(role: ViewerRole): ViewerMode {
   return role === 'public' ? 'public' : 'editor';
 }
 
-export function getViewerCapabilitiesForRole(role: ViewerRole): ViewerCapabilities {
+function getViewerCapabilitiesForRole(role: ViewerRole): ViewerCapabilities {
   switch (role) {
     case 'admin':
     case 'editor':

@@ -6,7 +6,7 @@
  * (and the filters hook) supply the canonical annotation's meta + draft flag.
  */
 
-export interface VisibilityFilterState {
+interface VisibilityFilterState {
   allographIds: number[];
   handIds: number[];
   showEditorial: boolean;
@@ -20,7 +20,7 @@ export interface AnnotationFilterMeta {
 }
 
 /** Which annotation layer(s) the viewer is showing (effective for this image). */
-export type FilterViewMode = 'allograph' | 'text' | 'both';
+type FilterViewMode = 'allograph' | 'text' | 'both';
 
 export interface VisibilityFilterContext {
   /** Both allograph + hand filter sets have finished their first-load seeding. */
