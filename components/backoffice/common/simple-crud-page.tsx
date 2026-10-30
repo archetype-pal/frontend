@@ -191,7 +191,7 @@ export function SimpleCrudPage<T extends { id: number }>({
             <Tooltip>
               <TooltipTrigger asChild>
                 {/* A disabled button fires no pointer events, so the span carries the tooltip. */}
-                <span tabIndex={0} className="inline-flex">
+                <span tabIndex={0} className="ml-auto flex w-fit">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -211,7 +211,7 @@ export function SimpleCrudPage<T extends { id: number }>({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+            className="ml-auto flex h-7 w-7 text-muted-foreground hover:text-destructive"
             onClick={() => setDeleteTarget(row.original)}
             aria-label={t('simpleCrud.deleteLabel', { label: singularLabel.toLowerCase() })}
           >
