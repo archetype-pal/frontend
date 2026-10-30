@@ -47,8 +47,8 @@ const STRING_OPS: { value: ConditionOperator; labelKey: string }[] = [
 const NUMERIC_OPS: { value: ConditionOperator; labelKey: string }[] = [
   { value: 'is', labelKey: 'queryBuilder.opEquals' },
   { value: 'is_not', labelKey: 'queryBuilder.opNotEquals' },
-  { value: 'gt', labelKey: 'queryBuilder.opMin' },
-  { value: 'lt', labelKey: 'queryBuilder.opMax' },
+  { value: 'gte', labelKey: 'queryBuilder.opMin' },
+  { value: 'lte', labelKey: 'queryBuilder.opMax' },
   { value: 'between', labelKey: 'queryBuilder.opBetween' },
   { value: 'is_empty', labelKey: 'queryBuilder.opIsEmpty' },
   { value: 'is_not_empty', labelKey: 'queryBuilder.opIsNotEmpty' },

@@ -73,7 +73,7 @@ export type TextsOverview = {
 };
 
 export async function fetchTextsOverview(): Promise<TextsOverview> {
-  const response = await proxyFetch('/api/v1/search/management/image-texts/overview/', {
+  const response = await proxyFetch('/api/v1/manuscripts/management/image-texts/overview/', {
     cache: 'no-store',
   });
   if (!response.ok) {

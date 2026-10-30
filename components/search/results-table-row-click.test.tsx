@@ -21,7 +21,7 @@ const hand = (id: number, name: string, shelfmark: string): HandListItem => ({
   repository_city: 'London',
   repository_name: 'British Library',
   shelfmark,
-  catalogue_numbers: '',
+  catalogue_numbers: [],
   place: '',
   date: null,
   description: '',

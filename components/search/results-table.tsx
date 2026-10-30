@@ -105,7 +105,7 @@ const textDateColumn = <T extends { date?: string | null }>(): Column<T> =>
 const textTypeColumn = <T extends { text_type: string }>(): Column<T> =>
   makeColumn('Text Type', (item) => item.text_type);
 
-const catalogueNumColumn = <T extends { catalogue_numbers: string | string[] }>(): Column<T> =>
+const catalogueNumColumn = <T extends { catalogue_numbers: string[] }>(): Column<T> =>
   makeColumn(
     'Cat. Num.',
     (item) => item.catalogue_numbers,

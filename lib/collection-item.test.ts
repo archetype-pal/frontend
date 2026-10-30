@@ -17,7 +17,7 @@ function makeClause(overrides: Partial<ClauseListItem> = {}): ClauseListItem {
     date: 'c. 1200',
     date_min: 1190,
     date_max: 1210,
-    catalogue_numbers: 'No. 1',
+    catalogue_numbers: ['No. 1'],
     locus: 'recto',
     type: 'charter',
     status: 'published',

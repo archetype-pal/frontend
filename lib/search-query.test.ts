@@ -23,7 +23,7 @@ describe('query-builder qb round-trip', () => {
         id: 'g',
         t: 'group',
         op: 'AND',
-        items: [{ id: 'c', t: 'cond', field: 'repository_name', op: 'gt', value: 'x'.repeat(i) }],
+        items: [{ id: 'c', t: 'cond', field: 'repository_name', op: 'gte', value: 'x'.repeat(i) }],
       };
       const { qb } = buildAdvancedExtraParams({
         enabled: true,

@@ -35,7 +35,7 @@ const clause: ClauseListItem = {
   date: '1160',
   date_min: 1160,
   date_max: 1160,
-  catalogue_numbers: '123',
+  catalogue_numbers: ['123'],
   locus: 'face',
   type: 'Charter',
   status: 'Published',
@@ -52,7 +52,7 @@ const hand: HandListItem = {
   repository_city: 'London',
   repository_name: 'British Library',
   shelfmark: 'Cotton Ch. xviii.13',
-  catalogue_numbers: 'PoMS Document 1/6/153',
+  catalogue_numbers: ['PoMS Document 1/6/153'],
   place: '',
   date: null,
   description:
