@@ -19,12 +19,13 @@ import {
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
 import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
+import { CurrentItemCombobox } from './current-item-combobox';
 import { useAuth } from '@/contexts/auth-context';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { getCurrentItem, updateCurrentItem } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toastApiError } from '@/lib/backoffice/format-api-error';
-import type { CurrentItemOption } from '@/types/backoffice';
+import type { CurrentItemOption, ItemPartNested } from '@/types/backoffice';
 import { useRepositories } from '@/hooks/backoffice/use-lookups';
 
 interface CurrentItemValues {
@@ -85,6 +86,45 @@ export function CurrentItemEditButton({
         />
       </DialogContent>
     </Dialog>
+  );
+}
+
+export function CurrentItemPicker({
+  part,
+  value,
+  onChange,
+}: {
+  part: ItemPartNested;
+  value: number | null;
+  onChange: (id: number | null) => void;
+}) {
+  const t = useTranslations('backoffice');
+  const savedLabel = part.current_item_display ?? '';
+  const [pickerKey, setPickerKey] = useState(savedLabel);
+  if (value === part.current_item && pickerKey !== savedLabel) {
+    setPickerKey(savedLabel);
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <CurrentItemCombobox
+        key={pickerKey}
+        value={value}
+        onChange={onChange}
+        selectedLabel={part.current_item_display}
+        className="min-w-0 flex-1"
+      />
+      {part.current_item != null && value === part.current_item && (
+        <CurrentItemEditButton
+          itemId={part.current_item}
+          label={t('physicalVolumes.editAriaLabel', {
+            repo: part.repository_name ?? '',
+            shelfmark: part.shelfmark ?? '',
+          })}
+          className="h-9 w-9 shrink-0"
+        />
+      )}
+    </div>
   );
 }
 

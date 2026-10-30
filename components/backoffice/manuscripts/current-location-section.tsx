@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
 import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
-import { CurrentItemCombobox } from './current-item-combobox';
+import { CurrentItemPicker } from './current-item-edit-dialog';
 import {
   createItemPart,
   updateItemPart,
@@ -265,11 +265,10 @@ function SinglePartLocation({
             <FieldLabel helpField="itemPart.currentItem">
               {t('manuscriptsDetail.physicalVolume')}
             </FieldLabel>
-            <CurrentItemCombobox
+            <CurrentItemPicker
+              part={part}
               value={currentItemId}
               onChange={handleCurrentItemChange}
-              selectedLabel={part.current_item_display}
-              className="w-full"
             />
           </div>
           <div className="space-y-1.5">
