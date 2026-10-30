@@ -1195,16 +1195,6 @@
     "queryState": {
       "retry": "Réessayer"
     },
-    "notifications": {
-      "ariaLabel": "Notifications",
-      "unread": "{count} non lu(e)s",
-      "markAllRead": "Tout marquer comme lu",
-      "closeLabel": "Fermer les notifications",
-      "allCaughtUp": "Vous êtes à jour.",
-      "kindReviewAssigned": "Révisions assignées",
-      "kindCommentReply": "Réponses aux commentaires",
-      "kindMention": "Mentions"
-    },
     "search": {
       "inputPlaceholder": "Rechercher des pages, actions ou éléments récents...",
       "noResults": "Aucun résultat trouvé.",
@@ -2701,13 +2691,6 @@
         "toastError": "Échec de l'envoi de l'e-mail de test",
         "backend": "Backend d'e-mail : {backend}"
       }
-    },
-    "reviewAge": {
-      "inReviewFor": "En relecture depuis {age}",
-      "today": "aujourd'hui",
-      "hours": "{hours} h",
-      "days": "{days} j",
-      "weeks": "{weeks} sem."
     },
     "previewAsPublic": {
       "triggerTitle": "Voir ce que voit un visiteur anonyme",

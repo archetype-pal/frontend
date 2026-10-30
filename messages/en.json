@@ -1195,16 +1195,6 @@
     "queryState": {
       "retry": "Retry"
     },
-    "notifications": {
-      "ariaLabel": "Notifications",
-      "unread": "{count} unread",
-      "markAllRead": "Mark all as read",
-      "closeLabel": "Close notifications",
-      "allCaughtUp": "You're all caught up.",
-      "kindReviewAssigned": "Assigned reviews",
-      "kindCommentReply": "Comment replies",
-      "kindMention": "Mentions"
-    },
     "search": {
       "inputPlaceholder": "Search pages, actions, or recent items...",
       "noResults": "No results found.",
@@ -2701,13 +2691,6 @@
         "toastError": "Failed to send test email",
         "backend": "Mail backend: {backend}"
       }
-    },
-    "reviewAge": {
-      "inReviewFor": "In review for {age}",
-      "today": "today",
-      "hours": "{hours}h",
-      "days": "{days}d",
-      "weeks": "{weeks}w"
     },
     "previewAsPublic": {
       "triggerTitle": "See what an anonymous visitor sees",
