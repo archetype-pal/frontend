@@ -1880,6 +1880,7 @@
       "emailSettingTo": "Envoyé à {email}",
       "emailSettingNoAddress": "Votre compte n'a pas d'adresse e-mail.",
       "emailSettingFailed": "Impossible d'enregistrer votre réglage d'e-mail",
+      "emailSettingUnavailable": "Impossible de charger votre réglage d'e-mail : {reason}",
       "filterAll": "tous",
       "filterPending": "en attente",
       "filterApproved": "approuvés",

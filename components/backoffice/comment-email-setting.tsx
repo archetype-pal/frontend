@@ -19,7 +19,7 @@ export function CommentEmailSetting() {
   const queryClient = useQueryClient();
   const isSuperuser = Boolean(user?.is_superuser);
 
-  const { data } = useQuery({
+  const { data, error } = useQuery({
     queryKey: backofficeKeys.commentEmailSetting(),
     queryFn: getCommentEmailSetting,
     enabled: isSuperuser,
@@ -42,7 +42,11 @@ export function CommentEmailSetting() {
           {t('comments.emailSettingLabel')}
         </Label>
         <p id="comment-email-setting-hint" className="text-xs text-muted-foreground">
-          {email ? t('comments.emailSettingTo', { email }) : t('comments.emailSettingNoAddress')}
+          {error
+            ? t('comments.emailSettingUnavailable', { reason: formatApiError(error) })
+            : email
+              ? t('comments.emailSettingTo', { email })
+              : t('comments.emailSettingNoAddress')}
         </p>
       </div>
       <Switch

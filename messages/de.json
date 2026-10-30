@@ -1880,6 +1880,7 @@
       "emailSettingTo": "Gesendet an {email}",
       "emailSettingNoAddress": "Ihr Konto hat keine E-Mail-Adresse.",
       "emailSettingFailed": "Ihre E-Mail-Einstellung konnte nicht gespeichert werden",
+      "emailSettingUnavailable": "Ihre E-Mail-Einstellung konnte nicht geladen werden: {reason}",
       "filterAll": "alle",
       "filterPending": "ausstehend",
       "filterApproved": "genehmigt",

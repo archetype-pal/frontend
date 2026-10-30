@@ -1880,6 +1880,7 @@
       "emailSettingTo": "Sent to {email}",
       "emailSettingNoAddress": "Your account has no email address.",
       "emailSettingFailed": "Could not save your email setting",
+      "emailSettingUnavailable": "Could not load your email setting: {reason}",
       "filterAll": "all",
       "filterPending": "pending",
       "filterApproved": "approved",
