@@ -69,7 +69,8 @@ export interface HandListItem {
   repository_name: string;
   repository_city: string;
   shelfmark: string;
-  catalogue_numbers: string;
+  // A list once the backend's catalogue-list change ships; a joined string until then.
+  catalogue_numbers: string | string[];
   place: string;
   date: string | null;
   description?: string;
@@ -93,7 +94,8 @@ interface AnnotatedSearchItem {
   date: string | null;
   date_min: number | null;
   date_max: number | null;
-  catalogue_numbers: string;
+  // A list once the backend's catalogue-list change ships; a joined string until then.
+  catalogue_numbers: string | string[];
   locus: string;
   type: string;
   status: string;
