@@ -1,4 +1,4 @@
-import { BackofficeApiError } from './api-client';
+import { throwIfNotOk } from './api-client';
 import type { MenuHeading, Page, PageListItem } from '@/lib/pages';
 
 // Pages go through Next's own `/api/pages` proxy (not straight to Django
@@ -10,9 +10,8 @@ const PAGES_API_PATH = '/api/pages';
 const MENU_HEADINGS_API_PATH = '/api/menu-headings';
 
 async function parseOrThrow<T>(res: Response): Promise<T> {
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new BackofficeApiError(res.status, data as Record<string, unknown>);
-  return data as T;
+  await throwIfNotOk(res);
+  return res.json() as Promise<T>;
 }
 
 export function getPages(): Promise<PageListItem[]> {
