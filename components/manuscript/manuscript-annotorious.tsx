@@ -1,5 +1,6 @@
 'use client';
 
+import { normalizeRotation } from '@/hooks/use-viewer-image-adjustments';
 import { newId } from '@/lib/id';
 import React, { useEffect, useRef } from 'react';
 import type OpenSeadragon from 'openseadragon';
@@ -49,10 +50,6 @@ export type ViewerImageAdjustments = {
   contrast: number;
   saturation: number;
 };
-
-function normalizeRotation(degrees: number): number {
-  return ((degrees % 360) + 360) % 360;
-}
 
 function buildViewerImageFilter(adjustments: ViewerImageAdjustments): string {
   const { brightness, contrast, saturation } = adjustments;

@@ -33,6 +33,11 @@ function clean(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+/** The key collections dedupe and select by: an image and a graph may share an id. */
+export function getCollectionItemKey(item: Pick<CollectionItem, 'id' | 'type'>): string {
+  return `${item.type}:${item.id}`;
+}
+
 export function isCollectionEditorialAnnotation(item: CollectionDisplayInput): boolean {
   return item.type === 'graph' && item.annotation_type === 'editorial';
 }

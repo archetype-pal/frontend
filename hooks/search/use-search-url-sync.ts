@@ -1,5 +1,6 @@
 'use client';
 
+import { searchHref } from '@/lib/search-routing';
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { ResultType } from '@/lib/search-types';
@@ -118,7 +119,7 @@ export function useSearchUrlSync(opts: {
     if (viewMode !== 'table' || preserveExplicitViewParam.current) {
       params.set('view', viewMode);
     }
-    const path = '/search/' + resultType + (params.toString() ? '?' + params.toString() : '');
+    const path = searchHref(resultType, params);
     const currentPath = window.location.pathname + window.location.search;
     if (path !== currentPath) {
       isInternalUrlUpdate.current = true;

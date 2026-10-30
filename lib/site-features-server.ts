@@ -1,3 +1,4 @@
+import { isRecord } from '@/lib/is-record';
 import { apiFetch, authFetch } from './api-fetch';
 import {
   getDefaultBranding,
@@ -18,10 +19,6 @@ const SITE_FEATURES_PATH = '/api/v1/app-settings/';
  * there invalidates the entry this `next: { tags }` writes here.
  */
 export const SITE_FEATURES_TAG = 'site-features';
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return value != null && typeof value === 'object' && !Array.isArray(value);
-}
 
 let lastGood: SiteFeaturesConfig | null = null;
 
@@ -55,7 +52,7 @@ export async function readSiteFeatures(): Promise<SiteFeaturesRead> {
     // If the response is `null`, an array, or a primitive, we'd crash on
     // `parsed.sections` reading below. Bail out so the SSR layout doesn't 500
     // the whole site over a broken/unexpected response.
-    if (!isPlainObject(raw)) {
+    if (!isRecord(raw)) {
       // A 200 with a malformed body isn't an HTTP-layer failure, so apiFetch
       // never sees it — log it here or it degrades silently.
       console.error(`[API] GET ${SITE_FEATURES_PATH} → 200 with unexpected body shape`, raw);
@@ -67,8 +64,8 @@ export async function readSiteFeatures(): Promise<SiteFeaturesRead> {
     // runtime config. Treat anything non-plain-object as missing so
     // malformed responses fall back to defaults instead of leaking garbage
     // keys to consumers.
-    const parsedSections = isPlainObject(parsed.sections) ? parsed.sections : {};
-    const parsedCategories = isPlainObject(parsed.searchCategories) ? parsed.searchCategories : {};
+    const parsedSections = isRecord(parsed.sections) ? parsed.sections : {};
+    const parsedCategories = isRecord(parsed.searchCategories) ? parsed.searchCategories : {};
     lastGood = {
       sections: { ...defaults.sections, ...parsedSections },
       sectionOrder: normalizeSectionOrder(parsed.sectionOrder),
@@ -86,7 +83,7 @@ export async function readSiteFeatures(): Promise<SiteFeaturesRead> {
             k,
             {
               ...defaults.searchCategories[k as keyof typeof defaults.searchCategories],
-              ...(isPlainObject(v) ? v : {}),
+              ...(isRecord(v) ? v : {}),
             },
           ])
         ),

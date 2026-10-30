@@ -1,3 +1,5 @@
+import { isRecord } from '@/lib/is-record';
+import { getCollectionItemKey } from '@/lib/collection-display';
 import {
   normalizeCollectionName,
   type CollectionItem,
@@ -16,10 +18,6 @@ export type PortableCollectionFile = {
     items: CollectionItem[];
   };
 };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 function getPortableFileSize(raw: string): number {
   return new TextEncoder().encode(raw).byteLength;
@@ -122,7 +120,7 @@ function sanitizePortableItems(value: unknown): CollectionItem[] {
 
   return value.map((rawItem, index) => {
     const item = toPortableCollectionItem(rawItem, index);
-    const key = `${item.type}:${item.id}`;
+    const key = getCollectionItemKey(item);
 
     if (seen.has(key)) {
       throw new Error(`Collection item ${index + 1} duplicates ${key}.`);

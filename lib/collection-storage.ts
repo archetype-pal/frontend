@@ -1,3 +1,6 @@
+import { isRecord } from '@/lib/is-record';
+import { getCollectionItemKey } from '@/lib/collection-display';
+
 export type CollectionItem = {
   id: number;
   type: 'image' | 'graph';
@@ -47,10 +50,6 @@ export const MAX_COLLECTION_NAME_LENGTH = 100;
 const DEFAULT_COLLECTION_ID = 'default';
 const DEFAULT_COLLECTION_NAME = 'Collection';
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 function sanitizeItems(value: unknown): CollectionItem[] {
   if (!Array.isArray(value)) return [];
 
@@ -67,7 +66,7 @@ function sanitizeItems(value: unknown): CollectionItem[] {
       continue;
     }
 
-    const key = `${item.type}:${item.id}`;
+    const key = getCollectionItemKey({ id: item.id, type: item.type });
     if (seen.has(key)) continue;
 
     seen.add(key);

@@ -11,7 +11,7 @@ export const DEFAULT_IMAGE_ADJUSTMENTS: ViewerImageAdjustments = {
   saturation: 100,
 };
 
-function normalizeRotation(degrees: number): number {
+export function normalizeRotation(degrees: number): number {
   return ((degrees % 360) + 360) % 360;
 }
 

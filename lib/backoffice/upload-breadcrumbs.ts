@@ -23,6 +23,7 @@
  * swallowed — breadcrumbs improve recovery, they never gate an upload.
  */
 
+import { canUseStorage } from '@/lib/browser-storage';
 import { newId } from '@/lib/id';
 
 type UploadBreadcrumbStatus = 'pending' | 'uploading' | 'processing' | 'error' | 'canceled';
@@ -72,10 +73,6 @@ const isDev = process.env.NODE_ENV === 'development';
 export const MAX_BREADCRUMBS = 500;
 
 const STATUSES: readonly string[] = ['pending', 'uploading', 'processing', 'error', 'canceled'];
-
-function canUseStorage(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
-}
 
 function isValidBreadcrumb(x: unknown): x is UploadBreadcrumb {
   if (typeof x !== 'object' || x === null) return false;

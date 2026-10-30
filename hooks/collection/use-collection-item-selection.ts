@@ -1,5 +1,6 @@
 'use client';
 
+import { getCollectionItemKey } from '@/lib/collection-display';
 import * as React from 'react';
 
 import type { CollectionItem } from '@/contexts/collection-context';
@@ -10,10 +11,6 @@ type CollectionItemSelectionState = {
 };
 
 const EMPTY_ITEM_KEYS = new Set<string>();
-
-function getCollectionItemKey(item: Pick<CollectionItem, 'id' | 'type'>): string {
-  return `${item.type}:${item.id}`;
-}
 
 export function useCollectionItemSelection(
   collectionId: string,
