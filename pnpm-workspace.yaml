@@ -31,3 +31,11 @@ allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+
+# Advisories with no patched release. deepmerge 4.3.1 under Mirador 4.2.4
+# (held, see the Dependabot config): GHSA-gcqx-w48m-w2h4, prototype poisoning
+# of the returned object, low; Mirador only merges its own config objects with
+# it. Drop the entry once Mirador moves off deepmerge.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-gcqx-w48m-w2h4
