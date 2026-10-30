@@ -126,6 +126,20 @@ describe('<CommentEmailSetting>', () => {
     expect(toggle.hasAttribute('disabled')).toBe(true);
   });
 
+  it('says why it is unavailable when the setting cannot be loaded', async () => {
+    getSettingMock.mockRejectedValue(
+      new BackofficeApiError(503, { detail: 'Service unavailable' })
+    );
+    renderSetting();
+
+    const toggle = await screen.findByRole('switch', {
+      name: NAME,
+      description: 'Could not load your email setting: Service unavailable',
+    });
+
+    expect(toggle.hasAttribute('disabled')).toBe(true);
+  });
+
   it('is not shown to staff who are not superusers', () => {
     authState.user = { is_superuser: false, is_staff: true, email: 'staff@example.org' };
     renderSetting();
