@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useTranslations } from 'next-intl';
@@ -21,6 +21,7 @@ import {
   type DataTableColumn,
 } from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { CurrentItemEditButton } from '@/components/backoffice/manuscripts/current-item-edit-dialog';
 import { DataPagination } from '@/components/ui/data-pagination';
 import { deleteCurrentItem, getCurrentItems } from '@/services/backoffice/manuscripts';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
@@ -55,65 +56,77 @@ export default function PhysicalVolumesPage() {
   const shelfmarkLabel = getLabel('fieldShelfmark');
   const appManuscriptsLabel = getLabel('appManuscripts');
 
-  const columns: DataTableColumn<CurrentItemOption>[] = [
-    {
-      accessorKey: 'repository_name',
-      header: sortableHeader(t('physicalVolumes.colRepository')),
-      cell: ({ row }) => (
-        <span className="text-sm font-medium">{row.original.repository_name}</span>
-      ),
-      size: 120,
-    },
-    {
-      accessorKey: 'shelfmark',
-      header: sortableHeader(shelfmarkLabel),
-      cell: ({ row }) => <span className="text-sm">{row.original.shelfmark}</span>,
-    },
-    {
-      accessorKey: 'description',
-      header: t('physicalVolumes.colDescription'),
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground line-clamp-1">
-          {row.original.description || '—'}
-        </span>
-      ),
-      size: 200,
-    },
-    {
-      accessorKey: 'part_count',
-      header: sortableHeader(t('physicalVolumes.colParts')),
-      cell: ({ row }) => <span className="tabular-nums text-sm">{row.original.part_count}</span>,
-      size: 70,
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => {
-        if (row.original.part_count === 0) {
-          return (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-destructive"
-              aria-label={t('physicalVolumes.deleteAriaLabel', {
+  const columns: DataTableColumn<CurrentItemOption>[] = useMemo(
+    () => [
+      {
+        accessorKey: 'repository_name',
+        header: sortableHeader(t('physicalVolumes.colRepository')),
+        cell: ({ row }) => (
+          <span className="text-sm font-medium">{row.original.repository_name}</span>
+        ),
+        size: 120,
+      },
+      {
+        accessorKey: 'shelfmark',
+        header: sortableHeader(shelfmarkLabel),
+        cell: ({ row }) => <span className="text-sm">{row.original.shelfmark}</span>,
+      },
+      {
+        accessorKey: 'description',
+        header: t('physicalVolumes.colDescription'),
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground line-clamp-1">
+            {row.original.description || '—'}
+          </span>
+        ),
+        size: 200,
+      },
+      {
+        accessorKey: 'part_count',
+        header: sortableHeader(t('physicalVolumes.colParts')),
+        cell: ({ row }) => <span className="tabular-nums text-sm">{row.original.part_count}</span>,
+        size: 70,
+      },
+      {
+        id: 'actions',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1">
+            <CurrentItemEditButton
+              itemId={row.original.id}
+              label={t('physicalVolumes.editAriaLabel', {
                 repo: row.original.repository_name,
                 shelfmark: row.original.shelfmark,
               })}
-              onClick={() => setDeleteTarget(row.original)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          );
-        }
-        return (
-          <span className="text-xs text-muted-foreground">
-            {t('physicalVolumes.linkedToManuscripts', { label: appManuscriptsLabel.toLowerCase() })}
-          </span>
-        );
+              className="h-7 w-7"
+            />
+            {row.original.part_count === 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-destructive"
+                aria-label={t('physicalVolumes.deleteAriaLabel', {
+                  repo: row.original.repository_name,
+                  shelfmark: row.original.shelfmark,
+                })}
+                onClick={() => setDeleteTarget(row.original)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                {t('physicalVolumes.linkedToManuscripts', {
+                  label: appManuscriptsLabel.toLowerCase(),
+                })}
+              </span>
+            )}
+          </div>
+        ),
+        size: 150,
       },
-      size: 120,
-    },
-  ];
+    ],
+    [t, shelfmarkLabel, appManuscriptsLabel]
+  );
 
   const {
     data: repositoriesData,

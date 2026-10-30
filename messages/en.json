@@ -1644,6 +1644,13 @@
       "deleteConfirm": "Delete",
       "toastDeleted": "Item deleted",
       "toastFailedDelete": "Failed to delete item",
+      "editTitle": "Edit item",
+      "editAriaLabel": "Edit item {repo} {shelfmark}",
+      "toastUpdated": "Item updated",
+      "toastFailedUpdate": "Failed to update item",
+      "loadFailed": "Failed to load this item.",
+      "searchRepositoriesPlaceholder": "Search repositories...",
+      "noRepositoriesFound": "No repositories found.",
       "searchPlaceholder": "Search by {label}..."
     },
     "publications": {

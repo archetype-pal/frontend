@@ -1644,6 +1644,13 @@
       "deleteConfirm": "Löschen",
       "toastDeleted": "Element gelöscht",
       "toastFailedDelete": "Löschen des Elements fehlgeschlagen",
+      "editTitle": "Element bearbeiten",
+      "editAriaLabel": "Element {repo} {shelfmark} bearbeiten",
+      "toastUpdated": "Element aktualisiert",
+      "toastFailedUpdate": "Aktualisieren des Elements fehlgeschlagen",
+      "loadFailed": "Element konnte nicht geladen werden.",
+      "searchRepositoriesPlaceholder": "Bibliotheken durchsuchen...",
+      "noRepositoriesFound": "Keine Bibliotheken gefunden.",
       "searchPlaceholder": "Nach {label} suchen..."
     },
     "publications": {

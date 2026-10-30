@@ -1644,6 +1644,13 @@
       "deleteConfirm": "Supprimer",
       "toastDeleted": "Élément supprimé",
       "toastFailedDelete": "Échec de la suppression de l'élément",
+      "editTitle": "Modifier l'élément",
+      "editAriaLabel": "Modifier l'élément {repo} {shelfmark}",
+      "toastUpdated": "Élément mis à jour",
+      "toastFailedUpdate": "Échec de la mise à jour de l'élément",
+      "loadFailed": "Échec du chargement de l'élément.",
+      "searchRepositoriesPlaceholder": "Rechercher des dépôts...",
+      "noRepositoriesFound": "Aucun dépôt trouvé.",
       "searchPlaceholder": "Rechercher par {label}..."
     },
     "publications": {
