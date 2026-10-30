@@ -622,7 +622,10 @@ function ResultsTableComponent<K extends ResultType>({
               </TableCell>
             )}
             {cols.map((col, ci) => {
-              const cell = col.accessor(row);
+              // A multi-valued attribute (catalogue numbers, tags) arrives as an array;
+              // rendered raw, React concatenates the values with nothing between them.
+              const raw = col.accessor(row);
+              const cell = Array.isArray(raw) ? raw.join(', ') : raw;
               const isFirst = ci === 0 && !hasSubRow;
               const formattedFields = getFormattedFields(row);
               const formattedText =
