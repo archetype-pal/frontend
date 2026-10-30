@@ -285,7 +285,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       <CompletenessChecklist
         items={[
           {
-            label: t('manuscriptWorkspace.checklistCurrentLocation'),
+            label: t('manuscriptWorkspace.checklistCurrentItem'),
             complete: item.item_parts.length > 0 && item.item_parts[0].current_item != null,
             value: item.item_parts[0]?.current_item_display ?? undefined,
           },

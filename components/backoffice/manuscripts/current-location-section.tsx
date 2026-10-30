@@ -224,14 +224,14 @@ function SinglePartLocation({
       }
     },
     onSuccess: () => {
-      toast.success(t('manuscriptsDetail.locationUpdated'));
+      toast.success(t('manuscriptsDetail.itemAndLocusUpdated'));
       queryClient.invalidateQueries({
         queryKey: backofficeKeys.manuscripts.detail(historicalItemId),
       });
       setDirty(false);
     },
     onError: (err) => {
-      toastApiError(t('manuscriptsDetail.locationUpdateFailed'), err);
+      toastApiError(t('manuscriptsDetail.itemAndLocusUpdateFailed'), err);
     },
   });
 
@@ -245,7 +245,7 @@ function SinglePartLocation({
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium flex items-center gap-2">
           <MapPin className="h-4 w-4" />
-          {t('manuscriptsDetail.currentLocation')}
+          {t('manuscriptsDetail.currentItemAndLocus')}
         </h3>
         {dirty && (
           <Button
@@ -255,7 +255,7 @@ function SinglePartLocation({
             disabled={saveMut.isPending}
           >
             {saveMut.isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-            {t('manuscriptsDetail.saveLocation')}
+            {t('manuscriptsDetail.saveItemAndLocus')}
           </Button>
         )}
       </div>
@@ -326,7 +326,7 @@ function MultiPartSummary({
     <div className="space-y-3">
       <h3 className="text-sm font-medium flex items-center gap-2">
         <MapPin className="h-4 w-4" />
-        {t('manuscriptsDetail.currentLocation')}
+        {t('manuscriptsDetail.currentItem')}
       </h3>
       <div className="rounded-md border p-4 space-y-2">
         <p className="text-sm text-muted-foreground">
