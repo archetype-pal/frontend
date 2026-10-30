@@ -39,9 +39,6 @@ const SearchDistributionPanel = React.lazy(() =>
 import { AdvancedSearchPanel } from '@/components/search/advanced-search-panel';
 import { MobileFilterSheet } from '@/components/search/mobile-filter-sheet';
 import { FieldVisibilityMenu } from '@/components/search/field-visibility-menu';
-const SearchMapView = React.lazy(() =>
-  import('@/components/search/search-map-view').then((m) => ({ default: m.SearchMapView }))
-);
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -320,7 +317,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               showGridToggle={s.showGridToggle}
               showTimelineToggle={s.showTimelineToggle}
               showDistributionToggle={s.showDistributionToggle}
-              showMapToggle={s.showMapToggle}
               hasTimelineData={s.hasTimelineData}
               distributionEnabled={s.distributionEnabled}
               className="hidden sm:inline-flex"
@@ -439,7 +435,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               showGridToggle={s.showGridToggle}
               showTimelineToggle={s.showTimelineToggle}
               showDistributionToggle={s.showDistributionToggle}
-              showMapToggle={s.showMapToggle}
               hasTimelineData={s.hasTimelineData}
               distributionEnabled={s.distributionEnabled}
               advancedEnabled={s.advancedSearch.enabled}
@@ -641,25 +636,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                           },
                           offset: 0,
                         }))
-                      }
-                    />
-                  </React.Suspense>
-                ) : s.viewMode === 'map' ? (
-                  <React.Suspense
-                    fallback={
-                      <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
-                        {t('loadingMap')}
-                      </div>
-                    }
-                  >
-                    <SearchMapView
-                      cityDistribution={s.cityDistribution}
-                      onSelectCity={(city) =>
-                        s.handleFacetClick('', {
-                          type: 'selectFacet',
-                          facetKey: 'repository_city',
-                          value: city,
-                        })
                       }
                     />
                   </React.Suspense>
