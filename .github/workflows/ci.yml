@@ -88,7 +88,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_API_URL: https://archetype.gla.ac.uk
+      # Static generation and the Lighthouse run fetch the API for page data and
+      # fall back to empty content when it is unreachable. A closed local port
+      # refuses at once; a real host that is down costs a 10 s connect timeout
+      # per fetch, which pushes page generation past Next's 60 s limit.
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:9
       NEXT_PUBLIC_IIIF_UPSTREAM: https://archetype.gla.ac.uk
       NEXT_PUBLIC_SITE_URL: https://archetype.gla.ac.uk
       CORS_ALLOWED_ORIGINS: https://archetype.gla.ac
