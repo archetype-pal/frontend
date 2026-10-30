@@ -21,8 +21,6 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
-    env:
-      INFRA_DISPATCH_TOKEN: ${{ secrets.INFRA_DISPATCH_TOKEN }}
     steps:
       - uses: actions/checkout@v7
       - name: Compute release version
@@ -34,7 +32,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push beta image
-        id: beta
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -52,19 +49,6 @@ jobs:
             ghcr.io/archetype-pal/frontend:beta-sha-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      # Beta deploys on this event (infrastructure deploy-beta.yml); its cron is only a
-      # fallback that GitHub runs hours late. INFRA_DISPATCH_TOKEN is a fine-grained token
-      # scoped to the infrastructure repository with contents:write. Skipped when unset.
-      - name: Ask the infrastructure repo to deploy beta
-        if: env.INFRA_DISPATCH_TOKEN != ''
-        env:
-          GH_TOKEN: ${{ secrets.INFRA_DISPATCH_TOKEN }}
-        run: |
-          gh api repos/archetype-pal/infrastructure/dispatches \
-            -f event_type=image-published \
-            -f client_payload[image]=frontend \
-            -f client_payload[digest]="${{ steps.beta.outputs.digest }}" \
-            -f client_payload[commit]="${{ github.sha }}"
       # The three Glasgow images target hosts that are not yet deployed (Track J). Static
       # generation fetches the API at build time and times out when the host is
       # unreachable, so a failure here must not block the beta image above.
