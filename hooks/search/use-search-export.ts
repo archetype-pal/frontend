@@ -38,17 +38,16 @@ export function useSearchExport(opts: {
         if (submittedKeyword) params.set('q', submittedKeyword);
         params.set('export_format', format);
         params.set('scope', scope);
+        // `download=1` makes the API serve the file itself (CSV, BibTeX or JSON)
+        // instead of wrapping the text in JSON.
+        params.set('download', '1');
         const endpoint = `${API_BASE_URL}/api/v1/search/${SEARCH_RESULT_CONFIG[resultType].apiPath}/export/?${params.toString()}`;
         const res = await fetch(endpoint, { cache: 'no-store' });
         if (!res.ok) throw new Error(`Export failed: ${res.status}`);
-        const payload = (await res.json()) as { content?: string; results?: unknown[] };
-        const content =
-          payload.content ??
-          (format === 'json' ? JSON.stringify(payload.results ?? [], null, 2) : '');
-        const blob = new Blob([content], {
-          type: format === 'json' ? 'application/json' : 'text/plain',
-        });
-        downloadBlob(`${resultType}-${scope}.${format === 'bibtex' ? 'bib' : format}`, blob);
+        downloadBlob(
+          `${resultType}-${scope}.${format === 'bibtex' ? 'bib' : format}`,
+          await res.blob()
+        );
         toast.success(
           `Exported ${resolveResultTypeLabel(resultType, getLabel)} as ${format.toUpperCase()}`
         );
