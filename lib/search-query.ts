@@ -2,6 +2,7 @@
  * Search query state and URL helpers for the facet search UI.
  */
 import type { FacetClickAction } from '@/types/facets';
+import { newId } from '@/lib/id';
 
 export type QueryState = {
   limit: number;
@@ -565,11 +566,6 @@ export type QueryGroup = {
 };
 
 type QueryBuilderNode = QueryCondition | QueryGroup;
-
-function newId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
-  return `id_${Math.random().toString(36).slice(2)}`;
-}
 
 export function createEmptyQueryGroup(op: 'AND' | 'OR' = 'AND'): QueryGroup {
   return { id: newId(), t: 'group', op, items: [] };

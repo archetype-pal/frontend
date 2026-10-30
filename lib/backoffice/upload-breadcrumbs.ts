@@ -23,6 +23,8 @@
  * swallowed — breadcrumbs improve recovery, they never gate an upload.
  */
 
+import { newId } from '@/lib/id';
+
 type UploadBreadcrumbStatus = 'pending' | 'uploading' | 'processing' | 'error' | 'canceled';
 
 export interface UploadBreadcrumb {
@@ -170,14 +172,9 @@ export function getUploadTabId(): string {
   try {
     let id = window.sessionStorage.getItem(TAB_ID_STORAGE_KEY);
     if (!id) {
-      // Guarded like the other id mints: crypto.randomUUID is secure-context
-      // only, and here a throw would be caught below and return '' — giving
-      // every tab the same empty id, which makes partitionUploadBreadcrumbs
-      // treat every crumb as own-tab and collapses cross-tab ownership.
-      id =
-        typeof crypto !== 'undefined' && crypto.randomUUID
-          ? crypto.randomUUID()
-          : `tab_${Math.random().toString(36).slice(2)}`;
+      // A throw here would be caught below and return '', giving every tab the
+      // same empty id and collapsing cross-tab ownership; newId never throws.
+      id = newId();
       window.sessionStorage.setItem(TAB_ID_STORAGE_KEY, id);
     }
     return id;

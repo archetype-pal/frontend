@@ -25,14 +25,10 @@ import {
   type QueryCondition,
   type QueryGroup,
 } from '@/lib/search-query';
-
-function newConditionId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
-  return `c_${Math.random().toString(36).slice(2)}`;
-}
+import { newId } from '@/lib/id';
 
 function createDefaultQueryCondition(): QueryCondition {
-  return { id: newConditionId(), t: 'cond', field: '', op: 'is', value: '', valueTo: '' };
+  return { id: newId(), t: 'cond', field: '', op: 'is', value: '', valueTo: '' };
 }
 
 const STRING_OPS: { value: ConditionOperator; labelKey: string }[] = [

@@ -1,5 +1,6 @@
 'use client';
 
+import { newId } from '@/lib/id';
 import * as React from 'react';
 import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -14,9 +15,7 @@ const NOTE_COLORS = [
   { bg: 'bg-purple-100', border: 'border-purple-300', hex: '#f3e8ff' },
 ];
 
-function generateId(): string {
-  return `note-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
+const generateId = () => newId('note');
 
 // Debounce timer for text input persistence
 let textPersistTimer: ReturnType<typeof setTimeout> | null = null;

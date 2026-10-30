@@ -24,6 +24,7 @@ import {
   isAcceptedImageFilename,
 } from '@/lib/backoffice/upload-helpers';
 import { useUploadManager } from '@/contexts/upload-manager-context';
+import { newId } from '@/lib/id';
 
 interface ItemImageUploadDialogProps {
   open: boolean;
@@ -38,14 +39,6 @@ interface StagedFile {
   file: File;
   locus: string;
   tags: string;
-}
-
-/** `crypto.randomUUID` is secure-context-only and throws on a plain-HTTP
- *  origin — which here would be straight out of a drop handler. Mirrors
- *  `newId()` in lib/search-query.ts. */
-function newId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
-  return `id_${Math.random().toString(36).slice(2)}`;
 }
 
 /**

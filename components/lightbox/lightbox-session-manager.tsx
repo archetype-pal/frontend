@@ -1,5 +1,6 @@
 'use client';
 
+import { newId } from '@/lib/id';
 import * as React from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -92,7 +93,7 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
     setIsLoading(true);
     try {
       const session: LightboxSession = {
-        id: `session-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+        id: newId('session'),
         name: sessionName,
         workspaces: workspaces.filter((w) => w.id === currentWorkspaceId),
         images: workspaceImages,

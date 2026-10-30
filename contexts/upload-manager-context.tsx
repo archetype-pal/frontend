@@ -44,6 +44,7 @@ import {
   type UploadPhase,
   type UploadSession,
 } from '@/services/backoffice/uploads';
+import { newId } from '@/lib/id';
 
 export type UploadItemStatus =
   'pending' | 'uploading' | 'processing' | 'done' | 'error' | 'duplicate' | 'canceled' | 'busy';
@@ -177,14 +178,6 @@ function itemFromCrumb(crumb: UploadBreadcrumb, over: Partial<UploadItem>): Uplo
     error: '',
     ...over,
   };
-}
-
-/** `crypto.randomUUID` is secure-context-only and throws on a plain-HTTP
- *  origin — which here would be straight out of a drop handler. Mirrors
- *  `newId()` in lib/search-query.ts. */
-function newId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
-  return `id_${Math.random().toString(36).slice(2)}`;
 }
 
 /**

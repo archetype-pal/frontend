@@ -1,5 +1,6 @@
 'use client';
 
+import { newId } from '@/lib/id';
 import * as React from 'react';
 import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -293,7 +294,7 @@ function LightboxPageContent() {
       }
     }
 
-    const regionId = `region-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+    const regionId = newId('region');
     const region: LightboxRegion = {
       id: regionId,
       imageId: cropImageId,
