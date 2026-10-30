@@ -12,16 +12,24 @@ import { vi } from 'vitest';
 vi.mock('next-intl', async (importOriginal) => {
   const actual = await importOriginal<typeof import('next-intl')>();
   const messages = (await import('./messages/en.json')).default;
+  const translators = new Map<string | undefined, ReturnType<typeof actual.createTranslator>>();
   return {
     ...actual,
     useLocale: () => 'en',
-    useTranslations: (namespace?: string) =>
-      actual.createTranslator({
-        locale: 'en',
-        messages,
-        namespace: namespace as never,
-        onError: () => {},
-      }),
+    useTranslations: (namespace?: string) => {
+      if (!translators.has(namespace)) {
+        translators.set(
+          namespace,
+          actual.createTranslator({
+            locale: 'en',
+            messages,
+            namespace: namespace as never,
+            onError: () => {},
+          })
+        );
+      }
+      return translators.get(namespace)!;
+    },
   };
 });
 
