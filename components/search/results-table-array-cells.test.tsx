@@ -34,7 +34,7 @@ const hand: HandListItem = {
   repository_city: 'London',
   repository_name: 'British Library',
   shelfmark: 'Add 2',
-  catalogue_numbers: 'Ker 236; Lawrie 12',
+  catalogue_numbers: ['Ker 236', 'Lawrie 12'],
   place: '',
   date: null,
   description: '',
@@ -47,8 +47,8 @@ describe('ResultsTable multi-valued cells', () => {
     expect(screen.queryByText('Ker 236Lawrie 12')).toBeNull();
   });
 
-  it('still renders a joined string as it comes', () => {
+  it('joins the hands column the same way', () => {
     render(<ResultsTable results={[hand]} resultType="hands" />);
-    expect(screen.getByText('Ker 236; Lawrie 12')).toBeTruthy();
+    expect(screen.getByText('Ker 236, Lawrie 12')).toBeTruthy();
   });
 });

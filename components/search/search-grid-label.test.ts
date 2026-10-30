@@ -136,7 +136,7 @@ const baseClause: ClauseListItem = {
   date: '1160',
   date_min: 1160,
   date_max: 1160,
-  catalogue_numbers: '123',
+  catalogue_numbers: ['123'],
   locus: 'face',
   type: 'Charter',
   status: 'Published',
