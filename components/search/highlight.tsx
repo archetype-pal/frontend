@@ -1,5 +1,6 @@
 'use client';
 
+import { escapeHtml } from '@/lib/markup-escape';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
@@ -11,14 +12,6 @@ interface HighlightProps {
 
 const HIGHLIGHT_START_TOKEN = '__hl_start__';
 const HIGHLIGHT_END_TOKEN = '__hl_end__';
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 /** Turn Meilisearch highlight markers into safe HTML with <mark> only. */
 function highlightMarkersToHtml(formatted: string): string {

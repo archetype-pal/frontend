@@ -36,6 +36,7 @@
  * TEI form, e.g. `perg`).
  */
 
+import { decodeEntities, escapeHtml } from '@/lib/markup-escape';
 import {
   MSDESC_AREAS,
   MSDESC_VOCABS,
@@ -816,20 +817,6 @@ function textContent(el: XmlElementNode): string {
   return parts.join('');
 }
 
-function decodeEntities(value: string): string {
-  return value.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);/g, (full, body: string) => {
-    if (body.startsWith('#')) {
-      const hex = body[1] === 'x' || body[1] === 'X';
-      const code = Number.parseInt(body.slice(hex ? 2 : 1), hex ? 16 : 10);
-      return Number.isFinite(code) && code >= 0 && code <= 0x10ffff
-        ? String.fromCodePoint(code)
-        : full;
-    }
-    const named: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
-    return named[body.toLowerCase()] ?? full;
-  });
-}
-
 /**
  * Emit a raw (still entity-encoded) text node: collapse pretty-print
  * whitespace and neutralize stray angle brackets (real tags were already
@@ -841,13 +828,4 @@ function emitText(raw: string): string {
 
 function collapseWs(text: string): string {
   return text.replace(/\s+/g, ' ');
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
 }

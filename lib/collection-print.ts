@@ -1,3 +1,4 @@
+import { escapeHtml } from '@/lib/markup-escape';
 import type { CollectionItem, NamedCollection } from './collection-storage';
 import {
   getCollectionDisplaySectionLabel,
@@ -11,13 +12,6 @@ import {
   type CollectionDisplaySectionType,
 } from './collection-display';
 import { coordinatesFromGeoJson, getIiifImageUrl, getIiifImageUrlWithBounds } from '@/utils/iiif';
-
-function escapeHtml(value: string): string {
-  return value.replace(
-    /[&<>"]/g,
-    (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[character] as string
-  );
-}
 
 function getSafePrintImageUrl(value: string): string {
   if (value.startsWith('/')) return value;
