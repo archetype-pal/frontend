@@ -545,8 +545,8 @@ export type ConditionOperator =
   | 'is_not'
   | 'contains'
   | 'starts_with'
-  | 'gt'
-  | 'lt'
+  | 'gte'
+  | 'lte'
   | 'between'
   | 'is_empty'
   | 'is_not_empty';
@@ -764,9 +764,9 @@ function rebuildQueryRootFromFlatSearchParams(sp: URLSearchParams): QueryGroup {
         valueTo: hi,
       });
     } else if (lo) {
-      items.push({ id: newId(), t: 'cond', field, op: 'gt', value: lo });
+      items.push({ id: newId(), t: 'cond', field, op: 'gte', value: lo });
     } else if (hi) {
-      items.push({ id: newId(), t: 'cond', field, op: 'lt', value: hi });
+      items.push({ id: newId(), t: 'cond', field, op: 'lte', value: hi });
     }
   }
   return { id: newId(), t: 'group', op: 'AND', items };
