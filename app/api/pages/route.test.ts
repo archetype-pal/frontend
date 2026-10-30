@@ -6,7 +6,10 @@ const { authFetch } = vi.hoisted(() => ({ authFetch: vi.fn() }));
 vi.mock('@/lib/api-fetch', () => ({ authFetch }));
 
 const { getServerAuthToken } = vi.hoisted(() => ({ getServerAuthToken: vi.fn() }));
-vi.mock('@/lib/auth-token-server', () => ({ getServerAuthToken }));
+vi.mock('@/lib/auth-token-server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/auth-token-server')>()),
+  getServerAuthToken,
+}));
 
 import { NextRequest } from 'next/server';
 import { POST } from './route';
