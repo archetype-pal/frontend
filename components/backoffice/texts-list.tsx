@@ -67,6 +67,7 @@ import { useSelectionSet } from '@/hooks/use-selection-set';
 import { downloadBlob } from '@/lib/download';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { invalidateAfterImageTextDelete } from '@/lib/backoffice/image-text-cache';
+import { errorMessage } from '@/lib/error-message';
 
 const STATUS_TONE: Record<ImageTextStatus, string> = {
   Draft:
@@ -292,7 +293,7 @@ export function TextsList() {
     } catch (err) {
       toast.error(t('textsList.toastExportFailed'), {
         id: toastId,
-        description: err instanceof Error ? err.message : String(err),
+        description: errorMessage(err),
       });
     }
   }

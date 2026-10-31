@@ -17,6 +17,7 @@ import { ViewerLinkBar, type ActiveRegion } from './viewer-link-bar';
 import type { Mode } from '@/components/backoffice/tei-text-editor';
 import type { EditorLinkSelection } from '@/lib/tei-tiptap';
 import type { TextDisplayMode } from '@/types/annotation-viewer';
+import { errorMessage } from '@/lib/error-message';
 
 function LoadingEditorFallback() {
   const t = useTranslations('manuscript');
@@ -206,8 +207,7 @@ function TextEditor({
       showActionNotification({
         kind: 'error',
         title: t('text.saveFailedTitle'),
-        description:
-          error instanceof Error ? error.message.slice(0, 160) : t('text.saveFailedDescription'),
+        description: errorMessage(error, t('text.saveFailedDescription')).slice(0, 160),
       });
     } finally {
       setSaving(false);

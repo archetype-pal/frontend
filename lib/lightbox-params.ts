@@ -1,6 +1,7 @@
 import type { CollectionItem } from '@/contexts/collection-context';
 import type { GraphListItem, ImageListItem } from '@/types/search';
 import { apiFetch } from '@/lib/api-fetch';
+import { errorMessage } from '@/lib/error-message';
 
 type ItemType = 'image' | 'graph';
 type ResolvedItem = CollectionItem | ImageListItem | GraphListItem;
@@ -31,7 +32,7 @@ export async function resolveItemById(
     const data = await response.json();
     return { ...data, type } as ResolvedItem;
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = errorMessage(err);
     setError(`Failed to load ${type} ${id}: ${msg}`);
     return null;
   }
@@ -78,7 +79,7 @@ export async function resolveItemsByIds(
       const id = missingIds[index];
       const status = statusById.get(id);
       if (status === undefined || status >= 500 || status === 429) retryableIds.push(id);
-      failed.push(result.reason instanceof Error ? result.reason.message : String(result.reason));
+      failed.push(errorMessage(result.reason));
     }
   }
 

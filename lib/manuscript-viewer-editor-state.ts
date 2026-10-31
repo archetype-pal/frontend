@@ -7,6 +7,7 @@ import type {
 } from '@/types/annotation-viewer';
 
 import { isDbId } from '@/lib/annotation-popup-utils';
+import { errorMessage } from '@/lib/error-message';
 
 function toA9sWithMeta(annotation: A9sAnnotation): A9sWithMeta {
   return annotation as A9sWithMeta;
@@ -139,7 +140,7 @@ export function partitionSaveResults(
 
   const captureError = (reason: unknown) => {
     if (partition.firstError) return;
-    partition.firstError = reason instanceof Error ? reason.message : String(reason);
+    partition.firstError = errorMessage(reason);
   };
 
   upsertRecords.forEach((record, index) => {

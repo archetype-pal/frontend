@@ -19,6 +19,7 @@ import type {
 } from '@/components/manuscript/manuscript-annotorious';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
 import type { A9sWithMeta } from '@/types/annotation-viewer';
+import { errorMessage } from '@/lib/error-message';
 
 interface UseImageTextLinkingArgs {
   imageId: string;
@@ -220,8 +221,7 @@ export function useImageTextLinking({
           showActionNotification({
             kind: 'error',
             title: 'Link failed',
-            description:
-              error instanceof Error ? error.message.slice(0, 160) : 'Could not link region.',
+            description: errorMessage(error, 'Could not link region.').slice(0, 160),
           });
         }
       })();
@@ -261,8 +261,7 @@ export function useImageTextLinking({
           showActionNotification({
             kind: 'error',
             title: 'Link failed',
-            description:
-              error instanceof Error ? error.message.slice(0, 160) : 'Could not link region.',
+            description: errorMessage(error, 'Could not link region.').slice(0, 160),
           });
         }
       })();
@@ -331,8 +330,7 @@ export function useImageTextLinking({
           showActionNotification({
             kind: 'error',
             title: 'Unlink failed',
-            description:
-              error instanceof Error ? error.message.slice(0, 160) : 'Could not remove the link.',
+            description: errorMessage(error, 'Could not remove the link.').slice(0, 160),
           });
         }
       })();
@@ -360,8 +358,7 @@ export function useImageTextLinking({
           showActionNotification({
             kind: 'error',
             title: 'Reshape failed',
-            description:
-              error instanceof Error ? error.message.slice(0, 160) : 'Could not save the region.',
+            description: errorMessage(error, 'Could not save the region.').slice(0, 160),
           })
         );
     },

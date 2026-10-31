@@ -12,6 +12,7 @@ import type { GraphListItem, ImageListItem } from '@/types/search';
 import type { CollectionItem } from '@/contexts/collection-context';
 import type { WorksetPayload } from '@/types/workset';
 import { getCollectionItemTypeLabel, getCollectionManuscriptLabel } from '@/lib/collection-display';
+import { errorMessage } from '@/lib/error-message';
 
 export interface LightboxState {
   // Current workspace
@@ -183,7 +184,7 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Failed to initialize',
+        error: errorMessage(error, 'Failed to initialize'),
         isLoading: false,
       });
     }
@@ -583,7 +584,7 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Failed to load session',
+        error: errorMessage(error, 'Failed to load session'),
         isLoading: false,
       });
     }
@@ -617,7 +618,7 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Failed to load workset',
+        error: errorMessage(error, 'Failed to load workset'),
         isLoading: false,
       });
     }

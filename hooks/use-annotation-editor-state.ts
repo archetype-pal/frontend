@@ -35,6 +35,7 @@ import type {
   AnnotationEditorRecordMap,
   ViewerCapabilities,
 } from '@/types/annotation-viewer';
+import { errorMessage } from '@/lib/error-message';
 
 // 50 ms trailing-edge window for coalescing per-pointermove drag updates
 // (Phase 0.7). Short enough that a follow-up save picks up the latest shape
@@ -417,7 +418,7 @@ export function useAnnotationEditorState(
       return {
         kind: 'saved-but-refresh-failed',
         succeededCount: succeededTotal,
-        message: error instanceof Error ? error.message : 'Failed to refresh annotations.',
+        message: errorMessage(error, 'Failed to refresh annotations.'),
       };
     }
 

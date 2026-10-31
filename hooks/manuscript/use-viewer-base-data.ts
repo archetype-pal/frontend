@@ -11,6 +11,7 @@ import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-
 import type { Manuscript } from '@/types/manuscript';
 import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
+import { errorMessage } from '@/lib/error-message';
 
 /**
  * Loads the viewer's base data for an image, extracted from
@@ -78,7 +79,7 @@ export function useViewerBaseData(imageId: string) {
         setError(null);
       } catch (err) {
         if (isMounted) {
-          setError(err instanceof Error ? err.message : 'Failed to load manuscript data');
+          setError(errorMessage(err, 'Failed to load manuscript data'));
         }
       } finally {
         if (isMounted) setLoading(false);
