@@ -25,6 +25,8 @@
  * user-facing copy — the form UI renders its own localized messaging.
  */
 
+import { escapeXmlAttr, escapeXmlText } from '@/lib/markup-escape';
+
 // ── Parsed-tree types ───────────────────────────────────────────────────
 
 interface XmlAttribute {
@@ -444,29 +446,6 @@ export function text(value: string): BuildText {
 
 export function raw(xml: string): BuildRaw {
   return { kind: 'raw', xml };
-}
-
-export function escapeXmlText(value: string): string {
-  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-}
-
-/**
- * Escape an attribute value. Deliberately identical to `escapeAttr` in
- * `lib/tei-prosemirror.ts` (which mirrors the backend's
- * `html.escape(quote=True)` that produced the stored corpus) — including `>`
- * and `'`. The two emitters MUST agree: a prose leaf emitted here is compared
- * byte-for-byte against `docToTei` output by the leaf editor's
- * rich-representability gate, so a value carrying an apostrophe (a place name
- * like "St Andrew's", an external URL with `'`) would otherwise fail the gate
- * and demote the leaf to the plain-textarea fallback forever.
- */
-export function escapeXmlAttr(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#x27;');
 }
 
 function serializeAttrs(attrs: BuildAttr[]): string {

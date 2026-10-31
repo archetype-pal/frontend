@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { escapeXmlAttr, escapeXmlText } from '@/lib/markup-escape';
 import type { ElementShape, XmlElementNode } from '@/lib/msdesc-fragments';
 import {
   attrValue,
@@ -8,8 +9,6 @@ import {
   childElements,
   el,
   elementText,
-  escapeXmlAttr,
-  escapeXmlText,
   hasNonWhitespaceText,
   innerXml,
   parseFragment,
