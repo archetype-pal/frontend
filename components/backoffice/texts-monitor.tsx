@@ -41,17 +41,15 @@ import {
   fetchTextsOverview,
   type ActivityBucket,
   type AnnotationActivityBucket,
+  type AnnotationHealth,
+  type CoveragePayload,
   type Kind,
+  type MatrixPayload,
   type LanguageRow,
   type RecentRow,
   type Status,
-  type TextsOverview,
 } from '@/services/texts-monitor';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-
-type MatrixPayload = TextsOverview['matrix'];
-type CoveragePayload = TextsOverview['coverage'];
-type AnnotationHealth = TextsOverview['annotation_health'];
 
 // Status palette is routed through the `--c-status-*` design tokens
 // (globals.css). Wash backgrounds and borders use the named utility

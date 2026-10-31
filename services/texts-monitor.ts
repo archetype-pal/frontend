@@ -1,7 +1,8 @@
 import { proxyFetch } from '@/lib/api-fetch';
 
-export type Kind = 'Transcription' | 'Translation';
-export type Status = 'Draft' | 'Review' | 'Live' | 'Reviewed';
+import type { ImageTextKind as Kind, ImageTextStatus as Status } from '@/types/image-text';
+
+export type { Kind, Status };
 
 export type MatrixPayload = {
   kinds: Kind[];

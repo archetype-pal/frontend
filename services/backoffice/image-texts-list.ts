@@ -8,8 +8,11 @@
 
 import { backofficeGet } from './api-client';
 import type { ImageTextStatus } from './review-queue';
+import type { PaginatedResponse } from '@/types/backoffice';
 
-export type ImageTextKind = 'Transcription' | 'Translation';
+import type { ImageTextKind } from '@/types/image-text';
+
+export type { ImageTextKind };
 
 export interface ImageTextListRow {
   id: number;
@@ -38,12 +41,7 @@ export interface ImageTextListRow {
   modified: string;
 }
 
-export interface PaginatedImageTextList {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: ImageTextListRow[];
-}
+export type PaginatedImageTextList = PaginatedResponse<ImageTextListRow>;
 
 export interface ImageTextListParams {
   page?: number;

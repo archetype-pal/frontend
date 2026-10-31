@@ -8,7 +8,9 @@
 
 import { proxyFetch } from '@/lib/api-fetch';
 
-export type ImageTextStatus = 'Draft' | 'Review' | 'Live' | 'Reviewed';
+import type { ImageTextStatus } from '@/types/image-text';
+
+export type { ImageTextStatus };
 
 export interface QueueEntry {
   id: number;

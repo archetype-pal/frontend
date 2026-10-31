@@ -42,8 +42,9 @@ import {
   useExistingImageText,
 } from '@/components/backoffice/image-text-create-guards';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import type { ImageTextKind } from '@/types/image-text';
 
-type Kind = 'Transcription' | 'Translation';
+type Kind = ImageTextKind;
 
 export function ImportTeiDialog({
   open,
